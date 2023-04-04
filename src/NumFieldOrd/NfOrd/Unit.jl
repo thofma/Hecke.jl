@@ -34,9 +34,8 @@
 
 export is_unit, is_torsion_unit, is_independent, unit_group
 
-add_verbose_scope(:UnitGroup)
-add_assert_scope(:UnitGroup)
-set_assert_level(:UnitGroup, 0)
+add_verbosity_scope(:UnitGroup)
+add_assertion_scope(:UnitGroup)
 
 include("Unit/FindUnits.jl")
 include("Unit/Helper.jl")

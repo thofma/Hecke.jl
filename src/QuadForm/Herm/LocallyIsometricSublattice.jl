@@ -57,7 +57,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
   if S[1] == 0
     BB = mtype[ B[1][i, :] for i in 1:nrows(B[1])]
     m = div(length(BB) - r0, 2)
-    k, h = ResidueField(base_ring(OE), p)
+    k, h = residue_field(base_ring(OE), p)
     hext = extend(h, base_field(E))
     YY = mtype[ BB[i] for i in (2*m + 1):length(BB) ]
     for i in 1:m
@@ -164,7 +164,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
   end
   @assert genus(LL, p) == c
 
-  k, h = ResidueField(order(p), p)
+  k, h = residue_field(order(p), p)
   hext = extend(h, K)
   for j in length(C)-1:-1:1
     c = C[j]
@@ -249,7 +249,7 @@ end
 # 3. Contsruct a lattice X in the space of M such that X_p = Y_p and X_q = M_q for all q \ne p.
 
 function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
-  k, h = ResidueField(order(P), P)
+  k, h = residue_field(order(P), P)
   m = rank(M)
   chain = typeof(M)[ L ]
   ok, LL = is_maximal_integral(L, p)

@@ -12,7 +12,7 @@
   K = GF(3)
   E1 = EllipticCurve(K, [1, 0, 1, 1, 0])
   E2 = EllipticCurve(K, [1, 0, 1, 0, 2])
-  Kx, x = PolynomialRing(K);
+  Kx, x = polynomial_ring(K);
   f = x+2
   phi = @inferred isogeny_from_kernel(E1, f)
   @test @inferred domain(phi) == E1
@@ -81,7 +81,7 @@
   image(L, P)
 
   f = @inferred frobenius_map(E)
-  Kx, x = PolynomialRing(base_field(E),"x")
+  Kx, x = polynomial_ring(base_field(E),"x")
   @test isogeny_map_phi(f) == x^13
   f(f(P)) == P
 
@@ -131,7 +131,7 @@
   
   #Example from https://trac.sagemath.org/ticket/32484
   E = EllipticCurve(GF(71, 2), [0,1])
-  R, x = PolynomialRing(base_field(E), "x")
+  R, x = polynomial_ring(base_field(E), "x")
   h = x^4 + 26*x^3 + 61*x^2 + 4*x + 19
   @test !is_kernel_polynomial(E, h)
 

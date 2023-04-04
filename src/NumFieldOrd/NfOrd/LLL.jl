@@ -1,5 +1,5 @@
-add_verbose_scope(:LLL)
-add_assert_scope(:LLL)
+add_verbosity_scope(:LLL)
+add_assertion_scope(:LLL)
 
 ################################################################################
 #
@@ -14,7 +14,7 @@ function _lll_gram(A::NfOrdIdl)
   @hassert :LLL 1 !iszero(det(g))
   @hassert :LLL 1 is_positive_definite(g)
   l, t = lll_gram_with_transform(g)
-  return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
+  return FakeFmpqMat(l, ZZRingElem(1)), t::ZZMatrix
 end
 
 function _lll_quad(A::NfOrdIdl)
@@ -27,7 +27,7 @@ function _lll_quad(A::NfOrdIdl)
   g = matrix(FlintZZ, 2, 2, [a1, a12, a12, a2])
   @hassert :LLL 1 is_positive_definite(g)
   l, t = lll_gram_with_transform(g)
-  return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
+  return FakeFmpqMat(l, ZZRingElem(1)), t::ZZMatrix
 end
 
 function _lll_CM(A::NfOrdIdl)
@@ -38,7 +38,7 @@ function _lll_CM(A::NfOrdIdl)
   g = BM*M*transpose(BM)
   @hassert :LLL 1 is_positive_definite(g)
   @vtime :LLL 3 l, t = lll_gram_with_transform(g)
-  return FakeFmpqMat(l, fmpz(1)), t*T::fmpz_mat
+  return FakeFmpqMat(l, ZZRingElem(1)), t*T::ZZMatrix
 end
 
 ################################################################################
@@ -47,7 +47,7 @@ end
 #
 ################################################################################
 
-function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
 
   K = nf(order(A))
 
@@ -68,7 +68,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     end
   end
   #General case. _lll could fail, we need a try and catch in a loop
-  local t::fmpz_mat
+  local t::ZZMatrix
   local l::FakeFmpqMat
   while true
     if prec > 2^18
@@ -89,7 +89,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 end
 
 
-function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   K = nf(order(A))
   n = degree(order(A))
   prec = max(prec, 4*n)
@@ -99,11 +99,11 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, transpose(l))
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
+    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), d, d, transpose(l))
+    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), d, l, d)
     g = zero_matrix(FlintZZ, n, n)
-    den = fmpz(1)
-    sv = fmpz(0)
+    den = ZZRingElem(1)
+    sv = ZZRingElem(0)
   else
     c = minkowski_matrix(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
@@ -116,22 +116,22 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
       rt_c.cache_z2 = zero_matrix(FlintZZ, n, n)
     end
 
-    d::fmpz_mat = rt_c.cache_z1
-    g::fmpz_mat = rt_c.cache_z2
+    d::ZZMatrix = rt_c.cache_z1
+    g::ZZMatrix = rt_c.cache_z2
 
     round_scale!(g, c, prec)
 
     @v_do :ClassGroup 2 println("using inf val", v)
     c = deepcopy(c)
     mult_by_2pow_diag!(c, v)
-    sv = max(fmpz(0), sum(v[1,i] for i=1:ncols(l)))
+    sv = max(ZZRingElem(0), sum(v[1,i] for i=1:ncols(l)))
 
 
     round_scale!(d, c, prec)
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat},  Ref{fmpz_mat}), g, (b.num), d)
+    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix},  Ref{ZZMatrix}), g, (b.num), d)
     den = b.den
 
-    ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
+    ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), d, g)
     shift!(d, -prec)
   end
 
@@ -144,15 +144,15 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
 
   ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
 
-  ccall((:fmpz_mat_one, libflint), Nothing, (Ref{fmpz_mat}, ), g)
-  ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  ccall((:fmpz_mat_one, libflint), Nothing, (Ref{ZZMatrix}, ), g)
+  ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
   @v_do :ClassGroup 2 printstyled("lll basis length profile\n", color=:green);
   @v_do :ClassGroup 2 for i = 1:nrows(l)
-    print(Float64(div(l[i,i], fmpz(2)^prec*den*den)*1.0), " : ")
+    print(Float64(div(l[i,i], ZZRingElem(2)^prec*den*den)*1.0), " : ")
   end
   @v_do :ClassGroup 2 println("")
   if nbits(maximum(abs, t)) >  div(prec, 2)
@@ -164,9 +164,9 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
   ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
   n = nrows(l)
-  disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * fmpz(2)^(2*sv)
-  di = root(disc, n)+1
-  di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+  disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * ZZRingElem(2)^(2*sv)
+  di = iroot(disc, n) + 1
+  di *= ZZRingElem(2)^(div(n+1,2)) * ZZRingElem(2)^prec
 
   if compare_index(l, 1, 1, di) > 0
     @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red);
@@ -174,13 +174,13 @@ function _lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int =
     throw(LowPrecisionLLL())
   end
   pr = prod_diagonal(l)
-  if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+  if pr > ZZRingElem(2)^(div(n*(n-1), 2)) * disc * ZZRingElem(2)^(n*prec)
     @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red);
-    @v_do :ClassGroup 2 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec));
+    @v_do :ClassGroup 2 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", ZZRingElem(2)^(div(n*(n-1), 2)) * disc * ZZRingElem(2)^(n*prec));
     throw(LowPrecisionLLL())
   end
 
-  return FakeFmpqMat(deepcopy(l), fmpz(2)^prec), t*t1
+  return FakeFmpqMat(deepcopy(l), ZZRingElem(2)^prec), t*t1
 end
 
 
@@ -351,7 +351,7 @@ function _lll_quad(M::NfAbsOrd)
   a1 = 2*numerator(norm(b[1]))
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
-  g = matrix(FlintZZ, 2, 2, fmpz[a1, a12, a12, a2])
+  g = matrix(FlintZZ, 2, 2, ZZRingElem[a1, a12, a12, a2])
   @hassert :ClassGroup 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
   On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
@@ -392,7 +392,7 @@ function _ordering_by_T2(M::NfAbsOrd, prec::Int = 32)
 
   K = nf(M)
   B = basis(M, K)
-  ints = fmpz[lower_bound(t2(x, prec), fmpz) for x in B]
+  ints = ZZRingElem[lower_bound(t2(x, prec), ZZRingElem) for x in B]
   p = sortperm(ints)
   On = NfAbsOrd(B[p])
   On.is_maximal = M.is_maximal
@@ -425,6 +425,11 @@ end
 
 
 #Inefficient, but at least it works.
+@doc Markdown.doc"""
+    subsets(n::Int, k::Int)
+
+Return a vector of all ordered `k`-element subsets of `1..n`.    
+"""
 function subsets(n::Int, k::Int)
   if k == 0
     return Vector{Int}[Int[]]
@@ -444,6 +449,11 @@ function subsets(n::Int, k::Int)
 end
 
 
+@doc Markdown.doc"""
+    subsets(v::Vector{T}, k::Int) where T
+
+Return a vector of all ordered `k`-element sub-vectors of `v`.
+"""
 function subsets(v::Vector{T}, k::Int) where T
   indices = subsets(length(v), k)
   res = Vector{T}[]
@@ -528,13 +538,13 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   l = length(u)
   @vprint :LLL 3 "Block of dimension $(l)\n"
   prec = max(prec, 10*n)
-  local g::fmpz_mat
+  local g::ZZMatrix
 
   bas = basis(M, K)[u]
-  profile_sub = nbits(prod(Hecke.upper_bound(fmpz, t2(x)) for x in bas))
+  profile_sub = nbits(prod(Hecke.upper_bound(ZZRingElem, t2(x)) for x in bas))
   @vprint :LLL 3 "Starting with profile $(profile_sub)\n"
   while true
-    local d::fmpz_mat
+    local d::ZZMatrix
     @vprint :LLL 3 "Computing Minkowski matrix\n"
     while true
       @vprint :LLL 3 "Precision: $(prec)\n"
@@ -554,7 +564,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
     ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d1, g, ctx)
+    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d1, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       prec *= 2
@@ -566,7 +576,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   @vprint :LLL 3 "Computing the profile of the new basis \n"
   new_basis = g*basis_matrix(bas, FakeFmpqMat)
   els = elem_type(K)[elem_from_mat_row(K, new_basis.num, i, new_basis.den) for i = 1:nrows(new_basis)]
-  new_profile = nbits(prod(Hecke.upper_bound(fmpz, t2(x)) for x in els))
+  new_profile = nbits(prod(Hecke.upper_bound(ZZRingElem, t2(x)) for x in els))
   if new_profile <= profile_sub
     @vprint :LLL 3 "Output a better basis!\n"
     @vprint :LLL 3 "New profile: $(new_profile)\n"
@@ -584,10 +594,10 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   n = degree(M)
   prec = max(prec, 10*n)
   disc = abs(discriminant(M))
-  local g::fmpz_mat
-  local d::fmpz_mat
+  local g::ZZMatrix
+  local d::ZZMatrix
   ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
-  dM = sum(nbits(Hecke.upper_bound(fmpz, t2(x))) for x in basis(M, K))
+  dM = sum(nbits(Hecke.upper_bound(ZZRingElem, t2(x))) for x in basis(M, K))
   @vprint :LLL 1 "Input profile: $(dM)\n"
   @vprint :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2)) \n"
   att = 0
@@ -616,18 +626,18 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true
       disc = abs(discriminant(M))
-      di = root(disc, n)+1
-      di *= fmpz(2)^(div(n+1,2)+prec)
+      di = iroot(disc, n) + 1
+      di *= ZZRingElem(2)^(div(n+1,2)+prec)
       if compare_index(d, 1, 1, di) > 0
         fl = false
       else
         pr = prod_diagonal(d)
-        if pr > fmpz(2)^(div(n*(n-1), 2)+(n*prec)) * disc
+        if pr > ZZRingElem(2)^(div(n*(n-1), 2)+(n*prec)) * disc
           fl = false
         end
       end
@@ -647,7 +657,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
       On.gen_index = M.gen_index
     end
     prec *= 2
-    dOn = nbits(prod(Hecke.upper_bound(fmpz, t2(x)) for x in basis(On, K)))
+    dOn = nbits(prod(Hecke.upper_bound(ZZRingElem, t2(x)) for x in basis(On, K)))
     if dOn < dM
       @vprint :LLL 3 "I use the transformation\n"
       @vprint :LLL 3 "New profile: $(dOn)\n"
@@ -698,7 +708,7 @@ end
 
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
-function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(A, copy = false)*basis_matrix(order(A), copy = false)
   K = nf(order(A))
@@ -708,7 +718,7 @@ function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::
   return q
 end
 
-function lll_basis(A::NfOrdFracIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::NfOrdFracIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   L, T = lll(A.num, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(order(A))
@@ -726,14 +736,14 @@ end
 ################################################################################
 
 function short_elem(A::NfOrdFracIdl,
-                v::fmpz_mat=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
+                v::ZZMatrix=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
 
 function short_elem(A::NfOrdIdl,
-                v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
+                v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
   t = lll(A, v, prec = prec)[2]
   w = view(t, 1:1, 1:ncols(t))
@@ -792,7 +802,7 @@ function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
-  a = FacElem(Dict{nf_elem, fmpz}(one(K) => fmpz(1)))
+  a = FacElem(Dict{nf_elem, ZZRingElem}(one(K) => ZZRingElem(1)))
   A = ideal(O, 1)
   for (k, v) = I.fac
     @assert order(k) === O
@@ -822,12 +832,12 @@ end
 
 # The bound should be sqrt(disc) (something from LLL)
 @doc Markdown.doc"""
-    power_reduce(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
+    power_reduce(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl, FacElem{nf_elem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
 $B$ has small norm.
 """
-function power_reduce(A::NfOrdIdl, e::fmpz)
+function power_reduce(A::NfOrdIdl, e::ZZRingElem)
   O = order(A)
   K= nf(O)
   if norm(A, copy = false) > abs(discriminant(O))
@@ -836,7 +846,7 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
     A = A1
     al = FacElem(Dict(a=>-e))
   else
-    al = FacElem(Dict(K(1) => fmpz(1)))
+    al = FacElem(Dict(K(1) => ZZRingElem(1)))
   end
 
   #we have A_orig^e = (A*a)^e = A^e*a^e = A^e*al and A is now small
@@ -844,7 +854,7 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
   if e < 0
     B = inv(A)
     A = numerator(B)
-    add_to_key!(al.fac, K(denominator(B)), fmpz(e))
+    add_to_key!(al.fac, K(denominator(B)), ZZRingElem(e))
     e = -e
   end
 
@@ -878,13 +888,13 @@ function power_reduce(A::NfOrdIdl, e::fmpz)
 end
 
 
-function new_power_reduce(A::NfOrdIdl, e::fmpz)
+function new_power_reduce(A::NfOrdIdl, e::ZZRingElem)
   O = order(A)
   if iszero(e)
     return ideal(O, 1)
   end
   K = nf(O)
-  al = FacElem(Dict(K(1) => fmpz(1)))
+  al = FacElem(Dict(K(1) => ZZRingElem(1)))
   if e < 0
     A1 = inv(A)
     A = A1.num
@@ -903,7 +913,7 @@ function new_power_reduce(A::NfOrdIdl, e::fmpz)
   return res[1], al
 end
 
-function _new_power_reduce(A::NfOrdIdl, e::fmpz, Ainv::NfOrdIdl, d::fmpz)
+function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRingElem)
   #Ainv//d is the inverse of A
   #We want to reduce A^e
   O = order(A)
@@ -923,7 +933,7 @@ function _new_power_reduce(A::NfOrdIdl, e::fmpz, Ainv::NfOrdIdl, d::fmpz)
     mul!(newb, newb, basis_matrix(Ainv, copy = false))
     Ainv.basis_matrix = newb
   else
-    al = FacElem(Dict(K(1) => fmpz(1)))
+    al = FacElem(Dict(K(1) => ZZRingElem(1)))
   end
 
 

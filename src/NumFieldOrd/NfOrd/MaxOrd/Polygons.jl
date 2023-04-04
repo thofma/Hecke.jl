@@ -8,7 +8,7 @@ export NewtonPolygon, Line, Polygon
 
 mutable struct Line
   points :: Tuple{Tuple{Int, Int}, Tuple{Int, Int}}
-  slope :: fmpq
+  slope :: QQFieldElem
 
   function Line(points::Tuple{Tuple{Int, Int}, Tuple{Int, Int}})
     line = new()
@@ -53,7 +53,7 @@ mutable struct NewtonPolygon{T}
   P::Polygon
   f::T
   phi::T
-  p::fmpz
+  p::ZZRingElem
   development::Vector{T}
 end
 
@@ -82,7 +82,7 @@ function slope(L::Line)
 end
 
 function slope(a::Tuple{Int, Int}, b::Tuple{Int, Int})
-  return fmpq(b[2]-a[2], b[1]-a[1])
+  return QQFieldElem(b[2]-a[2], b[1]-a[1])
 end
 
 function degree(L::Line)
@@ -176,7 +176,8 @@ function lower_convex_hull(points::Vector{Tuple{Int, Int}})
     while i<= length(points)
       y = pointsconvexhull[end]
       sl = [slope(y, x) for x = points[i:end]]
-      p = findlast(x->x == minimum(sl), sl)
+      min_sl = minimum(sl)
+      p = findlast(x->x == min_sl, sl)::Int
       push!(pointsconvexhull, points[p+i-1])
       i += p
     end
@@ -239,13 +240,17 @@ function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Unio
   return NewtonPolygon(P, f, phi, p, dev)
 end
 
+#TODO: in Oscar/experimental/GaloisGrp are the "missing" functions
+# - without phi
+# - for QQFieldElem/ZZPolyRingElem and prime
+# - over Q(t) with degree
 @doc Markdown.doc"""
-    newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz)
+    newton_polygon(f::ZZPolyRingElem, phi::ZZPolyRingElem, p::ZZRingElem)
 
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v_p(a_i))$
 where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
-function newton_polygon(f::T, phi::T, p::fmpz) where T
+function newton_polygon(f::T, phi::T, p::ZZRingElem) where T
   dev = phi_development(f, phi)
   a = Tuple{Int, Int}[]
   for i = 0:length(dev) -1
@@ -268,7 +273,7 @@ function _newton_polygon(dev, p)
 end
 
 
-function valuation(f::fmpz_poly, p::Union{fmpz, Int})
+function valuation(f::ZZPolyRingElem, p::Union{ZZRingElem, Int})
   l = Int[Int(valuation(coeff(f, i), p)) for i = 0:degree(f) if coeff(f, i)!=0]
   return minimum(l)
 end
@@ -285,7 +290,7 @@ end
 function _valuation(f::Generic.Poly{<:LocalFieldElem})
   K = base_ring(f)
   e = absolute_ramification_index(K)
-  return minimum(fmpz[numerator(e*valuation(coeff(f, i))) for i = 0:degree(f)])
+  return minimum(ZZRingElem[numerator(e*valuation(coeff(f, i))) for i = 0:degree(f)])
 end
 
 ################################################################################
@@ -295,33 +300,33 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)
+    residual_polynomial(N::NewtonPolygon{ZZPolyRingElem}, L::Line)
 
 Computes the residual polynomial of the side $L$ of the Newton Polygon $N$.
 """
-function residual_polynomial(N::NewtonPolygon{fmpz_poly}, L::Line)
+function residual_polynomial(N::NewtonPolygon{ZZPolyRingElem}, L::Line)
   F = GF(N.p, cached = false)
-  Ft = PolynomialRing(F, "t", cached = false)[1]
+  Ft = polynomial_ring(F, "t", cached = false)[1]
   FF = FiniteField(Ft(N.phi), "a", cached = false)[1]
   return residual_polynomial(FF, L, N.development, N.p)
 end
 
-function residual_polynomial(F, L::Line, dev::Vector{fmpz_poly}, p::Union{Int, fmpz})
+function residual_polynomial(F, L::Line, dev::Vector{ZZPolyRingElem}, p::Union{Int, ZZRingElem})
 
   R = GF(p, cached=false)
   cof = Vector{elem_type(F)}()
-  Rx, x = PolynomialRing(R, "y", cached=false)
+  Rx, x = polynomial_ring(R, "y", cached=false)
   s = L.points[1][1]
   e = denominator(L.slope)
   for i=0:degree(L)
     if !iszero(dev[Int(s+e*i+1)])
-      el=Rx(divexact(dev[Int(s+e*i+1)], fmpz(p)^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
+      el=Rx(divexact(dev[Int(s+e*i+1)], ZZRingElem(p)^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
       push!(cof, F(el))
     else
       push!(cof, F(0))
     end
   end
-  Fx, x = PolynomialRing(F,"x", cached=false)
+  Fx, x = polynomial_ring(F,"x", cached=false)
   return Fx(cof)
 
 end
@@ -355,10 +360,10 @@ end
 #
 ###############################################################################
 
-function is_regular_at(f::fmpz_poly, p::fmpz)
+function is_regular_at(f::ZZPolyRingElem, p::ZZRingElem)
   Zx = parent(f)
   R = GF(p, cached = false)
-  Rx = PolynomialRing(R, "y", cached = false)[1]
+  Rx = polynomial_ring(R, "y", cached = false)[1]
   f1 = Rx(f)
   sqf = factor_squarefree(f1)
   for (g, v) in sqf
@@ -386,13 +391,13 @@ end
 #
 ###############################################################################
 
-function gens_overorder_polygons(O::NfOrd, p::fmpz)
+function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
   K = nf(O)
   f = K.pol
   Qx = parent(f)
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   R = GF(p, cached = false)
-  Rx, y = PolynomialRing(R, "y", cached = false)
+  Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
   sqf = factor_squarefree(f1)
   l = powers(gen(K), degree(K)-1)
@@ -437,7 +442,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     for i in 1:nrows(B)
       elt[i] = elem_from_mat_row(K, B.num, i, B.den)
     end
-    O1 = _order_for_polygon_overorder(K, elt, inv(fmpq(p^vdisc)))
+    O1 = _order_for_polygon_overorder(K, elt, inv(QQFieldElem(p^vdisc)))
   else
     O1 = NfAbsOrd(K, B)
     O1.disc = divexact(O.disc, p^(2*vdisc))
@@ -449,11 +454,11 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
 end
 
 
-function polygons_overorder(O::NfOrd, p::fmpz)
+function polygons_overorder(O::NfOrd, p::ZZRingElem)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
-  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
-  Kx, x = PolynomialRing(GF(p, cached=false), "x", cached=false)
+  Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
+  Kx, x = polynomial_ring(GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -508,7 +513,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
 
 end
 
-function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::fmpq = fmpq(0)) where {S, T}
+function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::QQFieldElem = QQFieldElem(0)) where {S, T}
 
   n = degree(K)
   closed = false
@@ -573,7 +578,7 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{fmpz, Int}) where {T}
+function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{ZZRingElem, Int}) where {T}
 
   O = order(Ip1)
   n = degree(O)
@@ -582,9 +587,9 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
   @vprint :NfOrd 1 "Done \n"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
-  list_bases = Vector{Vector{Vector{fmpz}}}(undef, length(AA))
+  list_bases = Vector{Vector{Vector{ZZRingElem}}}(undef, length(AA))
   for i = 1:length(AA)
-    l = Vector{Vector{fmpz}}(undef, dim(AA[i][1]))
+    l = Vector{Vector{ZZRingElem}}(undef, dim(AA[i][1]))
     for j = 1:length(l)
       l[j] = coordinates(AtoO(AA[i][2](AA[i][1][j])))
     end
@@ -610,10 +615,10 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
         t += 1
       end
     end
-    N1 = view(hnf_modular_eldiv!(N1, fmpz(p), :lowerleft), nrows(N1) - degree(O) + 1:nrows(N1), 1:degree(O))
+    N1 = view(hnf_modular_eldiv!(N1, ZZRingElem(p), :lowerleft), nrows(N1) - degree(O) + 1:nrows(N1), 1:degree(O))
     P = ideal(O, N1)
-    P.minimum = fmpz(p)
-    P.norm = fmpz(p)^f
+    P.minimum = ZZRingElem(p)
+    P.norm = ZZRingElem(p)^f
     P.splitting_type = (0, f)
     P.is_prime = 1
     fromOtosimplealgebra = compose(OtoA, pseudo_inv(BtoA))
@@ -623,7 +628,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
   return ideals, AA
 end
 
-function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOrdIdl, p::Union{Int, fmpz})
+function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOrdIdl, p::Union{Int, ZZRingElem})
   #I is an ideal lying over p
   #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
@@ -631,8 +636,8 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
   A, OtoA = AlgAss(O, Ip1, p)
 
   if dim(A) == 1
-    Ip1.norm = fmpz(p)
-    Ip1.minimum = fmpz(p)
+    Ip1.norm = ZZRingElem(p)
+    Ip1.minimum = ZZRingElem(p)
     Ip1.splitting_type = (0, 1)
     Ip1.is_prime = 1
     ideals = Vector{Tuple{ideal_type(O), Int}}(undef, 1)
@@ -651,7 +656,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       P = ideals[j][1]
       f = P.splitting_type[2]
       #@vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
-      P.gen_one = fmpz(p)
+      P.gen_one = ZZRingElem(p)
       @vtime :NfOrd 3 find_random_second_gen(P)
       u = P.gen_two
       modulo = norm(P)*p
@@ -677,7 +682,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       @hassert :NfOrd 1 !iszero(x)
       @hassert :NfOrd 2 O*O(p) + O*x == P
       P.gen_two = x
-      P.gens_normal = fmpz(p)
+      P.gens_normal = ZZRingElem(p)
       if !iszero(mod(discriminant(O), p)) || valuation(norm(I), p) == length(ideals)
         e = 1
       elseif length(ideals) == 1
@@ -746,9 +751,9 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       end
       @hassert :NfOrd 1 !iszero(u)
       @hassert :NfOrd 2 O*O(p) + O*u == P
-      P.gen_one = fmpz(p)
+      P.gen_one = ZZRingElem(p)
       P.gen_two = u
-      P.gens_normal = fmpz(p)
+      P.gens_normal = ZZRingElem(p)
       P.gens_weakly_normal = 1
       if !iszero(mod(discriminant(O), p)) || valuation(norm(I), p) == length(ideals)
         e = 1
@@ -791,9 +796,9 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     end
     @hassert :NfOrd 1 !iszero(x)
     @hassert :NfOrd 2 O*O(p) + O*x == P
-    P.gen_one = fmpz(p)
+    P.gen_one = ZZRingElem(p)
     P.gen_two = x
-    P.gens_normal = fmpz(p)
+    P.gens_normal = ZZRingElem(p)
     P.gens_weakly_normal = 1
     if !iszero(mod(discriminant(O), p))
       e = 1
@@ -812,7 +817,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     x = find_elem_of_valuation_1(P, P2)
     @hassert :NfOrd 1 !iszero(x)
     @hassert :NfOrd 2 O*O(p) + O*x == P
-    P.gen_one = fmpz(p)
+    P.gen_one = ZZRingElem(p)
     P.gen_two = x
     P.gens_normal = p
     P.gens_weakly_normal = 1
@@ -841,7 +846,7 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
     A.gens_weakly_normal = true
     return nothing
   end
-  B = Array{fmpz}(undef, degree(O))
+  B = Array{ZZRingElem}(undef, degree(O))
 
   gen = O()
 
@@ -861,8 +866,8 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
 
     # Put the entries of B into the (1 x d)-Matrix m
     for i in 1:degree(O)
-      s = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), m, 0, i - 1)
-      ccall((:fmpz_set, libflint), Nothing, (Ptr{fmpz}, Ref{fmpz}), s, B[i])
+      s = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), m, 0, i - 1)
+      ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), s, B[i])
     end
     if iszero(m)
       continue
@@ -899,12 +904,12 @@ function find_elem_of_valuation_1(P::NfAbsOrdIdl{S, T}, P2::NfAbsOrdIdl{S, T}) w
   return el
 end
 
-function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
+function decomposition_type_polygon(O::NfOrd, p::Union{ZZRingElem, Int})
   K = nf(O)
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = Zx(K.pol)
   R = GF(p, cached = false)
-  Rx, y = PolynomialRing(R, "y", cached = false)
+  Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = change_base_ring(R, f, parent = Rx)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
   fac = factor(f1) #TODO: We don't need the factorization directly, but only the factorization of the non-squarefree part
@@ -935,14 +940,14 @@ function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
       end
     end
     if length(Nl) != length(pols)
-      I1 = ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, g^m)))))
-      I1.minimum = fmpz(p)
-      I1.norm = fmpz(p)^(degree(g)*m)
-      I2 = ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, divexact(f1, g^m))))))
+      I1 = ideal(O, ZZRingElem(p), O(K(parent(K.pol)(lift(Zx, g^m)))))
+      I1.minimum = ZZRingElem(p)
+      I1.norm = ZZRingElem(p)^(degree(g)*m)
+      I2 = ideal(O, ZZRingElem(p), O(K(parent(K.pol)(lift(Zx, divexact(f1, g^m))))))
       if isone(I2.gen_two)
-        I2.minimum = fmpz(1)
+        I2.minimum = ZZRingElem(1)
       else
-        I2.minimum = fmpz(p)
+        I2.minimum = ZZRingElem(p)
       end
 
       push!(l, (I1, I2))
@@ -976,15 +981,15 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degree_limit::Int = 0, lower_limit::Int = 0) 
   if degree_limit == 0
     degree_limit = degree(O)
   end
   K = nf(O)
   f = K.pol
-  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   R = GF(p, cached = false)
-  Rx, y = PolynomialRing(R, "y", cached = false)
+  Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
   @vtime :NfOrd 1 fac = factor(f1)
@@ -1001,7 +1006,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limi
       t = parent(f)(phi)
       b = K(t)
       J = NfAbsOrdIdl(O)
-      J.gen_one = fmpz(p)
+      J.gen_one = ZZRingElem(p)
       J.gen_two = O(b, false)
       J.is_prime = 1
       J.splitting_type = ei, degree(phi)
@@ -1024,7 +1029,11 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{fmpz, Int}, degree_limi
       continue
     end
     #TODO: p-adic factorization of the polynomial.
-    push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))), false)), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))), false))))
+    i1 = ideal(O, ZZRingElem(p), O(K(parent(f)(lift(Zx, g^m))), false))
+    i1.minimum = p
+    i2 = ideal(O, ZZRingElem(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))), false))
+    i2.minimum = p
+    push!(l, (i1, i2))
   end
   if !isempty(l)
     @vtime :NfOrd 3 Ip = pradical1(O, p)

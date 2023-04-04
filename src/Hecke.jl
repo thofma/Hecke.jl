@@ -86,29 +86,31 @@ import Nemo
 if isdefined(Nemo, :IntegerUnion)
   import Nemo.IntegerUnion
 else
-  const IntegerUnion = Union{Integer, Nemo.fmpz}
+  const IntegerUnion = Union{Integer, Nemo.ZZRingElem}
 end
+
+const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, Nemo.QQFieldElem}
 
 import Pkg
 
-exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, :factor, :call,
+exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!]
+           :can_solve, :set_entry!, :factor]
 
 for i in names(Nemo)
-  i in exclude && continue
+  (i in exclude || !isdefined(Nemo, i)) && continue
   eval(Meta.parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end
 
-import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
-             elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat,
-             gfp_fmpz_elem, Zmodn_poly, Zmodn_mat, GaloisField,
-             GaloisFmpzField, acb_vec, array, acb_vec_clear, force_coerce,
+import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struct,
+             elem_to_mat_row!, elem_from_mat_row, fpFieldElem, fpMatrix,
+             FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
+             FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, is_power, number_field, factor
+       next_prime, is_power, number_field, factor, @vtime
 
 
 ###############################################################################
@@ -119,21 +121,30 @@ export show, StepRange, domain, codomain, image, preimage, modord, resultant,
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 
-global const number_field = NumberField
-
 function MaximalOrder
 end
 
 global const maximal_order = MaximalOrder
 
 function __init__()
-  # Because of serialization/deserialization problems, the base rings would differ otherwise.
-  Hecke.Globals.Zx.base_ring = FlintZZ
-  Hecke.Globals.Qx.base_ring = FlintQQ
+  # verify some base rings survived serialization/deserialization
+  @assert Hecke.Globals.Zx.base_ring === FlintZZ
+  @assert Hecke.Globals.Qx.base_ring === FlintQQ
 
-  # Check if were are non-interactive
+  # Check if were loaded from another package
+  # if VERSION < 1.7.*, only the "other" package will have the
+  # _tryrequire_from_serialized in the backtrace.
+  # if VERSION >= 1.8, also doing 'using Package' will have
+  # _tryrequire_from_serialized the backtrace.
+  #
+  # To still distinguish both scenarios, notice that
+  # 'using OtherPackage' will either have _tryrequire_from_serialized at least twice,
+  # or one with four arguments (hence five as the function name is the first argument)
+  # 'using Package' serialized will have a version with less arguments
   bt = Base.process_backtrace(Base.backtrace())
-  isinteractive_manual = all(sf -> sf[1].func != :_tryrequire_from_serialized, bt)
+  filter!(sf -> sf[1].func === :_tryrequire_from_serialized, bt)
+  isinteractive_manual =
+    length(bt) == 0 || (length(bt) == 1 && length(only(bt)[1].linfo.specTypes.parameters) < 4)
 
   # Respect the -q and --banner flag
   allowbanner = Base.JLOptions().banner != 0
@@ -159,7 +170,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2022 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2023 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
@@ -198,9 +209,9 @@ end
 
 module Globals
   using Hecke
-  const Qx, _ = PolynomialRing(FlintQQ, "x", cached = false)
-  const Zx, _ = PolynomialRing(FlintZZ, "x", cached = false)
-  const Zxy, _ = PolynomialRing(FlintZZ, ["x", "y"], cached = false)
+  const Qx, _ = polynomial_ring(FlintQQ, "x", cached = false)
+  const Zx, _ = polynomial_ring(FlintZZ, "x", cached = false)
+  const Zxy, _ = polynomial_ring(FlintZZ, ["x", "y"], cached = false)
 end
 
 using .Globals
@@ -214,7 +225,7 @@ using .Globals
 # We have our own factor in Hecke, but some functions in AA fall back to
 # AA.factor, so let's add a fallback.
 
-AbstractAlgebra.factor(x) = factor(x)
+AbstractAlgebra.factor(x::RingElement) = factor(x)
 
 ################################################################################
 #
@@ -223,14 +234,6 @@ AbstractAlgebra.factor(x) = factor(x)
 ################################################################################
 
 include("Assertions.jl")
-
-################################################################################
-#
-#  Deprecations
-#
-################################################################################
-
-include("Deprecations.jl")
 
 ################################################################################
 #
@@ -291,7 +294,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
       while true
         R = ArbField(pstart, cached = false)
         # We need to pair them
-        _rall = Tuple{arb, arb}[ sincospi(fmpq(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
+        _rall = Tuple{arb, arb}[ sincospi(QQFieldElem(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
         if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
           CC = AcbField(pstart, cached = false)
           rall = acb[ CC(l[2], l[1]) for l in _rall]
@@ -492,7 +495,7 @@ macro vtime(args...)
   if length(args) == 2
     msg = string(args[2])
     quote
-      if get_verbose_level($(args[1])) >= 1
+      if get_verbosity_level($(args[1])) >= 1
         local t0 = time_ns()
         local val = $(esc(args[2]))
         println((time_ns()-t0)/1e9, " @ ", $msg)
@@ -505,7 +508,7 @@ macro vtime(args...)
   elseif length(args) == 3
     msg = string(args[3])
     quote
-      if get_verbose_level($(args[1])) >= $(args[2])
+      if get_verbosity_level($(args[1])) >= $(args[2])
         local t0 = time_ns()
         local val = $(esc(args[3]))
         println((time_ns()-t0)/1e9, " @ ", $msg)
@@ -532,7 +535,7 @@ end
 
 macro vtime_add(flag, level, var, key, value)
   quote
-    if get_verbose_level($flag) >= $level
+    if get_verbosity_level($flag) >= $level
       _vtime_add($(esc(var)).time, $key, $(esc(value)))
     end
   end
@@ -541,7 +544,7 @@ end
 macro vtime_add_elapsed(flag, level, var, key, stmt)
   quote
     tm = @elapsed $(esc(stmt))
-    if get_verbose_level($flag) >= $level
+    if get_verbosity_level($flag) >= $level
       _vtime_add($(esc(var)).time, $key, tm)
     end
   end
@@ -574,8 +577,7 @@ Base.showerror(io::IO, ::NotImplemented) =
 function checkbounds(a::Int, b::Int) nothing; end;
 
 ################################################################################
-add_assert_scope(:PID_Test)
-set_assert_level(:PID_Test, 0)
+add_assertion_scope(:PID_Test)
 
 ################################################################################
 #
@@ -632,9 +634,11 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-for T in subtypes(Map(HeckeMap))
-  (M::T)(a) = image(M, a)
-end
+#for T in subtypes(Map(HeckeMap))
+#  (M::T)(a) = image(M, a)
+#end
+
+(f::Map{D, C, <:Hecke.HeckeMap, T} where {D, C, T})(x) = image(f, x)
 
 ################################################################################
 #
@@ -683,6 +687,15 @@ Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
 Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
 
 include("Aliases.jl")
+#
+################################################################################
+#
+#  Deprecations
+#
+################################################################################
+
+include("Deprecations.jl")
+
 
 
 ################################################################################

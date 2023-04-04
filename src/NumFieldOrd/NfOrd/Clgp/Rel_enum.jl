@@ -9,7 +9,7 @@
 ################################################################################
 
 function enum_ctx_from_ideal(A::NfOrdIdl,
-                v::fmpz_mat; prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
+                v::ZZMatrix; prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
 
   l, t = lll(A, v, prec = prec)
   OK = order(A)
@@ -32,13 +32,13 @@ function enum_ctx_from_ideal(A::NfOrdIdl,
   ## then |N(x)| <= D^(1/2)
   #d = abs(discriminant(order(A))) * norm(A)^2
   #due to limit, the lattice is smaller and the disc as well.
-  d = fmpz(ceil(abs(prod(TC[TC(E.C[i,i]) for i=1:E.limit]))))
+  d = ZZRingElem(ceil(abs(prod(TC[TC(E.C[i,i]) for i=1:E.limit]))))
   ## but we don't want to overshoot too much the length of the last
   ## basis element.
   den = basis_matrix(OK, copy = false).den ## we ignore the den above, but this
                                 ## changes the discriminant!!!
-  b = min(den^2 * (root(d, E.limit)+1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
-  @v_do :ClassGroup 3 println("T_2 from disc ", (root(d, E.limit)+1)*E.limit * E.d)
+  b = min(den^2 * (iroot(d, E.limit) + 1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
+  @v_do :ClassGroup 3 println("T_2 from disc ", (iroot(d, E.limit)+1)*E.limit * E.d)
   @v_do :ClassGroup 3 println("    from Gram ", E.G[E.limit, E.limit]*E.limit)
   @v_do :ClassGroup 3 println(" using ", b)
   enum_ctx_start(E, b)
@@ -93,7 +93,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
       end
       @v_do :ClassGroup_time 2 rt = time_ns()
 #      I.M = I.E.x * I.E.t
-      ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), I.M, I.E.x, I.E.t)
+      ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), I.M, I.E.x, I.E.t)
       q = elem_from_mat_row(K, I.M, 1, I.E.t_den)
 #      println("found ", q, " norm ", norm(q)//norm(I.A))
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt

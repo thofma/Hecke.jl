@@ -222,7 +222,7 @@ to estimate the number of full relations to be expected from $k$ partial
 relations involving $n$ (large) primes.
 """
 function rels_from_partial(n::Int, k::Int)
-  N = fmpz(n)
+  N = ZZRingElem(n)
   return Int(round(N*(1-(N-1)^k//N^k-k*(N-1)^(k-1)//N^k)))
 end
 
@@ -284,12 +284,12 @@ end
 
 
 function class_group_expected(O::NfOrd, B::Integer, samples::Int = 100)
-  d = root(abs(discriminant(O)), 2)
+  d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end
 
-function class_group_expected(O::NfOrd, B::fmpz, samples::Int = 100)
-  d = root(abs(discriminant(O)), 2)
+function class_group_expected(O::NfOrd, B::ZZRingElem, samples::Int = 100)
+  d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end
 
@@ -300,13 +300,13 @@ function class_group_expected(c::ClassGrpCtx, samples::Int = 100)
   return class_group_expected(O, B, samples)
 end
 
-function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
+function class_group_expected(d::ZZRingElem, deg::Int, B::Int, samples::Int = 100)
   #d is the norm of elements we can sample, typically, sqrt(disc)
   #B is the factor base bound
   #we want
   # 1/sum (delta(psi)/delta(x)) * delta(vol)
 
-  d = max(d, fmpz(100))
+  d = max(d, ZZRingElem(100))
   d1 = BigFloat(d)
 
   pg = psi_guess(d1^(1/samples), B, 1:samples)
@@ -365,7 +365,7 @@ tool:
   represented by taking few elements of a basis and then changing the basis
 =#
 
-function expected_yield(D::fmpz, n::Int, B1::Integer, B2::Integer=0, steps::Int=20)
+function expected_yield(D::ZZRingElem, n::Int, B1::Integer, B2::Integer=0, steps::Int=20)
   lD = log(abs(D))/2
   l = lD/steps
 

@@ -36,7 +36,7 @@
 #  lll_gram_indef_with_transform
 ######################################################
 
-  function find_gamma(H::MatElem{fmpq})
+  function find_gamma(H::MatElem{QQFieldElem})
     O,M = Hecke._gram_schmidt(H,QQ)
     d = diagonal(O)
     gamma =[abs(d[i])//abs(d[i+1]) for i=1:ncols(H)-1]
@@ -119,61 +119,61 @@
   L3 = lattice(ambient_space(L2), UU8*basis_matrix(L2))
   @test L == L3
 
-  gen1 = genera((1,1),1)
+  gen1 = Zgenera((1,1),1)
   L1 = representative(gen1[1])
   H1,U1 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L1)))
   Lat1 = lattice(ambient_space(L1),U1*basis_matrix(L1))
   @test L1 == Lat1
 
-  gen2 = genera((2,1),1)
+  gen2 = Zgenera((2,1),1)
   L2 = representative(gen2[1])
   H2,U2 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L2)))
   Lat2 = lattice(ambient_space(L2),U2*basis_matrix(L2))
   @test L2 == Lat2
 
-  gen3 = genera((2,2),1)
+  gen3 = Zgenera((2,2),1)
   L3 = representative(gen3[1])
   H3,U3 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L3)))
   Lat3 = lattice(ambient_space(L3),U3*basis_matrix(L3))
   @test L3 == Lat3
 
-  gen4 = genera((2,3),1)
+  gen4 = Zgenera((2,3),1)
   L4 = representative(gen4[1])
   H4,U4 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L4)))
   Lat4 = lattice(ambient_space(L4),U4*basis_matrix(L4))
   @test L4 == Lat4
 
-  gen5 = genera((1,5),1)
+  gen5 = Zgenera((1,5),1)
   L5 = representative(gen5[1])
   H5,U5 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L5)))
   Lat5 = lattice(ambient_space(L5),U5*basis_matrix(L5))
   @test L5 == Lat5
 
-  gen6 = genera((4,2),1)
+  gen6 = Zgenera((4,2),1)
   L6 = representative(gen6[1])
   H6,U6 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L6)))
   Lat6 = lattice(ambient_space(L6),U6*basis_matrix(L6))
   @test L6 == Lat6
 
-  gen7 = genera((1,3),1)
+  gen7 = Zgenera((1,3),1)
   L7 = representative(gen7[1])
   H7,U7 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L7)))
   Lat7 = lattice(ambient_space(L7),U7*basis_matrix(L7))
   @test L7 == Lat7
 
-  gen8 = genera((1,2),1)
+  gen8 = Zgenera((1,2),1)
   L8 = representative(gen8[1])
   H8,U8 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L8)))
   Lat8 = lattice(ambient_space(L8),U8*basis_matrix(L8))
   @test L8 == Lat8
 
-  gen9 = genera((3,3),1)
+  gen9 = Zgenera((3,3),1)
   L9 = representative(gen9[1])
   H9,U9 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L9)))
   Lat9 = lattice(ambient_space(L9),U9*basis_matrix(L9))
   @test L9 == Lat9
 
-  gen10 = genera((1,3),1)
+  gen10 = Zgenera((1,3),1)
   L10 = representative(gen10[1])
   H10,U10 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L10)))
   Lat10 = lattice(ambient_space(L10),U10*basis_matrix(L10))

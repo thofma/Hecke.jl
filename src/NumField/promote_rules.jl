@@ -4,13 +4,13 @@
 #
 ################################################################################
 
-AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpz}) where S <: NumFieldElem = S
+AbstractAlgebra.promote_rule(::Type{S}, ::Type{ZZRingElem}) where S <: NumFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{fmpz}, ::Type{S}) where S <: NumFieldElem = S
+AbstractAlgebra.promote_rule(::Type{ZZRingElem}, ::Type{S}) where S <: NumFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{S}, ::Type{fmpq}) where S <: NumFieldElem = S
+AbstractAlgebra.promote_rule(::Type{S}, ::Type{QQFieldElem}) where S <: NumFieldElem = S
 
-AbstractAlgebra.promote_rule(::Type{fmpq}, ::Type{S}) where S <: NumFieldElem = S
+AbstractAlgebra.promote_rule(::Type{QQFieldElem}, ::Type{S}) where S <: NumFieldElem = S
 
 AbstractAlgebra.promote_rule(::Type{T}, ::Type{S}) where {S <: NumFieldElem, T <: Integer} = S
 

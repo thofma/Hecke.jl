@@ -31,21 +31,21 @@ function _fmpr_clear_fn(x::fmpr)
   ccall((:fmpr_clear, libarb), Nothing, (Ref{fmpr}, ), x)
 end
 
-function fmpq(x::fmpr)
-  z = fmpq()
-  ccall((:fmpr_get_fmpq, libarb), Nothing, (Ref{fmpq}, Ref{fmpr}), z, x)
+function QQFieldElem(x::fmpr)
+  z = QQFieldElem()
+  ccall((:fmpr_get_fmpq, libarb), Nothing, (Ref{QQFieldElem}, Ref{fmpr}), z, x)
   return z
 end
 =#
 
 mutable struct cfrac
-  coeff::Ptr{fmpz}
+  coeff::Ptr{ZZRingElem}
   n::Int
   l::Int # real length
 
   function cfrac(x::Int)
     z = new()
-    z.coeff = ccall((:_fmpz_vec_init, libflint), Ptr{fmpz}, (Int, ), x)
+    z.coeff = ccall((:_fmpz_vec_init, libflint), Ptr{ZZRingElem}, (Int, ), x)
     z.n = x
     finalizer(_cfrac_clear_fn, z)
     return z
@@ -53,7 +53,7 @@ mutable struct cfrac
 end
 
 function _cfrac_clear_fn(x::cfrac)
-  ccall((:_fmpz_vec_clear, libflint), Nothing, (Ptr{fmpz}, Int), x.coeff, x.n)
+  ccall((:_fmpz_vec_clear, libflint), Nothing, (Ptr{ZZRingElem}, Int), x.coeff, x.n)
 end
 
 function show(io::IO, x::cfrac)
@@ -67,23 +67,23 @@ end
 
 
 # THIS LEAKS MEMORY
-function cfrac(x::fmpq, y::Int)
-  r = fmpq()
+function cfrac(x::QQFieldElem, y::Int)
+  r = QQFieldElem()
   z = cfrac(y)
-  l = ccall((:fmpq_get_cfrac, libflint), Int, (Ptr{fmpz}, Ref{fmpq}, Ref{fmpq}, Int), z.coeff, r, x, y)
+  l = ccall((:fmpq_get_cfrac, libflint), Int, (Ptr{ZZRingElem}, Ref{QQFieldElem}, Ref{QQFieldElem}, Int), z.coeff, r, x, y)
   z.l = l
   return z, r
 end
 
-function fmpq(x::cfrac)
-  z = fmpq()
-  ccall((:fmpq_set_cfrac, libflint), Nothing, (Ref{fmpq}, Ptr{fmpz}, Int), z, x.coeff, x.l)
+function QQFieldElem(x::cfrac)
+  z = QQFieldElem()
+  ccall((:fmpq_set_cfrac, libflint), Nothing, (Ref{QQFieldElem}, Ptr{ZZRingElem}, Int), z, x.coeff, x.l)
   return z
 end
 
-function fmpq(x::cfrac, y::Int)
-  z = fmpq()
-  ccall((:fmpq_set_cfrac, libflint), Nothing, (Ref{fmpq}, Ptr{fmpz}, Int), z, x.coeff, y)
+function QQFieldElem(x::cfrac, y::Int)
+  z = QQFieldElem()
+  ccall((:fmpq_set_cfrac, libflint), Nothing, (Ref{QQFieldElem}, Ptr{ZZRingElem}, Int), z, x.coeff, y)
   return z
 end
 

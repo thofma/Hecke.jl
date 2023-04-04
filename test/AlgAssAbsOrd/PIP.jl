@@ -32,4 +32,18 @@
   N = Hecke.swan_module(ZG, 3)
   fl, a = Hecke.__isprincipal(ZG, N, :right)
   @test !fl
+
+
+  # Issue #834
+  Qx, x = QQ["x"]
+  K, _a = number_field(x^2 + 15)
+  OK = maximal_order(K)
+  N = matrix(OK, 3, 3, OK.([1//2*_a + 1//2, 0, 1,
+                            1//2*_a + 3//2, 1//2*_a + 3//2, 1//2*_a + 1//2,
+                            0, 1, 1//2*_a + 1//2]))
+
+  I = 2 * OK
+  R, = quo(OK, I)
+  mats = Hecke._write_as_product_of_elementary_matrices(N, R)
+  @test map_entries(R, reduce(*, mats)) == map_entries(R, N)
 end

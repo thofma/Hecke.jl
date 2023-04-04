@@ -13,7 +13,7 @@ end
 function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
   time_kernel = 0.0
   add_units = Int[]
-  rel = SMat{fmpz}()
+  rel = SMat{ZZRingElem}()
   K = nf(x)
   r1, r2 = signature(K)
   nrel = max(10, r1+r2-1)
@@ -113,7 +113,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   finished = false
 
   if add_orbit
-    aut = automorphisms(u)
+    aut = automorphism_list(u)
     gens_aut = small_generating_set(aut)
     indices_aut = Int[]
     for s = 1:length(gens_aut)
@@ -134,16 +134,16 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
     for i = 1:nrows(s1)
-      elements[i] = FacElem(ge, fmpz[s1[i, j] for j = 1:ncols(s1)])
+      elements[i] = FacElem(ge, ZZRingElem[s1[i, j] for j = 1:ncols(s1)])
     end
     p = 32
     if has_full_rank(u)
       elements = reduce_mod_units(elements, u)
     end
     #I order the elements by the maximum of the conjugate log.
-    m_conjs = Vector{fmpz}(undef, length(elements))
+    m_conjs = Vector{ZZRingElem}(undef, length(elements))
     for i = 1:length(m_conjs)
-      m_conjs[i] = maximum(fmpz[abs_upper_bound(fmpz, x) for x in conjugates_arb_log(elements[i], p)])
+      m_conjs[i] = maximum(ZZRingElem[abs_upper_bound(ZZRingElem, x) for x in conjugates_arb_log(elements[i], p)])
     end
     p_elements = sortperm(m_conjs)
     elements = elements[p_elements]
@@ -283,7 +283,7 @@ end
 
 function compute_galois_closure!(U::UnitGrpCtx, c::ClassGrpCtx)
   @vprint :UnitGroup 1 "Computing Galois closure \n"
-  aut = automorphisms(U)
+  aut = automorphism_list(U)
   gens_aut = small_generating_set(aut)
   indices_aut = Int[]
   for s = 1:length(gens_aut)

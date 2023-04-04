@@ -22,14 +22,14 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - 1.6
+          - 1.8
         julia-arch:
           - x64
         os:
           - macOS-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # For Codecov, we must also fetch the parent of the HEAD commit to
           # be able to properly deal with PRs / merges
@@ -40,7 +40,7 @@ jobs:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
       - name: Cache artifacts
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         env:
           cache-name: cache-artifacts
         with:
@@ -63,4 +63,4 @@ jobs:
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"
         continue-on-error: true
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3

@@ -13,7 +13,7 @@
     @test I*J == 8*O
     @test intersect(I, J) == J
     @test I^2 == J
-    @test I^fmpz(2) == J
+    @test I^ZZRingElem(2) == J
 
     @test norm(I) == 4*base_ring(O)
   end

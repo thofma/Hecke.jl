@@ -12,7 +12,7 @@ end
 Base.hash(x::WithCache{T}) where {T} = x.cache
 
 struct FacElemWrap{T, S}
-  fac::Dict{WithCache{T}, fmpz}
+  fac::Dict{WithCache{T}, ZZRingElem}
   hash::UInt
   #parent::FacElemMon{S}
 end
@@ -41,7 +41,7 @@ function Base.:(*)(x::FacElemWrap, y::FacElemWrap)
   return FacElemWrap(z)
 end
 
-function FacElemWrap(x::Dict{T, fmpz}) where {T}
-  z = Dict{WithCache{T}, fmpz}(with_cache(k) => p for (k, p) in x)
+function FacElemWrap(x::Dict{T, ZZRingElem}) where {T}
+  z = Dict{WithCache{T}, ZZRingElem}(with_cache(k) => p for (k, p) in x)
   return FacElemWrap{T, Nothing}(z, UInt(0))
 end

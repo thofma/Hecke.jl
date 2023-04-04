@@ -34,3 +34,16 @@
   @test B == transpose(A)
 end
 
+@testset "Multiplicative order" begin
+  L = orthogonal_sum(root_lattice(:A, 7), root_lattice(:E, 8))[1]
+  ao = automorphism_group_order(L)
+  aag = automorphism_group_generators(L)
+  for M in aag
+    @test has_finite_multiplicative_order(M)
+    n = multiplicative_order(M)
+    @test divides(ao, n)[1]
+  end
+  @test_throws ArgumentError multiplicative_order(zero_matrix(QQ,1,1))
+  @test_throws ArgumentError has_finite_multiplicative_order(aag[1][:, 1:end-1])
+end
+

@@ -39,7 +39,7 @@ export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfin
        direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
        psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, is_exact, free_resolution, obj, map,
-       primary_part, is_free
+       primary_part, is_free, is_pure, is_neat
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
@@ -64,18 +64,18 @@ is_abelian(::GrpAbFinGen) = true
 ##############################################################################
 
 @doc Markdown.doc"""
-    abelian_group(::Type{T} = GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen
+    abelian_group(::Type{T} = GrpAbFinGen, M::ZZMatrix) -> GrpAbFinGen
 
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-abelian_group(M::fmpz_mat; name::String = "") = abelian_group(GrpAbFinGen, M, name=name)
+abelian_group(M::ZZMatrix; name::String = "") = abelian_group(GrpAbFinGen, M, name=name)
 
-function abelian_group(::Type{GrpAbFinGen}, M::fmpz_mat; name::String = "")
+function abelian_group(::Type{GrpAbFinGen}, M::ZZMatrix; name::String = "")
    if is_snf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
-    N = fmpz[M[i, i] for i = 1:min(nrows(M), ncols(M))]
+    N = ZZRingElem[M[i, i] for i = 1:min(nrows(M), ncols(M))]
     if ncols(M) > nrows(M)
-      N = vcat(N, fmpz[0 for i = 1:ncols(M)-nrows(M)])
+      N = vcat(N, ZZRingElem[0 for i = 1:ncols(M)-nrows(M)])
     end
     G = GrpAbFinGen(N)
   else
@@ -318,7 +318,7 @@ function nrels(A::GrpAbFinGen)
 end
 
 @doc Markdown.doc"""
-    rels(A::GrpAbFinGen) -> fmpz_mat
+    rels(A::GrpAbFinGen) -> ZZMatrix
 
 Returns the currently used relations of $G$ as a single matrix.
 """
@@ -379,10 +379,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    snf(A::GrpAbFinGen) -> GrpAbFinGen, Map
+    snf(A::GrpAbFinGen) -> GrpAbFinGen, GrpAbFinGenMap
 
 Returns a pair $(G, f)$, where $G$ is an abelian group in canonical Smith
-normal form isomorphic to $G$ and an isomorphism $f : G \to A$.
+normal form isomorphic to $A$ and an isomorphism $f : G \to A$.
 """
 function snf(G::GrpAbFinGen)
   if isdefined(G, :snf_map)
@@ -425,9 +425,9 @@ end
 
 # For S in SNF with G.rels = U*S*T and Ti = inv(T) this removes
 # the ones at the diagonal of S and constructs the homomorphism.
-function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
+function _reduce_snf(G::GrpAbFinGen, S::ZZMatrix, T::ZZMatrix, Ti::ZZMatrix)
 
-  d = fmpz[S[i,i] for i = 1:min(nrows(S), ncols(S))]
+  d = ZZRingElem[S[i,i] for i = 1:min(nrows(S), ncols(S))]
 
   while length(d) < ngens(G)
     push!(d, 0)
@@ -435,7 +435,7 @@ function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
 
   pos = Int[i for i = 1:length(d) if !isone(d[i])]
   r = Int[i for i = 1:nrows(T)]
-  s = fmpz[ d[i] for i in pos]
+  s = ZZRingElem[ d[i] for i in pos]
   TT = sub(T, r, pos)
   TTi = sub(Ti, pos, r)
 
@@ -484,9 +484,9 @@ rank_snf(A::GrpAbFinGen) = length(findall(x -> iszero(x), A.snf))
 
 rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
 
-rank(A::GrpAbFinGen, p::Union{Int, fmpz}) = is_snf(A) ? rank_snf(A, p) : rank_snf(snf(A)[1], p)
+rank(A::GrpAbFinGen, p::Union{Int, ZZRingElem}) = is_snf(A) ? rank_snf(A, p) : rank_snf(snf(A)[1], p)
 
-function rank_snf(A::GrpAbFinGen, p::Union{Int, fmpz})
+function rank_snf(A::GrpAbFinGen, p::Union{Int, ZZRingElem})
   if isempty(A.snf)
     return 0
   end
@@ -505,7 +505,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    order(A::GrpAbFinGen) -> fmpz
+    order(A::GrpAbFinGen) -> ZZRingElem
 
 Returns the order of $A$. It is assumed that $A$ is finite.
 """
@@ -525,7 +525,7 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 ################################################################################
 
 @doc Markdown.doc"""
-    exponent(A::GrpAbFinGen) -> fmpz
+    exponent(A::GrpAbFinGen) -> ZZRingElem
 
 Returns the exponent of $A$. It is assumed that $A$ is finite.
 """
@@ -547,7 +547,7 @@ end
 
 function exponent_snf(A::GrpAbFinGen)
   is_infinite(A) && error("Group must be finite")
-  ngens(A)==0 && return fmpz(1)
+  ngens(A)==0 && return ZZRingElem(1)
   return A.snf[end]
 end
 
@@ -609,7 +609,8 @@ Returns the direct sum $D$ of the abelian groups $G_i$. `task` can be
 are computed as well: ":sum" for the injections, ":prod" for the
 projections.
 """
-function direct_sum(G::GrpAbFinGen...  ; task::Symbol = :sum, kwargs...)
+function direct_sum(_G::GrpAbFinGen, Gs::GrpAbFinGen...  ; task::Symbol = :sum, kwargs...)
+  G = (_G, Gs...)
   @assert task in [:prod, :sum, :both, :none]
   return _direct_product(:sum, G...; task = task, kwargs...)
 end
@@ -663,6 +664,18 @@ end
 export ⊕
 
 @doc Markdown.doc"""
+    canonical_injections(G::GrpAbFinGen) -> Vector{Map}
+
+Given a group $G$ that was created as a direct product, return the
+injections from all components.
+"""
+function canonical_injections(G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("1st argument must be a direct product")
+  return [canonical_injection(G, i) for i=1:length(D)]
+end
+ 
+@doc Markdown.doc"""
     canonical_injection(G::GrpAbFinGen, i::Int) -> Map
 
 Given a group $G$ that was created as a direct product, return the
@@ -676,6 +689,18 @@ function canonical_injection(G::GrpAbFinGen, i::Int)
   return h
 end
 
+@doc Markdown.doc"""
+    canonical_projections(G::GrpAbFinGen) -> Vector{Map}
+
+Given a group $G$ that was created as a direct product, return the
+projections into all components.
+"""
+function canonical_projections(G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("1st argument must be a direct product")
+  return [canonical_projection(G, i) for i=1:length(D)]
+end
+ 
 @doc Markdown.doc"""
     canonical_projection(G::GrpAbFinGen, i::Int) -> Map
 
@@ -931,7 +956,7 @@ function sub(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
 
   if length(s) == 0
-    S = GrpAbFinGen(fmpz[1])
+    S = GrpAbFinGen(ZZRingElem[1])
     I = zero_matrix(FlintZZ, ngens(S), ngens(G))
     mp = hom(S, G, I, check = false)
     if add_to_lattice
@@ -1000,12 +1025,12 @@ function sub(s::Vector{GrpAbFinGenElem},
 end
 
 @doc Markdown.doc"""
-    sub(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
+    sub(G::GrpAbFinGen, M::ZZMatrix) -> GrpAbFinGen, Map
 
 Create the subgroup $H$ of $G$ generated by the elements corresponding to the
 rows of $M$ together with the injection $\iota : H \to G$.
 """
-function sub(G::GrpAbFinGen, M::fmpz_mat,
+function sub(G::GrpAbFinGen, M::ZZMatrix,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = zero_matrix(FlintZZ, nrows(M) + nrels(G), ngens(G) + nrows(M))
   for i = 1:nrows(M)
@@ -1051,7 +1076,7 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
   return S, mS
 end
 
-function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
+function _sub_integer_snf(G::GrpAbFinGen, n::ZZRingElem, add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   ind = 1
   while ind <= ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
     ind += 1
@@ -1064,8 +1089,8 @@ function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, 
     end
     return Gnew, mp
   end
-  invariants = Vector{fmpz}(undef, ngens(G)-ind+1)
-  for_map = Vector{fmpz}(undef, ngens(G)-ind+1)
+  invariants = Vector{ZZRingElem}(undef, ngens(G)-ind+1)
+  for_map = Vector{ZZRingElem}(undef, ngens(G)-ind+1)
   for i = ind:length(G.snf)
     if iszero(G.snf[i])
       invariants[i-ind+1] = 0
@@ -1090,12 +1115,12 @@ function _sub_integer_snf(G::GrpAbFinGen, n::fmpz, add_to_lattice::Bool = true, 
 end
 
 @doc Markdown.doc"""
-    sub(G::GrpAbFinGen, n::fmpz) -> GrpAbFinGen, Map
+    sub(G::GrpAbFinGen, n::ZZRingElem) -> GrpAbFinGen, Map
 
 Create the subgroup $n \cdot G$ of $G$ together
 with the injection $\iota : n\cdot G \to G$.
 """
-function sub(G::GrpAbFinGen, n::fmpz,
+function sub(G::GrpAbFinGen, n::ZZRingElem,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   if is_snf(G)
     return _sub_integer_snf(G, n, add_to_lattice, L)
@@ -1118,7 +1143,7 @@ with the injection $\iota : n \cdot G \to G$.
 """
 function sub(G::GrpAbFinGen, n::Integer,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  return sub(G, fmpz(n), add_to_lattice, L)
+  return sub(G, ZZRingElem(n), add_to_lattice, L)
 end
 
 ################################################################################
@@ -1177,12 +1202,12 @@ function quo(G::GrpAbFinGen, s::Vector{GrpAbFinGenElem},
 end
 
 @doc Markdown.doc"""
-    quo(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
+    quo(G::GrpAbFinGen, M::ZZMatrix) -> GrpAbFinGen, Map
 
 Create the quotient $H$ of $G$ by the subgroup generated by the elements
 corresponding to the rows of $M$, together with the projection $p : G \to H$.
 """
-function quo(G::GrpAbFinGen, M::fmpz_mat,
+function quo(G::GrpAbFinGen, M::ZZMatrix,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(rels(G), M)
   Q = abelian_group(m)
@@ -1205,7 +1230,7 @@ end
 
 @doc Markdown.doc"""
     quo(G::GrpAbFinGen, n::Integer}) -> GrpAbFinGen, Map
-    quo(G::GrpAbFinGen, n::fmpz}) -> GrpAbFinGen, Map
+    quo(G::GrpAbFinGen, n::ZZRingElem}) -> GrpAbFinGen, Map
 
 Returns the quotient $H = G/nG$ together with the projection $p : G \to H$.
 """
@@ -1326,7 +1351,7 @@ end
 function Base.intersect(A::Vector{GrpAbFinGen})
   a = first(A)
   for b = A
-    a = intersect(a, b, true)
+    a = intersect(a, b)
   end
   return a
 end
@@ -1481,16 +1506,16 @@ end
 # TH: Isn't this the same as UnitsModM.jl?
 # TODO: remove this from here. It does not belong here
 @doc Markdown.doc"""
-    multgrp_of_cyclic_grp(n::fmpz) -> GrpAbFinGen
+    multgrp_of_cyclic_grp(n::ZZRingElem) -> GrpAbFinGen
 
 Returns the multiplicative group of the cyclic group with $n$ elements.
 """
-function multgrp_of_cyclic_grp(n::fmpz)
-  composition = Vector{fmpz}()
+function multgrp_of_cyclic_grp(n::ZZRingElem)
+  composition = Vector{ZZRingElem}()
   for (p,mp) in factor(n)
     if (p == 2) && (mp >= 2)
       push!(composition,2)
-      push!(composition,fmpz(2)^(mp-2))
+      push!(composition,ZZRingElem(2)^(mp-2))
     else
       push!(composition,(p-1)*p^(mp-1))
     end
@@ -1498,7 +1523,7 @@ function multgrp_of_cyclic_grp(n::fmpz)
   return abelian_group(composition)
 end
 
-multgrp_of_cyclic_grp(n::Integer) = multgrp_of_cyclic_grp(fmpz(n))
+multgrp_of_cyclic_grp(n::Integer) = multgrp_of_cyclic_grp(ZZRingElem(n))
 
 ################################################################################
 #
@@ -1546,17 +1571,17 @@ function find_isomorphism_with_abelian_group(G::Vector{NfToNfMor})
   p = 2
   R = GF(p, cached = false)
   K = domain(G[1])
-  Rx = PolynomialRing(R, "x", cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
   while iszero(discriminant(Rx(K.pol)))
     p = next_prime(p)
 		R = GF(p, cached = false)
-	  Rx = PolynomialRing(R, "x", cached = false)[1]
+	  Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
-  list = gfp_poly[Rx(x.prim_img) for x in S]
+  list = fpPolyRingElem[Rx(x.prim_img) for x in S]
   push!(list, gen(Rx))
   n = length(G)
   elem_to_index = Dict{NfToNfMor, Int}()
-  words = Dict{gfp_poly, Array{Int}}()
+  words = Dict{fpPolyRingElem, Array{Int}}()
   rels = Vector{Vector{Int}}()
 
   l = length(list)
@@ -1740,11 +1765,11 @@ function abelian_groups(n::Int)
   if n == 1
     return GrpAbFinGen[abelian_group(Int[])]
   end
-  nn = fmpz(n)
+  nn = ZZRingElem(n)
   fac = factor(nn)
   sylow_lists = Vector{Vector{GrpAbFinGen}}()
   for (p, e) in fac
-    push!(sylow_lists, GrpAbFinGen[abelian_group(fmpz[p^i for i in reverse(t)]) for t in AllParts(e)])
+    push!(sylow_lists, GrpAbFinGen[abelian_group(ZZRingElem[p^i for i in reverse(t)]) for t in AllParts(e)])
   end
   C = Base.Iterators.product(sylow_lists...)
   grps = GrpAbFinGen[]
@@ -1775,6 +1800,14 @@ function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert codomain(f) == codomain(g)
   return hom(domain(f), codomain(g), GrpAbFinGenElem[f(x)-g(x) for x in gens(domain(f))])
 end
+
+-(M::GrpAbFinGenMap) = hom(domain(M), codomain(M), [-M(g) for g = gens(domain(M))], check = false)
+
+function *(a::ZZRingElem, M::GrpAbFinGenMap)
+  return hom(domain(M), codomain(M), [a*M(g) for g = gens(domain(M))], check = false)
+end
+
+*(a::Integer, M::GrpAbFinGenMap) = ZZRingElem(a)*M
 
 
 ################################################################################
@@ -1822,7 +1855,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    elementary_divisors(G::GrpAbFinGen) -> Vector{fmpz}
+    elementary_divisors(G::GrpAbFinGen) -> Vector{ZZRingElem}
 
 Given $G$, returns the elementary divisors of $G$, that is, the unique positive
 integers $e_1,\dotsc,e_k$ with $e_i \mid e_{i + 1}$ and
@@ -1871,17 +1904,141 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    is_pure(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool
+
+A subgroup `U` of `G` is called pure iff for all `n` an element in `U` 
+that is in the image of the multiplication by `n` map of `G` is also
+a multiple of an element in `U`.
+
+For finite abelian groups this is equivalent to `U` having a complement in `G`.
+They are also know as *isolated subgroups* and *serving subgroups*.
+
+See also: [`is_neat`](@ref), [`has_complement`](@ref)
+
+# EXAMPLES
+```julia
+julia> G = abelian_group([2, 8]);
+
+julia> U, _ = sub(G, [G[1]+2*G[2]]);
+
+julia> is_pure(U, G)
+false
+
+julia> U, _ = sub(G, [G[1]+4*G[2]]);
+
+julia> is_pure(U)
+true
+
+julia> has_complement(U, G)[1]
+true
+```
+"""
+function is_pure(U::GrpAbFinGen, G::GrpAbFinGen)
+  @assert is_finite(G)
+  #not implemented in general: needs to be done via torsion subgroup
+  n = exponent(G)
+  lf = factor(n)
+  for (p, k) = lf
+    for i=1:k
+      h = hom(G, G, [p^i*g for g = gens(G)])
+      q, mq = quo(intersect(image(h)[1], U), h(U)[1])
+      if order(q) != 1
+        return false
+      end
+    end
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    is_neat(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool
+
+A subgroup `U` of `G` is called neat iff for all primes `p` an element in `U` 
+that is in the image of the multiplication by `p` map of `G` is also
+a multiple of an element in `U`.
+
+See also: [`is_pure`](@ref)
+
+
+# EXAMPLES
+```julia
+julia> G = abelian_group([2, 8]);
+
+julia> U, _ = sub(G, [G[1] + 2*G[2]]);
+
+julia> is_neat(U, G)
+true
+
+julia> is_pure(U, G)
+false
+```
+"""
+function is_neat(U::GrpAbFinGen, G::GrpAbFinGen)
+  @assert is_finite(G)
+  #not implemented in general: needs to be done via torsion subgroup
+  n = exponent(G)
+  lf = factor(n).fac
+  for p = keys(lf)
+    h = hom(G, G, [p*g for g = gens(G)])
+    q, mq = quo(intersect(image(h)[1], U), h(U)[1])
+    if order(q) != 1
+      return false
+    end
+  end
+  return true
+end
+
+@doc Markdown.doc"""
+    saturate(U::GrpAbFinGen, G::GrpAbFinGen) -> GrpAbFinGen
+
+For a subgroup `U` of `G` find a minimal overgroup that is pure,
+and thus has a complement.
+
+See also: [`is_pure`](@ref), [`has_complement`](@ref)
+"""
+function saturate(U::GrpAbFinGen, G::GrpAbFinGen)
+  @assert is_finite(G)
+  #not implemented in general: needs to be done via torsion subgroup
+  n = exponent(G)
+  lf = factor(n)
+  for (p, k) = lf
+    for i=k:-1:1
+      h = hom(G, G, [p^i*g for g = gens(G)])
+      i, mi = image(h)
+      s = intersect(i, U)
+      fl, mp = is_subgroup(s, G)
+      q, mq = quo(s, h(U)[1])
+      if order(q) != 1
+        oU = order(U)
+        U = (U + sub(G, [preimage(h, image(mp, preimage(mq, g))) for g = gens(q)])[1])
+        @assert oU != order(U)
+      end
+    end
+  end
+  return U
+end
+
 #TODO: a better algorithm?
 @doc Markdown.doc"""
     has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap
+    has_complement(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool, GrpAbFinGen
 
-Given a map representing a subgroup of a group $G$, returns either true and
+Given a map representing a subgroup of a group $G$, 
+or a subgroup `U` of a group `G`, returns either true and
 an injection of a complement in $G$, or false.
+
+See also: [`is_pure`](@ref)
 """
-function has_complement(m::GrpAbFinGenMap)
+function has_complement(m::GrpAbFinGenMap, to_lattice::Bool = true)
   G = codomain(m)
   if !isfinite(G)
-    error("Not yet implemented")
+    U = domain(m)
+    q, mq = quo(G, U, false)
+    Cgens = [preimage(mq, g) for g = gens(q)]
+    C, mC = sub(G, Cgens, false)
+    _, sumUC = sub(G, append!(m.(gens(U)), Cgens), false)
+    return order(intersect(m, mC, false)) == 1 && order(quo(G, sumUC, false)[1]) == 1, mC
   end
   H, mH = cokernel(m, false)
   SH, mSH = snf(H)
@@ -1902,17 +2059,17 @@ function has_complement(m::GrpAbFinGenMap)
     S1, mS1 = sub(s, SH.snf[i], false)
     fl, el = haspreimage(mS1*m1, test_el)
     if !fl
-      return false, sub(G, GrpAbFinGenElem[])[2]
+      return false, sub(G, GrpAbFinGenElem[], false)[2]
     end
     el1 = mS1(el)
     coeffs = zero_matrix(FlintZZ, 1, ngens(s))
     for j = 1:ngens(s)
       if !iszero(el1[j])
-        R = ResidueRing(FlintZZ, s.snf[j], cached = false)
+        R = residue_ring(FlintZZ, s.snf[j], cached = false)
         r1 = R(el1[j])
-				r2 = R(SH.snf[i])
-				fl1, r = divides(r1, r2)
-				@assert fl1
+        r2 = R(SH.snf[i])
+        fl1, r = divides(r1, r2)
+        @assert fl1
         coeffs[1, j] = lift(r)
       end
     end
@@ -1924,13 +2081,22 @@ function has_complement(m::GrpAbFinGenMap)
   return true, mres
 end
 
+#TODO: is this the correct(?) interface? it feels natural, but the map
+#      may or may not be required
+function has_complement(U::GrpAbFinGen, G::GrpAbFinGen)
+  fl, mp = is_subgroup(U, G)
+  fl || error("not a subgroup")
+  fl, mp = has_complement(mp)
+  fl && return fl, image(mp)[1]
+  return fl, U
+end
 ################################################################################
 #
 #  Identity
 #
 ################################################################################
 
-id(G::GrpAbFinGen) = G(zeros(fmpz, ngens(G)))
+id(G::GrpAbFinGen) = G(zeros(ZZRingElem, ngens(G)))
 
 ################################################################################
 #
@@ -1956,7 +2122,7 @@ function is_diagonalisable(mH::GrpAbFinGenMap)
   H1 = domain(mH1)
   G1 = codomain(mH1)
   el = mH1(H1[ngens(H1)])
-  pk = gcd(fmpz[el[i] for i = 1:ngens(G1)])
+  pk = gcd(ZZRingElem[el[i] for i = 1:ngens(G1)])
   pk = gcd(pk, exponent(G1))
   e = G1[0]
   for i = 1:ngens(G1)

@@ -239,10 +239,10 @@ function approximate_defpoly(K::AnticNumberField, el::Vector{acb})
   ps = power_sums(rts)
   pol = power_sums_to_polynomial(ps)
   @vprint :ClassField 1 "Approximation: $pol \n"
-  l2norm = fmpz(0)
+  l2norm = ZZRingElem(0)
   for i = 0:degree(pol)
     c = coeff(pol, i)
-    l2norm += upper_bound(fmpz, abs(c)^2)
+    l2norm += upper_bound(ZZRingElem, abs(c)^2)
   end
   return true, nbits(l2norm)
 end
@@ -263,14 +263,14 @@ function find_defining_polynomial(K::AnticNumberField, el::Vector{acb}, v::InfPl
 end
 
 function _find_coeffs(K, pol, v)
-  Kt = PolynomialRing(K, "t", cached = false)[1]
+  Kt = polynomial_ring(K, "t", cached = false)[1]
   OK = maximal_order(K)
   B = basis(OK, K)
-  bconjs = [real(evaluate(x, v, 2*precision(parent(pol)))) for x in B]
+  bconjs = [real(evaluate(x, _embedding(v), 2*precision(parent(pol)))) for x in B]
   coeffs = Vector{nf_elem}(undef, degree(pol)+1)
   for i = 1:degree(pol)
     c = coeff(pol, i-1)
-    bn = 3*nbits(Hecke.upper_bound(fmpz, c))
+    bn = 3*nbits(Hecke.upper_bound(ZZRingElem, c))
     fl, comb = _approximate(c, bconjs, bn)
     if !fl
       add = 10
@@ -294,19 +294,19 @@ function _approximate(el::arb, A::Vector{arb}, bits::Int)
   for i = 1:n
     M[i, i] = 1
     flag, M[i, n + 2] = unique_integer(V[i])
-    !flag && return false, fmpz[M[1, 1]]
+    !flag && return false, ZZRingElem[M[1, 1]]
   end
   M[n + 1, n + 1] = 1
   flag, M[n + 1, n + 2] = unique_integer(-V0)
-  !flag && return false, fmpz[M[1, 1]]
+  !flag && return false, ZZRingElem[M[1, 1]]
   lll!(M, lll_ctx(0.99999, 0.5001))
   if !isone(abs(M[1, n + 1]))
-    return false, fmpz[M[1, 1]]
+    return false, ZZRingElem[M[1, 1]]
   end
   if isone(M[1, n + 1])
-    res = fmpz[M[1, i] for i = 1:n]
+    res = ZZRingElem[M[1, i] for i = 1:n]
   else
-    res = fmpz[-M[1, i] for i = 1:n]
+    res = ZZRingElem[-M[1, i] for i = 1:n]
   end
   return true, res
 end
@@ -432,14 +432,14 @@ function _limx(K::AnticNumberField, target_prec::Int)
   r1, r2 = signature(K)
   n = degree(K)
   r = r1 + r2
-  c_1 = n*R(2)^fmpq(-2*r2, n)
+  c_1 = n*R(2)^QQFieldElem(-2*r2, n)
   p1 = (2*const_pi(R))^(r-1)
   p2 = n^r*p1//2^r2
   c_0 = sqrt(p2//(c_1^(r+1)))
-  A0 = log(c_0*(fmpz(2)^target_prec))
+  A0 = log(c_0*(ZZRingElem(2)^target_prec))
   p2 = A0//c_1
   p1 = n*(r+1)*log(p2)//(2*(r+1)+4*A0)
-  return p2^(fmpq(n, 2))//(p1+1)
+  return p2^(QQFieldElem(n, 2))//(p1+1)
 end
 
 function _find_N0(K::AnticNumberField, target_prec::Int, C::arb)
@@ -456,14 +456,14 @@ function _find_i0(K::AnticNumberField, target_prec::Int)
   B = _B(K, target_prec)
   limx = _limx(K, target_prec)
   i0 = 300
-  while limx^i0*(factorial(fmpz(div(i0, 2)))) < B
+  while limx^i0*(factorial(ZZRingElem(div(i0, 2)))) < B
     i0 *= 2
   end
   imax = i0
   imin = div(i0, 2)
   while imax - imin > 2
     attempt = div(imax + imin, 2)
-    if limx^attempt*(factorial(fmpz(div(attempt, 2)))) < B
+    if limx^attempt*(factorial(ZZRingElem(div(attempt, 2)))) < B
       imin = attempt
     else
       imax = attempt
@@ -480,12 +480,12 @@ function _approximate_derivative_Artin_L_function(chars::Vector, target_prec::In
   end
   prec = min(10, div(degree(chars[1].C), 2))*target_prec
   RR = ArbField(prec)
-  maxC = (root(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
-  nterms = Int(Hecke.upper_bound(fmpz, target_prec*maxC//2))
+  maxC = (iroot(norm(conductor(chars[1].C)[1])*abs(discriminant(maximal_order(K))), 2)+1)//(sqrt(const_pi(RR))^degree(K))
+  nterms = Int(Hecke.upper_bound(ZZRingElem, target_prec*maxC//2))
   i0 = _find_i0(K, target_prec)
   Acoeffs = _compute_A_coeffs(n, i0, prec)
-  factorials = Vector{fmpz}(undef, n)
-  factorials[1] = fmpz(1)
+  factorials = Vector{ZZRingElem}(undef, n)
+  factorials[1] = ZZRingElem(1)
   for i = 2:length(factorials)
     factorials[i] = factorials[i-1]*(i-1)
   end
@@ -528,7 +528,7 @@ function compute_values_f_quadratic(chars::Vector, target_prec::Int)
       continue
     end
     cx = _C(x, prec)
-    nterms = Int(Hecke.upper_bound(fmpz, (target_prec*cx)//2))
+    nterms = Int(Hecke.upper_bound(ZZRingElem, (target_prec*cx)//2))
     v = Vector{Tuple{arb, arb}}(undef, nterms)
     v0 = _evaluate_f_x_0(cx, prec, 2*target_prec, nterms)
     for i = 1:length(v)
@@ -606,7 +606,7 @@ function ideals_up_to(OK::NfOrd, n::Int, coprime_to::NfOrdIdl = ideal(OK, 1))
     P = lp[i]
     nP = Int(norm(P, copy = false))
     @assert nP <= n
-    expon = Int(flog(fmpz(n), nP))
+    expon = Int(flog(ZZRingElem(n), nP))
     for j = 1:length(lI)
       I = lI[j]
       if norm(I, copy = false)*nP > n
@@ -694,7 +694,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   for i = 1:length(reps)
     el = reps[i].elem_in_nf*u.elem_in_nf//lambda.elem_in_nf
     trel = 2*tr(el)
-    newtrel = fmpq(mod(numerator(trel), 2*denominator(trel)), denominator(trel))
+    newtrel = QQFieldElem(mod(numerator(trel), 2*denominator(trel)), denominator(trel))
     expi = cispi(R(newtrel))
     Gsum += chi(ideal(OK, reps[i]), prec) * expi
   end
@@ -752,18 +752,18 @@ function _evaluate_f_x_0(x::arb, prec::Int, tolerance::Int, N::Int)
   res = Vector{arb}(undef, N)
   A = 2//x
   res[N] = real(exp_integral_e(one(CC), CC(N*A)))
-  nstop = Int(upper_bound(fmpz, ceil(4//A)))
+  nstop = Int(upper_bound(ZZRingElem, ceil(4//A)))
   n = N
   e0 = exp(A)
   e1 = exp(-N*A)
-  th = fmpq(1, 2)^tolerance
+  th = QQFieldElem(1, 2)^tolerance
   while n > nstop
     first = true
     res[n-1] = zero(RR)
     f0 = e1
     f1 = -f0//n
     m = 1
-    d = fmpq(-1)
+    d = QQFieldElem(-1)
     s = res[n]
     while abs(s) > th
       add!(res[n-1], res[n-1], s)
@@ -804,7 +804,7 @@ function _lambda_and_artin(chi::RCFCharacter, target_prec::Int, coeffs_0, coeffs
   res2 = zero(CC)
   cchi = _C(chi, prec)
   n = degree(K)
-  nterms_chi = Int(Hecke.upper_bound(fmpz, target_prec*cchi//2))
+  nterms_chi = Int(Hecke.upper_bound(ZZRingElem, target_prec*cchi//2))
   res1 = zero(CC)
   res2 = zero(CC)
   aux = CC()
@@ -841,7 +841,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Ve
   lnx = log(x)
   powslogx = powers(lnx, n-1)
   ix = inv(x)
-  th = RR(fmpq(1, 2)^(3+target_prec))
+  th = RR(QQFieldElem(1, 2)^(3+target_prec))
   ixpow = RR(1)
   aux = RR()
   for i = 0:length(coeffs_0)-1
@@ -875,7 +875,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Ve
     #res0 += ixpow*auxres0
     ixpow = mul!(ixpow, ixpow, ix)
   end
-  res1 += x*gamma(fmpq(1, 2), RR)*gamma(fmpz(1), RR)^(n-1)
+  res1 += x*gamma(QQFieldElem(1, 2), RR)*gamma(ZZRingElem(1), RR)^(n-1)
 
   #CC = AcbField(prec)
   #res0int = (one(CC)/(2*const_pi(CC)*onei(CC)))*Nemo.integrate(CC, y -> x^y * gamma(y/2)*gamma((y+1)/2)^(n-1)/y, 1.1 - (nterms+0.1)*onei(CC), 1.1 + (nterms+0.1) * onei(CC))
@@ -888,7 +888,7 @@ function _evaluate_f_x_0_1(x::arb, n::Int, target_prec::Int, coeffs_0::Vector{Ve
   return res0, res1
 end
 
-function _Aij_at_0(i::Int, n::Int, aij::Vector{arb}, factorials::Vector{fmpz})
+function _Aij_at_0(i::Int, n::Int, aij::Vector{arb}, factorials::Vector{ZZRingElem})
   #aij starts with ai0 and finishes with ain
   CC = parent(aij[1])
   if iseven(i)
@@ -917,7 +917,7 @@ function _Aij_at_0(i::Int, n::Int, aij::Vector{arb}, factorials::Vector{fmpz})
   return D
 end
 
-function _Aij_at_1(i::Int, n::Int, aij::Vector{arb}, factorials::Vector{fmpz})
+function _Aij_at_1(i::Int, n::Int, aij::Vector{arb}, factorials::Vector{ZZRingElem})
   #aij starts with ai0 and finishes with ain
   if iseven(i)
     m = 1
@@ -990,9 +990,9 @@ function _compute_A_coeffs(n::Int, nterms::Int, prec::Int)
 end
 
 function _coeff_0_odd(n::Int, q::Int)
-  exc_num = fmpz(2)^(n+2*q)
-  exc_den = (2*q+1)*factorial(fmpz(2*q))*factorial(fmpz(q))^(n-2)
-  r = fmpq(exc_num, exc_den)
+  exc_num = ZZRingElem(2)^(n+2*q)
+  exc_den = (2*q+1)*factorial(ZZRingElem(2*q))*factorial(ZZRingElem(q))^(n-2)
+  r = QQFieldElem(exc_num, exc_den)
   if iseven(q) || iseven(n)
     return -r
   else
@@ -1002,12 +1002,12 @@ end
 
 function _coeff_exp_odd(n::Int, q::Int, RR::ArbField)
   res = Vector{arb}(undef, n-1)
-  res[1] = _sum_pow_inv_odd(q, 1) + (n-1)*_sum_pow_inv_even(q, 1) - log(RR(2)) - fmpq(n, 2)*const_euler(RR)
+  res[1] = _sum_pow_inv_odd(q, 1) + (n-1)*_sum_pow_inv_even(q, 1) - log(RR(2)) - QQFieldElem(n, 2)*const_euler(RR)
   for k = 2:n-1
-    res[k] = (-1)^k*zeta(k, RR)*(1+fmpq(n-2, fmpz(2)^k)) + _sum_pow_inv_odd(q, k) + (n-1)*_sum_pow_inv_even(q, k)
+    res[k] = (-1)^k*zeta(k, RR)*(1+QQFieldElem(n-2, ZZRingElem(2)^k)) + _sum_pow_inv_odd(q, k) + (n-1)*_sum_pow_inv_even(q, k)
     res[k] = res[k]/k
   end
-  RRx = PowerSeriesRing(RR, n, "x", cached = false)[1]
+  RRx = power_series_ring(RR, n, "x", cached = false)[1]
   g = RRx(res, length(res), n, 1)
   gexp = exp(g)
   return arb[coeff(gexp, i) for i = 0:n-1]
@@ -1018,15 +1018,15 @@ function _coeffs_exp_odd(n::Int, nterms::Int, RR::ArbField)
   if isodd(nterms)
     nt += 1
   end
-  RRx = PowerSeriesRing(RR, n, "x", cached = false)[1]
+  RRx = power_series_ring(RR, n, "x", cached = false)[1]
   res = Vector{Vector{arb}}(undef, nt)
-  sum_pow_inv_odd = Vector{fmpq}(undef, n-1)
-  sum_pow_inv_even = Vector{fmpq}(undef, n-1)
+  sum_pow_inv_odd = Vector{QQFieldElem}(undef, n-1)
+  sum_pow_inv_even = Vector{QQFieldElem}(undef, n-1)
   for i = 1:n-1
-    sum_pow_inv_odd[i] = fmpq(0)
-    sum_pow_inv_even[i] = fmpq(0)
+    sum_pow_inv_odd[i] = QQFieldElem(0)
+    sum_pow_inv_even[i] = QQFieldElem(0)
   end
-  inexc =  log(RR(2)) + fmpq(n, 2)*const_euler(RR)
+  inexc =  log(RR(2)) + QQFieldElem(n, 2)*const_euler(RR)
   zeta_k = Vector{arb}(undef, n-2)
   for i = 1:n-2
     if iseven(i)
@@ -1037,15 +1037,15 @@ function _coeffs_exp_odd(n::Int, nterms::Int, RR::ArbField)
   end
   for q = 0:nt-1
     for j = 1:n-1
-      sum_pow_inv_odd[j] += fmpq(1, (2*q+1)^j)
+      sum_pow_inv_odd[j] += QQFieldElem(1, (2*q+1)^j)
       if !iszero(q)
-        sum_pow_inv_even[j] += (n-1)*fmpq(1, (2*q)^j)
+        sum_pow_inv_even[j] += (n-1)*QQFieldElem(1, (2*q)^j)
       end
     end
     res_q = Vector{arb}(undef, n-1)
     res_q[1] = sum_pow_inv_odd[1] + sum_pow_inv_even[1] - inexc
     for k = 2:n-1
-      res_q[k] = zeta_k[k-1]*(1+fmpq(n-2, fmpz(2)^k)) + sum_pow_inv_odd[k] + sum_pow_inv_even[k]
+      res_q[k] = zeta_k[k-1]*(1+QQFieldElem(n-2, ZZRingElem(2)^k)) + sum_pow_inv_odd[k] + sum_pow_inv_even[k]
       res_q[k] = res_q[k]/k
     end
     g = RRx(res_q, length(res_q), n, 1)
@@ -1056,32 +1056,32 @@ function _coeffs_exp_odd(n::Int, nterms::Int, RR::ArbField)
 end
 
 function _coeffs_exp_even(n::Int, nterms::Int, RR::ArbField)
-  inexc = fmpq(n, 2)*const_euler(RR)+(n-1)*log(RR(2))
+  inexc = QQFieldElem(n, 2)*const_euler(RR)+(n-1)*log(RR(2))
   res = Vector{arb}(undef, div(nterms, 2))
-  sum_inv_odd = fmpq(0)
-  sum_inv_even = fmpq(1, 2)
+  sum_inv_odd = QQFieldElem(0)
+  sum_inv_even = QQFieldElem(1, 2)
   res[1] = sum_inv_even - inexc
   for q = 2:length(res)
-    sum_inv_odd += (n-1)*fmpq(1, (2*q-1))
-    sum_inv_even += fmpq(1, 2*q)
+    sum_inv_odd += (n-1)*QQFieldElem(1, (2*q-1))
+    sum_inv_even += QQFieldElem(1, 2*q)
     res[q] = sum_inv_odd + sum_inv_even - inexc
   end
   return res
 end
 
 function _coeff_exp_0(n::Int, RR::ArbField)
-  c0 = -fmpq(n, 2)*const_euler(RR)-(n-1)*log(RR(2))
-  c1 = zeta(2, RR)*fmpq(3*n-2, 8)
-  RRx = PowerSeriesRing(RR, 3, "x", cached = false)[1]
+  c0 = -QQFieldElem(n, 2)*const_euler(RR)-(n-1)*log(RR(2))
+  c1 = zeta(2, RR)*QQFieldElem(3*n-2, 8)
+  RRx = power_series_ring(RR, 3, "x", cached = false)[1]
   g = RRx([c0, c1], 2, 3, 1)
   expg = exp(g)
   return arb[coeff(expg, i) for i = 0:2]
 end
 
 function _coeff_0_even(n::Int, q::Int)
-  num = 2 * fmpz(4)^(q*(n-1))*factorial(fmpz(q))^(n-2)
-  den = factorial(fmpz(2*q))^(n-1)
-  r = fmpq(num, den)
+  num = 2 * ZZRingElem(4)^(q*(n-1))*factorial(ZZRingElem(q))^(n-2)
+  den = factorial(ZZRingElem(2*q))^(n-1)
+  r = QQFieldElem(num, den)
   if iseven(q) || iseven(n)
     return r
   else

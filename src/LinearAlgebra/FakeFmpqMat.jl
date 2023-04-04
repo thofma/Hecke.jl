@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  FakeFmpqMat.jl : Model fmpq_mat's as fmpz_mat's with denominator
+#  FakeFmpqMat.jl : Model QQMatrix's as ZZMatrix's with denominator
 #
 ################################################################################
 
@@ -48,7 +48,7 @@ end
 #
 ################################################################################
 
-Base.getindex(a::FakeFmpqMat, i::Int, j::Int) = fmpq(a.num[i, j], a.den)
+Base.getindex(a::FakeFmpqMat, i::Int, j::Int) = QQFieldElem(a.num[i, j], a.den)
 
 ################################################################################
 #
@@ -135,13 +135,13 @@ end
 #
 ################################################################################
 
-function *(x::FakeFmpqMat, y::fmpz_mat)
+function *(x::FakeFmpqMat, y::ZZMatrix)
   t = x.num * y
   z = FakeFmpqMat(t, denominator(x))
   return z
 end
 
-function *(x::fmpz_mat, y::FakeFmpqMat)
+function *(x::ZZMatrix, y::FakeFmpqMat)
   t = x * y.num
   z = FakeFmpqMat(t, denominator(y))
   return z
@@ -156,7 +156,7 @@ function *(x::Integer, y::FakeFmpqMat)
   end
 end
 
-function *(x::fmpz, y::FakeFmpqMat)
+function *(x::ZZRingElem, y::FakeFmpqMat)
   g = gcd(x, y.den)
   if isone(g)
     return FakeFmpqMat(y.num * x, y.den, true)
@@ -167,9 +167,9 @@ end
 
 *(x::FakeFmpqMat, y::Integer) = y * x
 
-*(x::FakeFmpqMat, y::fmpz) = y * x
+*(x::FakeFmpqMat, y::ZZRingElem) = y * x
 
-function *(x::fmpq, y::FakeFmpqMat)
+function *(x::QQFieldElem, y::FakeFmpqMat)
   n = numerator(x)
   d = denominator(x)
   g = gcd(n, y.den)
@@ -180,9 +180,9 @@ function *(x::fmpq, y::FakeFmpqMat)
   end
 end
 
-*(x::FakeFmpqMat, y::fmpq) = y * x
+*(x::FakeFmpqMat, y::QQFieldElem) = y * x
 
-*(x::FakeFmpqMat, y::Rational{<:Integer}) = x * fmpq(y)
+*(x::FakeFmpqMat, y::Rational{<:Integer}) = x * QQFieldElem(y)
 
 *(x::Rational{<:Integer}, y::FakeFmpqMat) = y * x
 
@@ -209,8 +209,8 @@ function to_fmpz_mat(x::FakeFmpqMat)
   return numerator(x)
 end
 
-function FakeFmpqMat(x::Vector{fmpq})
-  dens = fmpz[denominator(x[i]) for i=1:length(x)]
+function FakeFmpqMat(x::Vector{QQFieldElem})
+  dens = ZZRingElem[denominator(x[i]) for i=1:length(x)]
   den = lcm(dens)
   M = zero_matrix(FlintZZ, 1, length(x))
   for i in 1:length(x)
@@ -219,22 +219,30 @@ function FakeFmpqMat(x::Vector{fmpq})
   return FakeFmpqMat(M,den)
 end
 
-function fmpq_mat(x::FakeFmpqMat)
-  z = fmpq(1, x.den) * fmpq_mat(x.num)
+function QQMatrix(x::FakeFmpqMat)
+  z = QQFieldElem(1, x.den) * QQMatrix(x.num)
   return z
 end
 
-function fmpq_mat(x::fmpz_mat)
+function QQMatrix(x::ZZMatrix)
   z = zero_matrix(FlintQQ, nrows(x), ncols(x))
-  ccall((:fmpq_mat_set_fmpz_mat, libflint), Nothing, (Ref{fmpq_mat}, Ref{fmpz_mat}), z, x)
+  ccall((:fmpq_mat_set_fmpz_mat, libflint), Nothing, (Ref{QQMatrix}, Ref{ZZMatrix}), z, x)
   return z
 end
 
-function _fmpq_mat_to_fmpz_mat_den(x::fmpq_mat)
+function _fmpq_mat_to_fmpz_mat_den(x::QQMatrix)
   z = zero_matrix(FlintZZ, nrows(x), ncols(x))
-  d = fmpz()
-  ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz}, Ref{fmpq_mat}), z, d, x)
+  d = ZZRingElem()
+  ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{QQMatrix}), z, d, x)
   return z, d
+end
+
+function _fmpq_mat_to_fmpz_mat_den!(z::ZZMatrix, d::ZZRingElem, x::QQMatrix)
+  ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{QQMatrix}), z, d, x)
+end
+
+function _fmpq_mat_set_fmpz_mat_div_fmpz!(z::QQMatrix, x::ZZMatrix, y::ZZRingElem)
+  ccall((:fmpq_mat_set_fmpz_mat_div_fmpz, libflint), Nothing, (Ref{QQMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}), z, x, y)
 end
 
 ################################################################################
@@ -246,6 +254,10 @@ end
 function hnf!(x::FakeFmpqMat, shape = :lowerleft)
   x.num = _hnf(x.num, shape)
   return x
+end
+
+function __hnf(x::FakeFmpqMat)
+  FakeFmpqMat(Nemo.__hnf(x.num), x.den)
 end
 
 function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
@@ -270,9 +282,38 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, c
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv(x::FakeFmpqMat, g::fmpz, shape = :lowerleft)
+function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = _hnf_modular_eldiv(x.num, g, shape)
+  if cutoff
+    # Since we are modular, we are in the full rank situation 
+    n = nrows(x)
+    m = ncols(x)
+    if shape === :lowerleft
+      h = sub(h, (n - m + 1):n, 1:m)
+    else
+      h = sub(h, 1:m, 1:m)
+    end
+  end
+
   return FakeFmpqMat(h, denominator(x))
+end
+
+function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+  h = hnf_modular_eldiv!(x.num, g, shape)
+  # Since we are modular, we are in the full rank situation 
+  if cutoff
+    n = nrows(x)
+    m = ncols(x)
+    if shape === :lowerleft
+      x = sub(h, (n - m + 1):n, 1:m)
+    else
+      x = sub(h, 1:m, 1:m)
+    end
+  end
+  return x
+end
+
+function _hnf_modular_iterative_eldiv(x::Vector{FakeFmpqMat}, g::ZZRingElem, shape = :lowerleft, cutoff::Bool = false)
 end
 
 function hnf!!(x::FakeFmpqMat, shape = :lowerleft)
@@ -359,7 +400,7 @@ function reduce(::typeof(vcat), A::Vector{FakeFmpqMat})
     return A[1]
   end
 
-  d = reduce(lcm, (denominator(a) for a in A), init = fmpz(1))
+  d = reduce(lcm, (denominator(a) for a in A), init = ZZRingElem(1))
   res = zero_matrix(FlintZZ, sum(nrows, A), ncols(A[1]))
   k = 1
   for i in 1:length(A)
@@ -387,3 +428,13 @@ end
 function transpose(M::FakeFmpqMat)
   return FakeFmpqMat(transpose(numerator(M, copy = false)), denominator(M))
 end
+
+################################################################################
+#
+#  Is triangular
+#
+################################################################################
+
+is_upper_triangular(M::FakeFmpqMat) = is_upper_triangular(numerator(M, copy = false))
+
+is_lower_triangular(M::FakeFmpqMat) = is_lower_triangular(numerator(M, copy = false))

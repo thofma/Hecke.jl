@@ -1,4 +1,4 @@
-@testset "GaloisField" begin
+@testset "fpField" begin
 
   for p in [31, 11, 101]
     F = GF(p)
@@ -40,10 +40,10 @@
 end
 
 
-@testset "GaloisFmpzField" begin
+@testset "FpField" begin
 
   for p in [31, 11, 101]
-    F = GF(fmpz(p))
+    F = GF(ZZRingElem(p))
     G, mG = unit_group(F)
     #Test generator
     g = mG(G[1])
@@ -82,7 +82,7 @@ end
   end
 end
 
-@testset "FqNmodFiniteField" begin
+@testset "fqPolyRepField" begin
 
   for p in [31, 11, 101]
     F = FiniteField(p, 2)[1]
@@ -124,10 +124,10 @@ end
   end
 end
 
-@testset "FqFiniteField" begin
+@testset "FqPolyRepField" begin
 
   for p in [31, 11, 101]
-    F = FiniteField(fmpz(p), 2, "a")[1]
+    F = FiniteField(ZZRingElem(p), 2, "a")[1]
     G, mG = unit_group(F)
     #Test generator
     g = mG(G[1])

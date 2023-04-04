@@ -4,20 +4,20 @@
 #
 ##########################################################################################################
 
-function tame_conductors_degree_2(O::NfOrd, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
+function tame_conductors_degree_2(O::NfOrd, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   K = nf(O)
   d = degree(O)
-  b1 = Int(root(bound,d))
+  b1 = Int(iroot(bound,d))
   ram_primes = ramified_primes(O)
   sort!(ram_primes)
   filter!(x -> x!=2, ram_primes)
   list = squarefree_up_to(b1, coprime_to = vcat(ram_primes,2), prime_base = unramified_outside)
 
-  extra_list = Tuple{Int, fmpz}[(1,fmpz(1))]
+  extra_list = Tuple{Int, ZZRingElem}[(1,ZZRingElem(1))]
   for q in ram_primes
     tr = prime_decomposition_type(O, Int(q))
     e = tr[1][2]
-    nq = fmpz(q)^(divexact(d,e))
+    nq = ZZRingElem(q)^(divexact(d,e))
     if nq > bound
       break
     end
@@ -31,21 +31,21 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz; unramified_outside::Vec
     end
   end
 
-  final_list=Tuple{Int,fmpz}[]
+  final_list=Tuple{Int,ZZRingElem}[]
   l = length(list)
   for (el,norm) in extra_list
     for i=1:l
-      if fmpz(list[i])^d*norm>bound
+      if ZZRingElem(list[i])^d*norm>bound
         continue
       end
-      push!(final_list, (list[i]*el, fmpz(list[i])^d*norm))
+      push!(final_list, (list[i]*el, ZZRingElem(list[i])^d*norm))
     end
   end
   return final_list
 
 end
 
-function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Vector{fmpz}=fmpz[], prime_base::Vector{fmpz} = fmpz[])
+function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
 
   sqf = trues(n)
   primes = trues(n)
@@ -159,7 +159,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Vecto
 end
 
 
-function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
+function conductors_tame(O::NfOrd, n::Int, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   if n == 2
     return tame_conductors_degree_2(O, bound, unramified_outside = unramified_outside)
@@ -170,18 +170,18 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
   #
   d = degree(O)
   K = nf(O)
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
+  wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
   ram_primes = ramified_primes(O)
-  filter!(x -> !divisible(fmpz(n),x), ram_primes)
+  filter!(x -> !divisible(ZZRingElem(n),x), ram_primes)
   sort!(ram_primes)
   coprime_to = vcat(ram_primes, wild_ram)
   m = minimum(wild_ram)
   k = divexact(n, m)
   e = Int((m-1)*k)
-  b1 = Int(root(bound, degree(O)*e))
+  b1 = Int(iroot(bound, degree(O)*e))
   list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to, prime_base = unramified_outside)
 
-  extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]
+  extra_list = Tuple{Int, ZZRingElem}[(1, ZZRingElem(1))]
   for q in ram_primes
     if !isempty(unramified_outside) && !(q in unramified_outside)
       continue
@@ -189,7 +189,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
     tr = prime_decomposition_type(O, Int(q))
     f = tr[1][1]
     nq = q^f
-    if is_coprime(nq - 1, fmpz(n))
+    if is_coprime(nq - 1, ZZRingElem(n))
       continue
     end
     nq = nq^(length(tr)*e)
@@ -206,7 +206,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
     end
   end
 
-  final_list = Tuple{Int, fmpz}[]
+  final_list = Tuple{Int, ZZRingElem}[]
   l = length(list)
   e = Int((m-1)*k)
   for (el,norm) in extra_list
@@ -214,14 +214,14 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz; unramified_outside::Vect
       if (list[i]^(e*d)) * norm > bound
         continue
       end
-      push!(final_list, (list[i]*el, (fmpz(list[i])^(e*d))*norm))
+      push!(final_list, (list[i]*el, (ZZRingElem(list[i])^(e*d))*norm))
     end
   end
 
   return final_list
 end
 
-function conductors(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
+function conductors(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   #Careful: I am assuming that a is in snf!
   K = nf(O)
@@ -233,7 +233,7 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unr
   #
   # First, conductors for tamely ramified extensions
   #
-  bound_tame = root(bound, divexact(n, expo))
+  bound_tame = iroot(bound, divexact(n, expo))
   list = conductors_tame(O, expo, bound_tame, unramified_outside = unramified_outside)
 
   if tame
@@ -243,13 +243,13 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unr
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
   #
-  wild_list = Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
+  wild_list = Tuple{Int, Dict{NfOrdIdl, Int}, ZZRingElem}[(1, Dict{NfOrdIdl, Int}(), ZZRingElem(1))]
   for q in wild_ram
     if !isempty(unramified_outside) && !(q in unramified_outside)
       continue
     end
     lp = prime_decomposition(O, Int(q))
-    fq = divexact(d, lp[1][2]*length(lp))
+    FqPolyRepFieldElem = divexact(d, lp[1][2]*length(lp))
     l = length(wild_list)
     sq = q^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
     #=
@@ -264,10 +264,10 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unr
     =#
     v = valuation(expo, q)
     # First, we compute the bound coming from the bound on the discriminant
-    boundsubext = root(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension
+    boundsubext = iroot(bound, Int(divexact(n, q^v))) #The bound on the norm of the discriminant on the subextension
                                                      # of order q^v
     #Bound coming from the bound on the discriminant
-    obound = fmpz(flog(boundsubext, sq))
+    obound = ZZRingElem(flog(boundsubext, sq))
 
     #Bound coming from the analysis on the different in a local extension
     nbound = q^v + lp[1][2] * v * q^v - 1
@@ -285,7 +285,7 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unr
     bound_max_exp = min(ram_groups_bound, bound_max_exp)
 
     #The prime may be also tamely ramified!
-    nisc = gcd(q^(fq)-1, fmpz(expo))
+    nisc = gcd(q^(FqPolyRepFieldElem)-1, ZZRingElem(expo))
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
       nq=sq^((fnisc-1)*(divexact(n, fnisc)))
@@ -340,7 +340,7 @@ end
 #
 ###############################################################################
 
-function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Vector{Int}; coprime_to::Vector{fmpz}=fmpz[], unramified_outside::Vector{fmpz} = fmpz[])
+function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Vector{Int}; coprime_to::Vector{ZZRingElem}=ZZRingElem[], unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   G = map(Int, snf(abelian_group(a))[1].snf)
   sqf= trues(n)
@@ -452,29 +452,29 @@ end
 
 
 
-function conductors_tameQQ(O::NfOrd, a::Vector{Int}, bound::fmpz; unramified_outside::Vector{fmpz} = fmpz[])
+function conductors_tameQQ(O::NfOrd, a::Vector{Int}, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   #
   #  First, conductors coprime to the ramified primes and to the
   #  degree of the extension we are searching for.
   #
   n = prod(a)
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
+  wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
   m = minimum(wild_ram)
   k = divexact(n, m)
-  b1 = Int(root(fmpz(bound),Int((m-1)*k)))
+  b1 = Int(iroot(ZZRingElem(bound),Int((m-1)*k)))
 
   return squarefree_for_conductorsQQ(O, b1, a, coprime_to = wild_ram, unramified_outside = unramified_outside)
 
 end
 
-function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; unramified_outside::Vector{fmpz} = fmpz[])
+function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   K = nf(O)
   d = degree(O)
   n = prod(a)
   expo = a[end]
-  wild_ram = collect(keys(factor(fmpz(n)).fac))
+  wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
 
   #
   # First, conductors for tamely ramified extensions
@@ -488,7 +488,7 @@ function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; u
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
   #
-  wild_list=Tuple{Int, Int, fmpz}[(1, 1, 1)]
+  wild_list=Tuple{Int, Int, ZZRingElem}[(1, 1, 1)]
   for q in wild_ram
     if !isempty(unramified_outside) && !(q in unramified_outside)
       continue
@@ -511,7 +511,7 @@ function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; u
     #This is the only thing that matters for the exponent of the conductor
     nisc = gcd(q-1,n)
     nbound = q^v + v * q^v - 1
-    boundsubext = root(bound, Int(divexact(n, q^v)))
+    boundsubext = iroot(bound, Int(divexact(n, q^v)))
     obound = flog(boundsubext, q)
     nnbound = valuation_bound_discriminant(n, q)
     bound_max_ap = min(nbound, obound, nnbound)  #bound on ap
@@ -523,7 +523,7 @@ function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; u
     end
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
-      nq=fmpz(q)^((fnisc-1)*(divexact(n, fnisc)))
+      nq=ZZRingElem(q)^((fnisc-1)*(divexact(n, fnisc)))
       for s=1:l
         nn=nq*wild_list[s][3]
         if nn>bound
@@ -550,7 +550,7 @@ function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; u
   exps = Int((minimum(wild_ram)-1)*divexact(n, minimum(wild_ram)))
   for el in multiple
     for (q,d,nm2) in wild_list
-      if (fmpz(el)^exps)*nm2 > bound
+      if (ZZRingElem(el)^exps)*nm2 > bound
         continue
       end
       push!(final_list, (el*q*d))
@@ -560,7 +560,7 @@ function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::fmpz, tame::Bool=false; u
   for el in single
     for j = 2:length(wild_list)
       q,d,nm2 = wild_list[j]
-      if (fmpz(el)^exps)*nm2 > bound
+      if (ZZRingElem(el)^exps)*nm2 > bound
         continue
       end
       push!(final_list, (el*q*d))
@@ -578,7 +578,7 @@ end
 
 
 
-function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::fmpz; only_tame::Bool = false)
+function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
   #I am assuming that gtype is in "SNF"
   conds_tame = conductors_generic_tame(K, gtype, absolute_bound)
   if only_tame
@@ -604,7 +604,7 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
       end
       vp = valuation(gtype[end], p)
       # First, we compute the bound coming from the bound on the discriminant
-      boundsubext = root(bound, Int(divexact(n, p^vp))) #The bound on the norm of the discriminant on the subextension
+      boundsubext = iroot(bound, Int(divexact(n, p^vp))) #The bound on the norm of the discriminant on the subextension
                                                         # of order q^v
       #Bound coming from the bound on the discriminant
       obound = flog(boundsubext, nP)
@@ -620,8 +620,8 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
     end
   end
   #create now a sublist with just the wild ramified primes.
-  conds_wild = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
-  push!(conds_wild, (Dict{NfOrdIdl, Int}(), fmpz(1)))
+  conds_wild = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
+  push!(conds_wild, (Dict{NfOrdIdl, Int}(), ZZRingElem(1)))
   # For each p in wild_primes, p[2] describes the possible exponent
   # range. Of course, not every prime needs to appear, so we add
   # 0 to the list of possible exponents.
@@ -633,7 +633,7 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
       continue
     end
     D = Dict{NfOrdIdl, Int}()
-    nD = fmpz(1)
+    nD = ZZRingElem(1)
     for j = 1:length(I)
       if iszero(I[j])
         continue
@@ -666,16 +666,16 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
   return conds
 end
 
-function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::fmpz)
+function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::ZZRingElem)
 
   OK = maximal_order(K)
   n = prod(gtype)
   wild = collect(keys(factor(n).fac))
   pmin = Int(minimum(wild))
   bound = div(absolute_bound, abs(discriminant(OK))^n)
-  lp = prime_ideals_up_to(OK, Int(root(bound, pmin-1)))
+  lp = prime_ideals_up_to(OK, Int(iroot(bound, pmin-1)))
   filter!(x -> !(minimum(x, copy = false) in wild), lp)
-  lf = Vector{Tuple{NfOrdIdl, fmpz}}()
+  lf = Vector{Tuple{NfOrdIdl, ZZRingElem}}()
   for P in lp
     nP = norm(P)
     gn = gcd(nP-1, gtype[end])
@@ -692,8 +692,8 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
     push!(lf, (P, dP))
   end
   #Now, I have to merge them.
-  conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
-  push!(conds, (Dict{NfOrdIdl, Int}(), fmpz(1)))
+  conds = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
+  push!(conds, (Dict{NfOrdIdl, Int}(), ZZRingElem(1)))
   if isempty(lf)
     return conds
   end
@@ -701,7 +701,7 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
     P = lf[i][1]
     dP = lf[i][2]
     indj = length(conds)
-    new_conds = Vector{Tuple{Dict{NfOrdIdl, Int}, fmpz}}()
+    new_conds = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
     for j = 1:indj
       Dd = dP*conds[j][2]
       if Dd > bound

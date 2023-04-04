@@ -7,9 +7,9 @@ function _get_simple_extension_and_maximal_order(K)
   pol = K.pol
   k = length(pol)
   gensK = gens(K)
-  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   basesofmaximalorders = Vector{elem_type(K)}[]
-  discs = fmpz[]
+  discs = ZZRingElem[]
   for i in 1:k
     f = pol[i]
     g = zero(Qx)
@@ -24,11 +24,11 @@ function _get_simple_extension_and_maximal_order(K)
   end
   bbb = vec([ prod(c) for c in Iterators.product(basesofmaximalorders...) ])
   Ksimpleabs, g = Hecke.absolute_simple_field(Ksimple)
-  prime_divisors = Set{fmpz}()
+  prime_divisors = Set{ZZRingElem}()
   for i in 1:length(discs)
     for j in 1:(i - 1)
       ff = factor(gcd(discs[i], discs[j]))
-      prime_divisors = union(prime_divisors, Set{fmpz}([ p for (p, e) in ff ]))
+      prime_divisors = union(prime_divisors, Set{ZZRingElem}([ p for (p, e) in ff ]))
     end
   end
   OO = Order(Ksimpleabs, [ g\b for b in bbb ])
@@ -46,7 +46,7 @@ gtype = ARGS[3]
 startcond = ARGS[4]
 endcond = ARGS[5]
 
-bounddisc = fmpz(eval(parse(bounddisc)))
+bounddisc = ZZRingElem(eval(parse(bounddisc)))
 gtype = convert(Vector{Int}, eval(parse(gtype)))
 startcond = parse(Int, startcond)
 endcond = parse(Int, endcond)
@@ -54,8 +54,8 @@ real = parse(Bool, real)
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
-Qx, x = PolynomialRing(QQ, "x")
-K, a = NumberField(x - 1, "a")
+Qx, x = polynomial_ring(QQ, "x")
+K, a = number_field(x - 1, "a")
 O = maximal_order(K)
 
 n=prod(gtype)
@@ -97,7 +97,7 @@ width = length(string(total_cond))
 
 #@show l_conductors
 
-fields=Tuple{AnticNumberField, fmpz}[]
+fields=Tuple{AnticNumberField, ZZRingElem}[]
 #  autos=Vector{NfRelNSToNfRelNSMor}[]
 
 #Now, the big loop

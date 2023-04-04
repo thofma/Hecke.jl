@@ -42,7 +42,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
   throw(error("Not an element of the base field"))
 end
 
-function (K::FlintRationalField)(a::AbsAlgAssElem{fmpq})
+function (K::QQField)(a::AbsAlgAssElem{QQFieldElem})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))
@@ -154,21 +154,27 @@ end
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
 
+  ca = coefficients(a, copy = false)
+  cb = coefficients(b, copy = false)
+
   A = parent(a)
   n = dim(A)
   c = A()
   t = base_ring(A)()
+  mt = multiplication_table(A, copy = false)
+
   for i = 1:n
-    if iszero(coefficients(a, copy = false)[i])
+    cai = ca[i]
+    if iszero(cai)
       continue
     end
     for j = 1:n
-      t = coefficients(a, copy = false)[i]*coefficients(b, copy = false)[j]
+      t = mul!(t, cai, cb[j])
       if iszero(t)
         continue
       end
       for k = 1:n
-        c.coeffs[k] += multiplication_table(A, copy = false)[i, j, k]*t
+        c.coeffs[k] = addmul!(c.coeffs[k], mt[i, j, k], t)
       end
     end
   end
@@ -266,7 +272,7 @@ end
 
 mul!(c::AbsAlgAssElem{T}, a::T, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
 
-function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, fmpz }) where {T}
+function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, ZZRingElem }) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
   if c === a
@@ -275,7 +281,7 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, fmpz }) w
     return d
   end
 
-  bfmpq = fmpq(b, 1)
+  bfmpq = QQFieldElem(b, 1)
   for i = 1:dim(parent(a))
     c.coeffs[i] = mul!(coefficients(c, copy = false)[i], coefficients(a, copy = false)[i], bfmpq)
   end
@@ -286,7 +292,7 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, fmpz }) w
   return c
 end
 
-mul!(c::AbsAlgAssElem{T}, a::Union{ Int, fmpz }, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
+mul!(c::AbsAlgAssElem{T}, a::Union{ Int, ZZRingElem }, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
 
 function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -342,22 +348,28 @@ function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
     return z
   end
 
+  ccoeff = coefficients(c, copy = false)
+  acoeff = coefficients(a, copy = false)
+  bcoeff = coefficients(b, copy = false)
+  mt = multiplication_table(A, copy = false)
+
   for k in 1:n
-    c.coeffs[k] = zero!(coefficients(c, copy = false)[k])
+    c.coeffs[k] = zero!(ccoeff[k])
   end
 
   for i = 1:n
-    if iszero(coefficients(a, copy = false)[i])
+    ai = acoeff[i]
+    if iszero(ai)
       continue
     end
     for j = 1:n
-      t = coefficients(a, copy = false)[i]*coefficients(b, copy = false)[j]
+      t = mul!(t, ai, bcoeff[j])
       if iszero(t)
         continue
       end
       for k = 1:n
-        s = mul!(s, multiplication_table(A, copy = false)[i, j, k], t)
-        c.coeffs[k] = add!(coefficients(c, copy = false)[k], coefficients(c, copy = false)[k], s)
+        s = mul!(s, mt[i, j, k], t)
+        c.coeffs[k] = add!(ccoeff[k], ccoeff[k], s)
         #c.coeffs[k] += A.mult_table[i, j, k]*t
       end
     end
@@ -433,25 +445,25 @@ function *(a::AbsAlgAssElem{S}, b::S) where {S <: RingElem}
   return typeof(a)(parent(a), coefficients(a, copy = false).* Ref(b))
 end
 
-*(b::S, a::AbsAlgAssElem{S}) where {S <: RingElem } = a*b
+*(b::S, a::AbsAlgAssElem{S}) where {S <: RingElem} = a*b
 
-*(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*base_ring(parent(a))(b)
+*(a::AbsAlgAssElem{T}, b::Integer) where {T <: RingElem} = a*base_ring(parent(a))(b)
 
-*(b::Integer, a::AbsAlgAssElem{T}) where {T} = a*b
+*(b::Integer, a::AbsAlgAssElem{T}) where {T <: RingElem} = a*b
 
 dot(a::AbsAlgAssElem{T}, b::T) where {T <: RingElem} = a*b
 
 dot(b::T, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
-dot(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*b
+dot(a::AbsAlgAssElem{T}, b::Integer) where {T <: RingElem} = a*b
 
-dot(b::Integer, a::AbsAlgAssElem{T}) where {T} = b*a
+dot(b::Integer, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
-dot(a::AbsAlgAssElem{T}, b::fmpz) where {T} = a*b
+dot(a::AbsAlgAssElem{T}, b::ZZRingElem) where {T <: RingElem} = a*b
 
-dot(b::fmpz, a::AbsAlgAssElem{T}) where {T} = b*a
+dot(b::ZZRingElem, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
-function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResF{S} where S <: Union{Int, fmpz}
+function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResF{S} where S <: Union{Int, ZZRingElem}
   @assert length(c) == length(V)
   A = parent(V[1])
   res = zero(A)
@@ -463,7 +475,7 @@ function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Gener
   return res
 end
 
-function dot(c::Vector{gfp_elem}, V::Vector{AlgAssElem{gfp_elem, AlgAss{gfp_elem}}})
+function dot(c::Vector{fpFieldElem}, V::Vector{AlgAssElem{fpFieldElem, AlgAss{fpFieldElem}}})
   @assert length(c) == length(V)
   A = parent(V[1])
   res = zero(A)
@@ -534,7 +546,7 @@ function ^(a::AbsAlgAssElem, b::Int)
   end
 end
 
-function ^(a::AbsAlgAssElem, b::fmpz)
+function ^(a::AbsAlgAssElem, b::ZZRingElem)
   if fits(Int, b)
     return a^Int(b)
   end
@@ -623,15 +635,19 @@ end
 # For polynomial substitution
 for T in subtypes(AbsAlgAss)
   @eval begin
-    function (A::$T)(a::Union{Integer, fmpz, Rational{<: Integer}})
+    function (A::$T)(a::Union{Integer, ZZRingElem, Rational{<: Integer}})
       return A(base_ring(A)(a))
     end
 
-    function (A::$T{S})(a::S) where {S}
-      return a*one(A)
-    end
+    #function (A::$T{S})(a::S) where {S <: RingElem}
+    #  return a*one(A)
+    #end
   end
 end
+
+(A::AbsAlgAss{T})(x::T) where {T <: RingElem} = x * one(A)
+
+(A::AbsAlgAss{T})(x::T) where {T <: AlgAssElem} = x * one(A)
 
 ################################################################################
 #
@@ -705,7 +721,7 @@ Returns the minimal polynomial of $a$ as a polynomial over
 """
 function Generic.minpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_ring(parent(a)), "x", cached=false)[1]
+  R = polynomial_ring(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, M)
 end
 
@@ -717,7 +733,7 @@ Returns the characteristic polynomial of $a$ as a polynomial over
 """
 function charpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
-  R = PolynomialRing(base_ring(parent(a)), "x", cached = false)[1]
+  R = polynomial_ring(base_ring(parent(a)), "x", cached = false)[1]
   return charpoly(R, M)
 end
 
@@ -759,7 +775,7 @@ Returns the reduced characteristic polynomial of $a$ as a polynomial over
 """
 function reduced_charpoly(a::AbsAlgAssElem)
   A = parent(a)
-  R = PolynomialRing(base_ring(A), "x", cached = false)[1]
+  R = polynomial_ring(base_ring(A), "x", cached = false)[1]
   W = decompose(A)
   f = one(R)
   for (B, BtoA) in W
@@ -775,8 +791,13 @@ end
 ################################################################################
 
 function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
+  ca = coefficients(a, copy = false)
   for c = 1:ncols(M)
-    M[i, c] = deepcopy(coefficients(a, copy = false)[c])
+    if M isa QQMatrix
+      M[i, c] = ca[c]
+    else
+      M[i, c] = deepcopy(ca[c])
+    end
   end
   return nothing
 end
@@ -789,7 +810,7 @@ function elem_from_mat_row(A::AbsAlgAss{T}, M::MatElem{T}, i::Int) where T
   return a
 end
 
-function elem_to_mat_row!(x::fmpz_mat, i::Int, d::fmpz, a::AbsAlgAssElem{fmpq})
+function elem_to_mat_row!(x::ZZMatrix, i::Int, d::ZZRingElem, a::AbsAlgAssElem{QQFieldElem})
   z = zero_matrix(FlintQQ, 1, ncols(x))
   elem_to_mat_row!(z, 1, a)
   z_q = FakeFmpqMat(z)
@@ -798,14 +819,14 @@ function elem_to_mat_row!(x::fmpz_mat, i::Int, d::fmpz, a::AbsAlgAssElem{fmpq})
     x[i, j] = z_q.num[1, j]
   end
 
-  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), d, z_q.den)
   return nothing
 end
 
-function elem_from_mat_row(A::AbsAlgAss{fmpq}, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
+function elem_from_mat_row(A::AbsAlgAss{QQFieldElem}, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
   a = A()
   for j in 1:ncols(M)
-    a.coeffs[j] = fmpq(M[i, j], d)
+    a.coeffs[j] = QQFieldElem(M[i, j], d)
   end
   return a
 end
@@ -820,17 +841,19 @@ The multiplication is from the left if `action == :left` and from the right if
 """
 function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   A = parent(a)
+  acoeff = coefficients(a, copy = false)
+  mt = multiplication_table(A, copy = false)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
-  if action==:left
+  if action == :left
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, multiplication_table(A, copy = false)[j, i]] = deepcopy(coefficients(a, copy = false)[j])
+        _set_to_copy!(M, i, mt[j, i], acoeff[j]) # M[i, mt[j, i]] = deepcopy(acoeff[j])
       end
     end
-  elseif action==:right
+  elseif action == :right
     for i = 1:dim(A)
       for j = 1:dim(A)
-        M[i, multiplication_table(A, copy = false)[i, j]] = deepcopy(coefficients(a, copy = false)[j])
+        _set_to_copy!(M, i, mt[i, j], acoeff[j]) # M[i, mt[i, j] = deepcopy(acoeff[j])
       end
     end
   else
@@ -839,34 +862,52 @@ function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
   return M
 end
 
-function representation_matrix!(a::Union{ AlgAssElem, AlgMatElem }, M::MatElem, action::Symbol = :left)
+_set_to_copy!(M::QQMatrix, i, j, c) = M[i, j] = c
+
+_set_to_copy!(M, i, j, c) = M[i, j] = deepcopy(c)
+
+function _addmul!(M::MatrixElem, i, j, b, c)
+  return M[i, j] = addmul!(M[i, j], b, c)
+end
+
+function _addmul!(M::QQMatrix, i, j, a::QQFieldElem, b::QQFieldElem)
+  c = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), M, i - 1, j - 1)
+  ccall((:fmpq_addmul, libflint), Nothing, (Ptr{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), c, a, b)
+end
+
+function representation_matrix!(a::Union{AlgAssElem, AlgMatElem}, M::MatElem, action::Symbol = :left)
   A = parent(a)
-  if action==:left
-    for i = 1:dim(A)
-      if iszero(coefficients(a, copy = false)[i])
-        continue
-      end
-      for j = 1:dim(A)
-        for k = 1:dim(A)
-          M[j, k] += coefficients(a, copy = false)[i]*multiplication_table(A, copy = false)[i, j, k]
+  acoeff = coefficients(a, copy = false)
+  mt = multiplication_table(A, copy = false)
+  GC.@preserve M begin
+    if action == :left
+      for i = 1:dim(A)
+        if iszero(acoeff[i])
+          continue
+        end
+        for j = 1:dim(A)
+          for k = 1:dim(A)
+            _addmul!(M, j, k, acoeff[i], mt[i, j, k])
+            #M[j, k] += acoeff[i] * mt[i, j, k]
+          end
         end
       end
-    end
-  elseif action==:right
-    for i = 1:dim(A)
-      if iszero(coefficients(a, copy = false)[i])
-        continue
-      end
-      for j = 1:dim(A)
-        for k = 1:dim(A)
-          M[j, k] += coefficients(a, copy = false)[i]*multiplication_table(A, copy = false)[j, i, k]
+    elseif action == :right
+      for i = 1:dim(A)
+        if iszero(coefficients(a, copy = false)[i])
+          continue
+        end
+        for j = 1:dim(A)
+          for k = 1:dim(A)
+            _addmul!(M, j, k, acoeff[i], mt[j, i, k]) # M[j, k] += acoeff[i] * mt[j, i, k]
+          end
         end
       end
+    else
+      error("Not yet implemented")
     end
-  else
-    error("Not yet implemented")
   end
-  return nothing
+  return M
 end
 
 function representation_matrix(a::Union{ AlgAssElem, AlgMatElem }, action::Symbol = :left)
@@ -951,7 +992,7 @@ end
 
 Returns the norm of $x$.
 """
-function norm(a::AbsAlgAssElem{fmpq})
+function norm(a::AbsAlgAssElem{QQFieldElem})
   return abs(det(representation_matrix(a)))
 end
 

@@ -27,7 +27,7 @@ l = Hecke.quadratic_extensions(10^boundquad, u = startfield:(startfield + number
 width = length(string(length(lall)))
 
 for (i, K) in enumerate(l)
-  z = Hecke.D5_extensions(fmpz(10)^boundexp, [K])
+  z = Hecke.D5_extensions(ZZRingElem(10)^boundexp, [K])
   if length(z) != 0
     fname = basename * sprint_formatted("%0$(width)d", startfield + i - 1)
     @show fname

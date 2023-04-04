@@ -5,7 +5,7 @@ using Polymake, Hecke, Markdown
 Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
 Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
-function _polytope(; A::fmpz_mat=zero_matrix(FlintZZ, 1, 1), b::fmpz_mat=zero_matrix(FlintZZ, ncols(A), 1), C::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
+function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_matrix(FlintZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)
     bA = Matrix{BigInt}(hcat(-b, A))
     z = findall(i->!is_zero_row(bA, i), 1:nrows(bA))
@@ -34,11 +34,11 @@ end
 
 
 @doc Markdown.doc"""
-    solve_ineq(A::fmpz_mat, b::fmpz_mat)
+    solve_ineq(A::ZZMatrix, b::ZZMatrix)
 
 Solves $Ax<=b$, assumes finite set of solutions.
 """
-function solve_ineq(A::fmpz_mat, b::fmpz_mat)
+function solve_ineq(A::ZZMatrix, b::ZZMatrix)
   p = _polytope(C = hcat(b, -A))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
@@ -60,11 +60,11 @@ function solve_ineq(A::fmpz_mat, b::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-    solve_non_negative(A::fmpz_mat, b::fmpz_mat)
+    solve_non_negative(A::ZZMatrix, b::ZZMatrix)
 
 Finds all solutions to $Ax = b$, $x>=0$. Assumes a finite set of solutions.
 """
-function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
+function solve_non_negative(A::ZZMatrix, b::ZZMatrix)
   p = _polytope(A = A, b = b, C = identity_matrix(FlintZZ, ncols(A)))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
@@ -86,11 +86,11 @@ function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-    solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)
+    solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)
 
 Solves $Ax = b$ under $Cx >= 0$, assumes a finite solution set.
 """
-function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 0
+function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)  # Ax == b && Cx >= 0
   p = _polytope(A = A, b = b, C = C)
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
@@ -120,11 +120,11 @@ function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 
 end
 
 @doc Markdown.doc"""
-    solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat, d::fmpz_mat)
+    solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
 
 Solves $Ax = b$ under $Cx >= d$, assumes a finite solution set.
 """
-function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat, d::fmpz_mat)
+function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
   n = ncols(A)
   A = cat(A, identity_matrix(FlintZZ, ncols(d)), dims=(1,2))
   b = vcat(b, identity_matrix(FlintZZ, ncols(d)))
@@ -133,11 +133,11 @@ function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat, d::fmpz_mat)
   return s[:, 1:n]
 end
 
-function Hecke.valuation(a::FacElem{fmpz, FlintIntegerRing}, p::fmpz)
+function Hecke.valuation(a::FacElem{ZZRingElem, ZZRing}, p::ZZRingElem)
   return sum(k*valuation(b, p) for (b, k) = a.fac)
 end
 
-function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
+function norm_equation2_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
   @assert Hecke.is_maximal(R)
   lp = factor(k*R)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
@@ -164,7 +164,7 @@ function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
 end
 
 
-function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
+function norm_equation_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
   @assert Hecke.is_maximal(R)
   lp = factor(k)
   S = []
@@ -198,14 +198,14 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
 end
 
 norm_equation_fac_elem(R::NfAbsOrd, k::Integer; abs::Bool = false) =
-                            norm_equation_fac_elem(R, fmpz(k), abs = abs)
+                            norm_equation_fac_elem(R, ZZRingElem(k), abs = abs)
 
-function norm_equation(R::NfAbsOrd, k::fmpz; abs::Bool = false)
+function norm_equation(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
   s = norm_equation_fac_elem(R, k, abs = abs)
   return [R(evaluate(x)) for x = s]
 end
 
-norm_equation(R::NfAbsOrd, k::Integer; abs::Bool = false) = norm_equation(R, fmpz(k), abs = abs)
+norm_equation(R::NfAbsOrd, k::Integer; abs::Bool = false) = norm_equation(R, ZZRingElem(k), abs = abs)
 
 function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a::NfAbsOrdElem{AnticNumberField,nf_elem})
 
@@ -259,8 +259,8 @@ function Hecke.is_irreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
     return false
   end
   s, ms = Hecke.sunit_mod_units_group_fac_elem(S)
-  V = matrix([fmpz[valuation(ms(x), y) for y = S] for x = gens(s)])
-  b = matrix([fmpz[valuation(a, y) for y = S]])
+  V = matrix([ZZRingElem[valuation(ms(x), y) for y = S] for x = gens(s)])
+  b = matrix([ZZRingElem[valuation(a, y) for y = S]])
   sol = solve(V, b)
 
   #want to write sol = x+y where
@@ -312,7 +312,7 @@ function irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}})
   p = _polytope(C = V)
   z = p.HILBERT_BASIS_GENERATORS
   @assert nrows(z[2]) == 0 #no idea....
-  res = [O(evaluate(ms(s(map(fmpz, Array(z[1][i, 2:end])))))) for i=1:nrows(z[1]) if z[1][i,1] == 0]
+  res = [O(evaluate(ms(s(map(ZZRingElem, Array(z[1][i, 2:end])))))) for i=1:nrows(z[1]) if z[1][i,1] == 0]
   return res
 end
 
@@ -328,8 +328,8 @@ function factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem})
     return []
   end
   irr = irreducibles(S)
-  A = matrix([fmpz[valuation(x, y) for y = S] for x = irr])
-  b = matrix([fmpz[valuation(a, y) for y = S]])
+  A = matrix([ZZRingElem[valuation(x, y) for y = S] for x = irr])
+  b = matrix([ZZRingElem[valuation(a, y) for y = S]])
   sol = solve_non_negative(A, b)
   res = Fac{NfAbsOrdElem{AnticNumberField,nf_elem}}[]
   for j=1:nrows(sol)
@@ -346,7 +346,7 @@ function factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   return res
 end
 
-function Base.lastindex(a::fmpz_mat, i::Int)
+function Base.lastindex(a::ZZMatrix, i::Int)
   i==1 && return nrows(a)
   i==2 && return ncols(a)
   error("illegal dimension")

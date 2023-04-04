@@ -8,7 +8,7 @@ export is_totally_real, is_totally_complex, conjugates, conjugates_real,
 ################################################################################
 
 @doc Markdown.doc"""
-    is_totally_real(K::NumberField) -> Bool
+    is_totally_real(K::number_field) -> Bool
 
 Returns true if and only if $K$ is totally real, that is, if all roots of the
 defining polynomial are real.
@@ -17,7 +17,7 @@ function is_totally_real(K::NumField)
   return iszero(signature(K)[2])
 end
 
-is_totally_real(::FlintRationalField) = true
+is_totally_real(::QQField) = true
 
 @doc Markdown.doc"""
     is_totally_complex(K::AnticNumberField) -> Bool
@@ -29,7 +29,7 @@ function is_totally_complex(K::NumField)
   return iszero(signature(K)[1])
 end
 
-is_totally_complex(::FlintRationalField) = false
+is_totally_complex(::QQField) = false
 
 ################################################################################
 #
@@ -72,7 +72,7 @@ function conjugates(x::NumFieldElem, C::AcbField)
   return map(C, conjugates_arb(x, precision(C)))
 end
 
-function conjugates(x::fmpq, abs_tol::Int = 32)
+function conjugates(x::QQFieldElem, abs_tol::Int = 32)
   return [ComplexField(abs_tol)(x)]
 end
 
@@ -497,7 +497,7 @@ function complex_conjugation(K::AnticNumberField; auts::Vector{NfToNfMor} = NfTo
   if !isempty(auts)
     A = auts
   else
-    A = automorphisms(K)
+    A = automorphism_list(K)
     if length(A) < degree(K)
       error("Number field must be normal")
     end
@@ -614,5 +614,4 @@ function is_complex_conjugation(f::NfToNfMor)
       error("Precision too high in complex_conjugation")
     end
   end
-
 end

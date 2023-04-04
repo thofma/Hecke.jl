@@ -1,6 +1,6 @@
 
 Qx,x = FlintQQ["x"]
-K,a = NumberField(x^6+108)
+K,a = number_field(x^6+108)
 OK = ring_of_integers(K)
 lp = prime_decomposition(OK, 5)
 P = lp[1][1]
@@ -25,7 +25,7 @@ end
 #=
   @testset "Canonicalisation" begin
   for i in 1:300
-    a = rand(L)
+    a = rand(L, -10:10)
     c = canonical_unit(a)
     @test is_unit(c)
   end
@@ -39,9 +39,9 @@ end
       @test valuation(L(500)) == 3
 
       for i in 1:300
-        a = rand(L)
-        while a == L()
-          a = rand(L)
+        a = rand(L, -10:10)
+        while iszero(a)
+          a = rand(L, -10:10)
         end
         @test valuation(a) >= 0
       end
@@ -60,8 +60,8 @@ end
 
     @testset "GCDX" begin
       for i in 1:550
-        a = rand(L)
-        b = rand(L)
+        a = rand(L, -10:10)
+        b = rand(L, -10:10)
         (g,u,v) = gcdx(a,b)
         @test g == u*a + v*b
       end
@@ -69,8 +69,8 @@ end
 
     @testset "GCD" begin
       for i in 1:550
-        a = rand(L)
-        b = rand(L)
+        a = rand(L, -10:10)
+        b = rand(L, -10:10)
         g = gcd(a,b)
         @test divides(a,g)[1] && divides(b,g)[1]
       end
@@ -83,8 +83,8 @@ end
       @test divides(L(15),L(25)) == (false, L(0))
       @test_throws ErrorException divexact(L(8),L(10))
       for i in 1:300
-        a = rand(L)
-        b = rand(L)
+        a = rand(L, -10:10)
+        b = rand(L, -10:10)
         d = divides(a,b)
         if d[1]
           @test a == d[2] * b

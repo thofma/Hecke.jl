@@ -4,8 +4,8 @@
 
 ```@docs
 euler_phi_inv
-Hecke.modord(::fmpz, ::fmpz)
-Hecke.is_prime_power(::fmpz)
+Hecke.modord(::ZZRingElem, ::ZZRingElem)
+Hecke.is_prime_power(::ZZRingElem)
 Hecke.primes_up_to(::Int)
 ```
 
@@ -22,15 +22,15 @@ Hecke.psi_lower
 
 ```@docs
 Hecke.largest_elementary_divisor
-Hecke.maximal_elementary_divisor(::fmpz_mat)
-Hecke.mod_sym(::fmpz_mat, ::fmpz)
-Hecke.mod_sym!(::fmpz_mat, ::fmpz)
-Hecke.mod!(::fmpz_mat, ::fmpz)
-Hecke.saturate(::fmpz_mat)
-Hecke.elementary_divisors(::fmpz_mat)
+Hecke.maximal_elementary_divisor(::ZZMatrix)
+Hecke.mod_sym(::ZZMatrix, ::ZZRingElem)
+Hecke.mod_sym!(::ZZMatrix, ::ZZRingElem)
+Hecke.mod!(::ZZMatrix, ::ZZRingElem)
+Hecke.saturate(::ZZMatrix)
+Hecke.elementary_divisors(::ZZMatrix)
 Hecke.jordan_normal_form
-Hecke.divisors(::fmpz_mat, ::fmpz)
-Hecke.snf_with_transform(::fmpz_mat)
+Hecke.divisors(::ZZMatrix, ::ZZRingElem)
+Hecke.snf_with_transform(::ZZMatrix)
 ```
 
 ## Polynomials

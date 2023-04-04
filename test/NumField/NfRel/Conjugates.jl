@@ -1,9 +1,9 @@
 @testset "NumField/NfRel/Conjugates.jl" begin
   Qx, x = QQ["x"]
-  K, a = NumberField(x^2 - 2, "a")
+  K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
   g = t^3 + a*t + 5
-  L, b = NumberField(g, "b")
+  L, b = number_field(g, "b")
   r, s = @inferred signature(L)
   @test (r, s) == (2, 2)
   plc = @inferred infinite_places(L)

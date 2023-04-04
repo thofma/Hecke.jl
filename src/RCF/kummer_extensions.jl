@@ -21,7 +21,7 @@ function kummer_extension(n::Int, gen::Vector{FacElem{nf_elem, AnticNumberField}
   K.zeta = zeta^div(o, n)
   K.n = n
   K.gen = gen
-  K.AutG = GrpAbFinGen(fmpz[n for i=gen])
+  K.AutG = GrpAbFinGen(ZZRingElem[n for i=gen])
   K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
   return K
 end
@@ -94,7 +94,7 @@ end
 
 function number_field(K::KummerExt)
   k = base_field(K)
-  kt = PolynomialRing(k, "t", cached = false)[1]
+  kt = polynomial_ring(k, "t", cached = false)[1]
   pols = Vector{elem_type(kt)}(undef, length(K.gen))
   for i = 1:length(pols)
     p = Vector{nf_elem}(undef, Int(order(K.AutG[i]))+1)
@@ -171,7 +171,7 @@ function _compute_frob(K, mF, p)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Vector{fmpz}(undef, length(K.gen))
+  aut = Vector{ZZRingElem}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -183,7 +183,7 @@ function _compute_frob(K, mF, p)
       @assert i <= K.n
       mu = mul!(mu, mu, z_pj)
     end
-    aut[j] = fmpz(i)
+    aut[j] = ZZRingElem(i)
   end
   return aut
 end
@@ -201,7 +201,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
   end
 
 
-  F, mF = ResidueField(Zk, p)
+  F, mF = residue_field(Zk, p)
   #_mF = extend_easy(mF, number_field(Zk))
   mF1 = NfToFqMor_easy(mF, number_field(Zk))
   z_p = image(mF1, K.zeta)^(K.n-1)
@@ -211,7 +211,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Vector{fmpz}(undef, length(K.gen))
+  aut = Vector{ZZRingElem}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -223,7 +223,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
       @assert i <= K.n
       mul!(mu, mu, z_pj)
     end
-    aut[j] = fmpz(i)
+    aut[j] = ZZRingElem(i)
   end
   z = K.AutG(aut)
   K.frob_cache[p] = z
@@ -293,7 +293,7 @@ end
 # We save the projection of the factor base, we can reuse them
 #Computes a set of prime ideals of the base field of K such that the corresponding Frobenius
 #automorphisms generate the automorphism group
-function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
+function find_gens(K::KummerExt, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
   if isdefined(K, :frob_gens)
     return K.frob_gens[1], K.frob_gens[2]
   end
@@ -319,12 +319,12 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
     if isempty(LP)
       continue
     end
-    #Compute the projections of the gens as gfp_poly.
+    #Compute the projections of the gens as fpPolyRingElem.
     #I can use these projections for all the prime ideals, saving some time.
     f = R[1]
-    D = Vector{Vector{gfp_poly}}(undef, length(K.gen))
+    D = Vector{Vector{fpPolyRingElem}}(undef, length(K.gen))
     for i = 1:length(D)
-      D[i] = Vector{gfp_poly}(undef, length(K.gen[i].fac))
+      D[i] = Vector{fpPolyRingElem}(undef, length(K.gen[i].fac))
     end
 
     first = false
@@ -371,7 +371,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::fmpz=fmpz(1))
 end
 
 
-function _canonical_frobenius_with_cache(p::NfOrdIdl, K::KummerExt, cached::Bool, D::Vector{Vector{gfp_poly}})
+function _canonical_frobenius_with_cache(p::NfOrdIdl, K::KummerExt, cached::Bool, D::Vector{Vector{fpPolyRingElem}})
   @assert norm(p, copy = false) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
@@ -401,7 +401,7 @@ function _compute_frob(K, mF, p, cached, D)
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-  aut = Vector{fmpz}(undef, length(K.gen))
+  aut = Vector{ZZRingElem}(undef, length(K.gen))
   for j = 1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p, copy = false)-1, ord_genj)
@@ -413,7 +413,7 @@ function _compute_frob(K, mF, p, cached, D)
       @assert i <= K.n
       mu = mul!(mu, mu, z_pj)
     end
-    aut[j] = fmpz(i)
+    aut[j] = ZZRingElem(i)
   end
   return aut
 end
@@ -435,14 +435,14 @@ function is_subfield(K::KummerExt, L::KummerExt)
   @assert base_field(K) == base_field(L)
   @assert divisible(exponent(L), exponent(K))
   #First, find prime number that might be ramified.
-  norms = Vector{fmpz}(undef, length(K.gen)+length(L.gen)+1)
+  norms = Vector{ZZRingElem}(undef, length(K.gen)+length(L.gen)+1)
   for i = 1:length(K.gen)
     norms[i] = numerator(norm(K.gen[i]))
   end
   for i = 1:length(L.gen)
     norms[i+length(K.gen)] = numerator(norm(L.gen[i]))
   end
-  norms[end] = fmpz(exponent(L))
+  norms[end] = ZZRingElem(exponent(L))
   norms = coprime_base(norms)
   coprime_to = lcm(norms)
   res = Vector{Tuple{FacElem{nf_elem, AnticNumberField}, Vector{Int}}}(undef, length(K.gen))
@@ -519,16 +519,16 @@ function reduce_mod_powers(a::nf_elem, n::Int)
   return reduce_mod_powers(FacElem(a), n)
 end
 
-function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, fmpz})
+function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, ZZRingElem})
   a1 = RelSaturate._mod_exponents(a, n)
   if nbits(maximum(values(a.fac))) > 30000
     b = compact_presentation(a1, n)
   else
     c = conjugates_arb_log(a, 64)
     c1 = conjugates_arb_log(a1, 64)
-    bn = maximum(fmpz[upper_bound(fmpz, abs(x)) for x in c])
-    bn1 = maximum(fmpz[upper_bound(fmpz, abs(x)) for x in c1])
-    if bn1 < root(bn, 2)
+    bn = maximum(ZZRingElem[upper_bound(ZZRingElem, abs(x)) for x in c])
+    bn1 = maximum(ZZRingElem[upper_bound(ZZRingElem, abs(x)) for x in c1])
+    if bn1 < isqrt(bn)
       b = compact_presentation(a1, n)
     else
       b = compact_presentation(a, n, decom = decom)
@@ -549,14 +549,14 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom:
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Vector{NfOrdIdl})
-  vals = fmpz[valuation(a, p) for p in primes]
-  lp = Dict{NfOrdIdl, fmpz}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
+  vals = ZZRingElem[valuation(a, p) for p in primes]
+  lp = Dict{NfOrdIdl, ZZRingElem}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
   return reduce_mod_powers(a, n, lp)
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
   Zk = maximal_order(base_ring(a))
   lp = factor_coprime(a, IdealSet(Zk))
-  lp1 = Dict{NfOrdIdl, fmpz}((x, fmpz(y)) for (x, y) in lp)
+  lp1 = Dict{NfOrdIdl, ZZRingElem}((x, ZZRingElem(y)) for (x, y) in lp)
   return reduce_mod_powers(a, n, lp1)
 end

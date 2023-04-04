@@ -1,6 +1,6 @@
 @testset "Jordan and Rational canonical form" begin
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^6 + rand(Qx, 1:5, -3:3)
   M = companion_matrix(f)
   @test minpoly(Qx, M) == f

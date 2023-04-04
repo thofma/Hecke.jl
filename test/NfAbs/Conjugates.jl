@@ -1,8 +1,8 @@
 @testset "NfAbs/Conjugates" begin
 Qx, x = FlintQQ["x"]
-K1, a1 = NumberField(x^6 - x^5 + x^4 - x^3 + x^2 - x + 1, "a") # totally complex
-K2, a2 = NumberField(x^6 - x^5 - 7*x^4 + 2*x^3 + 7*x^2 - 2*x - 1, "a") # totally real
-K3, a3 = NumberField(x^6 - x^5 - x^4 + 4*x^3 + 3*x^2 - 1, "a") # signature (2, 2)
+K1, a1 = number_field(x^6 - x^5 + x^4 - x^3 + x^2 - x + 1, "a") # totally complex
+K2, a2 = number_field(x^6 - x^5 - 7*x^4 + 2*x^3 + 7*x^2 - 2*x - 1, "a") # totally real
+K3, a3 = number_field(x^6 - x^5 - x^4 + 4*x^3 + 3*x^2 - 1, "a") # signature (2, 2)
 
 @testset "Totally real/complex" begin
   @test @inferred is_totally_complex(K1)
@@ -113,7 +113,7 @@ end
 end
 
 @testset "Bad example" begin
-  Zx, x = PolynomialRing(FlintZZ)
+  Zx, x = polynomial_ring(FlintZZ)
   f = swinnerton_dyer(3, x)
   g = swinnerton_dyer(8, x)
   k, a = number_field(f, cached = false)
@@ -131,7 +131,7 @@ end
 end
 
 @testset "Another bad example" begin
-  Qx, x = PolynomialRing(FlintQQ)
+  Qx, x = polynomial_ring(FlintQQ)
   f = x^12-3502319*x^10-3032677266943*x^8+17220065055936439179*x^6+26436504739687580368857995*x^4+12508949875084010197801010438203*x^2+1495531630727918278288148065057756816
   K, a = number_field(f, "a")
   @test 19619386 >= t2(a) >= 19619385

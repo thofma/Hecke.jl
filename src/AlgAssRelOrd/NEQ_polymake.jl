@@ -3,12 +3,10 @@
 
 # Returns all vectors v such that Av == b and Cv >= 0.
 
-export solve_non_negative, solve_mixed, solve_ineq
-
 nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
 ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
-function _polytope(; A::fmpz_mat=zero_matrix(FlintZZ, 1, 1), b::fmpz_mat=zero_matrix(FlintZZ, ncols(A), 1), C::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
+function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_matrix(FlintZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)
     bA = Matrix{BigInt}(hcat(-b, A))
     z = findall(i->!is_zero_row(bA, i), 1:nrows(bA))
@@ -37,11 +35,11 @@ end
 
 
 @doc Markdown.doc"""
-    solve_ineq(A::fmpz_mat, b::fmpz_mat)
+    solve_ineq(A::ZZMatrix, b::ZZMatrix)
 
 Solves $Ax<=b$, assumes finite set of solutions.
 """
-function solve_ineq(A::fmpz_mat, b::fmpz_mat)
+function solve_ineq(A::ZZMatrix, b::ZZMatrix)
   p = _polytope(C = hcat(b, -A))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
@@ -63,11 +61,11 @@ function solve_ineq(A::fmpz_mat, b::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-    solve_non_negative(A::fmpz_mat, b::fmpz_mat)
+    solve_non_negative(A::ZZMatrix, b::ZZMatrix)
 
 Finds all solutions to $Ax = b$, $x>=0$. Assumes a finite set of solutions.
 """
-function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
+function solve_non_negative(A::ZZMatrix, b::ZZMatrix)
   p = _polytope(A = A, b = b, C = identity_matrix(FlintZZ, ncols(A)))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
@@ -89,11 +87,11 @@ function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
 end
 
 @doc Markdown.doc"""
-    solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)
+    solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)
 
 Solves $Ax = b$ under $Cx >= 0$, assumes a finite solution set.
 """
-function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 0
+function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)  # Ax == b && Cx >= 0
   p = _polytope(A = A, b = b, C = C)
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
@@ -123,11 +121,11 @@ function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 
 end
 
 @doc Markdown.doc"""
-    solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat, d::fmpz_mat)
+    solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
 
 Solves $Ax = b$ under $Cx >= d$, assumes a finite solution set.
 """
-function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat, d::fmpz_mat)
+function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
   n = ncols(A)
   A = cat(A, identity_matrix(FlintZZ, ncols(d)), dims=(1,2))
   b = vcat(b, identity_matrix(FlintZZ, ncols(d)))

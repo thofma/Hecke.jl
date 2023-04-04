@@ -131,7 +131,7 @@ end
 
 
 #Trager: p4, Algebraic Factoring and Rational Function Integration
-function _absolute_field(K::NfRel; cached::Bool = false)
+function _absolute_field(K::NfRel; cached::Bool = false, do_embedding::Bool = true)
   f = K.pol
   kx = parent(f)
   k = base_ring(kx)
@@ -143,18 +143,30 @@ function _absolute_field(K::NfRel; cached::Bool = false)
   g = f
   N = norm(g)
 
+  i = 0
+  l = 0
+
   while true
     @assert degree(N) == degree(g) * degree(k)
     if !is_constant(N) && is_squarefree(N)
       break
     end
-    l += 1
+    i += 1
+    if isodd(i)
+      l = -div(i+1, 2)
+    else
+      l = div(i, 2)
+    end
     g = compose(f, gen(kx) - l*gen(k))
     N = norm(g)
   end
 
-  Ka, gKa = NumberField(N, "x", cached = cached, check = false)
-  KaT, T = PolynomialRing(Ka, "T", cached = false)
+  Ka, gKa = number_field(N, "x", cached = cached, check = false)
+  KaT, T = polynomial_ring(Ka, "T", cached = false)
+
+  if !do_embedding
+    return Ka, gen(Ka), gen(Ka), gen(K)
+  end
 
   # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
 
@@ -187,9 +199,13 @@ end
 #
 ################################################################################
 
-function collapse_top_layer(K::NfRel{T}; cached::Bool = false) where T <: SimpleNumFieldElem
-  Ka, a, b, c = _absolute_field(K)
-  h1 = hom(Ka, K, c, inverse = (a, b))
+function collapse_top_layer(K::NfRel{T}; cached::Bool = false, do_embedding::Bool = true) where T <: SimpleNumFieldElem
+  Ka, a, b, c = _absolute_field(K, do_embedding = do_embedding)
+  if !do_embedding
+    h = hom(Ka, Ka, gen(Ka), check = false)
+    return Ka, h, h
+  end
+  h1 = hom(Ka, K, c, inverse = (a, b), check = false)
   h2 = hom(base_field(K), Ka, a, check = false)
   embed(h1)
   embed(MapFromFunc(x->preimage(h1, x), K, Ka))

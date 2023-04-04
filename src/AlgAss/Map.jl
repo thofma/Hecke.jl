@@ -70,7 +70,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
       #  z.c_t[1, i] = ca[i]
       #end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
-      if T === fmpq_mat
+      if T === QQMatrix
         mul!(zdt, zct, M) # there is no mul! for Generic.Mat
       else
         zdt = zct * M
@@ -113,11 +113,11 @@ function __set!(c_t, ca)
   end
 end
 
-function __set!(c_t::fmpq_mat, ca)
+function __set!(c_t::QQMatrix, ca)
   GC.@preserve c_t begin
     for i in 1:length(ca)
-      t = ccall((:fmpq_mat_entry, libflint), Ptr{fmpq}, (Ref{fmpq_mat}, Int, Int), c_t, 0, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{fmpq}, Ref{fmpq}), t, ca[i])
+      t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), c_t, 0, i - 1)
+      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, ca[i])
     end
   end
 end
@@ -313,7 +313,7 @@ end
 ################################################################################
 
 # Morphism between an algebra A and a finite field Fq.
-# base_ring(A) can be a GaloisField, a Generic.ResField{fmpz} or a Fq(Nmod)FiniteField, Fq can be a
+# base_ring(A) can be a fpField, a Generic.ResField{ZZRingElem} or a Fq(Nmod)FiniteField, Fq can be a
 # Fq(Nmod)FiniteField.
 # MatType is the type of matrices over base_ring(A), PolyRingType the type of a
 # polynomial ring over base_ring(A)
@@ -324,15 +324,15 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
   t::MatType # dummy vector used in image and preimage
   tt::MatType # another dummy vector
   R::PolyRingType
-  RtoFq::FqPolyRingToFqMor # only used if S == AbsAlgAss{fq} or S == AbsAlgAss{fq_nmod}
+  RtoFq::FqPolyRingToFqMor # only used if S == AbsAlgAss{FqPolyRepFieldElem} or S == AbsAlgAss{fqPolyRepFieldElem}
 
   # First case: base_ring(A) == F_p
   function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType) where {
            S, T, MatType, PolyRingType
-           #S <: AbsAlgAss{S1} where { S1 <: Union{ gfp_elem, Generic.ResF{fmpz} } },
-           #T <: Union{ FqNmodFiniteField, FqFiniteField },
-           #MatType <: Union{ gfp_mat, Generic.MatSpaceElem{Generic.ResF{fmpz}} },
-           #PolyRingType <: Union{ GFPPolyRing, GFPFmpzPolyRing }
+           #S <: AbsAlgAss{S1} where { S1 <: Union{ fpFieldElem, Generic.ResF{ZZRingElem} } },
+           #T <: Union{ fqPolyRepField, FqPolyRepField },
+           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResF{ZZRingElem}} },
+           #PolyRingType <: Union{ fpPolyRing, FpPolyRing }
     }
 
     z = new{S, T, MatType, PolyRingType}()
@@ -352,7 +352,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
       return Fq(sR)
     end
 
-    function _preimage(x::Union{ fq_nmod, fq })
+    function _preimage(x::Union{ fqPolyRepFieldElem, FqPolyRepFieldElem })
       @assert typeof(x) == elem_type(T)
       for i = 1:dim(A)
         z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
@@ -368,10 +368,10 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
   # Second case: base_ring(A) == F_p^n
   function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType, RtoFq::FqPolyRingToFqMor) where {
                                                                                                                                                S, T, MatType, PolyRingType
-           #S <: AbsAlgAss{S1} where { S1 <: Union{ fq, fq_nmod } },
-           #T <: Union{ FqNmodFiniteField, FqFiniteField },
-           #MatType <: Union{ fq_nmod_mat, fq_mat },
-           #PolyRingType <: Union{ FqNmodPolyRing, FqPolyRing }
+           #S <: AbsAlgAss{S1} where { S1 <: Union{ FqPolyRepFieldElem, fqPolyRepFieldElem } },
+           #T <: Union{ fqPolyRepField, FqPolyRepField },
+           #MatType <: Union{ fqPolyRepMatrix, FqPolyRepMatrix },
+           #PolyRingType <: Union{ fqPolyRepPolyRing, FqPolyRepPolyRing }
     }
 
     z = new{S, T, MatType, PolyRingType}()
@@ -392,7 +392,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
       return Fq(z.RtoFq(sR))
     end
 
-    function _preimage(x::Union{ fq_nmod, fq })
+    function _preimage(x::Union{ fqPolyRepFieldElem, FqPolyRepFieldElem })
       @assert typeof(x) == elem_type(T)
       x = z.RtoFq\x
       for i = 1:dim(A)
@@ -408,21 +408,21 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
 
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{gfp_elem}, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat, R::GFPPolyRing)
-  return AbsAlgAssToFqMor{typeof(A), FqNmodFiniteField, gfp_mat, GFPPolyRing}(A, Fq, M, N, R)
+function AbsAlgAssToFqMor(A::AbsAlgAss{fpFieldElem}, Fq::fqPolyRepField, M::fpMatrix, N::fpMatrix, R::fpPolyRing)
+  return AbsAlgAssToFqMor{typeof(A), fqPolyRepField, fpMatrix, fpPolyRing}(A, Fq, M, N, R)
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{fq_nmod}, Fq::FqNmodFiniteField, M::fq_nmod_mat, N::fq_nmod_mat, R::FqNmodPolyRing, RtoFq::FqPolyRingToFqMor)
-  return AbsAlgAssToFqMor{typeof(A), FqNmodFiniteField, fq_nmod_mat, FqNmodPolyRing}(A, Fq, M, N, R, RtoFq)
+function AbsAlgAssToFqMor(A::AbsAlgAss{fqPolyRepFieldElem}, Fq::fqPolyRepField, M::fqPolyRepMatrix, N::fqPolyRepMatrix, R::fqPolyRepPolyRing, RtoFq::FqPolyRingToFqMor)
+  return AbsAlgAssToFqMor{typeof(A), fqPolyRepField, fqPolyRepMatrix, fqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
-#function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{fmpz}}, Fq::FqFiniteField, M::Generic.MatSpaceElem{Generic.ResF{fmpz}}, N::Generic.MatSpaceElem{Generic.ResF{fmpz}}, R::GFPFmpzPolyRing)
-function AbsAlgAssToFqMor(A, Fq::FqFiniteField, M, N, R::GFPFmpzPolyRing)
-  return AbsAlgAssToFqMor{typeof(A), FqFiniteField, typeof(M), GFPFmpzPolyRing}(A, Fq, M, N, R)
+#function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{ZZRingElem}}, Fq::FqPolyRepField, M::Generic.MatSpaceElem{Generic.ResF{ZZRingElem}}, N::Generic.MatSpaceElem{Generic.ResF{ZZRingElem}}, R::FpPolyRing)
+function AbsAlgAssToFqMor(A, Fq::FqPolyRepField, M, N, R::FpPolyRing)
+  return AbsAlgAssToFqMor{typeof(A), FqPolyRepField, typeof(M), FpPolyRing}(A, Fq, M, N, R)
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{fq}, Fq::FqFiniteField, M::fq_mat, N::fq_mat, R::FqPolyRing, RtoFq::FqPolyRingToFqMor)
-  return AbsAlgAssToFqMor{typeof(A), FqFiniteField, fq_mat, FqPolyRing}(A, Fq, M, N, R, RtoFq)
+function AbsAlgAssToFqMor(A::AbsAlgAss{FqPolyRepFieldElem}, Fq::FqPolyRepField, M::FqPolyRepMatrix, N::FqPolyRepMatrix, R::FqPolyRepPolyRing, RtoFq::FqPolyRingToFqMor)
+  return AbsAlgAssToFqMor{typeof(A), FqPolyRepField, FqPolyRepMatrix, FqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
 ################################################################################
@@ -434,7 +434,7 @@ end
 function (f::AbsAlgAssMor)(O::AlgAssAbsOrd)
   domain(f) != algebra(O) && throw(error("Order not an order of the domain"))
   B = codomain(f)
-  C = Order(B, elem_type(B)[f(b) for b in O.basis_alg])
+  C = Order(B, elem_type(B)[f(b) for b in O.basis_alg], check = false)
   return C
 end
 

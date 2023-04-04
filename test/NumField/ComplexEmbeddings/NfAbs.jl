@@ -71,4 +71,17 @@
   s = Hecke.complex_embedding(K, CC(0, -0.1))
   @test Set(complex_embeddings(K)) == Set([r, s])
   @test_throws ErrorException Hecke.complex_embedding(K, 0.0)
+
+  K, a = quadratic_field(-2)
+  @test Hecke.infinite_uniformizers(K) == Dict{Hecke.embedding_type(K), nf_elem}()
+  K, a = quadratic_field(2)
+  em = complex_embeddings(K)
+  for (e, elt) in Hecke.infinite_uniformizers(K)
+    @test is_negative(elt, e)
+    @test all(is_positive(elt, ee) for ee in em if ee != e)
+  end
+
+  # This should be fast
+  K, a = cyclotomic_field(19^3, cached = false)
+  @test length(@inferred complex_embeddings(K)) == degree(K)
 end

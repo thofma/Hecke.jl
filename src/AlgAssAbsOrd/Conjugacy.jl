@@ -1,5 +1,5 @@
-Hecke.add_verbose_scope(:Conjugacy)
-Hecke.add_assert_scope(:Conjugacy)
+add_verbosity_scope(:Conjugacy)
+add_assertion_scope(:Conjugacy)
 
 include("Conjugacy/Husert.jl")
 include("Conjugacy/Lifting.jl")
@@ -23,9 +23,9 @@ include("Conjugacy/Conjugacy.jl")
 # B = matrix(FlintQQ, 5, 5, 15054, 1, -105441, -149944, -5019, 21417, -15, -149919, -212937, -7151, 1254, 0, -8787, -12480, -418, 627, 0, -4389, -6249, -209, 108, 3, -756, -1179, -39])
 #
 # julia> Hecke._eltseq(A) |> print
-# fmpz[0, 1, 0, 0, 0, 0, 1, 0, -343, -147, -21, 0, 0, 0, 0, -7]
+# ZZRingElem[0, 1, 0, 0, 0, 0, 1, 0, -343, -147, -21, 0, 0, 0, 0, -7]
 # julia> Hecke._eltseq(B) |> print
-# fmpz[-39277, -17864, -773376, 225560, -2841374, -1292556, -55957655, 16320401, -405524, -184499, -7988112, 2329751, -1622301, -738076, -31955520, 9319917]
+# ZZRingElem[-39277, -17864, -773376, 225560, -2841374, -1292556, -55957655, 16320401, -405524, -184499, -7988112, 2329751, -1622301, -738076, -31955520, 9319917]
 #
 # A = matrix(FlintQQ, 3, 3, [0, 1, 0, -1, 2, 0, 0, 0, 1])
 #

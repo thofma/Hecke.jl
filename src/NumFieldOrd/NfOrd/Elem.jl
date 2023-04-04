@@ -48,7 +48,7 @@ function Base.deepcopy_internal(x::NfAbsOrdElem{S, T}, dict::IdDict) where {S, T
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
     z.has_coord = true
-    z.coordinates = Base.deepcopy_internal(x.coordinates, dict)::Vector{fmpz}
+    z.coordinates = Base.deepcopy_internal(x.coordinates, dict)::Vector{ZZRingElem}
   end
   return z
 end
@@ -59,8 +59,8 @@ end
 #
 ################################################################################
 
-function elem_from_mat_row(O::NfAbsOrd, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
-  return O(fmpz[M[i, j] for j=1:degree(O)])
+function elem_from_mat_row(O::NfAbsOrd, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
+  return O(ZZRingElem[M[i, j] for j=1:degree(O)])
 end
 
 ################################################################################
@@ -108,7 +108,7 @@ will be checked that $a$ is contained in $\mathcal O$ if and only if
   end
 end
 
-(O::NfAbsOrd{S, T})(a::T, arr::Vector{fmpz}, check::Bool = false) where {S, T} = begin
+(O::NfAbsOrd{S, T})(a::T, arr::Vector{ZZRingElem}, check::Bool = false) where {S, T} = begin
   if check
     (x, y) = _check_elem_in_order(a,O)
     (!x || arr != y ) && error("Number field element not in the order")
@@ -118,7 +118,7 @@ end
   end
 end
 
-(O::NfAbsOrd{S, T})(a::T, arr::fmpz_mat, check::Bool = false) where {S, T} = begin
+(O::NfAbsOrd{S, T})(a::T, arr::ZZMatrix, check::Bool = false) where {S, T} = begin
   if check
     (x, y) = _check_elem_in_order(a,O)
     (!x || arr != y ) && error("Number field element not in the order")
@@ -131,7 +131,7 @@ end
 @doc Markdown.doc"""
       (O::NumFieldOrd)(a::IntegerUnion) -> NumFieldOrdElem
 
-Given an element $a$ of type `fmpz` or `Integer`, this
+Given an element $a$ of type `ZZRingElem` or `Integer`, this
 function coerces the element into $\mathcal O$.
 """
 (O::NfAbsOrd)(a::IntegerUnion) = begin
@@ -139,15 +139,15 @@ function coerces the element into $\mathcal O$.
 end
 
 @doc Markdown.doc"""
-      (O::NfAbsOrd)(arr::Vector{fmpz})
+      (O::NfAbsOrd)(arr::Vector{ZZRingElem})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfAbsOrd)(arr::Vector{fmpz}) = begin
+(O::NfAbsOrd)(arr::Vector{ZZRingElem}) = begin
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
-(O::NfAbsOrd)(arr::fmpz_mat) = begin
+(O::NfAbsOrd)(arr::ZZMatrix) = begin
   return NfAbsOrdElem(O, arr)
 end
 
@@ -197,7 +197,7 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    coordinates(a::NfAbsOrdElem) -> Vector{fmpz}
+    coordinates(a::NfAbsOrdElem) -> Vector{ZZRingElem}
 
 Returns the coefficient vector of $a$ with respect to the basis of the order.
 """
@@ -218,21 +218,21 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    charpoly(a::NfAbsOrdElem) -> fmpz_poly
-    charpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
+    charpoly(a::NfAbsOrdElem) -> ZZPolyRingElem
+    charpoly(a::NfAbsOrdElem, FlintZZ) -> ZZPolyRingElem
 
 The characteristic polynomial of $a$.
 """
-function charpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))
+function charpoly(a::NfAbsOrdElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
   return Zx(charpoly(elem_in_nf(a)))
 end
 
 @doc Markdown.doc"""
-    minpoly(a::NfAbsOrdElem) -> fmpz_poly
+    minpoly(a::NfAbsOrdElem) -> ZZPolyRingElem
 
 The minimal polynomial of $a$.
 """
-function minpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(FlintZZ, :x, false))
+function minpoly(a::NfAbsOrdElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
   return Zx(minpoly(elem_in_nf(a)))
 end
 
@@ -272,7 +272,7 @@ end
 #
 ################################################################################
 
-function mod(a::NfAbsOrdElem, m::Union{fmpz, Int})
+function mod(a::NfAbsOrdElem, m::Union{ZZRingElem, Int})
   d = degree(parent(a))
   ar = coordinates(a)
   for i in 1:d
@@ -288,7 +288,7 @@ end
 #
 ################################################################################
 
-function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
+function powermod(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
 
   #if contains_equation_order(parent(a))#This doesn't work!
   if is_defining_polynomial_nice(nf(parent(a)))
@@ -298,7 +298,7 @@ function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   end
 end
 
-function powermod_gen(a::NfAbsOrdElem, i::fmpz, p::fmpz)
+function powermod_gen(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
   if i == 0
     return one(parent(a))
   end
@@ -318,7 +318,7 @@ function powermod_gen(a::NfAbsOrdElem, i::fmpz, p::fmpz)
 end
 
 
-function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
+function powermod_fast(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
   if i == 0
     return one(parent(a))
   end
@@ -352,7 +352,7 @@ function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   return mod(parent(a)(b)*e, p)
 end
 
-function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::fmpz, p::fmpz)
+function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::ZZRingElem, p::ZZRingElem)
   if i == 0
     return one(parent(a))
   end
@@ -394,7 +394,7 @@ function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::fmpz, p::fmpz)
   return mod(parent(a)(b*e), p)
 end
 
-function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
+function powermod(a::NfOrdElem, i::ZZRingElem, I::NfOrdIdl)
   if i == 0
     return one(parent(a))
   end
@@ -421,11 +421,11 @@ function powermod(a::NfOrdElem, i::fmpz, I::NfOrdIdl)
 end
 
 
-powermod(a::NfAbsOrdElem, i::Integer, m::Integer) = powermod(a, fmpz(i), fmpz(m))
+powermod(a::NfAbsOrdElem, i::Integer, m::Integer) = powermod(a, ZZRingElem(i), ZZRingElem(m))
 
-powermod(a::NfAbsOrdElem, i::fmpz, m::Integer)  = powermod(a, i, fmpz(m))
+powermod(a::NfAbsOrdElem, i::ZZRingElem, m::Integer)  = powermod(a, i, ZZRingElem(m))
 
-powermod(a::NfAbsOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
+powermod(a::NfAbsOrdElem, i::Integer, m::ZZRingElem)  = powermod(a, ZZRingElem(i), m)
 
 ################################################################################
 #
@@ -434,7 +434,7 @@ powermod(a::NfAbsOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 ################################################################################
 
 @doc Markdown.doc"""
-    representation_matrix(a::NfAbsOrdElem) -> fmpz_mat
+    representation_matrix(a::NfAbsOrdElem) -> ZZMatrix
 
 Returns the representation matrix of the element $a$.
 """
@@ -459,17 +459,16 @@ field of the order of $a$.
 function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
   nf(parent(a)) != K && error("Element not in this field")
   A, d = Nemo.representation_matrix_q(a.elem_in_nf)
-  A.base_ring = FlintZZ
   z = FakeFmpqMat(A, d)
   return z
 end
 
 @doc Markdown.doc"""
-    representation_matrix_mod(a::NfAbsOrdElem, d::fmpz) -> fmpz_mat
+    representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem) -> ZZMatrix
 
 Returns the representation matrix of the element $a$ with entries reduced mod $d$.
 """
-function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
+function representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem)
   O = parent(a)
   A, den = representation_matrix_q(elem_in_nf(a))
   BM = basis_matrix(O, copy = false)
@@ -478,7 +477,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
   if fits(Int, d1)
-    R = ResidueRing(FlintZZ, Int(d1), cached = false)
+    R = residue_ring(FlintZZ, Int(d1), cached = false)
     AR = map_entries(R, A)
     BMR = map_entries(R, BM.num)
     BMinvR = map_entries(R, BMinv.num)
@@ -498,7 +497,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::fmpz)
     mod!(res, d)
     return res
   else
-    RR = ResidueRing(FlintZZ, d1, cached = false)
+    RR = residue_ring(FlintZZ, d1, cached = false)
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
     mul!(ARR, BMRR, ARR)
@@ -575,13 +574,13 @@ function rand(O::NfOrd, n::Integer)
   return rand(O, -n:n)
 end
 
-function rand(O::NfOrd, n::fmpz)
+function rand(O::NfOrd, n::ZZRingElem)
   z = O()
   rand!(z, O, BigInt(n))
   return z
 end
 
-function rand!(z::NfAbsOrdElem, O::NfOrd, n::fmpz)
+function rand!(z::NfAbsOrdElem, O::NfOrd, n::ZZRingElem)
   return rand!(z, O, BigInt(n))
 end
 

@@ -7,7 +7,7 @@ export overorders, is_bass, is_gorenstein, poverorders
 ################################################################################
 
 #H must be in lower left hnf form
-function is_zero_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
+function is_zero_mod_hnf!(a::ZZMatrix, H::ZZMatrix)
   reduce_mod_hnf_ll!(a, H)
   return iszero(a)
 end
@@ -95,7 +95,7 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
 
     # offset is the first index - 1, where the diagonal of S is not one.
 
-    A = abelian_group(fmpz[S[i, i] for i in (offset + 1):d])
+    A = abelian_group(ZZRingElem[S[i, i] for i in (offset + 1):d])
 
     z.offset = offset
     z.domain = A
@@ -187,7 +187,7 @@ end
 #
 ################################################################################
 
-poverorders(O, p::Int) = poverorders(O, fmpz(p))
+poverorders(O, p::Int) = poverorders(O, ZZRingElem(p))
 
 @doc Markdown.doc"""
     poverorders(O, p) -> Vector{Ord}
@@ -195,7 +195,7 @@ poverorders(O, p::Int) = poverorders(O, fmpz(p))
 Returns all `p`-overorders of `O`, that is all overorders `M`, such that the
 index of `O` in `M` is a `p`-power.
 """
-function poverorders(O, p::fmpz)
+function poverorders(O, p::ZZRingElem)
   if is_commutative(O)
     return poverorders_etale(O, p)
   end
@@ -368,7 +368,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
 
   #The degree of the extension divides the degree of a prime of M lying over P
   lQ = prime_ideals_over(M, P)
-  rel_fs = fmpz[divexact(valuation(norm(Q), p), f) for Q in lQ]
+  rel_fs = ZZRingElem[divexact(valuation(norm(Q), p), f) for Q in lQ]
   fac = factor(lcm(rel_fs))
   for (q, _) in fac
     if q == 2
@@ -483,13 +483,13 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     subs = subgroups(A, subtype = [2 for i = 1:f], fun = (G, z) -> sub(G, z, false))
   else
     R = GF(2)
-    V = Amodule(gfp_mat[map_entries(R, l.map) for l in autos])
+    V = Amodule(fpMatrix[map_entries(R, l.map) for l in autos])
     subm = minimal_submodules(V, f)
     subs = (sub(A, lift(x), false) for x in subm)
   end
 
   lQ = prime_ideals_over(M, P)
-  rel_fs = fmpz[divexact(valuation(norm(Q), 2), f) for Q in lQ]
+  rel_fs = ZZRingElem[divexact(valuation(norm(Q), 2), f) for Q in lQ]
   fac = factor(lcm(rel_fs))
   for (q, _) in fac
     if q == 2
@@ -499,7 +499,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
         subs1 = subgroups(A, subtype = [2 for i = 1:Int(f)*(Int(q) - 1)], fun = (G, z) -> sub(G, z, false))
       else
         R = GF(2)
-        V = Amodule(gfp_mat[map_entries(R, l.map) for l in autos])
+        V = Amodule(fpMatrix[map_entries(R, l.map) for l in autos])
         subm1 = submodules(V, dim(V)-Int(f)*(Int(q) - 1))
         subs1 = (sub(A, lift(x), false) for x in subm1)
       end
@@ -566,7 +566,7 @@ end
 #
 ################################################################################
 
-function poverorders_etale(O, p::fmpz)
+function poverorders_etale(O, p::ZZRingElem)
   lP = prime_ideals_over(O, p)
   res = typeof(O)[O]
   K = _algebra(O)
@@ -674,7 +674,7 @@ end
 
 function pprimary_overorders(O, P)
   to_enlarge = typeof(O)[O]
-  current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
+  current = Dict{QQFieldElem, Dict{FakeFmpqMat, typeof(O)}}()
   excess = Int[0]
   while length(to_enlarge) > 0
     N = popfirst!(to_enlarge)
@@ -736,7 +736,7 @@ end
 #
 ################################################################################
 
-function poverorders_one_step_generic(O, p::fmpz)
+function poverorders_one_step_generic(O, p::ZZRingElem)
   K = _algebra(O)
   d = degree(O)
   B = basis(O)
@@ -801,9 +801,9 @@ function poverorders_one_step_generic(O, p::fmpz)
   return orders
 end
 
-function poverorders_recursive_generic(O, p::fmpz)
+function poverorders_recursive_generic(O, p::ZZRingElem)
   to_enlarge = typeof(O)[O]
-  current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
+  current = Dict{QQFieldElem, Dict{FakeFmpqMat, typeof(O)}}()
   while length(to_enlarge) > 0
     N = pop!(to_enlarge)
     new = poverorders_one_step_generic(N, p)
@@ -866,7 +866,7 @@ end
 
 # Get all poveroders of O in N by looking at the quotient N/O (after intersecting with pmaximal_overoder)
 # and the use the MeatAxe
-function poverorders_nonrecursive_meataxe(O, N, p::fmpz)
+function poverorders_nonrecursive_meataxe(O, N, p::ZZRingElem)
   K = _algebra(O)
   d = degree(O)
   M = N
@@ -1025,7 +1025,7 @@ function is_bass(O, P)
   return div(ext_dim, resfield_dim) <= 2
 end
 
-function is_bass(O::NfOrd, p::fmpz)
+function is_bass(O::NfOrd, p::ZZRingElem)
   M = maximal_order(O)
   p_critical_primes = Set{ideal_type(O)}()
   lp = prime_decomposition(M, p)
@@ -1105,10 +1105,10 @@ function is_gorenstein(O::AlgAssAbsOrd)
 end
 
 function is_gorenstein(O, p::Int)
-  return is_gorenstein(O, fmpz(p))
+  return is_gorenstein(O, ZZRingElem(p))
 end
 
-function is_gorenstein(O, p::fmpz)
+function is_gorenstein(O, p::ZZRingElem)
   codiff = codifferent(O)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)
   v = valuation(norm(R), p)
@@ -1143,7 +1143,7 @@ end
 #
 ################################################################################
 
-function ideals_with_norm(O::NfOrd, p::fmpz, n::Int)
+function ideals_with_norm(O::NfOrd, p::ZZRingElem, n::Int)
   pn = p^n
   pInt = Int(p)
   K = nf(O)
@@ -1153,7 +1153,7 @@ function ideals_with_norm(O::NfOrd, p::fmpz, n::Int)
 
   autos = GrpAbFinGenMap[]
 
-  A = abelian_group(fmpz[pn for i in 1:d])
+  A = abelian_group(ZZRingElem[pn for i in 1:d])
 
   for i in 1:d
     m = representation_matrix(B[i])
@@ -1196,7 +1196,7 @@ function index(R::NfOrd, S::NfOrd)
   return FlintZZ(i)
 end
 
-function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::fmpz)
+function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::ZZRingElem)
   l1 = poverorders(O1, p)
   l2 = poverorders(O2, p)
   data_from_l2 = Dict{Vector{Int}, Vector{Tuple{typeof(O1), ideal_type(O1)}}}()
@@ -1219,7 +1219,7 @@ function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::fmpz)
   return data_from_l2
 end
 
-function abelian_group(Q::NfOrdQuoRing)
+function abelian_group(Q::AbsOrdQuoRing)
   A = abelian_group(Q.basis_matrix)
   S, mS = snf(A)
   B = basis(Q.base_ring, copy = false)
@@ -1249,7 +1249,7 @@ function is_isomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
 
   l = length(Q1_A.snf)
 
-  elements_with_correct_order = Dict{fmpz, Vector{GrpAbFinGenElem}}()
+  elements_with_correct_order = Dict{ZZRingElem, Vector{GrpAbFinGenElem}}()
 
   for g in Q2_A
     o = order(g)
@@ -1295,7 +1295,7 @@ function is_isomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
       end
     end
     if multiplicative
-      M = Array{fmpz}(degree(O1), degree(O2))
+      M = Array{ZZRingElem}(degree(O1), degree(O2))
       for i in 1:degree(O1)
         v = coordinates(Q2_mA(h(Q1_mA_inv(Q1(basis_O1[i])))).elem)
         for j in 1:degree(O2)

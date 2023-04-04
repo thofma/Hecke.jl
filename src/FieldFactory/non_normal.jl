@@ -29,7 +29,7 @@ function fixed_field(x::FieldsTower, H::GAP.GapObj)
   auts = NfToNfMor[]
   found = 0
   D = x.isomorphism
-  autsx = automorphisms(number_field(x))
+  autsx = automorphism_list(number_field(x))
   i = 0
   while length(gH) != found
     i += 1
@@ -99,7 +99,7 @@ function _find_discriminant_bound(n, i, disc)
 end
 
 
-function fields_transitive_group(n::Int, i::Int, disc::fmpz)
+function fields_transitive_group(n::Int, i::Int, disc::ZZRingElem)
   Gt = GAP.Globals.TransitiveGroup(n, i)
   @assert GAP.Globals.IsSolvable(Gt)
   id = GAP.Globals.IdGroup(Gt)

@@ -2,16 +2,16 @@ using ArgParse
 
 using Hecke
 
-function ArgParse.parse_item(::Type{fmpz}, x::AbstractString)
+function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
   if in('^', x)
     l = split(x, '^')
     if length(l) != 2
-      throw(error("Could not parse $x as fmpz"))
+      throw(error("Could not parse $x as ZZRingElem"))
     end
     l = string.(l)
-    return (parse(fmpz, l[1]))^parse(Int, l[2])
+    return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
   else
-    return parse(fmpz, string(x))
+    return parse(ZZRingElem, string(x))
   end
 end
 
@@ -156,8 +156,8 @@ function main()
     #@assert discriminant(OK) == fields[i][end]
     println(threadid(), ": Looking at disc", discriminant(OK))
 
-    hK = fmpz(0)
-    hrelative = fmpz(0)
+    hK = ZZRingElem(0)
+    hrelative = ZZRingElem(0)
 
     if _only_relative_one
       if has_obviously_not_relative_class_number_one(K)

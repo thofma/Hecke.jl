@@ -34,35 +34,12 @@ function _multgrp_non_maximal(Q::AbsOrdQuoRing{U, T}) where {U, T}
   A = algebra(O)
   OO = maximal_order(A)
 
-  aOO = a*OO
-
-  fac_of_aOO = factor(aOO)
-  prime_ideals = Dict{ideal_type(O), Vector{ideal_type(OO)}}()
-  for (p, e) in fac_of_aOO
-    q = contract(p, O)
-    if haskey(prime_ideals, q)
-      push!(prime_ideals[q], p)
-    else
-      prime_ideals[q] = ideal_type(OO)[ p ]
-    end
-  end
-
-  # keys are the same as in prime_ideals
-  primary_ideals = Dict{ideal_type(O), ideal_type(O)}()
-  for p in keys(prime_ideals)
-    primes_above = prime_ideals[p]
-    q = primes_above[1]^fac_of_aOO[primes_above[1]]
-    for i = 2:length(primes_above)
-      q = intersect(q, primes_above[i]^fac_of_aOO[primes_above[i]])
-    end
-    primary_ideals[p] = contract(q, O)
-  end
-
+  primary_ideals = primary_decomposition(a, O)
   groups = Vector{GrpAbFinGen}()
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap{U, T, elem_type(OO)}}()
   ideals = Vector{ideal_type(O)}() # values of primary_ideals, but in the "right" order
-  for (p, q) in primary_ideals
-    G, GtoQ = _multgrp_mod_q(p, q, prime_ideals[p][1])
+  for (q, p) in primary_ideals
+    G, GtoQ = _multgrp_mod_q(p, q, prime_ideals_over(OO, p)[1])
     push!(groups, G)
     push!(maps, GtoQ)
     push!(ideals, q)
@@ -129,7 +106,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
         y = hcat(y, h.coeff)
       end
       s = StoG\G(y)
-      return fmpz[ s.coeff[1, i] for i = 1:ngens(S) ]
+      return ZZRingElem[ s.coeff[1, i] for i = 1:ngens(S) ]
     end
   end
 
@@ -206,9 +183,9 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   q = numerator(q)
   q = q - 1 # the cardinality of (O/p)^\times
   if isone(q)
-    G = GrpAbFinGen(fmpz[])
+    G = GrpAbFinGen(ZZRingElem[])
     function disc_log2(x::AlgAssAbsOrdElem)
-      return fmpz[]
+      return ZZRingElem[]
     end
     GtoO = GrpAbFinGenToAbsOrdMap(G, O, elem_type(O)[], disc_log2, p)
     return G, GtoO
@@ -311,7 +288,7 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
   # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.16
   function disc_log(b::AlgAssAbsOrdElem)
     b = OtoQ(b)
-    a = fmpz[]
+    a = ZZRingElem[]
     gQ = map(OtoQ, g)
     k = 1
     for i in 1:length(dlogs)
@@ -321,7 +298,7 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
         prod = prod*gQ[k]^aa[j]
         k += 1
       end
-      a = fmpz[ a ; aa ]
+      a = ZZRingElem[ a ; aa ]
       b = divexact(b, prod)
     end
     return a
@@ -356,7 +333,7 @@ end
 # Given the groups (1 + p)/(1 + p^k + q) (via g and M) and
 # (1 + p^k + q)/(1 + p^(2*k) + q) (via h and N) and a discrete logarithm in the
 # second group this function computes the group (1 + p)/(1 + p^(2*k) + q).
-function _expand(g::Vector{T}, M::fmpz_mat, h::Vector{T}, N::fmpz_mat, disc_log::Function, q::AlgAssAbsOrdIdl) where { T <: AlgAssAbsOrdElem }
+function _expand(g::Vector{T}, M::ZZMatrix, h::Vector{T}, N::ZZMatrix, disc_log::Function, q::AlgAssAbsOrdIdl) where { T <: AlgAssAbsOrdElem }
   isempty(g) && return h, N
   isempty(h) && return g, M
 
@@ -417,10 +394,10 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
   M = basis_matrix(O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
-  y_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), fmpz(1))
+  y_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
-    y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), fmpz(1))
+    y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), ZZRingElem(1))
     mul!(y_fakemat2, y_fakemat, M)
     #@assert y_fakemat2 == y_fakemat * M
     denominator(y_fakemat2) != 1 && error("Element is in the ideal")

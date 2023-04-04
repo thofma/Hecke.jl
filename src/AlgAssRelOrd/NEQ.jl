@@ -408,11 +408,11 @@ end
 ################################################################################
 
 # Let K = base_ring(A). Then this returns the field K(x) and a map to A.
-function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ fmpq, nf_elem, NfRelElem } }
+function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ QQFieldElem, nf_elem, NfRelElem } }
   return _as_subfield(A, x, minpoly(x))
 end
 
-function _as_subfield(A::AbsAlgAss{fmpq}, x::AbsAlgAssElem{fmpq}, f::PolyElem{fmpq})
+function _as_subfield(A::AbsAlgAss{QQFieldElem}, x::AbsAlgAssElem{QQFieldElem}, f::PolyElem{QQFieldElem})
   s = one(A)
   M = zero_matrix(FlintQQ, degree(f), dim(A))
   elem_to_mat_row!(M, 1, s)

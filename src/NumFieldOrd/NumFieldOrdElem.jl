@@ -41,9 +41,9 @@ _elem_in_algebra(a::NumFieldOrdElem; copy::Bool = true) = elem_in_nf(a, copy = c
 #
 ################################################################################
 
-zero(O::NumFieldOrd) = O(fmpz(0))
+zero(O::NumFieldOrd) = O(ZZRingElem(0))
 
-one(O::NumFieldOrd) = O(fmpz(1))
+one(O::NumFieldOrd) = O(ZZRingElem(1))
 
 zero(a::NumFieldOrdElem) = parent(a)(0)
 
@@ -140,7 +140,7 @@ end
 #
 ################################################################################
 
-for T in [Integer, fmpz]
+for T in [Integer, ZZRingElem]
   @eval begin
     function *(a::NumFieldOrdElem, b::$T)
       c = parent(a)()
@@ -199,7 +199,7 @@ end
 
 # TODO: In the following parent(x)(z) does also a deepcopy, which is not
 # necessary (as ^y should produce something mutable)
-for T in [Integer, fmpz]
+for T in [Integer, ZZRingElem]
   @eval begin
     function ^(x::NumFieldOrdElem, y::$T)
       if y >= 0
@@ -253,7 +253,7 @@ end
 ################################################################################
 
 # ad hoc
-for T in [Integer, fmpz]
+for T in [Integer, ZZRingElem]
   @eval begin
     @inline function mul!(z::NumFieldOrdElem, x::NumFieldOrdElem, y::$T)
       z.elem_in_nf = mul!(z.elem_in_nf, x.elem_in_nf, y)
@@ -265,7 +265,7 @@ for T in [Integer, fmpz]
   end
 end
 
-for T in [Integer, fmpz]
+for T in [Integer, ZZRingElem]
   @eval begin
     @inline function add!(z::NumFieldOrdElem, x::NumFieldOrdElem, y::$T)
       z.elem_in_nf = add!(z.elem_in_nf, x.elem_in_nf, y)
@@ -277,7 +277,7 @@ for T in [Integer, fmpz]
   end
 end
 
-for T in [Integer, fmpz]
+for T in [Integer, ZZRingElem]
   @eval begin
     @inline function sub!(z::NumFieldOrdElem, x::NumFieldOrdElem, y::$T)
       z.elem_in_nf = sub!(z.elem_in_nf, x.elem_in_nf, y)
@@ -299,9 +299,9 @@ dot(x::NumFieldOrdElem, y::Integer) = x * y
 
 dot(x::Integer, y::NumFieldOrdElem) = y * x
 
-dot(x::NumFieldOrdElem, y::fmpz) = x * y
+dot(x::NumFieldOrdElem, y::ZZRingElem) = x * y
 
-dot(x::fmpz, y::NumFieldOrdElem) = y * x
+dot(x::ZZRingElem, y::NumFieldOrdElem) = y * x
 
 
 ################################################################################
@@ -321,7 +321,7 @@ function tr(a::NumFieldOrdElem)
 end
 
 @doc Markdown.doc"""
-    absolute_tr(a::NumFieldOrdElem) -> fmpz
+    absolute_tr(a::NumFieldOrdElem) -> ZZRingElem
 
 Return the absolute trace as an integer.
 """
@@ -345,7 +345,7 @@ function norm(a::NumFieldOrdElem)
 end
 
 @doc Markdown.doc"""
-    absolute_norm(a::NumFieldOrdElem) -> fmpz
+    absolute_norm(a::NumFieldOrdElem) -> ZZRingElem
 
 Return the absolute norm as an integer.
 """
@@ -483,12 +483,12 @@ end
 
 Nemo.promote_rule(::Type{S}, ::Type{U}) where {S <: NumFieldOrdElem, U <: Integer} = S
 
-Nemo.promote_rule(::Type{S}, ::Type{fmpz}) where {S <: NumFieldOrdElem} = S
+Nemo.promote_rule(::Type{S}, ::Type{ZZRingElem}) where {S <: NumFieldOrdElem} = S
 
-Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
+#Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
 
-Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T} = T
+Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T <: NumFieldElem} = T
 
-Nemo.promote_rule(::Type{NfRelOrdElem{S, T}}, ::Type{T}) where {S, T} = T
+Nemo.promote_rule(::Type{NfRelOrdElem{S, T}}, ::Type{T}) where {S, T <: NumFieldElem} = T
 
-Nemo.promote_rule(::Type{T}, ::Type{NfRelOrdElem{S, T}}) where {S, T} = T
+Nemo.promote_rule(::Type{T}, ::Type{NfRelOrdElem{S, T}}) where {S, T <: NumFieldElem} = T

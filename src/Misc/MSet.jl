@@ -1,5 +1,17 @@
-export MSet
+export MSet, multiplicities, subsets
 
+@doc Markdown.doc"""
+Type for a multi-set, ie. a set where elements are not unique, they
+(can) have a multiplicity. MSets can be created from any finite iterator.
+
+#EXAMPLE
+```julia
+julia> MSet([1,1,2,3,4,4,5])
+MSet(5, 4 : 2, 2, 3, 1 : 2
+
+```
+4 : 2 means the element 4 has multiplicity 2, ie. was included twice.
+"""
 mutable struct MSet{T} <: AbstractSet{T}
   dict::Dict{T, Int}
   MSet{T}() where {T} = new(Dict{T,Int}())
@@ -92,14 +104,43 @@ end
 Base.union!(s::MSet, xs) = (for x=xs; push!(s,x); end; s)
 Base.union!(s::MSet, xs::AbstractArray) = (for x=xs; push!(s,x); end; s)
 
+
+@doc Markdown.doc"""
+    multiplicities(s::MSet)
+
+Return an iterator for the multiplicities of all the elements.    
+"""
 function multiplicities(s::MSet)
   return values(s.dict)
+end
+
+@doc Markdown.doc"""
+    multiplicity(s::MSet, xs)
+  
+The multiplicity of the element xs in the multi-set s - or zero if
+  xs is not in s,
+"""
+function multiplicity(s::MSet, xs)
+  if haskey(s.dict, xs)
+    return s.dict[xs]
+  else
+    return 0
+  end
 end
 
 function Base.unique(s::MSet)
   return collect(keys(s.dict))
 end
 
+function Base.setdiff(s::MSet, itrs...)
+  s = copy(s)
+  for i = itrs
+    if i in s
+      pop!(s, i)
+    end
+  end
+  return s
+end
 ############################################
 # subsets iterator
 ############################################
@@ -110,6 +151,11 @@ struct MSubSetItr{T}
   length::Int
 end
 
+@doc Markdown.doc"""
+    subsets(s::MSet)
+
+An iterator for all sub-multi-sets of `s`.    
+"""
 function subsets(s::MSet{T}) where T
   # subsets are represented by integers in a weird base
   # the distinct elements are b0...bn with mult mi
@@ -167,6 +213,13 @@ struct SubSetItr{T}
   length::Int
 end
 
+@doc Markdown.doc"""
+    subsets(s::Set)
+    subsets(s::Set, k::Int)
+
+An iterator for all sub-sets of `s`. In the second for only
+subsets of size `k` are listed.
+"""
 function subsets(s::Set{T}) where T
   # subsets are represented by integers in base 2
   b = collect(unique(s))

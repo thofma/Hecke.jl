@@ -1,8 +1,8 @@
 function factored_norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
-  b = Dict{fmpq, fmpz}()
+  b = Dict{QQFieldElem, ZZRingElem}()
   for (p, k) = A.fac
     n = norm(p)
-    add_to_key!(b, fmpq(n), k)
+    add_to_key!(b, QQFieldElem(n), k)
     #if haskey(b, n)
     #  b[n] += k
     #else
@@ -20,25 +20,25 @@ end
 
 function factored_norm(A::NfOrdFracIdl)
   n = norm(A)
-  return FacElem(Dict(fmpq(numerator(n)) => 1, fmpq(denominator(n)) => -1))
+  return FacElem(Dict(QQFieldElem(numerator(n)) => 1, QQFieldElem(denominator(n)) => -1))
 end
 
 function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-  b = Dict{fmpq, fmpz}()
+  b = Dict{QQFieldElem, ZZRingElem}()
   for (p, k) = A.fac
     if iszero(k)
       continue
     end
     n = norm(p)
     v = numerator(n)
-    add_to_key!(b, fmpq(v), k)
+    add_to_key!(b, QQFieldElem(v), k)
     #if haskey(b, v)
     #  b[v] += k
     #else
     #  b[v] = k
     #end
     v1 = denominator(n)
-    add_to_key!(b, fmpq(v1), -k)
+    add_to_key!(b, QQFieldElem(v1), -k)
     #if haskey(b, v)
     #  b[v] -= k
     #else
@@ -75,7 +75,7 @@ end
 The factored fractional ideal $a*O$.
 """
 function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
-  de = Dict{NfOrdFracIdl, fmpz}()
+  de = Dict{NfOrdFracIdl, ZZRingElem}()
   for (e, k) = a.fac
     if !iszero(k)
       I = ideal(O, e)
@@ -159,7 +159,7 @@ function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
-  D = Dict{NfOrdIdl, fmpz}()
+  D = Dict{NfOrdIdl, ZZRingElem}()
   for (I, v) = Q.fac
     if iszero(v)
       continue
@@ -222,7 +222,7 @@ end
 
 
 function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_base::Vector{NfOrdIdl})
-  ev = Dict{NfOrdIdl, fmpz}()
+  ev = Dict{NfOrdIdl, ZZRingElem}()
   if isempty(coprime_base)
     return ev
   end
@@ -234,7 +234,7 @@ function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_bas
     P = minimum(p)
     @vprint :CompactPresentation 3 "Computing valuation at an ideal lying over $P"
     assure_2_normal(p)
-    v = fmpz(0)
+    v = ZZRingElem(0)
     for (b, e) in x
       if iszero(e)
         continue
@@ -255,7 +255,7 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet}; refine::Bool = false)
   if length(x.fac) <= 1
     return nothing
   elseif all(x -> iszero(x), values(x.fac))
-    x.fac = Dict{NfOrdIdl, fmpz}()
+    x.fac = Dict{NfOrdIdl, ZZRingElem}()
     return nothing
   end
   base_x = NfOrdIdl[y for (y, v) in x if !iszero(v)]
@@ -274,7 +274,7 @@ end
 function simplify!(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   de = factor_coprime(x)
   if length(de)==0
-    de = Dict(ideal(order(base_ring(parent(x))), 1) => fmpz(1))
+    de = Dict(ideal(order(base_ring(parent(x))), 1) => ZZRingElem(1))
   end
   x.fac = Dict((i//1, k) for (i,k) = de)
 end

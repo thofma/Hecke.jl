@@ -89,7 +89,10 @@ nav:
       - Introduction: 'quad_forms/introduction.md'
       - Spaces: 'quad_forms/basics.md'
       - Lattices: 'quad_forms/lattices.md'
+      - Integer lattices: 'quad_forms/integer_lattices.md'
       - Genera for hermitian lattices: 'quad_forms/genusherm.md'
+      - Genera for integer lattices: 'quad_forms/Zgenera.md'
+      - Discriminant groups: 'quad_forms/discriminant_group.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
       - Elements:     abelian/elements.md
@@ -104,6 +107,8 @@ nav:
       - Pseudo-Matrices: pmat/introduction.md
       - Conjugacy of integral matrices: misc/conjugacy.md
       - Misc: misc.md
+    - Extra features:
+      - Macros: features/macros.md
     - References: 'references.md'
     - Examples: 'examples.md'
     - Developer:

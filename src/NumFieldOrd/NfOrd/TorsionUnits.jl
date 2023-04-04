@@ -307,7 +307,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
   end
 
   p = upper_bound + 1
-  m = fmpz(0)
+  m = ZZRingElem(0)
   stable = 0
 
   first = true
@@ -325,7 +325,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
   while true
     p = next_prime(p)
     Rp = Nemo.GF(p, cached=false)
-    Rpt, t = PolynomialRing(Rp, "t", cached=false)
+    Rpt, t = polynomial_ring(Rp, "t", cached=false)
     gp = Rpt(K.pol)
 
     if degree(gp) != degree(K) || !is_squarefree(gp)
@@ -337,18 +337,18 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     minf = minimum(lp)
 
     if first
-      m_new = fmpz(p)^minf - 1
+      m_new = ZZRingElem(p)^minf - 1
       m_new, _ = ppio(m_new, disc)
       if isodd(m_new)
         m_new = 2 * m_new
       end
       first = false
     else
-      m_new = gcd(m, powermod(fmpz(p), minf, m) - 1)
+      m_new = gcd(m, powermod(ZZRingElem(p), minf, m) - 1)
     end
 
     if m_new == 2
-      return fmpz(2)
+      return ZZRingElem(2)
     end
 
     if m_new == m
@@ -356,7 +356,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     else
       stable = 0
     end
-    if !divisible(fmpz(degree(K)), euler_phi(m_new))
+    if !divisible(ZZRingElem(degree(K)), euler_phi(m_new))
       stable = 0
     end
 
@@ -377,7 +377,7 @@ function _torsion_group_order_divisor(K::NumField)
   end
 
   p = upper_bound + 1
-  m = fmpz(0)
+  m = ZZRingElem(0)
   stable = 0
 
   first = true
@@ -389,28 +389,28 @@ function _torsion_group_order_divisor(K::NumField)
 
   while true
     p = next_prime(p)
-    if divides(numerator(d1), fmpz(p))[1] || divides(denominator(d1), fmpz(p))[1]
+    if divides(numerator(d1), ZZRingElem(p))[1] || divides(denominator(d1), ZZRingElem(p))[1]
 
     end
     lP = prime_decomposition(OK, p)
 
-    lp = fmpz[degree(x[1]) for x in lP]
+    lp = ZZRingElem[degree(x[1]) for x in lP]
 
     minf = minimum(lp)
 
     if first
-      m_new = fmpz(p)^minf - 1
+      m_new = ZZRingElem(p)^minf - 1
       m_new, _ = ppio(m_new, disc)
       if isodd(m_new)
         m_new = 2 * m_new
       end
       first = false
     else
-      m_new =  gcd(m, powermod(fmpz(p), minf, m) - 1)
+      m_new =  gcd(m, powermod(ZZRingElem(p), minf, m) - 1)
     end
 
     if m_new == 2
-      return fmpz(2)
+      return ZZRingElem(2)
     end
 
     if m_new == m
@@ -418,7 +418,7 @@ function _torsion_group_order_divisor(K::NumField)
     else
       stable = 0
     end
-    if !divisible(fmpz(absolute_degree(K)), euler_phi(m_new))
+    if !divisible(ZZRingElem(absolute_degree(K)), euler_phi(m_new))
       stable = 0
     end
 
@@ -439,11 +439,11 @@ function _torsion_units_gen(K::AnticNumberField)
   end
 
   m = _torsion_group_order_divisor(K)
-  Ky = PolynomialRing(K, "y", cached = false)[1]
+  Ky = polynomial_ring(K, "y", cached = false)[1]
   fac = factor(m).fac
   gen = K(1)
   ord = 1
-  Zx, x = PolynomialRing(FlintZZ, "x")
+  Zx, x = polynomial_ring(FlintZZ, "x")
   for (p, v) in fac
     if p == 2 && v == 1
       mul!(gen, gen, K(-1))
@@ -453,7 +453,7 @@ function _torsion_units_gen(K::AnticNumberField)
     for i = v:-1:1
       f = cyclotomic(Int(p)^i, x)
       fK = map_coefficients(K, f, parent = Ky)
-      r = _roots_hensel(fK, max_roots = 1, is_normal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
+      r = _roots_hensel(fK, max_roots = 1, is_normal = true, root_bound = ZZRingElem[one(ZZRingElem) for i in 1:(r1 + r2)])
       if length(r) > 0
         mul!(gen, gen, r[1])
         ord *= Int(p)^(i)
@@ -473,11 +473,11 @@ function _torsion_units_gen(K::NumField)
   end
 
   m = _torsion_group_order_divisor(K)
-  Ky = PolynomialRing(K, "y", cached = false)[1]
+  Ky = polynomial_ring(K, "y", cached = false)[1]
   fac = factor(m).fac
   gen = one(K)
   ord = 1
-  Zx, x = PolynomialRing(FlintZZ, "x")
+  Zx, x = polynomial_ring(FlintZZ, "x")
   for (p, v) in fac
     if p == 2 && v == 1
       mul!(gen, gen, K(-1))

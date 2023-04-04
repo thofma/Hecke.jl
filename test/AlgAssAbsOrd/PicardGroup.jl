@@ -37,7 +37,7 @@ end
   O = maximal_order(A)
   P, mP = picard_group(O)
   @test is_snf(P)
-  @test P.snf == fmpz[ 2 ]
+  @test P.snf == ZZRingElem[ 2 ]
   @test test_disc_log_picard(P, mP, O)
   I = mP(P[1])
   @test_throws ErrorException Hecke.principal_generator(I)
@@ -70,7 +70,7 @@ end
   O = Order(A, basis(A))
   P, mP = picard_group(O)
   @test is_snf(P)
-  @test P.snf == fmpz[ 3 ]
+  @test P.snf == ZZRingElem[ 3 ]
   @test test_disc_log_picard(P, mP, O)
 
   Qx, x = FlintQQ["x"]
@@ -80,7 +80,7 @@ end
   O = Order(A, basis(A))
   P, mP = picard_group(O, true)
   @test is_snf(P)
-  @test P.snf == fmpz[ 2 ]
+  @test P.snf == ZZRingElem[ 2 ]
   @test test_disc_log_picard(P, mP, O)
   I = mP(P[1])
   @test_throws ErrorException principal_generator(I)
@@ -110,10 +110,18 @@ end
   OA = Order(A, basis(A))
   UA, mUA = unit_group(OA)
   @test is_snf(UA)
-  @test UA.snf == fmpz[ 2, 0 ]
+  @test UA.snf == ZZRingElem[ 2, 0 ]
   G, GtoUK = sub(UK, [ mUK\OK(K(coefficients(elem_in_algebra(mUA(UA[i]), copy = false), copy = false))) for i = 1:ngens(UA) ])
   for i = 1:ngens(UK)
     @test haspreimage(GtoUK, UK[i])[1]
   end
 
+  A = AlgAss(x * (x^2 - 113000))
+  O = Order(A, basis(A), cached = false)
+  U, mU = unit_group(O)
+  UU, mUU = unit_group_fac_elem(O)
+  u = mUU(UU[2])
+  @test abs(norm(evaluate(u))) == 1
+  @test evaluate(u) in O
+  @test is_trivial(quo(U, [mU\(O(evaluate(mUU(u)))) for u in gens(UU)])[1])
 end

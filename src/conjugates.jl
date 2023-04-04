@@ -6,15 +6,15 @@ function is_constant(f::PolyElem)
   return f.length<2
 end
 
-function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
-  local f::fmpz_poly
-  if typeof(f_in) == fmpq_poly
+function conjugates_init(f_in::Union{ZZPolyRingElem, QQPolyRingElem})
+  local f::ZZPolyRingElem
+  if typeof(f_in) == QQPolyRingElem
     f_in = f_in*denominator(f_in)
-    gz = Array{fmpz}(undef, length(f_in))
+    gz = Array{ZZRingElem}(undef, length(f_in))
     for i = 1:f_in.length
       gz[i] = FlintZZ(numerator(coeff(f_in, i-1)))
     end
-    g = PolynomialRing(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
+    g = polynomial_ring(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
     f = g
   else
     f = f_in
@@ -56,7 +56,7 @@ function conjugates_init(f_in::Union{fmpz_poly, fmpq_poly})
   return c
 end
 
-function evaluate(f::fmpq_poly, r::BigComplex)
+function evaluate(f::QQPolyRingElem, r::BigComplex)
   #Horner - not elegant, but workable
   l = f.length-1
   s = BigComplex(BigFloat(coeff(f, l)))
@@ -66,7 +66,7 @@ function evaluate(f::fmpq_poly, r::BigComplex)
   return s
 end
 
-function evaluate(f::fmpq_poly, r::T) where T <: RingElem
+function evaluate(f::QQPolyRingElem, r::T) where T <: RingElem
   R = parent(r)
   if iszero(f)
     return zero(R)
@@ -79,7 +79,7 @@ function evaluate(f::fmpq_poly, r::T) where T <: RingElem
   return s
 end
 
-function evaluate(f::fmpz_poly, r::BigComplex)
+function evaluate(f::ZZPolyRingElem, r::BigComplex)
   #Horner - not elegant, but workable
   l = f.length-1
   s = BigComplex(coeff(f, l))
@@ -89,7 +89,7 @@ function evaluate(f::fmpz_poly, r::BigComplex)
   return s
 end
 
-function hensel_lift(f::fmpz_poly, r::BigComplex)
+function hensel_lift(f::ZZPolyRingElem, r::BigComplex)
   return r - evaluate(f, r)/evaluate(derivative(f), r)
 end
 
@@ -190,7 +190,7 @@ function minkowski_matrix(K::AnticNumberField, p::Int = 50)
 end
 
 
-function *(a::fmpz_mat, b::Matrix{BigFloat})
+function *(a::ZZMatrix, b::Matrix{BigFloat})
   s = Base.size(b)
   ncols(a) == s[1] || error("dimensions do not match")
 

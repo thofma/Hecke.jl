@@ -1,70 +1,15 @@
-mutable struct InfPlcNfAbsNS
-  field::NfAbsNS
-  index::Vector{Int}
-  absolute_index::Int
-  isreal::Bool
-  roots::Vector{acb}
-end
-
-absolute_index(P::InfPlcNfAbsNS) = P.absolute_index
-
-number_field(P::InfPlcNfAbsNS) = P.field
-
-place_type(::Type{NfAbsNS}) = InfPlcNfAbsNS
-
-place_type(::NfAbsNS) = InfPlcNfAbsNS
-
-isreal(P::InfPlcNfAbsNS) = P.isreal
-
-function real_places(K::NfAbsNS)
-  r, s = signature(K)
-  return infinite_places(K)[1:r]
-end
-
-function infinite_places(K::NfAbsNS)
-  get_attribute!(K, :infinite_places) do
-    c = conjugate_data_arb_roots(K, 32, copy = false)
-
-    res = InfPlcNfAbsNS[]
-
-    l = ngens(K)
-
-    j = 1
-
-    for v in c[2]
-      push!(res, InfPlcNfAbsNS(K, v, j, true, acb[c[1][i].roots[v[i]] for i in 1:l]))
-      j += 1
-    end
-
-    for v in c[3]
-      push!(res, InfPlcNfAbsNS(K, v, j, false, acb[c[1][i].roots[v[i]] for i in 1:l]))
-      j += 1
-    end
-
-    return res
-  end::Vector{InfPlcNfAbsNS}
-end
-
-function Base.show(io::IO, P::InfPlcNfAbsNS)
-  print(io, "Infinite place of\n")
-  print(IOContext(io, :compact => true), P.field)
-  print(io, "Corresponding to roots\n")
-  print(io, P.roots)
-end
-
 function conjugates_data_roots(K::NfAbsNS)
   cache = get_attribute(K, :conjugates_data_roots)
   if cache !== nothing
     return cache
   end
-  pols = fmpq_poly[to_univariate(Globals.Qx, x) for x in K.pol]
+  pols = QQPolyRingElem[to_univariate(Globals.Qx, x) for x in K.pol]
   ctxs = acb_root_ctx[acb_root_ctx(x) for x in pols]
   set_attribute!(K, :conjugates_data_roots => ctxs)
   return ctxs
 end
 
 function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
-
   cache = get_attribute(K, :conjugates_data)
   if cache !== nothing
     if haskey(cache, p)
@@ -174,7 +119,6 @@ end
 
 
 function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
-
   K = parent(a)
   conjs, ind_real, ind_complex = conjugate_data_arb_roots(K, work_tol)
   res = Vector{acb}(undef, degree(K))
@@ -199,7 +143,7 @@ function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
   return res
 end
 
-function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
+function _evaluate(f::QQMPolyRingElem, vals::Vector{acb})
   S = parent(vals[1])
   powers = [Dict{Int, acb}() for i in 1:length(vals)]
   r = acb[zero(S)]
@@ -233,10 +177,6 @@ function _evaluate(f::fmpq_mpoly, vals::Vector{acb})
   return r[1]
 end
 
-function evaluate(a::NfAbsNSElem, P::InfPlcNfAbsNS, prec::Int)
-  return conjugates(a, prec)[absolute_index(P)]
-end
-
 function signature(K::NfAbsNS)
   if K.signature[1] != -1
     return K.signature
@@ -247,4 +187,3 @@ function signature(K::NfAbsNS)
   K.signature = (r, s)
   return (r, s)
 end
-

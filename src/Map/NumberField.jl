@@ -1,4 +1,4 @@
-export extend, NfToNfMor, automorphisms, automorphism_group
+export extend, NfToNfMor, automorphism_group
 
 struct NfMorSet{T}
   field::T
@@ -16,7 +16,7 @@ function parent(f::NumFieldMor)
 end
 
 function image(f::NumFieldMor, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
-  D = Dict{elem_type(codomain(f)), fmpz}(f(b) => e for (b, e) in a)
+  D = Dict{elem_type(codomain(f)), ZZRingElem}(f(b) => e for (b, e) in a)
   return FacElem(D)
 end
 
@@ -53,7 +53,7 @@ mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpG
 end
 
 function GrpGenToNfMorSet(G::GrpGen, K::NumField)
-  return GrpGenToNfMorSet(automorphisms(K), G, NfMorSet(K))
+  return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
 function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFieldMor
@@ -82,7 +82,7 @@ function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
 end
 
 
-function evaluate(f::fmpq_poly, a::nf_elem)
+function evaluate(f::QQPolyRingElem, a::nf_elem)
   #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
   if iszero(f)
@@ -125,7 +125,7 @@ function is_normal(K::AnticNumberField)
   if !fl
     return false
   end
-  if length(automorphisms(K, copy = false)) != degree(K)
+  if length(automorphism_list(K, copy = false)) != degree(K)
     set_attribute!(K, :is_normal => false)
     return false
   else
@@ -141,7 +141,7 @@ function is_normal_easy(K::AnticNumberField)
   while ind < 15
     p = next_prime(p)
     F = GF(p, cached = false)
-    Fx = PolynomialRing(F, cached = false)[1]
+    Fx = polynomial_ring(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
@@ -163,7 +163,7 @@ function is_normal_easy(K::AnticNumberField)
   return true
 end
 
-is_normal(K::NumField) = length(automorphisms(K)) == degree(K)
+is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 
 ################################################################################
 #
@@ -185,7 +185,7 @@ function is_cm_field(K::NumField)
     return false, id_hom(K)
   end
   if is_automorphisms_known(K)
-    auts = automorphisms(K, copy = false)
+    auts = automorphism_list(K, copy = false)
     return _find_complex_conj(auts)
   end
   if !is_cm_field_easy(K)
@@ -196,7 +196,7 @@ function is_cm_field(K::NumField)
   if res || fl
     return res, cm
   else
-    auts = automorphisms(K, copy = false)
+    auts = automorphism_list(K, copy = false)
     return _find_complex_conj(auts)
   end
 end
@@ -267,7 +267,7 @@ end
 #
 ################################################################################
 
-function _evaluate_mod(f::fmpq_poly, a::nf_elem, d::fmpz)
+function _evaluate_mod(f::QQPolyRingElem, a::nf_elem, d::ZZRingElem)
   #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
   if iszero(f)
@@ -287,10 +287,15 @@ end
 
 (f::NfToNfMor)(x::NfOrdIdl) = induce_image(f, x)
 
-function induce_image(f::NfToNfMor, x::NfOrdIdl)
+function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
   K = domain(f)
   if K != codomain(f)
-    OK = maximal_order(codomain(f))
+    if target == false
+      OK = maximal_order(codomain(f))
+    else
+      OK = target
+      @assert nf(OK) == codomain(f)
+    end
     @assert is_maximal(order(x))
     assure_2_normal(x)
     I = ideal(OK, x.gen_one, OK(f(x.gen_two.elem_in_nf)))
@@ -298,13 +303,15 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
     return I
   end
 
+  OK = order(x)
+  @assert target == false || OK === target
+
   if isone(x)
     return x
   end
 
-  OK = order(x)
   K = nf(OK)
- if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
+  if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
     int_in_ideal = x.gen_one
     if has_minimum(x)
       int_in_ideal = minimum(x, copy = false)
@@ -336,6 +343,10 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl)
       I.princ_gen = OK(f(K(x.princ_gen)))
     end
   end
+  if isdefined(x, :princ_gen_fac_elem)
+    I.princ_gen_fac_elem = f(x.princ_gen_fac_elem)
+  end
+
   for i in [:gen_one, :is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :iszero, :minimum, :norm, :splitting_type]
     if isdefined(x, i)
@@ -365,8 +376,8 @@ end
 function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   OK = order(P)
   K = nf(OK)
-  R = ResidueRing(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
-  Rx = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
+  Rx = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rx(K.pol)
   prim_img = Rx(image_primitive_element(f))
   gen_two = Rx(P.gen_two.elem_in_nf)
@@ -375,6 +386,9 @@ function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   res = ideal(OK, minimum(P), new_gen)
   if isdefined(P, :princ_gen)
     res.princ_gen = OK(f(K(P.princ_gen)), false)
+  end
+  if isdefined(P, :princ_gen_fac_elem)
+    res.princ_gen_fac_elem = f(P.princ_gen_fac_elem)
   end
   for i in [:is_prime, :gens_normal, :gens_weakly_normal, :is_principal,
           :minimum, :norm, :splitting_type]
@@ -394,10 +408,10 @@ end
 # Embedding of a number field into an algebra over Q.
 mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAbsToAbsAlgAssMor}
   header::MapHeader{AnticNumberField, S}
-  mat::fmpq_mat
-  t::fmpq_mat
+  mat::QQMatrix
+  t::QQMatrix
 
-  function NfAbsToAbsAlgAssMor{S}(K::AnticNumberField, A::S, M::fmpq_mat) where { S <: AbsAlgAss{fmpq} }
+  function NfAbsToAbsAlgAssMor{S}(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
     z = new{S}()
     z.mat = M
     z.t = zero_matrix(FlintQQ, 1, degree(K))
@@ -415,7 +429,7 @@ mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAb
   end
 end
 
-function NfAbsToAbsAlgAssMor(K::AnticNumberField, A::S, M::fmpq_mat) where { S <: AbsAlgAss{fmpq} }
+function NfAbsToAbsAlgAssMor(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
   return NfAbsToAbsAlgAssMor{S}(K, A, M)
 end
 
@@ -447,13 +461,13 @@ function is_involution(f::NfToNfMor)
     return false
   end
   p = 2
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = ResidueRing(FlintZZ, p, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, p, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   i = 2
@@ -474,13 +488,13 @@ function _order(f::NfToNfMor)
     return 1
   end
   p = 2
-  R = ResidueRing(FlintZZ, p, cached = false)
-  Rt = PolynomialRing(R, "t", cached = false)[1]
+  R = residue_ring(FlintZZ, p, cached = false)
+  Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = ResidueRing(FlintZZ, p, cached = false)
-    Rt = PolynomialRing(R, "t", cached = false)[1]
+    R = residue_ring(FlintZZ, p, cached = false)
+    Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   i = 2
@@ -507,27 +521,27 @@ function small_generating_set(G::Vector{NfToNfMor})
 	K = domain(G[1])
 	p = 2
   R = GF(p, cached = false)
-	Rx = PolynomialRing(R, "x", cached = false)[1]
+	Rx = polynomial_ring(R, "x", cached = false)[1]
 	while iszero(discriminant(Rx(K.pol)))
 		p = next_prime(p)
 	  R = GF(p, cached = false)
-		Rx = PolynomialRing(R, "x", cached = false)[1]
+		Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
 
-  given_gens = gfp_poly[Rx(image_primitive_element(x)) for x in G]
+  given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
 	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
   # First try one element
 
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
-    if length(closure(gfp_poly[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+    if length(closure(fpPolyRingElem[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return NfToNfMor[trygen]
     end
   end
 
   for i in 1:secondtry
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
-    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
+    gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -535,7 +549,7 @@ function small_generating_set(G::Vector{NfToNfMor})
 
   for i in 1:thirdtry
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
-    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
+    gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -553,7 +567,7 @@ function small_generating_set(G::Vector{NfToNfMor})
     end
     j = j + 1
     gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
-    gens_mod = gfp_poly[Rx(image_primitive_element(x)) for x in gens]
+    gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
     end
@@ -564,13 +578,13 @@ function _order(G::Vector{NfToNfMor})
   K = domain(G[1])
 	p = 2
   R = GF(p, cached = false)
-	Rx = PolynomialRing(R, "x", cached = false)[1]
+	Rx = polynomial_ring(R, "x", cached = false)[1]
 	while iszero(discriminant(Rx(K.pol)))
 		p = next_prime(p)
 	  R = GF(p, cached = false)
-		Rx = PolynomialRing(R, "x", cached = false)[1]
+		Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
-  given_gens = gfp_poly[Rx(image_primitive_element(x)) for x in G]
+  given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
 	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
 end
 
@@ -589,7 +603,7 @@ function frobenius_automorphism(P::NfOrdIdl)
   @assert is_normal(K)
   K = nf(OK)
   auts = decomposition_group(P)
-  F, mF = ResidueField(OK, P)
+  F, mF = residue_field(OK, P)
   p = minimum(P, copy = false)
   genF = elem_in_nf(mF\gen(F))
   powgen = gen(F)^p

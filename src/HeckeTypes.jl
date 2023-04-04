@@ -7,9 +7,24 @@
 export NonSimpleNumField
 
 export NonSimpleNumFieldElem
+"""
+    NonSimpleNumField{T}
 
+Common, abstract, overtype for all number fields that are (by type) generated
+by more than one generator. `T` is the type of the elements of the coefficient field.
+Typical example is a bi-quadratic field:
+    QQ[sqrt 2, sqrt 3]
+It can be converted to a simple extension (with maps), see e.g. 
+`absolute_simple_field` or `simple_extension`.
+"""
 abstract type NonSimpleNumField{T} <: NumField{T} end
 
+"""
+    NonSimpleNumFieldElem{T}
+
+Common, abstract, overtype for elements of non-simple number fields, see
+`NonSimpleNumField`
+"""
 abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
 
 ################################################################################
@@ -20,6 +35,12 @@ abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
 
 export NumFieldOrd, NumFieldOrdElem
 
+"""
+    NumFieldOrd
+
+Abstract overtype for all orders in number fields. An order is a unitary
+subring that has the same ZZ-dimension as the QQ-dimension of the field.
+"""
 abstract type NumFieldOrd <: Ring end
 
 abstract type NumFieldOrdElem <: RingElem end
@@ -31,27 +52,22 @@ abstract type NumFieldOrdElem <: RingElem end
 ################################################################################
 
 export NumFieldOrdIdl, NumFieldOrdFracIdl
+"""
+    NumFieldOrdIdl
 
+Common, abstract, type for all integral ideals in orders. See also
+`NumFieldOrd`.
+"""
 abstract type NumFieldOrdIdl end
+
+"""
+    NumFieldOrdFracIdl
+
+Common, abstract, type for all fractional ideals in orders, fractional
+ideals are, as a set, just an integral ideal divided by some integer. See also
+`NumFieldOrd`.
+"""
 abstract type NumFieldOrdFracIdl end
-
-################################################################################
-#
-#  Z/nZ modelled with UInt's
-#
-################################################################################
-
-struct nmod_struct
-  n::UInt    # mp_limb_t
-  ninv::UInt # mp_limb_t
-  norm::UInt # mp_limb_t
-end
-
-mutable struct nmod_struct_non
-  n::UInt    # mp_limb_t
-  ninv::UInt # mp_limb_t
-  norm::UInt # mp_limb_t
-end
 
 ################################################################################
 #
@@ -173,10 +189,10 @@ mutable struct fmpz_preinvn_struct
   n::Int
   norm::Int
 
-  function fmpz_preinvn_struct(f::fmpz)
+  function fmpz_preinvn_struct(f::ZZRingElem)
     z = new()
     ccall((:fmpz_preinvn_init, libflint), Nothing,
-          (Ref{fmpz_preinvn_struct}, Ref{fmpz}), z, f)
+          (Ref{fmpz_preinvn_struct}, Ref{ZZRingElem}), z, f)
     finalizer(_fmpz_preinvn_struct_clear_fn, z)
     return z
   end
@@ -196,7 +212,7 @@ struct acb_roots
 end
 
 mutable struct acb_root_ctx
-  poly::fmpq_poly
+  poly::QQPolyRingElem
   _roots::Ptr{acb_struct}
   prec::Int
   roots::Vector{acb}
@@ -204,7 +220,7 @@ mutable struct acb_root_ctx
   complex_roots::Vector{acb}
   signature::Tuple{Int, Int}
 
-  function acb_root_ctx(x::fmpq_poly, p::Int = 32)
+  function acb_root_ctx(x::QQPolyRingElem, p::Int = 32)
     z = new()
     z.roots = _roots(x, p, p)
     z.poly = x
@@ -275,7 +291,11 @@ end
 ################################################################################
 
 const SRowSpaceDict = IdDict()
+"""
+    SRowSpace
 
+Parent type for rows of sparse matrices.
+"""
 mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
@@ -286,6 +306,12 @@ mutable struct SRowSpace{T} <: Ring
   end
 end
 
+"""
+    SRow{T}
+
+Type for rows of sparse matrices, to create one use
+`sparse_row`
+"""
 mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
   base_ring
@@ -359,6 +385,12 @@ end
 
 const SMatSpaceDict = IdDict()
 
+"""
+    SMatSpace
+
+Parent for sparse matrices. Usually only created from a sparse matrix
+via a call to parent.
+"""
 mutable struct SMatSpace{T} <: Ring
   rows::Int
   cols::Int
@@ -371,6 +403,11 @@ mutable struct SMatSpace{T} <: Ring
   end
 end
 
+"""
+    SMat{T}
+
+Type of sparse matrices, to create one use `sparse_matrix`.
+"""
 mutable struct SMat{T}
   r::Int
   c::Int
@@ -406,22 +443,22 @@ end
 #
 ################################################################################
 
-# now that x is a fmpz_mat, the type for x is not really used
+# now that x is a ZZMatrix, the type for x is not really used
 mutable struct enum_ctx{Tx, TC, TU}
-  G::fmpz_mat
+  G::ZZMatrix
   n::Int
   limit::Int # stop recursion at level limit, defaults to n
   d::IntegerUnion #we actually want G/d
-  C::Matrix{TC} # the pseudo-cholesky form - we don't have fmpq_mat
+  C::Matrix{TC} # the pseudo-cholesky form - we don't have QQMatrix
   last_non_zero::Int
-  x::fmpz_mat # 1 x n
+  x::ZZMatrix # 1 x n
   U::Vector{TU}
   L::Vector{TU}
   l::Vector{TU}
   tail::Vector{TU}
-  c::fmpz # the length of the elements we want
-  t::fmpz_mat # if set, a transformation to be applied to all elements
-  t_den::fmpz
+  c::ZZRingElem # the length of the elements we want
+  t::ZZMatrix # if set, a transformation to be applied to all elements
+  t_den::ZZRingElem
   cnt::Int
 
   function enum_ctx{Tx, TC, TU}() where {Tx, TC, TU}
@@ -437,8 +474,8 @@ end
 
 mutable struct EnumCtxArb
   G::arb_mat
-  L::Vector{fmpz_mat}
-  x::fmpz_mat
+  L::Vector{ZZMatrix}
+  x::ZZMatrix
   p::Int
 
   function EnumCtxArb(G::arb_mat)
@@ -471,9 +508,16 @@ end
 
 const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 
+"""
+    FakeFmpqMat
+
+A container type for a pair: an integer matrix (fmpz_mat) and an integer
+denominator.
+Used predominantly to represent bases of orders in absolute number fields.
+"""
 mutable struct FakeFmpqMat
-  num::fmpz_mat
-  den::fmpz
+  num::ZZMatrix
+  den::ZZRingElem
   rows::Int
   cols::Int
 
@@ -482,7 +526,7 @@ mutable struct FakeFmpqMat
     return z
   end
 
-  function FakeFmpqMat(x::fmpz_mat, y::fmpz, simplified::Bool = false)
+  function FakeFmpqMat(x::ZZMatrix, y::ZZRingElem, simplified::Bool = false)
     z = new()
     z.num = x
     z.den = y
@@ -494,7 +538,7 @@ mutable struct FakeFmpqMat
     return z
   end
 
-  function FakeFmpqMat(x::Tuple{fmpz_mat, fmpz}, simplified::Bool = false)
+  function FakeFmpqMat(x::Tuple{ZZMatrix, ZZRingElem}, simplified::Bool = false)
     z = new()
     z.num = x[1]
     z.den = x[2]
@@ -507,7 +551,7 @@ mutable struct FakeFmpqMat
   end
 
   # TODO: Maybe this should be a copy option
-  function FakeFmpqMat(x::fmpz_mat)
+  function FakeFmpqMat(x::ZZMatrix)
     z = new()
     z.num = x
     z.den = one(FlintZZ)
@@ -516,7 +560,7 @@ mutable struct FakeFmpqMat
     return z
   end
 
-  function FakeFmpqMat(x::fmpq_mat)
+  function FakeFmpqMat(x::QQMatrix)
     z = new()
     z.rows = nrows(x)
     z.cols = ncols(x)
@@ -536,6 +580,11 @@ end
 #
 ################################################################################
 
+"""
+    FacElemMon{S}
+
+Parent for factored elements, ie. power products.
+"""
 mutable struct FacElemMon{S} <: Ring
   base_ring::S  # for the base
   basis_conjugates_log::Dict{RingElem, Tuple{Int, Vector{arb}}}
@@ -544,12 +593,11 @@ mutable struct FacElemMon{S} <: Ring
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
     return get_cached!(FacElemMonDict, R, cached) do
-      z = new()
-      z.base_ring = R
-      z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
-      z.basis_conjugates = Dict{RingElem, Vector{arb}}()
-      z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
-      return z
+      new{S}(R,
+        Dict{RingElem, Vector{arb}}(),
+        Dict{RingElem, Vector{arb}}(),
+        Dict{Int, Dict{nf_elem, Vector{arb}}}()
+        )
     end::FacElemMon{S}
   end
 
@@ -561,11 +609,11 @@ mutable struct FacElemMon{S} <: Ring
       F = get_attribute(R, :fac_elem_mon)::FacElemMon{AnticNumberField}
       return F
     end
-    z = new{AnticNumberField}()
-    z.base_ring = R
-    z.basis_conjugates_log = Dict{RingElem, Vector{arb}}()
-    z.basis_conjugates = Dict{RingElem, Vector{arb}}()
-    z.conj_log_cache = Dict{Int, Dict{nf_elem, Vector{arb}}}()
+    z = new{AnticNumberField}(R,
+      Dict{RingElem, Vector{arb}}(),
+      Dict{RingElem, Vector{arb}}(),
+      Dict{Int, Dict{nf_elem, Vector{arb}}}()
+      )
     if cached
       set_attribute!(R, :fac_elem_mon => z)
     end
@@ -575,14 +623,21 @@ end
 
 FacElemMon(R::S) where {S} = FacElemMon{S}(R)
 
+"""
+    FacElem{B, S}
+
+Type for factored elements, that is elements of the form
+    prod a_i^k_i
+for elements `a_i` of type `B` in a ring of type `S`.
+"""
 mutable struct FacElem{B, S}
-  fac::Dict{B, fmpz}
+  fac::Dict{B, ZZRingElem}
   hash::UInt
   parent::FacElemMon{S}
 
   function FacElem{B, S}() where {B, S}
     z = new{B, S}()
-    z.fac = Dict{B, fmpz}()
+    z.fac = Dict{B, ZZRingElem}()
     z.hash = UInt(0)
     return z
   end
@@ -620,40 +675,41 @@ export NfOrd, NfAbsOrd
   basis_nf::Vector{T}        # Basis as array of number field elements
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
   basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of K
-  basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
-  gen_index::fmpq                  # The det of basis_mat_inv as fmpq
-  index::fmpz                      # The det of basis_mat_inv
-                                   # (this is the index of the equation order
-                                   #  in the given order)
-  disc::fmpz                       # Discriminant
-  is_equation_order::Bool           # Equation order of ambient number field?
+  basis_mat_inv::FakeFmpqMat          # Inverse of basis matrix
+  gen_index::fmpq                     # The det of basis_mat_inv as fmpq
+  index::fmpz                         # The det of basis_mat_inv
+                                      # (this is the index of the equation order
+                                      #  in the given order)
+  disc::fmpz                          # Discriminant
+  is_equation_order::Bool             # Equation order of ambient number field?
+
 
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
-  minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
-  minkowski_gram_CMfields::fmpz_mat
+  minkowski_gram_mat_scaled::Tuple{ZZMatrix, Int} # Minkowski matrix - gram * 2^prec and rounded
+  minkowski_gram_CMfields::ZZMatrix
   complex_conjugation_CM::Map
 
   torsion_units#::Tuple{Int, NfAbsOrdElem}
 
-  is_maximal::Int                   # 0 Not known
+  is_maximal::Int                  # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
 
-  primesofmaximality::Vector{fmpz} # primes at the which the order is known to
+  primesofmaximality::Vector{ZZRingElem} # primes at the which the order is known to
                                    # to be maximal
 
   norm_change_const::Tuple{BigFloat, BigFloat}
                                    # Tuple c1, c2 as in the paper of
                                    # Fieker-Friedrich
-  trace_mat::fmpz_mat              # The trace matrix (if known)
+  trace_mat::ZZMatrix              # The trace matrix (if known)
 
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
                                    # and den.
-  tcontain_fmpz::fmpz              # Temporary variable for _check_elem_in_order
-  tcontain_fmpz2::fmpz             # Temporary variable for _check_elem_in_order
-  tidempotents::fmpz_mat           # Temporary variable for idempotents()
+  tcontain_fmpz::ZZRingElem              # Temporary variable for _check_elem_in_order
+  tcontain_fmpz2::ZZRingElem             # Temporary variable for _check_elem_in_order
+  tidempotents::ZZMatrix           # Temporary variable for idempotents()
 
-  index_div::Dict{fmpz, Vector}       # the index divisor splitting
+  index_div::Dict{fmpz, Vector}    # the index divisor splitting
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
 
@@ -664,15 +720,15 @@ export NfOrd, NfAbsOrd
     r = new{S, elem_type(S)}()
     r.nf = a
     #r.signature = (-1,0)
-    r.primesofmaximality = Vector{fmpz}()
+    r.primesofmaximality = Vector{ZZRingElem}()
     #r.norm_change_const = (-1.0, -1.0)
     r.is_equation_order = false
     r.is_maximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
-    r.tcontain_fmpz = fmpz()
-    r.tcontain_fmpz2 = fmpz()
+    r.tcontain_fmpz = ZZRingElem()
+    r.tcontain_fmpz2 = ZZRingElem()
     r.tidempotents = zero_matrix(FlintZZ, 1 + 2*degree(a), 1 + 2*degree(a))
-    r.index_div = Dict{fmpz, Any}()
+    r.index_div = Dict{ZZRingElem, Any}()
     return r
   end
 
@@ -736,7 +792,7 @@ export NfAbsOrdElem
 
 mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
   elem_in_nf::T
-  coordinates::Vector{fmpz}
+  coordinates::Vector{ZZRingElem}
   has_coord::Bool
   parent::NfAbsOrd{S, T}
 
@@ -744,7 +800,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     z = new{S, T}()
     z.parent = O
     z.elem_in_nf = nf(O)()
-    z.coordinates = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{ZZRingElem}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -752,13 +808,13 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
   function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
     z = new{S, T}()
     z.elem_in_nf = a
-    z.coordinates = Vector{fmpz}(undef, degree(O))
+    z.coordinates = Vector{ZZRingElem}(undef, degree(O))
     z.parent = O
     z.has_coord = false
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
     z.parent = O
     z.elem_in_nf = a
@@ -767,7 +823,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::fmpz_mat) where {S, T}
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::ZZMatrix) where {S, T}
     (nrows(arr) > 1 && ncols(arr) > 1) &&
         error("Matrix must have 1 row or 1 column")
 
@@ -783,7 +839,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
     z.elem_in_nf = dot(O.basis_nf, arr)
     z.has_coord = true
@@ -805,17 +861,17 @@ NfAbsOrdElem(O::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdElem{S, T}(O)
 
 NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T) where {S, T} = NfAbsOrdElem{S, T}(O, a)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T} = NfAbsOrdElem{S, T}(O, a, arr)
+NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T, arr::Vector{ZZRingElem}) where {S, T} = NfAbsOrdElem{S, T}(O, a, arr)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
+NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::fmpz_mat) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
+NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::ZZMatrix) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
 
 NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{U}) where {S, T, U <: Integer} = NfAbsOrdElem{S, T}(O, arr)
 
 #NfAbsOrdElem(O::NfAbsOrd{S, T}, p::Integer) where {S, T} = NfAbsOrdElem{S, T}(O, p)
 
-#NfAbsOrdElem(O::NfAbsOrd{S, T}, p::fmpz) where {S, T} = NfAbsOrdElem{S, T}(O, p)
+#NfAbsOrdElem(O::NfAbsOrd{S, T}, p::ZZRingElem) where {S, T} = NfAbsOrdElem{S, T}(O, p)
 
 const NfOrdElem = NfAbsOrdElem{AnticNumberField, nf_elem}
 
@@ -848,17 +904,17 @@ const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
 const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
 @doc Markdown.doc"""
-    NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
+    NfOrdIdl(O::NfOrd, a::ZZMatrix) -> NfOrdIdl
 
     Creates the ideal of $O$ with basis matrix $a$.
     No sanity checks. No data is copied, $a$ should not be used anymore.
 
-  NfOrdIdl(a::fmpz, b::NfOrdElem) -> NfOrdIdl
+  NfOrdIdl(a::ZZRingElem, b::NfOrdElem) -> NfOrdIdl
 
     Creates the ideal $(a,b)$ of the order of $b$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
 
-  NfOrdIdl(O::NfOrd, a::fmpz, b::nf_elem) -> NfOrdIdl
+  NfOrdIdl(O::NfOrd, a::ZZRingElem, b::nf_elem) -> NfOrdIdl
 
     Creates the ideal $(a,b)$ of $O$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
@@ -872,25 +928,25 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 @attributes mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
   order::NfAbsOrd{S, T}
   basis::Vector{NfAbsOrdElem{S, T}}
-  basis_matrix::fmpz_mat
+  basis_matrix::ZZMatrix
   basis_mat_inv::FakeFmpqMat
-  lll_basis_matrix::fmpz_mat
-  gen_one::fmpz
+  lll_basis_matrix::ZZMatrix
+  gen_one::ZZRingElem
   gen_two::NfAbsOrdElem{S, T}
   gens_short::Bool
-  gens_normal::fmpz
+  gens_normal::ZZRingElem
   gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
                            # weaker than normality - at least potentially
-  norm::fmpz
-  minimum::fmpz
+  norm::ZZRingElem
+  minimum::ZZRingElem
   is_prime::Int            # 0: don't know
                            # 1 known to be prime
                            # 2 known to be not prime
-  iszero::Int             # as above
+  iszero::Int              # as above
   is_principal::Int        # as above
   princ_gen::NfAbsOrdElem{S, T}
   princ_gen_fac_elem::FacElem{T, S}
-  princ_gen_special::Tuple{Int, Int, fmpz}
+  princ_gen_special::Tuple{Int, Int, ZZRingElem}
                            # Check if the ideal is generated by an integer
                            # First entry encodes the following:
                            # 0: don't know
@@ -907,8 +963,8 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
   ## For residue fields of non-index divisors
   prim_elem::NfAbsOrdElem{S, T}
-  min_poly_prim_elem::fmpz_poly  # minimal polynomial modulo P
-  basis_in_prim::Vector{fmpz_mat} #
+  min_poly_prim_elem::ZZPolyRingElem  # minimal polynomial modulo P
+  basis_in_prim::Vector{ZZMatrix} #
 
   function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}) where {S, T}
     # populate the bits types (Bool, Int) with default values
@@ -923,7 +979,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::fmpz_mat) where {S, T}
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::ZZMatrix) where {S, T}
     # create ideal of O with basis_matrix a
     # Note that the constructor 'destroys' a, a should not be used anymore
     r = NfAbsOrdIdl(O)
@@ -931,7 +987,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(a::fmpz, b::NfAbsOrdElem{S, T}) where {S, T}
+  function NfAbsOrdIdl{S, T}(a::ZZRingElem, b::NfAbsOrdElem{S, T}) where {S, T}
     # create ideal (a,b) of order(b)
     r = NfAbsOrdIdl(parent(b))
     r.gen_one = a
@@ -939,7 +995,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::fmpz, b::nf_elem) where {S, T}
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::ZZRingElem, b::nf_elem) where {S, T}
     # create ideal (a,b) of O
     r = NfAbsOrdIdl(a, O(b, false))
     return r
@@ -978,17 +1034,17 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     C.princ_gen = O(x)
     C.princ_gen_fac_elem = FacElem(nf(O)(x))
     C.is_principal = 1
-    C.princ_gen_special = (1, abs(x), fmpz(0))
-    C.gen_one = fmpz(x)
+    C.princ_gen_special = (1, abs(x), ZZRingElem(0))
+    C.gen_one = ZZRingElem(x)
     C.gen_two = O(x)
-    C.norm = fmpz(abs(x))^degree(O)
-    C.minimum = fmpz(abs(x))
-    C.gens_normal = fmpz(x)
+    C.norm = ZZRingElem(abs(x))^degree(O)
+    C.minimum = ZZRingElem(abs(x))
+    C.gens_normal = ZZRingElem(x)
     C.gens_weakly_normal = true
     return C
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, x::fmpz) where {S, T}
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, x::ZZRingElem) where {S, T}
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     C = NfAbsOrdIdl(O)
@@ -1006,17 +1062,17 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
   end
 end
 
-NfAbsOrdIdl(a::fmpz, b::NfAbsOrdElem{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(a, b)
+NfAbsOrdIdl(a::ZZRingElem, b::NfAbsOrdElem{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(a, b)
 
 NfAbsOrdIdl(O::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(O)
 
 NfAbsOrdIdl(a::NfAbsOrdElem{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(a)
 
-NfAbsOrdIdl(O::NfAbsOrd{S, T}, a::fmpz_mat) where {S, T} = NfAbsOrdIdl{S, T}(O, a)
+NfAbsOrdIdl(O::NfAbsOrd{S, T}, a::ZZMatrix) where {S, T} = NfAbsOrdIdl{S, T}(O, a)
 
 NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::Int) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
 
-NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::fmpz) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
+NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::ZZRingElem) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
 
 const NfOrdIdl = NfAbsOrdIdl{AnticNumberField, nf_elem}
 
@@ -1041,8 +1097,8 @@ const NfAbsOrdFracIdlSetID = Dict{NfAbsOrd, NfAbsOrdFracIdlSet}()
 mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
   order::NfAbsOrd{S, T}
   num::NfAbsOrdIdl{S, T}
-  den::fmpz
-  norm::fmpq
+  den::ZZRingElem
+  norm::QQFieldElem
   basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
 
@@ -1052,7 +1108,7 @@ mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
     return z
   end
 
-  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::NfAbsOrdIdl{S, T}, b::fmpz) where {S, T}
+  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::NfAbsOrdIdl{S, T}, b::ZZRingElem) where {S, T}
     z = new{S, T}()
     z.order = O
     b = abs(b)
@@ -1069,7 +1125,7 @@ mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
     return z
   end
 
-  function NfAbsOrdFracIdl{S, T}(x::NfAbsOrdIdl{S, T}, y::fmpz) where {S, T}
+  function NfAbsOrdFracIdl{S, T}(x::NfAbsOrdIdl{S, T}, y::ZZRingElem) where {S, T}
     z = new{S, T}()
     z.order = order(x)
     z.num = x
@@ -1093,7 +1149,7 @@ function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}) where {S, T}
 end
 
 function NfAbsOrdFracIdl(O::NfAbsOrd{S, T},
-                         a::NfAbsOrdIdl{S, T}, b::fmpz) where {S, T}
+                         a::NfAbsOrdIdl{S, T}, b::ZZRingElem) where {S, T}
   return NfAbsOrdFracIdl{S, T}(O, a, b)
 end
 
@@ -1101,7 +1157,7 @@ function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}, a::FakeFmpqMat) where {S, T}
   return NfAbsOrdFracIdl{S, T}(O, a)
 end
 
-function NfAbsOrdFracIdl(x::NfAbsOrdIdl{S, T}, y::fmpz) where {S, T}
+function NfAbsOrdFracIdl(x::NfAbsOrdIdl{S, T}, y::ZZRingElem) where {S, T}
   return NfAbsOrdFracIdl{S, T}(x, y)
 end
 
@@ -1202,7 +1258,7 @@ mutable struct BigComplex
     return BigComplex(BigFloat(r))
   end
 
-  function BigComplex(r::fmpz)
+  function BigComplex(r::ZZRingElem)
     return BigComplex(BigFloat(BigInt(r)))
   end
 
@@ -1229,7 +1285,7 @@ end
 ################################################################################
 
 mutable struct roots_ctx
-  f::fmpz_poly
+  f::ZZPolyRingElem
   r_d::Vector{BigComplex}  # the 1st r1 ones will be real
   r::Vector{BigComplex}    # the complexes and at the end, the conjugated
   r1::Int
@@ -1240,8 +1296,8 @@ mutable struct roots_ctx
   minkowski_mat_p::Int
 
   cache::Matrix{BigFloat} # to avoid allocation elsewhere.
-  cache_z1::fmpz_mat
-  cache_z2::fmpz_mat
+  cache_z1::ZZMatrix
+  cache_z2::ZZMatrix
   function roots_ctx()
     r = new()
     return r
@@ -1263,13 +1319,13 @@ mutable struct _RealRing
   t1::BigFloat
   t2::BigFloat
   z1::BigInt
-  zz1::fmpz
+  zz1::ZZRingElem
   function _RealRing()
     r = new()
     r.t1 = BigFloat(0)
     r.t2 = BigFloat(0)
     r.z1 = BigInt(0)
-    r.zz1 = fmpz(0)
+    r.zz1 = ZZRingElem(0)
     return r
   end
 end
@@ -1335,21 +1391,21 @@ end
 ################################################################################
 
 mutable struct FactorBaseSingleP{T}
-  P::fmpz
+  P::ZZRingElem
   pt::FactorBase{T}
   lp::Vector{Tuple{Int,NfOrdIdl}}
   lf::Vector{T}
   doit::Function
 
-  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
-    Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) 
+    Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::fmpz, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
-    Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)[1]
+  function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}}) 
+    Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
@@ -1374,7 +1430,7 @@ mutable struct FactorBaseSingleP{T}
   end
 end
 
-function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
+function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::QQFieldElem = QQFieldElem(0))
   if !isdefined(sP, :lf)
     return fb_naive_doit(a, v, sP, no)
   end
@@ -1385,7 +1441,7 @@ function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
   return fb_naive_doit(a, v, sP, no)
 end
 
-function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
+function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::QQFieldElem = QQFieldElem(0))
   lp = sP.lp
   r = Vector{Tuple{Int, Int}}()
   for x=1:length(lp)
@@ -1428,15 +1484,15 @@ function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
 end
 
 mutable struct NfFactorBase
-  fb::Dict{fmpz, FactorBaseSingleP}
+  fb::Dict{ZZRingElem, FactorBaseSingleP}
   size::Int
-  fb_int::FactorBase{fmpz}
+  fb_int::FactorBase{ZZRingElem}
   ideals::Vector{NfOrdIdl}
   rw::Vector{Int}
   mx::Int
 
   function NfFactorBase()
-    r = new(Dict{fmpz, Vector{Tuple{Int, NfOrdIdl}}}())
+    r = new(Dict{ZZRingElem, Vector{Tuple{Int, NfOrdIdl}}}())
     r.size = 0
     return r
   end
@@ -1450,15 +1506,15 @@ end
 ################################################################################
 
 mutable struct ModuleCtxNmod
-  R::NmodRing
-  basis::SMat{nmod}
-  gens::SMat{nmod}
+  R::zzModRing
+  basis::SMat{zzModRingElem}
+  gens::SMat{zzModRingElem}
 
   function ModuleCtxNmod()
     return new()
   end
 
-  function ModuleCtxNmod(R::NmodRing, dim::Int)
+  function ModuleCtxNmod(R::zzModRing, dim::Int)
     M = new()
     M.R = R
     M.basis = sparse_matrix(R)
@@ -1469,7 +1525,7 @@ mutable struct ModuleCtxNmod
 
   function ModuleCtxNmod(p::Int, dim::Int)
     M = new()
-    M.R = ResidueRing(FlintZZ, p, cached=false)
+    M.R = residue_ring(FlintZZ, p, cached=false)
     M.basis = sparse_matrix(M.R)
     M.basis.c = dim
     M.gens = sparse_matrix(M.R)
@@ -1478,15 +1534,15 @@ mutable struct ModuleCtxNmod
 end
 
 mutable struct ModuleCtx_fmpz
-  bas_gens::SMat{fmpz}  # contains a max. indep system
-  max_indep::SMat{fmpz} # the bas_gens in upper-triangular shape
-  basis::SMat{fmpz}     # if set, probably a basis (in upper-triangular)
-  rel_gens::SMat{fmpz}  # more elements, used for relations
+  bas_gens::SMat{ZZRingElem}  # contains a max. indep system
+  max_indep::SMat{ZZRingElem} # the bas_gens in upper-triangular shape
+  basis::SMat{ZZRingElem}     # if set, probably a basis (in upper-triangular)
+  rel_gens::SMat{ZZRingElem}  # more elements, used for relations
   Mp::ModuleCtxNmod
-  rel_reps_p::SMat{nmod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
+  rel_reps_p::SMat{zzModRingElem}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
                         # at least mod p...
-  basis_idx::fmpz
-  essential_elementary_divisors::Vector{fmpz}
+  basis_idx::ZZRingElem
+  essential_elementary_divisors::Vector{ZZRingElem}
   new::Bool
   trafo::Any            # transformations bla
   done_up_to::Int
@@ -1499,7 +1555,7 @@ mutable struct ModuleCtx_fmpz
     M.bas_gens.c = dim
     M.rel_gens = sparse_matrix(FlintZZ)
     M.rel_gens.c = dim
-    R = ResidueRing(FlintZZ, p, cached=false)
+    R = residue_ring(FlintZZ, p, cached=false)
     M.rel_reps_p = sparse_matrix(R)
     M.new = false
     M.Mp = ModuleCtxNmod(R, dim)
@@ -1518,8 +1574,8 @@ mutable struct RandIdlCtx
   ibase::Vector{NfOrdFracIdl}
   rand::NfOrdIdl
   exp::Vector{Int}
-  ub::fmpz
-  lb::fmpz
+  ub::ZZRingElem
+  lb::ZZRingElem
   last::Set{Vector{Int}}
   function RandIdlCtx()
     return new()
@@ -1530,7 +1586,7 @@ const nf_elem_or_fac_elem = Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
 
 abstract type NormCtx end
 
-mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
+mutable struct ClassGrpCtx{T}  # T should be a matrix type: either ZZMatrix or SMat{}
   FB::NfFactorBase
 
   M::ModuleCtx_fmpz
@@ -1541,7 +1597,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   last_piv1::Vector{Int}
   mis::Set{Int}
 
-  h::fmpz
+  h::ZZRingElem
   c::roots_ctx
 
   rel_cnt::Int
@@ -1559,7 +1615,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
 
   largePrimeCnt::Int
   B2::Int
-  largePrime::Dict{fmpz_poly, Tuple{nf_elem, fmpq}}
+  largePrime::Dict{ZZPolyRingElem, Tuple{nf_elem, QQFieldElem}}
   largePrime_success::Int
   largePrime_no_success::Int
 
@@ -1568,7 +1624,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
 
   randomClsEnv::RandIdlCtx
 
-  val_base::fmpz_mat      # a basis for the possible infinite randomization
+  val_base::ZZMatrix      # a basis for the possible infinite randomization
                           # vectors: conditions are
                           #  - sum over all = 0
                           #  - indices corresponding to complex pairs are
@@ -1578,7 +1634,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   rel_mat_full_rank::Bool
   H_trafo::Vector{Any}
 
-  dl_data # Tuple{Int, fmpz_mat, AbelianGrp, fmpz_mat}
+  dl_data # Tuple{Int, ZZMatrix, AbelianGrp, ZZMatrix}
   cl_map::Map
   finished::Bool
 
@@ -1593,7 +1649,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
     r.R_rel = Vector{nf_elem_or_fac_elem}()
     r.RS = Set{UInt}()
     r.largePrimeCnt = 0
-    r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
+    r.largePrime = Dict{ZZPolyRingElem, Tuple{nf_elem, QQFieldElem}}()
     r.largePrime_success = 0
     r.largePrime_no_success = 0
     r.normStat = Dict{Int, Int}()
@@ -1616,11 +1672,11 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
   A::NfOrdIdl
   v::Vector{Int}  # the infinite valuation will be exp(v[i])
   E::enum_ctx{Tx, TU, TC}
-  c::fmpz           # the last length
+  c::ZZRingElem           # the last length
   cnt::Int
   bad::Int
   restart::Int
-  M::fmpz_mat
+  M::ZZMatrix
   vl::Int
   rr::UnitRange{Int}
 
@@ -1651,21 +1707,21 @@ end
 ################################################################################
 
 # S is the type of the order, T the type of the ideal
-mutable struct AbsOrdQuoRing{S, T} <: Ring
+@attributes mutable struct AbsOrdQuoRing{S, T} <: Ring
   base_ring::S
   ideal::T
-  basis_matrix::fmpz_mat
-  basis_mat_array::Matrix{fmpz}
+  basis_matrix::ZZMatrix
+  basis_mat_array::Matrix{ZZRingElem}
   preinvn::Vector{fmpz_preinvn_struct}
   factor::Dict{T, Int}
   one # cache the simplify! one or isone testing
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
-  tmp_xxgcd::fmpz_mat # used only by xxgcd in NfOrd/ResidueRing.jl
-  tmp_div::fmpz_mat # used only by div in NfOrd/ResidueRing.jl
-  tmp_ann::fmpz_mat # used only by annihilator in NfOrd/ResidueRing.jl
-  tmp_euc::fmpz_mat # used only by euclid in NfOrd/ResidueRing.jl
+  tmp_xxgcd::ZZMatrix # used only by xxgcd in NfOrd/residue_ring.jl
+  tmp_div::ZZMatrix # used only by div in NfOrd/residue_ring.jl
+  tmp_ann::ZZMatrix # used only by annihilator in NfOrd/residue_ring.jl
+  tmp_euc::ZZMatrix # used only by euclid in NfOrd/residue_ring.jl
 
   multiplicative_group::Map
 
@@ -1732,15 +1788,15 @@ abstract type GrpAb <: AbstractAlgebra.AdditiveGroup end
 abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
 @attributes mutable struct GrpAbFinGen <: GrpAb
-  rels::fmpz_mat
-  hnf::fmpz_mat
+  rels::ZZMatrix
+  hnf::ZZMatrix
   is_snf::Bool
-  snf::Vector{fmpz}
+  snf::Vector{ZZRingElem}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
-  exponent::fmpz
+  exponent::ZZRingElem
   isfinalized::Bool
 
-  function GrpAbFinGen(R::fmpz_mat, is_hnf::Bool = false)
+  function GrpAbFinGen(R::ZZMatrix, is_hnf::Bool = false)
     r = new()
     r.is_snf = false
     r.rels = R
@@ -1751,7 +1807,7 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
     return r
   end
 
-  function GrpAbFinGen(R::Vector{fmpz}, is_snf::Bool = true)
+  function GrpAbFinGen(R::Vector{ZZRingElem}, is_snf::Bool = true)
     r = new()
     r.is_snf = is_snf
     r.snf = R
@@ -1762,7 +1818,7 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
   function GrpAbFinGen(R::Vector{T}, is_snf::Bool = true) where T <: Integer
     r = new()
     r.is_snf = is_snf
-    r.snf = map(fmpz, R)
+    r.snf = map(ZZRingElem, R)
     r.isfinalized = false
     return r
   end
@@ -1771,7 +1827,7 @@ end
 
 mutable struct GrpAbFinGenElem <: GrpAbElem
   parent::GrpAbFinGen
-  coeff::fmpz_mat
+  coeff::ZZMatrix
 
   GrpAbFinGenElem() = new()
 end
@@ -1825,49 +1881,13 @@ include("Map/MapType.jl")
 
 mutable struct NoElements <: Exception end
 
-################################################################################
-#
-#  Infinite places
-#
-################################################################################
-
-export Plc, InfPlc
-
-abstract type Plc end
-
-mutable struct InfPlc <: Plc
-  K::AnticNumberField # Number field
-  i::Int              # The position of the root r in conjugates_arb(a),
-                      # where a is the primitive element of K
-  r::acb              # Approximation of the root
-  isreal::Bool        # True if and only if r is real
-  uniformizer::nf_elem# An element which is positive at the place
-                      # and negative at all the other real places
-                      # Makes sense only if the place is real
-
-  function InfPlc(K::AnticNumberField, i::Int)
-    z = new()
-    z.K = K
-    c = conjugate_data_arb(K)
-    r1, r2 = c.signature
-    if 1 <= i <= r1
-      z.i = i
-      z.isreal = true
-      z.r = c.roots[i]
-    elseif r1 + 1 <= i <= r1 + r2
-      z.i = i
-      z.isreal = false
-      z.r = c.complex_roots[i - r1]
-    elseif r1 + r2  + 1 <= i <=  r1 + 2*r2
-      z.i = i - r2
-      z.isreal = false
-      z.r = c.complex_roots[i - r1 - r2]
-    end
-    return z
-  end
-end
-
 abstract type NumFieldEmb{T} end
+
+################################################################################
+#
+#  Number field embeddings
+#
+################################################################################
 
 mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
   K::AnticNumberField  # Number Field
@@ -1876,14 +1896,14 @@ mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
   r::acb               # Approximation of the root
   isreal::Bool         # True if and only if the embedding is real.
   conjugate::Int       # The conjuagte embedding
-  uniformizer::nf_elem # An element which is positive at the place
-                       # and negative at all the other real places.
+  uniformizer::nf_elem # An element which is positive at the embedding
+                       # and negative at all the other real embeddings.
                        # Makes sense only if the place is real.
 
-  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_root_ctx, i::Int)
+  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_roots, i::Int)
     z = new()
     z.K = K
-    r1, r2 = c.signature
+    r1, r2 = length(c.real_roots), length(c.complex_roots)
     if 1 <= i <= r1
       z.i = i
       z.isreal = true
@@ -1901,6 +1921,27 @@ mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
       z.conjugate = i - r2
     end
     return z
+  end
+end
+
+################################################################################
+#
+#  Infinite places
+#
+################################################################################
+
+export Plc, InfPlc
+
+abstract type Plc end
+
+# The field is not necessary, but we want to parametrize by it
+mutable struct InfPlc{K, E} <: Plc
+  field::K
+  embedding::E
+
+  function InfPlc(embedding::E) where {E}
+    K = number_field(embedding)
+    return new{typeof(K), E}(K, embedding)
   end
 end
 
@@ -1956,18 +1997,18 @@ abstract type GModule end
 export ZpnGModule
 
 mutable struct ZpnGModule <: GModule
-  R::Nemo.NmodRing
+  R::Nemo.zzModRing
   V::GrpAbFinGen
-  G::Vector{nmod_mat}
+  G::Vector{zzModMatrix}
   p::Int
 
-  function ZpnGModule(V::GrpAbFinGen,G::Vector{nmod_mat})
+  function ZpnGModule(V::GrpAbFinGen,G::Vector{zzModMatrix})
     @assert ngens(V)==ncols(G[1]) && ngens(V)==nrows(G[1])
     z=new()
     z.G=G
     z.V=V
     z.R=parent(G[1][1,1])
-    f=factor(fmpz(z.R.n))
+    f=factor(ZZRingElem(z.R.n))
     @assert length(f.fac)==1
     z.p=Int(first(keys(f.fac)))
     return z
@@ -2019,13 +2060,13 @@ end
 
 function GrpAbLatticeCreate()
   r = GrpAbLattice()
-  r.zero = fmpz_mat(0,0)
+  r.zero = ZZMatrix(0,0)
   r.mult = *
   r.make_id = G::GrpAbFinGen -> identity_matrix(FlintZZ, ngens(G))
   return r
 end
 
-const GrpAbLattice = RelLattice{GrpAbFinGen, fmpz_mat}
+const GrpAbLattice = RelLattice{GrpAbFinGen, ZZMatrix}
 const GroupLattice = GrpAbLatticeCreate()
 
 ###############################################################################
@@ -2058,17 +2099,17 @@ end
 #
 ################################################################################
 
-@attributes mutable struct NfAbsNS <: NonSimpleNumField{fmpq}
-  pol::Vector{fmpq_mpoly}
-  abs_pol::Vector{fmpq_poly}
+@attributes mutable struct NfAbsNS <: NonSimpleNumField{QQFieldElem}
+  pol::Vector{QQMPolyRingElem}
+  abs_pol::Vector{QQPolyRingElem}
   S::Vector{Symbol}
   basis#::Vector{NfAbsNSElem}
   degree::Int
   degrees::Vector{Int}
   signature::Tuple{Int, Int}
-  traces::Vector{Vector{fmpq}}
+  traces::Vector{Vector{QQFieldElem}}
 
-  function NfAbsNS(ff::Vector{fmpq_poly}, f::Vector{fmpq_mpoly}, S::Vector{Symbol}, cached::Bool = false)
+  function NfAbsNS(ff::Vector{QQPolyRingElem}, f::Vector{QQMPolyRingElem}, S::Vector{Symbol}, cached::Bool = false)
     r = new()
     r.abs_pol = ff
     r.pol = f
@@ -2078,11 +2119,11 @@ end
   end
 end
 
-mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{fmpq}
-  data::fmpq_mpoly
+mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{QQFieldElem}
+  data::QQMPolyRingElem
   parent::NfAbsNS
 
-  function NfAbsNSElem(K::NfAbsNS, g::fmpq_mpoly)
+  function NfAbsNSElem(K::NfAbsNS, g::QQMPolyRingElem)
     return new(g, K)
   end
 
@@ -2101,7 +2142,7 @@ include("LocalField/Types.jl")
 ################################################################################
 #cannot use Ref here, has to be Ptr as the underlying stuff is
 #not Julia allocated (but flint)
-mutable struct fmpz_poly_raw  ## fmpz_poly without parent like in c
+mutable struct fmpz_poly_raw  ## ZZPolyRingElem without parent like in c
   coeffs::Ptr{Nothing}
   alloc::Int
   length::Int
@@ -2109,18 +2150,18 @@ mutable struct fmpz_poly_raw  ## fmpz_poly without parent like in c
   function fmpz_poly_raw()
     error("should not get called")
     z = new()
-    ccall((:fmpz_poly_init, libflint), Nothing, (Ref{fmpz_poly},), z)
+    ccall((:fmpz_poly_init, libflint), Nothing, (Ref{ZZPolyRingElem},), z)
     finalizer(_fmpz_poly_raw_clear_fn, z)
     return z
   end
 
-  function _fmpz_poly_raw_clear_fn(a::fmpz_poly)
-    ccall((:fmpz_poly_clear, libflint), Nothing, (Ref{fmpz_poly},), a)
+  function _fmpz_poly_raw_clear_fn(a::ZZPolyRingElem)
+    ccall((:fmpz_poly_clear, libflint), Nothing, (Ref{ZZPolyRingElem},), a)
   end
 end
 
 mutable struct fmpz_poly_factor
-  c::Int   # really an fmpz  - but there is no fmpz_raw to be flint compatible
+  c::Int   # really an ZZRingElem  - but there is no fmpz_raw to be flint compatible
   poly::Ptr{fmpz_poly_raw}
   exp::Ptr{Int}
   _num::Int
@@ -2141,7 +2182,7 @@ mutable struct fmpz_poly_factor
 end
 
 mutable struct HenselCtx
-  f::fmpz_poly
+  f::ZZPolyRingElem
   p::UInt
 
   LF :: fmpz_poly_factor
@@ -2153,15 +2194,15 @@ mutable struct HenselCtx
   r::Int  #for the cleanup
   lf:: Nemo.nmod_poly_factor
 
-  function HenselCtx(f::fmpz_poly, p::fmpz)
+  function HenselCtx(f::ZZPolyRingElem, p::ZZRingElem)
     a = new()
     a.f = f
     a.p = UInt(p)
-    Zx,x = PolynomialRing(FlintZZ, "x", cached=false)
-    Rx,x = PolynomialRing(GF(UInt(p), cached=false), "x", cached=false)
+    Zx,x = polynomial_ring(FlintZZ, "x", cached=false)
+    Rx,x = polynomial_ring(GF(UInt(p), cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, libflint), UInt,
-          (Ref{Nemo.nmod_poly_factor}, Ref{gfp_poly}), (a.lf), Rx(f))
+          (Ref{Nemo.nmod_poly_factor}, Ref{fpPolyRingElem}), (a.lf), Rx(f))
     r = a.lf.num
     a.r = r
     a.LF = fmpz_poly_factor()
@@ -2196,14 +2237,14 @@ mutable struct HenselCtx
 end
 
 mutable struct qAdicRootCtx
-  f::fmpz_poly
+  f::ZZPolyRingElem
   p::Int
   n::Int
   Q::Vector{FlintQadicField}
   H::Hecke.HenselCtx
   R::Vector{qadic}
   is_splitting::Bool
-  function qAdicRootCtx(f::fmpz_poly, p::Int; splitting_field::Bool = false)
+  function qAdicRootCtx(f::ZZPolyRingElem, p::Int; splitting_field::Bool = false)
     r = new()
     r.f = f
     r.p = p

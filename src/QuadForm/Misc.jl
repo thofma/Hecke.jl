@@ -1,3 +1,5 @@
+export VecSpaceRes, SpaceRes
+
 ################################################################################
 #
 #  Restrict and extend scalars from L^n to Q^(d * n)
@@ -21,6 +23,21 @@ function VecSpaceRes(K::S, n::Int) where {S}
   return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
 end
 
+mutable struct SpaceRes{S, T} <: Map{S, T, HeckeMap, SpaceRes}
+  header::MapHeader{S, T}
+  map::VecSpaceRes
+
+  function SpaceRes{S, T}(D::S, C::T) where {S, T}
+    z = new{S, T}()
+    K = base_ring(C)
+    n = dim(C)
+    z.map = VecSpaceRes(K, n)
+ 
+    z.header = MapHeader{S, T}(D, C)
+    return z
+  end
+end
+
 function Base.show(io::IO, f::VecSpaceRes)
   n = f.domain_dim
   m = f.codomain_dim
@@ -29,18 +46,22 @@ function Base.show(io::IO, f::VecSpaceRes)
   println(io, f.field)
 end
 
+Base.show(io::IO, f::SpaceRes) = Base.show(io, f.map)
+
 (f::VecSpaceRes)(a) = image(f, a)
 
 function image(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
-  if v isa Vector{fmpq}
+  if v isa Vector{QQFieldElem}
     vv = v
   else
-    vv = map(fmpq, v)::Vector{fmpq}
+    vv = map(QQFieldElem, v)::Vector{QQFieldElem}
   end
   return _image(f, vv)
 end
 
-function _image(f::VecSpaceRes{S, T}, v::Vector{fmpq}) where {S, T}
+image(f::SpaceRes, v::Vector) = image(f.map, v)
+
+function _image(f::VecSpaceRes{S, T}, v::Vector{QQFieldElem}) where {S, T}
   n = f.codomain_dim
   d = f.absolute_degree
   m = f.domain_dim
@@ -60,6 +81,8 @@ end
 
 Base.:(\)(f::VecSpaceRes, a) = preimage(f, a)
 
+Base.:(\)(f::SpaceRes, a) = preimage(f, a)
+
 function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   if v isa Vector{T}
     vv = v
@@ -69,11 +92,13 @@ function preimage(f::VecSpaceRes{S, T}, v::Vector) where {S, T}
   return _preimage(f, vv)
 end
 
+preimage(f::SpaceRes, v::Vector) = preimage(f.map, v)
+
 function _preimage(f::VecSpaceRes{S, T}, w::Vector{T}) where {S, T}
   n = f.codomain_dim
   d = f.absolute_degree
   @req length(w) == n "Vector must have length $n ($(length(w)))"
-  z = Vector{fmpq}(undef, f.domain_dim)
+  z = Vector{QQFieldElem}(undef, f.domain_dim)
   k = 1
   for i in 1:n
     y = w[i]
@@ -105,15 +130,15 @@ unit $\Delta$, such that $K(\sqrt(\Delta))$ is unramified at $\mathfrak p$.
 function kummer_generator_of_local_unramified_quadratic_extension(p)
   @assert is_dyadic(p)
   K = nf(order(p))
-  k, h = ResidueField(order(p), p)
-  kt, t = PolynomialRing(k, "t", cached = false)
+  k, h = residue_field(order(p), p)
+  kt, t = polynomial_ring(k, "t", cached = false)
   a = rand(k)
   f = t^2 - t + a
   while !is_irreducible(f)
     a = rand(k)
     f = t^2 - t + a
   end
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  Kt, t = polynomial_ring(K, "t", cached = false)
   g = t^2 - t + elem_in_nf(h\a)
   aa = elem_in_nf(h\a)
   gg = evaluate(g, inv(K(2)) * (t + 1))
@@ -132,7 +157,7 @@ function _find_special_class(u, p)
   R = order(p)
   K = nf(R)
   @assert valuation(u, p) == 0
-  k, _h = ResidueField(R, p)
+  k, _h = residue_field(R, p)
   h = extend(_h, K)
   fl, s = is_square_with_sqrt(h(u))
   @assert fl
@@ -152,7 +177,7 @@ function _find_special_class(u, p)
     u = divexact(u, (1 + (h\s) * pi^(div(val, 2)))^2)
     val = valuation(u - 1, p)
   end
-  kt, t = PolynomialRing(k, "t", cached = false)
+  kt, t = polynomial_ring(k, "t", cached = false)
   return val == 2 * e && is_irreducible(kt([h(divexact(u - 1, 4)), one(k), one(k)])) ? u : one(K)
 end
 
@@ -217,7 +242,7 @@ function _strong_approximation(S, ep, xp)
   if all(x -> x >= 0, ep) && all(is_integral, xp)
     return _strong_approximation_easy(S, ep, xp)
   else
-    d = reduce(lcm, (denominator(x) for x in xp), init = one(fmpz))
+    d = reduce(lcm, (denominator(x) for x in xp), init = one(ZZRingElem))
     for i in 1:length(S)
       l = valuation(d, S[i]) - ep[i]
       if l < 0
@@ -226,7 +251,7 @@ function _strong_approximation(S, ep, xp)
       @assert valuation(d, S[i]) + ep[i] >= 0
     end
   end
-  _ep = fmpz[]
+  _ep = ZZRingElem[]
   _xp = nf_elem[]
   _S = support(d * OK)
   _SS = ideal_type(OK)[]
@@ -331,7 +356,7 @@ function _idempotents(x::Vector)
 
   #println("V:\n", sprint(show, "text/plain", V))
 
-  m = lcm(fmpz[minimum(x[i], copy = false) for i in 1:length(x)])
+  m = lcm(ZZRingElem[minimum(x[i], copy = false) for i in 1:length(x)])
 
   H = hnf_modular_eldiv!(V, m) # upper right
 
@@ -372,7 +397,7 @@ end
 
 function _weak_approximation_coprime(IP, S, M)
   R = order(M)
-  A, _exp, _log = infinite_primes_map(R, IP, M)
+  A, _exp, _log = sign_map(R, _embedding.(IP), M)
 
   t = (1 + _exp(A([ S[j] == 1 ? 0 : -1 for j in 1:length(IP)])))
   @assert all(i -> sign(t, IP[i]) == S[i], 1:length(IP))
@@ -473,14 +498,14 @@ end
 
 # I think I need a can_change_base_ring version
 
-function element_with_signs(K, D::Dict{InfPlc, Int})
+function element_with_signs(K, D::Dict{<:NumFieldEmb, Int})
   return _element_with_signs(K, D)
 end
 
 function _element_with_signs(K, D)
   OK = maximal_order(K)
-  G, mG = infinite_primes_map(OK, real_places(K), 1*OK)
-  r = real_places(K)
+  G, mG = sign_map(OK, real_embeddings(K), 1*OK)
+  r = real_embeddings(K)
   z = id(G)
   for (v, s) in D
     for i in 1:length(r)
@@ -500,11 +525,11 @@ function _element_with_signs(K, D)
   return zz
 end
 
-function element_with_signs(K, P::Vector{InfPlc}, S::Vector{Int})
+function element_with_signs(K, P::Vector{<:NumFieldEmb}, S::Vector{Int})
   return _element_with_signs(K, zip(P, S))
 end
 
-function element_with_signs(K, A::Vector{Tuple{InfPlc, Int}})
+function element_with_signs(K, A::Vector{Tuple{T, Int}}) where {T <: NumFieldEmb}
   return _element_with_signs(K, A)
 end
 
@@ -524,7 +549,7 @@ The number field $L/K$ must be a simple extension of degree 2.
 """
 is_local_norm(::NumField, ::NumFieldElem, ::Any)
 
-function is_local_norm(K::AnticNumberField, a::fmpq, p::fmpz)
+function is_local_norm(K::AnticNumberField, a::QQFieldElem, p::ZZRingElem)
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
   b = (2 * x - tr(x))^2
@@ -533,7 +558,7 @@ function is_local_norm(K::AnticNumberField, a::fmpq, p::fmpz)
   return hilbert_symbol(a, bQ, p) == 1
 end
 
-function is_local_norm(K::AnticNumberField, a::fmpq, P::NfOrdIdl)
+function is_local_norm(K::AnticNumberField, a::QQFieldElem, P::NfOrdIdl)
   p = minimum(P)
   return is_local_norm(K, a, p)
 end
@@ -542,12 +567,12 @@ function is_local_norm(K::AnticNumberField, a::RingElement, P::NfOrdIdl)
   return is_local_norm(K, FlintQQ(a), P)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, p::fmpz)
+function is_local_norm(K::AnticNumberField, a::RingElement, p::ZZRingElem)
   return is_local_norm(K, FlintQQ(a), p)
 end
 
 function is_local_norm(K::AnticNumberField, a::RingElement, p::Integer)
-  return is_local_norm(K, FlintQQ(a), fmpz(p))
+  return is_local_norm(K, FlintQQ(a), ZZRingElem(p))
 end
 
 function is_local_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
@@ -568,7 +593,7 @@ end
 
 # Return a local unit u (that is, valuation(u, P) = 0) with trace one.
 # P must be even and inert (P is lying over p)
-function _special_unit(P, p::fmpz)
+function _special_unit(P, p::ZZRingElem)
   R = order(P)
   E = nf(R)
   @assert degree(E) == 2
@@ -623,7 +648,7 @@ function _special_unit(P, p)
     a = a//pi^v
     x = x//pi^(div(v, 2))
   end
-  k, h = ResidueField(order(p), p)
+  k, h = residue_field(order(p), p)
   hex = extend(h, K)
   t = hex \ sqrt(hex(a))
   a = a//t^2
@@ -692,11 +717,11 @@ end
 #
 ################################################################################
 
-order(::fmpz) = FlintZZ
+order(::ZZRingElem) = FlintZZ
 
-uniformizer(p::fmpz) = p
+uniformizer(p::ZZRingElem) = p
 
-is_dyadic(p::fmpz) = p == 2
+is_dyadic(p::ZZRingElem) = p == 2
 
 ################################################################################
 #
@@ -726,7 +751,7 @@ end
 function _find_quaternion_algebra(b, P, I)
   @assert iseven(length(I) + length(P))
   @assert all(p -> !is_local_square(b, p), P)
-  @assert all(p -> is_negative(evaluate(b, p)), I)
+  @assert all(p -> is_negative(b, p), I)
 
   K = parent(b)
   if length(P) > 0
@@ -774,7 +799,7 @@ function _find_quaternion_algebra(b, P, I)
   U, h = unit_group(R)
   sign_vector = g -> begin
     return matrix(F, 1, length(__P) + length(I),
-                 vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(Int, evaluate(g, p)), 2) for p in I]))
+                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(g, p), 2) for p in I]))
   end
 
 
@@ -831,7 +856,7 @@ function _find_quaternion_algebra(b, P, I)
   return z
 end
 
-function _find_quaternion_algebra(b::fmpq, P, I)
+function _find_quaternion_algebra(b::QQFieldElem, P, I)
   K, a = rationals_as_number_field()
   bK = K(b)
   OK = maximal_order(K)
@@ -855,7 +880,7 @@ end
 #
 ################################################################################
 
-function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
+function _weak_approximation(I::Vector{<: InfPlc}, val::Vector{<: Int})
   K = number_field(first(I))
   if degree(K) == 2
     return _weak_approximation_quadratic(I, val)
@@ -864,12 +889,12 @@ function _weak_approximation(I::Vector{InfPlc}, val::Vector{Int})
   end
 end
 
-function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
+function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   OK = maximal_order(K)
   local A::GrpAbFinGen
-  A, exp, log = infinite_primes_map(OK, I, 1 * OK)
-  uni = infinite_places_uniformizers(K)
+  A, exp, log = sign_map(OK, _embedding.(I), 1 * OK)
+  uni = infinite_uniformizers(K)
   target_signs = zeros(Int, ngens(A))
 
   if all(isequal(1), val)
@@ -894,7 +919,7 @@ function _weak_approximation_generic(I::Vector{InfPlc}, val::Vector{Int})
   return c
 end
 
-function _weak_approximation_quadratic(I::Vector{InfPlc}, val::Vector{Int})
+function _weak_approximation_quadratic(I::Vector{<: InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   if length(I) == 1
     return K(val[1])
@@ -926,6 +951,9 @@ end
 # equal to sum.
 # This is not optimized.
 function _integer_lists(sum::Int, len::Int)
+  if len <= 0
+    return Vector{Int}[]
+  end
   if sum == 0
     return Vector{Int}[fill(0, len)]
   end
@@ -944,6 +972,11 @@ function _integer_lists(sum::Int, len::Int)
     end
   end
   return res
+end
+
+function _integer_lists(sum::Int, minval::Int, maxval::Int)
+  len = maxval-minval+1
+  return _integer_lists(sum, len)
 end
 
 is_dyadic(p) = is_dyadic(minimum(p))
@@ -1031,8 +1064,8 @@ function _non_square_norm(P)
   #@assert is_inert(P)
   R = order(P)
   p = minimum(P)
-  k, h = ResidueField(order(P), P)
-  kp, hp = ResidueField(order(p), p)
+  k, h = residue_field(order(P), P)
+  kp, hp = residue_field(order(p), p)
   local u
   while true
     r = rand(k)

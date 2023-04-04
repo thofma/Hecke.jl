@@ -46,7 +46,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   rr = sparse_matrix(FlintZZ)
 
   # To track the valuation of the S-units
-  vals_of_rels = SRow{fmpz}[]
+  vals_of_rels = SRow{ZZRingElem}[]
 
   @vprint :ClassGroup 1 "finding relations ...\n"
   @vtime :ClassGroup 1 for (i, A) = enumerate(I)
@@ -60,14 +60,14 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
     # We only track the valuation of the prime ideals in S.
     # Even though S might intersect the class group factor base
     # non-trivially, this should still be correct.
-    push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))], sort = false))
+    push!(vals_of_rels, sparse_row(FlintZZ, [(i, ZZRingElem(-1))], sort = false))
   end
 
   @vprint :ClassGroup 1 "... done\n"
 
   @vprint :ClassGroup 1 "solving...\n"
   @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
-  Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), fmpz(-1)*R)
+  Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), ZZRingElem(-1)*R)
   @vprint :ClassGroup 1 ".. done, now saturating ...\n"
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
   @vprint :ClassGroup 1 " done\n"
@@ -77,10 +77,10 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
 
   g = vcat(c.R_gen, c.R_rel)
 
-  valuations = SRow{fmpz}[]
+  valuations = SRow{ZZRingElem}[]
 
   for s = 1:S.r
-    rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+    rs = zeros(ZZRingElem, c.M.bas_gens.r + c.M.rel_gens.r)
     for (p, v) = S2[s]
       rs[p] = v
     end
@@ -115,7 +115,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   #  @assert (O(evaluate(U[j]))*O) == prod(I[i]^Int(valuations[j][i]) for i in 1:length(I))
   #end
 
-  C = abelian_group(fmpz[0 for i=U])
+  C = abelian_group(ZZRingElem[0 for i=U])
   r = MapSUnitModUnitGrpFacElem()
   r.idl = I_in
 
@@ -147,7 +147,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
       end
       s, d = solve_ut(S1, b)
       @assert d == 1  # this would indicate element is not in group...
-      c = zeros(fmpz, length(I))
+      c = zeros(ZZRingElem, length(I))
       for (p,v) = s
         c[p] = v
       end
@@ -190,7 +190,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
   G = abelian_group(vcat(U.snf, S.snf))
 
   r = MapSUnitGrpFacElem()
-  r.valuations = Vector{SRow{fmpz}}(undef, ngens(G))
+  r.valuations = Vector{SRow{ZZRingElem}}(undef, ngens(G))
   for i = 1:ngens(U)
     r.valuations[i] = sparse_row(FlintZZ)
   end

@@ -35,26 +35,26 @@ holds. If successful, return true and $T$, otherwise false and some element.
 The element will be returned in factored form.
 """
 function is_norm(K::AnticNumberField, a::Integer)
-  return is_norm(K, fmpz(a))
+  return is_norm(K, ZZRingElem(a))
 end
-function is_norm(K::AnticNumberField, a::fmpq)
+function is_norm(K::AnticNumberField, a::QQFieldElem)
   fl, s = is_norm(K, numerator(a)*denominator(a)^(degree(K)-1))
-  return fl, s * FacElem(Dict(K(denominator(a)) => fmpz(-1)))
+  return fl, s * FacElem(Dict(K(denominator(a)) => ZZRingElem(-1)))
 end
 function is_norm(K::AnticNumberField, a::Rational)
-  return is_norm(K, fmpq(a))
+  return is_norm(K, QQFieldElem(a))
 end
 
 @doc Markdown.doc"""
-    is_norm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}) -> Bool, nf_elem
+    is_norm(K::AnticNumberField, a::ZZRingElem; extra::Vector{ZZRingElem}) -> Bool, nf_elem
 
-For a fmpz $a$, try to find $T \in K$ s.th. $N(T) = a$
+For a ZZRingElem $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
 In \testtt{extra} one can pass in additional prime numbers that
 are allowed to occur in the solution. This will then be supplemented.
 The element will be returned in factored form.
 """
-function is_norm(K::AnticNumberField, a::fmpz; extra::Vector{fmpz}=fmpz[])
+function is_norm(K::AnticNumberField, a::ZZRingElem; extra::Vector{ZZRingElem}=ZZRingElem[])
   L = lll(maximal_order(K))
   C, mC = narrow_class_group(L)
 #  println("narrow group is : $C")

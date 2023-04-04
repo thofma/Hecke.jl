@@ -57,8 +57,8 @@ Usually, to create an order, one starts with a field (or a polynomial):
 
 ```@repl 1
 using Hecke; # hide
-Qx, x = PolynomialRing(QQ, "x");
-K, a = NumberField(x^2 - 10, "a");
+Qx, x = polynomial_ring(QQ, "x");
+K, a = number_field(x^2 - 10, "a");
 E = EquationOrder(K)
 Z_K = MaximalOrder(K)
 conductor(E)
@@ -78,6 +78,6 @@ norm(alpha)
 It is possible to work with residue fields as well:
 
 ```@repl 1
-Fp, mFp = ResidueField(Z_K, p)
+Fp, mFp = residue_field(Z_K, p)
 [ mFp(x) for x = basis(Z_K)]
 ```

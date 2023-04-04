@@ -6,7 +6,7 @@
 
 # Note that T must admit gcd's and base must consist of elements x for which
 # valuation(_, x) is definied.
-# works (at least) for fmpz and nmod_poly, so it can be used for the
+# works (at least) for ZZRingElem and zzModPolyRingElem, so it can be used for the
 # smoothness test
 
 function _compose(a::node{T}, b::node{T}, check = false) where T
@@ -53,7 +53,7 @@ function is_smooth(c::FactorBase{T}, a::T) where T
   return a == 1 || a==-1
 end
 
-function is_smooth!(c::FactorBase{fmpz}, a::fmpz)
+function is_smooth!(c::FactorBase{ZZRingElem}, a::ZZRingElem)
   @assert a != 0
   g = gcd(c.prod, a)
   if g==1
@@ -119,10 +119,10 @@ function factor(c::FactorBase{T}, a::T, do_error::Bool = true) where T
   return f
 end
 
-function factor(c::FactorBase{fmpz}, a::fmpq)
+function factor(c::FactorBase{ZZRingElem}, a::QQFieldElem)
   @assert a != 0
   a = deepcopy(a)
-  f = Dict{fmpz, Int}()
+  f = Dict{ZZRingElem, Int}()
   n = abs(numerator(a))
   d = denominator(a)
   lp = _split(c.ptree, n*d)

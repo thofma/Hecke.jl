@@ -16,12 +16,12 @@ function _print_to_file(list::Vector{FieldsTower}, f::IOStream; separator = '#')
     auts = list[i].generators_of_automorphisms
     embs = list[i].subfields
     p = K.pol
-    p1 = fmpz[numerator(coeff(p, i)) for i = 0:degree(p)]
+    p1 = ZZRingElem[numerator(coeff(p, i)) for i = 0:degree(p)]
     Qx = parent(p)
-    imgs = fmpq_poly[Qx(image_primitive_element(x)) for x in auts]
-    imgs_coeff = Vector{fmpq}[fmpq[coeff(x1, i) for i = 0:degree(x1)] for x1 in imgs]
-    embs_imgs = Tuple{fmpq_poly, fmpq_poly}[(codomain(x2).pol, parent(codomain(x2).pol)(image_primitive_element(x2))) for x2 in embs]
-    embs_imgs_coeff = Vector{Tuple{Vector{fmpq}, Vector{fmpq}}}(undef, length(embs_imgs))
+    imgs = QQPolyRingElem[Qx(image_primitive_element(x)) for x in auts]
+    imgs_coeff = Vector{QQFieldElem}[QQFieldElem[coeff(x1, i) for i = 0:degree(x1)] for x1 in imgs]
+    embs_imgs = Tuple{QQPolyRingElem, QQPolyRingElem}[(codomain(x2).pol, parent(codomain(x2).pol)(image_primitive_element(x2))) for x2 in embs]
+    embs_imgs_coeff = Vector{Tuple{Vector{QQFieldElem}, Vector{QQFieldElem}}}(undef, length(embs_imgs))
     for i = 1:length(embs_imgs)
       y, z = embs_imgs[i]
       embs_imgs_coeff[i] = ([coeff(y, j) for j = 0:degree(y)], [coeff(z, k) for k = 0:degree(z)])
@@ -31,7 +31,7 @@ function _print_to_file(list::Vector{FieldsTower}, f::IOStream; separator = '#')
   return nothing
 end
 
-Base.convert(::Type{fmpq}, a::Rational{<: Integer}) = fmpq(a)
+Base.convert(::Type{QQFieldElem}, a::Rational{<: Integer}) = QQFieldElem(a)
 
 function _read_from_file(f::String)
   c = open(f, "r")
@@ -41,7 +41,7 @@ function _read_from_file(f::String)
 end
 
 function _read_from_file(f::IOStream)
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  Qx, x = polynomial_ring(FlintQQ, "x")
   list = Vector{FieldsTower}(undef, countlines(f))
   seekstart(f)
   QQ = number_field(x-1, "b", cached = false, check = false)[1]
@@ -79,7 +79,7 @@ function _read_from_file(f::IOStream)
 end
 
 function _parse_as_fmpq_vector(s)
-  res = fmpq[]
+  res = QQFieldElem[]
   i = 1
   while s[i] != '['
     i += 1
@@ -93,27 +93,27 @@ function _parse_as_fmpq_vector(s)
       j += 1
     end
     if s[j] == ']'
-      z = parse(fmpz, s[i:j-1])
+      z = parse(ZZRingElem, s[i:j-1])
       if is_rational
         push!(res, last_parsed//z)
         is_rational = false
       else
-        push!(res, fmpq(z))
+        push!(res, QQFieldElem(z))
       end
       break
     end
     if s[j] == ','
-      z = parse(fmpz, s[i:j-1])
+      z = parse(ZZRingElem, s[i:j-1])
       if is_rational
         push!(res, last_parsed//z)
         is_rational = false
       else
-        push!(res, fmpq(z))
+        push!(res, QQFieldElem(z))
       end
       i = j + 1
     end
     if s[j] == '/'
-      last_parsed = parse(fmpz, s[i:j-1])
+      last_parsed = parse(ZZRingElem, s[i:j-1])
       is_rational = true
       j += 2
       i = j
@@ -124,7 +124,7 @@ function _parse_as_fmpq_vector(s)
 end
 
 function _parse_array_of_array_of_fmpq(s)
-  res = Vector{fmpq}[]
+  res = Vector{QQFieldElem}[]
   i = 1
   while s[i] != '['
     i += 1
@@ -148,7 +148,7 @@ function _skip_head(s)
 end
 
 function _parse_array_of_tuples_of_arrays(s)
-  res = Tuple{Vector{fmpq}, Vector{fmpq}}[]
+  res = Tuple{Vector{QQFieldElem}, Vector{QQFieldElem}}[]
   i = _skip_head(s)
   i += 1
   end_sbraket = _find_closing_sbraket(s, i)

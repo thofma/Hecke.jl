@@ -65,15 +65,15 @@ end
 
 # compute largest m such that a^m < b (strictly less then!)
 
-function _max_power_in(a::fmpz, b::Int)
-  m = flog(fmpz(b), a)
+function _max_power_in(a::ZZRingElem, b::Int)
+  m = flog(ZZRingElem(b), a)
   if a^m == b
     m = m - 1
   end
   return m
 end
 
-_max_power_in(a::Int, b::Int) = _max_power_in(fmpz(a), b)
+_max_power_in(a::Int, b::Int) = _max_power_in(ZZRingElem(a), b)
 
 ################################################################################
 #
@@ -89,7 +89,7 @@ end
 
 # This function gives an upper bound on the error term of the Belabas-Friedmann
 # approximation.
-function _approx_error_bf(disc::fmpz, degree::Int, Tc = BigFloat)
+function _approx_error_bf(disc::ZZRingElem, degree::Int, Tc = BigFloat)
 
   logd_up = Tc(0)::Tc
   logd_down = Tc(0)::Tc
@@ -154,7 +154,7 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
   return x0::Tc
 end
 
-  function _comp_summand(R, p::fmpz, m::Int, aa::arb)
+  function _comp_summand(R, p::ZZRingElem, m::Int, aa::arb)
     logp = log(R(p))
 
     pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
@@ -179,7 +179,7 @@ end
   end
 
   function _comp_summand(R, p::Int, m::Int, aa::arb)
-    return _comp_summand(R, fmpz(p), m, aa)
+    return _comp_summand(R, ZZRingElem(p), m, aa)
   end
 
 # Computing the g_K(X) term of Belabas-Friedmann
@@ -226,7 +226,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
 
     lP = prime_decomposition_type(O, p)
     for P in lP
-      Pnorm = fmpz(p)^P[1]
+      Pnorm = ZZRingElem(p)^P[1]
       if Pnorm < xx0
         max_exp = _max_power_in(Pnorm, xx0)
 
@@ -247,7 +247,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
       end
 
       for P in lP
-        Pnorm = fmpz(p)^P[1]
+        Pnorm = ZZRingElem(p)^P[1]
         if (Pnorm < xx09)
           max_exp = _max_power_in(Pnorm, xx09)
 

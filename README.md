@@ -10,7 +10,7 @@
 ## About
 
 Hecke is a software package for algebraic number theory maintained by Claus Fieker, Tommy Hofmann and Carlo Sircana.
-It is written in [julia](https://www.julialang.org) and is based on the computer algebra packages [Nemo](https://www.nemocas.org) and [AbstractAlgebra](https://github.com/Nemocas/AbstractAlgebra.jl).
+It is written in [julia](https://www.julialang.org) and is based on the computer algebra packages [Nemo](https://github.com/Nemocas/Nemo.jl) and [AbstractAlgebra](https://github.com/Nemocas/AbstractAlgebra.jl).
 Hecke is part of the [OSCAR](https://oscar.computeralgebra.de/) project and the development is supported by the Deutsche Forschungsgemeinschaft DFG within the Collaborative Research Center TRR 195.
 
 - <https://github.com/thofma/Hecke.jl> (Source code)
@@ -84,9 +84,9 @@ Version 0.10.12...
  ... which comes with absolutely no warrant whatsoever
 (c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
-julia> Qx, x = PolynomialRing(FlintQQ, "x");
+julia> Qx, x = polynomial_ring(FlintQQ, "x");
 julia> f = x^3 + 2;
-julia> K, a = NumberField(f, "a");
+julia> K, a = number_field(f, "a");
 julia> O = maximal_order(K);
 julia> O
 Maximal order of Number field over Rational Field with defining polynomial x^3 + 2

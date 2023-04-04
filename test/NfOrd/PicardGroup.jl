@@ -67,12 +67,12 @@ end
   O = Order(K, [ K(1), 10*a, 100*a^2 ])
   P, mP = @inferred picard_group(O)
   @test is_snf(P)
-  @test P.snf == fmpz[ 24 ]
+  @test P.snf == ZZRingElem[ 24 ]
   @test test_disc_log_picard(P, mP, O)
 
   U, mU = Hecke.unit_group_non_maximal(O)
   @test is_snf(U)
-  @test U.snf == fmpz[ 2, 0 ]
+  @test U.snf == ZZRingElem[ 2, 0 ]
   @test contains(AF(53.89509393317), Hecke.regulator([ K(mU(U[2])) ], 1))
   @test test_disc_log_units(U, mU, O)
 
@@ -81,12 +81,12 @@ end
   O = equation_order(K)
   P, mP = picard_group(O)
   @test is_snf(P)
-  @test P.snf == fmpz[ 3, 6, 6, 18 ]
+  @test P.snf == ZZRingElem[ 3, 6, 6, 18 ]
   @test test_disc_log_picard(P, mP, O)
 
   U, mU = Hecke.unit_group_non_maximal(O)
   @test is_snf(U)
-  @test U.snf == fmpz[ 2, 0 ]
+  @test U.snf == ZZRingElem[ 2, 0 ]
   @test contains(AF(169.7695458895), Hecke.regulator([ K(mU(U[2])) ], 1))
   @test test_disc_log_units(U, mU, O)
 
@@ -95,12 +95,12 @@ end
   O = equation_order(K)
   P, mP = picard_group(O)
   @test is_snf(P)
-  @test P.snf == fmpz[ 2, 6, 24 ]
+  @test P.snf == ZZRingElem[ 2, 6, 24 ]
   @test test_disc_log_picard(P, mP, O)
 
   U, mU = Hecke.unit_group_non_maximal(O)
   @test is_snf(U)
-  @test U.snf == fmpz[ 2, 0 ]
+  @test U.snf == ZZRingElem[ 2, 0 ]
   @test contains(AF(31293.8558289993733), Hecke.regulator([ K(mU(U[2])) ], 1))
   @test test_disc_log_units(U, mU, O)
 
@@ -109,26 +109,32 @@ end
   O = equation_order(K)
   P, mP = picard_group(O)
   @test is_snf(P)
-  @test P.snf == fmpz[ 2, 2, 2, 2, 4 ]
+  @test P.snf == ZZRingElem[ 2, 2, 2, 2, 4 ]
   @test test_disc_log_picard(P, mP, O)
 
   U, mU = @inferred Hecke.unit_group_non_maximal(O)
   @test is_snf(U)
-  @test U.snf == fmpz[ 2, 0, 0 ]
+  @test U.snf == ZZRingElem[ 2, 0, 0 ]
   @test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> K(mU(x)), [ U[2], U[3] ]), 1))
   @test test_disc_log_units(U, mU, O)
+  U, mU = @inferred unit_group_fac_elem(O)
+  @test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> mU(x), [ U[2], U[3] ]), 1))
+  @test all(x -> evaluate(mU(x)) in O, [U[2], U[3]])
 
   f = x^3+4064*x^2-1608*x-2816
   K, a = number_field(f, "a", cached = false)
   O = equation_order(K)
   P, mP = @inferred picard_group(O)
   @test is_snf(P)
-  @test P.snf == fmpz[ 3, 12 ]
+  @test P.snf == ZZRingElem[ 3, 12 ]
   @test test_disc_log_picard(P, mP, O)
 
   U, mU = Hecke.unit_group_non_maximal(O)
   @test is_snf(U)
-  @test U.snf == fmpz[ 2, 0, 0 ]
+  @test U.snf == ZZRingElem[ 2, 0, 0 ]
   @test contains(AF(124666.2260696), Hecke.regulator(map( x -> K(mU(x)), [ U[2], U[3] ]), 1))
   @test test_disc_log_units(U, mU, O)
+  U, mU = unit_group_fac_elem(O)
+  @test contains(AF(124666.2260696), Hecke.regulator(map( x -> mU(x), [ U[2], U[3] ]), 1))
+  @test all(x -> evaluate(mU(x)) in O, [U[2], U[3]])
 end

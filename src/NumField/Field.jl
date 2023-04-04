@@ -1,4 +1,4 @@
-export absolute_degree, absolute_discriminant
+export absolute_degree, absolute_discriminant, automorphism_list
 
 ################################################################################
 #
@@ -16,7 +16,7 @@ base_field(::NumField)
 
 _base_ring(K::NumField) = base_field(K)
 
-_base_ring(::FlintRationalField) = FlintQQ
+_base_ring(::QQField) = FlintQQ
 
 ################################################################################
 #
@@ -36,7 +36,7 @@ is_absolute(::NumField)
 
 is_absolute(::NumField) = false
 
-is_absolute(::NumField{fmpq}) = true
+is_absolute(::NumField{QQFieldElem}) = true
 
 ################################################################################
 #
@@ -54,7 +54,7 @@ Given a number field $L/K$, this function returns the degree of $L$ over $K$.
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField(x^2 - 2, "a");
+julia> K, a = number_field(x^2 - 2, "a");
 
 julia> degree(K)
 2
@@ -80,11 +80,11 @@ function absolute_degree(A::NumField)
   return absolute_degree(base_field(A)) * degree(A)
 end
 
-function absolute_degree(K::NumField{fmpq})
+function absolute_degree(K::NumField{QQFieldElem})
   return degree(K)
 end
 
-absolute_degree(::FlintRationalField) = 1
+absolute_degree(::QQField) = 1
 
 ################################################################################
 #
@@ -107,7 +107,7 @@ is_simple(a::NumField)
 ################################################################################
 
 @doc doc"""
-    NumberField(f::Poly{NumFieldElem}, s::String;
+    number_field(f::Poly{NumFieldElem}, s::String;
                 cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
 
 Given an irreducible polynomial $f \in K[x]$ over some number field $K$, this
@@ -125,7 +125,7 @@ julia> K, a = quadratic_field(5);
 
 julia> Kt, t = K["t"];
 
-julia> L, b = NumberField(t^3 - 3, "b");
+julia> L, b = number_field(t^3 - 3, "b");
 ```
 """
 function _doc_stub_nf end
@@ -135,10 +135,10 @@ function _doc_stub_nf end
 abstract type DocuDummy end
 
 @doc (@doc _doc_stub_nf)
-NumberField(::DocuDummy)
+number_field(::DocuDummy)
 
 @doc (@doc _doc_stub_nf)
-NumberField(f::PolyElem{<: NumFieldElem}, s::String;
+number_field(f::PolyElem{<: NumFieldElem}, s::String;
             cached::Bool = false, check::Bool = false)
 
 ################################################################################
@@ -148,7 +148,7 @@ NumberField(f::PolyElem{<: NumFieldElem}, s::String;
 ################################################################################
 
 is_commutative(K::NumField) = true
-is_commutative(::FlintRationalField) = true
+is_commutative(::QQField) = true
 
 ################################################################################
 #
@@ -166,7 +166,7 @@ of $L$.
 function normal_basis(L::NumField)
   n = degree(L)
   K = base_field(L)
-  Aut = automorphisms(L)
+  Aut = automorphism_list(L)
 
   @req length(Aut) != degree(L) "The field must be normal over its base field"
 
@@ -191,7 +191,7 @@ function is_normal_basis_generator(a::NumFieldElem)
   L = parent(a)
   n = degree(L)
   K = base_field(L)
-  Aut = automorphisms(L)
+  Aut = automorphism_list(L)
 
   @req length(Aut) != degree(L) "The field must be normal over its base field"
 
@@ -313,24 +313,24 @@ function set_vars!(L::NonSimpleNumField{T}, a::Vector{Symbol}) where {T}
   nothing
 end
 
-is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
+is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
 
 function is_cyclotomic_type(L::Union{AnticNumberField, NfRel})
   f = get_attribute(L, :cyclo)::Union{Nothing,Int}
   if f === nothing
-    return false, fmpz(1)
+    return false, ZZRingElem(1)
   end
   return true, f
 end
 
-is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, fmpz(1)
-is_quadratic_type(K::NfRel) = false, fmpz(1)
+is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
+is_quadratic_type(K::NfRel) = false, ZZRingElem(1)
 function is_quadratic_type(L::AnticNumberField)
   f = get_attribute(L, :show)
   if f === Hecke.show_quad
     return true, numerator(-coeff(L.pol, 0))
   end
-  return false, fmpz(1)
+  return false, ZZRingElem(1)
 end
 
 ################################################################################
@@ -362,7 +362,7 @@ function absolute_basis(K::NumField)
   return res
 end
 
-function absolute_basis(K::NumField{fmpq})
+function absolute_basis(K::NumField{QQFieldElem})
   return basis(K)
 end
 
@@ -418,7 +418,7 @@ Return the signature of the number field of $K$.
 ```jldoctest
 julia> Qx, x = QQ["x"];
 
-julia> K, a = NumberField(x^2 - 2, "a");
+julia> K, a = number_field(x^2 - 2, "a");
 
 julia> signature(K)
 (2, 0)
@@ -432,29 +432,29 @@ function signature(K::NumField) end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    infinite_places(K::NumField) -> Vector{Plc}
-
-This function returns all infinite places of $K$.
-
-# Examples
-
-```jldoctest
-julia> Qx, x = QQ["x"];
-
-julia> K, a = NumberField(x^2 - 2, "a");
-
-julia> infinite_places(K)
-2-element Vector{InfPlc}:
- Real place of
-Number field over Rational Field with defining polynomial x^2 - 2
-corresponding to the root [-1.414213562373095049 +/- 3.90e-19]
- Real place of
-Number field over Rational Field with defining polynomial x^2 - 2
-corresponding to the root [1.414213562373095049 +/- 3.90e-19]
-```
-"""
-function infinite_places(::NumField) end
+#@doc Markdown.doc"""
+#    infinite_places(K::NumField) -> Vector{Plc}
+#
+#This function returns all infinite places of $K$.
+#
+## Examples
+#
+#```jldoctest
+#julia> Qx, x = QQ["x"];
+#
+#julia> K, a = number_field(x^2 - 2, "a", cached = false);
+#
+#julia> infinite_places(K)
+#2-element Vector{InfPlc}:
+# Real place of
+#Number field over Rational Field with defining polynomial x^2 - 2
+#corresponding to the root [-1.414213562373095049 +/- 3.90e-19]
+# Real place of
+#Number field over Rational Field with defining polynomial x^2 - 2
+#corresponding to the root [1.414213562373095049 +/- 3.90e-19]
+#```
+#"""
+#function infinite_places(::NumField) end
 
 @doc doc"""
     isreal(P::Plc)
@@ -491,11 +491,11 @@ function is_abelian(::NumField) end
 ################################################################################
 
 @doc doc"""
-    automorphisms(L::NumField) -> Vector{NumFieldMor}
+    automorphism_list(L::NumField) -> Vector{NumFieldMor}
 
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.
 """
-function automorphisms(L::NumField) end
+function automorphism_list(L::NumField) end
 
 ################################################################################
 #

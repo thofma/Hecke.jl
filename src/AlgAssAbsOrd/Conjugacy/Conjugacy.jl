@@ -12,17 +12,17 @@ export is_GLZ_conjugate
 # This is mainly for dealing with the isomorphism C_A \cong \End_Q[x](Q^n)
 # and the surjection to the semisimplification.
 mutable struct CommutatorAlgebra
-  A::fmpq_mat
-  T::Generic.MatSpaceElem{fmpq_poly}
-  Tinv::Generic.MatSpaceElem{fmpq_poly}
-  el::Vector{fmpq_poly}
-  invariant_factors::Vector{Vector{fmpq_poly}}
-  invariant_factors_factored::Vector{Vector{fmpq_poly}}
-  invariant_factors_grouped::Vector{Tuple{fmpq_poly,
+  A::QQMatrix
+  T::Generic.MatSpaceElem{QQPolyRingElem}
+  Tinv::Generic.MatSpaceElem{QQPolyRingElem}
+  el::Vector{QQPolyRingElem}
+  invariant_factors::Vector{Vector{QQPolyRingElem}}
+  invariant_factors_factored::Vector{Vector{QQPolyRingElem}}
+  invariant_factors_grouped::Vector{Tuple{QQPolyRingElem,
                                           AnticNumberField,
                                           Vector{Tuple{Int, Int, Int}}}}
   invariant_factors_grouped_grouped::Vector{Vector{Tuple{Int, Vector{Tuple{Int, Int}}}}}
-  irreducible_factors::Vector{Tuple{fmpq_poly,
+  irreducible_factors::Vector{Tuple{QQPolyRingElem,
                                     AnticNumberField,
                                     Vector{Tuple{Int, Int}}}}
 
@@ -64,11 +64,11 @@ function _compute_decomposition!(C::CommutatorAlgebra)
     true
   end
 
-  invariant_factors = Vector{Vector{fmpq_poly}}()
+  invariant_factors = Vector{Vector{QQPolyRingElem}}()
 
-  invariant_factors_factored = Vector{Vector{fmpq_poly}}()
+  invariant_factors_factored = Vector{Vector{QQPolyRingElem}}()
 
-  invariant_factors_grouped = Vector{Tuple{fmpq_poly,
+  invariant_factors_grouped = Vector{Tuple{QQPolyRingElem,
                                            AnticNumberField,
                                            Vector{Tuple{Int, Int, Int}}}}()
 
@@ -76,9 +76,9 @@ function _compute_decomposition!(C::CommutatorAlgebra)
                                                    Vector{Tuple{Int, Int}}}}[]
 
   for i in 1:length(C.el)
-    fac = factor(C.el[i])::Fac{fmpq_poly}
-    inv_fac = Vector{fmpq_poly}()
-    factored = Vector{fmpq_poly}()
+    fac = factor(C.el[i])::Fac{QQPolyRingElem}
+    inv_fac = Vector{QQPolyRingElem}()
+    factored = Vector{QQPolyRingElem}()
     j = 1
     for (p, e) in fac
       push!(factored, inv(leading_coefficient(p)) * p^e)
@@ -87,7 +87,7 @@ function _compute_decomposition!(C::CommutatorAlgebra)
       if k isa Int
         push!(invariant_factors_grouped[k][3], (i, j, e))
       else
-        K,  = NumberField(p, cached = false)
+        K,  = number_field(p, cached = false)
         push!(invariant_factors_grouped, (p, K, Tuple{Int, Int, Int}[(i, j, e)]))
       end
 
@@ -119,13 +119,13 @@ function _compute_decomposition!(C::CommutatorAlgebra)
 
   @hassert :Conjugacy 1 begin
     for i in 1:10
-      _w = fmpq_poly[rand(Qx, 1:5, 1:5) % C.el[i] for i in 1:n]
+      _w = QQPolyRingElem[rand(Qx, 1:5, 1:5) % C.el[i] for i in 1:n]
       v = Hecke._second_map_forward(_w, C)
       @assert Hecke._second_map_backward(v, C) == _w
     end
 
     for i in 1:10
-      _w = [fmpq_poly[rand(Qx, 1:5, 1:5) % C.invariant_factors_factored[i][j]
+      _w = [QQPolyRingElem[rand(Qx, 1:5, 1:5) % C.invariant_factors_factored[i][j]
                for j in 1:length(C.invariant_factors_factored[i])]
                for i in 1:dim(C)]
       _v = Hecke._third_map_forward(_w, C)
@@ -137,12 +137,12 @@ function _compute_decomposition!(C::CommutatorAlgebra)
   return C
 end
 
-function _first_map_forward(w::fmpq_mat, C::CommutatorAlgebra)
+function _first_map_forward(w::QQMatrix, C::CommutatorAlgebra)
   v = change_base_ring(Hecke.Globals.Qx, w) * C.T
   return elem_type(base_ring(v))[v[1, i] % C.el[i] for i in 1:dim(C)]
 end
 
-function _first_map_backward(v::Vector{fmpq_poly}, C::CommutatorAlgebra)
+function _first_map_backward(v::Vector{QQPolyRingElem}, C::CommutatorAlgebra)
   A = matrix(C)
   n = dim(C)
   _w = matrix(Hecke.Globals.Qx, 1, n, v)
@@ -157,22 +157,22 @@ function _first_map_backward(v::Vector{fmpq_poly}, C::CommutatorAlgebra)
   return z
 end
 
-function _second_map_forward(v::Vector{fmpq_poly}, C::CommutatorAlgebra)
-  z = Vector{Vector{fmpq_poly}}()
+function _second_map_forward(v::Vector{QQPolyRingElem}, C::CommutatorAlgebra)
+  z = Vector{Vector{QQPolyRingElem}}()
   for i in 1:length(v)
     if length(C.invariant_factors_factored[i]) == 0
-      push!(z, fmpq_poly[])
+      push!(z, QQPolyRingElem[])
     else
-      push!(z, fmpq_poly[v[i] % C.invariant_factors_factored[i][j]
+      push!(z, QQPolyRingElem[v[i] % C.invariant_factors_factored[i][j]
                            for j in 1:length(C.invariant_factors_factored[i])])
     end
   end
   return z
 end
 
-function _second_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra)
+function _second_map_backward(v::Vector{Vector{QQPolyRingElem}}, C::CommutatorAlgebra)
   n = dim(C)
-  w = Vector{fmpq_poly}()
+  w = Vector{QQPolyRingElem}()
   for i in 1:n
     if length(C.invariant_factors_factored[i]) == 0
       push!(w, zero(Hecke.Globals.Qx))
@@ -183,10 +183,10 @@ function _second_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra
   return w
 end
 
-function _third_map_forward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra)
-  z = Vector{Vector{fmpq_poly}}(undef, length(C.invariant_factors_grouped))
+function _third_map_forward(v::Vector{Vector{QQPolyRingElem}}, C::CommutatorAlgebra)
+  z = Vector{Vector{QQPolyRingElem}}(undef, length(C.invariant_factors_grouped))
   for l in 1:length(C.invariant_factors_grouped)
-    zz = fmpq_poly[]
+    zz = QQPolyRingElem[]
     for (i, j) in C.invariant_factors_grouped[l][3]
       push!(zz, v[i][j])
     end
@@ -195,10 +195,10 @@ function _third_map_forward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra)
   return z
 end
 
-function _third_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra)
-  z = Vector{Vector{fmpq_poly}}(undef, dim(C))
+function _third_map_backward(v::Vector{Vector{QQPolyRingElem}}, C::CommutatorAlgebra)
+  z = Vector{Vector{QQPolyRingElem}}(undef, dim(C))
   for i in 1:dim(C)
-    z[i] = Vector{fmpq_poly}(undef, length(C.invariant_factors_factored[i]))
+    z[i] = Vector{QQPolyRingElem}(undef, length(C.invariant_factors_factored[i]))
   end
 
   for l in 1:length(C.invariant_factors_grouped)
@@ -212,7 +212,7 @@ function _third_map_backward(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra)
 end
 
 function _std_basis_vector(C::CommutatorAlgebra, i::Int, j::Int)
-  z = Vector{Vector{fmpq_poly}}()
+  z = Vector{Vector{QQPolyRingElem}}()
   @assert 1 <= i <= length(C.invariant_factors_grouped)
   @assert 1 <= j <= length(C.invariant_factors_grouped[i][3])
   for k in 1:length(C.invariant_factors_grouped)
@@ -222,12 +222,12 @@ function _std_basis_vector(C::CommutatorAlgebra, i::Int, j::Int)
   return z
 end
 
-function _from_std_basis(v::Vector{Vector{fmpq_poly}}, C::CommutatorAlgebra)
+function _from_std_basis(v::Vector{Vector{QQPolyRingElem}}, C::CommutatorAlgebra)
   return _first_map_backward(
             _second_map_backward(_third_map_backward(v, C), C), C)
 end
 
-function _to_std_basis(v::fmpq_mat, C::CommutatorAlgebra)
+function _to_std_basis(v::QQMatrix, C::CommutatorAlgebra)
   return _third_map_forward(_second_map_forward(_first_map_forward(v, C), C), C)
 end
 
@@ -246,7 +246,7 @@ function _decomposition_type(C::CommutatorAlgebra)
 end
 
 function _induce_action(C::CommutatorAlgebra, M)
-  res = dense_matrix_type(fmpq_poly)[]
+  res = dense_matrix_type(QQPolyRingElem)[]
   @hassert :Conjugacy 1 M * matrix(C) == matrix(C) * M
   for i in 1:length(C.invariant_factors_grouped)
     n = length(C.invariant_factors_grouped[i][3])
@@ -311,20 +311,20 @@ julia> isone(abs(det(T))) && T * A == B * T
 true
 ```
 """
-is_GLZ_conjugate(A::Union{fmpz_mat, fmpq_mat}, B::Union{fmpz_mat, fmpq_mat})
+is_GLZ_conjugate(A::Union{ZZMatrix, QQMatrix}, B::Union{ZZMatrix, QQMatrix})
 
-function is_GLZ_conjugate(A::fmpz_mat, B::fmpz_mat)
+function is_GLZ_conjugate(A::ZZMatrix, B::ZZMatrix)
   AQ = change_base_ring(FlintQQ, A)
   BQ = change_base_ring(FlintQQ, B)
   return _isGLZ_conjugate_integral(AQ, BQ)
 end
 
-function is_GLZ_conjugate(A::fmpq_mat, B::fmpq_mat)
+function is_GLZ_conjugate(A::QQMatrix, B::QQMatrix)
   d = lcm(denominator(A), denominator(B))
   return _isGLZ_conjugate_integral(d*A, d*B)
 end
 
-function _isGLZ_conjugate_integral(A::fmpq_mat, B::fmpq_mat)
+function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
   if nrows(A) != nrows(B)
     return false, zero_matrix(FlintZZ, 0, 0)
   end
@@ -363,8 +363,8 @@ function _isGLZ_conjugate_integral(A::fmpq_mat, B::fmpq_mat)
     z = zero(AA)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
-      BB, mB = dec[i]::Tuple{AlgAss{fmpq},
-                             AbsAlgAssMor{AlgAss{fmpq},AlgAss{fmpq},fmpq_mat}}
+      BB, mB = dec[i]::Tuple{AlgAss{QQFieldElem},
+                             AbsAlgAssMor{AlgAss{QQFieldElem},AlgAss{QQFieldElem},QQMatrix}}
       local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
       C, BtoC = BB.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
@@ -377,8 +377,8 @@ function _isGLZ_conjugate_integral(A::fmpq_mat, B::fmpq_mat)
     z = zero(AA)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
-      BB, mB = dec[i]::Tuple{AlgAss{fmpq},
-                             AbsAlgAssMor{AlgAss{fmpq},AlgAss{fmpq},fmpq_mat}}
+      BB, mB = dec[i]::Tuple{AlgAss{QQFieldElem},
+                             AbsAlgAssMor{AlgAss{QQFieldElem},AlgAss{QQFieldElem},QQMatrix}}
       local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
       C, BtoC = BB.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
@@ -391,7 +391,7 @@ function _isGLZ_conjugate_integral(A::fmpq_mat, B::fmpq_mat)
   @hassert :Conjugacy 1 OO == right_order(OI)
   @vprint :Conjugacy 1 "Testing if ideal is principal...\n"
   fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool,
-                                              AlgAssElem{fmpq,AlgAss{fmpq}}}
+                                              AlgAssElem{QQFieldElem,AlgAss{QQFieldElem}}}
 
   if !fl
     return false, zero_matrix(FlintZZ, 0, 0)
@@ -441,37 +441,39 @@ end
 #
 ################################################################################
 
-_basis_of_commutator_algebra(A) = _basis_of_commutator_algebra(A, A)
+_basis_of_commutator_algebra(A::T) where T <: MatElem = _basis_of_commutator_algebra(A, A)
 
-_basis_of_commutator_algebra(As::Vector) = _basis_of_commutator_algebra(A, A)
+_basis_of_commutator_algebra(As::Vector) = _basis_of_commutator_algebra(As, As)
 
-function _basis_of_integral_commutator_algebra(A::fmpq_mat, B::fmpq_mat)
+function _basis_of_integral_commutator_algebra(A::QQMatrix, B::QQMatrix)
   # Compute using saturation
+  @assert nrows(A) == ncols(A)
+  @assert nrows(B) == ncols(B)
   @assert isone(denominator(A))
-  @assert isone(denominator(A))
-  linind = transpose(LinearIndices(size(A)))
+  @assert isone(denominator(B))
+  linind = transpose(LinearIndices((nrows(A), nrows(B))))
   n = nrows(A)
-  z = zero_matrix(FlintQQ, n^2, n^2)
-  for i in 1:n
+  m = nrows(B)
+  z = zero_matrix(FlintQQ, n*m, n*m)
+  for i in 1:m
     for j in 1:n
       for k in 1:n
-        z[linind[i, j], linind[i, k]] = FlintZZ(z[linind[i, j], linind[i, k]] +
-                                                                        A[k, j])
-        z[linind[i, j], linind[k, j]] = FlintZZ(z[linind[i, j], linind[k, j]] -
-                                                                        B[i, k])
+        z[linind[i, j], linind[i, k]] += FlintZZ(A[k, j])
+      end
+      for k in 1:m
+        z[linind[i, j], linind[k, j]] -= FlintZZ(B[i, k])
       end
     end
   end
   r, K = right_kernel(z)
   KK = change_base_ring(FlintZZ, denominator(K) * K)
   KK = transpose(saturate(transpose(KK)))
-  res = typeof(A)[]
+  res = QQMatrix[]
   for k in 1:ncols(K)
-    cartind = CartesianIndices(size(A))
-    M = zero_matrix(base_ring(A), nrows(A), ncols(A))
-    for l in 1:n^2
-      i1, j1 = cartind[l].I
-      M[j1, i1] = KK[l, k]
+    cartind = cartesian_product_iterator([1:x for x in (n, m)], inplace = true)
+    M = zero_matrix(FlintQQ, m, n)
+    for (l, v) in enumerate(cartind)
+        M[v[2], v[1]] = KK[l, k]
     end
     @assert M * A == B * M
     push!(res, M)
@@ -480,24 +482,28 @@ function _basis_of_integral_commutator_algebra(A::fmpq_mat, B::fmpq_mat)
 end
 
 function _basis_of_commutator_algebra(A::MatElem, B::MatElem)
-  linind = transpose(LinearIndices(size(A)))
+  @assert nrows(A) == ncols(A)
+  @assert nrows(B) == ncols(B)
+  @assert base_ring(A) === base_ring(B)
+  linind = transpose(LinearIndices((nrows(A), nrows(B))))
   n = nrows(A)
-  z = zero_matrix(base_ring(A), n^2, n^2)
-  for i in 1:n
+  m = nrows(B)
+  z = zero_matrix(base_ring(A), n*m, n*m)
+  for i in 1:m
     for j in 1:n
       for k in 1:n
-        z[linind[i, j], linind[i, k]] = FlintZZ(z[linind[i, j], linind[i, k]] +
-                                                                        A[k, j])
-        z[linind[i, j], linind[k, j]] = FlintZZ(z[linind[i, j], linind[k, j]] -
-                                                                        B[i, k])
+        z[linind[i, j], linind[i, k]] += A[k, j]
+      end
+      for k in 1:m
+        z[linind[i, j], linind[k, j]] -= B[i, k]
       end
     end
   end
   r, K = right_kernel(z)
   res = typeof(A)[]
   for k in 1:ncols(K)
-    cartind = cartesian_product_iterator([1:x for x in size(A)], inplace = true)
-    M = zero_matrix(base_ring(A), nrows(A), ncols(A))
+    cartind = cartesian_product_iterator([1:x for x in (n, m)], inplace = true)
+    M = zero_matrix(base_ring(A), m, n)
     for (l, v) in enumerate(cartind)
       M[v[2], v[1]] = K[l, k]
     end
@@ -507,19 +513,25 @@ function _basis_of_commutator_algebra(A::MatElem, B::MatElem)
   return res
 end
 
-function _basis_of_commutator_algebra(As::Vector, Bs::Vector)
-  linind = transpose(LinearIndices(size(As[1])))
+function _basis_of_commutator_algebra(As::Vector{T}, Bs::Vector{T}) where T <: MatElem
+  F = base_ring(As[1])
   n = nrows(As[1])
-  zz = zero_matrix(base_ring(As[1]), 0, n^2)
+  m = nrows(Bs[1])
+  @assert length(As) == length(Bs)
+  @assert all(M -> base_ring(M) === F, union(As, Bs))
+  @assert all(M -> size(M) == (n, n), As)
+  @assert all(M -> size(M) == (m, m), Bs)
+  linind = transpose(LinearIndices((n, m)))
+  zz = zero_matrix(F, 0, n*m)
   for (A, B) in zip(As, Bs)
-    z = zero_matrix(base_ring(A), n^2, n^2)
-    for i in 1:n
+    z = zero_matrix(F, n*m, n*m)
+    for i in 1:m
       for j in 1:n
         for k in 1:n
-          z[linind[i, j], linind[i, k]] = z[linind[i, j], linind[i, k]] +
-                                                                        A[k, j]
-          z[linind[i, j], linind[k, j]] = z[linind[i, j], linind[k, j]] -
-                                                                        B[i, k]
+          z[linind[i, j], linind[i, k]] += A[k, j]
+        end
+        for k in 1:m
+          z[linind[i, j], linind[k, j]] -= B[i, k]
         end
       end
     end
@@ -528,32 +540,41 @@ function _basis_of_commutator_algebra(As::Vector, Bs::Vector)
   r, K = right_kernel(zz)
   res = eltype(As)[]
   for k in 1:ncols(K)
-    cartind = cartesian_product_iterator([1:x for x in size(As[1])],
+    cartind = cartesian_product_iterator([1:x for x in (n, m)],
                                          inplace = true)
-    M = zero_matrix(base_ring(As[1]), nrows(As[1]), ncols(As[1]))
+    M = zero_matrix(F, m, n)
     for (l, v) in enumerate(cartind)
       M[v[2], v[1]] = K[l, k]
+    end
+    for i in 1:length(As)
+      M * As[i] == Bs[i] * M
     end
     push!(res, M)
   end
   return res
 end
 
-function _basis_of_integral_commutator_algebra(As::Vector{fmpq_mat},
-                                               Bs::Vector{fmpq_mat})
+function _basis_of_integral_commutator_algebra(As::Vector{QQMatrix},
+                                               Bs::Vector{QQMatrix})
   # Compute using saturation
+  n = nrows(As[1])
+  m = nrows(Bs[1])
+  @assert length(As) == length(Bs)
+  @assert all(M -> size(M) == (n, n), As)
+  @assert all(M -> size(M) == (m, m), Bs)
   @assert all(x -> isone(denominator(x)), As)
   @assert all(x -> isone(denominator(x)), Bs)
-  linind = transpose(LinearIndices(size(As[1])))
-  n = nrows(As[1])
-  zz = zero_matrix(base_ring(As[1]), 0, n^2)
+  linind = transpose(LinearIndices((n,m)))
+  zz = zero_matrix(FlintQQ, 0, n*m)
   for (A, B) in zip(As, Bs)
-    z = zero_matrix(FlintQQ, n^2, n^2)
-    for i in 1:n
+    z = zero_matrix(FlintQQ, n*m, n*m)
+    for i in 1:m
       for j in 1:n
         for k in 1:n
-          z[linind[i, j], linind[i, k]] = z[linind[i, j], linind[i, k]] + A[k, j]
-          z[linind[i, j], linind[k, j]] = z[linind[i, j], linind[k, j]] - B[i, k]
+          z[linind[i, j], linind[i, k]] += A[k, j]
+        end
+        for k in 1:m
+          z[linind[i, j], linind[k, j]] -= B[i, k]
         end
       end
     end
@@ -562,13 +583,12 @@ function _basis_of_integral_commutator_algebra(As::Vector{fmpq_mat},
   r, K = right_kernel(zz)
   KK = change_base_ring(FlintZZ, denominator(K) * K)
   KK = transpose(saturate(transpose(KK)))
-  res = typeof(As[1])[]
+  res = QQMatrix[]
   for k in 1:ncols(K)
-    cartind = CartesianIndices(size(As[1]))
-    M = zero_matrix(base_ring(As[1]), n, n)
-    for l in 1:n^2
-      i1, j1 = cartind[l].I
-      M[j1, i1] = KK[l, k]
+    cartind = cartesian_product_iterator([1:x for x in (n, m)], inplace = true)
+    M = zero_matrix(FlintQQ, m, n)
+    for (l, v) in enumerate(cartind)
+        M[v[2], v[1]] = KK[l, k]
     end
     for i in 1:length(As)
       M * As[i] == Bs[i] * M
@@ -584,12 +604,12 @@ end
 #
 ################################################################################
 
-#function _isconjugated_probabilistic(a::Vector{fmpz_mat}, b::Vector{fmpz_mat})
+#function _isconjugated_probabilistic(a::Vector{ZZMatrix}, b::Vector{ZZMatrix})
 #  return isconjugated_probabilistic(map(x -> map(QQ, x), a),
 #                                    map(x -> map(QQ, x), b))
 #end
 #
-#function _isconjugated_probabilistic(a::Vector{fmpq_mat}, b::Vector{fmpq_mat})
+#function _isconjugated_probabilistic(a::Vector{QQMatrix}, b::Vector{QQMatrix})
 #  B = _basis_of_commutator_algebra(a, b)
 #  l = length(B)
 #  for i in 1:50
@@ -601,19 +621,19 @@ end
 #  return false, zero_matrix(FlintQQ, 0, 0)
 #end
 #
-#function _isGLZ_conjugate(A::Vector{fmpz_mat}, B::Vector{fmpz_mat})
+#function _isGLZ_conjugate(A::Vector{ZZMatrix}, B::Vector{ZZMatrix})
 #  return __isGLZ_conjugate(map(x -> change_base_ring(FlintQQ, x), A),
 #                          map(x -> change_base_ring(FlintQQ, x), B))
 #end
 #
-#function _isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
-#  d1 = lcm(fmpz[denominator(x) for x in A])
-#  d2 = lcm(fmpz[denominator(x) for x in B])
+#function _isGLZ_conjugate(A::Vector{QQMatrix}, B::Vector{QQMatrix})
+#  d1 = lcm(ZZRingElem[denominator(x) for x in A])
+#  d2 = lcm(ZZRingElem[denominator(x) for x in B])
 #  d = lcm(d1, d2)
 #  return __isGLZ_conjugate(d .* A, d .* B)
 #end
 #
-#function __isGLZ_conjugate(A::Vector{fmpq_mat}, B::Vector{fmpq_mat})
+#function __isGLZ_conjugate(A::Vector{QQMatrix}, B::Vector{QQMatrix})
 #
 #  if A == B
 #    return true, identity_matrix(FlintQQ, nrows(A[1]))
@@ -649,7 +669,7 @@ end
 #      dec = decompose(AA)
 #      B, mB = dec[1]
 #      A.isomorphic_full_matrix_algebra = A, inv(mB)
-#      fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AlgAssElem{fmpq,typeof(AA)}}
+#      fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AlgAssElem{QQFieldElem,typeof(AA)}}
 #      yy = elem_in_algebra(y)
 #    elseif is_commutative(AA)
 #      @info "Algebra is commutative"

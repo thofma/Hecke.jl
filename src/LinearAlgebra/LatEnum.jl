@@ -45,8 +45,8 @@
 #     L, U for the other bound as well and using this for exclusion.
 #     (see other comment below)
 
-add_assert_scope(:LatEnum)
-add_verbose_scope(:LatEnum)
+add_assertion_scope(:LatEnum)
+add_verbosity_scope(:LatEnum)
 
 function show(io::IO, E::enum_ctx)
   println(io, "EnumCtx")
@@ -56,12 +56,12 @@ function show(io::IO, E::enum_ctx)
 end
 
 #need to only compute the top l x l submatrix when using limited enum
-function pseudo_cholesky(G::fmpz_mat, den=1;
+function pseudo_cholesky(G::ZZMatrix, den=1;
                  TC::Type=Rational{BigInt}, limit = nrows(G))
   n = ncols(G)
   @hassert :LatEnum 1 nrows(G) == n
   limit = min(limit, n)
-  t = fmpz()
+  t = ZZRingElem()
   C = Array{TC}(undef, limit, limit)
   for i=1:limit
     for j=1:limit
@@ -103,12 +103,12 @@ function enum_ctx_from_gram(G::FakeFmpqMat; Tx = BigInt, TC = Rational{BigInt}, 
   return enum_ctx_from_gram(numerator(G), denominator(G), Tx=Tx, TC=TC, TU=TU, limit = limit)
 end
 
-function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = fmpz(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = nrows(B))
+function enum_ctx_from_basis(B::ZZMatrix, den::ZZRingElem = ZZRingElem(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = nrows(B))
   G = gram(B)
   return enum_ctx_from_gram(G, den*den, Tx=Tx, TC=TC, TU=TU, limit = limit)
 end
 
-function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = nrows(G))
+function enum_ctx_from_gram(G::ZZMatrix, den = 1; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = nrows(G))
   E = enum_ctx{Tx, TC, TU}()
   E.G = G
   n = nrows(G)
@@ -164,7 +164,7 @@ function enum_ctx_local_bound(a::Number, b::Number) where Number
   return L, U
 end
 
-function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
+function enum_ctx_start(E::enum_ctx{A,B,C}, c::ZZRingElem) where {A,B,C}
   E.c = c
   zero!(E.x)
   for i=1:E.limit
@@ -183,7 +183,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
   E.cnt = 0
 end
 
-function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1.0) where {A,B,C}
+function enum_ctx_start(E::enum_ctx{A,B,C}, x::ZZMatrix; eps::Float64=1.0) where {A,B,C}
   E.x = x
   for i=E.limit-1:-1:1
     E.tail[i] = sum(E.C[i, j]*C(E.x[1,j]) for j=i+1:E.limit)
@@ -191,7 +191,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1.0) where
   b = sum(E.C[i,i]*(C(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit) #curr. length
   #@show b, C((x*E.G*x')[1,1])
   #@assert b == C((x*E.G*x')[1,1])
-  E.c = ceil(fmpz, b*C(E.d)*eps)
+  E.c = ceil(ZZRingElem, b*C(E.d)*eps)
   E.l[E.limit] = C(E.c//E.d)
   for i=E.limit-1:-1:1
     E.l[i] = E.l[i+1] - E.C[i+1,i+1]*(C(E.x[1,i+1]) + E.tail[i+1])^2
@@ -210,31 +210,31 @@ end
 #         length
 #         proper lattice type
 
-@inline function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
-  return ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
-               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
-#@inline function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
-    #return unsafe_load(reinterpret(Ptr{Ptr{fmpz}}, a.rows), r)+(c-1)*sizeof(Ptr)
+@inline function fmpz_mat_entry(a::ZZMatrix, r::Int, c::Int)
+  return ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem},
+               (Ref{ZZMatrix}, Int, Int), a, r - 1, c - 1)
+#@inline function fmpz_mat_entry(a::ZZMatrix, r::Int, c::Int)
+    #return unsafe_load(reinterpret(Ptr{Ptr{ZZRingElem}}, a.rows), r)+(c-1)*sizeof(Ptr)
 end
 
-@inline function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
-  z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
-               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
-  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
+@inline function fmpz_mat_entry_incref!(a::ZZMatrix, r::Int, c::Int)
+  z = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem},
+               (Ref{ZZMatrix}, Int, Int), a, r - 1, c - 1)
+  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, 1)
   #z = fmpz_mat_entry(a, r, c)
   #unsafe_store!(reinterpret(Ptr{Int}, z), unsafe_load(reinterpret(Ptr{Int}, z), 1)+1, 1)
-  ##ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
+  ##ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, 1)
 end
 
-function fmpz_mat_entry_add_ui!(a::fmpz_mat, r::Int, c::Int, v::UInt)
-  z = ccall((:fmpz_mat_entry, libflint), Ptr{fmpz},
-               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
-  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, v)
+function fmpz_mat_entry_add_ui!(a::ZZMatrix, r::Int, c::Int, v::UInt)
+  z = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem},
+               (Ref{ZZMatrix}, Int, Int), a, r - 1, c - 1)
+  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, v)
 end
 
 function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}
 #  println("i: ", i, "                                   "[1:2*i], "|")
-  t = fmpz()
+  t = ZZRingElem()
   if i == E.last_non_zero-1
     fmpz_mat_entry_incref!(E.x, 1, i)
 #    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
@@ -264,7 +264,7 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
   n::Int = 1
   n = E.limit
   i=1
-  t = fmpz()
+  t = ZZRingElem()
   while true
     enum_ctx_advance_level(E, i)
     getindex!(t, E.x, 1, i)
@@ -343,11 +343,11 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
 end
 
 function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::T, limit=-1) where {A,B,C} where T <: IntegerUnion
-  enum_ctx_start(E, fmpz(c))
+  enum_ctx_start(E, ZZRingElem(c))
   if enum_ctx_next(E)
     l = deepcopy(E.x) # else the 1st element is not returned....
   else
-    l = matrix(FlintZZ, 0, E.n, fmpz[])
+    l = matrix(FlintZZ, 0, E.n, ZZRingElem[])
   end
   while enum_ctx_next(E) && (limit == -1 || limit >= Base.size(l, 1))
     l = vcat(l, E.x)
@@ -402,7 +402,7 @@ function enumerate_using_gram(G::arb_mat, c::arb)
   return _enumerate(E, c, nrows(G), zero_matrix(FlintZZ, 1, nrows(G)))
 end
 
-function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
+function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
   # assume x_n,x_n-1,...,x_i+1 are set
   # compute the bound for x_i
   G = E.G
@@ -457,22 +457,22 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
 
   ccall((:arf_set_mag, libarb), Nothing, (Ref{arf_struct}, Ptr{Nemo.mag_struct}), u, tr_ptr)
   ccall((:arf_sub, libarb), Nothing, (Ref{arf_struct}, Ptr{arf_struct}, Ref{arf_struct}, Int, Cint), u, tm_ptr, u, p, 4) # 4 is round to -infty
-  lbfmpz = fmpz()
-  ccall((:arf_get_fmpz, libarb), Nothing, (Ref{fmpz}, Ref{arf_struct}, Cint), lbfmpz, u, 4)
+  lbfmpz = ZZRingElem()
+  ccall((:arf_get_fmpz, libarb), Nothing, (Ref{ZZRingElem}, Ref{arf_struct}, Cint), lbfmpz, u, 4)
 
   tr = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), ub)
   tm = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), ub)
 
   ccall((:arf_set_mag, libarb), Nothing, (Ref{arf_struct}, Ptr{Nemo.mag_struct}), u, tr)
   ccall((:arf_sub, libarb), Nothing, (Ref{arf_struct}, Ptr{arf_struct}, Ref{arf_struct}, Int, Cint), u, tm, u, p, 3) # 3 is round to +infty
-  ubfmpz = fmpz()
-  ccall((:arf_get_fmpz, libarb), Nothing, (Ref{fmpz}, Ref{arf_struct}, Cint), ubfmpz, u, 3)
+  ubfmpz = ZZRingElem()
+  ccall((:arf_get_fmpz, libarb), Nothing, (Ref{ZZRingElem}, Ref{arf_struct}, Cint), ubfmpz, u, 3)
 
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), u)
 
   @vprint :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz\n"
 
-  A = Vector{Vector{fmpz}}()
+  A = Vector{Vector{ZZRingElem}}()
 
   if i == 1
     @vprint :LatEnum "$(recprint(n - i)) his is depth $i\n"
@@ -483,7 +483,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
         @vprint :LatEnum "$(recprint(n - i)) Something is negative\n"
         continue
       end
-      push!(A, [ fmpz(j) ])
+      push!(A, [ ZZRingElem(j) ])
     end
   else
     for j in Int(lbfmpz):Int(ubfmpz)
@@ -502,7 +502,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
         if n == length(l[k]) + 1 && iszero(j) && all(iszero, l[k])
           continue
         end
-        push!(A, push!(l[k], fmpz(j)))
+        push!(A, push!(l[k], ZZRingElem(j)))
       end
     end
   end
@@ -535,9 +535,9 @@ end
 #
 function semi_factorial(n::Int)
   if isodd(n)
-    return prod([fmpz(2*i-1) for i=1:div(n+1, 2)])
+    return prod([ZZRingElem(2*i-1) for i=1:div(n+1, 2)])
   else
-    return prod([fmpz(2*i) for i=1:div(n, 2)])
+    return prod([ZZRingElem(2*i) for i=1:div(n, 2)])
   end
 end
 

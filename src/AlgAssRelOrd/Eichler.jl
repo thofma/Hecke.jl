@@ -8,7 +8,7 @@ function principal_generator_eichler(I::AlgAssRelOrdIdl)
   d = discriminant(O)
 
   # Compute r such that r orders[i] \subseteq orders[j] for all i, j
-  r = fmpz(1)
+  r = ZZRingElem(1)
   for i = 1:length(orders)
     for j = 1:length(orders)
       if i == j
@@ -146,7 +146,7 @@ function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) wh
   return units
 end
 
-function _eichler_find_transforming_unit_recurse(I::S, J::S, primes::Vector{T}) where { S <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, T <: Union{ Int, fmpz, NfAbsOrdIdl, NfRelOrdIdl } }
+function _eichler_find_transforming_unit_recurse(I::S, J::S, primes::Vector{T}) where { S <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, T <: Union{ Int, ZZRingElem, NfAbsOrdIdl, NfRelOrdIdl } }
   if length(primes) == 1
     u = _eichler_find_transforming_unit_maximal(I, J)
     return elem_in_algebra(u, copy = false)
@@ -206,25 +206,25 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
   return t
 end
 
-degree(F::Union{ GaloisField, Generic.ResField{fmpz} }) = 1
+degree(F::Union{ fpField, Generic.ResField{ZZRingElem} }) = 1
 
-function get_coeff_fmpz!(x::fq_nmod, n::Int, z::fmpz)
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{fmpz}, UInt), z, ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fq_nmod}, Int), x, n))
+function get_coeff_fmpz!(x::fqPolyRepFieldElem, n::Int, z::ZZRingElem)
+  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), z, ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n))
   return z
 end
 
-function get_coeff_fmpz!(x::fq, n::Int, z::fmpz)
-  ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), z, x, n)
+function get_coeff_fmpz!(x::FqPolyRepFieldElem, n::Int, z::ZZRingElem)
+  ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), z, x, n)
   return z
 end
 
-function lift!(x::gfp_elem, z::fmpz)
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{fmpz}, UInt), z, x.data)
+function lift!(x::fpFieldElem, z::ZZRingElem)
+  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), z, x.data)
   return z
 end
 
-function lift!(x::Generic.ResF{fmpz}, z::fmpz)
-  ccall((:fmpz_set, libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), z, x.data)
+function lift!(x::Generic.ResF{ZZRingElem}, z::ZZRingElem)
+  ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, x.data)
   return z
 end
 
@@ -238,7 +238,7 @@ end
 # This really SLOW! (But it is a hard problem, I guess.)
 function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
 
-  function _weight(v::MatElem{T}, n::fmpz, t::fmpz, jmax::Int) where { T <: Union{ fq, fq_nmod } }
+  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ FqPolyRepFieldElem, fqPolyRepFieldElem } }
     n = zero!(n)
     for i = 1:nrows(v)
       for j = 0:jmax
@@ -248,7 +248,7 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
     return n
   end
 
-  function _weight(v::MatElem{T}, n::fmpz, t::fmpz, jmax::Int) where { T <: Union{ gfp_elem, Generic.ResF{fmpz} } }
+  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, Generic.ResF{ZZRingElem} } }
     n = zero!(n)
     for i = 1:nrows(v)
       n = add!(n, n, lift!(v[i, 1], t))
@@ -295,8 +295,8 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
   # Initialize weight function stuff
   Fq = base_ring(parent(v))
   p = characteristic(Fq)
-  ngv = fmpz()
-  t = fmpz()
+  ngv = ZZRingElem()
+  t = ZZRingElem()
   jmax = degree(Fq) - 1
   minusW = -w
   temp = deepcopy(v)

@@ -35,9 +35,9 @@
 ################################################################################
 
 export tates_algorithm_global, tates_algorithm_local, tidy_model,
-       tamagawa_number, tamagawa_numbers, kodaira_symbol, kodaira_symbols, 
+       tamagawa_number, tamagawa_numbers, kodaira_symbol, kodaira_symbols,
        reduction_type, modp_reduction, bad_primes, KodairaSymbol
-       
+
 ################################################################################
 #
 #  Tates algorithm
@@ -47,7 +47,7 @@ export tates_algorithm_global, tates_algorithm_local, tidy_model,
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc Markdown.doc"""
     tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl)
-    -> EllipticCurve{nf_elem}, String, fmpz, fmpz, Bool
+    -> EllipticCurve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
@@ -55,295 +55,352 @@ $f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number
 at $p$ and s is false if and only if $E$ has non-split
 multiplicative reduction.
 """
-function tates_algorithm_local(E::EllCrv{nf_elem},pIdeal:: NfOrdIdl)
+function tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal::NfOrdIdl)
+  return _tates_algorithm(E, pIdeal)
+end
 
-  #Assumption: Coefficients of E are in DVR with maximal ideal pIdeal of K.
-
-  #Check if we have generators
-  p = pIdeal.gen_one
-  uniformizer = pIdeal.gen_two
+# internal version
+# extend this for global fields
+function _tates_algorithm(E, P)
   K = base_field(E)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  OK = maximal_order(K)
+  F, _mF = residue_field(OK, P)
+  mF = extend(_mF, K)
 
-  b2, b4, b6, b8 = b_invars(E)
-  c4, c6 = c_invars(E)
+  p = minimum(P)
+  pis2 = p == 2
+  pis3 = p == 3
+  pi = uniformizer(P)
 
-  delta = discriminant(E)
-  delta = numerator(delta)
+  # valuation
+  _val(x) = iszero(x) ? inf : valuation(x, P)
 
-  n = valuation(delta, pIdeal)
-
-  # test for type I0
-  if n == 0
-    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-  end
-
-
-  # Maybe smods?
-  # change coordinates so that p | a3, a4, a6
-  if p == 2
-    if mod(b2, pIdeal) == 0
-      r = pth_root_mod(a4, pIdeal)
-      t = pth_root_mod(r*(r*(r + a2) + a4) + a6, pIdeal)
-    else
-      temp = invmod(a1, pIdeal)
-      r = temp*a3
-      t = temp*(a4 + r^2)
+  # reduction and lift
+  _lift(y) = mF\y
+  _red(x) = mF(x)
+  # reduction
+  _redmod(x) = mF\(mF(x))
+  # inverse mod
+  _invmod(x) = mF\(inv(mF(x)))
+  # divisibility check
+  _pdiv(x) = iszero(x) || valuation(x, P) > 0
+  # p/2
+  onehalfmodp = pis2 ? ZZ(0) : invmod(ZZ(2), p)
+  # root mod P
+  _rootmod(x, e) = begin
+    fl, y = is_power(_red(x), e)
+    if fl
+      @assert y^e == _red(x)
     end
-
-  elseif p == 3
-    if mod(b2, pIdeal) == 0
-      r = pth_root_mod(-b6, pIdeal)
-    else
-      r = -invmod(b2, pIdeal)*b4
-    end
-
-    t = a1*r + a3
-  else
-    if mod(c4, pIdeal) == 0
-      r = - invmod(FlintZZ(12), p)*b2
-    else
-      r = - invmod(FlintZZ(12)*c4, pIdeal)*(c6 + b2 * c4)
-    end
-      t = - invmod(FlintZZ(2), p)* (a1*r + a3)
-      r = mod(r, pIdeal)
-      t = mod(t, pIdeal)
+    return fl ? _lift(y) : zero(x)
   end
 
-  trans = transform_rstu(E, [r, 0, t, 1])
-  E = trans[1]
-
-  a1, a2, a3, a4, a6 = a_invars(E)
-  b2, b4, b6, b8 = b_invars(E)
-  c4, c6 = c_invars(E)
-
-  split = true
-  # test for types In, II, III, IV
-  if mod(c4, pIdeal) != 0
-    if quadroots(one(K), a1//1, -a2//1, pIdeal)
-      cp = FlintZZ(n)
-    elseif mod(n, 2) == 0
-      cp = FlintZZ(2)
-      split = false
-    else
-      cp = FlintZZ(1)
-      split = false
-    end
-
-    Kp = KodairaSymbol("I$(n)")
-    fp = FlintZZ(1)
-
-
-    return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-  end
-  if a6!= 0 && valuation(a6, pIdeal) < 2
-    Kp = KodairaSymbol("II")
-    fp = FlintZZ(n)
-    cp = FlintZZ(1)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-  end
-
-  if b8!= 0 && valuation(b8, pIdeal) < 3
-    Kp = KodairaSymbol("III")
-    fp = FlintZZ(n-1)
-    cp = FlintZZ(2)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-  end
-
-  if b6!= 0 && valuation(b6, pIdeal) < 3
-    if quadroots(one(K), a3//uniformizer, -a6//uniformizer^2, pIdeal)
-      cp = FlintZZ(3)
-    else
-      cp = FlintZZ(1)
-    end
-    Kp = KodairaSymbol("IV")
-    fp = FlintZZ(n - 2)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-  end
-
-  # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
-  # Taking square roots ok?
-  if p == 2
-    s = pth_root_mod(a2, pIdeal)
-    t = uniformizer * pth_root_mod(a6//uniformizer^2, pIdeal)
-  elseif p ==3
-    s = a1
-    t = a3
-  else
-    s = -a1 * invmod(FlintZZ(2), p)
-    t = -a3 * invmod(FlintZZ(2), p)
-  end
-
-  trans = transform_rstu(E, [0, s, t, 1])
-  E = trans[1]
+  Fx, = polynomial_ring(F, cached = false)
+  # check if root exists of quadratic polynomial in F
+  _hasroot(a, b, c) = length(roots(Fx(_red.([c, b, a])))) > 0
+  # number of roots of monic cubic (a = 1)
+  _nrootscubic(b, c, d) = length(roots(Fx(_red.([d, c, b, one(b)]))))
 
   a1, a2, a3, a4, a6 = a_invars(E)
 
-  # set up auxililary cubic T^3 + bT^2 + cT + d
-  b = mod(a2//uniformizer, pIdeal)
-  c = mod(a4//uniformizer^2, pIdeal)
-  d = mod(a6//uniformizer^3, pIdeal)
-  w = 27*d^2 - b^2*c^2 + 4*b^3*d - 18*b*c*d + 4*c^3
-  x = 3*c - b^2
-  # test for distinct roots: type I0*
-  if mod(w, pIdeal) != 0
-    Kp = KodairaSymbol("I0*")
-    fp = FlintZZ(n - 4)
-    cp = 1 + nrootscubic(b//1, c//1, d//1, pIdeal)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-
-  # test for double root: type Im*
-  elseif mod(x, pIdeal) != 0
-    # change coordinates so that the double root is T = 0
-    if p == 2
-      r = pth_root_mod(c, pIdeal)
-    elseif p == 3
-      r = c*inv_mod(b, pIdeal)
-    else
-      r = (b*c - 9*d) * invmod(FlintZZ(2)*x, pIdeal)
+  if minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) < 0
+    # Non-integral at P, lets make integral
+    e = 0
+    if !iszero(a1)
+      e = max(e, -val(a1))
+    end
+    if !iszero(a2)
+      e = max(e, ceil(Int, -val(a2)//2))
+    end
+    if !iszero(a3)
+      e = max(e, ceil(Int, -val(a2)//3))
+    end
+    if !iszero(a4)
+      e = max(e, ceil(Int, -val(a2)//4))
+    end
+    if !iszero(a6)
+      e = max(e, ceil(Int, -val(a2)//6))
     end
 
-    r = uniformizer * mod(r, pIdeal)
+    pie = pi^e
+    a1 = a1 * pie
+    a2 = a2 * pie^2
+    a3 = a3 * pie^3
+    a4 = a4 * pie^4
+    a6 = a6 * pie^6
+  end
 
-    trans = transform_rstu(E, [r, 0, 0, 1])
-    E = trans[1]
+  # Now the model is P-integral
 
+  while true
+    E = EllipticCurve(K, [a1, a2, a3, a4, a6])
+    b2, b4, b6, b8 = b_invars(E)
+    c4, c6 = c_invars(E)
+    delta = discriminant(E)
+    vD = _val(delta)
+    if vD == 0 # Good reduction
+      return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    end
+
+    # change coords so that p|a3,a4,a6
+    if pis2
+      if _pdiv(b2)
+        r = _rootmod(a4, 2)
+        t = _rootmod(((r + a2)*r + a4)*r + a6, 2)
+      else
+        a1inv = _invmod(a1)
+        r = a1inv * a3
+        t = a1inv*(a4 + r^2)
+      end
+    else
+      if pis3
+        r = _pdiv(b2) ? _rootmod(-b6, 3) : (-_invmod(b2)*b4)
+        t = a1 * r + a3
+      else
+        r = _pdiv(c4) ? (-_invmod(K(12))*b2) : (-_invmod(12*c4)*(c6 + b2*c4))
+        t = -onehalfmodp*(a1*r + a3)
+      end
+    end
+    r = _redmod(r)
+    t = _redmod(t)
+
+    # transform and update invariants
+    E, = transform_rstu(E, [r, 0, t, 1])
     a1, a2, a3, a4, a6 = a_invars(E)
+    b2, b4, b6, b8 = b_invars(E)
 
-    # make a3, a4, a6 repeatedly more divisible by p
-    m = 1
-    mx = uniformizer^2
-    my = uniformizer^2
-    cp = FlintZZ(0)
-    while cp == 0
-      xa2 = mod(a2//uniformizer, pIdeal)
-      xa3 = mod(a3//my, pIdeal)
-      xa4 = mod(a4//(uniformizer*mx), pIdeal)
-      xa6 = mod(a6//(mx*my), pIdeal)
-      if mod(xa3^2 + 4*xa6, pIdeal) !=  0
-        if quadroots(one(K), xa3//1, -xa6//1, pIdeal)
-          cp = FlintZZ(4)
-        else
+    @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
+    # Model is still p-Integral, good!
+
+    @assert _val(a3) != 0
+    @assert _val(a4) != 0
+    @assert _val(a6) != 0
+
+    # Test for In, II, III, IV
+
+    if !_pdiv(c4) # Type In
+      split = _hasroot(one(K), a1, -a2)
+      if split
+        cp = FlintZZ(vD)
+      else
+        if mod(vD, 2) == 0
           cp = FlintZZ(2)
-        end
-
-      else
-        if p == 2
-          t = my * pth_root_mod(xa6, pIdeal)
         else
-          t = my * mod(-xa3*invmod(FlintZZ(2), p), pIdeal)
-        end
-
-        trans = transform_rstu(E, [0, 0, t, 1])
-        E = trans[1]
-
-        a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
-
-        my = my*uniformizer
-        m = m + 1
-        xa2 = mod(a2//uniformizer, pIdeal)
-        xa3 = mod(a3//my, pIdeal)
-        xa4 = mod(a4//(uniformizer*mx), pIdeal)
-        xa6 = mod(a6//(mx*my), pIdeal)
-
-        if mod(xa4^2 - 4*xa2*xa6, pIdeal) != 0
-          if quadroots(xa2//1, xa4//1, xa6//1, pIdeal)
-            cp = FlintZZ(4)
-          else
-            cp = FlintZZ(2)
-          end
-
-        else
-          if p == 2
-            r = mx * pth_root_mod(xa6*inv_mod(xa2), pIdeal)
-          else
-            r = mx * mod(-xa4 * invmod(2*xa2, pIdeal), pIdeal)
-          end
-
-          trans = transform_rstu(E, [r, 0, 0, 1])
-          E = trans[1]
-
-          a1, a2, a3, a4, a6 = a_invars(E)
-
-          mx = mx*uniformizer
-          m = m + 1
+          cp = FlintZZ(1)
         end
       end
+      Kp = KodairaSymbol("I$(vD)")
+      fp = FlintZZ(1)
+      return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
-    fp = n - m - 4
-    Kp = KodairaSymbol("I$(m)*")
-
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-
-  else
-    # Triple root case: types II*, III*, IV* or non-minimal
-    # change coordinates so that the triple root is T = 0
-    if p == 2
-      r = b
-    elseif p == 3
-      r = pth_root_mod(-d, pIdeal)
-    else
-      r = -b * invmod(FlintZZ(3), p)
+    if _val(a6) < 2 # Type II
+      Kp = KodairaSymbol("II")
+      fp = FlintZZ(vD)
+      cp = FlintZZ(1)
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
-    r = uniformizer * mod(r, pIdeal)
+    if _val(b8) < 3 # Type III
+      Kp = KodairaSymbol("III")
+      fp = FlintZZ(vD - 1)
+      cp = FlintZZ(2)
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    end
 
-    trans = transform_rstu(E, [r, 0, 0, 1])
-    E = trans[1]
+    if _val(b6) < 3 # Type IV
+      cp = _hasroot(one(K), a3//pi, -a6//pi^2) ? ZZ(3) : ZZ(1)
+      Kp = KodairaSymbol("IV")
+      fp = FlintZZ(vD - 2)
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    end
 
-    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+    # Change coords so that p|a1,a2, p^2|a3,a4, p^3|a6
 
-    x3 = a3//uniformizer^2
-    x6 = a6//uniformizer^4
-
-    # Test for type IV*
-    if mod(x3^2 + 4*x6, pIdeal) != 0
-      if quadroots(one(K), x3//1, -x6//1, pIdeal)
-        cp = FlintZZ(3)
-      else
-        cp = FlintZZ(1)
-      end
-      Kp = KodairaSymbol("IV*")
-      fp = FlintZZ(n - 6)
-
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+    if pis2
+      s = _rootmod(a2, 2)
+      t = pi * _rootmod(a6//pi^2, 2)
+    elseif pis3
+      s = a1
+      t = a3
     else
-      if p == 2
-        t = -uniformizer^2 * pth_root_mod(x6, pIdeal)
+      s = -a1 * onehalfmodp
+      t = -a3 * onehalfmodp
+    end
+
+    # transform and update invariants
+    E, = transform_rstu(E, [0, s, t, 1])
+    a1, a2, a3, a4, a6 = a_invars(E)
+    b2, b4, b6, b8 = b_invars(E)
+    c4, c6 = c_invars(E)
+
+    @assert _val(a1) > 0
+    @assert _val(a2) > 0
+    @assert _val(a3) >= 2
+    @assert _val(a4) >= 2
+    @assert _val(a6) >= 3
+
+    # Test P-integrality
+    @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
+
+    # Analyse roots of the cubic T^3  + bT^2  + cT^2 + d = 0, where
+    # b = a2/p, c = a4/p^2, d = a6/p^3
+
+    b = a2//pi
+    c = a4//pi^2
+    d = a6//pi^3
+    w = 27*d^2 - b^2*c^2 + 4*b^3*d - 18*b*c*d + 4*c^3
+    x = 3*c - b^2
+
+    sw = _pdiv(w) ? (_pdiv(x) ? 3 : 2) : 1
+
+    if sw == 1 # w != 0 mod P
+      # Three distinct roots, so type I*0
+      Kp = KodairaSymbol("I0*")
+      fp = FlintZZ(vD - 4)
+      cp = ZZ(1 + _nrootscubic(b, c, d))
+      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    elseif sw == 2
+      # One double root, so type I*m for some m
+      # Change coords so that the double root is T = 0 mod p
+
+      if pis2
+        r = _rootmod(c, 2)
       else
-        t = uniformizer^2 * mod(-x3 * invmod(FlintZZ(2), p), pIdeal)
+        if pis3
+          r = c * _invmod(b)
+        else
+          r = (b*c - 9 * d) * _invmod(2*x)
+        end
       end
+      r = pi * _redmod(r)
 
-      trans = transform_rstu(E, [0, 0, t, 1])
-      E = trans[1]
-
+      E, = transform_rstu(E, [r, 0, 0, 1])
       a1, a2, a3, a4, a6 = a_invars(E)
+      b2, b4, b6, b8 = b_invars(E)
+      c4, c6 = c_invars(E)
+
+      ix = 3
+      iy = 3
+      mx = pi^2
+      my = pi^2
+      done = false
+      while !done
+        at2 = a2//pi
+        a3t = a3//my
+        a4t = a4//(pi * mx)
+        a6t = a6//(mx * my)
+        if _pdiv(a3t^2 + 4*a6t)
+          if pis2
+            t = my * _rootmod(a6t, 2)
+          else
+            t = my * _redmod(-a3t * onehalfmodp)
+          end
+          E, = transform_rstu(E, [0, 0, t, 1])
+          a1, a2, a3, a4, a6 = a_invars(E)
+          b2, b4, b6, b8 = b_invars(E)
+          my = my * pi
+          iy = iy + 1
+          a2t = a2//pi
+          a3t = a3//my
+          a4t = a4//(pi * mx)
+          a6t = a6//(mx * my)
+          if _pdiv(a4t^2 - 4*a6t*a2t)
+            if pis2
+              r = mx * _rootmod(a6t * _invmod(a2t), 2)
+            else
+              r = mx * _redmod(-a4t * _invmod(2*a2t))
+            end
+            E, = transform_rstu(E, [r, 0, 0, 1])
+            a1, a2, a3, a4, a6 = a_invars(E)
+            b2, b4, b6, b8 = b_invars(E)
+            mx = mx * pi
+            ix = ix + 1
+            # Stay in the loop
+          else
+            cp = _hasroot(a2t, a4t, a6t) ? 4 : 2
+            done = true
+          end
+        else
+          cp = _hasroot(one(K), a3t, -a6t) ? 4 : 2
+          done = true
+        end
+      end
+      m = ix + iy - 5
+      fp = vD - m - 4
+      Kp = KodairaSymbol("I$(m)*")
+      return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    elseif sw == 3
+      # Triple root
+      # Change coordinates so that T = 0 mod p
+      if pis2
+        r = b
+      else
+        if pis3
+          r = _rootmod(-d, 3)
+        else
+          r = -b * _invmod(K(3))
+        end
+      end
+      r = pi * _redmod(r)
+      E, = transform_rstu(E, [r, 0, 0, 1])
+      a1, a2, a3, a4, a6 = a_invars(E)
+      b2, b4, b6, b8 = b_invars(E)
+      @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
+      # Cubic after transform must have triple root at 0"
+      @assert !(_val(a2) < 2 || _val(a4) < 3 || _val(a6) < 4)
+
+      a3t = a3//pi^2
+      a6t = a6//pi^4
+
+      # Test for Type IV*
+      if !_pdiv(a3t^2 + 4*a6t)
+        cp = _hasroot(one(K), a3t, -a6t) ? 3 : 1
+        Kp = KodairaSymbol("IV*")
+        fp = FlintZZ(vD - 6)
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      end
+
+      # Change coordinates so that p^3|a3, p^5|a6
+      if pis2
+        t = -pi^2 * _rootmod(a6t, 2)
+      else
+        t = pi^2 * _redmod(-a3t * onehalfmodp)
+      end
+      E, = transform_rstu(E, [0, 0, t, 1])
+      a1, a2, a3, a4, a6 = a_invars(E)
+      b2, b4, b6, b8 = b_invars(E)
 
       # Test for types III*, II*
-      if a4!=0 && valuation(a4, pIdeal) < 4
+
+      if _val(a4) < 4 # Type III*
         Kp = KodairaSymbol("III*")
-        fp = FlintZZ(n - 7)
+        fp = FlintZZ(vD - 7)
         cp = FlintZZ(2)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
-
-      elseif a6!= 0 && valuation(a6, pIdeal) < 6
-        Kp = KodairaSymbol("II*")
-        fp = FlintZZ(n - 8)
-        cp = FlintZZ(1)
-
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol,  fmpz, fmpz, Bool}
-      else
-        E = transform_rstu(E, [0, 0, 0, uniformizer])[1]
-        return tates_algorithm_local(E, pIdeal)::Tuple{EllCrv{nf_elem}, KodairaSymbol, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
+
+      if _val(a6) < 6 # Type II*
+        Kp = KodairaSymbol("II*")
+        fp = FlintZZ(vD - 8)
+        cp = FlintZZ(1)
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol,  ZZRingElem, ZZRingElem, Bool}
+      end
+
+      # Non-minimal equation, dividing out
+      a1 = a1//pi
+      a2 = a2//pi^2
+      a3 = a3//pi^3
+      a4 = a4//pi^4
+      a6 = a6//pi^6
     end
   end
 end
 
+
 @doc Markdown.doc"""
-    tates_algorithm_local(E::EllCrv{fmpq}, p:: Int)
-    -> EllipticCurve{fmpq}, String, fmpz, fmpz, Bool
+    tates_algorithm_local(E::EllCrv{QQFieldElem}, p:: Int)
+    -> EllipticCurve{QQFieldElem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
@@ -351,7 +408,7 @@ $f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number
 at $p$ and s is false if and only if $E$ has non-split
 multiplicative reduction.
 """
-function tates_algorithm_local(E::EllCrv{fmpq}, p)
+function tates_algorithm_local(E::EllCrv{QQFieldElem}, p)
 
   p = FlintZZ(p)
 
@@ -366,7 +423,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   # test for type I0
   if n == 0
-    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   # change coordinates so that p | a3, a4, a6
@@ -422,21 +479,21 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     Kp = KodairaSymbol("I$(n)")
     fp = FlintZZ(1)
 
-    return (E, Kp, fp, cp, split)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, split)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(a6, p^2) != 0
     Kp = KodairaSymbol("II")
     fp = FlintZZ(n)
     cp = FlintZZ(1)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(b8, p^3) != 0
     Kp = KodairaSymbol("III")
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
-    return (E, Kp, fp, cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, cp, true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(b6, p^3) != 0
@@ -447,7 +504,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     end
     Kp = KodairaSymbol("IV")
     fp = n - 2
-    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
@@ -459,7 +516,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     t = -a3 * invmod(FlintZZ(2), p)
   end
 
-  trans = transform_rstu(E, fmpz[0, s, t, 1])
+  trans = transform_rstu(E, ZZRingElem[0, s, t, 1])
   E = trans[1]
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
@@ -478,7 +535,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     Kp = KodairaSymbol("I0*")
     fp = FlintZZ(n - 4)
     cp = 1 + nrootscubic(b, c, d, p)
-    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
 
   # test for double root: type Im*
   elseif mod(x, p) != 0
@@ -571,7 +628,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     fp = n - m - 4
     Kp = KodairaSymbol("I$(m)*")
 
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
@@ -604,7 +661,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       Kp = KodairaSymbol("IV*")
       fp = FlintZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     else
       if p == 2
         t = x6
@@ -627,16 +684,16 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       elseif mod(a6, p^6) != 0
         Kp = KodairaSymbol("II*")
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, p])[1]
-        return tates_algorithm_local(E, p)::Tuple{EllCrv{fmpq}, KodairaSymbol, fmpz, fmpz, Bool}
+        return tates_algorithm_local(E, p)::Tuple{EllCrv{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
     end
   end
@@ -644,11 +701,11 @@ end
 
 
 @doc Markdown.doc"""
-    tates_algorithm_global(E::EllCrv{fmpq}) -> EllCrv{fmpq}
+    tates_algorithm_global(E::EllCrv{QQFieldElem}) -> EllCrv{QQFieldElem}
 
 Return a global reduced minimal model for $E$ using Tate's algorithm.
 """
-function tates_algorithm_global(E::EllCrv{fmpq})
+function tates_algorithm_global(E::EllCrv{QQFieldElem})
   delta = abs(numerator(discriminant(E)))
   fac = factor(delta)
 
@@ -665,20 +722,20 @@ function tates_algorithm_global(E::EllCrv{fmpq})
   # reduce coefficients (see tidy_model)
   E = tidy_model(E)
 
-  return E::EllCrv{fmpq}
+  return E::EllCrv{QQFieldElem}
 end
 
 
 
 struct KodairaSymbol
   ksymbol::Int
-  
+
   function KodairaSymbol(n::Int)
     @req n!= 0 "0 does not correspond to any Kodaira symbol."
     K = new(n)
     return K
   end
-  
+
   function KodairaSymbol(K::String)
     if K=="I0"
       return KodairaSymbol(1)
@@ -697,7 +754,7 @@ struct KodairaSymbol
     elseif K=="IV*"
       return KodairaSymbol(-4)
     end
-    
+
     if K[1]!='I'
       error("String does not represent a valid Kodaira symbol.")
     end
@@ -738,9 +795,9 @@ end
 
 Return true if K is corresponds to the Kodaira symbol given by the string.
 Valid inputs are : I0, II, III, IV and In where n is a positive integer,
-I0*, II*, III*, IV* and In* where n is a positive integer. 
+I0*, II*, III*, IV* and In* where n is a positive integer.
 
-Instead of substituting n for an integer one may also check against the generic types 'In' 
+Instead of substituting n for an integer one may also check against the generic types 'In'
 or 'In*' to test if the Kodaira symbol is of that type.
 """
 function ==(K::KodairaSymbol, s::String)
@@ -765,13 +822,13 @@ function ==(K::KodairaSymbol, s::String)
     elseif s == "In*"
       return K.ksymbol < -4
     end
-    
+
     if s[1] != 'I'
       error("String does not represent a valid Kodaira symbol.")
     end
-    
+ 
     n = lastindex(s)
-    
+
     if s[n]=='*'
       m = parse(Int, s[2:n-1])
       return K.ksymbol == -4 - m 
@@ -821,47 +878,47 @@ function ==(s::String, K::KodairaSymbol)
 end
 
 @doc Markdown.doc"""
-    tamagawa number(E::EllCrv{fmpq}, p::Int) -> fmpz
+    tamagawa number(E::EllCrv{QQFieldElem}, p::Int) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
 """
-function tamagawa_number(E::EllCrv{fmpq},p)
+function tamagawa_number(E::EllCrv{QQFieldElem},p)
   return tates_algorithm_local(E,p)[4]
 end
 
 @doc Markdown.doc"""
-    tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(fmpz, fmpz)}
+    tamagawa numbers(E::EllCrv{QQFieldElem}) -> Vector{(ZZRingElem, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the
 bad primes $p$ of $E$.
 """
-function tamagawa_numbers(E::EllCrv{fmpq})
+function tamagawa_numbers(E::EllCrv{QQFieldElem})
   badp = bad_primes(E)
   return [tamagawa_number(E,p) for p in badp]
 end
 
 @doc Markdown.doc"""
-    kodaira_symbol(E::EllCrv{fmpq}, p::Int) -> String
+    kodaira_symbol(E::EllCrv{QQFieldElem}, p::Int) -> String
 
 Return the reduction type of E at p using a Kodaira symbol.
 """
-function kodaira_symbol(E::EllCrv{fmpq},p)
+function kodaira_symbol(E::EllCrv{QQFieldElem},p)
   return tates_algorithm_local(E,p)[2]
 end
 
 @doc Markdown.doc"""
-    kodaira_symbols(E::EllCrv{fmpq}, p::Int) -> Vector{(fmpz, String)}
+    kodaira_symbols(E::EllCrv{QQFieldElem}, p::Int) -> Vector{(ZZRingElem, String)}
 
 Return the reduction types of E at all bad primes as a sequence of
 Kodaira symbols
 """
-function kodaira_symbols(E::EllCrv{fmpq})
+function kodaira_symbols(E::EllCrv{QQFieldElem})
   badp = bad_primes(E)
   return [kodaira_symbol(E,p) for p in badp]
 end
 
 @doc Markdown.doc"""
-    tamagawa number(E::EllCrv{fmpq}, p::NfOrdIdl) -> fmpz
+    tamagawa number(E::EllCrv{QQFieldElem}, p::NfOrdIdl) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
 """
@@ -870,7 +927,7 @@ function tamagawa_number(E::EllCrv{nf_elem},p::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    tamagawa numbers(E::EllCrv{fmpq}) -> Vector{(NfOrdIdl, fmpz)}
+    tamagawa numbers(E::EllCrv{QQFieldElem}) -> Vector{(NfOrdIdl, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the bad
 prime ideals $p$ of $E$.
@@ -904,12 +961,12 @@ function kodaira_symbols(E::EllCrv{nf_elem})
 end
 
 @doc Markdown.doc"""
-    reduction_type(E::EllCrv{fmpq}, p::fmpz) -> String
+    reduction_type(E::EllCrv{QQFieldElem}, p::ZZRingElem) -> String
 
 Return the reduction type of E at p. It can either be good, additive,
 split multiplicative or nonsplit mutiplicative.
 """
-function reduction_type(E::EllCrv{fmpq}, p)
+function reduction_type(E::EllCrv{QQFieldElem}, p)
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
 
   if Kp=="I0"
@@ -961,11 +1018,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    conductor(E::EllCrv{fmpq}) -> fmpz
+    conductor(E::EllCrv{QQFieldElem}) -> ZZRingElem
 
 Return the conductor of $E$ over QQ.
 """
-function conductor(E::EllCrv{fmpq})
+function conductor(E::EllCrv{QQFieldElem})
   badp = bad_primes(E)
 
   result = 1
@@ -992,11 +1049,11 @@ end
 
 #Magma returns the primes that divide the minimal discriminant
 @doc Markdown.doc"""
-    bad_primes(E::EllCrv{fmpq}) -> Vector{fmpz}
+    bad_primes(E::EllCrv{QQFieldElem}) -> Vector{ZZRingElem}
 
 Return a list of the primes that divide the discriminant of $E$.
 """
-function bad_primes(E::EllCrv{fmpq})
+function bad_primes(E::EllCrv{QQFieldElem})
 
   d = ZZ(discriminant(E))
   L = factor(d)
@@ -1004,7 +1061,7 @@ function bad_primes(E::EllCrv{fmpq})
 end
 
 @doc Markdown.doc"""
-    bad_primes(E::EllCrv{fmpq}) -> Vector{NfOrdIdl}
+    bad_primes(E::EllCrv{QQFieldElem}) -> Vector{NfOrdIdl}
 
 Return a list of prime ideals that divide the discriminant of $E$.
 """
@@ -1036,7 +1093,7 @@ function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
     throw(DomainError(p,"E has bad reduction at p"))
   end
 
-  K, phi = ResidueField(order(p),p)
+  K, phi = residue_field(order(p),p)
 
   a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E)))
 
@@ -1052,7 +1109,7 @@ end
 
 # this needs to be rewritten
 @doc Markdown.doc"""
-    get_b_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
+    get_b_integral(E::EllCrv{ZZRingElem}) -> Nemo.ZZRingElem
 
 Computes the invariants $b2$, $b4$, $b6$, $b8$ of an elliptic curve $E$ with integer coefficients.
 """
@@ -1068,7 +1125,7 @@ function get_b_integral(E)
 end
 
 @doc Markdown.doc"""
-    get_b_c_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
+    get_b_c_integral(E::EllCrv{ZZRingElem}) -> Nemo.ZZRingElem
 
 Computes the invariants $b2$, $b4$, $b6$, $b8$, $c4$, $c6$ of an elliptic curve $E$ with integer coefficients.
 """
@@ -1080,5 +1137,3 @@ function get_b_c_integral(E)
 
     return b2,b4,b6,b8,c4,c6
 end
-
-

@@ -1,7 +1,9 @@
 export genus, rank, det, dim, prime, symbol, representative, signature,
-       oddity, excess, level, genera, scale, norm, mass, orthogonal_sum,
-       quadratic_space,hasse_invariant, genera, local_symbol, local_symbols,
-       ZGenus, ZpGenus, representatives
+       oddity, excess, level, Zgenera, scale, norm, mass, orthogonal_sum,
+       quadratic_space,hasse_invariant, local_symbol, local_symbols,
+       ZGenus, ZpGenus, representatives, is_elementary, is_primary, is_unimodular,
+       is_primary_with_prime, is_elementary_with_prime, automorphous_numbers,
+       is_automorphous, bad_primes, signature_pair, signature_tuple
 
 @doc Markdown.doc"""
     ZpGenus
@@ -20,7 +22,7 @@ where
 
 - `m` = valuation of the component
 - `n` = rank of `A`
-- `d` = det(A) in `\{1,3,5,7\}`
+- `d` = `det(A)` in `{1,3,5,7}`
 - `s` = 0 (or 1) if even (or odd)
 - `o` = oddity of `A` (= 0 if s = 0) in `Z/8Z`
       = the trace of the diagonalization of `A`
@@ -28,18 +30,16 @@ where
 The genus symbol is a list of such symbols (ordered by `m`) for each
 of the Jordan blocks `A_1,...,A_t`.
 
-Reference: [Co1999]_ Conway && Sloane 3rd edition, Chapter 15, Section 7.
+Reference: [CS99](@cite) Chapter 15, Section 7.
 
 
-    INPUT:
-
-    - ``prime`` -- a prime number
-    - ``symbol`` -- the list of invariants for Jordan blocks `A_t,...,A_t` given
-      as a list of lists of integers
-
+# Arguments
+- `prime`: a prime number
+- `symbol`: the list of invariants for Jordan blocks `A_t,...,A_t` given
+  as a list of lists of integers
 """
 mutable struct ZpGenus
-  _prime::fmpz
+  _prime::ZZRingElem
   _symbol::Vector{Vector{Int}}
 
   function ZpGenus(prime, symbol, check=true)
@@ -65,7 +65,7 @@ A collection of local genus symbols (at primes)
 and a signature pair. Together they represent the genus of a
 non-degenerate Zlattice.
 """
-mutable struct ZGenus
+@attributes mutable struct ZGenus
   _signature_pair::Tuple{Int, Int}
   _symbols::Vector{ZpGenus} # assumed to be sorted by their primes
   _representative::ZLat
@@ -86,9 +86,11 @@ mutable struct ZGenus
   end
 end
 
-###########################################################
+###############################################################################
+#
 # Computation of genus symbols
-###########################################################
+#
+###############################################################################
 
 @doc Markdown.doc"""
     _iseven(A::MatElem) -> (Bool, Int)
@@ -108,7 +110,7 @@ function _iseven(A::MatElem)
 end
 
 @doc Markdown.doc"""
-    _split_odd(A::MatElem) -> (fmpz, fmpz_mat)
+    _split_odd(A::MatElem) -> (ZZRingElem, ZZMatrix)
 
 Given a non-degenerate Gram matrix `A (\mod 8)`, return a splitting
 ``[u] + B`` such that u is odd && `B` is not even.
@@ -164,7 +166,7 @@ function _split_odd(A::MatElem)
 end
 
 @doc Markdown.doc"""
-    _trace_diag_mod_8(A::MatElem) -> fmpz
+    _trace_diag_mod_8(A::MatElem) -> ZZRingElem
 
 Return the trace of the diagonalised form of `A` of an integral
 symmetric matrix which is diagonalizable `\mod 8`.  (Note that since
@@ -178,7 +180,7 @@ INPUT:
   `\ZZ/2\ZZ` && has determinant not divisible by `8`.
 """
 function _trace_diag_mod_8(A::MatElem)
-  R = ResidueRing(ZZ, 8)
+  R = residue_ring(ZZ, 8)
   A8 = change_base_ring(R, A)
   tr = R(0)
   while nrows(A8) > 0
@@ -203,47 +205,47 @@ where
 - `d = det(f)` in `{1,-1}`
 """
 function _p_adic_symbol(A::MatElem, p, val)
-    if p == 2
-        return _two_adic_symbol(A, val)
-    end
-    if nrows(A)>0
-      m0 = minimum(valuation(c, p) for c in A if c!=0)
-    else
-      m0 = 0
-    end
-    q = p^m0
-    n = nrows(A)
-    A = divexact(A, q)
-    Fp = GF(p)
-    A_p = change_base_ring(Fp, A)
-    bp, B_p = left_kernel(A_p)
-    rref!(B_p)
-    B_p = B_p[1:bp, 1:end]
-    if nrows(B_p) == 0
-      e0 = _kronecker_symbol(lift(det(A_p)),p)
-      n0 = nrows(A)
-      return [ [m0, n0, e0] ]
-    else
-      C_p = _basis_complement(B_p)
-      e0 = _kronecker_symbol(lift(det(C_p * A_p * transpose(C_p))), p)
-      n0 = nrows(C_p)
-      sym = [ [0, n0, e0] ]
-    end
-    r = nrows(B_p)
-    B = map_entries(lift, B_p)
-    C = map_entries(lift, C_p)
-    # Construct the blocks for the Jordan decomposition [F,X;X,A_new]
-    F = change_base_ring(QQ, C * A * transpose(C))
-    U = F^-1
-    d = denominator(U)
-    R = ResidueRing(ZZ, p^(val + 3))
-    u = R(d)^-1
+  if p == 2
+    return _two_adic_symbol(A, val)
+  end
+  if nrows(A)>0
+    m0 = minimum(valuation(c, p) for c in A if c!=0)
+  else
+    m0 = 0
+  end
+  q = p^m0
+  n = nrows(A)
+  A = divexact(A, q)
+  Fp = GF(p)
+  A_p = change_base_ring(Fp, A)
+  bp, B_p = left_kernel(A_p)
+  rref!(B_p)
+  B_p = B_p[1:bp, 1:end]
+  if nrows(B_p) == 0
+    e0 = _kronecker_symbol(lift(det(A_p)),p)
+    n0 = nrows(A)
+    return [ [m0, n0, e0] ]
+  else
+    C_p = _basis_complement(B_p)
+    e0 = _kronecker_symbol(lift(det(C_p * A_p * transpose(C_p))), p)
+    n0 = nrows(C_p)
+    sym = [ [0, n0, e0] ]
+  end
+  r = nrows(B_p)
+  B = map_entries(lift, B_p)
+  C = map_entries(lift, C_p)
+  # Construct the blocks for the Jordan decomposition [F,X;X,A_new]
+  F = change_base_ring(QQ, C * A * transpose(C))
+  U = F^-1
+  d = denominator(U)
+  R = residue_ring(ZZ, p^(val + 3))
+  u = R(d)^-1
 
-    U = change_base_ring(ZZ, U * d *lift(u))
+  U = change_base_ring(ZZ, U * d *lift(u))
 
-    X = C * A
-    A = B * (A - transpose(X)*U*X) * transpose(B)
-    return [vcat([s[1]+m0] , s[2:end]) for s in vcat(sym,_p_adic_symbol(A, p, val)) ]
+  X = C * A
+  A = B * (A - transpose(X)*U*X) * transpose(B)
+  return [vcat([s[1]+m0] , s[2:end]) for s in vcat(sym,_p_adic_symbol(A, p, val)) ]
 end
 
 
@@ -284,7 +286,7 @@ function _two_adic_symbol(A::MatElem, val)
   k2, B_2 = left_kernel(A_2)
   rref!(B_2)
   B_2 = B_2[1:k2,1:end]
-  R_8 = ResidueRing(ZZ, 8)
+  R_8 = residue_ring(ZZ, 8)
   # deal with the matrix being non-degenerate mod 2.
   if k2 == 0
     n0 = nrows(A)
@@ -321,7 +323,7 @@ function _two_adic_symbol(A::MatElem, val)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = ResidueRing(ZZ,2^(val + 3))
+  R = residue_ring(ZZ,ZZ(2)^(val + 3))
   u = lift(R(d)^-1)
   U = change_base_ring(ZZ,U * d * u)
   X = C * A
@@ -343,52 +345,54 @@ julia> Hecke.basis_complement(B)
 [0  1]
 """
 function _basis_complement(B::MatElem)
-    F = base_ring(B)
-    m = nrows(B)
-    n = ncols(B)
-    C = zero_matrix(F, n - m, n)
-    k = 1
-    l = 1
-    for i in 1:m
-      for j in k:n
-        if B[i,j] == 0
-          C[l,j] = 1
-          l += 1
-        else
-          k = j+1
-          break
-        end
+  F = base_ring(B)
+  m = nrows(B)
+  n = ncols(B)
+  C = zero_matrix(F, n - m, n)
+  k = 1
+  l = 1
+  for i in 1:m
+    for j in k:n
+      if B[i,j] == 0
+        C[l,j] = 1
+        l += 1
+      else
+        k = j+1
+        break
       end
     end
-    for j in k:n
-        C[l + j - k, j] = 1
-    end
-    return C
+  end
+  for j in k:n
+    C[l + j - k, j] = 1
+  end
+  return C
 end
 
-#########################################################
+###############################################################################
+#
 # Constructors
-#########################################################
+#
+###############################################################################
 
 @doc Markdown.doc"""
-    genus(A::MatElem)
+    genus(A::MatElem) -> ZGenus
 
-Return the genus of the integer lattice with gram matrix `A`.
+Return the genus of a $\mathbb Z$-lattice with gram matrix `A`.
 """
 function genus(A::MatElem)
-  @req ncols(A) == nrows(A) "must be a square matrix"
+  @req ncols(A) == nrows(A) "Input must be a square matrix"
+  @req rank(A) == ncols(A) "Input must have full rank"
   return genus(Zlattice(gram=A))
 end
 
 @doc Markdown.doc"""
     genus(L::ZLat) -> ZGenus
 
-Return the genus of this lattice.
+Return the genus of the lattice `L`.
 """
 function genus(L::ZLat)
   A = gram_matrix(L)
   denom = denominator(A)
-  @req denom==1 "for now only genera of integral lattices are supported"
   A = change_base_ring(ZZ, denom^2 * A)
   symbols = ZpGenus[]
   if ncols(A)>0
@@ -411,16 +415,20 @@ function genus(L::ZLat)
   DA = diagonal(rational_span(L))
   neg = Int(count(x<0 for x in DA))
   pos = Int(count(x>0 for x in DA))
-  @req neg+pos == ncols(A) "quadratic form is degenerate"
+  @req neg+pos == ncols(A) "Underlying quadratic form is degenerate"
   return ZGenus((pos, neg), symbols, L)
 end
 
+@doc Markdown.doc"""
+    genus(L::ZLat, p) -> ZpGenus
 
+Return the local genus symbol of `L` at the prime `p`.
+"""
 function genus(L::ZLat, p)
   return genus(gram_matrix(L), p)
 end
 
-function genus(A::fmpz_mat, p, val; offset=0)
+function genus(A::ZZMatrix, p, val; offset=0)
   @assert base_ring(A)==ZZ
   p = ZZ(p)
   symbol = _p_adic_symbol(A, p, val)
@@ -430,12 +438,21 @@ function genus(A::fmpz_mat, p, val; offset=0)
   return ZpGenus(p, symbol)
 end
 
+@doc Markdown.doc"""
+    genus(A::MatElem, p) -> ZpGenus
+
+Return the local genus symbol of a Z-lattice with gram matrix `A` at the prime `p`.
+"""
 function genus(A::MatElem, p)
+  @req ncols(A) == nrows(A) "Input must be a square matrix"
+  @req rank(A) == nrows(A) "Input must have full rank"
+  @req is_symmetric(A) "Input must be symmetric"
+  p = ZZ(p)
   offset = 0
   if base_ring(A) == QQ
     d = denominator(A)
     val = valuation(d, p)
-    A = change_base_ring(ZZ, A*divexact(d^2, p^val))
+    A = change_base_ring(ZZ, A*(d^2*(1//p)^val))
     offset = valuation(d, p)
   end
   val = valuation(det(A), p)
@@ -451,16 +468,18 @@ end
 Return the local genus of the orthogonal direct sum of two representatives.
 """
 function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
-  if prime(S1) != prime(S2)
-    throw(ValueError("the local genus symbols must be over the same prime"))
+  @req prime(S1) == prime(S2) "The local genus symbols must be over the same prime"
+  if rank(S1) == rank(S2) == 0
+    return ZpGenus(prime(S1), Hecke.symbol(S1))
   end
-  _sym1 = S1._symbol
-  _sym2 = S2._symbol
-  m = max(_sym1[end][1], _sym2[end][1])
+  _sym1 = Hecke.symbol(S1)
+  _sym2 = Hecke.symbol(S2)
+  m1 = min(_sym1[1][1], _sym2[1][1])
+  m2 = max(_sym1[end][1], _sym2[end][1])
   sym1 = Dict([[s[1], s] for s in _sym1])
   sym2 = Dict([[s[1], s] for s in _sym2])
   symbol = Vector{Int}[]
-  for k in 0:m
+  for k in m1:m2
     if prime(S1) == 2
       b = [k, 0, 1, 0, 0]
     else
@@ -484,9 +503,6 @@ function orthogonal_sum(S1::ZpGenus, S2::ZpGenus)
       push!(symbol, b)
     end
   end
-  if rank(S1) == rank(S2) == 0
-    symbol = S1._symbol
-  end
   return ZpGenus(prime(S1), symbol)
 end
 
@@ -495,73 +511,82 @@ direct_sum(S1::ZpGenus, S2::ZpGenus) = orthogonal_sum(S1, S2)
 @doc Markdown.doc"""
     orthogonal_sum(G1::ZGenus, G2::ZGenus) -> ZGenus
 
-Return the genus of the orthogonal direct sum of ``G1`` and ``G2``.
+Return the genus of the orthogonal direct sum of `G1` and `G2`.
 
 The orthogonal direct sum is defined via representatives.
 """
 function orthogonal_sum(G1::ZGenus, G2::ZGenus)
-  p1, n1 = G1._signature_pair
-  p2, n2 = G2._signature_pair
-  signature_pair = (p1 + p2, n1 + n2)
-  primes = [prime(s) for s in G1._symbols]
-  append!(primes, [prime(s) for s in G2._symbols if !(prime(s) in primes)])
+  p1, n1 = signature_pair(G1)
+  p2, n2 = signature_pair(G2)
+  sign_pair = (p1 + p2, n1 + n2)
+  primes = Hecke.primes(G1)
+  append!(primes, [p for p in Hecke.primes(G2) if !(p in primes)])
   sort(primes)
   local_symbols = []
   for p in primes
     sym_p = orthogonal_sum(local_symbol(G1, p), local_symbol(G2, p))
     push!(local_symbols, sym_p)
   end
-  return ZGenus(signature_pair, local_symbols)
+  return ZGenus(sign_pair, local_symbols)
 end
 
 direct_sum(S1::ZGenus, S2::ZGenus) = orthogonal_sum(S1, S2)
 
 
-##########################################################
+###############################################################################
+#
 # Enumeration of genus symbols
-##########################################################
+#
+###############################################################################
 
 @doc Markdown.doc"""
-    genera(sig_pair::Vector{Int}, determinant::Union{Int,fmpz};
-           max_scale=nothing, even=false) -> Vector{ZGenus}
+    Zgenera(sig_pair::Vector{Int}, determinant::RationalUnion;
+           min_scale::RationalUnion = min(one(QQ), QQ(abs(determinant))),
+           max_scale::RationalUnion = max(one(QQ), QQ(abs(determinant))),
+           even=false)                                         -> Vector{ZGenus}
 
-Return a list of all global genera with the given conditions.
+Return a list of all genera with the given conditions. Genera of non-integral
+$\mathbb Z$-lattices are also supported.
 
-Here a genus is called global if it is non-empty.
-
-INPUT:
-
-- ``sig_pair`` -- a pair of non-negative integers giving the signature
-- ``determinant`` -- an integer; the sign is ignored
-- ``max_scale`` -- (default: ``Nothing``) an integer; the maximum scale of a
-      jordan block
-- ``even`` -- boolean (default: ``false``)
-
-OUTPUT:
-
-A list of all (non-empty) global genera with the given conditions.
+# Arguments
+- `sig_pair`: a pair of non-negative integers giving the signature
+- `determinant`: a rational number; the sign is ignored
+- `min_scale`: a rational number; return only genera whose scale is an integer
+  multiple of `min_scale` (default: `min(one(QQ), QQ(abs(determinant)))`)
+- `max_scale`: a rational number; return only genera such that `max_scale` is an
+  integer multiple of the scale (default: `max(one(QQ), QQ(abs(determinant)))`)
+- `even`: boolean; if set to true, return only the even genera (default: `false`)
 """
-function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
-                max_scale=nothing, even=false)
-  @req all(s >= 0 for s in sig_pair) "the signature vector must be a pair of non negative integers."
-  if max_scale == nothing
-    _max_scale = determinant
-  else
-    _max_scale = FlintZZ(max_scale)
-  end
+function Zgenera(sig_pair::Tuple{Int,Int}, determinant::RationalUnion;
+                min_scale::RationalUnion = min(one(QQ), QQ(abs(determinant))),
+                max_scale::RationalUnion = max(one(QQ), QQ(abs(determinant))),
+                even=false)
+  @req all(s >= 0 for s in sig_pair) "The signature vector must be a pair of non negative integers."
+  determinant = QQ(determinant)
+  denominator(determinant) != 1 && even && return ZGenus[]
+  @req min_scale > 0 "Minimal scale must be a positive integer"
+  min_scale = QQ(min_scale)
+  @req max_scale > 0 "Maximal scale must be a positive integer"
+  max_scale = QQ(max_scale)
   rank = sig_pair[1] + sig_pair[2]
   out = ZGenus[]
   local_symbols = Vector{ZpGenus}[]
+  pd = prime_divisors(numerator(determinant)*denominator(determinant))
+  append!(pd, prime_divisors(numerator(min_scale)*denominator(min_scale)))
+  append!(pd, prime_divisors(numerator(max_scale)*denominator(max_scale)))
+  sort!(unique!(pd))
   # every global genus has a 2-adic symbol
-  if mod(determinant, 2) == 1
-    push!(local_symbols, _local_genera(ZZ(2), rank, 0, 0, even))
+  if !(2 in pd)
+      push!(local_symbols, _local_genera(2, rank, 0, 0, 0, even))
   end
   # collect the p-adic symbols
-  for p in prime_divisors(determinant)
+  for p in pd
     det_val = valuation(determinant, p)
-    mscale_p = valuation(_max_scale, p)
-    local_symbol_p = _local_genera(p, rank, det_val, mscale_p, even)
-    push!(local_symbols,local_symbol_p)
+    minscale_p = valuation(min_scale, p)
+    maxscale_p = valuation(max_scale, p)
+    local_symbol_p = _local_genera(p, rank, det_val, minscale_p, maxscale_p, even)
+    filter!(s -> (prime(s) == 2) || (length(symbol(s)) > 1) || (symbol(s)[1][1] != 0), local_symbol_p)
+    !is_empty(local_symbol_p) && push!(local_symbols,local_symbol_p)
   end
   # take the cartesian product of the collection of all possible
   # local genus symbols one for each prime
@@ -572,6 +597,8 @@ function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
   for g in cartesian_product_iterator(local_symbols,inplace=false)
     # create a Genus from a list of local symbols
     G = ZGenus(sig_pair, g)
+    abs(det(G)) != abs(determinant) && continue
+    even && !iseven(G) && continue
     # discard the empty genera
     if _isglobal_genus(G)
       push!(out, G)
@@ -583,35 +610,36 @@ function genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,fmpz};
 end
 
 @doc Markdown.doc"""
-    _local_genera(p, rank, det_val, max_scale, even) -> Vector{ZpGenus}
+    _local_genera(p, rank, det_val, min_scale, max_scale, even) -> Vector{ZpGenus}
 
 Return all `p`-adic genera with the given conditions.
 
 This is a helper function for `genera`.
 No input checks are done.
 
-INPUT:
-- ``p`` -- a prime number
-- ``rank`` -- the rank of this genus
-- ``det_val`` -- valuation of the determinant at p
-- ``max_scale`` -- an integer the maximal scale of a jordan block
-- ``even`` -- ``bool``; is ignored if `p` is not `2`
+# Arguments
+- `p`: a prime number
+- `rank`: the rank of this genus
+- `det_val`: valuation of the determinant at p
+- `min_scale`: an integer the minimal scale of a jordan block
+- `max_scale`: an integer the maximal scale of a jordan block
+- `even`: `bool`; is ignored if `p` is not `2`
     """
-function _local_genera(p::fmpz, rank::Int, det_val::Int, max_scale::Int,
-                       even::Bool)
+function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
+                       max_scale::Int, even::Bool)
   scales_rks = Vector{Vector{Int}}[] # contains possibilities for scales & ranks
-  for rkseq in _integer_lists(rank, max_scale+1)
+  for rkseq in _integer_lists(rank, min_scale, max_scale)
     # rank sequences
     # sum(rkseq) = rank
-    # length(rkseq) = max_scale + 1
+    # length(rkseq) = max_scale - min_scale + 1
     # now assure that we get the right determinant
     d = 0
     pgensymbol = Vector{Int}[]
-    for i in 0:max_scale
-      d += i * rkseq[i+1]
+    for i in min_scale:max_scale
+      d += i * rkseq[i-min_scale+1]
       # blocks of rank 0 are omitted
-      if rkseq[i+1] != 0
-        push!(pgensymbol,[i, rkseq[i+1], 0])
+      if rkseq[i-min_scale+1] != 0
+        push!(pgensymbol,[i, rkseq[i-min_scale+1], 0])
       end
     end
     if d == det_val
@@ -662,9 +690,9 @@ function _local_genera(p::fmpz, rank::Int, det_val::Int, max_scale::Int,
   return symbols
 end
 
-function _local_genera(p::Int, rank::Int, det_val::Int, max_scale::Int,
-                       even::Bool)
-  return _local_genera(ZZ(p), rank, det_val, max_scale, even)
+function _local_genera(p::Int, rank::Int, det_val::Int, min_scale::Int,
+                       max_scale::Int, even::Bool)
+  return _local_genera(ZZ(p), rank, det_val, min_scale, max_scale, even)
 end
 
 @doc Markdown.doc"""
@@ -766,9 +794,11 @@ function _blocks(b::Array{Int}, even_only=false)
   return blocks
 end
 
-############################################################
+###############################################################################
+#
 # Existence conditions
-############################################################
+#
+###############################################################################
 
 @doc Markdown.doc"""
     _isglobal_genus(G::ZGenus) -> Bool
@@ -776,15 +806,20 @@ end
 Return if `S` is the symbol of of a global quadratic form || lattice.
 """
 function _isglobal_genus(G::ZGenus)
-  D = det(G)
+  if denominator(scale(G)) != 1
+    return _isglobal_genus(rescale(G, denominator(scale(G))))
+  end
+  D = ZZ(det(G))
   r, s = signature_pair(G)
-  R = ResidueRing(ZZ, 8)
+  R = residue_ring(ZZ, 8)
   oddi = R(r - s)
-  for loc in G._symbols
-    p = loc._prime
-    sym = loc._symbol
+  for loc in local_symbols(G)
+    p = prime(loc)
+    sym = symbol(loc)
     v = sum([ss[1] * ss[2] for ss in sym])
     a = divexact(D, p^v)
+    denominator(a) == 1 || return false
+    a = numerator(a)
     b = prod([ss[3] for ss in sym])
     if p == 2
       if !_is2adic_genus(sym)
@@ -861,10 +896,18 @@ function _is2adic_genus(symbol::Vector{Vector{Int}})
   return true
 end
 
-#######################################################
+###############################################################################
+#
 # Equality
-#######################################################
+#
+###############################################################################
 
+@doc Markdown.doc"""
+   (==)(G1::ZpGenus, G2::ZpGenus) -> Bool
+
+Return whether the local genus symbols `G1` and `G2` define the same local
+genus.
+"""
 function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
@@ -874,7 +917,7 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   if length(sym1) == 0 || length(sym2) == 0
     return sym1 == sym2
   end
-  if G1._prime != 2
+  if prime(G1) != 2
     return sym1 == sym2
   end
   n = length(sym1)
@@ -907,10 +950,10 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
       continue
     end
     # sum_{q<2^m}(t_q-t'_q)
-    l = sum(fmpz[sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1]<m])
+    l = sum(ZZRingElem[sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1]<m])
     # 4 (min(a,m)+min(b,m)+...)
     # where 2^a, 2^b are the values of q for which e_q!=e'_q
-    r = 4*sum(fmpz[min(ZZ(m), sym1[i][1]) for i in det_differs])
+    r = 4*sum(ZZRingElem[min(ZZ(m), sym1[i][1]) for i in det_differs])
     if 0 != mod(l-r, 8)
       return false
     end
@@ -918,36 +961,46 @@ function Base.:(==)(G1::ZpGenus, G2::ZpGenus)
   return true
 end
 
+@doc Markdown.doc"""
+    (==)(G1::ZGenus, G2::ZGenus) -> Bool
+
+Return if the genus symbols `G1` and `G2` define the same genus.
+"""
 function Base.:(==)(G1::ZGenus, G2::ZGenus)
-  t = length(G1._symbols)
-  if t != length(G2._symbols)
+  if signature_tuple(G1) != signature_tuple(G2)
+    return false
+  end
+  t = length(local_symbols(G1))
+  if t != length(local_symbols(G2))
     return false
   end
   for i in 1:t
-    if G1._symbols[i] != G2._symbols[i]
+    if local_symbols(G1)[i] != local_symbols(G2)[i]
       return false
     end
   end
   return true
 end
 
-#############################################################
+###############################################################################
+#
 # Printing
-#############################################################
+#
+###############################################################################
 
 function Base.show(io::IO, G::ZGenus)
-  rep = "ZGenus\nSignature: $(G._signature_pair)"
-  for s in G._symbols
+  rep = "ZGenus\nSignature: $(signature_pair(G))"
+  for s in local_symbols(G)
     rep *= "\n$s"
   end
   print(io, rep)
 end
 
 function Base.show(io::IO, G::ZpGenus)
-  p = G._prime
+  p = prime(G)
   CS_string = ""
   if p == 2
-    for sym in G._symbol
+    for sym in symbol(G)
       s, r, d, e, o = sym
       d = _kronecker_symbol(d, 2)
       if s>=0
@@ -960,21 +1013,27 @@ function Base.show(io::IO, G::ZpGenus)
       end
     end
   else
-    for sym in G._symbol
+    for sym in symbol(G)
       s,r ,d = sym
-      CS_string *= " $(p^s)^$(d * r)"
+      if s >= 0
+        CS_string *= " $(p^s)^$(d * r)"
+      else
+        CS_string *= "(1/$(p^-s))^$(d*r)"
+      end
     end
   end
   rep = "Genus symbol at $p:  $CS_string"
   print(io, rstrip(rep))
 end
 
-##################################################################
+###############################################################################
+#
 # Invariants and properties
-##################################################################
+#
+###############################################################################
 
 @doc Markdown.doc"""
-    prime(S::ZpGenus) -> fmpz
+    prime(S::ZpGenus) -> ZZRingElem
 
 Return the prime `p` of this `p`-adic genus.
 """
@@ -982,10 +1041,14 @@ function prime(S::ZpGenus)
   return S._prime
 end
 
+@doc Markdown.doc"""
+    symbol(S::ZpGenus) -> Vector{Vector{Int}}
+
+Return a copy of the underlying lists of integers for the Jordan blocks of `S`.
+"""
 function symbol(S::ZpGenus)
   return copy(S._symbol)
 end
-
 
 @doc Markdown.doc"""
     iseven(S::ZpGenus) -> Bool
@@ -999,24 +1062,24 @@ function iseven(S::ZpGenus)
     return true
   end
 
-  sym = S._symbol[1]
+  sym = symbol(S)[1]
   return sym[1] > 0 || sym[4] == 0
 end
 
 @doc Markdown.doc"""
-    symbol(S::ZpGenus, scale::Int) -> Vector{Vector{Int64}}
+    symbol(S::ZpGenus, scale::Int) -> Vector{Int}
 
 Return a copy of the underlying lists of integers
 for the Jordan block of the given scale
 """
 function symbol(S::ZpGenus, scale::Int)
-  sym = S._symbol
+  sym = symbol(S)
   for s in sym
     if s[1] == scale
       return copy(s)
     end
   end
-  if S._prime != 2
+  if prime(S) != 2
     return [scale,0,1]
   else
     return [scale, 0,1,0,0]
@@ -1024,13 +1087,13 @@ function symbol(S::ZpGenus, scale::Int)
 end
 
 @doc Markdown.doc"""
-  hasse_invariant(S::ZpGenus) -> Int
+    hasse_invariant(S::ZpGenus) -> Int
 
 Return the Hasse invariant of a representative.
-If the representative is diagonal (a_1,...a_n)
+If the representative is diagonal (a_1, ... , a_n)
 Then the Hasse invariant is
 
-$\prod_{i<j}(a_i,a_j)_p$.
+$\prod_{i < j}(a_i, a_j)_p$.
 """
 function hasse_invariant(S::ZpGenus)
   # Conway Sloane Chapter 15 5.3
@@ -1048,37 +1111,42 @@ function hasse_invariant(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    det(S::ZpGenus) -> fmpz
+    det(S::ZpGenus) -> QQFieldElem
 
-Return an integer representing the determinant of this genus.
+Return an rational representing the determinant of this genus.
 """
 function det(S::ZpGenus)
-  p = S._prime
-  e = prod(Int[s[3] for s in S._symbol])
+  p = prime(S)
+  e = prod(Int[s[3] for s in symbol(S)])
   if p == 2
     e = e % 8
-  elseif e==-1
+  elseif e ==-1
     e = _min_nonsquare(p)
   end
-  return e*prod(fmpz[ p^(s[1]*s[2]) for s in S._symbol ])
+  return e*prod(QQFieldElem[QQ(p)^(s[1]*s[2]) for s in symbol(S)])
 end
 
 
 @doc Markdown.doc"""
-    dim(S::ZpGenus) -> fmpz
+    dim(S::ZpGenus) -> Int
 
 Return the dimension of this genus.
 """
 function dim(S::ZpGenus)
-  return sum(Int[s[2] for s in S._symbol])
+  return sum(Int[s[2] for s in symbol(S)])
 end
 
+@doc Markdown.doc"""
+    rank(S::ZpGenus) -> Int
+
+Return the rank of (a representative of) `S`.
+"""
 function rank(S::ZpGenus)
   return dim(S)
 end
 
 @doc Markdown.doc"""
-    excess(S::ZpGenus) -> Nemo.fmpz_mod
+    excess(S::ZpGenus) -> zzModRingElem
 
 Return the p-excess of the quadratic form whose Hessian
 matrix is the symmetric matrix A.
@@ -1088,32 +1156,40 @@ called the oddity.
 The p-excess is allways even && is divisible by 4 if
 p is congruent 1 mod 4.
 
-REFERENCE:
-Conway && Sloane Lattices && Codes, 3rd edition, pp 370-371.
+# Reference
+[CS99](@cite) pp 370-371.
 """
 function excess(S::ZpGenus)
-  R = ResidueRing(ZZ, 8)
-  p = S._prime
-  if S._prime == 2
+  R = residue_ring(ZZ, 8)
+  p = prime(S)
+  if p == 2
     return dim(S) - oddity(S)
   end
   k = 0
-  for s in S._symbol
+  for s in symbol(S)
     if isodd(s[1]) && s[3] == -1
       k += 1
     end
   end
-  return R(sum(fmpz[s[2]*(p^s[1]-1) for s in S._symbol]) + 4*k)
+  e = R(4*k)
+  for s in symbol(S)
+    if s[1] >= 0
+      e += R(s[2]*(p^s[1]-1))
+    else
+      e += R(s[2])*(inv(R(p^(-s[1])))-R(1))
+    end
+  end
+  return e
 end
 
 @doc Markdown.doc"""
-    signature(S::ZpGenus) -> Nemo.fmpz_mod
+    signature(S::ZpGenus) -> zzModRingElem
 
-Return the p-signature of this p-adic form.
+Return the $p$-signature of this $p$-adic form.
 """
 function signature(S::ZpGenus)
-  R = ResidueRing(ZZ, 8)
-  if S._prime == 2
+  R = residue_ring(ZZ, 8)
+  if prime(S) == 2
     return oddity(S)
   else
     return R(dim(S)) - excess(S)
@@ -1121,26 +1197,26 @@ function signature(S::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    oddity(S::ZpGenus) -> Int
+    oddity(S::ZpGenus) -> zzModRingElem
 
 Return the oddity of this even form.
-The oddity is also called the 2-signature
+The oddity is also called the $2$-signature
 """
 function oddity(S::ZpGenus)
-  R = ResidueRing(FlintZZ, 8)
-  p = S._prime
-  @req p == 2 "the oddity is only defined for p=2"
+  R = residue_ring(FlintZZ, 8)
+  p = prime(S)
+  @req p == 2 "The oddity is only defined for p=2"
   k = 0
-  for s in S._symbol
+  for s in symbol(S)
     if mod(s[1], 2) == 1 && s[3] in (3, 5)
       k += 1
     end
   end
-  return R(sum(Int[s[5] for s in S._symbol]) + 4*k)
+  return R(sum(Int[s[5] for s in symbol(S)]) + 4*k)
 end
 
 @doc Markdown.doc"""
-    scale(S::ZpGenus) -> fmpz
+    scale(S::ZpGenus) -> QQFieldElem
 
 Return the scale of this local genus.
 
@@ -1152,17 +1228,18 @@ function scale(S::ZpGenus)
   if rank(S) == 0
     return ZZ(0)
   end
-  return S._prime^S._symbol[1][1]
+  s = symbol(S)[1][1]
+  return QQ(prime(S))^s
 end
 
 @doc Markdown.doc"""
-    norm(S::ZpGenus) -> fmpz
+    norm(S::ZpGenus) -> QQFieldElem
 
 Return the norm of this local genus.
 
 Let `L` be a lattice with bilinear form `b`.
 The norm of `(L,b)` is defined as the ideal
-generated by `\{b(x,x) | x \in L\}`.
+generated by $\{b(x,x) | x \in L\}$.
 """
 function norm(S::ZpGenus)
   if rank(S) == 0
@@ -1170,14 +1247,14 @@ function norm(S::ZpGenus)
   end
   p = prime(S)
   if p == 2
-    fq = S._symbol[1]
-    return S._prime^(fq[1] + 1 - fq[4])
+    FqPolyRepFieldElem = symbol(S)[1]
+    return QQ(prime(S))^(FqPolyRepFieldElem[1] + 1 - FqPolyRepFieldElem[4])
   else
     return scale(S)
   end
 end
 @doc Markdown.doc"""
-    level(S::ZpGenus) -> fmpz
+    level(S::ZpGenus) -> QQFieldElem
 
 Return the maximal scale of a jordan component.
 """
@@ -1185,7 +1262,8 @@ function level(S::ZpGenus)
   if rank(S) == 0
     return ZZ(1)
   end
-  return prime(S)^S._symbol[end][1]
+  e = symbol(S)[end][1]
+  return QQ(prime(S))^e
 end
 
 @doc Markdown.doc"""
@@ -1196,6 +1274,9 @@ Return if this genus is even.
 function iseven(G::ZGenus)
   if rank(G) == 0
     return true
+  end
+  if !is_integral(G)
+    return false
   end
   return iseven(local_symbol(G, 2))
 end
@@ -1210,14 +1291,14 @@ The signature is `p - n` where `p` is the number of positive eigenvalues
 and `n` the number of negative eigenvalues.
 """
 function signature(G::ZGenus)
-  p, n = G._signature_pair
+  p, n = signature_pair(G)
   return p - n
 end
 
 @doc Markdown.doc"""
     signature_pair(G::ZGenus) -> Tuple{Int,Int}
 
-Return the signature_pair of this genus.
+Return the signature pair of this genus.
 
 The signature is `[p, n]` where `p` is the number of positive eigenvalues
 and `n` the number of negative eigenvalues.
@@ -1227,13 +1308,27 @@ function signature_pair(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    det(G::ZGenus)
+    signature_tuple(G::ZGenus) -> Tuple{Int, Int, Int}
+
+Return the signature tuple of this genus.
+
+The signature is `[p, d, n]` where `p` is the number of positive eigenvalues,
+`d` is the number of zero eigenvalues and `n` is the number of negative eigenvalues.
+"""
+function signature_tuple(G::ZGenus)
+  s = signature_pair(G)
+  return (s[1],0,s[2])
+end
+
+@doc Markdown.doc"""
+    det(G::ZGenus) -> QQFieldElem
 
 Return the determinant of this genus.
 """
 function det(G::ZGenus)
-  p, n = G._signature_pair
-  return ZZ(-1)^n*prod(prime(g)^sum(Int[s[1]*s[2] for s in g._symbol])
+  p, n = signature_pair(G)
+  d = QQ(-1)^n
+  return QQ(-1)^n*prod(QQ(prime(g))^sum(Int[s[1]*s[2] for s in g._symbol])
                        for g in G._symbols)
 end
 
@@ -1243,9 +1338,14 @@ end
 Return the dimension of this genus.
 """
 function dim(G::ZGenus)
-  return sum(G._signature_pair)
+  return sum(signature_pair(G))
 end
 
+@doc Markdown.doc"""
+    rank(G::ZGenus) -> Int
+
+Return the rank of a (representative of) the genus `G`.
+"""
 rank(G::ZGenus) = dim(G)
 
 @doc Markdown.doc"""
@@ -1264,18 +1364,18 @@ Return the local symbol at `p`.
 """
 function local_symbol(G::ZGenus, p)
   p = ZZ(p)
-  for sym in G._symbols
+  for sym in local_symbols(G)
     if p == prime(sym)
       return deepcopy(sym)
     end
   end
-  @assert p!=2
-  sym_p = [[0, rank(G), _kronecker_symbol(det(G),p)]]
+  @assert p != 2
+  sym_p = [[0, rank(G), _kronecker_symbol(numerator(det(G)),p)*_kronecker_symbol(denominator(det(G)), p)]]
   return ZpGenus(p, sym_p)
 end
 
 @doc Markdown.doc"""
-    level(G::ZGenus) -> fmpz
+    level(G::ZGenus) -> QQFieldElem
 
 Return the level of this genus.
 
@@ -1283,11 +1383,11 @@ This is the denominator of the inverse gram matrix
 of a representative.
 """
 function level(G::ZGenus)
-  return prod(level(sym) for sym in G._symbols)
+  return prod(level(sym) for sym in local_symbols(G))
 end
 
 @doc Markdown.doc"""
-    scale(G::ZGenus) -> fmpz
+    scale(G::ZGenus) -> QQFieldElem
 
 Return the scale of this genus.
 
@@ -1296,38 +1396,47 @@ The scale of `(L,b)` is defined as the ideal
 `b(L,L)`.
 """
 function scale(G::ZGenus)
-  return prod([scale(s) for s in G._symbols])
+  return prod([scale(s) for s in local_symbols(G)])
 end
 
 @doc Markdown.doc"""
-    norm(G::ZGenus) -> fmpz
+    norm(G::ZGenus) -> QQFieldElem
 
 Return the norm of this genus.
 
 Let `L` be a lattice with bilinear form `b`.
 The norm of `(L,b)` is defined as the ideal
-generated by `\{b(x,x) | x \in L\}`.
+generated by $\{b(x,x) | x \in L\}$.
 """
 function norm(G::ZGenus)
-  return prod([norm(s) for s in G._symbols])
+  return prod([norm(s) for s in local_symbols(G)])
 end
 
 @doc Markdown.doc"""
-    primes(G::ZGenus) -> Vector{fmpz}
+    primes(G::ZGenus) -> Vector{ZZRingElem}
 
 Return the list of primes of the local symbols of `G`.
 
 Note that 2 is always in the output since the 2-adic symbol
 of a `ZGenus` is, by convention, always defined.
 """
-primes(G) = prime.(local_symbols(G))
-
-##########################################################
-# Representative & discriminant group
-##########################################################
+primes(G::ZGenus) = prime.(local_symbols(G))
 
 @doc Markdown.doc"""
-    quadratic_space(G::ZGenus) -> QuadSpace{FlintRationalField, fmpq_mat}
+    is_integral(G::ZGenus) -> Bool
+
+Return whether `G` is a genus of integral $\mathbb Z$-lattices.
+"""
+is_integral(G::ZGenus) = is_integral(scale(G))
+
+###############################################################################
+#
+# Representative & discriminant group
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    quadratic_space(G::ZGenus) -> QuadSpace{QQField, QQMatrix}
 
 Return the quadratic space defined by this genus.
 """
@@ -1338,22 +1447,28 @@ function quadratic_space(G::ZGenus)
     return quadratic_space(QQ, qf)
   end
   determinant = det(G)
-  prime_neg_hasse = [prime(s) for s in G._symbols if hasse_invariant(s)==-1]
-  neg = G._signature_pair[2]
+  prime_neg_hasse = [prime(s) for s in local_symbols(G) if hasse_invariant(s)==-1]
+  neg = signature_pair(G)[2]
   qf =_quadratic_form_with_invariants(dimension, determinant, prime_neg_hasse,
                                       neg)
   return quadratic_space(QQ, qf)
 end
 
+@doc Markdown.doc"""
+    rational_representative(G::ZGenus) -> QuadSpace{QQField, QQMatrix}
+
+Return the quadratic space defined by this genus.
+"""
 rational_representative(G::ZGenus) = quadratic_space(G)
 
 @doc Markdown.doc"""
-    discriminant_group(G::ZGenus) -> TorQuadMod
+    discriminant_group(G::ZGenus) -> TorQuadModule
 
 Return the discriminant form associated to this genus.
 """
 function discriminant_group(G::ZGenus)
-  qL = fmpq_mat[]
+  @req is_integral(G) "G must be a genus of integral lattices"
+  qL = QQMatrix[]
   for gs in G._symbols
     p = gs._prime
     for block in gs._symbol
@@ -1362,7 +1477,7 @@ function discriminant_group(G::ZGenus)
     end
   end
   q = diagonal_matrix(qL)
-  return TorQuadMod(q)
+  return TorQuadModule(q)
 end
 
 @doc Markdown.doc"""
@@ -1373,6 +1488,12 @@ Compute a representative of this genus && cache it.
 function representative(G::ZGenus)
   if isdefined(G, :_representative)
     return G._representative
+  end
+  if denominator(scale(G)) != 1
+    L = representative(rescale(G, denominator(scale(G))))
+    L = rescale(L, 1//denominator(scale(G)))
+    G._representative = L
+    return L
   end
   V = quadratic_space(G)
   if rank(G) == 0
@@ -1385,7 +1506,7 @@ function representative(G::ZGenus)
     L = local_modification(L, representative(sym), p)
   end
   # confirm the computation
-    @hassert :Lattice 1 genus(L) == G
+  @hassert :Lattice 1 genus(L) == G
   G._representative = L
   return L
 end
@@ -1395,7 +1516,7 @@ end
 
 Return if this genus is definite.
 """
-is_definite(G::ZGenus) = any(x==0 for x in signature_pair(G))
+is_definite(G::ZGenus) = any(x == 0 for x in signature_pair(G))
 
 @doc Markdown.doc"""
     representatives(G::ZGenus) -> Vector{ZLat}
@@ -1405,7 +1526,7 @@ Return a list of representatives of the isometry classes in this genus.
 function representatives(G::ZGenus)
   L = representative(G)
   rep = genus_representatives(L)
-  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(fmpq[1//automorphism_group_order(S) for S in rep])
+  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(QQFieldElem[1//automorphism_group_order(S) for S in rep])
   return rep
 end
 
@@ -1415,28 +1536,28 @@ end
 Return a gram matrix of some representative of this local genus.
 """
 function gram_matrix(S::ZpGenus)
-  G = fmpq_mat[]
+  G = QQMatrix[]
   p = prime(S)
   for block in S._symbol
     push!(G, _gram_from_jordan_block(p, block))
   end
   G = diagonal_matrix(G)
-  @hassert :Lattice 1  S==genus(G, p)
-  return change_base_ring(QQ, G)
+  @hassert :Lattice 1  S == genus(G, p)
+  return G
 end
 
 @doc Markdown.doc"""
-    representative(S::ZpGenus) -> MatElem
+    representative(S::ZpGenus) -> ZLat
 
 Return an integer lattice which represents this local genus.
 """
 function representative(S::ZpGenus)
-  return Zlattice(gram=gram_matrix(S))
+  return Zlattice(gram = gram_matrix(S))
 end
 
 
 @doc Markdown.doc"""
-    _gram_from_jordan_block(p::fmpz, block, discr_form=false) -> MatElem
+    _gram_from_jordan_block(p::ZZRingElem, block, discr_form=false) -> MatElem
 
 Return the gram matrix of this jordan block.
 
@@ -1452,7 +1573,7 @@ INPUT:
 - ``discr_form`` -- Bool (default: ``false``); if ``true`` invert the scales
   to obtain a gram matrix for the discriminant form instead.
 """
-function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
+function _gram_from_jordan_block(p::ZZRingElem, block, discr_form=false)
   level = block[1]
   rk = block[2]
   det = block[3]
@@ -1464,14 +1585,14 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
     W = QQ[1;]
     if o == 0
       if det in [1, 7]
-        qL = fmpq_mat[U for i in 1:div(rk, 2)]
+        qL = QQMatrix[U for i in 1:div(rk, 2)]
       else
-        qL = fmpq_mat[U for i in 1:(div(rk, 2) - 1)]
+        qL = QQMatrix[U for i in 1:(div(rk, 2) - 1)]
         push!(qL, V)
       end
     elseif o == 1
       if rk % 2 == 1
-        qL = fmpq_mat[U for i in 1:max(0, div(rk - 3, 2))]
+        qL = QQMatrix[U for i in 1:max(0, div(rk - 3, 2))]
         if t*det % 8 in [3, 5]
           push!(qL,V)
         elseif rk >= 3
@@ -1484,23 +1605,23 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
         else
           det = 1
         end
-        qL = fmpq_mat[U for i in 1:max(0, div(rk - 4, 2))]
+        qL = QQMatrix[U for i in 1:max(0, div(rk - 4, 2))]
         if (det , t) == (1, 0)
-          append!(qL, fmpq_mat[U, 1 * W, 7 * W])
+          append!(qL, QQMatrix[U, 1 * W, 7 * W])
         elseif (det , t) == (1, 2)
-          append!(qL, fmpq_mat[U, 1 * W, 1 * W])
+          append!(qL, QQMatrix[U, 1 * W, 1 * W])
         elseif (det , t) == (1, 4)
-          append!(qL , fmpq_mat[V, 1 * W, 3 * W])
+          append!(qL , QQMatrix[V, 1 * W, 3 * W])
         elseif (det , t) == (1, 6)
-          append!(qL, fmpq_mat[U, 7 * W, 7 * W])
+          append!(qL, QQMatrix[U, 7 * W, 7 * W])
         elseif (det , t) == (-1, 0)
-          append!(qL, fmpq_mat[V, 1 * W, 7 * W])
+          append!(qL, QQMatrix[V, 1 * W, 7 * W])
         elseif (det , t) == (-1, 2)
-          append!(qL, fmpq_mat[U, 3 * W, 7 * W])
+          append!(qL, QQMatrix[U, 3 * W, 7 * W])
         elseif (det , t) == (-1, 4)
-          append!(qL, fmpq_mat[U, 1 * W, 3 * W])
+          append!(qL, QQMatrix[U, 1 * W, 3 * W])
         elseif (det , t) == (-1, 6)
-          append!(qL, fmpq_mat[U, 1 * W, 5 * W])
+          append!(qL, QQMatrix[U, 1 * W, 5 * W])
         else
           error("invalid symbol $block")
         end
@@ -1516,9 +1637,9 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
       q = zero_matrix(QQ, 0, 0)
     end
     if discr_form
-      q = q * (1//2^level)
+        q = q * (1//2)^level
     else
-      q = q * 2^level
+      q = q * QQ(2)^level
     end
   elseif p != 2 && discr_form
     q = identity_matrix(QQ, rk)
@@ -1527,7 +1648,7 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
       u = _min_nonsquare(p)
       q[1,1] = u
     end
-    q = q * (2 // p^level)
+    q = q * (2 // QQ(p)^level)
   end
   if p != 2 && !discr_form
     q = identity_matrix(QQ, rk)
@@ -1535,16 +1656,432 @@ function _gram_from_jordan_block(p::fmpz, block, discr_form=false)
       u = _min_nonsquare(p)
       q[1,1] = u
     end
-    q = q * p^level
+    q = q * QQ(p)^level
   end
   return q
 end
 
-##################################################
-# The mass formula
-##################################################
+###############################################################################
+#
+#  Spinor Genera
+#
+###############################################################################
+
 @doc Markdown.doc"""
-    _M_p(species, p) -> fmpq
+    automorphous_numbers(g::ZpGenus) -> Vector{ZZRingElem}
+
+Return generators of the group of automorphous square classes at this prime.
+
+A `p`-adic square class `r` is called automorphous if it is
+the spinor norm of a proper `p`-adic integral automorphism of this form.
+See [CS99](@cite) Chapter 15, 9.6 for details.
+"""
+function automorphous_numbers(g::ZpGenus)
+  @req is_integral(scale(g)) "g must have integral scale"
+  automorphs = ZZRingElem[]
+  sym = symbol(g)
+  G = change_base_ring(ZZ, gram_matrix(g))
+  p = prime(g)
+  if p != 2
+    up = ZZ(_min_nonsquare(p))
+    I = diagonal(G)
+    for r in I
+      # We need to consider all pairs in I
+      # since at most 2 elements are part of a pair
+      # we need need at most 2 of each type
+      if count(==(r), I) > 2
+        deleteat!(I, findfirst(x->x==r, I))
+      end
+    end
+    # products of all pairs
+    for r1 in I
+      for r2 in I
+        push!(automorphs, r1 * r2)
+      end
+    end
+    # supplement (i)
+    for block in sym
+      if block[2] >= 2
+        push!(automorphs, up)
+        break
+      end
+    end
+    # normalize the square classes and remove duplicates
+    automorphs1 = Set{ZZRingElem}()
+    for s in automorphs
+      v = valuation(s,p)
+      u = divexact(s, p^v)
+      if kronecker_symbol(u, p) == -1
+        u = up
+      else
+        u = ZZRingElem(1)
+      end
+      v = mod(v, 2)
+      sq = u * p^v
+      push!(automorphs1,sq)
+    end
+    return sort!(collect(automorphs1))
+  end
+  # p = 2
+  I = ZZRingElem[]
+  II = ZZRingElem[]
+  for block in collect_small_blocks(G)
+    if ncols(block) == 1
+      u = block[1,1]
+      if count(==(u),I) < 2
+        push!(I, block[1,1])
+      end
+    else # rank2
+      q = block[1,2]
+      append!(II, ZZRingElem[2*q, 3*2*q, 5*2*q, 7*2*q])
+    end
+  end
+  # We need to consider all pairs in L
+  # since at most 2 elements are part of a pair
+  # we need need at most 2 of each type
+  L = ZZRingElem[]
+  append!(L, I)
+  append!(L, II)
+  for r in L     # remove triplicates
+    if count(==(r),L) > 2
+      deleteat!(L, findfirst(==(r),L))
+    end
+  end
+  n = length(L)
+  for i in 1:n
+    for j in 1:i-1
+      r = L[i] * L[j]
+      push!(automorphs, r)
+    end
+  end
+
+  # supplement (i)
+  n = length(sym)
+  for k in 1:n
+    s = sym[k]
+    if sum([b[2] for b in sym[k:end] if b[1] - s[1] < 4]) >= 3
+      append!(automorphs, ZZRingElem[1, 3, 5, 7])
+      break
+    end
+  end
+
+  # supplement (ii)
+  sort(I, by=x->valuation(x,2))
+  n = length(I)
+  for i in 1:n
+    for j in 1:i-1
+      r = I[i] // I[j]
+      v = valuation(r, 2)
+      u = divexact(r, QQ(2)^v)
+      u = mod(u, 8)
+      @assert v >= 0
+      if v==0 && u==1
+        push!(automorphs, 2)
+      end
+      if v==0 && u==5
+        push!(automorphs, 6)
+      end
+      if v in [0, 2, 4]  # this overlaps with the first two cases!
+        push!(automorphs, 5)
+      end
+      if v in [1, 3] && u in [1, 5]
+        push!(automorphs, 3)
+      end
+      if v in [1, 3] && u in [3, 7]
+        push!(automorphs, 7)
+      end
+    end
+  end
+  # normalize the square classes and remove duplicates
+  automorphs1 = ZZRingElem[]
+  for s in automorphs
+    v = valuation(s, 2)
+    u = divexact(s, QQ(2)^v)
+    u = mod(u, 8)
+    v = mod(v, 2)
+    sq = u * 2^v
+    push!(automorphs1, sq)
+  end
+  return sort!(unique!(automorphs1))
+end
+
+@doc Markdown.doc"""
+    local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
+
+Return the product $\prod_p \QQ_p* / (\QQ_p*)^2$ where `p in primes`.
+"""
+function local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
+  K, _ = Hecke.rationals_as_number_field()
+  # f : QQ -> K
+  f = MapFromFunc(x -> K(x), x -> coeff(x, 0), QQ, K)
+  OK = maximal_order(K)
+  primes_as_ideals = [prime_decomposition(OK, p)[1][1] for p in primes]
+  stuff = [Hecke.local_multiplicative_group_modulo_squares(P) for P in primes_as_ideals]
+  grps = [s[1] for s in stuff]
+  maps = Any[s[2] for s in stuff]
+  A, proj, inj = direct_product(grps..., task = :both)
+  backwardmap = x -> sum([inj[i](maps[i]\(f(x))) for i in 1:length(maps)])
+  forwardmap = function(x)
+    elems = [f\(maps[i](proj[i](x))) for i in 1:length(grps)]
+    elems_integral = ZZRingElem[]
+    for i in 1:(length(elems) - 1)
+      push!(elems_integral, ZZ(denominator(elems[i])^2 * elems[i]))
+    end
+    cprimes = copy(primes)
+    for i in 1:length(primes)
+      if cprimes[i] == 2
+        cprimes[i] = primes[i]^4
+      else
+        cprimes[i] = primes[i]^3
+      end
+    end
+    y = crt(elems_integral, cprimes)
+    if sign(y) == sign(elems[end])
+      z = QQ(y)
+    else
+      z = QQ(y + sign(elems[end]) * prod(cprimes))
+    end
+    @assert backwardmap(z) == x
+    return z
+  end
+  diagonal_morphism = inv(MapFromFunc(forwardmap, backwardmap, A, QQ))
+  projd = Any[(primes[i],proj[i]*maps[i]*inv(f)) for i in 1:length(primes)]
+  injd = Any[(primes[i],f*inv(maps[i])*inj[i]) for i in 1:length(primes)]
+  return A, Dict(projd), Dict(injd), diagonal_morphism
+end
+
+@doc Markdown.doc"""
+    _automorphous_numbers(G::ZGenus)
+
+Return `(Delta, f)` where f: QQ^x -> Delta`
+
+has the property that q is automorphous if and only if $f(q)=0$.
+Further Delta is in bijection with the proper spinor genera of `G`.
+"""
+@attr function _automorphous_numbers(G::ZGenus)
+  @assert is_integral(G)
+  P = [prime(g) for g in local_symbols(G)]
+  A, proj, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
+  gens_automorph = elem_type(A)[]
+  for g in local_symbols(G)
+    p = prime(g)
+    for r in automorphous_numbers(g)
+      r = QQ(r)
+      S = [i for i in P if i!=p]
+      pv,u = ppio(ZZ(r),p)
+      pv = QQ(pv); u = QQ(u)
+      push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S], init=A()))
+    end
+  end
+  s = signature_tuple(G)
+  if s[1]*s[3]>0
+    # -1 is -1-adically automorphous
+    for p in P
+      push!(gens_automorph, inj[p](QQ(-1)))
+    end
+  end
+  gens_local_automorphs = elem_type(A)[]
+  for p in P
+    if p ==2
+      u_p = inj[p](QQ(3))
+      push!(gens_local_automorphs, u_p)
+      u_p = inj[p](QQ(5))
+      push!(gens_local_automorphs, u_p)
+    else
+      u_p = inj[p](QQ(lift(non_square(GF(p)))))
+      push!(gens_local_automorphs, u_p)
+    end
+  end
+  B,b = sub(A,gens_local_automorphs)
+  C,c = sub(B, [preimage(b,i) for i in gens_automorph])
+  Delta, proj = cokernel(c, false)
+  binv = MapFromFunc(x -> preimage(b, x), b, A, B)
+  f1 = compose(diagonal_map, binv)
+  f2 = compose(f1, proj)
+  f3 = Dict([(p,compose(compose(inj[p], binv), proj)) for p in keys(inj)])
+
+  function delta(p::ZZRingElem, r::QQFieldElem)
+    v = valuation(r, p)
+    pr = QQ(p)^v
+    ur = divexact(r, pr)
+    a = sum([f3[l](pr) for l in P if l!=p], init=Delta())
+    a = a + f3[p](ur)
+    return a
+  end
+
+  return Delta, f2, delta
+end
+
+function is_unimodular(g::ZpGenus)
+  return scale(g) == level(g) == 1
+end
+
+@doc Markdown.doc"""
+    bad_primes(g::ZGenus) -> Vector{ZZRingElem}
+
+Return `2` and the primes at which `g` is not unimodular.
+"""
+function bad_primes(g::ZGenus)
+  return [prime(g) for g in local_symbols(g) if !is_unimodular(g) || prime(g)==2]
+end
+
+@doc Markdown.doc"""
+    is_automorphous(G::ZGenus, q::RationalUnion) -> Bool
+
+Return if `q` is the spinor norm of an element of `SO(V)` where `V` is the
+rational quadratic space of `G`.
+
+See [CS99](@cite) Chapter 15, Theorem 18.
+"""
+function is_automorphous(G::ZGenus, q::RationalUnion)
+  @req is_integral(G) "G must be a genus of integral lattices"
+  q = QQ(q)
+  P = bad_primes(G)
+  if any(valuation(q,p)>0 for p in P)
+    error("q=$q contains a bad prime")
+  end
+  _, f2 = _automorphous_numbers(G)
+  return iszero(f2(q))
+end
+
+@doc Markdown.doc"""
+    improper_spinor_generators(G::ZGenus) -> Vector{ZZRingElem}
+
+Return a list of primes describing the improper spinor genera of `G`.
+
+Namely if $L$` is lattice in `G` and $L_i$ is a $p_i$-neigbhor of $L$
+where the `p_1, \dots, p_n$` are the improper spinor generators, then
+$L, L_1,\dots, L_n$ are representatives for the improper spinor genera of `G`.
+
+See [CS99](@cite) Chapter 15, Theorem 15.
+
+# Example
+The following genus consists of two proper spinor genera but only
+one improper spinor genus.
+
+```jldoctest
+julia> L1 = Zlattice(gram=ZZ[3 0 -1 1; 0 3 -1 -1; -1 -1 6 0; 1 -1 0 6]);
+
+julia> length(Hecke.proper_spinor_generators(genus(L1)))
+1
+
+julia> length(Hecke.improper_spinor_generators(genus(L1)))
+0
+```
+"""
+function improper_spinor_generators(G::ZGenus)
+  if denominator(scale(G)) != 1
+    return improper_spinor_generators(rescale(G, denominator(scale(G))))
+  end
+  return _improper_spinor_generators(G)[1]
+end
+
+"""
+    _improper_spinor_generators(G::ZGenus) -> Vector{ZZRingElem}, map
+
+The first return value are the improper spinor generators.
+The second return value is a map f:QQ -> AbelianGroup
+(not defined over the bad primes)
+which satisfies f(r) == 0 if and only if r is improperly automorphous.
+"""
+function _improper_spinor_generators(G::ZGenus)
+  @assert is_integral(G)
+  P = bad_primes(G)
+  Delta, i_prop,Deltap = _automorphous_numbers(G)
+  S = ZZRingElem[]
+
+  a = Delta()
+  for p in P
+    a += Deltap(p, _norm_generator(local_symbol(G,p)))
+  end
+  _, inc = sub(Delta, [a], false) # no need for the group lattice
+  Delta_improp,proj = cokernel(inc, false)
+  i_improp = compose(i_prop, proj)
+  spin_gens = Set{elem_type(Delta_improp)}()
+  push!(spin_gens, Delta_improp())
+
+  C = order(Delta_improp)
+  p = 1
+  while length(spin_gens) < C
+    p = next_prime(p)
+    if p in P
+      continue
+    end
+    Delta_x = i_improp(QQ(p))
+    if Delta_x in spin_gens
+      continue
+    end
+    push!(S, p)
+    push!(spin_gens, Delta_x)
+  end
+  return S,i_improp
+end
+
+function _norm_generator(G::ZpGenus)
+  @assert is_integral(scale(G))
+  h1 = ZpGenus(prime(G), symbol(G)[1:1])
+  g = gram_matrix(h1)
+  if g[end, end] == 0
+    # hyperbolic plane
+    return 2 * g[end - 1, end]
+  end
+  return g[end, end]
+end
+
+@doc Markdown.doc"""
+    proper_spinor_generators(G::ZGenus) -> Vector{ZZRingElem}
+
+Return a list of primes describing the proper spinor genera of `G`.
+
+Namely if $L$` is lattice in `G` and $L_i$ is a $p_i$-neigbhor of $L$
+where the `p_1, \dots, p_n$` are the proper spinor generators, then
+$L, L_1,\dots, L_n$ are representatives for the proper spinor genera of `G`.
+
+See [CS99](@cite) Chapter 15, Theorem 15.
+
+# Example
+The following genus consists of two proper spinor genera.
+```jldoctest
+julia> L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2]);
+
+julia> length(Hecke.proper_spinor_generators(genus(L1)))
+1
+```
+"""
+function proper_spinor_generators(G::ZGenus)
+  if denominator(scale(G)) != 1
+    return proper_spinor_generators(rescale(G, denominator(scale(G))))
+  end
+  P = bad_primes(G)
+  Delta, i = _automorphous_numbers(G)
+  spin_gens = Set{elem_type(Delta)}()
+  Q = ZZRingElem[]
+  push!(spin_gens, 0*Delta[1])
+
+  p = 1
+  while length(spin_gens) < order(Delta)
+    p = next_prime(p)
+    if p in P
+      continue
+    end
+    Delta_x = i(QQ(p))
+    if Delta_x in spin_gens
+      continue
+    end
+    push!(Q, p)
+    push!(spin_gens, Delta_x)
+  end
+  return Q
+end
+
+################################################################################
+#
+# The mass formula
+#
+################################################################################
+
+@doc Markdown.doc"""
+    _M_p(species, p) -> QQFieldElem
 
 Return the diagonal factor `M_p` as a function of the species.
 """
@@ -1555,7 +2092,7 @@ function _M_p(species, p)
   p = QQ(p)
   n = abs(species)
   s = Int(div(n + 1,2))
-  mp = 2 * prod(fmpq[1 - p^(-2*k) for k in 1:s-1])
+  mp = 2 * prod(QQFieldElem[1 - p^(-2*k) for k in 1:s-1])
   if n % 2 == 0
     mp *= ZZ(1) - sign(species) * p^(-s)
   end
@@ -1563,7 +2100,7 @@ function _M_p(species, p)
 end
 
 @doc Markdown.doc"""
-    _standard_mass_squared(G::ZGenus) -> fmpq
+    _standard_mass_squared(G::ZGenus) -> QQFieldElem
 
 Return the standard mass of this genus.
 It depends only on the dimension and determinant.
@@ -1576,10 +2113,12 @@ function _standard_mass_squared(G::ZGenus)
     s = div(n, 2) + 1
   end
   std = QQ(2)^2
-  std *= prod(fmpq[_gamma_exact(j // 2) for j in 1:n])^2
-  std *= prod(fmpq[_zeta_exact(2*k) for k in 1:s-1])^2
+  std *= prod(QQFieldElem[_gamma_exact(j // 2) for j in 1:n])^2
+  std *= prod(QQFieldElem[_zeta_exact(2*k) for k in 1:s-1])^2
   if n % 2 == 0
     D = ZZ(-1)^(s) * det(G)
+    @assert is_integral(D)
+    D = ZZ(D)
     std *= _quadratic_L_function_squared(ZZ(s), D)
     d = fundamental_discriminant(D)
     # since quadratic_L_function__exact is different
@@ -1595,7 +2134,7 @@ function _standard_mass_squared(G::ZGenus)
 end
 
 @doc Markdown.doc"""
-    mass(G::ZGenus) -> fmpq
+    mass(G::ZGenus) -> QQFieldElem
 
 Return the mass of this genus.
 
@@ -1605,20 +2144,23 @@ of the isometry classes in this genus.
 Its mass is defined as $\sum_{i=1}^n \frac{1}{|O(L_i)|}$.
 """
 function mass(G::ZGenus)
-  pos, neg = G._signature_pair
+  if denominator(scale(G)) != 1
+    return mass(rescale(G, denominator(scale(G))))
+  end
+  pos, neg = signature_pair(G)
   @req pos * neg == 0 "The genus must be definite."
   if pos + neg == 1
     return QQ(1//2)
   end
   mass1 = _standard_mass_squared(G)
-  mass1 *= prod(fmpq[_mass_squared(sym) for sym in G._symbols])
-  mass1 //= prod(fmpq[_standard_mass(sym) for sym in G._symbols])^2
+  mass1 *= prod(QQFieldElem[_mass_squared(sym) for sym in local_symbols(G)])
+  mass1 //= prod(QQFieldElem[_standard_mass(sym) for sym in local_symbols(G)])^2
   return sqrt(mass1)
 end
 
 
 @doc Markdown.doc"""
-    _mass_squared(G::ZpGenus) -> fmpq
+    _mass_squared(G::ZpGenus) -> QQFieldElem
 
 Return the local mass `m_p` of this genus as defined by Conway.
 
@@ -1626,8 +2168,8 @@ See Equation (3) in [CS1988]_
 """
 function _mass_squared(G::ZpGenus)
   @req dim(G) > 1 "the dimension must be at least 2"
-  p = G._prime
-  sym = G._symbol
+  p = prime(G)
+  sym = symbol(G)
   #diagonal product
 
   # diagonal factors
@@ -1645,7 +2187,7 @@ function _mass_squared(G::ZpGenus)
     return m_p
   end
   # type factors
-  nII = sum(fmpz[fq[2] for fq in sym if fq[4] == 0])
+  nII = sum(ZZRingElem[FqPolyRepFieldElem[2] for FqPolyRepFieldElem in sym if FqPolyRepFieldElem[4] == 0])
   nI_I = ZZ(0)   # the total number of pairs of adjacent constituents f_q,
   # f_2q that are both of type I (odd)
   for k in 1:r-1
@@ -1657,7 +2199,7 @@ function _mass_squared(G::ZpGenus)
 end
 
 @doc Markdown.doc"""
-    _standard_mass(G::ZpGenus) -> fmpq
+    _standard_mass(G::ZpGenus) -> QQFieldElem
 
 Return the standard p-mass of this local genus.
 
@@ -1665,11 +2207,13 @@ See Equation (6) of [CS1988]_.
 """
 function _standard_mass(G::ZpGenus)
   n = dim(G)
-  p = G._prime
+  p = prime(G)
   s = div(n + 1, 2)
-  std = 2*prod(fmpq[1 - QQ(p)^(-2*k) for k in 1:s-1])
+  std = 2*prod(QQFieldElem[1 - QQ(p)^(-2*k) for k in 1:s-1])
   if n % 2 == 0
     D = ZZ(-1)^s * det(G)
+    @assert is_integral(D)
+    D = ZZ(D)
     epsilon = _kronecker_symbol(4*D, p)
     std *= (1 - epsilon*QQ(p)^(-s))
   end
@@ -1685,7 +2229,7 @@ See Table 1 in [CS1988]_.
 function _species_list(G::ZpGenus)
   p = prime(G)
   species_list = Int[]
-  sym = G._symbol
+  sym = symbol(G)
   if p != 2
     for k in 1:length(sym)
       n = sym[k][2]
@@ -1743,13 +2287,10 @@ function _species_list(G::ZpGenus)
   return species_list
 end
 
-
-
-
 @doc Markdown.doc"""
-    _gamma_exact(n) -> fmpq
+    _gamma_exact(n) -> QQFieldElem
 
-Evaluate the exact value of the `\Gamma^2` function at an integer or
+Evaluate the exact value of the $\Gamma^2$ function at an integer or
 half-integer argument. Ignoring factors of pi
 """
 function _gamma_exact(n)
@@ -1773,7 +2314,7 @@ function _gamma_exact(n)
 end
 
 @doc Markdown.doc"""
-    _zeta_exact(n) -> fmpq
+    _zeta_exact(n) -> QQFieldElem
 
 Return the exact value of the Riemann Zeta function
 ignoring factors of pi.
@@ -1781,7 +2322,7 @@ ignoring factors of pi.
 The argument must be a critical value, namely either positive even
 or negative odd.
 
-See for example [Iwa1972]_, p13, Special value of `\zeta(2k)`
+See for example [Iwa1972]_, p13, Special value of $\zeta(2k)$
 REFERENCES:
 
 - [Iwa1972]_
@@ -1805,7 +2346,7 @@ function _zeta_exact(n)
 end
 
 @doc Markdown.doc"""
-    _quadratic_L_function_squared(n, d) -> fmpq
+    _quadratic_L_function_squared(n, d) -> QQFieldElem
 
 Return the square of the exact value of a quadratic twist of the Riemann Zeta
 function by $\chi_d(x) = \left(\frac{d}{x}\right)$.
@@ -1819,7 +2360,7 @@ The input `n` must be a critical value.
 """
 function _quadratic_L_function_squared(n, d)
   if n <= 0
-      return _bernoulli_kronecker(1-n, d)^2//(n-1)^2
+    return _bernoulli_kronecker(1-n, d)^2//(n-1)^2
   end
   @req (n >= 1) "n must be a critical value (i.e. even > 0 or odd < 0)"
   # Compute the kind of critical values (p10)
@@ -1832,9 +2373,9 @@ function _quadratic_L_function_squared(n, d)
   @req (mod(n - delta, 2) == 0) "not in domain"
   f = abs(fundamental_discriminant(d))
   if delta == 0
-      GS = f
+    GS = f
   else
-      GS = -f
+    GS = -f
   end
   a = ZZ(-1)^(2 + (n - delta))
   a *= (2//f)^(2*n)
@@ -1843,7 +2384,6 @@ function _quadratic_L_function_squared(n, d)
   a *= _bernoulli_kronecker(Int(n),d)^2//factorial(ZZ(n))^2
   return a
 end
-
 
 @doc Markdown.doc"""
     rational_isometry_class(g::ZpGenus) -> LocalQuadSpaceCls
@@ -1888,13 +2428,15 @@ function rational_isometry_class(g::ZGenus)
 end
 
 ################################################################################
+#
 # Representations
+#
 ################################################################################
 
 @doc Markdown.doc"""
     represents(g1::ZpGenus, g2::ZpGenus) -> Bool
 
-Return if `g1` represents `g2`.
+Return whether `g1` represents `g2`.
 
 Based on O'Meara Integral Representations of Quadratic Forms Over Local Fields
 Note that for `p == 2` there is a typo in O'Meara Theorem 3 (V).
@@ -1903,11 +2445,14 @@ The correct statement is
 """
 function represents(G1::ZpGenus, G2::ZpGenus)
   G1, G2 = G2, G1
-	@req prime(G2) == prime(G1) "different primes"
+  s = lcm(denominator(scale(G1)), denominator(scale(G2)))
+  G1 = rescale(G1, s)
+  G2 = rescale(G2, s)
+	@req prime(G2) == prime(G1) "Associated primes must be the same"
   p = prime(G2)
   s1 = symbol(G1)
   s2 = symbol(G2)
-  level = max(s1[end][1],s2[end][1])
+  level = max(s1[end][1], s2[end][1])
   # notation
   function delta(pgenus::ZpGenus, i)
     # O'Meara p.857
@@ -2020,6 +2565,7 @@ function represents(G1::ZpGenus, G2::ZpGenus)
     if !any(represents(L, u*d) for u in [1,3,5,7])
       return false
     end
+
     # III
     S1 = rational_isometry_class(gen2_round[i+2])
     S2 = rational_isometry_class(gen1_square[i])
@@ -2083,5 +2629,253 @@ function represents(G1::ZGenus, G2::ZGenus)
     end
   end
   return true
+end
+
+################################################################################
+#
+#     Embeddings
+#
+################################################################################
+
+@doc Markdown.doc"""
+    embed(S::ZLat, G::Genus, primitive=true) -> Bool, embedding
+
+Return a (primitive) embedding of the integral lattice `S` into some lattice in the genus of `G`.
+
+```jldoctest
+julia> G = Zgenera((8,0), 1, even=true)[1];
+
+julia> L, S, i = embed(root_lattice(:A,5), G);
+
+```
+"""
+function embed(S::ZLat, G::ZGenus, primitive::Bool=true)
+  @req scale(S) >= 1 && scale(G) >= 1 "L and G must be integral"
+  @req signature_tuple(S)[2]==0 "S must be nondegenerate"
+  if abs(det(G)) == 1
+    pos, neg = signature_pair(G)
+    return embed_in_unimodular(S, pos, neg, primitive=primitive, even=iseven(G))
+  end
+  raise(NotImplementedError("for now G needs to be even unimodular, but you can use Nikulin's theory to get a primitive embedding by 'hand' in the non-unimodular cases"))
+end
+
+@doc Markdown.doc"""
+    embed_in_unimodular(S::ZLat, pos, neg, primitive=true, even=true) -> Bool, L, S', iS, iR
+
+Return a (primitive) embedding of the integral lattice `S` into some
+(even) unimodular lattice of signature `(pos, neg)`.
+
+For now this works only for even lattices.
+
+```jldoctest
+julia> NS = orthogonal_sum(Zlattice(:U), rescale(root_lattice(:A, 16), -1))[1];
+
+julia> LK3, iNS, i = embed_in_unimodular(NS, 3, 19);
+
+julia> genus(LK3)
+ZGenus
+Signature: (3, 19)
+Genus symbol at 2:   1^22
+
+julia> iNS
+Quadratic lattice of rank 18 and degree 22 over the rationals
+
+julia> is_primitive(LK3, iNS)
+true
+```
+"""
+function embed_in_unimodular(S::ZLat, pos, neg; primitive=true, even=true)
+  @vprint :Lattice 1 "computing embedding in L_$(n) \n"
+  pS,kS, nS = signature_tuple(S)
+  @req kS == 0 "S must be non-degenerate"
+  even || raise(NotImplementedError("for now we need the unimodular lattice to be even."))
+  pR = pos - pS
+  nR = neg - nS
+  DS = discriminant_group(S)
+  DR = rescale(DS, -1)  # discriminant group of R = S^\perp in L as predicted by Nikulin
+  GR = genus(DR, (pR, nR)) # genus of R
+  R = representative(GR)
+  R = lll(R)  # make R a bit nicer
+  R = Zlattice(gram=gram_matrix(R)) # clear the history of R
+
+  SR, iS, iR = orthogonal_sum(S, R)
+  V = ambient_space(SR)
+  S = lattice(V, basis_matrix(S) * iS.matrix)
+  R = lattice(V, basis_matrix(R) * iR.matrix)
+  fl, glue = is_anti_isometric_with_anti_isometry(discriminant_group(S), discriminant_group(R))
+  @assert fl
+  L = overlattice(glue)
+  @assert V === ambient_space(SR)
+  @hassert :Lattice 1 abs(det(L)) ==1
+  @hassert :Lattice 1 denominator(gram_matrix(L))==1
+  @hassert :Lattice 1 !even || iseven(L)
+  return L, S, iS
+end
+
+###############################################################################
+#
+# Primary/elementary genera
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    is_primary_with_prime(G::ZGenus) -> Bool, ZZRingElem
+
+Given a genus of $\mathbb Z$-lattices `G`, return whether it is primary,
+that is whether the bilinear form is integral and the associated
+discriminant form (see [`discriminant_group`](@ref)) is a `p`-group for some
+prime number `p`. In case it is, `p` is also returned as second output.
+
+Note that for unimodular genera, this function returns `(true, 1)`. If the
+genus is not primary, the second return value is `-1` by default.
+"""
+function is_primary_with_prime(G::ZGenus)
+  @req is_integral(G) "G must be a genus of integral lattices"
+  length(primes(G)) >= 3 && return false, ZZ(-1)
+
+  sym = local_symbols(G)
+  if length(sym) == 1 # symbol only at 2
+    if sym[1]._symbol[end][1] != 0
+      return true, ZZ(2)
+    else
+      return true, ZZ(1)
+    end
+  end
+
+  if sym[1]._symbol[end][1] != 0
+      return false, ZZ(-1)
+  end
+
+  return true, primes(G)[end]
+end
+
+@doc Markdown.doc"""
+    is_primary(G::ZGenus, p::Union{Integer, ZZRingElem}) -> Bool
+
+Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
+return whether `G` is `p`-primary, that is whether the associated discriminant
+form (see [`discriminant_group`](@ref)) is a `p`-group.
+"""
+function is_primary(G::ZGenus, p::Union{Integer, ZZRingElem})
+  bool, q = is_primary_with_prime(G)
+  return bool && q == p
+end
+
+@doc Markdown.doc"""
+    is_unimodular(G::ZGenus) -> Bool
+
+Given a genus of integral $\mathbb Z$-lattices `G`, return whether `G` is
+unimodular, that is whether the associated discriminant form
+(see [`discriminant_group`](@ref)) is trivial.
+"""
+is_unimodular(G::ZGenus) = is_primary(G, 1)
+
+@doc Markdown.doc"""
+    is_elementary_with_prime(G::ZGenus) -> Bool, ZZRingElem
+
+Given a genus of $\mathbb Z$-lattices `G`, return whether it is elementary,
+that is whether the bilinear form is inegtral and the associated discriminant
+form (see [`discriminant_group`](@ref)) is an elementary `p`-group for some
+prime number `p`. In case it is, `p` is also returned as second output.
+
+Note that for unimodular genera, this function returns `(true, 1)`. If the
+genus is not elementary, the second return value is `-1` by default.
+"""
+function is_elementary_with_prime(G::ZGenus)
+  bool, p = is_primary_with_prime(G)
+  bool || return bool, ZZ(-1)
+  if p == 1
+    return bool, p
+  end
+  symp = local_symbol(G, p)
+  if symp._symbol[end][1] != 1
+    return false, ZZ(-1)
+  end
+  return true, p
+end
+
+@doc Markdown.doc"""
+    is_elementary(G::ZGenus, p::Union{Integer, ZZRingElem}) -> Bool
+
+Given a genus of integral $\mathbb Z$-lattices `G` and a prime number `p`,
+return whether `G` is `p`-elementary, that is whether its associated discriminant
+form (see [`discriminant_group`](@ref)) is an elementary `p`-group.
+"""
+function is_elementary(G::ZGenus, p::Union{Integer, ZZRingElem})
+  bool, q = is_elementary_with_prime(G)
+  return bool && q == p
+end
+
+###############################################################################
+#
+# Re-scaling
+#
+###############################################################################
+
+# TODO: this could be done faster by working on symbols directly! It is
+# straightforward when p != 2; for p == 2 one has to be careful...
+@doc Markdown.doc"""
+    rescale(G::ZpGenus, a::RationalUnion) -> ZpGenus
+
+Given a local genus symbol `G` of $\mathbb Z$-lattices, return the local genus
+symbol of any representative of `G` rescaled by `a`.
+"""
+function rescale(G::ZpGenus, a::RationalUnion)
+  @req !iszero(a) "a must be non-zero"
+  a = QQ(a)
+  p = prime(G)
+  m = gram_matrix(G)
+  return genus(a*m, p)
+end
+
+@doc Markdown.doc"""
+    rescale(G::ZGenus, a::RationalUnion) -> ZGenus
+
+Given a genus symbol `G` of $\mathbb Z$-lattices, return the genus
+symbol of any representative of `G` rescaled by `a`.
+"""
+rescale(::ZGenus, ::RationalUnion)
+
+function rescale(G::ZGenus, a::IntegerUnion)
+  @req !iszero(a) "a must be non-zero"
+  a = ZZ(a)
+  if isdefined(G, :_representative)
+    return genus(rescale(G._representative, a))
+  end
+  sig_pair = signature_pair(G)
+  sig_pair = a < 0 ? reverse(sig_pair) : sig_pair
+  pd = prime_divisors(a)
+  append!(pd, primes(G))
+  sort!(unique!(pd))
+  sym = eltype(local_symbols(G))[]
+  for p in pd
+    s = rescale(local_symbol(G, p), a)
+    ss = symbol(s)
+    p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue
+    push!(sym, s)
+  end
+  return ZGenus(sig_pair, sym)
+end
+
+function rescale(G::ZGenus, a::RationalUnion)
+  @req !iszero(a) "a must be non zero"
+  a = QQ(a)
+  if isdefined(G, :_representative)
+    return genus(rescale(G._representative, a))
+  end
+  G = rescale(G, numerator(a))
+  sig_pair = signature_pair(G)
+  a = denominator(a)
+  pd = prime_divisors(a)
+  append!(pd, primes(G))
+  unique!(pd)
+  sym = eltype(local_symbols(G))[]
+  for p in pd
+    s = rescale(local_symbol(G, p), 1//a)
+    ss = symbol(s)
+    p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue
+    push!(sym, s)
+  end
+  return ZGenus(sig_pair, sym)
 end
 
