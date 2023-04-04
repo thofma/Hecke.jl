@@ -150,8 +150,30 @@ end
 #
 ################################################################################
 
-iszero(a::LocalFieldElem) = iszero(a.data)
+iszero(a::LocalFieldElem) = iszero(a.data) 
+
+#in ramified fields the generator is the uniformizer and has valuation 1
+# precision is measured in powers of a uniformizer, but the uniformizer
+# is represented as x.
+#the precision of the coefficient of x comes in multiples of e
+#hence pi in precision 1 which should be 0 (valuation >= precision)
+#fails as x has coefficient 1 in precision 1 which is non zero
+function iszero(a::LocalFieldElem{S, EisensteinLocalField}) where S
+  f = a.data
+  iszero(f) && return true
+  e = ramification_index(parent(a))
+  p = precision(a)
+  for i=0:degree(f)
+    c = coeff(f, i)
+    if !iszero(c) && valuation(c)*e + i < p
+      return false
+    end
+  end
+  return true
+end
+
 isone(a::LocalFieldElem) = isone(a.data)
+isone(a::LocalFieldElem{S, EisensteinLocalField}) where S = iszero(a-1)
 is_unit(a::LocalFieldElem) = !iszero(a)
 
 function O(K::LocalField, prec::T) where T <: IntegerUnion
@@ -181,7 +203,7 @@ function zero!(a::LocalFieldElem)
   return a
 end
 
-function Base.:(==)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S, T}
+function Base.:(==)(a::LocalFieldElem, b::LocalFieldElem)
   for i = 0:max(degree(a.data), degree(b.data))
     if coeff(a, i) != coeff(b, i)
       return false
@@ -189,6 +211,20 @@ function Base.:(==)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S, 
   end
   return true
 end
+
+function Base.:(==)(a::LocalFieldElem{S, EisensteinLocalField}, b::LocalFieldElem{S, EisensteinLocalField}) where {S}
+  e = ramification_index(parent(a))
+  p = min(precision(a), precision(b))
+  for i = 0:max(degree(a.data), degree(b.data))
+    ca = coeff(a, i)
+    cb = coeff(b, i)
+    if ca != cb && valuation(ca-cb) * e + i < p
+      return false
+    end
+  end
+  return true
+end
+
 
 ################################################################################
 #
@@ -243,10 +279,11 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::LocalFieldElem) -> QQFieldElem
 
-The valuation of $a$, normalized so that $v(p) = 1$.
+The valuation of $a$, normalized so that $v(p) = 1$. Scale by the 
+`absolute_ramification_index` to get a surjection onto ZZ.
 """
 function valuation(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   return valuation(norm(a))//degree(parent(a))
@@ -262,7 +299,7 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
   c = coeff(a, i)
   while iszero(c)
     i += 1
-    i > degree(parent(a)) && error("intersting element")
+    i > degree(parent(a)) && error("interesting element")
     c = coeff(a, i)
   end
   vc = valuation(c)
@@ -308,13 +345,9 @@ function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldE
 end
 
 function check_parent(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  #=
   if parent(a) !== parent(b)
-    @show parent(a)
-    @show parent(b)
     error("Wrong parents!")
   end
-  =#
   return nothing
 end
 
@@ -356,7 +389,7 @@ end
 function norm(a::LocalFieldElem)
   K = parent(a)
   return det(representation_matrix(a))
-  #the resultant is not quite stable (yet), it is not using the 
+  #the resultant is not quite stable (yet), it is not using the
   #fun factor stuff...
   res = setprecision(base_ring(a.data), precision(a.data)) do
     resultant(defining_polynomial(K, precision(a.data)), a.data)
@@ -484,7 +517,7 @@ function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: F
   check_parent(a, b)
   K = parent(a)
   c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
-     a.data + b.data
+    a.data + b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
@@ -493,7 +526,7 @@ function Base.:-(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: F
   check_parent(a, b)
   K = parent(a)
   c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
-     a.data - b.data
+    a.data - b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
 end
@@ -550,32 +583,56 @@ end
 function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   K = c.parent = a.parent
+  e = ramification_index(parent(a))
   c.data = mul!(c.data, a.data, b.data)
-  c.data = mod(c.data, defining_polynomial(parent(a), max(precision(c.data), ceil(Int, precision(K)/ramification_index(K)))))
-  c.precision = compute_precision(a.parent, c.data)
+  c.data = mod(c.data, defining_polynomial(parent(a), max(precision(c.data), ceil(Int, precision(K)/e))))
+#  c.precision = compute_precision(a.parent, c.data)
+  e = absolute_ramification_index(parent(a))
+  if iszero(a)
+    va = 0
+  else
+    va = Int(e*valuation(a))
+  end
+  if iszero(b)
+    vb = 0
+  else
+    vb = Int(e*valuation(b))
+  end
+  pr = min(precision(a) - va, precision(b) - vb) + va+vb
+  c.precision = min(compute_precision(a.parent, c.data), pr)
+#  c.precision = compute_precision(a.parent, c.data)
   return c
+end
+
+function uniformizer(L::Union{PadicField, QadicField}, v::Int; prec::Int = 20)  #precision????
+  return setprecision(L, prec) do
+    uniformizer(L)^v
+  end
 end
 
 function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
   if v > 0
-    return uniformizer(L)^v
+    return setprecision(L, prec) do 
+      uniformizer(L)^v
+    end
   end
   if inertia_degree(L) == degree(L)
-    return L(uniformizer(base_field(L))^v)
+    return L(uniformizer(base_field(L), v, prec = prec))
   end
   #possibly compute the pi^v only for v mod e the complicated way, and scale
   #by prime number afterwards
   #also: find out abs and rel prec....
   e = absolute_ramification_index(L)
-  pr = ceil(Int, prec/e-2*v)
+  pr = ceil(Int, (prec-v)/e)+2
   f = defining_polynomial(L, pr)
   local pi_inv
   setprecision(L, pr*e) do
     g = parent(f)([coeff(f, i) for i=1:degree(f)])
-    pi_inv = -g(uniformizer(L))*inv(coeff(f, 0))
+    pi_inv = g(uniformizer(L))
+    pi_inv *= -inv(coeff(f, 0))
     @assert valuation(pi_inv) == - valuation(uniformizer(L))
     @assert precision(pi_inv) >= prec - 1
-  end  
+  end
   return pi_inv^-v
 end
 
@@ -635,7 +692,7 @@ function _underlying_base_field(K::T) where T <: Union{PadicField, QadicField}
   return K
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     log(a::LocalFieldElem) -> LocalFieldElem
 
 Computes the $p$-adic exponential of $a$.
@@ -648,7 +705,7 @@ function exp(a::LocalFieldElem)
   end
   Qp = _underlying_base_field(K)
   N_orig = precision(a)
-  N = N_orig + clog(ZZRingElem(N_orig), p) 
+  N = N_orig + clog(ZZRingElem(N_orig), p)
   a = setprecision(a, N)
   oN = precision(parent(a))
   setprecision!(parent(a), max(oN, N))
@@ -675,7 +732,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     log(a::LocalFieldElem) -> LocalFieldElem
 
 Computes the $p$-adic logarithm of $a$, defined via the series on the 1-units and

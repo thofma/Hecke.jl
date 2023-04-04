@@ -16,7 +16,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
            #S <: Union{ fqPolyRepPolyRing, FqPolyRepPolyRing },
            #T <: Union{ fqPolyRepField, FqPolyRepField },
            #PolyType <: Union{ fqPolyRepPolyRingElem, FqPolyRepPolyRingElem },
-           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResF{ZZRingElem}} }
+           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}} }
     }
 
     z = new{S, T, PolyType, MatType}()
@@ -131,6 +131,27 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       return f
     end
     z.header = MapHeader{S, T}(parent(h), Fqm, _image, _preimage)
+    return z
+  end
+
+  function FqPolyRingToFqMor{S, T, PolyType, MatType}(F::T, h::FqPolyRingElem) where {
+           S, T, PolyType, MatType
+           #S <: Union{ fqPolyRepPolyRing, FqPolyRepPolyRing },
+           #T <: Union{ fqPolyRepField, FqPolyRepField },
+           #PolyType <: Union{ fqPolyRepPolyRingElem, FqPolyRepPolyRingElem },
+           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}} }
+    }
+    z = new{S, T, PolyType, MatType}()
+    z.h = h
+
+    function _image(f::FqPolyRingElem)
+      return F.forwardmap(f)
+    end
+
+    function _preimage(f::FqFieldElem)
+      return F.backwardmap(f)
+    end
+    z.header = MapHeader{S, T}(parent(h), F, _image, _preimage)
     return z
   end
 end

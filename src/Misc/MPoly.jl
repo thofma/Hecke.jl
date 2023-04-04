@@ -48,7 +48,7 @@ function mul!(res::QQMPolyRingElem, a::QQMPolyRingElem, c::ZZRingElem)
   return nothing
 end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    is_univariate(f::Generic.MPoly{T}) where T <: NumFieldElem -> Bool, PolyElem{T}
 #
 #Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
@@ -94,7 +94,7 @@ Hecke.ngens(R::ZZMPolyRing) = length(gens(R))
 #the block is also not used here I think
 #functionality to view mpoly as upoly in variable `i`, so the
 #coefficients are mpoly's without variable `i`.
-function Hecke.leading_coefficient(f::MPolyElem, i::Int)
+function Hecke.leading_coefficient(f::MPolyRingElem, i::Int)
   g = MPolyBuildCtx(parent(f))
   d = degree(f, i)
   for (c, e) = zip(coefficients(f), exponent_vectors(f))
@@ -111,7 +111,7 @@ end
 `content` as a polynomial in the variable `i`, i.e. the gcd of all the
 coefficients when viewed as univariate polynomial in `i`.
 """
-function Hecke.content(f::MPolyElem, i::Int)
+function Hecke.content(f::MPolyRingElem, i::Int)
   return reduce(gcd, coefficients(f, i))
 end
 
@@ -119,7 +119,7 @@ end
 The coefficients of `f` when viewed as a univariate polynomial in the `i`-th
 variable.
 """
-function Hecke.coefficients(f::MPolyElem, i::Int)
+function Hecke.coefficients(f::MPolyRingElem, i::Int)
   d = degree(f, i)
   cf = [MPolyBuildCtx(parent(f)) for j=0:d]
   for (c, e) = zip(coefficients(f), exponent_vectors(f))

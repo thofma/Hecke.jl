@@ -4,11 +4,11 @@ const default_class_mod_pol_db = joinpath(artifact"ClassicalModularPolynomialsDB
 
 const _classical_modular_polynomial_cache = Dict{Any, Any}()
 
-@doc Markdown.doc"""
+@doc raw"""
     classical_modular_polynomial([R::MPolyRing,] n::Int) -> Poly
 
 Returns the classical modular polynomial of level $n as an element of
-$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specificed,
+$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specified,
 the polynomial will be evaluated at the variables of $R$.
 
 Modular polynomials are available up to level `59`.
@@ -42,11 +42,11 @@ const default_atkin_mod_pol_db = joinpath(artifact"AtkinModularPolynomialsDB", "
 
 const _atkin_modular_polynomial_cache = Dict{Any, Any}()
 
-@doc Markdown.doc"""
+@doc raw"""
     atkin_modular_polynomial([R::MPolyRing,] n::Int) -> Poly
 
 Returns the Atkin modular polynomial of prime level $n as an element of
-$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specificed,
+$\mathbf{Z}[x, y]$. If an optional bivariate polynomial $R$ is specified,
 the polynomial will be evaluated at the variables of $R$.
 
 Atkin modular polynomials are available up to level `400`.

@@ -10,6 +10,9 @@
     bb, c = @inferred haspreimage(mH, b)
     @test !bb
     # TODO: Test for has_image missing
+
+    fl, c = @inferred haspreimage(mH, elem_type(H)[])
+    @test fl
   end
 
   @testset "Homomorphisms" begin

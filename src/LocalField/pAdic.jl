@@ -1,4 +1,4 @@
-@doc Markdown.doc"""
+@doc raw"""
     lift(a::padic) -> ZZRingElem
 
 Returns the positive canonical representative in $\mathbb{Z}$. $a$ needs
@@ -76,7 +76,7 @@ function my_log_one_minus(x::padic)
 
 end
 
-function my_log_one_minus_inner(x::Generic.Res{QQPolyRingElem}, pr::Int, v::Int, p)
+function my_log_one_minus_inner(x::Generic.ResidueRingElem{QQPolyRingElem}, pr::Int, v::Int, p)
   #need N s.th. Nv-log_p(N) >= pr
   #as a function of N, this has a min at log(p)/v
   #the N needs to > pr/v + s.th. small

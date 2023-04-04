@@ -12,7 +12,7 @@ add_verbosity_scope(:LocallyFreeClassGroup)
 # If the left and right conductor of O in a maximal order coincide (which is the
 # case if O is the integral group ring of a group algebra), the computation can
 # be speeded up by setting cond = :left.
-@doc Markdown.doc"""
+@doc raw"""
     locally_free_class_group(O::AlgAssAbsOrd) -> GrpAbFinGen
 
 Given an order $O$ in a semisimple algebra over $\mathbb Q$, this function
@@ -113,7 +113,7 @@ end
 # This only works if O is an integral group ring!
 # (Because the theory only works in this case, not because of laziness.)
 # See Bley, Wilson: "Computations in relative algebraic K-groups".
-@doc Markdown.doc"""
+@doc raw"""
     locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
       -> GrpAbFinGen, DiscLogLocallyFreeClassGroup
 
@@ -243,7 +243,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
   return k1
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     K1(A::AlgAss{<:FinFieldElem}) -> Vector{AbsAlgAssElem}
 
 Given an algebra over a finite field, this function returns generators for $K_1(A)$.

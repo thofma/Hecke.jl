@@ -187,7 +187,7 @@ function _find_prime(L::NfRelNS{nf_elem})
   i = 1
   pols = L.pol
   threshold = absolute_degree(L)^2
-  polsR = Vector{FqPolyRepPolyRingElem}(undef, length(pols))
+  polsR = Vector{FqPolyRingElem}(undef, length(pols))
   while i < n_attempts+1
     p = next_prime(p)
     if is_index_divisor(OK, p) || divisible(dL, p)
@@ -393,6 +393,7 @@ function simplified_absolute_field(L::NfRelNS; cached = false)
   a = _find_short_primitive_element(L)
   f = absolute_minpoly(a)
   @assert degree(f) == absolute_degree(L)
+  local K::AnticNumberField
   K = number_field(f, check = false, cached = cached)[1]
   mp = hom(K, L, a)
   return K, mp

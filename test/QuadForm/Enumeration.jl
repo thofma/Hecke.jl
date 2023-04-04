@@ -1,4 +1,4 @@
-@testset "Interal short vector enumeration" begin
+@testset "Internal short vector enumeration" begin
   G = matrix(ZZ, 5, 5, [10, -8, -3, -6, -8, -8, 12, 8, 5, 6, -3, 8, 16, 4, 0, -6, 5, 4, 12, 6, -8, 6, 0, 6, 14])
   ub = 10
   sv = @inferred Hecke.__enumerate_gram(Vector, G, nothing, ub)

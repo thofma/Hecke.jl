@@ -73,7 +73,7 @@ One can test whether a given element of a rational function field is in the degr
 localization.
 
 ```@docs
-in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
+in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
 ```
 
 All basic arithmetic operations are provided for elements of the degree localization.

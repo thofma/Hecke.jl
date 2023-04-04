@@ -147,7 +147,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
       pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
 
 Returns the pseudo-basis of $\mathcal O$.
@@ -161,7 +161,7 @@ function pseudo_basis(O::NfRelOrd; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       basis_pmatrix(O::NfRelOrd) -> PMat
 
 Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
@@ -176,7 +176,7 @@ function basis_pmatrix(O::NfRelOrd; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       inv_coeff_ideals(O::NfRelOrd{T, S}) -> Vector{S}
 
 Returns the inverses of the coefficient ideals of the pseudo basis of $O$.
@@ -196,7 +196,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
       basis_nf(O::NfRelOrd) -> Vector{NumFieldElem}
 
 Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
@@ -485,7 +485,7 @@ function Order(L::NumField{S}, M::Generic.Mat{S}) where S <: NumFieldElem{T} whe
 end
 
 #=
-@doc Markdown.doc"""
+@doc raw"""
       Order(K::NumField, M::PMat) -> NfRelOrd
 
 Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
@@ -588,7 +588,7 @@ end
 ################################################################################
 
 #=
-@doc Markdown.doc"""
+@doc raw"""
     trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 Returns the trace matrix of $\mathcal O$ with respect to $(\omega_1,\dotsc,\omega_d)$
@@ -642,7 +642,7 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMa
   return g
 end
 
-function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f::FqPolyRepPolyRingElem) where {T <: Union{nf_elem, NfRelElem}}
+function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f) where {T <: Union{nf_elem, NfRelElem}}
   return map_coefficients(m, f, parent = R)
 end
 
@@ -705,7 +705,7 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) = dedekind_
 ################################################################################
 
 #=
-@doc Markdown.doc"""
+@doc raw"""
       poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 This function tries to find an order that is locally larger than $\mathcal O$
@@ -742,7 +742,7 @@ end
 #
 ################################################################################
 #=
-@doc Markdown.doc"""
+@doc raw"""
       pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$.
@@ -950,7 +950,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::NumFieldElem, O::NfOrd) -> ZZRingElem
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in

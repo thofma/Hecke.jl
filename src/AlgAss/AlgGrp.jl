@@ -21,7 +21,7 @@ order_type(::Type{AlgGrp{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{AlgG
 order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
-@doc Markdown.doc"""
+@doc raw"""
     group(A::AlgGrp) -> Group
 
 Returns the group defining $A$.
@@ -35,7 +35,7 @@ function (A::AlgGrp{T, S, R})(c::Vector{T}; copy::Bool = false) where {T, S, R}
   return AlgGrpElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplication_table(A::AlgGrp; copy::Bool = true) -> Matrix{RingElem}
 
 Given a group algebra $A$ this function returns the multiplication table of
@@ -56,7 +56,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     group_algebra(K::Ring, G; op = *) -> AlgGrp
 
 Returns the group ring $K[G]$.
@@ -82,7 +82,7 @@ function group_algebra(K::Field, G::GrpAbFinGen)
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     (K::Ring)[G::Group] -> AlgGrp
     (K::Ring)[G::GrpAbFinGen] -> AlgGrp
 
@@ -99,7 +99,7 @@ getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
 
 is_commutative_known(A::AlgGrp) = (A.is_commutative != 0)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_commutative(A::AlgGrp) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
@@ -179,7 +179,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     center(A::AlgGrp) -> AlgAss, AbsAlgAssMor
 
 Returns the center $C$ of $A$ and the inclusion $C \to A$.
@@ -304,7 +304,7 @@ function _merge_elts_in_gens!(left::Vector{Tuple{Int, Int}}, mid::Vector{Tuple{I
   return mid
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false})
       -> Vector{AlgGrpElem}
 
@@ -694,7 +694,7 @@ function preimage(f::AbsAlgAssMorGen, z)
 end
 
 # Write M_n(K) as M_n(Q) if [K : Q] = 1
-# We use the "restricted scalar map" to modell M_n(Q) -> M_n(K)
+# We use the "restricted scalar map" to model M_n(Q) -> M_n(K)
 function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
   K = base_ring(A)
   @assert is_absolute(K) && degree(K) == 1

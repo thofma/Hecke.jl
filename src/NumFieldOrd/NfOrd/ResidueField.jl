@@ -70,6 +70,20 @@ end
 #
 ################################################################################
 
+function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g::QQPolyRingElem, p)
+  R = Nemo._GF(p, cached = false)
+
+  Zy, y = polynomial_ring(ZZ, "y", cached = false)
+  Rx, x = polynomial_ring(R, "x", cached = false)
+
+  gmodp = Rx(g)
+  fmodp = Rx(f)
+
+  h = gcd(gmodp, fmodp)
+
+  return Nemo._residue_field(h)[1], h
+end
+
 # It is assumed that p is not an index divisor
 function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, degree_one::Type{Val{S}} = Val{false}) where S
   R = GF(p, cached = false)
@@ -95,6 +109,19 @@ function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRing
 	end
 end
 
+function _residue_field_nonindex_divisor_fq_default(O, P)
+  @assert has_2_elem(P) && is_prime_known(P) && is_prime(P)
+
+  gtwo = P.gen_two
+
+  f = nf(O).pol
+  g = parent(f)(elem_in_nf(gtwo))
+
+  F, h = _residue_field_nonindex_divisor_helper_fq_default(f, g, minimum(P))
+  mF = Mor(O, F, h)
+  mF.P = P
+end
+
 function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
   # This code assumes that P comes from prime_decomposition
   @assert has_2_elem(P) && is_prime_known(P) && is_prime(P)
@@ -111,10 +138,14 @@ function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false},
     mF.P = P
     return F, mF
   elseif small === Val{false}
-    F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
+    F, h = _residue_field_nonindex_divisor_helper_fq_default(f, g, minimum(P))
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
+    #F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
+    #mF = Mor(O, F, h)
+    #mF.P = P
+    #return F, mF
   end
 end
 
@@ -123,6 +154,11 @@ end
 #  Residue field construction for index divisors
 #
 ################################################################################
+
+function _residue_field_generic_fq_default(O, P)
+	f = NfOrdToFqFieldMor(O, P)
+ 	return codomain(f), f
+end
 
 function _residue_field_generic(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
   if small == Val{true}
@@ -150,7 +186,7 @@ end
 #  High level functions
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
 
 Returns the residue field of the prime ideal $P$ together with the
@@ -162,12 +198,12 @@ function residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true)
     !is_prime(P) && error("Ideal must be prime")
   end
   if !is_maximal_known(O) || !is_maximal(O)
-    return _residue_field_generic(O, P)
+    return _residue_field_generic_fq_default(O, P)
   end
   if !is_index_divisor(O, minimum(P)) && has_2_elem(P)
     return _residue_field_nonindex_divisor(O, P)
   else
-    return _residue_field_generic(O, P)
+    return _residue_field_generic_fq_default(O, P)
   end
 end
 
@@ -211,7 +247,7 @@ function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     relative_residue_field(O::NfRelOrd, P::NfRelOrdIdl) -> RelFinField, Map
 
 Given a maximal order `O` in a relative number field $E/K$ and a prime ideal
@@ -239,11 +275,12 @@ function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) w
     end
   end
   FK = codomain(projK)
-  if base_field(K) isa QQField
-    projE = NfRelOrdToRelFinFieldMor{typeof(O), FqPolyRepFieldElem}(O, P, projK)
-  else
-    projE = NfRelOrdToRelFinFieldMor{typeof(O), Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
-  end
+  projE = NfRelOrdToFqFieldRelMor{typeof(O)}(O, P, projK)
+  #if base_field(K) isa QQField
+  #  projE = NfRelOrdToRelFinFieldMor{typeof(O), FqFieldElem}(O, P, projK)
+  #else
+  #  projE = NfRelOrdToRelFinFieldMor{typeof(O), Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
+  #end
   set_attribute!(P, :rel_residue_field_map, projE)
   return codomain(projE), projE
 end

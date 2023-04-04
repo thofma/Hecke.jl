@@ -64,7 +64,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
       pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
       pseudo_basis(a::NfRelOrdFracIdl{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
 
@@ -79,7 +79,7 @@ function pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       basis_pmatrix(a::NfRelOrdIdl) -> PMat
       basis_pmatrix(a::NfRelOrdFracIdl) -> PMat
 
@@ -105,7 +105,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
       basis_matrix(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_matrix(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
 
@@ -120,7 +120,7 @@ function basis_matrix(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       basis_mat_inv(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_mat_inv(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
 
@@ -172,7 +172,7 @@ function defines_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
   return _spans_subset_of_pseudohnf(M, I, :lowerleft)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::NfRelOrd, M::PMat, check::Bool = true, M_in_hnf::Bool = false) -> NfRelOrdIdl
 
 Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If `check` is set,
@@ -187,7 +187,7 @@ function ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, check::Bool = true, M_in_hnf
   return NfRelOrdIdl{T, S, U}(O, M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::NfRelOrd, M::Generic.Mat, check::Bool = true) -> NfRelOrdIdl
 
 Creates the ideal of $\mathcal O$ with basis matrix $M$. If `check` is set,
@@ -198,7 +198,7 @@ function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {
   return ideal(O, PseudoMatrix(M, coeffs), check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
 Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If `check` is set,
@@ -238,7 +238,7 @@ function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfR
   return ideal(O, x, y, aa, bb, check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
     *(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
     *(x::NfRelOrdElem{T}, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
@@ -270,7 +270,7 @@ end
 
 *(x::T, O::NfRelOrd) where { T <: Union{ Int, ZZRingElem, NfOrdElem, NfRelOrdElem } } = ideal(O, x)
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
 Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If `check` is set,
@@ -475,7 +475,7 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(a::NfRelOrdIdl) -> NfOrdIdl
 
 Returns the norm of $a$.
@@ -796,7 +796,7 @@ end
 
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-@doc Markdown.doc"""
+@doc raw"""
       pradical(O::NfRelOrd, P::NfOrdIdl) -> NfRelOrdIdl
 
 Given a prime ideal $P$, this function returns the $P$-radical
@@ -1397,7 +1397,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
       minimum(A::NfRelOrdIdl) -> NfOrdIdl
       minimum(A::NfRelOrdIdl) -> NfRelOrdIdl
 
@@ -1435,7 +1435,7 @@ end
 function residue_field(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
   @assert order(P) == O
   @assert P.is_prime == 1
-  mF = NfRelOrdToFqMor{T, S, U}(O, P)
+  mF = NfRelOrdToFqMor(O, P)
   return codomain(mF), mF
 end
 
@@ -1513,7 +1513,7 @@ end
 #
 ################################################################################
 #=
-@doc Markdown.doc"""
+@doc raw"""
     in(x::NfRelOrdElem, y::NfRelOrdIdl)
     in(x::NumFieldElem, y::NfRelOrdIdl)
     in(x::ZZRingElem, y::NfRelOrdIdl)

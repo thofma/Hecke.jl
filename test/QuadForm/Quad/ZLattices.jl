@@ -177,11 +177,11 @@ end
     @test gram_matrix(V) == gram_matrix(L)
   end
 
-  # orthogonal sum
+  # direct sum
 
   for L in [Lr0, Lr1, Lr2]
     for LL in [Lr0, Lr1, Lr2]
-      LLL, = @inferred orthogonal_sum(L, LL)
+      LLL, = @inferred direct_product(L, LL)
       @test gram_matrix(LLL) == diagonal_matrix(gram_matrix(L), gram_matrix(LL))
     end
   end
@@ -194,7 +194,8 @@ end
   # root lattice recognition
 
   L = Zlattice(gram=ZZ[4;])
-  LL,i,j = orthogonal_sum(L,L)
+  LL, inj = direct_sum(L,L)
+  i, j = inj
   @test LL == i(L)+j(L)
   @test L == preimage(i, LL)
   R = @inferred root_sublattice(L)
@@ -203,7 +204,7 @@ end
   R = lattice(ambient_space(L),basis_matrix(L)[1,:])
   @test rank(root_sublattice(R))==1
 
-  L = orthogonal_sum(root_lattice(:A,2),root_lattice(:D,4))[1]
+  L = biproduct(root_lattice(:A,2),root_lattice(:D,4))[1]
   R = root_lattice_recognition(L)
   @test length(R[1]) == 2
   @test (:D,4) in R[1] && (:A,2) in R[1]
@@ -247,7 +248,8 @@ end
       if rank(L) > 4 # small examples suffice
         continue
       end
-      C1L, _, f = orthogonal_sum(C1, L)
+      C1L, inj = direct_sum(C1, L)
+      f = inj[2]
       V = ambient_space(C1L)
       imL = lattice(V, f.matrix)
       Ge = automorphism_group_generators(imL, ambient_representation = true)
@@ -343,7 +345,7 @@ end
   V = quadratic_space(QQ, QQ[1 0 0; 0 1 0; 0 0 1])
   L = lattice(V, ZZ[1 -1 0; 0 1 -1])
   S = lattice(V, ZZ[1 -1 0;])
-  submod = Hecke.orthogonal_submodule(L, S)
+  submod = orthogonal_submodule(L, S)
   @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1 1 -2])
 
   @test is_definite(L)
@@ -362,7 +364,7 @@ end
   V = quadratic_space(QQ,gram)
   L = lattice(V, BS)
   H = lattice(V, BH)
-  R = Hecke.orthogonal_submodule(L,H)
+  R = orthogonal_submodule(L,H)
   @test is_sublattice(L,R)
 
   # local modification
@@ -431,9 +433,22 @@ end
   M = kernel_lattice(L, f, ambient_representation = false)
   @test basis_matrix(M) == QQ[0 2;]
 
+  L = root_lattice(:A, 7)
+  f = matrix(QQ, 7, 7, [ 1  1  1  1  1  1  1;
+                         0 -1 -1 -1 -1 -1 -1;
+                         0  1  0  0  0  0  0;
+                         0  0  1  0  0  0  0;
+                         0  0  0  1  0  0  0;
+                         0  0  0  0  1  0  0;
+                         0  0  0  0  0  1  0])
+  M = @inferred coinvariant_lattice(L, f)
+  @test rank(M) == 6
+  ok, p = is_elementary_with_prime(M)
+  @test ok
+  @test p == multiplicative_order(f)
+
   @test_throws ErrorException root_lattice(:F,3)
   @test_throws ErrorException root_lattice(:D,1)
-
 
   L = root_lattice(:A, 2)
   @test signature_tuple(L) == (2,0,0)
@@ -596,7 +611,7 @@ end
   @test_throws ArgumentError glue_map(1//2*L, S, R) # 1//2*L is not all integral
   @test_throws ArgumentError glue_map(L, 2*S, R)    # 2*S is not primitive in L
   @test_throws ArgumentError glue_map(L, S, M)      # Sum of the ranks do not match
-  @test_throws ArgumentError glue_map(L, R, N)      # R and N are not orthognal
+  @test_throws ArgumentError glue_map(L, R, N)      # R and N are not orthogonal
 
   glue, iS, iR = @inferred glue_map(L, S, R)
   @test is_bijective(glue)          # It is an anti-isometry so it has to be bijective
@@ -660,11 +675,11 @@ end
   @test !Hecke.is_isometric(L1, L2)
 end
 
-@testset "orthogonal sums" begin
+@testset "direct sums" begin
   L1 = root_lattice(:A, 6)
   L2 = root_lattice(:E, 7)
-  L, inj, proj = @inferred direct_sum([L1, L2])
-  @test genus(L) == orthogonal_sum(genus(L1), genus(L2))
+  L, inj, proj = @inferred biproduct([L1, L2])
+  @test genus(L) == direct_sum(genus(L1), genus(L2))
   for i in 1:2, j in 1:2
     f = compose(inj[i], proj[j])
     m = f.matrix

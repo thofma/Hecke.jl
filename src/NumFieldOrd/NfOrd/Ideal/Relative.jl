@@ -1,4 +1,4 @@
-@doc Markdown.doc"""
+@doc raw"""
     norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
 
 Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the norm
@@ -34,7 +34,7 @@ end
 
 #TODO: intersect_nonindex uses a worse algo in a more special case. Combine.
 #  for prime ideals, the gcd's can be done in F_p/ F_q hence might be faster
-@doc Markdown.doc"""
+@doc raw"""
     minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
 
 Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the
@@ -104,7 +104,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     intersect_prime(f::Map, P::NfOrdIdl, O_k::NfOrd) -> NfOrdIdl
 
 Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$
@@ -164,7 +164,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk::NfOrd = maximal_order(domai
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_decomposition_nonindex(f::Map, p::NfOrdIdl, Z_K::NfOrd) -> Vector{Tuple{NfOrdIdl, Int}}
 
 Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and

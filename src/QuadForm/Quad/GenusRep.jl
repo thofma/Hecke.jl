@@ -82,7 +82,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     genus_representatives(L::QuadLat; max = inf, use_auto = false)
                                                         -> Vector{QuadLat}
 
@@ -728,7 +728,7 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
   # The ideles we are considering here are considered to be representatives of
   # classes of ideles (modulo (F^*_S)*J^L, where F^*_S is the set of principal
   # ideles which are totally positive at the infinite places where the
-  # envelopping space V of L is anisotropic, and where J^L is the set of ideles
+  # enveloping space V of L is anisotropic, and where J^L is the set of ideles
   # which lie in the spinor norm of L at all finite places.  So, we may modify
   # the ideles in the following two ways without changing their class:
   # 1 multiply every component by an element of F^*
@@ -1399,7 +1399,7 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
   e::nf_elem
   pi::nf_elem
   piinv::nf_elem
-  hext::NfToFinFldMor{FqPolyRepField}
+  hext::NfToFinFldMor{FqField}
   h::AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
   g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
   i::GrpAbFinGenMap
@@ -2260,7 +2260,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   O = equation_order(K)
   C, _dlog, _exp = narrow_picard_group(O)
   res = QuadBin{ZZRingElem}[]
-  # C gives me all proper classes of definit forms
+  # C gives me all proper classes of definite forms
   # So if proper = true, we don't have to do anything
   # and if proper = false, we have to sieve using is_equivalent
   for c in C

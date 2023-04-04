@@ -92,7 +92,7 @@ function algebra(V::ModAlgAss)
   end
 end
 
-Markdown.doc"""
+@doc raw"""
     coefficient_ring(V::ModAlgAss) -> Field
 
 Returns the coefficient ring of the module.
@@ -104,7 +104,7 @@ function dim(V::ModAlgAss)
   return V.dim
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Amodule(A::AbsAlgAss, M::Vector{<:MatElem})
 
 Given an algebra $A$ over a field $K$ and a list of $\dim(A)$ of square
@@ -116,14 +116,14 @@ function Amodule(A::AbsAlgAss, M::Vector{<:MatElem})
   return ModAlgAss{eltype(M), typeof(A)}(A, action_of_basis = M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Amodule(M::Vector{<:MatElem})
 
 Given a list `M` of square matrices over a field $K$, construct the module
 for the free algebra with the generators acting via `M[i]` from the right.
 
 Note that the free algebra will not be constructed and the resulting
-object has no assocated algebra.
+object has no associated algebra.
 """
 function Amodule(M::Vector{<:MatElem})
   return ModAlgAss{eltype(M)}(action_of_gens = M)
@@ -135,14 +135,14 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     has_algebra(V::ModAlgAss) -> Bool
 
-Returns whether the module was defined explicitely using an algebra.
+Returns whether the module was defined explicitly using an algebra.
 """
 has_algebra(V::ModAlgAss) = isdefined(V, :algebra)
 
-@doc Markdown.doc"""
+@doc raw"""
     has_matrix_action(V::ModAlgAss) -> Bool
 
 Returns whether the action on the module is given by matrices.
@@ -190,7 +190,7 @@ function action_of_gens_inverse(V::ModAlgAss)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     action(V::ModAlgAss{_, MatElem, _}, x::AbsAlgAssElem)
 
 Given a $A$-module $V$ for an algebra $A$ with action given by matrices, and an
@@ -221,7 +221,7 @@ function action_of_word(V::ModAlgAss{<: Any, <: MatElem}, w::Vector{Int})
   return v
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     action(V::ModAlgAss) -> Vector
 
 Given a module $V$, returns the action on $V$. If no algebra is defined,

@@ -42,7 +42,7 @@ export haspreimage, has_image, hom, kernel, cokernel, image, is_injective, is_su
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem) -> Bool, GrpAbFinGenElem
 
 Returns whether $a$ is in the image of $M$. If so, the second return value is
@@ -68,6 +68,10 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
     return true, map(x->preimage(M, x), a)
   end
 
+  if length(a) == 0
+    return true, a
+  end
+
   m = vcat(M.map, rels(codomain(M)))
   G = domain(M)
   if isdefined(G, :exponent) && fits(Int, G.exponent) && is_prime(G.exponent)
@@ -87,8 +91,6 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
     return false, GrpAbFinGenElem[id(domain(M))]
   end
 end
-
-
 
 # Note that a map can be a partial function. The following function
 # checks if an element is in the domain of definition.
@@ -120,7 +122,7 @@ end
 
 id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), check = false)
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}) -> Map
 
 Creates the homomorphism $A[i] \mapsto B[i]$.
@@ -161,7 +163,7 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   return h
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}) -> Map
 
 Creates the homomorphism which maps $G[i]$ to $B[i]$.
@@ -177,12 +179,19 @@ end
 function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   @assert length(B) == ngens(G)
   @assert all(i -> parent(i) == H, B)
+  if length(B) == 0
+    M = zero_matrix(ZZ, ngens(G), ngens(H))
+  else
+    M = vcat([x.coeff for x = B]...)
+  end
+  #=
   M = zero_matrix(FlintZZ, ngens(G), ngens(H))
   for i = 1:ngens(G)
     for j = 1:ngens(H)
       M[i, j] = B[i][j]
     end
   end
+  =#
   h = hom(G, H, M, check = check)
   return h
 end
@@ -236,13 +245,9 @@ function inv(f::GrpAbFinGenMap)
     error("The map is not invertible")
   end
   gB = gens(codomain(f))
-  imgs = Vector{GrpAbFinGenElem}(undef, length(gB))
-  for i = 1:length(imgs)
-    fl, el = haspreimage(f, gB[i])
-    if !fl
-      error("The map is not invertible")
-    end
-    imgs[i] = el
+  fl, imgs = haspreimage(f, gB)
+  if !fl
+    error("The map is not invertible")
   end
   return hom(codomain(f),domain(f), imgs, check = false)
 end
@@ -255,7 +260,7 @@ end
 
 #TODO: store and reuse on map. Maybe need to change map
 
-@doc Markdown.doc"""
+@doc raw"""
     kernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the domain of $h$. This function returns an abelian group $A$ and an
@@ -294,7 +299,7 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   return sub(G, elem_type(G)[], add_to_lattice)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     image(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
@@ -316,7 +321,7 @@ function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   return sub(H, im, add_to_lattice)  # too much, this is sub in hnf....
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cokernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the codomain of $h$. This function returns an abelian group $A$ and
@@ -334,7 +339,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_surjective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is surjective.
@@ -370,7 +375,7 @@ end
 ################################################################################
 
 #TODO: Improve in the finite case
-@doc Markdown.doc"""
+@doc raw"""
     is_injective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is injective.
@@ -387,7 +392,7 @@ end
 ################################################################################
 
 #TODO: Improve in the finite case
-@doc Markdown.doc"""
+@doc raw"""
     is_bijective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is bijective.
@@ -429,8 +434,52 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
     reduce_mod_hnf_ur!(M, C.hnf)
   end
   return hom(domain(f), codomain(g), M, check = false)
-
 end
+
+function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+  @assert domain(f) == domain(g)
+  @assert codomain(f) == codomain(g)
+  M = f.map + g.map
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.hnf)
+  end
+
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+  @assert domain(f) == domain(g)
+  @assert codomain(f) == codomain(g)
+  M = f.map - g.map
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.hnf)
+  end
+
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+function -(f::GrpAbFinGenMap)
+  M = -f.map
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.hnf)
+  end
+
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+
 
 ###############################################################################
 struct MapParent
@@ -464,7 +513,7 @@ function cyclic_hom(a::ZZRingElem, b::ZZRingElem)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map) -> GrpAbFinGen, Map
 
 Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.

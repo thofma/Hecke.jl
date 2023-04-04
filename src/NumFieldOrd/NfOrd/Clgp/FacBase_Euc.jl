@@ -5,7 +5,7 @@
 ################################################################################
 
 # Note that T must admit gcd's and base must consist of elements x for which
-# valuation(_, x) is definied.
+# valuation(_, x) is defined.
 # works (at least) for ZZRingElem and zzModPolyRingElem, so it can be used for the
 # smoothness test
 

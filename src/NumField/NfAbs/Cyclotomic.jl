@@ -1,7 +1,7 @@
 export cyclotomic_units_totally_real, cyclotomic_regulator
 # Some functionality for cyclotomic fields
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_units_totally_real(K::NumField)
 
 Given the maximal totally real subfield $K$ of a cyclotomic field of prime
@@ -133,7 +133,7 @@ function _cyclotomic_units_totally_real_prime_power_conductor(K, q, in_cyclotomi
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_regulator(n::Int, prec::Int; maximal_totally_real::Bool = false)
 
 Determine the regulator of the cyclotomic units of the cyclotomic field of

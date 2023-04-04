@@ -2,7 +2,7 @@ export simplify
 
 add_verbosity_scope(:Simplify)
 
-@doc Markdown.doc"""
+@doc raw"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
 
 Tries to find an isomorphic field $L$ given by a "simpler" defining polynomial.

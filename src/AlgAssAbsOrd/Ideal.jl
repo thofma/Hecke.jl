@@ -1,6 +1,6 @@
 export is_invertible, contract, swan_module, is_subset_locally, is_equal_locally, lattice_with_local_conditions, primary_decomposition
 
-@doc Markdown.doc"""
+@doc raw"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
 
 Returns the order of which $a$ is a (possibly fractional) left or right ideal
@@ -14,7 +14,7 @@ function order(a::AlgAssAbsOrdIdl)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     algebra(a::AlgAssAbsOrdIdl) -> AbsAlgAss
 
 Returns the algebra containing $a$.
@@ -68,7 +68,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(A::AbsAlgAss, M::FakeFmpqMat, M_in_hnf::Bool = false) -> AlgAssAbsOrdIdl
 
 Returns the ideal in $A$ with basis matrix $M$.
@@ -85,7 +85,7 @@ function ideal(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat, M_in_hnf::Bool = false
   return AlgAssAbsOrdIdl{typeof(A), elem_type(A)}(A, M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(A::AbsAlgAss, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol = :nothing,
           M_in_hnf::Bool = false)
       -> AlgAssAbsOrdIdl
@@ -110,7 +110,7 @@ function ideal(A::AbsAlgAss{QQFieldElem}, O::AlgAssAbsOrd, M::FakeFmpqMat, side:
   return a
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::AlgAssAbsOrd, x::AbsAlgAssElem) -> AlgAssAbsOrdIdl
     ideal(O::AlgAssAbsOrd, x::AlgAssAbsOrdElem) -> AlgAssAbsOrdIdl
 
@@ -148,7 +148,7 @@ end
 
 ideal(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where { S, T } = ideal(O, elem_in_algebra(x, copy = false))
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::AlgAssAbsOrd, x::AbsAlgAssElem, side::Symbol) -> AlgAssAbsOrdIdl
     ideal(O::AlgAssAbsOrd, x::AlgAssAbsOrdElem, side::Symbol) -> AlgAssAbsOrdIdl
 
@@ -177,7 +177,7 @@ end
 
 ideal(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}, side::Symbol) where { S, T } = ideal(O, elem_in_algebra(x, copy = false), side)
 
-@doc Markdown.doc"""
+@doc raw"""
     *(O::AlgAssAbsOrd, x::AbsAlgAssElem) -> AlgAssAbsOrdIdl
     *(O::AlgAssAbsOrd, x::AlgAssAbsOrdElem) -> AlgAssAbsOrdIdl
     *(O::AlgAssAbsOrd, x::Int) -> AlgAssAbsOrdIdl
@@ -196,7 +196,7 @@ Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 *(O::AlgAssAbsOrd, x::Union{ Int, ZZRingElem }) = ideal(O, O(x), :left)
 *(x::Union{ Int, ZZRingElem }, O::AlgAssAbsOrd) = ideal(O, O(x), :right)
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal_from_lattice_gens(A::AbsAlgAss, v::Vector{ <: AbsAlgAssElem })
       -> AlgAssAbsOrdIdl
 
@@ -216,7 +216,7 @@ function ideal_from_lattice_gens(A::AbsAlgAss{QQFieldElem}, v::Vector{ <: AbsAlg
   return ideal(A, M, true)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      ideal_from_lattice_gens(A::AbsAlgAss, O::AlgAssAbsOrd,
                              v::Vector{ <: AbsAlgAssElem},
                              side::Symbol = :nothing)
@@ -360,7 +360,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis(a::AlgAssAbsOrdIdl; copy::Bool = true) -> Vector{AbsAlgAssElem}
 
 Returns the basis of $a$.
@@ -376,7 +376,7 @@ end
 
 absolute_basis(a::AlgAssAbsOrdIdl) = basis(a)
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true) -> FakeFmpqMat
 
 Returns the basis matrix of $a$ with respect to the basis of the algebra.
@@ -389,7 +389,7 @@ function basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_mat_inv(a::AlgAssAbsOrdIdl; copy::Bool = true) -> FakeFmpqMat
 
 Returns the inverse of the basis matrix of $a$.
@@ -403,7 +403,7 @@ function basis_mat_inv(a::AlgAssAbsOrdIdl; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_matrix_wrt(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true)
       -> FakeFmpqMat
 
@@ -418,7 +418,7 @@ function basis_matrix_wrt(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     integral_basis_matrix_wrt(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd;
                               copy::Bool = true)
       -> ZZMatrix
@@ -438,7 +438,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     +(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
 Returns $a + b$.
@@ -498,7 +498,7 @@ end
 
 global _matrix = []
 
-@doc Markdown.doc"""
+@doc raw"""
     *(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
 Returns $a \cdot b$.
@@ -528,9 +528,13 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
       elem_to_mat_row!(M, i1d + j, t)
     end
   end
+
+  _, oned = integral_split(coefficients(one(A)), ZZ)
+
   if is_full_rank(a) && is_full_rank(b)
-    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_multiplication_table(A)
+    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_multiplication_table(A) * oned
     H = sub(hnf_modular_eldiv!(FakeFmpqMat(M), el), (d2 - d + 1):d2, 1:d)
+    @hassert :AlgAssOrd 1 H == sub(hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
   else
     H = sub(hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
     #H = sub(__hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
@@ -551,7 +555,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   return c
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ^(a::AlgAssAbsOrdIdl, e::Int) -> AlgAssAbsOrdIdl
     ^(a::AlgAssAbsOrdIdl, e::ZZRingElem) -> AlgAssAbsOrdIdl
 
@@ -560,7 +564,7 @@ Returns $a^e$.
 ^(A::AlgAssAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 ^(A::AlgAssAbsOrdIdl, e::ZZRingElem) = Base.power_by_squaring(A, BigInt(e))
 
-@doc Markdown.doc"""
+@doc raw"""
     intersect(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
 Returns $a \cap b$.
@@ -585,7 +589,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     *(a::AlgAssAbsOrdIdl, x::Int) -> AlgAssAbsOrdIdl
     *(x::Int, a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
     *(a::AlgAssAbsOrdIdl, x::ZZRingElem) -> AlgAssAbsOrdIdl
@@ -670,7 +674,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     in(x::AbsAlgAssElem, a::AlgAssAbsOrdIdl) -> Bool
     in(x::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl) -> Bool
 
@@ -692,7 +696,7 @@ in(x::AlgAssAbsOrdElem{S, T}, a::AlgAssAbsOrdIdl{S, T}) where { S, T } = in(elem
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> Bool
 
 Returns `true` if $a$ and $b$ are equal and `false` otherwise.
@@ -813,7 +817,7 @@ function _colon_raw(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}, side::Sy
   return N
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ring_of_multipliers(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
 
 Given an ideal $a$, it returns the ring $(a : a)$.
@@ -823,7 +827,7 @@ function ring_of_multipliers(a::AlgAssAbsOrdIdl, action::Symbol = :left)
   return Order(algebra(a), hnf(M))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     left_order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
 
 Returns the largest order of which $a$ is a left ideal, that is
@@ -838,7 +842,7 @@ function left_order(a::AlgAssAbsOrdIdl)
   return a.left_order
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     right_order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
 
 Returns the largest order of which $a$ is a right ideal, that is
@@ -892,7 +896,7 @@ function assure_has_norm(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}) where 
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true) -> QQFieldElem
 
 Returns the norm of $a$ considered as an (possibly fractional) ideal of $O$.
@@ -906,7 +910,7 @@ function norm(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}; copy::Bool = true
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(a::AlgAssAbsOrdIdl; copy::Bool = true) -> QQFieldElem
 
 Returns the norm of $a$ considered as an (possibly fractional) ideal of
@@ -929,7 +933,7 @@ function assure_has_normred(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}) whe
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     normred(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true) -> QQFieldElem
 
 Returns the reduced norm of $a$ considered as an (possibly fractional) ideal
@@ -946,7 +950,7 @@ function normred(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}; copy::Bool = t
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     normred(a::AlgAssAbsOrdIdl; copy::Bool = true) -> QQFieldElem
 
 Returns the reduced norm of $a$ considered as an (possibly fractional) ideal
@@ -960,7 +964,7 @@ normred(a::AlgAssAbsOrdIdl; copy::Bool = true) = normred(a, order(a), copy = cop
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     locally_free_basis(a::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
       -> AlgAssAbsOrdElem
 
@@ -970,7 +974,7 @@ See also `is_locally_free`.
 """
 locally_free_basis(I::AlgAssAbsOrdIdl, p::Union{Int, ZZRingElem}; side::Symbol = :right) = locally_free_basis(order(I), I, p, side = side)
 
-@doc Markdown.doc"""
+@doc raw"""
     locally_free_basis(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl,
                        p::Union{ Int, ZZRingElem }) -> AlgAssAbsOrdElem
 
@@ -987,7 +991,7 @@ function locally_free_basis(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, Z
   return x
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_free(a::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
       -> Bool, AlgAssAbsOrdElem
 
@@ -999,7 +1003,7 @@ See also `locally_free_basis`.
 is_locally_free(I::AlgAssAbsOrdIdl, p::Union{Int,ZZRingElem}; side::Symbol = :right) = is_locally_free(order(I), I, p, side = side)
 
 # See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_free(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl, p::ZZRingElem
                    side = :right) -> Bool, AlgAssAbsOrdElem
 
@@ -1156,7 +1160,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   return J
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pradical(O::AlgAssAbsOrd, p::Int) -> AlgAssAbsOrdIdl
 
 Given an order $O$ and a prime $p$, it returns the radical of the ideal
@@ -1219,7 +1223,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRi
   return typeof(I)[_from_submodules_to_ideals(M, O, I, x, A1, OtoA1) for x in ls ]
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResF{ZZRingElem}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResidueFieldElem{ZZRingElem}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action_of_gens) == sub(rref(x)[2], 1:r, 1:ncols(x)) end
   m = zero_matrix(FlintZZ, nrows(x), degree(O))
   g = Vector{elem_type(algebra(O))}(undef, nrows(x))
@@ -1243,7 +1247,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
   return J
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_ideals_over(O::AlgAssAbsOrd, p::Union{ Int, ZZRingElem })
       -> Vector{AlgAssAbsOrdIdl}
 
@@ -1254,7 +1258,7 @@ function prime_ideals_over(O::AlgAssAbsOrd, p::Union{ Int, ZZRingElem })
   return max_id
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_ideals_over(O::AlgAssAbsOrd, P::AlgAssAbsOrdIdl)
       -> Vector{AlgAssAbsOrdIdl}
 
@@ -1287,7 +1291,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     inv(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
 Returns an ideal $b$ in `algebra(a)` such that `a*b == left_order(a)`
@@ -1342,7 +1346,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_left(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
 Returns an ideal $c$ such that $a = b \cdot c$.
@@ -1362,7 +1366,7 @@ function divexact_left(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where
   return c
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_right(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
 Returns an ideal $c$ such that $a = c \cdot b$.
@@ -1391,7 +1395,7 @@ colon(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where { S, T } = divex
 ################################################################################
 
 # copy doesn't do anything (yet?)
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in $O$.
@@ -1406,7 +1410,7 @@ function denominator(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}; copy::Bool
   return denominator(M, copy = false)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::AlgAssAbsOrdIdl) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in
@@ -1459,7 +1463,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     extend(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) -> AlgAssAbsOrdIdl
 
 Returns $O \cdot a \cdot O$.
@@ -1476,7 +1480,7 @@ function extend(A::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}, action::Symbol 
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     *(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) -> AlgAssAbsOrdIdl
     *(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
 
@@ -1486,7 +1490,7 @@ It is assumed that the order of $a$ is contained in $O$.
 *(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = extend(A, O, :right)
 *(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = extend(A, O, :left)
 
-@doc Markdown.doc"""
+@doc raw"""
     contract(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) -> AlgAssAbsOrdIdl
     intersect(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) -> AlgAssAbsOrdIdl
     intersect(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdIdl
@@ -1626,7 +1630,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
       -> AlgAssAbsOrdElem, AlgAssAbsOrdElem
 
@@ -1768,7 +1772,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(I::AlgAssAbsOrdIdl) -> Dict{AlgAssAbsOrdIdl, Int}
 
 Assumes that `algebra(A)` is commutative.
@@ -1804,7 +1808,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_normal(a::AlgAssAbsOrdIdl) -> Bool
 
 Returns `true` if $a$ is a normal ideal and `false` otherwise.
@@ -2069,7 +2073,7 @@ end
 # Then we can reduce to the case that X^(p)_q >= M_q for all q != p.
 # Once we have this, we can just intersect the X.
 
-@doc Markdown.doc"""
+@doc raw"""
     lattice_with_local_conditions(O::AlgAssAbsOrd,
                                   ps::Vector{<: IntegerUnion},
                                   Is::Vector{<: AlgAssAbsOrdIdl})
@@ -2216,7 +2220,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     primary_decomposition(I::AlgAssAbsOrdIdl [O::Order]) -> Vector{Tuple}
 
 Return the primary decomposition of $I$ over the order $O$ as a list of tuples
@@ -2252,12 +2256,16 @@ function primary_decomposition(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd = left_order(
       # Thus P^d = 0
       # In particular P^d \subseteq p * O
       # So P^(d * e) \subseteq I locally at p/P.
-      push!(res, (I + P^(d * e), P))
+      ee = d * e
+      #@show basis_mat_inv(I) * basis_matrix(P^ee)
+      #@show basis_mat_inv(p^e * O) * basis_matrix(P^ee)
+      @hassert :AlgAssOrd 1 I + P^ee == I + P^(ee + 1)
+      push!(res, (I + P^(ee), P))
     end
   end
 
-  @hassert :AlgAssOrd prod(x[1] for x in res; init = 1 * O) == I
-  @hassert :AlgAssOrd all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*O, res), res)
+  @hassert :AlgAssOrd 1 prod(x[1] for x in res; init = 1 * O) == I
+  @hassert :AlgAssOrd  all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*O, res), res)
 
   return res
 end

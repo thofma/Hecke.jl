@@ -43,7 +43,7 @@ export local_height, canonical_height, naive_height, height_pairing,
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     naive_height(P::EllCrvPt{QQFieldElem}, prec) -> arb
 
 Return the naive height of a point $P$ on an elliptic curve defined over
@@ -68,7 +68,7 @@ function naive_height(P::EllCrvPt{QQFieldElem}, prec::Int = 100)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     naive_height(P::EllCrvPt{nf_elem}, prec) -> arb
 
 Return the naive height of a point $P$ on an elliptic curve defined over
@@ -126,7 +126,7 @@ end
 
 #TODO: Fine-tune precision
 
-@doc Markdown.doc"""
+@doc raw"""
     local_height(P::EllCrvPt{QQFieldElem}, p::IntegerUnion, prec::Int) -> ArbField
 
 Computes the local height of a point $P$ on an elliptic curve defined over
@@ -509,7 +509,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     neron_tate_height(P::EllCrvPt{T}, prec::Int) -> arb 
       where T<:Union{QQFieldElem, nf_elem}
 
@@ -520,7 +520,7 @@ function neron_tate_height(P::EllCrvPt{T}, prec::Int = 100) where T<:Union{QQFie
   return canonical_height(P, prec)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     canonical_height(P::EllCrvPt{QQFieldElem}, prec::Int) -> arb
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
@@ -552,7 +552,7 @@ function canonical_height(P::EllCrvPt{QQFieldElem}, prec = 100)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     canonical_height(P::EllCrvPt{nf_elem}, prec::Int) -> arb
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
@@ -600,7 +600,7 @@ function canonical_height(P::EllCrvPt{nf_elem}, prec = 100)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     height_pairing(P::EllCrvPt{T},Q::EllCrvPt{T}, prec::Int) 
       -> ArbField where T<:Union{QQFieldElem, nf_elem}
 
@@ -623,7 +623,7 @@ function height_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, prec::Int = 100) where T
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     regulator(S::Vector{EllCrvPt{T}}, prec = 100) -> ArbField
 
 Return the determinant of the height pairing matrix of a given
@@ -670,7 +670,7 @@ end
 # means that Magma's implementation is probably slightly wrong and that their
 # lower bounds are considerably less sharp.
 
-@doc Markdown.doc"""
+@doc raw"""
     CPS_height_bounds(E::EllCrv) -> arb, arb
 
 Given an elliptic curve over a number field or rational field, return a tuple
@@ -906,7 +906,7 @@ function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::ar
   
   alpha_bound = min(alpha_bound, hu)
  
-  #Subdiving the inital square into four squares and computing alpha_bound there
+  #Subdiving the initial square into four squares and computing alpha_bound there
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b, r//2, alpha_bound, prec)
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a, b + r//2, r//2, alpha_bound, prec)
   alpha_bound = refine_alpha_bound(P, Q, E, mu, a + r//2, b, r//2, alpha_bound, prec)
@@ -952,7 +952,7 @@ function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb
   
   beta_bound = max(beta_bound, hu)
  
-  #Subdiving the inital square into four squares and computing alpha_bound there
+  #Subdiving the initial square into four squares and computing alpha_bound there
   beta_bound = refine_beta_bound(P, Q, E, mu, a, b, r//2, beta_bound, prec)
   beta_bound = refine_beta_bound(P, Q, E, mu, a, b + r//2, r//2, beta_bound, prec)
   beta_bound = refine_beta_bound(P, Q, E, mu, a + r//2, b, r//2, beta_bound, prec)

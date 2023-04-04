@@ -44,7 +44,7 @@ export is_torsion_point, torsion_points, torsion_structure, torsion_bound, pr_to
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     order(P::EllCrvPt{nf_elem}) -> ZZRingElem
 
 Returns the order of the point $P$ or $0$ if the order is infinite.
@@ -74,7 +74,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_torsion_point(P::EllCrvPt{QQFieldElem}) -> Bool
 
 Returns whether the point $P$ is a torsion point.
@@ -84,7 +84,7 @@ function is_torsion_point(P::EllCrvPt{T}) where T <: Union{nf_elem,QQFieldElem}
   return o != 0
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_torsion_point(P::EllCrvPt{fqPolyRepFieldElem}) -> Bool
 
 Returns whether the point $P$ is a torsion point.
@@ -100,7 +100,7 @@ end
 ################################################################################
 
 # via theorem of Lutz-Nagell
-@doc Markdown.doc"""
+@doc raw"""
     torsion_points_lutz_nagell(E::EllCrv{QQFieldElem}) -> Vector{EllCrvPt}
 
 Computes the rational torsion points of an elliptic curve using the
@@ -175,7 +175,7 @@ function torsion_points_lutz_nagell(F::EllCrv{QQFieldElem})
 end
 
 # via division polynomials
-@doc Markdown.doc"""
+@doc raw"""
     torsion_points_division_poly(E::EllCrv{QQFieldElem}) -> Array{EllCrvPt}
 
 Computes the rational torsion points of a rational elliptic curve $E$ using
@@ -274,7 +274,7 @@ function torsion_points_division_poly(F::EllCrv{QQFieldElem})
 end
 
 # function for users
-@doc Markdown.doc"""
+@doc raw"""
     torsion_points(E::EllCrv{QQFieldElem}) -> Vector{EllCrvPt{QQFieldElem}}
 
 Returns the rational torsion points of $E$.
@@ -295,7 +295,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_structure(E::EllCrv{QQFieldElem}) -> (A::Vector{ZZRingElem},
                                            B::Vector{EllCrvPt{QQFieldElem}}
 
@@ -345,7 +345,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_bound(E::EllCrv{nf_elem}, n::Int) -> ZZRingElem
 
 
@@ -384,7 +384,7 @@ end
 ################################################################################
 
 #Adapted from Sage: ell_generic.py
-@doc Markdown.doc"""
+@doc raw"""
     pr_torsion_basis(E::EllCrv{nf_elem}, p::ZZRingElem, r = Int) -> Vector{EllCrvPt}
 
 Compute a basis for the p-power torsion subgroup. When r is given the algorithm stops searching after
@@ -516,7 +516,7 @@ end
 
 #Returns [m, n] with m >n. This is inconsistent with the way torsion_structure
 #returns elements for EllCrv over QQ.
-@doc Markdown.doc"""
+@doc raw"""
     torsion_structure(E::EllCrv{nf_elem}) -> (A::Vector{ZZRingElem},
                                            B::Vector{EllCrvPt{nf_elem}}
 

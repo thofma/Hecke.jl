@@ -1,6 +1,6 @@
 parent_type(::Type{AlgMatElem{T, S, Mat}}) where {T, S, Mat} = S
 
-@doc Markdown.doc"""
+@doc raw"""
     matrix(a::AlgMatElem; copy::Bool = true) -> MatElem
 
 Returns the matrix which defines $a$.
@@ -33,7 +33,7 @@ function assure_has_coeffs(a::AlgMatElem)
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     coefficients(a::AlgMatElem; copy::Bool = true) -> Vector{RingElem}
 
 Returns the coefficients of $a$ in the basis of `algebra(a)`.
@@ -63,7 +63,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     -(a::AlgMatElem) -> AlgMatElem
 
 Returns $-a$.
@@ -190,7 +190,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     inv(a::AlgMatElem) -> AlgMatElem
 
 Returns $a^{-1}$.
@@ -213,7 +213,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ^(a::AlgMatElem, b::Int) -> AlgMatElem
 
 Returns $a^b$.
@@ -284,7 +284,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(a::AlgMatElem, b::AlgMatElem) -> Bool
 
 Returns `true` if $a$ and $b$ are equal and `false` otherwise.

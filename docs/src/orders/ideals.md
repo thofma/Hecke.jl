@@ -21,7 +21,7 @@ above, also indexed by the type of the field and their elements:
 `NfAbsOrdIdl{AnticNumberField,nf_elem}` for ideals in
 simple absolute fields.
 
-Different to elements, the `parent`of an ideal is teh set of all ideals
+Different to elements, the `parent`of an ideal is the set of all ideals
 in the ring, of type `NfAbsOrdIdlSet`.
 
 ## Creation
@@ -90,7 +90,7 @@ mc \ ans
 
 The class group, or more precisely the information used to compute it
 also allows for principal ideal testing and related tasks.
-In general, due to the size of the objetcs, the ```fac_elem``` versions are
+In general, due to the size of the objects, the ```fac_elem``` versions are
 more effcient.
 
 ```@docs

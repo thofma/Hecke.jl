@@ -16,26 +16,6 @@ LinearAlgebra.dot(a::RingElem, b::RingElem) = a*b
 
 dense_matrix_type(::Type{T}) where {T} = Generic.MatSpaceElem{T}
 
-# TODO (easy): Check if the following can be simplified to
-# coefficient_type(::Type{<:Mat{T}}} where {T} = T
-coefficient_type(::Type{ZZMatrix}) = ZZRingElem
-
-coefficient_type(::Type{QQMatrix}) = QQFieldElem
-
-coefficient_type(::Type{zzModMatrix}) = zzModRingElem
-
-coefficient_type(::Type{fqPolyRepMatrix}) = fqPolyRepFieldElem
-
-coefficient_type(::Type{FqPolyRepMatrix}) = FqPolyRepFieldElem
-
-coefficient_type(::Type{arb_mat}) = arb
-
-coefficient_type(::Type{acb_mat}) = acb
-
-coefficient_type(::Type{fpMatrix}) = fpFieldElem
-
-coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
-
 ################################################################################
 #
 #  Unsafe functions for generic matrices
@@ -131,7 +111,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     saturate(A::ZZMatrix) -> ZZMatrix
 
 Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \cap
@@ -232,14 +212,6 @@ function is_zero_row(M::ZZMatrix, i::Int)
     end
   end
   return true
-end
-
-function is_zero_entry(M::ZZMatrix, i::Int, j::Int)
-  GC.@preserve M begin
-    m = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), M, i - 1, j - 1)
-    fl = ccall((:fmpz_is_zero, libflint), Bool, (Ptr{ZZRingElem},), m)
-    return fl
-  end
 end
 
 function is_positive_entry(M::ZZMatrix, i::Int, j::Int)
@@ -544,7 +516,7 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
     for c = 1:nrows(a)
       j = 1
       for i=1:min(nrows(H), ncols(H))
-        while j <= ncols(H) && iszero(H[i, j])
+        while j <= ncols(H) && is_zero_entry(H, i, j)
           j += 1
         end
         if j > ncols(H)
@@ -608,12 +580,12 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    lift(a::Generic.Mat{Generic.Res{ZZRingElem}}) -> ZZMatrix
+@doc raw"""
+    lift(a::Generic.Mat{Generic.ResidueRingElem{ZZRingElem}}) -> ZZMatrix
 
 It returns a lift of the matrix to the integers.
 """
-function lift(a::Generic.Mat{Generic.Res{ZZRingElem}})
+function lift(a::Generic.Mat{Generic.ResidueRingElem{ZZRingElem}})
   z = zero_matrix(FlintZZ, nrows(a), ncols(a))
   for i in 1:nrows(a)
     for j in 1:ncols(a)
@@ -681,7 +653,7 @@ end
 #  Kernel function
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
 It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
@@ -697,7 +669,7 @@ function kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAl
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
 It returns a basis for the right kernel of the matrix defined over a field.
@@ -716,7 +688,7 @@ function right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
   return ar
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
 
 It returns a basis for the left kernel of the matrix.
@@ -725,7 +697,7 @@ left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_ke
 
 
 
-@doc Markdown.doc"""
+@doc raw"""
     kernel(a::MatElem{T}; side::Symbol = :right) -> Int, MatElem{T}
 
 It returns a tuple $(n, M)$, where $n$ is the rank of the kernel and $M$ is a basis for it. If side is $:right$ or not
@@ -752,7 +724,7 @@ function left_kernel(x::fpMatrix)
   return n, transpose(M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     left_kernel(a::ZZMatrix) -> Int, ZZMatrix
 
 It returns a tuple $(n, M)$ where $M$ is a matrix whose rows generate
@@ -856,7 +828,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     kernel(a::MatrixElem{T}, R::Ring; side::Symbol = :right) -> n, MatElem{elem_type(R)}
 
 It returns a tuple $(n, M)$, where $n$ is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
@@ -873,10 +845,28 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
+    diagonal_matrix(x::T...) where T <: RingElem -> MatElem{T}
     diagonal_matrix(x::Vector{T}) where T <: RingElem -> MatElem{T}
+    diagonal_matrix(Q, x::Vector{T}) where T <: RingElem -> MatElem{T}
 
 Returns a diagonal matrix whose diagonal entries are the elements of $x$.
+
+# Examples
+
+```jldoctest
+julia> diagonal_matrix(QQ(1), QQ(2))
+[1   0]
+[0   2]
+
+julia> diagonal_matrix([QQ(3), QQ(4)])
+[3   0]
+[0   4]
+
+julia> diagonal_matrix(QQ, [5, 6])
+[5   0]
+[0   6]
+```
 """
 function diagonal_matrix(x::Vector{T}) where T <: RingElem
   M = zero_matrix(parent(x[1]), length(x), length(x))
@@ -890,7 +880,10 @@ function diagonal_matrix(x::T...) where T <: RingElem
   return diagonal_matrix(collect(x))
 end
 
-@doc Markdown.doc"""
+diagonal_matrix(R::Ring, x::Vector{<:RingElement}) = diagonal_matrix(R.(x))
+
+
+@doc raw"""
     diagonal_matrix(x::Vector{T}) where T <: MatElem -> MatElem
 
 Returns a block diagonal matrix whose diagonal blocks are the matrices in $x$.
@@ -946,7 +939,7 @@ function _copy_matrix_into_matrix(A::MatElem, r::Vector{Int}, c::Vector{Int}, B:
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_positive_definite(a::ZZMatrix) -> Bool
 
 Tests if $a$ is positive definite by testing if all principal minors
@@ -1064,7 +1057,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     mod!(M::ZZMatrix, p::ZZRingElem)
 
 Reduces every entry modulo $p$ in-place, i.e. applies the mod function to every entry.
@@ -1082,7 +1075,7 @@ function mod!(M::ZZMatrix, p::ZZRingElem)
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mod(M::ZZMatrix, p::ZZRingElem) -> ZZMatrix
 
 Reduces every entry modulo $p$, i.e. applies the mod function to every entry.
@@ -1093,7 +1086,7 @@ function mod(M::ZZMatrix, p::ZZRingElem)
   return N
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mod_sym!(M::ZZMatrix, p::ZZRingElem)
 
 Reduces every entry modulo $p$ in-place, into the symmetric residue system.
@@ -1104,7 +1097,7 @@ function mod_sym!(M::ZZMatrix, B::ZZRingElem)
 end
 mod_sym!(M::ZZMatrix, B::Integer) = mod_sym!(M, ZZRingElem(B))
 
-@doc Markdown.doc"""
+@doc raw"""
     mod_sym(M::ZZMatrix, p::ZZRingElem) -> ZZMatrix
 
 Reduces every entry modulo $p$ into the symmetric residue system.
@@ -1136,7 +1129,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     vcat(A::Vector{Generic.Mat}) -> Generic.Mat
     vcat(A::Array{ZZMatrix}, 1}) -> ZZMatrix
 
@@ -1300,7 +1293,7 @@ V = [e -divexact(b, g) ; f divexact(a, g)];
 
 then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 =#
-@doc Markdown.doc"""
+@doc raw"""
     snf_with_transform(A::ZZMatrix, l::Bool = true, r::Bool = true) -> ZZMatrix, ZZMatrix, ZZMatrix
 
 Given some integer matrix $A$, compute the Smith normal form (elementary
@@ -1567,7 +1560,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_diagonal(A::Mat)
 
 Tests if $A$ is diagonal.
@@ -1604,7 +1597,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     diagonal(A::Mat{T}) -> Vector{T}
 
 Returns the diagonal of `A` as an array.
@@ -1722,7 +1715,7 @@ function can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
 end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
 
-@doc Markdown.doc"""
+@doc raw"""
     solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
@@ -1764,7 +1757,7 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   return x
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given a lower triangular $m \times m$ matrix $A$ and a matrix $b$ of size
@@ -1833,7 +1826,7 @@ function solve_lt(A::MatElem{T}, b::Vector{T}) where T
   return x
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 
 For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, i.e. all the pivot
@@ -1862,7 +1855,7 @@ function reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem -> MatElem
 
 For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, i.e. all the pivot
@@ -1874,7 +1867,7 @@ function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   return C
 end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    find_pivot(A::MatElem{<:RingElem}) -> Vector{Int}
 #
 #Find the pivot-columns of the reduced row echelon matrix $A$.
@@ -1899,7 +1892,7 @@ end
 #  return p
 #end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
 #
 #Tries to solve $Ax = B$ for $x$ if `side = :right` and $xA = B$ if `side =
@@ -1942,7 +1935,7 @@ end
 #  return true, sol
 #end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
 #
 #Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
@@ -2008,7 +2001,7 @@ end
 #  return true, sol, X
 #end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
 #
 #Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`
@@ -2064,7 +2057,7 @@ end
 #  return true, transpose(z*T)
 #end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
 #
 #Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
@@ -2141,7 +2134,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     elementary_divisors(A::ZZMatrix) -> Vector{ZZRingElem}
 
 The elementary divisors of $A$, that is, the diagonal entries of the Smith
@@ -2152,7 +2145,7 @@ function elementary_divisors(A::MatElem{T}) where T
   return T[s[i,i] for i = 1:min(ncols(s), nrows(s))]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_elementary_divisor(A::ZZMatrix) -> ZZRingElem
 
 The largest elementary divisor of $A$, that is, the last diagonal entry of the
@@ -2162,7 +2155,7 @@ function maximal_elementary_divisor(A::ZZMatrix)
   return elementary_divisors(A)[end]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     divisors(A::ZZMatrix, d::ZZRingElem) -> ZZRingElem
 
 Returns the diagonal entries of a diagonal form of $A$. We assume that all the elementary
@@ -2192,7 +2185,7 @@ function divisors(M::ZZMatrix, d::ZZRingElem)
   return l
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     largest_elementary_divisor(A::ZZMatrix) -> ZZRingElem
 
 The largest elementary divisor of $A$, that is, the last diagonal entry of the
@@ -2418,7 +2411,7 @@ function _has_finite_multiplicative_order(f)
   return all(p -> is_cyclotomic_polynomial(p[1]), fact), fact
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     has_finite_multiplicative_order(M::Union{ZZMatrix, QQMatrix}) -> Bool
 
 Given a matrix `M` with integral or rational entries, return whether `M` has
@@ -2453,7 +2446,7 @@ function has_finite_multiplicative_order(f::Union{ZZMatrix, QQMatrix})
   return _has_finite_multiplicative_order(f)[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplicative_order(M::Union{ZZMatrix, QQMatrix}) -> IntExt
 
 Given a matrix `M` with integral or rational entries, return the multiplicative
@@ -2513,8 +2506,8 @@ mutable struct LinearSolveCtx{S, T}
   v::T # temp vector
   pivots::Vector{Int}
 
-  function LinearSolveCtx{S}() where {S}
-    return new{S, Vector{coefficient_type(S)}}()
+  function LinearSolveCtx{S}() where {T, S <: MatElem{T}}
+    return new{S, Vector{T}}()
   end
 
   function LinearSolveCtx(A::MatElem{T}, side::Symbol) where {T <: RingElem}

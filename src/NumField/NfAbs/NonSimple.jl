@@ -525,10 +525,12 @@ function minpoly_sparse(a::NfAbsNSElem)
   z *= a
   sz = SRow(z)
   i = 1
+  local so::typeof(sz)
   Qt, t = polynomial_ring(FlintQQ, "x", cached = false)
   while true
     if n % i == 0
-      fl, so = can_solve_with_solution(M, sz)
+      fl, _so = can_solve_with_solution(M, sz)
+      so = typeof(sz)(_so)
       if fl
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
@@ -888,7 +890,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     number_field(f::Vector{QQPolyRingElem}, s::String="_\$") -> NfAbsNS
 
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
@@ -896,7 +898,6 @@ we construct
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle .$$
 The ideal must be maximal, however, this is not tested.
 """
-
 function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool = false, check::Bool = true)
   n = length(f)
   if occursin('#', s)
@@ -907,12 +908,10 @@ function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool =
   return number_field(f, lS, cached = cached, check = check)
 end
 
-
 function number_field(f::Vector{QQPolyRingElem}, s::Vector{String}; cached::Bool = false, check::Bool = true)
   lS = Symbol[Symbol(x) for x=s]
   return number_field(f, lS, cached = cached, check = check)
 end
-
 
 function number_field(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true)
   length(S) == length(f) || error("number of names must match the number of polynomials")
@@ -1022,7 +1021,7 @@ function cyclotomic_field(::Type{NonSimpleNumField}, n::Int, s::String="z"; cach
   lp = [cyclotomic(k, x) for k = lc]
   ls = ["$s($n)_$k" for k = lc]
   C, g = number_field(lp, ls, cached = cached, check = false)
-  #the :decom array is neccessary as this fixes the order of the
+  #the :decom array is necessary as this fixes the order of the
   #generators. The factorisation (Dict) does not give useful
   #info here.
   set_attribute!(C, :show => show_sparse_cyclo, :cyclo => n, :decom => lc)
@@ -1142,7 +1141,7 @@ function primitive_element(K::NfAbsNS)
   return pe
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
 
 The factorisation of $f$ (using Trager's method).

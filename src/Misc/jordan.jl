@@ -1,7 +1,7 @@
 export spectrum, eigenspace, jordan_normal_form, rational_canonical_form,
 companion_matrix, common_eigenspaces, eigenspaces
 
-@doc Markdown.doc"""
+@doc raw"""
     spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
 
 Returns the spectrum of a matrix, i.e. the set of eigenvalues of $M$ with multiplicities.
@@ -23,7 +23,7 @@ function spectrum(M::MatElem{T}) where T <: FieldElem
   return D
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     spectrum(M::MatElem{T}, L) where T <: FieldElem -> Dict{T, Int}
 
 Returns the spectrum of a matrix over the field $L$, i.e. the set of eigenvalues of $M$ with multiplicities.
@@ -37,7 +37,7 @@ end
 eigvals(M::MatElem{T}) where T <: FieldElem = spectrum(M)
 eigvals(M::MatElem{T}, L) where T <: FieldElem = spectrum(M, L)
 
-@doc Markdown.doc"""
+@doc raw"""
     eigenspace(M::MatElem{T}, lambda::T; side::Symbol = :right)
       where T <: FieldElem -> Vector{MatElem{T}}
 
@@ -55,7 +55,7 @@ function eigenspace(M::MatElem{T}, lambda::T; side::Symbol = :right) where T <: 
   return kernel(N, side = side)[2]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     eigenspace(M::MatElem{T}; side::Symbol = :right)
       where T <: FieldElem -> Dict{T, MatElem{T}}
 
@@ -153,7 +153,7 @@ function decompose_primary(M::MatElem{T}) where T <: FieldElem
           end
         end
         if isempty(intersect_not_contained)
-          #W containes some subspaces but it is independent from the others
+          #W contains some subspaces but it is independent from the others
           snew = Vector{Tuple{typeof(M), typeof(M)}}(undef, length(s) - length(is_contained) +1)
           indn = 1
           for z = 1:length(s)
@@ -213,7 +213,7 @@ function _copy_matrix_into_matrix(A::MatElem, i::Int, j::Int, B::MatElem)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     companion_matrix(p::PolyElem) -> MatElem
 
 Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
@@ -252,7 +252,7 @@ function jordan_block(p::PolyElem, e::Int)
   return M
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_similar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> Bool
 
 Returns true if the matrices are similar (conjugated) and false otherwise.
@@ -263,7 +263,7 @@ function is_similar(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem
   return CM == CN
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugating_matrix(M::MatElem{T}, N::MatElem{T}) where T <: FieldElem -> MatElem{T}
 
 Returns a matrix $S$ such that $S\times N \times S^{-1} = M$.
@@ -361,7 +361,7 @@ function find_pivots(M::MatElem{T}) where T <: FieldElem
   return pivots
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     complete_to_basis(C::MatElem{T}) where T <: FieldElem -> MatElem{T}
 
 Returns a matrix representing a basis of $K^n$ whose first elements are given by the rows of $C$.
@@ -430,7 +430,7 @@ function restriction(M::MatElem{T}, S::MatElem{T}) where T <: FieldElem
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     _rational_canonical_form_setup(M)
 
 Returns minpolys, the basis transformation and the vectors generating the blocks of the
@@ -465,7 +465,7 @@ function _rational_canonical_form_setup(M::MatElem{T}) where T <: FieldElem
   return pols, basis_transf, gens
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_canonical_form(M::MatElem{T}) where T <: FieldElem -> MatElem{T}, MatElem{T}
 
 Returns matrices $C$ and $S$ such that $C = SMS^{-1}$ and $C$ is in rational canonical form.
@@ -525,7 +525,7 @@ function refine_for_jordan(pols::Vector, gens::Vector, M::MatElem)
   return factors, gens_polys_mults
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     jordan_normal_form(M::MatElem{T}) where T <: FieldElem -> MatElem{T}, MatElem{T}
 
 Returns matrices $J$ and $S$ such that $J = SMS^{-1}$ and $J$ is in Jordan normal form.
@@ -565,7 +565,7 @@ function jordan_normal_form(M::MatElem{T}) where T <: FieldElem
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     jordan_decomposition(M::MatElem{T}) where T <:FieldElem -> MatElem{T}, MatElem{T}
 
 Returns matrices $S$ and $N$ such that $N$ is nilpotent, $S$ is semisimple and $M = S+N$.
@@ -612,7 +612,7 @@ function jordan_decomposition(M::MatElem{T}) where T <: FieldElem
   return Binv*J*B, Binv*N*B
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplicative_jordan_decomposition(M::MatElem{T}) where T <:FieldElem -> MatElem{T}, MatElem{T}
 
 Returns matrices $S$ and $U$ such that $U$ is unipotent, $S$ is semisimple and $M = SU$.
@@ -824,7 +824,7 @@ function simultaneous_diagonalization(L...; check::Bool = true)
   return simultaneous_diagonalization(collect(L), check = check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     simultaneous_diagonalization(L::Vector{S}; check::Bool=false)
 
 Returns a tuple whose first entry is the transformation matrix and whose
@@ -846,7 +846,7 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
   end
   s = Hecke.nrows(L[1])
 
-  # Compute transformation marix
+  # Compute transformation matrix
   CE = common_eigenspaces(L, side = :left)
   A =  Hecke.vcat(collect(values(CE)))
 
@@ -865,7 +865,7 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
   return A, D
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     simultaneous_diagonalization(L::Vector{MatElem}, K::Field; check::Bool=false)
 
 Returns a tuple whose first entry is the transformation matrix and whose
@@ -878,7 +878,7 @@ function simultaneous_diagonalization(L::Vector{S}, K::W; check::Bool = true) wh
   return simultaneous_diagonalization(L1, check = check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :right)
       where T <: FieldElem -> Dict{Vector{T}, MatElem{T}}
 

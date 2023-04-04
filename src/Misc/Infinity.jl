@@ -87,7 +87,7 @@ const IntExt = Union{Int, PosInf}
 
 is_positive(::PosInf) = true
 
-@doc Markdown.doc"""
+@doc raw"""
     is_infinite(x::Any) -> Bool
 
 Tests whether $x$ is infinite, by returning `!isfinite(x)`.

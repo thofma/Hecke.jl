@@ -97,7 +97,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     rescale(q::AbstractSpace, r) -> AbstractSpace
 
 For $q=(V,\Phi)$ return the space $(V, r \Phi)$.
@@ -111,21 +111,21 @@ rescale(q::AbstractSpace, r)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     rank(V::AbstractSpace) -> Int
 
 Return the rank of the space `V`.
 """
 @attr Int rank(L::AbstractSpace) = rank(L.gram)
 
-@doc Markdown.doc"""
+@doc raw"""
     dim(V::AbstractSpace) -> Int
 
 Return the dimension of the space `V`.
 """
 dim(V::AbstractSpace) = nrows(V.gram)
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(V::AbstractSpace) -> MatElem
 
 Return the Gram matrix of the space `V`.
@@ -134,21 +134,21 @@ gram_matrix(V::AbstractSpace) = V.gram
 
 # Once we have quaternion spaces the following makes more sense
 
-@doc Markdown.doc"""
+@doc raw"""
     base_ring(V::AbstractSpace) -> NumField
 
 Return the algebra over which the space `V` is defined.
 """
 base_ring(V::AbstractSpace) = _base_algebra(V)
 
-@doc Markdown.doc"""
+@doc raw"""
     fixed_field(V::AbstractSpace) -> NumField
 
 Return the fixed field of the space `V`.
 """
 fixed_field(::AbstractSpace)
 
-@doc Markdown.doc"""
+@doc raw"""
     involution(V::AbstractSpace) -> NumField
 
 Return the involution of the space `V`.
@@ -161,7 +161,7 @@ involution(V::AbstractSpace)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_regular(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is regular, that is, if the Gram matrix
@@ -171,14 +171,14 @@ function is_regular(V::AbstractSpace)
   return rank(V) == dim(V)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_quadratic(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is quadratic.
 """
 is_quadratic(::AbstractSpace)
 
-@doc Markdown.doc"""
+@doc raw"""
     ishermitian(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is hermitian.
@@ -196,14 +196,14 @@ ishermitian(::AbstractSpace)
   return fixed_field(V)(d)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     det(V::AbstractSpace) -> FieldElem
 
 Return the determinant of the space `V` as an element of its fixed field.
 """
 det(::AbstractSpace)
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(V::AbstractSpace) -> FieldElem
 
 Return the discriminant of the space `V` as an element of its fixed field.
@@ -234,7 +234,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(V::AbstractSpace, M::MatElem) -> MatElem
 
 Return the Gram matrix of the rows of `M` with respect to the Gram matrix of the space `V`.
@@ -249,7 +249,7 @@ function gram_matrix(V::AbstractSpace{T}, M::MatElem{S}) where {S, T}
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(V::AbstractSpace, S::Vector{Vector}) -> MatElem
 
 Return the Gram matrix of the sequence `S` with respect to the Gram matrix of the space `V`.
@@ -267,14 +267,14 @@ function gram_matrix(V::AbstractSpace{T}, S::Vector{Vector{U}}) where {T, U}
   return gram_matrix(V, m)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     inner_product(V::AbstractSpace, v::Vector, w::Vector) -> FieldElem
 
 Return the inner product of `v` and `w` with respect to the bilinear form of the space `V`.
 """
 inner_product(V::AbstractSpace, v::Vector, w::Vector)
 
-@doc Markdown.doc"""
+@doc raw"""
     inner_product(V::AbstractSpace, v::MatElem, w::MatElem) -> MatElem
 
 Shortcut for `v * gram_matrix(V) * adjoint(w)`.
@@ -289,7 +289,7 @@ _inner_product(L::AbstractLat, v, w) = inner_product(ambient_space(L), v, w)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     orthogonal_basis(V::AbstractSpace) -> MatElem
 
 Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the space `V`.
@@ -310,7 +310,7 @@ function orthogonal_basis(V::AbstractSpace)
   return B
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     diagonal(V::AbstractSpace) -> Vector{FieldElem}
 
 Return a vector of elements $a_1,\dotsc,a_n$ such that the space `V` is isometric to
@@ -408,7 +408,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
 
 Return whether the spaces `L` and `M` are isometric over the completion at `p`.
@@ -421,7 +421,7 @@ is_isometric(L::AbstractSpace, M::AbstractSpace, p)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isometric(L::AbstractSpace, M::AbstractSpace) -> Bool
 
 Return whether the spaces `L` and `M` are isometric.
@@ -460,7 +460,7 @@ function _isdefinite(V::AbstractSpace)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_positive_definite(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is positive definite.
@@ -480,7 +480,7 @@ function is_positive_definite(V::AbstractSpace)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_negative_definite(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is negative definite.
@@ -500,7 +500,7 @@ function is_negative_definite(V::AbstractSpace)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_definite(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is definite.
@@ -515,7 +515,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isotropic(V::AbstractSpace) -> Bool
 
 Return if the space `V` is isotropic.
@@ -525,14 +525,14 @@ with $\Phi(v,v) = 0$.
 """
 is_isotropic(::AbstractSpace)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isotropic_with_vector(V::AbstractSpace) -> Bool, Vector
 
 Return if the space `V` is isotropic and an isotropic vector.
 """
 is_isotropic_with_vector(::AbstractSpace)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isotropic(V::AbstractSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
 
 Given a space `V` and a place `p` in the fixed field `K` of `V`, return
@@ -590,10 +590,10 @@ end
 
 # TODO: Change VecSpaceRes/SpaceRes to allow restriction of scalars
 # to non rational subfields
-@doc Markdown.doc"""
+@doc raw"""
     restrict_scalars(V::AbstractSpace, K::QQField,
                                   alpha::FieldElem = one(base_ring(V)))
-                                                          -> QuadSpace, SpaceRes
+                                                          -> QuadSpace, AbstractSpaceRes
 
 Given a space $(V, \Phi)$ and a subfield `K` of the base algebra `E` of `V`, return the
 quadratic space `W` obtained by restricting the scalars of $(V, \alpha\Phi)$ to `K`,
@@ -631,7 +631,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
     end
   end
   Vres = quadratic_space(FlintQQ, G, check = false)
-  VrestoV = SpaceRes{typeof(Vres), typeof(V)}(Vres, V)
+  VrestoV = AbstractSpaceRes(Vres, V, identity_matrix(QQ, rank(Vres)), identity_matrix(E, rank(V)))
   return Vres, VrestoV
 end
 
@@ -641,7 +641,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     orthogonal_complement(V::AbstractSpace, M::T) where T <: MatElem -> T
 
 Given a space `V` and a subspace `W` with basis matrix `M`, return a basis
@@ -654,7 +654,7 @@ function orthogonal_complement(V::AbstractSpace, M::MatElem)
   return K
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     orthogonal_projection(V::AbstractSpace, M::T) where T <: MatElem -> AbstractSpaceMor
 
 Given a space `V` and a non-degenerate subspace `W` with basis matrix `M`,
@@ -673,58 +673,17 @@ end
 
 ################################################################################
 #
-#  Orthogonal sum
+#  Direct sums
 #
 ################################################################################
 
-function _orthogonal_sum(V::AbstractSpace, W::AbstractSpace)
-  K = base_ring(V)
-  G = diagonal_matrix(gram_matrix(V), gram_matrix(W))
-  n = dim(V) + dim(W)
-  i1 = zero_matrix(K, dim(V), n)
-  for i in 1:dim(V)
-    i1[i, i] = 1
-  end
-  i2 = zero_matrix(K, dim(W), n)
-  for i in 1:dim(W)
-    i2[i, i + dim(V)] = 1
-  end
-  return G, i1, i2
-end
-
-@doc Markdown.doc"""
-    orthogonal_sum(V::AbstractSpace, W::AbstractSpace) -> AbstractSpace, AbstractSpaceMor, AbstractSpaceMor
-
-Given two spaces `V` and `W` of the same kind (either both hermitian or both quadratic)
-and defined over the same algebra, return their orthogonal sum $V \oplus W$. It is given with
-the two natural embeddings $V \to V\oplus W$ and $W \to V\oplus W$.
-"""
-orthogonal_sum(V::AbstractSpace, W::AbstractSpace)
-
-function orthogonal_sum(V::QuadSpace, W::QuadSpace)
-  @req base_ring(V) === base_ring(W) "Base algebra must be equal"
-  G, i1, i2 = _orthogonal_sum(V, W)
-  VplusW = quadratic_space(base_ring(V), G)
-  f1 = hom(V, VplusW, i1)
-  f2 = hom(W, VplusW, i2)
-  return VplusW, f1, f2
-end
-
-function orthogonal_sum(V::HermSpace, W::HermSpace)
-  @req base_ring(V) === base_ring(W) "Base algebra must be equal"
-  G, i1, i2 = _orthogonal_sum(V, W)
-  VplusW = hermitian_space(base_ring(V), G)
-  f1 = hom(V, VplusW, i1)
-  f2 = hom(W, VplusW, i2)
-  return VplusW, f1, f2
-end
-
-function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
+function _biproduct(x::Vector{T}) where T <: AbstractSpace
   @req length(x) >= 2 "Input must contain at least two quadratic spaces"
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
+  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> ishermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic" 
   G = diagonal_matrix(gram_matrix.(x))
-  V = quadratic_space(K, G)
+  V = is_quadratic(x[1]) ? quadratic_space(K, G) : hermitian_space(K, G)
   n = sum(dim.(x))
   inj = AbstractSpaceMor[]
   proj = AbstractSpaceMor[]
@@ -746,21 +705,73 @@ function _orthogonal_sum_with_injections_and_projections(x::Vector{<:QuadSpace})
   return V, inj, proj
 end
 
-@doc Markdown.doc"""
-    direct_sum(x::Vararg{QuadSpace}) -> QuadSpace, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
-    direct_sum(x::Vector{QuadSpace}) -> QuadSpace, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+@doc raw"""
+    direct_sum(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
 
-Given a collection of quadratic spaces $V_1, \ldots, V_n$,
-return their complete direct sum $V := V_1 \oplus \ldots \oplus V_n$,
-together with the injections $V_i \to V$ and the projections $V \to V_i$.
+Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
+return their direct sum $V := V_1 \oplus \ldots \oplus V_n$,
+together with the injections $V_i \to V$.
+
+For objects of type `AbstractSpace`, finite direct sums and finite direct
+products agree and they are therefore called biproducts.
+If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
+one should call `direct_product(x)`.
+If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
+the projections $V \to V_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vararg{QuadSpace})
-  x = collect(x)
-  @req length(x) >= 2 "Input must consist of at least two quadratic spaces"
-  return _orthogonal_sum_with_injections_and_projections(x)
+function direct_sum(x::Vector{T}) where T <: AbstractSpace
+  @req length(x) >= 2 "Input must consist of at least two spaces"
+  V, inj, = _biproduct(x)
+  return V, inj
 end
 
-direct_sum(x::Vector{<:QuadSpace}) = _orthogonal_sum_with_injections_and_projections(x)
+direct_sum(x::Vararg{AbstractSpace}) = direct_sum(collect(x))
+
+@doc raw"""
+    direct_product(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_product(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+
+Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
+return their direct product $V := V_1 \times \ldots \times V_n$,
+together with the projections $V \to V_i$.
+
+For objects of type `AbstractSpace`, finite direct sums and finite direct
+products agree and they are therefore called biproducts.
+If one wants to obtain `V` as a direct sum with the injections $V_i \to V$,
+one should call `direct_sum(x)`.
+If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
+the projections $V \to V_i$, one should call `biproduct(x)`.
+"""
+function direct_product(x::Vector{T}) where T <: AbstractSpace
+  @req length(x) >= 2 "Input must consist of at least two spaces"
+  V, _, proj = _biproduct(x)
+  return V, proj
+end
+
+direct_product(x::Vararg{AbstractSpace}) = direct_product(collect(x))
+
+@doc raw"""
+    biproduct(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+
+Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
+return their biproduct $V := V_1 \oplus \ldots \oplus V_n$, together
+with the injections $V_i \to V$ and the projections $V \to V_i$.
+
+For objects of type `AbstractSpace`, finite direct sums and finite direct
+products agree and they are therefore called biproducts.
+If one wants to obtain `V` as a direct sum with the injections $V_i \to V$,
+one should call `direct_sum(x)`.
+If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
+one should call `direct_product(x)`.
+"""
+function biproduct(x::Vector{T}) where T <: AbstractSpace
+  @req length(x) >= 2 "Input must consisy of at least two spaces"
+  return _biproduct(x)
+end
+
+biproduct(x::Vararg{AbstractSpace}) = biproduct(collect(x))
 
 ################################################################################
 #
@@ -768,7 +779,7 @@ direct_sum(x::Vector{<:QuadSpace}) = _orthogonal_sum_with_injections_and_project
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbstractSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
@@ -777,7 +788,7 @@ represented by `V` locally at `p`, i.e. whether $U_p$ embeds in $V_p$.
 """
 is_locally_represented_by(::AbstractSpace, ::AbstractSpace, p)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_represented_by(U::T, V::T) where T <: AbstractSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, return whether `U` is

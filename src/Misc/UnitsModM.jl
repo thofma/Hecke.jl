@@ -1,17 +1,17 @@
 export UnitGroup, solvemod, gen_mod_pk,
        disc_log_bs_gs, disc_log_ph, disc_log_mod
 
-function order(x::Generic.Res{ZZRingElem}, fp::Dict{ZZRingElem, Int64})
+function order(x::Generic.ResidueRingElem{ZZRingElem}, fp::Dict{ZZRingElem, Int64})
   error("missing")
 end
 
-@doc Markdown.doc"""
-    is_primitive_root(x::Generic.Res{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
+@doc raw"""
+    is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
 
 Given $x$ in $Z/MZ$, the factorisation of $M$ (in `fM`), decide if $x$ is primitive.
 Intrinsically, only makes sense if the units of $Z/MZ$ are cyclic.
 """
-function is_primitive_root(x::Generic.Res{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
+function is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -49,13 +49,13 @@ end
   ord_(k+1)(A) = |G_(k+1)|  iff gcd(|G_(k+1)|, a) = 1
   Since either |G_k| = |G_(k+1)| or
               p|G_k| = |G_(k+1)|
-  we get (from the constant gcd) that wither a is coprime to p, hence
+  we get (from the constant gcd) that either a is coprime to p, hence
   the gcd will be stable for all subsequent k's as well, or
   |G_k| is stable (other gcd) hence will be stable. In either case,
   gcd(|G_(k+l)|, a) = 1 for all l, thus a is a generator
 =#
 
-@doc Markdown.doc"""
+@doc raw"""
     gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=0) ZZRingElem
 
 Find an integer $x$ s.th. $x$ is a primtive root for all powers of the (odd) prime $p$. If `mod` is non zero, it finds a generator for $Z/p^kZ$ modulo `mod` powers only.
@@ -102,8 +102,8 @@ mutable struct MapUnitGroupModM{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGroup
 end
 
 #TO BE FIXED. If mod is non-zero, it is wrong.
-@doc Markdown.doc"""
-    UnitGroup(R::Generic.ResRing{ZZRingElem}) -> GrpAbFinGen, Map
+@doc raw"""
+    UnitGroup(R::Generic.ResidueRing{ZZRingElem}) -> GrpAbFinGen, Map
 
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """
@@ -242,7 +242,7 @@ function UnitGroup(R::Nemo.zzModRing, mod::ZZRingElem=ZZRingElem(0))
   return G, MapUnitGroupModM{typeof(R)}(G, R, dexp, dlog)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     solvemod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
 
 Finds $x$ s.th. $ax == b mod M$.
@@ -260,7 +260,7 @@ function solvemod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
 end
 
 #solves a^x = b (mod M) for M a prime power
-@doc Markdown.doc"""
+@doc raw"""
     disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
 
 Computes $g$ s.th. $a^g == b mod M$. $M$ has to be a power of an odd prime
@@ -361,7 +361,7 @@ function disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
 end
 
 #TODO: a version that caches the baby-steps between calls
-@doc Markdown.doc"""
+@doc raw"""
     disc_log_bs_gs{T}(a::T, b::T, o::ZZRingElem)
 
 Tries to find $g$ s.th. $a^g == b$ under the assumption that $g \leq o$.
@@ -407,7 +407,7 @@ function disc_log_bs_gs(a::T, b::T, o::ZZRingElem) where {T <: RingElem}
   throw("disc_log failed")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     disc_log_ph(a::T, b::T, o::ZZRingElem, r::Int)
 
 Tries to find $g$ s.th. $a^g == b$ under the assumption that $ord(a) | o^r$

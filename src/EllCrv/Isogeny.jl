@@ -134,7 +134,7 @@ end
 
 
 
-@doc Markdown.doc"""
+@doc raw"""
     is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyElem)
 
 Return whether `E` has a cyclic isogeny of with kernel polynomial
@@ -193,7 +193,7 @@ function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyEl
 end
 
 #Currently only works for kernels do not contain 4-torsion. Kernels need to be checked for correctness. Input polynomial needs to be separable.
-@doc Markdown.doc"""
+@doc raw"""
     isogeny_from_kernel(E::EllCrv, psi::RingElem) -> Isogeny
 
 Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
@@ -204,7 +204,7 @@ function isogeny_from_kernel(E::EllCrv, psi::RingElem)
 end
 
 #Input polynomial needs to be separable. (2^r-torsion is allowed however)
-@doc Markdown.doc"""
+@doc raw"""
     isogeny_from_kernel_factored(E::EllCrv, psi::RingElem) -> Isogeny
 
 Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
@@ -255,7 +255,7 @@ function isogeny_from_kernel_factored(E::EllCrv, psi::RingElem)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     degree(f::Isogeny) -> Int
 
 Return the degree of the isogeny $f$.
@@ -264,7 +264,7 @@ function degree(f::Isogeny)
   return f.degree
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isogeny_map_psi(f::Isogeny) -> Poly
 
 Return the kernel polynomial defining the isogeny $f$.
@@ -273,7 +273,7 @@ function isogeny_map_psi(f::Isogeny)
   return f.psi
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isogeny_map_psi_squared(f::Isogeny) -> Poly
 
 Return the denominator of the first coordinate of $f$,
@@ -284,7 +284,7 @@ function isogeny_map_psi_squared(f::Isogeny)
   return denominator(f.coordx)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isogeny_map_phi(f::Isogeny) -> Poly
 
 Return the polynomial phi defining the isogeny $f$.
@@ -293,7 +293,7 @@ function isogeny_map_phi(f::Isogeny)
   return numerator(f.coordx)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isogeny_map_omega(f::Isogeny) -> Poly
 
 Return the polynomial omega defining the isogeny $f$.
@@ -302,7 +302,7 @@ function isogeny_map_omega(f::Isogeny)
   return numerator(f.coordy)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     image(phi::Isogeny, P::EllCrvPt) -> EllCrvPt
 
 Return $\phi(P)$.
@@ -325,7 +325,7 @@ function image(f::Isogeny, P::EllCrvPt)
   return codomain(f)([phix, phiy])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     image(fs::Vector{Isogeny}, P::EllCrvPt) -> EllCrvPt
 
 Return phi_n \circ phi_(n-1) \circ phi_1(P) where fs is a list of compatible
@@ -340,7 +340,7 @@ function image(fs::Vector{Isogeny}, P::EllCrvPt)
   return P
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     push_through_isogeny(f::Isogeny, v::RingElem) -> RingElem
 
 Let $f:E \to E'$ be an isogeny and let S be the set of points on E
@@ -365,7 +365,7 @@ end
 
 #TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up
 #to automorphism. Also need to carefully see what happens when the curve is supersingular and we compute the dual of frobenius
-@doc Markdown.doc"""
+@doc raw"""
     dual_isogeny(psi::Isogeny) -> Isogeny
 
 Return the dual isogeny of psi. Currently only works for separable isogenies.
@@ -408,8 +408,8 @@ function dual_isogeny(psi::Isogeny)
   return psihat_up_to_auto
 end
 
-#Might need some tweaks in characteristic 2. Also might be inefficent inefficient, but it works.
-@doc Markdown.doc"""
+#Might need some tweaks in characteristic 2. Also might be inefficient inefficient, but it works.
+@doc raw"""
     dual_of_frobenius(psi::Isogeny) -> Isogeny
 
 Return the dual of frobenius.
@@ -472,7 +472,7 @@ function dual_of_frobenius(E)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     identity_isogeny((E::EllCrv) -> Isogeny
 
 Return the isogeny corresponding to the identity map on $E$
@@ -481,7 +481,7 @@ function identity_isogeny(E::EllCrv)
   return isomorphism_to_isogeny(identity_map(E))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplication_by_m_map((E::EllCrv, m::Int) -> Isogeny
 
 Return the isogeny corresponding to the multiplication by m map on $E$
@@ -549,7 +549,7 @@ function defrobenify(f::RingElem, p, rmax::Int = -1)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     frobenius_map(E::EllCrv{FinFieldElem}) -> Isogeny
 
 Return the Frobenius map on E.
@@ -558,7 +558,7 @@ function frobenius_map(E::EllCrv{T}) where T<:FinFieldElem
   return frobenius_map(E, 1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     frobenius_map(E::EllCrv{FinFieldElem}, n::Int) -> Isogeny
 
 Return the $n$-th power of the Frobenius map on E.
@@ -580,7 +580,7 @@ function frobenius_map(E::EllCrv{T}, n) where T<:FinFieldElem
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_maps(I::Isogeny) -> [Poly, Poly]
 
 Return the rational maps defining the isogeny.
@@ -620,7 +620,7 @@ function show(io::IO, f::Isogeny)
   (x : y : 1) -> ($(fx) : $(fy) : 1 )")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     compose(I1::Isogeny, I2::Isogeny) -> Isogeny
 
 Return composition $I2 \circ I1$.
@@ -680,7 +680,7 @@ function compose(I1::Isogeny, I2::Isogeny)
   return f
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     compose(fs::Vector{Isogeny}) -> Isogeny
 
 Return the composition phi_n \circ phi_(n-1) \circ phi_1 where fs is a list of compatible
@@ -705,7 +705,7 @@ function ^(phi::Isogeny, n::Int)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isogenous(E::EllCrv, F::EllCrv) -> Bool
 
 Return true when $E$ and $F$ are isogenous. Currently only implemented for

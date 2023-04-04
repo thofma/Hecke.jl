@@ -35,7 +35,7 @@
 end
 
 @testset "Multiplicative order" begin
-  L = orthogonal_sum(root_lattice(:A, 7), root_lattice(:E, 8))[1]
+  L = direct_sum(root_lattice(:A, 7), root_lattice(:E, 8))[1]
   ao = automorphism_group_order(L)
   aag = automorphism_group_generators(L)
   for M in aag

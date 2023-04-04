@@ -213,7 +213,7 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
   QC = identity_matrix(T, n)
   #=
   We use QC at the same time for Q_k and the product Q_k * CC.
-    Q_k shoud be
+    Q_k should be
   1 0 ... * * ... 0
   0 1 ... * * ... 0
   . . . . * * . . .
@@ -294,7 +294,7 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
     zero_cols[row1] = false
     # Q = QC*Q
     # We only need to change the columns 1 to row1 since we already know,
-    # that the columns row2 to n will eventually be an "indentity matrix".
+    # that the columns row2 to n will eventually be an "identity matrix".
     # In particular, we don't need to compute Q*inv(CC).
     #tic()
     for j = 1:row1

@@ -6,9 +6,6 @@
   A = @inferred sparse_row(FlintZZ)
   @test A isa SRow{ZZRingElem}
 
-  B = @inferred SRow(R)
-  @test B isa SRow{ZZRingElem}
-
   C = @inferred sparse_row(R)
   @test C isa SRow{ZZRingElem}
 
@@ -31,7 +28,7 @@
   h = @inferred hash(D)
   @test h == hash(E)
 
-  # Accesing elements
+  # Accessing elements
 
   @test ZZRingElem(1) == @inferred D[1]
   @test ZZRingElem(2) == @inferred D[2]

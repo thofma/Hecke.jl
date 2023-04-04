@@ -152,7 +152,7 @@ end
 #
 ###############################################################################
 
-function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: AbstractAlgebra.MPolyElem}
+function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: AbstractAlgebra.MPolyRingElem}
    R = parent(p)
    i = max(1, ndigits(length(p), base=4))
    l = length(G.buckets)
@@ -496,10 +496,10 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::ZZRin
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
-    @vprint :Fields 1 "contructing abelian extensions with invariants $l \n"
-    @vprint :FieldsNonFancy 1 "contructing abelian extensions with invariants $l \n"
+    @vprint :Fields 1 "constructing abelian extensions with invariants $l \n"
+    @vprint :FieldsNonFancy 1 "constructing abelian extensions with invariants $l \n"
     o = divexact(GAP.Globals.Size(G), GAP.Globals.Size(E1))
-    bound = root(absolute_bound, o)
+    bound = iroot(absolute_bound, o)
     IsoE1 = GAP.Globals.IdGroup(E1)
     @vprint :Fields 1 "Number of fields at the $i -th step: $(length(list)) \n"
     @vprint :FieldsNonFancy 1 "Number of fields at the $i -th step: $(length(list)) \n"
@@ -530,8 +530,8 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::ZZRin
 end
 
 function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::ZZRingElem; only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
-  b1 = root(absolute_bound, g2[1])
-  b2 = root(absolute_bound, g1[1])
+  b1 = iroot(absolute_bound, g2[1])
+  b2 = iroot(absolute_bound, g1[1])
   @vprint :Fields 1 "The group is the product of $(g1) and $(g2)\n"
   l2 = fields(g2[1], g2[2], b2, only_real = only_real, unramified_outside = unramified_outside)
   if isempty(l2)
@@ -613,9 +613,9 @@ function fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product
         end
       end
     end
-    bound = root(div(absolute_bound, cd), prod(invariants))
+    bound = iroot(div(absolute_bound, cd), prod(invariants))
   else
-    bound = root(absolute_bound, prod(invariants))
+    bound = iroot(absolute_bound, prod(invariants))
   end
   list = fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1), unramified_outside = unramified_outside)
   if isempty(list)

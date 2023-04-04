@@ -112,8 +112,8 @@ Returns all abelian extension $L/K$ with Galois group with abelian invariants
 `gtype`, such that $L/\mathbf{Q}$ is normal and the absolute discriminant of
 $L$ is bounded by `bound`.
 
-- `only_real = true`: Only totally real fields will be comuted.
-- `only_complex = true`: Only totally complex fields will be comuted.
+- `only_real = true`: Only totally real fields will be computed.
+- `only_complex = true`: Only totally complex fields will be computed.
 - `tame = true`: Only tame fields will be computed.
 
 Note that fields are returned as class fields of $L$, which can be transformed

@@ -1,6 +1,6 @@
 export complex_embeddings, real_embeddings, evaluation_function, complex_embedding
 
-@doc Markdown.doc"""
+@doc raw"""
     complex_embeddings(K::NumField; conjugates::Bool = true) -> Vector{NumFieldEmb}
 
 Return the complex embeddings of $K$. If `conjugates` is `false`, only one
@@ -23,7 +23,7 @@ julia> complex_embeddings(K, conjugates = false)
 """
 complex_embeddings(K::NumField)
 
-@doc Markdown.doc"""
+@doc raw"""
     real_embeddings(K::NumField) -> Vector{NumFieldEmb}
 
 Return the real embeddings of $K$.
@@ -46,7 +46,7 @@ function real_embeddings(K::NumField)
   end::Vector{embedding_type(K)}
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     number_field(f::NumFieldEmb) -> NumField
 
 Return the corresponding number field of the embedding $f$.
@@ -62,7 +62,7 @@ Imaginary quadratic field defined by x^2 + 3
 """
 number_field(::NumFieldEmb)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_real(f::NumFieldEmb) -> Bool
 
 Return `true` if the embedding is real.
@@ -78,7 +78,7 @@ true
 """
 is_real(f::NumFieldEmb)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_imaginary(f::NumFieldEmb) -> Bool
 
 Returns `true` if the embedding is imaginary, that is, not real.
@@ -94,7 +94,7 @@ true
 """
 is_imaginary(f::NumFieldEmb) = !is_real(f)
 
-@doc Markdown.doc"""
+@doc raw"""
     conj(f::NumFieldEmb) -> NumFieldEmb
 
 Returns the conjugate embedding of `f`.
@@ -112,7 +112,7 @@ conj(f::NumFieldEmb)
 
 # Restriction
 
-@doc Markdown.doc"""
+@doc raw"""
     restrict(f::NumFieldEmb, K::NumField)
 
 Given an embedding $f$ of a number field $L$ and a number field $K$ appearing
@@ -135,7 +135,7 @@ corresponding to ≈ -1.73
 """
 restrict(f::NumFieldEmb, K::NumField)
 
-@doc Markdown.doc"""
+@doc raw"""
     restrict(f::NumFieldEmb, g::NumFieldMor)
 
 Given an embedding $f$ of a number field $L$ and a morphism $g \colon K \to L$,
@@ -166,7 +166,7 @@ restrict(f::NumFieldEmb, K::NumFieldMor)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     extend(e::NumFieldEmb, f::NumFieldMor)
 
 Given an embedding $e$ of $k$ and a morphism $f \colon k \to K$, determine
@@ -214,7 +214,7 @@ end
 
 (f::NumFieldEmb)(x::NumFieldOrdElem, prec::Int = 32) = f(elem_in_nf(x), prec)
 
-@doc Markdown.doc"""
+@doc raw"""
     evaluation_function(e::NumFieldEmb, prec::Int) -> Function
 
 Return the anonymous function `x -> e(x, prec)`.
@@ -242,7 +242,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     sign(x::NumFieldElem, e::NumFieldEmb) -> Int
 
 Given a number field element `x` and a complex embedding `e`, return `1`, `-1`
@@ -290,7 +290,7 @@ function sign(x::FacElem{<:NumFieldElem}, e::NumFieldEmb)
   return s
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     signs(a::NumFieldElem, [embs::Vector{NumFieldEmb} = real_embeddings(K)])
                                                        -> Dict{NumFieldEmb, Int}
 
@@ -319,7 +319,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_positive(a::NumFieldElem, e::NumFieldEmb)   -> Bool
 
 Given a number field element `a` and a real embedding `e`, return whether `a`
@@ -338,7 +338,7 @@ true
 """
 is_positive(x::Union{NumFieldElem, FacElem}, e::NumFieldEmb) = sign(x, e) == 1
 
-@doc Markdown.doc"""
+@doc raw"""
     is_positive(a::NumFieldElem, embs::Vector{NumFieldEmb}) -> Bool
 
 Return whether the element $a$ is positive at all embeddings of `embs`. All
@@ -360,7 +360,7 @@ function is_positive(a::Union{NumFieldElem, FacElem}, l::Vector{<: NumFieldEmb})
   return all(x -> is_positive(a, x), l)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_totally_positive(a::NumFieldElem) -> Bool
 
 Return whether the element $a$ is totally positive, that is, whether it is
@@ -382,7 +382,7 @@ is_totally_positive(a::NumFieldOrdElem, e...) =
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_negative(a::NumFieldElem, e::NumFieldEmb)   -> Bool
 
 Given a number field element `a` and a real embedding `e`, return whether `a`
@@ -401,7 +401,7 @@ false
 """
 is_negative(x::Union{NumFieldElem, FacElem}, e::NumFieldEmb) = sign(x, e) == -1
 
-@doc Markdown.doc"""
+@doc raw"""
     is_negative(a::NumFieldElem, embs::Vector{NumFieldEmb}) -> Bool
 
 Return whether the element $a$ is positive at all embeddings of `embs`. All

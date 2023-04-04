@@ -15,7 +15,7 @@ quadratic_space_type(K::S) where {S <: Field} =
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_space(K::NumField, n::Int; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with dimension `n` and Gram matrix
@@ -27,7 +27,7 @@ function quadratic_space(K::Field, n::Int; cached::Bool = true)
   return quadratic_space(K, G, cached = cached)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_space(K::NumField, G::MatElem; cached::Bool = true) -> QuadSpace
 
 Create the quadratic space over `K` with Gram matrix `G`.
@@ -191,7 +191,7 @@ function _hasse_invariant(D::Vector, p)
   return h
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hasse_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
 
 Returns the Hasse invariant of the quadratic space `V` at `p`. This is equal
@@ -243,7 +243,7 @@ end
 # wi = witt invariant
 # ni = rank
 # Lam p. 117
-function _witt_of_orthogonal_sum(d1, w1, n1, d2, w2, n2, p)
+function _witt_of_direct_sum(d1, w1, n1, d2, w2, n2, p)
   _n1 = mod(n1, 4)
   if _n1 == 0 || _n1 == 1
     disc1 = d1
@@ -311,7 +311,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     witt_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
 
 Returns the Witt invariant of the quadratic space `V` at `p`.
@@ -427,7 +427,7 @@ function _quadratic_form_invariants(M, O; minimal = true)
   return ncols(M), ker, reduce(*, D, init = one(K)), F, I
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     invariants(M::QuadSpace)
           -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
 
@@ -1192,13 +1192,13 @@ function is_isotropic_with_vector(q::QuadSpace{QQField, QQMatrix})
     return false, z
   end
   # confirm the computation
-  v = [S[1,i] for i in 1:ncols(S)]
+  v = elem_type(base_ring(q))[S[1,i] for i in 1:ncols(S)]
   @hassert :Lattice 1 inner_product(q,v,v)==0
   @hassert :Lattice 1 !all(x==0 for x in v)
   return true, v
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _isotropic_subspace(q::QuadSpace{QQField, QQMatrix}) -> Bool, QQMatrix
 
 Return if `q` is isotropic and the basis of an isotropic subspace.
@@ -1255,7 +1255,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     v = basis_matrix(M)[1:i,:]
     return true, v
   end
-  # embedd in H^k for H the hyperbolic plane
+  # embed in H^k for H the hyperbolic plane
   D = rescale(discriminant_group(M),-1)
   (p,_,n) = signature_tuple(q)
   a = p - n
@@ -1265,7 +1265,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     s = (0, a)
   end
   R = representative(genus(D, s))
-  LL, iM, iR = orthogonal_sum(M, R)
+  LL, inj = direct_sum(M, R)
   MM = maximal_even_lattice(LL)
   # MM is sum of hyperbolic planes -> Simon should succeed
   ok, H = _maximal_isotropic_subspace_unimodular(MM)
@@ -1274,10 +1274,11 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
   # the  totally isotropic subspace H has large enough dimension so that its
   # intersection with L is non-trivial (and isotropic) -> we win
   VV = ambient_space(MM)
-  iso = preimage(iM, lattice(VV, H))
+  iso = preimage(inj[1], lattice(VV, H))
   @hassert :Lattice 0 rank(iso) >0
   @hassert :Lattice 0 gram_matrix(iso)==0
-  return true, basis_matrix(iso)
+  B = basis_matrix(iso)::dense_matrix_type(base_field(M))
+  return true, B
 end
 
 function _maximal_isotropic_subspace_unimodular(L)
@@ -1861,7 +1862,7 @@ function _isisometric_with_isometry(F, G)
   return true, M
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isometric_with_isometry(V::QuadSpace, W::QuadSpace)
 
 Returns wether $V$ and $W$ are isometric together with an isometry in case it
@@ -1955,7 +1956,7 @@ function _isisotropic_with_vector_finite(M)
   return false, elem_type(k)[]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     signature_tuple(q::QuadraticSpace{QQField,QQMatrix) ->Tuple{Int,Int,Int}
 
 Return the number of (positive, zero, negative) inertia of this rational quadratic space.
@@ -1968,7 +1969,7 @@ function signature_tuple(q::QuadSpace{QQField,QQMatrix})
   return (pos, zero, neg)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     signature_tuple(q::QuadraticSpace{QQField,QQMatrix}, p::InfPlc)
     -> Tuple{Int,Int,Int}
 
@@ -1983,7 +1984,7 @@ function signature_tuple(q::QuadSpace, p::InfPlc)
   return pos, zero, neg
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     signature_tuples(q::QuadraticSpace{QQField,QQMatrix})
     -> Dict{Union{PosInf,InfPlc},Tuple{Int,Int,Int}}
 
@@ -2057,7 +2058,7 @@ local_quad_space_class(K, prime::IntegerUnion, n, d, hasse_inv, k)=local_quad_sp
 base_ring(G::LocalQuadSpaceCls) = G.K
 prime(G::LocalQuadSpaceCls) = G.p
 
-@doc Markdown.doc"""
+@doc raw"""
     det_nondegenerate_part(g::QuadSpaceCls) -> Int
 
 Return the determinant of the quotient of this quadratic space by its radical.
@@ -2070,7 +2071,7 @@ dim(G::LocalQuadSpaceCls) = G.dim
 dim_radical(G::LocalQuadSpaceCls) = G.dim_rad
 hasse_invariant(G::LocalQuadSpaceCls) = G.hass_inv
 
-@doc Markdown.doc"""
+@doc raw"""
     isometry_class(V::QuadSpace, p) -> LocalQuadSpaceCls
 
 Return the abstract isometry class of the completion of the quadratic space `V`
@@ -2143,7 +2144,7 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   return is_local_square(G1.det*G2.det, prime(G1))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
     -> LocalQuadSpaceCls
 
@@ -2159,15 +2160,15 @@ function Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   r2 = dim_radical(G2)
   r = r1 + r2
   d = det_nondegenerate_part(G1)*det_nondegenerate_part(G2)
-  _,w,_ = _witt_of_orthogonal_sum(G1.det, witt_invariant(G1), dim(G1)-r1,
+  _,w,_ = _witt_of_direct_sum(G1.det, witt_invariant(G1), dim(G1)-r1,
                                  G2.det, witt_invariant(G2), dim(G2)-r2, p)
   h = _witt_hasse(w, n - r, d, p)
   return local_quad_space_class(K, p, n, d, h, r)
 end
 
-orthogonal_sum(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls) = G1 + G2
+direct_sum(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls) = G1 + G2
 
-@doc Markdown.doc"""
+@doc raw"""
     Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
     -> LocalQuadSpaceCls
 
@@ -2191,7 +2192,7 @@ function Base.:(-)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   return H
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     represents(V::LocalQuadSpaceCls, x)
 
 Return if the quadratic space `V` over the field $K$ represents `x in K`.
@@ -2221,7 +2222,7 @@ function is_isotropic(G1::LocalQuadSpaceCls)
   return represents(G1, G2)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
 
 Return if `G1` represents the quadratic space `G2`.
@@ -2299,7 +2300,7 @@ function Base.show(io::IO, G::QuadSpaceCls)
 end
 
 function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
-  @req base_ring(G1) == base_ring(G2) "isometry classes over differnt fields do not compare"
+  @req base_ring(G1) == base_ring(G2) "isometry classes over different fields do not compare"
   if G1 === G2
     return true
   end
@@ -2318,7 +2319,7 @@ function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
   return all(local_symbol(G1, p) == local_symbol(G2,p) for p in P)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isometry_class(q::QuadSpace) -> QuadSpaceCls
 
 Return the abstract isometry class of `q`.
@@ -2357,7 +2358,7 @@ function det(g::Union{QuadSpaceCls,LocalQuadSpaceCls})
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     det_nondegenerate_part(g::QuadSpaceCls) -> Int
 
 Return the determinant of the quotient of this quadratic space by its kernel.
@@ -2368,7 +2369,7 @@ det_ndeg(g::QuadSpaceCls) = det_nondegenerate_part(g)
 
 base_ring(g::QuadSpaceCls) = g.K
 
-@doc Markdown.doc"""
+@doc raw"""
     dim_radical(g::QuadSpaceCls) -> Int
 
 Return the dimension of the kernel of this quadratic space.
@@ -2379,7 +2380,7 @@ function local_symbols(g::QuadSpaceCls)
   return copy(g.LGS)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     local_symbol(g::QuadSpaceCls, p) -> LocalQuadSpaceCls
 
 Return the isometry class of the localization of (a representative of)
@@ -2422,7 +2423,7 @@ function is_isotropic(G1::QuadSpaceCls)
   return represents(G1, G2)
 end
 # Representation
-@doc Markdown.doc"""
+@doc raw"""
     represents(g1::QuadSpaceCls, g2::QuadSpaceCls) -> Bool
 
 Return if `g1` represents the regular space `g2`.
@@ -2433,7 +2434,7 @@ function represents(g1::QuadSpaceCls, g2::QuadSpaceCls)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     represents(g1::QuadSpaceCls, x) -> Bool
 
 Return if `g1` represents `x`.
@@ -2468,12 +2469,12 @@ function _common_hasse_support(g1,g2,d)
 end
 
 # Direct sum
-@doc Markdown.doc"""
-    orthogonal_sum(g1::QuadSpaceCls, g2::QuadSpaceCls) -> QuadSpaceCls
+@doc raw"""
+    direct_sum(g1::QuadSpaceCls, g2::QuadSpaceCls) -> QuadSpaceCls
 
 Return the isometry class of the direct sum of two representatives.
 """
-function orthogonal_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
+function direct_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
   @req base_ring(g1) == base_ring(g2) "must be defined over the same base ring"
   K = base_ring(g1)
   g = class_quad_type(K)(K)
@@ -2497,13 +2498,13 @@ function orthogonal_sum(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {
   return g
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     +(g1::QuadSpaceCls, g2::QuadSpaceCls) -> QuadSpaceCls
 
 Return the isometry class of the direct sum of two representatives.
 """
 function Base.:(+)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
-  return orthogonal_sum(g1, g2)
+  return direct_sum(g1, g2)
 end
 
 function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U}
@@ -2536,7 +2537,7 @@ function Base.:(-)(g1::QuadSpaceCls{S,T,U},g2::QuadSpaceCls{S,T,U}) where {S,T,U
 end
 
 # representatives
-@doc Markdown.doc"""
+@doc raw"""
     representative(g::QuadSpaceCls) -> QuadSpace
 
 Return a quadratic space in this isometry class.
@@ -2557,7 +2558,7 @@ function representative(g::QuadSpaceCls)
   return quadratic_space(K, q)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     representative(g::QuadSpaceCls{QQField,ZZIdl,QQFieldElem})
     -> QuadSpace{QQField, QQMatrix}
 

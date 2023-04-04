@@ -82,7 +82,7 @@ Let $R$ be a commutative ring. Sparse matrices with base ring $R$ are modelled b
 objects of type `SMat`. More precisely, the type is of parametrized form `SRow{T}`, where `T` is the element type of the base ring.
 For example, `SMat{ZZRingElem}` is the type for sparse matrices over the integers.
 
-In constrast to sparse rows, sparse matrices have a fixed number of rows and columns,
+In contrast to sparse rows, sparse matrices have a fixed number of rows and columns,
 that is, they represent elements of the matrices space $\mathrm{Mat}_{n\times m}(R)$.
 Internally, sparse matrices are implemented as an array of sparse rows.
 As a consequence, unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.

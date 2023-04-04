@@ -33,7 +33,7 @@ embedding(p::PosInf) = QQEmb()
 
 embeddings(p::PosInf) = [QQEmb()]
 
-@doc Markdown.doc"""
+@doc raw"""
     embedding(p::InfPlc) -> NumFieldEmb
 
 Given a real infinite place, return the unique real embedding defining
@@ -43,13 +43,14 @@ See also [`embeddings`](@ref).
 
 # Examples
 
-```juldoctest
+```jldoctest
 julia> K, a = quadratic_field(5);
 
 julia> embedding(real_places(K)[1])
 Embedding of
 Real quadratic field defined by x^2 - 5
 corresponding to ≈ -2.24
+```
 """
 function embedding(p::InfPlc)
   if is_complex(p)
@@ -59,7 +60,7 @@ function embedding(p::InfPlc)
   return _embedding(p)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     embeddings(p::InfPlc) -> Vector{NumFieldEmb}
 
 Given a complex place, return all complex embeddings defining this place.
@@ -86,7 +87,7 @@ function embeddings(p::InfPlc)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     number_field(p::InfPlc) -> NumField
 
 Return the number field of the infinite place.
@@ -141,7 +142,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_real(p::InfPlc) -> Bool
 
 Return whether the infinite place `p` is real.
@@ -155,7 +156,7 @@ true
 """
 is_real(p::InfPlc) = is_real(_embedding(p))
 
-@doc Markdown.doc"""
+@doc raw"""
     is_real(p::InfPlc) -> Bool
 
 Return whether the infinite place `p` is complex.
@@ -175,7 +176,7 @@ is_complex(p::InfPlc) = is_imaginary(_embedding(p))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     infinite_place(e::NumFieldEmb)
 
 Construct the infinite place induced by the given complex embedding.
@@ -193,7 +194,7 @@ function infinite_place(e::NumFieldEmb)
   return InfPlc(e)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     infinite_places(K::NumField) -> Vector{InfPlc}
 
 Return all infinite places of the number field.
@@ -213,7 +214,7 @@ function infinite_places(K::NumField)
   return infinite_place.(complex_embeddings(K, conjugates = false))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     real_places(K::NumField) -> Vector{InfPlc}
 
 Return all infinite real places of the number field.
@@ -231,7 +232,7 @@ julia> infinite_places(K)
 """
 real_places(K::NumField) = infinite_place.(real_embeddings(K))
 
-@doc Markdown.doc"""
+@doc raw"""
     complex_places(K::NumField) -> Vector{InfPlc}
 
 Return all infinite complex places of $K$.
@@ -254,7 +255,7 @@ complex_places(K::NumField) = [p for p in infinite_places(K) if is_complex(p)]
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     restrict(p::InfPlc, K::NumField)
 
 Given an infinite place `p` of a number field `L` and a number field `K`
@@ -286,7 +287,7 @@ restrict(p::Union{InfPlc, PosInf}, ::QQField) = inf
 #
 ################################################################################
  
-@doc Markdown.doc"""
+@doc raw"""
     extend(p::InfPlc, L::NumField) -> Vector{InfPlc}
 
 Given an infinite place `p` of a number field `K` and an extension `L` of `K`,
@@ -321,7 +322,7 @@ end
 #The action of f on P is defined as f(P) = P\circ f^{-1} and not P\circ f
 #In this way, (f\circ g)(P)= f(g(P)), otherwise it would fail.
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_image(m::NfToNfMor, P::InfPlc) -> InfPlc
 
 Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
@@ -337,7 +338,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_value(x::NumFieldElem, p::InfPlc, prec::Int = 32) -> arb
 
 Return the evaluation of `x` at the normalized absolute valuation contained

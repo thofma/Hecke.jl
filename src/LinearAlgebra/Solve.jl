@@ -1,4 +1,4 @@
-@doc Markdown.doc"""
+@doc raw"""
     rand!(a::nf_elem, U::AbstractArray) -> nf_elem
 
 Inplace, set the coefficients of $a$ to random elements in $U$.
@@ -11,7 +11,7 @@ function rand!(a::nf_elem, U::AbstractArray)
   return a
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(K::AnticNumberField, U::AbstractArray) -> nf_elem
 
 Find an element in $K$ where the coefficients are selected at random in $U$.
@@ -21,7 +21,7 @@ function rand(K::AnticNumberField, U::AbstractArray)
   return rand!(a, U)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rand!(A::Generic.Mat{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
 
 Inplace, replace each element in $A$ by an element where the coefficients are
@@ -37,7 +37,7 @@ function rand!(A::Generic.Mat{nf_elem}, U::AbstractArray)
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
 
 Create a random matrix in $A$ where the coefficients are selected from $U$.
@@ -46,7 +46,7 @@ function rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray)
   return rand!(A(), U)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modular_lift(ap::Vector{fqPolyRepMatrix}, me::modular_env) -> Array
 
 Given an array of matrices as computed by \code{modular_proj},
@@ -62,7 +62,7 @@ function modular_lift(ap::Vector{fqPolyRepMatrix}, me::modular_env)
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mod!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
 
 Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
@@ -75,7 +75,7 @@ function mod!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mod_sym!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
 
 Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
@@ -94,7 +94,7 @@ function small_coeff(a::nf_elem, B::ZZRingElem, i::Int)
   return cmpabs(z, B) <= 0
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_reconstruction(A::Generic.Mat{nf_elem}, M::ZZRingElem) -> Bool, Generic.Mat{nf_elem}
 
 Apply \code{rational_reconstruction} to each entry of $M$.
@@ -149,7 +149,7 @@ end
 function algebraic_reconstruction(a::nf_elem, M::ZZRingElem)
   K = parent(a)
   n = degree(K)
-  Znn = matrix_space(FlintZZ, n, n; cached=false)
+  Znn = matrix_space(FlintZZ, n, n)
 #  L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) Znn(M)]
   L = vcat(hcat(Znn(1), representation_matrix_q(a)[1]), hcat(Znn(0),Znn(M)))
   lll!(L)
@@ -162,7 +162,7 @@ end
 function algebraic_reconstruction(a::nf_elem, M::NfAbsOrdIdl)
   K = parent(a)
   n = degree(K)
-  Znn = matrix_space(FlintZZ, n, n; cached=false)
+  Znn = matrix_space(FlintZZ, n, n)
   L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) basis_matrix(M, copy = false)]
   lll!(L)
   d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, ZZRingElem(1))
@@ -171,7 +171,7 @@ function algebraic_reconstruction(a::nf_elem, M::NfAbsOrdIdl)
   return true, n//d
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     algebraic_split(a::nf_elem) -> nf_elem, nf_elem
 
 Writes the input as a quotient of two "small" algebraic integers.
@@ -221,7 +221,7 @@ function denominator_ideal(M::Vector{nf_elem}, den::nf_elem)
   return d
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact!(A::Generic.Mat{nf_elem}, p::ZZRingElem)
 
 Inplace: divide each entry of $A$ by $p$.

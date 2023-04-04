@@ -435,8 +435,8 @@ length(representatives(G1))
 ## Sum of genera
 
 ```@docs
-orthogonal_sum(::HermLocalGenus, ::HermLocalGenus)
-orthogonal_sum(::HermGenus, ::HermGenus)
+direct_sum(::HermLocalGenus, ::HermLocalGenus)
+direct_sum(::HermGenus, ::HermGenus)
 ```
 
 ### Examples
@@ -458,8 +458,8 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), ma
 L = hermitian_lattice(E, gens, gram = D);
 g2 = genus(L, p);
 G2 = genus(L);
-orthogonal_sum(g1, g2)
-orthogonal_sum(G1, G2)
+direct_sum(g1, g2)
+direct_sum(G1, G2)
 ```
 
 ---

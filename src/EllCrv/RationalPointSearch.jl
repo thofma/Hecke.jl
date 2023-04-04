@@ -33,7 +33,7 @@ const _primes_for_sieve =
  821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,941,
  947,953,967,971,977,983,991,997,1009,1013,1019,1021]
 
-@doc Markdown.doc"""
+@doc raw"""
     find_points((coefficients::Vector{ZZRingElem}, bound::IntegerUnion) -> ArbField
 
 Given a list of coefficients [a_0, a_1, ..., a_n] and a bound,
@@ -61,7 +61,7 @@ function find_points(coefficients::Vector{ZZRingElem}, bound::IntegerUnion, N = 
   return _find_points(_coefficients, _bound, N, P, Pfirst)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion) -> ArbField
 
 Given an elliptic curve E over QQ with integral coefficients and
@@ -252,7 +252,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
   #Determine the set of denumerators b
 
   #if the polynomial is odd we can restrict the possible denominators to the ones of the form a*b^2
-  #where a is a non-square-free divisor of the leading coefficent
+  #where a is a non-square-free divisor of the leading coefficient
   if odd_degree
     BB = Int[]
     q = Hecke.squarefree_part(lead_coeff)
@@ -510,7 +510,7 @@ end
 function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
 
   F = GF(p, cached = false)
-  # a contains n+1 elemts : a0, ...., an
+  # a contains n+1 elements : a0, ...., an
   n = length(coeff) - 1
 
   a = map(F, coeff)
@@ -525,7 +525,7 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
   for t in (0:p - 1)
     z = F(t)
     zpowers = powers(z, n)
-    #a[i+1] correponds to a_i above
+    #a[i+1] corresponds to a_i above
     for i in 0:n
       az[i + 1] = a[i + 1] * zpowers[n - i + 1]
     end
@@ -574,7 +574,7 @@ end
 function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
 
   F = GF(p, cached = false)
-  # a contains n+1 elemts : a0, ...., an
+  # a contains n+1 elements : a0, ...., an
   n = length(coeff) - 1
 
   a = map(F, coeff)
@@ -617,7 +617,7 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
     #         1,...,z^n if n is even
     zpowers = _powers(z, isoddn, n)
     
-    #a[i+1] correponds to a_i above
+    #a[i+1] corresponds to a_i above
     for i in 0:n
       az[i + 1] = a[i + 1] * zpowers[n - i + 1]
     end
@@ -692,7 +692,7 @@ end
 function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
   R = residue_ring(ZZ, 16)
-  # a contains n+1 elemts : a0, ...., an
+  # a contains n+1 elements : a0, ...., an
   n = length(coefficients) - 1
 
   a = map(R, coefficients)
@@ -711,7 +711,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
     
     #Projective closure
     
-    #a[i+1] correponds to a_i above
+    #a[i+1] corresponds to a_i above
     chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i + d) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
     if chunk == falses(16)
       part_16[t+1] = 0
@@ -734,7 +734,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
   
   for t in (0:2:15)
     z = R(t)
-    #a[i+1] correponds to a_i above
+    #a[i+1] corresponds to a_i above
     chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i + d) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
     if chunk == falses(16)
       part_16[t+1] = 0

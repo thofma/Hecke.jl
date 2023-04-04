@@ -40,7 +40,7 @@
 #  - find powers of ideal
 #  - find LLL/HNF basis
 #  - lifting?
-#  use ResRing(Poly) instead of doing % pgg?
+#  use ResidueRing(Poly) instead of doing % pgg?
 #  an open variant where k is increased until we have a root?
 #
 #missing: different (better) handling for x^n-a
@@ -422,7 +422,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   ZX, X = polynomial_ring(FlintZZ, "X", cached = false)
 
-  #to avoid embarrasment...
+  #to avoid embarrassment...
 
   #find the prime ideal - as I don't want to use orders, this is
   #fun (computing a max order just for this is wasteful)
@@ -725,7 +725,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
   # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
-  # we're using a prime ideal above p of intertia degree deg_p
+  # we're using a prime ideal above p of inertia degree deg_p
   # O is the order where the result will be reconstructed in
 
   (c1, c2) = norm_change_const(any_order(K))
@@ -774,7 +774,7 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{arb})
   # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
-  # we're using a prime ideal above p of intertia degree deg_p
+  # we're using a prime ideal above p of inertia degree deg_p
   # O is the order where the result will be reconstructed in
 
   (c1, c2) = norm_change_const(O)

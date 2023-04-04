@@ -18,9 +18,9 @@ different types:
    is `NfRel{nf_elem}`. The next extension thus will be
    `NfRel{NfRelElem{nf_elem}}`.
  - `NfRelNS`: extensions of number fields given by several polynomials.
-    This too will be refered to as a non-simple field.
+    This too will be referred to as a non-simple field.
 
-The simple types `AnticNumberField` and `NfRel` are also calle simple
+The simple types `AnticNumberField` and `NfRel` are also called simple
 fields in the rest of this document, `NfRel` and `NfRelNS` are referred
 to as relative extensions while `AnticNumberField` and `NfAbsNS` are
 called absolute.

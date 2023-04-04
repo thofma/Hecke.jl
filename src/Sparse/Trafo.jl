@@ -51,8 +51,8 @@ function sparse_trafo_para_add_scaled(i::Int, j::Int, a::T, b::T, c::T, d::T) wh
   return z
 end
 
-function sparse_trafo_partial_dense(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) where {S}
-  z = SparseTrafoElem{coefficient_type(S), S}()
+function sparse_trafo_partial_dense(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) where {T, S <: MatElem{T}}
+  z = SparseTrafoElem{T, S}()
   z.type = 5
   z.i = i
   z.rows = rows
@@ -153,7 +153,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     scale_row!(A::SMat{T}, i::Int, c::T)
 
 Multiply the $i$-th row of $A$ by $c$ inplace.
@@ -169,7 +169,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     swap_rows!(A::SMat{T}, i::Int, j::Int)
 
 Swap the $i$-th and $j$-th row of $A$ inplace.
@@ -185,7 +185,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     reverse_rows!(A::SMat)
 
 Inplace inversion of the rows of $A$.
@@ -203,7 +203,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     swap_cols!(A::SMat, i::Int, j::Int)
 
 Swap the $i$-th and $j$-th column of $A$ inplace.
@@ -255,7 +255,7 @@ end
 #
 ################################################################################
 # rows j -> row i*c + row j
-@doc Markdown.doc"""
+@doc raw"""
     add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T)
 
 Add $c$ times the $i$-th row to the $j$-th row of $A$ inplace, that is,
@@ -274,7 +274,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T)
 
 Add $c$ times the $i$-th column to the $j$-th column of $A$ inplace, that is,
@@ -310,7 +310,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     transform_row!(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
 
 Applies the transformation $(A_i, A_j) \rightarrow (aA_i + bA_j, cA_i + dA_j)$
@@ -323,7 +323,7 @@ function transform_row!(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T) wher
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     transform_row(A::SRow{T}, B::SRow{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
 
 Returns the tuple $(aA + bB, cA + dB)$.

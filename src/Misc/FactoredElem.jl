@@ -92,7 +92,7 @@ function (x::FacElemMon{S})() where S
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     FacElem{B}(R, base::Vector{B}, exp::Vector{ZZRingElem}) -> FacElem{B}
 
 Returns the element $\prod b_i^{e_i}$, un-expanded.
@@ -117,7 +117,7 @@ function FacElem(R, base::Vector{B}, exp::Vector{ZZRingElem}; parent = FacElemMo
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     FacElem{B}(base::Vector{B}, exp::Vector{ZZRingElem}) -> FacElem{B}
 
 Returns the element $\prod b_i^{e_i}$, un-expanded.
@@ -131,7 +131,7 @@ function FacElem(base::Vector{B}, exp::Vector{ZZRingElem}) where B
   return FacElem(R, base, exp)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     FacElem{B}(R, d::Dict{B, ZZRingElem}) -> FacElem{B}
     FacElem{B}(R, d::Dict{B, Integer}) -> FacElem{B}
 
@@ -148,7 +148,7 @@ function FacElem(R, d::Dict{B, ZZRingElem}) where B
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     FacElem{B}(d::Dict{B, ZZRingElem}) -> FacElem{B}
     FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
 
@@ -565,7 +565,7 @@ function _ev(d::Dict{T, ZZRingElem}, oe::T) where T
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     evaluate{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the
@@ -576,7 +576,7 @@ function evaluate(x::FacElem{T}) where T
   return _ev(x.fac, one(base_ring(x)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     evaluate_naive{T}(x::FacElem{T}) -> T
 
 Expands or evaluates the factored element, i.e. actually computes the
@@ -595,7 +595,7 @@ function evaluate_naive(x::FacElem{T}) where T
 end
 
 #################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     max_exp(a::FacElem)
 
 Finds the largest exponent in the factored element $a$.
@@ -604,7 +604,7 @@ function max_exp(a::FacElem)
   return maximum(values(a.fac))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     min_exp(a::FacElem)
 
 Finds the smallest exponent in the factored element $a$.
@@ -613,7 +613,7 @@ function min_exp(a::FacElem)
   return minimum(values(a.fac))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maxabs_exp(a::FacElem)
 
 Finds the largest exponent by absolute value in the factored element $a$.
@@ -635,7 +635,7 @@ end
 
 #################################################################################
 ##
-##  Auxillary deep copy functions
+##  Auxiliary deep copy functions
 ##
 #################################################################################
 #

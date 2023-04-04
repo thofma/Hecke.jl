@@ -119,7 +119,7 @@ function data_assure(R::RecoCtx)
   R.new_data || return
 
   R.L = lll(basis_matrix(R.p1, R.f, R.k))
-  if isdefined(R, :LI) #to keep stucture consistent
+  if isdefined(R, :LI) #to keep structure consistent
     R.LI, R.d = pseudo_inv(R.L)
   end
   R.new_data = false
@@ -517,7 +517,7 @@ function Hecke.modular_lift(g::Vector{zzModMPolyRingElem}, me::Hecke.modular_env
   return finish(bt)
 end
 
-function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPolyElem{fqPolyRepFieldElem}
+function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPolyRingElem{fqPolyRepFieldElem}
   d = Dict{Vector{Int}, Vector{Tuple{Int, fqPolyRepFieldElem}}}()
   for i in 1:length(g)
     for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]),
@@ -570,7 +570,7 @@ import Base.//, Base.==
 struct Term{T}
   f::T
   i::Int
-  function Term(f::T, i::Int) where {T <: AbstractAlgebra.MPolyElem}
+  function Term(f::T, i::Int) where {T <: AbstractAlgebra.MPolyRingElem}
     return new{T}(f, i)
   end
 end
@@ -581,7 +581,7 @@ end
 
 struct Terms{T}
   f::T
-  function Terms(f::T) where {T <: AbstractAlgebra.MPolyElem}
+  function Terms(f::T) where {T <: AbstractAlgebra.MPolyRingElem}
     return new{T}(f)
   end
 end
@@ -646,7 +646,7 @@ function monomial(t::Term)
   return m
 end
 
-function lead_term(f::AbstractAlgebra.MPolyElem)
+function lead_term(f::AbstractAlgebra.MPolyRingElem)
   return Term(f, 1)
 end
 

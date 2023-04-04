@@ -77,12 +77,12 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Generic.Res{ZZRingElem}, fpFieldElem} -> padic
+@doc raw"""
+    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Generic.ResidueRingElem{ZZRingElem}, fpFieldElem} -> padic
 
 Computes a lift of the element from the residue ring.
 """
-function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZModRingElem, Generic.Res{ZZRingElem}, fpFieldElem}
+function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZModRingElem, Generic.ResidueRingElem{ZZRingElem}, fpFieldElem}
   n = modulus(parent(a))
   p = prime(K)
   v, fl = remove(n, p)
@@ -97,7 +97,7 @@ function lift(a::FinFieldElem, K::LocalField)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(f::T, Kt) where T <: Union{zzModPolyRingElem, ZZModPolyRingElem, fpPolyRingElem} -> Generic.Poly{padic}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
@@ -106,7 +106,7 @@ function lift(f::T, Kt::PolyRing) where T <: FinFieldElem
   return map_coefficients(x -> lift(x, K), f, Kt)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(x::fqPolyRepFieldElem, Q::QadicField) -> qadic
 
 Computes a lift of the element from the residue ring.
@@ -119,7 +119,7 @@ function lift(x::fqPolyRepFieldElem, Q::QadicField)
   return setprecision(z, 1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(x::fqPolyRepPolyRingElem, Kt) -> Generic.Poly{qadic}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
@@ -192,7 +192,7 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
     return one(Kt), f
   end
   ind = degree(f) -1
-  while !iszero(valuation(coeff(f, ind)))
+  while iszero(coeff(f, ind)) || !iszero(valuation(coeff(f, ind)))
     ind -= 1
   end
   g = setprecision_fixed_precision(Kt(S[coeff(f, i) for i = ind:degree(f)]), 1)
@@ -204,12 +204,12 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
     push!(ch, div(ch[end]+1, 2))
   end
   reverse!(ch)
-  for pr = 1:length(ch)-1
+  for pr = 1:length(ch)
     i = ch[pr]
     g = setprecision_fixed_precision(g, i)
     h = setprecision_fixed_precision(h, i)
-    s = setprecision_fixed_precision(s, ch[pr+1])
-    t = setprecision_fixed_precision(t, ch[pr+1])
+    s = setprecision_fixed_precision(s, i)# ch[pr+1])
+    t = setprecision_fixed_precision(t, i)# ch[pr+1])
     e = f - g*h
     q, r = divrem(s*e, h)
     gn = g+t*e+q*g
@@ -226,6 +226,7 @@ function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
   i = ch[end]
   g = setprecision_fixed_precision(g, v)
   h = setprecision_fixed_precision(h, v)
+  return g, h
   e = f - g*h
   q, r = divrem(s*e, h)
   res1 = g+t*e+q*g
@@ -735,10 +736,10 @@ function norm(f::PolyElem{padic})
   return f
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}
 
-Computes $\mathrm{Res}_x(f(x), t- g(x))$.
+Computes $\mathrm{ResidueRingElem}_x(f(x), t- g(x))$.
 """
 function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
   Kt = parent(f)
@@ -811,7 +812,7 @@ end
 #  Hensel factorization
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Generic.Poly{T}}
 
 Computes a factorization of $f$ such that every factor has a unique irreducible factor over the residue field.
@@ -822,7 +823,13 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic,
   f = divexact(f, cf)
   Kt = parent(f)
   D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
-#  @assert iszero(valuation(leading_coefficient(f)))
+  _f = f
+  if !iszero(valuation(leading_coefficient(f)))
+    vf, f = fun_factor(f)
+  else
+    vf = one(Kt)
+  end
+  @assert iszero(valuation(leading_coefficient(f)))
   K = base_ring(Kt)
   k, mk = residue_field(K)
   kt = polynomial_ring(k, "t", cached = false)[1]
@@ -855,10 +862,11 @@ mutable struct HenselCtxdr{S}
   f::PolyElem{S}
   lf::Vector{PolyElem{S}}
   la::Vector{PolyElem{S}}
-  p::S
+  p::S #always the uniformizer
   n::Int
 
   function HenselCtxdr{qadic}(f::Generic.Poly{qadic}, lfp::Vector{Generic.Poly{qadic}}, la::Vector{Generic.Poly{qadic}}, p::qadic, n::Int)
+    @assert p == uniformizer(parent(p))
     return new(f, lfp, la, p, n)
   end
 
@@ -931,18 +939,25 @@ function lift(C::HenselCtxdr, mx::Int)
   N = minimum([precision(x) for x in C.lf])
   N = min(N, minimum([precision(x) for x in C.la]))
   #have: N need mx
+  one = setprecision(parent(p), mx) do
+    Base.one(parent(p))
+  end
   ch = Int[mx]
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
+  e = absolute_ramification_index(parent(p))
   @vprint :PolyFactor 1 "using lifting chain $ch\n"
   for k=length(ch)-1:-1:1
     N2 = ch[k]
+    N2 += e - mod(N2, e)
     i = length(C.lf)
     j = i-1
-    p = setprecision(C.p, N2)^ch[k+1]
-#    _mp = map(x-> iszero(x) ? -1 : valuation(x), coefficients(prod(C.lf[1:C.n]) - C.f))
-#    @show _mp, p
+
+    p = uniformizer(parent(p), ch[k+1], prec = N2)
+    ip = uniformizer(parent(p), -ch[k+1], prec = N2)
+#    _mp = map(x-> iszero(x) ? -1 : valuation(x), coefficients(prod(setprecision(x, mx) for x = C.lf[1:C.n]) - C.f))
+#      @show _mp, valuation(p)
     while j > 0
       if i == length(C.lf)
         f = setprecision(C.f, N2)
@@ -958,11 +973,10 @@ function lift(C::HenselCtxdr, mx::Int)
       g = setprecision(g, N2)
       a = setprecision(a, N2)
       b = setprecision(b, N2)
-      ip = setprecision(inv(p), N2)
       fgh = (f-g*h)*ip
       G = rem(fgh*b, g)*p+g
       H = rem(fgh*a, h)*p+h
-      t = (1-a*G-b*H)*ip
+      t = (one-a*G-b*H)*ip
       B = rem(t*b, g)*p+b
       A = rem(t*a, h)*p+a
       if i < length(C.lf)
@@ -976,6 +990,8 @@ function lift(C::HenselCtxdr, mx::Int)
       j -= 2
     end
   end
+#    _mp = map(x-> iszero(x) ? -1 : valuation(x), coefficients(prod(setprecision(x, mx) for x = C.lf[1:C.n]) - C.f))
+#      @show _mp, valuation(p)
   return nothing
 end
 
@@ -985,7 +1001,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
 
 Computes a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.
@@ -1026,7 +1042,9 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
           break
         end
         s = slope(l)
-        mu = divexact(phi^Int(denominator(s)), uniformizer(K)^(-(Int(numerator(s)))))
+#        nu = divexact(phi^Int(denominator(s)), uniformizer(K)^(-(Int(numerator(s)))))
+        mu = phi^Int(denominator(s)) * uniformizer(K, Int(numerator(s)), prec = precision(phi))
+
         chi = characteristic_polynomial(fphi1, mu)
         hchi = Hensel_factorization(chi)
         for (ppp, fff) in hchi
@@ -1036,10 +1054,10 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, 
           com = fff(mu)
           com = divexact(com, _content(com))
           gc = gcd(com, fphi1)
+          @assert degree(gc) > 0
           if degree(gc) < 1
             continue
           end
-#          @assert degree(gc) > 0
           push!(factfphi, gc)
           fphi1 = divexact(fphi1, gc)
         end

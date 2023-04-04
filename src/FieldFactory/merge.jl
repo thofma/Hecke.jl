@@ -91,7 +91,7 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
       red += 1
     end
   end
-  #Finally, I count the numer of times a single subgroup appears in the lists.
+  #Finally, I count the number of times a single subgroup appears in the lists.
   redfirst = 1
   ind = 1
   for i = 1:length(decompositions)
@@ -270,7 +270,7 @@ function check_bound_disc(K::FieldsTower, L::FieldsTower, bound::ZZRingElem)
     disc_comp = n
     deg *= degree(Lab[i])
   end
-  bound_max_ab_subext = root(bound, divexact(degree(K.field)*degree(L.field), deg))
+  bound_max_ab_subext = iroot(bound, divexact(degree(K.field)*degree(L.field), deg))
   if disc_comp <= bound_max_ab_subext
     return true
   else
@@ -388,7 +388,7 @@ end
 
 function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute_bound::ZZRingElem, redfirst::Int)
   ab1, ab2, fl = _disjoint_ab_subs(list1, list2)
-  bound_max_ab_sub = root(absolute_bound, divexact(degree(list1[1])*degree(list2[1]), ab1*ab2))
+  bound_max_ab_sub = iroot(absolute_bound, divexact(degree(list1[1])*degree(list2[1]), ab1*ab2))
   D = Dict{Tuple{Set{ZZRingElem}, Set{ZZRingElem}, Bool}, Vector{Tuple{Int, Int}}}() #The boolean true means real
   for i1 = 1:length(list1)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Combinations with field $(i1)/$(length(list1)) of the first list"

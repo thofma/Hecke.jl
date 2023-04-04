@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_unit(x::NfOrdElem) -> Bool
 
 Returns whether $x$ is invertible or not.

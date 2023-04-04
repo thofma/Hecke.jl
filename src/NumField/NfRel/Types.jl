@@ -186,7 +186,7 @@ end
   splitting_type::Tuple{Int, Int}
 
   minimum
-  non_index_div_poly::FqPolyRepPolyRingElem # only used if the ideal is a prime ideal not dividing the index
+  non_index_div_poly::FqPolyRingElem # only used if the ideal is a prime ideal not dividing the index
   p_uniformizer::NfRelOrdElem{T, U}
   anti_uniformizer::U
 

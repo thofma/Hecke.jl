@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     unit_group_rank(O::NfOrd) -> Int
 
 Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
@@ -20,7 +20,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_independent{T}(x::Vector{T})
 
 Given an array of non-zero units in a number field, returns whether they

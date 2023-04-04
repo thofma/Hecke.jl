@@ -274,3 +274,88 @@ end
   L13orth = @inferred orthogonal_submodule(L1, L13)
   @test rank(intersect(L13clos1, L13orth)) == 0
 end
+
+@testset "Direct sums" begin
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  f = x - 1
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  g = t^2 + 1
+  E, b = number_field(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
+  gens2 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  gens3 = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
+  L1 = hermitian_lattice(E, gens, gram = D)
+  L2 = hermitian_lattice(E, gens2, gram = D)
+  L3 = hermitian_lattice(E, gens3, gram = D)
+  L4 = hermitian_lattice(E, gens, gram = 2*D)
+  @test genus(direct_sum(L1, L2)[1]) == direct_sum(genus(L1), genus(L2))
+  @test genus(direct_product(L3, L4)[1]) == direct_sum(genus(L3), genus(L4))
+  L5, inj, proj = @inferred biproduct(L1, L2, L3, L4)
+  for i in 1:4, j in 1:4
+    f = compose(inj[i], proj[j])
+    m = f.matrix
+    @test i == j ? isone(m) : iszero(m)
+  end
+end
+
+@testset "Trace equivalence" begin
+  E8 = rescale(root_lattice(:E,8),-6)
+  f = matrix(QQ, 8, 8, [ 1  0  0  0  0  0  0  0;
+                         0  1  0  0  0  0  0  0;
+                         1  2  4  4  3  2  1  2;
+                        -2 -4 -6 -5 -4 -3 -2 -3;
+                         2  4  6  4  3  2  1  3;
+                        -1 -2 -3 -2 -1  0  0 -2;
+                         0  0  0  0  0 -1  0  0;
+                        -1 -2 -3 -3 -2 -1  0 -1])
+
+  g = matrix(QQ, 8, 8, [-1 -1  0  0  0  0  0  0;
+                         1  0  0  0  0  0  0  0;
+                         0  1  1  0  0  0  0  0;
+                         0  0  0  1  0  0  0  0;
+                         0  0  0  0  1  0  0  0;
+                         0  0  0  0  0  1  1  0;
+                        -2 -4 -6 -5 -4 -3 -2 -3;
+                        0  0  0  0 0  0  0  1])
+
+  for h in [f, g]
+    n = multiplicative_order(h)
+    M = kernel_lattice(E8, cyclotomic_polynomial(n)(h))
+    hM = solve_left(basis_matrix(M), basis_matrix(M)*h)
+    @test is_cyclotomic_polynomial(minpoly(hM))
+    M = Zlattice(gram = gram_matrix(M))
+    H, res = hermitian_structure_with_transfer_data(M, hM)
+    @test rank(H) == divexact(rank(M), euler_phi(n))
+    @test domain(res) === ambient_space(M)
+    @test codomain(res) === ambient_space(H)
+    M2, h2 = trace_lattice_with_isometry(H, res)
+    @test M2 == M
+    @test h2 == hM
+    H2 = hermitian_structure(M2, h2, res = res)
+    @test H2 == H
+    M2, h2, res2 = trace_lattice_with_isometry_and_transfer_data(H)
+    mb = block_diagonal_matrix([absolute_representation_matrix(gen(base_field(H))) for j in 1:rank(H)])
+    @test h2 == mb
+    @test genus(M2) == genus(M)
+    E = base_field(H)
+    OE = maximal_order(E)
+    DKQ = different(base_ring(OE))*OE
+    DEK = different(OE)
+    DEQ = DEK*DKQ
+    @test is_integral(DEQ*scale(H))                     # M is integral
+    @test is_integral(different(base_ring(OE))*norm(H)) # M is even
+    H2 = inv(DEQ)*dual(H)
+    Mv, h2 = trace_lattice_with_isometry(H2, res)
+    @test h2 == hM
+    @test Mv == dual(M)
+  end
+
+  L, f = trace_lattice_with_isometry(E8)
+  @test isone(-f)
+  L, f = trace_lattice_with_isometry(E8, order = 1)
+  @test isone(f)
+  @test_throws ArgumentError trace_lattice_with_isometry(E8, order = 3)
+end
+

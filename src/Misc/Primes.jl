@@ -140,7 +140,7 @@ struct PrimesSet{T}
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     PrimesSet(f::Integer, t::Integer) -> PrimesSet
     PrimesSet(f::ZZRingElem, t::ZZRingElem) -> PrimesSet
 
@@ -151,7 +151,7 @@ function PrimesSet(f::T, t::T) where T
   return PrimesSet{T}(f, t)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     PrimesSet(f::Integer, t::Integer, mod::Integer, val::Integer)
     PrimesSet(f::ZZRingElem, t::ZZRingElem, mod::ZZRingElem, val::ZZRingElem)
 

@@ -43,7 +43,7 @@
 # which gets called when f : K -> L is a map from AnticNumberField to
 # NfRel{nf_elem}. (More precisely, f(a) = image(f.image_data, codomain(f), a))
 #
-# Note that we do not store L inside explicitely inside MapData* and this
+# Note that we do not store L inside explicitly inside MapData* and this
 # becomes a problem if f.isid is true. Thus we need to pass L to the function.
 #
 # Difference to the old system
@@ -53,7 +53,7 @@
 # careful when it comes to morphism of relative fields.
 #
 # Assume L/K is an NfRel{nf_elem} and f : L -> L is a morphism, mapping K to K.
-# Before, we were basically storing implicitely f(gen(L)) as well as g : K ->
+# Before, we were basically storing implicitly f(gen(L)) as well as g : K ->
 # K. Instead we are storing f(gen(L)) as well as f(L(gen(K)). This new system
 # is much more flexible and does not require awkward special cases, which do
 # not scale. The (minor) price we pay is that some morphism are a bit slower to
@@ -889,7 +889,7 @@ end
 
 ################################################################################
 #
-#  Auxillary map_data function
+#  Auxiliary map_data function
 #
 ################################################################################
 

@@ -1,5 +1,5 @@
 ## Elements
-Elements in a finitely geenrated abelian group are of type `GrpAbFinGenElem`
+Elements in a finitely generated abelian group are of type `GrpAbFinGenElem`
 and are always given as a linear combination of the generators.
 Internally this representation is normliased to have a unique
 representative.

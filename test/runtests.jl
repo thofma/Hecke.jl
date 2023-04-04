@@ -120,7 +120,7 @@ if fl === "true" && !no_parallel && !Sys.iswindows()
 end
 
 # Special consideration for Windows on CI
-# We quickly run out of ressources there, so let's do non-parallel and only short
+# We quickly run out of resources there, so let's do non-parallel and only short
 if fl === "true" && Sys.iswindows()
   isparallel = false
   short_test = true

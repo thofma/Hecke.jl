@@ -12,7 +12,7 @@ export multiplicative_group, multiplicative_group_generators
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplicative_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
     unit_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
 
@@ -34,7 +34,7 @@ end
 
 unit_group(Q::NfOrdQuoRing) = multiplicative_group(Q)
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplicative_group_generators(Q::NfOrdQuoRing) -> Vector{NfOrdQuoRingElem}
 
 Return a set of generators for $Q^\times$.
@@ -58,7 +58,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     _multgrp(Q::NfOrdQuoRing) -> (GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap)
 
 Returns the group $Q^\times$ and a map from this group to $Q$.
@@ -108,7 +108,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl) -> (GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap)
 
 Given a prime ideal $p$ in a maximal order $\mathcal O$, an integer $v > 0$ and
@@ -700,7 +700,7 @@ end
 ################################################################################
 # TODO compare with implementations in UnitsModM.jl
 
-@doc Markdown.doc"""
+@doc raw"""
     baby_step_giant_step(g, n, h) -> ZZRingElem
     baby_step_giant_step(g, n, h, cache::Dict) -> ZZRingElem
 
@@ -739,7 +739,7 @@ function baby_step_giant_step(gen, n, a)
   return baby_step_giant_step(gen, n, a, cache)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pohlig_hellman(g, n, h; factor_n=factor(n)) -> ZZRingElem
 
 Computes the discrete logarithm $x$ such that $h = g^x$.
@@ -914,7 +914,7 @@ end
 #
 ####################################################################################
 
-function _find_gen(Q::FqPolyRepField, powm::Vector{ZZRingElem}, m::ZZRingElem)
+function _find_gen(Q::Union{FqPolyRepField, FqField}, powm::Vector{ZZRingElem}, m::ZZRingElem)
   found = false
   g = one(Q)
   while !found
