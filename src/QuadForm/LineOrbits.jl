@@ -4,20 +4,6 @@
 #
 ################################################################################
 
-# Iterate over the lines in K^n, that is, over the points of projective
-# space P^(n-1)(K).
-#
-# Important: In the prime case, this must always be lexicographically ordered
-
-mutable struct LineEnumCtx{T, S}
-  K::T
-  a::S # primitive element
-  dim::Int
-  depth::Int
-  v::Vector{S}
-  length::BigInt
-end
-
 # We iterate through K by adding 1 in the prime field case and by multiplying
 # with a primitive element in the general case.
 

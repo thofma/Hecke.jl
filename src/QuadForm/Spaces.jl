@@ -9,18 +9,6 @@ export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian,
 #
 ################################################################################
 
-@attributes mutable struct AbstractSpaceMor{D, T} <: Map{D, D, HeckeMap, AbstractSpaceMor}
-  header::MapHeader{D, D}
-  matrix::T
-
-  function AbstractSpaceMor(V::D, W::D, B::T) where {D, T}
-    z = new{D, T}()
-    z.header = MapHeader{D, D}(V, W)
-    z.matrix = B
-    return z
-  end
-end
-
 function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false)
   @req base_ring(V) == base_ring(W) "Spaces must have the same base field"
   @req nrows(B) == dim(V) && ncols(B) == dim(W) """
