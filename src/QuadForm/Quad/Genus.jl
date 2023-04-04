@@ -4,38 +4,6 @@
 #
 ################################################################################
 
-# This holds invariants of a local Jordan decomposition
-#
-# L = L_1 \perp ... \perp L_r
-#
-# In the non-dyadic case we store
-# - ranks
-# - scales
-# - determinant (classes)
-# of the L_i
-#
-# In the dyadic case we store
-# - norm generators of L_i
-# - (valuation of ) weights
-# - determinant (classes)
-# - Witt invariants
-
-mutable struct JorDec{S, T, U}
-  K::S
-  p::T
-  is_dyadic::Bool
-  ranks::Vector{Int}
-  scales::Vector{Int}
-
-  # dyadic things
-  normgens::Vector{U}
-  weights::Vector{Int}
-  dets::Vector{U}
-  witt::Vector{Int}
-
-  JorDec{S, T, U}() where {S, T, U} = new{S, T, U}()
-end
-
 function JorDec(p, scales::Vector{Int}, ranks::Vector{Int}, dets::Vector{nf_elem})
   K = nf(order(p))
   _weight = Vector{Int}()
@@ -505,67 +473,10 @@ end
 #
 ################################################################################
 
-# This holds invariants of a local Genus symbol
-#
-# L = L_1 \perp ... \perp L_r
-#
-# In the non-dyadic case we store
-# - ranks
-# - scales
-# - determinant (classes)
-# of the L_i = L^(s_i)
-#
-# In the dyadic case we store
-# - norm generators of L^(s_i)
-# - (valuation of ) weights of L^(s_i)
-# - determinant (classes) of L^(s_i)
-# - Witt invariants of L_i
-
-mutable struct QuadLocalGenus{S, T, U}
-  K::S
-  p::T
-  is_dyadic::Bool
-  witt_inv::Int
-  hass_inv::Int
-  det::U
-  rank::Int
-
-  uniformizer::U
-
-  ranks::Vector{Int}
-  scales::Vector{Int}
-  detclasses::Vector{Int}
-
-  # dyadic things
-  normgens::Vector{U}
-  weights::Vector{Int}
-  f::Vector{Int}
-  dets::Vector{U}
-  witt::Vector{Int}
-  norms::Vector{Int}
-
-  # Sometimes we know a jordan decomposition
-  jordec::JorDec{S, T, U}
-
-  function QuadLocalGenus{S, T, U}() where {S, T, U}
-    z = new{S, T, U}()
-    z.rank = 0
-    z.witt_inv = 0
-    z.hass_inv = 0
-    return z
-  end
-end
-
 local_genus_quad_type(K) = QuadLocalGenus{typeof(K), ideal_type(order_type(K)), elem_type(K)}
 
 function in(L::QuadLat, G::QuadLocalGenus)
   return genus(L, prime(G)) == G
-end
-
-function local_quadratic_genus_type(K)
-  return QuadLocalGenus{typeof(K),
-                        ideal_type(order_type(K)),
-                        elem_type(K)}
 end
 
 # Access
@@ -1252,16 +1163,6 @@ end
 
 ######
 
-mutable struct LocalGenusSymbol{S}
-  P
-  data
-  x
-  iseven::Bool
-  E
-  is_ramified
-  non_norm
-end
-
 prime(G::LocalGenusSymbol) = G.P
 
 uniformizer(G::LocalGenusSymbol{QuadLat}) = G.x
@@ -1661,7 +1562,7 @@ end
 
 function quadratic_local_genera(K, p; rank::Int, det_val::Int, max_scale = nothing)
   J = local_jordan_decompositions(K, p, rank = rank, det_val = det_val, max_scale = max_scale)
-  res = local_quadratic_genus_type(K)[]
+  res = local_genus_quad_type(K)[]
   for j in J
     g = genus(j)
     if !(g in res)
@@ -1676,22 +1577,6 @@ end
 #  Global genus
 #
 ################################################################################
-
-mutable struct QuadGenus{S, T, U}
-  K::S
-  primes::Vector{T}
-  LGS::Vector{QuadLocalGenus{S, T, U}}
-  rank::Int
-  signatures::Dict{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}
-  d::U
-  space
-
-  function QuadGenus{S, T, U}(K) where {S, T, U}
-    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
-    z.rank = -1
-    return z
-  end
-end
 
 genus_quad_type(K) = QuadGenus{typeof(K), ideal_type(order_type(K)), elem_type(K)}
 
@@ -1794,7 +1679,7 @@ function quadratic_genera(K; rank::Int, signatures, det)
 
   primes = support(2 * det)
 
-  local_symbols = Vector{local_quadratic_genus_type(K)}[]
+  local_symbols = Vector{local_genus_quad_type(K)}[]
 
   ms = _max_scale
   ds = det
@@ -1807,7 +1692,7 @@ function quadratic_genera(K; rank::Int, signatures, det)
   res = genus_quad_type(K)[]
   it = Iterators.product(local_symbols...)
   for gs in it
-    c = collect(gs)::Vector{local_quadratic_genus_type(K)}
+    c = collect(gs)::Vector{local_genus_quad_type(K)}
     de = _possible_determinants(K, c, signatures)::Vector{nf_elem}
     for d in de
       b = _check_global_quadratic_genus(c, d, signatures)

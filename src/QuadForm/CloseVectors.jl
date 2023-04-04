@@ -170,12 +170,6 @@ function _close_vectors_iterator(L::ZLat, v::Vector{QQFieldElem}, lowerbound, up
   return C
 end
 
-mutable struct LatCloseEnumCtx{S, elem_type}
-  short_vector_iterator::S
-  e::QQFieldElem
-  d::Int
-end
-
 Base.IteratorSize(::Type{<:LatCloseEnumCtx}) = Base.SizeUnknown()
 
 Base.eltype(::Type{LatCloseEnumCtx{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}, QQFieldElem}

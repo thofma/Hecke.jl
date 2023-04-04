@@ -1,32 +1,13 @@
 export genus, representative, rank, det, uniformizer, det_representative,
        gram_matrix, hermitian_genera, hermitian_local_genera, rank,
        is_inert, scales, ranks, dets, is_split, is_ramified, is_dyadic,
-       norms, primes, signatures, HermLocalGenus, HermGenus
+       norms, primes, signatures
 
 ################################################################################
 #
 #  Local genus symbol
 #
 ################################################################################
-
-# Need to make this type stable once we have settled on a design
-mutable struct HermLocalGenus{S, T}
-  E::S                                # Field
-  p::T                                # prime of base_field(E)
-  data::Vector{Tuple{Int, Int, Int}}  # data
-  norm_val::Vector{Int}               # additional norm valuation
-                                      # (for the dyadic case)
-  is_dyadic::Bool                      # 2 in p
-  is_ramified::Bool                    # p ramified in E
-  is_split::Bool                       # p split in E
-  non_norm_rep::FieldElem             # u in K*\N(E*)
-  ni::Vector{Int}                     # ni for the ramified, dyadic case
-
-  function HermLocalGenus{S, T}() where {S, T}
-    z = new{S, T}()
-    return z
-  end
-end
 
 local_genus_herm_type(E) = HermLocalGenus{typeof(E), ideal_type(order_type(base_field(E)))}
 
@@ -1143,26 +1124,6 @@ end
 #  Global genus
 #
 ################################################################################
-
-mutable struct HermGenus{S, T, U, V}
-  E::S
-  primes::Vector{T}
-  LGS::Vector{U}
-  rank::Int
-  signatures::V
-
-  function HermGenus(E::S, r, LGS::Vector{U}, signatures::V) where {S, U, V}
-    K = base_field(E)
-    primes = Vector{ideal_type(order_type(K))}(undef, length(LGS))
-
-    for i in 1:length(LGS)
-      primes[i] = prime(LGS[i])
-      @assert r == rank(LGS[i])
-    end
-    z = new{S, eltype(primes), U, V}(E, primes, LGS, r, signatures)
-    return z
-  end
-end
 
 genus_herm_type(E) = HermGenus{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{place_type(base_field(E)), Int}}
 

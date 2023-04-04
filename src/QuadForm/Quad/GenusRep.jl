@@ -14,18 +14,6 @@ export automorphism_group_generators, genus_representatives
 #
 ################################################################################
 
-# To keep track of ray class groups
-mutable struct SpinorGeneraCtx
-  mR::MapRayClassGrp # ray class group map
-  mQ::GrpAbFinGenMap # quotient
-  rayprimes::Vector{NfAbsOrdIdl{AnticNumberField, nf_elem}}
-  criticalprimes::Vector{NfAbsOrdIdl{AnticNumberField, nf_elem}}
-
-  function SpinorGeneraCtx()
-    return new()
-  end
-end
-
 function SpinorGeneraCtx(L::QuadLat)
   R = base_ring(L)
   F = number_field(R)
@@ -1386,70 +1374,6 @@ function _square_rep_nice(x, p, piinv)
     x = x * piinv^v
   end
   return order(p)(x)
-end
-
-# Move this to a proper place
-#
-# TODO: Cache this in the dyadic case (on the lattice or the field)
-mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, LocMultGrpModSquMap}
-  domain::GrpAbFinGen
-  codomain::AnticNumberField
-  is_dyadic::Bool
-  p::NfAbsOrdIdl{AnticNumberField, nf_elem}
-  e::nf_elem
-  pi::nf_elem
-  piinv::nf_elem
-  hext::NfToFinFldMor{FqField}
-  h::AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
-  g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
-  i::GrpAbFinGenMap
-  mS::GrpAbFinGenMap
-
-  function LocMultGrpModSquMap(K::AnticNumberField, p::NfAbsOrdIdl{AnticNumberField, nf_elem})
-    R = order(p)
-    @assert nf(R) === K
-    @assert is_absolute(K)
-    z = new()
-    z.codomain = K
-    z.p = p
-    z.is_dyadic = is_dyadic(p)
-
-    if !is_dyadic(p)
-      pi = elem_in_nf(uniformizer(p))
-      k, h = residue_field(R, p)
-      hext = extend(h, K)
-      e = elem_in_nf(h\non_square(k))
-      G = abelian_group([2, 2])
-
-      z.domain = G
-      z.e = e
-      z.pi = pi
-      z.hext = hext
-      return z
-    else
-      pi = elem_in_nf(uniformizer(p))
-      e = ramification_index(p)
-      dim = valuation(norm(p), 2) * e + 2
-      #V = vector_space(F, dim)
-      I = p^(2*e + 1)
-      Q, h = quo(R, I)
-      U, g = unit_group(Q)
-      M, i = quo(U, 2, false)
-      SS, mSS = snf(M)
-      @assert SS.snf == ZZRingElem[2 for i in 1:(dim - 1)]
-      #@assert ngens(S) == dim - 1
-      piinv = anti_uniformizer(p)
-      G = abelian_group([2 for i in 1:dim])
-      z.domain = G
-      z.pi = pi
-      z.piinv = piinv
-      z.h = h
-      z.g = g
-      z.i = i
-      z.mS = mSS
-      return z
-    end
-  end
 end
 
 domain(f::LocMultGrpModSquMap) = f.domain
