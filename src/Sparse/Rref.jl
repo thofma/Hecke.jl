@@ -1,4 +1,4 @@
-@doc Markdown.doc"""
+@doc raw"""
     rref(M::SMat{T}; truncate = false) where {T <: FieldElement} -> (Int, SMat{T})
 
 Return a tuple $(r, A)$ consisting of the rank $r$ of $M$ and a reduced row echelon
@@ -126,7 +126,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     nullspace(M::SMat{T}) where {T <: FieldElement}
 
 Return a tuple $(\nu, N)$ consisting of the nullity $\nu$ of $M$ and
@@ -167,7 +167,7 @@ function nullspace(M::SMat{T}) where {T <: FieldElement}
   return nullity, X
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     left_kernel(M::SMat{T}) where {T <: FieldElement}
 
 Return a tuple $\nu, N$ where $N$ is a matrix whose rows generate the
@@ -180,7 +180,7 @@ function left_kernel(M::SMat{T}) where T <: FieldElement
   return n, transpose(N)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     right_kernel(M::SMat{T}) where {T <: FieldElement}
 
 Return a tuple $\nu, N$ where $N$ is a matrix whose columns generate the
@@ -192,7 +192,7 @@ function right_kernel(M::SMat{T}) where T <: FieldElement
   return nullspace(M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     kernel(M::SMat{T}; side::Symbol = :right) where {T <: FieldElement}
 
 Return a tuple $(n, N)$, where n is the rank of the kernel and $N$ is a

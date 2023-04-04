@@ -9,7 +9,7 @@ function _basis_of_hom(L::ModAlgAssLat, M::ModAlgAssLat)
   y = action_of_basis(M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     endomorphism_ring(f::EndAlgMap, L::ModAlgAssLat) -> Order
 
 Given an lattice $L$ of a module $V$ and $f : E \to \mathrm{End}(V)$

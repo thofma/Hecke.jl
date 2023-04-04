@@ -3,7 +3,7 @@
 #  Interface
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_group(C::ClassField)
 
 The group of automorphisms fixing the base field, returned as an abstract 
@@ -36,7 +36,7 @@ function automorphism_group(C::ClassField)
   return A, f                      
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     frobenius_easy(p::NfOrdIdl, C::ClassField)
  
 For a prime ideal $p$ that is unramified in $C$ and is coprime to the 
@@ -73,7 +73,7 @@ end
 
 elem_type(::Type{Hecke.NfMorSet{NfRelNS{nf_elem}}}) = Hecke.NumFieldMor{NfRelNS{nf_elem}, NfRelNS{nf_elem}}
 
-@doc Markdown.doc"""
+@doc raw"""
     frobenius_map(C::ClassField)
     artin_map(C::ClassField)
 
@@ -116,7 +116,7 @@ pointless: real -> complex: ramified, thus illegal
 
 =#
 
-@doc Markdown.doc"""
+@doc raw"""
     complex_conjugation(C::ClassField, p::InfPlc)
 
 Given an infinite place `p` ramifying in `C`, return the automorphism of
@@ -153,7 +153,7 @@ end
 
 
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_automorphism_group(C::ClassField)
 
  Computes a generating set for the automorphisms of the
@@ -326,7 +326,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor) -> NfRelToNfRelMor
 
 Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,

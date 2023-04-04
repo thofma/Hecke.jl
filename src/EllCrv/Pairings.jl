@@ -142,7 +142,7 @@ function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   return true, t 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     weil_pairing(P::EllCrvPt, Q::EllCrvPt, n::Int) -> FieldElem
 
 Given two $n$-torsion points $P$ and $Q$ on an elliptic curve, return the Weil
@@ -168,7 +168,7 @@ function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     tate_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
 
 Given an $n$-torsion point $P$ and another point $Q$ on an elliptic curve over
@@ -200,7 +200,7 @@ end
 
 #Assuming that P and Q are defined over the same field which contains the nth roots of unity.
 #Should be identical to reduced_tate_pairing in Magma
-@doc Markdown.doc"""
+@doc raw"""
     reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n::Int) -> FieldElem
 
 Given an $n$-torsion point $P$ and another point $Q$ on an elliptic curve over

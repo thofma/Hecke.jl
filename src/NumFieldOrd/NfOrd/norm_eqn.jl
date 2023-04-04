@@ -13,7 +13,7 @@ function norm_1_generators(A::Vector{NfOrdIdl})
   return id
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm_equation(K::AnticNumerField, a) -> nf_elem
 
 For $a$ an integer or rational, try to find $T \in K$ s.th.
@@ -27,7 +27,7 @@ function norm_equation(K::AnticNumberField, a)
   error("no solution")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_norm(K::AnticNumberField, a) -> Bool, nf_elem
 
 For $a$ an integer or rational, try to find $T \in K$ s.th. $N(T) = a$
@@ -45,7 +45,7 @@ function is_norm(K::AnticNumberField, a::Rational)
   return is_norm(K, QQFieldElem(a))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_norm(K::AnticNumberField, a::ZZRingElem; extra::Vector{ZZRingElem}) -> Bool, nf_elem
 
 For a ZZRingElem $a$, try to find $T \in K$ s.th. $N(T) = a$

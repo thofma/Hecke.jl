@@ -11,7 +11,7 @@ import Nemo: can_solve
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     binary_quadratic_form(a::T, b::T, c::T) where {T <: RingElement}
 
 Constructs the binary quadratic form $ax^2 + bxy + cy^2$.
@@ -20,7 +20,7 @@ binary_quadratic_form(a::T, b::T, c::T) where {T <: RingElem} = QuadBin(parent(a
 
 binary_quadratic_form(a::Integer, b::Integer, c::Integer) = binary_quadratic_form(FlintZZ(a), FlintZZ(b), FlintZZ(c))
 
-@doc Markdown.doc"""
+@doc raw"""
     binary_quadratic_form(R::Ring, a, b, c)
 
 Constructs the binary quadratic form $ax^2 + bxy + cy^2$ over the ring $R$.
@@ -143,7 +143,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      can_solve_with_solution(f::QuadBin, n::Int64)
 For a binary quadratic form $f$ with negative discriminant and an integer $n$,
 returns tuple (`true`, (`x`,`y`)) if $f$(`x`,`y`) = $n$ for integers `x`,`y`.
@@ -177,7 +177,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(f::QuadBin) -> RingElem
 
 Return the discriminant of `f = [a, b, c]`, that is, `b^2 - 4ac`.
@@ -198,7 +198,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_discriminant(D)
 
 Returns `true` if $D$ is the discriminant of an integral binary quadratic form,
@@ -215,7 +215,7 @@ function is_discriminant(D::IntegerUnion)
   return false
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_fundamental_discriminant(D)
 
 Returns `true` if $D$ is a fundamental discriminant otherwise returns `false`.
@@ -235,7 +235,7 @@ function is_fundamental_discriminant(D::IntegerUnion)
   return false
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      conductor(D) -> ZZRingElem
 
 Returns the conductor of the discriminant $D$, that is, the largest
@@ -307,7 +307,7 @@ is_reducible(f::QuadBin) = is_square(discriminant(f))
 ###############################################################################
 
 
-@doc Markdown.doc"""
+@doc raw"""
     compose(f1::QuadBin, f2::QuadBin)
 
 Returns the composition of the binary quadratic forms $f_1$ and $f_2$. The
@@ -358,7 +358,7 @@ function _number_of_primeforms(d::ZZRingElem, p::ZZRingElem)
     return jacobi_symbol(mod(d, p), p) + 1
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      prime_form(d::ZZRingElem, p::ZZRingElem)
 Returns an integral binary quadratic form of discriminant $d$ and leading coefficient
 $p$ where $p$ is a prime number.
@@ -382,7 +382,7 @@ end
 
 is_isometric(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}) = is_equivalent(f, g, proper=false)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = false)
 
 Return whether `f` and `g` are (properly) equivalent.
@@ -484,7 +484,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     reduction(f::QuadBin{ZZRingElem}) -> QuadBin{ZZRingElem}
 
 Return a reduced binary quadratic form equivalent to `f`.
@@ -494,7 +494,7 @@ function reduction(f::QuadBin{ZZRingElem})
   return g
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     reduction_with_transformation(f::QuadBin{ZZRingElem}) -> QuadBin{ZZRingElem}, Mat{ZZRingElem}
 
 Return a reduced binary quadratic form `g` equivalent to `f` and a matrix `T`
@@ -660,7 +660,7 @@ function _action(f::QuadBin, M)
   return binary_quadratic_form(a1, b1, c1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_reduced(f::QuadBin{ZZRingElem}) -> Bool
 
 Return whether `f` is reduced in the following sense. Let `f = [a, b, c]`
@@ -707,7 +707,7 @@ function is_reduced(f::QuadBin{ZZRingElem})
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cycle(f::QuadBin{ZZRingElem}; proper::Bool = false) -> Vector{QuadBin{ZZRingElem}}
 
 Return the cycle of `f` as defined by Buchmann--Vollmer (Algorithm 6.1). The

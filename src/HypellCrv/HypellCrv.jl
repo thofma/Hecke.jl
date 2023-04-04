@@ -145,7 +145,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     HyperellipticCurve(f::PolyElem, g::PolyElem; check::Bool = true) -> HypellCrv
 
 Return the hyperelliptic curve $y^2 + h(x)y = f(x)$. The polynomial $f$ 
@@ -159,7 +159,7 @@ function HyperellipticCurve(f::PolyElem{T}, h::PolyElem{T}; check::Bool = true) 
   return HypellCrv{T}(f, h, check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     HyperellipticCurve(f::PolyElem; check::Bool = true) -> HypellCrv
 
 Return the hyperelliptic curve $y^2 = f(x)$. The polynomial $f$ must be monic of
@@ -179,7 +179,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     base_field(C::HypellCrv) -> Field
 
 Return the base field over which `C` is defined.
@@ -194,7 +194,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     base_change(K::Field, C::HypellCrv) -> EllCrv
 
 Return the base change of the hyperelliptic curve $C$ over K if coercion is
@@ -214,7 +214,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(C::HypellCrv, D::HypellCrv) -> Bool
 
 Return true if $C$ and $D$ are given by the same model over the same field.
@@ -230,7 +230,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     genus(C::HypellCrv{T}) -> T
 
 Return the of $C$.
@@ -247,7 +247,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(C::HypellCrv{T}) -> T
 
 Compute the discriminant of $C$.
@@ -275,7 +275,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     equation(C::HypellCrv) -> Poly
 
 Return the equation defining the hyperelliptic curve C.
@@ -289,7 +289,7 @@ function equation(C::HypellCrv)
   return y^2 + h(x)*y - f(x)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     homogeneous_equation(C::HypellCrv) -> Poly
 
 Return the homogeneous equation defining the hyperelliptic curve C.
@@ -306,7 +306,7 @@ end
 
 
 
-@doc Markdown.doc"""
+@doc raw"""
     hyperelliptic_polynomials(C::HypellCrv) -> Poly, Poly
 
 Return f, h such that C is given by y^2 + h*y = f
@@ -355,7 +355,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     points_at_infinity(C::HypellCrv) -> HypellCrvPt
 
 Return the points at infinity.
@@ -407,7 +407,7 @@ function points_with_x(C::HypellCrv{T}, x) where T
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     is_finite(P::HypellCrvPt) -> Bool
 
 Return true if P is not the point at infinity.
@@ -416,7 +416,7 @@ function is_finite(P::HypellCrvPt)
   return !P.is_infinite
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_infinite(P::HypellCrvPt) -> Bool
 
 Return true if P is the point at infinity.
@@ -432,7 +432,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_on_curve(C::HypellCrv{T}, coords::Vector{T}) -> Bool
 
 Return true if `coords` defines a point on $C$ and false otherwise. The array
@@ -489,7 +489,7 @@ function show(io::IO, P::HypellCrvPt)
    print(io, "Point  ($(P[1]) : $(P[2]) : $(P[3]))  of $(P.parent)")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
 
 Return true if $P$ and $Q$ are equal and live over the same elliptic curve

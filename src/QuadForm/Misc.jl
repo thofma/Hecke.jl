@@ -24,7 +24,7 @@ function VecSpaceRes(K::S, n::Int) where {S}
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     AbstractSpaceRes
 
 A container type for map of change of scalars between vector spaces $V$ and $W$,
@@ -252,7 +252,7 @@ end
 
 # Return an element Delta, such that K_p(\sqrt{Delta}) is the unique quadratic unramified extension.
 
-@doc Markdown.doc"""
+@doc raw"""
     kummer_generator_of_local_unramified_quadratic_extension(p::Idl) -> NumFieldElem
 
 Given a dyadic prime ideal $\mathfrak p$ of a number field $K$, return a local
@@ -670,7 +670,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_local_norm(L::NumField, a::NumFieldElem, P)
 
 Given a number field $L/K$, an element $a \in K$ and a prime ideal $P$ of $K$,

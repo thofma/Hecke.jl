@@ -69,7 +69,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
       (O::NumFieldOrd)(a::NumFieldElem, check::Bool = true) -> NumFieldOrdElem
 
 Given an element $a$ of the ambient number field of $\mathcal O$, this
@@ -89,7 +89,7 @@ is contained in $\mathcal O$ if and only if `check` is `true`.
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       (O::NumFieldOrd)(a::NumFieldOrdElem, check::Bool = true) -> NumFieldOrdElem
 
 Given an element $a$ of some order in the ambient number field of
@@ -128,7 +128,7 @@ end
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       (O::NumFieldOrd)(a::IntegerUnion) -> NumFieldOrdElem
 
 Given an element $a$ of type `ZZRingElem` or `Integer`, this
@@ -138,7 +138,7 @@ function coerces the element into $\mathcal O$.
   return NfAbsOrdElem(O, nf(O)(a))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       (O::NfAbsOrd)(arr::Vector{ZZRingElem})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
@@ -151,7 +151,7 @@ end
   return NfAbsOrdElem(O, arr)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       (O::NfAbsOrd)(arr::Vector{Integer})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
@@ -196,7 +196,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     coordinates(a::NfAbsOrdElem) -> Vector{ZZRingElem}
 
 Returns the coefficient vector of $a$ with respect to the basis of the order.
@@ -217,7 +217,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     charpoly(a::NfAbsOrdElem) -> ZZPolyRingElem
     charpoly(a::NfAbsOrdElem, FlintZZ) -> ZZPolyRingElem
 
@@ -227,7 +227,7 @@ function charpoly(a::NfAbsOrdElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, fals
   return Zx(charpoly(elem_in_nf(a)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     minpoly(a::NfAbsOrdElem) -> ZZPolyRingElem
 
 The minimal polynomial of $a$.
@@ -433,7 +433,7 @@ powermod(a::NfAbsOrdElem, i::Integer, m::ZZRingElem)  = powermod(a, ZZRingElem(i
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     representation_matrix(a::NfAbsOrdElem) -> ZZMatrix
 
 Returns the representation matrix of the element $a$.
@@ -449,7 +449,7 @@ function representation_matrix(a::NfAbsOrdElem)
   return A.num
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     representation_matrix(a::NfAbsOrdElem, K::AnticNumberField) -> FakeFmpqMat
 
 Returns the representation matrix of the element $a$ considered as an element
@@ -463,7 +463,7 @@ function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem) -> ZZMatrix
 
 Returns the representation matrix of the element $a$ with entries reduced mod $d$.
@@ -547,7 +547,7 @@ function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(O::NfOrd, R::UnitRange{Integer}) -> NfAbsOrdElem
 
 Computes a coefficient vector with entries uniformly distributed in `R` and returns
@@ -563,7 +563,7 @@ function rand!(z::NfAbsOrdElem, O::NfOrd, n::IntegerUnion)
   return rand!(z, O, -n:n)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(O::NfOrd, n::IntegerUnion) -> NfAbsOrdElem
 
 Computes a coefficient vector with entries uniformly distributed in
@@ -600,7 +600,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(a::NfOrdElem) -> Fac{NfOrdElem}
 
 Computes a factorization of $a$ into irreducible elements. The return value

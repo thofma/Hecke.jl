@@ -19,7 +19,7 @@ mutable struct RealNumberField <: Nemo.Field
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     real_number_field(K::AnticNumberField, i::Int)
 
 The real field using the $i$-th conjugate for evaluation and comparison.
@@ -34,7 +34,7 @@ function real_number_field(K::AnticNumberField, i::Int)
   return RealNumberField(K, P)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     real_number_field(K::AnticNumberField, P::InfPlc)
 
 The real field using the real place $P$ to define the embedding for
@@ -63,7 +63,7 @@ function show(io::IO, e::RealNumberFieldElem)
   println(io, "$(e.data) = ", evaluate(e.data, e.parent.P))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     evaluate(a::RealNumberFieldElem, p::Int = 10)
 
 The value of $a$ as a real number under the chosen embedding.

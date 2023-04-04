@@ -42,7 +42,7 @@ export haspreimage, has_image, hom, kernel, cokernel, image, is_injective, is_su
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem) -> Bool, GrpAbFinGenElem
 
 Returns whether $a$ is in the image of $M$. If so, the second return value is
@@ -122,7 +122,7 @@ end
 
 id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), check = false)
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}) -> Map
 
 Creates the homomorphism $A[i] \mapsto B[i]$.
@@ -163,7 +163,7 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
   return h
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}) -> Map
 
 Creates the homomorphism which maps $G[i]$ to $B[i]$.
@@ -260,7 +260,7 @@ end
 
 #TODO: store and reuse on map. Maybe need to change map
 
-@doc Markdown.doc"""
+@doc raw"""
     kernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the domain of $h$. This function returns an abelian group $A$ and an
@@ -299,7 +299,7 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   return sub(G, elem_type(G)[], add_to_lattice)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     image(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
@@ -321,7 +321,7 @@ function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   return sub(H, im, add_to_lattice)  # too much, this is sub in hnf....
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cokernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the codomain of $h$. This function returns an abelian group $A$ and
@@ -339,7 +339,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_surjective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is surjective.
@@ -375,7 +375,7 @@ end
 ################################################################################
 
 #TODO: Improve in the finite case
-@doc Markdown.doc"""
+@doc raw"""
     is_injective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is injective.
@@ -392,7 +392,7 @@ end
 ################################################################################
 
 #TODO: Improve in the finite case
-@doc Markdown.doc"""
+@doc raw"""
     is_bijective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is bijective.
@@ -513,7 +513,7 @@ function cyclic_hom(a::ZZRingElem, b::ZZRingElem)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map) -> GrpAbFinGen, Map
 
 Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.

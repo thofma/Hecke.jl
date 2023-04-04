@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     restrict_scalars(A::AlgAss{nf_elem}, Q::QQField)
     restrict_scalars(A::AlgAss{fqPolyRepFieldElem}, Fp::fpField)
     restrict_scalars(A::AlgAss{FqPolyRepFieldElem}, Fp::Generic.ResidueField{ZZRingElem})
@@ -37,7 +37,7 @@ end
 #  return A, AtoA, AtoA
 #end
 
-@doc Markdown.doc"""
+@doc raw"""
     restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
       -> AlgAss, Map
 

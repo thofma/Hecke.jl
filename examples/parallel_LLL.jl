@@ -26,7 +26,7 @@ function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> ZZMatrix
 
 Let $c$ be the Minkowski matrix as computed by `minkowski_matrix` with precision $p$.

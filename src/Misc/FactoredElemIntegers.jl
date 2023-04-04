@@ -1,6 +1,6 @@
 const FacElemQ = Union{FacElem{QQFieldElem, QQField}, FacElem{ZZRingElem, ZZRing}}
 
-@doc Markdown.doc"""
+@doc raw"""
     evaluate(x::FacElem{QQFieldElem}) -> QQFieldElem
     evaluate(x::FacElem{ZZRingElem}) -> ZZRingElem
 
@@ -16,7 +16,7 @@ end
 function evaluate(x::FacElem{ZZRingElem})
   return evaluate_naive(simplify(x))
 end
-@doc Markdown.doc"""
+@doc raw"""
     simplify(x::FacElem{QQFieldElem}) -> FacElem{QQFieldElem}
     simplify(x::FacElem{ZZRingElem}) -> FacElem{ZZRingElem}
 
@@ -122,7 +122,7 @@ function simplify!(x::FacElem{ZZRingElem})
   nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isone(x::FacElem{QQFieldElem}) -> Bool
     isone(x::FacElem{ZZRingElem}) -> Bool
 Tests if $x$ represents $1$ without an evaluation.
@@ -137,7 +137,7 @@ function isone(x::FacElem{ZZRingElem})
   return all(iszero, values(y.fac)) || all(isone, keys(y.fac))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_coprime(x::FacElem{ZZRingElem}) -> Fac{ZZRingElem}
 Computed a partial factorisation of $x$, ie. writes $x$ as a product
 of pariwise coprime integers.

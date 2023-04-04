@@ -6,14 +6,14 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     order(a::NfRelOrdFracIdl) -> NfRelOrd
 
 Returns the order of $a$.
 """
 order(a::NfRelOrdFracIdl) = a.order
 
-@doc Markdown.doc"""
+@doc raw"""
     nf(a::NfRelOrdFracIdl) -> NumField
 
 Returns the number field, of which $a$ is a fractional ideal.
@@ -75,7 +75,7 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::NfRelOrdFracIdl) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in
@@ -90,7 +90,7 @@ function denominator(a::NfRelOrdFracIdl; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     numerator(a::NfRelOrdFracIdl) -> NfRelOrdIdl
 
 Returns the ideal $d*a$ where $d$ is the denominator of $a$.
@@ -138,7 +138,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
@@ -150,7 +150,7 @@ function fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool = 
   return NfRelOrdFracIdl{T, S, U}(O, M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
@@ -264,7 +264,7 @@ function assure_has_norm(a::NfRelOrdFracIdl)
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(a::NfRelOrdFracIdl{T, S}) -> S
 
 Returns the norm of $a$.
@@ -472,7 +472,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     in(x::NumFieldElem, y::NfRelOrdFracIdl)
 
 Returns whether $x$ is contained in $y$.

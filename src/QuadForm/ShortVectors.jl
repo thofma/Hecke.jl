@@ -1,6 +1,6 @@
 export short_vectors, short_vectors_iterator, shortest_vectors, kissing_number
 
-@doc Markdown.doc"""
+@doc raw"""
     short_vectors(L::ZLat, [lb = 0], ub, [elem_type = ZZRingElem]; check::Bool = true)
                                        -> Vector{Tuple{Vector{elem_type}, QQFieldElem}}
 
@@ -16,7 +16,7 @@ See also [`short_vectors_iterator`](@ref) for an iterator version.
 """
 short_vectors
 
-@doc Markdown.doc"""
+@doc raw"""
     short_vectors_iterator(L::ZLat, [lb = 0], ub,
                            [elem_type = ZZRingElem]; check::Bool = true)
                                     -> Tuple{Vector{elem_type}, QQFieldElem} (iterator)
@@ -83,7 +83,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     shortest_vectors(L::ZLat, [elem_type = ZZRingElem]; check::Bool = true)
                                                -> QQFieldElem, Vector{elem_type}, QQFieldElem}
 
@@ -113,7 +113,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     minimum(L::ZLat)
 
 Return the minimum squared length among the non-zero vectors in `L`.
@@ -133,7 +133,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     kissing_number(L::ZLat)
 
 Return the Kissing number of the sphere packing defined by `L`.

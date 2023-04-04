@@ -1,6 +1,6 @@
 export close_vectors, close_vectors_iterator
 
-@doc Markdown.doc"""
+@doc raw"""
     close_vectors(L:ZLat, v:Vector, [lb,], ub; check::Bool = false)
                                             -> Vector{Tuple{Vector{Int}}, QQFieldElem}
 
@@ -233,7 +233,7 @@ function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; kw...) where
   _v = T[v[i] for i in 1:nrows(v)]
   return first.(close_vectors(L, _v, upperbound; kw...))
 end
-@doc Markdown.doc"""
+@doc raw"""
     _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) -> Tuple{ZLat, MatrixElem{T}, T}
 Where T is a concrete type, e.g. ZZRingElem, QQFieldElem, etc.
 Converts a quadratic triple QT = [Q, K, d] to the input values required for closest vector problem (CVP).
@@ -247,7 +247,7 @@ function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: Ring
   return Lattice, vector, upperbound
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _convert_type(L::ZLat, v::MatrixElem{T}, c::T) -> Tuple{QQMatrix, QQMatrix, QQFieldElem}
 
 Where T is a concrete type, e.g. ZZRingElem, QQFieldElem, etc.
@@ -263,7 +263,7 @@ function _convert_type(L::ZLat, v::MatrixElem{T}, c::T) where T <: RingElem
   return Q, K, d
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     closest_vectors(Q::MatrixElem{T}, L::MatrixElem{T},
                     c::T; equal::Bool=false, sorting::Bool=false)
                                                     -> Vector{Vector{ZZRingElem}}

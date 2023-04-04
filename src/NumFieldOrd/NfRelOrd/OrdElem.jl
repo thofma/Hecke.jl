@@ -23,7 +23,7 @@ end
 #
 ################################################################################
 #=
-@doc Markdown.doc"""
+@doc raw"""
       (O::NfRelOrd)(a::NumFieldElem, check::Bool = true) -> NfRelOrdElem
 
 Given an element $a$ of the ambient number field of $\mathcal O$, this
@@ -42,7 +42,7 @@ function (O::NfRelOrd{S, T, U})(a::U, check::Bool = true) where {S, T, U}
 end
 
 #=
-@doc Markdown.doc"""
+@doc raw"""
       (O::NfRelOrd)(a::NfRelOrdElem, check::Bool = true) -> NfRelOrdElem
 
 Given an element $a$ of some order in the ambient number field of
@@ -70,7 +70,7 @@ end
 (O::NfRelOrd)(a::IntegerUnion) = O(nf(O)(a))
 
 #=
-@doc Markdown.doc"""
+@doc raw"""
       (O::NfRelOrd)() -> NfRelOrdElem
 
 Constructs a new element of $\mathcal O$ which is set to $0$.
@@ -102,7 +102,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
       coordinates(a::NfRelOrdElem{T}) -> Vector{T}
 
 Returns the coefficient vector of $a$.

@@ -279,7 +279,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::LocalFieldElem) -> QQFieldElem
 
 The valuation of $a$, normalized so that $v(p) = 1$. Scale by the 
@@ -692,7 +692,7 @@ function _underlying_base_field(K::T) where T <: Union{PadicField, QadicField}
   return K
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     log(a::LocalFieldElem) -> LocalFieldElem
 
 Computes the $p$-adic exponential of $a$.
@@ -732,7 +732,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     log(a::LocalFieldElem) -> LocalFieldElem
 
 Computes the $p$-adic logarithm of $a$, defined via the series on the 1-units and

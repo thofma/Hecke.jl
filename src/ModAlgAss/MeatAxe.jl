@@ -95,7 +95,7 @@ function reduce_mod_rref!(M::T, w::T) where {T}
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     closure(C::T, G::Vector{T}) where T <: MatElem
 
 Given a matrix $C$ representing a subspace of $K^n$ and a list of matrices $G$ representing endomorphisms of $K^n$,
@@ -393,7 +393,7 @@ end
 #
 #################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     meataxe(M::ModAlgAss) -> Bool, MatElem
 
 Given a module $M$, defined via its generators, return `true` if the module is
@@ -499,7 +499,7 @@ _random_coefficient_for_meataxe(R::Ring) = R(rand(Int))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     composition_series(M::ModAlgAss) -> Vector{MatElem}
 
 Given a Fq[G]-module $M$, it returns a composition series for $M$, i.e. a
@@ -600,7 +600,7 @@ function _composition_factors_with_multiplicity_cyclic(M::ModAlgAss{S, T, V}; di
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     composition_factors_with_multiplicity(M::ModAlgAss)
 
 Given a Fq[G]-module $M$, it returns, up to isomorphism, the composition factors of $M$ with their multiplicity,
@@ -959,7 +959,7 @@ function _minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=dim(M)+1, lf = Tupl
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     minimal_submodules(M::ModAlgAss)
 
 Given a Fq[G]-module $M$, it returns all the minimal submodules of $M$.
@@ -969,7 +969,7 @@ function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=dim(M)+1, lf = Tuple
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_submodules(M::ModAlgAss)
 
 Given a $G$-module $M$, it returns all the maximal submodules of $M$.
@@ -986,7 +986,7 @@ function maximal_submodules(M::ModAlgAss{S, T, V}, index::Int=dim(M), lf = Tuple
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     submodules(M::ModAlgAss)
 
 Given a $G$-module $M$, it returns all the submodules of $M$.
@@ -1053,7 +1053,7 @@ function submodules(M::ModAlgAss{S, T, V}) where {S, T, V}
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     submodules(M::ModAlgAss, index::Int)
 
 Given a $G$-module $M$, it returns all the submodules of $M$ of index $q$^index, where $q$ is the order of the field.

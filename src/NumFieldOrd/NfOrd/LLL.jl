@@ -190,7 +190,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     lll(M::NfAbsOrd) -> NfAbsOrd
 
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
@@ -425,7 +425,7 @@ end
 
 
 #Inefficient, but at least it works.
-@doc Markdown.doc"""
+@doc raw"""
     subsets(n::Int, k::Int)
 
 Return a vector of all ordered `k`-element subsets of `1..n`.    
@@ -449,7 +449,7 @@ function subsets(n::Int, k::Int)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     subsets(v::Vector{T}, k::Int) where T
 
 Return a vector of all ordered `k`-element sub-vectors of `v`.
@@ -693,7 +693,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     lll_basis(M::NumFieldOrd) -> Vector{NumFieldElem}
 
 A basis for $M$ that is reduced using the LLL algorithm for the Minkowski metric.
@@ -703,7 +703,7 @@ function lll_basis(M::NfAbsOrd)
   return basis(M1, nf(M1))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lll_basis(I::NumFieldOrdIdl) -> Vector{NumFieldElem}
 
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
@@ -792,7 +792,7 @@ function reduce_ideal(A::NfOrdFracIdl)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     reduce_ideal(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
@@ -831,7 +831,7 @@ end
 
 
 # The bound should be sqrt(disc) (something from LLL)
-@doc Markdown.doc"""
+@doc raw"""
     power_reduce(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl, FacElem{nf_elem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$

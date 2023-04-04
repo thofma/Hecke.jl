@@ -160,7 +160,7 @@ function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Union{NfAbsOrdIdl, 
   return hilbert_symbol(b, a, p)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hilbert_symbol(a::NumFieldElem, b::NumFieldElem, p::NfOrdIdl) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
@@ -224,7 +224,7 @@ function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Plc)
   return hilbert_symbol(b, a, p)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hilbert_symbol(a::nf_elem, b::nf_elem, p::InfPlc) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
@@ -241,7 +241,7 @@ function hilbert_symbol(a::IntegerUnion, b::IntegerUnion, p::PosInf)
   return hilbert_symbol(a, b, 0)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hilbert_symbol(a::ZZRingElem, b::ZZRingElem, p::ZZRingElem) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
@@ -291,7 +291,7 @@ function hilbert_symbol(a::Union{QQFieldElem,ZZRingElem,Integer,Rational{<:Integ
   return hilbert_symbol(QQFieldElem(a), QQFieldElem(b), ZZRingElem(p))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hilbert_symbol(a::Union{QQFieldElem,ZZRingElem,Int,Rational{Int}}, b::Union{QQFieldElem,ZZRingElem,Int,Rational{Int}}, p::Union{ZZRingElem,Int}) -> {-1, +1}
 
 Returns the local Hilbert symbol $(a,b)_p$.

@@ -25,7 +25,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     defining_modulus(CF::ClassField)
 
 The modulus, i.e. an ideal of the set of real places, used to create the
@@ -53,7 +53,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     base_ring(A::ClassField)
 
 The maximal order of the field that $A$ is defined over.
@@ -62,7 +62,7 @@ function base_ring(A::ClassField)
   return order(codomain(A.rayclassgroupmap))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     base_field(A::ClassField)
 
 The number field that $A$ is defined over.
@@ -85,7 +85,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     degree(A::ClassField)
 
 The degree of $A$ over its base field, i.e. the size of the defining ideal group.
@@ -121,7 +121,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     exponent(A::ClassField)
 
 The exponent of $A$ over its base field, i.e. the exponent of the Galois
@@ -141,7 +141,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     compositum(a::ClassField, b::ClassField) -> ClassField
 
 The compositum of $a$ and $b$ as a (formal) class field.
@@ -160,7 +160,7 @@ function compositum(a::ClassField, b::ClassField)
   return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     *(A::ClassField, B::ClassField) -> ClassField
 
 The compositum of $a$ and $b$ as a (formal) class field.
@@ -173,7 +173,7 @@ The compositum of $a$ and $b$ as a (formal) class field.
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     intersect(a::ClassField, b::ClassField) -> ClassField
 
 The intersection of $a$ and $b$ as a class field.
@@ -198,7 +198,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_subfield(a::ClassField, b::ClassField) -> Bool
 
 Determines if $a$ is a subfield of $b$.
@@ -221,7 +221,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(a::ClassField, b::ClassField)
 
 Tests if $a$ and $b$ are equal.
@@ -250,7 +250,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_cyclic(C::ClassField)
 
 Tests if the (relative) automorphism group of $C$ is cyclic (by checking
@@ -267,7 +267,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_p_subfield(C::ClassField, p::Int)
 
 Returns the class field corresponding to the maximal subextension of
@@ -283,7 +283,7 @@ function maximal_p_subfield(C::ClassField, p::Int)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
 
 Tests if $a$ is a local norm at $p$ in the extension implicitly given by $r$.
@@ -313,7 +313,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_local_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
 
 Tests if $a$ is a local norm at all finite places in the extension implicitly given by $r$.
@@ -328,7 +328,7 @@ function is_local_norm(r::ClassField, a::NfAbsOrdElem)
   return all(x -> is_local_norm(r, a, x), keys(fl))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
 
 For a prime $p$ in the base ring of $r$, determine the splitting type of $p$
@@ -356,7 +356,7 @@ function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassFi
   return (e, f, Int(divexact(order(q), f)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     decomposition_group(C::ClassField, p::[InfPlc | NfOrdIdl]) -> GrpAbFinGen
 
 Compute the decomposition group of any infinite place or prime ideal of the
@@ -400,7 +400,7 @@ function decomposition_group(C::ClassField, p::NfOrdIdl)
   return sub(R, map(h, g))[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     inertia_subgroup(C::ClassField, p::NfOrdIdl) -> GrpAbFinGen
 
 Compute the inertia subgroup of any prime ideal of the
@@ -428,7 +428,7 @@ function inertia_subgroup(C::ClassField, p::NfOrdIdl)
   return sub(R, map(h, g))[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     decomposition_field(C::ClassField, p::[InfPlc | NfOrdIdl]) -> ClassField
 
 Compute the decomposition field, ie. the field fixed by the decomposition group
@@ -438,7 +438,7 @@ function decomposition_field(C::ClassField, p::NfOrdIdl)
   return fixed_field(C, decomposition_group(C, p))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     inertia_field(C::ClassField, p::NfOrdIdl) -> ClassField
 
 Compute the inertia field, ie. the field fixed by the decomposition group
@@ -452,7 +452,7 @@ function decomposition_field(C::ClassField, p::InfPlc)
   return fixed_field(C, decomposition_group(C, p))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     knot(C::ClassField)
 
 The knot (or number knot) defined by Scholz is the obstruction to the 
@@ -486,7 +486,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ray_class_field(m::MapClassGrp) -> ClassField
     ray_class_field(m::MapRayClassGrp) -> ClassField
 
@@ -499,7 +499,7 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
   return ray_class_field(m, id_hom(domain(m)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap) -> ClassField
 
 For $m$ a map computed by either {ray_class_group} or {class_group} and
@@ -519,7 +519,7 @@ function ray_class_field(m::S, quomap::T) where {S <: Union{MapClassGrp, MapRayC
   return CF
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hilbert_class_field(k::AnticNumberField) -> ClassField
 
 The Hilbert class field of $k$ as a formal (ray-) class field.
@@ -528,7 +528,7 @@ function hilbert_class_field(k::AnticNumberField)
   return ray_class_field(class_group(k)[2])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
 
 The ray class field modulo $I$. If `n_quo` is given, then the largest
@@ -538,7 +538,7 @@ function ray_class_field(I::NfAbsOrdIdl; n_quo = -1)
   return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ray_class_field(I::NfAbsOrdIdl, inf::Vector{InfPlc}; n_quo = 0) -> ClassField
 
 The ray class field modulo $I$ and the infinite places given. If `n_quo` is given, then the largest

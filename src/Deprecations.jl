@@ -54,7 +54,7 @@ else
      return n//d
   end
 
-  @doc Markdown.doc"""
+  @doc raw"""
         simplest_between(l::QQFieldElem, r::QQFieldElem)
 
   > Return the simplest fraction in the closed interval `[l, r]`. A canonical >

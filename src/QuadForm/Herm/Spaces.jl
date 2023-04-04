@@ -6,7 +6,7 @@ export is_represented_by, is_locally_represented_by, is_locally_hyperbolic
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     hermitian_space(E::NumField, n::Int; cached::Bool = true) -> HermSpace
 
 Create the hermitian space over `E` with dimension `n` and Gram matrix equals to
@@ -18,7 +18,7 @@ function hermitian_space(E::NumField, n::Int; cached::Bool = true)
   return hermitian_space(E, G, cached = cached)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hermitian_space(E::NumField, gram::MatElem; cached::Bool = true) -> HermSpace
 
 Create the hermitian space over `E` with Gram matrix equals to `gram`. The matrix `gram`
@@ -281,7 +281,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
 
 Return whether the completion of the hermitian space `V` over $E/K$ at the prime

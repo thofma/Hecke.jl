@@ -46,7 +46,7 @@ global const VERBOSE_LOOKUP = Dict{Symbol, Int}()
 
 global const VERBOSE_PRINT_INDENT = Int[ 0 ]
 
-@doc Markdown.doc"""
+@doc raw"""
     add_verbosity_scope(s::Symbol) -> Nothing
 
 Add the symbol `s` to the list of (global) verbosity scopes.
@@ -85,7 +85,7 @@ function _global_indent()
   return s
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     @vprint(S::Symbol, k::Int, msg::String)
     @vprint S k msg
 
@@ -162,7 +162,7 @@ macro vprint(s, l::Int, msg)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     @v_do(S::Symbol, k::Int, act::Expr)
     @v_do S k act
 
@@ -235,7 +235,7 @@ macro v_do(s, l::Int, action)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     set_verbosity_level(s::Symbol, l::Int) -> Int
 
 If `s` represents a known verbosity scope, set the current verbosity level of
@@ -262,7 +262,7 @@ function set_verbosity_level(s::Symbol, l::Int)
   VERBOSE_LOOKUP[s] = l
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     get_verbosity_level(s::Symbol) -> Int
 
 If `s` represents a known verbosity scope, return the current verbosity level
@@ -305,7 +305,7 @@ global const ASSERT_SCOPE = Symbol[]
 
 global const ASSERT_LOOKUP = Dict{Symbol, Int}()
 
-@doc Markdown.doc"""
+@doc raw"""
     add_assertion_scope(s::Symbol) -> Nothing
 
 Add the symbol `s` to the list of (global) assertion scopes.
@@ -322,7 +322,7 @@ function add_assertion_scope(s::Symbol)
   nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     set_assertion_level(s::Symbol, l::Int) -> Int
 
 If `s` represents a known assertion scope, set the current assertion level
@@ -352,7 +352,7 @@ function set_assertion_level(s::Symbol, l::Int)
   ASSERT_LOOKUP[s] = l
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     get_assertion_level(s::Symbol) -> Int
 
 If `s` represents a symbol of a known assertion scope, return the current
@@ -385,7 +385,7 @@ function get_assertion_level(s::Symbol)
   return get(ASSERT_LOOKUP, s, 0)::Int
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     @hassert(S::Symbol, k::Int, assert::Expr)
     @hassert S k assert
 
@@ -470,7 +470,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     @req(assert, msg)
     @req assert msg
 

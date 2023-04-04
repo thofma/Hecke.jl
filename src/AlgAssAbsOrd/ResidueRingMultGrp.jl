@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplicative_group(Q::AlgAssAbsOrdQuoRing)
       -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
     unit_group(Q::AlgAssAbsOrdQuoRing) -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap

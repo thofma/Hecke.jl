@@ -1,6 +1,6 @@
 export left_order, right_order, normred, locally_free_basis, is_locally_free
 
-@doc Markdown.doc"""
+@doc raw"""
     order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
 
 Returns the order of which $a$ is a (possibly fractional) left or right ideal
@@ -14,7 +14,7 @@ function order(a::AlgAssRelOrdIdl)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     algebra(a::AlgAssRelOrdIdl) -> AbsAlgAss
 
 Returns the algebra containing $a$.
@@ -33,7 +33,7 @@ is_full_lattice(a::AlgAssRelOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(A::AbsAlgAss, M::PMat, M_in_hnf::Bool = false) -> AlgAssRelOrdIdl
 
 Returns the ideal in $A$ with basis pseudo-matrix $M$.
@@ -44,7 +44,7 @@ function ideal(A::AbsAlgAss{S}, M::PMat{S, T}, M_in_hnf::Bool = false) where { S
   return AlgAssRelOrdIdl{S, T, typeof(A)}(A, M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(A::AbsAlgAss, O::AlgAssRelOrd, M::PMat, side::Symbol = :nothing,
           M_in_hnf::Bool = false)
       -> AlgAssRelOrdIdl
@@ -70,7 +70,7 @@ function ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::S
   return a
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::AlgAssRelOrd, x::AbsAlgAssElem) -> AlgAssRelOrdIdl
     ideal(O::AlgAssRelOrd, x::AlgAssRelOrdElem) -> AlgAssRelOrdIdl
 
@@ -118,7 +118,7 @@ end
 
 ideal(O::AlgAssRelOrd{S, T, U}, x::AlgAssRelOrdElem{S, T, U}) where { S, T, U } = ideal(O, elem_in_algebra(x, copy = false))
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::AlgAssRelOrd, x::AbsAlgAssElem, side::Symbol) -> AlgAssRelOrdIdl
     ideal(O::AlgAssRelOrd, x::AlgAssRelOrdElem, side::Symbol) -> AlgAssRelOrdIdl
 
@@ -152,7 +152,7 @@ end
 
 ideal(O::AlgAssRelOrd{S, T, U}, x::AlgAssRelOrdElem{S, T, U}, action::Symbol) where { S, T, U } = ideal(O, elem_in_algebra(x, copy = false), action)
 
-@doc Markdown.doc"""
+@doc raw"""
     *(O::AlgAssRelOrd, x::AbsAlgAssElem) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, x::AlgAssRelOrdElem) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, x::Int) -> AlgAssRelOrdIdl
@@ -171,7 +171,7 @@ Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 *(O::AlgAssRelOrd{S, T, U}, x::Union{ Int, ZZRingElem }) where {S, T, U} = ideal(O, O(x), :left)
 *(x::Union{ Int, ZZRingElem }, O::AlgAssRelOrd{S, T, U}) where {S, T, U} = ideal(O, O(x), :right)
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::AlgAssRelOrd, a::NfOrdFracIdl) -> AlgAssRelOrdIdl
     ideal(O::AlgAssRelOrd, a::NfRelOrdFracIdl) -> AlgAssRelOrdIdl
 
@@ -186,7 +186,7 @@ function ideal(O::AlgAssRelOrd{S, T, U}, a::T) where {S, T, U}
   return ideal(algebra(O), O, PM, :twosided)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal(O::AlgAssRelOrd, a::NfAbsOrdIdl) -> AlgAssRelOrdIdl
     ideal(O::AlgAssRelOrd, a::NfRelOrdIdl) -> AlgAssRelOrdIdl
 
@@ -205,7 +205,7 @@ function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl)
   return ideal(O, aa)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     *(O::AlgAssRelOrd, a::NfAbsOrdIdl) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, a::NfRelOrdIdl) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, a::NfOrdFracIdl) -> AlgAssRelOrdIdl
@@ -225,7 +225,7 @@ Returns the ideal $a \cdot O$ where $a$ is a (fractional) ideal of `base_ring(O)
 
 *(a::Union{NfAbsOrdIdl, NfRelOrdIdl}, O::AlgAssRelOrd) = ideal(O, a)
 
-@doc Markdown.doc"""
+@doc raw"""
     ideal_from_lattice_gens(A::AbsAlgAss, v::Vector{ <: AbsAlgAssElem })
       -> AlgAssRelOrdIdl
 
@@ -244,7 +244,7 @@ function ideal_from_lattice_gens(A::AbsAlgAss{S}, v::Vector{ <: AbsAlgAssElem{S}
 
   return ideal(A, PM, true)
 end
-@doc Markdown.doc"""
+@doc raw"""
     ideal_from_lattice_gens(A::AbsAlgAss, O::AlgAssRelOrd,
                             v::Vector{ <: AbsAlgAssElem },
                             side::Symbol = :nothing)
@@ -402,7 +402,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     pseudo_basis(a::AlgAssRelOrdIdl; copy::Bool = true)
 
 Returns the pseudo basis of $a$, i. e. a vector $v$ of pairs $(e_i, a_i)$ such
@@ -418,7 +418,7 @@ function pseudo_basis(a::AlgAssRelOrdIdl; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_pmatrix(a::AlgAssRelOrdIdl; copy::Bool = true) -> PMat
 
 Returns the basis pseudo-matrix of $a$ with respect to the basis of the algebra.
@@ -431,7 +431,7 @@ function basis_pmatrix(a::AlgAssRelOrdIdl; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_basis(a::AlgAssRelOrdIdl) -> Vector{ <: AbsAlgAssElem }
 
 Returns a basis of $a$ as $\mathbb Z$-module.
@@ -448,7 +448,7 @@ function absolute_basis(a::AlgAssRelOrdIdl)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_pmatrix_wrt(a::AlgAssRelOrdIdl, O::AlgAssRelOrd; copy::Bool = true)
       -> PMat
 
@@ -469,7 +469,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_matrix(a::AlgAssRelOrdIdl; copy::Bool = true) -> MatElem
 
 Returns the basis matrix of $a$, that is the basis pseudo-matrix of $a$ without
@@ -484,7 +484,7 @@ function basis_matrix(a::AlgAssRelOrdIdl; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_mat_inv(a::AlgAssRelOrdIdl; copy::Bool = true) -> MatElem
 
 Returns the inverse of the basis matrix of $a$.
@@ -504,7 +504,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     +(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
 
 Returns $a + b$.
@@ -527,7 +527,7 @@ function +(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where {S, T
   return c
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     *(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
 
 Returns $a \cdot b$.
@@ -575,7 +575,7 @@ function *(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where {S, T
   return c
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ^(a::AlgAssRelOrdIdl, e::Int) -> AlgAssRelOrdIdl
     ^(a::AlgAssRelOrdIdl, e::ZZRingElem) -> AlgAssRelOrdIdl
 
@@ -584,7 +584,7 @@ Returns $a^e$.
 ^(A::AlgAssRelOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 ^(A::AlgAssRelOrdIdl, e::ZZRingElem) = Base.power_by_squaring(A, BigInt(e))
 
-@doc Markdown.doc"""
+@doc raw"""
     intersect(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
 
 Returns $a \cap b$.
@@ -613,7 +613,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     *(a::AlgAssRelOrdIdl, x::NfAbsOrdElem) -> AlgAssRelOrdIdl
     *(x::NfAbsOrdElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
     *(a::AlgAssRelOrdIdl, x::NfRelOrdElem) -> AlgAssRelOrdIdl
@@ -717,7 +717,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     in(x::AbsAlgAssElem, a::AlgAssRelOrdIdl) -> Bool
     in(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl) -> Bool
 
@@ -745,7 +745,7 @@ in(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl) = in(elem_in_algebra(x, copy = false
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> Bool
 
 Returns `true` if $a$ and $b$ are equal and `false` otherwise.
@@ -838,7 +838,7 @@ function ring_of_multipliers(a::AlgAssRelOrdIdl, action::Symbol = :left)
   return Order(algebra(a), PM)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     left_order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
 
 Returns the largest order of which $a$ is a left ideal, that is
@@ -853,7 +853,7 @@ function left_order(a::AlgAssRelOrdIdl)
   return a.left_order
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     right_order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
 
 Returns the largest order of which $a$ is a right ideal, that is
@@ -925,7 +925,7 @@ function mod!(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl)
   return x
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mod(x::AlgAssRelOrdElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdElem
 
 Returns $y$ in `parent(x)` such that $x \equiv y \mod a$ and the coefficients
@@ -977,7 +977,7 @@ function assure_has_norm(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}) 
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}; copy::Bool = true)
       where { S, T, U } -> T
 
@@ -992,7 +992,7 @@ function norm(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}; copy::Bool 
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(a::AlgAssRelOrdIdl{S, T, U}; copy::Bool = true) where { S, T, U } -> T
 
 Returns the norm of $a$ considered as an (possibly fractional) ideal of
@@ -1019,7 +1019,7 @@ function assure_has_normred(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     normred(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}; copy::Bool = true)
       where { S, T, U } -> T
 
@@ -1037,7 +1037,7 @@ function normred(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}; copy::Bo
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     normred(a::AlgAssRelOrdIdl{S, T, U}; copy::Bool = true) where { S, T, U } -> T
 
 Returns the reduced norm of $a$ considered as an (possibly fractional) ideal
@@ -1051,7 +1051,7 @@ normred(a::AlgAssRelOrdIdl; copy::Bool = true) = normred(a, order(a), copy = cop
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     locally_free_basis(a::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAssRelOrdElem
 
@@ -1061,7 +1061,7 @@ See also `is_locally_free`.
 """
 locally_free_basis(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) = locally_free_basis(order(I), I, p)
 
-@doc Markdown.doc"""
+@doc raw"""
     locally_free_basis(O::AlgAssRelOrd, a::AlgAssRelOrdIdl,
                        p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) -> AlgAssRelOrdElem
 
@@ -1078,7 +1078,7 @@ function locally_free_basis(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbs
   return x
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_free(a::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> Bool, AlgAssRelOrdElem
 
@@ -1090,7 +1090,7 @@ See also `locally_free_basis`.
 is_locally_free(I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) = is_locally_free(order(I), I, p)
 
 # See Bley, Wilson "Computations in relative algebraic K-groups", section 4.2
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_free(O::AlgAssRelOrd, a::AlgAssRelOrdIdl,
                    p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) -> Bool, AlgAssRelOrdElem
 
@@ -1183,7 +1183,7 @@ end
 ################################################################################
 
 # See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.1
-@doc Markdown.doc"""
+@doc raw"""
     pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAssRelOrdIdl
 
@@ -1219,7 +1219,7 @@ end
 ################################################################################
 
 # See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 5.23
-@doc Markdown.doc"""
+@doc raw"""
     prime_ideals_over(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> Vector{AlgAssRelOrdIdl}
 
@@ -1461,7 +1461,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(a::AlgAssRelOrdIdl, B::Int) -> AbsAlgAssElem
 
 Returns a random element of $a$ whose coefficient size is controlled by $B$.
@@ -1524,7 +1524,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     inv(a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
 
 Returns an ideal $b$ in `algebra(a)` such that `a*b == left_order(a)`
@@ -1557,7 +1557,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_left(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
 
 Returns an ideal $c$ such that $a = b \cdot c$.
@@ -1577,7 +1577,7 @@ function divexact_left(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U})
   return c
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_right(a::AlgAssRelOrdIdl, b::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
 
 Returns an ideal $c$ such that $a = c \cdot b$.
@@ -1605,7 +1605,7 @@ colon(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where { S, T, U 
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::AlgAssRelOrdIdl, O::AlgAssRelOrd) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in $O$.
@@ -1630,7 +1630,7 @@ function denominator(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}) wher
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::AlgAssRelOrdIdl) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in

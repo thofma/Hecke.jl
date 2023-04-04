@@ -1,5 +1,3 @@
-using Markdown
-
 mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
   header::Hecke.MapHeader
   modulus_fin::Hecke.NfOrdIdl
@@ -58,7 +56,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
 ***
     ray_class_group(m::NfOrdIdl, A::Vector{InfPlc}=[]) -> FinGenGrpAb, Map
 

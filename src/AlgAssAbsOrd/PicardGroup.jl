@@ -52,7 +52,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
       -> GrpAbFinGen, MapPicardGroup
 
@@ -456,7 +456,7 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
   return k*beta*inv(t*gamma), P(p)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     principal_generator(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrdElem
 
 Given a principal ideal $a$ in an order $O$ in a commutative algebra over
@@ -793,7 +793,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     kernel_group(O::AlgAssAbsOrd) -> GrpAbFinGen, MapPicardGroup
 
 Given an order $O$ in a commutative algebra over $\mathbb Q$, this function

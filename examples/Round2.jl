@@ -1349,7 +1349,7 @@ G, b = FunctionField(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
 =#
 
 module FactorFF
-using Hecke, Markdown
+using Hecke
 
 function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
@@ -1478,7 +1478,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
     swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
 

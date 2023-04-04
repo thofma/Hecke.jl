@@ -65,7 +65,7 @@ function analytic_eval(a::analytic_func{T}, b::T) where T<:Number
   return s
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     dickman_rho(x::Number, prec::Int=55) Number
 
 Evaluates the Dickman-$\rho$ function at $x$.
@@ -87,7 +87,7 @@ function dickman_rho(x::Number, prec::Int=55)
   return analytic_eval(rho_coeff(x, prec), k-x)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
 
 Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
@@ -174,7 +174,7 @@ end
 
 #the function Ei = -integral(-x, infty, exp(-t)/t dt)
 
-@doc Markdown.doc"""
+@doc raw"""
     exponential_integral(x::AbstractFloat) -> AbstractFloat
     ei(x::AbstractFloat) -> AbstractFloat
 
@@ -192,7 +192,7 @@ end
 
 #the function li = integral(0, x, dt/log(t))
 #             li(x) = Ei(log(x)) according to wiki and ?
-@doc Markdown.doc"""
+@doc raw"""
     logarithmic_integral(x::AbstractFloat) AbstractFloat
     li(x::AbstractFloat) AbstractFloat
 
@@ -214,7 +214,7 @@ Chapter IX, Question 18
 The formula (for n=365) is in the solutions.
 =#
 
-@doc Markdown.doc"""
+@doc raw"""
     rels_from_partial(n::Int, k::Int) -> Int
 
 Estimates the number of collisions in $k$ samples among $n$ possibilities. Used
@@ -256,7 +256,7 @@ function vol(n::Int, b::T) where T<:Number
   return b*sum(s)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     psi_guess(x::Number, B::Int) Number
 
 Uses the dickman_rho function to estimate $\psi(x, B)$ the number
@@ -266,7 +266,7 @@ function psi_guess(x::Number, B::Int)
   return x*dickman_rho(log(x)/log(B))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     psi_guess(x::Number, e::UnitRange, B::Int) Number
 
 Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number

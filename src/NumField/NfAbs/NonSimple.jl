@@ -890,7 +890,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     number_field(f::Vector{QQPolyRingElem}, s::String="_\$") -> NfAbsNS
 
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
@@ -1141,7 +1141,7 @@ function primitive_element(K::NfAbsNS)
   return pe
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
 
 The factorisation of $f$ (using Trager's method).

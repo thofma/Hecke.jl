@@ -514,7 +514,7 @@ end
    return unramified_extension(f_L)
  end
 
-@doc Markdown.doc"""
+@doc raw"""
     image_of_logarithm_one_units(K::NonArchLocalField) -> (Int, Vector)
 
 Returns a tuple `(n, x)` consisting of a positive integer `n` and a list of elements of `K`,

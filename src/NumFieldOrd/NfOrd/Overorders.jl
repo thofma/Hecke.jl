@@ -189,7 +189,7 @@ end
 
 poverorders(O, p::Int) = poverorders(O, ZZRingElem(p))
 
-@doc Markdown.doc"""
+@doc raw"""
     poverorders(O, p) -> Vector{Ord}
 
 Returns all `p`-overorders of `O`, that is all overorders `M`, such that the
@@ -202,7 +202,7 @@ function poverorders(O, p::ZZRingElem)
   return poverorders_recursive_generic(O, p)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     overorders(O::NfOrd, type = :all) -> Vector{Ord}
 
 Returns all overorders of `O`. If `type` is `:bass` or `:gorenstein`, then

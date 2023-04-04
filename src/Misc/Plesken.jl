@@ -58,7 +58,7 @@ end
 #  Presentation for extensions of prime power degree
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     presentation(p, r, n) -> FinField
 
 Computes a presentation for the finite field of order p^(r^n) as defined

@@ -109,7 +109,7 @@ Base.copy(f::NfToNfMor) = f
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      is_normal(K::AnticNumberField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
@@ -170,7 +170,7 @@ is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 #  IsCMfield
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     is_cm_field(K::AnticNumberField) -> Bool, NfToNfMor
 
 Given a number field $K$, this function returns true and the complex conjugation
@@ -449,7 +449,7 @@ end
 #  Order of an automorphism in the automorphisms group
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     is_involution(f::NfToNfMor) -> Bool
 
 Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false otherwise.
@@ -476,7 +476,7 @@ function is_involution(f::NfToNfMor)
   return fp == gen(Rt)
 end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    _order(f::NfToNfMor) -> Int
 #
 #If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.

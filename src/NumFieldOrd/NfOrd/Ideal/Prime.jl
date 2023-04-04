@@ -37,7 +37,7 @@ export PrimeIdealsSet, prime_ideals_over, ramification_index,
        ramification_group, is_ramified, is_tamely_ramified, is_weakly_ramified,
        approximate
 
-@doc Markdown.doc"""
+@doc raw"""
     is_ramified(O::NfOrd, p::Int) -> Bool
 
 Returns whether the integer $p$ is ramified in $\mathcal O$.
@@ -48,7 +48,7 @@ function is_ramified(O::NfAbsOrd, p::Union{Int, ZZRingElem})
   return mod(discriminant(O), p) == 0
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_tamely_ramified(O::NfOrd, p::Union{Int, ZZRingElem}) -> Bool
 
 Returns whether the integer $p$ is tamely ramified in $\mathcal O$.
@@ -64,7 +64,7 @@ function is_tamely_ramified(K::AnticNumberField, p::Union{Int, ZZRingElem})
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_tamely_ramified(K::AnticNumberField) -> Bool
 
 Returns whether the number field $K$ is tamely ramified.
@@ -80,7 +80,7 @@ function is_tamely_ramified(K::AnticNumberField)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_weakly_ramified(K::AnticNumberField, P::NfOrdIdl) -> Bool
 
 Given a prime ideal $P$ of a number field $K$, return whether $P$
@@ -91,7 +91,7 @@ function is_weakly_ramified(K::AnticNumberField, P::NfOrdIdl)
   return length(ramification_group(P, 2)) == 1
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     degree(P::NfOrdIdl) -> Int
 
 The inertia degree of the prime-ideal $P$.
@@ -103,7 +103,7 @@ end
 
 inertia_degree(A::NfAbsOrdIdl) = degree(A)
 
-@doc Markdown.doc"""
+@doc raw"""
     ramification_index(P::NfOrdIdl) -> Int
 
 The ramification index of the prime-ideal $P$.
@@ -119,7 +119,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(K::AnticNumberField, f::zzModPolyRingElem) -> nf_elem
 
 Given a polynomial $f$ over a finite field, lift it to an element of the
@@ -211,7 +211,7 @@ function ideal_from_poly(O::NfOrd, p::ZZRingElem, fi::FpPolyRingElem, ei::Int)
   return idl
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_decomposition(O::NfAbsOrd,
                         p::Integer,
                         degree_limit::Int = 0,
@@ -495,7 +495,7 @@ function _prime_decomposition_type(fmodp)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_decomposition_type(O::NfOrd, p::Integer) -> Vector{Tuple{Int, Int}}
 
 Returns an array of tuples whose length is the number of primes lying over $p$ and the $i$-th tuple
@@ -520,7 +520,7 @@ function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
                        degree_limit::Int = 0, index_divisors::Bool = true) -> Vector{NfOrdIdl}
@@ -562,7 +562,7 @@ function prime_ideals_up_to(O::NfOrd, B::Int;
   return r
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_ideals_over(O::NfOrd,
                        lp::AbstractVector{Int};
                        degree_limit::Int = 0) -> Vector{NfOrdIdl}
@@ -588,7 +588,7 @@ function prime_ideals_over(O::NfOrd,
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
                        complete::Bool = false,
@@ -647,7 +647,7 @@ end
 ################################################################################
 
 #TODO: do sth. useful here!!!
-@doc Markdown.doc"""
+@doc raw"""
     divides(A::NfOrdIdl, B::NfOrdIdl)
 
 Checks if $B$ divides $A$.
@@ -732,7 +732,7 @@ function _get_integer_in_ideal(I::NfOrdIdl)
   return minimum(I)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     coprime_base(A::Vector{NfOrdIdl}) -> Vector{NfOrdIdl}
     coprime_base(A::Vector{NfOrdElem}) -> Vector{NfOrdIdl}
 
@@ -818,7 +818,7 @@ end
 ################################################################################
 
 #TODO: factoring type??? (with unit)
-@doc Markdown.doc"""
+@doc raw"""
     factor(A::NfOrdIdl) -> Dict{NfOrdIdl, Int}
 
 Computes the prime ideal factorization $A$ as a dictionary, the keys being
@@ -947,7 +947,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_prime_known(A::NfOrdIdl) -> Bool
 
 Returns whether $A$ knows if it is prime.
@@ -956,7 +956,7 @@ function is_prime_known(A::NfAbsOrdIdl)
   return A.is_prime != 0
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_prime(A::NfOrdIdl) -> Bool
 
 Returns whether $A$ is a prime ideal.
@@ -1051,7 +1051,7 @@ mutable struct PrimeIdealsSet
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     PrimeIdealsSet(O::NfOrd, f, t; proof = false,
                                    indexdivisors = true,
                                    ramified = true,
@@ -1617,7 +1617,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
 Given a prime ideal $P$ in a normal number field $G$, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
@@ -1702,7 +1702,7 @@ function decomposition_group_easy(G, P)
   return G[indices]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     decomposition_group(K::AnticNumberField, P::NfOrdIdl, m::Map)
                                                   -> Grp, GrpToGrp
 
@@ -1721,7 +1721,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
 Given a prime ideal $P$ in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
@@ -1809,7 +1809,7 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
   return G[indices]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
@@ -1844,7 +1844,7 @@ function ramification_group(P::NfOrdIdl, i::Int)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ramification_group(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from

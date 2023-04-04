@@ -40,7 +40,7 @@ function lattice(V::HermSpace, B::PMat; check::Bool = true)
   return L
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hermitian_lattice(E::NumField, B::PMat; gram = nothing,
 				             check::Bool = true) -> HermLat
 
@@ -69,7 +69,7 @@ function hermitian_lattice(E::NumField, B::PMat; gram = nothing, check::Bool = t
   return lattice(V, B, check = check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hermitian_lattice(E::NumField, basis::MatElem; gram = nothing,
 				                    check::Bool = true) -> HermLat
 
@@ -84,7 +84,7 @@ By default, `basis` is checked to be of full rank. This test can be disabled by 
 """
 hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram, check = check)
 
-@doc Markdown.doc"""
+@doc raw"""
     hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) -> HermLat
 
 Given a list of vectors `gens` and a number field `E` of degree 2, return the hermitian
@@ -119,7 +119,7 @@ function hermitian_lattice(E::NumField, gens::Vector; gram = nothing)
   return lattice(V, gens)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hermitian_lattice(E::NumField; gram::MatElem) -> HermLat
 
 Given a matrix `gram` and a number field `E` of degree 2, return the free hermitian
@@ -278,7 +278,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     bad_primes(L::HermLat; discriminant::Bool = false, dyadic::Bool = false)
                                                              -> Vector{NfOrdIdl}
 
