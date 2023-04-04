@@ -183,7 +183,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     quo(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing, Map
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing, Map
 
@@ -207,7 +207,7 @@ function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOr
   return domain(f), f
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     residue_ring(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
     residue_ring(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
 
@@ -215,7 +215,7 @@ The quotient ring $O$ modulo $I$ as a new ring.
 """
 Nemo.residue_ring(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem
 
 Returns a lift of $a$ back to $O$.
@@ -225,7 +225,7 @@ function lift(O::NfOrd, a::NfOrdQuoRingElem)
   return preimage(f, a)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(a::NfOrdQuoRingElem) -> NfOrdElem
 
 Given an element of the quotient ring $\mathcal O/I$, return a lift in
@@ -835,7 +835,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     group_structure(Q::NfOrdQuoRing) -> GrpAbFinGen
 
 Returns an abelian group with the structure of $(Q,+)$.

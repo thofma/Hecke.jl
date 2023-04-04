@@ -23,7 +23,7 @@ mutable struct FunFldDiff
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     differential(f::Generic.FunctionFieldElem) -> Differential
 
 Return the differential df.
@@ -128,7 +128,7 @@ Base.:*(df::FunFldDiff, r::Generic.FunctionFieldElem) = r*df
 Base.:*(df::FunFldDiff, r::GenOrdElem) = r*df
 Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 
-@doc Markdown.doc"""
+@doc raw"""
     //(df::FunFldDiff, dg::FunFldDiff) -> FunctionFieldElem
     
 Return the function r such that r*df = dg.
@@ -158,7 +158,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     divisor(df::FunFldDiff) -> Divisor
     
 Return the divisor corresponding to the differential form.
@@ -169,7 +169,7 @@ function divisor(df::FunFldDiff)
   return divisor(df.f) - 2*pole_divisor(F(x)) + different_divisor(F)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(df::FunFldDiff, p::GenOrdIdl) -> Int
     
 Return the valuation of the differential form at a prime.
@@ -184,7 +184,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_of_differentials(F::FunctionField) -> Vector{FunFldDiff}
     
 Return a basis of the first order differential forms of F.

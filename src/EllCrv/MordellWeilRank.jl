@@ -18,7 +18,7 @@ export  quartic_local_solubility, R_soluble, Qp_soluble, quartic_rational_point_
 #TODO: Extend this to hyperelliptic curves
 #TODO: Do this over number fields
 
-@doc Markdown.doc"""
+@doc raw"""
     quartic_local_solubility(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem) -> Bool
 
 Check if the quartic defined by ax^4+bx^3+cx^2+dx+e is soluble over the real field $\mathbb{R}$ and over all local fields $\mathbb{Q}_p$.
@@ -50,7 +50,7 @@ function quartic_local_solubility(a, b, c, d, e)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     R_soluble(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem) -> Bool
 
 Check if the quartic defined by $ax^4+bx^3+cx^2+dx+e$ has a solution over $\mathbb{R}$.
@@ -65,7 +65,7 @@ function R_soluble(a, b, c, d, e)
   return signature(a*x^4+b*x^3+c*x^2+d*x+e)[1]>0
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Qp_soluble(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem,
     p::ZZRingElem) -> Bool
 
@@ -192,7 +192,7 @@ end
 
 
 #TODO: Make sieve-assisted
-@doc Markdown.doc"""
+@doc raw"""
     quartic_rational_point_search(a::QQFieldElem, b::QQFieldElem, c::QQFieldElem, d::QQFieldElem, e::QQFieldElem,
     lower_bound::Int, upper_bound::Int) -> Bool
 
@@ -254,7 +254,7 @@ end
 ###############################################################################
 
 # Following Cremona p. 87
-@doc Markdown.doc"""
+@doc raw"""
     rank_2_torsion(E::EllCrv, lim1::Int, lim2::Int) -> Int, Int, Int, Int
 
 Compute bounds on rank and Sha using descent by 2-torsion isogeny.

@@ -7,7 +7,7 @@ export ideal_class_monoid, is_locally_isomorphic, is_conjugate
 ###############################################################################
 
 # Stefano Marseglia "Computing the ideal class monoid of an order"
-@doc Markdown.doc"""
+@doc raw"""
     ideal_class_monoid(R::NfAbsOrd)
       -> Vector{FacElem{NfOrdFracIdl, NfOrdFracIdlSet}}
     ideal_class_monoid(R::AlgAssAbsOrd)
@@ -28,7 +28,7 @@ function ideal_class_monoid(R::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
 end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Prop. 4.1
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
     is_locally_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool
     is_locally_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool
@@ -44,7 +44,7 @@ function is_locally_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOr
 end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Cor. 4.5
-@doc Markdown.doc"""
+@doc raw"""
     is_isomorphic_with_map(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
     is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
     is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
@@ -72,7 +72,7 @@ function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfO
   return true, divexact(_elem_in_algebra(a, copy = false), A(denominator(IJ, copy = false)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
     is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
     is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
@@ -287,7 +287,7 @@ function matrix_to_ideal(O::NfAbsOrd, M::ZZMatrix)
 end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order"
-@doc Markdown.doc"""
+@doc raw"""
     is_conjugate(M::ZZMatrix, N::ZZMatrix) -> Bool, ZZMatrix
 
 Returns `true` and a matrix $U$ with $M = U\cdot N\cdot U^{-1}$ if such a

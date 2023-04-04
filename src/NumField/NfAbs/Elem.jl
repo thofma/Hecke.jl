@@ -91,7 +91,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     minpoly(a::nf_elem) -> QQPolyRingElem
 
 The minimal polynomial of $a$.
@@ -182,7 +182,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm_div(a::nf_elem, d::ZZRingElem, nb::Int) -> QQFieldElem
 
 Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
@@ -231,7 +231,7 @@ end
 ################################################################################
 
 # TODO: Use fits(Int, n) and then split into ZZModRingElem/zzModRingElem case
-@doc Markdown.doc"""
+@doc raw"""
     is_norm_divisible(a::nf_elem, n::ZZRingElem) -> Bool
 
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
@@ -294,7 +294,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     numerator(a::nf_elem) -> nf_elem
 
 For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with
@@ -365,7 +365,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(f::PolyElem{nf_elem}) -> QQPolyRingElem
 
 >The norm of $f$, that is, the product of all conjugates of $f$ taken
@@ -400,7 +400,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(f::ZZPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
     factor(f::QQPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
 
@@ -427,7 +427,7 @@ function nice(f::PolyElem{nf_elem})
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
 The factorisation of $f$.
@@ -648,7 +648,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     roots(f::ZZPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
@@ -659,7 +659,7 @@ function roots(f::ZZPolyRingElem, K::AnticNumberField; kw...)
   return roots(f1; kw...)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     roots(f::QQPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
@@ -674,7 +674,7 @@ function elem_in_nf(a::nf_elem)
   return a
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
                                     ispure = false,
                                     is_squarefree = false,
@@ -748,7 +748,7 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
   return vcat(rts, _roots_hensel(f, max_roots = max_roots, ispure = ispure, is_normal = is_normal))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     has_root(f::PolyElem{nf_elem}) -> Bool, nf_elem
 
 Tests if $f$ has a root and return it.
@@ -762,7 +762,7 @@ function has_root(f::PolyElem{nf_elem})
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     has_root(f::ZZPolyRingElem, K::AnticNumberField) -> Bool, nf_elem
     has_root(f::QQPolyRingElem, K::AnticNumberField) -> Bool, nf_elem
 
@@ -784,7 +784,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false) -> Bool, nf_elem
 
 Determines whether $a$ has an $n$-th root. If this is the case,

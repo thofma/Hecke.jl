@@ -31,7 +31,7 @@ function lattice(V::QuadSpace, B::PMat; check::Bool = true)
 end
 
 # TODO: At the moment I assume that B is a pseudo-hnf (probably)
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_lattice(K::Field, B::PMat ; gram = nothing,
                                           check:::Bool = true) -> QuadLat
 
@@ -60,7 +60,7 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = tru
   return lattice(V, B, check = check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_lattice(K::Field, basis::MatElem ; gram = nothing,
                                                  check::Bool = true) -> QuadLat
 
@@ -75,7 +75,7 @@ By default, `basis` is checked to be of full rank. This test can be disabled by 
 """
 quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true) = quadratic_lattice(K, pseudo_matrix(basis), gram = gram, check = check)
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> QuadLat
 
 Given a list of vectors `gens` and a field `K`, return the quadratic lattice
@@ -110,7 +110,7 @@ function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
   return lattice(V, gens)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_lattice(K::Field ; gram::MatElem) -> QuadLat
 
 Given a matrix `gram` and a field `K`, return the free quadratic
@@ -224,7 +224,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     rescale(L::QuadLat, a) -> QuadLat
 
 Rescale the quadratic form `q` of the ambient space to `a \cdot q`
@@ -245,7 +245,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     bad_primes(L::QuadLat; even = false) -> Vector{NfOrdIdl}
 
 Return the prime ideals dividing the scale and volume of $L$. If `even == true`

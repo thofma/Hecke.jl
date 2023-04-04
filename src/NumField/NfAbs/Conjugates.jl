@@ -7,7 +7,7 @@ export is_totally_real, is_totally_complex, conjugates, conjugates_real,
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_totally_real(K::number_field) -> Bool
 
 Returns true if and only if $K$ is totally real, that is, if all roots of the
@@ -19,7 +19,7 @@ end
 
 is_totally_real(::QQField) = true
 
-@doc Markdown.doc"""
+@doc raw"""
     is_totally_complex(K::AnticNumberField) -> Bool
 
 Returns true if and only if $K$ is totally complex, that is, if all roots of the
@@ -37,7 +37,7 @@ is_totally_complex(::QQField) = false
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
 Compute the conjugates of $x$ as elements of type `acb`.
@@ -56,7 +56,7 @@ function conjugates(x::NumFieldElem, abs_tol::Int = 32, T = arb)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates(x::nf_elem, C::AcbField) -> Vector{acb}
 
 Compute the conjugates of $x$ as elements of type `acb`.
@@ -185,7 +185,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates_arb_real(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
 Compute the real conjugates of $x$ as elements of type `arb`.
@@ -213,7 +213,7 @@ function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates_complex(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
 Compute the complex conjugates of $x$ as elements of type `acb`.
@@ -250,7 +250,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates_arb_log(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
 Returns the elements
@@ -348,7 +348,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     minkowski_map(a::nf_elem, abs_tol::Int) -> Vector{arb}
 
 Returns the image of $a$ under the Minkowski embedding.
@@ -431,7 +431,7 @@ end
 #
 ############################################################################
 
-#@doc Markdown.doc"""
+#@doc raw"""
 ##    _signs(a::nf_elem) -> Vector{Int}
 #> For a non-zero element $a$ return the signs of all real embeddings.
 #"""
@@ -465,7 +465,7 @@ function _signs(a::nf_elem)
   end
 end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 ##    signs(a::FacElem{nf_elem, AnticNumberField}) -> Vector{Int}
 #> For a non-zero element $a$ in factored form,
 #> return the signs of all real embeddings.
@@ -487,7 +487,7 @@ function _signs(a::FacElem{nf_elem, AnticNumberField})
   return s
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     complex_conjugation(K::AnticNumberField)
 
 Given a totally complex normal number field, this function returns an

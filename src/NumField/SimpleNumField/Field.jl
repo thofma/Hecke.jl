@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_radical_extension(L::SimpleNumField) -> Bool
 
 Tests if $L/K$ is pure, that is, if the defining polynomial is of the form
@@ -17,7 +17,7 @@ function is_radical_extension(K::SimpleNumField)
   return all(i -> iszero(coeff(K.pol, i)), 1:degree(K)-1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_kummer_extension(L::SimpleNumField) -> Bool
 
 Tests if $L/K$ is a Kummer extension, that is, if the defining polynomial is
@@ -50,7 +50,7 @@ function radical_extension(n::Int, a::FacElem, s::String = "_\$";
   return radical_extension(n, evaluate(a), s, cached = cached, check = check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     radical_extension(n::Int, a::NumFieldElem, s = "_$";
                    check = true, cached = true) -> NumField, NumFieldElem
 
@@ -84,7 +84,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis(L::SimpleNumField) -> Vector{NumFieldElem}
 
 Return the canonical basis of a simple extension $L/K$, that is, the elements
@@ -114,7 +114,7 @@ basis(::SimpleNumField)
 
 export defining_polynomial
 
-@doc Markdown.doc"""
+@doc raw"""
     defining_polynomial(L::SimpleNumField) -> PolyElem
 
 Given a simple number field $L/K$, constructed as $L = K[x]/(f)$, this function
@@ -130,7 +130,7 @@ defining_polynomial(K::NfRel) = K.pol
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(L::SimpleNumField) -> NumFieldElem
 
 The discriminant of the defining polynomial of $L$, *not* the discriminant of
@@ -146,7 +146,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_discriminant(L::SimpleNumField, QQ) -> QQFieldElem
 
 The absolute discriminant of the defining polynomial of $L$, *not* the
@@ -175,7 +175,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_subfield(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
 
 Return `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
@@ -184,14 +184,14 @@ $0$.
 """
 is_subfield(::SimpleNumField, ::SimpleNumField)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isomorphic(K::SimpleNumField, L::SimpleNumField) -> Bool
 
 Return `true` if $K$ and $L$ are isomorphic, otherwise `false`.
 """
 is_isomorphic(K::SimpleNumField, L::SimpleNumField) = is_isomorphic_with_map(K, L)[1]
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isomorphic_with_map(K::SimpleNumField, L::SimpleNumField) -> Bool, Map
 
 Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
@@ -208,7 +208,7 @@ export is_isomorphic_with_map
 ################################################################################
 
 # TODO (easy): Do this for Non-Simple number fields
-@doc Markdown.doc"""
+@doc raw"""
     is_linearly_disjoint(K::SimpleNumField, L::SimpleNumField) -> Bool
 
 Given two number fields $K$ and $L$ with the same base field $k$, this function

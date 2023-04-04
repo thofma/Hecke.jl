@@ -57,7 +57,7 @@ gen(R::KInftyRing) = R(inv(gen(R.K)))
 
 characteristic(R::KInftyRing) = characteristic(R.K)
 
-@doc Markdown.doc"""
+@doc raw"""
      degree(a::KInftyElem)
 
 Return the degree of the given element, i.e.
@@ -65,7 +65,7 @@ Return the degree of the given element, i.e.
 """
 degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::KInftyElem)
 
 Return the degree valuation of the given element, i.e. `-degree(a)`.
@@ -85,7 +85,7 @@ function is_unit(a::KInftyElem{T}) where T <: FieldElement
                                             degree(denominator(data(a), false))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
 
 Return `true` if the given element of the rational function field is an
@@ -183,7 +183,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
 Returns the inverse element of $a$ if $a$ is a unit.
 If 'checked = false' the invertibility of $a$ is not checked and the
@@ -200,7 +200,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
 
 Returns tuple `(flag, c)` where `flag = true` if $b$ divides $a$ and $a = bc$,
@@ -222,7 +222,7 @@ function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where {T <: nf_elem}
 Returns element 'c' of given localization such that $a = bc$ if such element
 exists. If `checked = false` the corresponding element of the rational function
@@ -486,7 +486,7 @@ function residue_field(K::KInftyRing{T}, a::KInftyElem{T}) where {T <: FieldElem
 end
 #TODO: residue_ring is probably "just" poly of deg < n, think about it
 
-@doc Markdown.doc"""
+@doc raw"""
     localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
 
 Return the localization of $k[1/x]$ at $(1/x)$ inside the rational function

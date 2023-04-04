@@ -6,7 +6,7 @@ export rres, rresx
 #  Computation of a generator of the ideal of the resultant
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 A generator for the ideal of the resultant of $f$ and $g$ using a quadratic-time algorithm.
@@ -226,7 +226,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     xxgcd(a::ResElem{ZZRingElem}, b::ResElem{ZZRingElem}) -> g, e, f, u, v
     xxgcd(a::ResElem{Integer}, b::ResElem{Integer}) -> g, e, f, u, v
 
@@ -305,7 +305,7 @@ function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: IntegerUnion
   return R(G), R(U)*R(u), R(U)*R(v)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     annihilator(a::ResElem{ZZRingElem}) -> r
     annihilator(a::ResElem{Integer}) -> r
 
@@ -318,7 +318,7 @@ function annihilator(a::ResElem{T}) where T <: IntegerUnion
   return R(divexact(m, gcd(m, a.data)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_unit(f::Union{ZZModPolyRingElem,zzModPolyRingElem}) -> Bool
 
 Tests if $f$ is a unit in the polynomial ring, i.e. if
@@ -337,7 +337,7 @@ function Nemo.is_unit(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_nilpotent(a::ResElem{ZZRingElem}) -> Bool
     is_nilpotent(a::ResElem{Integer}) -> Bool
 
@@ -584,7 +584,7 @@ function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} wh
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rresx(f::PolyElem{ResElem{ZZRingElem}}, g::PolyElem{ResElem{ZZRingElem}}) -> r, u, v
 
 The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
@@ -853,7 +853,7 @@ end
 #key idea (Carlo): if g = ab and a is a unit mod p, then it is actually a unit
 # in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
-@doc Markdown.doc"""
+@doc raw"""
     rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
@@ -870,7 +870,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 The 'gcd' of $f$ and $g$ together with the 'cofactors' using a quadratic-time algorithm.
@@ -965,7 +965,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 The resultant of $f$ and $g$ using a quadratic-time algorithm.
@@ -1258,7 +1258,7 @@ end
 ################################################################################
 
 
-@doc Markdown.doc"""
+@doc raw"""
     primsplit!(f::PolyElem{ResElem{ZZRingElem}}) -> c, f
     primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
 
@@ -1288,7 +1288,7 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnio
   return g, f
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     primsplit(f::PolyElem{ResElem{ZZRingElem}}}) -> c, f
     primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
 
@@ -1402,7 +1402,7 @@ function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPoly
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     compose_mod(x::zzModPolyRingElem, y::zzModPolyRingElem, z::zzModPolyRingElem) -> zzModPolyRingElem
 
   Compute $x(y)$ mod $z$.
@@ -1426,7 +1426,7 @@ function compose_mod(x::fpPolyRingElem, y::fpPolyRingElem, z::fpPolyRingElem)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     taylor_shift(x::zzModPolyRingElem, c::UInt) -> zzModPolyRingElem
 
   Compute $x(t-c)$.

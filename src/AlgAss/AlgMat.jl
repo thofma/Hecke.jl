@@ -49,7 +49,7 @@ end
 
 is_commutative_known(A::AlgMat) = (A.is_commutative != 0)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_commutative(A::AlgMat) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
@@ -178,7 +178,7 @@ function assure_has_multiplication_table(A::AlgMat{T, S}) where { T, S }
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplication_table(A::AlgMat; copy::Bool = true) -> Array{RingElem, 3}
 
 Given an algebra $A$ this function returns the multiplication table of $A$:
@@ -200,7 +200,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     matrix_algebra(R::Ring, n::Int) -> AlgMat
 
 Returns $\mathrm{Mat}_n(R)$.
@@ -228,7 +228,7 @@ function matrix_algebra(R::Ring, n::Int)
 end
 
 # Constructs Mat_n(S) as an R-algebra
-@doc Markdown.doc"""
+@doc raw"""
     matrix_algebra(R::Ring, S::Ring, n::Int) -> AlgMat
 
 Returns $\mathrm{Mat}_n(S)$ as an $R$-algebra.
@@ -257,7 +257,7 @@ function matrix_algebra(R::Ring, S::Ring, n::Int)
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     matrix_algebra(R::Ring, gens::Vector{<: MatElem}; isbasis::Bool = false)
       -> AlgMat
 
@@ -341,7 +341,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     matrix_algebra(R::Ring, S::Ring, gens::Vector{<: MatElem};
                    isbasis::Bool = false)
       -> AlgMat
@@ -535,7 +535,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     center(A::AlgMat) -> AlgAss, AbsAlgAssMor
 
 Returns the center $C$ of $A$ and the inclusion $C \to A$.

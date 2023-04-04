@@ -1,6 +1,6 @@
 export MSet, multiplicities, subsets
 
-@doc Markdown.doc"""
+@doc raw"""
 Type for a multi-set, ie. a set where elements are not unique, they
 (can) have a multiplicity. MSets can be created from any finite iterator.
 
@@ -105,7 +105,7 @@ Base.union!(s::MSet, xs) = (for x=xs; push!(s,x); end; s)
 Base.union!(s::MSet, xs::AbstractArray) = (for x=xs; push!(s,x); end; s)
 
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplicities(s::MSet)
 
 Return an iterator for the multiplicities of all the elements.    
@@ -114,7 +114,7 @@ function multiplicities(s::MSet)
   return values(s.dict)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplicity(s::MSet, xs)
   
 The multiplicity of the element xs in the multi-set s - or zero if
@@ -151,7 +151,7 @@ struct MSubSetItr{T}
   length::Int
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     subsets(s::MSet)
 
 An iterator for all sub-multi-sets of `s`.    
@@ -213,7 +213,7 @@ struct SubSetItr{T}
   length::Int
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     subsets(s::Set)
     subsets(s::Set, k::Int)
 

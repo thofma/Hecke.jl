@@ -1,5 +1,5 @@
 module FactorFF
-using Hecke, Markdown
+using Hecke
 
 function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
@@ -133,7 +133,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
     swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
 

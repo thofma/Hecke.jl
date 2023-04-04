@@ -70,7 +70,7 @@ function _principal_subfields_basis(K::SimpleNumField)
   return principal_subfields_ar
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     principal_subfields(L::SimpleNumField) -> Vector{Tuple{NumField, Map}}
 
 Return the principal subfields of $L$ as pairs consisting of a subfield $k$
@@ -296,7 +296,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     subfields(L::SimpleNumField) -> Vector{Tuple{NumField, Map}}
 
 Given a simple extension $L/K$, returns all subfields of $L$ containing

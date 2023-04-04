@@ -48,7 +48,7 @@ function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingE
 end
 
 #TODO: write vector reconstruction and use it here.
-@doc Markdown.doc"""
+@doc raw"""
     rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem) -> Bool, SRow{ZZRingElem}, ZZRingElem
 
 Apply rational reconstruction to the entries of $A$. Returns true iff
@@ -137,7 +137,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     det_mc(A::SMat{ZZRingElem})
 
 Computes the determinant of $A$ using a LasVegas style algorithm,
@@ -180,7 +180,7 @@ function det_mc(A::SMat{ZZRingElem})
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     det(A::SMat{ZZRingElem})
 
 The determinant of $A$ using a modular algorithm.
@@ -208,7 +208,7 @@ function det(A::SMat{ZZRingElem})
   return crt_signed(ld, crt_env(lp))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     echelon_with_transform(A::SMat{zzModRingElem}) -> SMat, SMat
 
 Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
@@ -223,7 +223,7 @@ function echelon_with_transform(A::SMat{zzModRingElem})
   return sub(M.basis, 1:A.r, 1:A.c), sub(M.basis, 1:A.r, A.c+1:z.c)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false) -> SRow{ZZRingElem}, ZZRingElem
     solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false) -> SMat{ZZRingElem}, ZZRingElem
 

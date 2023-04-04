@@ -71,7 +71,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfAbsOrd, A::FakeFmpqMat, A_in_hnf::Bool = false) -> NfAbsOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If `A_in_hnf`
@@ -84,7 +84,7 @@ function fractional_ideal(O::NfAbsOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfAbsOrd, A::ZZMatrix, b::ZZRingElem, A_in_hnf::Bool = false) -> NfAbsOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
@@ -99,7 +99,7 @@ end
 
 fractional_ideal(O::NfAbsOrd, x::ZZMatrix, y::Integer) = fractional_ideal(O, x, ZZRingElem(y))
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfAbsOrd, I::NfAbsOrdIdl) -> NfAbsOrdFracIdl
 
 Turns the ideal $I$ into a fractional ideal of $\mathcal O$.
@@ -110,7 +110,7 @@ function fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl)
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfAbsOrd, I::NfAbsOrdIdl, b::ZZRingElem) -> NfAbsOrdFracIdl
 
 Creates the fractional ideal $I/b$ of $\mathcal O$.
@@ -127,7 +127,7 @@ fractional_ideal(x::NfAbsOrdIdl) = fractional_ideal(order(x), x, ZZRingElem(1))
 
 fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl, y::Integer) = fractional_ideal(O, x, ZZRingElem(y))
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfAbsOrd, a::nf_elem) -> NfAbsOrdFracIdl
 
 Creates the principal fractional ideal $(a)$ of $\mathcal O$.
@@ -138,7 +138,7 @@ function fractional_ideal(O::NfAbsOrd, x::NumFieldElem)
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     fractional_ideal(O::NfAbsOrd, a::NfAbsOrdElem) -> NfAbsOrdFracIdl
 
 Creates the principal fractional ideal $(a)$ of $\mathcal O$.
@@ -216,7 +216,7 @@ parent_type(::Type{NfAbsOrdFracIdl{S, T}}) where {S, T} = NfAbsOrdFracIdlSet{S, 
 
 order(a::NfAbsOrdFracIdlSet) = a.order
 
-@doc Markdown.doc"""
+@doc raw"""
     order(a::NfAbsOrdFracIdl) -> NfAbsOrd
 
 The order that was used to define the ideal $a$.
@@ -229,7 +229,7 @@ order(a::NfAbsOrdFracIdl) = a.order
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_mat_inv(I::NfAbsOrdFracIdl) -> FakeFmpqMat
 
 Returns the inverse of the basis matrix of $I$.
@@ -249,7 +249,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis(I::NfAbsOrdFracIdl) -> Vector{nf_elem}
 
 Returns the $\mathbf Z$-basis of $I$.
@@ -305,7 +305,7 @@ function assure_has_basis_matrix(a::NfAbsOrdFracIdl)
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_matrix(I::NfAbsOrdFracIdl) -> FakeFmpqMat
 
 Returns the basis matrix of $I$ with respect to the basis of the order.
@@ -389,7 +389,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(I::NfAbsOrdFracIdl) -> QQFieldElem
 
 Returns the norm of $I$.
@@ -419,7 +419,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     inv(A::NfAbsOrdFracIdl) -> NfAbsOrdFracIdl
 
 Returns the fractional ideal $B$ such that $AB = \mathcal O$.
@@ -690,7 +690,7 @@ function ideal(O::NfAbsOrd{S, T}, a::T) where {S <: NumField, T <: NumFieldElem}
   return a*O
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     integral_split(A::NfAbsOrdFracIdl) -> NfAbsOrdIdl, NfAbsOrdIdl
 
 Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
@@ -709,7 +709,7 @@ function integral_split(A::NfAbsOrdFracIdl)
   return numerator(n), numerator(d)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(I::NfAbsOrdFracIdl) -> Dict{NfAbsOrdIdl, Int}
 
 The factorisation of $I$.
@@ -735,7 +735,7 @@ function one(A::NfAbsOrdFracIdl)
   return NfAbsOrdFracIdl(ideal(order(A), 1), ZZRingElem(1))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(A::NfAbsOrdFracIdl, p::NfAbsOrdIdl)
 
 The valuation of $A$ at $p$.

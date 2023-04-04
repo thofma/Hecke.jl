@@ -174,7 +174,7 @@ function JorDec(L::QuadLat, p)
   return JorDec(J, G, E, p)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(J::JorDec, i::Int) -> MatElem
 
 Given an abstract Jordan decomposition $J$ and $i$, return the Gram matrix of
@@ -227,7 +227,7 @@ function gram_matrix(J::JorDec, i::Int)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return the Gram matrix of a lattice
@@ -243,7 +243,7 @@ function gram_matrix(J::JorDec)
   return D
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lattice(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return a lattice admitting this Jordan
@@ -253,7 +253,7 @@ function lattice(J::JorDec)
   return quadratic_lattice(J.K, gram = gram_matrix(J))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     genus(J::JorDec) -> QuadLocalGenus
 
 Given an abstract Jordan decomposition, return the local genus to which the
@@ -1442,7 +1442,7 @@ function _unimodular_jordan_block(p, m)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     local_jordan_decomposition(E::NumField, p; rank::Int
                                                det_val::Int
                                                max_scale::Int)
@@ -1963,7 +1963,7 @@ Base.:(+)(G1::QuadGenus, G2::QuadGenus) = direct_sum(G1, G2)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     in(L::QuadLat, G::QuadGenus) -> Bool
 
 Test if the lattice $L$ is contained in the genus $G$.

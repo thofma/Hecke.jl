@@ -59,7 +59,7 @@ function simplify!(C::CyclotomicExt)
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_extension(k::AnticNumberField, n::Int) -> CyclotomicExt
 
 Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
@@ -262,7 +262,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_extension(k::ClassField, n::Int) -> ClassField
 
 Computes $k(\zeta_n)$, as a class field, as an extension of the same base field.
@@ -279,7 +279,7 @@ function cyclotomic_extension(::Type{ClassField}, zk::NfOrd, n::Int; cached::Boo
   return fixed_field(r, kernel(h)[1])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_extension(ClassField, k::AnticNumberField, n::Int) -> ClassField
 
 Computes $k(\zeta_n)$, as a class field, as an extension of the same base field.
@@ -288,7 +288,7 @@ function cyclotomic_extension(::Type{ClassField}, k::AnticNumberField, n::Int; c
   return cyclotomic_extension(ClassField, maximal_order(k), n)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     fixed_field(A::ClassField, U::GrpAbFinGen)
 
 For a subgroup $U$ of the norm group of $A$, return the class field fixed
@@ -471,7 +471,7 @@ end
 #  Automorphisms for cyclotomic extensions
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
 
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_simple_field(C).
@@ -529,7 +529,7 @@ function show_cyclo(io::IO, C::ClassField)
   print(io, "Cyclotomic field mod $f as a class field")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_field(::Type{ClassField}, n::Int) -> ClassField
 
 The $n$-th cyclotomic field as a `ray_class_field`

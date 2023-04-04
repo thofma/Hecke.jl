@@ -7,7 +7,7 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        divisibility, coinvariant_lattice
 
 # scope & verbose scope: :Lattice
-@doc Markdown.doc"""
+@doc raw"""
     basis_matrix(L::ZLat)
 
 Return the basis matrix $B$ of the integer lattice $L$.
@@ -29,7 +29,7 @@ base_field(L::ZLat) = base_ring(gram_matrix(ambient_space(L)))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     Zlattice([B::MatElem]; gram) -> ZLat
 
 Return the Z-lattice with basis matrix $B$ inside the quadratic space with
@@ -66,7 +66,7 @@ function Zlattice(;gram, check=true)
   return lattice(quadratic_space(FlintQQ, gram, check=check), identity_matrix(FlintQQ, n), check=check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; isbasis=true, check=true) -> ZLat
 
 Return the Z-lattice with basis matrix $B$ inside the quadratic space $V$.
@@ -96,7 +96,7 @@ function lattice_in_same_ambient_space(L::ZLat, B::MatElem)
   return lattice(V,B)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rescale(L::ZLat, r::RationalUnion) -> ZLat
 
 Return the lattice `L` in the quadratic space with form `r \Phi`.
@@ -127,7 +127,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(L::ZLat) -> QQMatrix
 
 Return the gram matrix of $L$.
@@ -166,7 +166,7 @@ gram_matrix_of_rational_span(L::ZLat) = gram_matrix(L)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_span(L::ZLat) -> QuadSpace
 
 Return the rational span of $L$, which is the quadratic space with Gram matrix
@@ -206,7 +206,7 @@ function _biproduct(x::Vector{ZLat})
   return B
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
 
@@ -231,7 +231,7 @@ end
 
 direct_sum(x::Vararg{ZLat}) = direct_sum(collect(x))
 
-@doc Markdown.doc"""
+@doc raw"""
     direct_product(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
     direct_product(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
 
@@ -256,7 +256,7 @@ end
 
 direct_product(x::Vararg{ZLat}) = direct_product(collect(x))
 
-@doc Markdown.doc"""
+@doc raw"""
     biproduct(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
     biproduct(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
@@ -281,7 +281,7 @@ end
 
 biproduct(x::Vararg{ZLat}) = biproduct(collect(x))
 
-@doc Markdown.doc"""
+@doc raw"""
     orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
 
 Return the largest submodule of `L` orthogonal to `S`.
@@ -596,7 +596,7 @@ function is_sublattice(M::ZLat, N::ZLat)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_sublattice_with_relations(M::ZLat, N::ZLat) -> Bool, QQMatrix
 
 Returns whether $N$ is a sublattice of $M$. In this case, the second return
@@ -623,7 +623,7 @@ function is_sublattice_with_relations(M::ZLat, N::ZLat)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     root_lattice(R::Symbol, n::Int)
 
 Return the root lattice of type `R` given by `:A`, `:D` or `:E` with parameter `n`.
@@ -710,7 +710,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     Zlattice(S::Symbol, n::RationalUnion = 1) -> Zlat
 
 Given `S = :H` or `S = :U`, return a $\mathbb Z$-lattice admitting $n*J_2$ as
@@ -724,7 +724,7 @@ function Zlattice(S::Symbol, n::RationalUnion = 1)
   return Zlattice(gram = gram)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hyperbolic_plane_lattice(n::RationalUnion = 1)
 
 Return the hyperbolic plane with intersection form of scale `n`, that is,
@@ -769,7 +769,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     scale(L::ZLat) -> QQFieldElem
 
 Return the scale of `L`.
@@ -798,7 +798,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(L::ZLat) -> QQFieldElem
 
 Return the norm of `L`.
@@ -825,7 +825,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     iseven(L::ZLat) -> Bool
 
 Return whether `L` is even.
@@ -841,7 +841,7 @@ iseven(L::ZLat) = is_integral(L) && iseven(numerator(norm(L)))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(L::ZLat) -> QQFieldElem
 
 Return the discriminant of the rational span of `L`.
@@ -854,7 +854,7 @@ discriminant(L::ZLat) = discriminant(rational_span(L))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     det(L::ZLat) -> QQFieldElem
 
 Return the determinant of the gram matrix of `L`.
@@ -879,7 +879,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     signature_tuple(L::ZLat) -> Tuple{Int,Int,Int}
 
 Return the number of (positive, zero, negative) inertia of `L`.
@@ -941,7 +941,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_locally_isometric(L::ZLat, M::ZLat, p::Int) -> Bool
 
 Return whether `L` and `M` are isometric over the `p`-adic integers.
@@ -1000,7 +1000,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     mass(L::ZLat) -> QQFieldElem
 
 Return the mass of the genus of `L`.
@@ -1016,7 +1016,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     genus_representatives(L::ZLat) -> Vector{ZLat}
 
 Return representatives for the isometry classes in the genus of `L`.
@@ -1048,7 +1048,7 @@ function _maximal_integral_lattice(L::ZLat)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_even_lattice(L::ZLat, p) -> ZLat
 
 Given an even lattice `L` and a prime number `p` return an overlattice of `M`
@@ -1065,7 +1065,7 @@ function maximal_even_lattice(L::ZLat, p)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_even_lattice(L::ZLat) -> ZLat
 
 Return a maximal even overlattice `M` of the even lattice `L`.
@@ -1089,7 +1089,7 @@ function maximal_integral_lattice(L::ZLat)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     is_maximal_even(L::ZLat, p) -> Bool, ZLat
 
 Return if the (`p`-locally) even lattice `L` is maximal at `p` and an even overlattice `M`
@@ -1178,7 +1178,7 @@ function is_maximal_even(L::ZLat, p)
   return false, LL
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _is_isotropic_with_vector_mod4(Gnormal) -> Bool, MatElem
 
 Return if `Gnormal` is isotropic mod 4 and an isotropic vector.
@@ -1254,7 +1254,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     *(a::RationalUnion, L::ZLat) -> ZLat
 
 Return the lattice $aM$ inside the ambient space of $M$.
@@ -1276,7 +1276,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
 Return `true` if both lattices have the same ambient quadratic space
 and the same underlying module.
 """
@@ -1291,7 +1291,7 @@ function Base.:(==)(L1::ZLat, L2::ZLat)
   return hnf(FakeFmpqMat(B1)) == hnf(FakeFmpqMat(B2))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     local_modification(M::ZLat, L::ZLat, p)
 
 Return a local modification of `M` that matches `L` at `p`.
@@ -1342,7 +1342,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     kernel_lattice(L::ZLat, f::MatElem;
                    ambient_representation::Bool = true) -> ZLat
 
@@ -1375,7 +1375,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     invariant_lattice(L::ZLat, G::Vector{MatElem};
                       ambient_representation::Bool = true) -> ZLat
     invariant_lattice(L::ZLat, G::MatElem;
@@ -1410,7 +1410,7 @@ function invariant_lattice(L::ZLat, G::MatElem;
   return kernel_lattice(L, G - 1, ambient_representation = ambient_representation)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     coinvariant_lattice(L::ZLat, G::Vector{MatElem};
                         ambient_representation::Bool = true) -> ZLat
     coinvariant_lattice(L::ZLat, G::MatElem;
@@ -1434,7 +1434,7 @@ coinvariant_lattice(L::ZLat, G::Union{MatElem, Vector{<:MatElem}}; ambient_repre
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     Base.in(v::Vector, L::ZLat) -> Bool
 
 Return whether the vector `v` lies in the lattice `L`.
@@ -1445,7 +1445,7 @@ function Base.in(v::Vector, L::ZLat)
   return V in L
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Base.in(v::QQMatrix, L::ZLat) -> Bool
 
 Return whether the row span of `v` lies in the lattice `L`.
@@ -1458,7 +1458,7 @@ function Base.in(v::QQMatrix, L::ZLat)
   return fl && isone(denominator(w))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_primitive(L::ZLat, v::Union{Vector, QQMatrix}) -> Bool
 
 Return whether the vector `v` is primitive in `L`.
@@ -1481,7 +1481,7 @@ function is_primitive(L::ZLat, v::QQMatrix)
   return is_primitive(L, M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     divisibility(L::ZLat, v::Union{Vector, QQMatrix}) -> QQFieldElem
 
 Return the divisibility of `v` with respect to `L`.
@@ -1514,7 +1514,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     lll(L::ZLat, same_ambient::Bool = true) -> ZLat
 
 Given an integral $\mathbb Z$-lattice `L` with basis matrix `B`, compute a basis
@@ -1565,7 +1565,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     root_lattice_recognition(L::ZLat)
 
 Return the ADE type of the root sublattice of `L`.
@@ -1603,7 +1603,7 @@ function root_lattice_recognition(L::ZLat)
   return Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr], irr
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     irreducible_components(L::ZLat)
 
 Return the irreducible components ``L_i`` of the positive definite lattice ``L``.
@@ -1735,7 +1735,7 @@ function _irreducible_components_short_vectors(L, ub)
   return append!([L1], _irreducible_components_short_vectors(L2, ub))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     root_lattice_recognition_fundamental(L::ZLat)
 
 Return the ADE type of the root sublattice of `L`
@@ -1796,7 +1796,7 @@ function root_lattice_recognition_fundamental(L::ZLat)
   return C, ADE, components_new
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}
 
 Return the type of the irreducible root lattice
@@ -1843,7 +1843,7 @@ function _ADE_type_with_isometry_irreducible(L)
   return ADE, T
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     root_sublattice(L::ZLat) -> ZLat
 
 Return the sublattice spanned by the roots
@@ -1889,7 +1889,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     primitive_closure(M::ZLat, N::ZLat) -> ZLat
 
 Given two $\mathbb Z$-lattices `M` and `N` with $N \subseteq \mathbb{Q} M$,
@@ -1930,7 +1930,7 @@ function primitive_closure(M::ZLat, N::ZLat)
   return lattice(ambient_space(M), Bz*basis_matrix(M))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_primitive(M::ZLat, N::ZLat) -> Bool
 
 Given two $\mathbb Z$-lattices $N \subseteq M$, return whether `N` is a
@@ -1969,7 +1969,7 @@ function is_primitive(M::ZLat, N::ZLat)
   return primitive_closure(M, N) == N
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
                            -> Tuple{TorQuadModuleMor, TorQuadModuleMor, TorQuadModuleMor}
 
@@ -2062,7 +2062,7 @@ function glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
   return glue_map, iS, iR
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     overlattice(glue_map::TorQuadModuleMor) -> ZLat
 
 Given the glue map of a primitive extension of $\mathbb Z$-lattices
@@ -2113,7 +2113,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_primary_with_prime(L::ZLat) -> Bool, ZZRingElem
 
 Given a $\mathbb Z$-lattice `L`, return whether `L` is primary, that is whether `L`
@@ -2137,7 +2137,7 @@ function is_primary_with_prime(L::ZLat)
   return true, pd[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_primary(L::ZLat, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L` and a prime number `p`,
@@ -2149,7 +2149,7 @@ function is_primary(L::ZLat, p::Union{Integer, ZZRingElem})
   return bool && q == p
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_unimodular(L::ZLat) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L`, return whether `L` is unimodular,
@@ -2158,7 +2158,7 @@ is trivial.
 """
 is_unimodular(L::ZLat) = is_primary(L, 1)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_elementary_with_prime(L::ZLat) -> Bool, ZZRingElem
 
 Given a $\mathbb Z$-lattice `L`, return whether `L` is elementary, that is whether
@@ -2178,7 +2178,7 @@ function is_elementary_with_prime(L::ZLat)
   return bool, p
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_elementary(L::ZLat, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L` and a prime number `p`, return whether
@@ -2196,7 +2196,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     reflection(gram::QQMatrix, v::QQMatrix) -> QQMatrix
 
 Return the matrix representation of the orthogonal reflection in the row vector `v`.
@@ -2212,7 +2212,7 @@ function reflection(gram::MatElem, v::MatElem)
   return ref
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p, nu) -> (err, Vector{QQMatrix})
 
 Decompose the approximate isometry `T` into a product of reflections
@@ -2365,7 +2365,7 @@ function _is_isometric_indef_approx(L::ZLat, M::ZLat)
   return f, indexL1f_M1
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     index(L::ZLat, M::ZLat) -> IntExt
 
 Return the index $[L:M]=|L/M|$ of $M$ in $L$.
@@ -2408,7 +2408,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     coxeter_number(ADE::Symbol, n) -> Int
 
 Return the Coxeter number of the corresponding ADE root lattice.
@@ -2437,7 +2437,7 @@ function coxeter_number(ADE::Symbol, n)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     highest_root(ADE::Symbol, n) -> ZZMatrix
 
 Return coordinates of the highest root of `root_lattice(ADE, n)`.
@@ -2473,7 +2473,7 @@ function _weyl_vector(R::ZLat)
   return weyl*basis_matrix(R)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     leech_lattice()
 
 Return the Leech lattice.
@@ -2484,7 +2484,7 @@ function leech_lattice()
   return leech_lattice(N)[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     leech_lattice(niemeier_lattice::ZLat) -> ZLat, QQMatrix, Int
 
 Return a triple `L, v, h` where `L` is the Leech lattice.

@@ -453,7 +453,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     submodules(M::ZpnGModule; typequo, typesub, order)
 
 Given a ZpnGModule $M$, the function returns all the submodules of $M$.
@@ -858,7 +858,7 @@ end
 #
 ##################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     stable_subgroups(R::GrpAbFinGen, quotype::Vector{Int}, act::Vector{T}; op=sub)
 
 Given a group $R$, an array of endomorphisms of the group and the type of the quotient, it returns all the stable

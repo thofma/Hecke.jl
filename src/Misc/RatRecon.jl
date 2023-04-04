@@ -9,7 +9,7 @@ export rational_reconstruction, farey_lift, berlekamp_massey
 # Algorithm copies from the bad-primes paper
 
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 
  Returns `true` and $x, y$ s.th. $ay = x mod b$ and $degree(x) <= n$, $degree(y) <= m$
@@ -39,7 +39,7 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
   return false, M[2,1], M[2,2]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
 
  Returns `true` and $x/y$ s.th. $ay = x mod b$ and $degree(x), degree(y) <= degree(b)/2$
@@ -57,7 +57,7 @@ end
 #      signature, not the best (fastest) interface, ....
 #However: for now it works.
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_reconstruction(a::ZZRingElem, b::ZZRingElem)
     rational_reconstruction(a::Integer, b::Integer)
 
@@ -75,7 +75,7 @@ function rational_reconstruction(a::Integer, b::Integer)
   return rational_reconstruction(ZZRingElem(a), ZZRingElem(b))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D::ZZRingElem) -> Bool, ZZRingElem, ZZRingElem
 
 Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
@@ -91,7 +91,7 @@ end
 #Note: the vector version might be useful - or the mult be previous den version
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
-@doc Markdown.doc"""
+@doc raw"""
     rational_reconstruction(a::nf_elem, b::ZZRingElem)
 
 Applies the `rational_reconstruction` function to each coefficient.

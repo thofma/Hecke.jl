@@ -214,7 +214,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     subfield(L::NumField, elt::Vector{<: NumFieldelem};
                           isbasis::Bool = false) -> NumField, Map
 
@@ -264,7 +264,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     fixed_field(K::SimpleNumField,
                 sigma::Map;
                 simplify::Bool = true) -> number_field, NfToNfMor
@@ -280,7 +280,7 @@ function fixed_field(K::SimpleNumField, sigma::T; simplify::Bool = true) where {
   return fixed_field(K, T[sigma], simplify = simplify)
 end
 
-#@doc Markdown.doc"""
+#@doc raw"""
 #    fixed_field(K::SimpleNumField, A::Vector{NfToNfMor}) -> number_field, NfToNfMor
 #
 #Given a number field $K$ and a set $A$ of automorphisms of $K$, this function

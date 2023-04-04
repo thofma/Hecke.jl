@@ -98,14 +98,14 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     gens(G::GrpAbFinGen) -> Vector{GrpAbFinGenElem}
 
 The sequence of generators of $G$.
 """
 gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i = 1:ngens(G)]
 
-@doc Markdown.doc"""
+@doc raw"""
     gen(G::GrpAbFinGen, i::Int) -> Vector{GrpAbFinGenElem}
 
 The $i$-th generator of $G$.
@@ -119,7 +119,7 @@ gen(G::GrpAbFinGen, i::Int) = G[i]
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     parent(x::GrpAbFinGenElem) -> GrpAbFinGen
 
 Returns the parent of $x$.
@@ -168,7 +168,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     getindex(x::GrpAbFinGenElem, i::Int) -> ZZRingElem
 
 Returns the $i$-th component of the element $x$.
@@ -263,7 +263,7 @@ is_identity(a::GrpAbFinGenElem) = iszero(a.coeff)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     (A::GrpAbFinGen)(x::Vector{ZZRingElem}) -> GrpAbFinGenElem
 
 Given an array `x` of elements of type `ZZRingElem` of the same length as ngens($A$),
@@ -276,7 +276,7 @@ function (A::GrpAbFinGen)(x::Vector{ZZRingElem})
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     (A::GrpAbFinGen)(x::Vector{Integer}) -> GrpAbFinGenElem
 
 Given an array `x` of elements of type `Integer` of the same length as
@@ -288,7 +288,7 @@ function (A::GrpAbFinGen)(x::AbstractVector{T}) where T <: Integer
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     (A::GrpAbFinGen)(x::ZZMatrix) -> GrpAbFinGenElem
 
 Given a matrix over the integers with either $1$ row and `ngens(A)` columns
@@ -314,7 +314,7 @@ end
 
 zero(A::GrpAbFinGen) = A()
 
-@doc Markdown.doc"""
+@doc raw"""
     getindex(A::GrpAbFinGen, i::Int) -> GrpAbFinGenElem
 
 Returns the element of $A$ with components $(0,\dotsc,0,1,0,\dotsc,0)$,
@@ -339,7 +339,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     order(A::GrpAbFinGenElem) -> ZZRingElem
 
 Returns the order of $A$. It is assumed that the order is finite.
@@ -372,7 +372,7 @@ end
 
 rand(rng::AbstractRNG, a::Random.SamplerTrivial{GrpAbFinGen, GrpAbFinGenElem}) = rand(a.self)
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(G::GrpAbFinGen) -> GrpAbFinGenElem
 
 Returns an element of $G$ chosen uniformly at random.
@@ -391,7 +391,7 @@ function rand_gen(G::GrpAbFinGen)
   return image(mS, rand(S))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(G::GrpAbFinGen, B::ZZRingElem) -> GrpAbFinGenElem
 
 For a (potentially infinite) abelian group $G$, return an element
@@ -399,7 +399,7 @@ chosen uniformly at random with coefficients bounded by $B$.
 """
 rand(G::GrpAbFinGen, B::ZZRingElem) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(G::GrpAbFinGen, B::Integer) -> GrpAbFinGenElem
 
 For a (potentially infinite) abelian group $G$, return an element

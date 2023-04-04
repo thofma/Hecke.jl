@@ -184,7 +184,7 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     compose_mod(a::AbstractAlgebra.MPolyRingElem{T}, vars::Vector{Int}, vals::Vector{MPolyRingElem{T}}, mod::Vector{MPolyRingElem{T}}) where T <: FieldElement
 Evaluate the polynomial by substituting in the supplied values in the array `vals` for
 the corresponding variables with indices given by the array `vars`. The evaluation will

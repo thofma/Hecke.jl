@@ -57,7 +57,7 @@ end
 # 2 = ARF_RND_FLOOR = round towards -infinity
 # 3 = ARF_RND_CEIL = round towards +infinity
 
-@doc Markdown.doc"""
+@doc raw"""
     abs_upper_bound(::Type{ZZRingElem}, x::arb) -> ZZRingElem
 
 Returns a positive integer $b$ of type `ZZRingElem` such that $\lvert x \rvert \leq
@@ -84,7 +84,7 @@ function abs_upper_bound(::Type{ZZRingElem}, x::arb)
   return bound
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     abs_upper_bound(::Type{Float64}, x::Float64) -> Float64
 
 Returns a positive double $b$ such that $\lvert x \rvert \leq b$. It is not
@@ -107,7 +107,7 @@ function abs_upper_bound(::Type{Float64}, x::arb)
   return bound
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     upper_bound(::Type{ZZRingElem}, x::arb) -> ZZRingElem
 
 Returns an integer $b$ of type `ZZRingElem` such that $x \leq
@@ -131,7 +131,7 @@ function upper_bound(::Type{ZZRingElem}, x::arb)
   return bound
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lower_bound(x::arb, ::Type{ZZRingElem}) -> ZZRingElem
 
 Returns an integer $b$ of type `ZZRingElem` such that $x \geq

@@ -515,7 +515,7 @@ function recprint(n::Int)
   return s
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hermite_constant(n::Int, R=ArbField(100))
 
 The $n$-th Hermite constant (for lattices) to the power $n$.

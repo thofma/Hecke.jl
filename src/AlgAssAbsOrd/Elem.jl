@@ -99,7 +99,7 @@ zero(O::AlgAssAbsOrd) = O(algebra(O)())
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     elem_in_algebra(x::AlgAssAbsOrdElem; copy::Bool = true) -> AbsAlgAssElem
     elem_in_algebra(x::AlgAssRelOrdElem; copy::Bool = true) -> AbsAlgAssElem
 
@@ -147,7 +147,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     coordinates(x::AlgAssAbsOrdElem; copy::Bool = true) -> Vector{ZZRingElem}
     coordinates(x::AlgAssRelOrdElem; copy::Bool = true) -> Vector{NumFieldElem}
 
@@ -228,7 +228,7 @@ function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: U
   return typeof(a)(O, c)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true)
     divexact_right(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem, check::Bool = true)
       -> AlgAssRelOrdElem
@@ -239,7 +239,7 @@ If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
 divexact_right(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :right, check)
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_left(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true)
     divexact_left(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem, check::Bool = true)
       -> AlgAssRelOrdElem
@@ -273,7 +273,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ^(x::AlgAssAbsOrdElem, y::Union{ Int, ZZRingElem }) -> AlgAssAbsOrdElem
     ^(x::AlgAssRelOrdElem, y::Union{ Int, ZZRingElem }) -> AlgAssRelOrdElem
 
@@ -297,7 +297,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem) -> Bool
     ==(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem) -> Bool
 
@@ -364,7 +364,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left) -> ZZMatrix
 
 Returns a matrix representing multiplication with $x$ with respect to the basis
@@ -415,7 +415,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     tr(x::AlgAssAbsOrdElem) -> ZZRingElem
 
 Returns the trace of $x$.
@@ -424,7 +424,7 @@ function tr(x::AlgAssAbsOrdElem)
   return FlintZZ(tr(x.elem_in_algebra))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     trred(x::AlgAssAbsOrdElem) -> ZZRingElem
 
 Returns the reduced trace of $x$.

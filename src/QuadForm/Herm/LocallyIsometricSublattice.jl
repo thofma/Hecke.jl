@@ -288,7 +288,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     locally_isometric_sublattice(M::HermLat, L::HermLat, p::NfOrdIdl) -> HermLat
 
 Given rationally isometric hermitian lattices `M` and `L` over $E/K$ and a prime ideal `p`

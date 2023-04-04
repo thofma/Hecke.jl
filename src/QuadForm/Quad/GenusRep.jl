@@ -82,7 +82,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     genus_representatives(L::QuadLat; max = inf, use_auto = false)
                                                         -> Vector{QuadLat}
 

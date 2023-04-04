@@ -40,7 +40,7 @@ export torsion_unit_group, torsion_units, torsion_units_generator, torsion_units
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_torsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
 Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
@@ -59,7 +59,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_unit_order(x::NfOrdElem, n::Int)
 
 Given a torsion unit $x$ together with a multiple $n$ of its order, compute
@@ -114,7 +114,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_units(O::NfOrd) -> Vector{NfOrdElem}
 
 Given an order $O$, compute the torsion units of $O$.
@@ -124,7 +124,7 @@ function torsion_units(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
   return powers(g, ord-1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_units_generator(O::NfOrd) -> NfOrdElem
 
 Given an order $O$, compute a generator of the torsion units of $O$.
@@ -133,7 +133,7 @@ function torsion_units_generator(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
   return torsion_units_gen_order(O)[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_units_gen_order(O::NfOrd) -> NfOrdElem
 
 Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
@@ -166,7 +166,7 @@ function torsion_units_gen_order(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
   return genO, ord_O
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_unit_group(O::NfOrd) -> GrpAb, Map
 
 Given an order $\mathcal O$, returns the torsion units as an abelian group $G$

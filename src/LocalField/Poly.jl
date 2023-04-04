@@ -77,7 +77,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Generic.ResidueRingElem{ZZRingElem}, fpFieldElem} -> padic
 
 Computes a lift of the element from the residue ring.
@@ -97,7 +97,7 @@ function lift(a::FinFieldElem, K::LocalField)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(f::T, Kt) where T <: Union{zzModPolyRingElem, ZZModPolyRingElem, fpPolyRingElem} -> Generic.Poly{padic}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
@@ -106,7 +106,7 @@ function lift(f::T, Kt::PolyRing) where T <: FinFieldElem
   return map_coefficients(x -> lift(x, K), f, Kt)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(x::fqPolyRepFieldElem, Q::QadicField) -> qadic
 
 Computes a lift of the element from the residue ring.
@@ -119,7 +119,7 @@ function lift(x::fqPolyRepFieldElem, Q::QadicField)
   return setprecision(z, 1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(x::fqPolyRepPolyRingElem, Kt) -> Generic.Poly{qadic}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
@@ -736,7 +736,7 @@ function norm(f::PolyElem{padic})
   return f
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}
 
 Computes $\mathrm{ResidueRingElem}_x(f(x), t- g(x))$.
@@ -812,7 +812,7 @@ end
 #  Hensel factorization
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Generic.Poly{T}}
 
 Computes a factorization of $f$ such that every factor has a unique irreducible factor over the residue field.
@@ -1001,7 +1001,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
 
 Computes a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.

@@ -752,7 +752,7 @@ function (f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMo
   return map_coefficients(f, p)
 end
 =#
-@doc Markdown.doc"""
+@doc raw"""
     extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField) -> NfToFqNmodMor
 
 For a residue field map from a prime ideal, extend the domain of the map

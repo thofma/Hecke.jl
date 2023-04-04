@@ -200,7 +200,7 @@ function divisible(x::Integer, y::Integer)
   return iszero(rem(x, y))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     modord(a::ZZRingElem, m::ZZRingElem) -> Int
     modord(a::Integer, m::Integer)
 
@@ -388,7 +388,7 @@ end
 #compare to Oscar/examples/PerfectPowers.jl which is, for large input,
 #far superiour over gmp/ fmpz_is_perfect_power
 
-@doc Markdown.doc"""
+@doc raw"""
     is_power(a::ZZRingElem) -> Int, ZZRingElem
     is_power(a::Integer) -> Int, Integer
 
@@ -426,7 +426,7 @@ function is_power(a::Integer)
   return e, typeof(a)(r)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_power(a::QQFieldElem) -> Int, QQFieldElem
     is_power(a::Rational) -> Int, Rational
 
@@ -448,7 +448,7 @@ function is_power(a::Rational)
   return e, T(numerator(r))//T(denominator(r))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_power(a::ZZRingElem, n::Int) -> Bool, ZZRingElem
     is_power(a::QQFieldElem, n::Int) -> Bool, QQFieldElem
     is_power(a::Integer, n::Int) -> Bool, Integer
@@ -547,7 +547,7 @@ end
 ################################################################################
 
 
-@doc Markdown.doc"""
+@doc raw"""
     nbits(a::Integer) -> Int
 
   Returns the number of bits necessary to represent $a$.
@@ -575,7 +575,7 @@ function mod_sym(a::ZZRingElem, b::ZZRingElem)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     isinteger(a::QQFieldElem) -> Bool
 
 Returns `true` iff the denominator of $a$ is one.
@@ -616,7 +616,7 @@ function show(io::IO, mC::MapSUnitGrpZ)
   println(io, "SUnits map of $(codomain(mC)) for $(mC.idl)")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     sunit_group_fac_elem(S::Vector{ZZRingElem}) -> GrpAbFinGen, Map
     sunit_group_fac_elem(S::Vector{Integer}) -> GrpAbFinGen, Map
 
@@ -671,7 +671,7 @@ function preimage(f::MapSUnitGrpZFacElem, a::FacElem)
   return sum(GrpAbFinGenElem[e*preimage(f, k) for (k,e) = a.fac])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     sunit_group(S::Vector{ZZRingElem}) -> GrpAbFinGen, Map
     sunit_group(S::Vector{Integer}) -> GrpAbFinGen, Map
 
@@ -699,7 +699,7 @@ function sunit_group(S::Vector{ZZRingElem})
   return u, mp
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_prime_power(n::ZZRingElem) -> Bool
     is_prime_power(n::Integer) -> Bool
 
@@ -944,7 +944,7 @@ end
 
 export euler_phi_inv, Divisors, carmichael_lambda
 
-@doc Markdown.doc"""
+@doc raw"""
     Divisors{T}
 
 An iterator for the divisors of a given object.
@@ -1067,7 +1067,7 @@ function Base.show(io::IO, D::Divisors)
   print(io, "\n")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     unit_group(::ZZRing) -> GrpAbFinGen, Map
 
 The unit group of $\mathbb{Z}$, i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
@@ -1083,7 +1083,7 @@ function unit_group(::ZZRing)
   return G, MapFromFunc(exp, log, G, FlintZZ)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     unit_group(::Integers{T}) -> GrpAbFinGen, Map
 
 The unit group of , i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
@@ -1105,7 +1105,7 @@ end
 #basically from
 #http://people.math.gatech.edu/~ecroot/shparlinski_final.pdf
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
-@doc Markdown.doc"""
+@doc raw"""
     euler_phi_inv_fac_elem(n::ZZRingElem)
 
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
@@ -1216,7 +1216,7 @@ function carmichael_lambda(n::T) where {T <: Integer}
   return T(carmichael_lambda(ZZRingElem(n)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     euler_phi_inv(n::Integer) -> Vector{ZZRingElem}
 
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
@@ -1226,7 +1226,7 @@ function euler_phi_inv(n::Integer)
   return euler_phi_inv(ZZRingElem(n))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     euler_phi_inv(n::ZZRingElem) -> Vector{ZZRingElem}
 
 The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
@@ -1481,7 +1481,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     primes_up_to(n::Int) -> Vector{Int}
 
 Returns a vector containing all the prime numbers up to $n$.
@@ -1517,7 +1517,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     squarefree_up_to(n::Int) -> Vector{Int}
 
 Returns a vector containing all the squarefree numbers up to $n$.
@@ -1578,7 +1578,7 @@ end
 ################################################################################
 
 #TODO (Hard): Implement this properly.
-@doc Markdown.doc"""
+@doc raw"""
     is_squarefree(n::Union{Int, ZZRingElem}) -> Bool
 
 Returns true if $n$ is squarefree, false otherwise.
@@ -1663,7 +1663,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     squarefree_part(a::ZZRingElem) -> ZZRingElem
 
 Returns the squarefee part $b$ of $a$, which is the smallest (absolute value)
@@ -1686,7 +1686,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     factor(a::QQFieldElem, ::ZZRing) -> Fac{ZZRingElem}
 
 Factor the rational number $a$ into prime numbers.

@@ -185,7 +185,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
 Returns $x \cap y$.
@@ -489,7 +489,7 @@ function gcd_into!(A::NfAbsOrdIdl, B::NfAbsOrdIdl, C::NfAbsOrdIdl)
 end
 
 #TODO: write a ppio version that allows for p-powers as well
-@doc Markdown.doc"""
+@doc raw"""
     gcd(A::NfOrdIdl, p::ZZRingElem) -> NfOrdIdl
 
 The gcd or sum (A + pO).
@@ -734,7 +734,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     idempotents(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdElem, NfOrdElem
 
 Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
@@ -831,7 +831,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
 
 Find $x$ such that $x \equiv r_1 \bmod i_1$ and $x \equiv r_2 \bmod i_2$

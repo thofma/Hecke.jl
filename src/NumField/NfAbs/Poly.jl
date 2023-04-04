@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_elem}, q::ZZRingElem) -> Generic.Poly{nf_elem}, ZZRingElem
 
 Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
@@ -28,7 +28,7 @@ function induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_
   return c, pq
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::ZZRingElem) -> bool, Generic.Poly{nf_elem}
 
 Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
@@ -54,7 +54,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
 
 Computes the greatest common divisor of $f$ and $g$ using a modular algorithm.

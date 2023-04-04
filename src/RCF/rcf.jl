@@ -10,7 +10,7 @@ add_assertion_scope(:ClassField)
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     number_field(CF::ClassField) -> NfRelNS{nf_elem}
 
 Given a (formal) abelian extension, compute the class field by finding defining
@@ -1106,7 +1106,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ring_class_group(O::NfAbsOrd)
 
 The ring class group (Picard group) of $O$.
@@ -1114,7 +1114,7 @@ The ring class group (Picard group) of $O$.
 ring_class_group(O::NfAbsOrd) = picard_group(O)
 
 
-@doc Markdown.doc"""
+@doc raw"""
     ring_class_field(O::NfAbsOrd) -> ClassField
 
 The ring class field of $O$, i.e. the maximal abelian extension ramified

@@ -79,7 +79,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis(I::GenOrdFracIdl) -> Vector{FunFieldElem}
 
 Returns the basis over the maximal Order of $I$.
@@ -251,7 +251,7 @@ Base.:*(x::GenOrdFracIdl, y::GenOrdElem) = y * x
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(I::GenOrdFracIdl) -> GenOrd
 
 Returns the norm of $I$.

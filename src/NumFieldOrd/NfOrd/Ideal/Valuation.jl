@@ -401,7 +401,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
@@ -411,7 +411,7 @@ such that $a$ is contained in $\mathfrak p^i$.
 """
 valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
@@ -426,7 +426,7 @@ function valuation(a::ZZRingElem, p::NfAbsOrdIdl)
   P = minimum(p, copy = false)
   return valuation(a, P)* p.splitting_type[1]
 end
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::Integer, p::NfOrdIdl) -> ZZRingElem
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
@@ -469,7 +469,7 @@ function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNS
   return valuation_naive(O(x*d), B) - valuation_naive(O(d), B)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(A::NfOrdIdl, p::NfOrdIdl) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$

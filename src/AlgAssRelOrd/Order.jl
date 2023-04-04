@@ -8,7 +8,7 @@ ideal_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}
 
 ideal_type(::Type{AlgAssRelOrd{S, T, U}}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}
 
-@doc Markdown.doc"""
+@doc raw"""
     algebra(O::AlgAssRelOrd) -> AbsAlgAss
 
 Returns the algebra which contains $O$.
@@ -17,14 +17,14 @@ algebra(O::AlgAssRelOrd) = O.algebra
 
 _algebra(O::AlgAssRelOrd) = algebra(O)
 
-@doc Markdown.doc"""
+@doc raw"""
     base_ring(O::AlgAssRelOrd) -> Union{NfAbsOrd, NfRelOrd}
 
 Returns an order $R$ in the base ring of the algebra of $O$, such that $O$ is an $R$-order.
 """
 base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
 
-@doc Markdown.doc"""
+@doc raw"""
     is_commutative(O::AlgAssRelOrd) -> Bool
 
 Returns `true` if $O$ is a commutative ring and `false` otherwise.
@@ -37,7 +37,7 @@ is_commutative(O::AlgAssRelOrd) = is_commutative(algebra(O))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     Order(A::AbsAlgAss{<: NumFieldElem}, M::Generic.Mat{<: NumFieldElem})
       -> AlgAssRelOrd
 
@@ -47,7 +47,7 @@ function Order(A::AbsAlgAss{S}, M::Generic.Mat{S}) where S <: NumFieldElem
   return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A))), typeof(A)}(A, deepcopy(M))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Order(A::AbsAlgAss{<: NumFieldElem}, M::PMat{<: NumFieldElem, T})
       -> AlgAssRelOrd
 
@@ -57,7 +57,7 @@ function Order(A::AbsAlgAss{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
   return AlgAssRelOrd{S, T, typeof(A)}(A, deepcopy(M))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     Order(A::AbsAlgAss{<: NumFieldElem}, B::Vector{<: AbsAlgAssElem{ <: NumFieldElem}})
       -> AlgAssRelOrd
 
@@ -145,7 +145,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     pseudo_basis(O::AlgAssRelOrd; copy::Bool = true)
 
 Returns the pseudo basis of $O$, i. e. a vector $v$ of pairs $(e_i, a_i)$ such
@@ -161,7 +161,7 @@ function pseudo_basis(O::AlgAssRelOrd{S, T, U}; copy::Bool = true) where {S, T, 
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_pmatrix(O::AlgAssRelOrd; copy::Bool = true) -> PMat
 
 Returns the basis pseudo-matrix of $O$.
@@ -202,7 +202,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_matrix(O::AlgAssRelOrd; copy::Bool = true) -> MatElem
 
 Returns the basis matrix of $O$, that is the basis pseudo-matrix of $O$ without
@@ -217,7 +217,7 @@ function basis_matrix(O::AlgAssRelOrd; copy::Bool = true)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     basis_mat_inv(O::AlgAssRelOrd; copy::Bool = true) -> MatElem
 
 Returns the inverse of the basis matrix of $O$.
@@ -237,7 +237,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     degree(O::AlgAssRelOrd) -> Int
 
 Returns the dimension of the algebra containing $O$.
@@ -278,7 +278,7 @@ function _check_elem_in_order(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, V}, sho
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     in(a::AbsAlgAssElem, O::AlgAssRelOrd) -> Bool
 
 Returns `true` if the algebra element $a$ is in $O$ and `false` otherwise.
@@ -293,7 +293,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     denominator(a::AbsAlgAssElem, O::AlgAssRelOrd) -> ZZRingElem
 
 Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
@@ -318,7 +318,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(O::AlgAssRelOrd, B::Int) -> AlgAssRelOrdElem
 
 Returns a random element of $O$ whose coefficient size is controlled by $B$.
@@ -365,7 +365,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     ==(R::AlgAssRelOrd, S::AlgAssRelOrd) -> Bool
 
 Returns `true` if $R$ and $S$ are equal and `false` otherwise.
@@ -381,7 +381,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     trred_matrix(O::AlgssRelOrd) -> MatElem
 
 Returns the reduced trace matrix $M$ of $O$, i. e. `M[i, j] = trred(b[i]*b[j])`,
@@ -408,7 +408,7 @@ function trred_matrix(O::AlgAssRelOrd)
   return deepcopy(M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(O::AlgssRelOrd)
 
 Returns the discriminant of $O$.
@@ -439,7 +439,7 @@ function is_maximal_order_known(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   return isdefined(A, :maximal_order)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
 
 Returns a maximal $R$-order of $A$ where $R$ is the maximal order of the base ring of $A$.
@@ -480,7 +480,7 @@ function maximal_order_via_relative(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   return maximal_order(O)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_order(O::AlgAssRelOrd) -> AlgAssRelOrd
 
 Returns a maximal order of the algebra of $O$ containing itself.
@@ -514,7 +514,7 @@ function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   return OO::AlgAssRelOrd{S, T, U}
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     any_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
 
 Returns any $R$-order of $A$ where $R$ is the maximal order of the base ring of $A$.
@@ -524,7 +524,7 @@ function any_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   return any_order(A, maximal_order(K))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     any_order(A::AbsAlgAss{ <: NumFieldElem}, R::Union{ NfAbsOrd, NfRelOrd })
       -> AlgAssRelOrd
 
@@ -632,7 +632,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     nice_order(O::AlgAssRelOrd) -> AlgAssRelOrd, AlgElem
 
 Given a maximal order $O$ in a full matrix algebra over a number field, return a
@@ -655,7 +655,7 @@ function nice_order_ideal(O::AlgAssRelOrd)
   return O.nice_order_ideal
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_maximal(O::AlgAssRelOrd) -> Bool
 
 Returns `true` if $O$ is a maximal order and `false` otherwise.
@@ -706,7 +706,7 @@ is_maximal_known(O::AlgAssRelOrd) = O.is_maximal != 0
 ################################################################################
 
 # See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 4.12
-@doc Markdown.doc"""
+@doc raw"""
     phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAssRelOrd
 
@@ -755,7 +755,7 @@ function _pmaximal_overorder(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ N
   return O
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAssRelOrd
 

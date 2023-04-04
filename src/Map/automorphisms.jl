@@ -186,7 +186,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_group(K::NumField) -> GenGrp, GrpGenToNfMorSet
 
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
@@ -249,7 +249,7 @@ function automorphism_group(K::NumField)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_group(L::NumField, K::NumField) -> GenGrp, GrpGenToNfMorSet
 
 Given the number field extension $L$ and $K$, this function returns a group $G$
@@ -267,7 +267,7 @@ function automorphism_group(L::NumField, K::NumField)
   return G, GrpGenToNfMorSet(G, aut, L)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_automorphism_group(L::NumField) -> GenGrp, GrpGenToNfMorSet
 
 Given the number field $L$, this function returns a group $G$

@@ -186,7 +186,7 @@ end
 #  High level functions
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
 
 Returns the residue field of the prime ideal $P$ together with the
@@ -247,7 +247,7 @@ function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     relative_residue_field(O::NfRelOrd, P::NfRelOrdIdl) -> RelFinField, Map
 
 Given a maximal order `O` in a relative number field $E/K$ and a prime ideal

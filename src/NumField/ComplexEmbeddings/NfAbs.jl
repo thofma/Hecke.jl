@@ -279,7 +279,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     infinite_uniformizers(K::NumField) -> Dict{NumFieldEmb, NumFieldElem}
 
 Returns a dictionary having as keys the real real embeddings of $K$ and the values

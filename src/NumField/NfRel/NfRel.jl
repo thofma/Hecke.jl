@@ -520,7 +520,7 @@ function representation_matrix(a::NfRelElem)
   return M
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_representation_matrix(a::NfRelElem) -> MatrixElem
 
 Return the absolute representation matrix of `a`, that is the matrix
@@ -778,7 +778,7 @@ rand(rng::AbstractRNG, L::NfRel, B::UnitRange{Int}) = rand(rng, make(L, B))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     kummer_generator(K::NfRel{nf_elem}) -> nf_elem
 
 Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
@@ -872,7 +872,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
 					                  -> NfRel, NfRelElem
 Given an integer `n`, return the `n`-th cyclotomic field $E = \mathbb{Q}(\zeta_n)$
