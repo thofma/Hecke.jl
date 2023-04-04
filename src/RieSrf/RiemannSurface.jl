@@ -18,9 +18,15 @@ mutable struct RiemannSurface
   prec::Int
   embedding::Union{PosInf, InfPlc}
   discriminant_points::Vector{acb}
-  closed_chains::Vector{CPath}
+  fundamental_group_of_P1::Tuple{Vector{CPath}, Vector{Vector{Int}}}
   function_field::AbstractAlgebra.Generic.FunctionField
   basis_of_differentials::Vector{Any}
+  weak_error::arb
+  error::arb
+  real_field::ArbField
+  complex_field::AcbField
+  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
+  homology_basis::Tuple{Vector{Vector{Int64}}, fmpz_mat, fmpz_mat}
 
   function RiemannSurface(f::MPolyElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     K = base_ring(f)
@@ -35,10 +41,21 @@ mutable struct RiemannSurface
     kxy, y = PolynomialRing(kx, "y")
     f_new = f(x,y)
     F, a = function_field(f_new)
-    #diff_base = basis_of_differentials(F)
+    diff_base = basis_of_differentials(F)
     RS.function_field = F
-    #RS.basis_of_differentials = diff_base
-    #RS.genus = dimension(diff_bas)
+    RS.basis_of_differentials = diff_base
+    RS.genus = length(diff_base)
+    
+    RS.complex_field = AcbField(prec + 3 + max(degree(f, 1), degree(f, 2)))
+    Rc = ArbField(prec + 3 + max(degree(f, 1), degree(f, 2)))
+    RS.real_field = Rc
+    
+    b10prec = floor(Int, prec*log(2)/log(10))
+    
+    RS.weak_error = Rc(10)^(-(2//3) *b10prec)
+    RS.error = Rc(10)^(-prec + 1)
+    
+    
     
     return RS
   end
@@ -141,6 +158,8 @@ function discriminant_points(RS::RiemannSurface, copy::Bool = true)
 end
 
 
+
+
 ################################################################################
 #
 #  Monodromy computation
@@ -148,6 +167,14 @@ end
 ################################################################################
 
 function monodromy_representation(RS::RiemannSurface)
+  if isdefined(RS, :monodromy_representation)
+    return RS.monodromy_representation
+  else
+    return _monodromy_representation(RS)
+  end
+end
+
+function _monodromy_representation(RS::RiemannSurface)
   paths, pi1_gens = fundamental_group_of_punctured_P1(RS, true)
   f = defining_polynomial(RS)
   m = degree(f, 2)
@@ -172,7 +199,7 @@ function monodromy_representation(RS::RiemannSurface)
     assign_permutation(path, inv(s_m(path_perm)))
   end
   
-  mon_rep = []
+  mon_rep = Tuple{Vector{CPath}, Perm{Int64}}[]
   
   for gamma in pi1_gens
     chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
@@ -183,7 +210,7 @@ function monodromy_representation(RS::RiemannSurface)
      end
   end
   
-  inf_chain = []
+  inf_chain = Vector{CPath}[]
   inf_perm = one(s_m)
   
   for g in mon_rep
@@ -192,7 +219,7 @@ function monodromy_representation(RS::RiemannSurface)
   end
   
   push!(mon_rep, (reverse(inf_chain), inv(inf_perm)))
-  
+  RS.monodromy_representation = mon_rep
   return mon_rep
   
 end
@@ -203,8 +230,16 @@ function monodromy_group(RS::RiemannSurface)
   return closure(gens, *)
 end
 
-#Follows algorithm 4.3.1 in Neurohr
 function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool = true)
+  if isdefined(RS, :fundamental_group_of_P1)
+    return RS.fundamental_group_of_P1
+  else
+    return _fundamental_group_of_punctured_P1(RS, abel_jacobi)
+  end
+end
+
+#Follows algorithm 4.3.1 in Neurohr
+function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool = true)
   
   #Compute the exceptional values x_i
   D_points = discriminant_points(RS)
@@ -254,7 +289,7 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool
   end
   #Now we sort the points by angle and level
 
-  path_edges = []
+  path_edges = Int[]
   past_nodes = [d + 1]
   current_node = d + 1
   
@@ -275,7 +310,7 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool
   current_level = vcat(left_edges, right_edges)
   
   while length(path_edges) < length(edges)
-    next_level = []
+    next_level = Int[]
     for edge in current_level
     
       previous_node = edge[1]
@@ -336,13 +371,13 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool
   path_indices = map(path -> map(t -> findfirst(x -> x == t, path_edges), path), paths)
 
   c_arcs = CPath[]
-  paths_with_arcs = []
+  paths_with_arcs = Vector{Int}[]
   
   #We reconstruct the paths 
   for path in reverse(path_indices)
     
     i = path[end]
-    loop = []
+    loop = Int[]
     
     arc_start = arc_end = end_point(c_lines[i])
     center = D_points[path_edges[i][end]]
@@ -363,7 +398,7 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool
     push!(c_arcs, c_arc(arc_start, arc_end, center))
     push!(loop, d + n + 1)
 
-    path_to_loop = []
+    path_to_loop = Int[]
 
     #Now we attach the line piece
     push!(path_to_loop, i)
@@ -371,7 +406,7 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool
     #We add the inverse arcs as moving towards the points we want to encircle we move clockwise 
     for k in (length(path)-1:-1:1)  
     
-      arc_buffer = []
+      arc_buffer = Int[]
       old_line_piece = c_lines[path[k+1]]
       new_line_piece = c_lines[path[k]]
       arc_start = start_point(old_line_piece)
@@ -398,6 +433,9 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool
     end
     push!(paths_with_arcs, vcat(reverse(path_to_loop), reverse(loop), -path_to_loop))
   end
+  
+  pi1 = vcat(c_lines, c_arcs), reverse(paths_with_arcs)
+  RS.fundamental_group_of_P1 = pi1
   return vcat(c_lines, c_arcs), reverse(paths_with_arcs)
 end
 
@@ -471,7 +509,6 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   Rc = ArbField(prec)
   
   f = embed_mpoly(defining_polynomial(RS), v, prec)
-  
   Cc = base_ring(f)
   
   f = change_base_ring(Cc, f, parent = parent(f))
@@ -484,6 +521,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   x_vals = zeros(Cc, N)
   y_vals = [zeros(Cc, m) for i in (1:N)]
   z = zeros(Cc, m)
+
   x_vals[1] = evaluate(path, u[1])
   
   Kxy = parent(f)
@@ -536,14 +574,21 @@ end
 ################################################################################
 
 function homology_basis(RS::RiemannSurface)
+  if isdefined(RS, :homology_basis)
+    return RS.homology_basis
+  end
+  return _homology_basis(RS)
+end
+
+function _homology_basis(RS::RiemannSurface)
   mon_rep = monodromy_representation(RS)
   gens = map(t -> t[2], mon_rep)
   s_n = parent(gens[1])
   n = s_n.n
   d = length(gens)
   
-  ramification_points = []
-  ramification_indices = []
+  ramification_points = Tuple{Int64, SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true}, Perm{Int64}}[]
+  ramification_indices = Int[]
   
   for i in (1:d)
     for cyc in cycles(gens[i])
@@ -551,14 +596,14 @@ function homology_basis(RS::RiemannSurface)
       push!(ramification_indices, length(cyc) - 1)
     end
   end
-  
+
   genus = -n + 1 + divexact(sum(ramification_indices;init = zero(Int)), 2)
   
   all_branches_terminated = false
   ram_pts_nr = length(ramification_points)
   vertices = Set([ram_pts_nr+1])
-  edges_on_level = []
-  terminated_edges = []
+  edges_on_level = Vector{TretkoffEdge}[]
+  terminated_edges = TretkoffEdge[]
   
   level = 1
   push!(edges_on_level, [])
@@ -570,7 +615,6 @@ function homology_basis(RS::RiemannSurface)
       push!(edges_on_level[level], edge)
     end
   end
-  
   while !all_branches_terminated
     level += 1
     push!(edges_on_level, [])
@@ -669,8 +713,8 @@ function homology_basis(RS::RiemannSurface)
   
   reverse!(terminated_edges)
   
-  P = []
-  QQ = []
+  P = TretkoffEdge[]
+  QQ = TretkoffEdge[]
   Q = Vector{TretkoffEdge}(undef, PQ_size)
   l = 1
   
@@ -692,7 +736,7 @@ function homology_basis(RS::RiemannSurface)
     Q[l] = edge
   end
   
-  cycles_list = []
+  cycles_list = Vector{Int}[]
   
   for i in (1:PQ_size)
     cycle = vcat(branch(P[i]), reverse(branch(Q[i])[1:end-2]))
@@ -728,7 +772,9 @@ function homology_basis(RS::RiemannSurface)
   
   @req rank(A) == 2*genus "Computed matrix has the wrong rank. There is a bug in the code."
   K = matrix(ZZ, A)
-  return cycles_list, K, symplectic_reduction(K)
+  
+  RS.homology_basis = cycles_list, K, symplectic_reduction(K)
+  return RS.homology_basis
 end
 
 function symplectic_reduction(K::MatrixElem{fmpz})
