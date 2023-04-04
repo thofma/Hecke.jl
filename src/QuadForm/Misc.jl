@@ -1,5 +1,3 @@
-export VecSpaceRes, AbstractSpaceRes
-
 ################################################################################
 #
 #  Restrict and extend scalars from L^n to Q^(d * n)
