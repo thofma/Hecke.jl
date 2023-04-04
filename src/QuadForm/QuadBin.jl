@@ -42,8 +42,9 @@ function show(io::IO, f::QuadBin)
   if get(io, :supercompact, false)
     print(io, "Binary quadratic form")
   else
-    print(io, "Binary quadratic form:")
+    print(io, "Binary quadratic form: ")
     _show(io, f, true)
+  end
 end
 
 function _show(io::IO, f::QuadBin, compact = false)

@@ -23,14 +23,14 @@ end
 # TODO: Write a parser for the data
 
 function Base.show(io::IO, ::MIME"text/plain", L::LatDB)
-  println(io, "Definite integer lattices database of rank <= ", L.max_rank)
+  println(io, "Definite integer lattices of rank <= ", L.max_rank)
   println(io, "Author: Gabriele Nebe and Neil Sloane")
-  print(io, "Source: http://www.math.rwth-aachen.de/~Gabriele.Nebe/LATTICES/index.html#25D")
+  println(io, "Source: http://www.math.rwth-aachen.de/~Gabriele.Nebe/LATTICES/index.html#25D")
   print(io, "Number of lattices: ", number_of_lattices(L))
 end
 
-function show(io::IO, ::MIME"text/plain", L::LatDB)
-  if get(io, :supercomptact, false)
+function Base.show(io::IO, L::LatDB)
+  if get(io, :supercompact, false)
     print(io, "Integer lattices database")
   else
     print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")

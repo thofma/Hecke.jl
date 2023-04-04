@@ -76,33 +76,29 @@ function Base.show(io::IO, ::MIME"text/plain", f::VecSpaceRes)
   n = f.domain_dim
   m = f.codomain_dim
   println(io, "Map of change of scalars")
-  println(io, "  from QQ^", n)
-  println(io, "  to K^", m)
-  print(io, "where K is ", f.field)
+  println(io, "  from Vector space of dimension ", n, " over $(QQ)")
+  print(io, "  to Vector space of dimension ", m, " over ")
+  print(io, f.field)
 end
 
 function Base.show(io::IO, f::VecSpaceRes)
   if get(io, :supercompact, false)
     print(io, "Map of change of scalars")
   else
-    n = f.domain_dim
-    m = f.codomain_dim
     print(io, "Map of change of scalars between vector spaces")
   end
 end
 
 function Base.show(io::IO, ::MIME"text/plain", f::AbstractSpaceRes)
-  println(io, "Map of change of scalarsabstract hermitian spaces")
-  println(io, "  from", domain(f))
-  print(io, "  to", codomain(f))
+  println(io, "Map of change of scalars")
+  println(io, "  from ", domain(f))
+  print(io, "  to ", codomain(f))
 end
 
-function Base.show(io, f::AbstractSpaceRes)
+function Base.show(io::IO, f::AbstractSpaceRes)
  if get(io, :supercompact, false)
     print(io, "Map of change of scalars")
   else
-    n = f.domain_dim
-    m = f.codomain_dim
     print(io, "Map of change of scalars between hermitian spaces")
   end
 end

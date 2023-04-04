@@ -36,7 +36,7 @@ local_genus_herm_type(E) = HermLocalGenus{typeof(E), ideal_type(order_type(base_
 #
 ################################################################################
 
-function show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
+function Base.show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
   p = prime(G)
   println(io, "Local genus symbol")
   println(io, "  for hermitian lattices over ", order(p))
@@ -1225,21 +1225,21 @@ function _print_short(io::IO, a::acb)
   end
 end
 
-function Base.show(io::IO, G::HermGenus)
-  print(io, "Global genus symbol\n")
-  for i in 1:length(G.primes)
-    print(IOContext(io, :compact => true), G.primes[i], " => ", G.LGS[i],)
-    if i < length(G.primes)
-      print(io, "\n")
-    end
-  end
-  for (pl, v) in G.signatures
-    print(io, "\n")
-    print(io, pl)
-    print(io, " => ")
-    print(io, v)
-  end
-end
+#function Base.show(io::IO, G::HermGenus)
+#  print(io, "Global genus symbol\n")
+#  for i in 1:length(G.primes)
+#    print(IOContext(io, :compact => true), G.primes[i], " => ", G.LGS[i],)
+#    if i < length(G.primes)
+#      print(io, "\n")
+#    end
+#  end
+#  for (pl, v) in G.signatures
+#    print(io, "\n")
+#    print(io, pl)
+#    print(io, " => ")
+#    print(io, v)
+#  end
+#end
 
 ################################################################################
 #

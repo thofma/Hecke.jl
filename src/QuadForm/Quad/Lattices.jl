@@ -9,7 +9,7 @@ function Base.show(io::IO, ::MIME"text/plain", L::QuadLat)
   print(io, "  over ", base_ring(L))
 end
 
-function Base.show(io::IO, ::MIME"text/plain", L::QuadLat)
+function Base.show(io::IO, L::QuadLat)
   if get(io, :supercompact, false)
     print(io, "Quadratic lattice")
   else

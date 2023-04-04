@@ -348,7 +348,7 @@ function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadModule)
   println(io, "Finite quadratic module")
   println(io, "  over $(ZZ)")
   println(io, "  with underlying abelian group: ", abelian_group(T))
-  println(io, "Gram matrix of the quadratic form with values in", value_module_quadratic_form(T))
+  println(io, "Gram matrix of the quadratic form with values in ", value_module_quadratic_form(T))
   show(io,MIME"text/plain"(), gram_matrix_quadratic(T))
 end
 

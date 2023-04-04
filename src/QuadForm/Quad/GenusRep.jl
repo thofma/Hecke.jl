@@ -1464,7 +1464,7 @@ function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
   print(io, "  at the prime ideal ", f.p)
 end
 
-function show(io::IO, f::LocalMultGrpModSquMap)
+function show(io::IO, f::LocMultGrpModSquMap)
   if get(io, :supercompact, false)
     print(io, "Map for local unit group modulo squares")
   else

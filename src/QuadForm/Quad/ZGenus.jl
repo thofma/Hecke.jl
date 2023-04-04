@@ -1003,7 +1003,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZGenus)
   end
 end
 
-function show(io::IO, G::ZGenus)
+function Base.show(io::IO, G::ZGenus)
   str = iseven(G) ? "II" : "I"
   p, n = signature_pair(G)
    str *= "_($p, $n)"
@@ -1034,7 +1034,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZpGenus)
   end
 end
 
-function show(io::IO, ::MIME"text/plain", G::ZpGenus)
+function Base.show(io::IO, G::ZpGenus)
   if get(io, :sumpercompact, false)
     for sym in symbol(G)
       print(io, Tuple(sym))
@@ -1074,7 +1074,7 @@ function _write_local_symbol(G::ZpGenus)
   print(io, rstrip(rep))
 end
 
-function show(io::IO, ::MIME"text/latex", G::ZGenus)
+function Base.show(io::IO, ::MIME"text/latex", G::ZGenus)
   str = iseven(G) ? "II" : "I"
   p, n = signature_pair(G)
   str *= "_{($p, $n)}"
@@ -1086,7 +1086,7 @@ function show(io::IO, ::MIME"text/latex", G::ZGenus)
   end
 end
 
-function show(io::IO, ::MIME"text/latex", g::ZpGenus)
+function Base.show(io::IO, ::MIME"text/latex", g::ZpGenus)
   p = prime(g)
   str = ""
   if p == 2
