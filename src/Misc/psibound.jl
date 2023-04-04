@@ -1,7 +1,7 @@
 import Nemo.setcoeff!, Nemo.lift, Hecke.lift, Nemo.rem
 export psi_lower, psi_upper, show_psi
 
-#function setcoeff!(g::ZZModRelPowerSeriesRingElem, i::Int64, a::Nemo.Generic.Res{Nemo.ZZRingElem})
+#function setcoeff!(g::ZZModRelPowerSeriesRingElem, i::Int64, a::Nemo.Generic.ResidueRingElem{Nemo.ZZRingElem})
 #  setcoeff!(g, i, lift(a))
 #end
 
@@ -136,7 +136,7 @@ function _psi_lower(N::ZZRingElem, pr, a::Int=776, cl = ceil)
   return res, f  # res[i] <= psi(2^(i-1), B)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     psi_lower(N::Integer, B::Int, a::Int = 776) -> Vector{Int}, ZZAbsPowerSeriesRingElem
     psi_lower(N::ZZRingElem, B::Int, a::Int = 776) -> Vector{Int}, ZZAbsPowerSeriesRingElem
 
@@ -157,7 +157,7 @@ function psi_lower(N::Integer, B::Int, a::Int = 776)
   return _psi_lower(ZZRingElem(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     psi_upper(N::Integer, B::Int a::Int=771) -> Vector{Int}, ZZAbsPowerSeriesRingElem
     psi_upper(N::ZZRingElem, B::Int a::Int=771) -> Vector{Int}, ZZAbsPowerSeriesRingElem
 
@@ -178,7 +178,7 @@ function psi_upper(N::Integer, B::Int, a::Int=771)
   return _psi_lower(ZZRingElem(N), PrimesSet{Int}(2, B), a, floor)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     show_psi(N::Integer, B::Int)
     show_psi(N::ZZRingElem, B::Int)
 
@@ -211,7 +211,7 @@ function show_psi(N::ZZRingElem, B::Int)
   show_psi(BigInt(N), B)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     psi_lower(N::Integer, B::NfFactorBase) -> Vector{Int}, ZZAbsPowerSeriesRingElem
     psi_lower(N::ZZRingElem, B::NfFactorBase) -> Vector{Int}, ZZAbsPowerSeriesRingElem
 

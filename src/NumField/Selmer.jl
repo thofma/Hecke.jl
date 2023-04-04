@@ -1,5 +1,5 @@
 module SelmerModule
-using Hecke, Markdown
+using Hecke
 
 """
 Adds an element to the group. For this to work, C needs to be a subgroup of the parent of a.
@@ -18,7 +18,7 @@ function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
   return divexact(order(G), order(U))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
 
 Let $K$ be the number field of the prime ideals in $S$. Then the $p$-Selmer group is a subgroup of
@@ -57,7 +57,7 @@ true
 """
 function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
   @assert all(x->order(x) == order(S[1]), S)
-  @assert isprime(p) #maybe not neccessary
+  @assert isprime(p) #maybe not necessary
 
   #TODO: need primes above p as well?
   ZK = order(S[1])
@@ -195,7 +195,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
   return Sel, MapFromFunc(toK, toSel, Sel, codomain(mU)) 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
 
 Similar to the `pselmer_group_fac_elem`, the difference is that the elements here are evaluated, 
@@ -206,7 +206,7 @@ function pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Sy
   return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem([y], ZZRingElem[1])), G, number_field(order(S[1])))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pselmer_group_fac_elem(p::Int, S::Vector{<:Integer}; algo::Symbol = :raw, check::Bool = true)
 
 The Selmer group of Q - with the elements in factored form. For $p=2$, $-1$ can be included into $S$.

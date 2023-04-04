@@ -11,7 +11,7 @@ function _min_val(M, p)
   return minimum(L)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _last_block_index(G::Union{zzModMatrix, ZZModMatrix}, p) -> Int, Int, Int
 
 Return the starting index of the last modular block, as well as its valuation
@@ -32,7 +32,7 @@ function _last_block_index(G::Union{zzModMatrix, ZZModMatrix}, p)
   return 1, val, val_current
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _hensel_qf(Z::T, G::T, F::T, a, b, p) where T <: Union{zzModMatrix, ZZModMatrix}
 
 The real worker for `hensel_qf`. Input is
@@ -79,7 +79,7 @@ function _hensel_qf(Z::T, G::T, F::T, a, b, p) where {T <: Union{zzModMatrix, ZZ
   return F
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _hensel_qf_modular_odd(Z::T, G::T, F::T, a, b)
                                         where T <: Union{zzModMatrix, ZZModMatrix}
 
@@ -149,7 +149,7 @@ function _solve_X_get_A_and_c(Y::fpMatrix, b, g)
   return A, c
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _solve_X(Y::fpMatrix, b, g, ker=false) -> fpMatrix
 
 Solve a certain linear equation modulo $2$. This is a helper function for
@@ -192,7 +192,7 @@ function _solve_X_ker(Y::fpMatrix, b, g)
   return Ker
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hensel_qf(G::T, F::T, a, b, p) where T <: Union{zzModMatrix, ZZModMatrix}
 
 Lift `F` modulo `p^n` satisfying `G == F * G * F'`.
@@ -234,7 +234,7 @@ function hensel_qf(G::T, F::T, a, b, p) where {T <: Union{zzModMatrix, ZZModMatr
   return F
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     _block_indices_vals(G:::Union{zzModMatrix, ZZModMatrix}, p)
                                                      -> Vector{Int}, Vector{Int}
 
@@ -310,7 +310,7 @@ function _hensel_qf_modular_even(Z::T, G::T, F::T, a, b) where {T <: Union{zzMod
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     weak_approximation(V::QuadSpace, target) -> QQMatrix
 
 Return $f \in SO(V)$ such that $f \cong f_p \mod p^{v_p}$ for the given $f_p$ and $v_p$
@@ -397,7 +397,7 @@ function _crt(V::Vector{ZZMatrix},B::Vector{ZZRingElem}, prec::Vector{Int})
   return sol
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(G::QQMatrix, p)
 
 Return the minimum valuation of the entries of `G`.

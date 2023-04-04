@@ -1,4 +1,4 @@
-@doc Markdown.doc"""
+@doc raw"""
     collect_small_blocks(G::MatElem) -> Vector{MatElem}
 
 Given a block diagonal matrix $G$ consisting of blocks of size $1$ or $2$,
@@ -132,7 +132,7 @@ function _ispadic_normal_form_dyadic(G, p)
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     padic_normal_form(G::MatElem, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
                                               -> MatElem{QQFieldElem}, MatElem{QQFieldElem}
 
@@ -255,7 +255,7 @@ end
 
 #def _find_min_p(G, cnt, lower_bound=0):
 #    r"""
-#    Find smallest valuation below and right from ``cnt`` prefering the diagonal.
+#    Find smallest valuation below and right from ``cnt`` preferring the diagonal.
 #
 #    INPUT:
 #
@@ -630,7 +630,7 @@ function _jordan_odd_adic(G, p)
         swap_rows!(D, cnt, piv1)
         swap_cols!(D, cnt, piv1)
       end
-      # we are alread orthgonal to the part with i < cnt
+      # we are already orthgonal to the part with i < cnt
       # now make the rest orthgonal too
       for i in (cnt + 1):n
         if !iszero(D[i, cnt])
@@ -1407,7 +1407,7 @@ end
 #    INPUT:
 #
 #    - ``G`` -- block diagonal matrix with blocks of type `U`, `V`, `W`
-#    - ``partial`` -- bool (defaul: ``False``)
+#    - ``partial`` -- bool (default: ``False``)
 #
 #    OUTPUT:
 #

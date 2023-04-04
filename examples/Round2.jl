@@ -42,7 +42,7 @@ mutable struct Order{S, T} <: AbstractAlgebra.Ring
   function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
     # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
-    #the intial shell needs to be empty (illegal)
+    #the initial shell needs to be empty (illegal)
     r = new{typeof(F), typeof(R)}()
     r.F = F
     r.R = R
@@ -581,7 +581,7 @@ end
 
 Hecke.base_ring(::AnticNumberField) = FlintQQ
 
-function (R::PolyRing{T})(a::Generic.Rat{T}) where {T}
+function (R::PolyRing{T})(a::Generic.RationalFunctionFieldElem{T}) where {T}
   @assert isone(denominator(a))
   return R(numerator(a))
 end
@@ -591,7 +591,7 @@ function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
 
-function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.Rat{T}}) where {T}
+function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
   R = parent(gen(F).num)
@@ -666,15 +666,15 @@ Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
 
 #######################################################################
 #
-# support for Rat{T}
+# support for RationalFunctionFieldElem{T}
 #
 #######################################################################
-# Rat{T}, KInftyRing{T}
+# RationalFunctionFieldElem{T}, KInftyRing{T}
 
-Base.denominator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
-Base.numerator(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
+Base.denominator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
+Base.numerator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
 
-function Hecke.integral_split(x::AbstractAlgebra.Generic.Rat{T}, R::KInftyRing{T}) where {T}
+function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T}
   if iszero(x)
     return zero(R), one(R)
   end
@@ -689,20 +689,20 @@ end
 
 (R::Generic.RationalFunctionField{QQFieldElem})(x::KInftyElem{QQFieldElem}) = x.d
 
-# Rat{T}, PolyRing{T}
-function Hecke.numerator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+# RationalFunctionFieldElem{T}, PolyRing{T}
+function Hecke.numerator(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
   return numerator(a)
 end
 
-function Hecke.denominator(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+function Hecke.denominator(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
   return denominator(a)
 end
 
-function Hecke.integral_split(a::Generic.Rat{T}, S::PolyRing{T}) where {T}
+function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
   return numerator(a), denominator(a)
 end
 
-function Hecke.factor(a::Generic.Rat{T}, R::Generic.PolyRing{T}) where {T}
+function Hecke.factor(a::Generic.RationalFunctionFieldElem{T}, R::Generic.PolyRing{T}) where {T}
   @assert parent(numerator(a)) == R
   f1 = factor(numerator(a))
   f2 = factor(denominator(a))
@@ -813,7 +813,7 @@ mutable struct HessQRElem <: RingElem
     @assert parent(r.g) == P.R
     return r
   end
-  function HessQRElem(P::HessQR, q::Generic.Rat{QQFieldElem})
+  function HessQRElem(P::HessQR, q::Generic.RationalFunctionFieldElem{QQFieldElem})
     f = numerator(q)
     g = denominator(q)
     return HessQRElem(P, f, g)
@@ -856,7 +856,7 @@ end
 
 check_parent(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) || error("Incompatible rings")
 
-function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::HessQR)
+function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::HessQR)
   if iszero(a)
     return zero(S), one(S)
   end
@@ -878,11 +878,11 @@ function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::HessQR)
   return HessQRElem(S, cn, zn, zd), S(cd)
 end
 
-function Hecke.numerator(a::Generic.Rat, S::HessQR)
+function Hecke.numerator(a::Generic.RationalFunctionFieldElem, S::HessQR)
   return integral_split(a, S)[1]
 end
 
-function Hecke.denominator(a::Generic.Rat, S::HessQR)
+function Hecke.denominator(a::Generic.RationalFunctionFieldElem, S::HessQR)
   return integral_split(a, S)[2]
 end
 
@@ -894,7 +894,7 @@ Nemo.is_domain_type(::Type{HessQRElem}) = true
 
 Base.parent(a::HessQRElem) = a.parent
 
-(R::HessQR)(a::Generic.Rat{QQFieldElem}) = HessQRElem(R, a)
+(R::HessQR)(a::Generic.RationalFunctionFieldElem{QQFieldElem}) = HessQRElem(R, a)
 (R::HessQR)(a::ZZRingElem) = HessQRElem(R, a)
 (R::HessQR)(a::Integer) = HessQRElem(R, ZZRingElem(a))
 (R::HessQR)(a::ZZPolyRingElem) = HessQRElem(R, a)
@@ -976,7 +976,7 @@ function divrem(a::HessQRElem, b::HessQRElem)
       (af(g-dv) -g(af-du))/(g(g-dv)) = d*..., so once cont(g %d) =1,
       we can replace f and g mod d (and figure out the quotient afterwards)
 
-    - for d = p a prime, the rep is unqiue, thus F_p(t)
+    - for d = p a prime, the rep is unique, thus F_p(t)
   =#
   r = rem(a,b)
   return divexact(a-r, b), r
@@ -1053,8 +1053,6 @@ end
 
 Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
-Nemo.dense_poly_type(::Type{FpFieldElem}) = FpPolyRingElem
-
 function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
@@ -1076,7 +1074,7 @@ function Hecke.factor(a::HessQRElem)
   return Fac(R(a.f), Dict((R(p),k) for (p,k) = f.fac))
 end
 
-function Hecke.factor(a::Generic.Rat, R::HessQR)
+function Hecke.factor(a::Generic.RationalFunctionFieldElem, R::HessQR)
   d1 = reduce(lcm, map(denominator, coefficients(numerator(a))), init = ZZRingElem(1))
   f1 = factor(R(d1*numerator(a)))
   d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = ZZRingElem(1))
@@ -1163,7 +1161,7 @@ end
   This is iterated until delta == 0
 =#
 
-function two_by_two(Q::MatElem{<:Generic.Rat{_T}}, R::PolyRing{_T}, S::HessQR) where {_T}
+function two_by_two(Q::MatElem{<:Generic.RationalFunctionFieldElem{_T}}, R::PolyRing{_T}, S::HessQR) where {_T}
   @assert size(Q) == (2,2)
 
   Qt = base_ring(Q)
@@ -1282,15 +1280,15 @@ function GenericRound2.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField
   return GenericRound2.Order(o1, TT1, one(S)), GenericRound2.Order(o2, inv(TT2'), one(base_ring(TT2)))
 end
 
-function Base.denominator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
+function Base.denominator(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[2]
 end
 
-function Base.numerator(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
+function Base.numerator(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::ZZPolyRing)
   return integral_split(a, S)[1]
 end
 
-function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
+function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::ZZPolyRing)
   #TODO: feels too complicated....
   if iszero(a)
     return zero(S), one(S)
@@ -1313,7 +1311,7 @@ function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::ZZPolyRing)
   return cn*zn, cd*zd
 end
 
-function (S::ZZPolyRing)(a::Generic.Rat{QQFieldElem})
+function (S::ZZPolyRing)(a::Generic.RationalFunctionFieldElem{QQFieldElem})
   n, d = integral_split(a, S)
   @assert isone(d)
   return n
@@ -1351,7 +1349,7 @@ G, b = FunctionField(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
 =#
 
 module FactorFF
-using Hecke, Markdown
+using Hecke
 
 function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
@@ -1360,7 +1358,7 @@ function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
     return power_sums_to_polynomial(PQ)
 end
 
-function from_mpoly(f::MPolyElem, S::PolyRing{<:Generic.Rat})
+function from_mpoly(f::MPolyRingElem, S::PolyRing{<:Generic.RationalFunctionFieldElem})
   @assert ngens(parent(f)) == 2
   @assert base_ring(f) == base_ring(base_ring(S))
   R = parent(numerator(gen(base_ring(S))))
@@ -1373,7 +1371,7 @@ function from_mpoly(f::MPolyElem, S::PolyRing{<:Generic.Rat})
   return S(map(x->base_ring(S)(x//o), F))
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
+function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   Pf = parent(f)
   R, r = polynomial_ring(base_ring(base_ring(f)), 2)
   d = lcm(map(denominator, coefficients(f)))
@@ -1390,7 +1388,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.Rat})
   return Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf.fac))
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.Rat{T}}, F::Generic.FunctionField{T}) where {T}
+function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}, F::Generic.FunctionField{T}) where {T}
   return factor(map_coefficients(F, f))
 end
 #plain vanilla Trager, possibly doomed in pos. small char.
@@ -1432,8 +1430,8 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   return D
 end
 
-#TODO: don't think this startegy is optimal, but it works...
-function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
+#TODO: don't think this strategy is optimal, but it works...
+function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   f = divexact(f, gcd(f, derivative(f)))
 
   lf = factor(f)
@@ -1480,9 +1478,9 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.Rat})
 end
 
 
-@doc Markdown.doc"""
-    swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
-    swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.Rat})
+@doc raw"""
+    swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+    swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
 
 Compute the minimal polynomial of $\sum \pm \sqrt{t+v_i}$ evaluated at $x$.
 $t$ is the generator of the base field of the parent of $x$.
@@ -1490,7 +1488,7 @@ $t$ is the generator of the base field of the parent of $x$.
 In the second variant, the polynomial has roots $\sum\pm\sqrt{t+i}$ for
   $i=1,\ldots,n$.
 """
-function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
+function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   n = length(V)
   @assert characteristic(parent(x)) == 0 || characteristic(parent(x)) > length(V)
   S = base_ring(x)
@@ -1519,7 +1517,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.Rat})
   end
 end
 
-function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.Rat})
+function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   return swinnerton_dyer(x, collect(1:n))
 end
 

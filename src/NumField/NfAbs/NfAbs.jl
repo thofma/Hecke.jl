@@ -35,12 +35,12 @@ is_simple(::AnticNumberField) = true
 #
 ################################################################################
 
-@doc Markdown.doc"""
-    number_field(S::Generic.ResRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
+@doc raw"""
+    number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
 
  The number field $K$ isomorphic to the ring $S$ and the map from $K\to S$.
 """
-function number_field(S::Generic.ResRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
+function number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
   mp = MapFromFunc(y -> S(Qx(y)), x -> K(lift(x)), K, S)
@@ -56,7 +56,6 @@ function number_field(f::ZZPolyRingElem, s::AbstractString; cached::Bool = true,
   Qx = Globals.Qx
   return number_field(Qx(f), s, cached = cached, check = check)
 end
-
 
 function number_field(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
@@ -99,7 +98,7 @@ function wildanger_field(n::Int, B::Integer, s::String = "_\$"; cached::Bool = t
   return wildanger_field(n, ZZRingElem(B), s, cached = cached, check = check)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_field(d::IntegerUnion) -> AnticNumberField, nf_elem
 
 Returns the field with defining polynomial $x^2 - d$.
@@ -164,7 +163,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_defining_polynomial_nice(K::AnticNumberField)
 
 Tests if the defining polynomial of $K$ is integral and monic.
@@ -193,7 +192,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     class_group(K::AnticNumberField) -> GrpAbFinGen, Map
 
 Shortcut for `class_group(maximal_order(K))`: returns the class
@@ -210,7 +209,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     class_number(K::AnticNumberField) -> ZZRingElem
 
 Returns the class number of $K$.
@@ -225,7 +224,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     relative_class_number(K::AnticNumberField) -> ZZRingElem
 
 Returns the relative class number of $K$. The field must be a CM-field.
@@ -270,7 +269,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_torsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
 
 Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
@@ -319,7 +318,7 @@ function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     torsion_unit_order(x::nf_elem, n::Int)
 
 Given a torsion unit $x$ together with a multiple $n$ of its order, compute
@@ -491,7 +490,7 @@ function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
       is_subfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
@@ -515,7 +514,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
 Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
@@ -585,7 +584,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     compositum(K::AnticNumberField, L::AnticNumberField) -> AnticNumberField, Map, Map
 
 Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
@@ -614,7 +613,7 @@ end
 
 # This function can be improved by directly accessing the numerator
 # of the QQPolyRingElem representing the nf_elem
-@doc Markdown.doc"""
+@doc raw"""
     write(io::IO, A::Vector{nf_elem}) -> Nothing
 
 Writes the elements of `A` to `io`. The first line are the coefficients of
@@ -660,7 +659,7 @@ function write(io::IO, A::Vector{nf_elem})
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     write(file::String, A::Vector{nf_elem}, flag::ASCIString = "w") -> Nothing
 
 Writes the elements of `A` to the file `file`. The first line are the coefficients of
@@ -678,7 +677,7 @@ function write(file::String, A::Vector{nf_elem}, flag::String = "w")
 end
 
 # This function has a bad memory footprint
-@doc Markdown.doc"""
+@doc raw"""
     read(io::IO, K::AnticNumberField, ::Type{nf_elem}) -> Vector{nf_elem}
 
 Given a file with content adhering the format of the `write` procedure,
@@ -718,7 +717,7 @@ function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
   return A
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     read(file::String, K::AnticNumberField, ::Type{nf_elem}) -> Vector{nf_elem}
 
 Given a file with content adhering the format of the `write` procedure,
@@ -740,7 +739,7 @@ function read(file::String, K::AnticNumberField, ::Type{Hecke.nf_elem})
 end
 
 #TODO: get a more intelligent implementation!!!
-@doc Markdown.doc"""
+@doc raw"""
     splitting_field(f::ZZPolyRingElem) -> AnticNumberField
     splitting_field(f::QQPolyRingElem) -> AnticNumberField
 
@@ -802,7 +801,7 @@ end
 copy(f::QQPolyRingElem) = parent(f)(f)
 gcd_into!(a::QQPolyRingElem, b::QQPolyRingElem, c::QQPolyRingElem) = gcd(b, c)
 
-@doc Markdown.doc"""
+@doc raw"""
     splitting_field(f::PolyElem{nf_elem}) -> AnticNumberField
 
 Computes the splitting field of $f$ as an absolute field.
@@ -905,7 +904,7 @@ function Base.:(^)(a::nf_elem, e::UInt)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     normal_closure(K::AnticNumberField) -> AnticNumberField, NfToNfMor
 
 The normal closure of $K$ together with the embedding map.
@@ -1085,7 +1084,7 @@ function find_one_chain(t::NumField, a::NumField)
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     embed(f::Map{<:NumField, <:NumField})
 
 Registers `f` as a canonical embedding from the domain into the co-domain.
@@ -1118,7 +1117,7 @@ function embed(f::Map{<:NumField, <:NumField})
   push!(s, WeakRef(c))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     has_embedding(F::NumField, G::NumField) -> Bool
 
 Checks if an embedding from $F$ into $G$ is already known.
@@ -1216,7 +1215,7 @@ function force_op(op::T, throw_error::Type{Val{S}}, a::NumFieldElem...) where {T
   return op(map(C, a)...)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     embedding(k::NumField, K::NumField) -> Map
 
 Assuming $k$ is known to be a subfield of $K$, return the embedding map.

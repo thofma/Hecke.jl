@@ -14,7 +14,7 @@ Common, abstract, overtype for all number fields that are (by type) generated
 by more than one generator. `T` is the type of the elements of the coefficient field.
 Typical example is a bi-quadratic field:
     QQ[sqrt 2, sqrt 3]
-It can be converted to a simple extension (with maps), see e.g. 
+It can be converted to a simple extension (with maps), see e.g.
 `absolute_simple_field` or `simple_extension`.
 """
 abstract type NonSimpleNumField{T} <: NumField{T} end
@@ -80,7 +80,7 @@ abstract type NumFieldOrdFracIdl end
 # 3 = add scaled
 # 4 = parallel scaled addition
 # 5 = trafo partial dense
-# 6 = move row to other row (erverything moves up)
+# 6 = move row to other row (everything moves up)
 # 7 = trafo id
 mutable struct SparseTrafoElem{T, S}
   type::Int
@@ -307,27 +307,45 @@ mutable struct SRowSpace{T} <: Ring
 end
 
 """
-    SRow{T}
+    SRow{T, S}
 
 Type for rows of sparse matrices, to create one use
 `sparse_row`
+`S` is the type of the array used for the values - see `ZZRingElem_Vector` for
+an example.
 """
-mutable struct SRow{T}
+mutable struct SRow{T, S} # S <: AbstractVector{T}
   #in this row, in column pos[1] we have value values[1]
   base_ring
-  values::Vector{T}
+  values::S
   pos::Vector{Int}
 
-  function SRow{T}(R::Ring) where T
-    r = new{T}(R)
-    r.values = Vector{T}()
-    r.pos = Vector{Int}()
-    r.base_ring = R
+  function SRow(R::Ring)
+    @assert R != ZZ
+    r = new{elem_type(R), Vector{elem_type(R)}}(R, Vector{elem_type(R)}(), Vector{Int}())
     return r
   end
 
-  function SRow{T}(R::Ring, A::Vector{Tuple{Int, T}}) where T
-    r = SRow{T}(R)
+  function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector; check::Bool = true)
+    if check && any(iszero, S)
+      p = copy(p)
+      S = deepcopy(S)
+      i=1
+      while i <= length(p)
+        if iszero(S[i])
+          deleteat!(S, i)
+          deleteat!(p, i)
+        else
+          i += 1
+        end
+      end
+    end
+    r = new{elem_type(R), typeof(S)}(R, S, p)
+    return r
+  end
+
+  function SRow(R::Ring, A::Vector{Tuple{Int, T}}) where T
+    r = SRow(R)
     for (i, v) = A
       if !iszero(v)
         @assert parent(v) === R
@@ -335,35 +353,32 @@ mutable struct SRow{T}
         push!(r.values, v)
       end
     end
-    r.base_ring = R
     return r
   end
 
-  function SRow{T}(R::Ring, A::Vector{Tuple{Int, Int}}) where T
-    r = SRow{T}(R)
+  function SRow(R::Ring, A::Vector{Tuple{Int, Int}})
+    r = SRow(R)
     for (i, v) = A
       if !iszero(v)
         push!(r.pos, i)
-        push!(r.values, T(v))
+        push!(r.values, R(v))
       end
     end
-    r.base_ring = R
     return r
   end
 
-  function SRow{T}(A::SRow{S}) where {T, S}
-    r = new{T}(R)
-    r.values = Array{T}(undef, length(A.pos))
-    r.pos = copy(A.pos)
+  function SRow{T, S}(A::SRow{T, S}; copy::Bool = false) where {T, S}
+    copy || return A
+    r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
     for i=1:length(r.values)
-      r.values[i] = T(A.values[i])
+      r.values[i] = A.values[i]
     end
     return r
   end
 
   function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = SRow{T}(R)
+    r = SRow(R)
     for i=1:length(pos)
       v = val[i]
       if !iszero(v)
@@ -373,8 +388,10 @@ mutable struct SRow{T}
       end
     end
     r.base_ring = R
-    return r
+    return
   end
+
+
 end
 
 ################################################################################
@@ -383,23 +400,19 @@ end
 #
 ################################################################################
 
-const SMatSpaceDict = IdDict()
-
 """
     SMatSpace
 
 Parent for sparse matrices. Usually only created from a sparse matrix
 via a call to parent.
 """
-mutable struct SMatSpace{T} <: Ring
+struct SMatSpace{T}
   rows::Int
   cols::Int
   base_ring::Ring
 
-  function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = false) where {T}
-    return get_cached!(SMatSpaceDict, (R, r, c), cached) do
-      return new{T}(r, c, R)
-    end::SMatSpace{T}
+  function SMatSpace{T}(R::Ring, r::Int, c::Int) where {T}
+    return new{T}(r, c, R)
   end
 end
 
@@ -408,31 +421,24 @@ end
 
 Type of sparse matrices, to create one use `sparse_matrix`.
 """
-mutable struct SMat{T}
+mutable struct SMat{T, S}
   r::Int
   c::Int
-  rows::Vector{SRow{T}}
+  rows::Vector{SRow{T, S}}
   nnz::Int
-  base_ring::Ring
+  base_ring::Union{Ring, Nothing}
+  tmp::Vector{SRow{T, S}}
 
-  function SMat{T}() where {T}
-    r = new{T}()
-    r.rows = Vector{SRow{T}}()
-    r.nnz = 0
-    r.r = 0
-    r.c = 0
+  function SMat{T, S}() where {T, S}
+    r = new{T, S}(0,0,Vector{SRow{T, S}}(), 0, nothing, Vector{SRow{T, S}}())
     return r
   end
 
-  function SMat{T}(a::SMat{S}) where {S, T}
-    r = new{T}()
-    r.rows = Array{SRow{T}}(undef, length(a.rows))
+  function SMat{T, S}(a::SMat{T, S}) where {S, T}
+    r = new{T, S}(a.r, a.c, Array{SRow{T, S}}(undef, length(a.rows)), a.nnz, a.base_ring, Vector{SRow{T, S}}())
     for i=1:nrows(a)
-      r.rows[i] = SRow{T}(a.rows[i])
+      r.rows[i] = a.rows[i]
     end
-    r.c = a.c
-    r.r = a.r
-    r.nnz = a.nnz
     return r
   end
 end
@@ -495,23 +501,19 @@ end
 
 export FakeFmpqMat, FakeFmpqMatSpace
 
-mutable struct FakeFmpqMatSpace
+struct FakeFmpqMatSpace
   rows::Int
   cols::Int
 
-  function FakeFmpqMatSpace(r::Int, c::Int, cached::Bool=false)
-    return get_cached!(FakeFmpqMatSpaceID, (r,c), cached) do
-      return new(r,c)
-    end
+  function FakeFmpqMatSpace(r::Int, c::Int)
+    return new(r,c)
   end
 end
-
-const FakeFmpqMatSpaceID = IdDict{Tuple{Int,Int}, FakeFmpqMatSpace}()
 
 """
     FakeFmpqMat
 
-A container type for a pair: an integer matrix (fmpz_mat) and an integer
+A container type for a pair: an integer matrix (ZZMatrix) and an integer
 denominator.
 Used predominantly to represent bases of orders in absolute number fields.
 """
@@ -676,11 +678,11 @@ export NfOrd, NfAbsOrd
   basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
   basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of K
   basis_mat_inv::FakeFmpqMat          # Inverse of basis matrix
-  gen_index::fmpq                     # The det of basis_mat_inv as fmpq
-  index::fmpz                         # The det of basis_mat_inv
+  gen_index::QQFieldElem              # The det of basis_mat_inv as QQFieldElem
+  index::ZZRingElem                   # The det of basis_mat_inv
                                       # (this is the index of the equation order
                                       #  in the given order)
-  disc::fmpz                          # Discriminant
+  disc::ZZRingElem                    # Discriminant
   is_equation_order::Bool             # Equation order of ambient number field?
 
 
@@ -705,11 +707,11 @@ export NfOrd, NfAbsOrd
 
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
                                    # and den.
-  tcontain_fmpz::ZZRingElem              # Temporary variable for _check_elem_in_order
-  tcontain_fmpz2::ZZRingElem             # Temporary variable for _check_elem_in_order
+  tcontain_fmpz::ZZRingElem        # Temporary variable for _check_elem_in_order
+  tcontain_fmpz2::ZZRingElem       # Temporary variable for _check_elem_in_order
   tidempotents::ZZMatrix           # Temporary variable for idempotents()
 
-  index_div::Dict{fmpz, Vector}    # the index divisor splitting
+  index_div::Dict{ZZRingElem, Vector}    # the index divisor splitting
                                    # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
 
@@ -903,7 +905,7 @@ const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
 
 const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
-@doc Markdown.doc"""
+@doc raw"""
     NfOrdIdl(O::NfOrd, a::ZZMatrix) -> NfOrdIdl
 
     Creates the ideal of $O$ with basis matrix $a$.
@@ -1397,14 +1399,14 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
   doit::Function
 
-  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}}) 
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}})
     Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}}) 
+  function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}})
     Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false), "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
@@ -2295,7 +2297,7 @@ end
 const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
 
 mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
-  d::Generic.Rat{T}
+  d::Generic.RationalFunctionFieldElem{T}
   parent::KInftyRing{T}
 end
 

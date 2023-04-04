@@ -624,7 +624,7 @@ function hliftstep_quartic(
   for i in 1:r
     taylor_get_coeffs!(B[i], fac[i], xalpha)
     Blen[i] = length(B[i])
-    # push extra stuff to avoid anoying length checks
+    # push extra stuff to avoid annoying length checks
     while length(B[i]) < liftdegs[m] + 1
       push!(B[i], R(0))
     end
@@ -914,7 +914,7 @@ function divexact_pow(A::Fac{E}, b::E, bexp::Int) where E
   abases = E[t.first for t in a]
   aexps = Int[t.second for t in a]
 
-  i = 1 # index strickly before which everthing is coprime to b
+  i = 1 # index strickly before which everything is coprime to b
 
   while i <= length(abases) && !is_constant(b)
     abase_new, abases[i], b = gcdcofactors(abases[i], b)
@@ -950,7 +950,7 @@ end
 
 
 function lcc_kaltofen_step!(
-  divs::Vector{E},  # modifed
+  divs::Vector{E},  # modified
   Af::Fac{E},       # unmodified, possibly new one is returned
   Au::Vector{E},    # univariates in gen(v) from the lc's of bvar factors
   v::Int,           # the main variable for this step
@@ -1094,9 +1094,9 @@ function lcc_kaltofen(
 
 end
 
-# factor a truely multivariate A in at least three variables
+# factor a truly multivariate A in at least three variables
 function mfactor_irred_mvar_char_zero(
-  A::E,             # squarefree, primitve wrt mainvar, monic
+  A::E,             # squarefree, primitive wrt mainvar, monic
   mainvar::Int,
   minorvars::Vector{Int}
 ) where E
@@ -1319,7 +1319,7 @@ function mfactor_char_zero(a::E) where E
   return res
 end
 
-function factor(a::MPolyElem)
+function factor(a::MPolyRingElem)
   R = parent(a)
   K = base_ring(R)
   if elem_type(K) <: AbstractAlgebra.FieldElem && iszero(characteristic(K))
@@ -1329,7 +1329,7 @@ function factor(a::MPolyElem)
   end
 end
 
-function factor_squarefree(a::MPolyElem)
+function factor_squarefree(a::MPolyRingElem)
   R = parent(a)
   K = base_ring(R)
   if elem_type(K) <: AbstractAlgebra.FieldElem && iszero(characteristic(K))

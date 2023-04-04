@@ -231,9 +231,10 @@ end
 
 function ramification_index(L::LocalField, K::Union{FlintPadicField, FlintQadicField, LocalField})
   ri = 1
-  while absolute_degree(L) > absolute_degree(K)
+  while absolute_degree(L) >= absolute_degree(K)
     ri *= ramification_index(L)
     L = base_field(L)
+    L === K && return ri
   end
   if L === K
     return ri
@@ -392,12 +393,25 @@ function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQa
 #  @assert n>=0
   setprecision!(K, n)
   v = try 
+        setprecision(f, base_field(K), ceil(Int, n/ramification_index(K)))
+      finally
+        setprecision!(K, old)
+      end
+  return v
+end
+
+function setprecision(f::Function, K::Union{FlintPadicField, FlintQadicField}, n::Int)
+  old = precision(K)
+#  @assert n>=0
+  setprecision!(K, n)
+  v = try 
         f()
       finally
         setprecision!(K, old)
       end
   return v
 end
+
 
 ################################################################################
 #
@@ -500,7 +514,7 @@ end
    return unramified_extension(f_L)
  end
 
-@doc Markdown.doc"""
+@doc raw"""
     image_of_logarithm_one_units(K::NonArchLocalField) -> (Int, Vector)
 
 Returns a tuple `(n, x)` consisting of a positive integer `n` and a list of elements of `K`,

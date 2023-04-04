@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     reduction(L::ModAlgAssLat, p::IntegerUnion) -> ModAlgAss
 
 Given an $L$ over an $\mathbf{Z}$-order and a prime $p$, return the module $L/pL$
@@ -25,7 +25,7 @@ function reduction(L::ModAlgAssLat, p::IntegerUnion)
   return Amodule(amodp)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     change_coefficient_ring(R::Ring, L::ModAlgAssLat{ZZRing}) -> ModAlgAss
 
 Given a lattice $L$ over an $\mathbf{Z}$-order $L$, return the $L \otimes R$

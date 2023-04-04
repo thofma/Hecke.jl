@@ -1,7 +1,7 @@
 @testset "Fixed fields" begin
   Qx,x = FlintQQ["x"]
 
-  @testset "FixedField: absolut" begin
+  @testset "FixedField: absolute" begin
     f = x^8+236*x^6+12158*x^4+201788*x^2+779689
     K, a = number_field(f, "a");
     s = hom(K, K, 43//339072*a^7 + 9265//339072*a^5 + 336481//339072*a^3 + 2429659//339072*a);

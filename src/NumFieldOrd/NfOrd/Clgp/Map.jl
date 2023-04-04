@@ -5,7 +5,7 @@
 export is_principal
 
 # TODO: Agree on a name for power_class vs power_reduce2
-@doc Markdown.doc"""
+@doc raw"""
     power_class(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl
 
 Computes a (small) ideal in the same class as $A^e$.
@@ -39,7 +39,7 @@ function power_class(A::NfOrdIdl, e::ZZRingElem)
   return B
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem}) -> NfOrdIdl
 
 Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
@@ -105,7 +105,7 @@ function class_group_disc_log(r::SRow{ZZRingElem}, c::ClassGrpCtx)
   return d
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{ZZRingElem}
 
 Finds a number field element $\alpha$ such that $\alpha I$ factors over
@@ -114,7 +114,7 @@ the factor base in $c$.
 function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   #easy case: I factors over the FB...
   # should be done for a factor base, not the class group ctx.
-  # the ctx is needed for the small_elements buisness
+  # the ctx is needed for the small_elements business
   O = order(I)
   K = nf(O)
   n = norm(I)
@@ -190,7 +190,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       local r::SRow{ZZRingElem}
       if isone(n)
         @assert isone(Ia.num)
-        r = SRow(FlintZZ)
+        r = sparse_row(FlintZZ)
       else
         fl, r = _factor!(c.FB, Ia.num, false)
         if !fl
@@ -310,7 +310,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
-@doc Markdown.doc"""
+@doc raw"""
     is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, number_field}
 
 Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
@@ -326,7 +326,7 @@ function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   return fl, x
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, number_field}
 
 For a principal ideal $A$, find a generator in factored form.
@@ -340,7 +340,7 @@ function principal_generator_fac_elem(A::NfOrdIdl)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, number_field}
 
 For a principal ideal $I$ in factored form, find a generator in factored form.
@@ -357,7 +357,7 @@ function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   return x
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     principal_generator(A::NfOrdIdl) -> NfOrdElem
 
 For a principal ideal $A$, find a generator.
@@ -379,7 +379,7 @@ function principal_generator(A::NfOrdIdl)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, number_field}
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
@@ -426,7 +426,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
   if c == nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem}}
+    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
     A = IdealSet(L)(A)
   else
     L = O
@@ -434,7 +434,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis::SMat{ZZRingElem}
+  H = c.M.basis::SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}
   T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)
@@ -495,7 +495,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_principal(A::NfOrdIdl) -> Bool, NfOrdElem
     is_principal(A::NfOrdFracIdl) -> Bool, NfOrdElem
 
@@ -677,7 +677,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m)) -> MapClassGrp
 
 Returns a class group map such that the representatives for every classes are coprime to $m$.
@@ -711,7 +711,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
   return exp, el
 
 end
-@doc Markdown.doc"""
+@doc raw"""
     find_coprime_representatives(ideals::Vector{nfOrdIdl}, m::NfOrdIdl) -> Vector{NfOrdIdl}, Vector{nf_elem}
 
 Returns a vector v of ideals and elements el coprime to m such that ideals[i] = el[i]*v[i].

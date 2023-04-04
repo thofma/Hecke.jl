@@ -70,7 +70,7 @@ mutable struct HessQRElem <: RingElem
     @assert parent(r.g) == P.R
     return r
   end
-  function HessQRElem(P::HessQR, q::Generic.Rat{QQFieldElem})
+  function HessQRElem(P::HessQR, q::Generic.RationalFunctionFieldElem{QQFieldElem})
     f = numerator(q)
     g = denominator(q)
     return HessQRElem(P, f, g)
@@ -113,7 +113,7 @@ end
 
 check_parent(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) || error("Incompatible rings")
 
-function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::HessQR)
+function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::HessQR)
   if iszero(a)
     return zero(S), one(S)
   end
@@ -135,11 +135,11 @@ function Hecke.integral_split(a::Generic.Rat{QQFieldElem}, S::HessQR)
   return HessQRElem(S, cn, zn, zd), S(cd)
 end
 
-function Hecke.numerator(a::Generic.Rat, S::HessQR)
+function Hecke.numerator(a::Generic.RationalFunctionFieldElem, S::HessQR)
   return integral_split(a, S)[1]
 end
 
-function Hecke.denominator(a::Generic.Rat, S::HessQR)
+function Hecke.denominator(a::Generic.RationalFunctionFieldElem, S::HessQR)
   return integral_split(a, S)[2]
 end
 
@@ -151,7 +151,7 @@ Nemo.is_domain_type(::Type{HessQRElem}) = true
 
 Base.parent(a::HessQRElem) = a.parent
 
-(R::HessQR)(a::Generic.Rat{QQFieldElem}) = HessQRElem(R, a)
+(R::HessQR)(a::Generic.RationalFunctionFieldElem{QQFieldElem}) = HessQRElem(R, a)
 (R::HessQR)(a::ZZRingElem) = HessQRElem(R, a)
 (R::HessQR)(a::Integer) = HessQRElem(R, ZZRingElem(a))
 (R::HessQR)(a::ZZPolyRingElem) = HessQRElem(R, a)
@@ -233,7 +233,7 @@ function divrem(a::HessQRElem, b::HessQRElem)
       (af(g-dv) -g(af-du))/(g(g-dv)) = d*..., so once cont(g %d) =1,
       we can replace f and g mod d (and figure out the quotient afterwards)
 
-    - for d = p a prime, the rep is unqiue, thus F_p(t)
+    - for d = p a prime, the rep is unique, thus F_p(t)
 
     - other approach:
       af/g = (af mod b)/(g mod b) mod b:
@@ -331,8 +331,6 @@ end
 
 Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
-Nemo.dense_poly_type(::Type{FpFieldElem}) = FpPolyRingElem
-
 function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
@@ -400,7 +398,7 @@ function Hecke.factor(a::HessQRElem)
   return Fac(R(a.f), Dict((R(p),k) for (p,k) = f.fac))
 end
 
-function Hecke.factor(a::Generic.Rat, R::HessQR)
+function Hecke.factor(a::Generic.RationalFunctionFieldElem, R::HessQR)
   d1 = reduce(lcm, map(denominator, coefficients(numerator(a))), init = ZZRingElem(1))
   f1 = factor(R(d1*numerator(a)))
   d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = ZZRingElem(1))

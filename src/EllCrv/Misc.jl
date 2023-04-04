@@ -39,7 +39,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     squaredivisors(n::ZZRingElem) -> Iterator
 
 Computes the numbers whose square divides a given number $n$. It is assumed
@@ -56,7 +56,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     zeros(f::ZZPolyRingElem) -> Vector{ZZRingElem}
 
 Computes the integer zeros of a given polynomial $f$.
@@ -77,7 +77,7 @@ function zeros(f::ZZPolyRingElem)
 end
 
 
-# @doc Markdown.doc"""
+# @doc raw"""
 #     quadroots(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, p::ZZRingElem) -> Bool
 #
 # Returns true if the quadratic congruence of the quadratic polynomial
@@ -137,7 +137,7 @@ function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     nrootscubic(b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, p::ZZRingElem) -> ZZRingElem
 
 Returns the number of roots of the polynomial $x^3 + bx^2 + cx + d = 0$
@@ -204,7 +204,7 @@ function smod(a::T, b::S) where {T, S}
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
 	normal_basis(K::FinField, L::FinField) -> FinFieldElem
 
 Return a normal element of $L$ over $K = \mathbf F_q$, i.e. an
@@ -246,7 +246,7 @@ function mod(a::nf_elem, I::NfOrdIdl)
   return preimage(phi, b)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
 	inv_mod(a::NfOrdElem, I::NfOrdIdl) -> NfOrdElem
 
 Return a lift of the inverse of an element modulo a prime ideal.
@@ -266,7 +266,7 @@ function Base.invmod(a::nf_elem, I::NfOrdIdl)
   return preimage(phi, inv(b))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
 	pth_root_mod(a::NfOrdElem, I::NfOrdIdl) -> NfOrdElem
 
 Return a lift of the pth root of an element mod a prime ideal lying over p.

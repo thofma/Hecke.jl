@@ -101,7 +101,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_integral(a::AbsAlgAssElem) -> Bool
 
 Returns `true` if $a$ is integral and `false` otherwise.
@@ -385,7 +385,7 @@ end
 ################################################################################
 
 # Tries to compute a/b if action is :right and b\a if action is :left
-@doc Markdown.doc"""
+@doc raw"""
     is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
       -> Bool, AbsAlgAssElem
 
@@ -416,19 +416,19 @@ end
 function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left)
   t, c = is_divisible(a, b, action)
   if !t
-    error("Divison not possible")
+    error("Division not possible")
   end
   return c
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
 
 Returns an element $c$ such that $a = c \cdot b$.
 """
 divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :right)
 
-@doc Markdown.doc"""
+@doc raw"""
     divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
 
 Returns an element $c$ such that $a = b \cdot c$.
@@ -463,7 +463,7 @@ dot(a::AbsAlgAssElem{T}, b::ZZRingElem) where {T <: RingElem} = a*b
 
 dot(b::ZZRingElem, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
-function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResF{S} where S <: Union{Int, ZZRingElem}
+function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResidueFieldElem{S} where S <: Union{Int, ZZRingElem}
   @assert length(c) == length(V)
   A = parent(V[1])
   res = zero(A)
@@ -493,14 +493,14 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_invertible(a::AbsAlgAssElem) -> Bool, AbsAlgAssElem
 
 Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
 """
 is_invertible(a::AbsAlgAssElem) = is_divisible(one(parent(a)), a, :right)
 
-@doc Markdown.doc"""
+@doc raw"""
     inv(a::AbsAlgAssElem) -> AbsAlgAssElem
 
 Assuming $a$ is a unit this function returns $a^{-1}$.
@@ -713,7 +713,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     minpoly(a::AbsAlgAssElem) -> PolyElem
 
 Returns the minimal polynomial of $a$ as a polynomial over
@@ -722,10 +722,15 @@ Returns the minimal polynomial of $a$ as a polynomial over
 function Generic.minpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
   R = polynomial_ring(base_ring(parent(a)), "x", cached=false)[1]
+  return minpoly(R, a)
+end
+
+function Generic.minpoly(R::PolyRing, a::AbsAlgAssElem)
+  M = representation_matrix(a)
   return minpoly(R, M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     charpoly(a::AbsAlgAssElem) -> PolyElem
 
 Returns the characteristic polynomial of $a$ as a polynomial over
@@ -767,7 +772,7 @@ function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
   return g
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     reduced_charpoly(a::AbsAlgAssElem) -> PolyElem
 
 Returns the reduced characteristic polynomial of $a$ as a polynomial over
@@ -831,7 +836,7 @@ function elem_from_mat_row(A::AbsAlgAss{QQFieldElem}, M::ZZMatrix, i::Int, d::ZZ
   return a
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     representation_matrix(a::AbsAlgAssElem, action::Symbol = :left) -> MatElem
 
 Returns a matrix over `base_ring(algebra(a))` representing multiplication with
@@ -939,7 +944,7 @@ end
 #  return tr(representation_matrix(x))
 #end
 
-@doc Markdown.doc"""
+@doc raw"""
     tr(x::AbsAlgAssElem{T}) where T -> T
 
 Returns the trace of $x$.
@@ -958,7 +963,7 @@ end
 #  return trace(representation_matrix(x))
 #end
 
-@doc Markdown.doc"""
+@doc raw"""
     trred(x::AbsAlgAssElem{T}) where T -> T
 
 Returns the reduced trace of $x$.
@@ -987,7 +992,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(x::AbsAlgAssElem{T}) where T -> T
 
 Returns the norm of $x$.
@@ -1000,7 +1005,7 @@ function norm(a::AbsAlgAssElem)
   return det(representation_matrix(a))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     normred(x::AbsAlgAssElem{T}) where T -> T
 
 Returns the reduced norm of $x$.
@@ -1059,7 +1064,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     trred_matrix(A::Vector{ <: AlgAssElem}) -> MatElem
 
 Returns a matrix $M$ such that $M_{ij} = \mathrm{tr}(A_i \cdot A_j)$ where
@@ -1084,7 +1089,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     coefficients(a::AbsAlgAbsElem; copy::Bool = true) -> Vector{RingElem}
 
 Returns the coefficients of $a$ in the basis of `algebra(a)`.

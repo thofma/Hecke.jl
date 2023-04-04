@@ -7,7 +7,7 @@ function _prod(A, b)
   return b
 end
 
-#aparently, should be called evaluate, talk to Bill...
+#apparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
 function msubst(f::Generic.MPoly{T}, v::Vector{NfRelElem{T}}) where T
   k = base_ring(parent(f))
@@ -184,15 +184,15 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
 end
 
 
-@doc Markdown.doc"""
-    compose_mod(a::AbstractAlgebra.MPolyElem{T}, vars::Vector{Int}, vals::Vector{MPolyElem{T}}, mod::Vector{MPolyElem{T}}) where T <: FieldElement
+@doc raw"""
+    compose_mod(a::AbstractAlgebra.MPolyRingElem{T}, vars::Vector{Int}, vals::Vector{MPolyRingElem{T}}, mod::Vector{MPolyRingElem{T}}) where T <: FieldElement
 Evaluate the polynomial by substituting in the supplied values in the array `vals` for
 the corresponding variables with indices given by the array `vars`. The evaluation will
 succeed if multiplication is defined between elements of the coefficient ring of $a$ and
 elements of `vals`. The result will be reduced modulo "mod". If "mod" is a Groebner basis for the ideal
 the elements generate.
 """
-function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) where S <:MPolyRingElem{T} where T <: RingElem
   unique(vars) != vars && error("Variables not unique")
   length(vars) != length(vals) && error("Number of variables does not match number of values")
   for i = 1:length(vars)
@@ -207,7 +207,7 @@ function compose_mod(a::S, vars::Vector{Int}, vals::Vector{S}, mod::Vector{S}) w
   return _compose_mod(a, vars, vals, powers, mod)::S
 end
 
-function powermod(a::S, i::Union{Int, ZZRingElem}, modu::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+function powermod(a::S, i::Union{Int, ZZRingElem}, modu::Vector{S}) where S <:MPolyRingElem{T} where T <: RingElem
   if i == 0
     return one(parent(a))
   end
@@ -226,7 +226,7 @@ function powermod(a::S, i::Union{Int, ZZRingElem}, modu::Vector{S}) where S <:MP
   return b
 end
 
-function mulmod(a::S, b::S, mod::Vector{S}) where S <:MPolyElem{T} where T <: RingElem
+function mulmod(a::S, b::S, mod::Vector{S}) where S <:MPolyRingElem{T} where T <: RingElem
   return divrem(a*b, mod)[2]
 end
 
@@ -254,7 +254,7 @@ function _compose_mod(a, vars, vals, powers, modu)
 end
 
 
-function change_base_ring(p::MPolyElem{T}, g, new_polynomial_ring) where {T <: RingElement}
+function change_base_ring(p::MPolyRingElem{T}, g, new_polynomial_ring) where {T <: RingElement}
   cvzip = zip(coefficients(p), exponent_vectors(p))
   M = MPolyBuildCtx(new_polynomial_ring)
   for (c, v) in cvzip

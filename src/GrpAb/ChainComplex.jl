@@ -15,7 +15,7 @@ export chain_complex, is_exact, free_resolution, zero_map, ComplexOfMorphisms,
  and Im(phi) subset Im(psi), then G -> H can be constructed
 =#
 
-@doc Markdown.doc"""
+@doc raw"""
     lift(phi::Map, psi::Map) -> Map
 Given $\phi: G\to F$ and $\psi:H \to F$ s.th. $\Im(\phi) \subseteq \Im(\psi)$
 return the map $G\to H$ to make the diagram commute.
@@ -26,7 +26,7 @@ function lift(phi::Map, psi::Map)
   return hom(domain(phi), domain(psi), [t[2] for t = x])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     zero_map(G::GrpAbFinGen) -> Map
 Create the map $G \to \{0\}$.
 """
@@ -45,7 +45,7 @@ end
 #
 ######################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
   The complex is always stored this way
 ```
       maps[1]   maps[2]
@@ -65,7 +65,7 @@ minimal object index (in the sense of homological degree)
 `typ == :chain`
 
 The definition is `d_i(d_i+1(x)) = 0` where `d_i` are the (logically) numbered
-maps (differentials). The correspoding objects `M_i` are defined via
+maps (differentials). The corresponding objects `M_i` are defined via
 
   `d_i : M_i -> M_i-1`
 
@@ -453,7 +453,7 @@ function show(io::IO, C::ComplexOfMorphisms)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the chain complex.
@@ -469,7 +469,7 @@ function cochain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed
   return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the cochain complex.
@@ -513,7 +513,7 @@ function extract_object_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   return ComplexOfMorphisms(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_exact(C::ComplexOfMorphisms) -> Bool
 Tests is the complex $A_i: G_i \to G_{i+1}$
 is exact, ie. if $\Im(A_i) = \Kern(A_{i+1})$.
@@ -523,9 +523,9 @@ function is_exact(C::ComplexOfMorphisms)
   return all(i->is_eq(image(C.maps[i])[1], kernel(C.maps[i+1])[1]), 1:length(C.maps)-1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     free_resolution(G::GrpAbFinGen) -> ComplexOfMorphisms{GrpAbFinGen}
-A free resultion for $G$, ie. a chain complex terminating in
+A free resolution for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
 function free_resolution(G::GrpAbFinGen)
@@ -552,7 +552,7 @@ mutable struct ComplexOfMorphismsMap{T} <: Map{ComplexOfMorphisms{T}, ComplexOfM
 end
 
 #=
-@doc Markdown.doc"""
+@doc raw"""
     hom(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, phi::Map{<:T, <:T}) where {T} -> ComplexOfMorphismsMap
 Given chain complexes $C_i: G_i \to G_{i+1}$ and $D_i: H_i \to H_{i+1}$
 as well as a map $\phi = \phi_n: G_n \to H_n$, lift $\phi$ to
@@ -572,7 +572,7 @@ function hom(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, phi::Map{<:T, <
   return ComplexOfMorphismsMap(C, D, h)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(C::ComplexOfMorphisms{T}, G::T) -> ComplexOfMorphisms{T}
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $\hom(G_i, G)$.
@@ -603,7 +603,7 @@ function hom(C::ComplexOfMorphisms{T}, G::T) where {T}
   return ComplexOfMorphisms(reverse(R))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hom(C::ComplexOfMorphisms{T}, G::T) -> ComplexOfMorphisms{T}
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $\hom(G, G_i)$.
@@ -635,7 +635,7 @@ function hom(G::T, C::ComplexOfMorphisms{T}) where {T}
   return ComplexOfMorphisms(R)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     homology(C::ComplexOfMorphisms{GrpAbFinGen}) -> Vector{GrpAbFinGen}
 Given a complex $A_i: G_i \to G_{i+1}$,
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
@@ -675,7 +675,7 @@ function snake_lemma(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::Vect
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     tensor_product(C::ComplexOfMorphisms{T}, G::T) -> ComplexOfMorphisms{T}
 Given a complex $A_i: G_i \to G_{i+1}$ and a module $G$,
 compute the derived complex $G_i \otimes G$.

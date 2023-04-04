@@ -103,7 +103,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     completion(K::AnticNumberField, P::NfOrdIdl, precision::Int)
                                                     -> LocalField, CompletionMap
 
@@ -291,7 +291,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> LocalField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at a totally ramified prime ideal $P$,
@@ -401,7 +401,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int) -> QadicField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at an unramified prime ideal $P$, presented

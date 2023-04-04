@@ -21,7 +21,7 @@ function content(a::PolyElem{<: FieldElem})
 end
 
 
-function ZZRingElem(a::Generic.Res{Nemo.ZZRingElem})
+function ZZRingElem(a::Generic.ResidueRingElem{Nemo.ZZRingElem})
   return a.data
 end
 
@@ -29,11 +29,11 @@ function ZZRingElem(a::Nemo.zzModRingElem)
   return ZZRingElem(a.data)
 end
 
-function lift(::ZZRing, a::Generic.Res{Nemo.ZZRingElem})
+function lift(::ZZRing, a::Generic.ResidueRingElem{Nemo.ZZRingElem})
   return a.data
 end
 
-function (::ZZRing)(a::Generic.Res{Nemo.ZZRingElem})
+function (::ZZRing)(a::Generic.ResidueRingElem{Nemo.ZZRingElem})
   return a.data
 end
 
@@ -73,7 +73,7 @@ function rem!(z::T, f::T, g::T) where T <: PolyElem
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_rational_reconstruction(a::ZZPolyRingElem, M::ZZRingElem) -> QQPolyRingElem
 
 Apply `rational_reconstruction` to each coefficient of $a$, resulting
@@ -252,7 +252,7 @@ function continue_lift(a::HenselCtx, N::Int)
   a.N = N
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_mod_pk(f::ZZPolyRingElem, p::Int, k::Int) -> Dict{ZZPolyRingElem, Int}
 
  For $f$ that is square-free modulo $p$, return the factorisation modulo $p^k$.
@@ -266,7 +266,7 @@ function factor_mod_pk(f::ZZPolyRingElem, p::Int, k::Int)
   return factor_to_dict(H.LF)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_mod_pk_init(f::ZZPolyRingElem, p::Int) -> HenselCtx
 
  For $f$ that is square-free modulo $p$, return a structure that allows to compute
@@ -277,7 +277,7 @@ function factor_mod_pk_init(f::ZZPolyRingElem, p::Int)
   return H
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_mod_pk(H::HenselCtx, k::Int) -> RingElem
 
  Using the result of `factor_mod_pk_init`, return a factorisation modulo $p^k$.
@@ -326,7 +326,7 @@ function hensel_lift!(G::ZZPolyRingElem, H::ZZPolyRingElem, A::ZZPolyRingElem, B
   ccall((:fmpz_poly_hensel_lift, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{ZZPolyRingElem},  Ref{ZZPolyRingElem},  Ref{ZZPolyRingElem},  Ref{ZZPolyRingElem},  Ref{ZZPolyRingElem},  Ref{ZZPolyRingElem}, Ref{ZZPolyRingElem}, Ref{ZZPolyRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), G, H, A, B, f, g, h, a, b, p, p1)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p::ZZRingElem, k::Int) -> (ZZPolyRingElem, ZZPolyRingElem)
 
  Given $f = gh$ modulo $p$ for $g, h$ coprime modulo $p$, compute $G, H$ s.th. $f = GH mod p^k$ and
@@ -378,7 +378,7 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p:
   return g, h
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int) -> (ZZPolyRingElem, ZZPolyRingElem)
 
  Given $f$ and $g$ such that $g$ is a divisor of $f mod p$ and $g$ and $f/g$ are coprime, compute a hensel lift of $g modulo p^k$.
@@ -398,9 +398,9 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int
   return hensel_lift(f, g, h, p, k)[1]
 end
 
-modulus(F::Generic.ResRing{ZZRingElem}) = F.modulus
+modulus(F::Generic.ResidueRing{ZZRingElem}) = F.modulus
 
-modulus(F::Generic.ResField{ZZRingElem}) = F.modulus
+modulus(F::Generic.ResidueField{ZZRingElem}) = F.modulus
 
 function fmpq_poly_to_nmod_poly_raw!(r::zzModPolyRingElem, a::QQPolyRingElem)
   ccall((:fmpq_poly_get_nmod_poly, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{QQPolyRingElem}), r, a)
@@ -408,6 +408,18 @@ end
 
 function fmpq_poly_to_gfp_poly_raw!(r::fpPolyRingElem, a::QQPolyRingElem)
   ccall((:fmpq_poly_get_nmod_poly, libflint), Nothing, (Ref{fpPolyRingElem}, Ref{QQPolyRingElem}), r, a)
+end
+
+function fmpq_poly_to_fq_default_poly_raw!(r::FqPolyRingElem, a::QQPolyRingElem, t1::ZZPolyRingElem = ZZPolyRingElem(), t2::ZZRingElem = ZZRingElem())
+  ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), t1, a)
+  ccall((:fq_default_poly_set_fmpz_poly, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{ZZPolyRingElem}, Ref{FqField}), r, t1, r.parent.base_ring)
+  ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{ZZRingElem}, Ref{QQPolyRingElem}), t2, a)
+  if !isone(t2)
+    #res = ccall((:fmpz_invmod, libflint), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t2, t2, characteristic(base_ring(r)))
+    #res 
+    #@assert res != 0
+    ccall((:fq_default_poly_scalar_div_fq_default, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqFieldElem}, Ref{FqField}), r, r, coefficient_ring(r)(t2), coefficient_ring(r))
+  end
 end
 
 function fmpq_poly_to_fmpz_mod_poly_raw!(r::ZZModPolyRingElem, a::QQPolyRingElem, t1::ZZPolyRingElem = ZZPolyRingElem(), t2::ZZRingElem = ZZRingElem())
@@ -474,6 +486,12 @@ function fmpq_poly_to_gfp_fmpz_poly(Rx::Nemo.FpPolyRing, f::QQPolyRingElem)
   return g
 end
 
+function fmpq_poly_to_fq_default_poly(Rx::Nemo.FqPolyRing, f::QQPolyRingElem)
+  g = Rx()
+  fmpq_poly_to_fq_default_poly_raw!(g, f)
+  return g
+end
+
 function fmpz_poly_to_fmpz_mod_poly_raw!(r::ZZModPolyRingElem, a::ZZPolyRingElem)
   ccall((:fmpz_poly_get_fmpz_mod_poly, libflint), Nothing,
         (Ref{ZZModPolyRingElem}, Ref{ZZPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, a, r.parent.base_ring.ninv)
@@ -492,7 +510,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     rres(f::ZZPolyRingElem, g::ZZPolyRingElem) -> ZZRingElem
 
 The reduced resultant of $f$ and $g$,
@@ -543,7 +561,7 @@ function rres_bez(f::ZZPolyRingElem, g::ZZPolyRingElem)
   return lcm(denominator(q), denominator(w))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     rresx(f::ZZPolyRingElem, g::ZZPolyRingElem) -> r, u, v
 
 The reduced resultant, i.e. a generator for the intersect
@@ -621,12 +639,12 @@ function roots(f::FpPolyRingElem, K::FqPolyRepField)
   return roots(ff)
 end
 
-function is_power(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem}, m::Int)
+function is_power(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem, FqFieldElem}, m::Int)
   if iszero(a)
     return true, a
   end
-  s = size(parent(a))
-  if gcd(s-1, m) == 1
+  s = order(parent(a))
+  if gcd(s - 1, m) == 1
     return true, a^invmod(FlintZZ(m), s-1)
   end
   St, t = polynomial_ring(parent(a), "t", cached=false)
@@ -715,7 +733,7 @@ end
 
 # Number of positive roots
 
-@doc Markdown.doc"""
+@doc raw"""
     n_positive_roots(f::Union{ZZPolyRingElem, QQPolyRingElem};
                      multiplicities::Bool = false) -> Int
 
@@ -807,7 +825,7 @@ function n_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{
   return _number_of_sign_changes(evminf) - _number_of_sign_changes(evinf)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     n_positive_roots(f::PolyElem, P::InfPlc; multiplicities::Bool) -> true
 
 Return the number of positive roots of the polynomial $f$ at the real place $P$.
@@ -1063,7 +1081,7 @@ end
     if f is irreducible (or at least square-free), then there are
       (many) primes p s.th. f is square-free mod p
     then that means there are vectors b s.th. the
-    space <M^i b | i> = everyhting, at least mod p, so in general.
+    space <M^i b | i> = everything, at least mod p, so in general.
     Now f(M)b = 0 implies f(M) = 0.
 
     if f is known to be integral, then one can use arb to compute the
@@ -1277,7 +1295,7 @@ function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     fmpz_poly_read!(a::ZZPolyRingElem, b::String) -> ZZPolyRingElem
 
 Use flint's native read function to obtain the polynomial in the file with name `b`.
@@ -1289,7 +1307,7 @@ function fmpz_poly_read!(a::ZZPolyRingElem, b::String)
   return a
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     mahler_measure_bound(f::ZZPolyRingElem) -> ZZRingElem
 
 A upper bound on the Mahler measure of `f`.
@@ -1341,7 +1359,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{ZZRingElem} -> PolyElem{T}
 
 Find a random polynomial of degree=$n$.
@@ -1388,7 +1406,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where T
                                                                   -> PolyElem{T}
 
@@ -1421,7 +1439,7 @@ function cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where 
   return map_coefficients(base_ring(R), p, parent = R)::PolyElem{T}
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_cyclotomic_polynomial(p::PolyElem{T}) where T -> Bool
 
 Return whether `p` is cyclotomic.

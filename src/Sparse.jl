@@ -6,7 +6,7 @@
   to be formal
 
   The upper_triangular stuff performs very elementary transformations
-  until the matrix becomes dense. At this point, the dense bit is extraced and
+  until the matrix becomes dense. At this point, the dense bit is extracted and
   converted to an ZZMatrix which is then hnf'ed.
 
   Missing:
@@ -28,6 +28,7 @@ export vcat!, show, sub, SMat, SRow,
 
 include("Sparse/Matrix.jl")
 include("Sparse/Row.jl")
+include("Sparse/ZZRow.jl")
 include("Sparse/Module.jl")
 include("Sparse/Trafo.jl")
 include("Sparse/HNF.jl")

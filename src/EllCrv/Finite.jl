@@ -46,7 +46,7 @@ export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order
 
 Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
 
-@doc Markdown.doc"""
+@doc raw"""
     rand(E::EllCrv) -> EllCrvPt
 
 Return a random point on the elliptic curve $E$ defined over a finite field.
@@ -61,7 +61,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
 
   if E.short == false
     while true
-    # choose random x-coordinate and check if there exists a correspoding y-coordinate
+    # choose random x-coordinate and check if there exists a corresponding y-coordinate
       x = rand(rng, R)
       a1, a2, a3, a4, a6 = a_invars(E)
       Ry, y = polynomial_ring(R,"y")
@@ -97,7 +97,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     order_via_exhaustive_search(E::EllCrv{FinFieldElem) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
@@ -126,8 +126,8 @@ end
 ################################################################################
 
 # Th. 4.14
-@doc Markdown.doc"""
-    order_via_legendre(E::EllCrv{Generic.Res{ZZRingElem}) -> ZZRingElem
+@doc raw"""
+    order_via_legendre(E::EllCrv{Generic.ResidueRingElem{ZZRingElem}) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
@@ -167,11 +167,11 @@ end
 
 ################################################################################
 #
-#  Hasse inverval
+#  Hasse interval
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     hasse_interval(E::EllCrv) -> Vector{ZZRingElem}
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, return an array
@@ -191,7 +191,7 @@ function hasse_interval(E::EllCrv{T}) where T<:FinFieldElem
 end
 
 # section 4.3.4
-@doc Markdown.doc"""
+@doc raw"""
     elem_order_bsgs(P::EllCrvPt) -> ZZRingElem
 
 Calculate the order of a point $P$ on an elliptic curve given over a finite
@@ -282,7 +282,7 @@ function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
   return ZZ(M)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     order(P::EllCrvPt) -> ZZRingElem
 
 Given a point on an elliptic curve over a finite field, return the order
@@ -298,7 +298,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     order_via_bsgs(E::EllCrv) -> Vector{ZZRingElem}
 
 Calculate candidates for the number of points on an elliptic curve $E$ given
@@ -398,7 +398,7 @@ end
 ################################################################################
 
 
-@doc Markdown.doc"""
+@doc raw"""
     order_via_schoof(E::EllCrv) -> ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$,
@@ -697,7 +697,7 @@ end
 
 # Division polynomials in general for an elliptic curve over an arbitrary field
 
-# standard divison polynomial Psi (as needed in Schoof's algorithm)
+# standard division polynomial Psi (as needed in Schoof's algorithm)
 function psi_poly_field(E::EllCrv, n::Int, x, y)
 
     R = base_field(E)
@@ -764,7 +764,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     order(E::EllCrv{NemoResidue}) -> Nemo.ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
@@ -790,7 +790,7 @@ function order(E::EllCrv{T}) where T<:FinFieldElem
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     trace_of_frobenius(E::EllCrv{FinFieldElem}) -> Int
 
 Return the trace of the Frobenius endomorphism on the elliptic curve E
@@ -801,7 +801,7 @@ function trace_of_frobenius(E::EllCrv{T}) where T<:FinFieldElem
   return order(base_field(E))+1 - order(E)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     trace_of_frobenius(E::EllCrv{FinFieldElem}, Int) -> Int
 
 Return the trace of the $r$-th power of the Frobenius endomorphism on
@@ -829,7 +829,7 @@ end
 
 
 #Following Identifying supersingular elliptic curves - Andrew V. Sutherland
-@doc Markdown.doc"""
+@doc raw"""
     is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
 Return true when the elliptic curve is supersingular. The result is proven to be correct.
 """
@@ -903,7 +903,7 @@ function _embed_into_p2(j, L)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
 Return true when the elliptic curve is ordinary, i.e. not supersingular.
 """
@@ -912,7 +912,7 @@ function is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
 end
 
 #Following Identifying supersingular elliptic curves - Andrew V. Sutherland
-@doc Markdown.doc"""
+@doc raw"""
     is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
 Uses a probabilistic algorithm to test whether E is supersingular or not.
 If the function returns false, the curve is proven to be ordinary.
@@ -955,7 +955,7 @@ function monte_carlo_test(E, n)
 end
 
 #Based on Sage implementation in ell_finite_field.py
-@doc Markdown.doc"""
+@doc raw"""
     supersingular_polynomial(p::IntegerUnion)
 Return the polynomial whose roots correspond to j-invariants
 of supersingular elliptic curves of characteristic p.

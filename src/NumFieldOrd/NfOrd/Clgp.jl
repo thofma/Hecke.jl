@@ -100,7 +100,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   if !redo
     c = get_attribute(O, :ClassGrpCtx)
     if c !== nothing
-      return c::ClassGrpCtx{SMat{ZZRingElem}}
+      return c::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
     end
   end
 
@@ -109,7 +109,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem}}
+  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
   @assert order(c) === O
 
   c.B2 = bound * large
@@ -400,7 +400,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   return U, r
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
 Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
@@ -434,7 +434,7 @@ function _unit_group_maximal(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     unit_group(O::NfOrd) -> GrpAbFinGen, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
@@ -450,7 +450,7 @@ function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bo
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     unit_group_fac_elem(O::NfOrd) -> GrpAbFinGen, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
@@ -479,7 +479,7 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   return unit_group_fac_elem(UU)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     regulator(O::NfOrd)
 
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
@@ -495,7 +495,7 @@ function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Boo
   return U.tentative_regulator
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     regulator(K::AnticNumberField)
 
 Computes the regulator of $K$, i.e. the discriminant of the unit lattice

@@ -457,7 +457,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
 
   aorig = a
 
-  # I shoul improve this
+  # I should improve this
   a, sca = _coprime_integral_ideal_class_deterministic(a, F)
   #a, sca = _coprime_integral_ideal_class(a, F)
   @vprint :PIP 1 "Found coprime integral ideal class\n"
@@ -573,7 +573,7 @@ end
 
 function _solve_norm_equation_over_center_quaternion(M, x)
   A = algebra(M)
-  !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
+  !(base_ring(A) isa QQField) && error("Only implemented for rational quaternion algebras")
   B = basis_alg(M)
   G = zero_matrix(FlintQQ, 4, 4)
   f = standard_involution(A)
@@ -731,7 +731,7 @@ function _lift_norm_one_unit_quaternion(x, F)
     @assert normred(y) == 1
     if y - x in F
       return y
-      println("successs");
+      println("success");
     end
     if -y - x in F
       return -y
@@ -2208,7 +2208,7 @@ function _describe(B)
   if ismatalg
     return "Full matrix algebra of degree $n over field of degree $d"
   else
-    return "Divison algebra of degree $n over field of degree $d"
+    return "Division algebra of degree $n over field of degree $d"
   end
 end
 
@@ -2650,7 +2650,7 @@ function _recursive_iterator!(x, lengths, d, elts::Vector, bases_offsets, indice
   elseif i == k # unroll 1-loop base case for speed
     # this is the last component
 
-    # We do something clever for the indicies
+    # We do something clever for the indices
     o = bases_offsets[end][1]
     l = bases_offsets[end][2]
     ids = copy(isintegral(vtemp[o]) ? indices_integral[1] : indices_nonintegral[1])

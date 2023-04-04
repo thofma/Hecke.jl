@@ -43,8 +43,10 @@
   f = hom(q1,q1, ZZ[2 0; 0 1])
   @test sprint(show, f) isa String
 
-  @test b == preimage(f,b)
-  @test_throws ErrorException preimage(f,a)
+  ok, c = @inferred has_preimage(f ,b)
+  @test ok
+  @test b == c
+  @test_throws ArgumentError preimage(f,a)
   @test !is_bijective(f)
 
   T, i = primary_part(q1, 3)
@@ -234,13 +236,13 @@
   rq, i = radical_quadratic(Tsub)
   bool, j = @inferred has_complement(i)
   N = domain(j)
-  T2, _, _ = orthogonal_sum(rq, N)
+  T2, _ = direct_sum(rq, N)
   @test is_degenerate(T2)
   bool, phi = @inferred is_isometric_with_isometry(Tsub, T2)
   @test bool
   @test is_bijective(phi)
   @test !is_anti_isometric_with_anti_isometry(Tsub, T2)[1]
-  rq2, _ = radical_quadratic(Tsub) # the same as before but diffrent julia object
+  rq2, _ = radical_quadratic(Tsub) # the same as before but different julia object
   @test is_isometric_with_isometry(rq, rq2)[1]
   @test is_anti_isometric_with_anti_isometry(rq, rq2)[1]
 
@@ -287,30 +289,31 @@
   @test is_bijective(phi)
   @test all(a -> Hecke.quadratic_product(a) == (-1)*Hecke.quadratic_product(phi(a)), T1sub)
 
-  # orthogonal sum
+  # direct sums
 
   B = matrix(FlintQQ, 3, 3 ,[1, 1, 0, 1, -1, 0, 0, 1, -1])
   G = matrix(FlintQQ, 3, 3 ,[1, 0, 0, 0, 1, 0, 0, 0, 1])
   L1 = Zlattice(B, gram = G)
   qL1 = discriminant_group(L1)
   Z = torsion_quadratic_module(QQ[1;])
-  @test_throws ArgumentError orthogonal_sum(qL1, Z)
-  @test_throws ArgumentError orthogonal_sum(qL1, rescale(Z, 2))
+  @test_throws ArgumentError direct_sum(qL1, Z)
+  @test_throws ArgumentError direct_product(qL1, rescale(Z, 2))
 
   B = matrix(FlintQQ, 4, 4 ,[2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1])
   G = matrix(FlintQQ, 4, 4 ,[1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2])
   L2 = Zlattice(B, gram = G)
   qL2 = discriminant_group(L2)
   Z = torsion_quadratic_module(QQ[2;])
-  q, _, _ = @inferred orthogonal_sum(qL2, Z)
+  q, _ = @inferred direct_product(qL2, Z)
   @test is_isometric_with_isometry(q, qL2)[1]
   @test modulus_bilinear_form(q) == modulus_bilinear_form(qL2)
   @test modulus_quadratic_form(q) == modulus_quadratic_form(Z)
 
-  L3, _, _ = orthogonal_sum(L1, L2)
+  L3, _ = direct_product(L1, L2)
   qL3 = discriminant_group(L3)
 
-  q, qL1inq, qL2inq = @inferred orthogonal_sum(qL1, qL2)
+  q, inj = @inferred direct_sum(qL1, qL2)
+  qL1inq, qL2inq = inj
   @test is_injective(qL1inq) && is_injective(qL2inq)
   bool, _ = is_isometric_with_isometry(qL3, q)
   @test bool
@@ -331,14 +334,14 @@
     qL = discriminant_group(L)
     @test is_elementary(qL, 9-i)
   end
-  L = orthogonal_sum(root_lattice(:A, 7), root_lattice(:D, 7))[1]
+  L = biproduct(root_lattice(:A, 7), root_lattice(:D, 7))[1]
   qL = discriminant_group(L)
   @test is_primary(qL, 2) && !is_elementary(qL, 2)
 
-  # Additional orthogonal sum
+  # Additional direct sum
   list_lat = [root_lattice(:A, i) for i in 1:7]
   list_quad = discriminant_group.(list_lat)
-  S, inj, proj = direct_sum(list_quad)
+  S, inj, proj = biproduct(list_quad)
   @test order(S) == prod(order.(list_quad))
   for i in 1:7, j in 1:7
     f = compose(inj[i], proj[j])
@@ -347,8 +350,14 @@
   end
 
   T = discriminant_group(root_lattice(:D, 6))
-  S, inj, proj = @inferred direct_sum(T, T, T)
+  S, inj, proj = @inferred biproduct(T, T, T)
 
+  U2 = hyperbolic_plane_lattice(2)
+  q = discriminant_group(U2)
+  qq, qqinq = sub(q, [q[1]+q[2]])
+  ok, qqqinq = has_complement(qqinq)
+  @test ok
+  @test is_isometric_with_isometry(qq + domain(qqqinq), q)[1]
 
   # Smith normal form
   L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))

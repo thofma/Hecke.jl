@@ -56,7 +56,7 @@ end
 
 
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
     valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
 
@@ -70,7 +70,7 @@ function valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
   return sum(valuation(I, p)*v for (I, v) = A.fac)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField)
 The factored fractional ideal $a*O$.
 """
@@ -176,7 +176,7 @@ function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 
 A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
@@ -189,7 +189,7 @@ function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   return S
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 The factorisation of $Q$, by refining a coprime factorisation.
 """
@@ -206,13 +206,13 @@ function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
 end
 
 #TODO: expand the coprime stuff to automatically also get the exponents
-@doc Markdown.doc"""
+@doc raw"""
     simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> FacElem
     simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> FacElem
 
 Uses ```coprime_base``` to obtain a simplified version of $x$, ie.
 in the simplified version all base ideals will be pariwise coprime
-but not neccessarily prime!.
+but not necessarily prime!.
 """
 function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   z = copy(x)
@@ -279,7 +279,7 @@ function simplify!(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   x.fac = Dict((i//1, k) for (i,k) = de)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Dict{NfOrdIdl, Int}
 
 Computed a partial factorisation of $x$, ie. writes $x$ as a product

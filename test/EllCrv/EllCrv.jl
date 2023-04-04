@@ -210,7 +210,7 @@
 
   end
 
-  @testset "Point aritmetic" begin
+  @testset "Point arithmetic" begin
     #addition
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
     O = infinity(E43_a1)

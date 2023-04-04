@@ -68,7 +68,7 @@ function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = pare
   return r
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int = degree(f)) -> Vector{qadic}
 
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
@@ -114,7 +114,7 @@ function roots(C::qAdicRootCtx, n::Int = 10)
   return rt
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     qAdicConj(K::AnticNumberField, p::Int)
 
 Creates a data structure to compute the conjugates in an unramified splitting field
@@ -164,13 +164,13 @@ end
 #  all = true/ false: only on of a pair of complex conjugates is returned
 #  flat = true/ false: return (Re, Im) or the complex number
 #TODO: not sure how this would work in the ramified, not-normal case.
-@doc Markdown.doc"""
+@doc raw"""
     conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
 
 Returns an array of the $q$-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
 a $q$-adic (unramifed) extension $K_{P_i}$ of $Q_p$ is computed, sth. $a$ has $\deg P_i = \deg K_{P_i}$
-many cojugates in $K_{P_i}$.
+many conjugates in $K_{P_i}$.
 If `all = true` and `flat = false`, the default, then all $n$ conjugates are returned.
 If `all = false`, then for each $P_i$ only one conjugate is returned, the others could be
 computed using automorphisms (the Frobenius).
@@ -244,7 +244,7 @@ function _log(a::qadic)
   return log(a*inv(teichmuller(a)))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     conjugates_log(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
     conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
 
@@ -337,7 +337,7 @@ function special_gram(m::Vector{Vector{padic}})
   return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     regulator(u::Vector{T}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
     regulator(K::AnticNumberField, C::qAdicConj, n::Int = 10; flat::Bool = true)
     regulator(R::NfAbsOrd, C::qAdicConj, n::Int = 10; flat::Bool = true)
@@ -361,7 +361,7 @@ function regulator(R::NfAbsOrd{AnticNumberField, nf_elem}, C::qAdicConj, n::Int 
   return regulator([mu(u[i]) for i=2:ngens(u)], C, n, flat = flat)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}} -> qadic
     regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10) -> qadic
     regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10) -> qadic
@@ -476,7 +476,7 @@ function lift_root(f::ZZPolyRingElem, a::nf_elem, o::nf_elem, p::ZZRingElem, n::
   while k < n
     p *= p
     k *= 2
-    #TODO: here f wil be sparse (and possibly large degree), so
+    #TODO: here f will be sparse (and possibly large degree), so
     #      this evaluation is bad.
     # in the calling cite: don't work in the large field, restrict
     # to working (mod p^k) in the field defined by the factor
@@ -502,7 +502,7 @@ function lift_root(f::ZZPolyRingElem, a::nf_elem, o::nf_elem, p::ZZRingElem, n::
   return a
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     completion_easy(K::AnticNumberField, P::NfOrdIdl)
                                                -> FlintQadicField, CompletionMap
 
@@ -525,7 +525,7 @@ end
 
 completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, ZZRingElem(p), i)
 
-@doc Markdown.doc"""
+@doc raw"""
     completion(K::AnticNumberField, p::ZZRingElem, i::Int) -> FlintQadicField, Map
 
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of

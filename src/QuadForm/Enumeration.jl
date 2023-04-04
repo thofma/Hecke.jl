@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-# This implements the algortihm of Fincke-Pohst for enumeration with using
+# This implements the algorithm of Fincke-Pohst for enumeration with using
 # a Gram matrix. So given positive definite G and b, find all v such that
 # v * G * v^t <= b
 # 

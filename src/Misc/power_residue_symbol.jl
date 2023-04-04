@@ -1,7 +1,7 @@
 #Computes the d-th power residue symbol (a/b)_d in F_q
 #with d|q-1
 
-@doc Markdown.doc"""
+@doc raw"""
     power_residue(a::PolyElem{T}, b::PolyElem{T}, d::ZZRingElem, q::ZZRingElem) where T<: RingElem
 
 Computes the $d$-th power residue symbol $\left(\frac{a}{b}\right)_d$ in $\mathbb{F}_q$.

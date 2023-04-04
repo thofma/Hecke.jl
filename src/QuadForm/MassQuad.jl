@@ -1096,7 +1096,7 @@ end
 # The idea is that the p' part of divides the p' part of GL_n(O/P), where P is
 # any prime above p. Use primes until the bound does not change.
 #
-# This is in general not sharp, since it uses a heuristic. There is acutally
+# This is in general not sharp, since it uses a heuristic. There is actually
 # a "closed" formula for this number (see loc. cit.), but it requires a lot of
 # expensive computations.
 function _minkowski_multiple(K, n)

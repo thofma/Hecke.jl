@@ -146,7 +146,7 @@ function det(M::Generic.Mat{NfOrdElem})
   return res
 end
 
-# s, t are auxillary variables, r1, r2 are the residues, m1, m2 are the moduli
+# s, t are auxiliary variables, r1, r2 are the residues, m1, m2 are the moduli
 # aliasing is not allowed (?)
 function crt!(z::zzModPolyRingElem, r1::zzModPolyRingElem, r2::Union{zzModPolyRingElem, fqPolyRepFieldElem}, m1::zzModPolyRingElem, m2::zzModPolyRingElem, s::zzModPolyRingElem, t::zzModPolyRingElem)
   ccall((:nmod_poly_xgcd, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}), z, s, t, m1, m2)
@@ -246,21 +246,21 @@ function show(io::IO, P::PMat)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     coefficient_ideals(M::PMat)
 
 Returns the vector of coefficient ideals.
 """
 coefficient_ideals(M::PMat) = M.coeffs
 
-@doc Markdown.doc"""
+@doc raw"""
     matrix(M::PMat)
 
 Returns the matrix part of the `PMat`.
 """
 matrix(M::PMat) = M.matrix
 
-@doc Markdown.doc"""
+@doc raw"""
     base_ring(M::PMat)
 
 The `PMat` $M$ defines an $R$-module for some maximal order $R$.
@@ -282,7 +282,7 @@ function PseudoMatrix(O::NumFieldOrd, m::AbstractAlgebra.MatElem{T}, c::Vector{S
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     PseudoMatrix(m::Generic.Mat{nf_elem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
@@ -295,7 +295,7 @@ function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
   return PMat{nf_elem, NfOrdFracIdl}(m, cc)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
@@ -309,7 +309,7 @@ function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
   return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     PseudoMatrix(m::Generic.Mat{NfOrdElem}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the free (row) pseudo matrix representing the $Z_k$-module
@@ -479,7 +479,7 @@ end
 rand(I::NfOrdFracIdl, B::Int) = rand(GLOBAL_RNG, I, B)
 rand(rng::AbstractRNG, I::NfOrdFracIdl, B::Int) = rand(rng, make(I, B))
 
-@doc Markdown.doc"""
+@doc raw"""
     pseudo_hnf(P::PMat)
 
 Transforms $P$ into pseudo-Hermite form as defined by Cohen. Essentially the
@@ -514,7 +514,7 @@ function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright,
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     pseudo_hnf_with_transform(P::PMat)
 
 Transforms $P$ into pseudo-Hermite form as defined by Cohen. Essentially the

@@ -174,7 +174,7 @@ function JorDec(L::QuadLat, p)
   return JorDec(J, G, E, p)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(J::JorDec, i::Int) -> MatElem
 
 Given an abstract Jordan decomposition $J$ and $i$, return the Gram matrix of
@@ -227,11 +227,11 @@ function gram_matrix(J::JorDec, i::Int)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     gram_matrix(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return the Gram matrix of a lattice
-admitting this Jordan decompositon.
+admitting this Jordan decomposition.
 """
 function gram_matrix(J::JorDec)
   K = J.K
@@ -243,17 +243,17 @@ function gram_matrix(J::JorDec)
   return D
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     lattice(J::JorDec) -> MatElem
 
 Given an abstract Jordan decomposition, return a lattice admitting this Jordan
-decompositon.
+decomposition.
 """
 function lattice(J::JorDec)
   return quadratic_lattice(J.K, gram = gram_matrix(J))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     genus(J::JorDec) -> QuadLocalGenus
 
 Given an abstract Jordan decomposition, return the local genus to which the
@@ -298,7 +298,7 @@ function genus(J::JorDec)
     D = elem_type(K)[]
     for j in 1:r
       # TODO: We could determine just the diagonal, that would be easier.
-      # Also, there is some redundancy here, the z is acutally independent of i
+      # Also, there is some redundancy here, the z is actually independent of i
       z = gram_matrix(J, j)
       for l in 1:nrows(z)
         push!(D, pi^(max(0, 2 * (sca[i] - sca[j]))) * z[l, l])
@@ -324,7 +324,7 @@ function genus(J::JorDec)
   return g
 end
 
-function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
+function direct_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
   @req J1.p === J2.p "Jordan decompositions must be over same prime"
   if !(J1.is_dyadic)
     i1 = 1
@@ -367,7 +367,7 @@ function orthogonal_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U
     return JorDec(J1.p, _sca, _rk, _dets)
   else
     # Lazy
-    return JorDec(orthogonal_sum(lattice(J1), lattice(J2))[1], J1.p)
+    return JorDec(direct_sum(lattice(J1), lattice(J2))[1], J1.p)
   end
 end
 
@@ -569,7 +569,7 @@ function witt_invariant(G::QuadLocalGenus)
   w, d, n = G.witt[1], G.dets[1], G.ranks[1]
 
   for i in 2:length(G)
-    d, w, n = _witt_of_orthogonal_sum(d, w, n, G.dets[i], G.witt[i], G.ranks[i], p)
+    d, w, n = _witt_of_direct_sum(d, w, n, G.dets[i], G.witt[i], G.ranks[i], p)
   end
 
   G.witt_inv = w
@@ -1081,7 +1081,7 @@ end
 #
 ################################################################################
 
-function orthogonal_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
+function direct_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
   @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
   if !G1.is_dyadic
     p = prime(G1)
@@ -1108,12 +1108,12 @@ function orthogonal_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3, = orthogonal_sum(L1, L2)
+    L3, = direct_sum(L1, L2)
     G3 = genus(L3, prime(G1))
   end
 
   if isdefined(G1, :jordec) && isdefined(G2, :jordec)
-    G3.jordec = orthogonal_sum(G1.jordec, G2.jordec)
+    G3.jordec = direct_sum(G1.jordec, G2.jordec)
   end
 
   return G3
@@ -1161,7 +1161,7 @@ function _direct_sum_easy(G1::QuadLocalGenus, G2::QuadLocalGenus, detclassesG2 =
   return genus(QuadLat, prime(G1), uniformizer(G1), _rk, _sca, _detclass)
 end
 
-Base.:(+)(G1::QuadLocalGenus, G2::QuadLocalGenus) = orthogonal_sum(G1, G2)
+Base.:(+)(G1::QuadLocalGenus, G2::QuadLocalGenus) = direct_sum(G1, G2)
 
 ################################################################################
 #
@@ -1442,7 +1442,7 @@ function _unimodular_jordan_block(p, m)
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     local_jordan_decomposition(E::NumField, p; rank::Int
                                                det_val::Int
                                                max_scale::Int)
@@ -1536,7 +1536,7 @@ function _local_jordan_decompositions_nondyadic!(res, E, p, scalerank, ns, u)
   class2 = elem_type(E)[ns * u^(s[1] * s[2]) for s in scalerank]
   l = length(scalerank)
   @assert l <= sizeof(UInt) * 8
-  # I need to compute all possiblities to distribute class1/class2
+  # I need to compute all possibilities to distribute class1/class2
   # among the blocks.
   t = zero(UInt)
   for i in 1:2^l
@@ -1915,11 +1915,11 @@ end
 
 ################################################################################
 #
-#  Orthogonal sum of genus symbols
+#  Direct sum of genus symbols
 #
 ################################################################################
 
-function orthogonal_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T, U}
+function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T, U}
   @req G1.K === G2.K "Global genus symbols must be defined over the same field"
   K = G1.K
   LGS = local_genus_quad_type(K)[]
@@ -1945,7 +1945,7 @@ function orthogonal_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S
       dcl = fl ? 1 : -1
       g2 = genus(QuadLat, p, [(0, rank(G2), dcl)])
     end
-    g3 = orthogonal_sum(g1, g2)
+    g3 = direct_sum(g1, g2)
     push!(LGS, g3)
   end
   sig1 = G1.signatures
@@ -1955,7 +1955,7 @@ function orthogonal_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S
   return QuadGenus(K, G1.d * G2.d, LGS, sig3)
 end
 
-Base.:(+)(G1::QuadGenus, G2::QuadGenus) = orthogonal_sum(G1, G2)
+Base.:(+)(G1::QuadGenus, G2::QuadGenus) = direct_sum(G1, G2)
 
 ################################################################################
 #
@@ -1963,7 +1963,7 @@ Base.:(+)(G1::QuadGenus, G2::QuadGenus) = orthogonal_sum(G1, G2)
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     in(L::QuadLat, G::QuadGenus) -> Bool
 
 Test if the lattice $L$ is contained in the genus $G$.

@@ -6,7 +6,7 @@ export maximal_order, poverorder, MaximalOrder, ring_of_integers
 #  Maximal Order interface
 #
 ###############################################################################
-@doc Markdown.doc"""
+@doc raw"""
     MaximalOrder(O::NfAbsOrd; index_divisors::Vector{ZZRingElem}, discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> NfAbsOrd
 
 Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
@@ -27,7 +27,7 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{ZZRingElem} = ZZ
   end::NfAbsOrd{S, T}
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     MaximalOrder(K::NumField{QQFieldElem}; discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> NfAbsOrd
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
@@ -56,7 +56,7 @@ function MaximalOrder(K::AnticNumberField; discriminant::ZZRingElem = ZZRingElem
   end::NfAbsOrd{AnticNumberField, nf_elem}
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     ring_of_integers(K::AnticNumberField) -> NfAbsOrd
 
 Returns the ring of integers of $K$.
@@ -78,7 +78,7 @@ end
 #  function to get an order which is maximal at some primes
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem}) -> NfOrd
 
 Given a set of prime numbers, this function returns an overorder of $O$ which
@@ -549,7 +549,7 @@ function _poverorder(O::NfAbsOrd, p::ZZRingElem)
   return R
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     poverorder(O::NfOrd, p::ZZRingElem) -> NfOrd
     poverorder(O::NfOrd, p::Integer) -> NfOrd
 
@@ -581,7 +581,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     pmaximal_overorder(O::NfOrd, p::ZZRingElem) -> NfOrd
     pmaximal_overorder(O::NfOrd, p::Integer) -> NfOrd
 
@@ -625,7 +625,7 @@ end
 #  Ring of multipliers
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
     ring_of_multipliers(I::NfAbsOrdIdl) -> NfAbsOrd
 
 Computes the order $(I : I)$, which is the set of all $x \in K$
@@ -701,7 +701,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_shape_refined(f::fpPolyRingElem)
 
 Given a polynomial $f$ over a finite field, it returns an array having one

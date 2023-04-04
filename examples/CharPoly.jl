@@ -2,7 +2,7 @@ module CharPolyMod
 using Hecke
 
 #TODO: a (spin_base) as a sparse matrix
-#      see if the reduction at old pivots is actually neccessary
+#      see if the reduction at old pivots is actually necessary
 #      try to use a dense matrix for spin_base and use rows. Initialise a full matrix
 #        and avoid any allocations - in particular for fpFieldElem
 #      in "the" example a full reduction might be good.

@@ -32,6 +32,7 @@
 #
 ################################################################################
 
+export absolute_representation_matrix
 export cyclotomic_field_as_cm_extension
 
 add_assertion_scope(:NfRel)
@@ -519,6 +520,26 @@ function representation_matrix(a::NfRelElem)
   return M
 end
 
+@doc raw"""
+    absolute_representation_matrix(a::NfRelElem) -> MatrixElem
+
+Return the absolute representation matrix of `a`, that is the matrix
+representing multiplication with `a` with respect to a $\mathbb{Q}$-basis
+of the parent of `a` (see [`absolute_basis(::NfRel)`](@ref)).
+"""
+function absolute_representation_matrix(a::NfRelElem)
+  E = parent(a)
+  n = absolute_degree(E)
+  B = absolute_basis(E)
+  m = zero_matrix(QQ, n, n)
+  for i in 1:n
+    bb = B[i]
+    v = absolute_coordinates(a*bb)
+    m[i,:] = transpose(matrix(v))
+  end
+  return m
+end
+
 function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
   if new && is_monic(parent(a).pol) #should be much faster - eventually
     return resultant_mod(parent(a).pol, a.data)
@@ -757,7 +778,7 @@ rand(rng::AbstractRNG, L::NfRel, B::UnitRange{Int}) = rand(rng, make(L, B))
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     kummer_generator(K::NfRel{nf_elem}) -> nf_elem
 
 Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
@@ -851,7 +872,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
 					                  -> NfRel, NfRelElem
 Given an integer `n`, return the `n`-th cyclotomic field $E = \mathbb{Q}(\zeta_n)$

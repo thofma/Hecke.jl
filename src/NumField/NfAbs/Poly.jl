@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_elem}, q::ZZRingElem) -> Generic.Poly{nf_elem}, ZZRingElem
 
 Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
@@ -28,7 +28,7 @@ function induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_
   return c, pq
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::ZZRingElem) -> bool, Generic.Poly{nf_elem}
 
 Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
@@ -54,7 +54,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
 
 Computes the greatest common divisor of $f$ and $g$ using a modular algorithm.
@@ -323,7 +323,7 @@ end
 #a/the denominator using resultant. Faster than above, but still slow.
 #mainly due to the generic resultant. Maybe use only deg-1-primes??
 #fact: g= gcd(a, b) and 1= gcd(a/g, b/g) = u*(a/g) + v*(b/g)
-#then u*res(a/g, b/g) is mathematically integeral, same for v
+#then u*res(a/g, b/g) is mathematically integral, same for v
 #scaling by f'(a) makes it i nthe equation order
 #
 # missing/ next attempt:

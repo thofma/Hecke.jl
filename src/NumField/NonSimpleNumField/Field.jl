@@ -6,7 +6,7 @@ export component, non_simple_extension
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     number_field(f::Vector{PolyElem{<:NumFieldElem}}, s::String="_\$", check = true)
                                               -> NumField, Vector{NumFieldElem}
 
@@ -41,7 +41,7 @@ number_field(::Vector{<:PolyElem{<:Union{NumFieldElem, QQFieldElem}}}, ::String,
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     basis(L::NonSimpleNumField) -> Vector{NumFieldElem}
 
 Returns the canonical basis of a non-simple extension $L/K$. If
@@ -73,7 +73,7 @@ basis(::NonSimpleNumField)
 
 export defining_polynomials
 
-@doc Markdown.doc"""
+@doc raw"""
     defining_polynomials(L::NonSimpleNumField) -> Vector{PolyElem}
 
 Given a non-simple number field $L/K$, constructed as $L =
@@ -91,7 +91,7 @@ defining_polynomials(K::NfAbsNS) = K.abs_pol
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     simple_extension(L::NonSimpleNumField) -> SimpleNumField, Map
 
 Given a non-simple extension $L/K$, this function computes a simple extension
@@ -143,7 +143,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     component(L::NonSimpleNumField, i::Int) -> SimpleNumField, Map
 
 Given a non-simple extension $L/K$, this function returns the simple number field
@@ -273,7 +273,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     simplified_simple_extension(L::NonSimpleNumField) -> SimpleNumField, Map
 
 Given a non-simple extension $L/K$, this function returns an isomorphic simple number field

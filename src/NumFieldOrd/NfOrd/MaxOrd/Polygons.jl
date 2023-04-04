@@ -73,7 +73,7 @@ function length(L::Line)
   return L.points[2][1]-L.points[1][1]
 end
 
-function heigth(L::Line)
+function height(L::Line)
   return L.points[2][1]-L.points[1][1]
 end
 
@@ -199,7 +199,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     phi_development(f::PolyElem, phi::PolyElem) -> Vector{PolyElem}
 
 Computes an array of polynomials $[a_0, \ldots, a_s]$ such that $\sum a_i \phi^i = f$.
@@ -221,7 +221,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     newton_polygon(f::PolyElem{T}, phi::PolyElem{T}) where T <: Union{padic, qadic}
 
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
@@ -244,7 +244,7 @@ end
 # - without phi
 # - for QQFieldElem/ZZPolyRingElem and prime
 # - over Q(t) with degree
-@doc Markdown.doc"""
+@doc raw"""
     newton_polygon(f::ZZPolyRingElem, phi::ZZPolyRingElem, p::ZZRingElem)
 
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v_p(a_i))$
@@ -299,7 +299,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     residual_polynomial(N::NewtonPolygon{ZZPolyRingElem}, L::Line)
 
 Computes the residual polynomial of the side $L$ of the Newton Polygon $N$.

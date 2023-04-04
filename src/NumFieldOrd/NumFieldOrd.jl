@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     nf(O::NumFieldOrd) -> NumField
 
 Returns the ambient number field of $\mathcal O$.
@@ -17,7 +17,7 @@ nf(O::NumFieldOrd)
 
 _algebra(O::NumFieldOrd) = nf(O)
 
-@doc Markdown.doc"""
+@doc raw"""
     number_field(O::NumFieldOrd)
 
 Return the ambient number field of $\mathcal O$.
@@ -30,7 +30,7 @@ is_simple(O::NumFieldOrd) = is_simple(nf(O))
 
 is_commutative(O::NumFieldOrd) = true
 
-@doc Markdown.doc"""
+@doc raw"""
     is_equation_order(O::NumFieldOrd) -> Bool
 
 Returns whether $\mathcal O$ is the equation order of the ambient number
@@ -42,7 +42,7 @@ field $K$.
 
 @inline is_maximal_known_and_maximal(O::NumFieldOrd) = isone(O.is_maximal)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_maximal(R::NfAbsOrd) -> Bool
 
 Tests if the order $R$ is maximal. This might trigger the
@@ -70,7 +70,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     degree(O::NumFieldOrd) -> Int
 
 Returns the degree of $\mathcal O$.
@@ -87,7 +87,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     signature(O::NumFieldOrd) -> Tuple{Int, Int}
 
 Returns the signature of the ambient number field of $\mathcal O$.

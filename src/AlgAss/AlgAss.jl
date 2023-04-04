@@ -45,7 +45,7 @@ order_type(::Type{AlgAss{QQFieldElem}}) = AlgAssAbsOrd{AlgAss{QQFieldElem}, elem
 order_type(::AlgAss{T}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 order_type(::Type{AlgAss{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
-@doc Markdown.doc"""
+@doc raw"""
     multiplication_table(A::AlgAss; copy::Bool = true) -> Array{RingElem, 3}
 
 Given an algebra $A$ this function returns the multiplication table of $A$:
@@ -69,7 +69,7 @@ end
 
 is_commutative_known(A::AlgAss) = (A.is_commutative != 0)
 
-@doc Markdown.doc"""
+@doc raw"""
     is_commutative(A::AlgAss) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
@@ -234,7 +234,7 @@ function addmul!(a::NfAbsOrdElem, b::ZZRingElem, c::NfAbsOrdElem)
   return add!(a, a, b * c)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     quo(O::NfAbsOrd, I::NfAbsOrdIdl, p::Union{ Int, ZZRingElem })
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
       -> AlgAss, AbsOrdToAlgAssMor
@@ -356,7 +356,7 @@ function reduce_vector_mod_hnf(v::ZZMatrix, M::ZZMatrix)
   return w
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     quo(I::NfAbsOrdIdl, J::NfAbsOrdIdl, p::Union{ Int, ZZRingElem })
     quo(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
       -> AlgAss, AbsOrdToAlgAssMor
@@ -483,7 +483,7 @@ p = prime_decomposition(OK, 2)[1][1]
 # The idea is to compute pseudo-basis of O and I respectively, for which the
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
-@doc Markdown.doc"""
+@doc raw"""
     quo(O::NfRelOrd, I::NfRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
     quo(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAss, RelOrdToAlgAssMor
@@ -495,14 +495,14 @@ It is assumed that `R == base_ring(O)` and that $p$ is prime.
 """
 quo(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(O, I, p)
 
-function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S}
 
   K = _algebra(O)
 
   new_basisO, new_basisI, new_bmatO, new_bmatI = coprime_bases(O, I, p)
   new_bmatinvO = inv(new_bmatO)
 
-  Fp, mF = residue_field(order(p), p)
+  Fp = codomain(mF)
   mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 
@@ -634,7 +634,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   return A, OtoA
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     quo(I::NfRelOrdIdl, J::NfRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
     quo(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
       -> AlgAss, RelOrdToAlgAssMor
@@ -646,9 +646,9 @@ It is assumed that `order(I) === order(J)` and in particular both should be
 defined. Further, it should hold `R == base_ring(order(I))` and $p$ should be
 prime.
 """
-quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(I, J, p)
+quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S} = AlgAss(I, J, p, mF)
 
-function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
+function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S}
   @assert _algebra(I) === _algebra(J)
   @assert order(I) === order(J)
 
@@ -657,7 +657,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   new_basisI, new_basisJ, new_bmatI, new_bmatJinI = coprime_bases(I, J, p)
   bmatinvI = inv(new_bmatI)
 
-  Fp, mF = residue_field(order(p), p)
+  Fp = codomain(mF)
   mmF = extend(mF, _base_ring(K))
   invmmF = pseudo_inv(mmF)
 
@@ -923,7 +923,7 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false,
                 action::Symbol = :left)
        -> AlgAss, AbsAlgAssMor
@@ -1001,7 +1001,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
   return eA, eAtoA
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     subalgebra(A::AlgAss, basis::Vector{AlgAssElem}) -> AlgAss, AbsAlgAssMor
 
 Returns the subalgebra of $A$ generated by the elements in `basis` and a map
@@ -1033,7 +1033,7 @@ function _assure_trace_basis(A::AlgAss{T}) where T
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     trace_matrix(A::AlgAss) -> MatElem
 
 Returns a matrix $M$ over the base ring of $A$ such that
@@ -1083,7 +1083,7 @@ function _rep_for_center!(M::T, A::AlgAss) where T<: MatElem
   return nothing
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     center(A::AlgAss) -> AlgAss, AbsAlgAssMor
 
 Returns the center $C$ of $A$ and the inclusion $C \to A$.
@@ -1128,7 +1128,7 @@ end
 
 # See W. Eberly "Computations for Algebras and Group Representations" p. 126.
 # TODO: fix the type
-function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     error("Dimension of algebra is 1")
   end
@@ -1156,7 +1156,7 @@ function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFiel
   end
 end
 
-#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
 function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   fac = factor(mina)
   if length(fac) == 1
@@ -1228,7 +1228,7 @@ function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
   end
 end
 
-#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
 # TODO: fix the type
 function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   B = AlgAss(mina)
@@ -1239,7 +1239,7 @@ function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mi
 end
 
 # TODO: fix the type
-function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     return [ one(A) ]
   end
@@ -1280,7 +1280,7 @@ end
 # This computes a "matrix type" basis for A.
 # See W. Eberly "Computations for Algebras and Group Representations" p. 121.
 # TODO: fix the type
-function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
+function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
@@ -1343,7 +1343,7 @@ end
 
 # Assumes that A is central and isomorphic to a matrix algebra of base_ring(A)
 # TODO: fix the type
-function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{fpFieldElem, Generic.ResF{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
+function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
 
   idempotents = _primitive_idempotents(A)
   @assert length(idempotents)^2 == dim(A)
@@ -1367,7 +1367,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     direct_product(algebras::AlgAss...; task::Symbol = :sum)
       -> AlgAss, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
     direct_product(algebras::Vector{AlgAss}; task::Symbol = :sum)
@@ -1438,7 +1438,7 @@ function direct_product(a::AlgAss{T}, _algebras::AlgAss{T}...; task::Symbol = :s
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     direct_product(fields::AnticNumberFields...)
       -> AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor}
     direct_product(fields::Vector{AnticNumberFields})

@@ -45,7 +45,7 @@ export periods, real_period, faltings_height, stable_faltings_height
 
 # Following The complex AGM, periods of elliptic curves over C and complex
 #elliptic logarithms by John E. Cremona and Thotsaphon Thongjunthug
-@doc Markdown.doc"""
+@doc raw"""
     real_period(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
 Return the real period of an elliptic curve $E$ over QQ
 """
@@ -53,7 +53,7 @@ function real_period(E::EllCrv{QQFieldElem}, prec::Int = 100)
   return real(period_real_embedding(E, nothing, prec)[1])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     periods(E::EllCrv{ZZRingElem}, prec::Int) -> Float64
 Return the period lattices of an elliptic curve $E$ over a number field for each possible
 embedding in $mathb{C}$.
@@ -157,7 +157,7 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     faltings_height(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
 
 Return the Faltings height of E. This is defined as -1/2log(A) where A is the covolume
@@ -180,7 +180,7 @@ function faltings_height(E::EllCrv{QQFieldElem}, prec::Int = 100)
   return result
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     stable_faltings_height(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
 
 Return the stable Faltings height of E. This is defined as

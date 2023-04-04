@@ -13,7 +13,7 @@ end
 function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
   time_kernel = 0.0
   add_units = Int[]
-  rel = SMat{ZZRingElem}()
+  rel = sparse_matrix(ZZ)
   K = nf(x)
   r1, r2 = signature(K)
   nrel = max(10, r1+r2-1)

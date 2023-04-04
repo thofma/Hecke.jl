@@ -67,15 +67,20 @@ function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{padic
     pushfirst!(chain, i)
   end
   der = derivative(f)
-  wvect = [inv(der(rt[i])) for i = 1:length(rt)]
-  rtnew = copy(rt)
+  @assert precision(der) >= target_prec
+  rtnew = [setprecision(x, target_prec) for x = rt]
+  wvect = [(der(rtnew[i])) for i = 1:length(rt)]
+  prec_loss = Int(absolute_ramification_index(parent(rt[1]))*maximum(valuation, wvect))
+  wvect = map(inv, wvect)
   for i in 1:length(chain)
     for j = 1:length(rtnew)
-      wvect[j]*f(rtnew[j])
       rtnew[j] = rtnew[j] - wvect[j]*f(rtnew[j])
-      wvect[j] = wvect[j]*(2-wvect[j]*der(rtnew[j]))
+      if i < length(chain)
+        wvect[j] = wvect[j]*(2-wvect[j]*der(rtnew[j]))
+      end
     end
   end
+  return [setprecision(x, target_prec - prec_loss) for x= rtnew]
   return rtnew
 end
 
@@ -193,7 +198,7 @@ end
 ################################################################################
 
 
-function automorphism_group(K::Union{FlintQadicField, LocalField})
+function automorphism_group(K::FlintQadicField)
   aut = automorphism_list(K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
   for s = 1:length(aut)
@@ -205,25 +210,31 @@ function automorphism_group(K::Union{FlintQadicField, LocalField})
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     automorphism_group(L::LocalField, K::LocalField) -> GenGrp, GrpGenToNfMorSet
 
 Given the extension $L$ and $K$, this function returns a group $G$
 and a map from $G$ to the automorphisms of $L$ that fix $K$.
 """
-function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField})
+function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField} = base_field(L))
   aut = automorphism_list(L, K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
+  rt = [x(gen(L)) for x = aut]
   for s = 1:length(aut)
     for i = 1:length(aut)
-      mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
+      r = aut[i](rt[s])
+      p = findfirst(isequal(r), rt)
+      if p === nothing
+        p = argmax([valuation(x-r) for x = rt])
+      end
+      mult_table[s, i] = p
     end
   end
   G = GrpGen(mult_table)
   return G, GrpGenToNfMorSet(G, aut, L)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     absolute_automorphism_group(L::LocalField) -> GenGrp, GrpGenToNfMorSet
 
 Given the local field $L$, this function returns a group $G$

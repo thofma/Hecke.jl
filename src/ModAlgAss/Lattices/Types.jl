@@ -6,7 +6,7 @@
 
 mutable struct ModAlgAssLat{S, T, U}
   base_ring::S   # the underlying order
-  V::T           # the underyling module
+  V::T           # the underlying module
   basis::U       # the basis matrix
   basis_inv::U   # the inverse of the basis matrix
 

@@ -101,7 +101,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
 
   @show "#roots per local factor"
   @show map(length, con_pr)
-  #TODO: if there is only one root/local => lll not neccessary,
+  #TODO: if there is only one root/local => lll not necessary,
   #      go directly to CRT
   con_pr_j = [[one(parent(x)) for x = y] for y = con_pr]
   no_fac = sum(map(length, con_pr))

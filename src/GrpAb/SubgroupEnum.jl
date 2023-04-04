@@ -269,7 +269,7 @@ end
     end
   end
   for i in 1:(s-1)
-    # TODO: Precompute the indicies where they are equal
+    # TODO: Precompute the indices where they are equal
     if y[i] == y[i + 1]
       if sigma[i] < sigma[i + 1]
         return false
@@ -324,7 +324,7 @@ function compute_indice(s, t, x, y, sigma)
   return [( indice, tau )]
 end
 
-# Given sigma, we can iteraterate through all possible choices of intergers
+# Given sigma, we can iterate through all possible choices of integers
 # c_{i,j}. To do this we collect the single ranges at the indice and the
 # produce a product iterator.
 
@@ -694,7 +694,7 @@ function pSubgroupIterator(G::GrpAbFinGen, p::IntegerUnion;
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     psubgroups(g::GrpAbFinGen, p::Integer;
                subtype = :all,
                quotype = :all,
@@ -904,7 +904,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Vector{Int} = [-1],
   return z
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     subgroups(g::GrpAbFinGen;
               subtype = :all ,
               quotype = :all,

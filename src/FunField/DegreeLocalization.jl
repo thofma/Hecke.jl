@@ -43,7 +43,7 @@ end
 #
 ###############################################################################
 
-data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.Rat{T}
+data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.RationalFunctionFieldElem{T}
 
 function numerator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
   return numerator(data(a), canonicalise)
@@ -57,7 +57,7 @@ gen(R::KInftyRing) = R(inv(gen(R.K)))
 
 characteristic(R::KInftyRing) = characteristic(R.K)
 
-@doc Markdown.doc"""
+@doc raw"""
      degree(a::KInftyElem)
 
 Return the degree of the given element, i.e.
@@ -65,7 +65,7 @@ Return the degree of the given element, i.e.
 """
 degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
 
-@doc Markdown.doc"""
+@doc raw"""
     valuation(a::KInftyElem)
 
 Return the degree valuation of the given element, i.e. `-degree(a)`.
@@ -85,13 +85,13 @@ function is_unit(a::KInftyElem{T}) where T <: FieldElement
                                             degree(denominator(data(a), false))
 end
 
-@doc Markdown.doc"""
-    in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
+@doc raw"""
+    in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
 
 Return `true` if the given element of the rational function field is an
 element of `k_\infty(x)`, i.e. if `degree(numerator) <= degree(denominator)`.
 """
-function in(a::Generic.Rat{T}, R::KInftyRing{T}) where T <: FieldElement
+function in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
   if parent(a) != function_field(R)
     return false
   end
@@ -183,7 +183,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
 Returns the inverse element of $a$ if $a$ is a unit.
 If 'checked = false' the invertibility of $a$ is not checked and the
@@ -200,7 +200,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
 
 Returns tuple `(flag, c)` where `flag = true` if $b$ divides $a$ and $a = bc$,
@@ -222,7 +222,7 @@ function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where {T <: nf_elem}
 Returns element 'c' of given localization such that $a = bc$ if such element
 exists. If `checked = false` the corresponding element of the rational function
@@ -416,7 +416,7 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 
 AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
 
-function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.Rat{T}}
+function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.RationalFunctionFieldElem{T}}
   return KInftyElem{T}
 end
 
@@ -432,7 +432,7 @@ end
 
 (R::KInftyRing)() = R(function_field(R)())
 
-function (R::KInftyRing{T})(a::Generic.Rat{T}, checked::Bool=true) where T <: FieldElement
+function (R::KInftyRing{T})(a::Generic.RationalFunctionFieldElem{T}, checked::Bool=true) where T <: FieldElement
   checked && degree(numerator(a, false)) > degree(denominator(a, false)) &&
                                            error("Not an element of k_infty(x)")
   return KInftyElem{T}(a, R)
@@ -486,7 +486,7 @@ function residue_field(K::KInftyRing{T}, a::KInftyElem{T}) where {T <: FieldElem
 end
 #TODO: residue_ring is probably "just" poly of deg < n, think about it
 
-@doc Markdown.doc"""
+@doc raw"""
     localization(K::RationalFunctionField{T}, ::typeof(degree)) where T <: FieldElement
 
 Return the localization of $k[1/x]$ at $(1/x)$ inside the rational function

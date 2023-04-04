@@ -137,7 +137,7 @@ end
 #
 #######################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     signature(C::ClassField) -> Int, Int
 
 Return the signature of the number field defined by $C$.
@@ -190,7 +190,7 @@ end
 #
 #######################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     conductor(C::ClassField) -> NfOrdIdl, Vector{InfPlc}
 
 Return the conductor of the abelian extension corresponding to $C$.
@@ -231,7 +231,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
       #the idea, I think is if p does divide the degree, then it
       #has to wildly ramify, hence the expo should be larger than one.
       #however, this is wrong:
-      #C6 = C2 x C3, then 3 divdes the degree, however, 3 can ramify in
+      #C6 = C2 x C3, then 3 divides the degree, however, 3 can ramify in
       #     C2 (tame!) and not in C3
       # example: 
       #  k = quadratic_field(21)[1]
@@ -319,7 +319,7 @@ end
 #
 ###############################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[]; check) -> NfOrdIdl, Vector{InfPlc}
 
 Checks if (m, inf_plc) is the conductor of the abelian extension corresponding to $C$. If `check` is `false`, it assumes that the
@@ -461,7 +461,7 @@ function discriminant(C::ClassField, ::QQField)
   return absolute_discriminant(C)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     discriminant(C::ClassField) -> NfOrdIdl
 
 Using the conductor-discriminant formula, compute the (relative) discriminant of $C$.
@@ -633,7 +633,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
 
     norm_group(K::NfRelNS{nf_elem}, mR::Hecke.MapRayClassGrp) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
@@ -650,7 +650,7 @@ function norm_group(K::NfRelNS{nf_elem}, mR::T, is_abelian::Bool = true; of_clos
   return norm_group([to_univariate(kx, x) for x = K.pol], mR, is_abelian, of_closure = of_closure)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool = true; of_closure::Bool = false) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
 
     norm_group(f::Array{PolyElem{nf_elem}}, mR::Hecke.MapRayClassGrp, is_abelian::Bool = true; of_closure::Bool = false) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
@@ -912,7 +912,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_abelian_subfield(::Type{ClassField}, K::AnticNumberField) -> ClassField
 
 The maximal abelian subfield of $K$ as a class field, i.e. the norm group
@@ -957,7 +957,7 @@ function norm_group_map(R::ClassField, r::ClassField, map = false)
   return norm_group_map(R, [r], map)[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false) -> ClassField
 
 Using a probabilistic algorithm for the norm group computation, determine the maximal
@@ -982,7 +982,7 @@ function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
   return ray_class_field(mC, quo(C, iN, false)[2])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     maximal_abelian_subfield(A::ClassField, k::AnticNumberField) -> ClassField
 
 The maximal abelian extension of $k$ contained in $A$. $k$ must be a subfield of
@@ -1097,7 +1097,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     ray_class_field(K::NfRel{nf_elem}) -> ClassField
     ray_class_field(K::AnticNumberField) -> ClassField
 
@@ -1122,7 +1122,7 @@ function ray_class_field(K::AnticNumberField)
   return C
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     genus_field(A::ClassField, k::AnticNumberField) -> ClassField
 
 The maximal extension contained in $A$ that is the compositum of $K$
@@ -1137,7 +1137,7 @@ function genus_field(A::ClassField, k::AnticNumberField)
   return ray_class_field(A.rayclassgroupmap, GrpAbFinGenMap(A.quotientmap * quo(domain(h), kernel(h)[1])[2]))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     genus_field(A::ClassField) -> ClassField
 
 The maximal extension contained in $A$ that is the compositum of $K$
@@ -1151,7 +1151,7 @@ end
 #  using:
 #      prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
 #      PrimeIdealsSet
-@doc Markdown.doc"""
+@doc raw"""
     maximal_central_subfield(A::ClassField) -> ClassField
 
 A very probabilistic approach to compute the maximal central subfield in $A$
@@ -1252,7 +1252,7 @@ function small_knot(k::AnticNumberField, stable::Int = 5)
   # in the easiest case, Z just has some cyclic factor more than G, so
   # the "same" knot can be achieved with a smaller field.
   # Systematically: we want to replace U and V by U+x and V+x s.th.
-  # the quotient is unchainged: U/V = (U+x)/(V+x)
+  # the quotient is unchanged: U/V = (U+x)/(V+x)
   # Thus (V+x) cap U = V
   # if U/V has a complement C/V in W/V, then x = C works.
   # so we saturate U/V in W.V and then take the complement...
@@ -1280,7 +1280,7 @@ function small_knot(k::AnticNumberField, stable::Int = 5)
   return Z, G
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     subfields(C::ClassField; degree::Int) -> Vector{ClassField}
 
 Find all subfields of $C$ over the base field.
@@ -1303,7 +1303,7 @@ function subfields(C::ClassField; degree::Int = -1)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     normal_closure(C::ClassField) -> ClassField
 
 For a ray class field $C$ extending a normal base field $k$, compute the
@@ -1349,7 +1349,7 @@ function induce_action(C::ClassField, Aut::Vector{Hecke.NfToNfMor} = Hecke.NfToN
   return induce_action(C.rayclassgroupmap, Aut, C.quotientmap)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_normal(C::ClassField) -> Bool
 
 For a class field $C$ defined over a normal base field $k$, decide
@@ -1472,7 +1472,7 @@ function is_normal_difficult(C::ClassField)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     is_central(C::ClassField) -> Bool
 
 For a class field $C$ defined over a normal base field $k$, decide
@@ -1515,7 +1515,7 @@ Base.copy(f::Generic.MPoly) = deepcopy(f)
 Base.copy(f::Generic.Poly) = deepcopy(f)
 
 
-@doc Markdown.doc"""
+@doc raw"""
     lorenz_module(k::AnticNumberField, n::Int) -> NfOrdIdl
 
 Finds an ideal $A$ s.th. for all positive units $e = 1 \bmod A$ we have that
@@ -1538,7 +1538,7 @@ function lorenz_module(k::AnticNumberField, n::Int; containing=false)
 end
 
 #TODO: is this the right interface???
-@doc Markdown.doc"""
+@doc raw"""
     (::NfAbsOrdIdlSet)(m::Map, I::NfOrdIdl) -> NfOrdIdl
 
 Given an embedding $m:k\to K$ of number fields and an ideal $I$ in $k$,
@@ -1551,7 +1551,7 @@ end
 
 #TODO: write code (map?) to change polynomial rings other than evaluate
 
-@doc Markdown.doc"""
+@doc raw"""
     norm(m::T, a::nf_elem) where T <: Map{AnticNumberField, AnticNumberField} -> nf_elem
 
 Given an embedding $m:k\to K$ of number fields and an element in $K$, find the norm
@@ -1614,7 +1614,7 @@ end
 
 Base.intersect(R::NfAbsOrd, I::NfOrdFracIdl) = intersect(I, R)
 
-@doc Markdown.doc"""
+@doc raw"""
     content_ideal(f::PolyElem{nf_elem}, R::NfAbsOrd) -> NfAbsOrdIdl
 
 The fractional $R$-ideal generated by the coefficients of $f$.
@@ -1625,7 +1625,7 @@ function content_ideal(f::PolyElem{nf_elem}, R::NfAbsOrd)
   return i
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     content_ideal(f::PolyElem{NfAbsOrdElem}) -> NfAbsOrdIdl
 
 The ideal generated by the coefficients of $f$.

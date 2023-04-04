@@ -10,7 +10,7 @@
 
 export quadratic_twist, quadratic_twists, is_twist, twists
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_twist(E::EllCrv{T}}, d::T) -> EllCrv{T}
 
 Compute the quadratic twist of $E$ by $d$.
@@ -30,7 +30,7 @@ function quadratic_twist(E::EllCrv{T}, d) where T<: FieldElem
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_twist(E::EllCrv{FinFieldElem}}) -> EllCrv{FinFieldElem}
 
 Compute the unique quadratic twist of $E$.
@@ -57,7 +57,7 @@ function quadratic_twist(E::EllCrv{T}) where T<: FieldElem
 end
 
 #Test if we can't sometimes get two isomorphic curves
-@doc Markdown.doc"""
+@doc raw"""
     quadratic_twists(E::EllCrv{FinFieldElem}}) -> Vector{EllCrv{FinFieldElem}}
 
 Compute all quadratic twists of $E$.
@@ -113,7 +113,7 @@ function supersingular_twists3(E::EllCrv{T}) where T<: FinFieldElem
 
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     twists(E::EllCrv{FinFieldElem}}) -> Vector{EllCrv{FinFieldElem}}
 
 Compute all twists of $E$.
@@ -146,7 +146,7 @@ function twists(E::EllCrv{T}) where T<: FinFieldElem
    error("There is a bug in twists.")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_twist(EEllCrv, EllCrv) -> Bool
 
 Return true if $F$ is a twist of $E$

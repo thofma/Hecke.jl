@@ -193,7 +193,7 @@ function kernel(mp::GrpAbFinGenToQmodnZ)
 end
 
 #TODO: technically, dual Z could be Q/Z ...
-@doc Markdown.doc"""
+@doc raw"""
     dual(G::GrpAbFinGen) -> GrpAbFinGen, Map
 
 Computes the dual group, i.e. $hom(G, Q/Z)$ as an

@@ -199,7 +199,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     local_factor(L::HermLat, p::NfOrdIdl) -> QQFieldElem
 
 Given a definite hermitian lattice `L` and a bad prime ideal `p` of `L`,
@@ -307,7 +307,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     mass(L::HermLat) -> QQFieldElem
 
 Given a definite hermitian lattice `L`, return the mass of its genus.
@@ -336,7 +336,7 @@ function mass(L::HermLat)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     local_mass(L::HermLat) -> QQFieldElem
 
 Given a definite hermitian lattice `L`, return the product of its local

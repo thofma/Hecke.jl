@@ -9,6 +9,10 @@ function to_hecke(L::AbstractLat; target = "L", skip_field = false)
   return to_hecke(stdout, L, target = target, skip_field = skip_field)
 end
 
+function to_hecke(G::HermGenus; target = "G")
+  return to_hecke(stdout, G, target=target)
+end
+
 function to_hecke_string(L::AbstractLat; target = "L", skip_field = false)
   b = IOBuffer()
   to_hecke(b, L, target = target, skip_field = skip_field)
@@ -80,6 +84,45 @@ function to_hecke(io::IO, L::HermLat; target = "L", skip_field = false)
   println(io, "gens = ", Gs)
 
   println(io, target, " = hermitian_lattice(E, gens, gram = D)")
+end
+
+function to_hecke(io::IO, G::HermGenus; target = "G")
+  E = base_field(G)
+  K = base_field(E)
+  println(io, "Qx, x = polynomial_ring(FlintQQ, \"x\")")
+  f = defining_polynomial(K)
+  pol = replace(string(f), string(var(parent(f))) => "x")
+  println(io, "f = ", pol)
+  println(io, "K, a = number_field(f, \"a\", cached = false)")
+  println(io, "Kt, t = polynomial_ring(K, \"t\")")
+  f = defining_polynomial(E)
+  pol = replace(string(f), string(var(parent(f))) => "t")
+  pol = replace(pol, string(var(K)) => "a")
+  println(io, "g = ", pol, "")
+  println(io, "E, b = number_field(g, \"b\", cached = false);")
+  sig = signatures(G)
+  SE = collect(keys(sig))
+  sort!(SE, lt=(p,q) -> isless(real(embedding(p).r), real(embedding(q).r)))
+  println(io, "S = unique([restrict(r, K) for r in filter(!is_real, infinite_places(E)) if is_real(restrict(r, K))]);")
+  println(io, "sort!(S, lt=(p,q) -> isless(real(embedding(p).r), real(embedding(q).r)));")
+  vals = [sig[p] for p in SE]
+  println(io, "vals = Int$(vals);")
+  println(io, "sig = Dict(S[i] => vals[i] for i in 1:$(length(vals)));")
+  println(io, "OK = maximal_order(K);")
+  lgs = G.LGS
+  pp = prime.(lgs)
+  bases = [gens(p) for p in pp]
+  str = "ps = $(typeof(pp[1]))[ideal(OK, v) for v in Vector{$(elem_type(maximal_order(K)))}["
+  for bb in bases
+    bb = replace("$(bb)", string(var(K)) => "a")
+    bb = bb[10:end]
+    str *= "map(OK, "*bb*"), "
+  end
+  str = str[1:end-2]*"]];"
+  println(io, str)
+  println(io, "datas = $([G[p].data for p in pp]);")
+  println(io, "lgs = HermLocalGenus{typeof(E), $(typeof(pp[1]))}[genus(HermLat, E, ps[i], datas[i]) for i in 1:$(length(pp))];")
+  println(io, target, " = HermGenus(E, $(rank(G)), lgs, sig)")
 end
 
 ################################################################################

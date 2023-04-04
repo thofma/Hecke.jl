@@ -256,6 +256,17 @@ ambient_space(rescale(Lquad,3*a))
 pseudo_matrix(Lquad)
 ```
 
+## Categorical constructions
+Given finite collections of lattices, one can construct their direct sums, which
+are also direct products in this context. They are also sometimes called biproducts.
+Depending on the user usage, it is possible to call one of the following functions.
+
+```@docs
+direct_sum(x::Vector{AbstractLat})
+direct_product(x::Vector{AbstractLat})
+biproduct(x::Vector{AbstractLat})
+```
+
 ---
 
 ## Invariants

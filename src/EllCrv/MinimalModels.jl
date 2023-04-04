@@ -44,7 +44,7 @@ export minimal_model, has_global_minimal_model, semi_global_minimal_model, minim
 ################################################################################
 
 # algorithm of Laska-Kraus-Connell
-@doc Markdown.doc"""
+@doc raw"""
     laska_kraus_connell(E::EllCrv{ZZRingElem}) -> Array{Nemo.ZZRingElem}
 
 Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
@@ -120,7 +120,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     minimal_model(E::EllCrv{QQFieldElem}, p::Int) -> EllCrv{QQFieldElem},
       EllCrvIso{QQFieldElem}, EllCrvIso{QQFieldElem}
 
@@ -133,7 +133,7 @@ function minimal_model(E::EllCrv{QQFieldElem}, p::Int)
   return Ep, phi, inv(phi)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv{nf_elem},
       EllCrvIso{nf_elem}, EllCrvIso{nf_elem}
 
@@ -148,7 +148,7 @@ function minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl)
 end
 
 
-@doc Markdown.doc"""
+@doc raw"""
     tidy_model(E::EllCrv{QQFieldElem}) -> EllCrv{QQFieldElem}
 
 Given an elliptic curve with minimal model, this functions returns an
@@ -190,7 +190,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     minimal_model(E::EllCrv{QQFieldElem}) -> EllCrv{QQFieldElem}
 
 Returns the reduced global minimal model of $E$.
@@ -201,7 +201,7 @@ function minimal_model(E::EllCrv{QQFieldElem})
   return F, phi, inv(phi)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     minimal_model(E::EllCrv{nf_elem}) -> EllCrv, EllCrvIso, EllCrvIso
 
 Returns the reduced global minimal model if it exists.
@@ -214,7 +214,7 @@ function minimal_model(E::EllCrv{nf_elem})
   error("The curve E has no global minimal model.")
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     has_global_minimal_model(E::EllCrv{T}) -> Bool where T<:Union{QQFieldElem, nf_elem}
 
 Return true when a global minimal model for E exists.
@@ -227,7 +227,7 @@ function has_global_minimal_model(E::EllCrv{nf_elem})
   return is_principal(global_minimality_class(E))[1]
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     global_minimalirt_class(E::EllCrv{nf_elem}) -> NfOrdIdl
 
 Return the element in the ideal class group that forms the obstruction for
@@ -250,7 +250,7 @@ end
 
 # The semi-minimal model is inspired by the SageMath implementation
 
-@doc Markdown.doc"""
+@doc raw"""
     semi_global_minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv, EllCrvIso, EllCrvIso, NfOrdIdl
 
 Return a semi global minimal model and the unique prime at which the model is non-minimal.
@@ -493,7 +493,7 @@ function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
   return false, zero(OK)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     minimal_discriminant(E::EllCrv{QQFieldElem}) -> QQFieldElem
 
 Return the minimal discriminant ideal D_min of E. If E has a global minimal model
@@ -505,7 +505,7 @@ function minimal_discriminant(E::EllCrv{QQFieldElem})
   I = prod([P[i]^(v[i]) for i in (1:length(P))]; init = one(QQFieldElem))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     minimal_discriminant(E::EllCrv{nf_elem}) -> NfOrdIdl
 
 Return the minimal discriminant ideal D_min of E. If E has a global minimal model

@@ -12,7 +12,7 @@ export factor_absolute
 add_verbosity_scope(:AbsFact)
 add_assertion_scope(:AbsFact)
 
-function Hecke.norm(f::MPolyElem{nf_elem})
+function Hecke.norm(f::MPolyRingElem{nf_elem})
   Kx = parent(f)
   K = base_ring(Kx)
   n = nvars(Kx)
@@ -425,7 +425,7 @@ mutable struct RootCtxSingle{T}
 
   function RootCtxSingle(f::PolyElem{S}, K::fqPolyRepField) where {S <: SeriesElem}
     #not used I think
-    RR,  = power_series_ring(K, max_precision(R), string(var(R)), cached = false) #can't get the modell
+    RR,  = power_series_ring(K, max_precision(R), string(var(R)), cached = false) #can't get the model
     return RootCtxSingle(f, RR)
   end
 
@@ -849,7 +849,7 @@ function field(RC::RootCtx, m::MatElem)
   #we have roots, we need to combine roots for each row in m where the entry is pm 1
   #the coeffs then live is a number field, meaning that the elem sym functions or
   #the power sums will be needed
-  #the field degree apears to be nrows(m)...
+  #the field degree appears to be nrows(m)...
 
   #need primitive element, can use power sums up to #factors
 

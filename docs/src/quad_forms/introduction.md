@@ -41,12 +41,12 @@ of $(V, \Phi)$, we simply talk about the Gram matrix of $(V, \Phi)$.
 
 For a hermitian space $V$, we refer to the field $E$ as the *base ring* of $V$ and
 to $\overline{\phantom{x}}$ as the *involution* of $V$. Meanwhile, the field $K$
-is refered to as the *fixed field* of $V$.
+is referred to as the *fixed field* of $V$.
 
 By abuse of language, non-quadratic hermitian spaces are sometimes simply called
 _hermitian spaces_ and, in contrast, quadratic hermitian spaces are called
 _quadratic spaces_. In a general context, an arbitrary space (quadratic or
-hermitian) is refered to as a _space_ throughout this chapter.
+hermitian) is referred to as a _space_ throughout this chapter.
 
 ### Quadratic and hermitian lattices
 
@@ -65,7 +65,7 @@ to $\mathcal O_K$ as the *fixed ring* of $L$.
 Once again by abuse of language, non-quadratic hermitian lattices are sometimes
 simply called _hermitian lattices_ and _quadratic lattices_ refer to quadratic
 hermitian lattices. Therefore, in a general context, an arbitrary lattice is
-refered to as a _lattice_ in this chapter.
+referred to as a _lattice_ in this chapter.
 
 ## References
 

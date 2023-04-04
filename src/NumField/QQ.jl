@@ -316,3 +316,5 @@ lifted_denominator(x::ZZRingElem) = ZZRingElem(1)
 ################################################################################
 
 absolute_basis(Q::QQField) = [one(Q)]
+
+gen(Q::QQField) = one(Q)

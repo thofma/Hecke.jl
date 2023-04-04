@@ -146,7 +146,7 @@ end
 #  Compute generic group from anything
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
      generic_group(G, op)
 Computes group of $G$ with operation $op$, implemented with multiplication
 table 'G.mult_table'.
@@ -208,7 +208,7 @@ end
 #  Construct the ith element
 #
 ################################################################################
-@doc Markdown.doc"""
+@doc raw"""
      getindex(G::GrpGen, i::Int)
 Returns the $i$-th element of $G$.
 """
@@ -276,7 +276,7 @@ function _find_identity(m::Matrix{Int})
   return find_identity([1], (i, j) -> m[i, j])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      id(G::GrpGen)
 Returns the identity element of $G$.
 """
@@ -402,7 +402,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      _isnormal(H::Vector{GrpGenElem}) -> Bool
 Check if $H$ is invariant under conjugation by the generators of the group.
 """
@@ -419,7 +419,7 @@ function _isnormal(H::Vector{GrpGenElem})
   return true
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem) -> Bool
 Check if the cyclic group $H$ with generator $gen$ is invariant under
 conjugation by the generators of the group.
@@ -467,7 +467,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      _subgroups_all(G::GrpGen; normal::Bool = false)
 Iteratively built up subgroups from cyclic groups.
 Any subgroup is of the form <C_1,...,C_k>, where k are cyclic subgroups.
@@ -507,7 +507,7 @@ function _subgroups_all(G::GrpGen; normal::Bool = false)
   end
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      subgroups(G::GrpGen; order::Int = 0,
                               index::Int = 0,
                               normal::Bool = false,
@@ -552,7 +552,7 @@ function subgroups(G::GrpGen; order::Int = 0,
   return res
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     sub(G::GrpGen, H::Vector{GrpGenElem})
 
 Assume that $H$ is a subgroup of $G$, compute a generic group and an embedding.
@@ -569,7 +569,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     is_abelian(G::GrpGen) -> Bool
 
 Returns whether $G$ is abelian.
@@ -582,7 +582,7 @@ function defines_abelian_group(m)
   return is_symmetric(m)
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     is_cyclic(G::GrpGen) -> Bool
 
 Returns whether $G$ is cyclic.
@@ -652,7 +652,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
      quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
 Returns the quotient group $Q$ = $G$/$H$ with canonical map $G$ -> $Q$.
 """
@@ -703,7 +703,7 @@ end
 function quotient_indx(a::Int64,b::Int64)
   G = Hecke.small_group(a,b)
   subgroups = Hecke.subgroups(G, normal=true)
-  return Res = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
+  return ResidueRingElem = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
 end
 
 function direct_product(G1::GrpGen, G2::GrpGen)
@@ -733,19 +733,19 @@ function commutator_subgroup(G::GrpGen)
 end
 
 function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
-  Res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}()
-  push!(Res,(G, GrpGenToGrpGenMor(G,G,elements(G))))
+  ResidueRingElem = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}()
+  push!(ResidueRingElem,(G, GrpGenToGrpGenMor(G,G,elements(G))))
   Gtemp = G
   indx = 1
   while true
     Gtemp, GtempToGtemp = commutator_subgroup(Gtemp)
-    if Gtemp == Res[indx][1]
+    if Gtemp == ResidueRingElem[indx][1]
       break
     end
-    push!(Res,(Gtemp, GtempToGtemp))
+    push!(ResidueRingElem,(Gtemp, GtempToGtemp))
     indx += 1
   end
-  return Res
+  return ResidueRingElem
 end
 
 function ==(G::GrpGen, H::GrpGen)
@@ -817,7 +817,7 @@ function induces_to_quotient(G::GrpGen, mQ::GrpGenToGrpGenMor, aut::GrpGenToGrpG
   return GrpGenToGrpGenMor(Q, Q, [mQ(aut(preimage(mQ, q))) for q in collect(Q)])
 end
 
-@doc Markdown.doc"""
+@doc raw"""
      max_order(G::GrpGen) -> (g::GrpGenElem, i::Int64)
 Returns an element of $G$ with maximal order and the corresponding order.
 """
@@ -868,7 +868,7 @@ function gen_2_ab(G::GrpGen)
   end
 end
 
-function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, Res::Vector{Vector{Int64}})
+function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, ResidueRingElem::Vector{Vector{Int64}})
   new_candidates = Vector{Vector{Int64}}()
   for can in candidates
     produ = prod(can)
@@ -879,9 +879,9 @@ function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, Res::Vect
       elseif produ * div == bound
         if div != 1
           new_res = vcat(div, can)
-          push!(Res, new_res)
+          push!(ResidueRingElem, new_res)
         else
-        push!(Res, can)
+        push!(ResidueRingElem, can)
       end
       end
     end
@@ -889,7 +889,7 @@ function _d_find_rek!(candidates::Vector{Vector{Int64}}, bound::Int64, Res::Vect
   if length(new_candidates) == 0
     return
   else
-    _d_find_rek!(new_candidates, bound, Res)
+    _d_find_rek!(new_candidates, bound, ResidueRingElem)
   end
 end
 

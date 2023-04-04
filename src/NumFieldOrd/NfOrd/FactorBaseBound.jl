@@ -42,7 +42,7 @@
 # The algorithm is described in
 # Belabas, Diaz y Diaz, Friedmann: "Small generators for the ideal class group"
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_base_bound_bdf(O::NfOrd) -> Int
 
 Use the algorithm of Belabas, Diaz y Diaz and Friedmann to find $B$ such that
@@ -172,7 +172,7 @@ end
 # The theorem is described in
 # Bach: "Explicit bounds for primality testing and related problems"
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_base_bound_bach(O::NfOrd) -> Int
 
 Use the theorem of Bach to find $B$ such that
@@ -199,7 +199,7 @@ end
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_base_bound_grh(O::NfOrd) -> Int
 
 Returns an integer $B$, such that
@@ -210,7 +210,7 @@ function factor_base_bound_grh(O::NfOrd)
   return min(factor_base_bound_bdf(O), factor_base_bound_bach(O))
 end
 
-@doc Markdown.doc"""
+@doc raw"""
     factor_base_bound_minkowski(O::NfOrd) -> Int
 
 Returns an integer $B$, such that

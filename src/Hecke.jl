@@ -32,7 +32,7 @@
 ################################################################################
 
 
-@doc Markdown.doc"""
+@doc raw"""
 Hecke is a Julia package for algorithmic algebraic number theory.
 For more information please visit
 
@@ -107,10 +107,10 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              elem_to_mat_row!, elem_from_mat_row, fpFieldElem, fpMatrix,
              FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
-             force_op, fmpz_mod_ctx_struct, divisors
+             force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, is_power, number_field, factor, @vtime
+       next_prime, is_power, number_field, factor, @vtime, RationalUnion
 
 
 ###############################################################################
@@ -128,8 +128,8 @@ global const maximal_order = MaximalOrder
 
 function __init__()
   # verify some base rings survived serialization/deserialization
-  @assert Hecke.Globals.Zx.base_ring === FlintZZ
-  @assert Hecke.Globals.Qx.base_ring === FlintQQ
+  @assert base_ring(Hecke.Globals.Zx) === FlintZZ
+  @assert base_ring(Hecke.Globals.Qx) === FlintQQ
 
   # Check if were loaded from another package
   # if VERSION < 1.7.*, only the "other" package will have the
@@ -397,7 +397,7 @@ const pkg_version = _get_version()
 # to use:
 # in HeckeMap
 #   in the show function, start with @show_name(io, map)
-# for other objetcs
+# for other objects
 #   add @attributes to the struct
 #   add @show_name(io, obj) to show
 #   optionally, add @show_special(io, obj) as well
@@ -586,6 +586,7 @@ add_assertion_scope(:PID_Test)
 ################################################################################
 
 include("HeckeTypes.jl")
+include("Sparse.jl")
 include("NumField/NfRel/Types.jl")
 include("AlgAss/Types.jl")
 include("AlgAssAbsOrd/Types.jl")
@@ -599,7 +600,6 @@ include("NumField.jl")
 include("NumFieldOrd.jl")
 include("GenOrd.jl")
 include("FunField.jl")
-include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("analytic.jl")
@@ -646,7 +646,7 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-@doc Markdown.doc"""
+@doc raw"""
     vshow(A) -> Nothing
 
 Prints all fields of $A$.
@@ -657,7 +657,7 @@ function vshow(A)
       print("$i: ")
       println(getfield(A, i), "\n")
     else
-      println("$i: Not definied")
+      println("$i: Not defined")
     end
   end
 end
@@ -672,7 +672,7 @@ end
 
 elem_type(::Type{FacElemMon{T}}) where {T} = FacElem{elem_type(T), T}
 
-elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
+elem_type(::Type{Generic.ResidueRing{T}}) where {T} = Generic.ResidueRingElem{T}
 
 ################################################################################
 #
@@ -695,8 +695,6 @@ include("Aliases.jl")
 ################################################################################
 
 include("Deprecations.jl")
-
-
 
 ################################################################################
 #

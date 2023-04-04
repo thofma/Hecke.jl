@@ -50,10 +50,10 @@ end
   G, mG = automorphism_group(k2, prime_field(k2))
 
   z = Hecke.local_fundamental_class_serre(k2, prime_field(k2))
-  for s = G 
-    for t = G 
-      for r = G 
-        a = z(mG(t)*mG(s), mG(r))*z(mG(s), mG(t)) - mG(s)(z(mG(t), mG(r)))*z(mG(s), mG(r)*mG(t))
+  for g = G 
+    for h = G 
+      for k = G 
+        a = z(mG(g), mG(h*k))*z(mG(h), mG(k)) - mG(k)(z(mG(g), mG(h)))*z(mG(g*h), mG(k))
          @test iszero(a) || valuation(a) > 20
        end
      end

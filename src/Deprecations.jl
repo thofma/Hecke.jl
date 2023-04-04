@@ -32,6 +32,10 @@
 
 @deprecate automorphisms(x::LocalField, y::Union{FlintPadicField, FlintQadicField, LocalField}) automorphism_list(x, y)
 
+# Deprecated during 0.18.*
+
+@deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZGenus, ZpGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
+
 # Things that moved to Nemo
 
 # > 0.18.1
@@ -50,7 +54,7 @@ else
      return n//d
   end
 
-  @doc Markdown.doc"""
+  @doc raw"""
         simplest_between(l::QQFieldElem, r::QQFieldElem)
 
   > Return the simplest fraction in the closed interval `[l, r]`. A canonical >
