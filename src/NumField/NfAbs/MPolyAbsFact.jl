@@ -1371,7 +1371,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
 
   if degs[1] == 1
     # linear is irreducible by assumption
-    return (unit, [a])
+    return (unit, [a, parent(a)(1)])
   elseif length(vars) == 1
     uni_sub = zeros(Hecke.Globals.Qx, nvars(R))
     uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
@@ -1441,7 +1441,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   if degree(bi_a, 2) < 2
     if degree(bi_a, 2) == 1
       # a is abs irreducible
-      return (unit, [a])
+      return (unit, [a, parent(a)(1)])
     end
     @goto next_alpha
   end
@@ -1455,7 +1455,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
 
   if degree(f, mainvar) < 1 || degree(fbar, mainvar) < 1
     # a is abs irreducible
-    return (unit, [a])
+    return (unit, [a, parent(a)(1)])
   end
 
   # map the stuff in Q to the number field
@@ -1536,10 +1536,22 @@ function factor_absolute(a::QQMPolyRingElem)
   return result
 end
 
+"""
+    is_absolutely_irreducible(f::QQMPolyRingElem)
+
+Tests if `f` is irreducible over `C`.
+"""
+function is_absolutely_irreducible(a::QQMPolyRingElem)
+  @vprint :AbsFact 1 "testing  over QQ first...\n"
+  is_irreducible(a) || return false
+  unit, fp = absolute_multivariate_factorisation(a)
+  return isone(fp[2])
+end
+
 end
 
 using .MPolyFact
-export factor_absolute
+export factor_absolute, is_absolutely_irreducible
 
 #application (for free)
 
