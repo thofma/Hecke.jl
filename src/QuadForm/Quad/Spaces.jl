@@ -2093,8 +2093,9 @@ function witt_invariant(G::LocalQuadSpaceCls)
 end
 
 function show(io::IO, ::MIME"text/plain", G::LocalQuadSpaceCls)
-  println(io, "Local isometry class of quadratic spaces")
-  println(io, "  over ", base_ring(G))
+  println(io, "Local isometry class")
+  println(io, "  of Quadratic space")
+  println(io, "    over ", base_ring(G))
   println(IOContext(io, :compact => true), "Prime ideal: ", prime(G))
   println(io, "Invariants: ")
   println(io, "  Dimension: $(dim(G))")
@@ -2104,9 +2105,9 @@ end
 
 function show(io::IO, G::LocalQuadSpaceCls)
   if get(io, :supercompact, false)
-    print(io, "Local isometry class of quadratic spaces")
+    print(io, "Local isometry class of quadratic space")
   else
-    print(io, "Isometry class of quadratic spaces over the ", absolute_minimum(prime(G)), "-adic integers")
+    print(io, "Isometry class of quadratic space over the ", absolute_minimum(prime(G)), "-adic integers")
   end
 end
 
@@ -2280,9 +2281,10 @@ end
 
 function show(io::IO, ::MIME"text/plain", G::QuadSpaceCls)
   P = [p for p in keys(G.LGS) if hasse_invariant(G.LGS[p])==-1]
-  println(io, "Isometry class of quadratic spaces")
-  println(io, "  over ", base_ring(G))
-  println(io, "Invariants")
+  println(io, "Isometry class")
+  println(io, "  of Quadratic space")
+  println(io, "    over ", base_ring(G))
+  println(io, "Invariants:")
   println(io, "  Dimension: ", dim(G))
   println(io, "  Determinant: ", det(G))
   if length(P) == 0
@@ -2301,9 +2303,9 @@ end
 
 function show(io::IO, G::QuadSpaceCls)
   if get(io, :supercompact, false)
-    print(io, "Isometry class of quadratic spaces")
+    print(io, "Isometry class of quadratic space")
   else
-    print(io, "Isometry classe of quadratic spaces over ")
+    print(io, "Isometry classe of quadratic space over ")
     print(IOContext(io, :supercompact => true), base_ring(G))
   end
 end

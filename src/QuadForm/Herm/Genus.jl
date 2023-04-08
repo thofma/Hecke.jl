@@ -22,7 +22,11 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
   println(io, "Local genus symbol for hermitian lattices")
   println(IOContext(io, :compact => true), "  over ", maximal_order(G.E))
   println(IOContext(io, :compact => true), "Prime ideal: ", p)
-  print(io, "Jordan blocks ")
+  if length(G) == 1
+    print(io, "Jordan block ")
+  else
+    print(io, "Jordan blocks ")
+  end
   if is_dyadic(G) && is_ramified(G)
     println(io, "(scale, rank, det, norm):")
   else

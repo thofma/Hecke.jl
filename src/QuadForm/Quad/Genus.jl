@@ -27,7 +27,11 @@ function show(io::IO, ::MIME"text/plain", J::JorDec)
   println(io, "Jordan decomposition for quadratic lattices")
   println(IOContext(io, :compact => true), "  over ", order(J.p))
   println(IOContext(io, :compact => true), "Prime ideal: ", J.p)
-  print(io, "Jordan blocks ")
+  if length(J) == 1
+    print(io, "Jordan block ")
+  else
+    print(io, "Jordan blocks ")
+  end
   if is_dyadic(J.p)
     println(io, "(scale, rank, norm generator, weight, det, Witt):")
   else
@@ -631,7 +635,11 @@ function show(io::IO, ::MIME"text/plain", G::QuadLocalGenus)
   if !is_dyadic(p)
     println(io, "Unifomizer: ", uniformizer(G))
   end
-  print(io, "Jordan blocks ")
+  if length(G) == 1
+    print(io, "Jordan block ")
+  else
+    print(io, "Jordan blocks ")
+  end
   if !is_dyadic(p)
     println(io, "(scale, rank, determinant class):")
   else

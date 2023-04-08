@@ -385,7 +385,6 @@ function show(io::IO, a::TorQuadModuleElem)
   if get(io, :supercompact, false)
     print(io, "Element of finite quadratic module")
   else
-    print(io, "Element of finite quadratic module: ")
     print(IOContext(io, :supercompact => true), a.data.coeff)
   end
 end
