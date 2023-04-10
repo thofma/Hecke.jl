@@ -2,7 +2,7 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
        is_degenerate, cover, relations, orthogonal_submodule, brown_invariant,
        modulus_bilinear_form, modulus_quadratic_form, is_isometric_with_isometry,
        is_anti_isometric_with_anti_isometry, has_complement, radical_bilinear,
-       radical_quadratic, is_semi_regular
+       radical_quadratic, is_semi_regular, trivial_map, abelian_group_homomorphism
 
 ################################################################################
 #
@@ -411,7 +411,6 @@ end
 
 ngens(T::TorQuadModule) = length(T.gens_lift)
 
-
 @doc raw"""
     getindex(T::TorQuadModule, i::Int) -> TorQuadModuleElem
 
@@ -474,9 +473,16 @@ function (A::GrpAbFinGen)(a::TorQuadModuleElem)
   return a.data
 end
 
+@doc raw"""
+    id(T::TorQuadModule) -> TorQuadModuleElem
+
+Return the identity element of `T` as an abelian group.
+"""
+id(T::TorQuadModule) = T(id(abelian_group(T)))
+
 ################################################################################
 #
-#  Arithmetic
+#  Arithmetic of elements
 #
 ################################################################################
 
@@ -551,7 +557,7 @@ end
 
 ################################################################################
 #
-#  order
+#  Order
 #
 ################################################################################
 
@@ -651,6 +657,20 @@ function hom(T::TorQuadModule, S::TorQuadModule, img::Vector{TorQuadModuleElem})
 end
 
 @doc raw"""
+    abelian_group_homomorphism(f::TorQuadModuleMor) -> GrpAbFinGenMap
+
+Return the underlying abelian group homomorphism of `f`.
+"""
+abelian_group_homomorphism(f::TorQuadModuleMor) = f.map_ab
+
+@doc raw"""
+    matrix(f::TorQuadModuleMor) -> ZZMatrix
+
+Return the matrix defining the underlying abelian group homomorphism of `f`.
+"""
+matrix(f::TorQuadModuleMor) = matrix(abelian_group_homomorphism(f))
+
+@doc raw"""
     identity_map(T::TorQuadModule) -> TorQuadModuleMor
 
 Return the identity map of `T`.
@@ -659,6 +679,30 @@ function identity_map(T::TorQuadModule)
   map_ab = id_hom(abelian_group(T))
   return TorQuadModuleMor(T, T, map_ab)
 end
+
+@doc raw"""
+    trivial_map(T::TorQuadModule, U::TorQuadModule) -> TorQuadModuleMor
+
+Return the abelian group homomorphism between `T` and `U` sending every
+elements of `T` to the zero element of `U`.
+"""
+trivial_map(T::TorQuadModule, U::TorQuadModule) = hom(T, U, TorQuadModuleElem[id(U) for a in gens(T)])
+
+@doc raw"""
+    trivial_map(T::TorQuadModule) -> TorQuadModuleMor
+
+Return the abelian group endomorphism of `T sending every elements of `T`
+to the zero element of `T`.
+"""
+trivial_map(T::TorQuadModule) = trivial_map(T, T)
+
+@doc raw"""
+    zero(f::TorQuadModuleMor) -> TorQuadModuleMor
+
+Given a map `f` between two torsion quadratic modules `T` and `U`,
+return the trivial map between `T` and `U` (see [`trivial_map`](@ref)).
+"""
+zero(f::TorQuadModuleMor) = trivial_map(domain(f), codomain(f))
 
 @doc raw"""
     id_hom(T::TorQuadModule) -> TorQuadModuleMor
@@ -670,7 +714,7 @@ id_hom(T::TorQuadModule) = identity_map(T)
 @doc raw"""
     inv(f::TorQuadModuleMor) -> TorQuadModuleMor
 
-Given a bijective abelian group homomorphisms `f` between two torsion
+Given a bijective abelian group homomorphism `f` between two torsion
 quadratic modules, return the inverse of `f`.
 """
 function inv(f::TorQuadModuleMor)
@@ -779,6 +823,136 @@ function has_complement(i::TorQuadModuleMor)
   return (true, j)
 end
 
+@doc raw"""
+    kernel(f::TorQuadModuleMor) -> TorQuadModule, TorQuadModuleMor
+
+Given an abelian group homomorphism `f` between two torsion quadratic modules `T`
+and `U`, return the kernel `S` of `f` as well as the injection $S \to T$.
+
+Note: `f` need not be a morphism of torsion quadratic modules.
+"""
+function kernel(f::TorQuadModuleMor)
+  g = abelian_group_homomorphism(f)
+  Kg, KgtoA = kernel(g)
+  S, StoKg = snf(Kg)
+  return sub(domain(f), TorQuadModuleElem[domain(f)(KgtoA(StoKg(a))) for a in gens(S)])
+end
+
+################################################################################
+#
+#  Arithmetic of maps
+#
+################################################################################
+
+@doc raw"""
+    +(f::TorQuadModuleMor, g::TorQuadModuleMor) -> TorQuadModuleMor
+
+Given two abelian group homomorphisms `f` and `g` between the same torsion
+quadratic modules `T` and `U`, return the pointwise sum `h` of `f` and `g`
+which sends every elements `a` of `T` to $h(a) := f(a) + g(a)$.
+"""
+function Base.:(+)(f::TorQuadModuleMor, g::TorQuadModuleMor)
+  @req domain(f) === domain(g) "f and g must have the same domain"
+  @req codomain(f) === codomain(g) "f and g must have the same codomain"
+  return hom(domain(f), codomain(f), TorQuadModuleElem[f(a)+g(a) for a in gens(domain(f))])
+end
+
+@doc raw"""
+    -(f::TorQuadModuleMor) -> TorQuadModuleMor
+
+Given an abelian group homomorphism `f` between two torsion quadratic modules
+`T` and `U`, return the pointwise opposite morphism `h` of `f` which sends every
+elements `a` of `T` to $h(a) := -f(a)$.
+"""
+function Base.:(-)(f::TorQuadModuleMor)
+  return hom(domain(f), codomain(f), TorQuadModuleElem[-f(a) for a in gens(domain(f))])
+end
+
+@doc raw"""
+    -(f::TorQuadModuleMor, g::TorQuadModuleMor) -> TorQuadModuleMor
+
+Given two abelian group homomorphisms `f` and `g` between the same torsion
+quadratic modules `T` and `U`, return the pointwise difference `h` of `f` and
+`g` which sends every elements `a` of `T` to $h(a) := f(a) - g(a)$.
+"""
+function Base.:(-)(f::TorQuadModuleMor, g::TorQuadModuleMor)
+  @req domain(f) === domain(g) "f and g must have the same domain"
+  @req codomain(f) === codomain(g) "f and g must have the same codomain"
+  return hom(domain(f), codomain(f), TorQuadModuleElem[f(a)-g(a) for a in gens(domain(f))])
+end
+
+@doc raw"""
+    *(a::IntegerUnion, f::TorQuadModuleMor) -> TorQuadModuleMor
+    *(f::TorQuadModuleMor, a::IntegerUnion) -> TorQuadModuleMor
+
+Given an abelian group homomorphism `f` between two torsion quadratic modules
+`T` and `U`, return the pointwise $a$-twist morphism `h` of `f` which sends every
+elements `b` of `T` to $h(b) := a*f(b)$.
+"""
+function Base.:(*)(a::IntegerUnion, f::TorQuadModuleMor)
+  return hom(domain(f), codomain(f), TorQuadModuleElem[a*f(b) for b in gens(domain(f))])
+end
+
+Base.:(*)(f::TorQuadModuleMor, a::IntegerUnion) = a*f
+
+@doc raw"""
+    ^(f::TorQuadModuleMor, n::Integer) -> TorQuadModuleMor
+
+Given an abelian group endomorphism `f` of a torsion quadratic module `T`
+return the $n$-fold self-composition of `f`.
+
+Note that `n` must be non-negative and $f^0$ is by default the identity map
+of the domain of `f` (see [`identity_map`](@ref)).
+"""
+function Base.:^(f::TorQuadModuleMor, a::Integer)
+  @req a >= 0 "a must be a positive integer"
+  @assert domain(f) === codomain(f) "f must be a self-map"
+  if a == 0
+    return id_hom(domain(f))
+  elseif a == 1
+    return f
+  else
+    k = 1
+    f2 = f
+    while k != a
+      f2 = compose(f2, f)
+      k += 1
+    end
+    return f2
+  end
+end
+
+@doc raw"""
+    evaluate(p::Union{ZZPolyRingElem, QQPolyRingElem}, f::TorQuadModuleMor)
+                                                          -> TorQuadModuleMor
+
+Given an abelian group endomorphism `f` of a torsion quadratic module `T` and
+an univariate polynomial `p` with integral coefficients, return the abelian
+group endormorphism $h := p(f)$ of `T` obtained by substituting the variable of
+`p` by `f`.
+
+Note that one also simply call `p(f)` instead of writing `evaluate(p, f)`.
+"""
+function evaluate(p::ZZPolyRingElem, f::TorQuadModuleMor)
+  @req domain(f) === codomain(f) "f must be a self-map"
+  c = collect(coefficients(p))
+  g = zero(f)
+  for i in 1:length(c)
+    g += c[i]*f^(i-1)
+  end
+  return g
+end
+
+function evaluate(p::QQPolyRingElem, f::TorQuadModuleMor)
+  @req domain(f) === codomain(f) "f must be a self-map"
+  @req all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
+  return evaluate(map_coefficients(ZZ, p), f)
+end
+
+(p::ZZPolyRingElem)(f::TorQuadModuleMor) = evaluate(p, f)
+
+(p::QQPolyRingElem)(f::TorQuadModuleMor) = evaluate(p, f)
+
 ################################################################################
 #
 #  (Anti)-Isometry
@@ -855,7 +1029,7 @@ function _isometry_degenerate(T::TorQuadModule, U::TorQuadModule)
   # need to create our bijective mapping by sending generators of one radical to the
   # other and applying our previously computed isometry to the complements
   I = identity_matrix(ZZ, length(geneT)-length(gens(NT))) # for the radicals
-  M = isom.map_ab.map                                     # for the complements
+  M = matrix(isom)                                        # for the complements
   D = block_diagonal_matrix([I, M])
   phi = hom(Tsub, Usub, D)
   @hassert :Lattice 1 is_bijective(phi)

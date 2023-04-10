@@ -367,5 +367,53 @@
   S, f = @inferred snf(Tsub)
   @test is_snf(S)
 
+  # trivial element
+  L = root_lattice(:E, 7)
+  qL = discriminant_group(L)
+  a = @inferred id(qL)
+  @test iszero(a)
 end
 
+
+@testset "Maps functionalities" begin
+
+  L = rescale(root_lattice(:A, 3), 15)
+  qL = discriminant_group(L)
+  f = id_hom(qL)
+  fab = @inferred abelian_group_homomorphism(f)
+  @test all(a -> fab(data(a)) == data(f(a)), gens(qL))
+  M = @inferred matrix(f)
+  @test isone(M)
+
+  f = @inferred trivial_map(qL)
+  @test iszero(matrix(f))
+
+  N, qLtoN = normal_form(qL)
+  f = @inferred zero(qLtoN)
+  @test domain(f) === qL
+  @test codomain(f) === N
+  @test iszero(matrix(f))
+
+  K, KtoqL = @inferred kernel(qLtoN)
+  @assert order(K) == 1
+  K, KtoqL = kernel(f)
+  @assert order(K) == order(qL)
+  @assert isone(matrix(KtoqL))
+
+  m = matrix(QQ, 3, 3, [ 0  1  1;
+                        -1 -1 -1;
+                         1  1  0])  # this has order 4
+  f = hom(qL, qL, TorQuadModuleElem[qL(lift(a)*m) for a in gens(qL)]) # This has also order 4!
+  p = minpoly(m) # p = (X^2+1)(X+1)
+
+  @test iszero(matrix(p(f)))
+  @test !iszero(matrix(p(-f)))
+  @test iszero(matrix(f-f))
+  @test iszero(matrix(f*order(qL)))
+  @test isone(matrix(f^4))
+  @test !isone(matrix(f^2))
+  @test abelian_group_homomorphism(f) == abelian_group_homomorphism(f^5)
+
+  Zx, x = ZZ["x"]
+  @test matrix((x-1)(f)) == matrix(f) - 1
+end
