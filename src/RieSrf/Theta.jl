@@ -225,19 +225,18 @@ function siegel_reduction(tau::acb_mat)
   end
 end
 
-*(x::acb, y::arb_mat) = x * acb_mat(y)
+*(x::acb, y::arb_mat) = x * _acb_mat(y)
 *(x::arb_mat, y::acb) = y * x
-*(x::arb_mat, y::acb_mat) = acb_mat(x) * y
-*(x::acb_mat, y::arb_mat) = x * acb_mat(y)
-+(x::arb_mat, y::acb_mat) = acb_mat(x) + y
+*(x::arb_mat, y::acb_mat) = _acb_mat(x) * y
+*(x::acb_mat, y::arb_mat) = x * _acb_mat(y)
++(x::arb_mat, y::acb_mat) = _acb_mat(x) + y
 +(x::acb_mat, y::arb_mat) = y + x
 -(x::arb_mat, y::acb_mat) = x + (-y)
 -(x::acb_mat, y::arb_mat) = x + (-y)
 //(x::arb_mat, y::arb) = map(t -> t//y, x)
 
 
-
-function acb_mat(A::arb_mat)
+function _acb_mat(A::arb_mat)
   p = precision(base_ring(A))
   Cc = AcbField(p)
   return change_base_ring(Cc, A)
