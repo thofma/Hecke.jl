@@ -11,15 +11,17 @@ export lll, theta, cholesky_decomposition, siegel_reduction
 
 ################################################################################
 #
-#  Types
+#  Theta functions with characteristics and derivatives
 #
 ################################################################################
+
+#Based on Computing Theta Functions with Julia by Daniele Agostini and Lynn Chua
 
 function theta(z::Vector{acb}, tau::Vector{acb}; char::Vector{Vector{Int}} = [zeros(Int, 1), zeros(Int, 1)], dz::Vector{Vector{Int}}=Vector{Int}[], dtau::Vector{Vector{Int}}= Vector{Int}[], prec::Int = 0)
   return _theta(z, matrix(tau), char, dz, dtau, prec)
 end
 
-function theta(z::Vector{acb}, tau::acb_mat, char::Vector{Vector{Int}} = [zeros(Int, nrows(tau)), zeros(Int, nrows(tau))], dz::Vector{Vector{Int}}=Vector{Int}[], dtau::Vector{Vector{Int}}= Vector{Int}[], prec::Int = 0)
+function theta(z::Vector{acb}, tau::acb_mat; char::Vector{Vector{Int}} = [zeros(Int, nrows(tau)), zeros(Int, nrows(tau))], dz::Vector{Vector{Int}}=Vector{Int}[], dtau::Vector{Vector{Int}}= Vector{Int}[], prec::Int = 0)
   return _theta(z, tau, char, dz, dtau, prec)
 end
 
@@ -65,7 +67,20 @@ function _theta(z::Vector{acb}, tau::acb_mat, char::Vector{Vector{Int}}, dz::Vec
   
   rho = norm(shortest_vectors(transpose(T))[1]*sqrt(piR))
   
-  N = sum(map(t-> sum(t; init = 0), dz); init = 0)
+  factor = one(Cc)
+  for ij in dtau
+    if ij[1] == ij[2]
+      factor //= (4 * piR * i)
+    else
+      factor //= (2 * piR * i)
+    end
+    deriv = [zeros(g), zeros(g)]
+    deriv[1][ij[1]] = 1
+    deriv[2][ij[2]] = 1
+    dz = vcat(dz, deriv)
+  end
+  
+  N = Int(sum(map(t-> sum(t; init = 0), dz); init = 0))
   
   R0 = (sqrt(g + 2*N + sqrt(g^2 + 8*N)) + rho)//2
   
@@ -119,18 +134,7 @@ function _theta(z::Vector{acb}, tau::acb_mat, char::Vector{Vector{Int}}, dz::Vec
     ellipsoid_points = union(ellipsoid_points, Lat1)
   end
   
-  factor = one(Cc)
-  for ij in dtau
-    if ij[1] == ij[2]
-      factor //= 4 * piR * i
-    else
-      factor //= 2 * piR * i
-    end
-    deriv = [zeros(R.g), zeros(R.g)]
-    deriv[1][ij[1]] = 1
-    deriv[2][ij[2]] = 1
-    dz = vcat(dz, deriv)
-  end
+
   
   #We seem to find more points than Agostini as we also consider lattices centered at points of the form [0,1,-1], etc.
   #This could also affect error bounds
@@ -233,11 +237,11 @@ end
 
 
 
-#function acb_mat(A::arb_mat)
-#  p = precision(base_ring(A))
-#  Cc = AcbField(p)
-#  return change_base_ring(Cc, A)
-#end
+function acb_mat(A::arb_mat)
+  p = precision(base_ring(A))
+  Cc = AcbField(p)
+  return change_base_ring(Cc, A)
+end
 
 function real(tau::acb_mat)
   return map(real, tau)
