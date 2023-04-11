@@ -1070,7 +1070,7 @@ end
 Returns a matrix $M$ such that $M_{ij} = \mathrm{tr}(A_i \cdot A_j)$ where
 $\mathrm{tr}$ is the reduced trace.
 """
-function trred_matrix(A::Vector{<: AlgAssElem})
+function trred_matrix(A::Vector{<: AbsAlgAssElem})
   n = length(A)
   n == 0 && error("Array must be non-empty")
   K = base_ring(parent(A[1]))

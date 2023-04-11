@@ -115,4 +115,7 @@
   @test iseichler(A)
   p = complex_places(K)
   @test issplit(A, p[1])
+
+  A = matrix_algebra(QQ, 2)
+  @test schur_index(A) == 1
 end

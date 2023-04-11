@@ -11,27 +11,6 @@
 # Pages 327-334, ISSN 0747-7171, 10.1006/jsco.1996.0130.
 # (https://www.sciencedirect.com/science/article/pii/S0747717196901303)
 
-mutable struct SCPComb
-	rank::Int
-	trans::ZZMatrix
-	coef::ZZMatrix
-  F::Vector{ZZMatrix}
-
-  SCPComb() = new()
-end
-
-mutable struct VectorList{S, T}
-  vectors::Vector{S}
-  lengths::Vector{Vector{T}}
-  lookup::Dict{S, Int}
-  issorted::Bool
-  use_dict::Bool
-
-  function VectorList{S, T}() where {S, T}
-    return new{S, T}()
-  end
-end
-
 function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}},
                     use_dict::Bool = true) where {S, T}
 
@@ -160,48 +139,6 @@ function _find_point(w::ZZMatrix, V::VectorList{ZZMatrix, T}) where T
     end
     @assert k !== nothing
     return -k
-  end
-end
-
-mutable struct ZLatAutoCtx{S, T, V}
-  G::Vector{T}
-  Gtr::Vector{T}
-  dim::Int
-  max::S
-  V::VectorList{V, S}
-  v::Vector{T}
-  per::Vector{Int}
-  fp::Matrix{Int}
-  fp_diagonal::Vector{Int}
-  std_basis::Vector{Int}
-  scpcomb::SCPComb
-
-  orders::Vector{Int}
-  ng::Vector{Int}
-  nsg::Vector{Int}
-  g::Vector{Vector{T}}
-  prime::S
-
-  is_symmetric::BitArray{1}
-  operate_tmp::V
-
-  function ZLatAutoCtx(G::Vector{ZZMatrix})
-    z = new{ZZRingElem, ZZMatrix, ZZMatrix}()
-    z.G = G
-    z.Gtr = ZZMatrix[transpose(g) for g in G]
-    z.dim = nrows(G[1])
-    z.is_symmetric = falses(length(G))
-    z.operate_tmp = zero_matrix(FlintZZ, 1, ncols(G[1]))
-
-    for i in 1:length(z.G)
-      z.is_symmetric[i] = is_symmetric(z.G[i])
-    end
-
-    return z
-  end
-
-  function ZLatAutoCtx{S, T, V}() where {S, T, V}
-    return new{S, T, V}()
   end
 end
 

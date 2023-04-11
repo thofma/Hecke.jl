@@ -2001,25 +2001,6 @@ end
 # Abstract Isometry Classes of Quadratic spaces
 ################################################################################
 
-################################################################################
-mutable struct LocalQuadSpaceCls{S, T, U}
-  K::S    # the base field
-  p::T    # a finite place
-  hass_inv::Int
-  det::U
-  dim::Int
-  dim_rad::Int
-  witt_inv
-
-  function LocalQuadSpaceCls{S, T, U}(K) where {S, T, U}
-    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K)}()
-    z.dim = -1
-    z.K = K
-    return z
-  end
-end
-################################################################################
-
 function localclass_quad_type(K)
   return LocalQuadSpaceCls{typeof(K), ideal_type(order_type(K)), elem_type(K)}
 end
@@ -2234,23 +2215,6 @@ function represents(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   return _is_valid(G)
 end
 
-################################################################################
-
-mutable struct QuadSpaceCls{S, T, U, V}
-  K::S  # the underlying field
-  dim::Int
-  dim_rad::Int
-  det::U # of the non-degenerate part
-  LGS::Dict{T, LocalQuadSpaceCls{S, T, U}}
-  signature_tuples::Dict{V, Tuple{Int,Int,Int}}
-
-  function QuadSpaceCls{S, T, U, V}(K) where {S, T, U, V}
-    z = new{typeof(K), ideal_type(order_type(K)), elem_type(K), place_type(K)}()
-    z.K = K
-    z.dim = -1
-    return z
-  end
-end
 ################################################################################
 
 function class_quad_type(K)

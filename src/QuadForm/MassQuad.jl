@@ -1340,20 +1340,6 @@ end
 
 # This does not work at the moment.
 
-mutable struct ZetaFunction
-  K::AnticNumberField
-  coeffs::Vector{ZZRingElem}
-  dec_types
-
-  function ZetaFunction(K::AnticNumberField)
-    z = new()
-    z.K = K
-    z.coeffs = ZZRingElem[]
-    dec_types = []
-    return z
-  end
-end
-
 function _compute_decs(Z::ZetaFunction, n::Int)
   K = Z.K
   OK = maximal_order(K)
