@@ -4,83 +4,6 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
        is_anti_isometric_with_anti_isometry, has_complement, radical_bilinear,
        radical_quadratic, is_semi_regular
 
-@doc raw"""
-    TorQuadModule
-
-# Example:
-```jldoctest
-julia> A = matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]);
-
-julia> L = Zlattice(gram = A);
-
-julia> T = Hecke.discriminant_group(L)
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/2)^2
-Gram matrix of the quadratic form with values in Q/2Z
-[   1   1//2]
-[1//2      1]
-```
-
-We represent torsion quadratic modules as quotients of $\Z$-lattices
-by a full rank sublattice.
-
-We store them as a $\Z$-lattice `M` together with a projection `p : M -> A`
-onto an abelian group `A`. The bilinear structure of `A` is induced via `p`,
-that is `<a, b> = <p^-1(a), p^-1(a)>` with values in $\Q/n\Z$, where $n$
-is the modulus and depends on the kernel of `p`.
-
-Elements of A are basically just elements of the underlying abelian group.
-To move between `M` and `A`, we use the `lift` function `lift : M -> A`
-and coercion `A(m)`.
-
-# Examples
-```jldoctest
-julia> R = rescale(root_lattice(:D,4),2);
-
-julia> D = discriminant_group(R);
-
-julia> A = abelian_group(D)
-GrpAb: (Z/2)^2 x (Z/4)^2
-
-julia> d = D[1]
-[1, 0, 0, 0]
-
-julia> d == D(A(d))
-true
-
-julia> lift(d)
-4-element Vector{QQFieldElem}:
- 1
- 1
- 3//2
- 1
-```
-
-N.B. Since there are no elements of $\Z$-latties, we think of elements of `M` as
-elements of the ambient vector space. Thus if `v::Vector` is such an element
-then the coordinates with respec to the basis of `M` are given by
-`solve_left(basis_matrix(M), v)`.
-"""
-@attributes mutable struct TorQuadModule
-  ab_grp::GrpAbFinGen             # underlying abelian group
-  cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
-  rels::ZLat
-  proj::ZZMatrix                  # is a projection and respects the forms
-  gens_lift::Vector{Vector{QQFieldElem}}
-  gens_lift_mat::QQMatrix
-  modulus::QQFieldElem
-  modulus_qf::QQFieldElem
-  value_module::QmodnZ
-  value_module_qf::QmodnZ
-  gram_matrix_bilinear::QQMatrix
-  gram_matrix_quadratic::QQMatrix
-  gens 
-  is_normal::Bool
-
-  TorQuadModule() = new()
-end
-export TorQuadModule
-
 ################################################################################
 #
 #  Construction
@@ -378,21 +301,13 @@ end
 #
 ################################################################################
 
-mutable struct TorQuadModuleElem
-  data::GrpAbFinGenElem
-  parent::TorQuadModule
-
-  TorQuadModuleElem(T::TorQuadModule, a::GrpAbFinGenElem) = new(a, T)
-end
-export TorQuadModuleElem
-
 elem_type(::Type{TorQuadModule}) = TorQuadModuleElem
 
-################################################################################
+###############################################################################
 #
 #  Creation
 #
-################################################################################
+###############################################################################
 
 @doc raw"""
     (T::TorQuadModule)(a::GrpAbFinGenElem) -> TorQuadModuleElem
@@ -695,25 +610,6 @@ end
 ################################################################################
 #
 #  Map between torsion quadratic modules
-#
-################################################################################
-
-mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}
-  header::MapHeader{TorQuadModule, TorQuadModule}
-  map_ab::GrpAbFinGenMap
-
-  function TorQuadModuleMor(T::TorQuadModule, S::TorQuadModule, m::GrpAbFinGenMap)
-    z = new()
-    z.header = MapHeader(T, S)
-    z.map_ab = m
-    return z
-  end
-end
-export TorQuadModuleMor
-
-################################################################################
-#
-#  User constructors
 #
 ################################################################################
 
