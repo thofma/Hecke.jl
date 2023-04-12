@@ -7,7 +7,7 @@ import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction, set_prec
 import Nemo: shift_left, shift_right
 import Base: *
 
-export factor_absolute
+export factor_absolute, is_absolutely_irreducible
 
 add_verbosity_scope(:AbsFact)
 add_assertion_scope(:AbsFact)
