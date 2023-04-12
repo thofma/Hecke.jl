@@ -476,7 +476,7 @@ end
 @doc raw"""
     id(T::TorQuadModule) -> TorQuadModuleElem
 
-Return the identity element of `T` as an abelian group.
+Return the identity element for the abelian group structure on `T`.
 """
 id(T::TorQuadModule) = T(id(abelian_group(T)))
 
@@ -625,9 +625,6 @@ end
 Given two torsion quadratic modules `T` and `S`, and a matrix `M` representing
 an abelian group homomorphism between the underlying groups of `T` and `S`,
 return the corresponding abelian group homomorphism between `T` and `S`.
-
-Note that such a map needs not to preserve the torsion quadratic module
-structures.
 """
 function hom(T::TorQuadModule, S::TorQuadModule, M::ZZMatrix)
   map_ab = hom(abelian_group(T), abelian_group(S), M)
@@ -641,9 +638,6 @@ end
 Given two torsion quadratic modules `T` and `S`, and a set of elements of `S`
 containing as many elements as `ngens(T)`, return the abelian group homomorphism
 between `T` and `S` mapping the generators of `T` to the elements of `img`.
-
-Note that such a map needs not to preserve the torsion quadratic module
-structures.
 """
 function hom(T::TorQuadModule, S::TorQuadModule, img::Vector{TorQuadModuleElem})
   _img = GrpAbFinGenElem[]
@@ -691,7 +685,7 @@ trivial_map(T::TorQuadModule, U::TorQuadModule) = hom(T, U, TorQuadModuleElem[id
 @doc raw"""
     trivial_map(T::TorQuadModule) -> TorQuadModuleMor
 
-Return the abelian group endomorphism of `T sending every elements of `T`
+Return the abelian group endomorphism of `T` sending every elements of `T`
 to the zero element of `T`.
 """
 trivial_map(T::TorQuadModule) = trivial_map(T, T)
@@ -828,8 +822,6 @@ end
 
 Given an abelian group homomorphism `f` between two torsion quadratic modules `T`
 and `U`, return the kernel `S` of `f` as well as the injection $S \to T$.
-
-Note: `f` need not be a morphism of torsion quadratic modules.
 """
 function kernel(f::TorQuadModuleMor)
   g = abelian_group_homomorphism(f)
@@ -904,17 +896,17 @@ return the $n$-fold self-composition of `f`.
 Note that `n` must be non-negative and $f^0$ is by default the identity map
 of the domain of `f` (see [`identity_map`](@ref)).
 """
-function Base.:^(f::TorQuadModuleMor, a::Integer)
-  @req a >= 0 "a must be a positive integer"
+function Base.:^(f::TorQuadModuleMor, n::Integer)
+  @req n >= 0 "n must be a positive integer"
   @assert domain(f) === codomain(f) "f must be a self-map"
-  if a == 0
+  if n == 0
     return id_hom(domain(f))
-  elseif a == 1
+  elseif n == 1
     return f
   else
     k = 1
     f2 = f
-    while k != a
+    while k != n
       f2 = compose(f2, f)
       k += 1
     end
