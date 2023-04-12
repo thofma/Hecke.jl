@@ -324,7 +324,7 @@ julia> N, f = normal_form(T)
 (TorQuadModule: [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3], Map with following data
 Domain:
 =======
-T
+TorQuadModule [2//3 0 1//3; 0 0 2//3; 1//3 2//3 1//4]
 Codomain:
 =========
 TorQuadModule [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3])
@@ -391,10 +391,10 @@ julia> f = hom(T, T6, gens(T6))
 Map with following data
 Domain:
 =======
-T
+TorQuadModule [2//3 0 1//3; 0 0 2//3; 1//3 2//3 1//4]
 Codomain:
 =========
-T6
+TorQuadModule [4 0 2; 0 0 4; 2 4 3//2]
 
 julia> T[1]*T[1] == f(T[1])*f(T[1])
 false
