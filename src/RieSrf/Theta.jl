@@ -103,7 +103,7 @@ function _theta(z::Vector{acb}, tau::acb_mat, char::Vector{Vector{Int}}, dz::Vec
   err = Rc(10^(-n))
   
   #Find an R1 such that R_function becomes negative
-  while(R_function(R1, eps) > 0)
+  while R_function(R1, eps) > 0
     R1 = R1 + R0
   end
   
