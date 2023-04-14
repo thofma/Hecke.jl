@@ -428,9 +428,12 @@ end
 @doc raw"""
     subsets(n::Int, k::Int)
 
-Return a vector of all ordered `k`-element subsets of `1..n`.    
+Return a vector of all ordered `k`-element subsets of `1..n`.
 """
 function subsets(n::Int, k::Int)
+  if n < k
+    return Vector{Int}[]
+  end
   if k == 0
     return Vector{Int}[Int[]]
   end
