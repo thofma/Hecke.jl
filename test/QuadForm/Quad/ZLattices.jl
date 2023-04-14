@@ -687,3 +687,14 @@ end
   end
 end
 
+@testset "Constructor checks" begin
+  m = matrix(QQ, 2, 1, [1; -4])
+  @test_throws ArgumentError Zlattice(m)
+
+  L = root_lattice(:E, 7)
+  v = zero_matrix(QQ, 1, degree(L))
+  @test v in L
+  @test is_primitive(L, v)
+  @test_throws ArgumentError lattice_in_same_ambient_space(L, v)
+  @test rank(0*L) == 0
+end
