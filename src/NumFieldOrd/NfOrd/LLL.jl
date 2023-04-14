@@ -411,7 +411,7 @@ end
 
 function subsets_it(n::Int, k::Int)
   if n == k
-    return (Int[i for i = 1:n])
+    return ([Int[i for i = 1:n]])
   end
   if k == 1
     return ([Int[i] for i = 1:n])
