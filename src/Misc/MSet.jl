@@ -315,6 +315,7 @@ function int_to_elt(M::SubSetSizeItr{T}, i::Int) where T
 end
 
 function Base.iterate(M::SubSetSizeItr)
+  0 >= M.length && return nothing
   return int_to_elt(M, 0), 0
 end
 
