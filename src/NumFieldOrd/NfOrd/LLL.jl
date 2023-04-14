@@ -410,6 +410,12 @@ end
 
 
 function subsets_it(n::Int, k::Int)
+  if n < k
+    return (Vector{Int}[])
+  end
+  if k == 0
+    return ([Int[]])
+  end
   if n == k
     return ([Int[i for i = 1:n]])
   end
