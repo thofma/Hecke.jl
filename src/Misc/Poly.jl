@@ -1504,7 +1504,7 @@ function Base.iterate(
   ) where T<:PolyElem
   isone(p) && return nothing
   exp += 1
-  exponent = a.orderOfBaseRing ^ exp
+  exponent = ZZ(a.orderOfBaseRing) ^ exp
   f = gcd(powermod(a.x, exponent, p) - a.x, p)
   p = divexact(p, f)
   return (f, (p, exp))
