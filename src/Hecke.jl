@@ -905,4 +905,10 @@ precompile(class_group, (NfAbsOrd{AnticNumberField, nf_elem},))
 
 using .NormRel
 
+#if ccall(:jl_generating_output, Cint, ()) == 1   # if we're precompiling the package
+#  let
+#    include(joinpath("..", "system", "precompile.jl"))
+#  end
+#end
+
 end # module
