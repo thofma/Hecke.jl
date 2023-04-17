@@ -385,7 +385,7 @@ end
   M = @inferred matrix(f)
   @test isone(M)
 
-  f = @inferred trivial_map(qL)
+  f = @inferred trivial_morphism(qL)
   @test iszero(matrix(f))
 
   N, qLtoN = normal_form(qL)
@@ -407,13 +407,16 @@ end
   p = minpoly(m) # p = (X^2+1)(X+1)
 
   @test iszero(matrix(p(f)))
+  @test iszero(p(abelian_group_homomorphism(f))) #trivia for test coverage
   @test !iszero(matrix(p(-f)))
   @test iszero(matrix(f-f))
   @test iszero(matrix(f*order(qL)))
   @test isone(matrix(f^4))
   @test !isone(matrix(f^2))
   @test abelian_group_homomorphism(f) == abelian_group_homomorphism(f^5)
+  @test abelian_group_homomorphism(f*4) == abelian_group_homomorphism(f)*4 #trivia for test coverage
 
   Zx, x = ZZ["x"]
   @test matrix((x-1)(f)) == matrix(f) - 1
+  @test x(abelian_group_homomorphism(f)).map == matrix(f) #trivia for test coverage
 end

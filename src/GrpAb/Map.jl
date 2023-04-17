@@ -231,6 +231,7 @@ end
 
 
 ==(f::GrpAbFinGenMap, g::GrpAbFinGenMap) = domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
+
 ################################################################################
 #
 #  Inverse of a map
@@ -479,7 +480,56 @@ function -(f::GrpAbFinGenMap)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
+function Base.:(*)(a::IntegerUnion, f::GrpAbFinGenMap)
+  M = a*f.map
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.snf)
+  end
+  return hom(domain(f), codomain(f), M, check = false)
+end
 
+Base.:(*)(f::GrpAbFinGenMap, a::IntegerUnion) = a*f
+
+function Base.:^(f::GrpAbFinGenMap, n::Integer)
+  @assert domain(f) === codomain(f)
+  @assert n >= 0
+  M = f.map^n
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.snf)
+  end
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+function evaluate(p::ZZPolyRingElem, f::GrpAbFinGenMap)
+  @assert domain(f) === codomain(f)
+  M = p(f.map)
+  C = codomain(f)
+  if is_snf(C)
+    reduce_mod_snf!(M, C.snf)
+  else
+    assure_has_hnf(C)
+    reduce_mod_hnf_ur!(M, C.snf)
+  end
+  return hom(domain(f), codomain(f), M, check = false)
+end
+
+function evaluate(p::QQPolyRingElem, f::GrpAbFinGenMap)
+  @assert domain(f) === codomain(f)
+  @assert all(a -> is_integral(a), coefficients(p))
+  return evaluate(map_coefficients(ZZ, p), f)
+end
+
+(p::ZZPolyRingElem)(f::GrpAbFinGenMap) = evaluate(p, f)
+
+(p::QQPolyRingElem)(f::GrpAbFinGenMap) = evaluate(p, f)
 
 ###############################################################################
 struct MapParent

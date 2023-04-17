@@ -406,7 +406,7 @@ true
 Hecke provides several constructors for objects of type `TorQuadModuleMor`, see
 for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
 [`hom(::TorQuadModule, ::TorQuadModule, ::Vector{TorQuadModuleElem})`](@ref),
-[`identity_map(::TorQuadModule)`](@ref) or [`trivial_map(::TorQuadModule)`](@ref).
+[`identity_map(::TorQuadModule)`](@ref) or [`trivial_morphism(::TorQuadModule)`](@ref).
 """
 mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}
   header::MapHeader{TorQuadModule, TorQuadModule}
