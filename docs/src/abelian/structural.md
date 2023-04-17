@@ -67,7 +67,7 @@ quo(G::GrpAbFinGen, U::GrpAbFinGen)
 
 For 2 subgroups `U` and `V` of the same group `G`, `U+V` returns
 the smallest subgroup of `G` containing both. Similarly, $U\cap V$
-computes the intersection and `U \subset V` tests for inclusion.
+computes the intersection and $U \subset V$ tests for inclusion.
 The difference between `issubset =` $\subset$ and
 `is_subgroup` is that the inclusion map is also returned in the 2nd call.
 

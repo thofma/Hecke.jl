@@ -16,7 +16,6 @@ and discrete logarithms using index calculus methods.
 ## Sparse rows
 
 Building blocks for sparse matrices are sparse rows, which are modelled by
-objects of type \texttt{SRow}. More precisely, the type is of parametrized form
 objects of type `SRow`. More precisely, the type is of parametrized form
 `SRow{T}`, where `T` is the element type of the base ring $R$. For example,
 `SRow{ZZRingElem}` is the type for sparse rows over the integers.
