@@ -497,8 +497,22 @@ Base.:(*)(f::GrpAbFinGenMap, a::IntegerUnion) = a*f
 function Base.:^(f::GrpAbFinGenMap, n::Integer)
   @assert domain(f) === codomain(f)
   @assert n >= 0
-  M = f.map^n
   C = codomain(f)
+  if isdefined(C, :exponent)
+    if fits(Int, C.exponent)
+      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)
+      fRR = map_entries(RR, f.map)
+      MRR = fRR^n
+      M = lift(MRR)
+    else
+      R = residue_ring(FlintZZ, C.exponent, cached = false)
+      fR = map_entries(R, f.map)
+      MR = fR^n
+      M = map_entries(lift, MR)
+    end
+  else
+    M = f.map^n
+  end
   if is_snf(C)
     reduce_mod_snf!(M, C.snf)
   else
