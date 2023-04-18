@@ -1595,8 +1595,11 @@ function automorphism_group_generators(L::AbstractLat; ambient_representation::B
     return copy(gens)
   else
     bm = basis_matrix_of_rational_span(L)
-    bminv = inv(bm)
-    gens = typeof(bm)[bminv * g * bm for g in gens]
+    bm2 = orthogonal_complement(ambient_space(L), bm)
+    B = vcat(bm2, bm)
+    ide = identity_matrix(base_field(L), nrows(bm2))
+    gens = [block_diagonal_matrix([ide, g]) for g in gens]
+    gens = typeof(bm)[inv(B)*g*B for g in gens]
     @hassert :Lattice 1 begin
       flag = true
       Gamb = gram_matrix(ambient_space(L))
@@ -1717,8 +1720,12 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     if !ambient_representation
       return true, T
     else
-      T = inv(basis_matrix_of_rational_span(L)) * T *
-                 basis_matrix_of_rational_span(M)
+      BL = basis_matrix_of_rational_span(L)
+      BL = vcat(orthogonal_complement(ambient_space(L), BL), BL)
+      BM = basis_matrix_of_rational_span(M)
+      BM = vcat(orthogonal_complement(ambient_space(M), BM), BM)
+      T = block_diagonal_matrix([identity_matrix(base_field(L), degree(L)-rank(L)), T])
+      T = inv(BL)*T*BM
 
       @hassert :Lattice 1 T * gram_matrix(ambient_space(M)) *
                               _map(transpose(T), involution(L)) ==
