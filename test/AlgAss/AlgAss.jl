@@ -46,6 +46,10 @@ end
 
 @testset "Associative algebras" begin
 
+  # creation
+
+  @test_throws ArgumentError AlgAss(QQ, map(QQ, reshape([1 2 1 2; 1 2 1 2], 2, 2, 2)))
+
   @testset "Change of ring" begin
 
     # Restrict from number field to Q

@@ -136,14 +136,19 @@ function _zero_algebra(R::Ring)
   return A
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}) where {T}
+function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where {T}
   if size(mult_table, 1) == 0
     return _zero_algebra(R)
   end
-  return AlgAss{T}(R, mult_table, one)
+  A = AlgAss{T}(R, mult_table, one)
+  if check
+    @req check_associativity(A) "Multiplication table does not define associative operation"
+    @req check_distributivity(A) "Multiplication table does not define associative operation"
+  end
+  return A
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
+function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = true) where {T}
   if size(mult_table, 1) == 0
     return _zero_algebra(R)
   end
@@ -154,6 +159,10 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
   A.has_one = has_one
   if has_one
     A.one = one
+  end
+  if check
+    @req check_associativity(A) "Multiplication table does not define associative operation"
+    @req check_distributivity(A) "Multiplication table does not define associative operation"
   end
   return A
 end
