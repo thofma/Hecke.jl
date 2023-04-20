@@ -168,8 +168,9 @@ function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, FlintQad
   autsk = _automorphisms(base_field(K), F, L)
   auts = morphism_type(K, F)[]
   for f in autsk
-    rt = roots(map_coefficients(f, defining_polynomial(K)))
-    rt = refine_roots1(map_coefficients(f, defining_polynomial(K)), rt)
+    fK = map_coefficients(f, defining_polynomial(K))
+    rt = roots(fK)
+    rt = refine_roots1(fK, rt)
     for x in rt
       push!(auts, hom(K, F, f, x))
     end
@@ -210,6 +211,22 @@ function automorphism_group(K::FlintQadicField)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
+function gens(L::FlintQadicField, K::FlintPadicField)
+  return [gen(L)]
+end
+
+function gens(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField} = base_field(L))
+  if absolute_degree(K) > absolute_degree(L)
+    error("not a subfield")
+  end
+  g = [gen(L)]
+  l = base_field(L)
+  if l != K
+    append!(g, map(L, gens(l, K)))
+  end
+  return g
+end
+
 @doc raw"""
     automorphism_group(L::LocalField, K::LocalField) -> GenGrp, GrpGenToNfMorSet
 
@@ -219,13 +236,14 @@ and a map from $G$ to the automorphisms of $L$ that fix $K$.
 function automorphism_group(L::LocalField, K::Union{LocalField, FlintPadicField, FlintQadicField} = base_field(L))
   aut = automorphism_list(L, K)
   mult_table = Matrix{Int}(undef, length(aut), length(aut))
-  rt = [x(gen(L)) for x = aut]
+  g = gens(L, K)
+  rt = [map(x, g) for x = aut]
   for s = 1:length(aut)
     for i = 1:length(aut)
-      r = aut[i](rt[s])
+      r = map(aut[i], rt[s])
       p = findfirst(isequal(r), rt)
       if p === nothing
-        p = argmax([valuation(x-r) for x = rt])
+        p = argmax([sum(valuation(x[i]-r[i]) for i=1:length(g)) for x = rt])
       end
       mult_table[s, i] = p
     end
