@@ -583,8 +583,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
     end
     iszero(a) && continue
     valuation(a) == 0 && return inv(a)
-    @show valuation(a)
-    @time return frobenius_equation2(c, F, frobenius = fr, start = inv(a))
+    return frobenius_equation2(c, F, frobenius = fr)#, start = inv(a))
     cnt += 1
     if cnt > 5
       return frobenius_equation2(c, F, frobenius = fr)
@@ -592,7 +591,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
   end
 end
 
-function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false, start::Union{Nothing, Hecke.LocalFieldElem})
+function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false, start::Union{Nothing, Hecke.LocalFieldElem} = nothing)
   E = parent(c)
   pr = precision(c)
   K, mK = residue_field(E)
@@ -804,11 +803,15 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   end
 
   return function(h, g)
-    i = findfirst(isequal(g), G)
+    i = findall(isequal(g), G)
+    @assert length(i) == 1
+    i = i[1]
     if i === nothing
       i = argmax(valuation(g(gen(L))-x) for x = imG)
     end
-    j = findfirst(isequal(h), G)
+    j = findall(isequal(h), G)
+    @assert length(j) == 1
+    j = j[1]
     if j === nothing
       j = argmax(valuation(h(gen(L))-x) for x = imG)
     end
