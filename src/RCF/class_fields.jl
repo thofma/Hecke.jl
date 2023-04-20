@@ -1,3 +1,5 @@
+export grunwald_wang
+
 function Base.show(io::IO, C::ClassField_pp{S, T}) where {S, T}
   println(IOContext(io, :compact => true), "Cyclic class field of degree $(degree(C)) defined modulo $(defining_modulus(C))")
   if isdefined(C, :a)
@@ -546,4 +548,222 @@ subfield of exponent $n$ is computed.
 """
 function ray_class_field(I::NfAbsOrdIdl, inf::Vector{<: InfPlc}; n_quo = -1)
   return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
+end
+
+
+prime_decomposition(::ZZRing, p::Int) = [[p*ZZ, 1]]
+
+"""
+    grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int})
+    grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, Int})
+
+For a collection of places given via ideals as keys of `dp` and embeddings
+given as keys of `di` find a cyclic extension where the completions at
+the places have the degrees as the values of the dictionaries.
+
+The degree wil be the `lcm` of the local degree (values), the extension will
+be unramified at the places in `dp` unless they involve primes above `2`.
+
+The field will be constructed as a `ray_class_field`.
+
+# EXAMPLES
+```julia
+julia> A = grunwald_wang(Dict(3*ZZ => 3, 5*ZZ => 2))
+Class field defined mod (<13, 13>, InfPlc{AnticNumberField, NumFieldEmbNfAbs}[]) of structure Abelian group with structure: Z/6
+
+julia> K = absolute_simple_field(number_field(A))[1];
+
+julia> prime_decomposition_type(maximal_order(K), 5)
+3-element Vector{Tuple{Int64, Int64}}:
+ (2, 1)
+ (2, 1)
+ (2, 1)
+
+
+julia> prime_decomposition_type(maximal_order(K), 3)
+2-element Vector{Tuple{Int64, Int64}}:
+ (3, 1)
+ (3, 1)
+
+```
+"""
+function grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, Int} = Dict{NumFieldEmb, Int}())
+  lp = collect(keys(dp))
+  li = collect(keys(di))
+  if length(li) == 0  
+    if length(lp) == 0
+      error("no data specified, giving up")
+    end
+    k = number_field(order(lp[1]))
+  else
+    k = number_field(li[1])
+  end
+
+  if k == QQ
+    kk = rationals_as_number_field()[1]
+    zz = maximal_order(kk)
+    d = Dict{Any, Int}(gen(p)*zz => dp[p] for p = keys(dp))
+      for i = keys(di)
+      d[complex_embeddinsgs(kk)[1]] => di[i]
+    end
+  else
+    d = copy(dp)
+    for i = di
+      push!(d, i)
+    end
+  end
+  A = _grunwald_wang(d)
+  return A
+end
+
+function _grunwald_wang(d::Dict{<:Any, Int})
+  lp = collect(keys(d))
+  li = [x for x = lp if isa(x, NumFieldEmb)]
+  lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
+  @assert length(lp) + length(li) == length(d)
+
+  if length(li) == 0  
+    if length(lp) == 0
+      error("no data specified, giving up")
+    end
+    k = number_field(order(lp[1]))
+  else
+    k = number_field(li[1])
+  end
+  @assert all(x->k === number_field(x), li)
+  @assert all(x->k === number_field(order(x)), lp)
+
+  deg = lcm([x for x = values(d)]...)
+  ld = factor(deg).fac
+  if length(keys(ld)) == 1
+    return _grunwald_wang_pp(d)
+  end
+  S = ray_class_field(1*maximal_order(k))
+  for p = keys(ld)
+    dp = Dict(x => Int(gcd(v, p^ld[p])) for (x, v) = d)
+    S *= _grunwald_wang_pp(dp)
+  end
+  return rewrite_with_conductor(S)
+end
+
+function _grunwald_wang_pp(d::Dict{<:Any, Int})
+  #we'll try to be as unramified as possible at the ideals in d
+  #which means:
+  # - potentiel ramification at 2 (if 2 in d)
+  # - unram elsewhere.
+
+  lp = collect(keys(d))
+  li = [x for x = lp if isa(x, NumFieldEmb)]
+  lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
+
+  if length(li) == 0  
+    if length(lp) == 0
+      error("no data specified, giving up")
+    end
+    k = number_field(order(lp[1]))
+  else
+    k = number_field(li[1])
+  end
+
+  li = [x for x = li if isreal(x)]
+  @assert all(x->d[x] in [1,2], li)
+
+  li = InfPlc[infinite_place(x) for x = li] #for the conductor
+
+  zk = maximal_order(k)
+
+  deg = lcm([x for x = values(d)]...)
+  
+  @assert is_prime_power(deg) #for now, to keep things simple
+
+  con = prod(lp)
+  #complication:
+  # if deg = 2^l, l >= 3 then, since there are no unramifed
+  # extensions of Q_2 of this degree, 2 has to divide the conductor
+  # From Carlo's PhD, Thm 1.41: (for all primes, but here used for 2)
+  # P a prime above 2 in k/ zk, then
+  # v_P(con) <= p/(p-1) * (1+ l * e(P/p))
+  if iseven(deg) #2^l
+    l = valuation(deg, 2)
+    l2 = [p for p = lp if minimum(p) == 2] 
+    if length(l2) > 0
+      con *= prod(p^(2*(1+l*ramification_index(p)-1)) for p = l2)
+    end
+    #the -1 at the end is since p is already once in con
+    lp = [p for p = lp if minimum(p) != 2]
+  else
+    l2 = []
+  end
+
+  #in general: if the classgroup has a p^s and deg = p^l,
+  #then we need ideals with a p^(l-s) might yield a p^l at then end
+  c, _ = class_group(zk)
+  if order(c) > 1
+    s = gcd(deg, elementary_divisors(c)[end])
+  else
+    s = 1
+  end
+  P = PrimesSet(2, -1, Int(divexact(deg, s)), 1)
+  st = iterate(P)
+  PP = prime_decomposition(zk, st[1])
+  iP = 1
+  cnt = 0
+  #need to check the degree of the completion at p
+  #for p unramified this is "just" the order in the ray class group
+  #for p ramified this is unfortunately 
+  #  the order in the ray class group of the modulus coprime to p
+  #  time the index of this group in the full (ramified) one
+  while true
+    R, mR = ray_class_group(con, li, n_quo = deg)
+    val = GrpAbFinGenElem[preimage(mR, p) for p = lp]
+
+    if length(lp) > 0 && any(x->order(val[x]) % d[lp[x]] != 0, 1:length(lp))
+#      @show "too small"
+    else
+      if iseven(deg) && length(l2) > 0
+        S1 = ray_class_field(mR)
+        S2 = [ray_class_field(divexact(con, p^valuation(con, p)), n_quo = deg) for p = l2]
+        ngp = norm_group_map(S1, S2)
+        s, _ = sub(R, [val[i] for i = 1:length(lp)])
+        s += preimage(S1.quotientmap, sum(kernel(x)[1] for x = ngp))[1]
+      else
+        s, _ = sub(R, [val[i] for i = 1:length(lp)])
+      end
+      s = saturate(s, R)
+      fl, s = has_complement(s, R)
+      @assert fl
+      c, mc = quo(R, s)
+      c, _mc = quo(c, GrpAbFinGenElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
+      mc = mc * _mc
+      if all(i->order(mc(val[i])) == d[lp[i]], 1:length(lp))
+#        @show :cyc, snf(c)[1]
+        for (u, mu) = subgroups(c, quotype = [deg])
+          q, mq = quo(c, u)
+          A = ray_class_field(mR, mc*mq)
+          if all(vcat(lp, l2)) do p
+              y = prime_decomposition_type(A, p)
+              y[1]*y[2] == d[p]
+            end
+#            @show :place
+            _, mi = conductor(A)
+            if all(x in mi for x = li if d[_embedding(x)] == 2) &&
+                  !any(x in mi for x = li if d[_embedding(x)] == 1)
+              return A
+            end
+          end
+        end
+      end
+    end
+    con *= PP[iP][1]
+    iP += 1
+    if length(PP) < iP
+      st = iterate(P, st[2])
+      PP = prime_decomposition(zk, st[1])
+      iP = 1
+    end
+    cnt += 1
+    if cnt > 20
+#      error("bla")
+    end
+  end
 end
