@@ -6,7 +6,14 @@
 
 function image(f::CompletionMap, a::nf_elem)
   Qx = parent(parent(a).pol)
-  return evaluate(Qx(a), f.prim_img)
+  z = evaluate(Qx(a), f.prim_img)
+  if iszero(z) && !iszero(a) #maybe use always?
+    v = valuation(a, f.P)
+    a = a*uniformizer(f.P).elem_in_nf^-v
+    z = evaluate(Qx(a), f.prim_img)
+    z *= uniformizer(parent(z))^v
+  end
+  return z
 end
 
 function preimage(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, LocalFieldElem{qadic, EisensteinLocalField}}, a::LocalFieldElem{qadic, EisensteinLocalField})
