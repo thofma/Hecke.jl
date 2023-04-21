@@ -377,6 +377,9 @@ function _stringify(x::QQPolyRingElem)
 end
 
 function _stringify(x::Vector{T}) where {T}
+  if isempty(x)
+    return "[]"
+  end
   s = "["
   for i in 1:(length(x) - 1)
     s = s * _stringify(x[i]) * ","
