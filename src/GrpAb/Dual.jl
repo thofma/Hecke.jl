@@ -146,7 +146,7 @@ function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
   end
 end
 
-function Base.hash(a::QmodnZElem, h::UInt = UInt(121231))
+function Base.hash(a::QmodnZElem, h::UInt)
   if parent(a).trivialmodulus
     return hash(a.elt, h)
   end
