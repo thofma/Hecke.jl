@@ -166,7 +166,7 @@ end
 # Computes the intersection of subfields A = [a1,...,an] of K/k, represented as k-VS
 function _intersect_spaces(A::Vector{T}) where T
   if length(A) < 1
-    throw(error("Number of spaces must be non-zero"))
+    error("Number of spaces must be non-zero")
   elseif length(A) == 1
     return A[1]
   elseif length(A) == 2

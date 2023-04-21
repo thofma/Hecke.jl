@@ -105,7 +105,7 @@ fractional_ideal(O::NfAbsOrd, x::ZZMatrix, y::Integer) = fractional_ideal(O, x, 
 Turns the ideal $I$ into a fractional ideal of $\mathcal O$.
 """
 function fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl)
-  order(x) !== O && throw(error("Incompatible orders"))
+  order(x) !== O && error("Incompatible orders")
   z = NfAbsOrdFracIdl(O, x, ZZRingElem(1))
   return z
 end

@@ -1,7 +1,7 @@
 function is_locally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
   R = base_ring(L)
-  base_ring(L) != base_ring(M) && throw(error("Lattices must have the same base ring"))
-  order(p) != R && throw(error("Ideal must be in the base ring of the lattices"))
+  base_ring(L) != base_ring(M) && error("Lattices must have the same base ring")
+  order(p) != R && error("Ideal must be in the base ring of the lattices")
   d = rank(L)
   if d != rank(M)
     return false

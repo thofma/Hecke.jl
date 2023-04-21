@@ -371,7 +371,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
     error("element is zero")
   end
   if parent(a) !== nf(order(p))
-    throw(error("Incompatible parents"))
+    error("Incompatible parents")
   end
   if !is_defining_polynomial_nice(parent(a)) || order(p).is_maximal != 1
     return valuation_naive(a, p)::Int

@@ -310,8 +310,8 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
   ar_mat = Vector{QQMatrix}()
   v = Vector{nf_elem}(undef, n)
   for i in 1:length(autos)
-    domain(autos[i]) !== codomain(autos[i]) && throw(error("Maps must be automorphisms"))
-    domain(autos[i]) !== K && throw(error("Maps must be automorphisms of K"))
+    domain(autos[i]) !== codomain(autos[i]) && error("Maps must be automorphisms")
+    domain(autos[i]) !== K && error("Maps must be automorphisms of K")
     o = one(K)
     # Compute the image of the basis 1,a,...,a^(n - 1) under autos[i] and write
     # the coordinates in a matrix. This is the matrix of autos[i] with respect
@@ -379,8 +379,8 @@ function fixed_field(K::NfRel, A::Vector{T}; simplify::Bool = true) where {T <: 
   ar_mat = Vector{dense_matrix_type(elem_type(F))}()
   v = Vector{elem_type(K)}(undef, n)
   for i in 1:length(autos)
-    domain(autos[i]) !== codomain(autos[i]) && throw(error("Maps must be automorphisms"))
-    domain(autos[i]) !== K && throw(error("Maps must be automorphisms of K"))
+    domain(autos[i]) !== codomain(autos[i]) && error("Maps must be automorphisms")
+    domain(autos[i]) !== K && error("Maps must be automorphisms of K")
     o = one(K)
     # Compute the image of the basis 1,a,...,a^(n - 1) under autos[i] and write
     # the coordinates in a matrix. This is the matrix of autos[i] with respect

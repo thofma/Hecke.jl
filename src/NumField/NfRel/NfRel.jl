@@ -176,7 +176,7 @@ end
 
 function number_field(f::PolyElem{T}, S::Symbol;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
-  check && !is_irreducible(f) && throw(error("Polynomial must be irreducible"))
+  check && !is_irreducible(f) && error("Polynomial must be irreducible")
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
@@ -268,7 +268,7 @@ Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 ################################################################################
 
 function Base.inv(a::NfRelElem)
-  a == 0 && throw(error("Element not invertible"))
+  a == 0 && error("Element not invertible")
   g, s, _ = gcdx(data(a), parent(a).pol)
   @assert g == 1
   return parent(a)(s)
@@ -738,7 +738,7 @@ end
 
 function is_linearly_disjoint(K1::NfRel, K2::NfRel)
   if base_field(K1) != base_field(K2)
-    throw(error("Number fields must have the same base field"))
+    error("Number fields must have the same base field")
   end
 
   if gcd(degree(K1), degree(K2)) == 1

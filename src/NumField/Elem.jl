@@ -354,7 +354,7 @@ end
 for F in [AnticNumberField, NfRel]
   @eval begin
     function (L::$F)(a::Vector)
-      length(a) != degree(L) && throw(error("Vector must have length ($(length(a))) equal to the degree ($(degree(L)))"))
+      length(a) != degree(L) && error("Vector must have length ($(length(a))) equal to the degree ($(degree(L)))")
       K = base_field(L)
       aprom = Vector{elem_type(K)}(undef, degree(L))
       for i in 1:degree(L)

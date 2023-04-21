@@ -894,8 +894,8 @@ function local_basis_matrix(L::AbstractLat, p; type::Symbol = :any)
     #elseif type == :supermodule
     #  return _local_basis_supermodule_matrix(pseudo_matrix(L), p)
     #else
-    #  throw(error("""Invalid :type keyword :$(type).
-    #                 Must be either :any, :submodule, or :supermodule"""))
+    #  error("""Invalid :type keyword :$(type).
+    #           Must be either :any, :submodule, or :supermodule""")
     #end
   elseif S === base_ring(R)
     if type == :any

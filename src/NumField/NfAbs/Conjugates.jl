@@ -263,7 +263,7 @@ function conjugates_log(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
     return conjugates_arb_log(x, abs_tol)
   else
-    throw(error("Cannot return real conjugates as type ", T))
+    error("Cannot return real conjugates as type ", T)
   end
 end
 
@@ -378,7 +378,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
   end
 
   if work_tol > 2^18 || abs_tol > 2^18
-    throw(error("asdsd"))
+    error("asdsd")
   end
 
   #R = ArbField(precision(parent(c[1])), false)

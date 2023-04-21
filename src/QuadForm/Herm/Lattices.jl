@@ -674,7 +674,7 @@ function is_maximal_integral(L::HermLat, p)
 end
 
 function is_maximal_integral(L::HermLat)
-  !is_integral(norm(L)) && throw(error("The lattice is not integral"))
+  !is_integral(norm(L)) && error("The lattice is not integral")
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -704,7 +704,7 @@ function is_maximal(L::HermLat, p)
 end
 
 function maximal_integral_lattice(L::HermLat)
-  !is_integral(norm(L)) && throw(error("The lattice is not integral"))
+  !is_integral(norm(L)) && error("The lattice is not integral")
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -719,7 +719,7 @@ function maximal_integral_lattice(L::HermLat)
 end
 
 function maximal_integral_lattice(L::HermLat, p)
-  valuation(norm(L), p) < 0 && throw(error("Lattice is not locally integral"))
+  valuation(norm(L), p) < 0 && error("Lattice is not locally integral")
   _, L = _maximal_integral_lattice(L, p, false)
   return L
 end

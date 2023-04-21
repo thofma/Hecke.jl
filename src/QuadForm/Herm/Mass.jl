@@ -97,7 +97,7 @@ function _local_factor_dyadic(L::HermLat, p)
       return q^(m * (f2 - l) - k1) * (q^m1 - 1) * lf
     end
   end
-  throw(error("Impossible"))
+  error("Impossible")
 end
 
 ################################################################################

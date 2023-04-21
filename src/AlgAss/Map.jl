@@ -436,14 +436,14 @@ end
 ################################################################################
 
 function (f::AbsAlgAssMor)(O::AlgAssAbsOrd)
-  domain(f) != algebra(O) && throw(error("Order not an order of the domain"))
+  domain(f) != algebra(O) && error("Order not an order of the domain")
   B = codomain(f)
   C = Order(B, elem_type(B)[f(b) for b in O.basis_alg], check = false)
   return C
 end
 
 function (f::AbsAlgAssMor)(I::AlgAssAbsOrdIdl)
-  domain(f) != algebra(I) && throw(error("Order not an order of the domain"))
+  domain(f) != algebra(I) && error("Order not an order of the domain")
   B = codomain(f)
   J = ideal_from_lattice_gens(B, elem_type(B)[f(b) for b in basis(I)])
   return J
