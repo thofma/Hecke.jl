@@ -1480,7 +1480,7 @@ end
 function _compute_Aijs(i, j, s, r1, r2, CC)
   @show "Aijs", i, j, s, r1, r2
   if j > 1000
-    throw(error("asdsd"))
+    error("asdsd")
   end
   if s == -i
     return _compute_Aij(i, r1, r2, CC)[j] # A_{-s, j - 1}
@@ -1495,7 +1495,7 @@ function _compute_Aijs(i, j, s, r1, r2, CC)
       return (_compute_Aijs(i, j + 1, s, r1, r2, CC) - _compute_Aij(i, r1, r2, CC)[j + 1])//(s + CC(i))
     end
   end
-  throw(error("Ads"))
+  error("Ads")
 end
 
 function _tollis_f(x, s::Int, i0, r1, r2, CC)

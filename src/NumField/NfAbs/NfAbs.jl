@@ -974,7 +974,7 @@ function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}}
     end
   end
   if throw_error === Val{true}
-    throw(error("no coercion possible"))
+    error("no coercion possible")
   else
     return false
   end
@@ -991,10 +991,10 @@ end
       end
       return x::elem_type(a)
     else
-      throw(error("no coercion possible"))
+      error("no coercion possible")
     end
   else
-    throw(error("no coercion possible"))
+    error("no coercion possible")
   end
 end
 
@@ -1206,7 +1206,7 @@ function force_op(op::T, throw_error::Type{Val{S}}, a::NumFieldElem...) where {T
     C = common_super(parent(b), C)
     if C === nothing
       if throw_error === Val{true}
-        throw(error("no common parent known"))
+        error("no common parent known")
       else
         return nothing
       end
@@ -1253,7 +1253,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     if is_rational(b)
       return a(coeff(b, 0))
     elseif throw_error === Val{true}
-      throw(error("no coercion possible"))
+      error("no coercion possible")
     else
       return
     end
@@ -1292,7 +1292,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
       c = coeff(f, i)
       if !is_rational(c)
         if throw_error === Val{true}
-          throw(error("no coercion possible"))
+          error("no coercion possible")
         else
           return
         end

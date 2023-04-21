@@ -246,7 +246,7 @@ function gram_matrix(V::AbstractSpace{T}, S::Vector{Vector{U}}) where {T, U}
   m = zero_matrix(base_ring(V), length(S), rank(V))
   for i in 1:length(S)
     if length(S[i]) != rank(V)
-      throw(error("Vectors must be of length $(rank(V))"))
+      error("Vectors must be of length $(rank(V))")
     end
     for j in 1:rank(V)
       m[i, j] = S[i][j]
@@ -669,7 +669,7 @@ function _biproduct(x::Vector{T}) where T <: AbstractSpace
   @req length(x) >= 2 "Input must contain at least two quadratic spaces"
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
-  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> ishermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic" 
+  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> ishermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
   G = diagonal_matrix(gram_matrix.(x))
   V = is_quadratic(x[1]) ? quadratic_space(K, G) : hermitian_space(K, G)
   n = sum(dim.(x))

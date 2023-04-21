@@ -219,16 +219,16 @@ function overorders(O; type = :all)
     if is_commutative(O)
       return _overorders_with_local_property(O, is_bass)
     else
-      throw(error("Type :bass not supported for non-commutative orders"))
+      error("Type :bass not supported for non-commutative orders")
     end
   elseif type == :gorenstein
     if is_commutative(O)
       return _overorders_with_local_property(O, is_gorenstein)
     else
-      throw(error("Type :gorenstein not supported for non-commutative orders"))
+      error("Type :gorenstein not supported for non-commutative orders")
     end
   else
-    throw(error("Type $type not supported"))
+    error("Type $type not supported")
   end
 end
 

@@ -1952,13 +1952,13 @@ end
 function assert_auto(C, order)
   G, o = _get_generators(C)
   if o != order
-    throw(error("Order $o. Expected $order"))
+    error("Order $o. Expected $order")
   end
 
   for g in G
     for U in C.G
       if g * U * g' != U
-        throw(error("Not an isometry.\nElement:\n $g\nGram matrix:\n$U"))
+        error("Not an isometry.\nElement:\n $g\nGram matrix:\n$U")
       end
     end
   end
@@ -2101,7 +2101,7 @@ function _psolve(X, A, B, n, p)
       j += 1
     end
     if j == n + 1
-      throw(error("Not possible"))
+      error("Not possible")
     end
 
     if j != i

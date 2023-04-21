@@ -6,7 +6,7 @@ function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
   if in('^', x)
     l = split(x, '^')
     if length(l) != 2
-      throw(error("Could not parse $x as ZZRingElem"))
+      error("Could not parse $x as ZZRingElem")
     end
     l = string.(l)
     return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
@@ -82,7 +82,7 @@ function main()
   println("Output file $file")
 
   if isfile(file)
-    throw(error("File $file does already exist"))
+    error("File $file does already exist")
   end
 
   l_conductors = Vector{Int}()

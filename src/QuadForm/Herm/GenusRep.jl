@@ -102,7 +102,7 @@ function smallest_neighbour_prime(L::HermLat)
       return true, QQ, bad
     end
   end
-  throw(error("Impossible"))
+  error("Impossible")
 end
 
 function _neighbour(L, B, xG, x, h, P, CC, split)
@@ -393,7 +393,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
       end
     end
     if use_mass && _mass < 0
-      throw(error("This should not happen"))
+      error("This should not happen")
     end
     i = i + 1
   end

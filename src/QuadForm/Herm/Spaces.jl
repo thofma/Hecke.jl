@@ -154,11 +154,11 @@ end
 ################################################################################
 
 function hasse_invariant(L::HermSpace, p)
-  throw(error("The space must be quadratic"))
+  error("The space must be quadratic")
 end
 
 function witt_invariant(L::HermSpace, p)
-  throw(error("The space must be quadratic"))
+  error("The space must be quadratic")
 end
 
 ################################################################################

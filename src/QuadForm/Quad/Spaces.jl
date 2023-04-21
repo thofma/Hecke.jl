@@ -471,10 +471,10 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   @hassert :Lattice 1 !iszero(det)
   @hassert :Lattice 1 negative in 0:dim
 
-  sign(det) != (-1)^(negative % 2) && throw(error("Real place information does not match the sign of the determinant"))
+  sign(det) != (-1)^(negative % 2) && error("Real place information does not match the sign of the determinant")
 
   if dim == 1
-    !isempty(finite) && throw(error("Impossible Hasse invariants"))
+    !isempty(finite) && error("Impossible Hasse invariants")
     return matrix(FlintQQ, 1, 1, ZZRingElem[det])
   end
 
@@ -487,14 +487,14 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
     if !ok
       #q = ZZRingElem[p for p in finite if is_local_square(-det, p)][1]
       if is_local_square(-det, q)
-        throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
+        error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
       end
     end
   end
 
   # product formula check
 
-  !iseven((negative % 4 >= 2 ? 1 : 0) + length(finite)) && throw(error("The number of places (finite or infinite) with Hasse invariant -1 must be even"))
+  !iseven((negative % 4 >= 2 ? 1 : 0) + length(finite)) && error("The number of places (finite or infinite) with Hasse invariant -1 must be even")
 
   # reduce the number of bad primes
   det = squarefree_part(det)
@@ -610,7 +610,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     ok = all(Bool[!is_local_square(-det, p) for p in finite])
     if !ok
       q = eltype(finite)[p for p in finite if is_local_square(-det, p)][1]
-      throw(error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q"))
+      error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
     end
   end
 

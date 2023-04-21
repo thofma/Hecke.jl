@@ -96,7 +96,7 @@ function getindex(f::QuadBin, i::Int)
   elseif i == 3
     return f.c
   else
-    throw(error("Index must be between 1 and 3"))
+    error("Index must be between 1 and 3")
   end
 end
 

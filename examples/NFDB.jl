@@ -216,14 +216,14 @@ end
 
 function setindex!(D::NFDBRecord, s, k::Symbol)
   if !(k in record_info_v1.name_tuples)
-    throw(error("asdsD"))
+    error("asdsD")
   end
   if haskey(D.data, k)
-    throw(error("Data for $k already exists"))
+    error("Data for $k already exists")
   end
 
   if !(s isa properties_comp[k][1])
-    throw(error("$s has the wrong type (expected $(properties_comp[k][1]))"))
+    error("$s has the wrong type (expected $(properties_comp[k][1]))")
   end
 
   D.data[k] = s
@@ -325,7 +325,7 @@ function _get(K, s)
   if haskey(properties_comp, s)
     return (properties_comp[s][2])(K)
   else
-    throw(error("Invalid property :$(s) of number field"))
+    error("Invalid property :$(s) of number field")
   end
 end
 
@@ -426,7 +426,7 @@ function _parse(::Type{Bool}, io, start = Base.read(io, UInt8))
   elseif start == UInt8('f')
     fl = false
   else
-    throw(error("Not possible"))
+    error("Not possible")
   end
   if eof(io)
     b = UInt8(255)
@@ -790,7 +790,7 @@ end
 
 function Base.write(f::String, D::NFDB)
   if isfile(f)
-    throw(error("File $f already exists. Please move first"))
+    error("File $f already exists. Please move first")
   end
   open(f, "w") do io
     Base.write(io, D)

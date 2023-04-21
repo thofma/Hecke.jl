@@ -517,7 +517,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
   d2 = d^2
-  
+
   # We do something more clever if the dimensio is too big
   M = zero_matrix(FlintQQ, d2, d)
   t = one(A)
@@ -1016,7 +1016,7 @@ See also `locally_free_basis`.
 """
 function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRingElem}; side::Symbol = :right)
   b = _test_ideal_sidedness(I, O, side)
-  !b && throw(error("Ideal is not a $(side) ideal of the order"))
+  !b && error("Ideal is not a $(side) ideal of the order")
   d = denominator(I, O)
   I = d * I
   if side === :left
@@ -1029,7 +1029,7 @@ function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRi
     fl, x = _islocally_free_left(OB, IB, p)
     alpha = O(mB\elem_in_algebra(x))
   else
-    throw(error("side (:$(side)) must be either :left or :right"))
+    error("side (:$(side)) must be either :left or :right")
   end
   if fl
     # d * I = alpha => I = x/alpha (locally at p)

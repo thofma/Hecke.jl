@@ -76,7 +76,7 @@ end
 function charpoly(Zx::ZZPolyRing, a::nf_elem)
   f = charpoly(a)
   if !isone(denominator(f))
-    throw(error("Element is not integral"))
+    error("Element is not integral")
   end
   return Zx(f)
 end
@@ -117,7 +117,7 @@ end
 function minpoly(Zx::ZZPolyRing, a::nf_elem)
   f = minpoly(a)
   if !isone(denominator(f))
-    throw(error("Element is not integral"))
+    error("Element is not integral")
   end
   return Zx(f)
 end

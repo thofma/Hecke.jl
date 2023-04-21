@@ -434,7 +434,7 @@ function _quadratic_unimodular_lattice_dyadic(p, r, w, d, alpha, wi)
       @assert valuation(det(z), p) == 0
       return z
     else
-      throw(error("This should not happen"))
+      error("This should not happen")
     end
   end
 end
@@ -918,7 +918,7 @@ end
 
 function _genus_symbol(L::QuadLat, p)
   O = order(p)
-  nf(O) != base_field(L) && throw(error("Prime ideal must be an ideal of the base field of the lattice"))
+  nf(O) != base_field(L) && error("Prime ideal must be an ideal of the base field of the lattice")
   K = nf(O)
   # If you pull from cache, you might have to adjust the symbol according
   # to the uniformizer flag
@@ -1128,7 +1128,7 @@ end
 
 function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
   O = order(p)
-  nf(O) != base_field(L) && throw(error("Prime ideal must be an ideal of the base field of the lattice"))
+  nf(O) != base_field(L) && error("Prime ideal must be an ideal of the base field of the lattice")
   # If you pull from cache, you might have to adjust the symbol according
   # to the uniformizer flag
 
@@ -1136,7 +1136,7 @@ function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(ord
   if !iszero(uniformizer)
     unif = uniformizer
     if valuation(unif, p) != 1
-      throw(error("Wrong uniformizer"))
+      error("Wrong uniformizer")
     end
   else
     unif = elem_in_nf(Hecke.uniformizer(p))

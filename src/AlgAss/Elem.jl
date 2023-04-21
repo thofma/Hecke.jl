@@ -39,7 +39,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
     end
   end
 
-  throw(error("Not an element of the base field"))
+  error("Not an element of the base field")
 end
 
 function (K::QQField)(a::AbsAlgAssElem{QQFieldElem})
@@ -61,7 +61,7 @@ function (K::QQField)(a::AbsAlgAssElem{QQFieldElem})
     end
   end
 
-  throw(error("Not an element of the base field"))
+  error("Not an element of the base field")
 end
 
 

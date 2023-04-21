@@ -418,9 +418,9 @@ function automorphism_group_generators(L::ZLat; ambient_representation::Bool = t
     else
       # Extend trivially to the orthogonal complement of the rational span
       !is_regular(V) &&
-        throw(error(
+        error(
           """Can compute ambient representation only if ambient space is
-             regular"""))
+             regular""")
       C = orthogonal_complement(V, basis_matrix(L))
       C = vcat(basis_matrix(L), C)
       Cinv = inv(C)
@@ -554,13 +554,13 @@ function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bo
         T = inv(basis_matrix(L)) * T * basis_matrix(M)
       else
         (!is_regular(V) || !is_regular(W)) &&
-          throw(error(
+          error(
             """Can compute ambient representation only if ambient space is
-               regular"""))
+               regular""")
           (rank(V) != rank(W)) &&
-          throw(error(
+          error(
             """Can compute ambient representation only if ambient spaces
-            have the same dimension."""))
+            have the same dimension.""")
 
         CV = orthogonal_complement(V, basis_matrix(L))
         CV = vcat(basis_matrix(L), CV)

@@ -110,7 +110,7 @@ function main()
   @show file
 
   if isfile(file)
-    throw(error("File $file does already exist"))
+    error("File $file does already exist")
   end
 
   println("========================================")

@@ -1342,7 +1342,7 @@ function genus(L::Vector{<:HermLocalGenus}, signatures::Dict{<:InfPlc, Int})
   @assert !isempty(L)
   @assert all(N >= 0 for (_, N) in signatures)
   if !_check_global_genus(L, signatures)
-    throw(error("Invariants violate the product formula."))
+    error("Invariants violate the product formula.")
   end
   r = rank(first(L))
   @req all(g -> rank(g) == r, L) "Local genus symbols must have the same rank"

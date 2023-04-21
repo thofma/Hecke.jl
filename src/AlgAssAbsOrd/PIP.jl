@@ -207,7 +207,7 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   elseif min > nrr
     false, zero(A)
   else
-    throw(error("Something wrong here"))
+    error("Something wrong here")
   end
 end
 

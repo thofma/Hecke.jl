@@ -65,19 +65,19 @@ end
 
 @inline function _check_rank_range(L, r)
   r < 0 || r > L.max_rank &&
-        throw(error("Rank ($(r)) must be between 1 and $(L.max_rank)"))
+        error("Rank ($(r)) must be between 1 and $(L.max_rank)")
 end
 
 @inline function _check_range(L, r, i)
   r < 0 || r > L.max_rank &&
-          throw(error("Rank ($(r)) must be between 1 and $(L.max_rank)"))
+          error("Rank ($(r)) must be between 1 and $(L.max_rank)")
   j = number_of_lattices(L, r)
-  i < 0 || i > j && throw(error("Index ($(i)) must be between 1 and $(j)"))
+  i < 0 || i > j && error("Index ($(i)) must be between 1 and $(j)")
 end
 
 @inline function _check_range(L, i)
   j = number_of_lattices(L)
-  i < 0 || i > j && throw(error("Index ($(i)) must be between 1 and $(j)"))
+  i < 0 || i > j && error("Index ($(i)) must be between 1 and $(j)")
 end
 
 ################################################################################

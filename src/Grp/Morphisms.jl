@@ -181,7 +181,7 @@ function find_small_group(G::GrpGen; DB = DefaultSmallGroupDB())
       end
     end
   end
-  throw(error("Could not identify group"))
+  error("Could not identify group")
 end
 
 function eval_word(S, w::Vector{Int})

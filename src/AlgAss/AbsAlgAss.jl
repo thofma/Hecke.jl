@@ -977,7 +977,7 @@ end
 
 function __as_field_with_isomorphism(A::AbsAlgAss{FqFieldElem}, f::FqPolyRingElem, M::FqMatrix)
   Fr, = Nemo._residue_field(f)
-  RtoFr = FqPolyRingToFqMor{typeof(parent(f)), typeof(Fr), typeof(f), Any}(Fr, f) 
+  RtoFr = FqPolyRingToFqMor{typeof(parent(f)), typeof(Fr), typeof(f), Any}(Fr, f)
   return Fr, AbsAlgAssToFqMor(A, Fr, inv(M), M, parent(f), RtoFr)
 end
 
@@ -1179,7 +1179,7 @@ function returns the restriction $B$ of $A$ to $K$ and maps from $A$ to $B$
 and from $B$ to $A$.
 """
 function restrict_scalars(A::AbsAlgAss{T}, K::Field) where {T}
-  #K == base_ring(A) && throw(error("Not yet implemented"))
+  #K == base_ring(A) && error("Not yet implemented")
   B, BtoA = AlgAss(A)::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
   C, BtoC, CtoB = restrict_scalars(B, K)
 
