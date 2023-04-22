@@ -204,6 +204,15 @@ function (f::AbToNfMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
+function preimage(f::AbToNfMultGrp, b::nf_elem)
+  i = 0
+  while i < order(f.domain) && f.generator^i != b
+    i += 1
+  end
+  i == order(f.domain) && error("not in the image")
+  return i*f.domain[1]
+end
+
 domain(f::AbToNfMultGrp) = f.domain
 
 codomain(f::AbToNfMultGrp) = f.codomain

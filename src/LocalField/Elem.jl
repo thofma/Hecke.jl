@@ -31,6 +31,7 @@ end
 
 function _generator_valuation(K::LocalField{S, T}) where {S <: Union{padic, qadic}, T <: LocalFieldParameter}
   f = defining_polynomial(K)
+#  @show K, f
   return QQFieldElem(valuation(coeff(f, 0)), degree(f))
 end
 
@@ -616,9 +617,11 @@ function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
       uniformizer(L)^v
     end
   end
-  if inertia_degree(L) == degree(L)
+ 
+  if !isa(L, LocalField{<:Any, EisensteinLocalField})
     return L(uniformizer(base_field(L), v, prec = prec))
   end
+  
   #possibly compute the pi^v only for v mod e the complicated way, and scale
   #by prime number afterwards
   #also: find out abs and rel prec....

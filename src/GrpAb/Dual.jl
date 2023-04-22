@@ -146,6 +146,13 @@ function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
   end
 end
 
+function Base.hash(a::QmodnZElem, h::UInt)
+  if parent(a).trivialmodulus
+    return hash(a.elt, h)
+  end
+  error("not implemented")
+end
+
 for T in [ZZRingElem, Integer, QQFieldElem, Rational]
   @eval begin
     Base.:(==)(a::$T, b::QmodnZElem) = parent(b)(a) == b

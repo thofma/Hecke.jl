@@ -298,7 +298,6 @@ function solve_1_units(a::Vector{T}, b::T) where T
     h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
     lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
     fl, s = haspreimage(h, lhs)
-#    @show s
     _k, _mk = kernel(h)
     #if kernel has HNF, the next step is cheaper...
     _mk.map = hnf(_mk.map)
@@ -584,6 +583,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
     end
     iszero(a) && continue
     valuation(a) == 0 && return inv(a)
+    return frobenius_equation2(c, F, frobenius = fr)#, start = inv(a))
     cnt += 1
     if cnt > 5
       return frobenius_equation2(c, F, frobenius = fr)
@@ -591,13 +591,17 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
   end
 end
 
-function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false)
+function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false, start::Union{Nothing, Hecke.LocalFieldElem} = nothing)
   E = parent(c)
   pr = precision(c)
   K, mK = residue_field(E)
   d = absolute_inertia_degree(base_field(E))
   X = ArtinSchreierSolveCtx(K, d)
-  a0 = preimage(mK, frobenius_equation(X, mK(c)))
+  if start === nothing
+    a0 = preimage(mK, frobenius_equation(X, mK(c)))
+  else
+    a0 = setprecision(start, precision(c))
+  end
 
   if frobenius == false
     fr = Hecke.frobenius(E, base_field(E))
@@ -731,11 +735,13 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
 
   beta = []
   sigma_hat = []
-  imGG = map(x->x(E(gen(L))), GG)
-  imG = map(x->x(gen(L)), G)
+  #need to map and compare all generators
+  gL = gens(L, K)
+  imGG = map(x->map(x, map(E, gL)), GG)
+  imG = map(x->map(x, gL), G)
 
   function G_mul(i::Int, j::Int)
-    gij = G[i](imG[j])
+    gij = map(G[i], imG[j])
     f = findall(isequal(gij), imG)
     if f === nothing || length(f) == 0
       f = argmax([valuation(x-gij) for x = imG], dims = 1)
@@ -747,7 +753,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   for sigma = G
     #sigma induces on the residue field a power of frobenius - we want the
     #power...
-    fa = findall(isequal(E(sigma(gen(L)))), imGG)
+    fa = findall(isequal(map(E, map(sigma, gL))), imGG)
     #fa are all extensions of sigma to L...
     #but now we want a specific one:
     #sigma, restricted to the residue field is some power of frobenius
@@ -758,8 +764,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
       @assert length(power_L) == 1
       power_L = power_L[1]
     end
-#    @show power_L
-     power_E = [findfirst(isequal([mE(GG[i](preimage(mE, x))) for x = gens(rE, rK)]), power_frob_E) for i = fa]
+    power_E = [findfirst(isequal([mE(GG[i](preimage(mE, x))) for x = gens(rE, rK)]), power_frob_E) for i = fa]
 
 #    @show fb = findall(isequal(power_L), power_E)
 #    @assert length(fb) == 1
@@ -772,7 +777,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     @assert length(fb) == 1
 
     c = GG[fa[fb[1]]](pi) * pi_inv
-  
+ 
     us = frobenius_equation(c, K, frobenius = fr)
     #think...
     @assert fr(us) == c*us || valuation(fr(us) - c*us) >= precision(c)//absolute_ramification_index(E)
@@ -798,11 +803,15 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   end
 
   return function(h, g)
-    i = findfirst(isequal(g), G)
+    i = findall(isequal(g), G)
+    @assert length(i) == 1
+    i = i[1]
     if i === nothing
       i = argmax(valuation(g(gen(L))-x) for x = imG)
     end
-    j = findfirst(isequal(h), G)
+    j = findall(isequal(h), G)
+    @assert length(j) == 1
+    j = j[1]
     if j === nothing
       j = argmax(valuation(h(gen(L))-x) for x = imG)
     end
@@ -930,6 +939,23 @@ function one_unit_group(K::LocalField)
     rel, po = solve_1_units(gens[1:end-1], gens[end])
     push!(rel, -po)
     h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
+    while h[1,1] > 20 
+      #=
+      Eisenstein extension with defining polynomial x^2 + (2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + 2^20 + 2^21 + 2^22 + 2^23 + 2^24 + 2^25 + 2^26 + 2^27 + 2^28 + 2^29 + 2^30 + 2^31 + O(2^32))*x + 2^1 + O(2^32) over Unramified extension of 2-adic numbers of degree 1
+
+      gens[1]^4 == gens[2]^4, hence gens[3] is independent.
+      solve_1_units -> rework as rels_1_units
+      completion of x^2+1 at 2
+      =#
+      @show :permuting, h[1,1]
+      i = rand(1:length(gens)-1)
+      gens[end], gens[i] = gens[i], gens[end]
+      rel, po = solve_1_units(gens[1:end-1], gens[end])
+      push!(rel, -po)
+      h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
+    end
+
+
     #h[1,1] is the torsion part - it should be a power of p
     #t (and/or the inverse) should give the basis of the free bit
     ti = inv(t)
@@ -972,6 +998,28 @@ function one_unit_group(K::LocalField)
   return G, MapFromFunc(from_G, to_G, G, K)
 end
 
+function teichmuller(a::LocalFieldElem)
+  k, mk = residue_field(parent(a))
+  ka = mk(a)
+  if iszero(ka)
+    return zero(a)
+  end
+  q = order(k)
+  if q == 2
+    return one(a)
+  end
+
+  fs = preimage(mk, inv((q-1)*ka^(q-2)))
+  while true
+    fa = a^(q-1)-1
+    if iszero(fa)
+      return a
+    end
+    a = a-fa*fs
+    fs = fs*(2-fs*(q-1)*a^(q-2))
+  end
+end
+
 function unit_group(K::LocalField)
   U, mU = one_unit_group(K)
   k, mk = residue_field(K)
@@ -982,10 +1030,8 @@ function unit_group(K::LocalField)
   Z = abelian_group([0])
   G, pro, inj = direct_product(Z, u, U, task = :both)
 
-  gk = preimage(mk, mu(u[1])) #needs to be Teichmueller or a group extension
-  while !iszero(gk^order(u)-1)
-    gk = gk^order(k)
-  end
+  gk = preimage(mk, mu(u[1]))
+  gk = teichmuller(gk)
   @assert order(u[1]) == order(u)
 
   from_G = function(g::GrpAbFinGenElem)
