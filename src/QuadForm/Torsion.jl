@@ -411,6 +411,13 @@ end
 
 ngens(T::TorQuadModule) = length(T.gens_lift)
 
+function gen(T::TorQuadModule, i::Int)
+  if isdefined(T, :gens)
+    return gens(T)[i]
+  end
+  return T(gen(abelian_group(T), i))
+end
+
 @doc raw"""
     getindex(T::TorQuadModule, i::Int) -> TorQuadModuleElem
 
@@ -431,12 +438,7 @@ julia> D[2]
 [0, 1, 0, 0]
 ```
 """
-function getindex(T::TorQuadModule, i::Int)
-  if isdefined(T, :gens)
-    return gens(T)[i]
-  end
-  return T(abelian_group(T)[i])
-end
+getindex(T::TorQuadModule, i::Int) = gen(T, i)
 
 parent(a::TorQuadModuleElem) = a.parent
 
