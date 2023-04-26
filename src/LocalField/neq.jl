@@ -58,6 +58,10 @@ function trace_equation(F::Union{FlintQadicField, Hecke.LocalField}, a::Union{He
   return A*F(a) #F(a) here and above due to missing promote rule
 end
 
+function is_norm(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.UnramifiedLocalField}}, a::padic)
+  return valuation(a) % degree(F) == 0
+end
+
 function norm_equation(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.UnramifiedLocalField}}, a::padic)
   v = valuation(a)
   if v % degree(F) != 0
@@ -342,11 +346,23 @@ function solve_1_units(a::Vector{T}, b::T) where T
   return [expo[1, i] for i=1:length(cur_a)], pow_b
 end
 
-function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFieldElem})
+function is_norm(K::Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFieldElem})
+  return _norm_equation(K, b, test_only = true)::Bool
+end
+
+function norm_equation(K::Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFieldElem})
+  return _norm_equation(K, b, test_only = false)::elem_type(K)
+end
+
+function _norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFieldElem}; test_only::Bool)
   if iszero(b)
+    test_only && return true
     return zero(K)
   end
   if ramification_index(K, parent(b)) == 1
+    if test_only 
+      return Int(valuation(b)*absolute_ramification_index(K)) % degree(K, parent(b)) == 0
+    end
     return norm_equation_unramified(K, b)
   end
   #multi-step algo:
@@ -367,6 +383,9 @@ function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFie
   # then b/N(X) is a 1-unit
   @assert valuation(b) == 0
   k, mk = residue_field(K)
+  fl, rt = is_power(mk(K(b)), e)
+  test_only && !fl && return false
+  @assert fl
   c = preimage(mk, root(mk(K(b)), e))
   so *= c
   b *= inv(norm(c))
@@ -380,6 +399,7 @@ function norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFie
   end
   ng = map(norm, g)
   s, po = solve_1_units(ng, bb)
+  test_only && return po == 1
   @assert po == 1
   c = setprecision(prod(g[i]^s[i] for i=1:length(s)), precision(b)*e)
 
@@ -546,6 +566,8 @@ function artin_schreier_equation(X::ArtinSchreierSolveCtx, c::FinFieldElem)
 end
 
 function frobenius(E::Hecke.LocalField, F::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
+  #stupid approach... if E/F is unramified, then lifting of one root
+  #should be enough,
   a = automorphism_list(E, F)
   K, mK = residue_field(E)
   k, mk = residue_field(F)
@@ -558,6 +580,32 @@ function frobenius(E::Hecke.LocalField, F::Union{Hecke.LocalField, FlintPadicFie
   return a[f[1]]
 end
 
+struct MapEvalCtx
+  domain::Ring
+  codomain::Ring
+
+  map::Generic.MatSpaceElem{padic}
+
+  function MapEvalCtx(M::LocalFieldMor)
+    mat = matrix(prime_field(domain(M)), 
+                 absolute_degree(domain(M)),
+                 absolute_degree(codomain(M)),
+                 vcat([absolute_coordinates(M(x)) 
+                      for x = absolute_basis(domain(M))]...))
+
+    return new(domain(M), codomain(M), mat)                  
+  end
+end
+
+function Hecke.image(M::MapEvalCtx, a::LocalFieldElem)
+  b = inv_absolute_coordinates(M.codomain, absolute_coordinates(a)*M.map)
+  return b
+end
+
+function (M::MapEvalCtx)(a::LocalFieldElem)
+  return image(M, a)
+end
+
 """
 solve, hopefully,
     x^phi//x = c
@@ -565,32 +613,69 @@ solve, hopefully,
 """
 function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false)
   E = parent(c)
+  #solves using Lagrange resolvent
+  #problem: we'd like to have a unit solution (no precision loss when
+  #inverting), but the resolvent tends to have valuation (small primes)
+  #possibilities:
+  # - start with negative valuation to get a solution of val 0
+  # - live with the valuation and use frobenius_equation2 to 
+  #   add precision at the end
+  # - start with elem of val 0, then generically, the valuation of the
+  #   resolvent should be the valuation of the abs. degree
+  #   as long as the valuation comes from primes in ZZ, that are
+  #   Galois-invariant, we can just scale by p and get a solution of
+  #   val zero
+
+  local fr::MapEvalCtx
 
   if frobenius == false
-    fr = Hecke.frobenius(E, F)
+    fr = MapEvalCtx(Hecke.frobenius(E, F))
   else
-    fr = frobenius# ::Map{LocalField, LocalField}
+    if isa(frobenius, MapEvalCtx)
+      fr = frobenius
+    else
+      fr = MapEvalCtx(frobenius)# ::Map{LocalField, LocalField}
+    end
   end
 
-  cnt = 0
-  while true
-    gamma = random_elem(E)
-    b = gamma
-    a = zero(E)
-    for i=1:divexact(absolute_degree(E), absolute_degree(F))
-      a += b
-      b = c*fr(b)
+  v_deg = valuation(absolute_degree(E), prime(E))
+  setprecision(E, precision(E) + v_deg) do
+    c = setprecision(c, precision(E))
+    cnt = 0
+    while true
+      local gamma
+      while true
+        gamma = random_elem(E)#*uniformizer(E, -absolute_ramification_index(E))
+        if !iszero(gamma) && valuation(gamma) == 0
+          break
+        end
+      end
+      b = gamma
+      a = zero(E)
+      for i=1:divexact(absolute_degree(E), absolute_degree(F))
+        a += b
+        b = c*fr(b)
+      end
+      iszero(a) && continue
+      va = valuation(a)
+      va == 0 && return inv(a)
+      @show va, v_deg
+      if va <= v_deg 
+        denominator(va) == 1 && return inv(divexact(a, prime(E)^Int(va)))
+        @show :shit
+      end
+        
+#      return frobenius_equation2(c, F, frobenius = fr, start = inv(a))
+      cnt += 1
+      if cnt > 5
+        return frobenius_equation2(c, F, frobenius = fr)
+      end
     end
-    iszero(a) && continue
-    valuation(a) == 0 && return inv(a)
-    return frobenius_equation2(c, F, frobenius = fr)#, start = inv(a))
-    cnt += 1
-    if cnt > 5
-      return frobenius_equation2(c, F, frobenius = fr)
-    end
-  end
+  end #setprecision
 end
 
+#solve the same as above, but pi-adic digit by pi-adic digit, thus
+#slow for large precision
 function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, FlintQadicField, Hecke.LocalField}; frobenius = false, start::Union{Nothing, Hecke.LocalFieldElem} = nothing)
   E = parent(c)
   pr = precision(c)
@@ -603,8 +688,9 @@ function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, 
     a0 = setprecision(start, precision(c))
   end
 
+  local fr::MapEvalCtx
   if frobenius == false
-    fr = Hecke.frobenius(E, base_field(E))
+    fr = MapEvalCtx(Hecke.frobenius(E, base_field(E)))
   else
     fr = frobenius# ::Map{LocalField, LocalField}
   end
@@ -621,27 +707,30 @@ function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, 
   eE = absolute_ramification_index(E)
   @assert valuation(p)*eE == 1
   bla = 1
+  cc = c*s*fr(is)
+  v = valuation(cc-1)
   while true
+    if isone(cc)
+      return s
+    end
+    @assert v > 0
+    pvE = uniformizer(E, Int(v*eE))
+    pvE_inv = uniformizer(E, -Int(v*eE))
+    x = mK((cc-1)* pvE_inv)
+    a = preimage(mK, artin_schreier_equation(X, x))
+    t = (1+pvE*a)
+    s *= t
+    is *= inv(t)
     cc = c*s*fr(is)
     if isone(cc)
       return s
     end
-    v = valuation(cc-1)
-    @assert v > 0
-    x = mK(divexact(cc-1, p^Int(v*eE)))
-    a = preimage(mK, artin_schreier_equation(X, x))
-    t = (1+p^Int(v*eE)*a)
-    s *= t
-    is *= inv(t)
-    t = c*s*fr(is)
-    if isone(t)
-      return s
-    end
-    vv = valuation(t - 1)
+    vv = valuation(cc - 1)
     if vv*eE >= pr
       return setprecision(s, pr)
     end
     @assert vv > v "does not converge"
+    v = vv
 
     bla += 1
     if bla > eE*precision(c)
@@ -670,29 +759,60 @@ function gens(L::FinField, l::FinField)
   return g
 end
 
-function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.LocalField, FlintPadicField, FlintQadicField})
+#big TODO: figure out how to do this relative...
+#  want local class for (K/k)_p, but the completions of k and K do not
+#  know of each other. In current example C:Q_p = 20, but C:c = 5, so
+#  4x faster if restricted automorphisms are used.
+function local_fundamental_class_serre(L::Hecke.LocalField, K::FlintPadicField)
+  return local_fundamental_class_serre(hom(K, L))
+end
+
+function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.LocalField, FlintQadicField})
+  return local_fundamental_class_serre(hom(K, L, L(gen(K))))
+end
+
+function gens(k::FlintPadicField, K::FlintPadicField)
+  return [k(1)]
+end
+
+function gen(k::Nemo.fpField)
+  return k(1)
+end
+
+function defining_polynomial(k::Nemo.fpField)
+  kx, x = polynomial_ring(k, cached = false)
+  return x-k(1)
+end
+
+function local_fundamental_class_serre(mKL::LocalFieldMor)
+  K = domain(mKL)
+  L = codomain(mKL)
 
   e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
   d = divexact(absolute_inertia_degree(L), absolute_inertia_degree(K))
   E = unramified_extension(L, e)[1]
-  G = automorphism_list(L, K)
+  G = automorphism_list(L, prime_field(L))
+  gK = map(mKL, gens(K, prime_field(K)))
+  G = [g for g = G if map(g, gK) == gK]
   @assert Base.length(G) == absolute_degree(L)/absolute_degree(K)
 
-  u = L(uniformizer(K))//uniformizer(L)^e
+  u = mKL(uniformizer(K))//uniformizer(L)^e
   @assert valuation(u) == 0
   v = norm_equation(E, u)
   @assert valuation(v) == 0
+  global last_neq = (E, u, v)
   @assert norm(v) == u
   pi = v*uniformizer(L)
   pi_inv = inv(pi)
   
   #if (like here) L is Eisenstein over unram, then the automorphisms are easier
-  if ramification_index(L) == degree(L)#so we're ramified
+  global last_mKL = mKL
+  if ramification_index(L) == degree(L) && e > 1#so we're ramified
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
     E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E)))
-    G2 = automorphism_list(E2, K)
-    GG = []
+    G2 = automorphism_list(E2, prime_field(E2)) 
+    GG = morphism_type(E)[]
     for e = G2
       ime = e(gen(E2))
       imeE = E(map_coefficients(L, ime.data))
@@ -704,39 +824,43 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
         end
       end
     end
+    @assert length(GG) == divexact(absolute_degree(E), absolute_degree(K))
 #    @assert all(x->x in GG, automorphism_list(E, K))
   else
-    GG = automorphism_list(E, K)
+    GG = automorphism_list(E, prime_field(E))
+    gK = map(E, gK)
+    GG = [g for g = GG if map(g, gK) == gK]
   end 
 
   rE, mE = residue_field(E)
   rL, mL = residue_field(L)
   rK, mK = residue_field(K)
+  mrKL = hom(rK, rL, mL(mKL(preimage(mK, gen(rK)))))
   q = order(rK)
 
   #the gens are necessary as sometimes the defining eq. for rE is over
   #F_p rather than rL - then just testing the gen(rE) amounts to restricting
   #to a much smaller subfield
-  power_frob_L = [gens(rL, rK)]
+  power_frob_L = [gens(rL, prime_field(rL))]
   while length(power_frob_L) < absolute_degree(rL)/absolute_degree(rK)
     push!(power_frob_L, power_frob_L[end] .^q)
   end
 
-  power_frob_E = [gens(rE, rK)]
+  power_frob_E = [gens(rE, prime_field(rL))]
   while length(power_frob_E) < absolute_degree(rE)/absolute_degree(rK)
     push!(power_frob_E, power_frob_E[end] .^q)
   end
 
-  fr = frobenius(E, L)
+  fr = MapEvalCtx(frobenius(E, L))
  
-  z = findall(isequal([mE(fr(preimage(mE, x))) for x = gens(rE, rK)]), power_frob_E)
+  z = findall(isequal([mE(fr(preimage(mE, x))) for x = gens(rE, prime_field(rE))]), power_frob_E)
   @assert length(z) == 1
 #  @assert z[1] == d+1  #for d == 1 wrong
 
   beta = []
   sigma_hat = []
   #need to map and compare all generators
-  gL = gens(L, K)
+  gL = gens(L, prime_field(L))
   imGG = map(x->map(x, map(E, gL)), GG)
   imG = map(x->map(x, gL), G)
 
@@ -760,11 +884,11 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     #we want sigma^-1 restricted to be frob^j for small j
     power_L = 1
     if !isa(rL, Nemo.fpField)
-      power_L = findall(isequal([mL(sigma(preimage(mL, x))) for x = gens(rL, rK)]), power_frob_L)
+      power_L = findall(isequal([mL(sigma(preimage(mL, x))) for x = gens(rL, prime_field(rL))]), power_frob_L)
       @assert length(power_L) == 1
       power_L = power_L[1]
     end
-    power_E = [findfirst(isequal([mE(GG[i](preimage(mE, x))) for x = gens(rE, rK)]), power_frob_E) for i = fa]
+    power_E = [findfirst(isequal([mE(GG[i](preimage(mE, x))) for x = gens(rE, prime_field(rE))]), power_frob_E) for i = fa]
 
 #    @show fb = findall(isequal(power_L), power_E)
 #    @assert length(fb) == 1
@@ -777,7 +901,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
     @assert length(fb) == 1
 
     c = GG[fa[fb[1]]](pi) * pi_inv
- 
+
     us = frobenius_equation(c, K, frobenius = fr)
     #think...
     @assert fr(us) == c*us || valuation(fr(us) - c*us) >= precision(c)//absolute_ramification_index(E)
