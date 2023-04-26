@@ -161,6 +161,10 @@
   k = quadratic_field(8*9)[1]
   e = equation_order(k)
   @test degree(Hecke.ring_class_field(e)) == 2
+
+  k, _ = number_field(x^3 - 69*x - 52)
+  kk = number_field(ray_class_field(1*maximal_order(k), real_places(k)))
+  @test degree(kk) == 2
 end
 
 @testset "Jon Yard" begin
