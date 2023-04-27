@@ -25,7 +25,7 @@ jobs:
     - name: "Set up Julia"
       uses: julia-actions/setup-julia@v1
       with:
-        version: '~1.6.0-0'
+        version: '~1.8.0-0'
     - name: OscarDevTools - CI
       if: github.repository == 'oscar-system/OscarDevTools.jl'
       run: |
@@ -100,7 +100,7 @@ jobs:
           echo '${{ env.oscar_run_tests }}'
           julia --project=oscar-dev/project/ -e '${{ env.oscar_run_tests }}'
       - name: "Run doctests"
-        if: matrix.julia-version == '~1.6.0-0' || matrix.julia-version == '1.6'
+        if: matrix.julia-version == '~1.8.0-0' || matrix.julia-version == '1.8'
         run: |
           echo '${{ env.oscar_run_doctests }}'
           julia --project=oscar-dev/project/ -e '${{ env.oscar_run_doctests }}'

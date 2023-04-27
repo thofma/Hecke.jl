@@ -148,7 +148,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   if isdefined(c, :randomClsEnv)
     J = c.randomClsEnv
   else
-    J = random_init(c.FB.ideals[max(1, length(c.FB.ideals)-10):length(c.FB.ideals)], lb = root(abs(discriminant(O)), 2), ub = abs(discriminant(O)))
+    J = random_init(c.FB.ideals[max(1, length(c.FB.ideals)-10):length(c.FB.ideals)], lb = iroot(abs(discriminant(O)), 2), ub = abs(discriminant(O)))
     c.randomClsEnv = J
   end
   use_rand = false
