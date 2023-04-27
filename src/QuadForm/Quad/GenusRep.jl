@@ -904,7 +904,6 @@ function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
   return gens
 end
 
-# TODO: Enable use_auto
 function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = inf)
   R = base_ring(L)
   F = nf(R)
@@ -935,8 +934,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   if use_auto
     G = automorphism_group_generators(L)
     @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
-    Binv = inv(B)
-    adjust_gens = eltype(G)[B * g * Binv for g in G]
+    adjust_gens = eltype(G)[solve_left(B, B*g) for g in G]
     @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
     adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
@@ -1492,7 +1490,7 @@ function _genus_representatives_binary_quadratic_definite(L::QuadLat; max = inf,
   res = typeof(L)[]
   for M in lat
     Mre = rescale(M, inv(d))
-    @test genus(Mre) == G
+    @assert genus(Mre) == G
     push!(res, Mre)
   end
   return res
