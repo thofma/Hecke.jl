@@ -314,7 +314,11 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
 
   if bound == -1
     bound = maximum(diagonal(C.G[1]))
-    Csmall.max = Int(bound)
+    if fits(Int, bound)
+      Csmall.max = Int(bound)
+    else
+      return false, Csmall
+    end
   else
     Csmall.max = -1
   end
@@ -2069,11 +2073,11 @@ end
 
 function _norm(v::ZZMatrix, M::ZZMatrix, tmp::ZZMatrix = zero_matrix(FlintZZ, 1, ncols(v)))
   mul!(tmp, v, M)
-  return (v * tmp')[1, 1]
+  return (v * transpose(tmp))[1, 1]
 end
 
 function _dot_product(v::ZZMatrix, M::ZZMatrix, w::ZZMatrix)
-  return (v * M * w')[1, 1]
+  return (v * M * transpose(w))[1, 1]
 end
 
 #
