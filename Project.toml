@@ -1,6 +1,6 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.18.9"
+version = "0.18.10"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
