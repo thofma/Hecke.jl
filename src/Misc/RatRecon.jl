@@ -64,11 +64,23 @@ end
 Tries to solve $ay=x mod b$ for $x,y < sqrt(M/2)$. If possible, returns
   (`true`, $x$, $y$) or (`false`, garbage) if not possible.
 """
-function rational_reconstruction(a::ZZRingElem, b::ZZRingElem)
-  res = QQFieldElem()
-  a = mod(a, b)
-  fl = ccall((:fmpq_reconstruct_fmpz, libflint), Int, (Ref{QQFieldElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), res, a, b)
-  return fl!=0, numerator(res), denominator(res)
+function rational_reconstruction(a::ZZRingElem, b::ZZRingElem; ErrorTolerant::Bool = false)
+  if ErrorTolerant
+    m = matrix(ZZ, 2, 2, [a, ZZRingElem(1), b, ZZRingElem(0)])
+    lll!(m)
+    x = m[1,1]
+    y = m[1,2]
+    @assert (a*y-x) % b == 0
+    g = gcd(x, y)
+    divexact!(x, g)
+    divexact!(y, g)
+    return nbits(x)+nbits(y)+2*nbits(g) + 20 < nbits(b), x, y
+  else
+    res = QQFieldElem()
+    a = mod(a, b)
+    fl = ccall((:fmpq_reconstruct_fmpz, libflint), Int, (Ref{QQFieldElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), res, a, b)
+    return fl!=0, numerator(res), denominator(res)
+  end
 end
 
 function rational_reconstruction(a::Integer, b::Integer)
