@@ -61,8 +61,20 @@ end
     rational_reconstruction(a::ZZRingElem, b::ZZRingElem)
     rational_reconstruction(a::Integer, b::Integer)
 
-Tries to solve $ay=x mod b$ for $x,y < sqrt(M/2)$. If possible, returns
+Tries to solve $ay=x mod b$ for $x,y < sqrt(b/2)$. If possible, returns
   (`true`, $x$, $y$) or (`false`, garbage) if not possible.
+
+By default `y` and `b` have to be coprime for a valid solution. It is
+well known that then the solution is unique.
+
+If `ErrorTolerant` is set to `true`, then a solution is also accepted if
+`x`, `y` and `b` have a common divisor `g` and if
+  `a(y/g) = (x/g) mod (b/g)` is true and if the combined size is small enough,
+The typical application are modular algorithms where
+ - there are finitely many bad primes (ie. the `mod p` datum does
+   not match the global solution modulo `p`)
+ - that cannot be detected
+In this case `g` will be the product of the bad primes.
 """
 function rational_reconstruction(a::ZZRingElem, b::ZZRingElem; ErrorTolerant::Bool = false)
   if ErrorTolerant
