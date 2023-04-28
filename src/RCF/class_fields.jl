@@ -603,11 +603,14 @@ function grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, 
     kk = rationals_as_number_field()[1]
     zz = maximal_order(kk)
     d = Dict{Any, Int}(gen(p)*zz => dp[p] for p = keys(dp))
-      for i = keys(di)
-      d[complex_embeddinsgs(kk)[1]] => di[i]
+    if length(di) > 0
+      push!(d, complex_embeddings(kk)[1] => first(values(di)))
     end
   else
-    d = copy(dp)
+    d = Dict{Any, Int}()
+    for i = dp
+      push!(d, i)
+    end
     for i = di
       push!(d, i)
     end
