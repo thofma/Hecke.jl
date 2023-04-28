@@ -349,7 +349,7 @@ function _assert_has_preimage_data(f::LocalFieldMor)
     end
   end
 
-  r, R, U =  _rref_with_trans(M)
+  r, R, U =  _rref_with_trans(M) #terribly unstable numerically
   pivots = _get_pivots_ut(R)
 
   f.absolute_basis_matrix_image = M
