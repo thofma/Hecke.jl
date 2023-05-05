@@ -11,6 +11,7 @@
 
 @alias get_assert_level get_assertion_level
 @alias get_verbose_level get_verbosity_level
+@alias genera Zgenera
 @alias genera_hermitian hermitian_genera
 @alias genera_quadratic quadratic_genera
 @alias GenusHerm HermGenus

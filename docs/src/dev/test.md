@@ -17,7 +17,7 @@ The Hecke tests can be found in `Hecke/test/` and are organized in such a way th
 │   │   │   ├── NormalForm.jl
 │   │   │   ├── Spaces.jl
 │   │   │   ├── Types.jl
-│   │   │   ├── ZZGenus.jl
+│   │   │   ├── ZGenus.jl
 │   │   │   └── ZLattices.jl
 │   │   ├── QuadBin.jl
 │   │   ├── Torsion.jl
@@ -35,7 +35,7 @@ The Hecke tests can be found in `Hecke/test/` and are organized in such a way th
 │   │   │   ├── GenusRep.jl
 │   │   │   ├── NormalForm.jl
 │   │   │   ├── Spaces.jl
-│   │   │   ├── ZZGenus.jl
+│   │   │   ├── ZGenus.jl
 │   │   │   └── ZLattices.jl
 │   │   ├── QuadBin.jl
 │   │   └── Torsion.jl
