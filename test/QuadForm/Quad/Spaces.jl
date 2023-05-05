@@ -413,7 +413,7 @@
     @test is_isometric(q,r, p)
     @test is_isometric(q,r, infF)
     @test is_isometric(q,r)
-    L = Zlattice(gram=ZZ[1 1; 1 2])
+    L = integer_lattice(gram=ZZ[1 1; 1 2])
     g = genus(L)
     c1 = Hecke.isometry_class(ambient_space(L))
     c2 = Hecke.rational_isometry_class(g)

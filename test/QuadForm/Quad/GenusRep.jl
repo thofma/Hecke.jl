@@ -70,7 +70,7 @@
   @test is_locally_isometric(L, LL, p)
 
   # Rank 2 case
-  # This is the Zlattice with basis [1 2; 3 4]
+  # This is the integer_lattice with basis [1 2; 3 4]
 
   Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   f = x - 1;
@@ -101,14 +101,14 @@
   V = quadratic_space(QQ, G)
   L = lattice(V, B)
   @test length(genus_representatives(L)) == 2
-  @test length(genus_representatives(Zlattice(gram = gram_matrix(L)))) == 2
+  @test length(genus_representatives(integer_lattice(gram = gram_matrix(L)))) == 2
 
-  L = Zlattice(ZZ[4 3; 3 8])
+  L = integer_lattice(ZZ[4 3; 3 8])
   @test length(genus_representatives(L)) == 4
 
   B = matrix(FlintQQ, 5, 5 ,[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]);
   G = matrix(FlintQQ, 5, 5 ,[-2, 0, 0, 0, 0, 0, -4, -2, 2, 2, 0, -2, -4, 0, 0, 0, 2, 0, -4, 0, 0, 2, 0, 0, -4]);
-  L = Zlattice(B, gram = G);
+  L = integer_lattice(B, gram = G);
   @test length(genus_representatives(L))==1
 
 end
@@ -1096,7 +1096,7 @@ end
 @testset "Genus Representatives non-full rank, definite" begin
   B = matrix(FlintQQ, 5, 8 ,[0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 31//2, 3//2, 1//2, 1, 0, 0, 0, 0, 5//2, 3//2, 0, 0, 1//2]);
   G = matrix(FlintQQ, 8, 8 ,[16, -8, 0, 0, 0, 0, 0, 0, -8, 16, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 6]);
-  L = Zlattice(B, gram = G);
+  L = integer_lattice(B, gram = G);
   Ns = @inferred genus_representatives(L) #this uses the automorphisms
 
   L2 = Hecke._to_number_field_lattice(L)

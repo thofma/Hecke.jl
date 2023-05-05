@@ -1,5 +1,5 @@
 @testset "QuadForm/CloseVectors" begin
-  L = Zlattice(gram = matrix(QQ, 3, 3, [1, 0, 0,
+  L = integer_lattice(gram = matrix(QQ, 3, 3, [1, 0, 0,
                                         0, 1, 0,
                                         0, 0, 1]))
   v = [-1, 0, 0]
@@ -46,7 +46,7 @@
                                     [0, 0, -1], [0, 0, 1], [-1, 0, -1], [-1, 0, 1],
                                     [0, -1, -1], [0, -1, 1]])
 
-  L = Zlattice(matrix(QQ, 1, 1, [2]))
+  L = integer_lattice(matrix(QQ, 1, 1, [2]))
   cl = @inferred close_vectors(L, [0], 1)
   @test first.(cl) == [[0]]
   cl = @inferred collect(close_vectors_iterator(L, [0], 1))
@@ -67,13 +67,13 @@
   cl = @inferred collect(close_vectors_iterator(L, [0], 9//2, 9//2))
   @test isempty(cl)
 
-  L = Zlattice(matrix(QQ, 1, 1, [2]); gram = matrix(QQ, 1, 1, [1//2]))
+  L = integer_lattice(matrix(QQ, 1, 1, [2]); gram = matrix(QQ, 1, 1, [1//2]))
   cl = @inferred close_vectors(L, [0], 20)
   @test issetequal(first.(cl), Vector{ZZRingElem}[[i] for i in -3:3])
   cl = @inferred collect(close_vectors_iterator(L, [0], 20))
   @test issetequal(first.(cl), Vector{ZZRingElem}[[i] for i in -3:3])
 
-  L = Zlattice(gram = identity_matrix(QQ, 6))
+  L = integer_lattice(gram = identity_matrix(QQ, 6))
   v = [-1, 0, -1, 0, -2, 0]
   u = 14//3
   cl = close_vectors(L, v, u)
@@ -83,7 +83,7 @@
   @test length(unique(cl)) == 485
   @test all(x -> x[2] == inner_product(rational_span(L), QQ.(x[1] - v), QQ.(x[1] - v)) <= u, cl)
 
-  L = Zlattice(gram = identity_matrix(QQ, 6))
+  L = integer_lattice(gram = identity_matrix(QQ, 6))
   v = [-1, 0, -1, 0, -2, 0]
   u = 14//3
   cl = close_vectors(L, v, u)
@@ -103,7 +103,7 @@
   cl = collect(close_vectors_iterator(L, v, 3, 4))
   @test length(cl) == 412
 
-  L = Zlattice(matrix(QQ, 2, 2, [1, 0, 0, 2]))
+  L = integer_lattice(matrix(QQ, 2, 2, [1, 0, 0, 2]))
   v = [1, 1]
   u = 3
   cl = close_vectors(L, v, u)
@@ -121,13 +121,13 @@
   @test length(cl) == 7
   @test all(x -> x[2] == inner_product(rational_span(L), QQ.(x[1] - v), QQ.(x[1] - v)) <= u, cl)
 
-  L = Zlattice(;gram = QQ[0 0; 0 0])
+  L = integer_lattice(;gram = QQ[0 0; 0 0])
   @test_throws ArgumentError close_vectors(L, [1, 1], 1)
   @test_throws ArgumentError close_vectors_iterator(L, [1, 1], 1)
-  L = Zlattice(;gram = QQ[-1 0; 0 -1])
+  L = integer_lattice(;gram = QQ[-1 0; 0 -1])
   @test_throws ArgumentError close_vectors(L, [1, 1], 1)
   @test_throws ArgumentError close_vectors_iterator(L, [1, 1], 1)
-  L = Zlattice(;gram = QQ[1 0; 0 1])
+  L = integer_lattice(;gram = QQ[1 0; 0 1])
   @test_throws ArgumentError close_vectors(L, [1, 1, 1], 1)
   @test_throws ArgumentError close_vectors_iterator(L, [1, 1, 1], 1)
   @test_throws ArgumentError close_vectors(L, [1], 1)

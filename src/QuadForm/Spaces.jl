@@ -50,7 +50,7 @@ function image(f::AbstractSpaceMor, L::AbstractLat)
   end
 end
 
-function image(f::AbstractSpaceMor, L::ZLat)
+function image(f::AbstractSpaceMor, L::ZZLat)
   V = domain(f)
   @req V==ambient_space(L) "L not in domain"
   W = codomain(f)
@@ -59,7 +59,7 @@ function image(f::AbstractSpaceMor, L::ZLat)
   return lattice(W, B, isbasis=isbasis, check=false)
 end
 
-function preimage(f::AbstractSpaceMor, L::ZLat)
+function preimage(f::AbstractSpaceMor, L::ZZLat)
   V = domain(f)
   W = codomain(f)
   @req W==ambient_space(L) "L not in codomain"

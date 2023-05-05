@@ -228,17 +228,17 @@ end
 #
 ################################################################################
 
-function to_hecke(io::IO, L::ZLat; target = "L", skip_field = false)
+function to_hecke(io::IO, L::ZZLat; target = "L", skip_field = false)
   B = basis_matrix(L)
   G = gram_matrix(ambient_space(L))
   Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
   Gst = "[" * split(string([G[i, j] for i in 1:nrows(G) for j in 1:ncols(G)]), '[')[2]
   println(io, "B = matrix(FlintQQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
   println(io, "G = matrix(FlintQQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
-  println(io, target, " = ", "Zlattice(B, gram = G);")
+  println(io, target, " = ", "integer_lattice(B, gram = G);")
 end
 
-function to_magma(io::IO, L::ZLat; target = "L")
+function to_magma(io::IO, L::ZZLat; target = "L")
   B = basis_matrix(L)
   G = gram_matrix(ambient_space(L))
   Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
@@ -260,7 +260,7 @@ function to_sage_string(L::AbstractLat; target = "L")
   return String(take!(b))
 end
 
-function to_sage(io::IO, L::ZLat; target = "L")
+function to_sage(io::IO, L::ZZLat; target = "L")
   B = basis_matrix(L)
   G = gram_matrix(ambient_space(L))
   Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]

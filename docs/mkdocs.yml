@@ -91,7 +91,7 @@ nav:
       - Lattices: 'quad_forms/lattices.md'
       - Integer lattices: 'quad_forms/integer_lattices.md'
       - Genera for hermitian lattices: 'quad_forms/genusherm.md'
-      - Genera for integer lattices: 'quad_forms/Zgenera.md'
+      - Genera for integer lattices: 'quad_forms/integer_genera.md'
       - Discriminant groups: 'quad_forms/discriminant_group.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md

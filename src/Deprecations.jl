@@ -34,7 +34,7 @@
 
 # Deprecated during 0.18.*
 
-@deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZGenus, ZpGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
+@deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZZGenus, LocalZZGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
 
 # Things that moved to Nemo
 

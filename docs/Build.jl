@@ -29,7 +29,7 @@ pages = [
 					      "quad_forms/lattices.md",
 					      "quad_forms/genusherm.md",
 					      "quad_forms/integer_lattices.md",
-					      "quad_forms/Zgenera.md",
+					      "quad_forms/integer_genera.md",
 					      "quad_forms/discriminant_group.md"
 					    ],
          "Abelian groups" => "abelian/introduction.md",
