@@ -22,7 +22,7 @@ where $n \mathbb{Z} = \Phi(M,N)$ and
 $m \mathbb{Z} = 2n\mathbb{Z} + \sum_{x \in N} \mathbb{Z} \Phi (x,x)$.
 
 ```@docs
-torsion_quadratic_module(M::ZLat, N::ZLat)
+torsion_quadratic_module(M::ZZLat, N::ZZLat)
 ```
 
 ### The underlying Type
@@ -92,7 +92,7 @@ integral integer quadratic lattices.
 ### From a lattice
 
 ```@docs
-discriminant_group(::ZLat)
+discriminant_group(::ZZLat)
 ```
 
 ### From a Matrix

@@ -1,7 +1,7 @@
 @testset "Database" begin
   DB = Hecke.lattice_database()
   L = lattice(DB, 1)
-  @assert L isa ZLat
+  @assert L isa ZZLat
 
   DB = Hecke.quadratic_lattice_database()
   L = lattice(DB, 1)

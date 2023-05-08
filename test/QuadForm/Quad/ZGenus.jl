@@ -1,4 +1,4 @@
-@testset "ZGenus" begin
+@testset "ZZGenus" begin
   A = matrix(ZZ, 2, 2, [1, 1, 1, 1])
   @test (false, 1) == Hecke._iseven(A)
   A = matrix(ZZ, 2, 2, [2, 1, 1, 2])
@@ -36,8 +36,8 @@
   @test Hecke._two_adic_symbol(A, 2) == [[0, 2, 3, 1, 4], [1, 1, 1, 1, 1], [2, 1, 1, 1, 1]]
 
   #equality testing
-  g1 = ZpGenus(2,[[0, 2, 7, 0, 0], [3, 1, 7, 1, 7]])
-  g2 = ZpGenus(2,[[0, 2, 3, 0, 0], [3, 1, 3, 1, 3]])
+  g1 = LocalZZGenus(2,[[0, 2, 7, 0, 0], [3, 1, 7, 1, 7]])
+  g2 = LocalZZGenus(2,[[0, 2, 3, 0, 0], [3, 1, 3, 1, 3]])
   @test g1 != g2
 
   g1 = genus(A, 3)
@@ -114,8 +114,8 @@
   @test size(Hecke._local_genera(2, 3, 1, 0, 2, true))[1]==4
   @test size(Hecke._local_genera(5, 2, 2, 0, 2, true))[1]==6
 
-  @test length(Zgenera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
-  @test 4 == length(Zgenera((4,0), 125, even=true))
+  @test length(integer_genera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
+  @test 4 == length(integer_genera((4,0), 125, even=true))
   G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
   @test 36 == level(G)
   G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
@@ -138,7 +138,7 @@
   A = diagonal_matrix(ZZRingElem[2, -4, 6, 8])
   G = genus(A)
   q1 = discriminant_group(G)
-  q2 = discriminant_group(Zlattice(gram=A))
+  q2 = discriminant_group(integer_lattice(gram=A))
 
   A = matrix(ZZ, 0, 0, [])
   g2 = genus(A, 2)
@@ -245,7 +245,7 @@
   @test !Hecke._isglobal_genus(G)
 
 
-  L = Zlattice(gram=matrix(ZZ, 2, 2, [0, 1, 1, 0]))
+  L = integer_lattice(gram=matrix(ZZ, 2, 2, [0, 1, 1, 0]))
   G = genus(L)
   g2 = genus(L, 2)
   g7 = genus(L, 7)
@@ -253,13 +253,13 @@
   @test local_symbol(G, 7) == g7
   q = discriminant_group(G) # corner case
   @test order(q) == 1
-  L2 = Zlattice(gram=2*ZZ[2 1; 1 2])
+  L2 = integer_lattice(gram=2*ZZ[2 1; 1 2])
   G2 = genus(L2)
   @test genus(direct_sum(L,L2)[1]) == direct_sum(G, G2)
   @test length(representatives(G2)) == 1
   @test representative(G2)===representative(G2) # caching
 
-  G = Zgenera((8,0), 1, even=true)[1]
+  G = integer_genera((8,0), 1, even=true)[1]
   @test mass(G) == 1//696729600
 
   G = genus(diagonal_matrix(ZZRingElem[1, 3, 9]),3)
@@ -281,7 +281,7 @@
   genus_orders_sage = [[1, 1], [1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1], [1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 2, 2], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 2], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 2], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 2, 2, 2, 2], [1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [2, 2], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 2, 2, 2, 2], [1, 2], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1], [1, 1, 1, 1, 2, 2], [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2], [1, 2], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 3, 3, 3, 3], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 2, 2, 2], [1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 2, 2], [2, 2], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 2, 2], [1, 2], [1, 1, 1, 1, 1, 1], [1, 2, 2, 2], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 2, 2], [1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 3, 3, 4, 4], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 2], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 2, 2], [1, 1, 1, 1], [1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1], [1, 2], [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2], [1, 2], [1, 1, 1, 1, 1, 1], [1, 1]]
 
   for d in 1:(long_test ? 199 : 50)
-    L = [length(representatives(G)) for G in Zgenera((1,1), d)]
+    L = [length(representatives(G)) for G in integer_genera((1,1), d)]
     @test genus_orders_sage[d] == sort!(L)
   end
 
@@ -305,7 +305,7 @@
   end
 
   for (sig,d) in sigdet
-    for G in Zgenera(sig, d)
+    for G in integer_genera(sig, d)
       L = representative(G)
       spL = ambient_space(L)
       b = B[rank(L)-1]
@@ -356,7 +356,7 @@
 
   for d in 1:(long_test ? 50 : 10)
     for sig in [(2,0),(3,0),(4,0)]
-      for G in Zgenera(sig,d)
+      for G in integer_genera(sig,d)
         m = mass(G)
         L = representative(G)
         @test genus(L)==G
@@ -387,7 +387,7 @@
 
   # primary and elementary
 
-  L = Zlattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
+  L = integer_lattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   Lr = root_sublattice(L) #this is D4
   Ls = orthogonal_submodule(L, Lr)
   G = genus(L)
@@ -421,7 +421,7 @@ end
   sym2 = local_symbols(G)[1]
   @test automorphous_numbers(sym2) == [3, 5]
 
-  A = Zlattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
+  A = integer_lattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
   G = genus(A)
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 3, 5, 7]
@@ -449,14 +449,14 @@ end
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 2, 5]
 
-  L1 = Zlattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
+  L1 = integer_lattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
   g = genus(L1)
   # two classes in the improper spinor genus
   @test length(Hecke.proper_spinor_generators(g))==1
   @test !is_automorphous(g, 5)
 
   M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
-  L1 = Zlattice(gram=M1)
+  L1 = integer_lattice(gram=M1)
   g = genus(L1)
   @test Hecke.proper_spinor_generators(g) == [3]
   @test Hecke.improper_spinor_generators(g) == [] # unique in genus
@@ -470,7 +470,7 @@ end
   ZZ[64 0 32 0; 0 2 0 1; 32 0 32 0; 0 1 0 1],
   ZZ[64 32 48 40; 32 48 32 40; 48 32 39 35; 40 40 35 38],
   ZZ[16 12 0 0; 12 11 0 0; 0 0 16 4; 0 0 4 3]]
- L = [Zlattice(gram=g) for g in L]
+ L = [integer_lattice(gram=g) for g in L]
  G = [genus(i) for i in L]
  @test [length(Hecke.proper_spinor_generators(i)) == length(Hecke.improper_spinor_generators(i)) for i in G] == [1,0,1,0,1,1,0,0]
 
@@ -510,7 +510,7 @@ end
   G22 = direct_sum(G2, G)
   L2 = representative(G22)
   @test genus(L2) == G22
-  G = Zgenera((0,8), 1)[1]
+  G = integer_genera((0,8), 1)[1]
   G2 = rescale(G, -5)
   G3 = rescale(G, 7//92)
   G4 = rescale(G, -1//10000009)
@@ -530,30 +530,30 @@ end
   @test !is_isometric(repL2[1], repL2[2])
 
   # Enumeration
-  gen = @inferred Zgenera((1, 1), 4//3, min_scale = 1//18, max_scale = 12)
+  gen = @inferred integer_genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12)
   @test length(gen) == 8
   @test all(g -> det(g) == -4//3, gen)
   @test all(g -> !is_integral(g), gen)
   @test all(g -> scale(g) in [1//9, 1//3, 2//9, 2//3], gen)
-  gen = @inferred Zgenera((1, 1), 4//3, min_scale = 1//18, max_scale = 12, even = true)
+  gen = @inferred integer_genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12, even = true)
   @test isempty(gen)
-  @test_throws ArgumentError Zgenera((1,1), 4//3, min_scale = -1//18)
-  @test_throws ArgumentError Zgenera((1,1), 4//3, max_scale = -12)
-  gen1 = @inferred Zgenera((0,8), 5, even = true)
+  @test_throws ArgumentError integer_genera((1,1), 4//3, min_scale = -1//18)
+  @test_throws ArgumentError integer_genera((1,1), 4//3, max_scale = -12)
+  gen1 = @inferred integer_genera((0,8), 5, even = true)
   @test length(gen1) == 1
-  gen2 = @inferred Zgenera((0, 8), 5, min_scale = 1//5, even = true)
+  gen2 = @inferred integer_genera((0, 8), 5, min_scale = 1//5, even = true)
   @test length(gen2) == 1
   @test gen1 == gen2
-  gen3 = Zgenera((0,8), 5)
-  gen4 = Zgenera((0, 8), 5, min_scale = 1//5)
+  gen3 = integer_genera((0,8), 5)
+  gen4 = integer_genera((0, 8), 5, min_scale = 1//5)
   @test all(g -> g in gen4, gen3)
   @test all(g -> g in gen4, gen2)
-  @test isempty(Zgenera((0, 8), 1, min_scale = 2))
-  gen = @inferred Zgenera((0,8), 1, min_scale = 1//2, max_scale = 4)
+  @test isempty(integer_genera((0, 8), 1, min_scale = 2))
+  gen = @inferred integer_genera((0,8), 1, min_scale = 1//2, max_scale = 4)
   @test length(gen) == 53
 
   # Mass
-  gen = Zgenera((0,8), 16, even=true)
+  gen = integer_genera((0,8), 16, even=true)
   for g in gen
     k = rand(-50:50)
     while k == 0
@@ -580,7 +580,7 @@ end
   
   # Spinor genera
   M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
-  L = Zlattice(gram = M1)
+  L = integer_lattice(gram = M1)
   G = genus(L)
   G2 = rescale(G, 8//109)
   @test_throws ArgumentError Hecke.automorphous_numbers(local_symbol(G2, 109))

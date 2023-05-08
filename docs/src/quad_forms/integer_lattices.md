@@ -10,11 +10,11 @@ vector space $V = \mathbb{Q}^n$ over the rational numbers.
 Integer lattices are also known as quadratic forms over the integers.
 We will refer to them as $\mathbb{Z}$-lattices.
 
-A $\mathbb{Z}$-lattice $L$ has the type `ZLat`. It is given in terms of
+A $\mathbb{Z}$-lattice $L$ has the type `ZZLat`. It is given in terms of
 its ambient quadratic space $V$ together with a basis matrix $B$ whose rows span $L$,
 i.e. $L = \mathbb{Z}^r B$ where $r$ is the ($\mathbb{Z}$-module) rank of $L$.
 
-To access $V$ and $B$ see [`ambient_space(L::ZLat)`](@ref) and [`basis_matrix(L::ZLat)`](@ref).
+To access $V$ and $B$ see [`ambient_space(L::ZZLat)`](@ref) and [`basis_matrix(L::ZZLat)`](@ref).
 
 
 ## Creation of integer lattices
@@ -22,7 +22,7 @@ To access $V$ and $B$ see [`ambient_space(L::ZLat)`](@ref) and [`basis_matrix(L:
 ### From a gram matrix
 
 ```@docs
-Zlattice(B::QQMatrix)
+integer_lattice(B::QQMatrix)
 ```
 
 ### In a quadratic space
@@ -36,76 +36,76 @@ lattice(V::QuadSpace{QQField, QQMatrix}, B::MatElem;)
 ```@docs
 root_lattice(::Symbol, ::Int)
 hyperbolic_plane_lattice(n::Union{Int64, ZZRingElem})
-Zlattice(S::Symbol, n::Union{Int64, ZZRingElem})
+integer_lattice(S::Symbol, n::Union{Int64, ZZRingElem})
 leech_lattice
 ```
 
 ### From a genus
 Integer lattices can be created as representatives of a genus.
-See ([`representative(L::ZGenus)`](@ref))
+See ([`representative(L::ZZGenus)`](@ref))
 
 ### Rescaling the Quadratic Form
 
 ```@docs
-rescale(::ZLat, ::RationalUnion)
+rescale(::ZZLat, ::RationalUnion)
 ```
 
 ## Attributes
 
 ```@docs
-ambient_space(L::ZLat)
-basis_matrix(L::ZLat)
-gram_matrix(L::ZLat)
-rational_span(L::ZLat)
-base_ring(::ZLat)
-base_field(::ZLat)
+ambient_space(L::ZZLat)
+basis_matrix(L::ZZLat)
+gram_matrix(L::ZZLat)
+rational_span(L::ZZLat)
+base_ring(::ZZLat)
+base_field(::ZZLat)
 ```
 
 ## Invariants
 ```@docs
-rank(L::ZLat)
-det(L::ZLat)
+rank(L::ZZLat)
+det(L::ZZLat)
 
-scale(L::ZLat)
-norm(L::ZLat)
-iseven(L::ZLat)
-is_integral(L::ZLat)
+scale(L::ZZLat)
+norm(L::ZZLat)
+iseven(L::ZZLat)
+is_integral(L::ZZLat)
 
-is_primary_with_prime(L::ZLat)
-is_primary(L::ZLat, p::Union{Integer, ZZRingElem})
-is_elementary_with_prime(L::ZLat)
-is_elementary(L::ZLat, p::Union{Integer, ZZRingElem})
+is_primary_with_prime(L::ZZLat)
+is_primary(L::ZZLat, p::Union{Integer, ZZRingElem})
+is_elementary_with_prime(L::ZZLat)
+is_elementary(L::ZZLat, p::Union{Integer, ZZRingElem})
 ```
 
 ### The Genus
 
 For an integral lattice
 The genus of an integer lattice collects its local invariants.
-[`genus(::ZLat)`](@ref)
+[`genus(::ZZLat)`](@ref)
 ```@docs
-mass(L::ZLat)
-genus_representatives(L::ZLat)
+mass(L::ZZLat)
+genus_representatives(L::ZZLat)
 ```
 
 ### Real invariants
 ```@docs
-signature_tuple(L::ZLat)
-is_positive_definite(L::ZLat)
-is_negative_definite(L::ZLat)
-is_definite(L::ZLat)
+signature_tuple(L::ZZLat)
+is_positive_definite(L::ZZLat)
+is_negative_definite(L::ZZLat)
+is_definite(L::ZZLat)
 ```
 
 ## Isometries
 ```@docs
-automorphism_group_generators(L::ZLat)
-automorphism_group_order(L::ZLat)
-is_isometric(L::ZLat, M::ZLat)
-is_locally_isometric(L::ZLat, M::ZLat, p::Int)
+automorphism_group_generators(L::ZZLat)
+automorphism_group_order(L::ZZLat)
+is_isometric(L::ZZLat, M::ZZLat)
+is_locally_isometric(L::ZZLat, M::ZZLat, p::Int)
 ```
 # Root lattices
 ```@docs
-root_lattice_recognition(L::ZLat)
-root_lattice_recognition_fundamental(L::ZLat)
+root_lattice_recognition(L::ZZLat)
+root_lattice_recognition_fundamental(L::ZZLat)
 ADE_type(G::MatrixElem)
 coxeter_number(ADE::Symbol, n)
 highest_root(ADE::Symbol, n)
@@ -116,81 +116,81 @@ Most module operations assume that the lattices live in the same ambient space.
 For instance only lattices in the same ambient space compare.
 
 ```@docs
-Base.:(==)(L1::ZLat, L2::ZLat)
-is_sublattice(M::ZLat, N::ZLat)
-is_sublattice_with_relations(M::ZLat, N::ZLat)
-+(M::ZLat, N::ZLat)
-Base.:(*)(a::RationalUnion, L::ZLat)
-intersect(M::ZLat, N::ZLat)
-Base.in(v::Vector, L::ZLat)
-Base.in(v::QQMatrix, L::ZLat)
-primitive_closure(M::ZLat, N::ZLat)
-is_primitive(M::ZLat, N::ZLat)
-is_primitive(::ZLat, ::Union{Vector, QQMatrix})
-divisibility(::ZLat, ::Union{Vector, QQMatrix})
+Base.:(==)(L1::ZZLat, L2::ZZLat)
+is_sublattice(M::ZZLat, N::ZZLat)
+is_sublattice_with_relations(M::ZZLat, N::ZZLat)
++(M::ZZLat, N::ZZLat)
+Base.:(*)(a::RationalUnion, L::ZZLat)
+intersect(M::ZZLat, N::ZZLat)
+Base.in(v::Vector, L::ZZLat)
+Base.in(v::QQMatrix, L::ZZLat)
+primitive_closure(M::ZZLat, N::ZZLat)
+is_primitive(M::ZZLat, N::ZZLat)
+is_primitive(::ZZLat, ::Union{Vector, QQMatrix})
+divisibility(::ZZLat, ::Union{Vector, QQMatrix})
 ```
 
 ## Embeddings
 
 ### Categorical constructions
 ```@docs
-direct_sum(x::Vector{ZLat})
-direct_product(x::Vector{ZLat})
-biproduct(x::Vector{ZLat})
+direct_sum(x::Vector{ZZLat})
+direct_product(x::Vector{ZZLat})
+biproduct(x::Vector{ZZLat})
 ```
 
 ### Orthogonal sublattices
 ```@docs
-orthogonal_submodule(::ZLat, ::ZLat)
-irreducible_components(::ZLat)
+orthogonal_submodule(::ZZLat, ::ZZLat)
+irreducible_components(::ZZLat)
 ```
 
 ### Dual lattice
 ```@docs
-dual(L::ZLat)
+dual(L::ZZLat)
 ```
 
 ### Discriminant group
-See [`discriminant_group(L::ZLat)`](@ref).
+See [`discriminant_group(L::ZZLat)`](@ref).
 
 ### Overlattices
 ```@docs
-glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
+glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
 overlattice(glue_map::TorQuadModuleMor)
-local_modification(M::ZLat, L::ZLat, p)
-maximal_integral_lattice(L::ZLat)
+local_modification(M::ZZLat, L::ZZLat, p)
+maximal_integral_lattice(L::ZZLat)
 ```
 
 ### Sublattices defined by endomorphisms
 ```@docs
-kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true)
-invariant_lattice(L::ZLat, G::Vector{<:MatElem};
+kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = true)
+invariant_lattice(L::ZZLat, G::Vector{<:MatElem};
                            ambient_representation::Bool = true)
 ```
 
 ### Computing embeddings
 ```@docs
-embed(S::ZLat, G::ZGenus, primitive::Bool=true)
-embed_in_unimodular(S::ZLat, pos, neg; primitive=true, even=true)
+embed(S::ZZLat, G::ZZGenus, primitive::Bool=true)
+embed_in_unimodular(S::ZZLat, pos, neg; primitive=true, even=true)
 ```
 
 ## LLL, Short and Close Vectors
 
 ### LLL and indefinite LLL
 ```@docs
-lll(L::ZLat; same_ambient::Bool = true)
+lll(L::ZZLat; same_ambient::Bool = true)
 ```
 ### Short Vectors
 ```@docs
 short_vectors
 shortest_vectors
 short_vectors_iterator
-minimum(L::ZLat)
-kissing_number(L::ZLat)
+minimum(L::ZZLat)
+kissing_number(L::ZZLat)
 ```
 
 ### Close Vectors
 ```@docs
-close_vectors(L::ZLat, v::Vector, arg...; kw...)
+close_vectors(L::ZZLat, v::Vector, arg...; kw...)
 ```
 ---

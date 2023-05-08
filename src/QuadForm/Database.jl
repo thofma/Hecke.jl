@@ -120,7 +120,7 @@ function lattice(L::LatDB, r::Int, i::Int)
   d = L.db[r][i].deg
   A = matrix(FlintQQ, d, d, L.db[r][i].amb)
   B = matrix(FlintQQ, r, d, L.db[r][i].basis_mat)
-  return Zlattice(B, gram = A)
+  return integer_lattice(B, gram = A)
 end
 
 function lattice(L::LatDB, i::Int)

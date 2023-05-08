@@ -8,20 +8,20 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
 
 # scope & verbose scope: :Lattice
 @doc raw"""
-    basis_matrix(L::ZLat)
+    basis_matrix(L::ZZLat)
 
 Return the basis matrix $B$ of the integer lattice $L$.
 
 The lattice is given by the row span of $B$ seen inside of the
 ambient quadratic space of $L$.
 """
-basis_matrix(L::ZLat) = L.basis_matrix
+basis_matrix(L::ZZLat) = L.basis_matrix
 
-ambient_space(L::ZLat) = L.space
+ambient_space(L::ZZLat) = L.space
 
-base_ring(L::ZLat) = FlintZZ
+base_ring(L::ZZLat) = FlintZZ
 
-base_field(L::ZLat) = base_ring(gram_matrix(ambient_space(L)))
+base_field(L::ZZLat) = base_ring(gram_matrix(ambient_space(L)))
 
 ################################################################################
 #
@@ -30,7 +30,7 @@ base_field(L::ZLat) = base_ring(gram_matrix(ambient_space(L)))
 ################################################################################
 
 @doc raw"""
-    Zlattice([B::MatElem]; gram) -> ZLat
+    integer_lattice([B::MatElem]; gram) -> ZZLat
 
 Return the Z-lattice with basis matrix $B$ inside the quadratic space with
 Gram matrix `gram`.
@@ -40,34 +40,34 @@ If $B$ is not specified, the basis matrix is the identity matrix.
 
 # Examples
 ```jldoctest
-julia> L = Zlattice(matrix(QQ, 2, 2, [1//2, 0, 0, 2]));
+julia> L = integer_lattice(matrix(QQ, 2, 2, [1//2, 0, 0, 2]));
 
 julia> gram_matrix(L) == matrix(QQ, 2, 2, [1//4, 0, 0, 4])
 true
 
-julia> L = Zlattice(gram = matrix(ZZ, [2 -1; -1 2]));
+julia> L = integer_lattice(gram = matrix(ZZ, [2 -1; -1 2]));
 
 julia> gram_matrix(L) == matrix(ZZ, [2 -1; -1 2])
 true
 ```
 """
-function Zlattice(B::QQMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
+function integer_lattice(B::QQMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
   V = quadratic_space(FlintQQ, gram, check=check)
   return lattice(V, B, check=check)
 end
 
-function Zlattice(B::ZZMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
+function integer_lattice(B::ZZMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
   V = quadratic_space(FlintQQ, gram, check=check)
   return lattice(V, B, check=check)
 end
 
-function Zlattice(;gram, check=true)
+function integer_lattice(;gram, check=true)
   n = nrows(gram)
   return lattice(quadratic_space(FlintQQ, gram, check=check), identity_matrix(FlintQQ, n), check=check)
 end
 
 @doc raw"""
-    lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; isbasis=true, check=true) -> ZLat
+    lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; isbasis=true, check=true) -> ZZLat
 
 Return the $\mathbb Z$-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
@@ -85,21 +85,21 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, B::MatElem{<:RationalUnion}; i
     while i > 0 && is_zero_row(BB, i)
       i = i - 1
     end
-    return ZLat(V, BB[1:i, :])
+    return ZZLat(V, BB[1:i, :])
   else
     @req !check || rank(B) == nrows(B) "The rows of B must define a free system of vectors in V"
-    return ZLat(V, B)
+    return ZZLat(V, B)
   end
 end
 
-function lattice_in_same_ambient_space(L::ZLat, B::MatElem; check::Bool = true)
+function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true)
   @req !check || (rank(B) == nrows(B)) "The rows of B must define a free system of vectors"
   V = ambient_space(L)
   return lattice(V, B, check = false)
 end
 
 @doc raw"""
-    rescale(L::ZLat, r::RationalUnion) -> ZLat
+    rescale(L::ZZLat, r::RationalUnion) -> ZZLat
 
 Return the lattice `L` in the quadratic space with form `r \Phi`.
 
@@ -107,7 +107,7 @@ Return the lattice `L` in the quadratic space with form `r \Phi`.
 This can be useful to apply methods intended for positive definite lattices.
 
 ```jldoctest
-julia> L = Zlattice(gram=ZZ[-1 0; 0 -1])
+julia> L = integer_lattice(gram=ZZ[-1 0; 0 -1])
 Quadratic lattice of rank 2 and degree 2 over the rationals
 
 julia> shortest_vectors(rescale(L, -1))
@@ -116,7 +116,7 @@ julia> shortest_vectors(rescale(L, -1))
  [1, 0]
 ```
 """
-function rescale(L::ZLat, r::RationalUnion)
+function rescale(L::ZZLat, r::RationalUnion)
   B = basis_matrix(L)
   gram_space = gram_matrix(ambient_space(L))
   Vr = quadratic_space(QQ, r*gram_space)
@@ -130,20 +130,20 @@ end
 ################################################################################
 
 @doc raw"""
-    gram_matrix(L::ZLat) -> QQMatrix
+    gram_matrix(L::ZZLat) -> QQMatrix
 
 Return the gram matrix of $L$.
 
 # Examples
 ```jldoctest
-julia> L = Zlattice(matrix(ZZ, [2 0; -1 2]));
+julia> L = integer_lattice(matrix(ZZ, [2 0; -1 2]));
 
 julia> gram_matrix(L)
 [ 4   -2]
 [-2    5]
 ```
 """
-function gram_matrix(L::ZLat)
+function gram_matrix(L::ZZLat)
   if isdefined(L, :gram_matrix)
     return L.gram_matrix
   end
@@ -160,7 +160,7 @@ function gram_matrix(L::ZLat)
   return G
 end
 
-gram_matrix_of_rational_span(L::ZLat) = gram_matrix(L)
+gram_matrix_of_rational_span(L::ZZLat) = gram_matrix(L)
 
 ################################################################################
 #
@@ -169,14 +169,14 @@ gram_matrix_of_rational_span(L::ZLat) = gram_matrix(L)
 ################################################################################
 
 @doc raw"""
-    rational_span(L::ZLat) -> QuadSpace
+    rational_span(L::ZZLat) -> QuadSpace
 
 Return the rational span of $L$, which is the quadratic space with Gram matrix
 equal to `gram_matrix(L)`.
 
 # Examples
 ```jldoctest
-julia> L = Zlattice(matrix(ZZ, [2 0; -1 2]));
+julia> L = integer_lattice(matrix(ZZ, [2 0; -1 2]));
 
 julia> rational_span(L)
 Quadratic space over
@@ -185,7 +185,7 @@ with Gram matrix
 [4 -2; -2 5]
 ```
 """
-function rational_span(L::ZLat)
+function rational_span(L::ZZLat)
   if isdefined(L, :rational_span)
     return L.rational_span
   else
@@ -202,93 +202,93 @@ end
 #
 ################################################################################
 
-function _biproduct(x::Vector{ZLat})
+function _biproduct(x::Vector{ZZLat})
   Bs = basis_matrix.(x)
   B = diagonal_matrix(Bs)
   return B
 end
 
 @doc raw"""
-    direct_sum(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
-    direct_sum(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_sum(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
+    direct_sum(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
 return their direct sum $L := L_1 \oplus \ldots \oplus L_n$,
 together with the injections $L_i \to L$.
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `ZLat`, finite direct sums and finite direct products
+For objects of type `ZZLat`, finite direct sums and finite direct products
 agree and they are therefore called biproducts.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{ZLat})
+function direct_sum(x::Vector{ZZLat})
   @req length(x) >= 2 "Input must consist of at least two lattices"
   W, inj = direct_sum(ambient_space.(x))
   B = _biproduct(x)
   return lattice(W, B, check = false), inj
 end
 
-direct_sum(x::Vararg{ZLat}) = direct_sum(collect(x))
+direct_sum(x::Vararg{ZZLat}) = direct_sum(collect(x))
 
 @doc raw"""
-    direct_product(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
-    direct_product(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}
+    direct_product(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
+    direct_product(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
 return their direct product $L := L_1 \times \ldots \times L_n$,
 together with the projections $L \to L_i$.
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `ZLat`, finite direct sums and finite direct products
+For objects of type `ZZLat`, finite direct sums and finite direct products
 agree and they are therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{ZLat})
+function direct_product(x::Vector{ZZLat})
   @req length(x) >= 2 "Input must consist of at least two lattices"
   W, proj = direct_product(ambient_space.(x))
   B = _biproduct(x)
   return lattice(W, B, check = false), proj
 end
 
-direct_product(x::Vararg{ZLat}) = direct_product(collect(x))
+direct_product(x::Vararg{ZZLat}) = direct_product(collect(x))
 
 @doc raw"""
-    biproduct(x::Vararg{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
-    biproduct(x::Vector{ZLat}) -> ZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
 return their biproduct $L := L_1 \oplus \ldots \oplus L_n$,
 together with the injections $L_i \to L$ and the projections $L \to L_i$.
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `ZLat`, finite direct sums and finite direct products
+For objects of type `ZZLat`, finite direct sums and finite direct products
 agree and they are therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{ZLat})
+function biproduct(x::Vector{ZZLat})
   @req length(x) >= 2 "Input must consist of at least two lattices"
   W, inj, proj = biproduct(ambient_space.(x))
   B = _biproduct(x)
   return lattice(W, B, check = false), inj, proj
 end
 
-biproduct(x::Vararg{ZLat}) = biproduct(collect(x))
+biproduct(x::Vararg{ZZLat}) = biproduct(collect(x))
 
 @doc raw"""
-    orthogonal_submodule(L::ZLat, S::ZLat) -> ZLat
+    orthogonal_submodule(L::ZZLat, S::ZZLat) -> ZZLat
 
 Return the largest submodule of `L` orthogonal to `S`.
 """
-function orthogonal_submodule(L::ZLat, S::ZLat)
+function orthogonal_submodule(L::ZZLat, S::ZZLat)
   @assert ambient_space(L)==ambient_space(S) "L and S must have the same ambient space"
   B = basis_matrix(L)
   C = basis_matrix(S)
@@ -307,7 +307,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, L::ZLat)
+function Base.show(io::IO, L::ZZLat)
   print(io, "Quadratic lattice of rank ", rank(L),
             " and degree ", degree(L), " over the rationals")
 end
@@ -321,7 +321,7 @@ end
 # This is an internal function, which sets
 # L.automorphism_group_generators
 # L.automorphism_group_order
-function assert_has_automorphisms(L::ZLat; redo::Bool = false,
+function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
                                            try_small::Bool = true)
 
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -400,7 +400,7 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_generators(L::ZLat; ambient_representation::Bool = true)
+function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = true)
 
   @req rank(L) in [0, 2] || is_definite(L) "The lattice must be definite or of rank at most 2"
   assert_has_automorphisms(L)
@@ -435,7 +435,7 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_order(L::ZLat)
+function automorphism_group_order(L::ZZLat)
   @req is_definite(L) "The lattice must be definite"
   assert_has_automorphisms(L)
   return L.automorphism_group_order
@@ -449,7 +449,7 @@ end
 
 # documented in ../Lattices.jl
 
-function is_isometric(L::ZLat, M::ZLat)
+function is_isometric(L::ZZLat, M::ZZLat)
   if rank(L) != rank(M)
     return false
   end
@@ -479,7 +479,7 @@ function is_isometric(L::ZLat, M::ZLat)
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZLat, M::ZLat; ambient_representation::Bool = false)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false)
   @req is_definite(L) && is_definite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)
@@ -584,7 +584,7 @@ end
 #
 ################################################################################
 
-function is_sublattice(M::ZLat, N::ZLat)
+function is_sublattice(M::ZZLat, N::ZZLat)
   if ambient_space(M) != ambient_space(N)
     return false
   end
@@ -599,13 +599,13 @@ function is_sublattice(M::ZLat, N::ZLat)
 end
 
 @doc raw"""
-    is_sublattice_with_relations(M::ZLat, N::ZLat) -> Bool, QQMatrix
+    is_sublattice_with_relations(M::ZZLat, N::ZZLat) -> Bool, QQMatrix
 
 Returns whether $N$ is a sublattice of $M$. In this case, the second return
 value is a matrix $B$ such that $B B_M = B_N$, where $B_M$ and $B_N$ are the
 basis matrices of $M$ and $N$ respectively.
 """
-function is_sublattice_with_relations(M::ZLat, N::ZLat)
+function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
    if ambient_space(M) != ambient_space(N)
      return false, basis_matrix(M)
    end
@@ -632,11 +632,11 @@ Return the root lattice of type `R` given by `:A`, `:D` or `:E` with parameter `
 """
 function root_lattice(R::Symbol, n::Int)
   if R === :A
-    return Zlattice(gram = _root_lattice_A(n))
+    return integer_lattice(gram = _root_lattice_A(n))
   elseif R === :E
-    return Zlattice(gram = _root_lattice_E(n))
+    return integer_lattice(gram = _root_lattice_E(n))
   elseif R === :D
-    return Zlattice(gram = _root_lattice_D(n))
+    return integer_lattice(gram = _root_lattice_D(n))
   else
     error("Type (:$R) must be :A, :D or :E")
   end
@@ -713,17 +713,17 @@ end
 ################################################################################
 
 @doc raw"""
-    Zlattice(S::Symbol, n::RationalUnion = 1) -> Zlat
+    integer_lattice(S::Symbol, n::RationalUnion = 1) -> Zlat
 
 Given `S = :H` or `S = :U`, return a $\mathbb Z$-lattice admitting $n*J_2$ as
 Gram matrix in some basis, where $J_2$ is the 2-by-2 matrix with 0's on the
 main diagonal and 1's elsewhere.
 """
-function Zlattice(S::Symbol, n::RationalUnion = 1)
+function integer_lattice(S::Symbol, n::RationalUnion = 1)
   @req S === :H || S === :U "Only available for the hyperbolic plane"
   gram = n*identity_matrix(QQ, 2)
   gram = reverse_cols!(gram)
-  return Zlattice(gram = gram)
+  return integer_lattice(gram = gram)
 end
 
 @doc raw"""
@@ -749,7 +749,7 @@ julia> gram_matrix(L)
 [-13     0]
 ```
 """
-hyperbolic_plane_lattice(n::RationalUnion = 1) = Zlattice(:H, n)
+hyperbolic_plane_lattice(n::RationalUnion = 1) = integer_lattice(:H, n)
 
 ################################################################################
 #
@@ -759,7 +759,7 @@ hyperbolic_plane_lattice(n::RationalUnion = 1) = Zlattice(:H, n)
 
 # documented in ../Lattices.jl
 
-function dual(L::ZLat)
+function dual(L::ZZLat)
   G = gram_matrix(L)
   new_bmat = inv(G)*basis_matrix(L)
   return lattice(ambient_space(L), new_bmat, check = false)
@@ -772,14 +772,14 @@ end
 ################################################################################
 
 @doc raw"""
-    scale(L::ZLat) -> QQFieldElem
+    scale(L::ZZLat) -> QQFieldElem
 
 Return the scale of `L`.
 
 The scale of `L` is defined as the positive generator of the $\mathbb Z$-ideal
 generated by $\{\Phi(x, y) : x, y \in L\}$.
 """
-function scale(L::ZLat)
+function scale(L::ZZLat)
   if isdefined(L, :scale)
     return L.scale
   end
@@ -801,14 +801,14 @@ end
 ################################################################################
 
 @doc raw"""
-    norm(L::ZLat) -> QQFieldElem
+    norm(L::ZZLat) -> QQFieldElem
 
 Return the norm of `L`.
 
 The norm of `L` is defined as the positive generator of the $\mathbb Z$- ideal
 generated by $\{\Phi(x,x) : x \in L\}$.
 """
-function norm(L::ZLat)
+function norm(L::ZZLat)
   if isdefined(L, :norm)
     return L.norm
   end
@@ -828,14 +828,14 @@ end
 ################################################################################
 
 @doc raw"""
-    iseven(L::ZLat) -> Bool
+    iseven(L::ZZLat) -> Bool
 
 Return whether `L` is even.
 
 An integer lattice `L` in the rational quadratic space $(V,\Phi)$ is called even
 if $\Phi(x,x) \in 2\mathbb{Z}$ for all $x in L$.
 """
-iseven(L::ZLat) = is_integral(L) && iseven(numerator(norm(L)))
+iseven(L::ZZLat) = is_integral(L) && iseven(numerator(norm(L)))
 
 ################################################################################
 #
@@ -844,11 +844,11 @@ iseven(L::ZLat) = is_integral(L) && iseven(numerator(norm(L)))
 ################################################################################
 
 @doc raw"""
-    discriminant(L::ZLat) -> QQFieldElem
+    discriminant(L::ZZLat) -> QQFieldElem
 
 Return the discriminant of the rational span of `L`.
 """
-discriminant(L::ZLat) = discriminant(rational_span(L))
+discriminant(L::ZZLat) = discriminant(rational_span(L))
 
 ################################################################################
 #
@@ -857,11 +857,11 @@ discriminant(L::ZLat) = discriminant(rational_span(L))
 ################################################################################
 
 @doc raw"""
-    det(L::ZLat) -> QQFieldElem
+    det(L::ZZLat) -> QQFieldElem
 
 Return the determinant of the gram matrix of `L`.
 """
-function det(L::ZLat)
+function det(L::ZZLat)
   return det(gram_matrix(L))
 end
 
@@ -871,7 +871,7 @@ end
 #
 ################################################################################
 
-function rank(L::ZLat)
+function rank(L::ZZLat)
   return nrows(basis_matrix(L))
 end
 
@@ -882,11 +882,11 @@ end
 ################################################################################
 
 @doc raw"""
-    signature_tuple(L::ZLat) -> Tuple{Int,Int,Int}
+    signature_tuple(L::ZZLat) -> Tuple{Int,Int,Int}
 
 Return the number of (positive, zero, negative) inertia of `L`.
 """
-signature_tuple(L::ZLat) = signature_tuple(rational_span(L))
+signature_tuple(L::ZZLat) = signature_tuple(rational_span(L))
 
 ################################################################################
 #
@@ -896,7 +896,7 @@ signature_tuple(L::ZLat) = signature_tuple(rational_span(L))
 
 # so that abstract lattice functions also work with Z-lattices
 
-local_basis_matrix(L::ZLat, p) = basis_matrix(L)
+local_basis_matrix(L::ZZLat, p) = basis_matrix(L)
 
 ################################################################################
 #
@@ -904,7 +904,7 @@ local_basis_matrix(L::ZLat, p) = basis_matrix(L)
 #
 ################################################################################
 
-function intersect(M::ZLat, N::ZLat)
+function intersect(M::ZZLat, N::ZZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
   BM = basis_matrix(M)
   BN = basis_matrix(N)
@@ -925,7 +925,7 @@ end
 #
 ################################################################################
 
-function +(M::ZLat, N::ZLat)
+function +(M::ZZLat, N::ZZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
   BM = basis_matrix(M)
   BN = basis_matrix(N)
@@ -944,32 +944,32 @@ end
 ################################################################################
 
 @doc raw"""
-    is_locally_isometric(L::ZLat, M::ZLat, p::Int) -> Bool
+    is_locally_isometric(L::ZZLat, M::ZZLat, p::Int) -> Bool
 
 Return whether `L` and `M` are isometric over the `p`-adic integers.
 
 i.e. whether $L \otimes \Z_p \cong M\otimes \Z_p$.
 """
-function is_locally_isometric(L::ZLat, M::ZLat, p::Int)
+function is_locally_isometric(L::ZZLat, M::ZZLat, p::Int)
   return is_locally_isometric(L, M, ZZRingElem(p))
 end
 
-function is_locally_isometric(L::ZLat, M::ZLat, p::ZZRingElem)
+function is_locally_isometric(L::ZZLat, M::ZZLat, p::ZZRingElem)
   return genus(L, p) == genus(M, p)
 end
 
 ################################################################################
 #
-#  Conversion between ZLat and QuadLat
+#  Conversion between ZZLat and QuadLat
 #
 ################################################################################
 
-function _to_number_field_lattice(L::ZLat, K, V)
+function _to_number_field_lattice(L::ZZLat, K, V)
   LL = lattice(V, change_base_ring(K, basis_matrix(L)))
   return LL
 end
 
-function _to_number_field_lattice(L::ZLat;
+function _to_number_field_lattice(L::ZZLat;
                                   K::AnticNumberField = rationals_as_number_field()[1],
                                   V::QuadSpace = quadratic_space(K, gram_matrix(ambient_space(L))))
   return _to_number_field_lattice(L, K, V)
@@ -1003,11 +1003,11 @@ end
 ################################################################################
 
 @doc raw"""
-    mass(L::ZLat) -> QQFieldElem
+    mass(L::ZZLat) -> QQFieldElem
 
 Return the mass of the genus of `L`.
 """
-function mass(L::ZLat)
+function mass(L::ZZLat)
   @req is_definite(L) "L must be a definite lattice"
   return mass(genus(L))
 end
@@ -1019,17 +1019,17 @@ end
 ################################################################################
 
 @doc raw"""
-    genus_representatives(L::ZLat) -> Vector{ZLat}
+    genus_representatives(L::ZZLat) -> Vector{ZZLat}
 
 Return representatives for the isometry classes in the genus of `L`.
 """
-function genus_representatives(L::ZLat)
+function genus_representatives(L::ZZLat)
   s = denominator(scale(L))
   L = rescale(L, s)
   LL = _to_number_field_lattice(L)
   K = base_field(L)
   G = genus_representatives(LL)
-  res = ZLat[]
+  res = ZZLat[]
   for N in G
     push!(res, _to_ZLat(N, K = K))
   end
@@ -1043,7 +1043,7 @@ end
 ################################################################################
 
 # kept for testing
-function _maximal_integral_lattice(L::ZLat)
+function _maximal_integral_lattice(L::ZZLat)
   LL = _to_number_field_lattice(L)
   M = maximal_integral_lattice(LL)
   return _to_ZLat(M, V = ambient_space(L))
@@ -1051,14 +1051,14 @@ end
 
 
 @doc raw"""
-    maximal_even_lattice(L::ZLat, p) -> ZLat
+    maximal_even_lattice(L::ZZLat, p) -> ZZLat
 
 Given an even lattice `L` and a prime number `p` return an overlattice of `M`
 which is maximal at `p` and agrees locally with `L` at all other places.
 
 Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb Z$ for all $x in L$.
 """
-function maximal_even_lattice(L::ZLat, p)
+function maximal_even_lattice(L::ZZLat, p)
   while true
     ok, L = is_maximal_even(L, p)
     if ok
@@ -1068,14 +1068,14 @@ function maximal_even_lattice(L::ZLat, p)
 end
 
 @doc raw"""
-    maximal_even_lattice(L::ZLat) -> ZLat
+    maximal_even_lattice(L::ZZLat) -> ZZLat
 
 Return a maximal even overlattice `M` of the even lattice `L`.
 
 Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb Z$ for all $x in L$.
 Note that the genus of `M` is uniquely determined by the genus of `L`.
 """
-function maximal_even_lattice(L::ZLat)
+function maximal_even_lattice(L::ZZLat)
   @req iseven(L) "The lattice must be even"
   for p in prime_divisors(ZZ(det(L)))
     L = maximal_even_lattice(L, p)
@@ -1083,7 +1083,7 @@ function maximal_even_lattice(L::ZLat)
   return L
 end
 
-function maximal_integral_lattice(L::ZLat)
+function maximal_integral_lattice(L::ZZLat)
   @req denominator(norm(L)) == 1 "The quadratic form is not integral"
   L2 = rescale(L, 2)
   LL2 = maximal_even_lattice(L2)
@@ -1092,7 +1092,7 @@ end
 
 
 @doc raw"""
-    is_maximal_even(L::ZLat, p) -> Bool, ZLat
+    is_maximal_even(L::ZZLat, p) -> Bool, ZZLat
 
 Return if the (`p`-locally) even lattice `L` is maximal at `p` and an even overlattice `M`
 of `L` with $[M:L]=p$ if `L` is not maximal and $1$ else.
@@ -1100,7 +1100,7 @@ of `L` with $[M:L]=p$ if `L` is not maximal and $1$ else.
 Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb{Z}$ for all $x in L$.
 """
 
-function is_maximal_even(L::ZLat, p)
+function is_maximal_even(L::ZZLat, p)
   @req denominator(scale(L)) == 1 "The bilinear form is not integral"
   @req p != 2 || mod(ZZ(norm(L)),2) == 0 "The bilinear form is not even"
 
@@ -1257,11 +1257,11 @@ end
 ################################################################################
 
 @doc raw"""
-    *(a::RationalUnion, L::ZLat) -> ZLat
+    *(a::RationalUnion, L::ZZLat) -> ZZLat
 
 Return the lattice $aM$ inside the ambient space of $M$.
 """
-function Base.:(*)(a::RationalUnion, L::ZLat)
+function Base.:(*)(a::RationalUnion, L::ZZLat)
   @assert has_ambient_space(L)
   if is_zero(a)
     B = zero_matrix(QQ, 0, degree(L))
@@ -1271,7 +1271,7 @@ function Base.:(*)(a::RationalUnion, L::ZLat)
   return lattice_in_same_ambient_space(L, B, check = false)
 end
 
-function Base.:(*)(L::ZLat, a::RationalUnion)
+function Base.:(*)(L::ZZLat, a::RationalUnion)
   return a * L
 end
 
@@ -1285,7 +1285,7 @@ end
 Return `true` if both lattices have the same ambient quadratic space
 and the same underlying module.
 """
-function Base.:(==)(L1::ZLat, L2::ZLat)
+function Base.:(==)(L1::ZZLat, L2::ZZLat)
   V1 = ambient_space(L1)
   V2 = ambient_space(L2)
   if V1 != V2
@@ -1297,7 +1297,7 @@ function Base.:(==)(L1::ZLat, L2::ZLat)
 end
 
 @doc raw"""
-    local_modification(M::ZLat, L::ZLat, p)
+    local_modification(M::ZZLat, L::ZZLat, p)
 
 Return a local modification of `M` that matches `L` at `p`.
 
@@ -1313,7 +1313,7 @@ OUTPUT:
 an integral lattice `M'` in the ambient space of `M` such that `M` and `M'` are locally equal at all
 completions except at `p` where `M'` is locally isometric to the lattice `L`.
 """
-function local_modification(M::ZLat, L::ZLat, p)
+function local_modification(M::ZZLat, L::ZZLat, p)
   # notation
   d = denominator(inv(gram_matrix(L)))
   level = valuation(d,p)
@@ -1348,8 +1348,8 @@ end
 ################################################################################
 
 @doc raw"""
-    kernel_lattice(L::ZLat, f::MatElem;
-                   ambient_representation::Bool = true) -> ZLat
+    kernel_lattice(L::ZZLat, f::MatElem;
+                   ambient_representation::Bool = true) -> ZZLat
 
 Given a $\mathbf{Z}$-lattice $L$ and a matrix $f$ inducing an endomorphism of
 $L$, return $\ker(f)$ is a sublattice of $L$.
@@ -1358,7 +1358,7 @@ If `ambient_representation` is `true` (the default), the endomorphism is
 represented with respect to the ambient space of $L$. Otherwise, the
 endomorphism is represented with respect to the basis of $L$.
 """
-function kernel_lattice(L::ZLat, f::MatElem; ambient_representation::Bool = true)
+function kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = true)
   bL = basis_matrix(L)
   if ambient_representation
     if !is_square(bL)
@@ -1381,10 +1381,10 @@ end
 ################################################################################
 
 @doc raw"""
-    invariant_lattice(L::ZLat, G::Vector{MatElem};
-                      ambient_representation::Bool = true) -> ZLat
-    invariant_lattice(L::ZLat, G::MatElem;
-                      ambient_representation::Bool = true) -> ZLat
+    invariant_lattice(L::ZZLat, G::Vector{MatElem};
+                      ambient_representation::Bool = true) -> ZZLat
+    invariant_lattice(L::ZZLat, G::MatElem;
+                      ambient_representation::Bool = true) -> ZZLat
 
 Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
 endomorphisms of $L$ (or just one matrix $G$), return the lattice $L^G$,
@@ -1394,7 +1394,7 @@ If `ambient_representation` is `true` (the default), the endomorphism is
 represented with respect to the ambient space of $L$. Otherwise, the
 endomorphism is represented with respect to the basis of $L$.
 """
-function invariant_lattice(L::ZLat, G::Vector{<:MatElem};
+function invariant_lattice(L::ZZLat, G::Vector{<:MatElem};
                            ambient_representation::Bool = true)
   if length(G) == 0
     return L
@@ -1410,16 +1410,16 @@ function invariant_lattice(L::ZLat, G::Vector{<:MatElem};
   return M
 end
 
-function invariant_lattice(L::ZLat, G::MatElem;
+function invariant_lattice(L::ZZLat, G::MatElem;
                            ambient_representation::Bool = true)
   return kernel_lattice(L, G - 1, ambient_representation = ambient_representation)
 end
 
 @doc raw"""
-    coinvariant_lattice(L::ZLat, G::Vector{MatElem};
-                        ambient_representation::Bool = true) -> ZLat
-    coinvariant_lattice(L::ZLat, G::MatElem;
-                        ambient_representation::Bool = true) -> ZLat
+    coinvariant_lattice(L::ZZLat, G::Vector{MatElem};
+                        ambient_representation::Bool = true) -> ZZLat
+    coinvariant_lattice(L::ZZLat, G::MatElem;
+                        ambient_representation::Bool = true) -> ZZLat
 
 Given a $\mathbf{Z}$-lattice $L$ and a list of matrices $G$ inducing
 endomorphisms of $L$ (or just one matrix $G$), return the orthogonal
@@ -1430,7 +1430,7 @@ If `ambient_representation` is `true` (the default), the endomorphism is
 represented with respect to the ambient space of $L$. Otherwise, the
 endomorphism is represented with respect to the basis of $L$.
 """
-coinvariant_lattice(L::ZLat, G::Union{MatElem, Vector{<:MatElem}}; ambient_representation::Bool = true) =
+coinvariant_lattice(L::ZZLat, G::Union{MatElem, Vector{<:MatElem}}; ambient_representation::Bool = true) =
   orthogonal_submodule(L, invariant_lattice(L, G, ambient_representation = ambient_representation))
 
 ################################################################################
@@ -1440,22 +1440,22 @@ coinvariant_lattice(L::ZLat, G::Union{MatElem, Vector{<:MatElem}}; ambient_repre
 ################################################################################
 
 @doc raw"""
-    Base.in(v::Vector, L::ZLat) -> Bool
+    Base.in(v::Vector, L::ZZLat) -> Bool
 
 Return whether the vector `v` lies in the lattice `L`.
 """
-function Base.in(v::Vector, L::ZLat)
+function Base.in(v::Vector, L::ZZLat)
   @req length(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   V = matrix(QQ, 1, length(v), v)
   return V in L
 end
 
 @doc raw"""
-    Base.in(v::QQMatrix, L::ZLat) -> Bool
+    Base.in(v::QQMatrix, L::ZZLat) -> Bool
 
 Return whether the row span of `v` lies in the lattice `L`.
 """
-function Base.in(v::QQMatrix, L::ZLat)
+function Base.in(v::QQMatrix, L::ZZLat)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   @req nrows(v) == 1 "Must be a row vector."
   B = basis_matrix(L)
@@ -1464,7 +1464,7 @@ function Base.in(v::QQMatrix, L::ZLat)
 end
 
 @doc raw"""
-    is_primitive(L::ZLat, v::Union{Vector, QQMatrix}) -> Bool
+    is_primitive(L::ZZLat, v::Union{Vector, QQMatrix}) -> Bool
 
 Return whether the vector `v` is primitive in `L`.
 
@@ -1472,16 +1472,16 @@ A vector `v` in a $\mathbb Z$-lattice `L` is called primitive
 if for all `w` in `L` such that $v = dw$ for some integer `d`,
 then $d = \pm 1$.
 """
-is_primitive(::ZLat, ::Union{Vector, QQMatrix})
+is_primitive(::ZZLat, ::Union{Vector, QQMatrix})
 
-function is_primitive(L::ZLat, v::Vector{<: RationalUnion})
+function is_primitive(L::ZZLat, v::Vector{<: RationalUnion})
   @req v in L "v is not contained in L"
   is_zero(v) && return true
   M = lattice_in_same_ambient_space(L, matrix(QQ,1,length(v), v), check = false)
   return is_primitive(L, M)
 end
 
-function is_primitive(L::ZLat, v::QQMatrix)
+function is_primitive(L::ZZLat, v::QQMatrix)
   @req v in L "v is not contained in L"
   is_zero(v) && return true
   M = lattice_in_same_ambient_space(L, v, check = false)
@@ -1489,7 +1489,7 @@ function is_primitive(L::ZLat, v::QQMatrix)
 end
 
 @doc raw"""
-    divisibility(L::ZLat, v::Union{Vector, QQMatrix}) -> QQFieldElem
+    divisibility(L::ZZLat, v::Union{Vector, QQMatrix}) -> QQFieldElem
 
 Return the divisibility of `v` with respect to `L`.
 
@@ -1498,16 +1498,16 @@ we call the divisibility of `v` with the respect to `L` the
 non-negative generator of the fractional $\mathbb Z$-ideal
 $\Phi(v, L)$.
 """
-divisibility(::ZLat, ::Union{Vector, QQMatrix})
+divisibility(::ZZLat, ::Union{Vector, QQMatrix})
 
-function divisibility(L::ZLat, v::Vector{<: RationalUnion})
+function divisibility(L::ZZLat, v::Vector{<: RationalUnion})
   @req length(v) == degree(L) "The vector should have the same length as the degree of the lattice"
   imv = matrix(QQ, 1, length(v), v)*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
   imv = fractional_ideal(ZZ, vec(collect(imv)))
   return gen(imv)
 end
 
-function divisibility(L::ZLat, v::QQMatrix)
+function divisibility(L::ZZLat, v::QQMatrix)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice"
   @req nrows(v) == 1 "v must be a row vector"
   imv = v*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
@@ -1522,7 +1522,7 @@ end
 ################################################################################
 
 @doc raw"""
-    lll(L::ZLat, same_ambient::Bool = true) -> ZLat
+    lll(L::ZZLat, same_ambient::Bool = true) -> ZZLat
 
 Given an integral $\mathbb Z$-lattice `L` with basis matrix `B`, compute a basis
 `C` of `L` such that the gram matrix $G_C$ of `L` with respect to `C` is LLL-reduced.
@@ -1531,7 +1531,7 @@ By default, it creates the lattice in the same ambient space as `L`. This
 can be disabled by setting `same_ambient = false`.
 Works with both definite and indefinite lattices.
 """
-function lll(L::ZLat; same_ambient::Bool = true)
+function lll(L::ZZLat; same_ambient::Bool = true)
   rank(L) == 0 && return L
   def = is_definite(L)
   G = gram_matrix(L)
@@ -1560,9 +1560,9 @@ function lll(L::ZLat; same_ambient::Bool = true)
   end
   if same_ambient
     B2 = U*basis_matrix(L)
-    return lattice(ambient_space(L), B2, check = false)::ZLat
+    return lattice(ambient_space(L), B2, check = false)::ZZLat
   else
-    return Zlattice(gram = G2)
+    return integer_lattice(gram = G2)
   end
 end
 
@@ -1573,7 +1573,7 @@ end
 ################################################################################
 
 @doc raw"""
-    root_lattice_recognition(L::ZLat)
+    root_lattice_recognition(L::ZZLat)
 
 Return the ADE type of the root sublattice of `L`.
 
@@ -1591,7 +1591,7 @@ For more recognizable gram matrices use [`root_lattice_recognition_fundamental`]
 # Examples
 
 ```jldoctest
-julia> L = Zlattice(gram=ZZ[4  0 0  0 3  0 3  0;
+julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
                             0 16 8 12 2 12 6 10;
                             0  8 8  6 2  8 4  5;
                             0 12 6 10 2  9 5  8;
@@ -1602,16 +1602,16 @@ julia> L = Zlattice(gram=ZZ[4  0 0  0 3  0 3  0;
 Quadratic lattice of rank 8 and degree 8 over the rationals
 
 julia> R = root_lattice_recognition(L)
-([(:A, 1), (:D, 6)], ZLat[Quadratic lattice of rank 1 and degree 8 over the rationals, Quadratic lattice of rank 6 and degree 8 over the rationals])
+([(:A, 1), (:D, 6)], ZZLat[Quadratic lattice of rank 1 and degree 8 over the rationals, Quadratic lattice of rank 6 and degree 8 over the rationals])
 ```
 """
-function root_lattice_recognition(L::ZLat)
+function root_lattice_recognition(L::ZZLat)
   irr = irreducible_components(root_sublattice(L))
   return Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr], irr
 end
 
 @doc raw"""
-    irreducible_components(L::ZLat)
+    irreducible_components(L::ZZLat)
 
 Return the irreducible components ``L_i`` of the positive definite lattice ``L``.
 
@@ -1620,7 +1620,7 @@ This yields a maximal orthogonal splitting of `L` as
 L = \bigoplus_i L_i.
 ```
 """
-function irreducible_components(L::ZLat)
+function irreducible_components(L::ZZLat)
   @req is_definite(L) "L must be definite"
   if is_positive_definite(L)
     return _irreducible_components_pos_def(L)
@@ -1628,13 +1628,13 @@ function irreducible_components(L::ZLat)
   Lpos = rescale(L, -1)
   irr = _irreducible_components_pos_def(Lpos)
   V = ambient_space(L)
-  return ZLat[lattice(V, basis_matrix(i), check = false) for i in irr]
+  return ZZLat[lattice(V, basis_matrix(i), check = false) for i in irr]
 end
 
-function _irreducible_components_pos_def(L::ZLat, upper_bound=nothing)
+function _irreducible_components_pos_def(L::ZZLat, upper_bound=nothing)
   components1 =  _irreducible_components_gram(L)
-  components2 = ZLat[]
-  irreducible = ZLat[]
+  components2 = ZZLat[]
+  irreducible = ZZLat[]
   # special for root lattices
   for c in components1
     if all(abs(i)==2 for i in diagonal(gram_matrix(c)))
@@ -1669,13 +1669,13 @@ end
 # finds the irreducible components of the graph of the gram matrix
 # if it has only 2 on the diagonal, this is good enough
 # otherwise it may be insufficient
-function _irreducible_components_gram(L::ZLat)
+function _irreducible_components_gram(L::ZZLat)
   L = lll(L)
   V = ambient_space(L)
   B = basis_matrix(L)
   B = [B[i,:] for i in 1:nrows(B)]
   C = QQMatrix[]
-  components = ZLat[]
+  components = ZZLat[]
   while length(B) > 0
     basis = QQMatrix[]
     b = pop!(B)
@@ -1743,7 +1743,7 @@ function _irreducible_components_short_vectors(L, ub)
 end
 
 @doc raw"""
-    root_lattice_recognition_fundamental(L::ZLat)
+    root_lattice_recognition_fundamental(L::ZZLat)
 
 Return the ADE type of the root sublattice of `L`
 as well as the corresponding irreducible root sublattices
@@ -1762,7 +1762,7 @@ Output:
 # Examples
 
 ```jldoctest
-julia> L = Zlattice(gram=ZZ[4  0 0  0 3  0 3  0;
+julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
                             0 16 8 12 2 12 6 10;
                             0  8 8  6 2  8 4  5;
                             0 12 6 10 2  9 5  8;
@@ -1785,10 +1785,10 @@ julia> gram_matrix(R[1])
 
 ```
 """
-function root_lattice_recognition_fundamental(L::ZLat)
+function root_lattice_recognition_fundamental(L::ZZLat)
   V = ambient_space(L)
   ADE,components = root_lattice_recognition(L)
-  components_new = ZLat[]
+  components_new = ZZLat[]
   basis = zero_matrix(QQ,0,degree(L))
   for i in 1:length(ADE)
     ade = ADE[i]
@@ -1851,7 +1851,7 @@ function _ADE_type_with_isometry_irreducible(L)
 end
 
 @doc raw"""
-    root_sublattice(L::ZLat) -> ZLat
+    root_sublattice(L::ZZLat) -> ZZLat
 
 Return the sublattice spanned by the roots
 of length at most $2$.
@@ -1867,7 +1867,7 @@ vectors `x` of `L` with $|x^2|\leq 2$.
 
 # Examples
 ```jldoctest
-julia> L = Zlattice(gram = ZZ[2 0; 0 4]);
+julia> L = integer_lattice(gram = ZZ[2 0; 0 4]);
 
 julia> root_sublattice(L)
 Quadratic lattice of rank 1 and degree 2 over the rationals
@@ -1877,7 +1877,7 @@ julia> basis_matrix(root_sublattice(L))
 
 ```
 """
-function root_sublattice(L::ZLat)
+function root_sublattice(L::ZZLat)
   V = ambient_space(L)
   @req is_integral(L) "L must be integral"
   @req is_definite(L) "L must be definite"
@@ -1897,7 +1897,7 @@ end
 ################################################################################
 
 @doc raw"""
-    primitive_closure(M::ZLat, N::ZLat) -> ZLat
+    primitive_closure(M::ZZLat, N::ZZLat) -> ZZLat
 
 Given two $\mathbb Z$-lattices `M` and `N` with $N \subseteq \mathbb{Q} M$,
 return the primitive closure $M \cap \mathbb{Q} N$ of `N` in `M`.
@@ -1925,7 +1925,7 @@ false
 
 ```
 """
-function primitive_closure(M::ZLat, N::ZLat)
+function primitive_closure(M::ZZLat, N::ZZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must be in the same ambient space"
 
   ok, B = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side = :left)
@@ -1938,7 +1938,7 @@ function primitive_closure(M::ZLat, N::ZLat)
 end
 
 @doc raw"""
-    is_primitive(M::ZLat, N::ZLat) -> Bool
+    is_primitive(M::ZZLat, N::ZZLat) -> Bool
 
 Given two $\mathbb Z$-lattices $N \subseteq M$, return whether `N` is a
 primitive sublattice of `M`.
@@ -1970,14 +1970,14 @@ julia> is_primitive(M, N)
 true
 ```
 """
-function is_primitive(M::ZLat, N::ZLat)
+function is_primitive(M::ZZLat, N::ZZLat)
   @req is_sublattice(M, N) "N must be a sublattice of M"
 
   return primitive_closure(M, N) == N
 end
 
 @doc raw"""
-    glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
+    glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
                            -> Tuple{TorQuadModuleMor, TorQuadModuleMor, TorQuadModuleMor}
 
 Given three integral $\mathbb Z$-lattices `L`, `S` and `R`, with `S` and `R`
@@ -2031,7 +2031,7 @@ julia> is_bijective(glue)
 true
 ```
 """
-function glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
+function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   if check
     @req is_integral(L) "The lattices must be integral"
     @req is_primitive(L, S) && is_primitive(L, R) "S and R must be primitive in L"
@@ -2070,7 +2070,7 @@ function glue_map(L::ZLat, S::ZLat, R::ZLat; check=true)
 end
 
 @doc raw"""
-    overlattice(glue_map::TorQuadModuleMor) -> ZLat
+    overlattice(glue_map::TorQuadModuleMor) -> ZZLat
 
 Given the glue map of a primitive extension of $\mathbb Z$-lattices
 $S+R \subseteq L$, return `L`.
@@ -2121,7 +2121,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_primary_with_prime(L::ZLat) -> Bool, ZZRingElem
+    is_primary_with_prime(L::ZZLat) -> Bool, ZZRingElem
 
 Given a $\mathbb Z$-lattice `L`, return whether `L` is primary, that is whether `L`
 is integral and its discriminant group (see [`discriminant_group`](@ref)) is a
@@ -2131,7 +2131,7 @@ second output.
 Note that for unimodular lattices, this function returns `(true, 1)`. If the
 lattice is not primary, the second return value is `-1` by default.
 """
-function is_primary_with_prime(L::ZLat)
+function is_primary_with_prime(L::ZZLat)
   @req is_integral(L) "L must be integral"
   d = ZZ(abs(det(L)))
   if d == 1
@@ -2145,28 +2145,28 @@ function is_primary_with_prime(L::ZLat)
 end
 
 @doc raw"""
-    is_primary(L::ZLat, p::Union{Integer, ZZRingElem}) -> Bool
+    is_primary(L::ZZLat, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L` and a prime number `p`,
 return whether `L` is `p`-primary, that is whether its discriminant group
 (see [`discriminant_group`](@ref)) is a `p`-group.
 """
-function is_primary(L::ZLat, p::Union{Integer, ZZRingElem})
+function is_primary(L::ZZLat, p::Union{Integer, ZZRingElem})
   bool, q = is_primary_with_prime(L)
   return bool && q == p
 end
 
 @doc raw"""
-    is_unimodular(L::ZLat) -> Bool
+    is_unimodular(L::ZZLat) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L`, return whether `L` is unimodular,
 that is whether its discriminant group (see [`discriminant_group`](@ref))
 is trivial.
 """
-is_unimodular(L::ZLat) = is_primary(L, 1)
+is_unimodular(L::ZZLat) = is_primary(L, 1)
 
 @doc raw"""
-    is_elementary_with_prime(L::ZLat) -> Bool, ZZRingElem
+    is_elementary_with_prime(L::ZZLat) -> Bool, ZZRingElem
 
 Given a $\mathbb Z$-lattice `L`, return whether `L` is elementary, that is whether
 `L` is integral and its discriminant group (see [`discriminant_group`](@ref)) is
@@ -2176,7 +2176,7 @@ returned as second output.
 Note that for unimodular lattices, this function returns `(true, 1)`. If the lattice
 is not elementary, the second return value is `-1` by default.
 """
-function is_elementary_with_prime(L::ZLat)
+function is_elementary_with_prime(L::ZZLat)
   bool, p = is_primary_with_prime(L)
   bool || return false, ZZ(-1)
   if !is_integer(p*scale(dual(L)))
@@ -2186,13 +2186,13 @@ function is_elementary_with_prime(L::ZLat)
 end
 
 @doc raw"""
-    is_elementary(L::ZLat, p::Union{Integer, ZZRingElem}) -> Bool
+    is_elementary(L::ZZLat, p::Union{Integer, ZZRingElem}) -> Bool
 
 Given an integral $\mathbb Z$-lattice `L` and a prime number `p`, return whether
 `L` is `p`-elementary, that is whether its discriminant group
 (see [`discriminant_group`](@ref)) is an elementary `p`-group.
 """
-function is_elementary(L::ZLat, p::Union{Integer, ZZRingElem})
+function is_elementary(L::ZZLat, p::Union{Integer, ZZRingElem})
   bool, q = is_elementary_with_prime(L)
   return bool && q == p
 end
@@ -2275,7 +2275,7 @@ function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)
 end
 
 
-function _is_isometric_indef(L::ZLat, M::ZLat)
+function _is_isometric_indef(L::ZZLat, M::ZZLat)
   @req rank(L)>=3 "Strong approximation needs rank at least 3"
   @req degree(L)==rank(L) "Lattice needs to be full for now"
 
@@ -2299,7 +2299,7 @@ function _is_isometric_indef(L::ZLat, M::ZLat)
   return is_zero(isS(r))
 end
 
-function _is_isometric_indef_approx(L::ZLat, M::ZLat)
+function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
   # move to same ambient space
   qL = ambient_space(L)
   diag, trafo = Hecke._gram_schmidt(gram_matrix(qL), identity)
@@ -2373,11 +2373,11 @@ function _is_isometric_indef_approx(L::ZLat, M::ZLat)
 end
 
 @doc raw"""
-    index(L::ZLat, M::ZLat) -> IntExt
+    index(L::ZZLat, M::ZZLat) -> IntExt
 
 Return the index $[L:M]=|L/M|$ of $M$ in $L$.
 """
-function index(L::ZLat, M::ZLat)
+function index(L::ZZLat, M::ZZLat)
   b, M = is_sublattice_with_relations(L, M)
   b || error("M must be a sublattice of L to have a well defined index [L:M]")
   if rank(L)>rank(M)
@@ -2475,7 +2475,7 @@ function highest_root(ADE::Symbol, n)
   return w
 end
 
-function _weyl_vector(R::ZLat)
+function _weyl_vector(R::ZZLat)
   weyl = matrix(ZZ,1,rank(R),ones(1,rank(R)))*inv(gram_matrix(R))
   return weyl*basis_matrix(R)
 end
@@ -2486,13 +2486,13 @@ end
 Return the Leech lattice.
 """
 function leech_lattice()
-  R = Zlattice(gram=2*identity_matrix(ZZ,24))
+  R = integer_lattice(gram=2*identity_matrix(ZZ,24))
   N = maximal_even_lattice(R) # niemeier lattice
   return leech_lattice(N)[1]
 end
 
 @doc raw"""
-    leech_lattice(niemeier_lattice::ZLat) -> ZLat, QQMatrix, Int
+    leech_lattice(niemeier_lattice::ZZLat) -> ZZLat, QQMatrix, Int
 
 Return a triple `L, v, h` where `L` is the Leech lattice.
 
@@ -2504,7 +2504,7 @@ This implements the 23 holy constructions of the Leech lattice in [CS99](@cite).
 
 # Examples
 ```jldoctest leech
-julia> R = Zlattice(gram=2 * identity_matrix(ZZ, 24));
+julia> R = integer_lattice(gram=2 * identity_matrix(ZZ, 24));
 
 julia> N = maximal_even_lattice(R) # Some Niemeier lattice
 Quadratic lattice of rank 24 and degree 24 over the rationals
@@ -2549,7 +2549,7 @@ true
 
 ```
 """
-function leech_lattice(niemeier_lattice::ZLat)
+function leech_lattice(niemeier_lattice::ZZLat)
   # construct the leech lattice from one of the 23 holy constructions in SPLAG
   # we follow a mix of Ebeling and SPLAG
   # there seem to be some signs wrong in Ebeling?
@@ -2570,7 +2570,7 @@ function leech_lattice(niemeier_lattice::ZLat)
   @hassert :Lattice 1 all(h == coxeter_number(i...) for i in ade)
   rhoB = solve_left(basis_matrix(N), rho)
   v = QQ(1, h) * transpose(rhoB)
-  A = Zlattice(gram=gram_matrix(N))
+  A = integer_lattice(gram=gram_matrix(N))
   c = QQ(2 + 2//h)
   vv = vec(collect(v))
   sv = [matrix(QQ, 1, 24, vv - i)*basis_matrix(N) for (i, _) in Hecke.close_vectors(A, vv, c, c, check=false)]

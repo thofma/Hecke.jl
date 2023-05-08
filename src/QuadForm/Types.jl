@@ -6,7 +6,7 @@ export TorQuadModule
 export TorQuadModuleElem
 export TorQuadModuleMor
 export VecSpaceRes
-export ZLat
+export ZZLat
 
 ################################################################################
 #
@@ -182,7 +182,7 @@ end
 #
 ###############################################################################
 
-@attributes mutable struct ZLat <: AbstractLat{QQField}
+@attributes mutable struct ZZLat <: AbstractLat{QQField}
   space::QuadSpace{QQField, QQMatrix}
   rational_span::QuadSpace{QQField, QQMatrix}
   basis_matrix::QQMatrix
@@ -197,7 +197,7 @@ end
   scale::QQFieldElem
   norm::QQFieldElem
 
-  function ZLat(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix)
+  function ZZLat(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix)
     z = new()
     z.space = V
     z.basis_matrix = B
@@ -220,7 +220,7 @@ end
 ```jldoctest
 julia> A = matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]);
 
-julia> L = Zlattice(gram = A);
+julia> L = integer_lattice(gram = A);
 
 julia> T = Hecke.discriminant_group(L)
 Finite quadratic module over Integer Ring with underlying abelian group
@@ -272,8 +272,8 @@ then the coordinates with respec to the basis of `M` are given by
 """
 @attributes mutable struct TorQuadModule
   ab_grp::GrpAbFinGen             # underlying abelian group
-  cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
-  rels::ZLat
+  cover::ZZLat                     # ZZLat -> ab_grp, x -> x * proj
+  rels::ZZLat
   proj::ZZMatrix                  # is a projection and respects the forms
   gens_lift::Vector{Vector{QQFieldElem}}
   gens_lift_mat::QQMatrix

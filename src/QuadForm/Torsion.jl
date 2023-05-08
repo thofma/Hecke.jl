@@ -13,7 +13,7 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
 # compute the torsion quadratic module M/N
 
 @doc raw"""
-    torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
+    torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
                                                     snf::Bool = true,
                                                     modulus::QQFieldElem = QQFieldElem(0),
                                                     check::Bool = true) -> TorQuadModule
@@ -27,7 +27,7 @@ generators of the abelian group $M/N$.
 If `snf` is `true`, the underlying abelian group will be in Smith normal form.
 Otherwise, the images of the basis of $M$ will be used as the generators.
 """
-function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
+function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
                                                     snf::Bool = true,
                                                     modulus::QQFieldElem = QQFieldElem(0),
                                                     modulus_qf::QQFieldElem = QQFieldElem(0),
@@ -101,7 +101,7 @@ function torsion_quadratic_module(M::ZLat, N::ZLat; gens::Union{Nothing, Vector{
 end
 
 @doc raw"""
-    discriminant_group(L::ZLat) -> TorQuadModule
+    discriminant_group(L::ZZLat) -> TorQuadModule
 
 Return the discriminant group of `L`.
 
@@ -115,7 +115,7 @@ $$D \times D \to \Q / \Z \qquad (x,y) \mapsto \Phi(x,y) + \Z.$$
 If `L` is even, then the discriminant group is equipped with the discriminant
 quadratic form $D \to \Q / 2 \Z, x \mapsto \Phi(x,x) + 2\Z$.
 """
-@attr function discriminant_group(L::ZLat)::TorQuadModule
+@attr function discriminant_group(L::ZZLat)::TorQuadModule
   @req is_integral(L) "The lattice must be integral"
   if rank(L) == 0
     T = torsion_quadratic_module(dual(L), L, modulus = one(QQ), modulus_qf = QQ(2))
@@ -167,14 +167,14 @@ Return the underlying abelian group of `T`.
 abelian_group(T::TorQuadModule) = T.ab_grp
 
 @doc raw"""
-    cover(T::TorQuadModule) -> ZLat
+    cover(T::TorQuadModule) -> ZZLat
 
 For $T=M/N$ this returns $M$.
 """
 cover(T::TorQuadModule) = T.cover
 
 @doc raw"""
-    relations(T::TorQuadModule) -> ZLat
+    relations(T::TorQuadModule) -> ZZLat
 
 For $T=M/N$ this returns $N$.
 """
@@ -1385,7 +1385,7 @@ function torsion_quadratic_module(q::QQMatrix)
   Q = change_base_ring(FlintZZ, d * q)
   S, U, V = snf_with_transform(Q)
   D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
-  L = Zlattice(1//d * identity_matrix(QQ, nrows(q)), gram = d^2 * q)
+  L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)), gram = d^2 * q)
   denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
   rels = diagonal_matrix(denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
@@ -1643,7 +1643,7 @@ torsion quadratic modules.
 
 # Examples
 ```jldoctest
-julia> L = Zlattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]));
+julia> L = integer_lattice(gram=matrix(ZZ, [[2,-1,0,0],[-1,2,-1,-1],[0,-1,2,0],[0,-1,0,2]]));
 
 julia> T = Hecke.discriminant_group(L);
 
@@ -1667,7 +1667,7 @@ function brown_invariant(T::TorQuadModule)
 end
 
 @doc raw"""
-    genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}) -> ZGenus
+    genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}) -> ZZGenus
 
 Return the genus of an integer lattice with discriminant group `T` and the
 given `signature_pair`. If no such genus exists, raise an error.
@@ -1690,7 +1690,7 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
   end
   disc = order(T)
   determinant = ZZ(-1)^s_minus * disc
-  local_symbols = ZpGenus[]
+  local_symbols = LocalZZGenus[]
   P = prime_divisors(2 * disc)
   sort!(P) # expects primes in ascending order
   for p in P
@@ -1702,7 +1702,7 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
       G_p = change_base_ring(ZZ, G_p)
       genus_p = genus(G_p, p, valuation(elementary_divisors(D)[end], p))
     else
-      genus_p = ZpGenus(p, Vector{Int}[])
+      genus_p = LocalZZGenus(p, Vector{Int}[])
     end
     rk = rank - length(elementary_divisors(D))
     if rk > 0
@@ -1791,8 +1791,8 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
     for b1 in block1
       for b2 in block2
         sym2[1:3] = [b0, b1, b2]
-        local_symbols[1] = ZpGenus(2, sym2)
-        genus = ZGenus(signature_pair, local_symbols)
+        local_symbols[1] = LocalZZGenus(2, sym2)
+        genus = ZZGenus(signature_pair, local_symbols)
         if _isglobal_genus(genus)
           # make the symbol sparse again.
           i = 0
@@ -1805,8 +1805,8 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
             end
             i = i + 1
           end
-          local_symbols[1] = ZpGenus(2, sym2)
-          genus = ZGenus(signature_pair, local_symbols)
+          local_symbols[1] = LocalZZGenus(2, sym2)
+          genus = ZZGenus(signature_pair, local_symbols)
           return genus
         end
       end

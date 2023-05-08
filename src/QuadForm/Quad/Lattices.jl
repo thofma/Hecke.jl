@@ -291,7 +291,7 @@ end
 #
 ################################################################################
 
-function jordan_decomposition(L::Union{ZLat, QuadLat}, p)
+function jordan_decomposition(L::Union{ZZLat, QuadLat}, p)
   F = gram_matrix(ambient_space(L))
   even = is_dyadic(p)
   if even

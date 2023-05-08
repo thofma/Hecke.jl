@@ -126,7 +126,7 @@ end
   # integral
 
   # the minimal polynomial of f if \Phi_5, mb is the "absolute representation matrix"
-  # of a primitive 5-root of the unity. Then, changing the basis of the ZLat on which
+  # of a primitive 5-root of the unity. Then, changing the basis of the ZZLat on which
   # f acts, we can recover basis for which the induced action of f on the correspodning
   # hermitian lattice is given by multiplication by a 5-th root of the unity.
   # There are 4 of them and f is of order (size) 8, which is 4 times 2, so we should

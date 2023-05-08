@@ -303,7 +303,7 @@ function shortest_vectors(M::arb_mat)
   n = nrows(M)
   d = zero_matrix(ZZ, n, n)
   round_scale!(d, M, p)
-  L = Zlattice(d)
+  L = integer_lattice(d)
   U = shortest_vectors(L)
   return map(matrix, [map(R, u)*M for u in U])
 end
