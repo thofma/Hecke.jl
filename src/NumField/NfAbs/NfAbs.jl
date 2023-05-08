@@ -82,7 +82,7 @@ These fields tend to have non-trivial class groups.
 
 ```jldoctest
 julia> wildanger_field(3, ZZ(10), "a")
-(Number field over Rational Field with defining polynomial x^3 - 10*x^2 + 10*x - 10, a)
+(Number field of degree 3 over QQ, a)
 ```
 """
 function wildanger_field(n::Int, B::ZZRingElem, s::String = "_\$"; check::Bool = true, cached::Bool = true)
@@ -149,7 +149,7 @@ Returns the rational numbers as the number field defined by $x - 1$.
 
 ```jldoctest
 julia> rationals_as_number_field()
-(Number field over Rational Field with defining polynomial x - 1, 1)
+(Number field of degree 1 over QQ, 1)
 ```
 """
 function rationals_as_number_field()

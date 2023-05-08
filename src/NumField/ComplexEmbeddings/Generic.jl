@@ -13,12 +13,12 @@ julia> K, a = quadratic_field(-3);
 
 julia> complex_embeddings(K)
 2-element Vector{Hecke.NumFieldEmbNfAbs}:
- Embedding corresponding to ≈ 0.00 + 1.73 * i
- Embedding corresponding to ≈ 0.00 - 1.73 * i
+ Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
+ Complex embedding corresponding to 0.00 - 1.73 * i of imaginary quadratic field defined by x^2 + 3
 
 julia> complex_embeddings(K, conjugates = false)
 1-element Vector{Hecke.NumFieldEmbNfAbs}:
- Embedding corresponding to ≈ 0.00 + 1.73 * i
+ Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
 ```
 """
 complex_embeddings(K::NumField)
@@ -128,9 +128,9 @@ julia> L, b = number_field(polynomial(K, [1, 0, 1]), "b");
 julia> e = complex_embeddings(L);
 
 julia> restrict(e[1], K)
-Embedding of
-Real quadratic field defined by x^2 - 3
-corresponding to ≈ -1.73
+Complex embedding corresponding to -1.73
+  of number field with defining polynomial x^2 - 3
+    over rational field
 ```
 """
 restrict(f::NumFieldEmb, K::NumField)
@@ -153,9 +153,9 @@ julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 julia> e = complex_embeddings(K);
 
 julia> restrict(e[1], ktoK)
-Embedding of
-Number field over Rational Field with defining polynomial x^2 + x - 1
-corresponding to ≈ 0.62
+Complex embedding corresponding to 0.62
+  of number field with defining polynomial x^2 + x - 1
+    over rational field
 ```
 """
 restrict(f::NumFieldEmb, K::NumFieldMor)
@@ -183,8 +183,8 @@ julia> e = complex_embeddings(k)[1];
 
 julia> extend(e, ktoK)
 2-element Vector{Hecke.NumFieldEmbNfAbs}:
- Embedding corresponding to ≈ -0.81 + 0.59 * i
- Embedding corresponding to ≈ -0.81 - 0.59 * i
+ Complex embedding corresponding to -0.81 + 0.59 * i of cyclotomic field of order 5
+ Complex embedding corresponding to -0.81 - 0.59 * i of cyclotomic field of order 5
 ```
 """
 function extend(e::NumFieldEmb, f::NumFieldMor)
@@ -299,13 +299,13 @@ are by default all real embeddings of the number field.
 
 # Examples
 
-```jldoctest; filter = r"Embedding.*"
+```jldoctest; filter = r"Complex.*"
 julia> K, a = quadratic_field(3);
 
 julia> signs(a)
 Dict{Hecke.NumFieldEmbNfAbs, Int64} with 2 entries:
-  Embedding corresponding to ≈ -1.73 => -1
-  Embedding corresponding to ≈ 1.73  => 1
+  Complex embedding corresponding to -1.73 of real quadratic field define… => -1
+  Complex embedding corresponding to 1.73 of real quadratic field defined… => 1
 ```
 """
 function signs(a::Union{NumFieldElem, FacElem, NumFieldOrdElem},

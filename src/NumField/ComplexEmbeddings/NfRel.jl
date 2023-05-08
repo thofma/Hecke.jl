@@ -145,17 +145,27 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, ::MIME"text/plain",  P::NumFieldEmbNfRel)
-  print(io, "Embedding of\n")
-  println(io, number_field(P))
-  print(io, "extending the embedding\n", P.base_field_emb, "\n")
-  print(io, "with root ≈ ")
+function Base.show(io::IO, ::MIME"text/plain", P::NumFieldEmbNfRel)
+  print(io, "Complex embedding corresponding to root ")
   _print_acb_neatly(io, P.r)
+  io = pretty(io)
+  println(io)
+  print(io, Indent(), "of ", Lowercase())
+  Base.show(io, MIME"text/plain"(), number_field(P))
+  println(io)
+  print(io, "extending ", Lowercase(), P.base_field_emb)
+  print(io, Dedent())
 end
 
 function Base.show(io::IO, f::NumFieldEmbNfRel)
-  print(io, "Embedding corresponding to (", f.base_field_emb, ") and ≈ ")
-  _print_acb_neatly(io, f.r)
+  if get(io, :supercompact, false)
+    print(io, "Complex embedding of relative number field")
+  else
+    print(io, "Complex embedding corresponding to root ")
+    _print_acb_neatly(io, f.r)
+    io = pretty(io)
+    print(IOContext(io, :supercompact => true), " of ", Lowercase(), number_field(f))
+  end
 end
 
 ################################################################################

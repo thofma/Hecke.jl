@@ -155,9 +155,22 @@ end
 #
 ################################################################################
 
+function Base.show(io::IO, ::MIME"text/plain", a::NfRel)
+  println(io, "Relative number field with defining polynomial ", a.pol)
+  io = pretty(io)
+  print(io, Indent(), "over ", Lowercase())
+  show(io, MIME"text/plain"(), base_field(a))
+  print(io, Dedent())
+end
+
 function Base.show(io::IO, a::NfRel)
-  print(io, "Relative number field with defining polynomial ", a.pol)
-  print(io, "\n over ", a.base_ring)
+  if get(io, :supercompact, false)
+    print(io, "Relative number field")
+  else
+    io = pretty(io)
+    print(io, "Relative number field of degree ", degree(a), " over ")
+    print(IOContext(io, :supercompact => true), Lowercase(), base_field(a))
+  end
 end
 
 function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)
@@ -882,11 +895,12 @@ $\zeta_n+zeta_n^{-1}$.
 # Example
 ```jldoctest
 julia> E, b = cyclotomic_field_as_cm_extension(6)
-(Relative number field with defining polynomial t^2 - t + 1
- over Maximal real subfield of cyclotomic field of order 6, z_6)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field
+ of order 6, z_6)
 
 julia> base_field(E)
-Maximal real subfield of cyclotomic field of order 6
+Number field with defining polynomial $ - 1
+  over rational field
 
 ```
 """
