@@ -7,3 +7,5 @@ deps/hecke/libhecke.so.0
 deps/hecke/libhecke.so.0.0.0
 docs/site/*
 docs/build/*
+Manifest.toml
+.DS_Store
