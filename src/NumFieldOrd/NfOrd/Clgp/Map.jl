@@ -560,7 +560,9 @@ function Base.round(::Type{ZZRingElem}, x::arb)
   if radius(x) > 1e-1
     throw(InexactError(:round, ZZRingElem, x))
   end
-  return round(ZZRingElem, BigFloat(x))
+  return setprecision(BigFloat, precision(parent(x))) do
+    round(ZZRingElem, BigFloat(x))
+  end
 end
 
 function Base.round(::Type{ZZMatrix}, C::Nemo.arb_mat)

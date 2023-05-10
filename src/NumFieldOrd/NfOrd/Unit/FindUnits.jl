@@ -199,6 +199,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
             done = trues(length(elements))
             not_larger = not_larger_bound + 1
             finished = true
+            @v_do :UnitGroup 2 popindent()
             break
           end
           if add_orbit
@@ -223,15 +224,14 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       end
 
       @v_do :UnitGroup 2 popindent()
-    end
+    end  #for loop
+
 
     if has_full_rank(u)
       add_done = false
       for i = 1:length(elements)
         if !done[i]
           time_torsion += @elapsed is_tors, p1 = is_torsion_unit(elements[i], false, u.tors_prec)
-          @v_do :UnitGroup 2 popindent()
-
           u.tors_prec = max(p1, u.tors_prec)
           p = max(p, u.tors_prec)
           if is_tors
@@ -250,6 +250,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       end
       u.units = reduce(u.units, u.tors_prec)
     end
+
     if finished
       break
     end

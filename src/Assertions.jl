@@ -77,6 +77,7 @@ end
 function popindent()
   a = VERBOSE_PRINT_INDENT[1]
   VERBOSE_PRINT_INDENT[1] = a - 1
+  @assert VERBOSE_PRINT_INDENT[1] >= 0
   nothing
 end
 
