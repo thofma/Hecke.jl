@@ -114,24 +114,24 @@ julia> K, a = number_field([x^2 + 1, x^3 + 2], "a");
 
 julia> emb = complex_embeddings(K)
 6-element Vector{Hecke.NumFieldEmbNfAbsNS}:
- Embedding corresponding to ≈ [ 1.00 * i, -1.26]
- Embedding corresponding to ≈ [ 1.00 * i, 0.63 + 1.09 * i]
- Embedding corresponding to ≈ [ -1.00 * i, 0.63 + 1.09 * i]
- Embedding corresponding to ≈ [ -1.00 * i, -1.26]
- Embedding corresponding to ≈ [ -1.00 * i, 0.63 - 1.09 * i]
- Embedding corresponding to ≈ [ 1.00 * i, 0.63 - 1.09 * i]
+ Complex embedding corresponding to [1.00 * i, -1.26] of non-simple number field
+ Complex embedding corresponding to [1.00 * i, 0.63 + 1.09 * i] of non-simple number field
+ Complex embedding corresponding to [-1.00 * i, 0.63 + 1.09 * i] of non-simple number field
+ Complex embedding corresponding to [-1.00 * i, -1.26] of non-simple number field
+ Complex embedding corresponding to [-1.00 * i, 0.63 - 1.09 * i] of non-simple number field
+ Complex embedding corresponding to [1.00 * i, 0.63 - 1.09 * i] of non-simple number field
 
 julia> k, b = quadratic_field(-1);
 
 julia> i = hom(k, K, a[1]);
 
 julia> restrict(emb[1], i)
-Embedding of
-Imaginary quadratic field defined by x^2 + 1
-corresponding to ≈ 1.00 * i
+Complex embedding corresponding to 1.00 * i
+  of number field with defining polynomial x^2 + 1
+    over rational field
 
 julia> restrict(emb[3], i)
-Embedding of
-Imaginary quadratic field defined by x^2 + 1
-corresponding to ≈ -1.00 * i
+Complex embedding corresponding to -1.00 * i
+  of number field with defining polynomial x^2 + 1
+    over rational field
 ```

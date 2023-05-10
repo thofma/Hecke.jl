@@ -61,7 +61,7 @@ extension of $K$ with the defining polynomial $x^n - a$.
 
 ```jldoctest
 julia> radical_extension(5, QQ(2), "a")
-(Number field over Rational Field with defining polynomial x^5 - 2, a)
+(Number field of degree 5 over QQ, a)
 ```
 """
 function radical_extension(n::Int, a::NumFieldElem, s::String = "_\$";

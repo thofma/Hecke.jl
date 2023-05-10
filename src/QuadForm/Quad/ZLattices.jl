@@ -180,7 +180,7 @@ julia> L = integer_lattice(matrix(ZZ, [2 0; -1 2]));
 
 julia> rational_span(L)
 Quadratic space over
-Rational Field
+Rational field
 with Gram matrix
 [4 -2; -2 5]
 ```

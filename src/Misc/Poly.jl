@@ -1417,10 +1417,10 @@ specified, return the `n`-th cyclotomic polynomial over the integers.
 
 ```jldoctest
 julia> F, _ = FiniteField(5)
-(Galois field with characteristic 5, 1)
+(Finite field of characteristic 5, 1)
 
 julia> Ft, _ = F["t"]
-(Univariate Polynomial Ring in t over Galois field with characteristic 5, t)
+(Univariate polynomial ring in t over GF(5), t)
 
 julia> cyclotomic_polynomial(15, Ft)
 t^8 + 4*t^7 + t^5 + 4*t^4 + t^3 + 4*t + 1
@@ -1448,8 +1448,8 @@ Return whether `p` is cyclotomic.
 
 ```jldoctest
 julia> _, b = cyclotomic_field_as_cm_extension(12)
-(Relative number field with defining polynomial t^2 - (z_12 + 1//z_12)*t + 1
- over Maximal real subfield of cyclotomic field of order 12, z_12)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field
+ of order 12, z_12)
 
 julia> is_cyclotomic_polynomial(minpoly(b))
 false

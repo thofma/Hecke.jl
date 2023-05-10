@@ -137,9 +137,28 @@ end
 #
 ################################################################################
 
+function Base.show(io::IO, ::MIME"text/plain", a::NfRelNS)
+  @show_name(io, a)
+  @show_special(io, a)
+  io = pretty(io)
+  print(io, "Non-simple number field with defining polynomials [")
+  join(io, defining_polynomials(a), ", ")
+  println(io, "]")
+  print(io, Indent(), "over ", Lowercase())
+  show(io, MIME"text/plain"(), base_field(a))
+  print(io, Dedent())
+end
+
 function Base.show(io::IO, a::NfRelNS)
-  print(io, "non-simple Relative number field with defining polynomials ", a.pol)
-  print(io, " \n over ", base_field(a))
+  @show_name(io, a)
+  @show_special(io, a)
+  if get(io, :supercompact, false)
+    print(io, "Non-simple number field")
+  else
+    io = pretty(io)
+    print(io, "Non-simple number field of degree ", degree(a))
+    print(IOContext(io, :supercompact => true), " over ", Lowercase(), base_field(a))
+  end
 end
 
 function AbstractAlgebra.expressify(a::NfRelNSElem; context = nothing)

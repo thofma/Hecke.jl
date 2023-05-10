@@ -233,10 +233,27 @@ denominator(a::NfAbsNSElem) = denominator(a.data)
 #
 ################################################################################
 
+function Base.show(io::IO, ::MIME"text/plain", a::NfAbsNS)
+  @show_name(io, a)
+  @show_special(io, a)
+  io = pretty(io)
+  print(io, "Non-simple number field with defining polynomials [")
+  join(io, defining_polynomials(a), ", ")
+  println(io, "]")
+  print(io, Indent(), "over ", Lowercase(), base_field(a))
+  print(io, Dedent())
+end
+
 function Base.show(io::IO, a::NfAbsNS)
   @show_name(io, a)
   @show_special(io, a)
-  print(io, "Non-simple number field with defining polynomials ", a.pol)
+  if get(io, :supercompact, false)
+    print(io, "Non-simple number field")
+  else
+    io = pretty(io)
+    print(io, "Non-simple number field of degree ", degree(a))
+    print(IOContext(io, :supercompact => true), " over ", Lowercase(), base_field(a))
+  end
 end
 
 function Base.show(io::IO, a::NfAbsNSElem)

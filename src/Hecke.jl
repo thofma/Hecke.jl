@@ -68,6 +68,8 @@ using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, Spa
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias
 
+import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent
+
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
