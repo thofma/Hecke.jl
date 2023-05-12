@@ -187,7 +187,6 @@ end
 log(a::ZZRingElem) = log(BigInt(a))
 log(a::QQFieldElem) = log(numerator(a)) - log(denominator(a))
 
-one(::Type{ZZRingElem}) = ZZRingElem(1)
 one(::ZZRingElem) = ZZRingElem(1)
 zero(::ZZRingElem) = ZZRingElem(0)
 
@@ -342,14 +341,6 @@ end
 function Base.divrem(a::ZZRingElem, b::Int)
   return (div(a, b), rem(a, b))
 end
-
-################################################################################
-#
-#  Should go to Nemo?
-#
-################################################################################
-
-one(::Type{QQFieldElem}) = QQFieldElem(1)
 
 ############################################################
 # more unsafe function that Bill does not want to have....
