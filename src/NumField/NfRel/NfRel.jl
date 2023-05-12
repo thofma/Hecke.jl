@@ -895,8 +895,7 @@ $\zeta_n+zeta_n^{-1}$.
 # Example
 ```jldoctest
 julia> E, b = cyclotomic_field_as_cm_extension(6)
-(Relative number field of degree 2 over maximal real subfield of cyclotomic field
- of order 6, z_6)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field of order 6, z_6)
 
 julia> base_field(E)
 Number field with defining polynomial $ - 1
