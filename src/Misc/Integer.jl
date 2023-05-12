@@ -963,7 +963,7 @@ mutable struct Divisors{T}
     for (p, k) = factor(a).fac
       k = div(k, power)
       if k > 0
-        push!(r.lf, p, k)
+        push!(r.lf, T(p), k)
       end
     end
     r.f = x -> length(x) == 0 ? one(parent(a)) : prod(x)
@@ -1033,6 +1033,7 @@ mutable struct Divisors{T}
 end
 Base.IteratorSize(::Divisors) = Base.HasLength()
 Base.length(D::Divisors) = length(D.s)
+Base.eltype(::Divisors{T}) where T = T
 
 function Base.iterate(D::Divisors)
   x = iterate(D.s)
@@ -1149,6 +1150,70 @@ function euler_phi_inv_fac_elem(n::ZZRingElem)
     E = F
   end
 end
+
+#phi(n) < n and n/phi(n) can be arbitrarily large.
+#whowever, prod(p/(p-1) for p = PrimesSet(1, 1000000)) < 25
+#so for 32-bit input, the output is also small
+function euler_phi_inv(n::Int)
+  @assert n>0
+  T = Int
+  if nbits(n) > 55 #to be safe...
+    return T[T(x) for x = euler_phi_inv(ZZ(n))]
+  end
+  lp = T[]
+  for d = Divisors(n)
+    if is_prime(d+1)
+      push!(lp, d+1)
+    end
+  end
+#  println("possible primes: ", lp)
+
+  E = Tuple{T, T, T}[]
+  res = T[]
+  for p = lp
+    v = valuation(n, p)
+    push!(E, (p-1, p, p))
+    if n == p-1
+      push!(res, p)
+    end
+    for i=1:v
+      push!(E, (p*E[end][1], p*E[end][2], p))
+      if E[end][1] == n
+        push!(res, prod(E[end][2]))
+      end
+    end
+  end
+  while true
+    F = Tuple{T, T, T}[]
+    for e = E
+      nn = divexact(n, e[1])
+      pm = e[3]
+      for p = lp
+        if p <= pm
+          continue
+        end
+        if nn % (p-1) == 0
+          v = valuation(nn, p)
+          push!(F, (e[1]*(p-1), e[2]*p, p))
+          if F[end][1] == n
+            push!(res, F[end][2])
+          end
+          for i = 1:v
+            push!(F, (p*F[end][1], p*F[end][2], p))
+            if F[end][1] == n
+              push!(res, F[end][2])
+            end
+          end
+        end
+      end
+    end
+    if length(F) == 0
+      return res
+    end
+    E = F
+  end
+end
+
 
 function euler_phi(x::Fac{ZZRingElem})
   return prod((p-1)*p^(v-1) for (p,v) = x.fac)
