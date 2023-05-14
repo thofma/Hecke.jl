@@ -62,7 +62,8 @@ end
 
 @doc raw"""
     quadratic_lattice(K::Field, basis::MatElem ; gram = nothing,
-                                                 check::Bool = true) -> QuadLat
+                                                 check::Bool = true)
+                                                          -> Union{ZZLat, QuadLat}
 
 Given a matrix `basis` and a field `K`, return the quadratic lattice spanned
 by the rows of `basis` inside the quadratic space over `K` with Gram matrix `gram`.
@@ -72,11 +73,14 @@ matrix over `K` of size the number of columns of `basis`.
 
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
+
+If $K = \mathbb{Q}$, then the output lattice is of type `ZZLat`, seen as a lattice
+over the ring $\mathbb{Z}$.
 """
 quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true) = quadratic_lattice(K, pseudo_matrix(basis), gram = gram, check = check)
 
 @doc raw"""
-    quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> QuadLat
+    quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> Union{ZZLat, QuadLat}
 
 Given a list of vectors `gens` and a field `K`, return the quadratic lattice
 spanned by the elements of `gens` inside the quadratic space over `K` with
@@ -87,12 +91,15 @@ matrix over `K` of size the length of the elements of `gens`.
 
 If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
 in the quadratic space over `K` with gram matrix `gram`.
+
+If $K = \mathbb{Q}$, then the output lattice is of type `ZZLat`, seen as a lattice
+over the ring $\mathbb{Z}$.
 """
-function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
+function quadratic_lattice(K::Field, gens::Vector; gram = nothing, check::Bool = true)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(K, 0, nrows(gram), []))
-    L = quadratic_lattice(K, pm, gram = gram, check = false)
+    L = quadratic_lattice(K, pm, gram = gram, check = check)
     return L
   end
   @assert length(gens[1]) > 0
@@ -111,16 +118,19 @@ function quadratic_lattice(K::Field, gens::Vector ; gram = nothing)
 end
 
 @doc raw"""
-    quadratic_lattice(K::Field ; gram::MatElem) -> QuadLat
+    quadratic_lattice(K::Field ; gram::MatElem) -> Union{ZZLat, QuadLat}
 
 Given a matrix `gram` and a field `K`, return the free quadratic
 lattice inside the quadratic space over `K` with Gram matrix `gram`.
+
+If $K = \mathbb{Q}$, then the output lattice is of type `ZZLat`, seen as a lattice
+over the ring $\mathbb{Z}$.
 """
-function quadratic_lattice(K::Field ; gram::MatElem)
+function quadratic_lattice(K::Field ; gram::MatElem, check::Bool = true)
   @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(K, gram)
   B = pseudo_matrix(identity_matrix(K, ncols(gram)))
-  return quadratic_lattice(K, B, gram = gram, check = false)
+  return quadratic_lattice(K, B, gram = gram, check = check)
 end
 
 ################################################################################

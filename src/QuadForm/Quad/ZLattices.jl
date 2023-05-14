@@ -61,9 +61,40 @@ function integer_lattice(B::ZZMatrix; gram = identity_matrix(FlintQQ, ncols(B)),
   return lattice(V, B, check=check)
 end
 
+### Documentation in ./Lattices.jl
+quadratic_lattice(::QQField, B::Union{ZZMatrix, QQMatrix}; gram = identity_matrix(QQ, ncols(B)), check::Bool = true) = integer_lattice(B, gram = gram, check = check)
+
 function integer_lattice(;gram, check=true)
   n = nrows(gram)
   return lattice(quadratic_space(FlintQQ, gram, check=check), identity_matrix(FlintQQ, n), check=check)
+end
+
+### Documentation in ./Lattices.jl
+quadratic_lattice(::QQField; gram, check::Bool = true) = integer_lattice(gram = gram, check = check)
+
+### Documentation in ./Lattices.jl
+function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bool = true) where T <: Union{QQMatrix, ZZMatrix, Vector{RationalUnion}}
+  if length(gens) == 0
+    @assert gram !== nothing
+    B = zero_matrix(QQ, 0, nrows(gram))
+    return quadratic_lattice(QQ, B, gram = gram, check = check)
+  end
+  @assert length(gens[1]) > 0
+  if gram == nothing
+    gram = identity_matrix(QQ, length(gens[1]))
+  end
+  if check
+    @assert gram isa MatElem
+    @req gram == transpose(gram) "Gram matrix must be symmetric"
+    @req all(v -> length(v) == ncols(gram), gens) "Incompatible arguments: elements in gens must all have the number of entries, equal to the numbers of gram (if specified)"
+  end
+  gram = map_entries(QQ, gram)
+  V = quadratic_space(QQ, gram)
+  B = zero_matrix(QQ, length(gens), length(gens[1]))
+  for i in 1:length(gens)
+    B[i,:] = gens[i]
+  end
+  return lattice(V, B, isbasis = false)
 end
 
 @doc raw"""
