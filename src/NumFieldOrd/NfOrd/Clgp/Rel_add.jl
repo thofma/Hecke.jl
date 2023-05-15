@@ -15,7 +15,7 @@ function special_prime_ideal(p::ZZRingElem, a::nf_elem)
   f = K.pol
   R = parent(f)
   Zx = polynomial_ring(FlintZZ)[1]
-  Zpx = polynomial_ring(GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
+  Zpx = polynomial_ring(Native.GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
   g = Zpx(a)
   ff = Zpx(f)
   gcd!(g, g, ff)

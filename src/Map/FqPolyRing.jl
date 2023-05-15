@@ -27,9 +27,9 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
     Fq = base_ring(h)
     p = characteristic(Fq)
     if isnmod
-      Fp = GF(Int(p); cached = false)
+      Fp = Native.GF(Int(p); cached = false)
     else
-      Fp = GF(p; cached = false)
+      Fp = Native.GF(p; cached = false)
     end
     Fpx = polynomial_ring(Fp, "x", cached = false)[1]
     g = Fpx()

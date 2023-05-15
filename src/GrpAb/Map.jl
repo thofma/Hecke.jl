@@ -76,9 +76,9 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
   G = domain(M)
   if isdefined(G, :exponent) && fits(Int, G.exponent) && is_prime(G.exponent)
     e = G.exponent
-    RR = GF(Int(e))
+    RR = Native.GF(Int(e))
     fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, vcat([x.coeff for x = a])), side = :left)
-    p = map_entries(lift, p)
+    p = map_entries(x -> lift(x), p)
   else
     fl, p = can_solve_with_solution(m, vcat([x.coeff for x = a]), side = :left)
   end

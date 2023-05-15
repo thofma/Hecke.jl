@@ -278,8 +278,7 @@ function _sub_snf(M::ZpnGModule, n::Int)
 end
 
 
-function _exponent_p_sub(M::ZpnGModule; F::fpField = GF(M.p, cached = false))
-
+function _exponent_p_sub(M::ZpnGModule; F::fpField = Native.GF(M.p, cached = false))
   @assert is_snf(M.V)
   G = M.G
   V = M.V
@@ -402,7 +401,7 @@ function _mult_by_p(M::ZpnGModule)
   p = M.p
   @assert is_snf(V)
   #  First, the quotient M/pM
-  F = GF(p, cached = false)
+  F = Native.GF(p, cached = false)
   n = ngens(V)
   Gq = _change_ring(G, F, 1)
   spaces = [Amodule(Gq)]
@@ -923,8 +922,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
 
     #We need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
     if x1 == 1
-
-      F = GF(Int(p), cached = false)
+      F = Native.GF(Int(p), cached = false)
       act_mat = Vector{fpMatrix}(undef, length(act))
       for w=1:length(act)
         act_mat[w] = zero_matrix(F, ngens(S), ngens(S))

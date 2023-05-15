@@ -233,7 +233,7 @@ function is_prime_nice(K::AnticNumberField, p::Int)
   if d % p == 0
     return false
   end
-  F = GF(p)
+  F = Native.GF(p)
   f = map_coefficients(F, d*K.pol)
   if degree(f) < degree(K)
     return false
@@ -902,7 +902,7 @@ end
 
 function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   K = base_ring(f)
-  k = GF(p)
+  k = Native.GF(p)
   s = 0
   while iszero(coeff(f, s))
     s += 1

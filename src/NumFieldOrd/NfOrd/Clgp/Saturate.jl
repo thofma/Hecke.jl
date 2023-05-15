@@ -128,7 +128,7 @@ function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberF
     push!(v1, FacElem(zeta))
   end
 
-  T = GF(p, cached = false)
+  T = Native.GF(p, cached = false)
   cA = length(v1)
   A = identity_matrix(T, cA)
 

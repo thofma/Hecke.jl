@@ -707,7 +707,7 @@ end
 Given a polynomial $f$ over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
-function factor_shape_refined(x::fpPolyRingElem) 
+function factor_shape_refined(x::PolyRingElem) 
   res = Tuple{Int, Int}[]
   square_fac = factor_squarefree(x)
   for (f, i) in square_fac
@@ -723,7 +723,7 @@ function factor_shape_refined(x::fpPolyRingElem)
 end
 
 function new_pradical_frobenius1(O::NfOrd, p::Int)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
   Rx = polynomial_ring(R, "x", cached = false)[1]
@@ -839,7 +839,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
 end
 
 function pradical_frobenius1(O::NfOrd, p::Int)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
   Rx = polynomial_ring(R, "x", cached = false)[1]
@@ -934,7 +934,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
   d = degree(O)
   M = trace_matrix(O)
   K = nf(O)
-  F = GF(p, cached = false)
+  F = Native.GF(p, cached = false)
   Fx = polynomial_ring(F, "x", cached = false)[1]
   sqf = factor_squarefree(Fx(K.pol))
   p1 = one(Fx)

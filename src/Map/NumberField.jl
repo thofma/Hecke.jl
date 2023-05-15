@@ -520,11 +520,11 @@ function small_generating_set(G::Vector{NfToNfMor})
 
 	K = domain(G[1])
 	p = 2
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
 	Rx = polynomial_ring(R, "x", cached = false)[1]
 	while iszero(discriminant(Rx(K.pol)))
 		p = next_prime(p)
-	  R = GF(p, cached = false)
+	  R = Native.GF(p, cached = false)
 		Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
 
@@ -577,11 +577,11 @@ end
 function _order(G::Vector{NfToNfMor})
   K = domain(G[1])
 	p = 2
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
 	Rx = polynomial_ring(R, "x", cached = false)[1]
 	while iszero(discriminant(Rx(K.pol)))
 		p = next_prime(p)
-	  R = GF(p, cached = false)
+	  R = Native.GF(p, cached = false)
 		Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
   given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]

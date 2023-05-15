@@ -1503,7 +1503,7 @@ function _isisotropic_with_vector(F::MatrixElem)
         end
       end
 
-      FF = GF(2, cached = false)
+      FF = Native.GF(2, cached = false)
       fl, expo = can_solve_with_solution(matrix(FF, length(signsV), length(_target), [ s.coeff[1, i] for s in signsV, i in 1:length(_target)]), matrix(FF, 1, length(_target), _target), side = :left)
       @hassert :Lattice 1 fl
 

@@ -61,7 +61,7 @@ mutable struct NormCtx_split <: NormCtx
         continue
       end
       push!(NC.lp, p)
-      R = GF(p, cached = false)
+      R = Native.GF(p, cached = false)
       push!(NC.lR, R)
       push!(NC.mp, zero_matrix(R, 1, degree(O)))
       push!(NC.np, zero_matrix(R, 1, degree(O)))

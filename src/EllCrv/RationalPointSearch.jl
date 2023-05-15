@@ -573,7 +573,7 @@ end
 #y^2 = an*x^n + a_{n-1}*x^(n-1)*z + ... + a1*x*z^(n - 1) + a0*z^n
 function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
 
-  F = GF(p, cached = false)
+  F = Native.GF(p, cached = false)
   # a contains n+1 elements : a0, ...., an
   n = length(coeff) - 1
 

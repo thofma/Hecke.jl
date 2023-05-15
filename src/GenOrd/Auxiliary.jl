@@ -204,7 +204,7 @@ function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
-  return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
+  return F, MapFromFunc(x->F(data(x)), y->R(lift(ZZ, y)), R, F)
 end
 
 Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true

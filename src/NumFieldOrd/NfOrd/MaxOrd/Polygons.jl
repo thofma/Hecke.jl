@@ -313,7 +313,7 @@ end
 
 function residual_polynomial(F, L::Line, dev::Vector{ZZPolyRingElem}, p::Union{Int, ZZRingElem})
 
-  R = GF(p, cached=false)
+  R = Native.GF(p, cached=false)
   cof = Vector{elem_type(F)}()
   Rx, x = polynomial_ring(R, "y", cached=false)
   s = L.points[1][1]
@@ -362,7 +362,7 @@ end
 
 function is_regular_at(f::ZZPolyRingElem, p::ZZRingElem)
   Zx = parent(f)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx = polynomial_ring(R, "y", cached = false)[1]
   f1 = Rx(f)
   sqf = factor_squarefree(f1)
@@ -396,7 +396,7 @@ function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
   f = K.pol
   Qx = parent(f)
   Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
   sqf = factor_squarefree(f1)
@@ -407,7 +407,7 @@ function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
     isone(m) && continue
     fac = factor(gg)
     for (g, m1) in fac
-      F, a = FiniteField(g, "a", cached = false)
+      F, a = Native.FiniteField(g, "a", cached = false)
       phi = lift(Zx, g)
       dev, quos = phi_development_with_quos(Zx(f), phi)
       N = _newton_polygon(dev, p)
@@ -458,7 +458,7 @@ function polygons_overorder(O::NfOrd, p::ZZRingElem)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
   Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
-  Kx, x = polynomial_ring(GF(p, cached=false), "x", cached=false)
+  Kx, x = polynomial_ring(Native.GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -908,7 +908,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{ZZRingElem, Int})
   K = nf(O)
   Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = Zx(K.pol)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = change_base_ring(R, f, parent = Rx)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
@@ -929,7 +929,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{ZZRingElem, Int})
       continue
     end
     Nl = filter(x -> slope(x)<0, N.lines)
-    F, a = FiniteField(g, "a", cached = false)
+    F, a = Native.FiniteField(g, "a", cached = false)
     pols = dense_poly_type(elem_type(F))[]
     for ll in Nl
       rp = residual_polynomial(F, ll, dev, p)
@@ -988,7 +988,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degre
   K = nf(O)
   f = K.pol
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
   @vprint :NfOrd 1 "Factoring the polynomial \n"

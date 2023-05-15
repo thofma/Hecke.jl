@@ -218,7 +218,7 @@ function _automorphism_group_generic(K::AnticNumberField)
   while mod(d, p) == 0
     p = next_prime(p)
   end
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
@@ -301,7 +301,7 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   while mod(d, p) == 0
     p = next_prime(p)
   end
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
 
@@ -381,7 +381,7 @@ function generic_group(G::Vector{NfToNfMor}, ::typeof(*), full::Bool = true)
   while mod(d, p) == 0
     p = next_prime(p)
   end
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
@@ -559,7 +559,7 @@ function check_root(K::AnticNumberField, p::Int, el::nf_elem)
   q = p
   while cnt < 10
     q = next_prime(q)
-    F = GF(q, cached = false)
+    F = Native.GF(q, cached = false)
     Fx = polynomial_ring(F, cached = false)[1]
     fF = Fx(K.pol)
     if degree(fF) != degree(K) || iszero(discriminant(fF))

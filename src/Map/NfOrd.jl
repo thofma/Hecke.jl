@@ -71,7 +71,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, fqPolyRepField, HeckeMap, NfOrdToF
     p = minimum(P)
     a, g, b = get_residue_field_data(P)
     psmall = Int(p)
-    R = GF(psmall, cached = false)
+    R = Native.GF(psmall, cached = false)
     Rx, x = polynomial_ring(R, "_\$", cached = false)
     F = fqPolyRepField(Rx(g), Symbol("_\$"), false)
     d = degree(g)
@@ -306,7 +306,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::ZZPolyRingElem, a::NfOrdElem, 
   z.P = P
   a, g, b = get_residue_field_data(P)
   p = minimum(P)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "_\$", cached = false)
   F = FqPolyRepField(Rx(g), Symbol("_\$"), false)
   d = degree(g)
@@ -446,7 +446,7 @@ mutable struct NfOrdToGFMor <: Map{NfOrd, fpField, HeckeMap, NfOrdToFqNmodMor}
     a, g, b = get_residue_field_data(P)
     psmall = Int(p)
 		n = degree(O)
-    F = GF(psmall, cached = false)
+    F = Native.GF(psmall, cached = false)
     imageofbasis = Vector{fpFieldElem}(undef, n)
     for i in 1:n
       imageofbasis[i] = F(b[i][1, 1])
@@ -513,7 +513,7 @@ mutable struct NfOrdToGFFmpzMor <: Map{NfOrd, Nemo.FpField, HeckeMap, NfOrdToGFF
     p = minimum(P)
     a, g, b = get_residue_field_data(P)
 		n = degree(O)
-    F = GF(p, cached = false)
+    F = Native.GF(p, cached = false)
     imageofbasis = Vector{Nemo.FpFieldElem}(undef, n)
     for i in 1:n
       imageofbasis[i] = F(b[i][1, 1])
@@ -857,7 +857,7 @@ mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqPolyRepField, HeckeMap,
     r.Fq = codomain(a)
     r.header = MapHeader(k, r.Fq)
     r.s = r.Fq()
-    r.t = polynomial_ring(GF(characteristic(r.Fq), cached = false), cached = false)[1]()
+    r.t = polynomial_ring(Native.GF(characteristic(r.Fq), cached = false), cached = false)[1]()
     return r
   end
 end
@@ -916,7 +916,7 @@ mutable struct NfToFqNmodMor_easy <: Map{AnticNumberField, fqPolyRepField, Hecke
     r.Fq = codomain(a)
     r.header = MapHeader(k, r.Fq)
     r.s = r.Fq()
-    r.t = polynomial_ring(GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
+    r.t = polynomial_ring(Native.GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
     return r
   end
 end

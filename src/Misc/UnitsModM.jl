@@ -625,7 +625,7 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
     end
     return 1, 1, disclog1
   end
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   s = factor(npart)
   lp1 = Int[div(npart, Int(q)) for (q, v) in s]
   s1 = div(p-1, npart)
