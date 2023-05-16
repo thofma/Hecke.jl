@@ -2,7 +2,11 @@ function NormCtx(O::NfAbsOrd, nb::Int, normal::Bool = false)
   if normal
     return NormCtx_split(O, nb)
   else
-    return NormCtx_gen(O, nb)
+    if degree(O) > 20
+      return NormCtx_gen(O, nb)
+    else
+      return NormCtx_simple(O, nb)
+    end
   end
 end
 
@@ -22,35 +26,46 @@ function norm(m::ZZMatrix, NC::NormCtx_split, div::ZZRingElem = ZZRingElem(1))
   if nbits(no) > NC.nb - 10
     return nothing
   else
+    O = NC.O
+    k = nf(O)
+#    @assert no *div == norm(O(ZZRingElem[m[1, i] for i = 1:degree(k)]).elem_in_nf)
     return no
   end
 end
 
-#not used.
-function norms(a::ZZMatrix, NC::NormCtx_split, div::ZZRingElem = ZZRingElem(1))
-  no = Vector{ZZRingElem}()
-  nr = Vector{fpMatrix}()
+function norm(a::ZZMatrix, NC::NormCtx_gen, div::ZZRingElem = ZZRingElem(1))
+  O = NC.O
+  k = nf(O)
+  l = Vector{ZZRingElem}()
   for i=1:length(NC.lp)
-    n = matrix(NC.lR[i], a)*NC.lC[i]
-    m = zero_matrix(NC.lR[i], nrows(a), 1)
-    for k=1:nrows(n)
-      for j=2:ncols(n)
-        n[k, 1] *= n[k, j]
-      end
-      m[k, 1] = n[k, 1]*inv(NC.lR[i](div))
+    ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{fpMatrix}, Ref{ZZMatrix}), NC.mp[i], a)
+    mul!(NC.np[i], NC.mp[i], NC.basis[i])
+    gp = NC.gp[i]
+    for j=1:degree(k)
+      ccall((:nmod_poly_set_coeff_ui, libflint), Nothing,
+      (Ref{fpPolyRingElem}, Int, UInt), gp, j - 1, NC.np[i][1,j].data)
     end
-    push!(nr, m)
+    push!(l, lift(resultant(NC.fp[i], gp)//div))
   end
-  mm = induce_crt(nr, NC.e, true)
+
+  no = crt_signed(l, NC.e)
+  if nbits(no) > NC.nb-10
+    return nothing
+  else
+#    global last_bad = (a, NC, div)
+#    @assert no *div == norm(O(ZZRingElem[a[1, i] for i = 1:degree(k)]).elem_in_nf)
+    return no
+  end
 end
 
-function norm(a::ZZMatrix, NC::NormCtx_gen, div::ZZRingElem = ZZRingElem(1))
+function norm(a::ZZMatrix, NC::NormCtx_simple, div::ZZRingElem = ZZRingElem(1))
   O = NC.O
   k = nf(O)
   no = numerator(norm_div(O(ZZRingElem[a[1, i] for i = 1:degree(k)]).elem_in_nf, div, NC.nb))
   if nbits(no) > NC.nb-10
     return nothing
   else
+#    @assert no *div == norm(O(ZZRingElem[a[1, i] for i = 1:degree(k)]).elem_in_nf)
     return no
   end
 end
@@ -64,7 +79,6 @@ end
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
                 A::NfOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
-  global _start = A
   O = order(A)
   n = degree(O)
   L, Tr = lll(A, prec = prec)

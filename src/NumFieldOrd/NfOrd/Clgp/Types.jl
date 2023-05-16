@@ -39,8 +39,13 @@ mutable struct NormCtx_split <: NormCtx
   lR::Vector{fpField} #the local (finite field) splitting field
   nb::Int #bound on the number of bits the norm is allowed to have
   lC::Vector{fpMatrix} # for each p in lp, the conjugates of the basis of O
-  mp::Vector{fpMatrix} # for each p in lp, the conjugates of the basis of O
-  np::Vector{fpMatrix} # for each p in lp, the conjugates of the basis of O
+  mp::Vector{fpMatrix} # temp. variable
+  np::Vector{fpMatrix} # temp. variable
+  #= used in 
+    NumFieldOrd/NfOrd/Clgp/Rel_LLL.jl
+    a coordinate vector of an order element is mapped mod p into mp
+    multiplied by lC into np
+  =#
   e::crt_env
   function NormCtx_split(O::NfAbsOrd, nb::Int)
     p = p_start
@@ -83,14 +88,70 @@ mutable struct NormCtx_split <: NormCtx
   end
 end
 
-mutable struct NormCtx_gen <: NormCtx
+mutable struct NormCtx_simple <: NormCtx
   nb::Int
   O::NfAbsOrd
-  function NormCtx_gen(O::NfAbsOrd, nb::Int)
+
+  function NormCtx_simple(O::NfAbsOrd, nb::Int)
     NC = new()
     NC.nb = nb
     NC.O = O
     return NC
+  end
+end
+ 
+mutable struct NormCtx_gen <: NormCtx
+  nb::Int
+  O::NfAbsOrd
+  lp::Vector{Int} #the primes
+  basis::Vector{fpMatrix} # for each prime, the order basis (coefficients)
+                          # as polynomial
+  mp::Vector{fpMatrix} # temp. variable
+  np::Vector{fpMatrix} # temp. variable
+
+  fp::Vector{fpPolyRingElem}
+  gp::Vector{fpPolyRingElem}
+
+  e::crt_env
+  function NormCtx_gen(O::NfAbsOrd, nb::Int)
+    NC = new()
+    NC.nb = nb
+    NC.O = O
+    p = p_start
+    NC.lp = Int[]
+
+    NC.basis = Vector{fpMatrix}[]
+    NC.mp = Vector{fpMatrix}[]
+    NC.np = Vector{fpMatrix}[]
+
+    NC.fp = Vector{fpPolyRingElem}[]
+    NC.gp = Vector{fpPolyRingElem}[]
+    bas = basis(O, nf(O))
+    f = defining_polynomial(nf(O))
+    while true
+      p = next_prime(p)
+      push!(NC.lp, p)
+      k = GF(p, cached = false)
+      kx, x = polynomial_ring(k, cached = false)
+      b = zero_matrix(k, degree(O), degree(O))
+      for i=1:degree(O)
+        g = kx(bas[i])
+        for j=1:degree(g)+1
+          b[i, j] = coeff(g, j-1)
+        end
+      end
+      push!(NC.basis, b)
+      push!(NC.mp, zero_matrix(k, 1, degree(O)))
+      push!(NC.np, zero_matrix(k, 1, degree(O)))
+
+      push!(NC.fp, kx(f))
+      push!(NC.gp, kx())
+      nb -= nbits(p)
+      if nb < 0
+        NC.e = crt_env(ZZRingElem[p for p = NC.lp])
+        return NC
+      end
+    end
   end
 end
 
