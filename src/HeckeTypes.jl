@@ -843,7 +843,18 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
 
   function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
-    z.elem_in_nf = dot(O.basis_nf, arr)
+    k = nf(O)
+    if isa(k, AnticNumberField)
+      if is_equation_order(O)
+        z.elem_in_nf = k(k.pol.parent(arr))
+      else
+        #avoids rational (polynomial) arithmetic
+        xx = arr*O.basis_matrix.num
+        z.elem_in_nf = divexact(k(k.pol.parent(xx)), O.basis_matrix.den)
+      end
+    else
+      z.elem_in_nf = dot(O.basis_nf, arr)
+    end
     z.has_coord = true
     z.coordinates = arr
     z.parent = O

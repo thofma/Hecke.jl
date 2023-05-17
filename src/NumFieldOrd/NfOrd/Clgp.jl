@@ -112,6 +112,8 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
   c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
   @assert order(c) === O
 
+  set_attribute!(O, :ClassGroupCtx, c)
+
   c.B2 = bound * large
 
   if method == 2

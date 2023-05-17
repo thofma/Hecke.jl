@@ -64,13 +64,20 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   l = lll(t)
   clg.val_base = l
 
+  #if the galois group is small enough and the field large
+  #then the split-norm-ctx is (much) better
+  #the galois group size should, asymptotically, be
+  #number of primes divided by totally split ones
+  #lets accecpt this.
+  ordG = length(collect(PrimesSet(ZZ(1), maximum(FB.fb_int.base)))) / length([x[1] for x = FB.fb if length(x[2].lp) == degree(O)])
+
   if use_aut
     au = automorphism_list(nf(O), copy = false)
     clg.aut_grp = class_group_add_auto(clg, au)
     clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20,
-                                                     length(au) == degree(O))
+        length(au) == degree(O) || ordG < 4*degree(O))
   else
-    clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, false)
+    clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, ordG < 4*degree(O))
   end
 
   return clg
