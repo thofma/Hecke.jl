@@ -846,9 +846,12 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     k = nf(O)
     if is_equation_order(O)
       z.elem_in_nf = k(k.pol.parent(arr))
-    else
+    elseif isa(k, AnticNumberField) && isdefined(O, :basis_matrix)
+      #avoids rational (polynomial) arithmetic
       xx = arr*O.basis_matrix.num
       z.elem_in_nf = divexact(k(k.pol.parent(xx)), O.basis_matrix.den)
+    else
+      z.elem_in_nf = dot(O.basis_nf, arr)
     end
     z.has_coord = true
     z.coordinates = arr
