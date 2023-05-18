@@ -475,9 +475,9 @@ function genus_generators(L::HermLat)
   q00 = pseudo_inv(q0) * h
   PP = ideal_type(R)[]
 
-  local F::fpField
+  local F::FqField
 
-  local W::Generic.QuotientModule{fpFieldElem}
+  local W::Generic.QuotientModule{FqFieldElem}
 
   if iseven(rank(L))
     for (P, e) in factor(D)
@@ -504,7 +504,7 @@ function genus_generators(L::HermLat)
       l = length(PP)
       VD = Int[ valuation(D, P) for P in PP ]
       K, k = kernel(nnorm)
-      F = GF(2, cached = false)
+      F = Nemo._GF(2, cached = false)
       V = VectorSpace(F, length(PP))
       S = elem_type(V)[]
       for u in gens(K)

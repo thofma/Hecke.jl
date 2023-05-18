@@ -20,14 +20,14 @@ function compute_residue_field_data(m)
   primB, minprimB, getcoordpowerbasis = _as_field(B)
   f = degree(minprimB)
   prim_elem = m\(primB)
-  min_poly_prim_elem = ZZPolyRingElem(ZZRingElem[lift(coeff(minprimB, i)) for i in 0:degree(minprimB)])
+  min_poly_prim_elem = ZZPolyRingElem(ZZRingElem[lift(ZZ, coeff(minprimB, i)) for i in 0:degree(minprimB)])
   min_poly_prim_elem.parent = ZZPolyRing(FlintZZ, :$, false)
   basis_in_prim = Vector{ZZMatrix}(undef, degree(O))
   for i in 1:degree(O)
     basis_in_prim[i] = zero_matrix(FlintZZ, 1, f)
     t = getcoordpowerbasis(m(basisO[i]))
     for j in 1:f
-      basis_in_prim[i][1, j] = lift(t[1, j])
+      basis_in_prim[i][1, j] = lift(ZZ, t[1, j])
     end
   end
   return prim_elem, min_poly_prim_elem, basis_in_prim
@@ -86,7 +86,7 @@ end
 
 # It is assumed that p is not an index divisor
 function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, degree_one::Type{Val{S}} = Val{false}) where S
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
 
   Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)

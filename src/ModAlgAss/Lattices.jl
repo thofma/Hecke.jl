@@ -260,7 +260,7 @@ function sublattices(L::ModAlgAssLat, p::Int, level = inf)
   pL = p*L
   temp = typeof(L)[]
   i = 0
-  F = GF(p)
+  F = Native.GF(p)
   comp_fac = composition_factors(change_coefficient_ring(F, L))
   tmp_ = zero_matrix(QQ, rank(L), rank(L))
   while !isempty(to_check)

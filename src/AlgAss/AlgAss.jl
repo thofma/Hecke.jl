@@ -271,7 +271,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   end
 
   r = length(basis_elts)
-  Fp = GF(p, cached = false)
+  Fp = Nemo._GF(p, cached = false)
 
   if r == 0
     A = _zero_algebra(Fp)
@@ -337,7 +337,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
       z = zero(O)::eltype(BO)
       ca = coefficients(a, copy = false)
       for i in 1:r
-        l = lift(ca[i])
+        l = lift(ZZ, ca[i])
         addmul!(z, l, BO[basis_elts[i]])
       end
       return z
@@ -465,7 +465,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
 
   let BI = BI, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
-      return O(sum(lift(coefficients(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r))
+      return O(sum(lift(ZZ, coefficients(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r))
     end
   end
 

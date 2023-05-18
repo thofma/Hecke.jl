@@ -1272,11 +1272,11 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fqPolyRepFieldElem, FqPol
 
   p = characteristic(F)
   if T <: fqPolyRepFieldElem
-    Fp = GF(Int(p))
+    Fp = Native.GF(Int(p))
   elseif T === FqFieldElem
     Fp = Nemo._GF(p)
   else
-    Fp = GF(p)
+    Fp = Native.GF(p)
   end
 
   A2, A2toA = restrict_scalars(A, Fp)

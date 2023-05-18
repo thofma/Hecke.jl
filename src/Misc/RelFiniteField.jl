@@ -560,7 +560,7 @@ end
 #
 ################################################################################
 
-function FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
+function Native.FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
   if check
     @assert is_irreducible(f)
   end
@@ -569,7 +569,7 @@ function FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = 
   return F, gen(F)
 end
 
-function FiniteField(f::PolyElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
+function Native.FiniteField(f::PolyElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
   if check
     @assert is_irreducible(f)
   end
@@ -679,7 +679,7 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
   end
   p = _char(F)
   d = absolute_degree(F)
-  K, gK = FiniteField(p, d, "a", cached = cached)
+  K, gK = Native.FiniteField(p, d, "a", cached = cached)
   k, mk = absolute_field(base_field(F))
   def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F))
   img_gen_k = roots(defining_polynomial(k), K)[1]

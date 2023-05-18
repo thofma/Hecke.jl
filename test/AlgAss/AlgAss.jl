@@ -109,7 +109,7 @@ end
     A = AlgAss(f)
     B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fq)
-    @test degree(base_ring(B)) == degree(f)*degree(Fq)
+    @test absolute_degree(base_ring(B)) == degree(f)*degree(Fq)
     @test dim(B) == 1
 
     test_alg_morphism_char_p(B, A, BtoA)

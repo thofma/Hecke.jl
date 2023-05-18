@@ -203,7 +203,7 @@ function norm_div(a::nf_elem, d::ZZRingElem, nb::Int)
      no = 1
      while nbits(pp) < nb
        p = next_prime(p)
-       R = GF(Int(p), cached = false)
+       R = Native.GF(Int(p), cached = false)
        Rt, t = polynomial_ring(R, cached = false)
        np = R(divexact(resultant(Rt(parent(a).pol), Rt(a), false), R(d)))
        if isone(pp)
@@ -620,7 +620,7 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
     return Set(1:degree(f))
   end
   fp = modular_proj(f, me)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rt = polynomial_ring(R, cached = false)[1]
   if !is_squarefree(fp[1])
     throw(BadPrime(p))
@@ -742,7 +742,7 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     @assert is_monic(ff)
     @assert all(x->isone(denominator(x)), coefficients(ff))
     rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, is_normal = is_normal)
-    return vcat(rts, [x//d for x = rt])
+    return vcat(rts, nf_elem[x//d for x = rt])
   end
 
   return vcat(rts, _roots_hensel(f, max_roots = max_roots, ispure = ispure, is_normal = is_normal))

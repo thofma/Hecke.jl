@@ -139,8 +139,8 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
   p, d = _find_prime(pols)
-  F = FlintFiniteField(p, d, "w", cached = false)[1]
-  Fp = GF(p, cached = false)
+  F = Native.FiniteField(p, d, "w", cached = false)[1]
+  Fp = Native.GF(p, cached = false)
   Fpt = polynomial_ring(Fp, ngens(K))[1]
   Ft = polynomial_ring(F, "t", cached = false)[1]
   rt = Vector{Vector{fqPolyRepFieldElem}}(undef, ngens(K))
@@ -268,7 +268,7 @@ end
 function _block(a::nf_elem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRingElem)
   # TODO:
   # Maybe this _tmp business has to be moved out of this function too
-  _R = GF(Int(characteristic(base_ring(ap))), cached = false)
+  _R = Native.GF(Int(characteristic(base_ring(ap))), cached = false)
   _Ry, _ = polynomial_ring(_R, "y", cached = false)
   _tmp = _Ry()
   nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
@@ -324,7 +324,7 @@ function _find_prime(v::Vector{ZZPolyRingElem})
   polsR = Vector{fpPolyRingElem}(undef, length(v))
   while i < n_attempts+1
     p = next_prime(p)
-    R = GF(p, cached=false)
+    R = Native.GF(p, cached=false)
     Rt = polynomial_ring(R, "t", cached = false)[1]
     found_bad = false
     for j = 1:length(v)

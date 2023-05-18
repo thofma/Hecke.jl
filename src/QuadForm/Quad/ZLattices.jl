@@ -1110,7 +1110,7 @@ function is_maximal_even(L::ZZLat, p)
     return true, L
   end
   G = change_base_ring(ZZ, gram_matrix(L))
-  k = GF(p)
+  k = Native.GF(p)
   Gmodp = change_base_ring(k, G)
   r, V = left_kernel(Gmodp)
   VZ = lift(V[1:r,:])

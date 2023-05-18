@@ -581,6 +581,10 @@ function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
   return K, MapFromFunc(x->K(x), y->R(y), R, K)
 end
 
+function Hecke.residue_field(R::FqPolyRing, p::FqPolyRingElem)
+  return Nemo._residue_field(p, absolute = true)
+end
+
 ################################################################################
 #
 #  Factorization
@@ -596,13 +600,13 @@ function Hecke.index(O::GenOrd)
 end
 
 function prime_dec_nonindex(O::GenOrd, p::PolyElem, degree_limit::Int = 0, lower_limit::Int = 0)
-  K = residue_field(parent(p),p)[1]
+  K, mK = residue_field(parent(p),p)
   fact = factor(poly_to_residue(K, O.F.pol))
   result = []
   F = function_field(O)
   a = gen(F)
   for (fac, e) in fact
-    facnew = change_coefficient_ring(O.F.base_ring, fac)
+    facnew = map_coefficients(y -> preimage(mK, y), fac)
     I = GenOrdIdl(O, p, O(facnew(a)))
     I.is_prime = 1
     f = degree(fac)
@@ -616,8 +620,8 @@ end
 
 
 function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where T
-  if poly == 0
-    return K(0)
+  if iszero(poly)
+    return zero(K)
   else
     P, y = polynomial_ring(K,"y")
     coeffs = coefficients(poly)

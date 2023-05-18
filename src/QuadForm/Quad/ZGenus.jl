@@ -135,7 +135,7 @@ function _p_adic_symbol(A::MatElem, p, val)
   q = p^m0
   n = nrows(A)
   A = divexact(A, q)
-  Fp = GF(p)
+  Fp = Native.GF(p)
   A_p = change_base_ring(Fp, A)
   bp, B_p = left_kernel(A_p)
   rref!(B_p)
@@ -201,7 +201,7 @@ function _two_adic_symbol(A::MatElem, val)
   m0 = minimum([ valuation(c,2) for c in A if c!=0])
   q = ZZ(2)^m0
   A = divexact(A, q)
-  A_2 = change_base_ring(GF(2), A)
+  A_2 = change_base_ring(Native.GF(2), A)
   k2, B_2 = left_kernel(A_2)
   rref!(B_2)
   B_2 = B_2[1:k2,1:end]
@@ -1802,7 +1802,7 @@ Further Delta is in bijection with the proper spinor genera of `G`.
       u_p = inj[p](QQ(5))
       push!(gens_local_automorphs, u_p)
     else
-      u_p = inj[p](QQ(lift(non_square(GF(p)))))
+      u_p = inj[p](QQ(lift(ZZ, non_square(GF(p)))))
       push!(gens_local_automorphs, u_p)
     end
   end

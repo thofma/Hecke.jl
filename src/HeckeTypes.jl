@@ -2212,7 +2212,7 @@ mutable struct HenselCtx
     a.f = f
     a.p = UInt(p)
     Zx,x = polynomial_ring(FlintZZ, "x", cached=false)
-    Rx,x = polynomial_ring(GF(UInt(p), cached=false), "x", cached=false)
+    Rx,x = polynomial_ring(Native.GF(UInt(p), cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, libflint), UInt,
           (Ref{Nemo.nmod_poly_factor}, Ref{fpPolyRingElem}), (a.lf), Rx(f))

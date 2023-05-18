@@ -333,7 +333,7 @@ end
  $G = g mod p$, $H = h mod p$.
 """
 function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p::ZZRingElem, k::Int)
-  Rx, x = polynomial_ring(GF(p, cached=false), cached=false)
+  Rx, x = polynomial_ring(Native.GF(p, cached=false), cached=false)
   fl, a, b = gcdx(Rx(g), Rx(h))
   @assert isone(fl)
   @assert k>= 2
@@ -385,7 +385,7 @@ end
 """
 function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int)
   @assert is_monic(g) #experimentally: otherwise, the result is bad...
-  Rx, x = polynomial_ring(GF(p, cached=false), cached=false)
+  Rx, x = polynomial_ring(Native.GF(p, cached=false), cached=false)
   if !is_monic(f)
     pk = p^k
     f *= invmod(leading_coefficient(f), pk)

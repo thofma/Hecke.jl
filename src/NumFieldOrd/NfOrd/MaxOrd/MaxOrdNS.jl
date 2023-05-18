@@ -177,7 +177,7 @@ function pradical_trace1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Int, ZZRing
 end
 
 function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
   Rx = polynomial_ring(R, "x", cached = false)[1]

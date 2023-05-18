@@ -151,7 +151,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk::NfOrd = maximal_order(domai
   g = change_base_ring(base_ring(Qx), k.pol, parent = Qx)
   h = Qx(f(gen(k)))
 
-  Fp, xp = polynomial_ring(GF(Int(minimum(P)), cached=false), cached=false)
+  Fp, xp = polynomial_ring(Native.GF(Int(minimum(P)), cached=false), cached=false)
   gp = factor(Fp(g))
   hp = Fp(h)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
@@ -207,7 +207,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(co
   Qx = parent(G)
   res = Tuple{NfOrdIdl, Int}[]
   if fits(Int, minimum(p))
-    Fp = polynomial_ring(GF(Int(minimum(p)), cached = false), cached = false)[1]
+    Fp = polynomial_ring(Native.GF(Int(minimum(p)), cached = false), cached = false)[1]
     Gp = factor(ppio(Fp(G), Fp(f(p.gen_two.elem_in_nf)))[1])
     for (ke, e) in Gp
       P = ideal_from_poly(ZK, Int(minimum(p)), ke, e)
@@ -245,10 +245,10 @@ function prime_decomposition_type_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_ord
   Qx = parent(G)
 
   if fits(Int, minimum(p, copy = false))
-    Fp = polynomial_ring(GF(Int(minimum(p)), cached = false), cached = false)[1]
+    Fp = polynomial_ring(Native.GF(Int(minimum(p)), cached = false), cached = false)[1]
     Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), Fp(G)))
   else
-    Fpp = polynomial_ring(GF(minimum(p), cached = false), cached = false)[1]
+    Fpp = polynomial_ring(Native.GF(minimum(p), cached = false), cached = false)[1]
     Gp = factor_shape(gcd(Fpp(f(K(p.gen_two))), Fpp(G)))
   end
   res = Vector{Tuple{Int, Int}}(undef, sum(values(Gp)))

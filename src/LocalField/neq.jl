@@ -458,7 +458,7 @@ function basis(K::RelFinField)
 end
 
 function base_field(K::fqPolyRepField)
-  return GF(Int(characteristic(K)))
+  return Native.GF(Int(characteristic(K)))
 end
 
 absolute_frobenius_matrix(K::fqPolyRepField, d::Int = 1) = frobenius_matrix(K, d)

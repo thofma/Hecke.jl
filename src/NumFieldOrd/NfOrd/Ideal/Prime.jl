@@ -310,7 +310,7 @@ function _fac_and_lift(f::ZZPolyRingElem, p, degree_limit, lower_limit)
     return _fac_and_lift_deg1(f, p)
   end
   Zx = parent(f)
-  Zmodpx, x = polynomial_ring(GF(p, cached = false), "y", cached = false)
+  Zmodpx, x = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
   if isone(degree_limit)
     fmodp = ppio(fmodp, powermod(x, p, fmodp)-x)[1]
@@ -328,7 +328,7 @@ end
 function _fac_and_lift_deg1(f::ZZPolyRingElem, p)
   lifted_fac = Vector{Tuple{ZZPolyRingElem, Int}}()
   Zx = parent(f)
-  Zmodpx, x = polynomial_ring(GF(p, cached = false), "y", cached = false)
+  Zmodpx, x = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)
   fmodp = Zmodpx(f)
   fsq = factor_squarefree(fmodp)
   pw = powermod(x, div(p-1, 2), fmodp)
@@ -442,7 +442,7 @@ function anti_uniformizer(P::NfAbsOrdIdl)
   Mp = change_base_ring(GF(p, cached = false), M)
   K = left_kernel_basis(Mp)
   @assert length(K) > 0
-  P.anti_uniformizer = elem_in_nf(order(P)(lift.(K[1])))//p
+  P.anti_uniformizer = elem_in_nf(order(P)(map(x -> lift(ZZ, x), K[1])))//p
   return P.anti_uniformizer
 end
 
@@ -511,7 +511,7 @@ function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
     R = parent(f)
     Zx, x = polynomial_ring(FlintZZ,"x", cached = false)
     Zf = Zx(f)
-    fmodp = polynomial_ring(GF(p, cached = false), "y", cached = false)[1](Zf)
+    fmodp = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)[1](Zf)
     return _prime_decomposition_type(fmodp)
   else
     @assert O.is_maximal == 1 || p in O.primesofmaximality
@@ -1317,7 +1317,7 @@ end
 
 function _fac_and_lift(f::QQMPolyRingElem, p, degree_limit, lower_limit)
   Zx, x = polynomial_ring(FlintZZ, cached = false)
-  Zmodpx = polynomial_ring(GF(p, cached = false), "y", cached = false)[1]
+  Zmodpx = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)[1]
   fmodp = Zmodpx(f)
   fac = factor(fmodp)
   lifted_fac = Vector{Tuple{ZZPolyRingElem, Int}}()
@@ -1356,7 +1356,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
     degree_limit = degree(K)
   end
 
-  Fpx = polynomial_ring(GF(p, cached = false), cached = false)[1]
+  Fpx = polynomial_ring(Native.GF(p, cached = false), cached = false)[1]
   R = residue_ring(FlintZZ, p^2, cached = false)
   Rx = polynomial_ring(R, cached = false)[1]
   Zx = polynomial_ring(FlintZZ, cached = false)[1]
@@ -1381,7 +1381,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
     =#
     for x = Base.Iterators.product(fac...)
       k = lcm([degree(t[1]) for t = x])
-      Fq = FiniteField(p, k, "y", cached = false)[1]
+      Fq = Native.FiniteField(p, k, "y", cached = false)[1]
       Fq2 = residue_ring(Rx, lift(Zx, minpoly(gen(Fq))))
       rt = Vector{Vector{elem_type(Fq)}}()
       RT = []

@@ -408,7 +408,7 @@ function snf(G::GrpAbFinGen)
     e = S[m, m]
     if e > 1
       if fits(Int, e) && is_prime(e)
-        F = GF(Int(e), cached = false)
+        F = Native.GF(Int(e), cached = false)
         TF = map_entries(F, T)
         iT = lift(inv(TF))
       else

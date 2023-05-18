@@ -9,7 +9,7 @@ function randpoly(R::Union{ fqPolyRepPolyRing, FqPolyRepPolyRing }, dmax::Int)
 end
 
 @testset "Extensions of finite fields" begin
-  Fp = GF(2)
+  Fp = Native.GF(2)
   Fpx, x = Fp["x"]
   f = x^3 + x + 1
   Fq = fqPolyRepField(f, :$)
@@ -38,7 +38,7 @@ end
   @test iszero(FqytoG(Fqy()))
 
   # Now everything with FqFiniteFields
-  Fp = GF(ZZRingElem(2))
+  Fp = Native.GF(ZZRingElem(2))
   Fpx, x = Fp["x"]
   f = x^3 + x + 1
   Fq = FqPolyRepField(f, :$)

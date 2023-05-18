@@ -19,7 +19,7 @@ See also `change_coefficient_ring`.
 """
 function reduction(L::ModAlgAssLat, p::IntegerUnion)
   @req base_ring((L.base_ring)) isa ZZRing "Order must be a Z-order"
-  F = GF(p, cached = false)
+  F = Native.GF(p, cached = false)
   a = action_of_basis(L)
   amodp = map(m -> change_base_ring(F, m), a)
   return Amodule(amodp)

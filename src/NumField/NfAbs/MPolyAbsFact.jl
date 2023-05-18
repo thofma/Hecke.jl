@@ -103,7 +103,7 @@ mutable struct HenselCtxFqRelSeries{T}
   end
 
   function HenselCtxFqRelSeries(f::ZZMPolyRingElem, p::Int, s::Int = 0)
-    k = GF(p, cached = false)
+    k = Native.GF(p, cached = false)
     return HenselCtxFqRelSeries(f, k, s)
   end
 
@@ -554,7 +554,7 @@ mutable struct RootCtx
     mu === nothing && return mu
     r.H = mu
     r.R = RootCtxSingle{fqPolyRepRelPowerSeriesRingElem}[]
-    K = GF(p, d)
+    K = Native.GF(p, d)
     S, _ = power_series_ring(K, 10, "s", cached = false)
     for i=1:r.H.n
       @vtime :AbsFact 2 push!(r.R, RootCtxSingle(r.H.lf[i], S))
@@ -623,7 +623,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   local p
   while true
     p_max = next_prime(p_max)
-    gp = factor(g, GF(p_max, cached = false))
+    gp = factor(g, Native.GF(p_max, cached = false))
     if any(x->x>1, values(gp.fac))
       @vprint :AbsFact 1 "not squarefree mod $p_max\n"
       continue
@@ -689,7 +689,7 @@ function combination(RC::RootCtx)
   k = degree(F)
 
   p = characteristic(F)
-  Fp = GF(p, cached = false)
+  Fp = Native.GF(p, cached = false)
 
   #the paper
   # https://www.math.univ-toulouse.fr/~cheze/facto_abs.m
