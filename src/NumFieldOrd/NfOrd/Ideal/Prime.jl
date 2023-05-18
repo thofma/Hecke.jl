@@ -456,7 +456,7 @@ function _factor_distinct_deg(x::fpPolyRingElem)
   res = Dict{Int, Int}()
   f = parent(x)()
   for i in 1:fac.num
-    ccall((:nmod_poly_factor_get_nmod_poly, libflint), Nothing,
+    ccall((:nmod_poly_factor_get_poly, libflint), Nothing,
             (Ref{fpPolyRingElem}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
     res[degs[i]] = divexact(degree(f), degs[i])
   end

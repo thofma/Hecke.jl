@@ -935,7 +935,7 @@ function factor_equal_deg(x::fpPolyRingElem, d::Int)
   res = Vector{fpPolyRingElem}(undef, fac.num)
   for i in 1:fac.num
     f = parent(x)()
-    ccall((:nmod_poly_factor_get_nmod_poly, libflint), Nothing,
+    ccall((:nmod_poly_factor_get_poly, libflint), Nothing,
             (Ref{fpPolyRingElem}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
     res[i] = f
   end
