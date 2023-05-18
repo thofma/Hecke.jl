@@ -5,8 +5,11 @@
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", L::QuadLat)
+  io = pretty(io)
   println(io, "Quadratic lattice of rank $(rank(L)) and degree $(degree(L))")
-  print(io, "  over ", base_ring(L))
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), base_ring(L))
+  print(io, Dedent())
 end
 
 function Base.show(io::IO, L::QuadLat)

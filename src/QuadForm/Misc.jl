@@ -9,10 +9,12 @@
 function Base.show(io::IO, ::MIME"text/plain", f::VecSpaceRes)
   n = f.domain_dim
   m = f.codomain_dim
+  io = pretty(io)
   println(io, "Map of change of scalars")
-  println(io, "  from Vector space of dimension ", n, " over $(QQ)")
-  print(io, "  to Vector space of dimension ", m, " over ")
+  println(io, Indent(), "from vector space of dimension ", n, " over ", Lowercase(), QQ)
+  print(io, "to vector space of dimension ", m, " over ", Lowercase())
   print(io, f.field)
+  print(io, Dedent())
 end
 
 function Base.show(io::IO, f::VecSpaceRes)
@@ -24,9 +26,11 @@ function Base.show(io::IO, f::VecSpaceRes)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", f::AbstractSpaceRes)
+  io = pretty(io)
   println(io, "Map of change of scalars")
-  println(io, "  from ", domain(f))
-  print(io, "  to ", codomain(f))
+  println(io, Indent(), "from ", Lowercase(), domain(f))
+  print(io, "to ", Lowercase(), codomain(f))
+  print(io, Dedent())
 end
 
 function Base.show(io::IO, f::AbstractSpaceRes)

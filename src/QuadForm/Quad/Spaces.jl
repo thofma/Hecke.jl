@@ -94,9 +94,12 @@ fixed_field(V::QuadSpace) = base_ring(V)
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", V::QuadSpace)
+  io = pretty(io)
   println(io, "Quadratic space of dimension $(dim(V))")
-  println(io, "  over ", base_ring(V))
-  println(io, "with Gram matrix")
+  print(io, Indent(), "over ", Lowercase())
+  show(io, base_ring(V))
+  println(io, Dedent())
+  println(io, "with gram matrix")
   show(io, MIME"text/plain"(), gram_matrix(V))
 end
 
@@ -2093,14 +2096,21 @@ function witt_invariant(G::LocalQuadSpaceCls)
 end
 
 function show(io::IO, ::MIME"text/plain", G::LocalQuadSpaceCls)
+  nio = pretty(io)
+  io = pretty(io)
   println(io, "Local isometry class")
-  println(io, "  of Quadratic space")
-  println(io, "    over ", base_ring(G))
+  println(nio, Indent(), "of quadratic space")
+  print(nio, Indent(), "over ", Lowercase())
+  Base.show(nio, MIME"text/plain"(), base_ring(G))
+  println(nio, Dedent())
+  print(nio, Dedent())
   println(IOContext(io, :compact => true), "Prime ideal: ", prime(G))
   println(io, "Invariants: ")
-  println(io, "  Dimension: $(dim(G))")
-  println(io, "  Determinant: $(G.det)")
-  print(io, "  Hasse invariant: $(hasse_invariant(G))")
+  print(io, Indent())
+  println(io, "Dimension: $(dim(G))")
+  println(io, "Determinant: $(G.det)")
+  print(io, "Hasse invariant: $(hasse_invariant(G))")
+  print(io, Dedent())
 end
 
 function show(io::IO, G::LocalQuadSpaceCls)
@@ -2110,24 +2120,6 @@ function show(io::IO, G::LocalQuadSpaceCls)
     print(io, "Isometry class of quadratic space over the ", absolute_minimum(prime(G)), "-adic integers")
   end
 end
-
-#function Base.show(io::IO, G::LocalQuadSpaceCls)
-#  n = dim(G)
-#  d = G.det
-#  h = hasse_invariant(G)
-#  p = prime(G)
-#  compact = get(io, :compact, false)
-#  if compact
-#    print(io,"$G.P $n $d $h")
-#  else
-#    print(io, "Abstract local quadratic space over ")
-#    print(IOContext(io, :compact => true), base_ring(G))
-#    print(io, " at ")
-#    print(IOContext(io, :compact => true), p)
-#    println(io, " of ")
-#    print(io, "Dimension $n, determinant $d, Hasse invariant $h")
-#  end
-#end
 
 function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   if G1 === G2
@@ -2280,20 +2272,35 @@ function _is_valid(q::QuadSpaceCls{K}) where {K}
 end
 
 function show(io::IO, ::MIME"text/plain", G::QuadSpaceCls)
+  nio = pretty(io)
+  io = pretty(io)
   P = [p for p in keys(G.LGS) if hasse_invariant(G.LGS[p])==-1]
-  println(io, "Isometry class")
-  println(io, "  of Quadratic space")
-  println(io, "    over ", base_ring(G))
+  println(nio, "Isometry class")
+  println(nio, Indent(), "of quadratic space")
+  print(nio, Indent(), "over ", Lowercase())
+  Base.show(nio, MIME"text/plain"(), base_ring(G))
+  println(nio, Dedent(), Dedent())
   println(io, "Invariants:")
-  println(io, "  Dimension: ", dim(G))
-  println(io, "  Determinant: ", det(G))
+  print(io, Indent())
+  println(io, "Dimension: ", dim(G))
+  println(io, "Determinant: ", det(G))
+  vals = values(signature_tuples(G))
   if length(P) == 0
-    print(io, "  Signature tuples: ", values(signature_tuples(G)))
+    if length(vals) == 1
+      print(io, "Signature tuples: ", vals)
+    else
+      print(io, "Signature tuples: ", vals)
+    end
+    print(io, Dedent())
   else
-    println(io, "  Signature tuples: ", values(signature_tuples(G)))
+    if length(vals) == 1
+      println(io, "Signature tuple: ", vals)
+    else
+      println(io, "Signature tuples: ", vals)
+    end
+    print(io, Dedent())
     print(io, "Negative Hasse invariants at: ")
     for i in 1:length(P)-1
-      print(io, "")
       show(IOContext(io, :compact => true), P[i])
       print(io, ", ")
     end
@@ -2305,21 +2312,11 @@ function show(io::IO, G::QuadSpaceCls)
   if get(io, :supercompact, false)
     print(io, "Isometry class of quadratic space")
   else
-    print(io, "Isometry classe of quadratic space over ")
-    print(IOContext(io, :supercompact => true), base_ring(G))
+    io = pretty(io)
+    print(io, "Isometry class of quadratic space over ")
+    print(IOContext(io, :supercompact => true), Lowercase(), base_ring(G))
   end
 end
-
-#function Base.show(io::IO, G::QuadSpaceCls)
-#  K = base_ring(G)
-#  n = dim(G)
-#  d = det(G)
-#  S = signature_tuples(G)
-#  P = [p for p in keys(G.LGS) if hasse_invariant(G.LGS[p])==-1]
-#  print(IOContext(io, :compact => true), "Abstract quadratic space over ",
-#        K, " of dimension $n, determinant $d, negative Hasse invariants at ",P,
-#        " signature tuples ", values(S))
-#end
 
 function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
   @req base_ring(G1) == base_ring(G2) "isometry classes over different fields do not compare"

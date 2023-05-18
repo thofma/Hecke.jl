@@ -267,8 +267,10 @@ end
 
 # TODO: Print like abelian group
 function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadModule)
+  io = pretty(io)
   println(io, "Finite quadratic module")
-  println(io, "  over $(ZZ)")
+  println(io, Indent(), "over integer ring")
+  print(io, Dedent())
   println(io, abelian_group(T))
   println(io, "Bilinear value module: ", value_module(T))
   println(io, "Quadratic value module: ", value_module_quadratic_form(T))
@@ -285,26 +287,6 @@ function Base.show(io::IO, T::TorQuadModule)
     print(io, " -> ", value_module_quadratic_form(T))
   end
 end
-
-#function Base.show(io::IO, T::TorQuadModule)
-#  compact = get(io, :compact, false)
-#  if compact
-#    name = get_attribute(T,:name)
-#    if name !== nothing
-#      print(io, name)
-#    else
-#      print(io, "TorQuadModule ", gram_matrix_quadratic(T))
-#    end
-#  else
-#    print(io, "TorQuadModule: ")
-#    A = abelian_group(T)
-#    if is_snf(A)
-#      show_snf_structure(io, abelian_group(T))
-#      print(io, " ")
-#    end
-#    print(io, gram_matrix_quadratic(T))
-#  end
-#end
 
 ################################################################################
 #
@@ -376,9 +358,20 @@ end
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", a::TorQuadModuleElem)
+  io = pretty(io)
+  T = parent(a)
   println(io, "Element")
-  println(io, "  of ", parent(a))
-  print(io, "with components ", a.data.coeff)
+  print(io, Indent(), "of ")
+  print(io, "finite quadratic module: ")
+  show_snf_structure(io, abelian_group(T))
+  print(io, " -> ", value_module_quadratic_form(T))
+  println(io, Dedent())
+  comps = a.data.coeff
+  if length(comps) == 1
+    print(io, "with component ", comps)
+  else
+    print(io, "with components ", comps)
+  end
 end
 
 function show(io::IO, a::TorQuadModuleElem)

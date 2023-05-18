@@ -1379,9 +1379,11 @@ domain(f::LocMultGrpModSquMap) = f.domain
 codomain(f::LocMultGrpModSquMap) = f.codomain
 
 function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
+  io = pretty(io)
   println(io, "Map for local unit group modulo squares")
-  println(io, "  from ", f.domain)
-  println(io, "  to ", f.codomain)
+  println(io, Indent(), "from ", f.domain)
+  println(io, "to ", Lowercase(),  f.codomain)
+  print(io, Dedent())
   print(io, "at the prime ideal ")
   print(IOContext(io, :compact => true), f.p)
 end

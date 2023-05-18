@@ -903,26 +903,28 @@ end
 ###############################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", G::ZZGenus)
+  io = pretty(io)
   println(io, "Genus symbol for integer lattices")
   println(io, "Signatures: ", signature_tuple(G))
   s = local_symbols(G)
   if length(s) == 1
     println(io, "Local symbol: ")
-    print(io, "  ")
+    print(io, Indent())
     show(io, s[1])
+    print(io, Dedent())
   else
     println(io, "Local symbols: ")
+    print(io, Indent())
     for i in 1:(length(s)-1)
-      print(io, "  ")
       show(io, s[i])
-      print(io, "\n")
+      println(io)
     end
-    print(io, "  ")
     show(io, s[end])
+    print(io, Dedent())
   end
 end
 
-function Base.show(io::IO, G::ZGenus)
+function Base.show(io::IO, G::ZZGenus)
   if !get(io, :supercompact, false)
     print(io, "Genus symbol: ")
   end
@@ -932,7 +934,8 @@ function Base.show(io::IO, G::ZGenus)
   print(io, _write_global_symbol(G))
 end
 
-function Base.show(io::IO, ::MIME"text/plain", G::ZpGenus)
+function Base.show(io::IO, ::MIME"text/plain", G::LocalZZGenus)
+  io = pretty(io)
   println(io, "Local genus symbol for integer lattices")
   println(io, "Prime: ", prime(G))
   print(io, "Jordan blocks ")
@@ -941,11 +944,13 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZpGenus)
   else
     println(io, "(val, rank, det): ")
   end
+  print(io, Indent())
   s = symbol(G)
   for i in length(s)-1
-    println(io, "  ", Tuple(s[i]))
+    println(io, Tuple(s[i]))
   end
-  print(io, "  ", Tuple(s[end]))
+  print(io, Tuple(s[end]))
+  print(io, Dedent())
 end
 
 function Base.show(io::IO, G::LocalZZGenus)
@@ -959,7 +964,7 @@ function Base.show(io::IO, G::LocalZZGenus)
   end
 end
 
-function _write_local_symbol(G::ZpGenus; ones::Bool = true)
+function _write_local_symbol(G::LocalZZGenus; ones::Bool = true)
   p = prime(G)
   CS_string = ""
   if p == 2
@@ -990,7 +995,7 @@ function _write_local_symbol(G::ZpGenus; ones::Bool = true)
   return CS_string
 end
 
-function _write_global_symbol(G::ZGenus)
+function _write_global_symbol(G::ZZGenus)
   s = local_symbols(G)
   sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
   str = ""
@@ -1000,7 +1005,7 @@ function _write_global_symbol(G::ZGenus)
   return str
 end
 
-function Base.show(io::IO, ::MIME"text/latex", G::ZGenus)
+function Base.show(io::IO, ::MIME"text/latex", G::ZZGenus)
   str = iseven(G) ? "II" : "I"
   p, n = signature_pair(G)
   str *= "_{($p, $n)}"
@@ -1012,7 +1017,7 @@ function Base.show(io::IO, ::MIME"text/latex", G::ZGenus)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/latex", g::ZpGenus)
+function Base.show(io::IO, ::MIME"text/latex", g::LocalZZGenus)
   p = prime(g)
   str = ""
   if p == 2
