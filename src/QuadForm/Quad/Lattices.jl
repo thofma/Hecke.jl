@@ -55,7 +55,7 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = tru
     @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(K, gram)
-    V = quadratic_space(K, gram)
+    V = quadratic_space(K, gram, check = check)
   end
   return lattice(V, B, check = check)
 end
@@ -99,7 +99,7 @@ function quadratic_lattice(K::Field, gens::Vector; gram = nothing, check::Bool =
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(K, 0, nrows(gram), []))
-    L = quadratic_lattice(K, pm, gram = gram, check = check)
+    L = quadratic_lattice(K, pm, gram = gram)
     return L
   end
   @assert length(gens[1]) > 0
@@ -112,7 +112,7 @@ function quadratic_lattice(K::Field, gens::Vector; gram = nothing, check::Bool =
     @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gram = map_entries(K, gram)
-    V = quadratic_space(K, gram)
+    V = quadratic_space(K, gram, check = check)
   end
   return lattice(V, gens)
 end

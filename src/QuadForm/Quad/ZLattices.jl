@@ -86,7 +86,7 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
   if check
     @assert gram isa MatElem
     @req gram == transpose(gram) "Gram matrix must be symmetric"
-    @req all(v -> length(v) == ncols(gram), gens) "Incompatible arguments: elements in gens must all have the number of entries, equal to the numbers of gram (if specified)"
+    @req all(v -> length(v) == ncols(gram), gens) "Incompatible arguments: elements in gens must all have the same number of entries. This number must be equal to the size of the square matrix gram (if specified)"
   end
   gram = map_entries(QQ, gram)
   V = quadratic_space(QQ, gram)
