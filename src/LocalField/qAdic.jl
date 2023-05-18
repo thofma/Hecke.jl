@@ -118,11 +118,11 @@ function residue_field(Q::FlintQadicField)
   if z !== nothing
     return codomain(z), z
   end
-  Fp = GF(Int(prime(Q)))
+  Fp = Native.GF(Int(prime(Q)))
   Fpt = polynomial_ring(Fp, cached = false)[1]
   g = defining_polynomial(Q) #no Conway if parameters are too large!
   f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
-  k = FiniteField(f, "o", cached = false)[1]
+  k = Native.FiniteField(f, "o", cached = false)[1]
   pro = function(x::qadic)
     v = valuation(x)
     v < 0 && error("elt non integral")
@@ -146,7 +146,7 @@ function residue_field(Q::FlintQadicField)
 end
 
 function residue_field(Q::FlintPadicField)
-  k = GF(Int(prime(Q)))
+  k = Native.GF(Int(prime(Q)))
   pro = function(x::padic)
     v = valuation(x)
     v < 0 && error("elt non integral")

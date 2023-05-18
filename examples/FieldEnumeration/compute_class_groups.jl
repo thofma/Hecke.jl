@@ -6,7 +6,7 @@ function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
   if in('^', x)
     l = split(x, '^')
     if length(l) != 2
-      throw(error("Could not parse $x as ZZRingElem"))
+      error("Could not parse $x as ZZRingElem")
     end
     l = string.(l)
     return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
@@ -129,11 +129,11 @@ function main()
   outfile = splitext(fieldsfile)[1] * ".nfdb"
 
   if !isfile(fieldsfile)
-    throw(error("File $fields does not exist"))
+    error("File $fields does not exist")
   end
 
   if isfile(outfile)
-    throw(error("Output file $outfile already exists!"))
+    error("Output file $outfile already exists!")
   end
 
   print("Loading fields ... ")

@@ -517,7 +517,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   ba = basis(a, copy = false)
   bb = basis(b, copy = false)
   d2 = d^2
-  
+
   # We do something more clever if the dimensio is too big
   M = zero_matrix(FlintQQ, d2, d)
   t = one(A)
@@ -1016,7 +1016,7 @@ See also `locally_free_basis`.
 """
 function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRingElem}; side::Symbol = :right)
   b = _test_ideal_sidedness(I, O, side)
-  !b && throw(error("Ideal is not a $(side) ideal of the order"))
+  !b && error("Ideal is not a $(side) ideal of the order")
   d = denominator(I, O)
   I = d * I
   if side === :left
@@ -1029,7 +1029,7 @@ function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRi
     fl, x = _islocally_free_left(OB, IB, p)
     alpha = O(mB\elem_in_algebra(x))
   else
-    throw(error("side (:$(side)) must be either :left or :right"))
+    error("side (:$(side)) must be either :left or :right")
   end
   if fl
     # d * I = alpha => I = x/alpha (locally at p)
@@ -1148,7 +1148,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   m = zero_matrix(FlintZZ, degree(O), degree(O))
   for i = 1:nrows(dM)
     for j = 1:ncols(dM)
-      m[i, j] = lift(dM[i, j])
+      m[i, j] = lift(ZZ, dM[i, j])
     end
     g[i] = elem_in_algebra(elem_from_mat_row(O, m, i), copy = false)
   end
@@ -1187,13 +1187,13 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   M = zero_matrix(FlintZZ, degree(O), degree(O))
   for i = 1:ncols(B)
     for j = 1:degree(O)
-      M[i, j] = lift(B[j, i])
+      M[i, j] = lift(ZZ, B[j, i])
     end
   end
   M = hnf_modular_eldiv!(M, ZZRingElem(p)) # This puts p in the "missing" pivot entries
   M = M*basis_matrix(O, copy = false)
   res = ideal(algebra(O), O, M, :twosided)
-  B1 = lift(transpose(B))
+  B1 = map_entries(x -> lift(ZZ, x), transpose(B))
   res.gens = Vector{elem_type(algebra(O))}(undef, k + 1)
   for i = 1:k
     res.gens[i] = elem_in_algebra(elem_from_mat_row(O, B1, i), copy = false)
@@ -1223,7 +1223,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRi
   return typeof(I)[_from_submodules_to_ideals(M, O, I, x, A1, OtoA1) for x in ls ]
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{Zmodn_mat, Generic.Mat{Generic.ResidueFieldElem{ZZRingElem}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{FqMatrix, Zmodn_mat, Generic.Mat{Generic.ResidueFieldElem{ZZRingElem}}}, A1::AlgAss, OtoA1::AbsOrdToAlgAssMor)
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action_of_gens) == sub(rref(x)[2], 1:r, 1:ncols(x)) end
   m = zero_matrix(FlintZZ, nrows(x), degree(O))
   g = Vector{elem_type(algebra(O))}(undef, nrows(x))

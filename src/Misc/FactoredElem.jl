@@ -102,7 +102,7 @@ function FacElem(R, base::Vector{B}, exp::Vector{ZZRingElem}; parent = FacElemMo
     throw(ArgumentError("Parent of elements wrong."))
   end
 
-  length(base) != length(exp) && throw(error("not the same length"))
+  length(base) != length(exp) && error("not the same length")
 
   z = FacElem{B, typeof(R)}()
 

@@ -477,7 +477,7 @@ function residue_field(K::LocalField{S, UnramifiedLocalField}) where {S <: Field
    Fpt = polynomial_ring(ks, cached = false)[1]
    g = defining_polynomial(K)
    f = Fpt([ks(mks(coeff(g, i))) for i=0:degree(K)])
-   kk = FiniteField(f)[1]
+   kk = Native.FiniteField(f)[1]
    bas = basis(K)
    u = gen(kk)
    function proj(a::Hecke.LocalFieldElem)

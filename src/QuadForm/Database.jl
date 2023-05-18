@@ -76,19 +76,19 @@ end
 
 @inline function _check_rank_range(L, r)
   r < 0 || r > L.max_rank &&
-        throw(error("Rank ($(r)) must be between 1 and $(L.max_rank)"))
+        error("Rank ($(r)) must be between 1 and $(L.max_rank)")
 end
 
 @inline function _check_range(L, r, i)
   r < 0 || r > L.max_rank &&
-          throw(error("Rank ($(r)) must be between 1 and $(L.max_rank)"))
+          error("Rank ($(r)) must be between 1 and $(L.max_rank)")
   j = number_of_lattices(L, r)
-  i < 0 || i > j && throw(error("Index ($(i)) must be between 1 and $(j)"))
+  i < 0 || i > j && error("Index ($(i)) must be between 1 and $(j)")
 end
 
 @inline function _check_range(L, i)
   j = number_of_lattices(L)
-  i < 0 || i > j && throw(error("Index ($(i)) must be between 1 and $(j)"))
+  i < 0 || i > j && error("Index ($(i)) must be between 1 and $(j)")
 end
 
 ################################################################################
@@ -131,7 +131,7 @@ function lattice(L::LatDB, r::Int, i::Int)
   d = L.db[r][i].deg
   A = matrix(FlintQQ, d, d, L.db[r][i].amb)
   B = matrix(FlintQQ, r, d, L.db[r][i].basis_mat)
-  return Zlattice(B, gram = A)
+  return integer_lattice(B, gram = A)
 end
 
 function lattice(L::LatDB, i::Int)

@@ -130,7 +130,7 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
 
   if !b
     @show find_small_group(G)
-    throw(error("Galois group does not admit Brauer relation"))
+    error("Galois group does not admit Brauer relation")
   end
 
   nonredundant = trues(length(ls))
@@ -193,7 +193,7 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
 
   if !b
     @show find_small_group(G)
-    throw(error("Galois group does not admit Brauer relation"))
+    error("Galois group does not admit Brauer relation")
   end
   n = length(ls)
 
@@ -511,7 +511,7 @@ end
 
 function induce_action(N::NormRelation, i, s::Vector, S::Vector)
   if !ispure(N)
-    throw(error("Not implemented yet"))
+    error("Not implemented yet")
   end
   ZK = order(S[1])
   z = zero_matrix(SMat, FlintZZ, 0, length(S))

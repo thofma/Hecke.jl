@@ -64,7 +64,7 @@ function to_sage(x::QQMatrix, varname = "x")
   return s
 end
 
-function benchmark_code_sage(L::Vector{Hecke.ZLat}, repetitions::Int = 10; out_file::String = "sage_timings")
+function benchmark_code_sage(L::Vector{Hecke.ZZLat}, repetitions::Int = 10; out_file::String = "sage_timings")
   s = """
   from sage.all import *
   import timeit
@@ -96,7 +96,7 @@ quit()
   return s
 end
 
-function benchmark_code_magma(L::Vector{Hecke.ZLat}, repetitions::Int = 10; out_file::String = "magma_timings")
+function benchmark_code_magma(L::Vector{Hecke.ZZLat}, repetitions::Int = 10; out_file::String = "magma_timings")
   default_repetitions = repetitions
   s = """
   res := [];
@@ -129,7 +129,7 @@ function benchmark_code_magma(L::Vector{Hecke.ZLat}, repetitions::Int = 10; out_
   return s
 end
 
-function benchmark_magma(L::Vector{Hecke.ZLat})
+function benchmark_magma(L::Vector{Hecke.ZZLat})
   t, fp = mktemp()
   @show t
   out_file, fp_out = mktemp()
@@ -149,7 +149,7 @@ function benchmark_magma(L::Vector{Hecke.ZLat})
   return Float64[x[1] for x in t]
 end
 
-function benchmark_sage(L::Vector{Hecke.ZLat})
+function benchmark_sage(L::Vector{Hecke.ZZLat})
   t, fp = mktemp()
   @show t
   out_file, fp_out = mktemp()
@@ -168,7 +168,7 @@ function benchmark_sage(L::Vector{Hecke.ZLat})
   return Meta.eval(Meta.parse(s))
 end
 
-function benchmark_hecke(L::Vector{Hecke.ZLat})
+function benchmark_hecke(L::Vector{Hecke.ZZLat})
   res = Float64[]
   for i in 1:length(L)
     LL = L[i]
@@ -179,7 +179,7 @@ function benchmark_hecke(L::Vector{Hecke.ZLat})
   return res
 end
 
-function benchmark_all(L::Vector{Hecke.ZLat})
+function benchmark_all(L::Vector{Hecke.ZZLat})
   bM = benchmark_magma(L)
   bH = benchmark_hecke(L)
   bS = benchmark_sage(L)

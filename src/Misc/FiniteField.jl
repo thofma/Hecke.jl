@@ -12,8 +12,11 @@ function FlintFiniteField(p::ZZRingElem; cached::Bool = true)
   return k, k(1)
 end
 
-GF(p::Integer, k::Int, s::Union{AbstractString,Symbol}=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
-GF(p::ZZRingElem, k::Int, s::Union{AbstractString,Symbol}=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
+GF(p::Integer, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
+GF(p::ZZRingElem, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
+
+Native.GF(p::Integer, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
+Native.GF(p::ZZRingElem, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
 
 ##
 ## rand for Flint-Finite fields
@@ -286,7 +289,7 @@ end
 ## Minpoly/ Charpoly
 
 function minpoly(a::fqPolyRepFieldElem)
-  return minpoly(polynomial_ring(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
+  return minpoly(polynomial_ring(Native.GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
 end
 
 function minpoly(Rx::fpPolyRing, a::fqPolyRepFieldElem)
@@ -306,7 +309,7 @@ function minpoly(Rx::fpPolyRing, a::fqPolyRepFieldElem)
 end
 
 function charpoly(a::fqPolyRepFieldElem)
-  return charpoly(polynomial_ring(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
+  return charpoly(polynomial_ring(Native.GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
 end
 
 function charpoly(Rx::fpPolyRing, a::fqPolyRepFieldElem)
@@ -316,7 +319,7 @@ end
 
 
 function minpoly(a::FqPolyRepFieldElem)
-  return minpoly(polynomial_ring(GF(characteristic(parent(a)), cached = false), cached = false)[1], a)
+  return minpoly(polynomial_ring(Native.GF(characteristic(parent(a)), cached = false), cached = false)[1], a)
 end
 
 function minpoly(Rx::FpPolyRing, a::FqPolyRepFieldElem)
@@ -480,7 +483,7 @@ end
 function representation_matrix(a::fqPolyRepFieldElem)
   F = parent(a)
   k = quo(ZZ, Int(characteristic(F)))[1]
-  k = GF(Int(characteristic(F)))
+  k = Native.GF(Int(characteristic(F)))
   m = zero_matrix(k, degree(F), degree(F))
   ccall((:fq_nmod_embed_mul_matrix, libflint), Nothing, (Ref{fpMatrix}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), m, a, F)
   ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{fpMatrix}, Ref{fpMatrix}), m, m)
@@ -490,7 +493,7 @@ end
 function frobenius_matrix(F::fqPolyRepField, n::Int=1)
   a = frobenius(gen(F), n)
   k = quo(ZZ, Int(characteristic(F)))[1]
-  k = GF(Int(characteristic(F)))
+  k = Native.GF(Int(characteristic(F)))
   m = zero_matrix(k, degree(F), degree(F))
   ccall((:fq_nmod_embed_composition_matrix_sub, libflint), Nothing, (Ref{fpMatrix}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}, Int), m, a, F, degree(F))
   ccall((:nmod_mat_transpose, libflint), Nothing, (Ref{fpMatrix}, Ref{fpMatrix}), m, m)
@@ -576,7 +579,7 @@ end
 
 defining_polynomial(F::FqPolyRepField) = minpoly(gen(F))
 
-function defining_polynomial(Q::fqPolyRepField, P::Ring = GF(Int(characteristic(Q)), cached = false))
+function defining_polynomial(Q::fqPolyRepField, P::Ring = Native.GF(Int(characteristic(Q)), cached = false))
   Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
   for i=0:Q.len-1
@@ -587,3 +590,7 @@ function defining_polynomial(Q::fqPolyRepField, P::Ring = GF(Int(characteristic(
   end
   return f
 end
+
+lift(::ZZRing, x::fpFieldElem) = lift(x)
+
+lift(::ZZRing, x::FpFieldElem) = lift(x)

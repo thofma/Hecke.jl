@@ -6,7 +6,7 @@ export TorQuadModule
 export TorQuadModuleElem
 export TorQuadModuleMor
 export VecSpaceRes
-export ZLat
+export ZZLat
 
 ################################################################################
 #
@@ -182,7 +182,7 @@ end
 #
 ###############################################################################
 
-@attributes mutable struct ZLat <: AbstractLat{QQField}
+@attributes mutable struct ZZLat <: AbstractLat{QQField}
   space::QuadSpace{QQField, QQMatrix}
   rational_span::QuadSpace{QQField, QQMatrix}
   basis_matrix::QQMatrix
@@ -197,7 +197,7 @@ end
   scale::QQFieldElem
   norm::QQFieldElem
 
-  function ZLat(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix)
+  function ZZLat(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix)
     z = new()
     z.space = V
     z.basis_matrix = B
@@ -216,11 +216,11 @@ end
 @doc raw"""
     TorQuadModule
 
-# Example:
+# Examples
 ```jldoctest
 julia> A = matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]);
 
-julia> L = Zlattice(gram = A);
+julia> L = integer_lattice(gram = A);
 
 julia> T = Hecke.discriminant_group(L)
 Finite quadratic module over Integer Ring with underlying abelian group
@@ -272,8 +272,8 @@ then the coordinates with respec to the basis of `M` are given by
 """
 @attributes mutable struct TorQuadModule
   ab_grp::GrpAbFinGen             # underlying abelian group
-  cover::ZLat                     # ZLat -> ab_grp, x -> x * proj
-  rels::ZLat
+  cover::ZZLat                     # ZZLat -> ab_grp, x -> x * proj
+  rels::ZZLat
   proj::ZZMatrix                  # is a projection and respects the forms
   gens_lift::Vector{Vector{QQFieldElem}}
   gens_lift_mat::QQMatrix
@@ -300,6 +300,114 @@ end
 
 ### Maps
 
+@doc raw"""
+    TorQuadModuleMor
+
+Type for abelian group homomorphisms between torsion quadratic modules. It
+consists of a header which keeps track of the domain and the codomain of type
+`TorQuadModule` as well as the underlying abelian group homomorphism.
+
+# Examples
+```jldoctest
+julia> L = rescale(root_lattice(:A,3), 3)
+Quadratic lattice of rank 3 and degree 3 over the rationals
+
+julia> T = discriminant_group(L)
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: (Z/3)^2 x Z/12
+Gram matrix of the quadratic form with values in Q/2Z
+[2//3      0   1//3]
+[   0      0   2//3]
+[1//3   2//3   1//4]
+
+julia> N, f = normal_form(T)
+(TorQuadModule: [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3], Map with following data
+Domain:
+=======
+TorQuadModule [2//3 0 1//3; 0 0 2//3; 1//3 2//3 1//4]
+Codomain:
+=========
+TorQuadModule [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3])
+
+
+julia> domain(f)
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: (Z/3)^2 x Z/12
+Gram matrix of the quadratic form with values in Q/2Z
+[2//3      0   1//3]
+[   0      0   2//3]
+[1//3   2//3   1//4]
+
+julia> codomain(f)
+Finite quadratic module over Integer Ring with underlying abelian group
+(General) abelian group with relation matrix
+[4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
+with structure of GrpAb: (Z/3)^2 x Z/12
+
+Gram matrix of the quadratic form with values in Q/2Z
+[1//4      0      0      0]
+[   0   4//3      0      0]
+[   0      0   4//3      0]
+[   0      0      0   4//3]
+
+julia> abelian_group_homomorphism(f)
+Map with following data
+Domain:
+=======
+Abelian group with structure: (Z/3)^2 x Z/12
+Codomain:
+=========
+(General) abelian group with relation matrix
+[4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
+with structure of Abelian group with structure: (Z/3)^2 x Z/12
+```
+
+Note that an object of type `TorQuadModuleMor` needs not to be a morphism
+of torsion quadratic modules, i.e. it does not have to preserve the
+respective bilinear or quadratic forms of its domain and codomain. Though,
+it must be a homomorphism between the underlying finite abelian groups.
+
+# Examples
+```jldoctest
+julia> L = rescale(root_lattice(:A,3), 3);
+
+julia> T = discriminant_group(L)
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: (Z/3)^2 x Z/12
+Gram matrix of the quadratic form with values in Q/2Z
+[2//3      0   1//3]
+[   0      0   2//3]
+[1//3   2//3   1//4]
+
+julia> T6 = rescale(T, 6)
+Finite quadratic module over Integer Ring with underlying abelian group
+GrpAb: (Z/3)^2 x Z/12
+Gram matrix of the quadratic form with values in Q/12Z
+[4   0      2]
+[0   0      4]
+[2   4   3//2]
+
+julia> f = hom(T, T6, gens(T6))
+Map with following data
+Domain:
+=======
+TorQuadModule [2//3 0 1//3; 0 0 2//3; 1//3 2//3 1//4]
+Codomain:
+=========
+TorQuadModule [4 0 2; 0 0 4; 2 4 3//2]
+
+julia> T[1]*T[1] == f(T[1])*f(T[1])
+false
+
+julia> is_bijective(f)
+true
+```
+
+Hecke provides several constructors for objects of type `TorQuadModuleMor`, see
+for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
+[`hom(::TorQuadModule, ::TorQuadModule, ::Vector{TorQuadModuleElem})`](@ref),
+[`identity_map(::TorQuadModule)`](@ref) or [`trivial_morphism(::TorQuadModule)`](@ref).
+"""
 mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}
   header::MapHeader{TorQuadModule, TorQuadModule}
   map_ab::GrpAbFinGenMap

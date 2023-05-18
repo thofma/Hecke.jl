@@ -346,7 +346,7 @@ function ^(A::NfRelOrdIdl, a::Int)
   end
 
   if a < 0
-    throw(error("Exponent must be positive"))
+    error("Exponent must be positive")
   end
 
   if a == 2

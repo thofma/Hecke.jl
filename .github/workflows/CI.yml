@@ -27,12 +27,14 @@ jobs:
           - '1.8'
           - '~1.9.0-0'
           - 'nightly'
-        julia-arch:
-          - x64
         os:
           - ubuntu-latest
-          - macOS-latest
-          - windows-latest
+        include:
+          # Add a few windows and macOS jobs (not too many, the number we can run in parallel is limited)
+          - julia-version: '1.8'
+            os: macOS-latest
+          - julia-version: '1.8'
+            os: windows-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -40,7 +42,6 @@ jobs:
         uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
       - name: Cache artifacts
         uses: actions/cache@v3
         env:
@@ -55,10 +56,9 @@ jobs:
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@latest
       - name: "Run tests"
+        uses: julia-actions/julia-runtest@latest
         env:
           HECKE_TEST_PARALLEL: "2"
-
-        uses: julia-actions/julia-runtest@latest
         with:
           depwarn: error
         #      - name: "Process code coverage"
@@ -84,7 +84,7 @@ jobs:
           python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer
       - uses: julia-actions/setup-julia@v1
         with:
-          version: '1'
+          version: '1.8'
       - name: Cache artifacts
         uses: actions/cache@v3
         env:

@@ -3,11 +3,11 @@ function prime_field(K::NumField)
 end
 
 function prime_field(F::fqPolyRepField; cached::Bool = true)
-  return GF(Int(characteristic(F)), cached = cached)
+  return Native.GF(Int(characteristic(F)), cached = cached)
 end
 
 function prime_field(F::FqPolyRepField; cached::Bool = true)
-  return GF(characteristic(F), cached = cached)
+  return Native.GF(characteristic(F), cached = cached)
 end
 
 function prime_field(F::T; cached::Bool = true) where T <: Union{fpField, FpField}

@@ -7,7 +7,7 @@ import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction, set_prec
 import Nemo: shift_left, shift_right
 import Base: *
 
-export factor_absolute
+export factor_absolute, is_absolutely_irreducible
 
 add_verbosity_scope(:AbsFact)
 add_assertion_scope(:AbsFact)
@@ -103,7 +103,7 @@ mutable struct HenselCtxFqRelSeries{T}
   end
 
   function HenselCtxFqRelSeries(f::ZZMPolyRingElem, p::Int, s::Int = 0)
-    k = GF(p, cached = false)
+    k = Native.GF(p, cached = false)
     return HenselCtxFqRelSeries(f, k, s)
   end
 
@@ -554,7 +554,7 @@ mutable struct RootCtx
     mu === nothing && return mu
     r.H = mu
     r.R = RootCtxSingle{fqPolyRepRelPowerSeriesRingElem}[]
-    K = GF(p, d)
+    K = Native.GF(p, d)
     S, _ = power_series_ring(K, 10, "s", cached = false)
     for i=1:r.H.n
       @vtime :AbsFact 2 push!(r.R, RootCtxSingle(r.H.lf[i], S))
@@ -623,7 +623,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   local p
   while true
     p_max = next_prime(p_max)
-    gp = factor(g, GF(p_max, cached = false))
+    gp = factor(g, Native.GF(p_max, cached = false))
     if any(x->x>1, values(gp.fac))
       @vprint :AbsFact 1 "not squarefree mod $p_max\n"
       continue
@@ -689,7 +689,7 @@ function combination(RC::RootCtx)
   k = degree(F)
 
   p = characteristic(F)
-  Fp = GF(p, cached = false)
+  Fp = Native.GF(p, cached = false)
 
   #the paper
   # https://www.math.univ-toulouse.fr/~cheze/facto_abs.m
@@ -1371,7 +1371,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
 
   if degs[1] == 1
     # linear is irreducible by assumption
-    return (unit, [a])
+    return (unit, [a, parent(a)(1)])
   elseif length(vars) == 1
     uni_sub = zeros(Hecke.Globals.Qx, nvars(R))
     uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
@@ -1441,7 +1441,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   if degree(bi_a, 2) < 2
     if degree(bi_a, 2) == 1
       # a is abs irreducible
-      return (unit, [a])
+      return (unit, [a, parent(a)(1)])
     end
     @goto next_alpha
   end
@@ -1455,7 +1455,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
 
   if degree(f, mainvar) < 1 || degree(fbar, mainvar) < 1
     # a is abs irreducible
-    return (unit, [a])
+    return (unit, [a, parent(a)(1)])
   end
 
   # map the stuff in Q to the number field
@@ -1536,10 +1536,22 @@ function factor_absolute(a::QQMPolyRingElem)
   return result
 end
 
+"""
+    is_absolutely_irreducible(f::QQMPolyRingElem)
+
+Tests if `f` is irreducible over `C`.
+"""
+function is_absolutely_irreducible(a::QQMPolyRingElem)
+  @vprint :AbsFact 1 "testing  over QQ first...\n"
+  is_irreducible(a) || return false
+  unit, fp = absolute_multivariate_factorisation(a)
+  return isone(fp[2])
+end
+
 end
 
 using .MPolyFact
-export factor_absolute
+export factor_absolute, is_absolutely_irreducible
 
 #application (for free)
 

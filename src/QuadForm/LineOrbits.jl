@@ -226,7 +226,7 @@ function line_orbits(G::Vector{T}) where {T <: MatElem{FpFieldElem}}
   p = modulus(F)
   k = nrows(G[1])
   if fits(UInt, p)
-    Fsmall = GF(UInt(p), cached = false)
+    Fsmall = Native.GF(UInt(p), cached = false)
     GG = Vector{dense_matrix_type(Fsmall)}(undef, length(G))
     let Fsmall = Fsmall
       for i in 1:length(G)
@@ -256,7 +256,7 @@ function line_orbits(G::Vector{fqPolyRepMatrix})
   if d == 1
     p = characteristic(F)
     @assert fits(UInt, p)
-    GFp = GF(UInt(p), cached = false)
+    GFp = Native.GF(UInt(p), cached = false)
     GG = Vector{fpMatrix}(undef, length(G))
     let GFp = GFp
       for i in 1:length(G)
@@ -287,7 +287,7 @@ function line_orbits(G::Vector{FqPolyRepMatrix})
   k = nrows(G[1])
   if fits(UInt, p)
     f = defining_polynomial(F)
-    GFp = GF(UInt(p), cached = false)
+    GFp = Native.GF(UInt(p), cached = false)
     GFpx, x = polynomial_ring(GFp, "x", cached = false)
     local fp
     let GFp = GFp

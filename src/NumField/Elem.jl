@@ -227,7 +227,7 @@ end
     basis_matrix(v::Vector{NumFieldElem}) -> Mat
 
 Given a vector $v$ of $n$ elements of a number field $K$ of degree $d$, this
-function returns an $n x d$ matrix with entries in the base field of $K$, where
+function returns an $n \times d$ matrix with entries in the base field of $K$, where
 row $i$ contains the coefficients of $v[i]$ with respect of the canonical
 basis of $K$.
 """
@@ -354,7 +354,7 @@ end
 for F in [AnticNumberField, NfRel]
   @eval begin
     function (L::$F)(a::Vector)
-      length(a) != degree(L) && throw(error("Vector must have length ($(length(a))) equal to the degree ($(degree(L)))"))
+      length(a) != degree(L) && error("Vector must have length ($(length(a))) equal to the degree ($(degree(L)))")
       K = base_field(L)
       aprom = Vector{elem_type(K)}(undef, degree(L))
       for i in 1:degree(L)
@@ -543,7 +543,7 @@ representation_matrix(a::NumFieldElem)
 @doc doc"""
     gen(L::SimpleNumField) -> NumFieldElem
 
-Given a simple number field $L = K[x]/(x)$ over $K$, this functions returns the
+Given a simple number field $L = K[x]/(f)$ over $K$, this functions returns the
 class of $x$, which is the canonical primitive element of $L$ over $K$.
 """
 gen(::SimpleNumField)
@@ -627,7 +627,7 @@ end
     absolute_coordinates(x::NumFieldElem{T}) -> Vector{T}
 
 Given an element $x$ in a number field $K$, this function returns the coordinates of $x$
-with respect to the basis of $K$ over the rationals (the output of the 'absolute_basis' function).
+with respect to the basis of $K$ over the rationals (the output of the [`absolute_basis`](@ref) function).
 """
 absolute_coordinates(::NumFieldElem)
 

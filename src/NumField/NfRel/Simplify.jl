@@ -148,7 +148,7 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
   p = ZZRingElem(pint)
   abs_deg = d
   #First, we search for elements that are primitive using block systems
-  Fp = GF(p, cached = false)
+  Fp = Native.GF(p, cached = false)
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
@@ -272,7 +272,7 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   p = minimum(P, copy = false)
   abs_deg = d*degree(P)
   #First, we search for elements that are primitive using block systems
-  Fp = GF(p, cached = false)
+  Fp = Native.GF(p, cached = false)
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]

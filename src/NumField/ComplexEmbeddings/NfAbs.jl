@@ -75,13 +75,23 @@ end
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbs)
-  print(io, "Embedding of\n", number_field(f), "\ncorresponding to ≈ ")
+  print(io, "Complex embedding corresponding to ")
   _print_acb_neatly(io, f.r)
+  println(io)
+  io = pretty(io)
+  print(io, Indent(), "of ", Lowercase())
+  Base.show(io, MIME"text/plain"(), number_field(f))
 end
 
 function Base.show(io::IO, f::NumFieldEmbNfAbs)
-  print(io, "Embedding corresponding to ≈ ")
-  _print_acb_neatly(io, f.r)
+  if get(io, :supercompact, false)
+    print(io, "Complex embedding of number field")
+  else
+    print(io, "Complex embedding corresponding to ")
+    _print_acb_neatly(io, f.r)
+    io = pretty(io)
+    print(IOContext(io, :supercompact => true), " of ", Lowercase(), number_field(f))
+  end
 end
 
 ################################################################################

@@ -314,7 +314,11 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
 
   if bound == -1
     bound = maximum(diagonal(C.G[1]))
-    Csmall.max = Int(bound)
+    if fits(Int, bound)
+      Csmall.max = Int(bound)
+    else
+      return false, Csmall
+    end
   else
     Csmall.max = -1
   end
@@ -585,7 +589,7 @@ function _get_vectors_of_length(G::Union{ZZMatrix, FakeFmpqMat}, max::ZZRingElem
   return res
 end
 
-function _get_vectors_of_length(G::ZLat, max::ZZRingElem)
+function _get_vectors_of_length(G::ZZLat, max::ZZRingElem)
   return _get_vectors_of_length(FakeFmpqMat(gram_matrix(G)), max)
 end
 
@@ -1952,13 +1956,13 @@ end
 function assert_auto(C, order)
   G, o = _get_generators(C)
   if o != order
-    throw(error("Order $o. Expected $order"))
+    error("Order $o. Expected $order")
   end
 
   for g in G
     for U in C.G
       if g * U * g' != U
-        throw(error("Not an isometry.\nElement:\n $g\nGram matrix:\n$U"))
+        error("Not an isometry.\nElement:\n $g\nGram matrix:\n$U")
       end
     end
   end
@@ -2069,11 +2073,11 @@ end
 
 function _norm(v::ZZMatrix, M::ZZMatrix, tmp::ZZMatrix = zero_matrix(FlintZZ, 1, ncols(v)))
   mul!(tmp, v, M)
-  return (v * tmp')[1, 1]
+  return (v * transpose(tmp))[1, 1]
 end
 
 function _dot_product(v::ZZMatrix, M::ZZMatrix, w::ZZMatrix)
-  return (v * M * w')[1, 1]
+  return (v * M * transpose(w))[1, 1]
 end
 
 #
@@ -2101,7 +2105,7 @@ function _psolve(X, A, B, n, p)
       j += 1
     end
     if j == n + 1
-      throw(error("Not possible"))
+      error("Not possible")
     end
 
     if j != i

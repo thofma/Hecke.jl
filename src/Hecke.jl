@@ -68,6 +68,8 @@ using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, Spa
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias
 
+import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent
+
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
@@ -615,6 +617,7 @@ include("AlgAssRelOrd.jl")
 include("LocalField.jl")
 include("QuadForm.jl")
 include("FieldFactory.jl")
+include("RieSrf.jl")
 include("../examples/NFDB.jl")
 
 const _RealRings = _RealRing[_RealRing()]
@@ -904,5 +907,11 @@ precompile(class_group, (NfAbsOrd{AnticNumberField, nf_elem},))
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
 using .NormRel
+
+#if ccall(:jl_generating_output, Cint, ()) == 1   # if we're precompiling the package
+#  let
+#    include(joinpath("..", "system", "precompile.jl"))
+#  end
+#end
 
 end # module

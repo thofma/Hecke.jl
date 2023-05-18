@@ -104,8 +104,12 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       mQQQ = AbsOrdQuoMap(O, QQQ)
       push!(quo_rings, (QQQ, mQQQ))
       new_map = GrpAbFinGenToAbsOrdQuoRingMultMap(domain(cached_map), QQQ, copy(cached_map.generators), cached_map.discrete_logarithm)
-      new_map.tame = copy(cached_map.tame)
-      new_map.wild = copy(cached_map.wild)
+      # If we do new_map.tame = copy(cached_map.tame), this is only shallow copy
+      # but the keys of this dictionary are maps, which have a .generators field.
+      # These generators are changed to assert coprimeness, but if they are always
+      # identical, we make them too large eventually
+      new_map.tame = Dict(P => begin @assert !isdefined(y, :modulus); _n = GrpAbFinGenToAbsOrdMap(domain(y), codomain(y), copy(y.generators), y.discrete_logarithm); if isdefined(y, :disc_log) _n.disc_log = y.disc_log; end; _n; end for (P, y) in cached_map.tame)
+      new_map.wild = Dict(P => begin @assert !isdefined(y, :modulus); _n = GrpAbFinGenToAbsOrdMap(domain(y), codomain(y), copy(y.generators), y.discrete_logarithm); if isdefined(y, :disc_log) _n.disc_log = y.disc_log; end; _n; end for (P, y) in cached_map.wild)
       push!(groups_and_maps, (domain(new_map), new_map))
     else
       QQQ, mQQQ = quo(O, QQ)
@@ -117,8 +121,9 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       push!(quo_rings, (QQQ, mQQQ))
       gandm = _mult_grp_mod_n(quo_rings[end][1], dtame, dwild, n_quo)
       map_to_cache = GrpAbFinGenToAbsOrdQuoRingMultMap(gandm[1], QQQ, copy(gandm[2].generators), gandm[2].discrete_logarithm)
-      map_to_cache.tame = copy(gandm[2].tame)
-      map_to_cache.wild = copy(gandm[2].wild)
+      # See above why we cannot just copy
+      map_to_cache.tame = Dict(P => begin @assert !isdefined(y, :modulus); _n = GrpAbFinGenToAbsOrdMap(domain(y), codomain(y), copy(y.generators), y.discrete_logarithm); if isdefined(y, :disc_log) _n.disc_log = y.disc_log; end; _n; end for (P, y) in gandm[2].tame)
+      map_to_cache.wild = Dict(P => begin @assert !isdefined(y, :modulus); _n = GrpAbFinGenToAbsOrdMap(domain(y), codomain(y), copy(y.generators), y.discrete_logarithm); if isdefined(y, :disc_log) _n.disc_log = y.disc_log; end; _n; end for (P, y) in gandm[2].wild)
       ctx.multiplicative_groups[QQ] = map_to_cache
       push!(groups_and_maps, gandm)
     end

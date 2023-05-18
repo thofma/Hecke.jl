@@ -19,7 +19,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
   K = nf(order(p))
-  Rx = polynomial_ring(GF(UInt(P), cached=false), cached=false)[1]
+  Rx = polynomial_ring(Native.GF(UInt(P), cached=false), cached=false)[1]
   Zx = polynomial_ring(FlintZZ, cached = false)[1]
   gR = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)
@@ -52,7 +52,8 @@ end
 function val_func_no_index(p::NfOrdIdl)
   P = p.gen_one
   K = nf(order(p))
-  Rx, g = polynomial_ring(GF(P, cached=false), cached=false)
+  # TODO (GF): Change to proper GF to use nmod if possible
+  Rx, g = polynomial_ring(Native.GF(P, cached=false), cached=false)
   Zx = polynomial_ring(FlintZZ, cached = false)[1]
   nf_elem_to_gfp_fmpz_poly!(g, p.gen_two.elem_in_nf, false)
   f = Rx(K.pol)
@@ -226,7 +227,7 @@ function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
   if !isone(denominator(P.gen_two.elem_in_nf))
     return true
   end
-  R = GF(Int(minimum(P)), cached = false)
+  R = Native.GF(Int(minimum(P)), cached = false)
   Rt, t = polynomial_ring(R, "x", cached = false)
   f = Rt(nf(P).pol)
   g = Rt(P.gen_two.elem_in_nf)
@@ -371,7 +372,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
     error("element is zero")
   end
   if parent(a) !== nf(order(p))
-    throw(error("Incompatible parents"))
+    error("Incompatible parents")
   end
   if !is_defining_polynomial_nice(parent(a)) || order(p).is_maximal != 1
     return valuation_naive(a, p)::Int

@@ -39,7 +39,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
     end
   end
 
-  throw(error("Not an element of the base field"))
+  error("Not an element of the base field")
 end
 
 function (K::QQField)(a::AbsAlgAssElem{QQFieldElem})
@@ -61,7 +61,7 @@ function (K::QQField)(a::AbsAlgAssElem{QQFieldElem})
     end
   end
 
-  throw(error("Not an element of the base field"))
+  error("Not an element of the base field")
 end
 
 
@@ -1070,7 +1070,7 @@ end
 Returns a matrix $M$ such that $M_{ij} = \mathrm{tr}(A_i \cdot A_j)$ where
 $\mathrm{tr}$ is the reduced trace.
 """
-function trred_matrix(A::Vector{<: AlgAssElem})
+function trred_matrix(A::Vector{<: AbsAlgAssElem})
   n = length(A)
   n == 0 && error("Array must be non-empty")
   K = base_ring(parent(A[1]))

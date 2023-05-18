@@ -110,13 +110,13 @@ If `grh` is set to true, the validity of the bound depends on GRH.
 """
 function lower_discriminant_bound(n::Int, r::Int; grh::Bool = true)
   global odlyzko_bound_grh
-  (r < 0 || r > n) && throw(error("Number of real places ($r) must be in 1:$(n)"))
+  (r < 0 || r > n) && error("Number of real places ($r) must be in 1:$(n)")
   if grh && n <= 100
     if iseven(n)
-      (r < 0 || r > n) && throw(error("Number of real places ($r) must be in 1:$(n)"))
+      (r < 0 || r > n) && error("Number of real places ($r) must be in 1:$(n)")
       j = div(r, 2) + 1
     else
-      !isodd(r) && throw(error("Number of real places $r must be odd"))
+      !isodd(r) && error("Number of real places $r must be odd")
       j = div(r + 1, 2)
     end
     b = odlyzko_bound_grh[n][j]

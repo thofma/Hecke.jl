@@ -325,7 +325,7 @@ end
     M = kernel_lattice(E8, cyclotomic_polynomial(n)(h))
     hM = solve_left(basis_matrix(M), basis_matrix(M)*h)
     @test is_cyclotomic_polynomial(minpoly(hM))
-    M = Zlattice(gram = gram_matrix(M))
+    M = integer_lattice(gram = gram_matrix(M))
     H, res = hermitian_structure_with_transfer_data(M, hM)
     @test rank(H) == divexact(rank(M), euler_phi(n))
     @test domain(res) === ambient_space(M)

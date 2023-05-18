@@ -11,7 +11,7 @@
 
 @alias get_assert_level get_assertion_level
 @alias get_verbose_level get_verbosity_level
-@alias genera Zgenera
+@alias genera integer_genera
 @alias genera_hermitian hermitian_genera
 @alias genera_quadratic quadratic_genera
 @alias GenusHerm HermGenus
@@ -205,6 +205,12 @@
 @alias TorQuadMod TorQuadModule
 @alias TorQuadModElem TorQuadModuleElem
 @alias TorQuadModMor TorQuadModuleMor
+
+@alias ZGenus ZZGenus
+@alias ZLat ZZLat
+@alias Zgenera integer_genera
+@alias Zlattice integer_lattice
+@alias ZpGenus LocalZZGenus
 
 # Deprecated during 0.17.*
 @alias real_field real_number_field

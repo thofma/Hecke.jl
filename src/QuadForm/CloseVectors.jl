@@ -1,7 +1,7 @@
 export close_vectors, close_vectors_iterator
 
 @doc raw"""
-    close_vectors(L:ZLat, v:Vector, [lb,], ub; check::Bool = false)
+    close_vectors(L:ZZLat, v:Vector, [lb,], ub; check::Bool = false)
                                             -> Vector{Tuple{Vector{Int}}, QQFieldElem}
 
 Return all tuples `(x, d)` where `x` is an element of `L` such that `d = b(v -
@@ -18,7 +18,7 @@ Both input and output are with respect to the basis matrix of `L`.
 # Examples
 
 ```jldoctest
-julia> L = Zlattice(matrix(QQ, 2, 2, [1, 0, 0, 2]));
+julia> L = integer_lattice(matrix(QQ, 2, 2, [1, 0, 0, 2]));
 
 julia> close_vectors(L, [1, 1], 1)
 3-element Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}:
@@ -32,31 +32,31 @@ julia> close_vectors(L, [1, 1], 1, 1)
  ([0, 1], 1)
 ```
 """
-close_vectors(L::ZLat, v::Vector, arg...; kw...)
+close_vectors(L::ZZLat, v::Vector, arg...; kw...)
 
-function close_vectors(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
+function close_vectors(L::ZZLat, v::Vector, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   return _close_vectors(L, QQ.(v), nothing, QQ(upperbound), elem_type; kw...)
 end
 
-function close_vectors_iterator(L::ZLat, v::Vector, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
+function close_vectors_iterator(L::ZZLat, v::Vector, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   return _close_vectors_iterator(L, QQ.(v), nothing, QQ(upperbound), elem_type; kw...)
 end
 
-function close_vectors(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
+function close_vectors(L::ZZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   @req lowerbound >= 0 "The lower bound must be non-negative"
   return _close_vectors(L, QQ.(v), QQ(lowerbound), QQ(upperbound), elem_type; kw...)
 end
 
-function close_vectors_iterator(L::ZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
+function close_vectors_iterator(L::ZZLat, v::Vector, lowerbound, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
   @req lowerbound >= 0 "The lower bound must be non-negative"
   return _close_vectors_iterator(L, QQ.(v), QQ(lowerbound), QQ(upperbound), elem_type; kw...)
 end
 
-function _close_vectors(L::ZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
+function _close_vectors(L::ZZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
                                 sorting::Bool=false,
                                 check=true)  where {S}
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
@@ -64,8 +64,8 @@ function _close_vectors(L::ZLat, v::Vector{QQFieldElem}, lowerbound, upperbound:
   V = rational_span(L)
   G1 = gram_matrix(V)
   if check
-    @req is_definite(L) == true && G1[1, 1] > 0 "Zlattice must be positive definite"
-    @req rank(L) == d "Zlattice must have the same rank as the length of the vector in the second argument."
+    @req is_definite(L) == true && G1[1, 1] > 0 "integer_lattice must be positive definite"
+    @req rank(L) == d "integer_lattice must have the same rank as the length of the vector in the second argument."
   end
 
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
@@ -126,15 +126,15 @@ function _close_vectors(L::ZLat, v::Vector{QQFieldElem}, lowerbound, upperbound:
   return cv
 end
 
-function _close_vectors_iterator(L::ZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
+function _close_vectors_iterator(L::ZZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
                                 sorting::Bool=false,
                                 check=true, filter = nothing) where S
   d = length(v)
   V = rational_span(L)
   G1 = gram_matrix(V)
   if check
-    @req is_definite(L) == true && G1[1, 1] > 0 "Zlattice must be positive definite"
-    @req rank(L) == d "Zlattice must have the same rank as the length of the vector in the second argument."
+    @req is_definite(L) == true && G1[1, 1] > 0 "integer_lattice must be positive definite"
+    @req rank(L) == d "integer_lattice must have the same rank as the length of the vector in the second argument."
   end
 
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
@@ -223,12 +223,12 @@ end
 #
 ################################################################################
 
-function closest_vectors(L::ZLat, v::MatrixElem{T} , upperbound::T; kw...) where T <: RingElem
+function closest_vectors(L::ZZLat, v::MatrixElem{T} , upperbound::T; kw...) where T <: RingElem
   _v = T[v[i] for i in 1:nrows(v)]
   return first.(close_vectors(L, _v, upperbound; kw...))
 end
 @doc raw"""
-    _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) -> Tuple{ZLat, MatrixElem{T}, T}
+    _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) -> Tuple{ZZLat, MatrixElem{T}, T}
 Where T is a concrete type, e.g. ZZRingElem, QQFieldElem, etc.
 Converts a quadratic triple QT = [Q, K, d] to the input values required for closest vector problem (CVP).
 """
@@ -237,17 +237,17 @@ function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: Ring
   Q = G
   vector = -solve(Q, K) #-inv(Q) * K
   upperbound = (transpose(vector) * Q * vector)[1,1] - d
-  Lattice = Zlattice(gram = Q, check=false)
+  Lattice = integer_lattice(gram = Q, check=false)
   return Lattice, vector, upperbound
 end
 
 @doc raw"""
-    _convert_type(L::ZLat, v::MatrixElem{T}, c::T) -> Tuple{QQMatrix, QQMatrix, QQFieldElem}
+    _convert_type(L::ZZLat, v::MatrixElem{T}, c::T) -> Tuple{QQMatrix, QQMatrix, QQFieldElem}
 
 Where T is a concrete type, e.g. ZZRingElem, QQFieldElem, etc.
 Converts the input values from closest vector enumeration (CVE) to the corresponding quadratic triple QT = [Q, K, d].
 """
-function _convert_type(L::ZLat, v::MatrixElem{T}, c::T) where T <: RingElem
+function _convert_type(L::ZZLat, v::MatrixElem{T}, c::T) where T <: RingElem
   V = ambient_space(L)
   Q = gram_matrix(V)
   @req all(Q[i,i]>0 for i in 1:nrows(Q)) "L must be definite"

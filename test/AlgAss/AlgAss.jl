@@ -46,6 +46,10 @@ end
 
 @testset "Associative algebras" begin
 
+  # creation
+
+  @test_throws ArgumentError AlgAss(QQ, map(QQ, reshape([1 2 1 2; 1 2 1 2], 2, 2, 2)))
+
   @testset "Change of ring" begin
 
     # Restrict from number field to Q
@@ -105,7 +109,7 @@ end
     A = AlgAss(f)
     B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fq)
-    @test degree(base_ring(B)) == degree(f)*degree(Fq)
+    @test absolute_degree(base_ring(B)) == degree(f)*degree(Fq)
     @test dim(B) == 1
 
     test_alg_morphism_char_p(B, A, BtoA)

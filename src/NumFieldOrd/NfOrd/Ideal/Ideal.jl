@@ -2026,7 +2026,7 @@ function pradical_trace(O::NfAbsOrd, p::IntegerUnion)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:ncols(B)
     for j = 1:d
-      M2[i, j] = FlintZZ(B[j, i].data)
+      M2[i, j] = FlintZZ(lift(ZZ, B[j, i]))
     end
   end
   gens = elem_type(O)[O(p)]
@@ -2075,7 +2075,7 @@ function pradical_frobenius(O::NfAbsOrd, p::IntegerUnion)
   for i = 1:length(X)
     coords = Vector{ZZRingElem}(undef, d)
     for j=1:d
-      coords[j] = lift(X[i][j])
+      coords[j] = lift(ZZ, X[i][j])
     end
     push!(gens, O(coords))
   end
@@ -2083,7 +2083,7 @@ function pradical_frobenius(O::NfAbsOrd, p::IntegerUnion)
   m = zero_matrix(FlintZZ, d, d)
   for i = 1:length(X)
     for j = 1:d
-      m[i, j] = lift(X[i][j])
+      m[i, j] = lift(ZZ, X[i][j])
     end
   end
   mm = hnf_modular_eldiv!(m, ZZRingElem(p), :lowerleft)

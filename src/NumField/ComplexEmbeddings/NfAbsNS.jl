@@ -58,30 +58,37 @@ function _complex_embeddings(K::NfAbsNS)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbsNS)
-  print(io, "Embedding of\n")
-  print(IOContext(io, :compact => true), number_field(f))
-  print(io, "\n")
-  print(io, "with roots ≈ ")
-  print(io, "[ ")
+  io = pretty(io)
+  print(io, "Complex embedding ")
+  print(io, "corresponding to roots ")
+  print(io, "[")
   for i in 1:length(f.roots)
     _print_acb_neatly(io, f.roots[i])
     if i < length(f.roots)
       print(io, ", ")
     end
   end
-  print(io, "]")
+  println(io, "]")
+  print(io, Indent(), "of ", Lowercase())
+  Base.show(io, MIME"text/plain"(), number_field(f))
 end
 
 function Base.show(io::IO, f::NumFieldEmbNfAbsNS)
-  print(io, "Embedding corresponding to ≈ ")
-  print(io, "[ ")
-  for i in 1:length(f.roots)
-    _print_acb_neatly(io, f.roots[i])
-    if i < length(f.roots)
-      print(io, ", ")
+  if get(io, :supercompact, false)
+    print(io, "Complex embedding of number field")
+  else
+    print(io, "Complex embedding corresponding to ")
+    print(io, "[")
+    for i in 1:length(f.roots)
+      _print_acb_neatly(io, f.roots[i])
+      if i < length(f.roots)
+        print(io, ", ")
+      end
     end
+    print(io, "]")
+    io = pretty(io)
+    print(IOContext(io, :supercompact => true), " of ", Lowercase(), number_field(f))
   end
-  print(io, "]")
 end
 
 function (f::NumFieldEmbNfAbsNS)(a::NfAbsNSElem, prec::Int = 32)

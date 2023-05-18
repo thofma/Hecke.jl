@@ -140,3 +140,10 @@ end
   @test_throws ArgumentError cyclotomic_polynomial(-1)
 end
 
+# fix lazy_ factor overflow
+@testset "lazt_factor" begin
+  F = GF(2267)
+  Fx, x = F["x"]
+  f = x^8 + 319*x^7 + 1798*x^6 + 1177*x^5 + 1083*x^4 + 2070*x^3 + 2075*x^2 + 1937*x + 1896
+  @test collect(Hecke.lazy_factor(f)) == [f]
+end

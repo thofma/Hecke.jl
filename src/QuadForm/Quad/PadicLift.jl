@@ -97,7 +97,7 @@ function _hensel_qf_modular_odd(Z::T, G::T, F::T, a, b) where {T <: Union{zzModM
 end
 
 function _solve_X(Y::Union{zzModMatrix, ZZModMatrix}, b, g)
-  F = GF(2)
+  F = Native.GF(2)
   Y = change_base_ring(F, lift(Y))
   b = [F(lift(i)) for i in b]
   g = [F(lift(i)) for i in g]
@@ -105,7 +105,7 @@ function _solve_X(Y::Union{zzModMatrix, ZZModMatrix}, b, g)
 end
 
 function _solve_X_ker(Y::Union{zzModMatrix, ZZModMatrix}, b, g)
-  F = GF(2)
+  F = Native.GF(2)
   Y = change_base_ring(F, lift(Y))
   b = [F(lift(i)) for i in b]
   g = [F(lift(i)) for i in g]

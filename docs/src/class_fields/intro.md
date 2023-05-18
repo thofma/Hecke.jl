@@ -10,9 +10,9 @@ This chapter deals with abelian extensions of number fields and the rational num
 
 Class Field Theory, here specifically, class field theory of global number fields, deals
 with abelian extension, ie. fields where the group of automorphisms is abelian.
-For extensions of {\Q}, the famous Kronnecker-Weber theorem classifies all such fields:
+For extensions of $\mathbb Q$, the famous Kronnecker-Weber theorem classifies all such fields:
 a field is abelian if and only if it is contained in some cyclotomic field. For general
-number fields this is more involved and even for extensions of {\Q} is is not practical.
+number fields this is more involved and even for extensions of $\mathbb Q$ is is not practical.
 
 In Hecke, abelian extensions are parametrized by quotients of so called ray class groups.
 The language of ray class groups while dated is more applicable to algorithms than the
@@ -45,7 +45,7 @@ where the isomorphism is given by the Artin (or Frobenius) map. Since, in Hecke,
 (ray) class groups have no link to the field, actually this has to be specified using the
 maps.
 
-It should be noted that this is a {\em lazy} construction: nothing is computed at this point.
+It should be noted that this is a _lazy_ construction: nothing is computed at this point.
 
 ```@docs
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp})
@@ -73,7 +73,7 @@ In general, the number field constructed this way will be non-simple by type and
 by a polynomial for each maximal cyclic quotient of prime power order in the defining group.
 
 The algorithm employed is based on Kummer-theory and requires the addition of a suitable
-root of unity. Progress can be monitored by setting {{{set_verbose_level(:ClassField, n)}}}
+root of unity. Progress can be monitored by setting `set_verbose_level(:ClassField, n)`
 where $0\le n\le 3$
 
 ```@docs

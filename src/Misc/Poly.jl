@@ -333,7 +333,7 @@ end
  $G = g mod p$, $H = h mod p$.
 """
 function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p::ZZRingElem, k::Int)
-  Rx, x = polynomial_ring(GF(p, cached=false), cached=false)
+  Rx, x = polynomial_ring(Native.GF(p, cached=false), cached=false)
   fl, a, b = gcdx(Rx(g), Rx(h))
   @assert isone(fl)
   @assert k>= 2
@@ -385,7 +385,7 @@ end
 """
 function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int)
   @assert is_monic(g) #experimentally: otherwise, the result is bad...
-  Rx, x = polynomial_ring(GF(p, cached=false), cached=false)
+  Rx, x = polynomial_ring(Native.GF(p, cached=false), cached=false)
   if !is_monic(f)
     pk = p^k
     f *= invmod(leading_coefficient(f), pk)
@@ -935,7 +935,7 @@ function factor_equal_deg(x::fpPolyRingElem, d::Int)
   res = Vector{fpPolyRingElem}(undef, fac.num)
   for i in 1:fac.num
     f = parent(x)()
-    ccall((:nmod_poly_factor_get_nmod_poly, libflint), Nothing,
+    ccall((:nmod_poly_factor_get_poly, libflint), Nothing,
             (Ref{fpPolyRingElem}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
     res[i] = f
   end
@@ -1417,10 +1417,10 @@ specified, return the `n`-th cyclotomic polynomial over the integers.
 
 ```jldoctest
 julia> F, _ = FiniteField(5)
-(Galois field with characteristic 5, 1)
+(Finite field of characteristic 5, 1)
 
 julia> Ft, _ = F["t"]
-(Univariate Polynomial Ring in t over Galois field with characteristic 5, t)
+(Univariate polynomial ring in t over GF(5), t)
 
 julia> cyclotomic_polynomial(15, Ft)
 t^8 + 4*t^7 + t^5 + 4*t^4 + t^3 + 4*t + 1
@@ -1448,8 +1448,7 @@ Return whether `p` is cyclotomic.
 
 ```jldoctest
 julia> _, b = cyclotomic_field_as_cm_extension(12)
-(Relative number field with defining polynomial t^2 - (z_12 + 1//z_12)*t + 1
- over Maximal real subfield of cyclotomic field of order 12, z_12)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field of order 12, z_12)
 
 julia> is_cyclotomic_polynomial(minpoly(b))
 false
@@ -1504,7 +1503,7 @@ function Base.iterate(
   ) where T<:PolyElem
   isone(p) && return nothing
   exp += 1
-  exponent = a.orderOfBaseRing ^ exp
+  exponent = ZZ(a.orderOfBaseRing) ^ exp
   f = gcd(powermod(a.x, exponent, p) - a.x, p)
   p = divexact(p, f)
   return (f, (p, exp))

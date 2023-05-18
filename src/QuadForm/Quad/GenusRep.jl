@@ -127,7 +127,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
 
   if max > length(res) && use_mass
     if sum(QQFieldElem[1//automorphism_group_order(LL) for LL in res]) != _mass
-      throw(error("Something very wrong"))
+      error("Something very wrong")
     end
   end
 
@@ -163,7 +163,7 @@ function spinor_genera_in_genus(L, mod_out)
     while iszero(Gr[1, i])
       i += 1
       if i > ncols(Gr)
-        throw(error("Lattice is degenerated"))
+        error("Lattice is degenerated")
       end
       @assert !iszero(Gr[1, i])
       spinornorm = 2 * Gr[1, i]
@@ -245,7 +245,7 @@ function _smallest_norm_good_prime(L)
     end
     limit = 2 * limit
     if limit > 2^8
-      throw(error("Something off"))
+      error("Something off")
     end
   end
 end
@@ -386,7 +386,7 @@ function good_bong(L, p)
     elseif nrows(GG) == 1
       push!(bong, GG[1, 1])
     else
-      throw(error("This should not happen"))
+      error("This should not happen")
     end
   end
   return bong
@@ -599,7 +599,7 @@ function G_function(a, V, g, p)
       return _one_plus_power_of_p(e - floor(Int, e//2 - R//4), V, g, p)
     end
   else
-    throw(error("This should never happen"))
+    error("This should never happen")
   end
 end
 
@@ -707,7 +707,7 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
     if j isa Int # found
       the_idele[j] = i[2]
     else
-      #throw(error("Impossible?"))
+      #error("Impossible?")
       # ignore this
     end
   end
@@ -904,7 +904,6 @@ function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
   return gens
 end
 
-# TODO: Enable use_auto
 function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = inf)
   R = base_ring(L)
   F = nf(R)
@@ -935,8 +934,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   if use_auto
     G = automorphism_group_generators(L)
     @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
-    Binv = inv(B)
-    adjust_gens = eltype(G)[B * g * Binv for g in G]
+    adjust_gens = eltype(G)[solve_left(B, B*g) for g in G]
     @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
     adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
@@ -1500,7 +1498,7 @@ function _genus_representatives_binary_quadratic_definite(L::QuadLat; max = inf,
   res = typeof(L)[]
   for M in lat
     Mre = rescale(M, inv(d))
-    @test genus(Mre) == G
+    @assert genus(Mre) == G
     push!(res, Mre)
   end
   return res

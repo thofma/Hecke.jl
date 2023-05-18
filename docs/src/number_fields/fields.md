@@ -9,8 +9,8 @@ end
 
 ## Creation of number fields
 
-General number fields can be created using the function `number_field`, of which
-`number_field` is an alias. To create a simple number field given by a defining
+General number fields can be created using the function `number_field`.
+To create a simple number field given by a defining
 polynomial or a non-simple number field given by defining polynomials, the
 following functions can be used.
 

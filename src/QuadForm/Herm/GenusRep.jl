@@ -102,7 +102,7 @@ function smallest_neighbour_prime(L::HermLat)
       return true, QQ, bad
     end
   end
-  throw(error("Impossible"))
+  error("Impossible")
 end
 
 function _neighbour(L, B, xG, x, h, P, CC, split)
@@ -393,7 +393,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
       end
     end
     if use_mass && _mass < 0
-      throw(error("This should not happen"))
+      error("This should not happen")
     end
     i = i + 1
   end
@@ -475,9 +475,9 @@ function genus_generators(L::HermLat)
   q00 = pseudo_inv(q0) * h
   PP = ideal_type(R)[]
 
-  local F::fpField
+  local F::FqField
 
-  local W::Generic.QuotientModule{fpFieldElem}
+  local W::Generic.QuotientModule{FqFieldElem}
 
   if iseven(rank(L))
     for (P, e) in factor(D)
@@ -504,7 +504,7 @@ function genus_generators(L::HermLat)
       l = length(PP)
       VD = Int[ valuation(D, P) for P in PP ]
       K, k = kernel(nnorm)
-      F = GF(2, cached = false)
+      F = Nemo._GF(2, cached = false)
       V = VectorSpace(F, length(PP))
       S = elem_type(V)[]
       for u in gens(K)

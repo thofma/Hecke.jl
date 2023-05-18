@@ -78,7 +78,7 @@ is contained in $\mathcal O$ if and only if `check` is `true`.
 """
 (O::NfAbsOrd{S, T})(a::T, check::Bool = true) where {S, T} = begin
   if nf(O) !== parent(a)
-    throw(error("Underlying number fields not equal"))
+    error("Underlying number fields not equal")
   end
   if check
     (x, y) = _check_elem_in_order(a,O)
@@ -612,14 +612,14 @@ $a$ are principal, which is for example satisfied if class group of the order
 of $a$ is trivial.
 """
 function factor(a::NfOrdElem)
-  iszero(a) && throw(error("Element must be non-zero"))
+  iszero(a) && error("Element must be non-zero")
   OK = parent(a)
   I = a * OK
   D = Dict{NfOrdElem, Int}()
   u = a
   for (p, e) in factor(I)
     b, c = is_principal(p)
-    !b && throw(error("Prime ideal dividing the element not principal"))
+    !b && error("Prime ideal dividing the element not principal")
     D[c] = e
     u = divexact(u, c^e)
   end

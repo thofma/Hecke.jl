@@ -21,7 +21,7 @@ function base_ring(A::SRow{T}) where {T}
   elseif length(A.values) > 0
     return parent(A.values[1])
   else
-    throw(error("Base ring of empty row not defined"))
+    error("Base ring of empty row not defined")
   end
 end
 

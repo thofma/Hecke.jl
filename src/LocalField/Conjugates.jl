@@ -126,7 +126,7 @@ mutable struct qAdicConj
   cache::Dict{nf_elem, Any}
 
   function qAdicConj(K::AnticNumberField, p::Int; splitting_field::Bool = false)
-    if discriminant(map_coefficients(GF(p), K.pol)) == 0
+    if discriminant(map_coefficients(Native.GF(p), K.pol)) == 0
       error("cannot deal with difficult primes yet")
     end
     #=
@@ -563,8 +563,8 @@ function completion(K::AnticNumberField, ca::qadic)
   while length(pa) < d
     push!(pa, pa[end]*pa[2])
   end
-  m = matrix(GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
-  o = matrix(GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
+  m = matrix(Native.GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
+  o = matrix(Native.GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
   s = solve(m, o)
   @hassert :qAdic 1 m*s == o
   a = K()
@@ -573,7 +573,7 @@ function completion(K::AnticNumberField, ca::qadic)
   end
   f = defining_polynomial(parent(ca), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
-  o = matrix(GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
+  o = matrix(Native.GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
   s = solve(m, o)
   b = K()
   for i=1:d

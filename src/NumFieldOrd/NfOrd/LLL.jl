@@ -175,8 +175,8 @@ function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int =
   end
   pr = prod_diagonal(l)
   if pr > ZZRingElem(2)^(div(n*(n-1), 2)) * disc * ZZRingElem(2)^(n*prec)
-    @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red);
-    @v_do :ClassGroup 2 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", ZZRingElem(2)^(div(n*(n-1), 2)) * disc * ZZRingElem(2)^(n*prec));
+    @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red)
+    @v_do :ClassGroup 2 println("prod too large: ", nbits(pr), " > 2^(n(n-1)/2) disc = ", nbits(ZZRingElem(2)^(div(n*(n-1), 2)) * disc * ZZRingElem(2)^(n*prec)))
     throw(LowPrecisionLLL())
   end
 
@@ -410,8 +410,14 @@ end
 
 
 function subsets_it(n::Int, k::Int)
+  if n < k
+    return (Vector{Int}[])
+  end
+  if k == 0
+    return ([Int[]])
+  end
   if n == k
-    return (Int[i for i = 1:n])
+    return ([Int[i for i = 1:n]])
   end
   if k == 1
     return ([Int[i] for i = 1:n])
@@ -428,9 +434,12 @@ end
 @doc raw"""
     subsets(n::Int, k::Int)
 
-Return a vector of all ordered `k`-element subsets of `1..n`.    
+Return a vector of all ordered `k`-element subsets of `1..n`.
 """
 function subsets(n::Int, k::Int)
+  if n < k
+    return Vector{Int}[]
+  end
   if k == 0
     return Vector{Int}[Int[]]
   end
@@ -612,6 +621,10 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
         d = minkowski_gram_mat_scaled(M, prec)
         break
       catch e
+        if isa(e, InterruptException)
+          rethrow(e)
+        end
+        #TODO: see which are the legal errors here (low prec, ...)
         prec = prec*2
       end
     end
@@ -660,10 +673,9 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     dOn = nbits(prod(Hecke.upper_bound(ZZRingElem, t2(x)) for x in basis(On, K)))
     if dOn < dM
       @vprint :LLL 3 "I use the transformation\n"
-      @vprint :LLL 3 "New profile: $(dOn)\n"
+      @vprint :LLL 3 "New profile: $(dOn), was $dM\n"
       M = On
       dM = dOn
-      prec = Int(floor(prec*1.5))
     else
       prec *= 2
     end

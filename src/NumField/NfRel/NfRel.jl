@@ -155,9 +155,22 @@ end
 #
 ################################################################################
 
+function Base.show(io::IO, ::MIME"text/plain", a::NfRel)
+  println(io, "Relative number field with defining polynomial ", a.pol)
+  io = pretty(io)
+  print(io, Indent(), "over ", Lowercase())
+  show(io, MIME"text/plain"(), base_field(a))
+  print(io, Dedent())
+end
+
 function Base.show(io::IO, a::NfRel)
-  print(io, "Relative number field with defining polynomial ", a.pol)
-  print(io, "\n over ", a.base_ring)
+  if get(io, :supercompact, false)
+    print(io, "Relative number field")
+  else
+    io = pretty(io)
+    print(io, "Relative number field of degree ", degree(a), " over ")
+    print(IOContext(io, :supercompact => true), Lowercase(), base_field(a))
+  end
 end
 
 function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)
@@ -176,7 +189,7 @@ end
 
 function number_field(f::PolyElem{T}, S::Symbol;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
-  check && !is_irreducible(f) && throw(error("Polynomial must be irreducible"))
+  check && !is_irreducible(f) && error("Polynomial must be irreducible")
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
@@ -268,7 +281,7 @@ Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 ################################################################################
 
 function Base.inv(a::NfRelElem)
-  a == 0 && throw(error("Element not invertible"))
+  a == 0 && error("Element not invertible")
   g, s, _ = gcdx(data(a), parent(a).pol)
   @assert g == 1
   return parent(a)(s)
@@ -738,7 +751,7 @@ end
 
 function is_linearly_disjoint(K1::NfRel, K2::NfRel)
   if base_field(K1) != base_field(K2)
-    throw(error("Number fields must have the same base field"))
+    error("Number fields must have the same base field")
   end
 
   if gcd(degree(K1), degree(K2)) == 1
@@ -882,11 +895,11 @@ $\zeta_n+zeta_n^{-1}$.
 # Example
 ```jldoctest
 julia> E, b = cyclotomic_field_as_cm_extension(6)
-(Relative number field with defining polynomial t^2 - t + 1
- over Maximal real subfield of cyclotomic field of order 6, z_6)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field of order 6, z_6)
 
 julia> base_field(E)
-Maximal real subfield of cyclotomic field of order 6
+Number field with defining polynomial $ - 1
+  over rational field
 
 ```
 """

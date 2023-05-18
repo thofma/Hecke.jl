@@ -398,7 +398,7 @@ end
 
 function different(O::NfRelOrd)
   if !is_maximal_known_and_maximal(O)
-    throw(error("Order not known to be maximal"))
+    error("Order not known to be maximal")
   end
   return ideal(O, basis_pmatrix(inv(codifferent(O))))
 end

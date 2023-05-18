@@ -1070,7 +1070,7 @@ function _non_norm_rep(E, K, p)
       k = 0
       while true
         if k > 10000
-          throw(error("Something wrong in non_norm_rep"))
+          error("Something wrong in non_norm_rep")
         end
         y = rand(K, -5:5)
         if iszero(y)
@@ -1101,7 +1101,7 @@ function _non_norm_rep(E, K, p)
       k = 0
       while true
         if k > 10000
-          throw(error("Something wrong in non_norm_rep"))
+          error("Something wrong in non_norm_rep")
         end
         y = (1 + rand(B, -1:1)) * tu^(rand(1:tuo))
         @assert valuation(y, p) == 0
@@ -1111,7 +1111,7 @@ function _non_norm_rep(E, K, p)
         k += 1
       end
     end
-    throw(error("This should not happen ..."))
+    error("This should not happen ...")
   else
     lP = prime_decomposition(maximal_order(E), p)
     if length(lP) == 2

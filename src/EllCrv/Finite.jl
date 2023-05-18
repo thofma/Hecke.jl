@@ -154,7 +154,7 @@ function order_via_legendre(E::EllCrv{T}) where T<:FinFieldElem
 
   while x < p
     C = x^3 + a4*x + a6
-    Cnew = ZZ(C.data) # convert to ZZRingElem
+    Cnew = lift(ZZ, C) # convert to ZZRingElem
     a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
     grouporder = grouporder + a
     x = x + 1
@@ -518,7 +518,7 @@ function t_mod_prime(l, E)
 
   S, x = polynomial_ring(R, "x")
   T, y = polynomial_ring(S, "y")
-  Z = GF(l, cached = false)
+  Z = Native.GF(l, cached = false)
 
   _, _, _, a4, a6 = a_invars(E)
   f = x^3 + a4*x + a6
@@ -847,7 +847,7 @@ function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
     return j == 0
   end
   
-  L = GF(p, 2)
+  L = Native.GF(p, 2)
   Lx, X = polynomial_ring(L, "X")
   Lxy, Y = polynomial_ring(Lx, "Y")
   Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
@@ -884,6 +884,10 @@ end
 
 function _to_z(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem})
   return coeff(a, 0)
+end
+
+function _to_z(a::FqFieldElem)
+  return lift(ZZ, a)
 end
 
 function _embed_into_p2(j, L)

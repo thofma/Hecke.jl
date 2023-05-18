@@ -43,7 +43,7 @@ is_totally_complex(::QQField) = false
 Compute the conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
-$\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+$\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 
 Every entry $y$ of the vector returned satisfies
 `radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol` respectively.
@@ -62,7 +62,7 @@ end
 Compute the conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
-$\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+$\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 
 Let `p` be the precision of `C`, then every entry $y$ of the vector returned
 satisfies `radius(real(y)) < 2^-p` and `radius(imag(y)) < 2^-p`
@@ -219,7 +219,7 @@ end
 Compute the complex conjugates of $x$ as elements of type `acb`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
-$\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+$\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 
 Every entry $y$ of the array returned satisfies
 `radius(real(y)) < 2^-abs_tol` and `radius(imag(y)) < 2^-abs_tol`.
@@ -263,7 +263,7 @@ function conjugates_log(x::nf_elem, abs_tol::Int = 32, T = arb)
   if T === arb
     return conjugates_arb_log(x, abs_tol)
   else
-    throw(error("Cannot return real conjugates as type ", T))
+    error("Cannot return real conjugates as type ", T)
   end
 end
 
@@ -378,7 +378,7 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
   end
 
   if work_tol > 2^18 || abs_tol > 2^18
-    throw(error("asdsd"))
+    error("asdsd")
   end
 
   #R = ArbField(precision(parent(c[1])), false)

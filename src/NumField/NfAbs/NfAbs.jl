@@ -82,7 +82,7 @@ These fields tend to have non-trivial class groups.
 
 ```jldoctest
 julia> wildanger_field(3, ZZ(10), "a")
-(Number field over Rational Field with defining polynomial x^3 - 10*x^2 + 10*x - 10, a)
+(Number field of degree 3 over QQ, a)
 ```
 """
 function wildanger_field(n::Int, B::ZZRingElem, s::String = "_\$"; check::Bool = true, cached::Bool = true)
@@ -149,7 +149,7 @@ Returns the rational numbers as the number field defined by $x - 1$.
 
 ```jldoctest
 julia> rationals_as_number_field()
-(Number field over Rational Field with defining polynomial x - 1, 1)
+(Number field of degree 1 over QQ, 1)
 ```
 """
 function rationals_as_number_field()
@@ -323,7 +323,7 @@ end
 
 Given a torsion unit $x$ together with a multiple $n$ of its order, compute
 the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
-that $x^`k` = 1$.
+that $x^k = 1$.
 
 It is not checked whether $x$ is a torsion unit.
 """
@@ -974,7 +974,7 @@ function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}}
     end
   end
   if throw_error === Val{true}
-    throw(error("no coercion possible"))
+    error("no coercion possible")
   else
     return false
   end
@@ -991,10 +991,10 @@ end
       end
       return x::elem_type(a)
     else
-      throw(error("no coercion possible"))
+      error("no coercion possible")
     end
   else
-    throw(error("no coercion possible"))
+    error("no coercion possible")
   end
 end
 
@@ -1206,7 +1206,7 @@ function force_op(op::T, throw_error::Type{Val{S}}, a::NumFieldElem...) where {T
     C = common_super(parent(b), C)
     if C === nothing
       if throw_error === Val{true}
-        throw(error("no common parent known"))
+        error("no common parent known")
       else
         return nothing
       end
@@ -1253,7 +1253,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
     if is_rational(b)
       return a(coeff(b, 0))
     elseif throw_error === Val{true}
-      throw(error("no coercion possible"))
+      error("no coercion possible")
     else
       return
     end
@@ -1292,7 +1292,7 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
       c = coeff(f, i)
       if !is_rational(c)
         if throw_error === Val{true}
-          throw(error("no coercion possible"))
+          error("no coercion possible")
         else
           return
         end

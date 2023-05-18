@@ -66,7 +66,7 @@ Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
 
 function make(Hecke::Module; strict = false,
                              local_build::Bool = false,
-                             doctest::Bool = true,
+                             doctest = true,
                              format::Symbol = :mkdocs)
 
   # Load the bibliography

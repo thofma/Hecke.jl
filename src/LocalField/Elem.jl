@@ -31,6 +31,7 @@ end
 
 function _generator_valuation(K::LocalField{S, T}) where {S <: Union{padic, qadic}, T <: LocalFieldParameter}
   f = defining_polynomial(K)
+#  @show K, f
   return QQFieldElem(valuation(coeff(f, 0)), degree(f))
 end
 
@@ -143,6 +144,32 @@ function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T 
   return v
 end
 
+function inv_absolute_coordinates(K::FlintPadicField, C::Vector{padic}; start::Int = 0)
+  return C[start+1]
+end
+
+function inv_absolute_coordinates(K::FlintQadicField, C::Vector{padic}; start::Int = 0)
+  a = K()
+  pr = minimum(precision, C[start+1:start+degree(K)])
+  setprecision!(a, pr)
+  for i=0:degree(K)-1
+    setcoeff!(a, i, C[start+i+1])
+  end
+  return a
+end
+
+function inv_absolute_coordinates(K::LocalField, C::Vector{padic}; start::Int = 0)
+  a = K()
+  k = base_field(K)
+  deg_k = absolute_degree(k)
+  for i=0:degree(K)-1
+    setcoeff!(a.data, i, inv_absolute_coordinates(k, C, start = start))
+    start += deg_k
+  end
+  normalise(a.data, degree(K))
+  setprecision!(a, compute_precision(K, a.data))
+  return a
+end
 
 ################################################################################
 #
@@ -616,9 +643,11 @@ function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
       uniformizer(L)^v
     end
   end
-  if inertia_degree(L) == degree(L)
+ 
+  if !isa(L, LocalField{<:Any, EisensteinLocalField})
     return L(uniformizer(base_field(L), v, prec = prec))
   end
+  
   #possibly compute the pi^v only for v mod e the complicated way, and scale
   #by prime number afterwards
   #also: find out abs and rel prec....

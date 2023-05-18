@@ -20,7 +20,7 @@ some number field $K$, constructs the extension $K[x_1, \ldots, x_n]/(f_1(x_1),
 julia> Qx, x = QQ["x"];
 
 julia> K, a = number_field([x^2 - 2, x^2 - 3], "a")
-(Non-simple number field with defining polynomials QQMPolyRingElem[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])
+(Non-simple number field of degree 4 over QQ, NfAbsNSElem[a1, a2])
 ```
 """
 function _doc_stub_nf2 end
