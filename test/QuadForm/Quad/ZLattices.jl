@@ -711,3 +711,17 @@ let
   C = Hecke.ZLatAutoCtx(G)
   @test Hecke.init(C) isa Hecke.ZLatAutoCtx
 end
+
+@testset "quadratic_lattice constructor" begin
+  L = @inferred quadratic_lattice(QQ,QQ[1;])
+  @test L isa ZZLat
+  @test rank(L) == 1
+
+  E8 = root_lattice(:E, 8)
+  L = @inferred quadratic_lattice(QQ, gram = gram_matrix(E8))
+  @test genus(L) == genus(E8)
+
+  B = basis_matrix(dual(E8))
+  L = @inferred quadratic_lattice(QQ, [B[i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
+  @test genus(L) == genus(E8)
+end
