@@ -57,8 +57,6 @@ ambient_space(L::ZZLat)
 basis_matrix(L::ZZLat)
 gram_matrix(L::ZZLat)
 rational_span(L::ZZLat)
-base_ring(::ZZLat)
-base_field(::ZZLat)
 ```
 
 ## Invariants
@@ -163,15 +161,15 @@ maximal_integral_lattice(L::ZZLat)
 
 ### Sublattices defined by endomorphisms
 ```@docs
-kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = true)
-invariant_lattice(L::ZZLat, G::Vector{<:MatElem};
-                           ambient_representation::Bool = true)
+kernel_lattice(L::ZZLat, f::MatElem)
+invariant_lattice(L::ZZLat, G::Vector{<:MatElem})
+coinvariant_lattice(::ZZLat, ::Union{MatElem, Vector{<:MatElem}})
 ```
 
 ### Computing embeddings
 ```@docs
-embed(S::ZZLat, G::ZZGenus, primitive::Bool=true)
-embed_in_unimodular(S::ZZLat, pos, neg; primitive=true, even=true)
+embed(S::ZZLat, G::ZZGenus)
+embed_in_unimodular(::ZZLat, ::IntegerUnion, ::IntegerUnion)
 ```
 
 ## LLL, Short and Close Vectors

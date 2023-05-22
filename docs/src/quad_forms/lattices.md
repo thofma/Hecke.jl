@@ -262,9 +262,9 @@ are also direct products in this context. They are also sometimes called biprodu
 Depending on the user usage, it is possible to call one of the following functions.
 
 ```@docs
-direct_sum(x::Vector{AbstractLat})
-direct_product(x::Vector{AbstractLat})
-biproduct(x::Vector{AbstractLat})
+direct_sum(::Vector{AbstractLat})
+direct_product(::Vector{AbstractLat})
+biproduct(::Vector{AbstractLat})
 ```
 
 ---
@@ -280,8 +280,6 @@ Let $L$ be a lattice over $E/K$, in the space $(V, \Phi)$. We define:
 ```math
    \lbrack L^{\#} \colon L \rbrack_{\mathcal O_E} := \langle \left\{ \sigma \mid \sigma \in \text{Hom}_{\mathcal O_E}(L^{\#}, L) \right\} \rangle_{\mathcal O_E}.
 ```
-
-Note that these are fractional ideals of $\mathcal O_E$.
 
 ```@docs
 norm(::AbstractLat)
@@ -373,8 +371,9 @@ is_isotropic(Lquad, p)
 ## Automorphisms for definite lattices
 Let $L$ and $L'$ be two lattices over the same extension $E/K$, inside their
 respective ambient spaces $(V, \Phi)$ and $(V', \Phi')$. Similarly to homomorphisms
-of spaces, we define a *homomorphism of lattices* from $L$ to $L'$ to be an $E$-module
-homomorphism $f \colon L \to L'$ such that for all $x,y \in L$, one has
+of spaces, we define a *homomorphism of lattices* from $L$ to $L'$ to be an
+$\mathcal{O}_E$-module$ homomorphism $f \colon L \to L'$ such that for all
+$x,y \in L$, one has
 
 ```math
    \Phi'(f(x), f(y)) = \Phi(x,y).

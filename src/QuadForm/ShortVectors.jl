@@ -114,7 +114,7 @@ end
 ################################################################################
 
 @doc raw"""
-    minimum(L::ZZLat)
+    minimum(L::ZZLat) -> QQFieldElem
 
 Return the minimum squared length among the non-zero vectors in `L`.
 """
@@ -134,7 +134,7 @@ end
 ################################################################################
 
 @doc raw"""
-    kissing_number(L::ZZLat)
+    kissing_number(L::ZZLat) -> Int
 
 Return the Kissing number of the sphere packing defined by `L`.
 

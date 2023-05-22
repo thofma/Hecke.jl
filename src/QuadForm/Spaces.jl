@@ -26,6 +26,8 @@ function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false
   return AbstractSpaceMor(V, W, B)
 end
 
+matrix(f::AbstractSpaceMor) = f.matrix
+
 function image(f::AbstractSpaceMor, v::Vector)
   V = domain(f)
   w = matrix(base_ring(V), 1, length(v), v) * f.matrix
@@ -137,7 +139,7 @@ Return the fixed field of the space `V`.
 fixed_field(::AbstractSpace)
 
 @doc raw"""
-    involution(V::AbstractSpace) -> NumField
+    involution(V::AbstractSpace) -> NumFieldMor
 
 Return the involution of the space `V`.
 """
@@ -167,7 +169,7 @@ Return whether the space `V` is quadratic.
 is_quadratic(::AbstractSpace)
 
 @doc raw"""
-    ishermitian(V::AbstractSpace) -> Bool
+    is_hermitian(V::AbstractSpace) -> Bool
 
 Return whether the space `V` is hermitian.
 """
@@ -580,8 +582,8 @@ end
 # to non rational subfields
 @doc raw"""
     restrict_scalars(V::AbstractSpace, K::QQField,
-                                  alpha::FieldElem = one(base_ring(V)))
-                                                          -> QuadSpace, AbstractSpaceRes
+                                       alpha::FieldElem = one(base_ring(V)))
+                                                    -> QuadSpace, AbstractSpaceRes
 
 Given a space $(V, \Phi)$ and a subfield `K` of the base algebra `E` of `V`, return the
 quadratic space `W` obtained by restricting the scalars of $(V, \alpha\Phi)$ to `K`,

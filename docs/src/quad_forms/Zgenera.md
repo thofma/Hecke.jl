@@ -63,7 +63,8 @@ is_integral(G::ZZGenus)
 [`discriminant_group(::ZZGenus)`](@ref)
 
 ### Primary genera
-```docs
+
+```@docs
 is_primary_with_prime(G::ZZGenus)
 is_primary(G::ZZGenus, p::Union{Integer, ZZRingElem})
 is_elementary_with_prime(G::ZZGenus)

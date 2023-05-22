@@ -369,7 +369,7 @@ if $L'$ is a lattice over $E/K$ in the genus of $L$ (i.e. they are in the same g
 then $L'$ is isometric to one of the $L_i$'s, and these representatives are pairwise
 non-isometric. Then we define the *mass* of the genus $G(L)$ of $L$ to be
 ```math
-   \textnormal{mass}(G(L)) := \sum_{i=1}^n\frac{1}{\#\textnormal{Aut}(L_i)}.
+   \text{mass}(G(L)) := \sum_{i=1}^n\frac{1}{\#\text{Aut}(L_i)}.
 ```
 Note that since $L$ is definite, any lattice in the genus of $L$ is also definite, and the
 definition makes sense.
@@ -419,8 +419,7 @@ E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-infp = infinite_places(E);
-SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
+SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
 G1 = genus([g1], [(SEK[1], 1)]);
 L1 = representative(g1)
 L1 in g1
@@ -450,8 +449,7 @@ E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-infp = infinite_places(E);
-SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
+SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
 G1 = genus([g1], [(SEK[1], 1)]);
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
 gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
@@ -479,9 +477,8 @@ K, a = CyclotomicRealSubfield(8, "a");
 Kt, t = K["t"];
 E, b = number_field(t^2 - a * t + 1);
 p = prime_decomposition(maximal_order(K), 2)[1][1];
-hermitian_local_genera(E, p, 4, 2, 4)
-infp = infinite_places(E);
-SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
+hermitian_local_genera(E, p, 4, 2, 0, 4)
+SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
 hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
 ```
 

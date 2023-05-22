@@ -2,7 +2,9 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
        is_degenerate, cover, relations, orthogonal_submodule, brown_invariant,
        modulus_bilinear_form, modulus_quadratic_form, is_isometric_with_isometry,
        is_anti_isometric_with_anti_isometry, has_complement, radical_bilinear,
-       radical_quadratic, is_semi_regular, trivial_morphism, abelian_group_homomorphism
+       radical_quadratic, is_semi_regular, trivial_morphism, abelian_group_homomorphism,
+       value_module, value_module_quadratic_form, gram_matrix_bilinear,
+       gram_matrix_quadratic, quadratic_product
 
 ################################################################################
 #
@@ -110,10 +112,10 @@ group `D = dual(L)/L`.
 
 It comes equipped with the discriminant bilinear form
 
-$$D \times D \to \Q / \Z \qquad (x,y) \mapsto \Phi(x,y) + \Z.$$
+$$D \times D \to \mathbb{Q} / \mathbb{Z} \qquad (x,y) \mapsto \Phi(x,y) + \mathbb{Z}.$$
 
 If `L` is even, then the discriminant group is equipped with the discriminant
-quadratic form $D \to \Q / 2 \Z, x \mapsto \Phi(x,x) + 2\Z$.
+quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{Z}$.
 """
 @attr function discriminant_group(L::ZZLat)::TorQuadModule
   @req is_integral(L) "The lattice must be integral"
@@ -181,14 +183,14 @@ For $T=M/N$ this returns $N$.
 relations(T::TorQuadModule) = T.rels
 
 @doc raw"""
-    value_module(T::TorQuadModule)
+    value_module(T::TorQuadModule) -> QmodnZ
 
 Return the value module `Q/nZ` of the bilinear form of `T`.
 """
 value_module(T::TorQuadModule) = T.value_module
 
 @doc raw"""
-    value_module_quadratic_form(T::TorQuadModule)
+    value_module_quadratic_form(T::TorQuadModule) -> QmodnZ
 
 Return the value module `Q/mZ` of the quadratic form of `T`.
 """
@@ -529,7 +531,7 @@ function Base.:(*)(a::TorQuadModuleElem, b::TorQuadModuleElem)
 end
 
 @doc raw"""
-    inner_product(a::TorQuadModuleElem, b::TorQuadModuleElem)
+    inner_product(a::TorQuadModuleElem, b::TorQuadModuleElem) -> QmodnZElem
 
 Return the inner product of `a` and `b`.
 """
@@ -542,13 +544,13 @@ inner_product(a::TorQuadModuleElem, b::TorQuadModuleElem)=(a*b)
 ################################################################################
 
 @doc raw"""
-    quadratic_product(a::TorQuadModuleElem)
+    quadratic_product(a::TorQuadModuleElem) -> QmodnZElem
 
 Return the quadratic product of `a`.
 
 It is defined in terms of a representative:
-for $b + M \in M/N=T$ this returns
-$\Phi(b,b) + n \Z$..
+for $b + M \in M/N=T$, this returns
+$\Phi(b,b) + n \mathbb{Z}$.
 """
 function quadratic_product(a::TorQuadModuleElem)
   T = parent(a)

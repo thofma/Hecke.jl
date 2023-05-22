@@ -90,7 +90,7 @@ is_negative_definite(::AbstractSpace)
 is_definite(::AbstractSpace)
 ```
 
-Note that the `ishermitian` function tests whether the space is non-quadratic.
+Note that the `is_hermitian` function tests whether the space is non-quadratic.
 
 ### Examples
 
@@ -129,7 +129,7 @@ Q = quadratic_space(K, K[0 1; 1 0]);
 H = hermitian_space(E, 3);
 gram_matrix(Q, K[1 1; 2 0])
 gram_matrix(H, E[1 0 0; 0 1 0; 0 0 1])
-inner_product(Q, [1, 1], [0, 2])
+inner_product(Q, K[1  1], K[0  2])
 orthogonal_basis(H)
 diagonal(Q), diagonal(H)
 ```
@@ -219,9 +219,9 @@ sum of a finite collection of spaces. Note that the corresponding copies
 of the original spaces in the direct sum are pairwise orthogonal.
 
 ```@docs
-direct_sum(x::Vector{AbstractSpace})
-direct_product(x::Vector{AbstractSpace})
-biproduct(x::Vector{AbstractSpace})
+direct_sum(::Vector{AbstractSpace})
+direct_product(::Vector{AbstractSpace})
+biproduct(::Vector{AbstractSpace})
 ```
 
 ### Example
@@ -232,8 +232,8 @@ E, b = cyclotomix_field_as_cm_extensions(7);
 H = hermitian_space(E, 3);
 H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
 H3, inj, proj = biproduct(H, H2)
-isone(compose(inj[1], proj[1]))
-iszero(compose(inj[1], proj[2]))
+is_one(matrix(compose(inj[1], proj[1])))
+is_zero(matrix(compose(inj[1], proj[2])))
 ```
 ## Orthogonality operations
 
@@ -282,8 +282,9 @@ is_isotropic(H, p)
 Let $(V, \Phi)$ be a space over $E/K$ and let $\mathfrak p$ be a prime ideal
 of $\mathcal O_K$. $V$ is said to be *hyperbolic* locally at $\mathfrak p$ if
 the completion $V_{\mathfrak p}$ of $V$ can be decomposed as an orthogonal sum
-of dimension 2 spaces with Gram matrices of the form
-$$\left(\begin{array}{cc} 0&1\\1&0 \end{array}\right)$$.
+of hyperbolic planes. The hyperbolic plane is the space $(H, \Psi)$ of rank 2
+over $E/K$ such that there exists a basis $e_1, e_2$ of $H$ such that
+$\Psi(e_1, e_1) = \Psi(e_2, e_2) = 0$ and $\Psi(e_1, e_2) = 1$.
 
 ```@docs
 is_locally_hyperbolic(::HermSpace, ::NfOrdIdl)

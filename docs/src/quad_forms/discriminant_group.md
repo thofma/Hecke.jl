@@ -71,7 +71,7 @@ is_anti_isometric_with_anti_isometry(T::TorQuadModule, U::TorQuadModule)
 ```
 
 ### Primary and elementary modules
-```docs
+```@docs
 is_primary_with_prime(T::TorQuadModule)
 is_primary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
 is_elementary_with_prime(T::TorQuadModule)
@@ -79,7 +79,7 @@ is_elementary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
 ```
 
 ### Smith normal form
-```docs
+```@docs
 snf(T::TorQuadModule)
 is_snf(T::TorQuadModule)
 ```
