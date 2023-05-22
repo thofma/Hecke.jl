@@ -5,6 +5,9 @@
 ################################################################################
 
 function image(f::CompletionMap, a::nf_elem)
+  if iszero(a)
+    return zero(codomain(f))
+  end
   Qx = parent(parent(a).pol)
   z = evaluate(Qx(a), f.prim_img)
   if !isunit(z) 
