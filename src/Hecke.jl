@@ -73,7 +73,6 @@ using SparseArrays
 using Serialization
 using Random
 using Pkg
-using Test
 
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias
