@@ -5,9 +5,12 @@
 ################################################################################
 
 function image(f::CompletionMap, a::nf_elem)
+  if iszero(a)
+    return zero(codomain(f))
+  end
   Qx = parent(parent(a).pol)
   z = evaluate(Qx(a), f.prim_img)
-  if iszero(z) && !iszero(a) #maybe use always?
+  if !isunit(z) 
     v = valuation(a, f.P)
     a = a*uniformizer(f.P).elem_in_nf^-v
     z = evaluate(Qx(a), f.prim_img)
@@ -22,9 +25,16 @@ function preimage(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, Loca
   Qq = base_field(Kp)
   Qpx = parent(defining_polynomial(Qq))
   coeffs = Vector{nf_elem}()
+  #careful: we're woring in a limited precision world and the lift
+  #can be waaaay to large
+  if abs(valuation(a)) > 100
+    global last_a = a
+    error("elem too large")
+  end
+  pr = ceil(Int, min(f.precision, precision(a)) / ramification_index(Kp))
   for i = 0:degree(a.data)
     as_pol = Qpx(coeff(a.data, i))
-    as_fmpq_poly = map_coefficients(lift, as_pol)
+    as_fmpq_poly = map_coefficients(x->lift(setprecision(x, min(precision(x), pr))), as_pol)
     push!(coeffs, evaluate(as_fmpq_poly, f.inv_img[1]))
   end
   K = domain(f)
@@ -60,7 +70,7 @@ end
 function _lift(a::nf_elem, f::ZZPolyRingElem, prec::Int, P::NfOrdIdl)
   i = prec
   chain = [i]
-  lp = prime_decomposition(order(P), minimum(P))
+
   while i > 2
     i = div(i+1, 2)
     push!(chain, i)
@@ -120,14 +130,23 @@ presented as a Eisenstein extension of an unramified p-adic field.
 The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift. Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
+
+The map is guaranteed to yield a relative precision of at least `preciscion`. 
 """
 function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
+  #to guarantee a rel_prec we need to account for the index (or the
+  #elementary divisor of the trace mat): the map
+  #is for the field (equation order), the precision is measured in the
+  #maximal order
+  #also, precision in the unram part is counted differently, so
+  #we might need to increase by one...
   OK = order(P)
+  precision += valuation(denominator(basis_matrix(OK, copy = false)), P)
   @assert is_prime(P)
   @assert nf(OK) == K
   f = degree(P)
   e = ramification_index(P)
-  prec_padics = div(precision, e)
+  prec_padics = div(precision+e-1, e)
   Qp = PadicField(minimum(P), prec_padics, cached = false)
   Zp = maximal_order(Qp)
   Qq, gQq = QadicField(minimum(P), f, prec_padics, cached = false)
@@ -137,11 +156,40 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   mp = find_morphism(q, F)
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf
-  Zx = polynomial_ring(FlintZZ, "x")[1]
+  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   pol_gq = map_coefficients(lift,  defining_polynomial(Qq))
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #@assert mF(OK(gq_in_K)) == mp(g)
+
+  #gq_in_K is PE of the residue field lifted to suitable precision
+  #u is the PE of the ramified ext
+
+  coeffs_eisenstein, xZp = _solve_internal(gq_in_K, P, precision, Zp, Qq)
+
+  pol_gen = Qqx(coeffs_eisenstein)
+  Kp, gKp = eisenstein_extension(pol_gen, "a", cached = false)
+  Kp.def_poly = x->setprecision(pol_gen, x)
+  img_prim_elem = Vector{qadic}(undef, e)
+  for i = 1:e
+    coeff = Qq()
+    for j = 0:f-1
+      coeff += (gQq^j)*xZp[2, j+1+(i-1)*f].x
+    end
+    img_prim_elem[i] = coeff
+  end
+  img = Kp(Qqx(img_prim_elem))
   u = uniformizer(P).elem_in_nf
+  completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
+  completion_map.P = P
+  return Kp, completion_map
+end
+
+function _solve_internal(gq_in_K, P, precision, Zp, Qq)
+  f = inertia_degree(P)
+  K = parent(gq_in_K)
+  e = ramification_index(P)
+  u = uniformizer(P).elem_in_nf
+
   pows_gq = powers(gq_in_K, f-1)
   els = Vector{nf_elem}()
   el = one(K)
@@ -161,6 +209,7 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   if d != denominator(bK, copy = false)
     mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))
   end
+
   setprecision!(Zp, Hecke.precision(Zp) + valuation(Zp(denominator(MK))))
 
 if true
@@ -192,6 +241,7 @@ else
   @assert fl
 end 
   coeffs_eisenstein = Vector{qadic}(undef, e+1)
+  gQq = gen(Qq)
   for i = 1:e
     coeff = zero(Qq)
     for j = 0:f-1
@@ -203,21 +253,7 @@ end
   if iszero(coeffs_eisenstein[1])
     error("precision not high enough to obtain Esenstein polynomial")
   end
-  pol_gen = Qqx(coeffs_eisenstein)
-  Kp, gKp = eisenstein_extension(pol_gen, "a", cached = false)
-  Kp.def_poly = x->setprecision(pol_gen, x)
-  img_prim_elem = Vector{qadic}(undef, e)
-  for i = 1:e
-    coeff = Qq()
-    for j = 0:f-1
-      coeff += (gQq^j)*xZp[2, j+1+(i-1)*f].x
-    end
-    img_prim_elem[i] = coeff
-  end
-  img = Kp(Qqx(img_prim_elem))
-  completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
-  completion_map.P = P
-  return Kp, completion_map
+  return coeffs_eisenstein, xZp
 end
 
 function round(::Type{Int}, a::QQFieldElem)
@@ -225,68 +261,51 @@ function round(::Type{Int}, a::QQFieldElem)
 end
 
 function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, LocalFieldElem{qadic, EisensteinLocalField}}, new_prec::Int)
+  P = prime(f)
+  OK = order(P)
+  new_prec += valuation(denominator(basis_matrix(OK, copy = false)), P)
+
   if new_prec < f.precision
     K = domain(f)
     setprecision!(K, new_prec)
-    setprecision!(base_field(K), new_prec)
+    e = ramification_index(P)
+    setprecision!(base_field(K), div(new_prec+e-1, e))
     setprecision!(f.prim_img, new_prec)
   else
     #I need to increase the precision of the data
-    P = prime(f)
-    f = inertia_degree(P)
-    e = ramification_index(P)
     Kp = codomain(f)
+    _f = inertia_degree(P)
+    e = ramification_index(P)
     @assert !(new_prec in keys(Kp.def_poly_cache))
     gq, u = f.inv_img
-    Zx = polynomial_ring(FlintZZ, "x")[1]
-    pol_gq = lift(Zx, defining_polynomial(q))
-    gq = _increase_precision(gq, pol_gq, f.precision, new_prec, P)
-    f.inv_img[1] = gq
-    Kp = codomain(f)
+    ex = div(new_prec+e-1, e)
+    Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+    pol_gq = map_coefficients(lift, defining_polynomial(base_field(Kp)))
+    gq = _increase_precision(gq, pol_gq, div(f.precision+e-1, e), ex, P)
+    f.inv_img = (gq, f.inv_img[2])
+
+    Zp = maximal_order(prime_field(Kp))
     Qq = base_field(Kp)
-    setprecision!(Qq, new_prec)
-    Qqx = polynomial_ring(Qq, "x")[1]
-    Qp = PadicField(prime(Kp), new_prec)
-    Qpx = polynomial_ring(Qp, "x")
-    ex, r = divrem(precision, e)
-    if r > 0
-      ex += 1
-    end
-    modulo = minimum(P)^ex
-    pows_gq = powers_mod(gq_in_K, f, modulo)
-    els = Vector{nf_elem}()
-    el = one(K)
-    for i = 1:e
-      for j = 1:f
-        push!(els, mod(el*pows_gq[j], modulo))
-      end
-      mul!(el, el, u)
-    end
-    MK = basis_matrix(els)
-    bK = basis_matrix(nf_elem[_powermod(u, e, modulo), gen(K)])
-    MQp = map_entries(Qp, MK)
-    bQp = map_entries(Qp, bK)
-    fl, xQp = can_solve_with_solution(MQp, bQp, side = :left)
-    @assert fl
-    coeffs_eisenstein = Vector{qadic}(undef, e+1)
-    for i = 1:e
-      coeff = Qq()
-      for j = 0:f-1
-        coeff -= (gQq^j)*xQp[1, j+1+(i-1)*f]
-      end
-      coeffs_eisenstein[i] = coeff
-    end
-    coeffs_eisenstein[e+1] = one(Qq)
+    
+    setprecision!(Qq, ex)
+    setprecision!(Zp, ex)
+    gQq = gen(Qq)
+
+    coeffs_eisenstein, xZp = _solve_internal(gq, P, new_prec, Zp, Qq)
+
+    Qqx = polynomial_ring(Qq, "x", cached = false)[1]
+
     pol_gen = Qqx(coeffs_eisenstein)
     Kp.def_poly_cache[new_prec] = pol_gen
     img_prim_elem = Vector{qadic}(undef, e)
     for i = 1:e
       coeff = Qq()
-      for j = 0:f-1
-        coeff += (gQq^j)*xQp[2, j+1+(i-1)*f]
+      for j = 0:_f-1
+        coeff += (gQq^j)*xZp[2, j+1+(i-1)*_f].x
       end
       img_prim_elem[i] = coeff
     end
+    setprecision!(Kp, new_prec)
     f.prim_img = Kp(Qqx(img_prim_elem))
   end
   return nothing

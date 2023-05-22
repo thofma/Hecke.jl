@@ -7,6 +7,10 @@ to be integral.
 function lift(a::padic)
   b = ZZRingElem()
   R = parent(a)
+
+  if iszero(a)
+    return ZZ(0)
+  end
   ccall((:padic_get_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{padic}, Ref{FlintPadicField}), b, a, R)
   return b
 end
