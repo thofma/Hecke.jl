@@ -329,30 +329,36 @@ Gram matrix quadratic form:
 [1//3   2//3   1//4]
 
 julia> N, f = normal_form(T)
-(TorQuadModule: [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3], Map with following data
+(Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z, Map with following data
 Domain:
 =======
-TorQuadModule [2//3 0 1//3; 0 0 2//3; 1//3 2//3 1//4]
+Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3])
+Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z)
 
 
 julia> domain(f)
-Finite quadratic module over Integer Ring with underlying abelian group
+Finite quadratic module
+  over integer ring
 GrpAb: (Z/3)^2 x Z/12
-Gram matrix of the quadratic form with values in Q/2Z
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [2//3      0   1//3]
 [   0      0   2//3]
 [1//3   2//3   1//4]
 
 julia> codomain(f)
-Finite quadratic module over Integer Ring with underlying abelian group
+Finite quadratic module
+  over integer ring
 (General) abelian group with relation matrix
 [4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
 with structure of GrpAb: (Z/3)^2 x Z/12
 
-Gram matrix of the quadratic form with values in Q/2Z
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [1//4      0      0      0]
 [   0   4//3      0      0]
 [   0      0   4//3      0]

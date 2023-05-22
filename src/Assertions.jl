@@ -54,7 +54,7 @@ Add the symbol `s` to the list of (global) verbosity scopes.
 # Examples
 
 ```jldoctest
-julia> add_verbosity_scope(:MyScope);
+julia> add_verbosity_scope(:MyScope)
 
 ```
 """
@@ -252,6 +252,8 @@ verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 # Examples
 
 ```jldoctest
+julia> add_verbosity_scope(:MyScope)
+
 julia> set_verbosity_level(:MyScope, 4)
 4
 
@@ -280,6 +282,8 @@ verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 # Examples
 
 ```jldoctest
+julia> add_verbosity_scope(:MyScope)
+
 julia> get_verbosity_level(:MyScope)
 0
 
@@ -344,6 +348,8 @@ assertion scopes by calling the function [`add_assertion_scope`](@ref).
 # Examples
 
 ```jldoctest
+julia> add_assertion_scope(:MyScope)
+
 julia> set_assertion_level(:MyScope, 4)
 4
 
@@ -375,6 +381,8 @@ assertion scopes by calling the function [`add_assertion_scope`](@ref).
 # Examples
 
 ```jldoctest
+julia> add_assertion_scope(:MyScope)
+
 julia> get_assertion_level(:MyScope)
 0
 
@@ -428,6 +436,8 @@ We will set up different assertion scopes with different assertion levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
+julia> add_assertion_scope(:MyScope)
+
 julia> get_assertion_level(:MyScope)
 0
 
