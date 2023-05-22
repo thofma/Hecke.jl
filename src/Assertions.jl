@@ -282,7 +282,7 @@ verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 julia> add_verbosity_scope(:MyScope1);
 
 julia> get_verbosity_level(:MyScope1)
-0
+4
 
 julia> set_verbosity_level(:MyScope1, 4);
 
@@ -372,7 +372,7 @@ assertion scopes by calling the function [`add_assertion_scope`](@ref).
 julia> add_assertion_scope(:Myscope);
 
 julia> get_assertion_level(:Myscope)
-0
+1
 
 julia> set_assertion_level(:Myscope, 1);
 
@@ -418,10 +418,10 @@ We will set up different assertion scopes with different assertion levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
-julia> add_assertion_scope(:MyScope2);
+julia> add_assertion_scope(:MyScopeBis);
 
 julia> function hassert_test(x::Int)
-       @hassert :MyScope2 700 mod(x, 3) == 0
+       @hassert :MyScopeBis 700 mod(x, 3) == 0
        return div(x, 3)
        end
 hassert_test (generic function with 1 method)
@@ -429,7 +429,7 @@ hassert_test (generic function with 1 method)
 julia> hassert_test(2)
 0
 
-julia> set_assertion_level(:MyScope2, 701);
+julia> set_assertion_level(:MyScopeBis, 701);
 
 julia> try hassert_test(2)
        catch e e

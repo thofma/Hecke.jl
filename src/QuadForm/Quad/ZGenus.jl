@@ -2695,12 +2695,13 @@ julia> NS = direct_sum(integer_lattice(:U), rescale(root_lattice(:A, 16), -1))[1
 julia> LK3, iNS, i = embed_in_unimodular(NS, 3, 19);
 
 julia> genus(LK3)
-ZZGenus
-Signature: (3, 19)
-Genus symbol at 2:   1^22
+Genus symbol for integer lattices
+Signatures: (3, 0, 19)
+Local symbol:
+  Local genus symbol at 2: 1^22
 
 julia> iNS
-Quadratic lattice of rank 18 and degree 22 over the rationals
+Integer lattice of rank 18 and degree 22
 
 julia> is_primitive(LK3, iNS)
 true
