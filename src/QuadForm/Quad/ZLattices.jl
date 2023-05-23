@@ -921,6 +921,22 @@ signature_tuple(L::ZZLat) = signature_tuple(rational_span(L))
 
 ################################################################################
 #
+#  Modularity
+#
+################################################################################
+
+function is_modular(L::ZZLat, p::IntegerUnion)
+  a = scale(L)
+  v = valuation(a, p)
+  if v * rank(L) == valuation(volume(L), p)
+    return true, v
+  else
+    return false, 0
+  end
+end
+
+################################################################################
+#
 #  Local basis matrix
 #
 ################################################################################
@@ -1079,7 +1095,6 @@ function _maximal_integral_lattice(L::ZZLat)
   M = maximal_integral_lattice(LL)
   return _to_ZLat(M, V = ambient_space(L))
 end
-
 
 @doc raw"""
     maximal_even_lattice(L::ZZLat, p) -> ZZLat

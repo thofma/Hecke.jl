@@ -71,13 +71,13 @@ end
 ################################################################################
 
 @doc raw"""
-    genus_representatives(L::QuadLat; max = inf, use_auto = false)
+    genus_representatives(L::QuadLat; max = inf, use_auto = true)
                                                         -> Vector{QuadLat}
 
 Computes representatives for the isometry classes in the genus of $L$.
 
 At most `max` representatives are returned. The use of automorphims can be
-disabled by
+disabled by setting `use_auto = false`.
 """
 function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass = true)
   # Otherwise the isomorphism to the class group fails, cf. §102 in O'Meara.

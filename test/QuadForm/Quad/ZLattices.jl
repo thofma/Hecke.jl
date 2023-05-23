@@ -712,6 +712,7 @@ let
   @test Hecke.init(C) isa Hecke.ZLatAutoCtx
 end
 
+<<<<<<< HEAD
 @testset "quadratic_lattice constructor" begin
   L = @inferred quadratic_lattice(QQ,QQ[1;])
   @test L isa ZZLat
@@ -724,4 +725,13 @@ end
   B = basis_matrix(dual(E8))
   L = @inferred quadratic_lattice(QQ, [B[i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
   @test genus(L) == genus(E8)
+end
+
+let
+  L = integer_lattice(; gram = ZZ[3 0; 0 1])
+  fl, v = @inferred is_modular(L, 3)
+  @test !fl
+  L = integer_lattice(; gram = ZZ[3 0; 0 3])
+  fl, v = @inferred is_modular(L, 3)
+  @test fl && v == 1
 end
