@@ -225,7 +225,7 @@ julia> L = integer_lattice(gram = A);
 julia> T = Hecke.discriminant_group(L)
 Finite quadratic module
   over integer ring
-GrpAb: (Z/2)^2
+Abelian group: (Z/2)^2
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -320,7 +320,7 @@ Integer lattice of rank 3 and degree 3
 julia> T = discriminant_group(L)
 Finite quadratic module
   over integer ring
-GrpAb: (Z/3)^2 x Z/12
+Abelian group: (Z/3)^2 x Z/12
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -341,7 +341,7 @@ Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z)
 julia> domain(f)
 Finite quadratic module
   over integer ring
-GrpAb: (Z/3)^2 x Z/12
+Abelian group: (Z/3)^2 x Z/12
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -352,10 +352,7 @@ Gram matrix quadratic form:
 julia> codomain(f)
 Finite quadratic module
   over integer ring
-(General) abelian group with relation matrix
-[4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
-with structure of GrpAb: (Z/3)^2 x Z/12
-
+Abelian group: (Z/3)^2 x Z/12
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -388,7 +385,7 @@ julia> L = rescale(root_lattice(:A,3), 3);
 julia> T = discriminant_group(L)
 Finite quadratic module
   over integer ring
-GrpAb: (Z/3)^2 x Z/12
+Abelian group: (Z/3)^2 x Z/12
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -399,7 +396,7 @@ Gram matrix quadratic form:
 julia> T6 = rescale(T, 6)
 Finite quadratic module
   over integer ring
-GrpAb: (Z/3)^2 x Z/12
+Abelian group: (Z/3)^2 x Z/12
 Bilinear value module: Q/6Z
 Quadratic value module: Q/12Z
 Gram matrix quadratic form:

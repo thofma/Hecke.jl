@@ -908,12 +908,14 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZZGenus)
   println(io, "Signatures: ", signature_tuple(G))
   s = local_symbols(G)
   if length(s) == 1
-    println(io, "Local symbol: ")
+    print(io, "Local symbol:")
+  elseif length(s) == 1
+    println(io, "Local symbol:")
     print(io, Indent())
     show(io, s[1])
     print(io, Dedent())
   else
-    println(io, "Local symbols: ")
+    println(io, "Local symbols:")
     print(io, Indent())
     for i in 1:(length(s)-1)
       show(io, s[i])
@@ -940,24 +942,33 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalZZGenus)
   println(io, "Prime: ", prime(G))
   print(io, "Jordan blocks ")
   if prime(G) == 2
-    println(io, "(val, rank, det, sign, oddity): ")
+    print(io, "(val, rank, det, sign, oddity):")
   else
-    println(io, "(val, rank, det): ")
+    print(io, "(val, rank, det):")
   end
   print(io, Indent())
   s = symbol(G)
-  for i in length(s)-1
-    println(io, Tuple(s[i]))
+  if length(s) == 0
+    nothing
+  else
+    println(io)
+    for i in length(s)-1
+      println(io, Tuple(s[i]))
+    end
+    print(io, Tuple(s[end]))
+    print(io, Dedent())
   end
-  print(io, Tuple(s[end]))
-  print(io, Dedent())
 end
 
 function Base.show(io::IO, G::LocalZZGenus)
   if get(io, :supercompact, false)
-    print(io, prime(G), ": ")
-    for sym in symbol(G)
-      print(io, Tuple(sym))
+    if length(symbol(G)) == 0
+      print(io, "Empty local integer genus")
+    else
+      print(io, prime(G), ": ")
+      for sym in symbol(G)
+        print(io, Tuple(sym))
+      end
     end
   else
     print(io, "Local genus symbol at ", prime(G), ":", _write_local_symbol(G))
@@ -2698,7 +2709,6 @@ julia> genus(LK3)
 Genus symbol for integer lattices
 Signatures: (3, 0, 19)
 Local symbol:
-  Local genus symbol at 2: 1^22
 
 julia> iNS
 Integer lattice of rank 18 and degree 22

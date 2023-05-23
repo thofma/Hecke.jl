@@ -26,18 +26,21 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
   Base.show(nio, MIME"text/plain"(), maximal_order(G.E))
   println(nio, Dedent())
   println(IOContext(io, :compact => true), "Prime ideal: ", p)
-  if length(G) == 1
+  if length(G) in [0, 1]
     print(io, "Jordan block ")
   else
     print(io, "Jordan blocks ")
   end
   if is_dyadic(G) && is_ramified(G)
-    println(io, "(scale, rank, det, norm):")
+    print(io, "(scale, rank, det, norm):")
   else
-    println(io, "(scale, rank, det):")
+    print(io, "(scale, rank, det):")
   end
   print(io, Indent())
-  if is_dyadic(G) && is_ramified(G)
+  if length(G) == 0
+    nothing
+  elseif is_dyadic(G) && is_ramified(G)
+    println(io)
     for i in 1:length(G)-1
       println(io, "(", scale(G, i), ", ", rank(G, i), ", ",
               det(G, i) == 1 ? "+" : "-", ", ", norm(G, i), ")")
@@ -45,6 +48,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
     print(io, "(", scale(G, length(G)), ", ", rank(G, length(G)), ", ",
           det(G, length(G)) == 1 ? "+" : "-", ", ", norm(G, length(G)), ")")
   else
+    println(io)
     for i in 1:length(G)-1
       println(io, "(", scale(G, i), ", ", rank(G, i), ", ",
               det(G, i) == 1 ? "+" : "-",  ")")
@@ -57,7 +61,9 @@ end
 
 function Base.show(io::IO, G::HermLocalGenus)
   if get(io, :supercompact, false)
-    if is_dyadic(G) && is_ramified(G)
+    if length(G) == 0
+      print(io, "Empty local hermitian genus")
+    elseif is_dyadic(G) && is_ramified(G)
       for i in 1:length(G)
         print(io, "(", scale(G, i), ", ", rank(G, i), ", ",
             det(G, i) == 1 ? "+" : "-", ", ", norm(G, i), ")")

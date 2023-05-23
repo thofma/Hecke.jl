@@ -37,17 +37,21 @@ function show(io::IO, ::MIME"text/plain", J::JorDec)
     print(io, "Jordan blocks ")
   end
   if is_dyadic(J.p)
-    println(io, "(scale, rank, norm generator, weight, det, Witt):")
+    print(io, "(scale, rank, norm generator, weight, det, Witt):")
   else
-    println(io, "(scale, rank, determinant class):")
+    print(io, "(scale, rank, determinant class):")
   end
   print(io, Indent())
-  if !is_dyadic(J.p)
+  if length(J) == 0
+    nothing
+  elseif !is_dyadic(J.p)
+    println(io)
     for i in 1:length(J)-1
       println(io, "(", J.ranks[i], ", ", J.scales[i], ", ", J.dets[i], ")")
     end
     print(io, "(", J.ranks[end], ", ", J.scales[end], ", ", J.dets[end], ")")
   else
+    println(io)
     for i in 1:length(J)-1
       println(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.normgens[i], ", ", J.weights[i], ", ", J.dets[i], ", ", J.witt[i], ")")
     end
@@ -59,14 +63,18 @@ end
 function Base.show(io::IO, J::JorDec)
   p = J.p
   if get(io, :supercompact, false)
-    print(IOContext(io, :compact => true), p, ": ")
-    if !is_dyadic(p)
-      for i in 1:length(J)
-        print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.dets[i], ")")
-      end
+    if length(J) == 0
+      print(io, "Empty Jordan decomposition")
     else
-      for i in 1:length(J)
-        print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.normgens[i], ", ", J.weights[i], ", ", J.dets[i], ", ", J.witt[i], ")")
+      print(IOContext(io, :compact => true), p, ": ")
+      if !is_dyadic(p)
+        for i in 1:length(J)
+          print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.dets[i], ")")
+        end
+      else
+        for i in 1:length(J)
+          print(io, "(", J.scales[i], ", ", J.ranks[i], ", ", J.normgens[i], ", ", J.weights[i], ", ", J.dets[i], ", ", J.witt[i], ")")
+        end
       end
     end
   else
@@ -629,17 +637,21 @@ function show(io::IO, ::MIME"text/plain", G::QuadLocalGenus)
     print(io, "Jordan blocks ")
   end
   if !is_dyadic(p)
-    println(io, "(scale, rank, determinant class):")
+    print(io, "(scale, rank, determinant class):")
   else
-    println(io, "(scale, rank, norm generator, weight, det, Witt):")
+    print(io, "(scale, rank, norm generator, weight, det, Witt):")
   end
   print(io, Indent())
-  if !is_dyadic(G)
+  if length(G) == 0
+    nothing
+  elseif !is_dyadic(G)
+    println(io)
     for i in 1:length(G)-1
       println(io, "(", G.scales[i], ", ", G.ranks[i], ", ", G.detclasses[i], ")")
     end
     print(io, "(", G.scales[end], ", ", G.ranks[end], ", ", G.detclasses[end], ")")
   else
+    println(io)
     for i in 1:length(G)-1
       println(io, "(", G.scales[i], ", ", G.ranks[i], ", ", G.normgens[i], ", ", G.weights[i], ", ", G.dets[i], ", ", G.witt[i], ")")
     end
@@ -650,7 +662,9 @@ end
 
 function Base.show(io::IO, G::QuadLocalGenus)
   if get(io, :supercompact, false)
-    if !is_dyadic(G)
+    if length(G) == 0
+      print(io, "Empty local quadratic genus")
+    elseif !is_dyadic(G)
       for i in 1:length(G)
         print(io, "(", G.scales[i], ", ", G.ranks[i], ", ", G.detclasses[i], ")")
       end

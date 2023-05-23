@@ -271,7 +271,9 @@ function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadModule)
   println(io, "Finite quadratic module")
   println(io, Indent(), "over integer ring")
   print(io, Dedent())
-  println(io, abelian_group(T))
+  print(io, "Abelian group: ")
+  show_snf_structure(io, snf(abelian_group(T))[1])
+  println(io)
   println(io, "Bilinear value module: ", value_module(T))
   println(io, "Quadratic value module: ", value_module_quadratic_form(T))
   println(io, "Gram matrix quadratic form: ")
@@ -1084,7 +1086,7 @@ julia> T = torsion_quadratic_module(QQ[2//3 2//3    0    0    0;
                                           0 2//3    0    0 2//3])
 Finite quadratic module
   over integer ring
-GrpAb: (Z/3)^5
+Abelian group: (Z/3)^5
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -1101,7 +1103,7 @@ julia> U = torsion_quadratic_module(QQ[4//3    0    0    0    0;
                                           0    0    0    0 4//3])
 Finite quadratic module
   over integer ring
-GrpAb: (Z/3)^5
+Abelian group: (Z/3)^5
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -1215,7 +1217,7 @@ they should be rescaled (see [`rescale`](@ref)).
 julia> T = torsion_quadratic_module(QQ[4//5;])
 Finite quadratic module
   over integer ring
-GrpAb: Z/5
+Abelian group: Z/5
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -1266,7 +1268,7 @@ julia> N = lattice(V, B2);
 julia> T = torsion_quadratic_module(M, N)
 Finite quadratic module
   over integer ring
-GrpAb: Z/15
+Abelian group: Z/15
 Bilinear value module: Q/Z
 Quadratic value module: Q/Z
 Gram matrix quadratic form:
@@ -1378,7 +1380,7 @@ even denominator, then the value module of the quadratic form is `Q/2Z`
 julia> torsion_quadratic_module(QQ[1//6;])
 Finite quadratic module
   over integer ring
-GrpAb: Z/6
+Abelian group: Z/6
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -1387,7 +1389,7 @@ Gram matrix quadratic form:
 julia> torsion_quadratic_module(QQ[1//2;])
 Finite quadratic module
   over integer ring
-GrpAb: Z/2
+Abelian group: Z/2
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -1396,7 +1398,7 @@ Gram matrix quadratic form:
 julia> torsion_quadratic_module(QQ[3//2;])
 Finite quadratic module
   over integer ring
-GrpAb: Z/2
+Abelian group: Z/2
 Bilinear value module: Q/Z
 Quadratic value module: Q/2Z
 Gram matrix quadratic form:
@@ -1405,7 +1407,7 @@ Gram matrix quadratic form:
 julia> torsion_quadratic_module(QQ[1//3;])
 Finite quadratic module
   over integer ring
-GrpAb: Z/3
+Abelian group: Z/3
 Bilinear value module: Q/Z
 Quadratic value module: Q/Z
 Gram matrix quadratic form:
