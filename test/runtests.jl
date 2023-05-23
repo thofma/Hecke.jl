@@ -1,4 +1,8 @@
-using Hecke, Test, Dates, Printf, Documenter
+using Hecke
+using Test
+using Hecke.Dates
+using Hecke.Printf
+using Documenter
 
 DEFAULT_NPROCS = 4
 
@@ -145,7 +149,7 @@ for t in readdir(test_directory)
     continue
   end
 
-  if startswith(t, '.')
+  if startswith(t, '.') || endswith(t, ".toml")
     continue
   end
 

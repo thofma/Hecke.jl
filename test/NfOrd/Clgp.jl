@@ -1,5 +1,3 @@
-using Random
-
 @testset "Clgp" begin
   Qx, x = polynomial_ring(FlintQQ, "x")
   @testset "class numbers" begin

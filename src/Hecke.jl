@@ -63,7 +63,17 @@ using Requires
 
 using LazyArtifacts
 
-using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
+using LinearAlgebra
+using Markdown
+using InteractiveUtils
+using Libdl
+using Distributed
+using Printf
+using SparseArrays
+using Serialization
+using Random
+using Pkg
+using Test
 
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias

@@ -1,4 +1,5 @@
-using Test, Random
+using Test
+using Hecke.Random
 
 function runtests(name, path; isolate=false, seed=nothing)
     old_print_setting = Test.TESTSET_PRINT_ENABLE[]
@@ -12,7 +13,7 @@ function runtests(name, path; isolate=false, seed=nothing)
         else
             m = Main
         end
-        @eval(m, using Test, Random)
+        @eval(m, using Test, Hecke.Random)
         let id = myid()
             wait(@spawnat 1 print_testworker_started(name, id))
         end

@@ -1,5 +1,5 @@
-#using Random
-#using RandomExtensions
+#using Hecke.Random
+#using Hecke.RandomExtensions
 #
 #const rng = MersenneTwister()
 #const rand_seed = rand(UInt128)
