@@ -42,17 +42,8 @@ jobs:
         uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.julia-version }}
-      - name: Cache artifacts
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
+      - name: "Cache artifacts"
+        uses: julia-actions/cache@v1
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@latest
       - name: "Run tests"
@@ -85,17 +76,7 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.8'
-      - name: Cache artifacts
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
+      - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-docdeploy@latest
         env:
