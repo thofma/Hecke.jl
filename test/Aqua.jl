@@ -4,7 +4,7 @@ using Aqua
   Aqua.test_all(
     Hecke;
     ambiguities=false,      # TODO: fix ambiguities
-    unbound_args=false,     # TODO: fix unbound args
+    unbound_args=true,
     undefined_exports=true,
     project_extras=true,
     stale_deps=true,

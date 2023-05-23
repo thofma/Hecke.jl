@@ -1699,7 +1699,7 @@ coprime_bases(O::AlgAssRelOrd{S, T, U}, I::AlgAssRelOrdIdl{S, T, U}, p::Union{ N
 
 coprime_bases(I::AlgAssRelOrdIdl{S, T, U}, J::AlgAssRelOrdIdl{S, T, U}, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) where { S, T, U } = _coprime_bases(I, J, p)
 
-function _coprime_bases(M::Union{ NfRelOrd{S, T}, AlgAssRelOrd{S, T, U}, NfRelOrdIdl{S, T}, AlgAssRelOrdIdl{S, T, U} }, N::Union{ NfRelOrdIdl{S, T}, AlgAssRelOrdIdl{S, T, U} }, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) where { S, T, U }
+function _coprime_bases(M::Union{ NfRelOrd{S, T, U}, AlgAssRelOrd{S, T, U}, NfRelOrdIdl{S, T, U}, AlgAssRelOrdIdl{S, T, U} }, N::Union{ NfRelOrdIdl{S, T, U}, AlgAssRelOrdIdl{S, T, U} }, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }) where { S, T, U }
   A = _algebra(M)
   @assert A === _algebra(N)
   OK = order(p)
