@@ -316,6 +316,10 @@ consists of a header which keeps track of the domain and the codomain of type
 ```jldoctest
 julia> L = rescale(root_lattice(:A,3), 3)
 Integer lattice of rank 3 and degree 3
+with gram matrix
+[ 6   -3    0]
+[-3    6   -3]
+[ 0   -3    6]
 
 julia> T = discriminant_group(L)
 Finite quadratic module

@@ -109,6 +109,9 @@ This can be useful to apply methods intended for positive definite lattices.
 ```jldoctest
 julia> L = integer_lattice(gram=ZZ[-1 0; 0 -1])
 Integer lattice of rank 2 and degree 2
+with gram matrix
+[-1    0]
+[ 0   -1]
 
 julia> shortest_vectors(rescale(L, -1))
 2-element Vector{Vector{ZZRingElem}}:
@@ -307,6 +310,12 @@ end
 #  String I/O
 #
 ################################################################################
+
+function show(io::IO, ::MIME"text/plain", L::ZZLat)
+  println(io, "Integer lattice of rank $(rank(L)) and degree $(degree(L))")
+  println(io, "with gram matrix")
+  show(io, MIME"text/plain"(), gram_matrix(L))
+end
 
 function show(io::IO, L::ZZLat)
   if get(io, :supercompact, false)
@@ -1604,6 +1613,15 @@ julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
                             3  6 4  5 4  6 6  5;
                             0 10 5  8 2  9 5  8])
 Integer lattice of rank 8 and degree 8
+with gram matrix
+[4    0   0    0   3    0   3    0]
+[0   16   8   12   2   12   6   10]
+[0    8   8    6   2    8   4    5]
+[0   12   6   10   2    9   5    8]
+[3    2   2    2   4    2   4    2]
+[0   12   8    9   2   12   6    9]
+[3    6   4    5   4    6   6    5]
+[0   10   5    8   2    9   5    8]
 
 julia> R = root_lattice_recognition(L)
 ([(:A, 1), (:D, 6)], ZZLat[Integer lattice of rank 1 and degree 8, Integer lattice of rank 6 and degree 8])
@@ -1775,6 +1793,15 @@ julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
                             3  6 4  5 4  6 6  5;
                             0 10 5  8 2  9 5  8])
 Integer lattice of rank 8 and degree 8
+with gram matrix
+[4    0   0    0   3    0   3    0]
+[0   16   8   12   2   12   6   10]
+[0    8   8    6   2    8   4    5]
+[0   12   6   10   2    9   5    8]
+[3    2   2    2   4    2   4    2]
+[0   12   8    9   2   12   6    9]
+[3    6   4    5   4    6   6    5]
+[0   10   5    8   2    9   5    8]
 
 julia> R = root_lattice_recognition_fundamental(L);
 
@@ -1875,6 +1902,8 @@ julia> L = integer_lattice(gram = ZZ[2 0; 0 4]);
 
 julia> root_sublattice(L)
 Integer lattice of rank 1 and degree 2
+with gram matrix
+[2]
 
 julia> basis_matrix(root_sublattice(L))
 [1   0]
@@ -1918,6 +1947,8 @@ julia> basis_matrix(N)
 
 julia> N2 = primitive_closure(M, N)
 Integer lattice of rank 1 and degree 6
+with gram matrix
+[2]
 
 julia> basis_matrix(N2)
 [1   0   0   0   0   0]
@@ -1959,6 +1990,8 @@ julia> e1, e2 = bU[1,:], bU[2,:]
 
 julia> N = lattice_in_same_ambient_space(U, e1 + e2)
 Integer lattice of rank 1 and degree 2
+with gram matrix
+[6]
 
 julia> is_primitive(U, N)
 true
@@ -1969,6 +2002,8 @@ julia> f = matrix(QQ, 3, 3, [0 1 1; -1 -1 -1; 1 1 0]);
 
 julia> N = kernel_lattice(M, f+1)
 Integer lattice of rank 1 and degree 3
+with gram matrix
+[4]
 
 julia> is_primitive(M, N)
 true
@@ -2006,9 +2041,19 @@ julia> f = matrix(QQ, 8, 8, [-1 -1  0  0  0  0  0  0;
 
 julia> S = kernel_lattice(M ,f-1)
 Integer lattice of rank 4 and degree 8
+with gram matrix
+[12   -3    0   -3]
+[-3    2   -1    0]
+[ 0   -1    2    0]
+[-3    0    0    2]
 
 julia> R = kernel_lattice(M , f^2+f+1)
 Integer lattice of rank 4 and degree 8
+with gram matrix
+[ 2   -1    0    0]
+[-1    2   -6    0]
+[ 0   -6   30   -3]
+[ 0    0   -3    2]
 
 julia> glue, iS, iR = glue_map(M, S, R)
 (Map with following data
@@ -2095,9 +2140,19 @@ julia> f = matrix(QQ, 8, 8, [ 1  0  0  0  0  0  0  0;
 
 julia> S = kernel_lattice(M ,f-1)
 Integer lattice of rank 4 and degree 8
+with gram matrix
+[ 2   -1     0     0]
+[-1    2    -1     0]
+[ 0   -1    12   -15]
+[ 0    0   -15    20]
 
 julia> R = kernel_lattice(M , f^4+f^3+f^2+f+1)
 Integer lattice of rank 4 and degree 8
+with gram matrix
+[10   -4    0    1]
+[-4    2   -1    0]
+[ 0   -1    4   -3]
+[ 1    0   -3    4]
 
 julia> glue, iS, iR = glue_map(M, S, R);
 
@@ -2512,6 +2567,31 @@ julia> R = integer_lattice(gram=2 * identity_matrix(ZZ, 24));
 
 julia> N = maximal_even_lattice(R) # Some Niemeier lattice
 Integer lattice of rank 24 and degree 24
+with gram matrix
+[2   1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   0   1   1   0   0   0   0]
+[1   2   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   0   1   0   0   0   0]
+[1   1   2   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0]
+[1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   2   1   1   1   0   0   0   0   1   0   1   1   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   2   1   1   0   0   0   0   1   1   0   1   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   2   1   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0   1   1   1   0]
+[0   0   0   0   0   0   0   0   1   2   1   1   0   0   0   0   0   0   0   0   1   0   1   1]
+[0   0   0   0   0   0   0   0   1   1   2   1   0   0   0   0   0   0   0   0   1   1   0   1]
+[0   0   0   0   0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   1   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0]
+[0   0   0   0   0   1   1   0   0   0   0   0   1   2   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   0   1   0   0   0   0   0   1   0   2   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   0   0   0   0   0   0   1   0   0   2   0   0   0   0   0   0   0   0]
+[1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0]
+[0   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   2   0   0   0   0   0   0]
+[1   0   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   2   0   0   0   0   0]
+[1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   0   2   0   0   0   0]
+[0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0   2   1   1   1]
+[0   0   0   0   0   0   0   0   1   0   1   0   0   0   0   0   0   0   0   0   1   2   0   0]
+[0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   0   1   0   2   0]
+[0   0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   1   0   0   2]
 
 julia> minimum(N)
 2
