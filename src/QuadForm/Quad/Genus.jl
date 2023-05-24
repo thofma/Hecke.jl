@@ -31,7 +31,7 @@ function show(io::IO, ::MIME"text/plain", J::JorDec)
   Base.show(nio, MIME"text/plain"(), order(J.p))
   println(nio, Dedent())
   println(IOContext(io, :compact => true), "Prime ideal: ", J.p)
-  if length(J) == 1
+  if length(J) in [0,1]
     print(io, "Jordan block ")
   else
     print(io, "Jordan blocks ")
@@ -631,7 +631,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadLocalGenus)
   if !is_dyadic(p)
     println(io, "Unifomizer: ", uniformizer(G))
   end
-  if length(G) == 1
+  if length(G) in [0,1]
     print(io, "Jordan block ")
   else
     print(io, "Jordan blocks ")

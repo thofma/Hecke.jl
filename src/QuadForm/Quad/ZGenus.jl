@@ -908,8 +908,6 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZZGenus)
   println(io, "Signatures: ", signature_tuple(G))
   s = local_symbols(G)
   if length(s) == 1
-    print(io, "Local symbol:")
-  elseif length(s) == 1
     println(io, "Local symbol:")
     print(io, Indent())
     show(io, s[1])
@@ -940,14 +938,18 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalZZGenus)
   io = pretty(io)
   println(io, "Local genus symbol for integer lattices")
   println(io, "Prime: ", prime(G))
-  print(io, "Jordan blocks ")
+  s = symbol(G)
+  if length(s) in [0,1]
+    print(io, "Jordan block ")
+  else
+    print(io, "Jordan blocks ")
+  end
   if prime(G) == 2
     print(io, "(val, rank, det, sign, oddity):")
   else
     print(io, "(val, rank, det):")
   end
   print(io, Indent())
-  s = symbol(G)
   if length(s) == 0
     nothing
   else
@@ -2709,6 +2711,7 @@ julia> genus(LK3)
 Genus symbol for integer lattices
 Signatures: (3, 0, 19)
 Local symbol:
+  Local genus symbol at 2: 1^22
 
 julia> iNS
 Integer lattice of rank 18 and degree 22
