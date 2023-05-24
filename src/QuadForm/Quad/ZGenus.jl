@@ -2552,7 +2552,7 @@ end
 ################################################################################
 
 @doc raw"""
-    embed(S::ZZLat, G::Genus, primitive=true) -> Bool, embedding
+    embed(S::ZZLat, G::Genus, primitive::Bool=true) -> Bool, embedding
 
 Return a (primitive) embedding of the integral lattice `S` into some lattice in the genus of `G`.
 
@@ -2574,7 +2574,7 @@ function embed(S::ZZLat, G::ZZGenus, primitive::Bool=true)
 end
 
 @doc raw"""
-    embed_in_unimodular(S::ZZLat, pos, neg, primitive=true, even=true) -> Bool, L, S', iS, iR
+    embed_in_unimodular(S::ZZLat, pos::Int, neg::Int, primitive=true, even=true) -> Bool, L, S', iS, iR
 
 Return a (primitive) embedding of the integral lattice `S` into some
 (even) unimodular lattice of signature `(pos, neg)`.
@@ -2598,7 +2598,7 @@ julia> is_primitive(LK3, iNS)
 true
 ```
 """
-function embed_in_unimodular(S::ZZLat, pos, neg; primitive=true, even=true)
+function embed_in_unimodular(S::ZZLat, pos::IntegerUnion, neg::IntegerUnion; primitive=true, even=true)
   @vprint :Lattice 1 "computing embedding in L_$(n) \n"
   pS,kS, nS = signature_tuple(S)
   @req kS == 0 "S must be non-degenerate"

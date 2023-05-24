@@ -8,7 +8,7 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
 
 # scope & verbose scope: :Lattice
 @doc raw"""
-    basis_matrix(L::ZZLat)
+    basis_matrix(L::ZZLat) -> QQMatrix
 
 Return the basis matrix $B$ of the integer lattice $L$.
 
@@ -657,7 +657,7 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
 ################################################################################
 
 @doc raw"""
-    root_lattice(R::Symbol, n::Int)
+    root_lattice(R::Symbol, n::Int) -> ZZLat
 
 Return the root lattice of type `R` given by `:A`, `:D` or `:E` with parameter `n`.
 """
@@ -744,7 +744,7 @@ end
 ################################################################################
 
 @doc raw"""
-    integer_lattice(S::Symbol, n::RationalUnion = 1) -> Zlat
+    integer_lattice(S::Symbol, n::RationalUnion = 1) -> ZZlat
 
 Given `S = :H` or `S = :U`, return a $\mathbb Z$-lattice admitting $n*J_2$ as
 Gram matrix in some basis, where $J_2$ is the 2-by-2 matrix with 0's on the
@@ -758,7 +758,7 @@ function integer_lattice(S::Symbol, n::RationalUnion = 1)
 end
 
 @doc raw"""
-    hyperbolic_plane_lattice(n::RationalUnion = 1)
+    hyperbolic_plane_lattice(n::RationalUnion = 1) -> ZZLat
 
 Return the hyperbolic plane with intersection form of scale `n`, that is,
 the unique (up to isometry) even unimodular hyperbolic $\mathbb Z$-lattice
@@ -979,7 +979,7 @@ end
 
 Return whether `L` and `M` are isometric over the `p`-adic integers.
 
-i.e. whether $L \otimes \Z_p \cong M\otimes \Z_p$.
+i.e. whether $L \otimes \mathbb{Z}_p \cong M\otimes \mathbb{Z}_p$.
 """
 function is_locally_isometric(L::ZZLat, M::ZZLat, p::Int)
   return is_locally_isometric(L, M, ZZRingElem(p))
@@ -1642,7 +1642,7 @@ function root_lattice_recognition(L::ZZLat)
 end
 
 @doc raw"""
-    irreducible_components(L::ZZLat)
+    irreducible_components(L::ZZLat) -> Vector{ZZLat}
 
 Return the irreducible components ``L_i`` of the positive definite lattice ``L``.
 
@@ -2512,7 +2512,7 @@ function _weyl_vector(R::ZZLat)
 end
 
 @doc raw"""
-    leech_lattice()
+    leech_lattice() -> ZZLat
 
 Return the Leech lattice.
 """

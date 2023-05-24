@@ -86,7 +86,7 @@ scale(G::HermLocalGenus, i::Int) = G.data[i][1]
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime
 $\mathfrak p$ of $\mathcal O_K$, return the scale of the Jordan block of minimum
-$\mathfrak P$-valuation, where $\mathfrakP$ is a prime ideal of $\mathcal O_E$
+$\mathfrak P$-valuation, where $\mathfrak{P}$ is a prime ideal of $\mathcal O_E$
 lying over $\mathfrak p$.
 """
 scale(g::HermLocalGenus) = prime(g)^(scale(g, i))

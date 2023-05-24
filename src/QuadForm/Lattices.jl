@@ -732,7 +732,7 @@ end
 ################################################################################
 
 @doc raw"""
-    norm(L::AbstractLat) -> NfOrdFracIdl
+    norm(L::AbstractLat) -> NfAbsOrdFracIdl
 
 Return the norm of the lattice `L`. This is a fractional ideal of the fixed field
 of `L`.
@@ -1922,7 +1922,7 @@ direct_product(x::Vararg{AbstractLat}) = direct_product(collect(x))
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
 return their biproduct $L := L_1 \oplus \ldots \oplus L_n$, together with
-the injections $L_i \toL$ and the projections $L \to L_i$ (seen as maps
+the injections $L_i \to L$ and the projections $L \to L_i$ (seen as maps
 between the corresponding ambient spaces).
 
 For objects of type `AbstractLat`, finite direct sums and finite direct

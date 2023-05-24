@@ -230,12 +230,12 @@ Gram matrix of the quadratic form with values in Q/2Z
 [1//2      1]
 ```
 
-We represent torsion quadratic modules as quotients of $\Z$-lattices
+We represent torsion quadratic modules as quotients of $\mathbb{Z}$-lattices
 by a full rank sublattice.
 
-We store them as a $\Z$-lattice `M` together with a projection `p : M -> A`
+We store them as a $\mathbb{Z}$-lattice `M` together with a projection `p : M -> A`
 onto an abelian group `A`. The bilinear structure of `A` is induced via `p`,
-that is `<a, b> = <p^-1(a), p^-1(a)>` with values in $\Q/n\Z$, where $n$
+that is `<a, b> = <p^-1(a), p^-1(a)>` with values in $\mathbb{Q}/n\mathbb{Z}$, where $n$
 is the modulus and depends on the kernel of `p`.
 
 Elements of A are basically just elements of the underlying abelian group.
@@ -265,7 +265,7 @@ julia> lift(d)
  1
 ```
 
-N.B. Since there are no elements of $\Z$-latties, we think of elements of `M` as
+N.B. Since there are no elements of $\mathbb{Z}$-lattices, we think of elements of `M` as
 elements of the ambient vector space. Thus if `v::Vector` is such an element
 then the coordinates with respec to the basis of `M` are given by
 `solve_left(basis_matrix(M), v)`.
