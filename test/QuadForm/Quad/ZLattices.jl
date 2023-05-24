@@ -712,7 +712,6 @@ let
   @test Hecke.init(C) isa Hecke.ZLatAutoCtx
 end
 
-<<<<<<< HEAD
 @testset "quadratic_lattice constructor" begin
   L = @inferred quadratic_lattice(QQ,QQ[1;])
   @test L isa ZZLat
