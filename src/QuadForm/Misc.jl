@@ -999,7 +999,7 @@ end
 #
 ################################################################################
 
-# Compute all decreasing non-negative integer sequenes of length len with sum
+# Compute all decreasing non-negative integer sequences of length len with sum
 # equal to sum.
 # This is not optimized.
 function _integer_lists(sum::Int, len::Int)

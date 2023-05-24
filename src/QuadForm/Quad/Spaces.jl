@@ -1865,12 +1865,12 @@ end
 @doc raw"""
     is_isometric_with_isometry(V::QuadSpace, W::QuadSpace)
 
-Returns wether $V$ and $W$ are isometric together with an isometry in case it
+Returns whether $V$ and $W$ are isometric together with an isometry in case it
 exists. The isometry is given as an invertible matrix $T$ such that
 $T G_W T^t = G_V$, where $G_V$, $G_W$ are the Gram matrices.
 """
 function is_isometric_with_isometry(V::QuadSpace{F,M}, W::QuadSpace{F,M}) where {F,M}
-  @req base_ring(V) == base_ring(W) "base rings do not aggree"
+  @req base_ring(V) == base_ring(W) "base rings do not agree"
   GV = gram_matrix(V)
   GW = gram_matrix(W)
   if rank(V) > 2 || rank(W) > 2 || iszero(discriminant(V)) || iszero(discriminant(W))

@@ -14,7 +14,7 @@ One of the two polynomials must be monic.
 """
 function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
-  #step the same is true and we can discard the unti obtained from the fun_factor function
+  #step the same is true and we can discard the unit obtained from the fun_factor function
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
@@ -391,7 +391,7 @@ function Nemo.invmod(f::ZZModPolyRingElem, M::ZZModPolyRingElem)
   #lifting: to invert a, start with an inverse b mod m, then
   # then b -> b*(2-ab) is an inverse mod m^2
   # starting with this g, and using the fact that all coeffs are nilpotent
-  # we have an invers modulo s.th. nilpotent. Hence it works
+  # we have an inverse modulo s.th. nilpotent. Hence it works
   c = f*g
   rem!(c, c, M)
   while !isone(c)

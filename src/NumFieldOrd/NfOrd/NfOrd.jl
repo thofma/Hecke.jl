@@ -1392,7 +1392,7 @@ The codifferent ideal of $R$, i.e. the trace-dual of $R$.
 function codifferent(R::NfAbsOrd)
   t = trace_matrix(R)
   ti, d = pseudo_inv(t)
-  #= if d = |det(t)|, then snf(t) = U S V for unimodular U, V and S being 
+  #= if d = |det(t)|, then snf(t) = U S V for unimodular U, V and S being
      Smith, then (ti/d) = V^-1 S^-1 U^-1 and
      d*S^-1 is the Smith of ti - up to that the diagonal would need to be
      reversed. Hence d is a multiple of the largest elem. div.

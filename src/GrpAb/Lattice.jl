@@ -41,7 +41,7 @@
 # A graph G consists of nested dictionaries to store edges with data attached.
 # Additionally, we keep track of the degree of each vertex in the G.degrees
 # field. Whenever we modify G by appending or deleting vertices, we check
-# wether the degree of a vertex becomes < 2. If so, we store the vertex in
+# whether the degree of a vertex becomes < 2. If so, we store the vertex in
 # G.new_low_degrees.
 
 function Base.show(io::IO, G::Graph{T, M}) where {T, M}
@@ -405,7 +405,7 @@ function Base.append!(L::RelLattice{T, D}, A::T) where {T, D}
 end
 
 # Add a map to a lattice of groups
-# .. sugar for ablian groups ...
+# .. sugar for abelian groups ...
 function Base.append!(L::GrpAbLattice, f::Map)
   return Base.append!(L, domain(f), codomain(f), f.map)
 end

@@ -68,7 +68,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   #then the split-norm-ctx is (much) better
   #the galois group size should, asymptotically, be
   #number of primes divided by totally split ones
-  #lets accecpt this.
+  #lets accept this.
   ordG = length(collect(PrimesSet(ZZ(1), maximum(FB.fb_int.base)))) / length([x[1] for x = FB.fb if length(x[2].lp) == degree(O)])
 
   if use_aut

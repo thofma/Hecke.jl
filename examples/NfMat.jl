@@ -314,8 +314,8 @@ end
 
 ####
 #
-# Access - the checkbounds can be switched of for the raw versino
-# the generic versino does alloc and copy, thus is slow anyway
+# Access - the checkbounds can be switched of for the raw version
+# the generic version does alloc and copy, thus is slow anyway
 #
 ####
 function Base.getindex(M::NfMatElem, r::Int, c::Int)

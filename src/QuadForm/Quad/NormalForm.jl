@@ -725,7 +725,7 @@ function _jordan_2_adic(G)
   # transformation matrix
   B = identity_matrix(base_ring(G), n)
 
-  # indices of the diagonal entrys which are already used
+  # indices of the diagonal entries which are already used
   cnt = 1
   local minval::Union{Int,PosInf}
   while cnt <= n
@@ -741,8 +741,8 @@ function _jordan_2_adic(G)
         swap_rows!(D, cnt, piv1)
         swap_cols!(D, cnt, piv1)
       end
-      # we are already orthgonal to the part with i < cnt
-      # now make the rest orthgonal too
+      # we are already orthogonal to the part with i < cnt
+      # now make the rest orthogonal too
       for i in cnt+1:n
         if !iszero(D[i, cnt])
           c = divexact(D[i, cnt], D[cnt, cnt])
@@ -874,7 +874,7 @@ end
 #
 #    INPUT:
 #
-#    - ``G`` -- a symmetric matrix over `\ZZ_p` in jordan form --
+#    - ``G`` -- a symmetric matrix over `\ZZ_p` in Jordan form --
 #      the output of :meth:`p_adic_normal_form` or :meth:`_jordan_2_adic`
 #    - ``normal_odd`` -- bool (default: True) if true and `p` is odd,
 #      compute a normal form.

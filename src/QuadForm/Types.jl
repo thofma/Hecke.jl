@@ -134,7 +134,7 @@ end
     AbstractSpaceRes
 
 A container type for map of change of scalars between vector spaces $V$ and $W$,
-each equiped with a non-degenerate sesquilinear form, where $V$ is a $K$-vector
+each equipped with a non-degenerate sesquilinear form, where $V$ is a $K$-vector
 space for some number field $K$ and $W$ is a $E$-vector space for some finite simple
 extension `$E/K$.
 
