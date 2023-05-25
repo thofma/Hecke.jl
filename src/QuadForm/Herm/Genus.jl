@@ -20,11 +20,10 @@ local_genus_herm_type(E) = HermLocalGenus{typeof(E), ideal_type(order_type(base_
 function Base.show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
   p = prime(G)
   println(io, "Local genus symbol for hermitian lattices")
-  nio = pretty(io)
   io = pretty(io)
-  print(nio, Indent(), "over ", Lowercase())
-  Base.show(nio, MIME"text/plain"(), maximal_order(G.E))
-  println(nio, Dedent())
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), maximal_order(G.E))
+  println(io, Dedent())
   println(IOContext(io, :compact => true), "Prime ideal: ", p)
   if length(G) in [0, 1]
     print(io, "Jordan block ")
@@ -1123,11 +1122,10 @@ genus_herm_type(E) = HermGenus{typeof(E), ideal_type(order_type(base_field(E))),
 
 function Base.show(io::IO, ::MIME"text/plain", G::HermGenus)
   println(io, "Genus symbol for hermitian lattices")
-  nio = pretty(io)
   io = pretty(io)
-  print(nio, Indent(), "over ", Lowercase())
-  Base.show(nio, MIME"text/plain"(), maximal_order(G.E))
-  println(nio, Dedent())
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), maximal_order(G.E))
+  println(io, Dedent())
   sig = G.signatures
   lgs = G.LGS
   if length(sig) == 1
@@ -1154,6 +1152,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermGenus)
     print(IOContext(io, :compact => true), prime(g), " => ")
     print(IOContext(io, :supercompact => true), g)
   end
+  print(io, Dedent())
 end
 
 function show(io::IO, G::HermGenus)

@@ -952,6 +952,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalZZGenus)
   print(io, Indent())
   if length(s) == 0
     nothing
+    print(io, Dedent())
   else
     println(io)
     for i in length(s)-1

@@ -363,10 +363,7 @@ function Base.show(io::IO, ::MIME"text/plain", a::TorQuadModuleElem)
   io = pretty(io)
   T = parent(a)
   println(io, "Element")
-  print(io, Indent(), "of ")
-  print(io, "finite quadratic module: ")
-  show_snf_structure(io, abelian_group(T))
-  print(io, " -> ", value_module_quadratic_form(T))
+  print(io, Indent(), "of ", Lowercase(), T)
   println(io, Dedent())
   comps = a.data.coeff
   if length(comps) == 1

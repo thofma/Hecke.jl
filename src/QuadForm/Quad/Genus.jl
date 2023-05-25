@@ -24,12 +24,11 @@ function JorDec(p, scales::Vector{Int}, ranks::Vector{Int}, dets::Vector{nf_elem
 end
 
 function show(io::IO, ::MIME"text/plain", J::JorDec)
-  nio = pretty(io)
   io = pretty(io)
   println(io, "Jordan decomposition for quadratic lattices")
-  print(nio, Indent(), "over ", Lowercase())
-  Base.show(nio, MIME"text/plain"(), order(J.p))
-  println(nio, Dedent())
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), order(J.p))
+  println(io, Dedent())
   println(IOContext(io, :compact => true), "Prime ideal: ", J.p)
   if length(J) in [0,1]
     print(io, "Jordan block ")
@@ -621,12 +620,11 @@ end
 
 function show(io::IO, ::MIME"text/plain", G::QuadLocalGenus)
   p = prime(G)
-  nio = pretty(io)
   io = pretty(io)
   println(io, "Local genus symbol for quadratic lattices")
-  print(nio, Indent(),  "over ", Lowercase())
-  Base.show(nio, MIME"text/plain"(), order(p))
-  println(nio, Dedent())
+  print(io, Indent(),  "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), order(p))
+  println(io, Dedent())
   println(IOContext(io, :compact => true), "Prime ideal: ", p)
   if !is_dyadic(p)
     println(io, "Unifomizer: ", uniformizer(G))
@@ -1575,12 +1573,11 @@ function QuadGenus(K, d, LGS, signatures)
 end
 
 function show(io::IO, ::MIME"text/plain", G::QuadGenus)
-  nio = pretty(io)
   io = pretty(io)
   println(io, "Genus symbol for quadratic lattices")
-  print(nio, Indent(), "over ", Lowercase())
-  Base.show(nio, MIME"text/plain"(), maximal_order(G.K))
-  println(nio, Dedent())
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), maximal_order(G.K))
+  println(io, Dedent())
   sig = G.signatures
   lgs = G.LGS
   if length(sig) == 1
@@ -1606,6 +1603,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadGenus)
     print(IOContext(io, :compact => true), prime(g), " => ")
     print(IOContext(io, :supercompact => true), g)
   end
+  print(io, Dedent())
 end
 
 function show(io::IO, G::QuadGenus)

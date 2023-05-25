@@ -2096,14 +2096,13 @@ function witt_invariant(G::LocalQuadSpaceCls)
 end
 
 function show(io::IO, ::MIME"text/plain", G::LocalQuadSpaceCls)
-  nio = pretty(io)
   io = pretty(io)
   println(io, "Local isometry class")
-  println(nio, Indent(), "of quadratic space")
-  print(nio, Indent(), "over ", Lowercase())
-  Base.show(nio, MIME"text/plain"(), base_ring(G))
-  println(nio, Dedent())
-  print(nio, Dedent())
+  println(io, Indent(), "of quadratic space")
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), base_ring(G))
+  println(io, Dedent())
+  print(io, Dedent())
   println(IOContext(io, :compact => true), "Prime ideal: ", prime(G))
   println(io, "Invariants: ")
   print(io, Indent())
@@ -2272,14 +2271,13 @@ function _is_valid(q::QuadSpaceCls{K}) where {K}
 end
 
 function show(io::IO, ::MIME"text/plain", G::QuadSpaceCls)
-  nio = pretty(io)
   io = pretty(io)
   P = [p for p in keys(G.LGS) if hasse_invariant(G.LGS[p])==-1]
-  println(nio, "Isometry class")
-  println(nio, Indent(), "of quadratic space")
-  print(nio, Indent(), "over ", Lowercase())
-  Base.show(nio, MIME"text/plain"(), base_ring(G))
-  println(nio, Dedent(), Dedent())
+  println(io, "Isometry class")
+  println(io, Indent(), "of quadratic space")
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), base_ring(G))
+  println(io, Dedent(), Dedent())
   println(io, "Invariants:")
   print(io, Indent())
   println(io, "Dimension: ", dim(G))
@@ -2287,7 +2285,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadSpaceCls)
   vals = values(signature_tuples(G))
   if length(P) == 0
     if length(vals) == 1
-      print(io, "Signature tuples: ", vals)
+      print(io, "Signature tuple: ", vals)
     else
       print(io, "Signature tuples: ", vals)
     end
