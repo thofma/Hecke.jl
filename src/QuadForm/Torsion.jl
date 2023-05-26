@@ -269,31 +269,26 @@ end
 
 # TODO: Print like abelian group
 function Base.show(io::IO, ::MIME"text/plain" , T::TorQuadModule)
-  @show_name(io, T)
-  print(io, "Finite quadratic module over Integer Ring with underlying abelian group\n")
-  println(io, abelian_group(T))
-  print(io, "Gram matrix of the quadratic form with values in ")
-  println(io, value_module_quadratic_form(T))
-  show(io,MIME"text/plain"(), gram_matrix_quadratic(T))
+  io = pretty(io)
+  println(io, "Finite quadratic module")
+  println(io, Indent(), "over integer ring")
+  print(io, Dedent())
+  print(io, "Abelian group: ")
+  show_snf_structure(io, snf(abelian_group(T))[1])
+  println(io)
+  println(io, "Bilinear value module: ", value_module(T))
+  println(io, "Quadratic value module: ", value_module_quadratic_form(T))
+  println(io, "Gram matrix quadratic form: ")
+  show(io, MIME"text/plain"() , gram_matrix_quadratic(T))
 end
 
 function Base.show(io::IO, T::TorQuadModule)
-  compact = get(io, :compact, false)
-  if compact
-    name = get_attribute(T,:name)
-    if name !== nothing
-      print(io, name)
-    else
-      print(io, "TorQuadModule ", gram_matrix_quadratic(T))
-    end
+  if get(io, :supercompact, false)
+    print(io, "Finite quadratic module")
   else
-    print(io, "TorQuadModule: ")
-    A = abelian_group(T)
-    if is_snf(A)
-      show_snf_structure(io, abelian_group(T))
-      print(io, " ")
-    end
-    print(io, gram_matrix_quadratic(T))
+    print(io, "Finite quadratic module: ")
+    show_snf_structure(io, snf(abelian_group(T))[1])
+    print(io, " -> ", value_module_quadratic_form(T))
   end
 end
 
@@ -366,17 +361,26 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, a::TorQuadModuleElem)
-  v = a.data.coeff
-  print(io, "[")
-  for i in 1:length(v)
-    if i == length(v)
-      print(io, v[i])
-    else
-      print(io, v[i], ", ")
-    end
+function Base.show(io::IO, ::MIME"text/plain", a::TorQuadModuleElem)
+  io = pretty(io)
+  T = parent(a)
+  println(io, "Element")
+  print(io, Indent(), "of ", Lowercase(), T)
+  println(io, Dedent())
+  comps = a.data.coeff
+  if length(comps) == 1
+    print(io, "with component ", comps)
+  else
+    print(io, "with components ", comps)
   end
-  print(io, "]")
+end
+
+function show(io::IO, a::TorQuadModuleElem)
+  if get(io, :supercompact, false)
+    print(io, "Element of finite quadratic module")
+  else
+    print(IOContext(io, :supercompact => true), a.data.coeff)
+  end
 end
 
 ################################################################################
@@ -434,10 +438,14 @@ julia> R = rescale(root_lattice(:D,4),2);
 julia> D = discriminant_group(R);
 
 julia> D[1]
-[1, 0, 0, 0]
+Element
+  of finite quadratic module: (Z/2)^2 x (Z/4)^2 -> Q/2Z
+with components [1 0 0 0]
 
 julia> D[2]
-[0, 1, 0, 0]
+Element
+  of finite quadratic module: (Z/2)^2 x (Z/4)^2 -> Q/2Z
+with components [0 1 0 0]
 ```
 """
 getindex(T::TorQuadModule, i::Int) = gen(T, i)
@@ -466,7 +474,9 @@ julia> A = abelian_group(D)
 GrpAb: (Z/2)^2 x (Z/4)^2
 
 julia> d = D[1]
-[1, 0, 0, 0]
+Element
+  of finite quadratic module: (Z/2)^2 x (Z/4)^2 -> Q/2Z
+with components [1 0 0 0]
 
 julia> d == D(A(d))
 true
@@ -1073,9 +1083,12 @@ julia> T = torsion_quadratic_module(QQ[2//3 2//3    0    0    0;
                                           0 2//3 2//3 2//3    0;
                                           0    0 2//3 2//3    0;
                                           0 2//3    0    0 2//3])
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/3)^5
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/3)^5
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [2//3   2//3      0      0      0]
 [2//3   2//3   2//3      0   2//3]
 [   0   2//3   2//3   2//3      0]
@@ -1087,9 +1100,12 @@ julia> U = torsion_quadratic_module(QQ[4//3    0    0    0    0;
                                           0    0 4//3    0    0;
                                           0    0    0 4//3    0;
                                           0    0    0    0 4//3])
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/3)^5
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/3)^5
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [4//3      0      0      0      0]
 [   0   4//3      0      0      0]
 [   0      0   4//3      0      0]
@@ -1100,40 +1116,40 @@ julia> bool, phi = is_isometric_with_isometry(T,U)
 (true, Map with following data
 Domain:
 =======
-TorQuadModule [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3]
+Finite quadratic module: (Z/3)^5 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [4//3 0 0 0 0; 0 4//3 0 0 0; 0 0 4//3 0 0; 0 0 0 4//3 0; 0 0 0 0 4//3])
+Finite quadratic module: (Z/3)^5 -> Q/2Z)
 
 julia> is_bijective(phi)
 true
 
 julia> T2, _ = sub(T, [-T[4], T[2]+T[3]+T[5]])
-(TorQuadModule: (Z/3)^2 [2//3 1//3; 1//3 2//3], Map with following data
+(Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
 Domain:
 =======
-TorQuadModule [2//3 1//3; 1//3 2//3]
+Finite quadratic module: (Z/3)^2 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3])
+Finite quadratic module: (Z/3)^5 -> Q/2Z)
 
 julia> U2, _ = sub(T, [T[4], T[2]+T[3]+T[5]])
-(TorQuadModule: (Z/3)^2 [2//3 2//3; 2//3 2//3], Map with following data
+(Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
 Domain:
 =======
-TorQuadModule [2//3 2//3; 2//3 2//3]
+Finite quadratic module: (Z/3)^2 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [2//3 2//3 0 0 0; 2//3 2//3 2//3 0 2//3; 0 2//3 2//3 2//3 0; 0 0 2//3 2//3 0; 0 2//3 0 0 2//3])
+Finite quadratic module: (Z/3)^5 -> Q/2Z)
 
 julia> bool, phi = is_isometric_with_isometry(U2, T2)
 (true, Map with following data
 Domain:
 =======
-TorQuadModule [2//3 2//3; 2//3 2//3]
+Finite quadratic module: (Z/3)^2 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [2//3 1//3; 1//3 2//3])
+Finite quadratic module: (Z/3)^2 -> Q/2Z)
 
 julia> is_bijective(phi)
 true
@@ -1198,19 +1214,22 @@ they should be rescaled (see [`rescale`](@ref)).
 
 ```jldoctest
 julia> T = torsion_quadratic_module(QQ[4//5;])
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: Z/5
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: Z/5
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [4//5]
 
 julia> bool, phi = is_anti_isometric_with_anti_isometry(T, T)
 (true, Map with following data
 Domain:
 =======
-TorQuadModule [4//5]
+Finite quadratic module: Z/5 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [4//5])
+Finite quadratic module: Z/5 -> Q/2Z)
 
 julia> a = gens(T)[1];
 
@@ -1246,19 +1265,22 @@ julia> B2 = matrix(FlintQQ, 6, 6 , [ 1  0 -1  1  0 0;
 julia> N = lattice(V, B2);
 
 julia> T = torsion_quadratic_module(M, N)
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: Z/15
-Gram matrix of the quadratic form with values in Q/Z
+Finite quadratic module
+  over integer ring
+Abelian group: Z/15
+Bilinear value module: Q/Z
+Quadratic value module: Q/Z
+Gram matrix quadratic form:
 [3//5]
 
 julia> bool, phi = is_anti_isometric_with_anti_isometry(T,T)
 (true, Map with following data
 Domain:
 =======
-TorQuadModule [3//5]
+Finite quadratic module: Z/15 -> Q/Z
 Codomain:
 =========
-TorQuadModule [3//5])
+Finite quadratic module: Z/15 -> Q/Z)
 
 julia> a = gens(T)[1];
 
@@ -1355,27 +1377,39 @@ even denominator, then the value module of the quadratic form is `Q/2Z`
 # Example
 ```jldoctest
 julia> torsion_quadratic_module(QQ[1//6;])
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: Z/6
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: Z/6
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [1//6]
 
 julia> torsion_quadratic_module(QQ[1//2;])
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: Z/2
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: Z/2
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [1//2]
 
 julia> torsion_quadratic_module(QQ[3//2;])
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: Z/2
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: Z/2
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [3//2]
 
 julia> torsion_quadratic_module(QQ[1//3;])
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: Z/3
-Gram matrix of the quadratic form with values in Q/Z
+Finite quadratic module
+  over integer ring
+Abelian group: Z/3
+Bilinear value module: Q/Z
+Quadratic value module: Q/Z
+Gram matrix quadratic form:
 [1//3]
 ```
 """

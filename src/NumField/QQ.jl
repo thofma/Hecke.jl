@@ -71,6 +71,10 @@ minimum(x::ZZIdl) = gen(x)
 
 minimum(x::ZZFracIdl) = gen(x)
 
+absolute_minimum(x::ZZIdl) = gen(x)
+
+absolute_minimum(x::ZZFracIdl) = gen(x)
+
 prime_decomposition(O::NfOrd, p::ZZIdl) = prime_decomposition(O, gen(p))
 
 uniformizer(x::ZZIdl) = gen(x)

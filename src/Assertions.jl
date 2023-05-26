@@ -54,7 +54,7 @@ Add the symbol `s` to the list of (global) verbosity scopes.
 # Examples
 
 ```jldoctest
-julia> add_verbosity_scope(:MyScope);
+julia> add_verbosity_scope(:MyScope)
 
 ```
 """
@@ -252,10 +252,13 @@ verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 # Examples
 
 ```jldoctest
-julia> add_verbosity_scope(:MyScope);
+julia> add_verbosity_scope(:MyScope)
 
 julia> set_verbosity_level(:MyScope, 4)
 4
+
+julia> set_verbosity_level(:MyScope, 0)
+0
 ```
 """
 function set_verbosity_level(s::Symbol, l::Int)
@@ -279,16 +282,22 @@ verbosity scopes by calling the function [`add_verbosity_scope`](@ref).
 # Examples
 
 ```jldoctest
-julia> add_verbosity_scope(:MyScope1);
+julia> add_verbosity_scope(:MyScope)
 
-julia> get_verbosity_level(:MyScope1)
+julia> get_verbosity_level(:MyScope)
 0
 
-julia> set_verbosity_level(:MyScope1, 4);
-
-julia> get_verbosity_level(:MyScope1)
+julia> set_verbosity_level(:MyScope, 4)
 4
 
+julia> get_verbosity_level(:MyScope)
+4
+
+julia> set_verbosity_level(:MyScope, 0)
+0
+
+julia> get_verbosity_level(:MyScope)
+0
 ```
 """
 function get_verbosity_level(s::Symbol)
@@ -339,10 +348,13 @@ assertion scopes by calling the function [`add_assertion_scope`](@ref).
 # Examples
 
 ```jldoctest
-julia> add_assertion_scope(:MyScope);
+julia> add_assertion_scope(:MyScope)
 
 julia> set_assertion_level(:MyScope, 4)
 4
+
+julia> set_assertion_level(:MyScope, 0)
+0
 ```
 """
 function set_assertion_level(s::Symbol, l::Int)
@@ -369,16 +381,22 @@ assertion scopes by calling the function [`add_assertion_scope`](@ref).
 # Examples
 
 ```jldoctest
-julia> add_assertion_scope(:Myscope);
+julia> add_assertion_scope(:MyScope)
 
-julia> get_assertion_level(:Myscope)
+julia> get_assertion_level(:MyScope)
 0
 
-julia> set_assertion_level(:Myscope, 1);
-
-julia> get_assertion_level(:Myscope)
+julia> set_assertion_level(:MyScope, 1)
 1
 
+julia> get_assertion_level(:MyScope)
+1
+
+julia> set_assertion_level(:MyScope, 0)
+0
+
+julia> get_assertion_level(:MyScope)
+0
 ```
 """
 function get_assertion_level(s::Symbol)
@@ -418,10 +436,13 @@ We will set up different assertion scopes with different assertion levels in a
 custom function to show how to use this macro.
 
 ```jldoctest
-julia> add_assertion_scope(:MyScope2);
+julia> add_assertion_scope(:MyScope)
+
+julia> get_assertion_level(:MyScope)
+0
 
 julia> function hassert_test(x::Int)
-       @hassert :MyScope2 700 mod(x, 3) == 0
+       @hassert :MyScope 700 mod(x, 3) == 0
        return div(x, 3)
        end
 hassert_test (generic function with 1 method)
@@ -429,7 +450,7 @@ hassert_test (generic function with 1 method)
 julia> hassert_test(2)
 0
 
-julia> set_assertion_level(:MyScope2, 701);
+julia> set_assertion_level(:MyScope, 701);
 
 julia> try hassert_test(2)
        catch e e
@@ -438,6 +459,9 @@ AssertionError("\$(Expr(:escape, :(mod(x, 3) == 0)))")
 
 julia> hassert_test(3)
 1
+
+julia> set_assertion_level(:MyScope, 0)
+0
 ```
 
 If one does not setup in advance an assertion scope, the macro will raise an

@@ -4,10 +4,20 @@
 #
 ################################################################################
 
-function Base.show(io::IO, L::QuadLat)
+function Base.show(io::IO, ::MIME"text/plain", L::QuadLat)
+  io = pretty(io)
   println(io, "Quadratic lattice of rank $(rank(L)) and degree $(degree(L))")
-  println(io, "over")
-  print(IOContext(io, :compact => true), base_ring(L))
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), base_ring(L))
+  print(io, Dedent())
+end
+
+function Base.show(io::IO, L::QuadLat)
+  if get(io, :supercompact, false)
+    print(io, "Quadratic lattice")
+  else
+    print(io, "Quadratic lattice of rank $(rank(L)) and degree $(degree(L))")
+  end
 end
 
 ################################################################################

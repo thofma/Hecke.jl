@@ -35,16 +35,33 @@ binary_quadratic_form(R::Ring, a, b, c) = binary_quadratic_form(R(a), R(b), R(c)
 ################################################################################
 
 function show(io::IO, ::MIME"text/plain", f::QuadBin)
-  _show(io, f, get(io, :compact, false))
+  _show(io, f, false)
 end
 
 function show(io::IO, f::QuadBin)
-  _show(io, f, true)
+  if get(io, :supercompact, false)
+    print(io, "Binary quadratic form")
+  else
+    io = pretty(io)
+    print(io, "Binary quadratic form over ")
+    print(IOContext(io, :supercompact => true), Lowercase(), base_ring(f))
+    print(io, ": ")
+    _show(io, f, true)
+  end
 end
 
 function _show(io::IO, f::QuadBin, compact = false)
   if !compact
-    print(io, "Binary quadratic form with equation\n")
+    io = pretty(io)
+    println(io, "Binary quadratic form")
+    if base_ring(f) == ZZ
+      print(io, Indent(), "over integer ring")
+    else
+      print(io, Indent(), "over ", Lowercase())
+      show(io, MIME"text/plain"(), base_ring(f))
+    end
+    println(io, Dedent())
+    print(io, "with equation ")
   end
   sum = Expr(:call, :+)
   a = f[1]

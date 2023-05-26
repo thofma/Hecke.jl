@@ -124,7 +124,7 @@ mutable struct VecSpaceRes{S, T}
     domain_dim = n * d
     codomain_dim = n
 
-    return VecSpaceRes{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
+    return new{S, elem_type(K)}(K, domain_dim, codomain_dim, B, d)
   end
 end
 
@@ -223,9 +223,12 @@ julia> A = matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]);
 julia> L = integer_lattice(gram = A);
 
 julia> T = Hecke.discriminant_group(L)
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/2)^2
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/2)^2
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [   1   1//2]
 [1//2      1]
 ```
@@ -252,7 +255,9 @@ julia> A = abelian_group(D)
 GrpAb: (Z/2)^2 x (Z/4)^2
 
 julia> d = D[1]
-[1, 0, 0, 0]
+Element
+  of finite quadratic module: (Z/2)^2 x (Z/4)^2 -> Q/2Z
+with components [1 0 0 0]
 
 julia> d == D(A(d))
 true
@@ -310,41 +315,51 @@ consists of a header which keeps track of the domain and the codomain of type
 # Examples
 ```jldoctest
 julia> L = rescale(root_lattice(:A,3), 3)
-Quadratic lattice of rank 3 and degree 3 over the rationals
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[ 6   -3    0]
+[-3    6   -3]
+[ 0   -3    6]
 
 julia> T = discriminant_group(L)
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/3)^2 x Z/12
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/3)^2 x Z/12
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [2//3      0   1//3]
 [   0      0   2//3]
 [1//3   2//3   1//4]
 
 julia> N, f = normal_form(T)
-(TorQuadModule: [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3], Map with following data
+(Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z, Map with following data
 Domain:
 =======
-TorQuadModule [2//3 0 1//3; 0 0 2//3; 1//3 2//3 1//4]
+Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [1//4 0 0 0; 0 4//3 0 0; 0 0 4//3 0; 0 0 0 4//3])
+Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z)
 
 
 julia> domain(f)
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/3)^2 x Z/12
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/3)^2 x Z/12
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [2//3      0   1//3]
 [   0      0   2//3]
 [1//3   2//3   1//4]
 
 julia> codomain(f)
-Finite quadratic module over Integer Ring with underlying abelian group
-(General) abelian group with relation matrix
-[4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
-with structure of GrpAb: (Z/3)^2 x Z/12
-
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/3)^2 x Z/12
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [1//4      0      0      0]
 [   0   4//3      0      0]
 [   0      0   4//3      0]
@@ -372,17 +387,23 @@ it must be a homomorphism between the underlying finite abelian groups.
 julia> L = rescale(root_lattice(:A,3), 3);
 
 julia> T = discriminant_group(L)
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/3)^2 x Z/12
-Gram matrix of the quadratic form with values in Q/2Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/3)^2 x Z/12
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
 [2//3      0   1//3]
 [   0      0   2//3]
 [1//3   2//3   1//4]
 
 julia> T6 = rescale(T, 6)
-Finite quadratic module over Integer Ring with underlying abelian group
-GrpAb: (Z/3)^2 x Z/12
-Gram matrix of the quadratic form with values in Q/12Z
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/3)^2 x Z/12
+Bilinear value module: Q/6Z
+Quadratic value module: Q/12Z
+Gram matrix quadratic form:
 [4   0      2]
 [0   0      4]
 [2   4   3//2]
@@ -391,10 +412,10 @@ julia> f = hom(T, T6, gens(T6))
 Map with following data
 Domain:
 =======
-TorQuadModule [2//3 0 1//3; 0 0 2//3; 1//3 2//3 1//4]
+Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [4 0 2; 0 0 4; 2 4 3//2]
+Finite quadratic module: (Z/3)^2 x Z/12 -> Q/12Z
 
 julia> T[1]*T[1] == f(T[1])*f(T[1])
 false

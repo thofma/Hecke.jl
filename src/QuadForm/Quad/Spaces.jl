@@ -93,11 +93,22 @@ fixed_field(V::QuadSpace) = base_ring(V)
 #
 ################################################################################
 
-function Base.show(io::IO, V::QuadSpace)
-  print(io, "Quadratic space over\n")
-  println(io, base_ring(V))
-  println(io, "with Gram matrix")
-  print(io, gram_matrix(V))
+function Base.show(io::IO, ::MIME"text/plain", V::QuadSpace)
+  io = pretty(io)
+  println(io, "Quadratic space of dimension $(dim(V))")
+  print(io, Indent(), "over ", Lowercase())
+  show(io, base_ring(V))
+  println(io, Dedent())
+  println(io, "with gram matrix")
+  show(io, MIME"text/plain"(), gram_matrix(V))
+end
+
+function show(io::IO, V::QuadSpace)
+  if get(io, :supercompact, false)
+    print(io, "Quadratic space")
+  else
+    print(io, "Quadratic space of dimension $(dim(V))")
+  end
 end
 
 ################################################################################
@@ -2084,21 +2095,28 @@ function witt_invariant(G::LocalQuadSpaceCls)
   return G.witt_inv
 end
 
-function Base.show(io::IO, G::LocalQuadSpaceCls)
-  n = dim(G)
-  d = G.det
-  h = hasse_invariant(G)
-  p = prime(G)
-  compact = get(io, :compact, false)
-  if compact
-    print(io,"$G.P $n $d $h")
+function show(io::IO, ::MIME"text/plain", G::LocalQuadSpaceCls)
+  io = pretty(io)
+  println(io, "Local isometry class")
+  println(io, Indent(), "of quadratic space")
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), base_ring(G))
+  println(io, Dedent())
+  print(io, Dedent())
+  println(IOContext(io, :compact => true), "Prime ideal: ", prime(G))
+  println(io, "Invariants: ")
+  print(io, Indent())
+  println(io, "Dimension: $(dim(G))")
+  println(io, "Determinant: $(G.det)")
+  print(io, "Hasse invariant: $(hasse_invariant(G))")
+  print(io, Dedent())
+end
+
+function show(io::IO, G::LocalQuadSpaceCls)
+  if get(io, :supercompact, false)
+    print(io, "Local isometry class of quadratic space")
   else
-    print(io, "Abstract local quadratic space over ")
-    print(IOContext(io, :compact => true), base_ring(G))
-    print(io, " at ")
-    print(IOContext(io, :compact => true), p)
-    println(io, " of ")
-    print(io, "Dimension $n, determinant $d, Hasse invariant $h")
+    print(io, "Isometry class of quadratic space over the ", absolute_minimum(prime(G)), "-adic integers")
   end
 end
 
@@ -2252,15 +2270,50 @@ function _is_valid(q::QuadSpaceCls{K}) where {K}
   return true
 end
 
-function Base.show(io::IO, G::QuadSpaceCls)
-  K = base_ring(G)
-  n = dim(G)
-  d = det(G)
-  S = signature_tuples(G)
+function show(io::IO, ::MIME"text/plain", G::QuadSpaceCls)
+  io = pretty(io)
   P = [p for p in keys(G.LGS) if hasse_invariant(G.LGS[p])==-1]
-  print(IOContext(io, :compact => true), "Abstract quadratic space over ",
-        K, " of dimension $n, determinant $d, negative Hasse invariants at ",P,
-        " signature tuples ", values(S))
+  println(io, "Isometry class")
+  println(io, Indent(), "of quadratic space")
+  print(io, Indent(), "over ", Lowercase())
+  Base.show(io, MIME"text/plain"(), base_ring(G))
+  println(io, Dedent(), Dedent())
+  println(io, "Invariants:")
+  print(io, Indent())
+  println(io, "Dimension: ", dim(G))
+  println(io, "Determinant: ", det(G))
+  vals = values(signature_tuples(G))
+  if length(P) == 0
+    if length(vals) == 1
+      print(io, "Signature tuple: ", vals)
+    else
+      print(io, "Signature tuples: ", vals)
+    end
+    print(io, Dedent())
+  else
+    if length(vals) == 1
+      println(io, "Signature tuple: ", vals)
+    else
+      println(io, "Signature tuples: ", vals)
+    end
+    print(io, Dedent())
+    print(io, "Negative Hasse invariants at: ")
+    for i in 1:length(P)-1
+      show(IOContext(io, :compact => true), P[i])
+      print(io, ", ")
+    end
+    show(IOContext(io, :compact => true), P[end])
+  end
+end
+
+function show(io::IO, G::QuadSpaceCls)
+  if get(io, :supercompact, false)
+    print(io, "Isometry class of quadratic space")
+  else
+    io = pretty(io)
+    print(io, "Isometry class of quadratic space over ")
+    print(IOContext(io, :supercompact => true), Lowercase(), base_ring(G))
+  end
 end
 
 function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)

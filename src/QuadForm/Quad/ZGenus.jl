@@ -902,25 +902,94 @@ end
 #
 ###############################################################################
 
-function Base.show(io::IO, G::ZZGenus)
-  rep = "ZZGenus\nSignature: $(signature_pair(G))"
-  for s in local_symbols(G)
-    rep *= "\n$s"
+function Base.show(io::IO, ::MIME"text/plain", G::ZZGenus)
+  io = pretty(io)
+  println(io, "Genus symbol for integer lattices")
+  println(io, "Signatures: ", signature_tuple(G))
+  s = local_symbols(G)
+  if length(s) == 1
+    println(io, "Local symbol:")
+    print(io, Indent())
+    show(io, s[1])
+    print(io, Dedent())
+  else
+    println(io, "Local symbols:")
+    print(io, Indent())
+    for i in 1:(length(s)-1)
+      show(io, s[i])
+      println(io)
+    end
+    show(io, s[end])
+    print(io, Dedent())
   end
-  print(io, rep)
+end
+
+function Base.show(io::IO, G::ZZGenus)
+  if !get(io, :supercompact, false)
+    print(io, "Genus symbol: ")
+  end
+  print(io, iseven(G) ? "II" : "I")
+  p, n = signature_pair(G)
+  print(io, "_($p, $n)")
+  print(io, _write_global_symbol(G))
+end
+
+function Base.show(io::IO, ::MIME"text/plain", G::LocalZZGenus)
+  io = pretty(io)
+  println(io, "Local genus symbol for integer lattices")
+  println(io, "Prime: ", prime(G))
+  s = symbol(G)
+  if length(s) in [0,1]
+    print(io, "Jordan block ")
+  else
+    print(io, "Jordan blocks ")
+  end
+  if prime(G) == 2
+    print(io, "(val, rank, det, sign, oddity):")
+  else
+    print(io, "(val, rank, det):")
+  end
+  print(io, Indent())
+  if length(s) == 0
+    nothing
+    print(io, Dedent())
+  else
+    println(io)
+    for i in length(s)-1
+      println(io, Tuple(s[i]))
+    end
+    print(io, Tuple(s[end]))
+    print(io, Dedent())
+  end
 end
 
 function Base.show(io::IO, G::LocalZZGenus)
+  if get(io, :supercompact, false)
+    if length(symbol(G)) == 0
+      print(io, "Empty local integer genus")
+    else
+      print(io, prime(G), ": ")
+      for sym in symbol(G)
+        print(io, Tuple(sym))
+      end
+    end
+  else
+    print(io, "Local genus symbol at ", prime(G), ":", _write_local_symbol(G))
+  end
+end
+
+function _write_local_symbol(G::LocalZZGenus; ones::Bool = true)
   p = prime(G)
   CS_string = ""
   if p == 2
     for sym in symbol(G)
       s, r, d, e, o = sym
       d = _kronecker_symbol(d, 2)
+      !ones && (s == 0) && continue
       if s>=0
         CS_string *= " $(p^s)^$(d * r)"
       else
-        CS_string *="(1/$(p^-s))^$(d * r)"
+        CS_string *=" (1/$(p^-s))^$(d * r)"
       end
       if e == 1
         CS_string *= "_$o"
@@ -928,16 +997,69 @@ function Base.show(io::IO, G::LocalZZGenus)
     end
   else
     for sym in symbol(G)
-      s,r ,d = sym
+      s, r,d = sym
+      !ones && (s == 0) && continue
       if s >= 0
         CS_string *= " $(p^s)^$(d * r)"
       else
-        CS_string *= "(1/$(p^-s))^$(d*r)"
+        CS_string *= " (1/$(p^-s))^$(d*r)"
       end
     end
   end
-  rep = "Genus symbol at $p:  $CS_string"
-  print(io, rstrip(rep))
+  return CS_string
+end
+
+function _write_global_symbol(G::ZZGenus)
+  s = local_symbols(G)
+  sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
+  str = ""
+  for g in s
+    str *= _write_local_symbol(g, ones = false)
+  end
+  return str
+end
+
+function Base.show(io::IO, ::MIME"text/latex", G::ZZGenus)
+  str = iseven(G) ? "II" : "I"
+  p, n = signature_pair(G)
+  str *= "_{($p, $n)}"
+  s = local_symbols(G)
+  sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
+  print(io, str)
+  for g in s
+    show(io, "text/latex", g)
+  end
+end
+
+function Base.show(io::IO, ::MIME"text/latex", g::LocalZZGenus)
+  p = prime(g)
+  str = ""
+  if p == 2
+    for sym in symbol(g)
+      sym[1] == 0 && continue
+      s, r, d, e, o = sym
+      d = _kronecker_symbol(d, 2)
+      if s >= 0
+        str *= "$(p^s)^{$(d * r)}"
+      else
+        str *= "(1/$(p^-s))^{$(d * r)}"
+      end
+      if e == 1
+        str *= "_{$o}"
+      end
+    end
+  else
+    for sym in symbol(g)
+      sym[1] == 0 && continue
+      s, r, d = sym
+      if s >= 0
+        str *= "$(p^s)^{$(d * r)}"
+      else
+        str *= "(1/$(p^-s))^{$(d * r)}"
+      end
+    end
+  end
+  print(io, str)
 end
 
 ###############################################################################
@@ -2587,12 +2709,32 @@ julia> NS = direct_sum(integer_lattice(:U), rescale(root_lattice(:A, 16), -1))[1
 julia> LK3, iNS, i = embed_in_unimodular(NS, 3, 19);
 
 julia> genus(LK3)
-ZZGenus
-Signature: (3, 19)
-Genus symbol at 2:   1^22
+Genus symbol for integer lattices
+Signatures: (3, 0, 19)
+Local symbol:
+  Local genus symbol at 2: 1^22
 
 julia> iNS
-Quadratic lattice of rank 18 and degree 22 over the rationals
+Integer lattice of rank 18 and degree 22
+with gram matrix
+[0   1    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0]
+[1   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0]
+[0   0   -2    1    0    0    0    0    0    0    0    0    0    0    0    0    0    0]
+[0   0    1   -2    1    0    0    0    0    0    0    0    0    0    0    0    0    0]
+[0   0    0    1   -2    1    0    0    0    0    0    0    0    0    0    0    0    0]
+[0   0    0    0    1   -2    1    0    0    0    0    0    0    0    0    0    0    0]
+[0   0    0    0    0    1   -2    1    0    0    0    0    0    0    0    0    0    0]
+[0   0    0    0    0    0    1   -2    1    0    0    0    0    0    0    0    0    0]
+[0   0    0    0    0    0    0    1   -2    1    0    0    0    0    0    0    0    0]
+[0   0    0    0    0    0    0    0    1   -2    1    0    0    0    0    0    0    0]
+[0   0    0    0    0    0    0    0    0    1   -2    1    0    0    0    0    0    0]
+[0   0    0    0    0    0    0    0    0    0    1   -2    1    0    0    0    0    0]
+[0   0    0    0    0    0    0    0    0    0    0    1   -2    1    0    0    0    0]
+[0   0    0    0    0    0    0    0    0    0    0    0    1   -2    1    0    0    0]
+[0   0    0    0    0    0    0    0    0    0    0    0    0    1   -2    1    0    0]
+[0   0    0    0    0    0    0    0    0    0    0    0    0    0    1   -2    1    0]
+[0   0    0    0    0    0    0    0    0    0    0    0    0    0    0    1   -2    1]
+[0   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    1   -2]
 
 julia> is_primitive(LK3, iNS)
 true

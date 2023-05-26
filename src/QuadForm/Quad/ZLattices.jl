@@ -139,7 +139,10 @@ This can be useful to apply methods intended for positive definite lattices.
 
 ```jldoctest
 julia> L = integer_lattice(gram=ZZ[-1 0; 0 -1])
-Quadratic lattice of rank 2 and degree 2 over the rationals
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[-1    0]
+[ 0   -1]
 
 julia> shortest_vectors(rescale(L, -1))
 2-element Vector{Vector{ZZRingElem}}:
@@ -210,10 +213,11 @@ equal to `gram_matrix(L)`.
 julia> L = integer_lattice(matrix(ZZ, [2 0; -1 2]));
 
 julia> rational_span(L)
-Quadratic space over
-Rational field
-with Gram matrix
-[4 -2; -2 5]
+Quadratic space of dimension 2
+  over rational field
+with gram matrix
+[ 4   -2]
+[-2    5]
 ```
 """
 function rational_span(L::ZZLat)
@@ -335,9 +339,18 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, L::ZZLat)
-  print(io, "Quadratic lattice of rank ", rank(L),
-            " and degree ", degree(L), " over the rationals")
+function show(io::IO, ::MIME"text/plain", L::ZZLat)
+  println(io, "Integer lattice of rank $(rank(L)) and degree $(degree(L))")
+  println(io, "with gram matrix")
+  show(io, MIME"text/plain"(), gram_matrix(L))
+end
+
+function show(io::IO, L::ZZLat)
+  if get(io, :supercompact, false)
+    print(io, "Integer lattice")
+  else
+    print(io, "Integer lattice of rank $(rank(L)) and degree $(degree(L))")
+  end
 end
 
 ################################################################################
@@ -1642,10 +1655,19 @@ julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
                             0 12 8  9 2 12 6  9;
                             3  6 4  5 4  6 6  5;
                             0 10 5  8 2  9 5  8])
-Quadratic lattice of rank 8 and degree 8 over the rationals
+Integer lattice of rank 8 and degree 8
+with gram matrix
+[4    0   0    0   3    0   3    0]
+[0   16   8   12   2   12   6   10]
+[0    8   8    6   2    8   4    5]
+[0   12   6   10   2    9   5    8]
+[3    2   2    2   4    2   4    2]
+[0   12   8    9   2   12   6    9]
+[3    6   4    5   4    6   6    5]
+[0   10   5    8   2    9   5    8]
 
 julia> R = root_lattice_recognition(L)
-([(:A, 1), (:D, 6)], ZZLat[Quadratic lattice of rank 1 and degree 8 over the rationals, Quadratic lattice of rank 6 and degree 8 over the rationals])
+([(:A, 1), (:D, 6)], ZZLat[Integer lattice of rank 1 and degree 8, Integer lattice of rank 6 and degree 8])
 ```
 """
 function root_lattice_recognition(L::ZZLat)
@@ -1813,7 +1835,16 @@ julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
                             0 12 8  9 2 12 6  9;
                             3  6 4  5 4  6 6  5;
                             0 10 5  8 2  9 5  8])
-Quadratic lattice of rank 8 and degree 8 over the rationals
+Integer lattice of rank 8 and degree 8
+with gram matrix
+[4    0   0    0   3    0   3    0]
+[0   16   8   12   2   12   6   10]
+[0    8   8    6   2    8   4    5]
+[0   12   6   10   2    9   5    8]
+[3    2   2    2   4    2   4    2]
+[0   12   8    9   2   12   6    9]
+[3    6   4    5   4    6   6    5]
+[0   10   5    8   2    9   5    8]
 
 julia> R = root_lattice_recognition_fundamental(L);
 
@@ -1913,7 +1944,9 @@ vectors `x` of `L` with $|x^2|\leq 2$.
 julia> L = integer_lattice(gram = ZZ[2 0; 0 4]);
 
 julia> root_sublattice(L)
-Quadratic lattice of rank 1 and degree 2 over the rationals
+Integer lattice of rank 1 and degree 2
+with gram matrix
+[2]
 
 julia> basis_matrix(root_sublattice(L))
 [1   0]
@@ -1956,7 +1989,9 @@ julia> basis_matrix(N)
 [3   0   0   0   0   0]
 
 julia> N2 = primitive_closure(M, N)
-Quadratic lattice of rank 1 and degree 6 over the rationals
+Integer lattice of rank 1 and degree 6
+with gram matrix
+[2]
 
 julia> basis_matrix(N2)
 [1   0   0   0   0   0]
@@ -1997,7 +2032,9 @@ julia> e1, e2 = bU[1,:], bU[2,:]
 ([1 0], [0 1])
 
 julia> N = lattice_in_same_ambient_space(U, e1 + e2)
-Quadratic lattice of rank 1 and degree 2 over the rationals
+Integer lattice of rank 1 and degree 2
+with gram matrix
+[6]
 
 julia> is_primitive(U, N)
 true
@@ -2007,7 +2044,9 @@ julia> M = root_lattice(:A, 3);
 julia> f = matrix(QQ, 3, 3, [0 1 1; -1 -1 -1; 1 1 0]);
 
 julia> N = kernel_lattice(M, f+1)
-Quadratic lattice of rank 1 and degree 3 over the rationals
+Integer lattice of rank 1 and degree 3
+with gram matrix
+[4]
 
 julia> is_primitive(M, N)
 true
@@ -2044,31 +2083,41 @@ julia> f = matrix(QQ, 8, 8, [-1 -1  0  0  0  0  0  0;
                               0  0  0  0  0  0  0  1]);
 
 julia> S = kernel_lattice(M ,f-1)
-Quadratic lattice of rank 4 and degree 8 over the rationals
+Integer lattice of rank 4 and degree 8
+with gram matrix
+[12   -3    0   -3]
+[-3    2   -1    0]
+[ 0   -1    2    0]
+[-3    0    0    2]
 
 julia> R = kernel_lattice(M , f^2+f+1)
-Quadratic lattice of rank 4 and degree 8 over the rationals
+Integer lattice of rank 4 and degree 8
+with gram matrix
+[ 2   -1    0    0]
+[-1    2   -6    0]
+[ 0   -6   30   -3]
+[ 0    0   -3    2]
 
 julia> glue, iS, iR = glue_map(M, S, R)
 (Map with following data
 Domain:
 =======
-TorQuadModule [4//3 0; 0 4//3]
+Finite quadratic module: (Z/3)^2 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [2//3 0; 0 2//3], Map with following data
+Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
 Domain:
 =======
-TorQuadModule [4//3 0; 0 4//3]
+Finite quadratic module: (Z/3)^2 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [4//3 2//3; 2//3 2//3], Map with following data
+Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
 Domain:
 =======
-TorQuadModule [2//3 0; 0 2//3]
+Finite quadratic module: (Z/3)^2 -> Q/2Z
 Codomain:
 =========
-TorQuadModule [2//3 1//3; 1//3 4//3])
+Finite quadratic module: (Z/3)^2 -> Q/2Z)
 
 julia> is_bijective(glue)
 true
@@ -2133,10 +2182,20 @@ julia> f = matrix(QQ, 8, 8, [ 1  0  0  0  0  0  0  0;
                              -1 -2 -3 -3 -2 -1  0 -1]);
 
 julia> S = kernel_lattice(M ,f-1)
-Quadratic lattice of rank 4 and degree 8 over the rationals
+Integer lattice of rank 4 and degree 8
+with gram matrix
+[ 2   -1     0     0]
+[-1    2    -1     0]
+[ 0   -1    12   -15]
+[ 0    0   -15    20]
 
 julia> R = kernel_lattice(M , f^4+f^3+f^2+f+1)
-Quadratic lattice of rank 4 and degree 8 over the rationals
+Integer lattice of rank 4 and degree 8
+with gram matrix
+[10   -4    0    1]
+[-4    2   -1    0]
+[ 0   -1    4   -3]
+[ 1    0   -3    4]
 
 julia> glue, iS, iR = glue_map(M, S, R);
 
@@ -2550,7 +2609,32 @@ This implements the 23 holy constructions of the Leech lattice in [CS99](@cite).
 julia> R = integer_lattice(gram=2 * identity_matrix(ZZ, 24));
 
 julia> N = maximal_even_lattice(R) # Some Niemeier lattice
-Quadratic lattice of rank 24 and degree 24 over the rationals
+Integer lattice of rank 24 and degree 24
+with gram matrix
+[2   1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   0   1   1   0   0   0   0]
+[1   2   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   0   1   0   0   0   0]
+[1   1   2   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0]
+[1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   2   1   1   1   0   0   0   0   1   0   1   1   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   2   1   1   0   0   0   0   1   1   0   1   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   2   1   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0   1   1   1   0]
+[0   0   0   0   0   0   0   0   1   2   1   1   0   0   0   0   0   0   0   0   1   0   1   1]
+[0   0   0   0   0   0   0   0   1   1   2   1   0   0   0   0   0   0   0   0   1   1   0   1]
+[0   0   0   0   0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   1   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0]
+[0   0   0   0   0   1   1   0   0   0   0   0   1   2   0   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   0   1   0   0   0   0   0   1   0   2   0   0   0   0   0   0   0   0   0]
+[0   0   0   0   1   1   0   0   0   0   0   0   1   0   0   2   0   0   0   0   0   0   0   0]
+[1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0]
+[0   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   2   0   0   0   0   0   0]
+[1   0   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   2   0   0   0   0   0]
+[1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   0   2   0   0   0   0]
+[0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0   2   1   1   1]
+[0   0   0   0   0   0   0   0   1   0   1   0   0   0   0   0   0   0   0   0   1   2   0   0]
+[0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   0   1   0   2   0]
+[0   0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   1   0   0   2]
 
 julia> minimum(N)
 2
