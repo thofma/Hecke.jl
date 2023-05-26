@@ -25,6 +25,7 @@ get_verbosity_level(s::Symbol)
 ### Printings
 
 ```@docs
+@vprintln
 @vprint
 ```
 
