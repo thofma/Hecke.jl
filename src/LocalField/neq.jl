@@ -112,8 +112,8 @@ end
 #Thm 2.2
 #Thm 2.3 and the recognition is missing.
 #Plan for the NEQ: compute norms of gens
-#   find combinations that solve up to low precision 
-#   use exp/log for the hight bit...
+#   find combinations that solve up to low precision
+#   use exp/log for the height bit...
 #alternatively just use the lin. alg
 # 1+p^k/1+p^l, * = p^k/p^l, + for k<l<=2k ...
 
@@ -221,7 +221,7 @@ function _unit_group_gens_case1(K::Union{FlintQadicField, Hecke.LocalField})
 
   pi = uniformizer(K)
   one = K(1)
-  
+
   return [ one+x*pi^l for x = b for l = F_K]
 end
 
@@ -251,7 +251,7 @@ function setprecision!(A::Generic.MatSpaceElem{Hecke.QadicRingElem{FlintPadicFie
 end
 
 function solve_1_units(a::Vector{T}, b::T) where T
-  #assumes that T is a local field element - they don't have a 
+  #assumes that T is a local field element - they don't have a
   #common abstract type
   #
   #tries to write b as a power product of elements in a
@@ -270,7 +270,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
   #plan:
   # (1+p^k/1+p^l, *) = (p^k/p^l, +) for k<=l<=2k
   #so we start with k=1, l=2 to find the exponents mod p
-  #remove this from b 
+  #remove this from b
   #try to find the next part (mod p^2), ...
   #
   e = absolute_ramification_index(K)
@@ -308,7 +308,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
     #to find a nice preimage
     reduce_mod_hnf_ur!(s.coeff, _mk.map)
 #    @show s
-    # to verify that this is a "legal" operation... the hom constructor 
+    # to verify that this is a "legal" operation... the hom constructor
     # will verify that this is legal
     # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
 
@@ -327,7 +327,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
     expo_mult = vcat([_mk(x).coeff for x = gens(_k)]...)*expo_mult
     cur_a = [prod(cur_a[i]^_mk(x)[i] for i=1:length(cur_a)) for x = gens(_k)]
 #    @show [e*valuation(x-1) for x = cur_a]
- 
+
     cur_b = divexact(b^pow_b, prod(a[i]^expo[i] for i=1:length(a)))
     if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
       break
@@ -360,7 +360,7 @@ function _norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFi
     return zero(K)
   end
   if ramification_index(K, parent(b)) == 1
-    if test_only 
+    if test_only
       return Int(valuation(b)*absolute_ramification_index(K)) % degree(K, parent(b)) == 0
     end
     return norm_equation_unramified(K, b)
@@ -404,7 +404,7 @@ function _norm_equation(K:: Hecke.LocalField, b::Union{qadic,padic,Hecke.LocalFi
   c = setprecision(prod(g[i]^s[i] for i=1:length(s)), precision(b)*e)
 
   so *= c
-  b  *= inv(norm(c)) 
+  b  *= inv(norm(c))
   @assert valuation(b-1) > 1//(p-1)
   # Last step: norm/trace..
   bt = log(b)
@@ -425,7 +425,7 @@ function test_neq(L, n::Int = 5)
 end
 
 =#
-    
+
 
 
 
@@ -587,13 +587,13 @@ struct MapEvalCtx
   map::Generic.MatSpaceElem{padic}
 
   function MapEvalCtx(M::LocalFieldMor)
-    mat = matrix(prime_field(domain(M)), 
+    mat = matrix(prime_field(domain(M)),
                  absolute_degree(domain(M)),
                  absolute_degree(codomain(M)),
-                 vcat([absolute_coordinates(M(x)) 
+                 vcat([absolute_coordinates(M(x))
                       for x = absolute_basis(domain(M))]...))
 
-    return new(domain(M), codomain(M), mat)                  
+    return new(domain(M), codomain(M), mat)
   end
 end
 
@@ -618,7 +618,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
   #inverting), but the resolvent tends to have valuation (small primes)
   #possibilities:
   # - start with negative valuation to get a solution of val 0
-  # - live with the valuation and use frobenius_equation2 to 
+  # - live with the valuation and use frobenius_equation2 to
   #   add precision at the end
   # - start with elem of val 0, then generically, the valuation of the
   #   resolvent should be the valuation of the abs. degree
@@ -660,11 +660,11 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
       va = valuation(a)
       va == 0 && return inv(a)
       @show va, v_deg
-      if va <= v_deg 
+      if va <= v_deg
         denominator(va) == 1 && return inv(divexact(a, prime(E)^Int(va)))
         @show :shit
       end
-        
+
 #      return frobenius_equation2(c, F, frobenius = fr, start = inv(a))
       cnt += 1
       if cnt > 5
@@ -742,7 +742,7 @@ end
 
 """
     gens(L::FinField, l::FinField)
- 
+
 Return l-algebra generators for L, l must be a direct subfield of L
 """
 function gens(L::FinField, l::FinField)
@@ -804,14 +804,14 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   @assert norm(v) == u
   pi = v*uniformizer(L)
   pi_inv = inv(pi)
-  
+
   #if (like here) L is Eisenstein over unram, then the automorphisms are easier
   global last_mKL = mKL
   if ramification_index(L) == degree(L) && e > 1#so we're ramified
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
     E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E)))
-    G2 = automorphism_list(E2, prime_field(E2)) 
+    G2 = automorphism_list(E2, prime_field(E2))
     GG = morphism_type(E)[]
     for e = G2
       ime = e(gen(E2))
@@ -830,7 +830,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
     GG = automorphism_list(E, prime_field(E))
     gK = map(E, gK)
     GG = [g for g = GG if map(g, gK) == gK]
-  end 
+  end
 
   rE, mE = residue_field(E)
   rL, mL = residue_field(L)
@@ -852,7 +852,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   end
 
   fr = MapEvalCtx(frobenius(E, L))
- 
+
   z = findall(isequal([mE(fr(preimage(mE, x))) for x = gens(rE, prime_field(rE))]), power_frob_E)
   @assert length(z) == 1
 #  @assert z[1] == d+1  #for d == 1 wrong
@@ -960,7 +960,7 @@ k2 = Hecke.generic_completion(k, l2[1][1])  #S(3)(6)
   return beta, action, G_mul, mul, sigma_hat
 end
 #############################################################################
-#   The following "norm_equation_unramified" solves the norm equations only 
+#   The following "norm_equation_unramified" solves the norm equations only
 #   in unramified extensions
 # Ali PhD, Algorithm 4
 #############################################################################
@@ -1004,7 +1004,7 @@ function norm_equation_unramified(L::Hecke.LocalField, b::Hecke.LocalFieldElem)
    if iszero(b//nc-1)
      return c*f_nm
    end
-   
+
    n = ee*valuation((b//nc)-1)
    while prec_b >= n+1 #  "solve till precision n-1"
       z = ((b//nc)-1)*piK^-ZZ(n)
@@ -1063,7 +1063,7 @@ function one_unit_group(K::LocalField)
     rel, po = solve_1_units(gens[1:end-1], gens[end])
     push!(rel, -po)
     h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
-    while h[1,1] > 20 
+    while h[1,1] > 20
       #=
       Eisenstein extension with defining polynomial x^2 + (2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + 2^20 + 2^21 + 2^22 + 2^23 + 2^24 + 2^25 + 2^26 + 2^27 + 2^28 + 2^29 + 2^30 + 2^31 + O(2^32))*x + 2^1 + O(2^32) over Unramified extension of 2-adic numbers of degree 1
 
@@ -1094,7 +1094,7 @@ function one_unit_group(K::LocalField)
     while length(tor) < h[1,1]
       push!(tor, setprecision(tor[end]*tor[2], pr))
     end
-   
+
     ord = map(_order_1_unit, gens[2:end])
     ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
     G = abelian_group(ord)
@@ -1110,7 +1110,7 @@ function one_unit_group(K::LocalField)
       @assert z !== nothing
       if p != 1
         b = a*bas[1]^(z-1)
-        s, p = solve_1_units(bas[2:end], b) 
+        s, p = solve_1_units(bas[2:end], b)
         @assert p == 1
       end
       ex = vcat([-z+1], s)
@@ -1148,7 +1148,7 @@ function unit_group(K::LocalField)
   U, mU = one_unit_group(K)
   k, mk = residue_field(K)
   u, mu = unit_group(k)
-  
+
   #group is Z x u x U ...
 
   Z = abelian_group([0])
@@ -1181,7 +1181,7 @@ function unit_group(R::QadicRing)
   U, mU = one_unit_group(K)
   k, mk = residue_field(K)
   u, mu = unit_group(k)
-  
+
   #group is u * U ...
 
   G, pro, inj = direct_product(u, U, task = :both)

@@ -91,7 +91,7 @@ mc \ ans
 The class group, or more precisely the information used to compute it
 also allows for principal ideal testing and related tasks.
 In general, due to the size of the objects, the ```fac_elem``` versions are
-more effcient.
+more efficient.
 
 ```@docs
 Hecke.is_principal(::NfOrdIdl)

@@ -1469,7 +1469,7 @@ end
 #
 ################################################################################
 
-# Given epiomorphism h : A -> B, transport the refined wedderburn decomposition
+# Given epimorphism h : A -> B, transport the refined wedderburn decomposition
 # of A to B
 function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
   A = domain(h)

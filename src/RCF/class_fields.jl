@@ -457,11 +457,11 @@ end
 @doc raw"""
     knot(C::ClassField)
 
-The knot (or number knot) defined by Scholz is the obstruction to the 
+The knot (or number knot) defined by Scholz is the obstruction to the
 Hasse norm theorem: the quotient of local norms modulo global norms.
 For abelian extensions this is can easily be computed.
 
-Computes the obstruction as an abstract abelian group, ie. the Hasse norm 
+Computes the obstruction as an abstract abelian group, ie. the Hasse norm
 theorem holds for `C` over the base field iff this group is trivial.
 """
 function knot(C::ClassField)
@@ -561,7 +561,7 @@ For a collection of places given via ideals as keys of `dp` and embeddings
 given as keys of `di` find a cyclic extension where the completions at
 the places have the degrees as the values of the dictionaries.
 
-The degree wil be the `lcm` of the local degree (values), the extension will
+The degree will be the `lcm` of the local degree (values), the extension will
 be unramified at the places in `dp` unless they involve primes above `2`.
 
 The field will be constructed as a `ray_class_field`.
@@ -590,7 +590,7 @@ julia> prime_decomposition_type(maximal_order(K), 3)
 function grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, Int} = Dict{NumFieldEmb, Int}())
   lp = collect(keys(dp))
   li = collect(keys(di))
-  if length(li) == 0  
+  if length(li) == 0
     if length(lp) == 0
       error("no data specified, giving up")
     end
@@ -625,7 +625,7 @@ function _grunwald_wang(d::Dict{<:Any, Int})
   lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
   @assert length(lp) + length(li) == length(d)
 
-  if length(li) == 0  
+  if length(li) == 0
     if length(lp) == 0
       error("no data specified, giving up")
     end
@@ -652,14 +652,14 @@ end
 function _grunwald_wang_pp(d::Dict{<:Any, Int})
   #we'll try to be as unramified as possible at the ideals in d
   #which means:
-  # - potentiel ramification at 2 (if 2 in d)
+  # - potential ramification at 2 (if 2 in d)
   # - unram elsewhere.
 
   lp = collect(keys(d))
   li = [x for x = lp if isa(x, NumFieldEmb)]
   lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
 
-  if length(li) == 0  
+  if length(li) == 0
     if length(lp) == 0
       error("no data specified, giving up")
     end
@@ -676,7 +676,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
   zk = maximal_order(k)
 
   deg = lcm([x for x = values(d)]...)
-  
+
   @assert is_prime_power(deg) #for now, to keep things simple
 
   con = prod(lp)
@@ -688,7 +688,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
   # v_P(con) <= p/(p-1) * (1+ l * e(P/p))
   if iseven(deg) #2^l
     l = valuation(deg, 2)
-    l2 = [p for p = lp if minimum(p) == 2] 
+    l2 = [p for p = lp if minimum(p) == 2]
     if length(l2) > 0
       con *= prod(p^(2*(1+l*ramification_index(p)-1)) for p = l2)
     end
@@ -713,7 +713,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
   cnt = 0
   #need to check the degree of the completion at p
   #for p unramified this is "just" the order in the ray class group
-  #for p ramified this is unfortunately 
+  #for p ramified this is unfortunately
   #  the order in the ray class group of the modulus coprime to p
   #  time the index of this group in the full (ramified) one
   while true

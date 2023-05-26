@@ -244,7 +244,7 @@ end
 # The even (dyadic) ramified case
 # The approach below is VERY lame.
 # What we should do is the following:
-# 1. Find an (suffiently good approximation of an) isometry between the ambient spaces of M_p and L_p.
+# 1. Find an (sufficiently good approximation of an) isometry between the ambient spaces of M_p and L_p.
 # 2. Let Y_p be the image of L_p under this map. If it is good enough, then Y_p \isom L_p.
 # 3. Contsruct a lattice X in the space of M such that X_p = Y_p and X_q = M_q for all q \ne p.
 

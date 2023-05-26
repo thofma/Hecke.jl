@@ -45,7 +45,7 @@ end
 #used in HNF.jl:
 # sparse_row operations usually involve a temporary intermediate row
 # for large matrices, this kills the GC performance, so we allow
-# to store up to 10 sparse auxilliaries in the matrix..
+# to store up to 10 sparse auxiliaries in the matrix..
 # usage:
 # sr = get_tmp(A)
 # add_scaled_row(..., sr)

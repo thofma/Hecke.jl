@@ -1210,7 +1210,7 @@ function _admissible_basis(f::QQMatrix, b::NfRelElem; check::Bool = true)
   _mb = absolute_representation_matrix(b)
 
   # we look for a basis on which f acts blockwise
-  # as mutliplication by b along extension of scalars
+  # as multiplication by b along extension of scalars
   mb = block_diagonal_matrix([_mb for i in 1:m])
   bca = Hecke._basis_of_commutator_algebra(f, _mb)
   @assert !is_empty(bca)
@@ -1367,7 +1367,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   # we construct the gram matrix of the hermitian space in which to extend the scalars.
   # For this we change the basis of the ambient space/rational span of L and
   # we use the transfer formula to revert the trace construction (this is
-  # where we actually need a basis on which the isometry is given by mutliplication
+  # where we actually need a basis on which the isometry is given by multiplication
   # by `b`.
   gram = matrix(zeros(E, m, m))
   s = involution(E)
