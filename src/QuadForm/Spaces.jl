@@ -668,7 +668,6 @@ end
 ################################################################################
 
 function _biproduct(x::Vector{T}) where T <: AbstractSpace
-  @req length(x) >= 2 "Input must contain at least two quadratic spaces"
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
   @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> ishermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
@@ -711,7 +710,6 @@ If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
 the projections $V \to V_i$, one should call `biproduct(x)`.
 """
 function direct_sum(x::Vector{T}) where T <: AbstractSpace
-  @req length(x) >= 2 "Input must consist of at least two spaces"
   V, inj, = _biproduct(x)
   return V, inj
 end
@@ -734,7 +732,6 @@ If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
 the projections $V \to V_i$, one should call `biproduct(x)`.
 """
 function direct_product(x::Vector{T}) where T <: AbstractSpace
-  @req length(x) >= 2 "Input must consist of at least two spaces"
   V, _, proj = _biproduct(x)
   return V, proj
 end
@@ -757,7 +754,6 @@ If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
 one should call `direct_product(x)`.
 """
 function biproduct(x::Vector{T}) where T <: AbstractSpace
-  @req length(x) >= 2 "Input must consisy of at least two spaces"
   return _biproduct(x)
 end
 

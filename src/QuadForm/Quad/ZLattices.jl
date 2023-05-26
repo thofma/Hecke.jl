@@ -256,7 +256,6 @@ If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
 """
 function direct_sum(x::Vector{ZZLat})
-  @req length(x) >= 2 "Input must consist of at least two lattices"
   W, inj = direct_sum(ambient_space.(x))
   B = _biproduct(x)
   return lattice(W, B, check = false), inj
@@ -281,7 +280,6 @@ If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
 """
 function direct_product(x::Vector{ZZLat})
-  @req length(x) >= 2 "Input must consist of at least two lattices"
   W, proj = direct_product(ambient_space.(x))
   B = _biproduct(x)
   return lattice(W, B, check = false), proj
@@ -306,7 +304,6 @@ If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 """
 function biproduct(x::Vector{ZZLat})
-  @req length(x) >= 2 "Input must consist of at least two lattices"
   W, inj, proj = biproduct(ambient_space.(x))
   B = _biproduct(x)
   return lattice(W, B, check = false), inj, proj

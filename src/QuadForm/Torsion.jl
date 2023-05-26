@@ -1922,11 +1922,10 @@ function +(T::TorQuadModule, U::TorQuadModule)
 end
 
 function _biproduct(x::Vector{TorQuadModule}; proj = true)
-  @req length(x) >= 2 "Input must consist of at least two torsion quadratic modules"
   mbf = modulus_bilinear_form(x[1])
   mqf = modulus_quadratic_form(x[1])
-  @req all(i -> modulus_bilinear_form(x[i]) == mbf, 2:length(x)) "All torsion quadratic modules must have the same bilinear modulus"
-  @req all(i -> modulus_quadratic_form(x[i]) == mqf, 2:length(x)) "All torsion quadratic modules must have the same quadratic modulus"
+  @req all(q -> modulus_bilinear_form(q) == mbf, x) "All torsion quadratic modules must have the same bilinear modulus"
+  @req all(q -> modulus_quadratic_form(q) == mqf, x) "All torsion quadratic modules must have the same quadratic modulus"
   cs = cover.(x)
   rs = relations.(x)
   C, injC, projC = biproduct(cs)

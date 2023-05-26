@@ -506,5 +506,4 @@ end
     @test i != j ? iszero(m) : isone(m)
   end
   S, inj, proj = @inferred biproduct(V, V, V)
-  @test_throws ArgumentError direct_product(V)
 end
