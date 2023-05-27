@@ -31,7 +31,7 @@
 #
 ################################################################################
 
-export @vprint, @hassert, @v_do, @req, add_verbosity_scope, get_verbosity_level,
+export @vprint, @vprintln, @hassert, @v_do, @req, add_verbosity_scope, get_verbosity_level,
        set_verbosity_level, add_assertion_scope, get_assertion_level, set_assertion_level
 
 ################################################################################
@@ -87,21 +87,21 @@ function _global_indent()
 end
 
 @doc raw"""
-    @vprint(S::Symbol, k::Int, msg::String)
-    @vprint S k msg
+    @vprintln(S::Symbol, k::Int, msg::String)
+    @vprintln S k msg
 
-    @vprint(S::Symbol, msg::String)
-    @vprint S msg
+    @vprintln(S::Symbol, msg::String)
+    @vprintln S msg
 
 This macro can be used to control printings inside the code.
 
-The macro `@vprint` takes two or three arguments: a symbol `S` specifying a
+The macro `@vprintln` takes two or three arguments: a symbol `S` specifying a
 *verbosity scope*, an optional integer `k` and a string `msg`. If `k` is not
 specified, it is set by default to $1$.
 
 To each verbosity scope `S` is associated a *verbosity level* `l` which is cached.
-If the verbosity level $l$ of `S` is bigger than or equal to $k$, the macro `@vprint`
-triggers the printing of the associated string `msg`.
+If the verbosity level $l$ of `S` is bigger than or equal to $k$, the macro `@vprintln`
+triggers the printing of the associated string `msg` followed by a newline.
 
 One can add a new verbosity scope by calling the function [`add_verbosity_scope`](@ref).
 
@@ -128,10 +128,10 @@ julia> set_verbosity_level(:Test1, 1);
 julia> set_verbosity_level(:Test2, 3);
 
 julia> function vprint_example()
-       @vprint :Test1 "Triggered\n"
-       @vprint :Test2 2 "Triggered\n"
-       @vprint :Test3 "Not triggered\n"
-       @vprint :Test2 4 "Not triggered\n"
+       @vprintln :Test1 "Triggered"
+       @vprintln :Test2 2 "Triggered"
+       @vprintln :Test3 "Not triggered"
+       @vprintln :Test2 4 "Not triggered"
        end
 vprint_example (generic function with 1 method)
 
@@ -142,6 +142,35 @@ Triggered
 
 If one does not setup in advance a verbosity scope, the macro will raise an
 `ExceptionError` showing the error message "Not a valid symbol".
+"""
+macro vprintln(s, msg)
+  quote
+    if get_verbosity_level($s) >= 1
+      print(_global_indent())
+      println($(esc(msg)))
+      flush(stdout)
+    end
+  end
+end
+
+macro vprintln(s, l::Int, msg)
+  quote
+    if get_verbosity_level($s) >= $l
+      print(_global_indent())
+      println($(esc(msg)))
+      flush(stdout)
+    end
+  end
+end
+
+@doc raw"""
+    @vprint(S::Symbol, k::Int, msg::String)
+    @vprint S k msg
+
+    @vprint(S::Symbol, msg::String)
+    @vprint S msg
+
+The same as [`@vprintln`](@ref), but without the final newline.
 """
 macro vprint(s, msg)
   quote
@@ -223,7 +252,7 @@ If one does not setup in advance a verbosity scope, the macro will raise an
 macro v_do(s, action)
   quote
     if get_verbosity_level($s) >= 1
-     $(esc(action))
+      $(esc(action))
     end
   end
 end
