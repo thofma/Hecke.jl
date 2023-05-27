@@ -83,8 +83,16 @@ end
 
 iszero(x::QmodnZElem) = iszero(x.elt)
 
+function -(a::QmodnZElem)
+  return QmodnZElem(a.parent, -a.elt)
+end
+
 function +(a::QmodnZElem, b::QmodnZElem)
   return QmodnZElem(a.parent, a.elt + b.elt)
+end
+
+function -(a::QmodnZElem, b::QmodnZElem)
+  return QmodnZElem(a.parent, a.elt - b.elt)
 end
 
 function *(a::ZZRingElem, b::QmodnZElem)
