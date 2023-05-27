@@ -20,7 +20,6 @@ RandomExtensions = "fb686558-2515-59ef-acaa-46db3789a887"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 AbstractAlgebra = "^0.30.4"
@@ -28,11 +27,3 @@ Nemo = "^0.34.1"
 RandomExtensions = "0.4.3"
 Requires = "^0.5.2, 1.0"
 julia = "1.6"
-
-[extras]
-REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["REPL", "Test", "Documenter"]

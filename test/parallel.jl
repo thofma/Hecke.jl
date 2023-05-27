@@ -1,8 +1,5 @@
-using Test
-using Distributed
-using Dates
+using Hecke.Distributed
 import REPL
-using Printf: @sprintf
 
 if isdefined(Base, :Experimental)
   Stub = Base.Experimental
@@ -31,7 +28,7 @@ running_under_rr() = false
 
 @everywhere include("testdefs.jl")
 @everywhere using Hecke
-@everywhere using RandomExtensions
+@everywhere using Hecke.RandomExtensions
 
 if short_test
   @everywhere short_test = true

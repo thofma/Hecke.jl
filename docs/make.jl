@@ -1,4 +1,6 @@
-using Documenter, Hecke, Pkg
+using Documenter
+using Hecke
+using Pkg
 
 include(normpath(joinpath(Hecke.pkgdir, "docs", "Build.jl")))
 

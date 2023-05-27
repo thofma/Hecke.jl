@@ -1,4 +1,4 @@
-using SparseArrays
+using Hecke.SparseArrays
 
 @testset "Matrix" begin
   R = FlintZZ

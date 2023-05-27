@@ -1,9 +1,9 @@
 using Test
 
-using LinearAlgebra
+using Hecke.LinearAlgebra
 
-using Random
-using RandomExtensions
+using Hecke.Random
+using Hecke.RandomExtensions
 
 import Hecke.AbstractAlgebra
 include(joinpath(pathof(AbstractAlgebra), "..", "..", "test", "Rings-conformance-tests.jl"))
