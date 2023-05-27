@@ -31,8 +31,8 @@ function SpinorGeneraCtx(L::QuadLat)
   Q, mQ = quo(domain(mRCG), subgroupgens)
 
   @vprintln :GenRep 1 "Ray class group: size = $(order(RCG))"
-  @vprint :GenRep 1 "Ray class group quotient: size = $(order(Q))
-  (this is the number of spinor + genera in Genus(L))\n"
+  @vprintln :GenRep 1 """Ray class group quotient: size = $(order(Q))
+  (this is the number of spinor + genera in Genus(L))"""
 
   # 2) Find good generators (that is: generators which are not dyadic, and not
   #    in BadPrimes(L) -- so that neighbour generation is always possible),
@@ -51,8 +51,8 @@ function SpinorGeneraCtx(L::QuadLat)
   inf_plc = defining_modulus(mRCG)[2]
 
   critical_primes = _get_critical_primes(L, mRCG, inf_plc, mQ, true) # fulllist = not is_definite?
-  @vprint :GenRep 1 "good primes over $([minimum(q) for q in critical_primes])
-  (together with the squares) generate the subgroup.\n"
+  @vprintln :GenRep 1 """good primes over $([minimum(q) for q in critical_primes])
+  (together with the squares) generate the subgroup."""
 
   res = SpinorGeneraCtx()
 
@@ -264,10 +264,10 @@ function spinor_norm(L, p)
     # drei oder mehr Veränderlichen":
     J, G, E = jordan_decomposition(L, p)
     if any(g -> ncols(g) >= 2, G)
-      @vprint(:GenRep, 1,"""Spinor norm over $(minimum(p))
-  This lattice has a 2-dimensional Jordan constituent, and p is odd. Spinor norm
-  is either F^* or O_F^*(F^*)^2, i.e. we will find a vector space of dimension
-  $(gens(V)) or $(ngens(V) - 1).\n""")
+      @vprintln :GenRep 1 """Spinor norm over $(minimum(p))
+      This lattice has a 2-dimensional Jordan constituent, and p is odd. Spinor norm
+      is either F^* or O_F^*(F^*)^2, i.e. we will find a vector space of dimension
+      $(gens(V)) or $(ngens(V) - 1)."""
       # Which of the two is the case?
       # TODO: It is not a good idea to rely on implementation details of
       #       local_multiplicative_group_modulo_squares
@@ -296,7 +296,7 @@ function spinor_norm(L, p)
 
      twonormvectors = [g\(x) for x in twonormgens]
 
-     @vprint :GenRep "Spinor norm odd p, norm generators of the $(length(G)) Jordan components are: $(normgens), $(twonormgens) $(twonormvectors)"
+     @vprintln :GenRep "Spinor norm odd p, norm generators of the $(length(G)) Jordan components are: $(normgens), $(twonormgens) $(twonormvectors)"
     # cf. Kneser 1956, Satz 3:
     _SN, mS = sub(V, twonormvectors)
     #@assert length(rels(_SN)) == 0 # free
@@ -305,10 +305,10 @@ function spinor_norm(L, p)
     bong = good_bong(L, p)
     @hassert :GenRep 1 is_good_bong(bong, p)
     if !has_propertyA(L, p)
-      @vprint(:GenRep, 1,"""Spinor norm over dyadic prime:
-  This lattice does not have property A. Spinor norm is either F^* or
-  O_F^*(F^*)^2, i.e. we will find a vector space of dimension $(ngens(V)) or
-  $(ngens(V) - 1)\n""")
+      @vprintln :GenRep 1 """Spinor norm over dyadic prime:
+      This lattice does not have property A. Spinor norm is either F^* or
+      O_F^*(F^*)^2, i.e. we will find a vector space of dimension $(ngens(V)) or
+      $(ngens(V) - 1)"""
       # Using section 7, Thm. 3 in Beli 2002, one can decide which of the two
       # cases applies. This is why we needed to compute a *good* BONG:
       for i in 1:(length(bong) - 1)
@@ -527,16 +527,16 @@ function has_propertyA(L, p)
   nL = [valuation(aL[i], p) for i in 1:length(aL)]
   r = maximum(rL)
   if r > 2
-    @vprint(:GenRep,1,"""Property A is violated over dyadic prime:
-  There is a $(r)-dimensional Jordan component\n""")
+    @vprintln :GenRep 1 """Property A is violated over dyadic prime:
+    There is a $(r)-dimensional Jordan component"""
   end
 
   # genus: rL, sL, wL, aL note that aL only contains valuations
   for i in 1:length(sL)
     for j in (i + 1):length(sL)
       if !((0 < nL[j] - nL[i]) && (nL[j] - nL[i] < 2*(sL[j] - sL[i])))
-        @vprint(:GenRep, 1, """Property A is violated over dyadic prime:
-  Violated at $(i) $(j) (norm/scale valuations do not fit)\n""")
+        @vprintln :GenRep 1 """Property A is violated over dyadic prime:
+        Violated at $(i) $(j) (norm/scale valuations do not fit)"""
         return false
       end
     end
@@ -804,10 +804,10 @@ function _compute_ray_class_group(L)
     # we only need to carry around those finite places where the Spinor norm is
     # not exactly the units:
     if !exactlytheunits
-      @vprint :GenRep 2 """Found a prime over $(minimum(p)) where the spinor
-                           norm is not exactly the units of the order.
-                             dim(spinors)=$(length(spinors)),
-                             dim(LocalMultGrpModSq)=$(ngens(V))"""
+      @vprintln :GenRep 2 """Found a prime over $(minimum(p)) where the spinor
+                             norm is not exactly the units of the order.
+                               dim(spinors)=$(length(spinors)),
+                               dim(LocalMultGrpModSq)=$(ngens(V))"""
       push!(rayprimes, p)
       # A basis of the spinor norm of L at p, when viewed (modulo squares) as an F_2-vector space
       b = spinors

@@ -270,7 +270,7 @@ function factor_new(f::PolyElem{nf_elem})
   br = 0
   s = Set{Int}()
   while true
-    @vprint :PolyFactor 3 "Trying with $p\n "
+    @vprintln :PolyFactor 3 "Trying with $p"
     p = next_prime(p)
     if !is_prime_nice(zk, p)
       continue

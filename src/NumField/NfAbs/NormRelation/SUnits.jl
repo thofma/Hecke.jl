@@ -5,15 +5,15 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
   K = N.K
   for i = 1:length(N)
     k, mk = subfield(N, i)
-    @vprint :NormRelation 1 "Computing maximal order ..."
+    @vprintln :NormRelation 1 "Computing maximal order ..."
     zk = maximal_order(k)
-    @vprint :NormRelation 1 "Computing lll basis ... "
+    @vprintln :NormRelation 1 "Computing lll basis ... "
     zk = lll(zk)
-    @vprint :NormRelation 1 "Computing class group of $k... "
+    @vprintln :NormRelation 1 "Computing class group of $k... "
     class_group(zk)
-    @vprint :NormRelation 1 "done"
+    @vprintln :NormRelation 1 "done"
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
-    @vprint :NormRelation 1 "Now computing the S-unit group for lp of length $(length(lpk))"
+    @vprintln :NormRelation 1 "Now computing the S-unit group for lp of length $(length(lpk))"
     @assert length(lpk) > 0
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
 
@@ -32,10 +32,10 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
 
     cc = Vector{Tuple{Int, ZZRingElem}}[]
     for j in 1:length(N.coefficients_gen[i])
-      @vprint :NormRelation 1 "Inducing the action ... "
+      @vprintln :NormRelation 1 "Inducing the action ... "
       z = induce_action(N, i, j, lpk, c.FB, cc)
 
-      @vprint :NormRelation 1 "Feeding in the S-units of the small field ... "
+      @vprintln :NormRelation 1 "Feeding in the S-units of the small field ... "
 
 
       for l=1:ngens(Szk)

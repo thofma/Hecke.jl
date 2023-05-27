@@ -1,8 +1,8 @@
 module MPolyFact
 
 using Hecke
-import Hecke: Nemo, @vprint, @hassert, @vtime, rational_reconstruction, set_precision!,
-              set_precision, find_morphism
+using Hecke: Nemo, find_morphism, rational_reconstruction
+import Hecke: set_precision!, set_precision
 
 import Nemo: shift_left, shift_right
 import Base: *

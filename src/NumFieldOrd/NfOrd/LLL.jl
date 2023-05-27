@@ -613,7 +613,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   while steps == -1 || att < steps
     att += 1
     if att > 3
-      @vprint :LLL "Having a hard time computing a LLL basis"
+      @vprintln :LLL "Having a hard time computing a LLL basis"
     end
     @vprintln :LLL 3 "Attempt number : $(att)"
     while true

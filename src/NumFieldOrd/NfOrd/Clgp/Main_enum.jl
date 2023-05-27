@@ -106,7 +106,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
     @v_do :ClassGroup_gc 1 gc()
     #want 10% more relations than ideals...
     if ncols(clg.M) *1.1 < nrows(clg.M)
-      @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
+      @vprintln :ClassGroup 1 "rel mat probably full rank, leaving phase 1";
       while length(I) < length(clg.FB.ideals)
         push!(I, class_group_small_real_elements_relation_start(clg, clg.FB.ideals[length(I)+1], limit = limit, prec = prec, val = val))
       end
@@ -313,7 +313,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 
   h, piv = class_group_get_pivot_info(clg)
 
-  @vprint :ClassGroup 1 "Target rank: $(length(clg.FB.ideals))\nCurrent rank: $(rank(clg.M))\nTentative class number: $(h)"
+  @vprintln :ClassGroup 1 "Target rank: $(length(clg.FB.ideals))\nCurrent rank: $(rank(clg.M))\nTentative class number: $(h)"
 
   want_extra = 5
   bad_h = false
@@ -406,9 +406,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       if h==1
         return h, piv
       end
-      @vprint :ClassGroup 1 "Now have $(clg.M)"
-      @v_do :ClassGroup 1 println("full rank: current h = ", h,
-                      " want ", want_extra, " more")
+      @vprintln :ClassGroup 1 "Now have $(clg.M)"
+      @vprintln :ClassGroup 1 "full rank: current h = $(h) want $(want_extra) more"
       if h == last_h
         want_extra -= 1
       else

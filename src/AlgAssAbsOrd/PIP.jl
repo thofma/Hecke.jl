@@ -53,7 +53,7 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
     fl, gen = _is_principal_maximal_simple_component(ainB, MinB, side)
     #@show "not simple for component", B
     if !fl
-      @vprint :PIP "Not maximal over component of dimension $(dim(B))"
+      @vprintln :PIP "Not maximal over component of dimension $(dim(B))"
       return false, zero(A)
     end
     push!(gens, mB(gen))
@@ -477,7 +477,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
   end
   @hassert :PIP 1 beta * OA == aOA
 
-  @vprint :PIP "Computing K1..."
+  @vprintln :PIP "Computing K1..."
   #@show F, FinZ
   k1 = K1_order_mod_conductor(O, OA, F, FinZ)
   OZ = maximal_order(Z)
@@ -523,7 +523,7 @@ function _isprincipal(a::AlgAssAbsOrdIdl, O, side = :right)
 
   ##@show mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) ==  mQuni\(mQ(OZ(normred_over_center(beta * elemA, ZtoA))))
 
-  @vprint :PIP "Lifting to norm one unit"
+  @vprintln :PIP "Lifting to norm one unit"
   V = lift_norm_one_unit( UU^(-1) * OA(elemA)  * OA(beta), F)
 
   gamma =  beta * inv(elem_in_algebra(UU) * V)
@@ -2187,7 +2187,7 @@ function _unit_reps(M, F)
   end::Dict{typeof(F), Vector{Vector{elem_type(algebra(M))}}}
 
   if haskey(D, F)
-    @vprint :PIP "Unit representatives cached for this conductor ideal"
+    @vprintln :PIP "Unit representatives cached for this conductor ideal"
     return D[F]
   else
     u = __unit_reps(M, F)
@@ -2214,15 +2214,15 @@ end
 
 function __unit_reps_simple(M, F)
   B = algebra(M)
-  @vprint :PIP _describe(B)
-  @vprint :PIP "Computing generators of the maximal order"
+  @vprintln :PIP _describe(B)
+  @vprintln :PIP "Computing generators of the maximal order"
   UB = _unit_group_generators_maximal_simple(M)
   Q, MtoQ = quo(M, F)
   for u in UB
     @assert u in M && inv(u) in M
     #@show u in FinB
   end
-  @vprint :PIP "Number of generators: $(length(UB))"
+  @vprintln :PIP "Number of generators: $(length(UB))"
   UB_reduced = unique!([MtoQ(M(u)) for u in UB])
   #@show UB_reduced
   #@show norm(F)
@@ -2275,12 +2275,12 @@ function __unit_reps_simple(M, F)
     #                end
     #               )
     # #@time cl2 = closure(___units_, (x, y) -> (x[1] * y[1], x[2] * y[2]), eq = (x, y) -> x[2] == y[2])
-    @vprint :PIP "Number of units: $(length(cl))"
+    @vprintln :PIP "Number of units: $(length(cl))"
     #@show length(cl2)
     #@assert first.(cl) == first.(cl2)
     #push!(_debug, cl)
     to_return = Vector{elem_type(B)}(undef, length(cl))
-    @vprint :PIP "Mapping back"
+    @vprintln :PIP "Mapping back"
     Threads.@threads for i in 1:length(cl)
       to_return[i] = BtoC\(cl[i][1])
     end
@@ -2289,7 +2289,7 @@ function __unit_reps_simple(M, F)
     return to_return
   else
     __units = collect(zip(UB, UB_reduced))
-    @vprint :PIP "Closing in the other case"
+    @vprintln :PIP "Closing in the other case"
     cl = closure(__units, (x, y) -> (x[1] * y[1], x[2] * y[2]), eq = (x, y) -> x[2] == y[2])
     return first.(cl)
   end

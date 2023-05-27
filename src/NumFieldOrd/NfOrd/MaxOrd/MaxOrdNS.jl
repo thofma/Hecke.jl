@@ -42,7 +42,7 @@ function _maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFie
     end
     @vtime :NfOrd fac = factor(s)
     for (p, j) in fac
-      @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
+      @vprintln :NfOrd 1 "Computing p-maximal overorder for $p ..."
       O1 = pmaximal_overorder(O, p)
       if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
         OO += O1
