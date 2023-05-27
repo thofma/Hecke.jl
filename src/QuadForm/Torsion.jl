@@ -4,7 +4,7 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
        is_anti_isometric_with_anti_isometry, has_complement, radical_bilinear,
        radical_quadratic, is_semi_regular, trivial_morphism, abelian_group_homomorphism,
        value_module, value_module_quadratic_form, gram_matrix_bilinear,
-       gram_matrix_quadratic, quadratic_product
+       gram_matrix_quadratic, quadratic_product, is_totally_isotropic
 
 ################################################################################
 #
@@ -2159,3 +2159,27 @@ underlying abelian group is in Smith normal form.
 """
 is_snf(T::TorQuadModule) = is_snf(abelian_group(T))
 
+################################################################################
+#
+#  Isotropic check
+#
+################################################################################
+
+@doc raw"""
+    is_totally_isotorpic(T::TorQuadModule)
+
+Return whether the quadratic form on the torsion quadratic module `T` vanishes.
+"""
+function is_totally_isotropic(T::TorQuadModule)
+  for a in gens(T)
+    if !is_zero(quadratic_product(a))
+      return false
+    end
+    for b in gens(T)
+      if !is_zero(a * b)
+        return false
+      end
+    end
+  end
+  return true
+end

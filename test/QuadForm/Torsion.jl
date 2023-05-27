@@ -419,4 +419,11 @@ end
   Zx, x = ZZ["x"]
   @test matrix((x-1)(f)) == matrix(f) - 1
   @test x(abelian_group_homomorphism(f)).map == matrix(f) #trivia for test coverage
+
+  V = quadratic_space(QQ, QQ[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2])
+  L = lattice(V, 2*identity_matrix(ZZ, 4))
+  T = discriminant_group(L)
+  S, = sub(T, [T([1, 0, 0, 0]), T([0, 1, 0, 0]), T([0, 0, 1, 0]), T([0, 0, 0, 1])])
+  @test @inferred is_totally_isotropic(S)
+  @test @inferred !is_totally_isotropic(T)
 end
