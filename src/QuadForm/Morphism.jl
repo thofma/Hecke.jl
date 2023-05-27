@@ -173,7 +173,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
 
   @assert bound > 0
 
-  @vprint :Lattice 1 "Computing short vectors of length $bound\n"
+  @vprintln :Lattice 1 "Computing short vectors of length $bound"
 
   @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound)
 
@@ -221,7 +221,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   @vprint :Lattice 1 "Computing fingerprint: "
   if auto
     @vtime :Lattice 1 fingerprint(C)
-    @vprint :Lattice 1 "$(C.fp_diagonal)\n"
+    @vprintln :Lattice 1 "$(C.fp_diagonal)"
   end
 
   if auto
@@ -307,7 +307,7 @@ end
 # The return value is flag, Csmall
 function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true)
   # Compute the necessary short vectors
-  @vprint :Lattice 1 "Computing short vectors of length $max\n"
+  @vprintln :Lattice 1 "Computing short vectors of length $max"
   automorphism_mode = bound == ZZRingElem(-1)
 
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -411,7 +411,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   if automorphism_mode
     @vprint :Lattice 1 "Computing fingerprint: "
     @vtime :Lattice 1 fingerprint(Csmall)
-    @vprint :Lattice 1 "$(Csmall.fp_diagonal)\n"
+    @vprintln :Lattice 1 "$(Csmall.fp_diagonal)"
   end
 
   if automorphism_mode
@@ -546,7 +546,7 @@ function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, ma
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
 
-  @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
+  @vprintln :Lattice 1 "Computing short vectors of actual length $max"
   V = _short_vectors_gram_integral(Vector, C.G[1], max)
   return V
 end
@@ -557,7 +557,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::ZZRingElem = ZZRingElem(-1))
   if max == -1
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
-  @vprint :Lattice 1 "Computing short vectors of actual length $max\n"
+  @vprintln :Lattice 1 "Computing short vectors of actual length $max"
   V = _short_vectors_gram_integral(Vector, C.G[1], max)
   n = ncols(C.G[1])
   C.V = Vector{ZZMatrix}(undef, length(V))
@@ -928,7 +928,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
 
   sta = 1
   for step in sta:dim
-    @vprint :Lattice 1 "Entering step $step\n"
+    @vprintln :Lattice 1 "Entering step $step"
     nH = 0
     for i in step:dim
       nH += C.ng[i]
@@ -968,7 +968,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     nC = length(candidates[step])
     #@show step, nC
     while nC > 0 && ((im = candidates[step][1]) != 0)
-      @vprint :Lattice 1 "Step $(step), number of candidates left $(nC)\n"
+      @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
       #@show im
       found = 0
       # try C.V[im] as the image of the step-th basis vector
@@ -1721,9 +1721,9 @@ end
 function iso(step, x, C, Ci, Co, G)
   d = dim(Ci)
   found = false
-  @vprint :Lattice "Testing $(length(C[step])) many candidates\n"
+  @vprintln :Lattice "Testing $(length(C[step])) many candidates"
   while !isempty(C[step]) && C[step][1] != 0 && !found
-    @vprint :Lattice "Doing step $step\n"
+    @vprintln :Lattice "Doing step $step"
     if step < d
       # choose the image of the base vector nr. step
       x[step] = C[step][1]

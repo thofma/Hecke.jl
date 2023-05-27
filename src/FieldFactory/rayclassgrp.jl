@@ -179,7 +179,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   end
 
 
-  @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
+  @vprintln :RayFacElem 1 "Collecting elements to be evaluated; first, units"
   tobeeval = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nU+ngens(C))
   for i = 1:nU
     tobeeval[i] = ctx.units[i]
@@ -239,7 +239,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 
     # Discrete logarithm
     function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
-      @vprint :RayFacElem 1 "Disc log of element $J \n"
+      @vprintln :RayFacElem 1 "Disc log of element $J"
       a1 = id(X)
       for (f, k) in J
         a1 += k*disclog(f)
@@ -250,7 +250,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     function disclog(J::NfOrdIdl)
       @hassert :RayFacElem 1 is_coprime(J, m)
       if isone(J)
-        @vprint :RayFacElem 1 "J is one \n"
+        @vprintln :RayFacElem 1 "J is one"
         return id(X)
       end
       coeffs = zero_matrix(FlintZZ, 1, ngens(X))
@@ -261,12 +261,12 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         for i = 1:ngens(C)
           coeffs[1, i] = L[i]
         end
-        @vprint :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff) \n"
+        @vprintln :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff)"
         eL = exp_class(L)
         inv!(eL)
         add_to_key!(eL.fac, J, 1)
         pow!(eL, diffC)
-        @vprint :RayFacElem 1 "This ideal is principal: $eL \n"
+        @vprintln :RayFacElem 1 "This ideal is principal: $eL"
         z = principal_generator_fac_elem(eL)
       end
       ii = 1

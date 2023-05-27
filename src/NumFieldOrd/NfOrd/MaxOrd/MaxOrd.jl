@@ -128,7 +128,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
     if !(p in OO.primesofmaximality)
       push!(OO.primesofmaximality, p)
     end
-    @vprint :NfOrd 1 "done\n"
+    @vprintln :NfOrd 1 "done"
   end
   @assert isdefined(OO, :disc)
   return OO
@@ -166,7 +166,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRing
     @vtime :NfOrd 1 l = divisors(M, ds)
   end
 
-  @vprint :NfOrd 1 "Computing some factors of the discriminant\n"
+  @vprintln :NfOrd 1 "Computing some factors of the discriminant"
 
 
   #No, factors of the discriminant appearing in the
@@ -262,7 +262,7 @@ function _TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem})
   M = coprime_base(lp)
   Q = ZZRingElem[]
   while !isempty(M)
-    @vprint :NfOrd 1 "List of factors: $M\n"
+    @vprintln :NfOrd 1 "List of factors: $M"
     q = pop!(M)
     if is_coprime(q, discriminant(OO))
       continue
@@ -395,9 +395,9 @@ function _cycleBL(O::NfOrd, q::ZZRingElem)
   elseif I == ideal(O, q)
     return O, ZZRingElem(1)
   end
-  @vprint :NfOrd 1 "ring of multipliers\n"
+  @vprintln :NfOrd 1 "ring of multipliers"
   O1 = ring_of_multipliers(I)
-  @vprint :NfOrd 1 "ring of multipliers computed\n"
+  @vprintln :NfOrd 1 "ring of multipliers computed"
   while discriminant(O1) != discriminant(O)
     if isone(gcd(discriminant(O1), q))
       return O1, ZZRingElem(1)
@@ -409,10 +409,10 @@ function _cycleBL(O::NfOrd, q::ZZRingElem)
     elseif isdefined(I, :princ_gens) && q == I.princ_gens
       return O, ZZRingElem(1)
     end
-    @vprint :NfOrd 1 "ring of multipliers\n"
+    @vprintln :NfOrd 1 "ring of multipliers"
     O1 = ring_of_multipliers(I)
   end
-  @vprint :NfOrd 1 "The ring of multipliers was the ring itself\n"
+  @vprintln :NfOrd 1 "The ring of multipliers was the ring itself"
   # (I:I)=OO. Now, we want to prove tameness (or get a factor of q)
   # We have to test that (OO:a)/B is a free Z/qZ module.
   #TODO: Check, I am doing something stupid here
@@ -427,7 +427,7 @@ function _cycleBL(O::NfOrd, q::ZZRingElem)
       return O, q1
     end
   end
-  @vprint :NfOrd 1 "(OO:I)/OO is free\n"
+  @vprintln :NfOrd 1 "(OO:I)/OO is free"
   res = _cycleBL2(O, q, I)
   return res
 
@@ -488,7 +488,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem}=ZZRingElem[])
       l[i]=b
     end
     if is_prime(l[i])
-      @vprint :NfOrd 1 "pmaximal order at $(l[i])\n"
+      @vprintln :NfOrd 1 "pmaximal order at $(l[i])"
       OO1=pmaximal_overorder(O, l[i])
       if valuation(discriminant(OO1), l[i])<valuation(discriminant(OO), l[i])
         OO+=OO1
@@ -589,7 +589,7 @@ This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
 the index $[ \mathcal O_K : R]$ is not divisible by $p$.
 """
 function pmaximal_overorder(O::NfAbsOrd, p::ZZRingElem)
-  @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
+  @vprintln :NfOrd 1 "computing p-maximal overorder for $p ..."
   if p in O.primesofmaximality
     return O
   end
@@ -598,7 +598,7 @@ function pmaximal_overorder(O::NfAbsOrd, p::ZZRingElem)
     push!(O.primesofmaximality, p)
     return O
   end
-  @vprint :NfOrd 1 "extending the order at $p for the first time ... \n"
+  @vprintln :NfOrd 1 "extending the order at $p for the first time ..."
   i = 1
   OO = poverorder(O, p)
   dd = discriminant(OO)
@@ -607,7 +607,7 @@ function pmaximal_overorder(O::NfAbsOrd, p::ZZRingElem)
       break
     end
     i += 1
-    @vprint :NfOrd 1 "extending the order at $p for the $(i)th time ... \n"
+    @vprintln :NfOrd 1 "extending the order at $p for the $(i)th time ..."
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
@@ -707,7 +707,7 @@ end
 Given a polynomial $f$ over a finite field, it returns an array having one
 entry for every irreducible factor giving its degree and its multiplicity.
 """
-function factor_shape_refined(x::PolyRingElem) 
+function factor_shape_refined(x::PolyRingElem)
   res = Tuple{Int, Int}[]
   square_fac = factor_squarefree(x)
   for (f, i) in square_fac

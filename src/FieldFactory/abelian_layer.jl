@@ -61,8 +61,8 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
   end
   if gtype == Int[2,2]
     l = Hecke._C22_exts_abexts(Int(bound), only_real, unramified_outside = unramified_outside)
-    @vprint :Fields 1 "Computing maximal orders\n"
-    @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
+    @vprintln :Fields 1 "Computing maximal orders"
+    @vprintln :FieldsNonFancy 1 "Computing maximal orders"
     lf = Hecke._C22_with_max_ord(l)
     res1 = Vector{FieldsTower}(undef, length(lf))
     for i = 1:length(lf)
@@ -73,10 +73,10 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
   end
   l1 = _abelian_extensionsQQ(gtype, bound, only_real, unramified_outside = unramified_outside)
   list1 = Vector{FieldsTower}(undef, length(l1))
-  @vprint :Fields 1 "Computing maximal orders\n\n"
-  @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
+  @vprintln :Fields 1 "Computing maximal orders\n"
+  @vprintln :FieldsNonFancy 1 "Computing maximal orders"
   for i = 1:length(l1)
-    @vprint :Fields 1 "\e[1FComputing maximal order $(i) /$(length(l1)) \n"
+    @vprintln :Fields 1 "\e[1FComputing maximal order $(i) /$(length(l1))"
     x = l1[i]
     K, auts = _relative_to_absoluteQQ(x[1], x[2])
     if length(gtype) == 1
@@ -109,8 +109,8 @@ function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::
   l_conductors = Hecke.conductorsQQ(O, gtype, absolute_discriminant_bound; unramified_outside = unramified_outside)
   sort!(l_conductors, rev = true)
   len = length(l_conductors)
-  @vprint :Fields 1 "Number of conductors: $(len) \n\n"
-  @vprint :FieldsNonFancy 1 "Number of conductors: $(len) \n"
+  @vprintln :Fields 1 "Number of conductors: $(len) \n"
+  @vprintln :FieldsNonFancy 1 "Number of conductors: $(len)"
 
 
   complex = iseven(expo) && !only_real
@@ -120,7 +120,7 @@ function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::
   for (i, k) in enumerate(l_conductors)
     if iszero(mod(i, 1000))
       pt = len - i
-      @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol()) Conductors to test: $(pt)\n"
+      @vprintln :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol()) Conductors to test: $(pt)"
     end
     r, mr = Hecke.ray_class_groupQQ(O, k, complex, expo)
     if !has_quotient(r, gtype)
@@ -137,12 +137,12 @@ function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::
   end
   fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(class_fields))
   for i = 1:length(class_fields)
-    @vprint :Fields 1 "\e[1FComputing class field $(i) /$(length(class_fields)) \n"
+    @vprintln :Fields 1 "\e[1FComputing class field $(i) /$(length(class_fields))"
     C = class_fields[i]
     fields[i] = (number_field(C), Hecke.automorphism_groupQQ(C))
   end
-  @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of fields found: $(length(fields)) \n"
-  @vprint :FieldsNonFancy 1 "Number of fields found: $(length(fields)) \n"
+  @vprintln :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of fields found: $(length(fields))"
+  @vprintln :FieldsNonFancy 1 "Number of fields found: $(length(fields))"
   return fields
 
 end
@@ -200,17 +200,17 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   bound = div(absbound, abs(discriminant(O))^n)
-  @vprint :Fields 2 "\n"
+  @vprintln :Fields 2 ""
   @vtime :Fields 2 l_conductors = conductors_with_restrictions(F, gtype, IdG, bound, unramified_outside = unramified_outside)
-  @vprint :Fields 1 "   Number of conductors: $(length(l_conductors))\n"
-  @vprint :FieldsNonFancy 1 "Number of conductors: $(length(l_conductors))\n"
+  @vprintln :Fields 1 "   Number of conductors: $(length(l_conductors))"
+  @vprintln :FieldsNonFancy 1 "Number of conductors: $(length(l_conductors))"
   if length(l_conductors) == 0
-    @vprint :Fields 1 "\n"
+    @vprintln :Fields 1 ""
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
-  @vprint :Fields 2 "\n"
+  @vprintln :Fields 2 ""
   @vprint :Fields 1 "Computing class group of $(K.pol)"
-  @vprint :Fields 2 "\n"
+  @vprintln :Fields 2 ""
   @vtime :Fields 2 Cl, mCl = class_group(O, use_aut = true)
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   if mod(n, 2) == 0 && !only_real
@@ -218,12 +218,12 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
   end
   expo = lcm(gtype)
   if length(l_conductors) == 1 && isone(l_conductors[1][1]) && isempty(l_conductors[1][2]) && !divisible(order(Cl)* (2^length(inf_plc)), ZZRingElem(n))
-    @vprint :Fields 1 "\n"
+    @vprintln :Fields 1 ""
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   Hecke.allow_cache!(mCl)
   @vtime :Fields 3 rcg_ctx = Hecke.rayclassgrp_ctx(O, expo)
-  @vprint :Fields 1 "\n"
+  @vprintln :Fields 1 ""
   j = -1
   #first_group = true
   autos = F.generators_of_automorphisms
@@ -231,8 +231,8 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
   fun_sub = (x, y) -> quo(x, y, false)[2]
   for k in l_conductors
     j += 1
-    @vprint :Fields 1 "\e[1FConductors to test: $(length(l_conductors)-j) \n"
-    @vprint :Fields 3 "\n\n"
+    @vprintln :Fields 1 "\e[1FConductors to test: $(length(l_conductors)-j)"
+    @vprintln :Fields 3 "\n"
     @vtime :Fields 3 r, mr = Hecke.ray_class_group_quo(O, k[1], k[2], inf_plc, rcg_ctx)
     S, mS = snf(r)
     if !Hecke.has_quotient(S, gtype)
@@ -269,14 +269,14 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
         end
       end
     end
-    @vprint :Fields 3 "\n\n"
+    @vprintln :Fields 3 "\n"
   end
   if isempty(class_fields_with_act)
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions"
   candidates = check_abelian_extensions(class_fields_with_act, F, IdG)
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())\n"
+  @vprintln :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   t_candidates = findall(candidates)
   res_cfields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[t_candidates[i]][1] for i = 1:length(t_candidates)]
   return res_cfields
@@ -389,7 +389,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   if !use_brauer
     set_up_cycl_ext(K, expo, autos)
   end
-  @vprint :Fields 3 "Computing the fields directly\n"
+  @vprintln :Fields 3 "Computing the fields directly"
   for i in it
     C = class_fields[i]
     L = number_field(C, using_norm_relation = use_brauer)
@@ -468,7 +468,7 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Vector{NfToNfMor})
     end
     auts = automorphism_list(C, gens = autK, copy = false)
     @vprint :Fields 1 ": computing class group of cyclotomic extension of order $e"
-    @vprint :FieldsNonFancy 1 "computing class group of cyclotomic extension of order $e\n"
+    @vprintln :FieldsNonFancy 1 "computing class group of cyclotomic extension of order $e"
     Cl, mCl = class_group(maximal_order(C.Ka), use_aut = true)
     Hecke.allow_cache!(mCl)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"

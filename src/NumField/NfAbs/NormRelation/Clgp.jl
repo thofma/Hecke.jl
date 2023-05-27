@@ -8,11 +8,11 @@ function get_sunits_from_subfield_data!(c::Hecke.ClassGrpCtx, UZK::Hecke.UnitGrp
   end
 
 
-  @vprint :NormRelation 1 "Doing something in the subfields\n"
+  @vprintln :NormRelation 1 "Doing something in the subfields"
   if !docompact
     _add_sunits_from_brauer_relation!(c, UZK, N)
   else
-    @vprint :NormRelation 1 "Using the compact presentation\n"
+    @vprintln :NormRelation 1 "Using the compact presentation"
     _add_sunits_from_brauer_relation!(c, UZK, N, compact = onlyp)
   end
 end
@@ -22,7 +22,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
   OK = lll(maximal_order(nf(O)))
 
   bound = Hecke.factor_base_bound_grh(OK)
-  @vprint :NormRelation 1 "Factor base bound: $bound\n"
+  @vprintln :NormRelation 1 "Factor base bound: $bound"
   S = prime_ideals_up_to(OK, bound)
   #First, we try with a smaller factor base.
 
@@ -45,15 +45,15 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
     end
     i += 1
   end
-  @vprint :NormRelation 1 "Length of the first factor base: $(length(Sfirst))\n"
+  @vprintln :NormRelation 1 "Length of the first factor base: $(length(Sfirst))"
   c, UZK = _setup_for_norm_relation_fun(K, Sfirst)
   get_sunits_from_subfield_data!(c, UZK, N, compact = compact)
   for (p, e) in factor(index(N))
-    @vprint :NormRelation 1 "Saturating at $p \n"
+    @vprintln :NormRelation 1 "Saturating at $p"
     b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = degree(K) < 30)
     while b
       idx = Hecke._validate_class_unit_group(c, UZK)[1]
-      @vprint :NormRelation 1 "Index bound from analysis $idx\n"
+      @vprintln :NormRelation 1 "Index bound from analysis $idx"
       b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = degree(K) < 30)
     end
   end
@@ -63,19 +63,19 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
     c = _setup_for_norm_relation_fun(K, S)[1]
     get_sunits_from_subfield_data!(c, UZK, N, compact = compact)
     for (p, e) in factor(index(N))
-      @vprint :NormRelation 1 "Saturating at $p \n"
+      @vprintln :NormRelation 1 "Saturating at $p"
       b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = degree(K) < 30)
       while b
         idx = Hecke._validate_class_unit_group(c, UZK)[1]
-        @vprint :NormRelation 1 "Index bound from analysis $idx\n"
+        @vprintln :NormRelation 1 "Index bound from analysis $idx"
         b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = degree(K) < 30)
       end
     end
     idx = Hecke._validate_class_unit_group(c, UZK)[1]
   end
-  @vprint :NormRelation 1 "Index is $idx (should be 1)!\n"
+  @vprintln :NormRelation 1 "Index is $idx (should be 1)!"
   @assert idx == 1
-  @vprint :NormRelation 1 "\n"
+  @vprintln :NormRelation 1 ""
   c.finished = true
   set_attribute!(OK, :ClassGrpCtx => c)
   set_attribute!(OK, :UnitGrpCtx => UZK)

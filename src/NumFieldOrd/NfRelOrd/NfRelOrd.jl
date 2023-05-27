@@ -714,12 +714,12 @@ at the prime $p$.
 =#
 function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   if is_equation_order(O) && is_simple(O)
-    @vprint :NfRelOrd 3 "Applying Dedekind criterion\n"
+    @vprintln :NfRelOrd 3 "Applying Dedekind criterion"
     return dedekind_poverorder(O, p)
   else
-    @vprint :NfRelOrd 3 "Computing pradical\n"
+    @vprintln :NfRelOrd 3 "Computing pradical"
     @vtime :NfRelOrd 4 Ip = pradical(O, p)
-    @vprint :NfRelOrd 3 "Computing ring of multipliers\n"
+    @vprintln :NfRelOrd 3 "Computing ring of multipliers"
     @vtime :NfRelOrd 4 Op = ring_of_multipliers(Ip)
     return Op
   end
@@ -729,9 +729,9 @@ function poverorder(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S
   if is_equation_order(O)
     return overorder_polygons(O, p)
   end
-  @vprint :NfRelOrd 3 "Computing pradical\n"
+  @vprintln :NfRelOrd 3 "Computing pradical"
   @vtime :NfRelOrd 4 Ip = pradical(O, p)
-  @vprint :NfRelOrd 3 "Computing ring of multipliers\n"
+  @vprintln :NfRelOrd 3 "Computing ring of multipliers"
   @vtime :NfRelOrd 4 Op = ring_of_multipliers(Ip)
   return Op
 end
@@ -1089,7 +1089,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
   count = 0
   for e = elt
     count += 1
-    @vprint :NfRelOrd 1 "Element $count / $lelt \n"
+    @vprintln :NfRelOrd 1 "Element $count / $lelt"
     if e in O
       continue
     end
@@ -1246,22 +1246,22 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
   d = discriminant(O)
   facts = prefactorization_discriminant(K, d)
   sort!(facts, by = x -> absolute_minimum(x), rev = true)
-  @vprint :NfRelOrd 1 "Factors of the discriminant lying over $([minimum(x) for x in facts]) \n"
+  @vprintln :NfRelOrd 1 "Factors of the discriminant lying over $([minimum(x) for x in facts])"
   E = EquationOrder(K)
   OO = O
   while !isempty(facts)
     p = pop!(facts)
     pm = absolute_minimum(p)
     if is_prime_power(pm)
-      @vprint :NfRelOrd 1 "Factoring ideal over $(pm)\n"
+      @vprintln :NfRelOrd 1 "Factoring ideal over $(pm)"
       @vtime :NfRelOrd 1 lf = factor(p)
       for q in keys(lf)
-        @vprint :NfRelOrd 1 "Computing pmaximal order for $(q)\n"
+        @vprintln :NfRelOrd 1 "Computing pmaximal order for $(q)"
         @vtime :NfRelOrd 1 Oq = pmaximal_overorder(O, q)
         @vtime :NfRelOrd 1 OO = sum_as_OK_modules(OO, Oq)
       end
     else
-      @vprint :NfRelOrd 1 "Dedekind test for ideal lying over $(pm)\n"
+      @vprintln :NfRelOrd 1 "Dedekind test for ideal lying over $(pm)"
       @vtime :NfRelOrd 1 fail, E1 = Hecke.dedekind_test_composite(E, p)
       if !isone(fail)
         J = ideal(OL, OL(fail))
@@ -1278,10 +1278,10 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
       end
       g = gcd(discriminant(OO), p)
       if !isone(g)
-        @vprint :NfRelOrd 1 "Factoring ideal over $(absolute_minimum(g))\n"
+        @vprintln :NfRelOrd 1 "Factoring ideal over $(absolute_minimum(g))"
         @vtime :NfRelOrd 1 lf = factor(g)
         for q in keys(lf)
-          @vprint :NfRelOrd 1 "Computing pmaximal order for $(q)\n"
+          @vprintln :NfRelOrd 1 "Computing pmaximal order for $(q)"
           @vtime :NfRelOrd 1 Oq = pmaximal_overorder(O, q)
           @vtime :NfRelOrd 1 OO = sum_as_OK_modules(OO, Oq)
         end

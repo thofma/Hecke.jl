@@ -180,7 +180,7 @@ end
 function _easy_merge(list1, list2, absolute_bound::ZZRingElem)
 
   res = FieldsTower[]
-  @vprint :Fields 1 "Number of candidates = $(length(list1)*length(list2)) \n"
+  @vprintln :Fields 1 "Number of candidates = $(length(list1)*length(list2))"
   ind = 0
   for x in list1
     ind += 1
@@ -392,7 +392,7 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
   D = Dict{Tuple{Set{ZZRingElem}, Set{ZZRingElem}, Bool}, Vector{Tuple{Int, Int}}}() #The boolean true means real
   for i1 = 1:length(list1)
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Combinations with field $(i1)/$(length(list1)) of the first list"
-    @vprint :FieldsNonFancy 1 "Fields $(i1)/$(length(list1))\n"
+    @vprintln :FieldsNonFancy 1 "Fields $(i1)/$(length(list1))"
     K = list1[i1]
     DK = Dict{Tuple{Set{ZZRingElem}, Set{ZZRingElem}}, Vector{Int}}()
     rK = ramified_primes(K)
@@ -632,8 +632,8 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   mas2 = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(G2))
   if gcd(prod(mas1), prod(mas2)) == 1
     #All the fields are automatically linearly disjoint
-    @vprint :Fields 1 "All the fields are linearly disjoint, easy case \n"
-    @vprint :FieldsNonFancy 1 "All the fields are linearly disjoint, easy case \n"
+    @vprintln :Fields 1 "All the fields are linearly disjoint, easy case"
+    @vprintln :FieldsNonFancy 1 "All the fields are linearly disjoint, easy case"
     return _easy_merge(list1, list2, absolute_bound)
   end
 
@@ -642,12 +642,12 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
   #I check that the maximal abelian subextensions are linearly disjoint.
   #Working with polynomials may be more expensive.
   #Since I am working with abelian extensions, I can compute the norm groups and see there if the norm groups are correct.
-  @vprint :Fields 1 "Merging fields\n"
-  @vprint :Fields 1 "Number of fields: $(length(list1)*length(list2))\n"
-  @vprint :FieldsNonFancy 1 "Merging fields\n"
-  @vprint :FieldsNonFancy 1 "Number of fields: $(length(list1)*length(list2))\n"
-  @vprint :Fields 1 "Redundancy: $(red), $(redfirst), $(redsecond)\n"
-  @vprint :FieldsNonFancy 1 "Redundancy: $(red), $(redfirst), $(div(red, redfirst))\n"
+  @vprintln :Fields 1 "Merging fields"
+  @vprintln :Fields 1 "Number of fields: $(length(list1)*length(list2))"
+  @vprintln :FieldsNonFancy 1 "Merging fields"
+  @vprintln :FieldsNonFancy 1 "Number of fields: $(length(list1)*length(list2))"
+  @vprintln :Fields 1 "Redundancy: $(red), $(redfirst), $(redsecond)"
+  @vprintln :FieldsNonFancy 1 "Redundancy: $(red), $(redfirst), $(div(red, redfirst))"
 
   res = FieldsTower[]
   D1 = _first_sieve(list1, list2, absolute_bound, redfirst)
@@ -655,9 +655,9 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
     return res
   end
   clusters = Vector{Tuple{Int, Int}}[x for x in values(D1)]
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Candidates after first sieve: $(sum(length(x) for x in clusters))\n"
+  @vprintln :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Candidates after first sieve: $(sum(length(x) for x in clusters))"
 
-  @vprint :Fields 1 "Sieving by discriminant\n"
+  @vprintln :Fields 1 "Sieving by discriminant"
   #Now, I sieve by discriminant
   clusters1 = Vector{Vector{Tuple{Int, Int}}}()
   for v in clusters
@@ -668,11 +668,11 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
       end
     end
   end
-  @vprint :Fields 1 "Candidates: $(sum(length(x) for x in clusters1))\n"
-  @vprint :Fields 1 "Sieving by prime_splitting\n"
+  @vprintln :Fields 1 "Candidates: $(sum(length(x) for x in clusters1))"
+  @vprintln :Fields 1 "Sieving by prime_splitting"
   fields_to_be_computed = _sieve_by_prime_splitting(list1, list2, clusters1, red, redfirst, redsecond)
 
-  @vprint :Fields 1 "Computing maximal order of $(length(fields_to_be_computed)) fields\n"
+  @vprintln :Fields 1 "Computing maximal order of $(length(fields_to_be_computed)) fields"
   for i = 1:length(fields_to_be_computed)
     @vprint :Fields 1 "Doing $(i) / $(length(fields_to_be_computed))"
     pair = fields_to_be_computed[i]
@@ -682,8 +682,8 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
     end
     @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
-  @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields found: $(length(res))\n"
-  @vprint :FieldsNonFancy 1 "Fields found: $(length(res))\n"
+  @vprintln :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Fields found: $(length(res))"
+  @vprintln :FieldsNonFancy 1 "Fields found: $(length(res))"
   return res
 end
 
@@ -692,7 +692,7 @@ function _sieve_by_prime_splitting(list1, list2, clusters, red, redfirst, redsec
   d1 = degree(list1[1].field)
   d2 = degree(list2[1].field)
   total = length(clusters)
-  @vprint :Fields 1 "\n Number of clusters: $(total)\n"
+  @vprintln :Fields 1 "\n Number of clusters: $(total)"
   nclu = 0
   for v in clusters
     nclu += 1

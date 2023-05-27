@@ -108,9 +108,9 @@ function lll(L::NfLat, weights::ZZMatrix = zero_matrix(FlintZZ, 1, 1); starting_
   local v::ZZMatrix
   n = dim(L)
   starting_profile = sum(nbits(Hecke.upper_bound(ZZRingElem, t2(x))) for x in basis(L))
-  @vprint :LLL 1 "Starting profile: $(starting_profile) \n"
-  @vprint :LLL 1 "Target profile: $(nbits(discriminant(L)^2)+divexact(n*(n-1), 2)) \n"
-  @vprint :LLL 1 "Starting precision: $(prec) \n"
+  @vprintln :LLL 1 "Starting profile: $(starting_profile)"
+  @vprintln :LLL 1 "Target profile: $(nbits(discriminant(L)^2)+divexact(n*(n-1), 2))"
+  @vprintln :LLL 1 "Starting precision: $(prec)"
   while true
     if prec > 2^30
       error("Precision too large!")
@@ -121,20 +121,20 @@ function lll(L::NfLat, weights::ZZMatrix = zero_matrix(FlintZZ, 1, 1); starting_
     end
     Lnew = apply(L, v)
     new_profile = sum(nbits(Hecke.upper_bound(ZZRingElem, t2(x))) for x in basis(Lnew))
-    @vprint :LLL 1 "New profile: $(new_profile) \n"
+    @vprintln :LLL 1 "New profile: $(new_profile)"
     if new_profile < starting_profile
-      @vprint :LLL 1 "Using transformation!\n"
+      @vprintln :LLL 1 "Using transformation!"
       l2, v2 = lll(Lnew, weights, starting_prec = ceil(Int, prec*1.5))
       return l2, v2*v
     end
     prec *= 2
-    @vprint :LLL 1 "Increasing precision to $(prec) \n"
+    @vprintln :LLL 1 "Increasing precision to $(prec)"
   end
   return l1, v
 end
 
 function _lll(L::NfLat, weights::ZZMatrix, prec::Int)
-  @vprint :LLL 1 "Computing Minkowski Gram matrix with precision $(prec) \n"
+  @vprintln :LLL 1 "Computing Minkowski Gram matrix with precision $(prec)"
   local d::ZZMatrix
   local sv::ZZRingElem
   while true

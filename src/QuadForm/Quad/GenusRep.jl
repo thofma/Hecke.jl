@@ -30,7 +30,7 @@ function SpinorGeneraCtx(L::QuadLat)
 
   Q, mQ = quo(domain(mRCG), subgroupgens)
 
-  @vprint :GenRep 1 "Ray class group: size = $(order(RCG))\n"
+  @vprintln :GenRep 1 "Ray class group: size = $(order(RCG))"
   @vprint :GenRep 1 "Ray class group quotient: size = $(order(Q))
   (this is the number of spinor + genera in Genus(L))\n"
 
@@ -97,7 +97,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   end
 
   if !is_definite(L)
-    @vprint :GenRep 1 "Genus representatives of indefinite lattice\n"
+    @vprintln :GenRep 1 "Genus representatives of indefinite lattice"
     return spinor_genera_in_genus(L, [])
   end
 
@@ -108,14 +108,14 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   spinor_genera = spinor_genera_in_genus(L, typeof(p)[p])
 
   if use_mass
-    @vprint :GenRep 1 "Computing mass exactly ...\n"
+    @vprintln :GenRep 1 "Computing mass exactly ..."
     _mass = mass(L)
-    @vprint :GenRep 1 "... $(_mass)\n"
+    @vprintln :GenRep 1 "... $(_mass)"
   else
     _mass = -one(FlintQQ)
   end
 
-  @vprint :GenRep 1 "Found $(length(spinor_genera)) many spinor genera in genus\n"
+  @vprintln :GenRep 1 "Found $(length(spinor_genera)) many spinor genera in genus"
 
   for LL in spinor_genera
     @hassert :GenRep 3 all(!is_isometric_with_isometry(X, LL)[1] for X in res)
@@ -559,24 +559,24 @@ function G_function(a, V, g, p)
   d = relative_quadratic_defect(-a, p)
 
   if !is_in_A(a, p)
-    @vprint :GenRep 2 "G_function case F\n"
+    @vprintln :GenRep 2 "G_function case F"
     return N_function(-a, g, p)
   elseif valuation(-4 * a, p) == 0 && g\(K(-1//4)) == g\(a)
-    @vprint :GenRep 2 "G_function case G\n"
+    @vprintln :GenRep 2 "G_function case G"
     return sub(V, gens(V)[1:ngens(V) - 1])
   elseif valuation(-4 * a, p) == 0 && is_local_square(-4 * a, p)
-    @vprint :GenRep 2 "G_function case G\n"
+    @vprintln :GenRep 2 "G_function case G"
     return sub(V, gens(V)[1:ngens(V) - 1])
   elseif R > 4 * e
-    @vprint :GenRep 2 "G_function case H\n"
+    @vprintln :GenRep 2 "G_function case H"
     return sub(V, [g\(a)])
   elseif 2*e < R && R <= 4 * e
     if d <= 2 * e - R//2
-      @vprint :GenRep 2 "G_function case A\n"
+      @vprintln :GenRep 2 "G_function case A"
       O = _one_plus_power_of_p(R + d - 2*e, V, g, p)
       return _intersect(N_function(-a, g, p), _sum(O, sub(V, [g\(a)])))
     else
-      @vprint :GenRep 2 "G_function case B\n"
+      @vprintln :GenRep 2 "G_function case B"
       @assert R % 2 == 0
       W, mW = _one_plus_power_of_p(div(R, 2), V, g, p)
       #@assert length(rels(W)) == 0
@@ -584,15 +584,15 @@ function G_function(a, V, g, p)
     end
   elseif R <= 2 * e
     if d  <= e - R//2
-      @vprint :GenRep 2 "G_function case C\n"
+      @vprintln :GenRep 2 "G_function case C"
       return N_function(-a, g, p)
     elseif (e - R//2 < d) && (d <= 3 * e//2 - R//4)
       @assert R % 2 == 0
-      @vprint :GenRep 2 "G_function case D\n"
+      @vprintln :GenRep 2 "G_function case D"
       return _intersect(N_function(-a, g, p),
                         _one_plus_power_of_p(div(R, 2) + d - e, V, g, p))
     else
-      @vprint :GenRep 2 "G_function case E\n"
+      @vprintln :GenRep 2 "G_function case E"
       # Attention! Use the floor function wherever Beli writes stuff in square
       # brackets. This is due to his citing Hsia's papers, which have this
       # convention.
@@ -943,13 +943,13 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
       LO = Vector{eltype(k)}[x[1] for x in _LO]
-      @vprint :GenRep 2 "Checking $(length(LO)) representatives (instead of $(div(order(k)^n - 1, order(k) - 1)))\n"
+      @vprintln :GenRep 2 "Checking $(length(LO)) representatives (instead of $(div(order(k)^n - 1, order(k) - 1)))"
     else
-      @vprint :GenRep 2 "Enumerating lines over $k of length $n\n"
+      @vprintln :GenRep 2 "Enumerating lines over $k of length $n"
       LO = enumerate_lines(k, n)
     end
   else
-    @vprint :GenRep 2 "Enumerating lines over $k of length $n\n"
+    @vprintln :GenRep 2 "Enumerating lines over $k of length $n"
     LO = enumerate_lines(k, n)
   end
 
@@ -1086,7 +1086,7 @@ function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -
     if use_mass && !isempty(N)
       found = found + sum(QQFieldElem[1//automorphism_group_order(LL) for LL in N])
       perc = Printf.@sprintf("%2.1f", Float64(found//mass) * 100)
-      @vprint :GenRep 1 "#Lattices: $(length(result)), Target mass: $mass. Found so far: $found ($perc%)\n"
+      @vprintln :GenRep 1 "#Lattices: $(length(result)), Target mass: $mass. Found so far: $found ($perc%)"
     end
     append!(result, N)
     i = i + 1
@@ -1130,13 +1130,13 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   # test if each component is either unary or binary:
   k = findfirst(i -> !(ncols(gram_matrices[i]) in [1, 2]), 1:length(gram_matrices))
   if k !== nothing
-    @vprint :GenRep 2 "not maximal norm splitting: components are not all unary or binary\n";
+    @vprintln :GenRep 2 "not maximal norm splitting: components are not all unary or binary";
     return false, -k, []
   end
   # test if binary components are modular:
   for i in 1:length(gram_matrices)
     if ncols(gram_matrices[i]) != 1 && valuation(det(gram_matrices[i]), p) != 2*scales[i]
-      @vprint :GenRep 2 "not maximal norm splitting: at least one of the binary components is not modular\n"
+      @vprintln :GenRep 2 "not maximal norm splitting: at least one of the binary components is not modular"
       return false, -i, []
     end
   end
@@ -1154,7 +1154,7 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   for i in 1:length(scales)
     @assert NU[i] <= normsval[i]
     if NU[i] < normsval[i]
-      @vprint :GenRep 2 "not maximal norm splitting: norm condition at $i\n"
+      @vprintln :GenRep 2 "not maximal norm splitting: norm condition at $i"
       push!(fail, i)
     end
   end
@@ -1533,7 +1533,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   V = rational_span(L)
 
   # 1. Find the isometry with (F, Tr/2)
-  @vprint :GenRep 1 "Determining isometry with CM field ... \n"
+  @vprintln :GenRep 1 "Determining isometry with CM field ..."
   K = base_ring(V)
   d = discriminant(V)
   de = denominator(d)
@@ -1617,7 +1617,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   # O is the ring of multipliers/right oder of M
   # Now we compute CL_F/{ambiguous ideals of O_F with respect to F/K}
 
-  @vprint :GenRep 1 "Compute representatives modulo ambiguous ideal classes ... \n"
+  @vprintln :GenRep 1 "Compute representatives modulo ambiguous ideal classes ..."
   OFabs = maximal_order(O)
   amb_ideals = _ambigous_ideals_quotient_basis(OFabs, F, KtoFabs, FabstoF)
   @assert all(sigmaabs(I) == I for I in amb_ideals)
@@ -1654,7 +1654,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   c = conductor(O, OFabs) * OFabs
   _xps = Vector{elem_type(F)}[]
   _ps = ideal_type(OK)[]
-  @vprint :GenRep 1 "Computing local units ...\n"
+  @vprintln :GenRep 1 "Computing local units ..."
   for (p, _) in factor(minimum(image(FabstoF, c)))
     lQ = prime_decomposition(OF, p)
     lQ = [ (preimage(FabstoF, Q), e) for (Q, e) in lQ ]
@@ -1672,7 +1672,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   if length(_xps) > 0
     IT = Iterators.product(_xps...)
-    @vprint :GenRep 1 "There are $(length(IT)) potential kernel elements.\n"
+    @vprintln :GenRep 1 "There are $(length(IT)) potential kernel elements."
 
     for it in IT
       LL = _intersect_lattice_down(collect(it)::Vector{elem_type(F)}, _ps, OinF)
@@ -1702,7 +1702,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
     end
   end
 
-  @vprint :GenRep 1 "Now sieving the $(length(almost_res)) many candidates ...\n"
+  @vprintln :GenRep 1 "Now sieving the $(length(almost_res)) many candidates ..."
   # At the end we have to translate this relative ideals again and then back to
   # V. The things we want have the underscore _, but for assertion purposes we
   # do both.
@@ -1719,10 +1719,10 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   if use_mass
     _mass = mass(L)
-    @vprint :GenRep 1 "Using mass, which is $(_mass)\n"
+    @vprintln :GenRep 1 "Using mass, which is $(_mass)"
   else
     _mass = one(QQFieldElem)
-    @vprint :GenRep 1 "Not using mass\n"
+    @vprintln :GenRep 1 "Not using mass"
   end
 
   for N in almost_res
@@ -2029,7 +2029,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
   V = rational_span(L)
 
   # 1. Find the isometry with (K + K, Tr/2)
-  @vprint :GenRep 1 "Determining isometry with CM field ... \n"
+  @vprintln :GenRep 1 "Determining isometry with CM field ..."
   K = base_ring(V)
 
   mult_tb = Array{elem_type(K), 3}(undef, 2, 2, 2)

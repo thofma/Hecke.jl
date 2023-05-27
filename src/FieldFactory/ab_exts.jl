@@ -33,15 +33,15 @@ function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discrim
   n = prod(gtype)
 
   #Getting conductors
-  @vprint :AbExt 1 "Number of conductors: $(length(conds)) \n"
+  @vprintln :AbExt 1 "Number of conductors: $(length(conds))"
   fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
 
   #Now, the big loop
   fun = (x, y) -> quo(x, y, false)[2]
   for (i, k) in enumerate(conds)
-    @vprint :AbExt 1 "Conductor: $k \n"
+    @vprintln :AbExt 1 "Conductor: $k"
     if i % 10000 == 0
-      @vprint :AbExt 1 "Left: $(length(conds) - i)\n"
+      @vprintln :AbExt 1 "Left: $(length(conds) - i)"
     end
     r, mr = Hecke.ray_class_groupQQ(O, k, !only_real, gtype[end])
     if !has_quotient(r, gtype)
@@ -51,7 +51,7 @@ function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discrim
     for s in ls
       C = ray_class_field(mr, s)
       if Hecke._is_conductor_minQQ(C, n) && Hecke.discriminant_conductorQQ(O, C, k, absolute_discriminant_bound)
-        @vprint :AbExt 1 "New Field \n"
+        @vprintln :AbExt 1 "New Field"
         push!(fields, C)
       end
     end
@@ -70,13 +70,13 @@ function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_boun
 
   #Getting conductors
   l_conductors = conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
-  @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
+  @vprintln :AbExt 1 "Number of conductors: $(length(l_conductors))"
   fields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[]
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
-    @vprint :AbExt 1 "Conductor: $k \n"
-    @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
+    @vprintln :AbExt 1 "Conductor: $k"
+    @vprintln :AbExt 1 "Left: $(length(l_conductors) - i)"
     r, mr = Hecke.ray_class_groupQQ(O, k, !real, expo)
     if !has_quotient(r, gtype)
       continue
@@ -91,7 +91,7 @@ function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_boun
             continue
           end
         end
-        @vprint :AbExt 1 "New Field \n"
+        @vprintln :AbExt 1 "New Field"
         push!(fields, C)
       end
     end
@@ -153,13 +153,13 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
 
   #Getting conductors
   l_conductors = conductors(O, gtype, bound, tame)
-  @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
+  @vprintln :AbExt 1 "Number of conductors: $(length(l_conductors))"
 
   ctx = rayclassgrp_ctx(O, expo)
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
-    @vprint :AbExt 1 "Conductor: $k \n"
-    @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
+    @vprintln :AbExt 1 "Conductor: $k"
+    @vprintln :AbExt 1 "Left: $(length(l_conductors) - i)"
     r, mr = ray_class_group_quo(O, k[1], k[2], inf_plc, ctx)
     if !has_quotient(r, gtype)
       continue
@@ -182,11 +182,11 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
           G = generic_group(autabs, *)[1]
           id_G = find_small_group(G)
           if id_G == absolute_galois_group
-            @vprint :AbExt 1 "New Field \n"
+            @vprintln :AbExt 1 "New Field"
             push!(fields, C)
           end
         else
-          @vprint :AbExt 1 "New Field \n"
+          @vprintln :AbExt 1 "New Field"
           push!(fields, C)
         end
       end
@@ -288,7 +288,7 @@ function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
   if absolutely_distinct
     l_conductors = _sieve_conjugates(auts, l_conductors)
   end
-  @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
+  @vprintln :AbExt 1 "Number of conductors: $(length(l_conductors))"
 
   ctx = rayclassgrp_ctx(OK, expo)
   fsub = (x, y) -> quo(x, y, false)[2]
@@ -296,7 +296,7 @@ function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     if i % 10000 == 0
-      @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
+      @vprintln :AbExt 1 "Left: $(length(l_conductors) - i)"
     end
     r, mr = ray_class_group_quo(OK, k, inf_plc, ctx)
     if !has_quotient(r, gtype)
@@ -338,7 +338,7 @@ function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
         end
       end
       if cC[1] == mr.defining_modulus[1] && norm(discriminant(C)) <= bound
-        @vprint :AbExt 1 "New Field \n"
+        @vprintln :AbExt 1 "New Field"
         push!(new_fields, C)
       end
     end
@@ -830,7 +830,7 @@ function _from_relative_to_abs(L::NfRelNS{T}, auts::Vector{<: NumFieldMor{NfRelN
     autos[i] = hom(Ks, Ks, y, check = false)
   end
   set_automorphisms(Ks, closure(autos, degree(Ks)))
-  @vprint :AbExt 2 "Finished\n"
+  @vprintln :AbExt 2 "Finished"
   return Ks, autos
 end
 
@@ -874,7 +874,7 @@ function discriminant_conductor(C::ClassField, bound::ZZRingElem; lwp::Dict{Tupl
       qw = divexact(d, p.splitting_type[1])*ap
       mul!(discr, discr, ZZRingElem(p.minimum)^qw)
       if discr > bound
-        @vprint :AbExt 2 "too large\n"
+        @vprintln :AbExt 2 "too large"
         return false
       else
         if haskey(abs_disc, p.minimum)
@@ -905,7 +905,7 @@ function discriminant_conductor(C::ClassField, bound::ZZRingElem; lwp::Dict{Tupl
       qw = divexact(d, p.splitting_type[1])*ap
       mul!(discr, discr, ZZRingElem(p.minimum)^qw)
       if discr > bound
-        @vprint :AbExt 2 "too large\n"
+        @vprintln :AbExt 2 "too large"
         return false
       else
         if haskey(abs_disc, p.minimum)
@@ -956,7 +956,7 @@ function discriminant_conductor(C::ClassField, bound::ZZRingElem; lwp::Dict{Tupl
     np1 = np^ap
     mul!(discr, discr, np1)
     if discr > bound
-      @vprint :AbExt 2 "too large\n"
+      @vprintln :AbExt 2 "too large"
       return false
     else
       if haskey(abs_disc, p.minimum)
@@ -1003,7 +1003,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::ZZRing
       end
       discr*=p^ap
       if discr>bound
-        @vprint :AbExt 2 "too large\n"
+        @vprintln :AbExt 2 "too large"
         return false
       else
         abs_disc[p]=ap
@@ -1051,7 +1051,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::ZZRing
       end
       discr*=p^ap
       if discr>bound
-        @vprint :AbExt 2 "too large\n"
+        @vprintln :AbExt 2 "too large"
         return false
       else
         abs_disc[p]=ap

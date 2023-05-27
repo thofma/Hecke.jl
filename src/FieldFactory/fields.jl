@@ -439,7 +439,7 @@ function field_extensions(list::Vector{FieldsTower}, bound::ZZRingElem, IsoE1::G
   final_list = FieldsTower[]
   for (j, x) in enumerate(list)
     @vprint :Fields 1 "Field $(j)/$(length(list)): $(x.field.pol)"
-    @vprint :FieldsNonFancy 1 "Field $(j)/$(length(list)): $(x.field.pol)\n"
+    @vprintln :FieldsNonFancy 1 "Field $(j)/$(length(list)): $(x.field.pol)"
     append!(final_list, field_extensions(x, bound, IsoCheck, l, only_real, grp_to_be_checked, IsoE1, unramified_outside = unramified_outside))
   end
   return final_list
@@ -450,13 +450,13 @@ function field_extensions(x::FieldsTower, bound::ZZRingElem, IsoE1::GAP.GapObj, 
 
   list_cfields = _abelian_normal_extensions(x, l, bound, IsoE1, only_real, IsoG, unramified_outside = unramified_outside)
   if isempty(list_cfields)
-    @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of new fields found: 0\n\n"
-    @vprint :FieldsNonFancy 1 "Number of new fields found: 0\n\n"
+    @vprintln :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Number of new fields found: 0\n"
+    @vprintln :FieldsNonFancy 1 "Number of new fields found: 0\n"
     return Vector{FieldsTower}()
   end
   list = from_class_fields_to_fields(list_cfields, x.generators_of_automorphisms, grp_to_be_checked, IsoG)
   @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())Computing maximal orders"
-  @vprint :FieldsNonFancy 1 "Computing maximal orders\n"
+  @vprintln :FieldsNonFancy 1 "Computing maximal orders"
   final_list = Vector{FieldsTower}(undef, length(list))
   for j = 1:length(list)
     @vtime :Fields 4 maximal_order(list[j][1])
@@ -470,8 +470,8 @@ function field_extensions(x::FieldsTower, bound::ZZRingElem, IsoE1::GAP.GapObj, 
   end
 
   @vprint :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-  @vprint :Fields 1 "Number of new fields found: $(length(final_list))\n\n"
-  @vprint :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n\n"
+  @vprintln :Fields 1 "Number of new fields found: $(length(final_list))\n"
+  @vprintln :FieldsNonFancy 1 "Number of new fields found: $(length(final_list))\n"
   return final_list
 
 end
@@ -496,29 +496,29 @@ function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::ZZRin
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
     l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
-    @vprint :Fields 1 "constructing abelian extensions with invariants $l \n"
-    @vprint :FieldsNonFancy 1 "constructing abelian extensions with invariants $l \n"
+    @vprintln :Fields 1 "constructing abelian extensions with invariants $l"
+    @vprintln :FieldsNonFancy 1 "constructing abelian extensions with invariants $l"
     o = divexact(GAP.Globals.Size(G), GAP.Globals.Size(E1))
     bound = iroot(absolute_bound, o)
     IsoE1 = GAP.Globals.IdGroup(E1)
-    @vprint :Fields 1 "Number of fields at the $i -th step: $(length(list)) \n"
-    @vprint :FieldsNonFancy 1 "Number of fields at the $i -th step: $(length(list)) \n"
+    @vprintln :Fields 1 "Number of fields at the $i -th step: $(length(list))"
+    @vprintln :FieldsNonFancy 1 "Number of fields at the $i -th step: $(length(list))"
     lG = snf(abelian_group(l))[1]
     invariants = map(Int, lG.snf)
     onlyreal = (lvl > i || only_real)
     #First, I search for obstruction.
-    @vprint :Fields 1 "Computing obstructions\n"
-    @vprint :FieldsNonFancy 1 "Computing obstructions\n"
+    @vprintln :Fields 1 "Computing obstructions"
+    @vprintln :FieldsNonFancy 1 "Computing obstructions"
     #@vtime :Fields 1
     list = check_obstruction(list, L, i, invariants)
-    @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
-    @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
+    @vprintln :Fields 1 "Fields to check: $(length(list))\n"
+    @vprintln :FieldsNonFancy 1 "Fields to check: $(length(list))\n"
     if isempty(list)
       return FieldsTower[]
     end
     list = field_extensions(list, bound, IsoE1, invariants, onlyreal, unramified_outside = unramified_outside)
-    @vprint :Fields 1 "Step $i completed\n"
-    @vprint :FieldsNonFancy 1 "Step $i completed\n"
+    @vprintln :Fields 1 "Step $i completed"
+    @vprintln :FieldsNonFancy 1 "Step $i completed"
     if isempty(list)
       return FieldsTower[]
     end
@@ -532,7 +532,7 @@ end
 function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::ZZRingElem; only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   b1 = iroot(absolute_bound, g2[1])
   b2 = iroot(absolute_bound, g1[1])
-  @vprint :Fields 1 "The group is the product of $(g1) and $(g2)\n"
+  @vprintln :Fields 1 "The group is the product of $(g1) and $(g2)"
   l2 = fields(g2[1], g2[2], b2, only_real = only_real, unramified_outside = unramified_outside)
   if isempty(l2)
     return FieldsTower[]
@@ -559,7 +559,7 @@ function fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product
   if using_direct_product
     g1, g2, red, redfirst = direct_product_decomposition(G, (a, b))
     if g2 != (1, 1)
-      @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
+      @vprintln :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))"
       return fields_direct_product(g1, g2, red, redfirst, absolute_bound; only_real = only_real, unramified_outside = unramified_outside)
     end
   end
@@ -569,8 +569,8 @@ function fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product
   lG = snf(abelian_group(invariants))[1]
   invariants = map(Int, lG.snf)
   if GAP.Globals.IsAbelian(G)
-    @vprint :Fields 1 "computing abelian extension of Q with invariants $(invariants) and bound ~10^$(clog(absolute_bound, 10))\n"
-    @vprint :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound\n"
+    @vprintln :Fields 1 "computing abelian extension of Q with invariants $(invariants) and bound ~10^$(clog(absolute_bound, 10))"
+    @vprintln :FieldsNonFancy 1 "Doing Group ($a, $b) with bound $absolute_bound"
     return abelian_extensionsQQ(invariants, absolute_bound, only_real, unramified_outside = unramified_outside)
   end
   must_be_ram_surely, must_be_ram_maybe = must_be_ramified(L, length(L)-1)
@@ -621,17 +621,17 @@ function fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product
   if isempty(list)
     return list
   end
-  @vprint :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))\n"
-  @vprint :Fields 1 "Abelian invariants of the relative extension: $(invariants)\n"
-  @vprint :Fields 1 "Number of fields at this step: $(length(list)) \n"
-  @vprint :FieldsNonFancy 1 "Number of fields at this step: $(length(list)) \n"
+  @vprintln :Fields 1 "computing extensions with Galois group ($a, $b) and bound ~10^$(clog(absolute_bound, 10))"
+  @vprintln :Fields 1 "Abelian invariants of the relative extension: $(invariants)"
+  @vprintln :Fields 1 "Number of fields at this step: $(length(list))"
+  @vprintln :FieldsNonFancy 1 "Number of fields at this step: $(length(list))"
 
-  @vprint :Fields 1 "Computing obstructions\n"
-  @vprint :FieldsNonFancy 1 "Computing obstructions\n"
+  @vprintln :Fields 1 "Computing obstructions"
+  @vprintln :FieldsNonFancy 1 "Computing obstructions"
   #@vtime :Fields 1
   list = check_obstruction(list, L, length(L)-1, invariants)
-  @vprint :Fields 1 "Fields to check: $(length(list))\n\n"
-  @vprint :FieldsNonFancy 1 "Fields to check: $(length(list))\n\n"
+  @vprintln :Fields 1 "Fields to check: $(length(list))\n"
+  @vprintln :FieldsNonFancy 1 "Fields to check: $(length(list))\n"
   if isempty(list)
     return FieldsTower[]
   end

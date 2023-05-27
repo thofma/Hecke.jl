@@ -228,7 +228,7 @@ function _torsion_units_lattice_enum(O::NfOrd)
 
     gram_found = true
 
-    @vprint :UnitGroup 1 "Computing Gram matrix with precision $p ... \n"
+    @vprintln :UnitGroup 1 "Computing Gram matrix with precision $p ..."
 
     for i in 1:n, j in 1:n
       M[i,j] = _t2_pairing(B[i], B[j], p)
@@ -244,9 +244,9 @@ function _torsion_units_lattice_enum(O::NfOrd)
     end
   end
 
-  @vprint :UnitGroup 1 "Gram matrix is $M\n"
+  @vprintln :UnitGroup 1 "Gram matrix is $M"
 
-  @vprint :UnitGroup 1 "Enumerating elements with T_2 bounded by $n ... \n"
+  @vprintln :UnitGroup 1 "Enumerating elements with T_2 bounded by $n ..."
   l = enumerate_using_gram(M, A(n))
 
   R = Vector{NfOrdElem}()

@@ -36,7 +36,7 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::ZZRingElem) wh
   p, B = _conj_log_mat_cutoff_inv(U, p)
 
   @v_do :UnitGroup 1 popindent()
-  @vprint :UnitGroup 2 "Precision is now $p\n"
+  @vprintln :UnitGroup 2 "Precision is now $p"
 
   Ar = base_ring(B)
   b = zero_matrix(Ar, 1, r)
@@ -45,17 +45,17 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::ZZRingElem) wh
     b[1, i] = conlog[i]
   end
 
-  @vprint :UnitGroup 3 "For $p element b: $b\n"
+  @vprintln :UnitGroup 3 "For $p element b: $b"
   v = b*B
-  @vprint :UnitGroup 3 "For $p the vector v: $v\n"
+  @vprintln :UnitGroup 3 "For $p the vector v: $v"
   rel = Array{ZZRingElem}(undef, r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
 
-  @vprint :UnitGroup 2 "First iteration to find a rational relation ... \n"
+  @vprintln :UnitGroup 2 "First iteration to find a rational relation ..."
   while !_find_rational_relation!(rel, v, bound)
-    @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
+    @vprintln :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)"
     p =  2*p
     p, B = _conj_log_mat_cutoff_inv(U, p)
 
@@ -72,9 +72,9 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::ZZRingElem) wh
       b[1, i] = conlog[i]
     end
 
-    @vprint :UnitGroup 3 "For $p element b: $b\n"
+    @vprintln :UnitGroup 3 "For $p element b: $b"
     v = b*B
-    @vprint :UnitGroup 3 "For $p the vector v: $v\n"
+    @vprintln :UnitGroup 3 "For $p the vector v: $v"
   end
   return rel, p
 end
@@ -89,13 +89,13 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
 
   rreg = tentative_regulator(U)
   bound = _denominator_bound_in_relation(rreg, K)
-  @vprint :UnitGroup 1 "Adding dependent unit ... \n"
+  @vprintln :UnitGroup 1 "Adding dependent unit ..."
   rel, p = _search_rational_relation(U, y, bound)
-  @vprint :UnitGroup 3 "For $p rel: $rel\n"
-  @vprint :UnitGroup 2 "Second iteration to check relation ... \n"
+  @vprintln :UnitGroup 3 "For $p rel: $rel"
+  @vprintln :UnitGroup 2 "Second iteration to check relation ..."
 
   while !_check_relation_mod_torsion(U.units, y, rel, p)
-    @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
+    @vprintln :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)"
     p = 2*p
     @assert p > 0
     p, B = _conj_log_mat_cutoff_inv(U, p)
@@ -110,11 +110,11 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
       b[1, i] = conlog[i]
     end
 
-    @vprint :UnitGroup 3 "For $p element b: $b\n"
+    @vprintln :UnitGroup 3 "For $p element b: $b"
     v = b*B
-    @vprint :UnitGroup 3 "For $p the vector v: $v\n"
+    @vprintln :UnitGroup 3 "For $p the vector v: $v"
     _find_rational_relation!(rel, v, bound)
-    @vprint :UnitGroup 3 "For $p rel: $rel\n"
+    @vprintln :UnitGroup 3 "For $p rel: $rel"
   end
 
   if rel_only === Val{true}
@@ -134,7 +134,7 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
   U.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
   U.tentative_regulator = regulator(U.units, 64)
   U.rel_add_prec = p
-  @vprint :UnitGroup 1 "reduction of the new unit group...index improved by $(abs(rel[r+1]))\n"
+  @vprintln :UnitGroup 1 "reduction of the new unit group...index improved by $(abs(rel[r+1]))"
   if post_reduction
     @vtime :UnitGroup 1 U.units = reduce(U.units, p)
   end
@@ -146,23 +146,23 @@ end
 
 function _conj_log_mat_cutoff(x::UnitGrpCtx, p::Int)
   #if haskey(x.conj_log_mat_cutoff,  p)
-  #  @vprint :UnitGroup 3 "Conj matrix for $p cached\n"
+  #  @vprintln :UnitGroup 3 "Conj matrix for $p cached"
   #  return x.conj_log_mat_cutoff[p]
   #else
-    @vprint :UnitGroup 2 "Conj matrix for $p not cached\n"
+    @vprintln :UnitGroup 2 "Conj matrix for $p not cached"
     x.conj_log_mat_cutoff[p] = _conj_log_mat_cutoff(x.units, p)
     return x.conj_log_mat_cutoff[p]
   #end
 end
 
 function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
-  @vprint :UnitGroup 2 "Computing inverse of conjugates log matrix (starting with prec $p) ... \n"
+  @vprintln :UnitGroup 2 "Computing inverse of conjugates log matrix (starting with prec $p) ..."
   if haskey(x.conj_log_mat_cutoff_inv,  p)
-    @vprint :UnitGroup 2 "Inverse matrix cached for $p\n"
+    @vprintln :UnitGroup 2 "Inverse matrix cached for $p"
     return p, x.conj_log_mat_cutoff_inv[p]
   else
-    @vprint :UnitGroup 2 "Inverse matrix not cached for $p\n"
-    @vprint :UnitGroup 2 "Trying to invert conj matrix with prec $p \n"
+    @vprintln :UnitGroup 2 "Inverse matrix not cached for $p"
+    @vprintln :UnitGroup 2 "Trying to invert conj matrix with prec $p"
     local y
     try
       y = _conj_log_mat_cutoff(x, p)
@@ -180,8 +180,8 @@ function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
       if !(e isa ErrorException)
         rethrow(e)
       end
-      @vprint :UnitGroup 2 "Could not invert with prec $p \n"
-      @vprint :UnitGroup 2 "Increasing precision .. (error was $e)\n"
+      @vprintln :UnitGroup 2 "Could not invert with prec $p"
+      @vprintln :UnitGroup 2 "Increasing precision .. (error was $e)"
       @v_do :UnitGroup 2 pushindent()
       r = _conj_log_mat_cutoff_inv(x, 2 * p)
       @v_do :UnitGroup 2 popindent()
@@ -206,7 +206,7 @@ function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
     A = _conj_log_mat(u.units, p)
 
     B = A*transpose(A)
-    @vprint :UnitGroup 1 "Computing det of $(nrows(B))x$(ncols(B)) matrix with precision $(p) ... \n"
+    @vprintln :UnitGroup 1 "Computing det of $(nrows(B))x$(ncols(B)) matrix with precision $(p) ..."
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
@@ -302,10 +302,10 @@ function tentative_regulator(U::UnitGrpCtx)
   if isdefined(U, :tentative_regulator)
     rreg = U.tentative_regulator
   else
-    @vprint :UnitGroup 1 "Computing regulator of independent units with 64 bits ... \n"
+    @vprintln :UnitGroup 1 "Computing regulator of independent units with 64 bits ..."
     rreg = regulator(U.units, 64)
     U.tentative_regulator = rreg
-    @vprint :UnitGroup 1 "done \n"
+    @vprintln :UnitGroup 1 "done"
   end
   return rreg
 end

@@ -392,7 +392,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
 
       if gcd(m, div(mg, g)) == 1
         if gcd(m^n, _normmod(m^n, gen)) != norm(A)
-          @vprint :NfOrd 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
+          @vprintln :NfOrd 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal"
           cnt += 10
           continue
         end
@@ -419,7 +419,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
         end
       end
     end
-    @vprint :NfOrd 2 "used $cnt attempts\n"
+    @vprintln :NfOrd 2 "used $cnt attempts"
     A.gen_one = m
     A.gen_two = gen
     A.gens_normal = m
@@ -456,14 +456,14 @@ function assure_2_normal(A::NfAbsOrdIdl)
     mg = _minmod(m^2, gen)
     if gcd(m, div(mg, gcd(mg, m))) == 1
       if gcd(m^n, _normmod(m^n, gen)) != norm(A)
-        @vprint :NfOrd 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
+        @vprintln :NfOrd 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal"
         cnt += 10
         continue
       end
       break
     end
   end
-  @vprint :NfOrd 2 "used $cnt attempts\n"
+  @vprintln :NfOrd 2 "used $cnt attempts"
   A.gen_one = m
   A.gen_two = gen
   A.gens_normal = m

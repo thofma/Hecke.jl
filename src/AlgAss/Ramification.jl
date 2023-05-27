@@ -29,7 +29,7 @@ Given a central $\mathbf{Q}$-algebra $A$, return `true` if $A$ splits.
 function is_split(A::AbsAlgAss{QQFieldElem})
   i = schur_index(A, inf)
   if i == 2
-    @vprint :AlgAssOrd 1 "Not split at the infinite prime\n"
+    @vprintln :AlgAssOrd 1 "Not split at the infinite prime"
     return false
   end
   O = any_order(A)
@@ -37,7 +37,7 @@ function is_split(A::AbsAlgAss{QQFieldElem})
   for (p,j) in fac
     O1 = pmaximal_overorder(O, Int(p))
     if valuation(discriminant(O1), Int(p)) != 0
-      @vprint :AlgAssOrd 1 "Not split at $p\n"
+      @vprintln :AlgAssOrd 1 "Not split at $p"
       return false
     end
   end

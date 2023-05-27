@@ -625,7 +625,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
     p_max = next_prime(p_max)
     gp = factor(g, Native.GF(p_max, cached = false))
     if any(x->x>1, values(gp.fac))
-      @vprint :AbsFact 1 "not squarefree mod $p_max\n"
+      @vprintln :AbsFact 1 "not squarefree mod $p_max"
       continue
     end
     e = lcm([degree(x) for x = keys(gp.fac)])
@@ -639,7 +639,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
 
     if e == 1 || pc > 1.5 * degree(g)
       p = best_p
-      @vprint :AbsFact 1 "using $best_p of degree $d\n"
+      @vprintln :AbsFact 1 "using $best_p of degree $d"
       break
     end
   end
@@ -647,7 +647,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   R = RootCtx(f, p, d)
   R === nothing && return R, p_max
 
-  @vprint :AbsFact 1 "need to seriously lift $(R.H.n) elements\n"
+  @vprintln :AbsFact 1 "need to seriously lift $(R.H.n) elements"
   R.all_R = typeof(R.R[1].R)[]
   R.RP = typeof(R.R[1].R)[]
 
@@ -735,7 +735,7 @@ function combination(RC::RootCtx)
   while true
     j += 1
     while pow*d+j >= n
-      @vprint :AbsFact 1 "need more precicsion: $n ($d, $pow, $j)\n"
+      @vprintln :AbsFact 1 "need more precicsion: $n ($d, $pow, $j)"
       @vtime :AbsFact 2 more_precision(RC)
       n = precision(RC.R[1].R)
       if false && n > 170 #too small - but a safety valve
@@ -752,29 +752,29 @@ function combination(RC::RootCtx)
     mn = transpose(matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R]))
 
     if false && iszero(mn)
-      @vprint :AbsFact 2 "found zero column, disgarding\n"
+      @vprintln :AbsFact 2 "found zero column, disgarding"
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
         d += degree(lc, 2)
-        @vprint :AbsFact 1 "increasing power to $pow\n"
+        @vprintln :AbsFact 1 "increasing power to $pow"
         j = 0
         bad = 0
       end
       continue
     else
-      @vprint :AbsFact 2 "found non zero column\n"
+      @vprintln :AbsFact 2 "found non zero column"
     end
 
     nn = vcat(nn, mn)
 
     ke = kernel(nn)
-    @vprint :AbsFact 2 "current kernel dimension: $(ke[1])\n"
+    @vprintln :AbsFact 2 "current kernel dimension: $(ke[1])"
     if last_rank == ke[1]
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
-        @vprint :AbsFact 2 "increasing power to $pow\n"
+        @vprintln :AbsFact 2 "increasing power to $pow"
         j = 0
         bad = 0
         continue
@@ -790,12 +790,12 @@ function combination(RC::RootCtx)
     m = ke[2]
     z = transpose(m)*m
     if z != div(length(R), ke[1])
-      @vprint :AbsFact 2 "not a equal size partition\n"
+      @vprintln :AbsFact 2 "not a equal size partition"
       continue
     end
     stable += 1
     if stable < max(5, degree(f, 1)/3)
-      @vprint :AbsFact 2 "need confirmation...\n"
+      @vprintln :AbsFact 2 "need confirmation..."
       continue
     end
     return transpose(m)
@@ -873,7 +873,7 @@ function field(RC::RootCtx, m::MatElem)
   #TODO invest work in one factor only - need only powers of the roots involved there
   #     the other factor is then just a division away
   #     if complete orbits are combined, use the trace (pointwise) rather than powers
-  @vprint :AbsFact 2 "combining: $([findall(x->!iszero(x), collect(m[i, :])) for i=1:nrows(m)])\n"
+  @vprintln :AbsFact 2 "combining: $([findall(x->!iszero(x), collect(m[i, :])) for i=1:nrows(m)])"
   k, mk = residue_field(parent(R[1]))
   kt, t = polynomial_ring(k, cached = false)
   RR = map(mk, R)
@@ -892,7 +892,7 @@ function field(RC::RootCtx, m::MatElem)
     end
   end
 
-  @vprint :AbsFact 1 "target field has (local) degree $k\n"
+  @vprintln :AbsFact 1 "target field has (local) degree $k"
 
   Qq = QadicField(characteristic(F), k, 1, cached = false)[1]
   Qqt = polynomial_ring(Qq, cached = false)[1]
@@ -940,7 +940,7 @@ function field(RC::RootCtx, m::MatElem)
     end
     push!(nl, finish(f))
   end
-  @vprint :AbsFact 2 "now building the leading coeff...\n"
+  @vprintln :AbsFact 2 "now building the leading coeff..."
   lc = map(x->evaluate(leading_coefficient(x, 1), [0*t, t]), nl)
 
   for i = 1:length(lc)
@@ -958,7 +958,7 @@ function field(RC::RootCtx, m::MatElem)
   if !isone(_lc)
     ld = coprime_base(vcat(lc, [map_coefficients(k, _lc, parent = kt)]))
     if sum(map(degree, ld)) != degree(_lc) #TODO: this should(?) be caught earlier
-      @vprint :AbsFact 1 "leading coeff not square-free mod p, bad prime\n"
+      @vprintln :AbsFact 1 "leading coeff not square-free mod p, bad prime"
       return nothing
     end
 
@@ -966,14 +966,14 @@ function field(RC::RootCtx, m::MatElem)
     lc = _lc
     H = Hecke.HenselCtxQadic(map_coefficients(Qq, lc, parent = Qqt), ld)
   else
-    @vprint :AbsFact 2 "is monic, no leading coefficient...\n"
+    @vprintln :AbsFact 2 "is monic, no leading coefficient..."
     lc = _lc
     fa = []
   end
 
   el = nl
 
-  @vprint :AbsFact 1 "locating primitive element...\n"
+  @vprintln :AbsFact 1 "locating primitive element..."
   #currently, we're in F_q[[t]], not Q_q[[t]], however, the primitivity
   #can already be decided over F_q as lifting can not enlarge the field
 
@@ -983,7 +983,7 @@ function field(RC::RootCtx, m::MatElem)
   pe_j = 0
   for i = 1:length(el[1])
     bs = block_system([coeff(x, i) for x = el])
-    @vprint :AbsFact 3 "block system of coeff $i is $bs\n"
+    @vprintln :AbsFact 3 "block system of coeff $i is $bs"
     @assert all(x->length(x) == length(bs[1]), bs)
     if length(bs[1]) == 1
       pe_j = i
@@ -994,7 +994,7 @@ function field(RC::RootCtx, m::MatElem)
 
   local pe, pow, used
   if pe_j == 0
-    @vprint :AbsFact 2 "no single coefficient is primitive, having to to combinations\n"
+    @vprintln :AbsFact 2 "no single coefficient is primitive, having to to combinations"
     bs = [collect(1:length(el))]
     used = Int[]
     for i=1:length(el[1])
@@ -1007,28 +1007,28 @@ function field(RC::RootCtx, m::MatElem)
         break
       end
     end
-    @vprint :AbsFact 2 "using coeffs $used to form primtive element\n"
+    @vprintln :AbsFact 2 "using coeffs $used to form primtive element"
     pow = 1
     while true
       pe = x -> (sum(coeff(x, t) for t = used)^pow)
       bs = block_system([pe(x) for x = el])
       if length(bs[1]) == 1
-        @vprint :AbsFact 2 "using sum to the power $pow\n"
+        @vprintln :AbsFact 2 "using sum to the power $pow"
         break
       end
       pow += 1
     end
   else
-    @vprint :AbsFact 2 "$(pe_j)-th coeff is primitive\n"
+    @vprintln :AbsFact 2 "$(pe_j)-th coeff is primitive"
     pe = x -> coeff(x, pe_j)
     pow = 1
     used = [1]
   end
 
-  @vprint :AbsFact 1 "hopefully $(length(el)) degree field\n"
+  @vprintln :AbsFact 1 "hopefully $(length(el)) degree field"
 
   bnd = (length(el)*(length(used)*bnd))^(pow*length(el))
-  @vprint :AbsFact 1 "power sums (coeffs of minpoly of field) should have at most $(clog(bnd, characteristic(F))) p-adic digits\n"
+  @vprintln :AbsFact 1 "power sums (coeffs of minpoly of field) should have at most $(clog(bnd, characteristic(F))) p-adic digits"
 
   #TODO: Think: Do we need to lift all n factors? In the end we're going
   #      to return el[1] and prod(el[2:n]) only.
@@ -1052,18 +1052,18 @@ function field(RC::RootCtx, m::MatElem)
     if pr > 800
       error("too bas")
     end
-    @vprint :AbsFact 1  "using p-adic precision of $pr\n"
+    @vprintln :AbsFact 1  "using p-adic precision of $pr"
 
     setprecision!(Qq, pr+1)
     if length(fa) > 0
       H.f = map_coefficients(Qq, _lc, parent = Qqt)
-      @vprint :AbsFact 2 "lifting leading coeff factorisation\n"
+      @vprintln :AbsFact 2 "lifting leading coeff factorisation"
       @vtime :AbsFact 2 Hecke.lift(H, pr+1)
       fH = factor(H)
       lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
     end
 
-    @vprint :AbsFact 1 "lifting factors\n"
+    @vprintln :AbsFact 1 "lifting factors"
     @vtime :AbsFact 2 while precision(coeff(coeff(HQ.lf[1], 0), 0)) < pr+1
       lift_q(HQ)
     end
@@ -1080,7 +1080,7 @@ function field(RC::RootCtx, m::MatElem)
 
 #    # lift mod p^1 -> p^pr x^2+y^2+px+1 was bad I think
 #    @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
-#    ok || @vprint :AbsFact 1 "bad prime found, q-adic lifting failed\n"
+#    ok || @vprintln :AbsFact 1 "bad prime found, q-adic lifting failed"
 #    ok || return nothing
 #    @assert ok  # can fail but should fail for only finitely many p
 
@@ -1092,9 +1092,9 @@ function field(RC::RootCtx, m::MatElem)
     p = map(rational_reconstruction, p)
 
     if !all(x->x[1], p)
-      @vprint :AbsFact 2 "reco failed (for poly), increasing p-adic precision\n"
+      @vprintln :AbsFact 2 "reco failed (for poly), increasing p-adic precision"
       if 2*clog(bnd, prime(Qq)) < pr
-        @vprint :AbsFact 2 "bad prime? too much precision and still no poly, so changing prime\n"
+        @vprintln :AbsFact 2 "bad prime? too much precision and still no poly, so changing prime"
         return nothing
       end
       continue
@@ -1103,14 +1103,14 @@ function field(RC::RootCtx, m::MatElem)
     p = [x[2]//x[3] for x = p]
     p = Hecke.power_sums_to_polynomial(p)
     if any(x->denominator(x)>1, coefficients(p))
-      @vprint :AbsFact 2 "poly wrong, increasing p-adic precision\n"
+      @vprintln :AbsFact 2 "poly wrong, increasing p-adic precision"
       continue
     end
 
 
     k, a = number_field(p)
 
-    @vprint :AbsFact 1  "using as number field: $k\n"
+    @vprintln :AbsFact 1  "using as number field: $k"
 
     m = transpose(matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1]))
     kx, x = polynomial_ring(k, "x", cached = false)
@@ -1134,7 +1134,7 @@ function field(RC::RootCtx, m::MatElem)
     if iszero(r)
       return q, b[1]
     end
-    @vprint :AbsFact 2 "division failed, increasing precision\n"
+    @vprintln :AbsFact 2 "division failed, increasing precision"
   end
 end
 
@@ -1160,7 +1160,7 @@ function absolute_bivariate_factorisation(f::QQMPolyRingElem)
   end
 
   if degree(f, 2) < d
-    @vprint :AbsFact 1 "swapping variables to have smaller degree\n"
+    @vprintln :AbsFact 1 "swapping variables to have smaller degree"
     f = evaluate(f, [y, x])
     a, ca = absolute_bivariate_factorisation(f)
     S = parent(a)
@@ -1169,7 +1169,7 @@ function absolute_bivariate_factorisation(f::QQMPolyRingElem)
   end
 
   if degree(f, 2) == d && !isone(leading_coefficient(f, 1)) && isone(leading_coefficient(f, 2))
-    @vprint :AbsFact 1 "swapping variables to be monic\n"
+    @vprintln :AbsFact 1 "swapping variables to be monic"
     f = evaluate(f, [y, x])
     a, ca = absolute_bivariate_factorisation(f)
     S = parent(a)
@@ -1189,7 +1189,7 @@ function absolute_bivariate_factorisation(f::QQMPolyRingElem)
   s =-1
   while true
     s += 1
-    @vprint :AbsFact 1 "substitution to $s\n"
+    @vprintln :AbsFact 1 "substitution to $s"
     z = evaluate(f, [t, Qt(s)])
     if degree(z) == d && is_squarefree(z)
       break
@@ -1525,7 +1525,7 @@ Number field over Rational Field with defining polynomial x^3 - 5
 """
 function factor_absolute(a::QQMPolyRingElem)
   result = Any[]
-  @vprint :AbsFact 1 "factoring over QQ first...\n"
+  @vprintln :AbsFact 1 "factoring over QQ first..."
   @vtime :AbsFact 2 fa = factor(a)
   push!(result, fa.unit)
   for (p, e) in fa
@@ -1542,7 +1542,7 @@ end
 Tests if `f` is irreducible over `C`.
 """
 function is_absolutely_irreducible(a::QQMPolyRingElem)
-  @vprint :AbsFact 1 "testing  over QQ first...\n"
+  @vprintln :AbsFact 1 "testing  over QQ first..."
   is_irreducible(a) || return false
   unit, fp = absolute_multivariate_factorisation(a)
   return isone(fp[2])

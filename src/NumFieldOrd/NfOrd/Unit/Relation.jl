@@ -17,7 +17,7 @@ end
 
 function _find_rational_relation!(rel::Vector{ZZRingElem}, v::arb_mat, bound::ZZRingElem)
   #push!(_debug, (deepcopy(rel), deepcopy(v), deepcopy(bound)))
-  @vprint :UnitGroup 2 "Finding rational approximation in $v\n"
+  @vprintln :UnitGroup 2 "Finding rational approximation in $v"
   r = length(rel) - 1
 
   z = Array{QQFieldElem}(undef, r)
@@ -45,7 +45,7 @@ function _find_rational_relation!(rel::Vector{ZZRingElem}, v::arb_mat, bound::ZZ
 
   if is_integer
     rel[r + 1] = -1
-    @vprint :UnitGroup 2 "Found rational relation: $rel.\n"
+    @vprintln :UnitGroup 2 "Found rational relation: $rel."
     return true
   end
 
@@ -60,7 +60,7 @@ function _find_rational_relation!(rel::Vector{ZZRingElem}, v::arb_mat, bound::ZZ
     if app[1]
       z[i] = app[2]
     else
-      @vprint :UnitGroup 2 "Something went wrong with the approximation.\n"
+      @vprintln :UnitGroup 2 "Something went wrong with the approximation."
       return false
     end
   end
@@ -93,7 +93,7 @@ function _find_rational_relation!(rel::Vector{ZZRingElem}, v::arb_mat, bound::ZZ
 
   @assert g == 1
 
-  @vprint :UnitGroup 2 "Found rational relation: $rel.\n"
+  @vprintln :UnitGroup 2 "Found rational relation: $rel."
   return true
 end
 
@@ -114,7 +114,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
   zz = Array{ZZRingElem}(undef, r + 1)
 
-  @vprint :UnitGroup 1 "Computing conjugates log matrix ... \n"
+  @vprintln :UnitGroup 1 "Computing conjugates log matrix ..."
   A = _conj_log_mat_cutoff(x, p)
 
   Ar = base_ring(A)
@@ -137,11 +137,11 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
   inv_succesful = false
 
   try
-    @vprint :UnitGroup 1 "Inverting matrix ... \n"
+    @vprintln :UnitGroup 1 "Inverting matrix ..."
     B = inv(A)
     inv_succesful = true
   catch e
-    @vprint :UnitGroup 1 "Cannot invert matrix ... \n"
+    @vprintln :UnitGroup 1 "Cannot invert matrix ..."
     rethrow(e)
   end
 
@@ -181,11 +181,11 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
     if !inv_succesful
       try
-        @vprint :UnitGroup 1 "Inverting matrix ... \n"
+        @vprintln :UnitGroup 1 "Inverting matrix ..."
         B = inv(A)
         inv_succesful = true
       catch
-        @vprint :UnitGroup 1 "Cannot invert matrix. Increasing precision to $(2*p)\n"
+        @vprintln :UnitGroup 1 "Cannot invert matrix. Increasing precision to $(2*p)"
       end
     end
 
@@ -193,7 +193,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
   end
 
   # Check if it is a relation modulo torsion units!
-  @vprint :UnitGroup 1 "Checking relation $rel \n"
+  @vprintln :UnitGroup 1 "Checking relation $rel"
 
   if !_check_relation_mod_torsion(x, y, rel)
     #error("Dirty approximation did not work")
@@ -202,7 +202,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
     #return rel
   end
 
-  @vprint :UnitGroup 1 "Found a valid relation!\n"
+  @vprintln :UnitGroup 1 "Found a valid relation!"
   return rel
 end
 

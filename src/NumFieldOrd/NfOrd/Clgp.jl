@@ -138,7 +138,7 @@ end
 # think of a sensible function name
 
 function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
-  @vprint :UnitGroup 1 "Validating unit group and class group ... \n"
+  @vprintln :UnitGroup 1 "Validating unit group and class group ..."
   O = U.order
 
   # The residue of the zeta function cannot be computed for degree 1 (K = Q),
@@ -154,13 +154,13 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 
   if !isdefined(U, :torsion_units)
-    @vprint :UnitGroup 1 "Computing torsion structure ... \n"
+    @vprintln :UnitGroup 1 "Computing torsion structure ..."
     g, ord = torsion_units_gen_order(O)
     U.torsion_units_order = ord
     U.torsion_units_gen = g
   end
 
-  @vprint :UnitGroup 1 "Torsion structure done!\n"
+  @vprintln :UnitGroup 1 "Torsion structure done!"
 
   w = U.torsion_units_order
 
@@ -171,7 +171,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   r1, r2 = signature(O)
 
   if !isdefined(U, :residue)
-    @vprint :UnitGroup 1 "Computing residue of Dedekind zeta function ... \n"
+    @vprintln :UnitGroup 1 "Computing residue of Dedekind zeta function ..."
     U.residue = zeta_log_residue(O, 0.6931/2)  #log(2)/2
   end
   residue = U.residue
@@ -186,8 +186,8 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   @assert isfinite(loghRtrue)
 
-  @vprint :ClassGroup 1 "tentative class group $h\n"
-  @vprint :ClassGroup 1 "tentative regulator $(tentative_regulator(U))\n"
+  @vprintln :ClassGroup 1 "tentative class group $h"
+  @vprintln :ClassGroup 1 "tentative regulator $(tentative_regulator(U))"
 
   while true
     loghRapprox = log(h* abs(tentative_regulator(U)))
@@ -199,7 +199,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
       e_fmpz = abs_upper_bound(ZZRingElem, e)
-      @vprint :ClassGroup 1 "validate called, index bound is $e_fmpz\n"
+      @vprintln :ClassGroup 1 "validate called, index bound is $e_fmpz"
       return e_fmpz, divexact(abs(tentative_regulator(U)), e_fmpz)
     end
 
@@ -215,7 +215,7 @@ end
 
 function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
 
-  @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
+  @vprintln :UnitGroup 1 "Computing tentative class and unit group ..."
 
   @v_do :UnitGroup 1 pushindent()
   c = class_group_ctx(O, bound = bound, method = method, large = large, redo = redo, use_aut = use_aut)
@@ -224,7 +224,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   if c.finished
     U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
     @assert U.finished
-    @vprint :UnitGroup 1 "... done (retrieved).\n"
+    @vprintln :UnitGroup 1 "... done (retrieved)."
     if c.GRH && !GRH
       if !GRH
         class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
@@ -238,7 +238,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
     return c, U, ZZRingElem(1)
   end
 
-  @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
+  @vprintln :UnitGroup 1 "Tentative class number is now $(c.h)"
 
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
 
@@ -282,9 +282,9 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
       # In this case, the index may contain a large 2-power and saturation
       # will take forever.
       if isone(improved) && iszero(c.sat_done)
-        @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
+        @vprintln :ClassGroup 1 "Finite index, saturating at 2"
         while saturate!(c, U, 2, stable)
-          @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
+          @vprintln :ClassGroup 1 "Finite index, saturating at 2"
         end
         idx, reg_expected = _validate_class_unit_group(c, U)
         c.sat_done = 2
@@ -301,7 +301,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
         end
       end
       while (!use_aut && idx < 20 && idx > 1) || (idx < 10 && idx > 1)
-        @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
+        @vprintln :ClassGroup 1 "Finishing by saturating up to $idx"
         fl = false
         p = 2
         while !fl && p < 2*Int(idx)
@@ -311,7 +311,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
         @assert fl  # so I can switch assertions off...
         c.sat_done = 2*Int(idx)
         n_idx, reg_expected = _validate_class_unit_group(c, U)
-        @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
+        @vprintln :ClassGroup 1 "index estimate down to $n_idx from $idx"
         @assert idx != n_idx
         idx = n_idx
       end
@@ -344,7 +344,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   c.finished = true
   U.finished = true
 
-  #@vprint :ClassGroup 1 "hnftime $(c.time[:hnf_time])\n"
+  #@vprintln :ClassGroup 1 "hnftime $(c.time[:hnf_time])"
 
   if !GRH
     class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))

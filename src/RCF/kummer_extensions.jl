@@ -313,7 +313,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
     if cp % p == 0 || indZK % p == 0
       continue
     end
-    @vprint :ClassField 2 "Computing Frobenius over $p\n"
+    @vprintln :ClassField 2 "Computing Frobenius over $p"
     lP = prime_decomposition(ZK, p)
     LP = NfOrdIdl[P for (P, e) in lP if degree(P) < threshold]
     if isempty(LP)
@@ -364,7 +364,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
     if order(s) == 1
       break
     end
-    @vprint :ClassField 3 "Index: $(exponent(s))^($(valuation(order(s), exponent(s))))\n"
+    @vprintln :ClassField 3 "Index: $(exponent(s))^($(valuation(order(s), exponent(s))))"
   end
   K.frob_gens = (lp, sR)
   return lp, sR
@@ -510,8 +510,8 @@ If the factorisation of $a$ into prime ideals is known, the ideals
 should be passed in.
 """
 function reduce_mod_powers(a::nf_elem, n::Int, primes::Vector{NfOrdIdl})
-  @vprint :ClassField 2 "reducing modulo $(n)-th powers\n"
-  @vprint :ClassField 3 "starting with $a\n"
+  @vprintln :ClassField 2 "reducing modulo $(n)-th powers"
+  @vprintln :ClassField 3 "starting with $a"
   return reduce_mod_powers(FacElem(a), n, primes)
 end
 

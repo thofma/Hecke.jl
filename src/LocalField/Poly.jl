@@ -947,7 +947,7 @@ function lift(C::HenselCtxdr, mx::Int)
     push!(ch, div(ch[end]+1, 2))
   end
   e = absolute_ramification_index(parent(p))
-  @vprint :PolyFactor 1 "using lifting chain $ch\n"
+  @vprintln :PolyFactor 1 "using lifting chain $ch"
   for k=length(ch)-1:-1:1
     N2 = ch[k]
     N2 += e - mod(N2, e)

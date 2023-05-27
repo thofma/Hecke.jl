@@ -80,7 +80,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   if iszero(mod(n, 2))
     infplc = real_places(L)
   end
-  @vprint :ClassField 3 "Checking if I can compute the field over a subfield\n"
+  @vprintln :ClassField 3 "Checking if I can compute the field over a subfield"
   r, mr = Hecke.ray_class_group(OL, fm0, infplc, n_quo = n)
   if exponent(r) < n || order(r) < degree(C)
     return false, C

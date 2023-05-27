@@ -595,7 +595,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
   R = base_ring(M)
   #First iteration out of the loop.
   list = _submodules_with_struct(M, typesub)
-  @vprint :StabSub 1 "Subgroups at first step: $(length(list)) \n"
+  @vprintln :StabSub 1 "Subgroups at first step: $(length(list))"
   #Some data needed in the loop
   w = Vector{ZZRingElem}(undef, ngens(M.V))
   for i = 1:length(w)
@@ -612,7 +612,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
     for x in list
       L, _ = quo(M, x)
       newlist = _submodules_with_struct(L, new_typesub)
-      @vprint :StabSub 1 "Candidates to be added at this step: $(length(newlist)) \n"
+      @vprintln :StabSub 1 "Candidates to be added at this step: $(length(newlist))"
       #First, I sieve for the subgroups with the correct structure.
       for s = 1:length(newlist)
         ord = ZZRingElem(1)
@@ -626,7 +626,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
 	        end
         end
       end
-      @vprint :StabSub 1 "New till this point at this step: $(length(list1)) \n"
+      @vprintln :StabSub 1 "New till this point at this step: $(length(list1))"
     end
     new_typesub = new_typesub1
     list = list1

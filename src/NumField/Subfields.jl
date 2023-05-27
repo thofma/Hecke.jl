@@ -133,9 +133,9 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
 
   dsubfield = length(as)
 
-  @vprint :Subfields 1 "Sieving for primitive elements\n"
+  @vprintln :Subfields 1 "Sieving for primitive elements"
   # First check basis elements
-  @vprint :Subfields 1 "Sieving for primitive elements\n"
+  @vprintln :Subfields 1 "Sieving for primitive elements"
   # First check basis elements
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
@@ -154,7 +154,7 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
     end
   end
 
-  @vprint :Subfields 1 "Found $(length(indices)) primitive elements in the basis\n"
+  @vprintln :Subfields 1 "Found $(length(indices)) primitive elements in the basis"
   #Now, we select the one of smallest T2 norm
   if !isempty(indices)
     a = as[indices[1]]
@@ -166,11 +166,11 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
         I = t2n
       end
     end
-    @vprint :Subfields 1 "Primitive element found\n"
+    @vprintln :Subfields 1 "Primitive element found"
     return a
   end
 
-  @vprint :Subfields 1 "Trying combinations of elements in the basis\n"
+  @vprintln :Subfields 1 "Trying combinations of elements in the basis"
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
   cs = ZZRingElem[rand(FlintZZ, -2:2) for n in 1:dsubfield]
@@ -195,7 +195,7 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
       end
       k += 1
       if k == 5
-      	@vprint :Subfields 1 "Primitive element found\n"
+      	@vprintln :Subfields 1 "Primitive element found"
         return a
       end
     end

@@ -2741,7 +2741,7 @@ true
 ```
 """
 function embed_in_unimodular(S::ZZLat, pos::IntegerUnion, neg::IntegerUnion; primitive=true, even=true)
-  @vprint :Lattice 1 "computing embedding in L_$(n) \n"
+  @vprintln :Lattice 1 "computing embedding in L_$(n)"
   pS,kS, nS = signature_tuple(S)
   @req kS == 0 "S must be non-degenerate"
   even || raise(NotImplementedError("for now we need the unimodular lattice to be even."))

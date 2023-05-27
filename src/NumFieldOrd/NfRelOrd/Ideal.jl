@@ -891,7 +891,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
   K = base_field(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, copy = false)
-  @vprint :NfRelOrd 4 "Computing a pseudo basis of O with integral ideals \n"
+  @vprintln :NfRelOrd 4 "Computing a pseudo basis of O with integral ideals"
   basis_mat_int = zero_matrix(K, d, d)
   pbint = Vector{Tuple{elem_type(L), NfOrdIdl}}()
   for i = 1:d
@@ -916,7 +916,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
   # If the prime number in P is too small one can't use the trace.
   p = minimum(P)
   if p <= d
-    @vprint :NfRelOrd 4 "Frobenius method \n"
+    @vprintln :NfRelOrd 4 "Frobenius method"
     q = order(F)
     k = clog(ZZRingElem(degree(Oint)), q)
     for i = 1:d
@@ -931,7 +931,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
       end
     end
   else
-    @vprint :NfRelOrd 4 "Trace method \n"
+    @vprintln :NfRelOrd 4 "Trace method"
     for i = 1:d
       for j = i:d
         t = elts_with_val[i]*pbint[i][1]*elts_with_val[j]*pbint[j][1]
@@ -940,9 +940,9 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
       end
     end
   end
-  @vprint :NfRelOrd 4 "Computing nullspace \n"
+  @vprintln :NfRelOrd 4 "Computing nullspace"
   B = nullspace(A)[2]
-  @vprint :NfRelOrd 4 "Lifting nullspace \n"
+  @vprintln :NfRelOrd 4 "Lifting nullspace"
   M1 = zero_matrix(K, nrows(B), d)
   imF = pseudo_inv(mF)
   # Write a basis of the kernel of A in the rows of M1.
@@ -957,7 +957,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
       end
     end
   end
-  @vprint :NfRelOrd 4 "Final hnf \n"
+  @vprintln :NfRelOrd 4 "Final hnf"
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*P for i = 1:d ])
   PM = vcat(PM2, PM1)

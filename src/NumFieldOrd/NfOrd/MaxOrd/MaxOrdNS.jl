@@ -14,7 +14,7 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[]) 
+function new_maximal_order(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return maximal_order_round_four(O, index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
@@ -47,7 +47,7 @@ function _maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFie
       if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
         OO += O1
       end
-      @vprint :NfOrd 1 "done\n"
+      @vprintln :NfOrd 1 "done"
     end
   end
   OO.is_maximal = 1

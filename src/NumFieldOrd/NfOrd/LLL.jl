@@ -32,7 +32,7 @@ end
 
 function _lll_CM(A::NfOrdIdl)
   OK = order(A)
-  @vprint :LLL 3 "Reduction\n"
+  @vprintln :LLL 3 "Reduction"
   M = _minkowski_matrix_CM(OK)
   @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.3, 0.51))
   g = BM*M*transpose(BM)
@@ -327,7 +327,7 @@ end
 function _lll_CM(M::NfAbsOrd)
   K = nf(M)
   g = _minkowski_matrix_CM(M)
-  @vprint :LLL 1 "Now LLL\n"
+  @vprintln :LLL 1 "Now LLL"
   @hassert :LLL 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
   On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
@@ -528,14 +528,14 @@ function lll_precomputation(M::NfAbsOrd, prec::Int, nblocks::Int = 4)
       continue
     end
     indices = vcat(to_do[block][1], to_do[block][2])
-    @vprint :LLL 3 "Simplifying block $(block)\n"
+    @vprintln :LLL 3 "Simplifying block $(block)"
     prec, g1 = _lll_sublattice(M, indices, prec = prec)
     _copy_matrix_into_matrix(g, indices, indices, g1)
     done[block] = true
     push!(blocks_selection, indices)
-    @vprint :LLL 3 "Precision: $(prec)\n"
+    @vprintln :LLL 3 "Precision: $(prec)"
   end
-  @vprint :LLL 3 "Precomputation finished with precision $(prec)\n"
+  @vprintln :LLL 3 "Precomputation finished with precision $(prec)"
   return prec, M
 end
 
@@ -545,18 +545,18 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
   K = nf(M)
   n = degree(M)
   l = length(u)
-  @vprint :LLL 3 "Block of dimension $(l)\n"
+  @vprintln :LLL 3 "Block of dimension $(l)"
   prec = max(prec, 10*n)
   local g::ZZMatrix
 
   bas = basis(M, K)[u]
   profile_sub = nbits(prod(Hecke.upper_bound(ZZRingElem, t2(x)) for x in bas))
-  @vprint :LLL 3 "Starting with profile $(profile_sub)\n"
+  @vprintln :LLL 3 "Starting with profile $(profile_sub)"
   while true
     local d::ZZMatrix
-    @vprint :LLL 3 "Computing Minkowski matrix\n"
+    @vprintln :LLL 3 "Computing Minkowski matrix"
     while true
-      @vprint :LLL 3 "Precision: $(prec)\n"
+      @vprintln :LLL 3 "Precision: $(prec)"
       try
         d = minkowski_gram_mat_scaled(M, prec)
         break
@@ -564,7 +564,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
         prec = prec*2
       end
     end
-    @vprint :LLL 3 "Minkowski matrix computed\n"
+    @vprintln :LLL 3 "Minkowski matrix computed"
     g = identity_matrix(FlintZZ, l)
     d1 = sub(d, u, u)
     prec = div(prec, 2)
@@ -579,19 +579,19 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
       prec *= 2
       break
     end
-    @vprint :LLL 3 "Still in the loop\n"
+    @vprintln :LLL 3 "Still in the loop"
     prec *= 4
   end
-  @vprint :LLL 3 "Computing the profile of the new basis \n"
+  @vprintln :LLL 3 "Computing the profile of the new basis"
   new_basis = g*basis_matrix(bas, FakeFmpqMat)
   els = elem_type(K)[elem_from_mat_row(K, new_basis.num, i, new_basis.den) for i = 1:nrows(new_basis)]
   new_profile = nbits(prod(Hecke.upper_bound(ZZRingElem, t2(x)) for x in els))
   if new_profile <= profile_sub
-    @vprint :LLL 3 "Output a better basis!\n"
-    @vprint :LLL 3 "New profile: $(new_profile)\n"
+    @vprintln :LLL 3 "Output a better basis!"
+    @vprintln :LLL 3 "New profile: $(new_profile)"
     return prec, g
   else
-    @vprint :LLL 3 "Output the same basis :(\n"
+    @vprintln :LLL 3 "Output the same basis :("
     return prec, identity_matrix(FlintZZ, l)
   end
 end
@@ -607,15 +607,15 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   local d::ZZMatrix
   ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
   dM = sum(nbits(Hecke.upper_bound(ZZRingElem, t2(x))) for x in basis(M, K))
-  @vprint :LLL 1 "Input profile: $(dM)\n"
-  @vprint :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2)) \n"
+  @vprintln :LLL 1 "Input profile: $(dM)"
+  @vprintln :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2))"
   att = 0
   while steps == -1 || att < steps
     att += 1
     if att > 3
       @vprint :LLL "Having a hard time computing a LLL basis"
     end
-    @vprint :LLL 3 "Attempt number : $(att)\n"
+    @vprintln :LLL 3 "Attempt number : $(att)"
     while true
       try
         d = minkowski_gram_mat_scaled(M, prec)
@@ -629,7 +629,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
       end
     end
 
-    @vprint :LLL 3 "Minkowski matrix computed\n"
+    @vprintln :LLL 3 "Minkowski matrix computed"
     diag_d = prod_diagonal(d)
     g = identity_matrix(FlintZZ, n)
 
@@ -672,8 +672,8 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     prec *= 2
     dOn = nbits(prod(Hecke.upper_bound(ZZRingElem, t2(x)) for x in basis(On, K)))
     if dOn < dM
-      @vprint :LLL 3 "I use the transformation\n"
-      @vprint :LLL 3 "New profile: $(dOn), was $dM\n"
+      @vprintln :LLL 3 "I use the transformation"
+      @vprintln :LLL 3 "New profile: $(dOn), was $dM"
       M = On
       dM = dOn
     else
@@ -682,7 +682,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     if att == steps
       return M, prec
     end
-    @vprint :LLL 3 "Still in the loop\n"
+    @vprintln :LLL 3 "Still in the loop"
   end
   On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
   On.is_maximal = M.is_maximal
@@ -695,7 +695,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   if isdefined(M, :gen_index)
     On.gen_index = M.gen_index
   end
-  @vprint :LLL 3 "LLL finished with parameters $(parameters)\n"
+  @vprintln :LLL 3 "LLL finished with parameters $(parameters)"
   return On, prec
 end
 

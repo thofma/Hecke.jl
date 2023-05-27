@@ -15,11 +15,11 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
 
   vals_subfield = val_from_subfield(c.FB, mL, lp1)
   cache_mL = Dict{nf_elem, nf_elem}()
-  @vprint :ClassGroup 1 "Computing S-units of totally real subfield\n"
+  @vprintln :ClassGroup 1 "Computing S-units of totally real subfield"
   S, mS = Hecke.sunit_group_fac_elem(lp1)
-  @vprint :ClassGroup 1 "Embedding S-units of totally real subfield\n"
+  @vprintln :ClassGroup 1 "Embedding S-units of totally real subfield"
   for i = 1:ngens(S)
-    @vprint :ClassGroup 1 "Embedding S-units $i/$(ngens(S))\n"
+    @vprintln :ClassGroup 1 "Embedding S-units $i/$(ngens(S))"
     sup = Dict{NfOrdIdl, ZZRingElem}((mS.idl[i], v) for (i, v) in mS.valuations[i])
     u = compact_presentation(mS(S[i]), 2, decom = sup)
     if iszero(mS.valuations[i])

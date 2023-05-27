@@ -424,7 +424,7 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: NfAbsOrdIdl
     end
   end
 
-  @vprint :NfOrd 1 "prod_via_2_elem: used $cnt tries\n"
+  @vprintln :NfOrd 1 "prod_via_2_elem: used $cnt tries"
 
   c = ideal(O, first_gen_new, gen)
 

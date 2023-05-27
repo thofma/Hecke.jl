@@ -48,7 +48,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::QQFieldEle
 
   O = order(clg.FB.ideals[1])
   easy = is_defining_polynomial_nice(parent(a))
-  @vprint :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))\n"
+  @vprintln :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))"
   if integral #element is known to be integral
     fl, r = is_smooth!(clg.FB.fb_int, numerator(n*nI))
     push_normStat!(clg, numerator(n), fl)
@@ -60,11 +60,11 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::QQFieldEle
 
 
   if !fl
-    @vprint :ClassGroup 3 "not int-smooth\n"
+    @vprintln :ClassGroup 3 "not int-smooth"
 #    println("not int-smooth");
     # try for large prime?
     if easy && abs(r) < clg.B2 && is_prime(r) && !is_index_divisor(O, r)
-      @vprint :ClassGroup 3 "gives potential large prime\n"
+      @vprintln :ClassGroup 3 "gives potential large prime"
       i = special_prime_ideal(r, a)
       #TODO: check Galois orbit of special ideal
       if haskey(clg.largePrime, (r, i))
@@ -93,7 +93,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::QQFieldEle
     if res in clg.M.rel_gens || res in clg.M.bas_gens
       return false
     end
-    @vprint :ClassGroup 3 "adding $res\n"
+    @vprintln :ClassGroup 3 "adding $res"
     new_gen = add_gen!(clg.M, res, always)
     if always
       if new_gen
@@ -140,7 +140,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::QQFieldEle
     clg.last = clg.bad_rel
     return true
   else
-    @vprint :ClassGroup 3 "not alg-smooth\n"
+    @vprintln :ClassGroup 3 "not alg-smooth"
     clg.bad_rel += 1
     return false
   end
@@ -169,7 +169,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem, Hecke.ZZRing
 
   O = order(clg.FB.ideals[1])
 
-  @vprint :ClassGroup 3 "adding $R\n"
+  @vprintln :ClassGroup 3 "adding $R"
 
   new_gen = add_gen!(clg.M, R, always)
   if always

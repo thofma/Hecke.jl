@@ -46,11 +46,11 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   #Step 1: reduce the ideal in a p-power way...
 
   A = ideal(ZK, 1)
-  @vprint :CompactPresentation 1 "First reduction step\n"
+  @vprintln :CompactPresentation 1 "First reduction step"
   cached_red = Dict{NfOrdIdl, Dict{Int, Tuple{NfOrdIdl, FacElem{nf_elem, AnticNumberField}}}}()
   n_iterations = Int(flog(_v, n))
   for _k = n_iterations:-1:0
-    @vprint :CompactPresentation 3 "Reducing the support: step $(_k) / $(n_iterations)\n"
+    @vprintln :CompactPresentation 3 "Reducing the support: step $(_k) / $(n_iterations)"
     B = Dict{NfOrdIdl, Int}()
     for (p, vv) in de
       e_p = Int(div(vv, n^_k) % nn)
@@ -108,7 +108,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
         rethrow(e)
       end
       arb_prec *= 2
-      @vprint :CompactPresentation 2 "increasing precision to $arb_prec\n"
+      @vprintln :CompactPresentation 2 "increasing precision to $arb_prec"
       v = conjugates_arb_log_normalise(a, arb_prec) +
           conjugates_arb_log_normalise(be, arb_prec)
     end
@@ -125,7 +125,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
 
   while k>=1
-    @vprint :CompactPresentation 1 "k now: $k\n"
+    @vprintln :CompactPresentation 1 "k now: $k"
     D = Dict((p, div(ZZRingElem(v), n^k)) for (p, v) = de if v >= n^k)
     if length(D) == 0
       A = FacElem(Dict(ideal(ZK, 1) => 1))
@@ -180,7 +180,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     B1 = B.num
     @assert norm(B1) <= abs(discriminant(ZK))
 
-    @vprint :CompactPresentation 1 "Factoring ($(B1.gen_one), $(B1.gen_two)) of norm $(norm(B1))\n"
+    @vprintln :CompactPresentation 1 "Factoring ($(B1.gen_one), $(B1.gen_two)) of norm $(norm(B1))"
     @vtime :CompactPresentation 1 lfB1 = factor_easy(B1)
     for (p, _v) = lfB1
       if haskey(de, p)
@@ -212,7 +212,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
   @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a*be))) == 1 ||
                                     factored_norm(ideal(ZK, a*be)) == abs(factored_norm(FacElem(de)))
-  @vprint :CompactPresentation 1 "Final eval...\n"
+  @vprintln :CompactPresentation 1 "Final eval..."
   @vtime :CompactPresentation 1 A = evaluate(FacElem(de), coprime = true)
   @vtime :CompactPresentation 1 b_ev = evaluate_mod(a*be, A)
   inv!(be)
@@ -431,7 +431,7 @@ function _ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unit
 
   K = base_ring(a)
   ZK = maximal_order(K)
-  @vprint :Saturate 1 "Computing compact presentation\n"
+  @vprintln :Saturate 1 "Computing compact presentation"
   @vtime :Saturate 1 c = Hecke.compact_presentation(a, n, decom = decom)
   b = one(K)
   d = Dict{nf_elem, ZZRingElem}()

@@ -411,12 +411,12 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
   #recprint(n-i)
   #println("I am at level $i with $x")
 
-  @vprint :LatEnum "$(recprint(n - i)) Gii: , $(G[i,i])\n"
-  @vprint :LatEnum "$(recprint(n - i)) c: $(ArbField(p)(c))\n"
+  @vprintln :LatEnum "$(recprint(n - i)) Gii: , $(G[i,i])"
+  @vprintln :LatEnum "$(recprint(n - i)) c: $(ArbField(p)(c))"
 
   C = ArbField(p)(c)//G[i,i]
 
-  @vprint :LatEnum "$(recprint(n - i)) C: $C\n"
+  @vprintln :LatEnum "$(recprint(n - i)) C: $C"
 
   if !contains_zero(C)
     C = sqrt(C)
@@ -438,7 +438,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
     @hassert :LatEnum !contains_zero(C)
   end
 
-  @vprint :LatEnum "$(recprint(n - i)) C: $C\n"
+  @vprintln :LatEnum "$(recprint(n - i)) C: $C"
 
   CC = ArbField(p)(0)
 
@@ -470,26 +470,26 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
 
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), u)
 
-  @vprint :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz\n"
+  @vprintln :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz"
 
   A = Vector{Vector{ZZRingElem}}()
 
   if i == 1
-    @vprint :LatEnum "$(recprint(n - i)) his is depth $i\n"
+    @vprintln :LatEnum "$(recprint(n - i)) his is depth $i"
 
     for j in Int(lbfmpz):Int(ubfmpz)
-      @vprint :LatEnum "$(recprint(n - i)) j is $j\n"
+      @vprintln :LatEnum "$(recprint(n - i)) j is $j"
       if is_negative(c - G[i,i]*(j + CC)^2)
-        @vprint :LatEnum "$(recprint(n - i)) Something is negative\n"
+        @vprintln :LatEnum "$(recprint(n - i)) Something is negative"
         continue
       end
       push!(A, [ ZZRingElem(j) ])
     end
   else
     for j in Int(lbfmpz):Int(ubfmpz)
-      @vprint :LatEnum "$(recprint(n - i)) $x $i $j: $c $(G[i,i]) $CC\n"
-      @vprint :LatEnum "$(recprint(n - i)) $x $i $j $(G[i,i]*j^2)\n"
-      @vprint :LatEnum "$(recprint(n - i)) $x $i $j: $(c - G[i,i]*(j + CC)^2)\n"
+      @vprintln :LatEnum "$(recprint(n - i)) $x $i $j: $c $(G[i,i]) $CC"
+      @vprintln :LatEnum "$(recprint(n - i)) $x $i $j $(G[i,i]*j^2)"
+      @vprintln :LatEnum "$(recprint(n - i)) $x $i $j: $(c - G[i,i]*(j + CC)^2)"
       t = c - G[i,i]*(j + CC)^2
 
       if is_negative(t)

@@ -51,20 +51,20 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
     push!(rel, x.M.rel_gens[xj])
   end
   time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
-  @vprint :UnitGroup 1 "Saturating the kernel\n"
+  @vprintln :UnitGroup 1 "Saturating the kernel"
   @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
-  @vprint :UnitGroup 1 "Done\n"
+  @vprintln :UnitGroup 1 "Done"
   s1 = matrix(s)
   lll!(s1)
-  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+  @vprintln :UnitGroup 1 "Kernel time: $time_kernel"
   @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
   return k, add_units, s1
 end
 
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true, expected_reg::arb = ArbField(32, cached = false)(-1), add::Int = 0)
   add_orbit = false
-  @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... (using orbits: $add_orbit)\n"
-  @vprint :UnitGroup 1 "Relation module $(x.M)\n"
+  @vprintln :UnitGroup 1 "Processing ClassGrpCtx to find units ... (using orbits: $add_orbit)"
+  @vprintln :UnitGroup 1 "Relation module $(x.M)"
 
   O = order(u)
 
@@ -82,7 +82,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
   # I am not allowed to do this before the other block
   if nrows(x.M.rel_gens) == 0
-    @vprint :UnitGroup 1 "No additional relations. Going back ...\n"
+    @vprintln :UnitGroup 1 "No additional relations. Going back ..."
     return 0, 0
   end
 
@@ -91,7 +91,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
   time_torsion = 0.0
   not_larger = 0
 
-  @vprint :UnitGroup 1 "Enlarging unit group by adding kernel elements ...\n"
+  @vprintln :UnitGroup 1 "Enlarging unit group by adding kernel elements ..."
 
   starting_full_rank = has_full_rank(u)
   if starting_full_rank
@@ -149,21 +149,21 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     elements = elements[p_elements]
     done = falses(length(elements))
     for i = 1:length(elements)
-      @vprint :UnitGroup 1 "Element $(i) / $(length(elements))\n"
+      @vprintln :UnitGroup 1 "Element $(i) / $(length(elements))"
       y = elements[i]
       @hassert :UnitGroup 2 _isunit(y)
-      @vprint :UnitGroup 1 "(It really is a unit.)\n"
+      @vprintln :UnitGroup 1 "(It really is a unit.)"
       @hassert :UnitGroup 9000 denominator(minpoly(evaluate(y))) == 1
 
       if has_full_rank(u)
-        @vprint :UnitGroup 2 "have full rank, can reduce unit first...\n"
+        @vprintln :UnitGroup 2 "have full rank, can reduce unit first..."
         y = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[y], u)[1]
       else
-        @vprint :UnitGroup 2 "no full rank, cannot reduce unit first...\n"
+        @vprintln :UnitGroup 2 "no full rank, cannot reduce unit first..."
       end
 
-      @vprint :UnitGroup 1 "Exponents are of bit size $(isempty(y.fac) ? 0 : maximum([ nbits(o) for o in values(y.fac)]))\n"
-      @vprint :UnitGroup 1 "Test if kernel element yields torsion unit ... \n"
+      @vprintln :UnitGroup 1 "Exponents are of bit size $(isempty(y.fac) ? 0 : maximum([ nbits(o) for o in values(y.fac)]))"
+      @vprintln :UnitGroup 1 "Test if kernel element yields torsion unit ..."
 
       @v_do :UnitGroup 2 pushindent()
       time_torsion += @elapsed is_tors, p1 = is_torsion_unit(y, false, u.tors_prec)
@@ -172,7 +172,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       u.tors_prec = max(p1, u.tors_prec)
       p = max(p, u.tors_prec)
       if is_tors
-        @vprint :UnitGroup 1 "Element is torsion unit\n"
+        @vprintln :UnitGroup 1 "Element is torsion unit"
         not_larger += 1
         # We do break out of the for loop if not_larger > not_larger_bound,
         # because otherwise we do not check all kernel elements
@@ -180,7 +180,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
         continue
       end
 
-      @vprint :UnitGroup 1 "Element is non-torsion unit\n"
+      @vprintln :UnitGroup 1 "Element is non-torsion unit"
 
       @v_do :UnitGroup 2 pushindent()
 
@@ -190,7 +190,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
         done[i] = true
         not_larger = 0
         if has_full_rank(u)
-          @vprint :UnitGroup 1 "improved reg, reg is $(tentative_regulator(u))\n"
+          @vprintln :UnitGroup 1 "improved reg, reg is $(tentative_regulator(u))"
           if first
             idx, expected_reg = _validate_class_unit_group(x, u)
             first = false
@@ -206,13 +206,13 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
             for j  in indices_aut
               phiu = apply_automorphism(u, j, y)
               if add_unit!(u, phiu)
-                @vprint :UnitGroup 1 "New regulator: $(tentative_regulator(u))\n"
+                @vprintln :UnitGroup 1 "New regulator: $(tentative_regulator(u))"
                 not_larger = 0
               end
             end
           end
         else
-          @vprint :UnitGroup 1 "Increased rank by 1 (now $(rank(u)))\n"
+          @vprintln :UnitGroup 1 "Increased rank by 1 (now $(rank(u)))"
         end
       else
         if has_full_rank(u)
@@ -235,7 +235,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
           u.tors_prec = max(p1, u.tors_prec)
           p = max(p, u.tors_prec)
           if is_tors
-            @vprint :UnitGroup 1 "Element is torsion unit\n"
+            @vprintln :UnitGroup 1 "Element is torsion unit"
             done[i] = true
             continue
           end
@@ -258,17 +258,17 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
       not_larger = 0
     end
   end
-  @vprint :UnitGroup 1 "Finished processing\n"
+  @vprintln :UnitGroup 1 "Finished processing"
   if has_full_rank(u)
     u.tentative_regulator = regulator(u.units, 64)
-    @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
+    @vprintln :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)"
   else
-    @vprint :UnitGroup 1 "current rank is $(length(u.units)), need $r\n"
+    @vprintln :UnitGroup 1 "current rank is $(length(u.units)), need $r"
   end
-  @vprint :UnitGroup 1 "-"^80 * "\n"
-  @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
-  @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
-  @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
+  @vprintln :UnitGroup 1 "-"^80 * ""
+  @vprintln :UnitGroup 1 "Independent unit time: $time_indep"
+  @vprintln :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit"
+  @vprintln :UnitGroup 1 "Torsion test time: $time_torsion"
 
 
 
@@ -283,7 +283,7 @@ end
 
 
 function compute_galois_closure!(U::UnitGrpCtx, c::ClassGrpCtx)
-  @vprint :UnitGroup 1 "Computing Galois closure \n"
+  @vprintln :UnitGroup 1 "Computing Galois closure"
   aut = automorphism_list(U)
   gens_aut = small_generating_set(aut)
   indices_aut = Int[]
@@ -300,12 +300,12 @@ function compute_galois_closure!(U::UnitGrpCtx, c::ClassGrpCtx)
     found_new = false
     for i = 1:length(indices_aut)
       for j = 1:length(U.units)
-        @vprint :UnitGroup 1 "Applying auto \n"
+        @vprintln :UnitGroup 1 "Applying auto"
         uphi = apply_automorphism(U, indices_aut[i], U.units[j])
-        @vprint :UnitGroup 1 "Adding unit \n"
+        @vprintln :UnitGroup 1 "Adding unit"
         fl = add_unit!(U, uphi)
         if fl
-          @vprint :UnitGroup 1 "Found new unit! \n"
+          @vprintln :UnitGroup 1 "Found new unit!"
           found_new = true
           idx = _validate_class_unit_group(c, U)[1]
           if isone(idx)

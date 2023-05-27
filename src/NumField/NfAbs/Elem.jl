@@ -457,7 +457,7 @@ function factor(f::PolyElem{nf_elem}; algo::Symbol=:default)
       el = shift_right(el, 1)
       fac[gen(Kx)] = v
     end
-    @vprint :PolyFactor 1 "Factoring $(nice(el))\n"
+    @vprintln :PolyFactor 1 "Factoring $(nice(el))"
     lf = _factor(el, algo = algo)
     for g in lf
       fac[g] = v
@@ -487,7 +487,7 @@ end
 function factor_trager(f::PolyElem{nf_elem})
   k = 0
   g = f
-  @vprint :PolyFactor 1 "Using Trager's method\n"
+  @vprintln :PolyFactor 1 "Using Trager's method"
   p = p_start
   F = GF(p)
 
@@ -502,7 +502,7 @@ function factor_trager(f::PolyElem{nf_elem})
     @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
   end
 
-  @vprint :PolyFactor 2 "need to shift by $k, now the norm\n"
+  @vprintln :PolyFactor 2 "need to shift by $k, now the norm"
   if any(x -> denominator(x) > 1, coefficients(g)) ||
      !is_defining_polynomial_nice(K)
      #in all(?) tested examples, the non-modular one
@@ -837,14 +837,14 @@ function is_power_trager(a::nf_elem, n::Int)
   # This is done using Trager factorization, but we can do some short cuts
   # The norm will be the minpoly_a(x^n), which will always be squarefree.
   K = parent(a)
-  @vprint :PolyFactor 1 "Computing the minpoly\n"
+  @vprintln :PolyFactor 1 "Computing the minpoly"
   @vtime :PolyFactor 1 f = minpoly(a)
   b = K(1)
   c = a*b
   if degree(f) < degree(K)
     i = 0
     while true
-      @vprint :PolyFactor 1 "Need to shift it\n"
+      @vprintln :PolyFactor 1 "Need to shift it"
       b = (gen(K)+i)
       c = a*b^n
       f = minpoly(c)
@@ -857,12 +857,12 @@ function is_power_trager(a::nf_elem, n::Int)
   Qx = parent(f)
   x = gen(Qx)
   N = inflate(f, n)
-  @vprint :PolyFactor 1 "Factoring the minpoly\n"
+  @vprintln :PolyFactor 1 "Factoring the minpoly"
   @vtime :PolyFactor 1 fac = factor(N)
   Kt, t = polynomial_ring(K, "a", cached = false)
   for (p, _) in fac
     if degree(p) == degree(f)
-      @vprint :PolyFactor 1 "Computing final gcd\n"
+      @vprintln :PolyFactor 1 "Computing final gcd"
       t = gcd(change_base_ring(K, p, parent = Kt), t^n - c)
       @assert degree(t) == 1
       return true, -divexact(coeff(t, 0), coeff(t, 1))//b

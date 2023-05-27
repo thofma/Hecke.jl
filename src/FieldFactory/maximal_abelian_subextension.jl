@@ -39,7 +39,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
 end
 
 function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Vector{NfToNfMor}, emb_sub::NfToNfMor)#, deg_mas::Set{Int})
-  @vprint :MaxAbExt 3 "Starting checking abelian extension\n"
+  @vprintln :MaxAbExt 3 "Starting checking abelian extension"
   K = base_field(class_fields[1][1])
   d = degree(K)
   G = domain(class_fields[1][2][1])
@@ -72,14 +72,14 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   end
   expG = lcm(expG_arr)
   expG1 = ppio(expG, com)[1]
-  @vprint :MaxAbExt 3 "Context for ray class groups\n"
+  @vprintln :MaxAbExt 3 "Context for ray class groups"
 
   OK = maximal_order(K)
   rcg_ctx = Hecke.rayclassgrp_ctx(OK, com*expG1)
 
   cfields = trues(length(class_fields))
   for i = 1:length(class_fields)
-    @vprint :MaxAbExt 3 "Class Field $i\n"
+    @vprintln :MaxAbExt 3 "Class Field $i"
     C, res_act = class_fields[i]
     res_act_new = Vector{GrpAbFinGenMap}(undef, length(act_indices))
     for i = 1:length(act_indices)

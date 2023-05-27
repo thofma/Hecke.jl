@@ -135,7 +135,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
 
   @assert n >= m
 
-  @vprint :PseudoHnf 1 "Triangularizing ... \n"
+  @vprintln :PseudoHnf 1 "Triangularizing ..."
   triangularize!(A)
   #println("done")
 
