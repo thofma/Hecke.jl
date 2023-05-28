@@ -2177,6 +2177,7 @@ function is_totally_isotropic(T::TorQuadModule)
       return false
     end
     for b in gens(T)
+      b == a && continue
       if !is_zero(a * b)
         return false
       end
