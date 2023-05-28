@@ -4,7 +4,8 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
        is_anti_isometric_with_anti_isometry, has_complement, radical_bilinear,
        radical_quadratic, is_semi_regular, trivial_morphism, abelian_group_homomorphism,
        value_module, value_module_quadratic_form, gram_matrix_bilinear,
-       gram_matrix_quadratic, quadratic_product, is_totally_isotropic
+       gram_matrix_quadratic, quadratic_product, is_totally_isotropic, is_isometry,
+       is_anti_isometry
 
 ################################################################################
 #
@@ -2182,4 +2183,56 @@ function is_totally_isotropic(T::TorQuadModule)
     end
   end
   return true
+end
+
+################################################################################
+#
+#  Isometry/Anti-isometry check
+#
+################################################################################
+
+function _is_isometry_epsilon(f::TorQuadModuleMor, epsilon)
+  !is_bijective(f) && return false
+  for a in gens(domain(f))
+    for b in gens(domain(f))
+      if f(a)*f(b) != epsilon * a * b
+        return false
+      end  
+    end  
+    if quadratic_product(a) != epsilon * quadratic_product(f(a))
+      return false
+    end  
+  end  
+  return true 
+end
+
+function is_isometry(f::TorQuadModuleMor)
+  return _is_isometry_epsilon(f, 1)
+end
+
+function is_anti_isometry(f::TorQuadModuleMor)
+  return _is_isometry_epsilon(f, -1)
+end
+
+################################################################################
+#
+#  Submodules
+#
+################################################################################
+
+@doc raw"""
+    submodules(T::TorQuadMod; kw...)
+
+Return the submodules of `T` as an iterator. Possible keyword arguments to
+restrict the submodules:
+- `order::Int`: only submodules of order `order`,
+- `index::Int`: only submodules of index `index`,
+- `subtype::Vector{Int}`: only submodules which are isomorphic as an abelian
+  group to `abelian_group(subtype)`,
+- `quotype::Vector{Int}`: only submodules whose quotient are isomorphic as an
+  abelian to `abelian_group(quotype)`.
+"""
+function submodules(T::TorQuadModule; kw...)
+  A = abelian_group(T)
+  return (sub(T, T.(StoA.(gens(S)))) for (S, StoA) in subgroups(A; kw..., fun = (x, y) -> sub(x, y, false)))
 end

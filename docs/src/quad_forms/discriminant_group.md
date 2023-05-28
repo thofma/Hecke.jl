@@ -32,6 +32,7 @@ TorQuadModule
 
 Most of the functionality mirrors that of `AbGrp` its elements and homomorphisms.
 Here we display the part that is specific to elements of torsion quadratic modules.
+
 ### Attributes
 
 ```@docs
@@ -95,7 +96,7 @@ integral integer quadratic lattices.
 discriminant_group(::ZZLat)
 ```
 
-### From a Matrix
+### From a matrix
 
 ```@docs
 torsion_quadratic_module(q::QQMatrix)
@@ -128,4 +129,9 @@ is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
 direct_sum(x::Vector{TorQuadModule})
 direct_product(x::Vector{TorQuadModule})
 biproduct(x::Vector{TorQuadModule})
+```
+
+### Submodules
+```@docs
+submodules(::TorQuadMod)
 ```
