@@ -2095,7 +2095,7 @@ function is_primary_with_prime(T::TorQuadModule)
   if is_empty(ed)
     return true, ZZ(1)
   end
-  bool, p, _ = is_prime_power_with_data(elementary_divisors(T)[end])
+  bool, _, p = is_prime_power_with_data(elementary_divisors(T)[end])
   bool || return false, ZZ(-1)
   return bool, p
 end
