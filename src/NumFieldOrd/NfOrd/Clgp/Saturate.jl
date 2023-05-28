@@ -143,7 +143,7 @@ function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberF
 
   i = 1
   for q in S
-    @vprint :Saturate 3 "Finding primes for saturation: $i/$(threshold)\n"
+    @vprintln :Saturate 3 "Finding primes for saturation: $i/$(threshold)"
     if is_defining_polynomial_nice(K) && is_index_divisor(OK, q)
       continue
     end
@@ -199,12 +199,12 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
   K = nf(ZK)
   zeta, sT = Hecke.torsion_units_gen_order(K)
 
-  @vprint :Saturate 3 "Reducing exponents\n"
+  @vprintln :Saturate 3 "Reducing exponents"
   R = relations_mod_powers(c, p)
   if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
     push!(R, FacElem(zeta))
   end
-  @vprint :Saturate 3 "Done\n"
+  @vprintln :Saturate 3 "Done"
 
   T = GF(p, cached = false)
   cA = length(R)
@@ -227,7 +227,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
 
   evaluateat = Vector{Hecke.fpFieldElem}(undef, degree(K))
   for q in S
-    @vprint :Saturate 3 "Finding primes for saturation: $att/$(threshold)\n"
+    @vprintln :Saturate 3 "Finding primes for saturation: $att/$(threshold)"
     if is_defining_polynomial_nice(K) && is_index_divisor(ZK, q)
       continue
     end
@@ -362,15 +362,15 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
   restart = false
   decom = Dict{NfOrdIdl, ZZRingElem}()
   while true
-    @vprint :Saturate 1 "Computing candidates for the saturation\n"
+    @vprintln :Saturate 1 "Computing candidates for the saturation"
     R = U.units
     @vtime :Saturate 1 e = compute_candidates_for_saturate(R, n, stable)
     if nrows(e) == 0
-      @vprint :Saturate 1 "sat yielded nothing new at $stable, $success \n"
+      @vprintln :Saturate 1 "sat yielded nothing new at $stable, $success"
       return success
     end
     zeta = Hecke.torsion_units_generator(K)
-    @vprint :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements\n"
+    @vprintln :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements"
 
     wasted = false
     for i = ncols(e):-1:1
@@ -384,14 +384,14 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
         @assert length(R) + 1 == nrows(e)
         Hecke.add_to_key!(a.fac, zeta, e[nrows(e), i])
       end
-      @vprint :Saturate 1 "Testing if element is an n-th power\n"
+      @vprintln :Saturate 1 "Testing if element is an n-th power"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
-        @vprint :Saturate 1  "The element is an n-th power\n"
+        @vprintln :Saturate 1  "The element is an n-th power"
         success = true
         Hecke._add_dependent_unit!(U, x)
       else
-        @vprint :Saturate 1  "The element is not an n-th power\n"
+        @vprintln :Saturate 1  "The element is not an n-th power"
         wasted = true
         break
       end
@@ -402,7 +402,7 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
     elseif wasted
       stable *= 2
     else
-      @vprint :Saturate  1 "sat success at $(stable)\n"
+      @vprintln :Saturate  1 "sat success at $(stable)"
       return success
     end
   end
@@ -411,24 +411,24 @@ end
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert is_prime(n)
   K = nf(U)
-  @vprint :Saturate 1 "Simplifying the context\n"
+  @vprintln :Saturate 1 "Simplifying the context"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
   success = false
   restart = false
   while true
     if success
-      @vprint :Saturate 1 "Simplifying the context\n"
+      @vprintln :Saturate 1 "Simplifying the context"
       @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
     end
-    @vprint :Saturate 1 "Computing candidates for the saturation\n"
+    @vprintln :Saturate 1 "Computing candidates for the saturation"
     R = relations(c)
     @vtime :Saturate 1 e = compute_candidates_for_saturate(R, n, stable)
     if nrows(e) == 0
-      @vprint :Saturate 1 "sat yielded nothing new at $stable, $success \n"
+      @vprintln :Saturate 1 "sat yielded nothing new at $stable, $success"
       return success
     end
     zeta = Hecke.torsion_units_generator(K)
-    @vprint :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements\n"
+    @vprintln :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements"
 
     rels_added = sparse_matrix(FlintZZ)
     R_mat = relations_matrix(c)
@@ -439,16 +439,16 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         candidate_rel = divexact(fac_a, n)
         red_candidate = reduce(rels_added, candidate_rel)
         if iszero(red_candidate)
-          @vprint :Saturate 1 "Ignore this relation! \n"
+          @vprintln :Saturate 1 "Ignore this relation!"
           continue
         end
       end
 
       decom = Dict{NfOrdIdl, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
-      @vprint :Saturate 1 "Testing if element is an n-th power\n"
+      @vprintln :Saturate 1 "Testing if element is an n-th power"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
-        @vprint :Saturate 1  "The element is an n-th power\n"
+        @vprintln :Saturate 1  "The element is an n-th power"
         success = true
         fac_a = divexact(fac_a, n)
         if iszero(fac_a)
@@ -456,7 +456,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
           #we want to make sure it is used
           #find units can be randomised...
           #maybe that should also be addressed elsewhere
-          @vprint :Saturate 1  "The new element is a unit\n"
+          @vprintln :Saturate 1  "The new element is a unit"
 
           if use_orbit
             auts_action = Hecke._get_autos_from_ctx(d)
@@ -470,7 +470,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
             Hecke._add_dependent_unit!(U, x)
           end
         else
-          @vprint :Saturate 1  "The new element gives a relation\n"
+          @vprintln :Saturate 1  "The new element gives a relation"
           Hecke.class_group_add_relation(d, x, fac_a)
           if use_orbit
             #We add the relation to the matrix and compute the snf
@@ -483,7 +483,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
           end
         end
       else
-        @vprint :Saturate 1  "The element is not an n-th power\n"
+        @vprintln :Saturate 1  "The element is not an n-th power"
         wasted = true
         break
       end
@@ -494,7 +494,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     elseif wasted
       stable *= 2
     else
-      @vprint :Saturate  1 "sat success at $(stable)\n"
+      @vprintln :Saturate  1 "sat success at $(stable)"
       return success
     end
   end
@@ -510,7 +510,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
 
   new_rels = Vector{FacElem{nf_elem, AnticNumberField}}()
   vals_new_rels = Vector{SRow{ZZRingElem}}()
-  @vprint :Saturate 1 "Computing rels...\n"
+  @vprintln :Saturate 1 "Computing rels..."
   for i=1:length(c.FB.ideals)
     if cp != 0 && isone(c.M.basis.rows[i].values[1])
       continue
@@ -543,7 +543,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
       vals_new_rels[i] = sparse_row(view(M2, i:i, 1:ncols(M2)))
     end
   end
-  @vprint :Saturate 1 "Reducing rels...\n"
+  @vprintln :Saturate 1 "Reducing rels..."
   if !isempty(new_rels)
     @vtime :Saturate 1 new_rels = Hecke.reduce_mod_units(new_rels, U)
     for i = 1:length(new_rels)

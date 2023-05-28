@@ -222,18 +222,18 @@ import Hecke.RecoCtx
 
 function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
   Hecke.check_parent(f, g)
-  @vprint :MPolyGcd 1 "multivariate gcd of f with $(length(f)) and g with $(length(g)) terms over $(base_ring(f))\n"
+  @vprintln :MPolyGcd 1 "multivariate gcd of f with $(length(f)) and g with $(length(g)) terms over $(base_ring(f))"
 
   k = base_ring(f)
   ps = PrimesSet(Hecke.p_start, -1)
   fl, c = Hecke.is_cyclotomic_type(k)
   if fl
-    @vprint :MPolyGcd 2 "field is cyclotomic with conductor $c\n"
+    @vprintln :MPolyGcd 2 "field is cyclotomic with conductor $c"
     ps = PrimesSet(Hecke.p_start, -1, c, 1)
   end
   fl, c = Hecke.is_quadratic_type(k)
   if fl && abs(c) < typemax(Int)
-    @vprint :MPolyGcd 2 "field is quadratic, using conductor $(4*c)\n"
+    @vprintln :MPolyGcd 2 "field is quadratic, using conductor $(4*c)"
     ps = PrimesSet(Hecke.p_start, -1, Int(4*c), 1)
   end
   return _gcd(f, g, ps)
@@ -278,7 +278,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
   fl = true
   while true
     p = iterate(ps, p)[1]
-    @vprint :MPolyGcd 2 "Main loop: using $p\n"
+    @vprintln :MPolyGcd 2 "Main loop: using $p"
     @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, deg_limit = 1)
     if isempty(me)
       continue

@@ -12,9 +12,9 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
 
   d = degree(list[1])
   common_degree = ppio(invariants[end], d)[1]
-  @vprint :BrauerObst 1 "Computing cocycles\n"
+  @vprintln :BrauerObst 1 "Computing cocycles"
   cocycles = cocycles_computation(L, i)
-  @vprint :BrauerObst 1 "Computing isomorphisms\n"
+  @vprintln :BrauerObst 1 "Computing isomorphisms"
   G = GAP.Globals.ImagesSource(cocycles[1].projection)
   if isone(common_degree)
     for F in list
@@ -55,11 +55,11 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
     obstructions[i] = falses(length(cocycles))
   end
   for (p, v) in fac
-    @vprint :BrauerObst 1 "Checking obstructions at $p \n"
+    @vprintln :BrauerObst 1 "Checking obstructions at $p"
     cocycles_p_start = cocycle_ctx[_to_prime_power_kernel(x, Int(p)) for x in cocycles]
     indices_non_split = Int[]
     for i = 1:length(cocycles_p_start)
-      @vprint :BrauerObst 1 "Checking if cocycle $i splits \n"
+      @vprintln :BrauerObst 1 "Checking if cocycle $i splits"
       if !iszero(cocycles_p_start[i])
         push!(indices_non_split, i)
       end
@@ -422,7 +422,7 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   AutG = GAP.Globals.AutomorphismGroup(G)
   AutK = GAP.Globals.AutomorphismGroup(K)
   AutE = GAP.Globals.AutomorphismGroup(E)
-  @vprint :BrauerObst 1 "Automorphism Groups computed\n"
+  @vprintln :BrauerObst 1 "Automorphism Groups computed"
   isoAutG = GAP.Globals.IsomorphismPermGroup(AutG)
   isoAutK = GAP.Globals.IsomorphismPermGroup(AutK)
 
@@ -447,7 +447,7 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
     gensubs[s] = GAP.Globals.Image(EmbAutG, ind_auts_quo[s]) * GAP.Globals.Image(EmbAutK, ind_auts_sub[s])
   end
   S = GAP.Globals.Subgroup(GProd, GAP.julia_to_gap(gensubs))
-  @vprint :BrauerObst 1 "Map constructed. Enumerating cosets...\n"
+  @vprintln :BrauerObst 1 "Map constructed. Enumerating cosets..."
   Transv = GAP.Globals.RightTransversal(GProd, S)
   Tperm = GAP.Globals.List(Transv)
   #Now, I have to recover the automorphisms in AutG and AutK
@@ -466,7 +466,7 @@ function projections(mG::GAP.GapObj)
   E = GAP.Globals.Source(mG)
   AutG = GAP.Globals.AutomorphismGroup(G)
   AutE = GAP.Globals.AutomorphismGroup(E)
-  @vprint :BrauerObst 1 "Automorphism Groups computed\n"
+  @vprintln :BrauerObst 1 "Automorphism Groups computed"
   isoAutG = GAP.Globals.IsomorphismPermGroup(AutG)
   permAutG = GAP.Globals.ImagesSource(isoAutG)
   #I want to construct the map between the automorphism groups. The kernel is characteristic!
@@ -476,7 +476,7 @@ function projections(mG::GAP.GapObj)
     gens_img[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
   end
   S = GAP.Globals.Subgroup(permAutG, GAP.julia_to_gap(gens_img))
-  @vprint :BrauerObst 1 "Map constructed. Enumerating cosets...\n"
+  @vprintln :BrauerObst 1 "Map constructed. Enumerating cosets..."
   Transv = GAP.Globals.RightTransversal(permAutG, S)
   Tperm = GAP.Globals.List(Transv)
   #Now, I have to recover the automorphisms in AutG and AutK
@@ -520,7 +520,7 @@ function cocycles_computation(GG, HH, KK)
     end
   end
 
-  @vprint :BrauerObst 1 "Listing automorphisms \n"
+  @vprintln :BrauerObst 1 "Listing automorphisms"
   autos = _autos_to_check(H1, K, target_grp, mH1)
   cocycles = Vector{cocycle_ctx}(undef, length(autos))
   for i = 1:length(autos)

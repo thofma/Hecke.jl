@@ -346,8 +346,8 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
   AA = _matrix_algebra(Ks, ns)
   O = _basis_of_integral_commutator_algebra(A, A)
   I = _basis_of_integral_commutator_algebra(A, B)
-  @vprint :Conjugacy 1 "Algebra has dimension $(length(O))\n"
-  @vprint :Conjugacy 1 "Semisimple quotient has dimension $(dim(AA))\n"
+  @vprintln :Conjugacy 1 "Algebra has dimension $(length(O))"
+  @vprintln :Conjugacy 1 "Semisimple quotient has dimension $(dim(AA))"
   ordergens = elem_type(AA)[]
   idealgens = elem_type(AA)[]
   dec = decompose(AA)
@@ -389,7 +389,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
   OO = Order(AA, ordergens)
   OI = ideal_from_lattice_gens(AA, idealgens)
   @hassert :Conjugacy 1 OO == right_order(OI)
-  @vprint :Conjugacy 1 "Testing if ideal is principal...\n"
+  @vprintln :Conjugacy 1 "Testing if ideal is principal..."
   fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool,
                                               AlgAssElem{QQFieldElem,AlgAss{QQFieldElem}}}
 

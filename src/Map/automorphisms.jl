@@ -430,13 +430,13 @@ function _automorphisms_abelian(K::AnticNumberField)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
     end
-    @vprint :Automorphisms 1 "Trying $p \n"
+    @vprintln :Automorphisms 1 "Trying $p"
     @vtime :Automorphisms 1 isnew, h = _frobenius_at(K, p, auts)
     if !isnew
-      @vprint :Automorphisms "Not new! \n"
+      @vprintln :Automorphisms "Not new!"
       continue
     end
-    @vprint :Automorphisms "New! Computing closure \n"
+    @vprintln :Automorphisms "New! Computing closure"
     push!(auts, h)
     auts = closure(auts)
   end
@@ -573,7 +573,7 @@ function check_root(K::AnticNumberField, p::Int, el::nf_elem)
     end
   end
   if !isroot
-    @vprint :Automorphisms 4 "Not yet a root!\n"
+    @vprintln :Automorphisms 4 "Not yet a root!"
   end
   return isroot
 end
@@ -606,14 +606,14 @@ function _automorphisms_center(K::AnticNumberField)
       continue
     end
     it_bound = clog(ZZRingElem(clog(coeffs_bound, p)), 2)
-    @vprint :Automorphisms "Trying $p \n"
+    @vprintln :Automorphisms "Trying $p"
     isnew, h = _frobenius_at(K, p, auts, bound = it_bound)
     if !isnew
-      @vprint :Automorphisms "Not new! \n"
+      @vprintln :Automorphisms "Not new!"
       continue
     end
     cnt = 0
-    @vprint :Automorphisms "New! Computing closure \n"
+    @vprintln :Automorphisms "New! Computing closure"
     push!(auts, h)
     auts = closure(auts)
   end
@@ -644,7 +644,7 @@ function is_abelian2(K::AnticNumberField)
       return false
     end
     it_bound = clog(ZZRingElem(clog(coeffs_bound, p)), 2)
-    @vprint :Automorphisms 1 "Trying $p \n"
+    @vprintln :Automorphisms 1 "Trying $p"
     b = powermod(gFx, p, fF)
     if b in fpPolyRingElem[Fx(x(gen(K))) for x in auts]
       continue
@@ -654,7 +654,7 @@ function is_abelian2(K::AnticNumberField)
       return false
     end
     cnt = 0
-    @vprint :Automorphisms 1 "New! Computing closure \n"
+    @vprintln :Automorphisms 1 "New! Computing closure"
     push!(auts, hom(K, K, rt, check = false))
     auts = closure(auts)
   end

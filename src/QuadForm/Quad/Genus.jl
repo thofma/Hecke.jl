@@ -1834,7 +1834,7 @@ function representative(G::QuadGenus)
   M = maximal_integral_lattice(V)
   for g in G.LGS
     p = prime(g)
-    @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
+    @vprintln :Lattice 1 "Finding representative for $g at $(prime(g))..."
     L = representative(g)
     M = locally_isometric_sublattice(M, L, p)
     @assert is_locally_isometric(M, L, p)

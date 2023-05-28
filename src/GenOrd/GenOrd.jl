@@ -1,9 +1,9 @@
 # Support for generic maximal orders over any PID
-# 
+#
 #   final result:
 #     integral_closure(R, F)
 #     where R is "any" PID and F a finite extension of some quotient field of R
-# 
+#
 #   R needs to support
 #    - euclidean (hnf, pseudo_inv, gcd, lcm, mod, div, divrem)
 #    - factorisation
@@ -13,11 +13,11 @@
 #      (all Localisations of Z have QQ as quotient field,
 #      Q[x], Z[x] and Localisation(Q(x), degree) use Q(t))
 #    - is_domain_type
-# 
+#
 # Seems to work for
 # -  R = ZZ, F = AnticNumberField
 # -  R = Loc{ZZRingElem}, F = AnticNumberField
-# 
+#
 # -  R = k[x], F = FunctionField (for k = QQ, F_q)
 # -  R = localization(k(x), degree), F = FunctionField
 # -  R = Z[x], F = FunctionField/ QQ(t)
@@ -235,7 +235,7 @@ end
 ################################################################################
 
 function Base.hash(a::GenOrdElem, h::UInt)
-  b = 0x52da43cd011aacd1%UInt 
+  b = 0x52da43cd011aacd1%UInt
   return xor(b, hash(data(a), h))
 end
 
@@ -254,7 +254,7 @@ end
 
 ################################################################################
 #
-#  Parent check  
+#  Parent check
 #
 ################################################################################
 
@@ -482,7 +482,7 @@ end
 
 function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = false) where {T}
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @vprint :NfOrd 2 "ring of multipliers module $p (is_prime: $is_prime) of ideal with basis matrix $I\n"
+  @vprintln :NfOrd 2 "ring of multipliers module $p (is_prime: $is_prime) of ideal with basis matrix $I"
   II, d = pseudo_inv(I)
   @assert II*I == d
 
@@ -530,7 +530,7 @@ end
 
 function ring_of_multipliers(O::GenOrd, I::MatElem)
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @vprint :NfOrd 2 "ring of multipliers of ideal with basis matrix $I\n"
+  @vprintln :NfOrd 2 "ring of multipliers of ideal with basis matrix $I"
   II, d = pseudo_inv(I)
   @assert II*I == d
 
@@ -590,7 +590,7 @@ end
 ################################################################################
 
 function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false)
-  @vprint :NfOrd 1 "computing a $p-maximal orderorder\n"
+  @vprintln :NfOrd 1 "computing a $p-maximal orderorder"
 
   t = residue_field(parent(p), p)
 
@@ -602,13 +602,13 @@ function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprint :NfOrd 1 "using trace-radical for $p\n"
+    @vprintln :NfOrd 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprint :NfOrd 1 "non-perfect case for radical for $p\n"
+    @vprintln :NfOrd 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprint :NfOrd 1 "using radical-by-power for $p\n"
+    @vprintln :NfOrd 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   while true #TODO: check the discriminant to maybe skip the last iteration
@@ -704,10 +704,10 @@ end
 ################################################################################
 
 function Hecke.maximal_order(O::GenOrd)
-  @vprint :NfOrd 1 "starting maximal order...\n"
+  @vprintln :NfOrd 1 "starting maximal order..."
   S = base_ring(O)
   d = discriminant(O)
-  @vprint :NfOrd 2 "factoring the discriminant...\n"
+  @vprintln :NfOrd 2 "factoring the discriminant..."
   @vtime :NfOrd 2 ld = factor(d)
   local Op
   first = true

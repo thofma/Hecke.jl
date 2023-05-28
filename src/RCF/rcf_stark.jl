@@ -183,7 +183,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
     fl, nb = approximate_defpoly(K, el)
     if !fl
       p *= 2
-      @vprint :ClassField 1 "Guess not useful. Increasing precision to $(2*p) \n"
+      @vprintln :ClassField 1 "Guess not useful. Increasing precision to $(2*p)"
     elseif nb < p
       f = find_defining_polynomial(K, el, v)
       if degree(f) != degree(C)
@@ -199,14 +199,14 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
     end
   end
   p = max(64+p, nb)
-  @vprint :ClassField 1 "Guess: we need precision $(p) \n"
+  @vprintln :ClassField 1 "Guess: we need precision $(p)"
   while true
     approximations_derivative_Artin_L_functions = approximate_derivative_Artin_L_function(chars, p)
     el = approximate_artin_zeta_derivative_at_0(C1, mp, approximations_derivative_Artin_L_functions)
     f = find_defining_polynomial(K, el, v)
     if degree(f) != degree(C)
       p = 2*p
-      @vprint :ClassField 1 "Wrong guess, setting precision to $(p) \n"
+      @vprintln :ClassField 1 "Wrong guess, setting precision to $(p)"
       continue
     end
     mR = C.rayclassgroupmap
@@ -217,7 +217,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
       return nothing
     end
     p *= 2
-    @vprint :ClassField 1 "The reconstructed polynomial is wrong, setting precision to $(p) \n"
+    @vprintln :ClassField 1 "The reconstructed polynomial is wrong, setting precision to $(p)"
   end
 end
 
@@ -238,7 +238,7 @@ function approximate_defpoly(K::AnticNumberField, el::Vector{acb})
   rts = arb[2*real(cosh(x)) for x in el]
   ps = power_sums(rts)
   pol = power_sums_to_polynomial(ps)
-  @vprint :ClassField 1 "Approximation: $pol \n"
+  @vprintln :ClassField 1 "Approximation: $pol"
   l2norm = ZZRingElem(0)
   for i = 0:degree(pol)
     c = coeff(pol, i)
@@ -330,7 +330,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   lc = ideals_up_to(OK, bound, conductor(C)[1])
   cnt = 0
   while true
-    @vprint :ClassField 1 "Batch of ideals with $(length(lc)) elements \n"
+    @vprintln :ClassField 1 "Batch of ideals with $(length(lc)) elements"
     for I in lc
       for i = 1:length(real_plc)
         v = real_plc[i]
@@ -716,7 +716,7 @@ function _lambda_and_artin_quadratic(chi::RCFCharacter, target_prec::Int, vf::Di
   c = conductor(chi)
   vals = vf[c]
   nterms_chi = length(vals)
-  @vprint :ClassField 1 "Computing $(nterms_chi) coefficients Artin L function \n"
+  @vprintln :ClassField 1 "Computing $(nterms_chi) coefficients Artin L function"
   @vtime :ClassField 1 val_chi = compute_coeffs_L_function(chi, nterms_chi, prec)
   res1 = zero(CC)
   res2 = zero(CC)

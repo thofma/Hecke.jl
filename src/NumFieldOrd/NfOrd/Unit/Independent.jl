@@ -46,7 +46,7 @@ function _isindependent(x::Vector{T}, p::Int = 32) where T
 
     q = 2
     for i in 1:length(x)
-      @vprint :UnitGroup 3 "Computing conjugates with precision $p of ($i) $(length(x[i].fac))...\n"
+      @vprintln :UnitGroup 3 "Computing conjugates with precision $p of ($i) $(length(x[i].fac))..."
       conlog[i] = conjugates_arb_log(x[i], p)
       for j in 1:rr
         q = max(q, bits(conlog[i][j]))
@@ -65,7 +65,7 @@ function _isindependent(x::Vector{T}, p::Int = 32) where T
     Ar = base_ring(A)
 
     B = A*transpose(A)
-    @vprint :UnitGroup 1 "Computing det of $(nrows(B))x$(ncols(B)) matrix with precision $(p) ... \n"
+    @vprintln :UnitGroup 1 "Computing det of $(nrows(B))x$(ncols(B)) matrix with precision $(p) ..."
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)

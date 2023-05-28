@@ -231,7 +231,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     end
   end
 
-  @vprint :Saturate 1 "using prime $good_p of degree $deg_p\n"
+  @vprintln :Saturate 1 "using prime $good_p of degree $deg_p"
 
   # compute the lifting exponent a la Friedrich-Fieker
 
@@ -276,7 +276,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     end
   end
   ss = _lifting_expo(good_p, good_deg_p, K, bound_root)
-  @vprint :Saturate 1 "using a lifting bound of $ss\n"
+  @vprintln :Saturate 1 "using a lifting bound of $ss"
   rts = _hensel(f, factor_of_g, good_fp, Int(ss), max_roots = max_roots - length(rs), ispure = ispure)
   return vcat(rs, rts)
 end
@@ -384,18 +384,18 @@ function _hensel(f::Generic.Poly{nf_elem},
     _p = Int(characteristic(base_ring(fac_pol_mod_p)))
     if haskey(_cache, _p)
       _cache_p = _cache[_p]
-      @vprint :Saturate 4 "Hitting the cache for the prime $(_p)\n"
+      @vprintln :Saturate 4 "Hitting the cache for the prime $(_p)"
       fac_pol_mod_p.parent = parent(first(keys(_cache_p)))
       if haskey(_cache_p, fac_pol_mod_p)
-        @vprint :Saturate 1 "  Hitting the cache for the prime ideal\n"
+        @vprintln :Saturate 1 "  Hitting the cache for the prime ideal"
         _cache_lll = _cache_p[fac_pol_mod_p]
       else
-        @vprint :Saturate 1 "  Not hitting the cache for the prime ideal\n"
+        @vprintln :Saturate 1 "  Not hitting the cache for the prime ideal"
         _cache_lll = Dict()
         _cache_p[fac_pol_mod_p] = _cache_lll
       end
     else
-      @vprint :Saturate 4 "No hitting the cache for the prime $(_p)\n"
+      @vprintln :Saturate 4 "No hitting the cache for the prime $(_p)"
       _cache_p = Dict()
       _cache_lll = Dict()
       _cache_p[fac_pol_mod_p] = _cache_lll
@@ -483,7 +483,7 @@ function _hensel(f::Generic.Poly{nf_elem},
     sc = abs(det(numerator(basis_matrix(E))))
   end
 
-  @vprint :Saturate 1 "using a denominator estimate of $den\n"
+  @vprintln :Saturate 1 "using a denominator estimate of $den"
 
   ##for the result, to check for stabilising
 
@@ -516,9 +516,9 @@ function _hensel(f::Generic.Poly{nf_elem},
   local Mi::ZZMatrix
   local d::ZZRingElem
 
-  @vprint :Saturate 1 "Maximum number of steps: $(length(pr))\n"
+  @vprintln :Saturate 1 "Maximum number of steps: $(length(pr))"
   for i=2:length(pr)
-    @vprint :Saturate 1 "Step number $i\n"
+    @vprintln :Saturate 1 "Step number $i"
     pp = ZZRingElem(p)^pr[i]
     Q = residue_ring(FlintZZ, pp, cached=false)
     Qt, t = polynomial_ring(Q, "t", cached=false)

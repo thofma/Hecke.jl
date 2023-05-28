@@ -1177,7 +1177,7 @@ function factor(f::PolyElem{NfAbsNSElem})
   end
 
   f_orig = deepcopy(f)
-  @vprint :PolyFactor 1 "Factoring $f\n"
+  @vprintln :PolyFactor 1 "Factoring $f"
   @vtime :PolyFactor 2 g = gcd(f, derivative(f))
   if degree(g) > 0
     f = div(f, g)

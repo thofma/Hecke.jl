@@ -18,7 +18,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
       #@show "BadNorm"
       bad_norm += 1
       if I.cnt > 100  && bad_norm / I.cnt > 0.1
-        @vprint :ClassGroup 2 "norm too large, $(I.cnt) \n"
+        @vprintln :ClassGroup 2 "norm too large, $(I.cnt)"
         break
       end
       continue
@@ -33,7 +33,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
       fl = class_group_add_relation(c, ee, QQFieldElem(n), norm(I.A), integral = true)
     end
     if !fl  && I.cnt/(good+1) > 2*c.expect
-      @vprint :ClassGroup 2 "not enough progress $(I.cnt) $(c.expect) $good\n"
+      @vprintln :ClassGroup 2 "not enough progress $(I.cnt) $(c.expect) $good"
       break
     end
     if fl
@@ -41,16 +41,16 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
     end
     if fl && max_good > -1
       if max_good < good
-        @vprint :ClassGroup 2 "found enough $(I.cnt)\n"
+        @vprintln :ClassGroup 2 "found enough $(I.cnt)"
         break
       end
     end
     if false && fl && good > 0 && (rank(c.M)- rk+1)/good < rat
-      @vprint :ClassGroup 2 "rank too slow $(I.cnt) $good $(rank(c.M)) $rk\n"
+      @vprintln :ClassGroup 2 "rank too slow $(I.cnt) $good $(rank(c.M)) $rk"
       break
     end
   end
-  @vprint :ClassGroup 2 "delta rank: $(rank(c.M) - rk) found $good rels\n"
+  @vprintln :ClassGroup 2 "delta rank: $(rank(c.M) - rk) found $good rels"
   return (rank(c.M) - rk), good
 end
 
@@ -71,14 +71,14 @@ function class_group_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2) where {T}
 #    single_env(c, I, nb, rat, 1)
 #  end
 #
-#  @vprint :ClassGroup 1 "search in ideals:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\n"
+#  @vprintln :ClassGroup 1 "search in ideals:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)"
 
 #  @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
 #  if h == 1 return c; end
 
-#  @vprint :ClassGroup 1 "Now with random...\n"
-#  @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
-#  @vprint :ClassGroup 1 "$(piv)\n"
+#  @vprintln :ClassGroup 1 "Now with random..."
+#  @vprintln :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h"
+#  @vprintln :ClassGroup 1 "$(piv)"
 
   #while iszero(h) || length(c.M.rel_gens) < rr1 + rr2 - 1
     class_group_new_relations_via_lll(c, rat, extra = -1)
@@ -96,15 +96,15 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
 
   @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
 
-  @vprint :ClassGroup 1 "Now with random...\n"
-  @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
-  @vprint :ClassGroup 1 "$(piv)\n"
+  @vprintln :ClassGroup 1 "Now with random..."
+  @vprintln :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h"
+  @vprintln :ClassGroup 1 "$(piv)"
   if length(piv) == 0
     for i=1:5
       push!(piv, rand(1:length(c.FB.ideals)))
     end
-    @vprint :ClassGroup 1 "piv was empty, supplemented it to\n"
-    @vprint :ClassGroup 1 "$(piv)\n"
+    @vprintln :ClassGroup 1 "piv was empty, supplemented it to"
+    @vprintln :ClassGroup 1 "$(piv)"
   end
 
 
@@ -113,9 +113,9 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
   if isdefined(c, :randomClsEnv)
     rand_env = c.randomClsEnv
     random_extend(rand_env, 2.0)
-    @vprint :ClassGroup 1 "re-using and extending random: $(nbits(norm(rand_env.rand))) and $(rand_env.exp)\n"
+    @vprintln :ClassGroup 1 "re-using and extending random: $(nbits(norm(rand_env.rand))) and $(rand_env.exp)"
   else
-    @vprint :ClassGroup 1 "want $(stop-start) primes for random. Try distinct rational primes...\n"
+    @vprintln :ClassGroup 1 "want $(stop-start) primes for random. Try distinct rational primes..."
 #    @show start, stop
     JJ = NfOrdIdl[c.FB.ideals[stop]]
     start += length(c.FB.ideals) - stop
@@ -155,7 +155,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
       sort_rev = rank(c.M) < length(c.FB.ideals) *0.9
       for p = sort(collect(piv), rev = sort_rev)
         @vprint :ClassGroup 1 "$(set_cursor_col())$(clear_to_eol())#ideals tested: $n_idl, pivot ideal: $p, exp: $rand_exp, #rand base: $(length(rand_env.base))"
-        @vprint :ClassGroup 2 "\n" #otherwise the printing above is horrible
+        @vprintln :ClassGroup 2 "" #otherwise the printing above is horrible
         @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
         #@show nbits(norm(J)), rand_env.exp, rand_exp
         @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
@@ -179,10 +179,10 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
       end
     end
 
-    @vprint :ClassGroup 1 "eval info\n"
+    @vprintln :ClassGroup 1 "eval info"
     @vtime :ClassGroup 1 h, piv_new = class_group_get_pivot_info(c)
-    @vprint :ClassGroup 1 "length(piv) = $(length(piv_new)) and h = $h\n"
-    @vprint :ClassGroup 1 "$(piv_new)\n"
+    @vprintln :ClassGroup 1 "length(piv) = $(length(piv_new)) and h = $h"
+    @vprintln :ClassGroup 1 "$(piv_new)"
 
     if piv_new == piv
       if h > 0

@@ -50,7 +50,7 @@ function scaled_log_matrix(u::Vector{T}, pr::Int = 32) where T
 
   r,s = signature(_base_ring(u[1]))
   A = zero_matrix(FlintZZ, length(u), r + s)
-  @vprint :UnitGroup 1 "starting prec in scaled_log_matrix: $pr\n"
+  @vprintln :UnitGroup 1 "starting prec in scaled_log_matrix: $pr"
 
   for i in 1:length(u)
     c = conjugates_arb_log(u[i], pr)
@@ -59,7 +59,7 @@ function scaled_log_matrix(u::Vector{T}, pr::Int = 32) where T
     end
 
     if any(x->radius(x) > 1e-9, c)  # too small...
-      @vprint :UnitGroup 1 "increasing prec in scaled_log_matrix, now: $pr\n"
+      @vprintln :UnitGroup 1 "increasing prec in scaled_log_matrix, now: $pr"
       pr *= 2
       if pr > 2^30
         error("cannot do lll on units")
@@ -86,7 +86,7 @@ function row_norms(A::ZZMatrix)
 end
 
 function reduce(u::Vector{T}, prec::Int = 32) where T
-  @vprint :UnitGroup 1 "prec in reduce, now: $prec\n"
+  @vprintln :UnitGroup 1 "prec in reduce, now: $prec"
   r = length(u)
   if r == 0
     return u
@@ -99,16 +99,16 @@ function reduce(u::Vector{T}, prec::Int = 32) where T
     if isone(U)
       return u
     end
-    @vprint :UnitGroup 2 "reducing units by $U\n"
+    @vprintln :UnitGroup 2 "reducing units by $U"
     pA = prod(row_norms(A))
     pL = prod(row_norms(L))
-    @vprint :UnitGroup 1 "reducing norms of logs from 2^$(nbits(pA)) -> 2^$(nbits(pL)), rat is $(Float64(1.0*pA//pL))\n"
+    @vprintln :UnitGroup 1 "reducing norms of logs from 2^$(nbits(pA)) -> 2^$(nbits(pL)), rat is $(Float64(1.0*pA//pL))"
     u = transform(u, transpose(U))
     if nbits(pL) >= nbits(pA)
     #  u = [compact_presentation(x, decom = factor(1*maximal_order(base_ring(x)))) for x = u]
       return u
     end
-    @vprint :UnitGroup 1 "trying to reduce further...\n"
+    @vprintln :UnitGroup 1 "trying to reduce further..."
   end
 end
 

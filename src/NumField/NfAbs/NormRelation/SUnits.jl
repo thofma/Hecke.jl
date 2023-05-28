@@ -5,15 +5,15 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
   K = N.K
   for i = 1:length(N)
     k, mk = subfield(N, i)
-    @vprint :NormRelation 1 "Computing maximal order ..."
+    @vprintln :NormRelation 1 "Computing maximal order ..."
     zk = maximal_order(k)
-    @vprint :NormRelation 1 "Computing lll basis ... "
+    @vprintln :NormRelation 1 "Computing lll basis ... "
     zk = lll(zk)
-    @vprint :NormRelation 1 "Computing class group of $k... "
+    @vprintln :NormRelation 1 "Computing class group of $k... "
     class_group(zk)
-    @vprint :NormRelation 1 "done"
+    @vprintln :NormRelation 1 "done"
     lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
-    @vprint :NormRelation 1 "Now computing the S-unit group for lp of length $(length(lpk))"
+    @vprintln :NormRelation 1 "Now computing the S-unit group for lp of length $(length(lpk))"
     @assert length(lpk) > 0
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
 
@@ -32,10 +32,10 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
 
     cc = Vector{Tuple{Int, ZZRingElem}}[]
     for j in 1:length(N.coefficients_gen[i])
-      @vprint :NormRelation 1 "Inducing the action ... "
+      @vprintln :NormRelation 1 "Inducing the action ... "
       z = induce_action(N, i, j, lpk, c.FB, cc)
 
-      @vprint :NormRelation 1 "Feeding in the S-units of the small field ... "
+      @vprintln :NormRelation 1 "Feeding in the S-units of the small field ... "
 
 
       for l=1:ngens(Szk)
@@ -167,7 +167,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
   add_unit_later = FacElem{nf_elem, AnticNumberField}[]
-  @vprint :NormRelation 1 "Adding trivial relations\n"
+  @vprintln :NormRelation 1 "Adding trivial relations"
   for I in c.FB.ideals
     a = I.gen_one
     Hecke.class_group_add_relation(c, K(a), QQFieldElem(abs(a)^degree(K)), ZZRingElem(1), orbit = false)
@@ -182,8 +182,8 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
       continue
     end
     k, mk = subfield(N, i)
-    @vprint :NormRelation 1 "Looking at the subfield $i / $(length(N)) with defining equation $(k.pol) \n"
-    @vprint :NormRelation 1 "Computing lll basis of maximal order ...\n"
+    @vprintln :NormRelation 1 "Looking at the subfield $i / $(length(N)) with defining equation $(k.pol)"
+    @vprintln :NormRelation 1 "Computing lll basis of maximal order ..."
     zk = maximal_order(k)
     zk = lll(zk)
     lpk = NfOrdIdl[]
@@ -191,25 +191,25 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
       append!(lpk, prime_ideals_over(zk, p))
     end
     @assert length(lpk) > 0
-    @vprint :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ... \n"
+    @vprintln :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ..."
     Szk, mS = _get_sunits(N, i, lpk)
-    @vprint :NormRelation 1 "Coercing the sunits into the big field ...\n"
+    @vprintln :NormRelation 1 "Coercing the sunits into the big field ..."
     z = induce_action_just_from_subfield(N, i, lpk, c.FB, invariant)
 
     #found_torsion = false
     #CAREFUL! I AM ASSUMING THAT THE FIRST ELEMENT IS A TORSION UNIT!
     for l=2:ngens(Szk)
-      @vprint :NormRelation 3 "Sunits $l / $(ngens(Szk))\n"
+      @vprintln :NormRelation 3 "Sunits $l / $(ngens(Szk))"
       u = mS(Szk[l])  #do compact rep here???
       if iszero(mS.valuations[l])
         if UZK.finished
           continue
         end
         if compact != 0
-          @vprint :NormRelation 3 "  Compact presentation ...\n"
+          @vprintln :NormRelation 3 "  Compact presentation ..."
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{NfOrdIdl, Int}())
         elseif saturate_units
-          @vprint :NormRelation 3 "  Compact presentation ...\n"
+          @vprintln :NormRelation 3 "  Compact presentation ..."
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{NfOrdIdl, Int}())
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(N, i, x), v) for (x,v) = u.fac))
@@ -247,7 +247,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         =#
         if compact != 0
           sup = Dict{NfOrdIdl, Int}((lpk[w], t) for (w, t) in mS.valuations[l])
-          @vprint :NormRelation 3 "  Compact presentation ...\n"
+          @vprintln :NormRelation 3 "  Compact presentation ..."
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = sup)
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
@@ -260,7 +260,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         =#
       end
     end
-    @vprint :NormRelation 4 "Reducing the units\n"
+    @vprintln :NormRelation 4 "Reducing the units"
     @vtime :NormRelation 4 UZK.units = Hecke.reduce(UZK.units, UZK.tors_prec)
   end
 
@@ -365,13 +365,13 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
 end
 
 function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, invariant::Bool = false; saturate_units::Bool = false)
-  @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
+  @vprintln :NormRelation 1 "Setting up the norm relation context ..."
   fl, N = norm_relation(K, n)
   if !fl
     fl, N = norm_relation(K, 0, small_degree = false)
   end
   @assert fl
-  @vprint :NormRelation 1 "Using norm relation $N\n"
+  @vprintln :NormRelation 1 "Using norm relation $N"
   compact = 0
   g = gcd(index(N), n)
   compact = 0
@@ -382,10 +382,10 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
 end
 
 function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
-  @vprint :NormRelation 1 "Setting up the norm relation context ... \n"
+  @vprintln :NormRelation 1 "Setting up the norm relation context ..."
   fl, N = norm_relation(K, 0, small_degree = false)
   @assert fl
-  @vprint :NormRelation 1 "Using norm relation $N\n"
+  @vprintln :NormRelation 1 "Using norm relation $N"
   return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
@@ -433,7 +433,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
       Sclosed = S
     end
     if !invariant
-      @vprint :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))\n"
+      @vprintln :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))"
     end
     c, UZK = _setup_for_norm_relation_fun(K, Sclosed)
     _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact, saturate_units = saturate_units)
@@ -442,7 +442,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   if gcd(index(N), n) != 1
     # I need to saturate
     for (p, e) in factor(index(N))
-      @vprint :NormRelation 1 "Saturating at $p \n"
+      @vprintln :NormRelation 1 "Saturating at $p"
       b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
       while b
         b = Hecke.saturate!(c, UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
@@ -457,7 +457,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
 
   if saturate_units && !UZK.finished
     for (p, e) in factor(index(N))
-      @vprint :NormRelation 1 "Saturating at $p \n"
+      @vprintln :NormRelation 1 "Saturating at $p"
       b = Hecke.saturate!(UZK, Int(p), 3.5, easy_root = true, use_LLL = true)
       while b
         b = Hecke.saturate!(UZK, Int(p), 3.5, easy_root = true, use_LLL = true)

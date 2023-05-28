@@ -86,7 +86,7 @@ end
 function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           use_aut::Bool = false,
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array})
-  @vprint :ClassGroup 2 "Computing factor base ...\n"
+  @vprintln :ClassGroup 2 "Computing factor base ..."
 
   @assert B > 0
 
@@ -97,9 +97,9 @@ function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool =
       break
     end
     B *= 2
-    @vprint :ClassGroup 2 "Increasing bound to $B ...\n"
+    @vprintln :ClassGroup 2 "Increasing bound to $B ..."
   end
-  @vprint :ClassGroup 2 " done\n"
+  @vprintln :ClassGroup 2 " done"
   return class_group_init(FB, T, add_rels = add_rels, use_aut = use_aut)
 end
 

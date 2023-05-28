@@ -326,7 +326,7 @@ function _line_orbits(G::Vector)
   n = nrows(G[1])
   P = enumerate_lines(K, n)
   l = length(P)
-  @vprint :GenRep 1 "Computing orbits of lines of total length $l over $K\n"
+  @vprintln :GenRep 1 "Computing orbits of lines of total length $l over $K"
   lines = Vector{eltype(P)}(undef, l)
   i = 1
   for v in P

@@ -468,7 +468,7 @@ with $b$.
 """
 function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where {N, T}
   rA = nrows(A)
-  @vprint :HNF 1 "Extending HNF by:\n"
+  @vprintln :HNF 1 "Extending HNF by:"
   @vprint :HNF 1 b
   @vprint :HNF 1 "density $(density(A)) $(density(b))"
 
@@ -524,7 +524,7 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
       if nc % 10 == 0
         println("Now at $nc rows of $(nrows(b)), HNF so far $(nrows(A)) rows")
         println("Current density: $(density(A))")
-        @vprint :HNF 2 "and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))\n"
+        @vprintln :HNF 2 "and size of largest entry: $(nbits(maximum(abs, A))) bits $(sum(nbits, A))"
         @vtime :HNF 1 Base.GC.gc(false)
       end
     end
@@ -553,9 +553,9 @@ end
 Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 """
 function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false) where {N, T}
-  @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
+  @vprintln :HNF 1 "Starting Kannan Bachem HNF on:"
   @vprint :HNF 1 A
-  @vprint :HNF 1 " with density $(density(A)); truncating $truncate\n"
+  @vprintln :HNF 1 " with density $(density(A)); truncating $truncate"
 
   with_transform = (trafo == Val{true})
   with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing

@@ -50,7 +50,7 @@ function FacElem(x::T) where {T <: Union{NumFieldElem, QQFieldElem, AbsAlgAssEle
 end
 
 function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) where T
-  @vprint :UnitGroup 2 "Checking if factored element is torsion\n"
+  @vprintln :UnitGroup 2 "Checking if factored element is torsion"
 
   if checkisunit
     _isunit(x) ? nothing : return false, p
@@ -60,9 +60,9 @@ function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) 
   d = degree(K)
   r, s = signature(K)
 
-  @vprint :UnitGroup 2 "Precision is now $(p) \n"
+  @vprintln :UnitGroup 2 "Precision is now $(p)"
   l = 0
-  @vprint :UnitGroup 2 "Computing conjugates ... \n"
+  @vprintln :UnitGroup 2 "Computing conjugates ..."
   @v_do :UnitGroup 2 pushindent()
   A = ArbField(p, cached = false)
   B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
@@ -71,7 +71,7 @@ function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) 
   cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error
                                 # of 2^-p
   @v_do :UnitGroup 2 popindent()
-  @vprint :UnitGroup 2 "Conjugates log are $cx\n"
+  @vprintln :UnitGroup 2 "Conjugates log are $cx"
   for i in 1:r
     k = abs(cx[i])
     if is_positive(k)
@@ -378,7 +378,7 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
     end
     @vprint :CompactPresentation 3 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   end
-  @vprint :CompactPresentation 3 "\n"
+  @vprintln :CompactPresentation 3 ""
   return A
 end
 @doc raw"""

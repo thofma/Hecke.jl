@@ -54,7 +54,7 @@ Hecke.order(a::GenOrdIdl) = a.order
 ################################################################################
 
 function Base.hash(I::GenOrdIdl, h::UInt)
-  b = 0x11ba13ff011affd1%UInt 
+  b = 0x11ba13ff011affd1%UInt
   return xor(b, hash(basis_matrix(I, copy = false), h))
 end
 
@@ -437,13 +437,13 @@ function assure_has_minimum(A::GenOrdIdl)
   for i = 2:ncols(s)
     den = lcm(den, denominator(s[i]//d))
   end
-  
+
   if isa(den, KInftyElem)
     A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
   elseif isa(den, PolyElem)
     A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
   end
-  
+
   return nothing
 end
 
@@ -701,13 +701,13 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprint :NfOrd 1 "using trace-radical for $p\n"
+    @vprintln :NfOrd 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprint :NfOrd 1 "non-perfect case for radical for $p\n"
+    @vprintln :NfOrd 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprint :NfOrd 1 "using radical-by-power for $p\n"
+    @vprintln :NfOrd 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   return GenOrdIdl(O,rad(O,p))
@@ -948,9 +948,9 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::RingEl
   O = order(Ip1)
   n = degree(O)
   R = O.R
-  @vprint :NfOrd 1 "Splitting the algebra\n"
+  @vprintln :NfOrd 1 "Splitting the algebra"
   AA = Hecke.decompose(A)
-  @vprint :NfOrd 1 "Done \n"
+  @vprintln :NfOrd 1 "Done"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
   list_bases = Vector{Vector{Vector{elem_type(R)}}}(undef, length(AA))

@@ -677,10 +677,10 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   t_idem = 0.0
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
-  @vprint :PseudoHnf 1 "Computation of reduction: $t_comp_red\n"
+  @vprintln :PseudoHnf 1 "Computation of reduction: $t_comp_red"
   #return map_entries(lift, z)
   t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, :no_split)
-  @vprint :PseudoHnf 1 "Modular computation: $t_mod_comp\n"
+  @vprintln :PseudoHnf 1 "Modular computation: $t_mod_comp"
 
   res_mat = zero_matrix(nf(O), nrows(P), ncols(P))
   for i in 1:nrows(P)
@@ -757,7 +757,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   #println("computation of ideal sum : $t_sum")
   #println("computation of ideal div : $t_div")
   #println("computation of idems     : $t_idem")
- 
+
   return res
 end
 
@@ -772,7 +772,7 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   end
 
   for i in 1:nrows(z)
-    @vprint :PseudoHnf 4 "New row\n"
+    @vprintln :PseudoHnf 4 "New row"
     @vtime :PseudoHnf 4 I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
     @hassert :PseudoHnf 1 a * P.coeffs[i] == I
     @hassert :PseudoHnf is_integral(a * P.coeffs[i])

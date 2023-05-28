@@ -119,7 +119,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 end
 
 function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = true,  pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
-  @vprint :NormRelation 1 "Computing automorphisms\n"
+  @vprintln :NormRelation 1 "Computing automorphisms"
   A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
@@ -164,12 +164,12 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
     z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
   end
 
-  @vprint :NormRelation 1 "Computing subfields\n"
+  @vprintln :NormRelation 1 "Computing subfields"
   for i in 1:n
-    @vprint :NormRelation 3 "Computing subfield $i / $n \n"
+    @vprintln :NormRelation 3 "Computing subfield $i / $n"
 		auts = NfToNfMor[GtoA[f] for f in ls[nsubs[i]][1]]
     @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
-    @vprint :NormRelation 1 "Simplifying \n $F\n"
+    @vprintln :NormRelation 1 "Simplifying \n $F"
     @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
@@ -182,7 +182,7 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
 end
 
 function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
-  @vprint :NormRelation 1 "Computing automorphisms\n"
+  @vprintln :NormRelation 1 "Computing automorphisms"
   A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
   if iszero(target_den)
@@ -229,12 +229,12 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
     z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
   end
 
-  @vprint :NormRelation 1 "Computing subfields\n"
+  @vprintln :NormRelation 1 "Computing subfields"
   for i in 1:n
-    @vprint :NormRelation 3 "Computing subfield $i / $n \n"
+    @vprintln :NormRelation 3 "Computing subfield $i / $n"
 		auts = NfToNfMor[GtoA[f] for f in ls[i][1]]
     @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
-    @vprint :NormRelation 1 "Simplifying \n $F\n"
+    @vprintln :NormRelation 1 "Simplifying \n $F"
     @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF

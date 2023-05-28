@@ -26,7 +26,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   O = order(I[1])
   I_in = I
 
-  @vprint :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals\n"
+  @vprintln :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals"
 
   c = get_attribute(O, :ClassGrpCtx)
   if c == nothing
@@ -48,9 +48,9 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   # To track the valuation of the S-units
   vals_of_rels = SRow{ZZRingElem}[]
 
-  @vprint :ClassGroup 1 "finding relations ...\n"
+  @vprintln :ClassGroup 1 "finding relations ..."
   @vtime :ClassGroup 1 for (i, A) = enumerate(I)
-    @vprint :ClassGroup 2 "doin' $(i)/$(length(I)):\n$A\n"
+    @vprintln :ClassGroup 2 "doin' $(i)/$(length(I)):\n$A"
     @vtime :ClassGroup 2 x, r = class_group_ideal_relation(A, c)
 # TODO: write == for Idl and FracIdl
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
@@ -63,14 +63,14 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
     push!(vals_of_rels, sparse_row(FlintZZ, [(i, ZZRingElem(-1))], sort = false))
   end
 
-  @vprint :ClassGroup 1 "... done\n"
+  @vprintln :ClassGroup 1 "... done"
 
-  @vprint :ClassGroup 1 "solving...\n"
+  @vprintln :ClassGroup 1 "solving..."
   @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
   Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), ZZRingElem(-1)*R)
-  @vprint :ClassGroup 1 ".. done, now saturating ...\n"
+  @vprintln :ClassGroup 1 ".. done, now saturating ..."
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
-  @vprint :ClassGroup 1 " done\n"
+  @vprintln :ClassGroup 1 " done"
   S1 = sub(S, 1:nrows(S), 1:nrows(S))
   S2 = sub(S, 1:nrows(S), (nrows(S) + 1):ncols(S))
   @assert nrows(S1) == nrows(S2) && nrows(S1) == nrows(S)
@@ -107,9 +107,9 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
     push!(valuations, _val_vec)
     push!(U, e)  # I don't understand the inv
   end
-  @vprint :ClassGroup 1 "reducing mod units\n"
+  @vprintln :ClassGroup 1 "reducing mod units"
   @vtime :ClassGroup 1 U = reduce_mod_units(U, get_attribute(order(c), :UnitGrpCtx))
-  @vprint :ClassGroup 1 "Done!\n"
+  @vprintln :ClassGroup 1 "Done!"
 
   #for j in 1:length(I)
   #  @assert (O(evaluate(U[j]))*O) == prod(I[i]^Int(valuations[j][i]) for i in 1:length(I))

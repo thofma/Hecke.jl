@@ -68,7 +68,7 @@ end
 
 function parallel_work(f::Function, r::UnitRange)
   l = length(workers())
-  @vprint :Par 1 "using $l workers\n"
+  @vprintln :Par 1 "using $l workers"
   cache = []
   st = start(r)
   res = []
@@ -98,7 +98,7 @@ function parallel_work(f::Function, r::UnitRange)
       no_job -= 1
     end
   end
-  @vprint :Par 2 "Finishing off..\n"
+  @vprintln :Par 2 "Finishing off.."
   push!(res, ((1,2,3.0,4), 5.0))
   while no_job > 0
     tw -= time()

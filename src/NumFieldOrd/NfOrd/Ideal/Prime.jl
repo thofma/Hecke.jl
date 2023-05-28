@@ -553,7 +553,7 @@ function prime_ideals_up_to(O::NfOrd, B::Int;
     else
       deg_lim = 0
     end
-    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)\n"
+    @vprintln :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)"
     li = prime_decomposition(O, p, deg_lim)
     for P in li
       push!(r, P[1])
@@ -779,7 +779,7 @@ function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
     if isone(p)
       continue
     end
-    @vprint :CompactPresentation 3 "Doing $p, is_prime: $(is_prime(p)), is index divisor: $(is_index_divisor(OK, p))\n"
+    @vprintln :CompactPresentation 3 "Doing $p, is_prime: $(is_prime(p)), is index divisor: $(is_index_divisor(OK, p))"
     if is_prime(p)
       lp = prime_decomposition(OK, p)
       for (P, v) in lp

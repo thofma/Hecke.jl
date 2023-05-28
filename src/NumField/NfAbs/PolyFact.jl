@@ -56,7 +56,7 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
   while ch[end] > N
     push!(ch, div(ch[end]+1, 2))
   end
-  @vprint :PolyFactor 1 "using lifting chain $ch\n"
+  @vprintln :PolyFactor 1 "using lifting chain $ch"
   for k=length(ch)-1:-1:1
     N2 = ch[k]
     setprecision!(Q, N2+1)
@@ -270,7 +270,7 @@ function factor_new(f::PolyElem{nf_elem})
   br = 0
   s = Set{Int}()
   while true
-    @vprint :PolyFactor 3 "Trying with $p\n "
+    @vprintln :PolyFactor 3 "Trying with $p"
     p = next_prime(p)
     if !is_prime_nice(zk, p)
       continue
@@ -295,7 +295,7 @@ function factor_new(f::PolyElem{nf_elem})
     else
       s = Base.intersect(s, ns)
     end
-    @vprint :PolyFactor 3 "$s\n"
+    @vprintln :PolyFactor 3 "$s"
 
     if length(s) == 1
       return typeof(f)[f]
@@ -313,7 +313,7 @@ function factor_new(f::PolyElem{nf_elem})
       break
     end
   end
-  @vprint :PolyFactor 1 "possible degrees: $s\n"
+  @vprintln :PolyFactor 1 "possible degrees: $s"
   if br < 5 #TODO calibrate, the 5 is random...
     return zassenhaus(f, bp, degset = s)
   else
@@ -344,7 +344,7 @@ correct factorisation.
 $f$ needs to be square-free and square-free modulo $P$ as well.
 """
 function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
-  @vprint :PolyFactor 1 "Using (relative) Zassenhaus\n"
+  @vprintln :PolyFactor 1 "Using (relative) Zassenhaus"
 
   K = base_ring(parent(f))
   C, mC = completion_easy(K, P)
@@ -368,7 +368,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   # - norm change const to reco ctx? Store den in there as well?
   c1, c2 = norm_change_const(order(P))
   N = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(b)))
-  @vprint :PolyFactor 1 "using a precision of $N\n"
+  @vprintln :PolyFactor 1 "using a precision of $N"
 
   setprecision!(C, N)
 
@@ -563,8 +563,8 @@ to be square-free mod $P$ as well.
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
 function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
-  @vprint :PolyFactor 1 "Using (relative) van Hoeij\n"
-  @vprint :PolyFactor 2 "with p = $P\n"
+  @vprintln :PolyFactor 1 "Using (relative) van Hoeij"
+  @vprintln :PolyFactor 2 "with p = $P"
   @assert all(x->denominator(x) == 1, coefficients(f))
 
   K = base_ring(parent(f))
@@ -583,7 +583,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   mK = extend(mK, K)
   r = length(factor(map_coefficients(mK, f, cached = false)))
   N = degree(f)
-  @vprint :PolyFactor 1  "Having $r local factors for degree $N \n"
+  @vprintln :PolyFactor 1  "Having $r local factors for degree $N"
 
   setprecision!(C, 5)
 
@@ -629,7 +629,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors,
   #       need everywhere sqrt(n*T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
-  @vprint :PolyFactor 2 "using CLD precision bounds $b \n"
+  @vprintln :PolyFactor 2 "using CLD precision bounds $b"
 
   used = []
   really_used = []
@@ -644,7 +644,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       i= sort(b)[div(length(b)+1, 2)]
     end
     i = max(i, kk) #this seems to suggest, that prec is large enough to find factors! So the fail-2 works
-    @vprint :PolyFactor 1 "setting prec to $i, and lifting the info ...\n"
+    @vprintln :PolyFactor 1 "setting prec to $i, and lifting the info ..."
     setprecision!(codomain(mC), i)
     if degree(P) == 1
       vH.H.f = map_coefficients(x->coeff(mC(x), 0), f)
@@ -655,7 +655,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
 
     av_bits = sum(nbits, vH.Ml)/degree(K)^2 #Ml: lll basis of P^i?
-    @vprint :PolyFactor 1 "obtaining CLDs...\n"
+    @vprintln :PolyFactor 1 "obtaining CLDs..."
 
     #prune: in Swinnerton-Dyer: either top or bottom are too large.
     while from < N && b[N - from + up_to] > i
@@ -740,9 +740,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       push!(used, n)
 
       i = findfirst(x->x == n, have) #new data will be in block i of C
-      @vprint :PolyFactor 2 "trying to use coeff $n which is $i\n"
+      @vprintln :PolyFactor 2 "trying to use coeff $n which is $i"
       if b[i] > precision(codomain(mC))
-        @vprint :PolyFactor 2 "not enough precision for CLD $i, $b, $(precision(codomain(mC))), skipping\n"
+        @vprintln :PolyFactor 2 "not enough precision for CLD $i, $b, $(precision(codomain(mC))), skipping"
 
 #        error()
         continue
@@ -793,9 +793,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           d[k] = [l]
         end
       end
-      @vprint :PolyFactor 1 "partitioning of local factors: $(values(d))\n"
+      @vprintln :PolyFactor 1 "partitioning of local factors: $(values(d))"
       if length(keys(d)) <= nrows(M)
-        @vprint :PolyFactor 1  "BINGO: potentially $(length(keys(d))) factors\n"
+        @vprintln :PolyFactor 1  "BINGO: potentially $(length(keys(d))) factors"
         res = typeof(f)[]
         fail = []
         if length(keys(d)) == 1
@@ -812,7 +812,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
               A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
             end
             if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
-              @vprint :PolyFactor 2 "Fail: const coeffs do not divide\n"
+              @vprintln :PolyFactor 2 "Fail: const coeffs do not divide"
               push!(fail, v)
               if length(fail) > 1
                 break
@@ -829,7 +829,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           G *= 1//(den*leading_coefficient(f))
 
           if !iszero(rem(f, G))
-            @vprint :PolyFactor 2 "Fail: poly does not divide\n"
+            @vprintln :PolyFactor 2 "Fail: poly does not divide"
             push!(fail, v)
             if length(fail) > 2
               break
@@ -839,7 +839,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           push!(res, G)
         end
         if length(fail) == 1
-          @vprint :PolyFactor 1 "only one reco failed, total success\n"
+          @vprintln :PolyFactor 1 "only one reco failed, total success"
           push!(res, divexact(f, prod(res)))
           return res
         elseif false && length(fail) == 2 #ONLY legal if prec. is high enough
@@ -848,13 +848,13 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           #over itself has 2 degree 4 factors that fail to combine
           #possibly related to the poly being really small.
           #need to investigate
-          @vprint :PolyFactor 1 "only two recos failed, total success\n"
+          @vprintln :PolyFactor 1 "only two recos failed, total success"
           #only possibility is that the 2 need to combine...
           push!(res, divexact(f, prod(res)))
           return res
         end
         if length(res) < length(d)
-          @vprint :PolyFactor 1 "reco failed\n... here we go again ...\n"
+          @vprintln :PolyFactor 1 "reco failed\n... here we go again ..."
         else
           return res
         end

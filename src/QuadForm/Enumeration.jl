@@ -7,7 +7,7 @@
 # This implements the algorithm of Fincke-Pohst for enumeration with using
 # a Gram matrix. So given positive definite G and b, find all v such that
 # v * G * v^t <= b
-# 
+#
 # The main function is
 # _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X, d::Y) where {T, X, Y}
 
@@ -134,26 +134,26 @@ function __enumerate_gram(::Type{T}, G::ZZMatrix, l::Union{Nothing, Int}, c::Int
   Q = _pseudo_cholesky(G, Matrix{QQFieldElem})
   n = nrows(G)
   d = lcm([denominator(Q[i]) for i in 1:length(G)])
-  @vprint :Lattice 1 "Denominator of pseudo-Cholesky of bit size $(nbits(d))\n"
+  @vprintln :Lattice 1 "Denominator of pseudo-Cholesky of bit size $(nbits(d))"
   k = nbits(d) + nbits(n) + 2
   isbig = Int == Int64
   if 2 * k < (isbig ? 32 : 64)
-    @vprint :Lattice 1 "Enumerating using Int\n"
+    @vprintln :Lattice 1 "Enumerating using Int"
     Qint = Matrix{UnsafeRational{Int}}([Int(numerator(q))//Int(denominator(q)) for q in Q])
     res = __enumerate_cholesky(T, Qint, l, c)
     @hassert :Lattice 1 length(__enumerate_gram(G, l, c, Rational{Int})) == length(res)
   elseif 2 * k < 64
-    @vprint :Lattice 1 "Enumerating using Int64\n"
+    @vprintln :Lattice 1 "Enumerating using Int64"
     Qint64 = Matrix{UnsafeRational{Int64}}([Int64(numerator(q))//Int64(denominator(q)) for q in Q])
     res = __enumerate_cholesky(T, Qint64, l, c, identity, identity, ZZRingElem)
     @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, Rational{Int64}, identity, identity, ZZRingElem)) == length(res)
   elseif 2 * k < 128
     Qint128 = Matrix{UnsafeRational{Int128}}([Int128(numerator(q))//Int128(denominator(q)) for q in Q])
-    @vprint :Lattice 1 "Enumerating using Int128\n"
+    @vprintln :Lattice 1 "Enumerating using Int128"
     res = __enumerate_cholesky(T, Qint128, l, c, identity, identity, ZZRingElem)
     @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, Rational{Int128}, identity, identity, ZZRingElem)) == length(res)
   else
-    @vprint :Lattice 1 "Enumerating using QQFieldElem\n"
+    @vprintln :Lattice 1 "Enumerating using QQFieldElem"
     res = __enumerate_cholesky(T, Q, l, c, identity, identity, ZZRingElem)
   end
   @hassert :Lattice 1 length(__enumerate_gram(T, G, l, c, QQFieldElem, identity, identity, ZZRingElem)) == length(res)
@@ -834,7 +834,7 @@ end
 Base.IteratorSize(::Type{<:LatEnumCtx}) = Base.SizeUnknown()
 
 function __clean_and_assemble(v::V, transform::U, dotransform::Bool, elem_type::Type{S} = ZZRingElem) where {V, U, S}
-  # this may or may not produce a copy 
+  # this may or may not produce a copy
   if dotransform
     m = _transform(v, transform)
   else

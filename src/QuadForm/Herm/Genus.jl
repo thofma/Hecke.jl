@@ -1548,17 +1548,17 @@ function representative(G::HermGenus)
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
   V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
-  @vprint :Lattice 1 "Finding maximal integral lattice\n"
+  @vprintln :Lattice 1 "Finding maximal integral lattice"
   M = maximal_integral_lattice(V)
   lp = primes(G)
   bd = union(support(2*fixed_ring(M)), support(discriminant(maximal_order(E))))
   lp = union(lp, bd)
   for p in lp
-    @vprint :Lattice 1 "Finding representative for $g at $(prime(g))...\n"
+    @vprintln :Lattice 1 "Finding representative for $g at $(prime(g))..."
     g = G[p]
     L = representative(g)
     @hassert :Lattice 1 genus(L, p) == g
-    @vprint :Lattice 1 "Finding sublattice\n"
+    @vprintln :Lattice 1 "Finding sublattice"
     M = locally_isometric_sublattice(M, L, p)
   end
   return M

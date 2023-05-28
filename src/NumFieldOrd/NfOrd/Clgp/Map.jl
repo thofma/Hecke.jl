@@ -127,11 +127,11 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   # ok, we have to work
 
   I_start = I
-  @vprint :ClassGroup 1 "Ideal $I \n"
-  @vprint :ClassGroup 1 "Reducing ideal via LLL \n"
+  @vprintln :ClassGroup 1 "Ideal $I"
+  @vprintln :ClassGroup 1 "Reducing ideal via LLL"
   _I, b = reduce_ideal(I) # do the obvious reduction to an ideal of bounded norm
   @hassert :PID_Test 1 b*I == _I
-  @vprint :ClassGroup 1 "New ideal: $_I\n"
+  @vprintln :ClassGroup 1 "New ideal: $_I"
   I = _I
   n = norm(I)
   if is_smooth(c.FB.fb_int, n)
@@ -155,13 +155,13 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   last_j = I
   cnt = 0
   while true
-    @vprint :ClassGroup 1 "Attempt $cnt \n"
+    @vprintln :ClassGroup 1 "Attempt $cnt"
     if E.cnt > max(2*c.expect, 0)
 #      println("more random")
       use_rand = true
-      @vprint :ClassGroup 1 "New random \n"
+      @vprintln :ClassGroup 1 "New random"
       last_j = random_get(J, reduce = false)
-      @vprint :ClassGroup 1 "Using $last_j \n"
+      @vprintln :ClassGroup 1 "Using $last_j"
       E = class_group_small_lll_elements_relation_start(c, I*last_j)
       iI = inv(E.A)
     end
@@ -173,9 +173,9 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     if na === nothing #basically means elt is too large,
                       # exhausted randomness, so redo it.
       use_rand = true
-      @vprint :ClassGroup 1 "New random \n"
+      @vprintln :ClassGroup 1 "New random"
       last_j = random_get(J, reduce = false)
-      @vprint :ClassGroup 1 "Using $last_j \n"
+      @vprintln :ClassGroup 1 "Using $last_j"
       E = class_group_small_lll_elements_relation_start(c, I*last_j)
       iI = inv(E.A)
       continue
@@ -657,7 +657,7 @@ function reduce_mod_units(a::Vector{FacElem{nf_elem, AnticNumberField}}, U::Unit
     if iszero(V)
       return b
     end
-    @vprint :UnitGroup 2 "exactly? ($exact) reducing by $V\n"
+    @vprintln :UnitGroup 2 "exactly? ($exact) reducing by $V"
     for i=1:length(b)
       for j = 1:ncols(V)
         if !iszero(V[i, j])

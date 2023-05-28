@@ -482,8 +482,8 @@ function _ismaximal_integral(L::HermLat, p)
 
   hprim = u -> elem_in_nf((h\u))
 
-  @vprint :GenRep 1 """Enumerating projective points over $F
-                       of length $(nrows(V))\n"""
+  @vprintln :GenRep 1 """Enumerating projective points over $F
+                       of length $(nrows(V))"""
 
   for x in enumerate_lines(F, nrows(V))
     v = map_entries(hprim, matrix(F, 1, nrows(V), x) * V)::dense_matrix_type(E)

@@ -7,24 +7,24 @@
 ################################################################################
 
 function NfFactorBase(O::NfOrd, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
-  @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
+  @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
-  @vprint :ClassGroup 2 " done \n"
+  @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lp)
 end
 
 function NfFactorBase(O::NfOrd, lp::AbstractVector{Int}, degree_limit::Int = 0)
-  @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
+  @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lP = prime_ideals_over(O, lp, degree_limit = degree_limit)
-  @vprint :ClassGroup 2 " done \n"
+  @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lP)
 end
 
 function NfFactorBase(O::NfOrd, B::Int;
                         complete::Bool = true, degree_limit::Int = 5)
-  @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
+  @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
-  @vprint :ClassGroup 2 " done \n"
+  @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lp)
 end
 

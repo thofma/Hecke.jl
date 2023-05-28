@@ -269,7 +269,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
 #
 
   @assert is_snf(U)
-  @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
+  @vprintln :RayFacElem 1 "Collecting elements to be evaluated; first, units"
   evals = Hecke.NfOrdQuoRingElem[]
   tobeeval = FacElem{nf_elem, AnticNumberField}[]
   if gcd(U.snf[1],p)!=1
@@ -283,7 +283,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
   end
   append!(tobeeval,[mU(U[i]) for i=2:ngens(U)])
 
-  @vprint :RayFacElem 1 "then principal ideal generators \n"
+  @vprintln :RayFacElem 1 "then principal ideal generators"
   for i=1:ngens(C)
     @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
@@ -291,10 +291,10 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
   @vprint :RayFacElem 1 "Time for elements evaluation: "
   ev,quots,idemps= Hecke.fac_elems_eval(O,Q,tobeeval,lp,expo)
   @vtime :RayFacElem 1 append!(evals, ev)
-  @vprint :RayFacElem 1 "\n"
+  @vprintln :RayFacElem 1 ""
 
   for i=1:ngens(U)
-    @vprint :RayFacElem 1 "Disclog of unit $i \n"
+    @vprintln :RayFacElem 1 "Disclog of unit $i"
     a=(mG\(evals[i])).coeff
     if p==2 && !isempty(pr)
       if i==1
@@ -314,7 +314,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
 #
 
   for i=1: ngens(C)
-    @vprint :RayFacElem 1 "Disclog of class group element $i \n"
+    @vprintln :RayFacElem 1 "Disclog of class group element $i"
     invn=gcdx(vect[i], C.snf[i])[2]
     a=((mG\(evals[i+ngens(U)]))*invn).coeff
     if p==2 && !isempty(pr)

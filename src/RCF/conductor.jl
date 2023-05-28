@@ -220,7 +220,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
 
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
-  # 
+  #
   L = Dict{NfOrdIdl, Int}()
   for (p, vp) in mR.fact_mod
     if !divisible(E, minimum(p, copy = false))
@@ -233,7 +233,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
       #however, this is wrong:
       #C6 = C2 x C3, then 3 divides the degree, however, 3 can ramify in
       #     C2 (tame!) and not in C3
-      # example: 
+      # example:
       #  k = quadratic_field(21)[1]
       #  ray_class_field(21*maximal_order(k), real_places(k))
       # this is C2 x C8 x C3 and the 3 is tame only.
@@ -699,7 +699,7 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
   denom = lcm([denominator(coeff(x, i)) for x in l_pols for i = 0:degree(x)])
   indexO = index(O)
   while true
-    @vprint :ClassField 3 "Order of Q: $(order(Q))\n"
+    @vprintln :ClassField 3 "Order of Q: $(order(Q))"
     if is_abelian && order(Q) == B
       break
     end
@@ -707,7 +707,7 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
       break
     end
     p = next_prime(p)
-    @vprint :ClassField 3 "Using prime $(p)\n"
+    @vprintln :ClassField 3 "Using prime $(p)"
     if divisible(N1, p) || divisible(denom, p)
       continue
     end
@@ -1196,7 +1196,7 @@ function maximal_central_subfield(A::ClassField; stable::Int = 3, lower_bound::I
     n = matrix(ZZ, 1, length(lp), [degree(P[1]) for P = lp])
     r, k = kernel(n)
     S = [prod((lp[j][1]//1)^k[j, i] for j = 1:length(lp)) for i=1:r]
-    s = [mQ(preimage(mN, numerator(p))- preimage(mN, denominator(p)*ZK)) for p = S]    
+    s = [mQ(preimage(mN, numerator(p))- preimage(mN, denominator(p)*ZK)) for p = S]
     if all(iszero, s)
       st -= 1
       if st <= 0
@@ -1222,16 +1222,16 @@ function small_knot(k::AnticNumberField, stable::Int = 5)
     will live in Gamma
     G the genus field corresponds to the group of ideals
       U = { A in Z_K | exists B in Z_Gamma | N(A) = N(B) }
-    Z should be 
+    Z should be
       V = { A in Z_K | N(A) = Z_k ( = Z here) }
-    Question: U^n < V or exp(quo(U, V)) | n  
+    Question: U^n < V or exp(quo(U, V)) | n
 
     A in U -> B in Gamma mit N(A) = N(B), C := N_Gamma/Z(B)
     then N(C) = N(A) (norm tower), D := N_Z/K(C)
     then N(D) = N(A) and D in V, so D = gamma E
     with N(E) = 1, thus N(A) = N(D) = N(gamma)*Z
 
-    A^n equiv A^n N(gamma)^-1 and N(A^n/N(gamma)) = N(A)^n/N(gamma)^n 
+    A^n equiv A^n N(gamma)^-1 and N(A^n/N(gamma)) = N(A)^n/N(gamma)^n
 
     hopefully gamma and N(gamma) are = 1 mod the modulus as well
 
@@ -1242,7 +1242,7 @@ function small_knot(k::AnticNumberField, stable::Int = 5)
 
   G = genus_field(Gamma)
   Z = maximal_central_subfield(Gamma, stable = stable, lower_bound = degree(G))
- 
+
   k = degree(Z)//degree(G)
 
 #  println("starting with Z:", snf(norm_group(Z)[1])[1])

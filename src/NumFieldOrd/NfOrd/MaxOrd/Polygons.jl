@@ -582,9 +582,9 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
 
   O = order(Ip1)
   n = degree(O)
-  @vprint :NfOrd 1 "Splitting the algebra\n"
+  @vprintln :NfOrd 1 "Splitting the algebra"
   AA = _dec_com_finite(A)
-  @vprint :NfOrd 1 "Done \n"
+  @vprintln :NfOrd 1 "Done"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
   list_bases = Vector{Vector{Vector{ZZRingElem}}}(undef, length(AA))
@@ -655,7 +655,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
 
       P = ideals[j][1]
       f = P.splitting_type[2]
-      #@vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
+      #@vprintln :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))"
       P.gen_one = ZZRingElem(p)
       @vtime :NfOrd 3 find_random_second_gen(P)
       u = P.gen_two
@@ -707,7 +707,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       P = ideals[j][1]
       f = P.splitting_type[2]
 
-      #@vprint :NfOrd 1 "Searching for 2-element presentation \n"
+      #@vprintln :NfOrd 1 "Searching for 2-element presentation"
       # The following does not work if there is only one prime ideal
       # This is roughly Algorithm 6.4 of Belabas' "Topics in computational algebraic
       # number theory".
@@ -911,12 +911,12 @@ function decomposition_type_polygon(O::NfOrd, p::Union{ZZRingElem, Int})
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = change_base_ring(R, f, parent = Rx)
-  @vprint :NfOrd 1 "Factoring the polynomial \n"
+  @vprintln :NfOrd 1 "Factoring the polynomial"
   fac = factor(f1) #TODO: We don't need the factorization directly, but only the factorization of the non-squarefree part
   res = Tuple{Int, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
   for (g, m) in fac
-    @vprint :NfOrd 1 "Doing $((g,m)) \n"
+    @vprintln :NfOrd 1 "Doing $((g,m))"
     if m==1
       push!(res, (degree(g), 1))
       continue
@@ -981,7 +981,7 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degree_limit::Int = 0, lower_limit::Int = 0) 
+function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degree_limit::Int = 0, lower_limit::Int = 0)
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -991,7 +991,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degre
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
-  @vprint :NfOrd 1 "Factoring the polynomial \n"
+  @vprintln :NfOrd 1 "Factoring the polynomial"
   @vtime :NfOrd 1 fac = factor(f1)
   res = Tuple{NfOrdIdl, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
@@ -999,7 +999,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degre
     if degree(g) > degree_limit
       continue
     end
-    @vprint :NfOrd 1 "Doing $((g, m)) \n"
+    @vprintln :NfOrd 1 "Doing $((g, m))"
     phi = lift(Zx, g)
     if isone(m)
       ei = m
