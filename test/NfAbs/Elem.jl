@@ -142,6 +142,15 @@ end
   Kx, x = polynomial_ring(K, "x")
   fa = factor(x^4+(1//2*a^2 + 1*a + 2)*x^3+(a^2 + 2*a + 2)*x^2+(1//2*a^2 + 1*a + 2)*x+1)
   @test length(fa) == 3
+
+  # 1072
+  R, x = polynomial_ring(QQ, "x");
+  F, z = number_field(x^2+1);
+  f = polynomial(F, [1, 2, 3])
+  facts = factor(f)
+  @test unit(facts) * prod(p^e for (p, e) in facts) == f
+  facs = factor_squarefree(f)
+  @test unit(facts) * prod(p^e for (p, e) in facts) == f
 end
 
 @testset "Root computation" begin

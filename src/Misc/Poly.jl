@@ -906,7 +906,7 @@ function _factor_squarefree_char_0(f::PolyElem)
   di = gcd(f, derivative(f))
   if isone(di)
     res[f] = 1
-    return Fac(one(parent(f)), res)
+    return Fac(parent(f)(c), res)
   end
   ei = divexact(f, di)
   i = 1
