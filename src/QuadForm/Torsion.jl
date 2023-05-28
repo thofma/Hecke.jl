@@ -2178,7 +2178,8 @@ function is_totally_isotropic(T::TorQuadModule)
     end
     for b in gens(T)
       b == a && continue
-      if !is_zero(a * b)
+      k = inner_product(ambient_space(cover(T)), lift(a), lift(b))
+      if !is_zero(value_module_quadratic_form(T)(2*k))
         return false
       end
     end
