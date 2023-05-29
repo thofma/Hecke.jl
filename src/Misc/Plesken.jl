@@ -140,7 +140,7 @@ function _presentation_generic(F, r::T, n::Int) where T <: Union{ZZRingElem, Int
   #First, I add the right roots of unity to the field.
   xZx = ZZ["x"][2]
   phi = cyclotomic(r, xZx)
-  lf = factor(phi, F)
+  lf = factor(F, phi)
   lF = collect(keys(lf.fac))
   ind = 1
   st = steinitz_number(lF[1])

@@ -69,7 +69,7 @@ function florian(M::MatElem{<:Generic.RationalFunctionFieldElem{QQFieldElem}}, R
 
 
   de = det(MM)
-  for p = keys(factor(content(de), ZZ).fac)
+  for p = keys(factor(ZZ, content(de)).fac)
     #step 2: do a HNF mod p and record the lifted operations
     k = Native.GF(p)
     kt = polynomial_ring(k, cached = false)[1]

@@ -596,7 +596,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   local p
   while true
     p_max = next_prime(p_max)
-    gp = factor(g, Native.GF(p_max, cached = false))
+    gp = factor(Native.GF(p_max, cached = false), g)
     if any(x->x>1, values(gp.fac))
       @vprintln :AbsFact 1 "not squarefree mod $p_max"
       continue

@@ -565,7 +565,7 @@ Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 2 fields together with the embedding of $K \to C$ and $L \to C$.
 """
 function compositum(K::AnticNumberField, L::AnticNumberField)
-  lf = factor(K.pol, L)
+  lf = factor(L, K.pol)
   d = degree(first(lf.fac)[1])
   if any(x->degree(x) != d, keys(lf.fac))
     error("2nd field cannot be normal")
