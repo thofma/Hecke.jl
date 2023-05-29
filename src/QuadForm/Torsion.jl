@@ -2167,7 +2167,7 @@ is_snf(T::TorQuadModule) = is_snf(abelian_group(T))
 ################################################################################
 
 @doc raw"""
-    is_totally_isotorpic(T::TorQuadModule)
+    is_totally_isotropic(T::TorQuadModule)
 
 Return whether the quadratic form on the torsion quadratic module `T` vanishes.
 """
