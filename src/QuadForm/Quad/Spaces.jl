@@ -122,8 +122,19 @@ end
 @inline _temp2(V::QuadSpace{S, T}) where {S, T} = V.temp2::elem_type(S)
 
 # Internal version
-function _inner_product!(res, V, v::Vector, w::Vector, temp1 = deepcopy(v),
-                                                       temp2 = base_ring(V)())
+function _inner_product!(res, V::MatElem{T}, _v::Vector, _w::Vector,
+                         temp1 = deepcopy(v), temp2 = base_ring(V)()) where {T}
+  if eltype(_v) === T
+    v = _v
+  else
+    v = map(base_ring(V), _v)::Vector{T}
+  end
+  if eltype(_w) === T
+    w = _w
+  else
+    w = map(base_ring(V), _w)::Vector{T}
+  end
+
   mul!(temp1, v, V)
   zero!(res)
   for i in 1:length(v)
