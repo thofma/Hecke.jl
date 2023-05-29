@@ -11,7 +11,7 @@ k, a = wildanger_field(3, 13)
 h = hilbert_class_field(k)
 @test degree(h) == 9
 K = number_field(h)
-@test degree(h) == 9
+@test degree(K) == 9
 L = simple_extension(K)[1]
 @test degree(L) == 9
 absolute_simple_field(L)
