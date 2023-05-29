@@ -264,6 +264,7 @@ function factor_new(f::PolyElem{nf_elem})
   end
   zk = lll(zk) # always a good option!
   p = degree(f)
+  forig = f
   f *= lcm(map(denominator, coefficients(f)))
   np = 0
   bp = 1*zk
@@ -298,7 +299,7 @@ function factor_new(f::PolyElem{nf_elem})
     @vprintln :PolyFactor 3 "$s"
 
     if length(s) == 1
-      return typeof(f)[f]
+      return typeof(f)[forig]
     end
 
     if br == 0 || br > sum(values(lf))
