@@ -5,7 +5,7 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
        radical_quadratic, is_semi_regular, trivial_morphism, abelian_group_homomorphism,
        value_module, value_module_quadratic_form, gram_matrix_bilinear,
        gram_matrix_quadratic, quadratic_product, is_totally_isotropic, is_isometry,
-       is_anti_isometry
+       is_anti_isometry, stable_submodules
 
 ################################################################################
 #
@@ -2172,12 +2172,14 @@ is_snf(T::TorQuadModule) = is_snf(abelian_group(T))
 Return whether the quadratic form on the torsion quadratic module `T` vanishes.
 """
 function is_totally_isotropic(T::TorQuadModule)
-  for a in gens(T)
+  n = ngens(T)
+  for i in 1:n
+    a = gen(T, i)
     if !is_zero(quadratic_product(a))
       return false
     end
-    for b in gens(T)
-      b == a && continue
+    for j in (i + 1):n
+      b = gen(T, j)
       k = inner_product(ambient_space(cover(T)), lift(a), lift(b))
       if !is_zero(value_module_quadratic_form(T)(2*k))
         return false
@@ -2195,8 +2197,12 @@ end
 
 function _is_isometry_epsilon(f::TorQuadModuleMor, epsilon)
   !is_bijective(f) && return false
-  for a in gens(domain(f))
-    for b in gens(domain(f))
+  T = domain(f)
+  k = ngens(T)
+  for i in 1:k
+    a = gen(T, i)
+    for j in i:k
+      b = gen(T, j)
       if f(a)*f(b) != epsilon * a * b
         return false
       end  
@@ -2237,4 +2243,19 @@ restrict the submodules:
 function submodules(T::TorQuadModule; kw...)
   A = abelian_group(T)
   return (sub(T, T.(StoA.(gens(S)))) for (S, StoA) in subgroups(A; kw..., fun = (x, y) -> sub(x, y, false)))
+end
+
+@doc raw"""
+    stable_submodules(T::TorQuadMod, act::Vector{TorQuadModuleMor}; kw...)
+
+Return the submodules of `T` stable under the endomorphisms in `act` as
+an iterator. Possible keyword arguments to restrict the submodules:
+- `quotype::Vector{Int}`: only submodules whose quotient are isomorphic as an
+  abelian to `abelian_group(quotype)`.
+"""
+function stable_submodules(T::TorQuadModule, act::Vector{TorQuadModuleMor}; kw...)
+  A = abelian_group(T)
+  _act = [f.map_ab for f in act]
+  _res = stable_subgroups(A, _act; kw..., op = (x, y) -> sub(x, y, false))
+  return (sub(T, T.(StoA.(gens(S)))) for (S, StoA) in _res)
 end

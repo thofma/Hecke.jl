@@ -384,6 +384,7 @@
   # submodules
   T = torsion_quadratic_module(QQ[1//2 1//4; 1//4 1//2])
   @test length(collect(submodules(T, order = 2))) == 3
+  @test length(collect(stable_submodules(T, [id_hom(T)], quotype = [2]))) == 3
 end
 
 
