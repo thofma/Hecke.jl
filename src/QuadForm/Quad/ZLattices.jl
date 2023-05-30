@@ -491,6 +491,10 @@ end
 # documented in ../Lattices.jl
 
 function is_isometric(L::ZZLat, M::ZZLat)
+  if L == M
+    return true
+  end
+
   if rank(L) != rank(M)
     return false
   end

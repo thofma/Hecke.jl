@@ -15,9 +15,6 @@ end
 GF(p::Integer, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
 GF(p::ZZRingElem, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
 
-Native.GF(p::Integer, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
-Native.GF(p::ZZRingElem, k::Int, s::VarName=:o; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)[1]
-
 ##
 ## rand for Flint-Finite fields
 ##
