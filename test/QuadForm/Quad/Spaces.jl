@@ -22,6 +22,9 @@
   w = QQ[1 1;]
   p = @inferred inner_product(q, v, w)
   @test p == v * gram_matrix(q) * transpose(w)
+  for T in [Int, BigInt, fmpz, Rational{BigInt}, Rational{Int}]
+    @test inner_product(q, [1, 1], [1, 2]) == 3
+  end
 
   Qx, x = polynomial_ring(FlintQQ, "x")
   K1, a1 = number_field(x^2 - 2, "a1")
