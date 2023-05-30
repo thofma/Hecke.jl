@@ -211,3 +211,23 @@ end
     end
   end
 end
+
+@testset "SplittingField - FinField" begin
+  k = GF(3)
+  kt, t = k["t"]
+  K = splitting_field(t^6-2)
+  @test absolute_degree(K) == 2
+  K, r = splitting_field(t^6-2, do_roots = true)
+  @test length(r) == 2
+  
+  K = splitting_field(t^6-t-1)
+  @test degree(K) == 6
+
+  Ks,s = K["s"]
+  E, r = splitting_field(s^5-5*s+2*s^2+1, do_roots = true)
+
+  @test absolute_degree(E) == 30
+  @test length(r) == 5
+end  
+
+
