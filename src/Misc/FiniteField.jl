@@ -591,3 +591,21 @@ end
 lift(::ZZRing, x::fpFieldElem) = lift(x)
 
 lift(::ZZRing, x::FpFieldElem) = lift(x)
+
+function splitting_field(f::PolyElem{<:FinFieldElem}; do_roots::Bool = false)
+  lf = factor(f)
+  k = base_ring(f)
+  d = reduce(lcm, [degree(x) for x = keys(lf.fac)], init = 1)
+  if isa(k,  Nemo.fpField) || isa(k, Nemo.fqPolyRepField)
+    K = GF(Int(characteristic(k)), absolute_degree(k)*d)
+  else
+    K = GF(characteristic(k), absolute_degree(k)*d)
+  end
+  if !isa(k, Nemo.fpField) && !isa(k, Nemo.FpField)
+    embed(k, K)
+  end
+  if do_roots
+    return K, roots(f, K)
+  end
+  return K
+end  
