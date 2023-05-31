@@ -422,7 +422,7 @@ function norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField}, b::Union{fpF
    while !is_irreducible(f)
       f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
    end
-   return (-1)^(n)*any_root(f,F)
+   return (-1)^(n)*any_root(F, f)
 end
 
 function basis(K::RelFinField)
