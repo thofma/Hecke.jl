@@ -1384,7 +1384,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
         t = x[ti]
         g = gcd(d, degree(t[1]))
         d = lcm(d, degree(t[1]))
-        r = roots(t[1], Fq)
+        r = roots(Fq, t[1])
         if g == 1
           push!(rt, [r[1]])
         else

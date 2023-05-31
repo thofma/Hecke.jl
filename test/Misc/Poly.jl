@@ -20,7 +20,7 @@
     local l
 
     while p < 4096
-      l = roots(f, ArbField(p, cached = false))
+      l = roots(ArbField(p, cached = false), f)
       sgtpos = count(ispositive, l)
       sgtneg = count(isnegative, l)
       sgtz = count(iszero, l)

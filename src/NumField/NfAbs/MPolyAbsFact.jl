@@ -444,7 +444,7 @@ function analytic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; prec::I
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
   C = AcbField(prec)
-  rt = Hecke.roots(g, C)[1:max_roots]
+  rt = Hecke.roots(C, g)[1:max_roots]
   @assert all(x->parent(x) == C, rt)
   Cs, s = power_series_ring(C, pr+2, "s", cached = false)
   Cst, t = polynomial_ring(Cs, cached = false)
@@ -476,7 +476,7 @@ function symbolic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; max_roo
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
   lg = factor(g)
-  rt = vcat([Hecke.roots(x, number_field(x)[1]) for x = keys(lg.fac)]...)
+  rt = vcat([Hecke.roots(number_field(x)[1], x) for x = keys(lg.fac)]...)
   rt = rt[1:min(length(rt), max_roots)]
   RT = []
   for i = 1:length(rt)

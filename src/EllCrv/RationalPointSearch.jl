@@ -830,7 +830,7 @@ mutable struct NegativityCertificate
     end
 
 
-    rr = roots(f, AcbField(64, cached = false))
+    rr = roots(AcbField(64, cached = false), f)
     r = sort!(map(real, filter!(isreal, rr)))
 
     # Let's first consider what happens between two roots

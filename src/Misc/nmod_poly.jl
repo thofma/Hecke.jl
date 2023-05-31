@@ -1276,7 +1276,7 @@ function FlintFiniteField(f::fqPolyRepPolyRingElem, s::AbstractString = "o"; cac
   k = base_ring(f)
   p = characteristic(k)
   K, o = FlintFiniteField(p, degree(k)*degree(f), s, cached = cached)
-  r = roots(f, K)[1]  # not working, embeddings are missing
+  r = roots(K, f)[1]  # not working, embeddings are missing
   fl || error("s.th. went wrong")
   return K, r
 end

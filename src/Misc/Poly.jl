@@ -711,14 +711,14 @@ function roots(f::ZZPolyRingElem, ::QQField; max_roots::Int=degree(f))
 end
 
 function roots(f::ZZPolyRingElem; max_roots::Int=degree(f))
-  r = roots(f, FlintQQ, max_roots=max_roots)
+  r = roots(FlintQQ, f, max_roots=max_roots)
   return ZZRingElem[FlintZZ(x) for x = r if denominator(x) == 1]
 end
 
 function roots(f::QQPolyRingElem; max_roots::Int=degree(f))
-  Zx, x = polynomial_ring(FlintZZ, cached=false)
-  g = Zx(denominator(f) * f)
-  return roots(g, FlintQQ)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  g = Zx(denominator(f)*f)
+  return roots(FlintQQ, g)
 end
 
 function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
@@ -740,7 +740,7 @@ function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::
   d = Dict{acb_poly, Int}()
   Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
   for (k,v) = g.fac
-    for r = roots(k, R)
+    for r = roots(R, k)
       d[t-r] = v
     end
   end
@@ -753,7 +753,7 @@ function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   C = AcbField(precision(R))
   for k = keys(g.fac)
     s, _ = signature(k)
-    rt = roots(k, C)
+    rt = roots(C, k)
     append!(r, map(real, rt[1:s]))
   end
   return r
@@ -766,7 +766,7 @@ function factor(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::
   C = AcbField(precision(R))
   for (k,v) = g.fac
     s, t = signature(k)
-    r = roots(k, C)
+    r = roots(C, k)
     for i=1:s
       d[x-real(r[i])] = v
     end

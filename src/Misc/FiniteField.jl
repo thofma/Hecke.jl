@@ -293,7 +293,7 @@ function splitting_field(f::PolyElem{<:FinFieldElem}; do_roots::Bool = false)
     embed(k, K)
   end
   if do_roots
-    return K, roots(f, K)
+    return K, roots(K, f)
   end
   return K
-end  
+end
