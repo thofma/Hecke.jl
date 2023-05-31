@@ -101,6 +101,33 @@
 @deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; refine::Bool) factor_coprime(I, a, refine = refine)
 @deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) factor_coprime(I, a)
 
+@deprecate roots(f::QQPolyRingElem, R::T) where T <: Union{Nemo.fqPolyRepField, Nemo.fpField} roots(R, f)
+
+@deprecate roots(f::fpPolyRingElem, K::fqPolyRepField) roots(K, f)
+
+@deprecate roots(f::FpPolyRingElem, K::FqPolyRepField) roots(K, f)
+
+@deprecate roots(f::QQPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
+@deprecate roots(f::ZZPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
+
+@deprecate roots(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField}) roots(F, f)
+
+@deprecate roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...) roots(R, f, abs_tol, initial_prec...)
+
+@deprecate roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...) roots(R, f, abs_tol, initial_prec...)
+
+@deprecate roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int) roots(Q, f; max_roots = max_roots)
+@deprecate roots(f::ZZPolyRingElem, Q::FlintQadicField) roots(Q, f)
+
+@deprecate roots(f::ZZPolyRingElem, Q::QQField; max_roots::Int) roots(Q, f; max_roots = max_roots)
+@deprecate roots(f::ZZPolyRingElem, Q::QQField) roots(Q, f)
+
+
+@deprecate any_root(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField}) any_root(F, f)
+
+@deprecate any_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField) any_root(F, f)
+
+
 
 # Things that moved to Nemo
 

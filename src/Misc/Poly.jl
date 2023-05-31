@@ -721,19 +721,7 @@ function roots(f::QQPolyRingElem; max_roots::Int=degree(f))
   return roots(g, FlintQQ)
 end
 
-function roots(f::Union{ZZPolyRingElem,QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
-  g = factor(f)
-  r = elem_type(R)[]
-  C = AcbField(precision(R))
-  for k = keys(g.fac)
-      s, _ = signature(k)
-      rt = roots(k, C)
-      append!(r, map(real, rt[1:s]))
-  end
-  return r
-end
-
-function roots(f::Union{ZZPolyRingElem,QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   lf = factor(f)
   return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
 end
@@ -759,7 +747,7 @@ function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::
   return Fac(Rt(g.unit), d)
 end
 
-function roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   r = elem_type(R)[]
   C = AcbField(precision(R))
@@ -817,10 +805,6 @@ function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
   d = leading_coefficient(b)
   return one(parent(d)), divexact(b, d)
 end
-
-
-
-
 
 
 @doc raw"""

@@ -69,11 +69,11 @@ function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = pare
 end
 
 @doc raw"""
-    roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int = degree(f)) -> Vector{qadic}
+    roots(Q::FlintQadicField, f::ZZPolyRingElem; max_roots::Int = degree(f)) -> Vector{qadic}
 
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
 """
-function roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int = degree(f))
+function roots(Q::FlintQadicField, f::ZZPolyRingElem; max_roots::Int = degree(f))
   k, mk = residue_field(Q)
   rt = roots(f, k)
   RT = qadic[]
