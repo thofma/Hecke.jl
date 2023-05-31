@@ -2,12 +2,27 @@
 ###############################################################################
 #### AbstractAlgebra overrides ################################################
 
+function _doit(a::Generic.MPoly{<:NumFieldElem}, fxn::Function)
+  k = base_ring(a)
+  ks, ms = absolute_simple_field(k)
+  lf = fxn(map_coefficients(pseudo_inv(ms), a))
+  return Fac(map_coefficients(ms, unit(lf), parent = parent(a)), Dict(map_coefficients(ms, k, parent = parent(a)) => v for (k,v) = lf.fac))
+end
+
+function AbstractAlgebra.factor(a::Generic.MPoly{<:NumFieldElem})
+  return _doit(a, factor)
+end
+
 function AbstractAlgebra.factor(a::Generic.MPoly{nf_elem})
   return AbstractAlgebra.MPolyFactor.mfactor_char_zero(a)
 end
 
 function AbstractAlgebra.factor_squarefree(a::Generic.MPoly{nf_elem})
   return AbstractAlgebra.MPolyFactor.mfactor_squarefree_char_zero(a)
+end
+
+function AbstractAlgebra.factor_squarefree(a::Generic.MPoly{<:NumFieldElem})
+  return _doit(a, factor_squarefree)
 end
 
 function AbstractAlgebra.factor(a::Generic.Poly{nf_elem})
