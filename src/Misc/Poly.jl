@@ -747,7 +747,7 @@ function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   return all_rts, rl_rts, compl_rts
 end
 
-function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   d = Dict{acb_poly, Int}()
   Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
@@ -759,7 +759,19 @@ function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::
   return Fac(Rt(g.unit), d)
 end
 
-function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
+  g = factor(f)
+  r = elem_type(R)[]
+  C = AcbField(precision(R))
+  for k = keys(g.fac)
+    s, _ = signature(k)
+    rt = roots(k, C)
+    append!(r, map(real, rt[1:s]))
+  end
+  return r
+end
+
+function factor(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   d = Dict{arb_poly, Int}()
   Rx, x = polynomial_ring(R, String(var(parent(f))), cached = false)

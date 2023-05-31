@@ -275,17 +275,17 @@ end
 ################################################################################
 
 @doc raw"""
-    factor(f::ZZPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
-    factor(f::QQPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
+    factor(K::number_field, f::ZZPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
+    factor(K::number_field, f::QQPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
 
 The factorisation of $f$ over $K$.
 """
-function factor(f::QQPolyRingElem, K::AnticNumberField)
+function factor(K::AnticNumberField, f::QQPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
-function factor(f::ZZPolyRingElem, K::AnticNumberField)
+function factor(K::AnticNumberField, f::ZZPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end

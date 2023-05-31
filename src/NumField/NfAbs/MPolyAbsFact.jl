@@ -1523,7 +1523,7 @@ export factor_absolute, is_absolutely_irreducible
 
 #application (for free)
 
-function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, C::AcbField)
+function factor(C::AcbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{acb}, Int}()
   Cx, x = polynomial_ring(C, map(String, symbols(parent(f))), cached = false)
@@ -1547,7 +1547,7 @@ function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, C::AcbField)
   return Fac(map_coefficients(C, fa[1], parent = Cx), D)
 end
 
-function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, R::ArbField)
+function factor(R::ArbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{arb}, Int}()
   Rx, x = polynomial_ring(R, map(String, symbols(parent(f))), cached = false)

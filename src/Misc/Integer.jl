@@ -957,11 +957,11 @@ end
 ################################################################################
 
 @doc raw"""
-    factor(a::QQFieldElem, ::ZZRing) -> Fac{ZZRingElem}
+    factor(::ZZRing, a::QQFieldElem) -> Fac{ZZRingElem}
 
 Factor the rational number $a$ into prime numbers.
 """
-function factor(a::QQFieldElem, ::ZZRing)
+function factor(::ZZRing, a::QQFieldElem)
   fn = factor(numerator(a))
   fd = factor(denominator(a))
   for (p, e) = fd

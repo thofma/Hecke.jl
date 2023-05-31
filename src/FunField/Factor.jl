@@ -40,7 +40,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   return fa
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}, F::Generic.FunctionField{T}) where {T}
+function Hecke.factor(F::Generic.FunctionField{T}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}) where {T}
   return factor(map_coefficients(F, f))
 end
 

@@ -221,7 +221,7 @@ function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{T}, S::PolyRi
   return numerator(a), denominator(a)
 end
 
-function Hecke.factor(a::Generic.RationalFunctionFieldElem{T}, R::S) where {T, S<:PolyRing{T}}
+function Hecke.factor(R::S, a::Generic.RationalFunctionFieldElem{T}) where {T, S<:PolyRing{T}}
   @assert parent(numerator(a)) == R
   f1 = factor(numerator(a))
   f2 = factor(denominator(a))

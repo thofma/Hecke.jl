@@ -72,6 +72,36 @@
 
 @deprecate PseudoMatrix pseudo_matrix
 
+@deprecate factor(a::QQFieldElem, Z::ZZRing) factor(Z, a)
+
+@deprecate factor(f::QQPolyRingElem, K::AnticNumberField) factor(K, f)
+
+@deprecate factor(f::ZZPolyRingElem, K::AnticNumberField) factor(K, f)
+
+@deprecate factor(a::nf_elem, I::NfOrdIdlSet) factor(I, a)
+
+@deprecate factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) factor(I, a)
+
+@deprecate factor(f::QQPolyRingElem, R::T) where T <: Union{Nemo.fqPolyRepField, Nemo.fpField} factor(R, f)
+
+@deprecate factor(a::Generic.RationalFunctionFieldElem{T}, R::S) where {T, S<:PolyRing{T}} factor(R, a)
+
+@deprecate factor(a::Generic.RationalFunctionFieldElem, R::HessQR) factor(R, a)
+
+@deprecate factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}, F::Generic.FunctionField{T}) where {T} factor(F, f)
+
+@deprecate factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, R::ArbField) factor(R, f)
+
+@deprecate factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, C::AcbField) factor(C, f)
+
+@deprecate factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...) factor(R, f, abs_tol, initial_prec...)
+
+@deprecate factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...) factor(R, f, abs_tol, initial_prec...)
+
+@deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; refine::Bool) factor_coprime(I, a, refine = refine)
+@deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) factor_coprime(I, a)
+
+
 # Things that moved to Nemo
 
 # > 0.18.1
