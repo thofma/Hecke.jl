@@ -904,7 +904,13 @@ function Base.hash(G::ZZGenus)
 end
 
 function Base.hash(G::LocalZZGenus)
-  return xor(hash(prime(G)),  hash(symbol(G)))
+  if prime(G)!=2
+    # unique symbol
+    return xor(hash(prime(G)),  hash(symbol(G)))
+  else
+    # symbol is not unique but at least scales and ranks
+    return xor(hash(prime(G), reduce(xor,(hash(s[1:2]) for s in symbol(G)))))
+  end
 end
 
 Base.hash(G::LocalZZGenus, u::UInt) = xor(hash(G), u)
