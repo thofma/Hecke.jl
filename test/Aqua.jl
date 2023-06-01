@@ -7,8 +7,8 @@ using Aqua
     unbound_args=true,
     undefined_exports=true,
     project_extras=true,
-    stale_deps=true,
-    deps_compat=true,
+    stale_deps=(ignore=[:GAP, :Polymake],),
+    deps_compat=(ignore=[:GAP, :Polymake],),
     project_toml_formatting=true,
     piracy=false            # TODO: fix piracy
   )
