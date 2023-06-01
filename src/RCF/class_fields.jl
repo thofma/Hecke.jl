@@ -114,7 +114,7 @@ function degree(A::ClassField, QQ::QQField)
 end
 
 function degree(::Type{ZZRingElem}, A::ClassField, ::QQField)
-  return degree(ZZRingElem, A) * degree(base_field(A))
+  return degree(ZZRingElem, A) * absolute_degree(base_field(A))
 end
 
 absolute_degree(A::ClassField) = degree(A, QQ)
