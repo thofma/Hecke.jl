@@ -685,7 +685,6 @@ export NfOrd, NfAbsOrd
   disc::ZZRingElem                    # Discriminant
   is_equation_order::Bool             # Equation order of ambient number field?
 
-
   minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{ZZMatrix, Int} # Minkowski matrix - gram * 2^prec and rounded
   minkowski_gram_CMfields::ZZMatrix
