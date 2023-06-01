@@ -896,6 +896,19 @@ function Base.:(==)(G1::ZZGenus, G2::ZZGenus)
   return true
 end
 
+Base.hash(G::ZZGenus, u::UInt) = xor(hash(G), u)
+
+
+function Base.hash(G::ZZGenus)
+  return hash(reduce(xor,(hash(x) for x in local_symbols(G))), hash(signature_pair(G)))
+end
+
+function Base.hash(G::LocalZZGenus)
+  return xor(hash(prime(G)),  hash(symbol(G)))
+end
+
+Base.hash(G::LocalZZGenus, u::UInt) = xor(hash(G), u)
+
 ###############################################################################
 #
 # Printing

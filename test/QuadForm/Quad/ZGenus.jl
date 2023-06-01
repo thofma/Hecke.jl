@@ -18,6 +18,8 @@
   @test (false, 1) == Hecke._iseven(A)
   @test (1, ZZ[-1;]) == Hecke._split_odd(A)
 
+  @test length(unique!([genus(A), genus(A)]))==1
+  @test length(unique!([genus(A, 2), genus(A, 2)]))==1
 
   A = matrix(ZZ, 2, 2, [1, 2, 2, 3])
   @test (1, ZZ[-1;]) ==  Hecke._split_odd(A)
@@ -562,11 +564,11 @@ end
     g2 = rescale(g, 1//k)
     @test mass(g) == mass(g2)
   end
-  
+
   # Discriminant group
   G = genus(rescale(root_lattice(:A, 1), 1//3))
   @test_throws ArgumentError discriminant_group(G)
-  
+
   # Represents
   for k in 1:10
     n = rand(4:50)
@@ -577,7 +579,7 @@ end
     @test represents(G2, G)
     @test !represents(G, G2)
   end
-  
+
   # Spinor genera
   M1 = matrix(ZZ, 4, 4, [3,0,-1,1,0,3,-1,-1,-1,-1,6,0,1,-1,0,6])
   L = integer_lattice(gram = M1)
