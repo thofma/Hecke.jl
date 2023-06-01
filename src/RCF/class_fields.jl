@@ -109,6 +109,15 @@ function degree(::Type{ZZRingElem}, A::ClassField)
   end
 end
 
+function degree(A::ClassField, QQ::QQField)
+  return Int(degree(ZZRingElem, A, QQ))
+end
+
+function degree(::Type{ZZRingElem}, A::ClassField, ::QQField)
+  return degree(ZZRingElem, A) * absolute_degree(base_field(A))
+end
+
+absolute_degree(A::ClassField) = degree(A, QQ)
 
 function degree(A::ClassField_pp{S, T}) where {S, T}
   if A.degree == -1
