@@ -955,7 +955,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::LocalZZGenus)
     print(io, Dedent())
   else
     println(io)
-    for i in length(s)-1
+    for i in 1:length(s)-1
       println(io, Tuple(s[i]))
     end
     print(io, Tuple(s[end]))

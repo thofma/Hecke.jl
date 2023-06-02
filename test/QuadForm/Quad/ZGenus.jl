@@ -589,3 +589,8 @@ end
   @test Hecke.proper_spinor_generators(G) == Hecke.proper_spinor_generators(G2)
 
 end
+
+@testset "Fix issues" begin
+  ## Issue 1103
+  @test sprint(show, "text/plain", genus(root_lattice(:E, 8), 2)) isa String
+end
