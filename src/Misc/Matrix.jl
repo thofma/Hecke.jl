@@ -141,29 +141,50 @@ julia> saturate(ZZ[1 2;3 4;5 6])
 ```
 """
 function saturate(A::ZZMatrix)
-  # Let AT = H in HNF, then T⁻¹T=I in HNF. Hence elem_div T⁻¹ = [1..1].
-  # Let H' with full rank s.t. H'H = I' = [I_{rank(H)} 0; 0 0].
-  # Then H'A = H'HT⁻¹ = I'T⁻¹ with elem_div [1..1, 0..0]. Return I'T⁻¹.
-  a = transpose(A)
-  Tinv = transpose!(inv(hnf_transform!(a)))
-  s = zero(A)
-  s[begin:rank(a), :] = Tinv[begin:rank(a), :]
-  return s
+  # Let AU = H an m×n matrix of rank k in HNF.
+  # Let H' in QQ^{k×m} s.t. H'H = (i==j ? 1 : 0)_ij in ZZ^{k×n},
+  # and K a full rank (m-k)×n matrix with KH = 0 in ZZ^{(m-k)×n}.
+  # Set T := [H'; K]. Then TH = (i==j<=k ? 1 : 0)_ij =: I',
+  # by construction T has full rank, TA = THU⁻¹ = I'U⁻¹ in ZZ^{m×n},
+  # and elem_div(TA) = elem_div(I'U⁻¹) = elem_div(I') = (i<=k ? 1 : 0)_i.
+  # As of KA = KHU⁻¹ = 0, in our result
+  # TA = [H'A; KA] = [H'A; 0matrix], so just forget about K.
+  # Note that while we could compute the result as I'U⁻¹ via
+  # `hnf_with_transform(Aᵀ)` and `inv(U)`, both steps would involve
+  # the potentially gross matrix `U`.
+  H = transpose(A)
+  H = hnf!(H)
+  k = rank(H)
+  if k == ncols(H)
+    k == nrows(H) || (H = H[1:k, :])
+    # `inv` is faster on column hnf than on row hnf => transpose first
+    Hi, d = pseudo_inv(transpose!(H))
+    S = Hi*A
+    divexact!(S, S, d)
+  else
+    p = pivot_cols_of_hnf(H)
+    H = H[1:k, p]
+    Hi, d = pseudo_inv(transpose!(H))
+    S = zero(A)
+    S1 = view(S, 1:k, :)
+    S1[:, :] = Hi*A[p, :]
+    divexact!(S1, S1, d)
+  end
+  return S
+end
+
+function pivot_cols_of_hnf(H::ZZMatrix)
+  # H must be in row HNF
+  p = Vector{Int}(undef, rank(H))
+  i = 1
+  for j in axes(H, 2)
+    is_zero_entry(H, i, j) || (p[i] = j; i+=1)
+    i == rank(H)+1 && break
+  end
+  return p
 end
 
 transpose!(A::Union{ZZMatrix, QQMatrix}) = transpose!(A, A)
-
-"""
-    hnf_transform!(A::ZZMatrix) :: ZZMatrix
-
-Compute the HNF of `A` inplace and return the transformation matrix.
-"""
-function hnf_transform!(a::ZZMatrix) :: ZZMatrix
-  u = similar(a, nrows(a), nrows(a))
-  ccall((:fmpz_mat_hnf_transform, libflint), Nothing,
-    (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), a, u, a)
-  return u
-end
 
 function transpose!(A::ZZMatrix, B::ZZMatrix)
   ccall((:fmpz_mat_transpose, libflint), Nothing,
