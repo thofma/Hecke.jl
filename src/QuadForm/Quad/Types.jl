@@ -58,6 +58,7 @@ mutable struct LocalZZGenus
         @assert all(length(g)==3 for g in symbol)
       end
     end
+    deleteat!(symbol, [i for (i,s) in enumerate(symbol) if symbol[2]==0])
     g = new()
     g._prime = prime
     g._symbol = symbol
@@ -79,17 +80,17 @@ non-degenerate integer_lattice.
   _symbols::Vector{LocalZZGenus} # assumed to be sorted by their primes
   _representative::ZZLat
 
-  function ZZGenus(signature_pair, symbols)
+  function ZZGenus(signature_pair, symbols::Vector{LocalZZGenus})
     G = new()
     G._signature_pair = signature_pair
-    G._symbols = sort!(symbols, by = x->prime(x))
+    sort!(symbols, by = x->prime(x))
+    deleteat!(symbols, [i for (i,s) in enumerate(symbols) if prime(s)!=2 && is_unimodular(s)])
+    G._symbols = symbols
     return G
   end
 
   function ZZGenus(signature_pair, symbols, representative::ZZLat)
-    G = new()
-    G._signature_pair = signature_pair
-    G._symbols = sort!(symbols, by = x->prime(x))
+    G = ZZGenus(signature_pair, symbols)
     G._representative = representative
     return G
   end

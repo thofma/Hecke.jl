@@ -439,7 +439,7 @@ function direct_sum(G1::ZZGenus, G2::ZZGenus)
   primes = Hecke.primes(G1)
   append!(primes, [p for p in Hecke.primes(G2) if !(p in primes)])
   sort(primes)
-  local_symbols = []
+  local_symbols = LocalZZGenus[]
   for p in primes
     sym_p = direct_sum(local_symbol(G1, p), local_symbol(G2, p))
     push!(local_symbols, sym_p)
