@@ -115,28 +115,54 @@ end
     saturate(A::ZZMatrix) -> ZZMatrix
 
 Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \cap
-\mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of rows of
-$A$.
+\mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of columns
+of $A$.
 
 Equivalently, return $TA$ for an invertible rational matrix $T$ such that $TA$
 is integral and the elementary divisors of $TA$ are all trivial.
+
+# Examples
+
+```jldoctest
+julia> saturate(ZZ[1 2 3;4 5 6;7 0 7])
+[1    2    3]
+[1    1    1]
+[0   -1   -1]
+
+julia> saturate(ZZ[1 2 3;4 5 6])
+[1   2   3]
+[1   1   1]
+
+julia> saturate(ZZ[1 2;3 4;5 6])
+[1   2]
+[1   1]
+[0   0]
+
+```
 """
 function saturate(A::ZZMatrix)
-  #row saturation: want
-  #  TA in Z, T in Q and elem_div TA = [1]
-  #
-  #  AT = H (in HNF), then A = HT^-1 and H^-1A = T^-1
-  # since T is uni-mod, H^-1 A is in Z with triv. elm. div
-  H = transpose(A)
-  H = hnf!(H)
-  H = sub(H, 1:ncols(H), 1:ncols(H))
-    ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), H, H)
-  Hi, d = pseudo_inv(H)
-  S = Hi*A
-  divexact!(S, S, d)
-  #@hassert :HNF 1  d*Sd == S
-  return S
+  # Let AT = H in HNF, then T⁻¹T=I in HNF. Hence elem_div T⁻¹ = [1..1].
+  # Let H' with full rank s.t. H'H = I' = [I_{rank(H)} 0; 0 0].
+  # Then H'A = H'HT⁻¹ = I'T⁻¹ with elem_div [1..1, 0..0]. Return I'T⁻¹.
+  a = transpose(A)
+  Tinv = transpose!(inv(hnf_transform!(a)))
+  s = zero(A)
+  s[begin:rank(a), :] = Tinv[begin:rank(a), :]
+  return s
+end
+
+transpose!(A::Union{ZZMatrix, QQMatrix}) = transpose!(A, A)
+
+"""
+    hnf_transform!(A::ZZMatrix) :: ZZMatrix
+
+Compute the HNF of `A` inplace and return the transformation matrix.
+"""
+function hnf_transform!(a::ZZMatrix) :: ZZMatrix
+  u = similar(a, nrows(a), nrows(a))
+  ccall((:fmpz_mat_hnf_transform, libflint), Nothing,
+    (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), a, u, a)
+  return u
 end
 
 function transpose!(A::ZZMatrix, B::ZZMatrix)
