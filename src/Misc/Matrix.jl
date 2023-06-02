@@ -118,8 +118,9 @@ Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \cap
 \mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of columns
 of $A$.
 
-Equivalently, return $TA$ for an invertible rational matrix $T$ such that $TA$
-is integral and the elementary divisors of $TA$ are all trivial.
+Equivalently, return $TA$ (minus zero rows) for an invertible rational matrix
+$T$ such that $TA$ is integral and the elementary divisors of $TA$ are all
+trivial.
 
 # Examples
 
@@ -129,6 +130,10 @@ julia> saturate(ZZ[1 2 3;4 5 6;7 0 7])
 [1    1    1]
 [0   -1   -1]
 
+julia> saturate(ZZ[1 2 3;4 5 6;7 8 9])
+[1   2   3]
+[1   1   1]
+
 julia> saturate(ZZ[1 2 3;4 5 6])
 [1   2   3]
 [1   1   1]
@@ -136,52 +141,18 @@ julia> saturate(ZZ[1 2 3;4 5 6])
 julia> saturate(ZZ[1 2;3 4;5 6])
 [1   2]
 [1   1]
-[0   0]
 
 ```
 """
-function saturate(A::ZZMatrix)
-  # Let AU = H an m×n matrix of rank k in HNF.
-  # Let H' in QQ^{k×m} s.t. H'H = (i==j ? 1 : 0)_ij in ZZ^{k×n},
-  # and K a full rank (m-k)×n matrix with KH = 0 in ZZ^{(m-k)×n}.
-  # Set T := [H'; K]. Then TH = (i==j<=k ? 1 : 0)_ij =: I',
-  # by construction T has full rank, TA = THU⁻¹ = I'U⁻¹ in ZZ^{m×n},
-  # and elem_div(TA) = elem_div(I'U⁻¹) = elem_div(I') = (i<=k ? 1 : 0)_i.
-  # As of KA = KHU⁻¹ = 0, in our result
-  # TA = [H'A; KA] = [H'A; 0matrix], so just forget about K.
-  # Note that while we could compute the result as I'U⁻¹ via
-  # `hnf_with_transform(Aᵀ)` and `inv(U)`, both steps would involve
-  # the potentially gross matrix `U`.
-  H = transpose(A)
-  H = hnf!(H)
-  k = rank(H)
-  if k == ncols(H)
-    k == nrows(H) || (H = H[1:k, :])
-    # `inv` is faster on column hnf than on row hnf => transpose first
-    Hi, d = pseudo_inv(transpose!(H))
-    S = Hi*A
-    divexact!(S, S, d)
-  else
-    p = pivot_cols_of_hnf(H)
-    H = H[1:k, p]
-    Hi, d = pseudo_inv(transpose!(H))
-    S = zero(A)
-    S1 = view(S, 1:k, :)
-    S1[:, :] = Hi*A[p, :]
-    divexact!(S1, S1, d)
-  end
+function saturate(A::ZZMatrix) :: ZZMatrix
+  # Let AU = [H 0matrix] in HNF and HS = A = [H 0matrix]U⁻¹
+  # We have S == U⁻¹[1:rank(H), :] in ZZ with trivial elementary divisors.
+  # For any invertible H' with H'H = 1, also S = H'HS = H'A.
+  H = hnf!(transpose(A))
+  H = transpose(H[1:rank(H), :])
+  S = solve(H, A)
+  @assert rank(S) == rank(H)
   return S
-end
-
-function pivot_cols_of_hnf(H::ZZMatrix)
-  # H must be in row HNF
-  p = Vector{Int}(undef, rank(H))
-  i = 1
-  for j in axes(H, 2)
-    is_zero_entry(H, i, j) || (p[i] = j; i+=1)
-    i == rank(H)+1 && break
-  end
-  return p
 end
 
 transpose!(A::Union{ZZMatrix, QQMatrix}) = transpose!(A, A)
