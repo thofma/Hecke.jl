@@ -812,7 +812,7 @@ end
 
 ###############################################################################
 #
-# Equality
+# Equality and hash
 #
 ###############################################################################
 
@@ -896,24 +896,23 @@ function Base.:(==)(G1::ZZGenus, G2::ZZGenus)
   return true
 end
 
-Base.hash(G::ZZGenus, u::UInt) = xor(hash(G), u)
 
 
-function Base.hash(G::ZZGenus)
-  return hash(reduce(xor,(hash(x) for x in local_symbols(G))), hash(signature_pair(G)))
+function Base.hash(G::ZZGenus, u::UInt)
+  h = hash(reduce(xor,(hash(x) for x in local_symbols(G))), hash(signature_pair(G)))
+  return xor(h, u)
 end
 
-function Base.hash(G::LocalZZGenus)
+function Base.hash(G::LocalZZGenus, u::UInt)
   if prime(G)!=2
     # unique symbol
-    return xor(hash(prime(G)),  hash(symbol(G)))
+    h = xor(hash(prime(G)),  hash(symbol(G)))
   else
     # symbol is not unique but at least scales and ranks
-    return xor(hash(prime(G), reduce(xor,(hash(s[1:2]) for s in symbol(G)))))
+    h = xor(hash(prime(G), reduce(xor,(hash(s[1:2]) for s in symbol(G)))))
   end
+  return xor(h, u)
 end
-
-Base.hash(G::LocalZZGenus, u::UInt) = xor(hash(G), u)
 
 ###############################################################################
 #
