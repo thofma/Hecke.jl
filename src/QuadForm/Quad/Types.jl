@@ -58,7 +58,7 @@ mutable struct LocalZZGenus
         @assert all(length(g)==3 for g in symbol)
       end
     end
-    deleteat!(symbol, [i for (i,s) in enumerate(symbol) if symbol[2]==0])
+    deleteat!(symbol, [i for (i,s) in enumerate(symbol) if s[2]==0])
     g = new()
     g._prime = prime
     g._symbol = symbol
