@@ -207,19 +207,19 @@ function non_pivot_cols_of_ref(H::MatrixElem)
   i = 1
   for j in axes(H, 2)
     is_zero_entry(H, i, j) ? push!(p, j) : (i+=1)
+    i == nrows(H)+1 && break
   end
   return p
 end
 
 function rank_of_ref(H::MatrixElem)
-  i = 0
+  i = 1
   for j in axes(H, 2)
-    is_zero_entry(H, i+1, j) || (i+=1)
-    i == nrows(H) && return i
+    is_zero_entry(H, i, j) || (i+=1)
+    i == nrows(H)+1 && break
   end
-  return i
+  return i-1
 end
-
 
 transpose!(A::Union{ZZMatrix, QQMatrix}) = is_square(A) ? transpose!(A, A) : transpose(A)
 
