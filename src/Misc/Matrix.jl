@@ -149,14 +149,19 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   # We have S == U⁻¹[1:rank(H), :] in ZZ with trivial elementary divisors.
   # For any invertible H' with H'H = 1, also S = H'HS = H'A.
   H = hnf!(transpose(A))
-  H = transpose(H[1:rank_of_ref(H), :])
+  H = transpose!(view(H, 1:rank_of_ref(H), :))
   return solve(H, A)
+end
+
+function column_saturate(A::ZZMatrix) :: ZZMatrix
+  H = hnf(A)
+  return solve_left(view(H, 1:rank_of_ref(H), :), A)
 end
 
 function column_hnf_with_transform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
   # Typically the entries of U = S⁻¹ will explode compared to A, S, and U.
   # Thus, `inv(S)` needs the larger part of the runtime here.
-  H, S = hnf_with_backtransform_via_saturate(A)
+  H, S = column_hnf_with_backtransform_via_saturate(A)
   return H, inv(S)
 end
 
@@ -166,39 +171,51 @@ function hnf_with_transform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatri
 end
 
 function column_hnf_with_backtransform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
-  # Want (H, U) from AU = H. As computing U along the way gets slow,
-  # instead compute U⁻¹ satisfying A = HU⁻¹ after the fact from H.
-  # If H has full column rank, the solution S to HS = A is U⁻¹.
-  # Otherwise, the rows of S after the first rank(H) get multiplied with zero.
-  # So, we may choose them arbitrarily, s.t. S gets full rank.
-  # Most of the computation time goes into the HNF.
-  H = hnf!(transpose(A))
-  k = rank_of_ref(H)
-  k == nrows(H) && return H, solve(transpose!(H), A)
-  S = solve(transpose!(view(H, 1:k, :)), A)
-  return H, add_independent_rows(S)
+  return transpose.(hnf_with_backtransform_via_saturate(transpose(A)))
 end
 
 function hnf_with_backtransform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
-  # As above, but for UA = H. Solve SH = A.
+  # Want (H, U) from UA = H. As computing U along the way gets slow,
+  # instead compute U⁻¹ satisfying A = U⁻¹H after the fact from H.
+  # If H has full row rank, the solution S to SH = A is U⁻¹.
+  # Otherwise, the columns of S after the first rank(H) get multiplied with zero.
+  # So, we may choose them arbitrarily, and must choose them s.t. S becomes unimodular.
+  # TODO Find out, how to choose them efficiently.
+  # Most of the computation time goes into the HNF.
+  m = nrows(A); k = 0
   H = hnf(A)
   k = rank_of_ref(H)
-  k == nrows(H) && return H, solve_left(H, A)
-  S = solve_left(view(H, 1:k, :), A)
-  return H, add_independent_cols(S)
+  S = solve_left(H, A)
+  while k != m
+    # Probably not efficient, but working.
+    # We could also add the columns to A for the same effect.
+    A = add_random_cols(S, m-k)
+    h = hnf(A) # This needs some time again :(
+    # The following holds, due to S being unimodular:
+    @assert h[1:k, 1:k] == identity_matrix(base_ring(h), k)
+    k = rank_of_ref(h)
+    S = solve_left(h, A)
+  end
+  return H, S
 end
 
+add_random_rows(A::MatrixElem, k::Int) = [A; rand(MatrixSpace(base_ring(A), k, ncols(A)), -1:1)]
+add_random_cols(A::MatrixElem, k::Int) = [A rand(MatrixSpace(base_ring(A), nrows(A), k), -1:1)]
+# May fail, but faster:
+# add_guessed_rows(A::MatrixElem, k::Int) = (R = base_ring(A); m = nrows(A); [A [zero(A, m-k, k); identity_matrix(R, k)]])
+# Deterministic, but needs an extra rref computation:
 function add_independent_rows(A::MatrixElem)
   rk, R, = rref(A)
-  @assert rk == nrows(A) <= ncols(A)
-  B = zero(A, ncols(A), ncols(A))
+  needed_rows = ncols(A) - rk
+  c = non_pivot_cols_of_ref(R)
+  @assert length(c) == needed_rows
+  B = zero(A, nrows(A) + needed_rows, ncols(A))
   B[axes(A)...] = A
-  for (i, j) in zip(rk+1:nrows(B), non_pivot_cols_of_ref(R))
+  for (i, j) in zip(nrows(A)+1:nrows(B), c)
     B[i, j] = one(base_ring(B))
   end
   return B
 end
-
 add_independent_cols(A::MatrixElem) = transpose!(add_independent_rows(transpose(A)))
 
 function non_pivot_cols_of_ref(H::MatrixElem)
@@ -206,9 +223,10 @@ function non_pivot_cols_of_ref(H::MatrixElem)
   p = Int[]
   i = 1
   for j in axes(H, 2)
+    i == nrows(H)+1 && (append!(p, j:ncols(H)); break)
     is_zero_entry(H, i, j) ? push!(p, j) : (i+=1)
-    i == nrows(H)+1 && break
   end
+  @assert length(p) == ncols(H) - rank_of_ref(H)
   return p
 end
 
