@@ -659,10 +659,10 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{FlintPadicField, F
       iszero(a) && continue
       va = valuation(a)
       va == 0 && return inv(a)
-      @show va, v_deg
+      # @show va, v_deg
       if va <= v_deg
         denominator(va) == 1 && return inv(divexact(a, prime(E)^Int(va)))
-        @show :shit
+        # @show :shit
       end
 
 #      return frobenius_equation2(c, F, frobenius = fr, start = inv(a))
@@ -1071,7 +1071,7 @@ function one_unit_group(K::LocalField)
       solve_1_units -> rework as rels_1_units
       completion of x^2+1 at 2
       =#
-      @show :permuting, h[1,1]
+      # @show :permuting, h[1,1]
       i = rand(1:length(gens)-1)
       gens[end], gens[i] = gens[i], gens[end]
       rel, po = solve_1_units(gens[1:end-1], gens[end])
@@ -1115,7 +1115,7 @@ function one_unit_group(K::LocalField)
       end
       ex = vcat([-z+1], s)
       x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
-        @assert isone(x) || iszero(x-1) || (@show valuation(x-1); e*valuation(x-1) >= precision(a))
+        @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
       return G(ex)
     end
   end
