@@ -388,8 +388,10 @@ Return the local genus of the direct sum of two representatives.
 """
 function direct_sum(S1::LocalZZGenus, S2::LocalZZGenus)
   @req prime(S1) == prime(S2) "The local genus symbols must be over the same prime"
-  if rank(S1) == rank(S2) == 0
-    return LocalZZGenus(prime(S1), Hecke.symbol(S1))
+  if rank(S1) == 0
+    return S2
+  elseif rank(S2) == 0
+    return S1
   end
   _sym1 = Hecke.symbol(S1)
   _sym2 = Hecke.symbol(S2)
@@ -730,7 +732,7 @@ function _isglobal_genus(G::ZZGenus)
   for loc in local_symbols(G)
     p = prime(loc)
     sym = symbol(loc)
-    v = sum([ss[1] * ss[2] for ss in sym])
+    v = sum([ss[1] * ss[2] for ss in sym], init=0)
     a = divexact(D, p^v)
     denominator(a) == 1 || return false
     a = numerator(a)
@@ -1187,7 +1189,7 @@ end
 Return the dimension of this genus.
 """
 function dim(S::LocalZZGenus)
-  return sum(Int[s[2] for s in symbol(S)])
+  return sum(Int[s[2] for s in symbol(S)], init=0)
 end
 
 @doc raw"""
@@ -1266,7 +1268,7 @@ function oddity(S::LocalZZGenus)
       k += 1
     end
   end
-  return R(sum(Int[s[5] for s in symbol(S)]) + 4*k)
+  return R(sum(Int[s[5] for s in symbol(S)],init=0) + 4*k)
 end
 
 @doc raw"""
@@ -1382,7 +1384,7 @@ Return the determinant of this genus.
 function det(G::ZZGenus)
   p, n = signature_pair(G)
   d = QQ(-1)^n
-  return QQ(-1)^n*prod(QQ(prime(g))^sum(Int[s[1]*s[2] for s in g._symbol])
+  return QQ(-1)^n*prod(QQ(prime(g))^sum(Int[s[1]*s[2] for s in g._symbol],init=0)
                        for g in G._symbols)
 end
 
@@ -1580,7 +1582,7 @@ Return a list of representatives of the isometry classes in this genus.
 function representatives(G::ZZGenus)
   L = representative(G)
   rep = genus_representatives(L)
-  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(QQFieldElem[1//automorphism_group_order(S) for S in rep])
+  @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(QQFieldElem[1//automorphism_group_order(S) for S in rep],init=QQ(0))
   return rep
 end
 
@@ -1595,7 +1597,7 @@ function gram_matrix(S::LocalZZGenus)
   for block in S._symbol
     push!(G, _gram_from_jordan_block(p, block))
   end
-  G = diagonal_matrix(G)
+  G = diagonal_matrix(QQ, G)
   @hassert :Lattice 1  S == genus(G, p)
   return G
 end
