@@ -132,7 +132,7 @@ end
 
 # Now collect the tests we want to run
 
-const test_exclude = ["setup.jl", "runtests.jl", "parallel.jl", "testdefs.jl", "FieldFactory.jl"]
+const test_exclude = ["setup.jl", "runtests.jl", "parallel.jl", "testdefs.jl", "Aqua.jl", "FieldFactory.jl"]
 
 test_directory = joinpath(@__DIR__)
 
@@ -251,6 +251,8 @@ function print_res_recursively(testset, cur_level, max_level)
     print_res_recursively(t, cur_level + 1, max_level)
   end
 end
+
+include("Aqua.jl")
 
 if short_test
   include("setup.jl")

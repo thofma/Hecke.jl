@@ -876,8 +876,8 @@ function diagonal_matrix(x::Vector{T}) where T <: RingElem
   return M
 end
 
-function diagonal_matrix(x::T...) where T <: RingElem
-  return diagonal_matrix(collect(x))
+function diagonal_matrix(x::T, xs::T...) where T <: RingElem
+  return diagonal_matrix(collect((x, xs...)))
 end
 
 diagonal_matrix(R::Ring, x::Vector{<:RingElement}) = diagonal_matrix(R.(x))
@@ -892,8 +892,8 @@ function diagonal_matrix(x::Vector{T}) where T <: MatElem
   return cat(x..., dims = (1, 2))::T
 end
 
-function diagonal_matrix(x::T...) where T <: MatElem
-  return cat(x..., dims = (1, 2))::T
+function diagonal_matrix(x::T, xs::T...) where T <: MatElem
+  return cat(x, xs..., dims = (1, 2))::T
 end
 ################################################################################
 #
