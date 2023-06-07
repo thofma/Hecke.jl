@@ -3,6 +3,7 @@ import Base.vcat, Base.hcat
 
 add_verbosity_scope(:PseudoHnf)
 add_assertion_scope(:PseudoHnf)
+add_verbosity_scope(:PseudoHnfKB)
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = nrows(M)
@@ -522,7 +523,7 @@ matrix part of $P$ will be upper triangular with some technical normalisation
 for the off-diagonal elements. This operation preserves the module.
 The used transformation is returned as a second return value.
 
-A optional second argument can be specified as a symbols, indicating the desired
+A optional second argument can be specified as a symbol, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
@@ -1190,6 +1191,7 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
    return 0, 0
 end
 
+# Reduces the row r with pivot in column c (so r = pivot[c]) with other known pivots
 function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool) where {T <: NumFieldElem, S}
    r = pivot[c]
    A = H.matrix
@@ -1213,9 +1215,12 @@ function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c:
          end
       end
    end
+   @vprintln :PseudoHnfKB "(Partially) reduced row $r"
+   @vprintln :PseudoHnfKB A
    return nothing
 end
 
+# Reduces the entries of the column c with pivots "left from c", so in the columns 1:c - 1.
 function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
    r = pivot[c]
    A = H.matrix
@@ -1239,9 +1244,12 @@ function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int},
          end
       end
    end
+   @vprintln :PseudoHnfKB "(Partially) reduced column $c"
+   @vprintln :PseudoHnfKB A
    return nothing
 end
 
+# Permute the rows to get an echelon shape
 function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
    m = nrows(H)
    n = ncols(H)
@@ -1278,6 +1286,33 @@ function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, wit
    return nothing
 end
 
+# Produce a 1 in entry (r, c) by pushing the entry into the coefficient ideal
+function kb_produce_one!(H::PMat{T, S}, U::Generic.Mat{T}, r::Int, c::Int, with_transform::Bool) where {T <: NumFieldElem, S}
+   A = H.matrix
+   H.coeffs[r] = simplify(H.coeffs[r]*A[r, c])
+   with_transform ? divide_row!(U, r, A[r, c]) : nothing
+   divide_row!(A, r, A[r, c])
+   return nothing
+end
+
+# For p = pivot[c], return the gcd and the idempotents of the coefficient ideals
+# necessary to produce a zero in entry (r, c)
+function kb_get_idempotents_for_entry(H::PMat{T, S}, pivot::Vector{Int}, r::Int, c::Int) where {T <: NumFieldElem, S}
+   K = base_ring(H.matrix)
+   p = pivot[c]
+   a = H.coeffs[r]
+   aa = H.matrix[r, c]*a
+   b = H.coeffs[p]
+   d = aa + b
+   ad = simplify(aa//d)
+   bd = simplify(b//d)
+   if !is_integral(ad) || !is_integral(bd)
+      error("Ideals are not integral.")
+   end
+   u, v = map(K, idempotents(numerator(ad, copy = false), numerator(bd, copy = false)))
+   return d, u, v
+end
+
 function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_element::Int = 1) where {T <: NumFieldElem, S}
    m = nrows(H)
    n = ncols(H)
@@ -1290,60 +1325,37 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
    end
    pivot[col1] = row1
    pivot_max = col1
-   H.coeffs[row1] = H.coeffs[row1]*A[row1, col1]
-   simplify(H.coeffs[row1])
-   with_transform ? divide_row!(U, row1, A[row1, col1]) : nothing
-   divide_row!(A, row1, A[row1, col1])
+   kb_produce_one!(H, U, row1, col1, with_transform)
    t = K()
    t1 = K()
    t2 = K()
-   for i=row1:m-1
+   for i = row1 + 1:m
+      @vprintln :PseudoHnfKB "Working in row $i..."
       new_pivot = false
       for j = start_element:pivot_max
-         if iszero(A[i+1,j])
+         if iszero(A[i,j])
             continue
          end
          if pivot[j] == 0
-            pivot[j] = i+1
+            @vprintln :PseudoHnfKB "Found new pivot ($i, $j)"
+            # We found a pivot for column j in row i
+            pivot[j] = i
             pivot_max = max(pivot_max, j)
             new_pivot = true
-            H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
-            simplify(H.coeffs[i+1])
-            with_transform ? divide_row!(U, i+1, A[i+1, j]) : nothing
-            divide_row!(A, i+1, A[i+1, j])
-            kb_reduce_row!(H, U, pivot, j, with_transform)
+            kb_produce_one!(H, U, i, j, with_transform)
          else
+            # We have a pivot for column j in another row, so we can now produce
+            # a 0 in the entry (i, j)
             p = pivot[j]
-            Aij = deepcopy(A[i+1, j])
-            a = H.coeffs[i+1]
-            aa = Aij*a
-            b = H.coeffs[p]
-            d = aa + b
-            ad = aa//d
-            simplify(ad)
-            bd = b//d
-            simplify(bd)
-            if typeof(ad) == NfOrdFracIdl
-              if ad.den != 1 || bd.den != 1
-                error("Ideals are not integral.")
-              end
-              u, v = map(K, idempotents(ad.num, bd.num))
-            else
-              if !is_integral(ad) || !is_integral(bd)
-                error("Ideals are not integral.")
-              end
-              # numerator(ad) would make a deepcopy...
-              adint = ideal_type(order(ad))(order(ad), basis_pmatrix(ad, copy = false))
-              bdint = ideal_type(order(bd))(order(bd), basis_pmatrix(bd, copy = false))
-              u, v = map(K, idempotents(adint, bdint))
-            end
+            Aij = deepcopy(A[i, j])
+            d, u, v = kb_get_idempotents_for_entry(H, pivot, i, j)
             u = divexact(u, Aij)
             for c = j:n
-               t = deepcopy(A[i+1, c])
+               t = deepcopy(A[i, c])
                #t1 = mul!(t1, A[p, c], -Aij)
                mul!(t1, A[p, c], -Aij)
-               #A[i+1, c] = addeq!(A[i+1, c], t1)
-               addeq!(A[i+1, c], t1)
+               #A[i, c] = addeq!(A[i, c], t1)
+               addeq!(A[i, c], t1)
                #t1 = mul!(t1, t, u)
                mul!(t1, t, u)
                #t2 = mul!(t2, A[p, c], v)
@@ -1353,11 +1365,11 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
             end
             if with_transform
                for c = 1:m
-                  t = deepcopy(U[i+1, c])
+                  t = deepcopy(U[i, c])
                   #t1 = mul!(t1, U[p, c], -Aij)
                   mul!(t1, U[p, c], -Aij)
-                  #U[i+1, c] = addeq!(U[i+1, c], t1)
-                  addeq!(U[i+1, c], t1)
+                  #U[i, c] = addeq!(U[i, c], t1)
+                  addeq!(U[i, c], t1)
                   #t1 = mul!(t1, t, u)
                   mul!(t1, t, u)
                   #t2 = mul!(t2, U[p, c], v)
@@ -1366,30 +1378,34 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
                   add!(U[p, c], t1, t2)
                end
             end
-            H.coeffs[i+1] = a*b//d
-            simplify(H.coeffs[i+1])
-            H.coeffs[p] = d
-            simplify(H.coeffs[p])
+            H.coeffs[i] = simplify(H.coeffs[i]*H.coeffs[p]//d)
+            H.coeffs[p] = simplify(d)
+            @vprintln :PseudoHnfKB "Produced 0 in entry ($i, $j)"
+            @vprintln :PseudoHnfKB A
          end
+         # Whether we found a pivot in column j (in row i) or produced a zero
+         # using the pivot in column j in another row: We have to reduce the
+         # row pivot[j] again.
+         kb_reduce_row!(H, U, pivot, j, with_transform)
          kb_reduce_column!(H, U, pivot, j, with_transform, start_element)
          if new_pivot
             break
          end
       end
       if !new_pivot
+         # We did not find a new pivot in row i in the so far known area
          for c = pivot_max+1:n
-            if !iszero(A[i+1,c])
-               pivot[c] = i+1
+            if !iszero(A[i,c])
+               @vprintln :PseudoHnfKB "Found new pivot ($i, $c) (second attempt)"
+               pivot[c] = i
                pivot_max = max(pivot_max, c)
-               H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
-               simplify(H.coeffs[i+1])
-               with_transform ? divide_row!(U, i+1, A[i+1, c]) : nothing
-               divide_row!(A, i+1, A[i+1, c])
+               kb_produce_one!(H, U, i, c, with_transform)
                kb_reduce_column!(H, U, pivot, c, with_transform, start_element)
                break
             end
          end
       end
+      @vprintln :PseudoHnfKB ""
    end
    kb_sort_rows!(H, U, pivot, with_transform, start_element)
    return nothing

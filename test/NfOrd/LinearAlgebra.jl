@@ -177,4 +177,16 @@
   gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
   pm = pseudo_hnf(pseudo_matrix(matrix(gens)), :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
+
+  # issue 1112
+  K, a = CyclotomicRealSubfield(8, "a");
+  Kt, t = K["t"];
+  E, b = number_field(t^2 - a * t + 1, "b");
+  V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)));
+  L = lattice(V);
+  L2 = dual(L);
+  M = pseudo_matrix(L2)
+  H = pseudo_hnf(M, :lowerleft)
+  @test all(is_one, H.coeffs)
+  @test is_one(H.matrix)
 end

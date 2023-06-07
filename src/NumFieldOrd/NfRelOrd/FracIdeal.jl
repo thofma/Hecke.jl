@@ -95,12 +95,12 @@ end
 
 Returns the ideal $d*a$ where $d$ is the denominator of $a$.
 """
-function numerator(a::NfRelOrdFracIdl; copy::Bool = true) # copy for compatibility with NfOrdFracIdl (it doesn't do anything here)
+function numerator(a::NfRelOrdFracIdl; copy::Bool = true) # copy for compatibility with NfOrdFracIdl (it only does something if isone(denominator(a)) here)
   d = denominator(a)
-  PM = basis_pmatrix(a)
   if isone(d)
-    return ideal_type(order(a))(order(a), PM)
+    return ideal_type(order(a))(order(a), basis_pmatrix(a, copy = copy))
   end
+  PM = basis_pmatrix(a)
   for i = 1:degree(order(a))
     PM.coeffs[i] = PM.coeffs[i]*d
     PM.coeffs[i] = simplify(PM.coeffs[i])
