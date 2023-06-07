@@ -1337,7 +1337,7 @@ end
 
 ################################################################################
 #
-#  Equality
+#  Equality and hash
 #
 ################################################################################
 
@@ -1354,6 +1354,13 @@ function Base.:(==)(L1::ZZLat, L2::ZZLat)
   B1 = basis_matrix(L1)
   B2 = basis_matrix(L2)
   return hnf(FakeFmpqMat(B1)) == hnf(FakeFmpqMat(B2))
+end
+
+function Base.hash(L::ZZLat, u::UInt)
+  V = ambient_space(L)
+  B = hnf(FakeFmpqMat(basis_matrix(L)))
+  h = xor(hash(V), hash(B))
+  return xor(h, u)
 end
 
 @doc raw"""

@@ -734,3 +734,8 @@ let
   fl, v = @inferred is_modular(L, 3)
   @test fl && v == 1
 end
+
+@testset "Hashes" begin
+  L = root_lattice(:D, 5)
+  @test length(unique!([L,lattice_in_same_ambient_space(L, basis_matrix(L))])) == 1
+end

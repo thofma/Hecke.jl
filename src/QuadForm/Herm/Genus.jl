@@ -631,7 +631,8 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_dyadic = is_dyadic
   z.is_ramified = is_ramified
   z.is_split = is_split
-  z.data = data
+  del = [i for (i,s) in enumerate(data) if s[2] != 0]
+  z.data = data[del]
   return z
 end
 
@@ -790,8 +791,9 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_split = false
   # We test the cheap thing
   @req z.is_dyadic && z.is_ramified "Prime must be dyadic and ramified"
-  z.norm_val = norms
-  z.data = data
+  del = [i for (i,s) in enumerate(data) if s[2] != 0]
+  z.norm_val = norms[del]
+  z.data = data[del]
   z.ni = _get_ni_from_genus(z)
   return z
 end
@@ -922,7 +924,7 @@ Base.in(L::HermLat, G::HermLocalGenus) = base_field(L) === base_field(G) && genu
 
 ################################################################################
 #
-#  Equality
+#  Equality and hash
 #
 ################################################################################
 
@@ -1016,6 +1018,21 @@ function ==(G1::HermLocalGenus, G2::HermLocalGenus)
   end
 
   return true
+end
+
+function Base.hash(g::HermLocalGenus, u::UInt)
+  u = Base.hash(base_field(g), u)
+  u = Base.hash(prime(g), u)
+  h = xor(hash(det(g)), reduce(xor, (hash(s[1:2]) for s in g.data)))
+  if is_ramified(g)
+    if !is_dyadic(g)
+      h = xor(h, reduce(xor, (hash(s[3]) for s in g.data if iseven(s[1]))))
+    else
+      h = xor(h, reduce(xor, (hash(g.data[i][1] == 2*g.norm_val[i]) for i = 1:length(g.data))))
+      h = xor(h, hash(g.ni))
+    end
+  end
+  return xor(h, u)
 end
 
 function _genus_symbol(L::HermLat, p)
@@ -1256,7 +1273,7 @@ local_symbols(G) = copy(G.LGS)
 
 ################################################################################
 #
-#  Equality
+#  Equality and hash
 #
 ################################################################################
 
@@ -1292,6 +1309,12 @@ function ==(G1::HermGenus, G2::HermGenus)
   return true
 end
 
+function Base.hash(G::HermGenus, u::UInt)
+  u = Base.hash(base_field(G), u)
+  h = xor(reduce(xor, (hash(x) for x in local_symbols(G))), hash(signatures(G)))
+  return xor(h, u)
+end
+
 ################################################################################
 #
 #  Sum of global genera
@@ -1322,6 +1345,8 @@ function direct_sum(G1::HermGenus, G2::HermGenus)
   sig1 = G1.signatures
   sig2 = G2.signatures
   g3 = merge(+, sig1, sig2)
+  bd = union(support(2*maximal_order(base_field(E))), support(discriminant(maximal_order(E))))
+  filter!(g -> (prime(g) in bd) || (scales(g) != Int[0]), LGS)
   return genus(LGS, g3)
 end
 

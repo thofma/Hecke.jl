@@ -491,6 +491,8 @@ scale(G::QuadLocalGenus, i::Int) = scales(G)[i]
 
 rank(G::QuadLocalGenus, i::Int) = ranks(G)[i]
 
+base_field(G::QuadLocalGenus) = nf(prime(G))
+
 function witt_invariant(G::QuadLocalGenus)
   if G.witt_inv != 0
     return G.witt_inv
@@ -516,7 +518,7 @@ function rank(G::QuadLocalGenus)
     return G.rank
   end
 
-  rk = sum(G.ranks)
+  rk = sum(G.ranks, init=0)
 
   G.rank = rk
   return rk
@@ -687,9 +689,10 @@ function genus(::Type{QuadLat}, p, pi::nf_elem, ranks::Vector{Int},
   z.p = p
   z.uniformizer = pi
   z.is_dyadic = false
-  z.ranks = ranks
-  z.scales = scales
-  z.detclasses = normclass
+  del = [i for (i,k) in enumerate(ranks) if k != 0]
+  z.ranks = ranks[del]
+  z.scales = scales[del]
+  z.detclasses = normclass[del]
   return z
 end
 
@@ -704,12 +707,13 @@ function genus(::Type{QuadLat}, p, ranks::Vector{Int}, scales::Vector{Int},
   z = QuadLocalGenus{typeof(K), typeof(p), elem_type(K)}()
   z.is_dyadic = true
   z.p = p
-  z.ranks = ranks
-  z.scales = scales
-  z.weights = weights
-  z.normgens = normgens
-  z.dets = dets
-  z.witt = witt
+  del = [i for (i,k) in enumerate(ranks) if k != 0]
+  z.ranks = ranks[del]
+  z.scales = scales[del]
+  z.weights = weights[del]
+  z.normgens = normgens[del]
+  z.dets = dets[del]
+  z.witt = witt[del]
   z.f = f
   return z
 end
@@ -724,18 +728,19 @@ function genus(::Type{QuadLat}, p, ranks::Vector{Int}, scales::Vector{Int},
   z = QuadLocalGenus{typeof(K), typeof(p), elem_type(K)}()
   z.is_dyadic = true
   z.p = p
-  z.ranks = ranks
-  z.scales = scales
-  z.weights = weights
-  z.normgens = normgens
-  z.dets = dets
-  z.witt = witt
-  t = length(ranks)
+  del = [i for (i,k) in enumerate(ranks) if k != 0]
+  z.ranks = ranks[del]
+  z.scales = scales[del]
+  z.weights = weights[del]
+  z.normgens = normgens[del]
+  z.dets = dets[del]
+  z.witt = witt[del]
+  t = length(ranks[del])
   # I should do this only on demand ...
-  uL = Int[valuation(normgens[i], p) for i in 1:t]
-  wL = weights
-  sL = scales
-  aL = normgens
+  uL = Int[valuation(normgens[i], p) for i in del]
+  wL = weights[del]
+  sL = scales[del]
+  aL = normgens[del]
   _f = Vector{Int}()
   e = ramification_index(p) # absolute
   for k in 1:(t - 1)
@@ -758,9 +763,21 @@ end
 
 ################################################################################
 #
-#  Equality of genus symbols
+#  Equality of genus symbols and hashes
 #
 ################################################################################
+
+function Base.hash(g::QuadLocalGenus, u::UInt)
+  u = Base.hash(base_field(g), u)
+  u = Base.hash(prime(g), u)
+  h = xor(hash(scales(g)), hash(ranks(g)))
+  if is_dyadic(g)
+    h = xor(h, hash(weights(g)))
+    h = xor(h, hash(witt_invariant(g)))
+    h = xor(h, hash(norms(g)))
+  end
+  return xor(h, u)
+end
 
 function Base.:(==)(G1::QuadLocalGenus, G2::QuadLocalGenus)
   if G1 === G2
@@ -1661,11 +1678,21 @@ function Base.:(==)(G1::QuadGenus, G2::QuadGenus)
   return true
 end
 
+function Base.hash(G::QuadGenus, u::UInt)
+  u = Base.hash(base_field(G), u)
+  h = xor(hash(signatures(G)), reduce(xor, (hash(x) for x in local_symbols(G))))
+  return xor(h,u)
+end
+
+base_field(G::QuadGenus) = G.K
+
+signatures(G::QuadGenus) = G.signatures
+
 primes(G::QuadGenus) = G.primes
 
 function quadratic_genera(K; rank::Int, signatures, det)
   OK = maximal_order(K)
-
+  bd = support(2*OK)
   _max_scale = 2 * det
 
   primes = support(2 * det)
@@ -1684,6 +1711,7 @@ function quadratic_genera(K; rank::Int, signatures, det)
   it = Iterators.product(local_symbols...)
   for gs in it
     c = collect(gs)::Vector{local_genus_quad_type(K)}
+    filter!(g -> (prime(g) in bd) || scales(g) != Int[0], c)
     de = _possible_determinants(K, c, signatures)::Vector{nf_elem}
     for d in de
       b = _check_global_quadratic_genus(c, d, signatures)
@@ -1891,6 +1919,7 @@ end
 function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T, U}
   @req G1.K === G2.K "Global genus symbols must be defined over the same field"
   K = G1.K
+  bd = support(2*maximal_order(K))
   LGS = local_genus_quad_type(K)[]
   P1 = Set(primes(G1))
   P2 = Set(primes(G2))
@@ -1920,7 +1949,7 @@ function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T,
   sig1 = G1.signatures
   sig2 = G2.signatures
   sig3 = merge(+, sig1, sig2)
-
+  filter!(g -> (prime(g) in bd) || scales(g) != Int[0], LGS)
   return QuadGenus(K, G1.d * G2.d, LGS, sig3)
 end
 

@@ -442,3 +442,12 @@ end
   @test is_anti_isometry(f)
   @test !is_isometry(f)
 end
+
+@testset "Equality and hashes" begin
+  L = root_lattice(:E, 7)
+  T = discriminant_group(L)
+  T2, _ = sub(T, gens(T))
+  @test T == T2
+  @test length(unique!([T, T2])) == 1
+  @test length(unique!([T[1], -T[1]])) == 1
+end

@@ -233,7 +233,7 @@ end
 
 ################################################################################
 #
-#  Equality
+#  Equality and hash
 #
 ################################################################################
 
@@ -244,8 +244,14 @@ function Base.:(==)(L::AbstractLat, M::AbstractLat)
   if ambient_space(L) != ambient_space(M)
     return false
   end
-  return _modules_equality(_pseudo_hnf(L),
-                           _pseudo_hnf(M))
+  return pseudo_hnf(pseudo_matrix(L), :lowerleft) == pseudo_hnf(pseudo_matrix(M), :lowerleft)
+end
+
+function Base.hash(L::AbstractLat, u::UInt)
+  V = ambient_space(L)
+  B = _pseudo_hnf(L)
+  h = xor(hash(V), hash(B))
+  return xor(h, u)
 end
 
 ################################################################################

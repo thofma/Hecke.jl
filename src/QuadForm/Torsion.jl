@@ -386,9 +386,23 @@ end
 
 ################################################################################
 #
-#  Equality
+#  Equalities and hashes
 #
 ################################################################################
+
+function Base.:(==)(S::TorQuadModule, T::TorQuadModule)
+  modulus_bilinear_form(S) != modulus_bilinear_form(T) && return false
+  modulus_quadratic_form(S) != modulus_quadratic_form(T) && return false
+  relations(S) != relations(T) && return false
+  return cover(S) == cover(T)
+end
+
+function Base.hash(T::TorQuadModule, u::UInt)
+  u = Base.hash(modulus_bilinear_form(T), u)
+  u = Base.hash(modulus_quadratic_form(T), u)
+  u = Base.hash(relations(T), u)
+  return Base.hash(cover(T), u)
+end
 
 function Base.:(==)(a::TorQuadModuleElem, b::TorQuadModuleElem)
   if parent(a) !== parent(b)
@@ -396,6 +410,11 @@ function Base.:(==)(a::TorQuadModuleElem, b::TorQuadModuleElem)
   else
     return data(a) == data(b)
   end
+end
+
+function Base.hash(a::TorQuadModuleElem, u::UInt)
+  h = xor(hash(parent(a)), hash(data(a)))
+  return xor(h, u)
 end
 
 iszero(a::TorQuadModuleElem) = iszero(a.data)
