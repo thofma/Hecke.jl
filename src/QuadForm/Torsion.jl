@@ -2075,7 +2075,6 @@ Note that in the case of trivial groups, this function returns `(true, 1)`. If
 `T` is not primary, the second return value is `-1` by default.
 """
 function is_primary_with_prime(T::TorQuadModule)
-  @req !is_degenerate(T) "T must be non-degenerate"
   ed = elementary_divisors(T)
   if is_empty(ed)
     return true, ZZ(1)
