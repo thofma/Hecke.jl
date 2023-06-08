@@ -144,34 +144,24 @@ julia> saturate(ZZ[1 2;3 4;5 6])
 
 ```
 """
-function saturate(A::ZZMatrix) :: ZZMatrix
-  # Let AU = [H 0matrix] in HNF and HS = A = [H 0matrix]U⁻¹
-  # We have S == U⁻¹[1:rank(H), :] in ZZ with trivial elementary divisors.
-  # For any invertible H' with H'H = 1, also S = H'HS = H'A.
-  H = hnf!(transpose(A))
-  H = transpose!(view(H, 1:rank_of_ref(H), :))
-  return solve(H, A)
-end
-
-function column_saturate(A::ZZMatrix) :: ZZMatrix
+saturate(A::ZZMatrix) = transpose(column_saturate(transpose(A)))
+column_saturate(A::ZZMatrix) = hnf_with_column_saturate_and_rank(A)[2]
+function hnf_with_column_saturate_and_rank(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix, Int}
+  # Let UA = [H; 0matrix] in HNF and SH = A = U⁻¹[H; 0matrix].
+  # We have S == U⁻¹[:, 1:rank(H)] in ZZ with trivial elementary divisors.
+  # For any invertible H' with HH' = 1, also S = SHH' = AH'.
   H = hnf(A)
-  return solve_left(view(H, 1:rank_of_ref(H), :), A)
-end
-
-function column_hnf_with_transform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
-  # Typically the entries of U = S⁻¹ will explode compared to A, S, and U.
-  # Thus, `inv(S)` needs the larger part of the runtime here.
-  H, S = column_hnf_with_backtransform_via_saturate(A)
-  return H, inv(S)
+  k, p = pivots_of_ref(H)
+  ps = 1:findlast(p) # `findall(p)` impossible in `view`
+  return H, solve_left(view(H, 1:k, ps), view(A, :, ps)), k
 end
 
 function hnf_with_transform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
+  # Typically the entries of T = S⁻¹ will explode compared to A, S, and U.
+  # Thus, `inv(S)` needs the larger part of the runtime here.
+  # We may improve this in the case, extra columns were added.
   H, S = hnf_with_backtransform_via_saturate(A)
   return H, inv(S)
-end
-
-function column_hnf_with_backtransform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
-  return transpose.(hnf_with_backtransform_via_saturate(transpose(A)))
 end
 
 function hnf_with_backtransform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
@@ -183,18 +173,15 @@ function hnf_with_backtransform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZM
   # TODO Find out, how to choose them efficiently.
   # Most of the computation time goes into the HNF.
   m = nrows(A); k = 0
-  H = hnf(A)
-  k = rank_of_ref(H)
-  S = solve_left(H, A)
+  H, S, k = hnf_with_column_saturate_and_rank(A)
   while k != m
     # Probably not efficient, but working.
     # We could also add the columns to A for the same effect.
     A = add_random_cols(S, m-k)
-    h = hnf(A) # This needs some time again :(
+    # This needs some time again:
+    h, S, k = hnf_with_column_saturate_and_rank(A)
     # The following holds, due to S being unimodular:
     @assert h[1:k, 1:k] == identity_matrix(base_ring(h), k)
-    k = rank_of_ref(h)
-    S = solve_left(h, A)
   end
   return H, S
 end
@@ -218,26 +205,26 @@ function add_independent_rows(A::MatrixElem)
 end
 add_independent_cols(A::MatrixElem) = transpose!(add_independent_rows(transpose(A)))
 
-function non_pivot_cols_of_ref(H::MatrixElem)
-  # H must be in row echolon form
-  p = Int[]
+# H must be in row echolon form
+function pivots_of_ref(H::MatrixElem) :: Tuple{Int, BitVector}
+  p = falses(ncols(H))
   i = 1
   for j in axes(H, 2)
-    i == nrows(H)+1 && (append!(p, j:ncols(H)); break)
-    is_zero_entry(H, i, j) ? push!(p, j) : (i+=1)
+    i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (p[i] = true; i+=1)
   end
-  @assert length(p) == ncols(H) - rank_of_ref(H)
-  return p
+  return i-1, p
 end
-
 function rank_of_ref(H::MatrixElem)
   i = 1
   for j in axes(H, 2)
-    is_zero_entry(H, i, j) || (i+=1)
     i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (i+=1)
   end
   return i-1
 end
+pivot_cols_of_ref(H::MatrixElem) = findall(pivots_of_ref(H)[2])
+non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 
 transpose!(A::Union{ZZMatrix, QQMatrix}) = is_square(A) ? transpose!(A, A) : transpose(A)
 
