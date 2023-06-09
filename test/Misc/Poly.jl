@@ -147,3 +147,12 @@ end
   f = x^8 + 319*x^7 + 1798*x^6 + 1177*x^5 + 1083*x^4 + 2070*x^3 + 2075*x^2 + 1937*x + 1896
   @test collect(Hecke.lazy_factor(f)) == [f]
 end
+
+@testset "isolating roots" begin
+  QQx, x = QQ[:x]
+  QQ1, _ = number_field(x-1)
+  P = only(infinite_places(QQ1))
+  QQ1y, y = QQ1[:y]
+  n = Hecke.n_positive_roots((y-1//10000)*(y-2//10000)*(y-100), Hecke.embedding(P))
+  @test n == 3
+end
