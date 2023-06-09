@@ -95,8 +95,8 @@ function rational_reconstruction(a::ZZRingElem, b::ZZRingElem; ErrorTolerant::Bo
   end
 end
 
-function rational_reconstruction(a::Integer, b::Integer)
-  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b))
+function rational_reconstruction(a::Integer, b::Integer; ErrorTolerant::Bool = false)
+  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b), ErrorTolerant = ErrorTolerant)
 end
 
 @doc raw"""
@@ -112,7 +112,7 @@ function rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D:
   return fl!=0, numerator(res), denominator(res)
 end
 
-#Note: the vector version might be useful - or the mult be previous den version
+#Note: the vector version might be useful - or the mult by previous den version
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
 @doc raw"""
@@ -120,7 +120,7 @@ end
 
 Applies the `rational_reconstruction` function to each coefficient.
 """
-function rational_reconstruction(a::nf_elem, b::ZZRingElem)
+function rational_reconstruction(a::nf_elem, b::ZZRingElem; ErrorTolerant::Bool = false)
   K= parent(a)
   Qx = parent(K.pol)
   res = Qx(0)
@@ -130,7 +130,7 @@ function rational_reconstruction(a::nf_elem, b::ZZRingElem)
       continue
     end
     @assert denominator(c) == 1
-    fl, x, y = rational_reconstruction(numerator(c), b)
+    fl, x, y = rational_reconstruction(numerator(c), b, ErrorTolerant = ErrorTolerant)
     if !fl
       return false, K(res)
     end
