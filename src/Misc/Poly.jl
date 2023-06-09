@@ -853,7 +853,14 @@ function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::NumFieldEmb; start_prec:
       coeffs[i + 1] = evaluate(coeff(f, i), P, prec)
     end
     g = Cx(coeffs)
-    rts = real.(Hecke.roots(g))
+    try
+      rts = roots(g)
+    catch e
+      e isa ErrorException && startswith(e.msg, "unable to isolate all roots") || rethrow()
+      prec *= 2
+      continue
+    end
+    rts = real.(rts)
     if any(contains_zero, rts)
       prec = 2 * prec
     else
