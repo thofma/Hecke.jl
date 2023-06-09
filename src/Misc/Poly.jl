@@ -856,7 +856,7 @@ function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::NumFieldEmb; start_prec:
     try
       rts = roots(g)
     catch e
-      startswith(e.msg, "unable to isolate all roots") || rethrow()
+      e isa ErrorException && startswith(e.msg, "unable to isolate all roots") || rethrow()
       prec *= 2
       continue
     end
