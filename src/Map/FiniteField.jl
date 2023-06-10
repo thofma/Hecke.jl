@@ -21,6 +21,43 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
     @assert iszero(defining_polynomial(F)(a))
   end
 
+  if F isa FqField
+    @assert K isa FqField
+    @assert base_field(F) === base_field(K)
+    k = base_field(F)
+    kx = parent(defining_polynomial(F))
+
+    img = function(x::FqFieldElem)
+      @assert parent(x) === F
+      return lift(kx, x)(a)
+    end
+
+    M = zero_matrix(k, degree(F), degree(K))
+    M[1, 1] = one(k)
+    el = one(K)
+    for i = 2:nrows(M)
+      el = mul!(el, el, a)
+      for j = 1:ncols(M)
+        M[i, j] = coeff(el, j-1)
+      end
+    end
+    aux1 = zero_matrix(k, 1, degree(K))
+    function preimg(x::FqFieldElem)
+      @assert parent(x) == K
+      for i = 1:degree(K)
+        aux1[1, i] = coeff(x, i-1)
+      end
+      fl, y = can_solve_with_solution(M, aux1, side = :left)
+      if !fl
+        error("The element is not in the image!")
+      end
+      polF = kx([y[1, i] for i in 1:ncols(y)])
+      return F(polF)
+    end
+
+    return Nemo.FinFieldMorphism(F, K, img, preimg)
+  end
+
   #We need a preimage function
   p = characteristic(K)
   Kp = prime_field(K, cached = false)
@@ -39,7 +76,7 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
 
   aux = zero_matrix(Kp, 1, degree(F))
   aux1 = zero_matrix(Kp, 1, degree(K))
-  function img(x::FinFieldElem)
+  img = function(x::FinFieldElem)
     @assert parent(x) == F
     for i = 1:degree(F)
       aux[1, i] = Kp(coeff(x, i-1))
@@ -50,7 +87,7 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   end
 
 
-  function preimg(x::FinFieldElem)
+  preimg = function(x::FinFieldElem)
     @assert parent(x) == K
     for i = 1:degree(K)
       aux1[1, i] = Kp(coeff(x, i-1))
