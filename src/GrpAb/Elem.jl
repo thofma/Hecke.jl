@@ -140,9 +140,8 @@ function show(io::IO, a::GrpAbFinGenElem)
   if get(io, :compact, false)
     print(io, a.coeff)
   else
-    set_name!(parent(a))
     s = get_attribute(parent(a), :name)
-
+    s === nothing
     if s === nothing
       print(io, "Element of\n")
       print(io, parent(a))
