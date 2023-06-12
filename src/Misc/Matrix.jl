@@ -868,20 +868,20 @@ julia> diagonal_matrix(QQ, [5, 6])
 [0   6]
 ```
 """
-function diagonal_matrix(x::Vector{T}) where T <: RingElem
-  M = zero_matrix(parent(x[1]), length(x), length(x))
+function diagonal_matrix(R::Ring, x::Vector{<:RingElement})
+  x = R.(x)
+  M = zero_matrix(R, length(x), length(x))
   for i = 1:length(x)
     M[i, i] = x[i]
   end
   return M
 end
 
-function diagonal_matrix(x::T...) where T <: RingElem
-  return diagonal_matrix(collect(x))
+function diagonal_matrix(x::T, xs::T...) where T <: RingElem
+  return diagonal_matrix(collect((x, xs...)))
 end
 
-diagonal_matrix(R::Ring, x::Vector{<:RingElement}) = diagonal_matrix(R.(x))
-
+diagonal_matrix(x::Vector{<:RingElement}) = diagonal_matrix(parent(x[1]), x)
 
 @doc raw"""
     diagonal_matrix(x::Vector{T}) where T <: MatElem -> MatElem
@@ -892,9 +892,18 @@ function diagonal_matrix(x::Vector{T}) where T <: MatElem
   return cat(x..., dims = (1, 2))::T
 end
 
-function diagonal_matrix(x::T...) where T <: MatElem
-  return cat(x..., dims = (1, 2))::T
+function diagonal_matrix(x::T, xs::T...) where T <: MatElem
+  return cat(x, xs..., dims = (1, 2))::T
 end
+
+function diagonal_matrix(R::Ring, x::Vector{<:MatElem})
+  if length(x) == 0
+    return zero_matrix(R, 0, 0)
+  end
+  x = [change_base_ring(R, i) for i in x]
+  return diagonal_matrix(x)
+end
+
 ################################################################################
 #
 #  Copy matrix into another matrix

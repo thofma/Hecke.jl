@@ -323,7 +323,7 @@
   L = integer_lattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   T = discriminant_group(L)
   Tsub, _ = sub(T, [2*T[1], 3*T[2]])
-  @test_throws ArgumentError is_primary_with_prime(Tsub)
+  @test !is_primary_with_prime(Tsub)[1]
   bool, p = @inferred is_primary_with_prime(T)
   @test !bool && p == -1
   @test is_primary(primary_part(T, 2)[1], 2)

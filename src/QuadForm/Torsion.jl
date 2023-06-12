@@ -1847,22 +1847,9 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
     for b1 in block1
       for b2 in block2
         sym2[1:3] = [b0, b1, b2]
-        local_symbols[1] = LocalZZGenus(2, sym2)
+        local_symbols[1] = LocalZZGenus(2, copy(sym2))
         genus = ZZGenus(signature_pair, local_symbols)
         if _isglobal_genus(genus)
-          # make the symbol sparse again.
-          i = 0
-          k = 1
-          while i < 3
-            if sym2[k][2] == 0
-              deleteat!(sym2, k)
-            else
-              k = k + 1
-            end
-            i = i + 1
-          end
-          local_symbols[1] = LocalZZGenus(2, sym2)
-          genus = ZZGenus(signature_pair, local_symbols)
           return genus
         end
       end
@@ -2094,7 +2081,6 @@ Note that in the case of trivial groups, this function returns `(true, 1)`. If
 `T` is not primary, the second return value is `-1` by default.
 """
 function is_primary_with_prime(T::TorQuadModule)
-  @req !is_degenerate(T) "T must be non-degenerate"
   ed = elementary_divisors(T)
   if is_empty(ed)
     return true, ZZ(1)
@@ -2224,13 +2210,13 @@ function _is_isometry_epsilon(f::TorQuadModuleMor, epsilon)
       b = gen(T, j)
       if f(a)*f(b) != epsilon * a * b
         return false
-      end  
-    end  
+      end
+    end
     if quadratic_product(a) != epsilon * quadratic_product(f(a))
       return false
-    end  
-  end  
-  return true 
+    end
+  end
+  return true
 end
 
 function is_isometry(f::TorQuadModuleMor)
