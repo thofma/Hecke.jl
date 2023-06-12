@@ -153,7 +153,7 @@
   E, b = number_field(t^2 - a * t + 1, "b")
   V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)))
   L = lattice(V)
-  @test_broken L == dual(L)
+  @test L == dual(L)
   R = @inferred fixed_ring(L)
   @test R === base_ring(base_ring(L))
   @test is_maximal(R)

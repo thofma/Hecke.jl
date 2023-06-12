@@ -1359,6 +1359,8 @@ end
 function Base.hash(L::ZZLat, u::UInt)
   V = ambient_space(L)
   B = hnf(FakeFmpqMat(basis_matrix(L)))
+  # We compare lattices in the same ambient space, and since hnf for the basis
+  # matric is unique, one just needs to compare them.
   h = xor(hash(V), hash(B))
   return xor(h, u)
 end

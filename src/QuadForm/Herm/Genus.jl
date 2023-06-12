@@ -631,8 +631,8 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_dyadic = is_dyadic
   z.is_ramified = is_ramified
   z.is_split = is_split
-  del = [i for (i,s) in enumerate(data) if s[2] != 0]
-  z.data = data[del]
+  keep = [i for (i,s) in enumerate(data) if s[2] != 0]  # We keep only blocks of non-zero rank
+  z.data = data[keep]
   return z
 end
 
@@ -791,9 +791,9 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_split = false
   # We test the cheap thing
   @req z.is_dyadic && z.is_ramified "Prime must be dyadic and ramified"
-  del = [i for (i,s) in enumerate(data) if s[2] != 0]
-  z.norm_val = norms[del]
-  z.data = data[del]
+  keep = [i for (i,s) in enumerate(data) if s[2] != 0]    # We only keep the blocks of non-zero rank
+  z.norm_val = norms[keep]
+  z.data = data[keep]
   z.ni = _get_ni_from_genus(z)
   return z
 end
@@ -1021,13 +1021,29 @@ function ==(G1::HermLocalGenus, G2::HermLocalGenus)
 end
 
 function Base.hash(g::HermLocalGenus, u::UInt)
-  u = Base.hash(base_field(g), u)
+  u = Base.hash(base_field(g), u)   # We do equality only over the same parent base field
   u = Base.hash(prime(g), u)
+  # In any case, scale valuations and rank must agree
   h = xor(hash(det(g)), reduce(xor, (hash(s[1:2]) for s in g.data)))
+
+  # In the split and unramified cases, we have collected all the invariants.
+  # Otherwise, we need to split between dyadic and non-dyadic case. For the
+  # non-dyadic case, we have only one set of invariants to consider.
+  # For the dyadic case, we can't make it exhaustive but there are two sets of
+  # invariants we can attach to the local genus symbols.
   if is_ramified(g)
     if !is_dyadic(g)
+      # Ramified & non-dyadic: the determinants at the block of even scale are
+      # invariants for the local genus symbol. At that point, if the symbols
+      # share blocks with same scales and ranks, they should also share those
+      # determinant value.
+      # See equality test above
       h = xor(h, reduce(xor, (hash(s[3]) for s in g.data if iseven(s[1]))))
     else
+      # Ramified & dyadic: the only things that are invariant are the values of
+      # the ni's and the blocks for which the scale valuations are twice the
+      # norm valuations.
+      # See equality test above
       h = xor(h, reduce(xor, (hash(g.data[i][1] == 2*g.norm_val[i]) for i = 1:length(g.data))))
       h = xor(h, hash(g.ni))
     end
@@ -1310,7 +1326,10 @@ function ==(G1::HermGenus, G2::HermGenus)
 end
 
 function Base.hash(G::HermGenus, u::UInt)
-  u = Base.hash(base_field(G), u)
+  u = Base.hash(base_field(G), u)   # We only compare symbols over the same parent base field
+  # According to the theory/definition, global genus symbols are uniquely
+  # determined by their signatures (local infinite data) and their local symbols
+  # (local finite data).
   h = xor(reduce(xor, (hash(x) for x in local_symbols(G))), hash(signatures(G)))
   return xor(h, u)
 end
@@ -1345,7 +1364,13 @@ function direct_sum(G1::HermGenus, G2::HermGenus)
   sig1 = G1.signatures
   sig2 = G2.signatures
   g3 = merge(+, sig1, sig2)
+  # For genera of hermitian lattices, are bad all primes dividing 2 and those
+  # dividing the discriminant of the field extension (discriminant of the
+  # maximal order of the top field in E/K).
   bd = union(support(2*maximal_order(base_field(E))), support(discriminant(maximal_order(E))))
+  # We keep only the local symbols which are defined over bad primes or which
+  # are not unimodular.
+  # Unimodular <=> There is only one Jordan block, and it is a scale valuation 0
   filter!(g -> (prime(g) in bd) || (scales(g) != Int[0]), LGS)
   return genus(LGS, g3)
 end

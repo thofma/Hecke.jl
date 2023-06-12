@@ -250,6 +250,9 @@ end
 function Base.hash(L::AbstractLat, u::UInt)
   V = ambient_space(L)
   B = _pseudo_hnf(L)
+  # Pseudo-hnf are unique for lattices in a given space. Since we require that
+  # equal lattices lie in the same space, we just have to hash and compare the
+  # space and the pseudo lattice. Here equality for spaces is strong (`===`).
   h = xor(hash(V), hash(B))
   return xor(h, u)
 end
