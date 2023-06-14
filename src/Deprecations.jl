@@ -36,6 +36,34 @@
 
 @deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZZGenus, LocalZZGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
 
+@deprecate ideal(A::AbsAlgAss{S}, M::PMat{S, T}, M_in_hnf::Bool = false) where { S <: NumFieldElem, T } ideal(A, M; M_in_hnf)
+
+@deprecate ideal(A::AbsAlgAss{QQFieldElem}, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol = :nothing, M_in_hnf::Bool = false) ideal(A, O, M; side, M_in_hnf)
+
+@deprecate ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Bool = false) ideal(A, M; side, M_in_rref)
+
+@deprecate ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::Symbol = :nothing, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U } ideal(A, O, M; side, M_in_hnf)
+
+@deprecate ideal(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat, M_in_hnf::Bool = false) ideal(A, M; M_in_hnf)
+
+@deprecate ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, check::Bool = true, M_in_hnf::Bool = false) where {T, S, U} ideal(O, M; check, M_in_hnf)
+
+@deprecate ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool = true) where {T, S} ideal(O, x, y, a, b; check)
+
+@deprecate ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool = true) where {T, S} ideal(O, x, y, a, b; check)
+
+@deprecate ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {T, S} ideal(O, M; check)
+
+@deprecate ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true) ideal(O, a; check)
+
+@deprecate ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true) ideal(O, a; check)
+
+@deprecate ideal(O::NfRelOrd{T, S, U}, a::S, check::Bool = true) where {T, S, U} ideal(O, a; check)
+
+@deprecate ideal(O::NfRelOrd{T, S, U}, x::U, y::U, a::S, b::S, check::Bool = true) where {T, S, U} ideal(O, x, y, a, b; check)
+
+@deprecate ideal(O::NfAbsOrd, x::ZZMatrix, check::Bool = false, x_in_hnf::Bool = false) ideal(O, x; check, x_in_hnf)
+
 # Things that moved to Nemo
 
 # > 0.18.1

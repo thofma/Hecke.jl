@@ -358,7 +358,7 @@ Returns the ideal $A \cdot x$ or $x \cdot A$ respectively.
 *(x::AbsAlgAssElem, A::AbsAlgAss) = ideal(A, x, :left)
 
 @doc raw"""
-    ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Bool = false)
+    ideal(A::AbsAlgAss, M::MatElem; side::Symbol = :nothing, M_in_rref::Bool = false)
       -> AbsAlgAssIdl
 
 Returns the ideal of $A$ with basis matrix $M$.
@@ -367,7 +367,7 @@ set to `:right`/`:left`/`:twosided` respectively.
 If `M_in_rref == true`, it is assumed that $M$ is already in row reduced echelon
 form.
 """
-function ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Bool = false)
+function ideal(A::AbsAlgAss, M::MatElem; side::Symbol = :nothing, M_in_rref::Bool = false)
   @assert base_ring(M) == base_ring(A)
   @assert ncols(M) == dim(A)
   if !M_in_rref

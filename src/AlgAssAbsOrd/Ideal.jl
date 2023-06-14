@@ -69,12 +69,12 @@ end
 ################################################################################
 
 @doc raw"""
-    ideal(A::AbsAlgAss, M::FakeFmpqMat, M_in_hnf::Bool = false) -> AlgAssAbsOrdIdl
+    ideal(A::AbsAlgAss, M::FakeFmpqMat; M_in_hnf::Bool = false) -> AlgAssAbsOrdIdl
 
 Returns the ideal in $A$ with basis matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
-function ideal(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat, M_in_hnf::Bool = false)
+function ideal(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat; M_in_hnf::Bool = false)
   if !M_in_hnf
     if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
       M = hnf(M, :lowerleft, compute_det = true)
@@ -86,7 +86,7 @@ function ideal(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat, M_in_hnf::Bool = false
 end
 
 @doc raw"""
-    ideal(A::AbsAlgAss, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol = :nothing,
+    ideal(A::AbsAlgAss, O::AlgAssAbsOrd, M::FakeFmpqMat; side::Symbol = :nothing,
           M_in_hnf::Bool = false)
       -> AlgAssAbsOrdIdl
 
@@ -95,7 +95,7 @@ If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
 set to `:right`/`:left`/`:twosided` respectively.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
-function ideal(A::AbsAlgAss{QQFieldElem}, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol = :nothing, M_in_hnf::Bool = false)
+function ideal(A::AbsAlgAss{QQFieldElem}, O::AlgAssAbsOrd, M::FakeFmpqMat; side::Symbol = :nothing, M_in_hnf::Bool = false)
   a = ideal(A, M, M_in_hnf)
   a.order = O
   _set_sidedness(a, side)

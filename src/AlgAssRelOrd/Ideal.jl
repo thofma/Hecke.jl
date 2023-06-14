@@ -34,18 +34,18 @@ is_full_lattice(a::AlgAssRelOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1
 ################################################################################
 
 @doc raw"""
-    ideal(A::AbsAlgAss, M::PMat, M_in_hnf::Bool = false) -> AlgAssRelOrdIdl
+    ideal(A::AbsAlgAss, M::PMat; M_in_hnf::Bool = false) -> AlgAssRelOrdIdl
 
 Returns the ideal in $A$ with basis pseudo-matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left pseudo HNF.
 """
-function ideal(A::AbsAlgAss{S}, M::PMat{S, T}, M_in_hnf::Bool = false) where { S <: NumFieldElem, T }
+function ideal(A::AbsAlgAss{S}, M::PMat{S, T}; M_in_hnf::Bool = false) where { S <: NumFieldElem, T }
   !M_in_hnf ? M = pseudo_hnf(M, :lowerleft) : nothing
   return AlgAssRelOrdIdl{S, T, typeof(A)}(A, M)
 end
 
 @doc raw"""
-    ideal(A::AbsAlgAss, O::AlgAssRelOrd, M::PMat, side::Symbol = :nothing,
+    ideal(A::AbsAlgAss, O::AlgAssRelOrd, M::PMat; side::Symbol = :nothing,
           M_in_hnf::Bool = false)
       -> AlgAssRelOrdIdl
 
@@ -55,7 +55,7 @@ If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
 set to `:right`/`:left`/`:twosided` respectively.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left pseudo HNF.
 """
-function ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::Symbol = :nothing, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U }
+function ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}; side::Symbol = :nothing, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U }
   a = ideal(A, M, M_in_hnf)
   a.order = O
   _set_sidedness(a, side)
