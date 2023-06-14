@@ -332,7 +332,7 @@ end
 
 function PseudoMatrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
   @assert nrows(m) == length(c)
-  cc = [ fractional_ideal(order(c[i]), basis_pmatrix(c[i]), true) for i = 1:length(c) ]
+  cc = [ fractional_ideal(order(c[i]), basis_pmatrix(c[i]); M_in_hnf=true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 

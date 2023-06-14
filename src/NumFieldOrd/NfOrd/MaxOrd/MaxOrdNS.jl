@@ -207,7 +207,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
   it = 0
   while true
     if it == j
-      I = ideal(O, M1, false, true)
+      I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
       I.minimum = ZZRingElem(p)
@@ -252,7 +252,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
     end
     X = right_kernel_basis(A)
     if isempty(X)
-      I = ideal(O, M1, false, true)
+      I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
       I.minimum = ZZRingElem(p)
@@ -271,7 +271,7 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
       end
     end
     if iszero(length(new_gens))
-      I = ideal(O, M1, false, true)
+      I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
       I.minimum = ZZRingElem(p)

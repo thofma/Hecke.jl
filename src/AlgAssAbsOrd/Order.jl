@@ -1071,9 +1071,9 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   Hinv = inv(FakeFmpqMat(transpose(H)))
   Hinv = Hinv*basis_mat_R_in_S_inv_num*basis_matrix(R, copy = false)
   if action == :left
-    return ideal(algebra(R), R, Hinv, :right)
+    return ideal(algebra(R), R, Hinv; side=:right)
   else
-    return ideal(algebra(R), R, Hinv, :left)
+    return ideal(algebra(R), R, Hinv; side=:left)
   end
 end
 

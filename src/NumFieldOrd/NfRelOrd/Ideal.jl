@@ -229,13 +229,13 @@ end
 function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl; check::Bool = true) where {T, S}
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
   bb = fractional_ideal(order(b), b, ZZRingElem(1))
-  return ideal(O, x, y, aa, bb, check)
+  return ideal(O, x, y, aa, bb; check)
 end
 
 function ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfRelOrdIdl, b::NfRelOrdIdl; check::Bool = true) where {T, S}
-  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
-  bb = fractional_ideal(order(b), basis_pmatrix(b), true)
-  return ideal(O, x, y, aa, bb, check)
+  aa = fractional_ideal(order(a), basis_pmatrix(a); M_in_hnf=true)
+  bb = fractional_ideal(order(b), basis_pmatrix(b); M_in_hnf=true)
+  return ideal(O, x, y, aa, bb; check)
 end
 
 @doc raw"""
@@ -296,14 +296,14 @@ end
 
 function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl; check::Bool = true)
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
-  return ideal(O, aa, check)
+  return ideal(O, aa; check)
 end
 
 function ideal(O::NfRelOrd, a::NfRelOrdIdl; check::Bool = true)
   @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
 
-  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
-  return ideal(O, aa, check)
+  aa = fractional_ideal(order(a), basis_pmatrix(a); M_in_hnf=true)
+  return ideal(O, aa; check)
 end
 
 *(O::NfRelOrd{T, S, U}, a::S) where {T, S <: Union{NfOrdFracIdl, NfRelOrdFracIdl}, U} = fractional_ideal(O, a)
@@ -517,7 +517,7 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   else
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
   end
-  return ideal(order(a), H, false, true)
+  return ideal(order(a), H; check=false, M_in_hnf=true)
 end
 
 gcd(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a + b
@@ -558,7 +558,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   else
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   end
-  return ideal(order(a), H, false, true)
+  return ideal(order(a), H; check=false, M_in_hnf=true)
 end
 
 ################################################################################
@@ -572,7 +572,7 @@ function *(a::NfRelOrdIdl{T, S, U}, x::T) where {T <: NumFieldElem, S, U <: NumF
     return ideal(order(a), 0)
   end
 
-  return ideal(order(a), x*basis_pmatrix(a), true, true)
+  return ideal(order(a), x*basis_pmatrix(a); M_in_hnf=true)
 end
 
 *(x::T, a::NfRelOrdIdl{T, S, U}) where {T <: NumFieldElem, S, U <: NumFieldElem} = a*x
@@ -608,7 +608,7 @@ function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   else
     H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
   end
-  return ideal(order(a), H, false, true)
+  return ideal(order(a), H; check=false, M_in_hnf=true)
 end
 
 ################################################################################
@@ -643,7 +643,7 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
-  return fractional_ideal(O, PN, true)
+  return fractional_ideal(O, PN; M_in_hnf=true)
 end
 
 ################################################################################
@@ -654,7 +654,7 @@ end
 
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
-  return fractional_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
+  return fractional_ideal(O, basis_pmatrix(a, copy = false); M_in_hnf=true)*inv(b)
 end
 
 //(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
@@ -882,7 +882,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   PM2 = PseudoMatrix(identity_matrix(K, d), [ pb[i][2]*P for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
 
-  return ideal(O, PM, false, true)
+  return ideal(O, PM; check=false, M_in_hnf=true)
 end
 
 function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}}
@@ -967,7 +967,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
     PM = sub(pseudo_hnf_full_rank(PM, :lowerleft), (d + 1):2*d, 1:d)
   end
 
-  return ideal(O, PM, false, true)
+  return ideal(O, PM; check=false, M_in_hnf=true)
 
 end
 
@@ -1040,7 +1040,7 @@ function relative_ideal(a::NfOrdIdl, m::NfToNfRel)
   end
   M = M*basis_mat_inv(O, copy = false)
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
-  return ideal(O, PM, false, true)
+  return ideal(O, PM; check=false, M_in_hnf=true)
 end
 
 ################################################################################
@@ -1175,7 +1175,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
       N = vcat(N, deepcopy(m))
     end
     N = sub(pseudo_hnf(N, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-    P = ideal(O, N, false, true)
+    P = ideal(O, N; check=false, M_in_hnf=true)
     P.is_prime = 1
     e = _valuation_for_prime_decomposition(pO, P)
     P.splitting_type = (e, f)
@@ -1251,7 +1251,7 @@ end
 
 function _valuation_for_prime_decomposition(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
   O = order(A)
-  Afrac = fractional_ideal(O, basis_pmatrix(A), true)
+  Afrac = fractional_ideal(O, basis_pmatrix(A); M_in_hnf=true)
   Bi = inv(B)
   i = 0
   C = Afrac*Bi
@@ -1322,7 +1322,7 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
   end
   #else
   #  O = order(A)
-  #  Afrac = fractional_ideal(O, basis_pmatrix(A), true)
+  #  Afrac = fractional_ideal(O, basis_pmatrix(A); M_in_hnf=true)
   #  Bi = inv(B)
   #  i = 0
   #  C = Afrac*Bi

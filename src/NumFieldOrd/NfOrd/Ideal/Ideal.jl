@@ -343,7 +343,7 @@ function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
   if d < length(b)
     M = sub(M, (length(b) - d + 1):length(b), 1:d)
   end
-  return ideal(O, M, check, true)
+  return ideal(O, M; check, M_in_hnf=true)
 end
 
 ################################################################################

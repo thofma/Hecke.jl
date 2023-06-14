@@ -78,7 +78,7 @@ function sum_princ_gen_special(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
   else
     M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), genx, :lowerleft)
-    res = ideal(OK, M1, false, true)
+    res = ideal(OK, M1; check=false, M_in_hnf=true)
   end
   @hassert :NfOrd 1 res == sum_via_basis_matrix(x, y)
   return res
@@ -91,7 +91,7 @@ function sum_via_basis_matrix(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   hnf_modular_eldiv!(H, g, :lowerleft)
   H = view(H, (d + 1):2*d, 1:d)
-  res = ideal(OK, H, false, true)
+  res = ideal(OK, H; check=false, M_in_hnf=true)
   if isone(basis(OK, copy = false)[1])
     res.minimum = H[1, 1]
   end
@@ -109,7 +109,7 @@ function sum_princ_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   L = vcat(M, N)
   hnf_modular_eldiv!(L, g, :lowerleft)
   H = view(L, (d + 1):2*d, 1:d)
-  res = ideal(OK, H, false, true)
+  res = ideal(OK, H; check=false, M_in_hnf=true)
   if isone(basis(OK, copy = false)[1])
     res.minimum = H[1, 1]
   end
@@ -201,7 +201,7 @@ function intersect(x::NfOrdIdl, y::NfOrdIdl)
   H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
   K = left_kernel(H)[2]
   g = lcm(minimum(x),minimum(y))
-  return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_matrix(x, copy = false), g, :lowerleft), false, true)
+  return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_matrix(x, copy = false), g, :lowerleft); check=false, M_in_hnf=true)
 end
 
 lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
@@ -240,7 +240,7 @@ function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
     M1 = representation_matrix_mod(x.gen_two, l)
     Mf = vcat(minimum(x, copy = false)*basis_matrix(y, copy = false), basis_matrix(y, copy = false)*M1)
     hnf_modular_eldiv!(Mf, l, :lowerleft)
-    J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
+    J = ideal(O, view(Mf, (d+1):2*d, 1:d); check=false, M_in_hnf=true)
     if is_coprime(minimum(x, copy = false), minimum(y, copy = false))
       J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
     end
@@ -250,7 +250,7 @@ function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
     M1 = representation_matrix_mod(y.gen_two, l)
     Mf = vcat(minimum(y, copy = false)*basis_matrix(x, copy = false), basis_matrix(x, copy = false)*M1)
     hnf_modular_eldiv!(Mf, l, :lowerleft)
-    J = ideal(O, view(Mf, (d+1):2*d, 1:d), false, true)
+    J = ideal(O, view(Mf, (d+1):2*d, 1:d); check=false, M_in_hnf=true)
     if is_coprime(minimum(x, copy = false), minimum(y, copy = false))
       J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
     end
@@ -273,7 +273,7 @@ function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
   end
   # This is a d^2 x d matrix
   J = ideal(O, view(hnf_modular_eldiv!(z, l, :lowerleft),
-                      (d+1):2*d, 1:d), false, true)
+                      (d+1):2*d, 1:d); check=false, M_in_hnf=true)
   if is_coprime(minimum(x, copy = false), minimum(y, copy = false))
     J.minimum = minimum(x, copy = false)*minimum(y, copy = false)
   end
@@ -971,7 +971,7 @@ function extend(A::NfAbsOrdIdl, O::NfAbsOrd)
     end
   end
   M = sub(_hnf_modular_eldiv(M, minimum(A), :lowerleft), d*(d - 1) + 1:d^2, 1:d)
-  return ideal(O, M, false, true)
+  return ideal(O, M; check=false, M_in_hnf=true)
 end
 
 *(A::NfAbsOrdIdl, O::NfAbsOrd) = extend(A, O)
@@ -998,7 +998,7 @@ function contract(A::NfAbsOrdIdl, O::NfAbsOrd)
   M = M*basis_matrix(order(A), copy = false)*basis_mat_inv(O, copy = false)
   @assert M.den == 1
   M = _hnf_modular_eldiv(M.num, minimum(A), :lowerleft)
-  res = ideal(O, M, false, true)
+  res = ideal(O, M; check=false, M_in_hnf=true)
   if A.is_prime == 1
     res.is_prime = 1
   end

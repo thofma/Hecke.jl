@@ -90,7 +90,7 @@ function _hom_space_as_ideal(L::ModAlgAssLat, M::ModAlgAssLat)
   E, f = endomorphism_algebra(L.V)
   O = endomorphism_ring(f, M) # this is End_Lambda(M) in E = End_A(V)
   Ibas = E.(bas) # this is Hom_Lambda(L, M) in E = End_A(V)
-  I = ideal(E, O, FakeFmpqMat(basis_matrix(Ibas)), :right)
+  I = ideal(E, O, FakeFmpqMat(basis_matrix(Ibas)); side=:right)
   @assert _test_ideal_sidedness(I, O, :right)
   return E, f, O, I
 end

@@ -191,13 +191,13 @@ end
 *(x::U, O::NfRelOrd{T, S, U}) where {T, S, U <: NumFieldElem} = fractional_ideal(O, x)
 
 function fractional_ideal(O::NfRelOrd{T, S, U}, a::NfRelOrdIdl{T, S, U}) where {T, S, U <: NumFieldElem}
-  return fractional_ideal(O, basis_pmatrix(a), true)
+  return fractional_ideal(O, basis_pmatrix(a); M_in_hnf=true)
 end
 
 function fractional_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ ZZRingElem, NfAbsOrdElem, NfRelOrdElem } }
   K = base_field(nf(O))
   dd = inv(K(d))
-  return fractional_ideal(O, dd*basis_pmatrix(a), true)
+  return fractional_ideal(O, dd*basis_pmatrix(a); M_in_hnf=true)
 end
 
 ################################################################################
@@ -315,7 +315,7 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   H = vcat(basis_pmatrix(a), basis_pmatrix(b))
   if T != nf_elem
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
-    return fractional_ideal(order(a), H, true)
+    return fractional_ideal(order(a), H; M_in_hnf=true)
   end
   den = lcm(denominator(a), denominator(b))
   for i = 1:d
@@ -332,7 +332,7 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
   end
-  return fractional_ideal(order(a), H, true)
+  return fractional_ideal(order(a), H; M_in_hnf=true)
 end
 
 +(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = fractional_ideal(order(a), a) + b
@@ -372,7 +372,7 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T != nf_elem
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-    return fractional_ideal(order(a), H, true)
+    return fractional_ideal(order(a), H; M_in_hnf=true)
   end
   m = simplify(den^(2*d)*norm(a)*norm(b))
   @assert isone(denominator(m))
@@ -381,7 +381,7 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
   end
-  return fractional_ideal(order(a), H, true)
+  return fractional_ideal(order(a), H; M_in_hnf=true)
 end
 
 *(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = fractional_ideal(order(a), a)*b
@@ -400,7 +400,7 @@ divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*inv(b)
 
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   O = order(a)
-  return fractional_ideal(O, basis_pmatrix(a, copy = false), true)*inv(b)
+  return fractional_ideal(O, basis_pmatrix(a, copy = false); M_in_hnf=true)*inv(b)
 end
 
 //(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)

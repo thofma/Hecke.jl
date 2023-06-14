@@ -1402,8 +1402,7 @@ function codifferent(R::NfAbsOrd)
   d = abs(d)
 #  I = ideal(R, deepcopy(ti))//d  #should probably be false, true
   hnf_modular_eldiv!(ti, d, :lowerleft)
-  J = ideal(R, ti, true, true)//d  #should probably be false, true
-                                   #so don't check, but is in hnf
+  J = ideal(R, ti; M_in_hnf=true)//d  #should probably be check=false
 #  @assert I == J
   return J
 end
