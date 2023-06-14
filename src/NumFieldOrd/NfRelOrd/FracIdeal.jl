@@ -139,13 +139,13 @@ end
 ################################################################################
 
 @doc raw"""
-    fractional_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
+    fractional_ideal(O::NfRelOrd, M::PMat; M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
 Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
 `M_in_hnf` is set, then it is assumed that $M$ is already in lower left pseudo
 HNF.
 """
-function fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S, U}
+function fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}; M_in_hnf::Bool = false) where {T, S, U}
   !M_in_hnf && !iszero(matrix(M)) ? M = pseudo_hnf(M, :lowerleft, true) : nothing
   return NfRelOrdFracIdl{T, S, U}(O, M)
 end

@@ -64,6 +64,12 @@
 
 @deprecate ideal(O::NfAbsOrd, M::ZZMatrix, check::Bool, M_in_hnf::Bool = false) ideal(O, M; check, M_in_hnf)
 
+@deprecate fractional_ideal(O::NfAbsOrd, M::FakeFmpqMat, M_in_hnf::Bool) fractional_ideal(O, M; M_in_hnf)
+
+@deprecate fractional_ideal(O::NfAbsOrd, M::ZZMatrix, b::ZZRingElem, M_in_hnf::Bool) fractional_ideal(O, M, b; M_in_hnf)
+
+@deprecate fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool) where {T, S, U} fractional_ideal(O, M; M_in_hnf)
+
 # Things that moved to Nemo
 
 # > 0.18.1
