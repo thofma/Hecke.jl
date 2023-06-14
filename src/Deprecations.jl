@@ -62,7 +62,7 @@
 
 @deprecate ideal(O::NfRelOrd{T, S, U}, x::U, y::U, a::S, b::S, check::Bool) where {T, S, U} ideal(O, x, y, a, b; check)
 
-@deprecate ideal(O::NfAbsOrd, x::ZZMatrix, check::Bool, x_in_hnf::Bool = false) ideal(O, x; check, x_in_hnf)
+@deprecate ideal(O::NfAbsOrd, M::ZZMatrix, check::Bool, M_in_hnf::Bool = false) ideal(O, M; check, M_in_hnf)
 
 # Things that moved to Nemo
 

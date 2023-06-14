@@ -78,8 +78,8 @@ Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If `A_in_hnf
 is set, then it is assumed that the numerator of $A$ is already in lower left
 HNF.
 """
-function fractional_ideal(O::NfAbsOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
-  !x_in_hnf ? x = hnf(x) : nothing
+function fractional_ideal(O::NfAbsOrd, x::FakeFmpqMat, M_in_hnf::Bool = false)
+  !M_in_hnf ? x = hnf(x) : nothing
   z = NfAbsOrdFracIdl(O, x)
   return z
 end
@@ -90,8 +90,8 @@ end
 Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
 `A_in_hnf` is set, then it is assumed that $A$ is already in lower left HNF.
 """
-function fractional_ideal(O::NfAbsOrd, x::ZZMatrix, y::ZZRingElem=ZZRingElem(1), x_in_hnf::Bool = false)
-  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing
+function fractional_ideal(O::NfAbsOrd, x::ZZMatrix, y::ZZRingElem=ZZRingElem(1), M_in_hnf::Bool = false)
+  !M_in_hnf ? x = _hnf(x, :lowerleft) : nothing
   y = FakeFmpqMat(x, y)
   z = NfAbsOrdFracIdl(O, y)
   return z
