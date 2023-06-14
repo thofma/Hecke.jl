@@ -2,7 +2,7 @@
 # maps and disc_log and such
 ################################################################################
 
-export is_principal
+export is_principal, is_principal_fac_elem
 
 # TODO: Agree on a name for power_class vs power_reduce2
 @doc raw"""

@@ -94,7 +94,7 @@ In general, due to the size of the objects, the ```fac_elem``` versions are
 more efficient.
 
 ```@docs
-Hecke.is_principal(::NfOrdIdl)
+is_principal(::NfOrdIdl)
 is_principal_fac_elem(::NfAbsOrdIdl{AnticNumberField,nf_elem})
 power_class(::NfOrdIdl,::ZZRingElem)
 power_product_class(::Vector{NfOrdIdl}, ::Vector{ZZRingElem})
@@ -107,10 +107,10 @@ prime_ideals_up_to
 
 ```@repl 2
 I = mc(c[1])
-Hecke.is_principal(I)
+is_principal(I)
 I = I^Int(order(c[1]))
-Hecke.is_principal(I)
-Hecke.is_principal_fac_elem(I)
+is_principal(I)
+is_principal_fac_elem(I)
 ```
 
 The computation of $S$-units is also tied to the class group:

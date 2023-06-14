@@ -239,17 +239,17 @@ function Base.show(io::IO, N::Norm1Group)
   println(io, "currently, using $(length(N.gens)) generators")
 end
 
-function Hecke.is_principal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
+function is_principal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
   a,b = Hecke.reduce_ideal(A)
   # a*b == A
-  fl, c = Hecke.is_principal_fac_elem(a)
+  fl, c = is_principal_fac_elem(a)
   if !fl
     return fl, c
   end
   return fl, c*b
 end
 
-function Hecke.is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
+function is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
   zk = order(base_ring(A))
   B = FacElem(Dict((numerator(x), v) for (x,v) = A.fac))
   den = Dict{nf_elem, ZZRingElem}()
@@ -264,7 +264,7 @@ function Hecke.is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
   #TODO: redude_ideal for FracIdl as well
   a,b = Hecke.reduce_ideal(B)
   # a*b == B = A*den
-  fl, c = Hecke.is_principal_fac_elem(a)
+  fl, c = is_principal_fac_elem(a)
   if !fl
     return fl, c
   end
@@ -282,7 +282,7 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
   if fl # found new relation
     J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
     J = I*inv(J)
-    fl, g = Hecke.is_principal_fac_elem(J)
+    fl, g = is_principal_fac_elem(J)
     @assert fl
     ng = norm(A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
@@ -324,7 +324,7 @@ function Hecke.evaluate(N::Norm1Group)
     x = ms1(s1[i])
     I = FacElem(Dict((N.gC[j][1], x[j]) for j=1:ngens(N.sC[1])))
     I = I^order(x)
-    fl, g = Hecke.is_principal_fac_elem(I)
+    fl, g = is_principal_fac_elem(I)
     @assert fl
     ng = norm(N.A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
@@ -353,7 +353,7 @@ function Hecke.evaluate(N::Norm1Group)
     @assert fl
     J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
     J = I*inv(J)
-    fl, g = Hecke.is_principal_fac_elem(J)
+    fl, g = is_principal_fac_elem(J)
     @assert fl
     ng = norm(N.A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))

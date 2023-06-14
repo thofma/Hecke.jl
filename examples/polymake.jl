@@ -179,7 +179,7 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
     for i = 1:length(S)
       I *= prod(S[i][1][j][1]^Int(x[i][j]) for j=1:length(S[i][1]))
     end
-    fl, g = Hecke.is_principal_fac_elem(I)
+    fl, g = is_principal_fac_elem(I)
     if fl
       push!(sol, g)
     end
