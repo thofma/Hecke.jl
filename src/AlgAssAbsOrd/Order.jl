@@ -694,7 +694,7 @@ function pmaximal_overorder_meataxe(O::AlgAssAbsOrd{S, T}, p::Union{ZZRingElem, 
   return O
 end
 
-function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Union{ZZRingElem, Int})
+function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::IntegerUnion)
   #First, the head order by computing the pradical and its ring of multipliers
   d = discriminant(O)
   @vtime :AlgAssOrd 1 I = pradical(O, p)
