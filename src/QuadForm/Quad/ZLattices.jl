@@ -1604,7 +1604,7 @@ function lll(L::ZZLat; same_ambient::Bool = true)
     else
       G2, U = lll_gram_with_transform(M)
     end
-  elseif (rank(L) == 3) && (abs(det(M)) == -1)
+  elseif (rank(L) == 3) && (abs(det(M)) == 1)
     G2, U = lll_gram_indef_ternary_hyperbolic(M)
   elseif det(M) == 1
     G2, U = lll_gram_indef_with_transform(M)
