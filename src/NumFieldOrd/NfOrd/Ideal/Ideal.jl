@@ -264,16 +264,16 @@ function ideal(O::NfAbsOrd, x::NfAbsOrdElem)
 end
 
 @doc raw"""
-    ideal(O::NfOrd, x::ZZMatrix, check::Bool = false, x_in_hnf::Bool = false) -> NfAbsOrdIdl
+    ideal(O::NfOrd, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false) -> NfAbsOrdIdl
 
-Creates the ideal of $\mathcal O$ with basis matrix $x$. If `check` is set, then it is
-checked whether $x$ defines an ideal (expensive). If `x_in_hnf` is set, then it is assumed
-that $x$ is already in lower left HNF.
+Creates the ideal of $\mathcal O$ with basis matrix $M$. If `check` is set, then it is
+checked whether $M$ defines an ideal (expensive). If `M_in_hnf` is set, then it is assumed
+that $M$ is already in lower left HNF.
 """
-function ideal(O::NfAbsOrd, x::ZZMatrix, check::Bool = false, x_in_hnf::Bool = false)
-  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
+function ideal(O::NfAbsOrd, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false)
+  !M_in_hnf ? x = _hnf(M, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
   #_trace_call(;print = true)
-  I = NfAbsOrdIdl(O, x)
+  I = NfAbsOrdIdl(O, M)
   # The compiler stopped liking this recursion??
   # if check
   #   J = ideal(O, basis(I))
@@ -283,10 +283,10 @@ function ideal(O::NfAbsOrd, x::ZZMatrix, check::Bool = false, x_in_hnf::Bool = f
   return I
 end
 
-function _ideal(O::NfAbsOrd, x::ZZMatrix, x_in_hnf::Bool = false)
-  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
+function _ideal(O::NfAbsOrd, M::ZZMatrix, M_in_hnf::Bool = false)
+  !M_in_hnf ? x = _hnf(M, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
   #_trace_call(;print = true)
-  I = NfAbsOrdIdl(O, x)
+  I = NfAbsOrdIdl(O, M)
 
   return I
 end
@@ -343,7 +343,7 @@ function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
   if d < length(b)
     M = sub(M, (length(b) - d + 1):length(b), 1:d)
   end
-  return ideal(O, M, check, true)
+  return ideal(O, M; check, M_in_hnf=true)
 end
 
 ################################################################################

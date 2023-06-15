@@ -17,7 +17,7 @@ function principal_generator_eichler(I::AlgAssRelOrdIdl)
 
       # Consider orders[i] as an ideal.
       # The basis pseudo-matrix is probably not in HNF, but we don't need this.
-      OO = ideal(A, basis_pmatrix(orders[i], copy = false), true)
+      OO = ideal(A, basis_pmatrix(orders[i], copy = false); M_in_hnf=true)
       r = lcm(r, denominator(OO, orders[j]))
     end
   end

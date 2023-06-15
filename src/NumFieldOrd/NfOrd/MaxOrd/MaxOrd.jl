@@ -369,7 +369,7 @@ function _radical_by_trace(O::NfOrd, q::ZZRingElem)
       return M2[i, i], ideal(O, q)
     end
   end
-  I = ideal(O, M2, false, true)
+  I = ideal(O, M2; check=false, M_in_hnf=true)
   I.minimum = q
   I.gens = gens
   return ZZRingElem(1), I
@@ -749,7 +749,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
   it = 0
   while true
     if it == j
-      I = ideal(O, M1, false, true)
+      I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
       I.minimum = ZZRingElem(p)
@@ -794,7 +794,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
     end
     X = right_kernel_basis(A)
     if isempty(X)
-      I = ideal(O, M1, false, true)
+      I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
       I.minimum = ZZRingElem(p)
@@ -813,7 +813,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
       end
     end
     if iszero(length(new_gens))
-      I = ideal(O, M1, false, true)
+      I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
       I.minimum = ZZRingElem(p)
@@ -979,7 +979,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
   end
   hnf_modular_eldiv!(M2, ZZRingElem(p), :lowerleft)
   M2 = view(M2, nrows(M2)-d+1:nrows(M2), 1:d)
-  I = ideal(O, M2, false, true)
+  I = ideal(O, M2; check=false, M_in_hnf=true)
   I.minimum = p
   I.gens = gens
   return I

@@ -1807,8 +1807,8 @@ function _isfree_Q32(K::AnticNumberField)
 
   # theta = one(QG)
 
-  # N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(representation_matrix(theta, :left))), :left)
-  # #N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(identity_matrix(FlintQQ, n))), :left)
+  # N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(representation_matrix(theta, :left))); side=:left)
+  # #N = _colon_raw(OKasideal, ideal(QG, ZG, FakeFmpqMat(identity_matrix(FlintQQ, n))); side=:left)
   # # Johannes convention is the other way around
   #
   # Atheta = ideal(QG, ZG, N)

@@ -34,18 +34,18 @@ is_full_lattice(a::AlgAssRelOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1
 ################################################################################
 
 @doc raw"""
-    ideal(A::AbsAlgAss, M::PMat, M_in_hnf::Bool = false) -> AlgAssRelOrdIdl
+    ideal(A::AbsAlgAss, M::PMat; M_in_hnf::Bool = false) -> AlgAssRelOrdIdl
 
 Returns the ideal in $A$ with basis pseudo-matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left pseudo HNF.
 """
-function ideal(A::AbsAlgAss{S}, M::PMat{S, T}, M_in_hnf::Bool = false) where { S <: NumFieldElem, T }
+function ideal(A::AbsAlgAss{S}, M::PMat{S, T}; M_in_hnf::Bool = false) where { S <: NumFieldElem, T }
   !M_in_hnf ? M = pseudo_hnf(M, :lowerleft) : nothing
   return AlgAssRelOrdIdl{S, T, typeof(A)}(A, M)
 end
 
 @doc raw"""
-    ideal(A::AbsAlgAss, O::AlgAssRelOrd, M::PMat, side::Symbol = :nothing,
+    ideal(A::AbsAlgAss, O::AlgAssRelOrd, M::PMat; side::Symbol = :nothing,
           M_in_hnf::Bool = false)
       -> AlgAssRelOrdIdl
 
@@ -55,8 +55,8 @@ If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
 set to `:right`/`:left`/`:twosided` respectively.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left pseudo HNF.
 """
-function ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::Symbol = :nothing, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U }
-  a = ideal(A, M, M_in_hnf)
+function ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}; side::Symbol = :nothing, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U }
+  a = ideal(A, M; M_in_hnf)
   a.order = O
   _set_sidedness(a, side)
   if is_maximal_known(O) && is_maximal(O)
@@ -113,7 +113,7 @@ function ideal(O::AlgAssRelOrd{S, T, U}, x::AbsAlgAssElem{S}) where {S, T, U}
   end
   M = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), nrows(M) - degree(O) + 1:nrows(M), 1:ncols(M))
 
-  return ideal(A, O, M, :twosided, true)
+  return ideal(A, O, M; side=:twosided, M_in_hnf=true)
 end
 
 ideal(O::AlgAssRelOrd{S, T, U}, x::AlgAssRelOrdElem{S, T, U}) where { S, T, U } = ideal(O, elem_in_algebra(x, copy = false))
@@ -147,7 +147,7 @@ function ideal(O::AlgAssRelOrd{S, T, U}, x::AbsAlgAssElem{S}, side::Symbol) wher
   end
   M = PseudoMatrix(M, deepcopy(basis_pmatrix(O, copy = false).coeffs))
 
-  return ideal(A, O, M, side)
+  return ideal(A, O, M; side)
 end
 
 ideal(O::AlgAssRelOrd{S, T, U}, x::AlgAssRelOrdElem{S, T, U}, action::Symbol) where { S, T, U } = ideal(O, elem_in_algebra(x, copy = false), action)
@@ -183,7 +183,7 @@ function ideal(O::AlgAssRelOrd{S, T, U}, a::T) where {S, T, U}
   pb = pseudo_basis(O, copy = false)
   M = basis_matrix(O)
   PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
-  return ideal(algebra(O), O, PM, :twosided)
+  return ideal(algebra(O), O, PM; side=:twosided)
 end
 
 @doc raw"""
@@ -201,7 +201,7 @@ end
 function ideal(O::AlgAssRelOrd, a::NfRelOrdIdl)
   @assert order(a) === base_ring(O)
 
-  aa = fractional_ideal(order(a), basis_pmatrix(a), true)
+  aa = fractional_ideal(order(a), basis_pmatrix(a); M_in_hnf=true)
   return ideal(O, aa)
 end
 
@@ -242,7 +242,7 @@ function ideal_from_lattice_gens(A::AbsAlgAss{S}, v::Vector{ <: AbsAlgAssElem{S}
     PM = sub(PM, (nrows(PM) - dim(A) + 1):nrows(PM), 1:dim(A))
   end
 
-  return ideal(A, PM, true)
+  return ideal(A, PM; M_in_hnf=true)
 end
 @doc raw"""
     ideal_from_lattice_gens(A::AbsAlgAss, O::AlgAssRelOrd,
@@ -269,7 +269,7 @@ end
 ###############################################################################
 
 function _zero_ideal(A::AbsAlgAss{S}) where { S <: NumFieldElem }
-  a = ideal(A, PseudoMatrix(zero_matrix(base_ring(A), dim(A), dim(A))), true)
+  a = ideal(A, PseudoMatrix(zero_matrix(base_ring(A), dim(A), dim(A))); M_in_hnf=true)
   a.iszero = 1
   return a
 end
@@ -520,7 +520,7 @@ function +(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where {S, T
   d = dim(algebra(a))
   M = vcat(basis_pmatrix(a, copy = false), basis_pmatrix(b, copy = false))
   M = sub(pseudo_hnf(M, :lowerleft), (d + 1):2*d, 1:d)
-  c = ideal(algebra(a), M, true)
+  c = ideal(algebra(a), M; M_in_hnf=true)
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
   end
@@ -560,7 +560,7 @@ function *(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where {S, T
   end
 
   H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d2 - d + 1):d2, 1:d)
-  c = ideal(A, H, true)
+  c = ideal(A, H; M_in_hnf=true)
 
   if _left_order_known_and_maximal(a)
     c.left_order = left_order(a)
@@ -599,7 +599,7 @@ function intersect(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) whe
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
   H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
-  c = ideal(algebra(a), H, true)
+  c = ideal(algebra(a), H; M_in_hnf=true)
 
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
@@ -639,7 +639,7 @@ function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, ZZRingElem, NfAbsOrdElem,
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
-  b = ideal(algebra(a), x*basis_pmatrix(a, copy = false), true)
+  b = ideal(algebra(a), x*basis_pmatrix(a, copy = false); M_in_hnf=true)
   if isdefined(a, :left_order)
     b.left_order = left_order(a)
   end
@@ -1209,7 +1209,7 @@ function pradical(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
     N = vcat(N, deepcopy(t))
   end
   N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-  return ideal(algebra(O), O, N, :twosided, true)
+  return ideal(algebra(O), O, N; side=:twosided, M_in_hnf=true)
 end
 
 ################################################################################
@@ -1269,7 +1269,7 @@ function _prime_ideals_over(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ Nf
       N = vcat(N, lifted_components[j])
     end
     N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-    push!(primes, ideal(algebra(O), O, N, :twosided, true))
+    push!(primes, ideal(algebra(O), O, N; side=:twosided, M_in_hnf=true))
   end
 
   return primes
@@ -1328,7 +1328,7 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrd
   end
   N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
 
-  M = ideal(algebra(O), O, N, side, true)
+  M = ideal(algebra(O), O, N; side, M_in_hnf=true)
   if side == :left
     M.left_order = O # O is maximal
   else
@@ -1410,7 +1410,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ NfAbsOr
   n = numerator(det(basis_pmatrix(P, copy = false)), copy = false)
   PM = sub(pseudo_hnf_full_rank_with_modulus(PM, n, :lowerleft), length(basis_c) + 1:nrows(PM), 1:ncols(PM))
 
-  M = ideal(algebra(O), O, PM, side, true)
+  M = ideal(algebra(O), O, PM; side, M_in_hnf=true)
   @assert normred(M, O) == p
   if side == :left
     M.left_order = O # O is maximal

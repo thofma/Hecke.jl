@@ -399,18 +399,18 @@ function _first_sieve(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, ab
     lfieldsK = maximal_abelian_subextension(K)
     rK1 = Set(ZZRingElem[])
     for x in lfieldsK
-      rK1 = union(rK1, Hecke.ramified_primes(maximal_order(x)))
+      rK1 = union(rK1, ramified_primes(maximal_order(x)))
     end
     #First, I only check for disjointness
     for i2 = 1:length(list2)
       L = list2[i2]
       check_bound_disc(K, L, absolute_bound) || continue
       #First, I check if the discriminants are coprime
-      rL = Hecke.ramified_primes(L)
+      rL = ramified_primes(L)
       lfieldsL = maximal_abelian_subextension(L)
       rL1 = Set(ZZRingElem[])
       for x in lfieldsL
-        rL1 = union(rL1, Hecke.ramified_primes(maximal_order(x)))
+        rL1 = union(rL1, ramified_primes(maximal_order(x)))
       end
       fl = false
       if isempty(intersect(rL1, rK1))

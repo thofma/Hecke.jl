@@ -72,27 +72,27 @@ end
 ################################################################################
 
 @doc raw"""
-    fractional_ideal(O::NfAbsOrd, A::FakeFmpqMat, A_in_hnf::Bool = false) -> NfAbsOrdFracIdl
+    fractional_ideal(O::NfAbsOrd, M::FakeFmpqMat; M_in_hnf::Bool = false) -> NfAbsOrdFracIdl
 
-Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If `A_in_hnf`
-is set, then it is assumed that the numerator of $A$ is already in lower left
+Creates the fractional ideal of $\mathcal O$ with basis matrix $M$. If `M_in_hnf`
+is set, then it is assumed that the numerator of $M$ is already in lower left
 HNF.
 """
-function fractional_ideal(O::NfAbsOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
-  !x_in_hnf ? x = hnf(x) : nothing
-  z = NfAbsOrdFracIdl(O, x)
+function fractional_ideal(O::NfAbsOrd, M::FakeFmpqMat; M_in_hnf::Bool = false)
+  !M_in_hnf ? M = hnf(M) : nothing
+  z = NfAbsOrdFracIdl(O, M)
   return z
 end
 
 @doc raw"""
-    fractional_ideal(O::NfAbsOrd, A::ZZMatrix, b::ZZRingElem, A_in_hnf::Bool = false) -> NfAbsOrdFracIdl
+    fractional_ideal(O::NfAbsOrd, M::ZZMatrix, b::ZZRingElem; M_in_hnf::Bool = false) -> NfAbsOrdFracIdl
 
-Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
-`A_in_hnf` is set, then it is assumed that $A$ is already in lower left HNF.
+Creates the fractional ideal of $\mathcal O$ with basis matrix $M/b$. If
+`M_in_hnf` is set, then it is assumed that $A$ is already in lower left HNF.
 """
-function fractional_ideal(O::NfAbsOrd, x::ZZMatrix, y::ZZRingElem=ZZRingElem(1), x_in_hnf::Bool = false)
-  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing
-  y = FakeFmpqMat(x, y)
+function fractional_ideal(O::NfAbsOrd, M::ZZMatrix, b::ZZRingElem=ZZRingElem(1); M_in_hnf::Bool = false)
+  !M_in_hnf ? M = _hnf(M, :lowerleft) : nothing
+  y = FakeFmpqMat(M, b)
   z = NfAbsOrdFracIdl(O, y)
   return z
 end
