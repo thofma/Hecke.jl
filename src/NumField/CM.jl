@@ -13,11 +13,17 @@ function _isimag(x::acb)
 end
 
 function _print_acb_neatly(io, x::acb)
-  if !_isimag(x)
+  has_real_part = !_isimag(x)
+  has_imag_part = !isreal(x)
+  if !has_real_part && !has_imag_part
+    print(io, "0")
+    return
+  end
+  if has_real_part
     a = Float64(real(x))
     print(io, @sprintf "%.2f" a)
   end
-  if !isreal(x)
+  if has_imag_part
     b = Float64(imag(x))
     if b > 0
       print(io, _isimag(x) ? "" : " + ", @sprintf("%.2f", b), " * i")
