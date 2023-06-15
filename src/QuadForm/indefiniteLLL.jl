@@ -348,7 +348,7 @@ Gram matrix of `L` with respect to `U`.
 julia> G = ZZ[1 0 0; 0 4 3; 0 3 2];
 
 julia> lll_gram_indef_ternary_hyperbolic(G)
-([0 0 -1; 0 1 0; -1 0 0], [0 1 -2; 1 0 0; 0 1 -1])
+([0 0 -1; 0 1 0; -1 0 0], [-1 -1 0; 0 0 -1; -2 -1 0])
 ```
 """
 function lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool = false)
