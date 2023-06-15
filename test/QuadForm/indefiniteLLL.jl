@@ -1,24 +1,26 @@
-@testset "indefiniteLLL" begin
+# Helper function to check how reduced is a basis
+function find_gamma(H::MatElem{QQFieldElem})
+  O,M = Hecke._gram_schmidt(H,QQ)
+  d = diagonal(O)
+  gamma =[abs(d[i])//abs(d[i+1]) for i=1:ncols(H)-1]
+  gamma_max = maximum(gamma)
+  return gamma_max
+end
 
-######################################################
-#  complete_to_basis
-######################################################
-
+@testset "Complete to basis" begin
   w = ZZ[ 0 2  3  0 ; -5 3 -5 -5; 4 3 -5  4; 1 2 3 4; 0 1 0 0]
   v = ZZ[ 0 2  3  0; -5 3 -5 -5; 4 3 -5  4]
 
   x = Hecke._complete_to_basis(w)
   y = Hecke._complete_to_basis(v)
 
-  @test x[:,ncols(x)] == w[:,ncols(w)]
-  @test det(x) == 1 || det(x) == -1
-  @test y[:,ncols(y)] == v[:,ncols(v)]
-  @test det(y) == 1 || det(y) == -1
+  @test x[end, :] == w[end, :]
+  @test abs(det(x)) == 1
+  @test y[end, :] == v[end, :]
+  @test abs(det(y)) == 1
+end
 
-######################################################
-#  quad_form_solve_triv
-######################################################
-
+@testset "Quad form solve triv" begin
   G1 = ZZ[1 2; 2 3]
   v1 = Hecke._quadratic_form_solve_triv(G1)
   @test v1[1] == G1 && v1[2] == identity_matrix(G1)
@@ -31,20 +33,11 @@
   v3 = Hecke._quadratic_form_solve_triv(G3;base = true)
   @test v3[2][1,:] == v3[3]
   @test v3[3] * G3 * transpose(v3[3]) == 0
+end
 
-######################################################
-#  lll_gram_indef_with_transform
-######################################################
-
-  function find_gamma(H::MatElem{QQFieldElem})
-    O,M = Hecke._gram_schmidt(H,QQ)
-    d = diagonal(O)
-    gamma =[abs(d[i])//abs(d[i+1]) for i=1:ncols(H)-1]
-    gamma_max = maximum(gamma)
-    return gamma_max
-  end
-
-  G0 = ZZ[0 1 2; 1 -1 3; 2 3 0] #Finds an isotropic vector
+@testset "lll gram indef with transform" begin
+  # Finds an isotropic vector
+  G0 = ZZ[0 1 2; 1 -1 3; 2 3 0]
   H0,U0 = Hecke.lll_gram_indef_with_transform(G0)
   @test U0*G0*transpose(U0) == H0 
   @test H0[1,1] == 0
@@ -66,7 +59,8 @@
   @test  gamma_H2 <= gamma_G2
   @test abs(G2[1,1])^4 <= gamma_H2^6 * abs(det(G2))
 
-  G3 = ZZ[1 0 -2 3;0 -1 1 1;-2 1 0 4; 3 1 4 0] #Finds an isotropic vector
+  # Finds an isotropic vector
+  G3 = ZZ[1 0 -2 3;0 -1 1 1;-2 1 0 4; 3 1 4 0]
   H3,U3 = Hecke.lll_gram_indef_with_transform(G3)
   @test U3*G3*transpose(U3) == H3
   gamma_H3 = find_gamma(change_base_ring(QQ,H3[2:3,2:3]))
@@ -82,7 +76,8 @@
   @test  gamma_H4 <= gamma_G4
   @test abs(G4[1,1])^5 <= gamma_H4^10 * abs(det(G4))
 
-  G5 = ZZ[2 2 1 12 0 0; 2 -4 -1 1 2 6;1 -1 8 1 2 5;12 1 1 2 0 2 ; 0 2 2 0 0 0; 0 6 5 2 0 -2] #Finds an isotropic vector
+  # Finds an isotropic vector
+  G5 = ZZ[2 2 1 12 0 0; 2 -4 -1 1 2 6;1 -1 8 1 2 5;12 1 1 2 0 2 ; 0 2 2 0 0 0; 0 6 5 2 0 -2]
   H5,U5 = Hecke.lll_gram_indef_with_transform(G5)
   @test U5*G5*transpose(U5) == H5
   gamma_H5 = find_gamma(change_base_ring(QQ,H5[2:5,2:5]))
@@ -178,15 +173,12 @@
   H10,U10 = Hecke.lll_gram_indef_with_transform(change_base_ring(ZZ,gram_matrix(L10)))
   Lat10 = lattice(ambient_space(L10),U10*basis_matrix(L10))
   @test L10 == Lat10
+end
 
-######################################################
-#  lll_gram_indef_ternary_hyperbolic
-######################################################
-
+@testset "lll gram indef ternary hyperbolic" begin
   G = ZZ[1 0 0; 0 4 3; 0 3 2]
   H,U = Hecke.lll_gram_indef_ternary_hyperbolic(G)
   gamma_H = find_gamma(change_base_ring(QQ,H))
   gamma_G = find_gamma(change_base_ring(QQ,G))
   @test gamma_H < gamma_G
-
 end
