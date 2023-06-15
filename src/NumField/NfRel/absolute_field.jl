@@ -129,7 +129,7 @@ function absolute_simple_field(K::NfRel{nf_elem}; cached::Bool = false, simplify
   Ka, a, b, c = _absolute_field(K, cached = cached)
   h1 = hom(Ka, K, c, inverse = (a, b))
   embed(h1)
-  embed(MapFromFunc(x->preimage(h1, x), K, Ka))
+  embed(MapFromFunc(K, Ka, x->preimage(h1, x)))
   return Ka, h1
 end
 
@@ -212,7 +212,7 @@ function collapse_top_layer(K::NfRel{T}; cached::Bool = false, do_embedding::Boo
   h1 = hom(Ka, K, c, inverse = (a, b), check = false)
   h2 = hom(base_field(K), Ka, a, check = false)
   embed(h1)
-  embed(MapFromFunc(x->preimage(h1, x), K, Ka))
+  embed(MapFromFunc(K, Ka, x->preimage(h1, x)))
   embed(h2)
   return Ka, h1, h2
 end

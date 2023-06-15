@@ -29,9 +29,9 @@ function automorphism_group(C::ClassField)
     end
     push!(zz, t)
   end
-  f = MapFromFunc(x->prod(z[i]^x[i] for i=1:length(z)),
-                  y->A([findfirst(isequal(y(gen(K, i))), zz[i])-1 for i=1:length(z)]),
-                  A, G)
+  f = MapFromFunc(A, G,
+                  x->prod(z[i]^x[i] for i=1:length(z)),
+                  y->A([findfirst(isequal(y(gen(K, i))), zz[i])-1 for i=1:length(z)]))
   set_attribute!(C, :RelAuto => f)                
   return A, f                      
 end

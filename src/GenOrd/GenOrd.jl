@@ -494,7 +494,7 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
       R, mR = x
     else
       R = x
-      mR = MapFromFunc(x->R(x), x->lift(x), parent(p), R)
+      mR = MapFromFunc(parent(p), R, x->R(x), x->lift(x))
     end
     ref = x->rref(x)[2]
   else
@@ -503,10 +503,10 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
       R, mR = x
     else
       R = x
-      mR = MapFromFunc(x->R(x), x->lift(x), parent(p), R)
+      mR = MapFromFunc(parent(p), R, x->R(x), x->lift(x))
     end
 #    R = parent(p)
-#    mR = MapFromFunc(x->x, x->x, R, R)
+#    mR = MapFromFunc(R, R, x->x, x->x)
     ref = hnf
   end
   m = map_entries(mR, m)
@@ -598,7 +598,7 @@ function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false
     R, mR = t
   else
     R = t
-    mR = MapFromFunc(x->R(x), y->lift(y), parent(p), R)
+    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
@@ -785,7 +785,7 @@ function radical_basis_power(O::GenOrd, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = MapFromFunc(x->F(x), y->lift(y), parent(p), F)
+    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   q = characteristic(F)
@@ -819,7 +819,7 @@ function radical_basis_trace(O::GenOrd, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = MapFromFunc(x->R(x), y->lift(y), parent(p), R)
+    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
   end
 
   TT = map_entries(mR, T)
@@ -836,7 +836,7 @@ function radical_basis_power_non_perfect(O::GenOrd, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = MapFromFunc(x->F(x), y->lift(y), parent(p), F)
+    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
   end
   @assert isa(F, Generic.RationalFunctionField) && characteristic(F) != 0
   q = characteristic(F)

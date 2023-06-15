@@ -51,7 +51,7 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
       R, mR = x
     else
       R = x
-      mR = MapFromFunc(x->R(x), x->lift(x), parent(d), R)
+      mR = MapFromFunc(parent(d), R, x->R(x), x->lift(x))
     end
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
@@ -61,7 +61,7 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
       R, mR = x
     else
       R = x
-      mR = MapFromFunc(x->R(x), x->lift(x), parent(d), R)
+      mR = MapFromFunc(parent(d), R, x->R(x), x->lift(x))
     end
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
@@ -99,13 +99,13 @@ end
 
 function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
   K, _ = number_field(p)
-  return K, MapFromFunc(x->K(x), y->R(y), R, K)
+  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
 end
 
 function Hecke.residue_field(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFieldElem}
   @assert parent(p) === R
   K, _ = number_field(p)
-  return K, MapFromFunc(x -> K(x), y -> R(y), R, K)
+  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
 end
 
 function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T <: FieldElem}
@@ -177,7 +177,7 @@ function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
-  return F, MapFromFunc(x->F(data(x)), y->R(lift(ZZ, y)), R, F)
+  return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(ZZ, y)))
 end
 
 Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true

@@ -35,7 +35,7 @@ is_simple(::AnticNumberField) = true
 function number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
-  mp = MapFromFunc(y -> S(Qx(y)), x -> K(lift(x)), K, S)
+  mp = MapFromFunc(K, S, y -> S(Qx(y)), x -> K(lift(x)))
   return K, mp
 end
 
@@ -958,7 +958,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   s === nothing && return s
   all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s if filter(f))
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
   end
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
@@ -979,7 +979,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
           b = base_field(domain(f))
           ob = objectid(b)
           if !haskey(all_chain, ob)
-            g = MapFromFunc(x->domain(f)(x), b, domain(f))
+            g = MapFromFunc(b, domain(f), x->domain(f)(x))
             all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
             push!(new_k, b)
           end
@@ -997,7 +997,7 @@ function find_one_chain(t::NumField, a::NumField)
   ot = objectid(t)
   all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s)
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
   end
   new_k = Any[domain(f) for f = s]
   if haskey(all_chain, ot)
@@ -1024,7 +1024,7 @@ function find_one_chain(t::NumField, a::NumField)
         b = base_field(domain(f))
         ob = objectid(b)
         if !haskey(all_chain, ob)
-          g = MapFromFunc(x->domain(f)(x), b, domain(f))
+          g = MapFromFunc(b, domain(f), x->domain(f)(x))
           all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
           push!(new_k, b)
         end

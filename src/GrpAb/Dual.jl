@@ -227,7 +227,7 @@ function dual(G::GrpAbFinGen, u::QmodnZElem)
   QZ = parent(u)
   R, phi = hom(G, H)
   R::GrpAbFinGen
-  ex = MapFromFunc(x -> x[1]*u, y -> H(ZZRingElem[numerator(y.elt) * div(o, denominator(y.elt))]), H, parent(u))
+  ex = MapFromFunc(H, parent(u), x -> x[1]*u, y -> H(ZZRingElem[numerator(y.elt) * div(o, denominator(y.elt))]))
   local mu
   let phi = phi, G = G, QZ = QZ, u = u
     function mu(r::GrpAbFinGenElem)
@@ -243,7 +243,7 @@ function dual(G::GrpAbFinGen, u::QmodnZElem)
       return preimage(phi, g)
     end
   end
-  return R, MapFromFunc(mu, nu, R, MapParent(G, parent(u), "homomorphisms"))
+  return R, MapFromFunc(R, MapParent(G, parent(u), "homomorphisms"), mu, nu)
 end
 
 parent(f::GrpAbFinGenToQmodnZ) = MapParent(domain(f), codomain(f), "homomorphisms")

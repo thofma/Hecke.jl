@@ -32,7 +32,7 @@ function residue_field(Q::FlintQadicField)
     end
     return z
   end
-  mk = MapFromFunc(pro, lif, Q, k)
+  mk = MapFromFunc(Q, k, pro, lif)
   set_attribute!(Q, :ResidueFieldMap => mk)
   return k, mk
 end
@@ -50,7 +50,7 @@ function residue_field(Q::FlintPadicField)
     z = Q(lift(x))
     return z
   end
-  return k, MapFromFunc(pro, lif, Q, k)
+  return k, MapFromFunc(Q, k, pro, lif)
 end
 
 coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)

@@ -866,7 +866,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   end
   h = hom(Ka, K, pe, inverse = emb)
   embed(h)
-  embed(MapFromFunc(x->preimage(h, x), K, Ka))
+  embed(MapFromFunc(K, Ka, x->preimage(h, x)))
   return Ka, h
 end
 

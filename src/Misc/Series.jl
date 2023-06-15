@@ -224,7 +224,7 @@ end
 
 function Hecke.residue_field(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn zzModRingElem/gfp
   k = base_ring(S)
-  return k, MapFromFunc(x -> coeff(x, 0), y -> set_precision(S(y), 1), S, k)
+  return k, MapFromFunc(S, k, x -> coeff(x, 0), y -> set_precision(S(y), 1))
 end
 
 function rational_reconstruction(a::SeriesElem; parent::PolyRing = polynomial_ring(base_ring(a), cached = false)[1])

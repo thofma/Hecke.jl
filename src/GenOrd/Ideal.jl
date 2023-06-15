@@ -578,7 +578,7 @@ end
 
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
   K, _ = FiniteField(p,"o")
-  return K, MapFromFunc(x->K(x), y->R(y), R, K)
+  return K, MapFromFunc(R, K, x->K(x), y->R(y))
 end
 
 function Hecke.residue_field(R::FqPolyRing, p::FqPolyRingElem)
@@ -697,7 +697,7 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = MapFromFunc(x->R(x), y->lift(y), parent(p), R)
+    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
