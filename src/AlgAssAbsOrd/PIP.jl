@@ -2150,7 +2150,7 @@ function maximal_order_via_absolute(O::AlgAssRelOrd)
   for i = 1:degree(OC)
     elem_to_mat_row!(M, i, CtoA(elem_in_algebra(basis(OC, copy = false)[i], copy = false)))
   end
-  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
+  PM = sub(pseudo_hnf(pseudo_matrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
   O = Order(A, PM)
   O.is_maximal = 1
   return O

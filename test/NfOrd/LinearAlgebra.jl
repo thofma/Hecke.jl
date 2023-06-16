@@ -36,7 +36,7 @@
     de = ZZRingElem(37684868701591492337245802520684209569420259)
     AoverO = matrix_space(O, 5, 5)(map(z -> O(z), A))
 
-    Apm = Hecke.PseudoMatrix( AoverO, [(O(1)*O)::Hecke.NfOrdIdl for i in 1:5])
+    Apm = Hecke.pseudo_matrix( AoverO, [(O(1)*O)::Hecke.NfOrdIdl for i in 1:5])
 
     d = numerator(det(Apm))
 
@@ -53,7 +53,7 @@
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])
 
-    B = Hecke.PseudoMatrix(matrix(K, [1 1; 1 1; 1 0]), [ ideal(O, K(1)), ideal(O, K(QQFieldElem(1, 2))), ideal(O, K(1)) ])
+    B = Hecke.pseudo_matrix(matrix(K, [1 1; 1 1; 1 0]), [ ideal(O, K(1)), ideal(O, K(QQFieldElem(1, 2))), ideal(O, K(1)) ])
 
     Bhnf = pseudo_hnf(B, :lowerleft, true)
 
@@ -73,7 +73,7 @@
         z = rand(matrix_space(O, l, l), ZZRingElem(2)^ll)
         #println("    $l x $l matrix with $ll bits")
         cc = NfOrdIdl[ideal(O, 1) for i in 1:l]
-        pm = Hecke.PseudoMatrix(z, cc)
+        pm = Hecke.pseudo_matrix(z, cc)
         d = det(pm)
         ppm = Hecke.pseudo_hnf(pm)
         @test Hecke._spans_subset_of_pseudohnf(pm, ppm)
@@ -92,7 +92,7 @@
       L, b = number_field(g, "b")
 
       t = rand(-1000:1000, 3, 3)
-      PM = Hecke.PseudoMatrix(matrix(K, t))
+      PM = Hecke.pseudo_matrix(matrix(K, t))
       G, U = Hecke.pseudo_hnf_kb_with_transform(PM)
       @test Hecke._spans_subset_of_pseudohnf(PM, G)
       @test !iszero(det(U))
@@ -106,7 +106,7 @@
       Lz, z = L["z"]
       h = z^2 + 4*z + 10
       M, c = number_field(h, "c")
-      PN = Hecke.PseudoMatrix(matrix(L, t))
+      PN = Hecke.pseudo_matrix(matrix(L, t))
       H, V = Hecke.pseudo_hnf_kb_with_transform(PN)
       @test Hecke._spans_subset_of_pseudohnf(PN, H)
       @test !iszero(det(V))
@@ -127,13 +127,13 @@
         ideals = union(ideals, prime_decomposition(O, p))
         p = next_prime(p)
       end
-      A = Hecke.PseudoMatrix(one(matrix_space(O, 5, 5)), [ p for (p, e) in ideals ])
+      A = Hecke.pseudo_matrix(one(matrix_space(O, 5, 5)), [ p for (p, e) in ideals ])
       v = [ K(rand(p, 100)) for (p, e) in ideals ]
       @test Hecke._in_span(v, A)[1]
 
       K,  a = number_field(x, "a")
       O = maximal_order(K)
-      A = Hecke.PseudoMatrix(matrix(O, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
+      A = Hecke.pseudo_matrix(matrix(O, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
       @test Hecke._in_span(map(K, [1, 2, 3, 4]), A)[1]
       @test Hecke._in_span(map(K, [5, 6, 7, 8]), A)[1] == false
     end

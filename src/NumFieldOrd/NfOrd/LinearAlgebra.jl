@@ -1,4 +1,4 @@
-export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
+export pseudo_matrix, pseudo_hnf, pseudo_matrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
 import Base.vcat, Base.hcat
 
 add_verbosity_scope(:PseudoHnf)
@@ -269,13 +269,13 @@ This function returns the $R$ that was used to defined $M$.
 """
 base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.base_ring::order_type(parent_type(T))
 
-function PseudoMatrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
+function pseudo_matrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
   return PMat{T, S}(m ,c)
 end
 
-function PseudoMatrix(O::NumFieldOrd, m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
+function pseudo_matrix(O::NumFieldOrd, m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
   z = PMat{T, S}(m ,c)
@@ -284,26 +284,26 @@ function PseudoMatrix(O::NumFieldOrd, m::AbstractAlgebra.MatElem{T}, c::Vector{S
 end
 
 @doc raw"""
-    PseudoMatrix(m::Generic.Mat{nf_elem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
+    pseudo_matrix(m::Generic.Mat{nf_elem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
-function PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
+function pseudo_matrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
   cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(m, cc)
 end
 
 @doc raw"""
-    PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
+    pseudo_matrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
-function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
+function pseudo_matrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
   mm = change_base_ring(nf(base_ring(m)), m)
   cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
@@ -311,40 +311,40 @@ function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
 end
 
 @doc raw"""
-    PseudoMatrix(m::Generic.Mat{NfOrdElem}) -> PMat{nf_elem, NfOrdFracIdl}
+    pseudo_matrix(m::Generic.Mat{NfOrdElem}) -> PMat{nf_elem, NfOrdFracIdl}
 
 Returns the free (row) pseudo matrix representing the $Z_k$-module
  $$\sum Z_k m_i$$
  where $m_i$ are the rows of $M$.
 """
-function PseudoMatrix(m::Generic.Mat{nf_elem})
+function pseudo_matrix(m::Generic.Mat{nf_elem})
    K = base_ring(m)
    O = maximal_order(K)
-   return PseudoMatrix(O, m, [ideal(O, K(1)) for i = 1:nrows(m)])
+   return pseudo_matrix(O, m, fractional_ideal_type(O)[ideal(O, K(1)) for i = 1:nrows(m)])
 end
 
-function PseudoMatrix(m::MatElem{S}) where S <: NumFieldElem
+function pseudo_matrix(m::MatElem{S}) where S <: NumFieldElem
   L = base_ring(m)
   OL = maximal_order(L)
   K = base_field(L)
-  return PseudoMatrix(OL, m, fractional_ideal_type(OL)[ fractional_ideal(OL, ideal(OL, 1)) for i = 1:nrows(m) ])
+  return pseudo_matrix(OL, m, fractional_ideal_type(OL)[ fractional_ideal(OL, ideal(OL, 1)) for i = 1:nrows(m) ])
 end
 
-function PseudoMatrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
+function pseudo_matrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
   @assert nrows(m) == length(c)
   cc = [ fractional_ideal(order(c[i]), basis_pmatrix(c[i]); M_in_hnf=true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 
-PseudoMatrix(m::MatElem{NfOrdElem}) = PseudoMatrix(change_base_ring(nf(base_ring(m)), m))
+pseudo_matrix(m::MatElem{NfOrdElem}) = pseudo_matrix(change_base_ring(nf(base_ring(m)), m))
 
-function PseudoMatrix(c::Vector{S}) where S
+function pseudo_matrix(c::Vector{S}) where S
    K = nf(order(c[1]))
    m = identity_matrix(K, length(c))
-   return PseudoMatrix(m, c)
+   return pseudo_matrix(m, c)
 end
 
-PseudoMatrix(c::Vector{NfOrdIdl}) = PseudoMatrix(map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c))
+pseudo_matrix(c::Vector{NfOrdIdl}) = pseudo_matrix(map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c))
 
 function nrows(m::PMat)
   return nrows(m.matrix)
@@ -632,7 +632,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
       end
       C[rowPerm[i]] = P.coeffs[i]
     end
-    PMinor = PseudoMatrix(Minor, C)
+    PMinor = pseudo_matrix(Minor, C)
     m1 = det(PMinor)
     simplify(m1)
     push!(dets, numerator(m1))
@@ -975,10 +975,8 @@ end
 
 function sub(P::PMat, rows::UnitRange{Int}, cols::UnitRange{Int})
   m = sub(P.matrix, rows, cols)
-  return PseudoMatrix(m, P.coeffs[rows])
+  return pseudo_matrix(m, P.coeffs[rows])
 end
-
-pseudo_matrix(x...) = PseudoMatrix(x...)
 
 function pseudo_hnf_cohen(P::PMat)
    return _pseudo_hnf_cohen(P, Val{false})
@@ -1139,7 +1137,7 @@ end
 
 function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H = _pseudo_hnf_kb(PseudoMatrix(reverse_cols(P.matrix), P.coeffs), Val{false})
+    H = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val{false})
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
@@ -1153,7 +1151,7 @@ end
 
 function pseudo_hnf_kb_with_transform(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H, U = _pseudo_hnf_kb(PseudoMatrix(reverse_cols(P.matrix), P.coeffs), Val{true})
+    H, U = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val{true})
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
@@ -1441,13 +1439,13 @@ function show(io::IO, P::PMat2)
    end
 end
 
-function PseudoMatrix2(m::Generic.Mat{nf_elem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
+function pseudo_matrix2(m::Generic.Mat{nf_elem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
    ( nrows(m) != length(r) || ncols(m) != length(c) ) && error("Dimensions do not match.")
    return PMat2(m, r, c)
 end
 
 
-function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdIdl})
+function pseudo_matrix2(m::Generic.Mat{NfOrdElem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdIdl})
    mm = change_base_ring(nf(base_ring(m)), m)
    rr = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), r)
    cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
@@ -1551,7 +1549,7 @@ function pseudo_snf_kb!(S::PMat2, U::Generic.Mat{nf_elem}, K::Generic.Mat{nf_ele
    t = base_ring(A)()
    t1 = base_ring(A)()
    t2 = base_ring(A)()
-   H = PseudoMatrix(A, S.row_coeffs)
+   H = pseudo_matrix(A, S.row_coeffs)
    if !iszero(A[1, 1])
       S.row_coeffs[1] = S.row_coeffs[1]*A[1, 1]
       simplify(S.row_coeffs[1])
@@ -1618,13 +1616,13 @@ function show(io::IO, M::ModDed)
    end
 end
 
-ModDed(m::Generic.Mat{nf_elem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+ModDed(m::Generic.Mat{nf_elem}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
 
-ModDed(m::Generic.Mat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+ModDed(m::Generic.Mat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
 
-ModDed(c::Vector{NfOrdFracIdl}) = ModDed(PseudoMatrix(c), true; check = false)
+ModDed(c::Vector{NfOrdFracIdl}) = ModDed(pseudo_matrix(c), true; check = false)
 
-ModDed(c::Vector{NfOrdIdl}) = ModDed(PseudoMatrix(c), true; check = false)
+ModDed(c::Vector{NfOrdIdl}) = ModDed(pseudo_matrix(c), true; check = false)
 
 function in(v::Vector{nf_elem}, M::ModDed)
    P = M.pmatrix
@@ -1666,38 +1664,38 @@ function vcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    m = vcat(P.matrix, Q.matrix)
    c = vcat(P.coeffs, Q.coeffs)
-   return PseudoMatrix(m, c)
+   return pseudo_matrix(m, c)
 end
 
 function vcat(A::Vector{ <: PMat })
   m = vcat([ P.matrix for P in A ])
   c = vcat([ P.coeffs for P in A ]...)
-  return PseudoMatrix(m, c)
+  return pseudo_matrix(m, c)
 end
 
 function vcat(A::PMat...)
   m = vcat([ P.matrix for P in A ])
   c = vcat([ P.coeffs for P in A ]...)
-  return PseudoMatrix(m, c)
+  return pseudo_matrix(m, c)
 end
 
 function hcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    @assert P.coeffs == Q.coeffs
    m = hcat(P.matrix, Q.matrix)
-   return PseudoMatrix(m, P.coeffs)
+   return pseudo_matrix(m, P.coeffs)
 end
 
 function hcat(A::Vector{ <: PMat })
   @assert all( P -> P.coeffs == A[1].coeffs, A)
   m = hcat([ P.matrix for P in A ])
-  return PseudoMatrix(m, A[1].coeffs)
+  return pseudo_matrix(m, A[1].coeffs)
 end
 
 function hcat(A::PMat...)
   @assert all( P -> P.coeffs == A[1].coeffs, A)
   m = hcat([ P.matrix for P in A ])
-  return PseudoMatrix(m, A[1].coeffs)
+  return pseudo_matrix(m, A[1].coeffs)
 end
 
 function +(M::ModDed, N::ModDed)
@@ -1722,7 +1720,7 @@ function intersect(M::ModDed, N::ModDed)
    end
    C1 = hcat(A, deepcopy(A))
    m = zero_matrix(base_ring(B.matrix), nrows(B), ncols(B))
-   C2 = hcat(B, PseudoMatrix(m, B.coeffs))
+   C2 = hcat(B, pseudo_matrix(m, B.coeffs))
    C = vcat(C1, C2)
    # C = [A A; B 0]
    pseudo_hnf_kb!(C, C.matrix, false)
@@ -1731,7 +1729,7 @@ function intersect(M::ModDed, N::ModDed)
          m[i, j] = C.matrix[i + nrows(A), j + ncols(A)]
       end
    end
-   D = PseudoMatrix(m, C.coeffs[nrows(A) + 1:nrows(C)])
+   D = pseudo_matrix(m, C.coeffs[nrows(A) + 1:nrows(C)])
    MN = ModDed(D, true; check = false)
    simplify_basis!(MN)
    return MN

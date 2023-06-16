@@ -157,14 +157,14 @@ Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
 """
 function fractional_ideal(O::NfRelOrd{T, S, U}, M::Generic.Mat{T}) where {T, S, U}
   coeffs = deepcopy(basis_pmatrix(O, copy = false)).coeffs
-  return fractional_ideal(O, PseudoMatrix(M, coeffs))
+  return fractional_ideal(O, pseudo_matrix(M, coeffs))
 end
 
 function fractional_ideal(O::NfRelOrd{T, S, U}, A::Vector{U}) where {T, S, U}
   if all(iszero, A)
     M = zero_matrix(base_field(nf(O)), degree(O), degree(O))
     pb = pseudo_basis(O)
-    return NfRelOrdFracIdl{T, S, U}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
+    return NfRelOrdFracIdl{T, S, U}(O, pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
   end
 
   return sum(fractional_ideal(O, a) for a in A if !iszero(a))
@@ -175,13 +175,13 @@ function fractional_ideal(O::NfRelOrd{T, S, U}, x::U) where {T, S, U}
   pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_field(nf(O)), d, d)
   if iszero(x)
-    return NfRelOrdFracIdl{T, S, U}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
+    return NfRelOrdFracIdl{T, S, U}(O, pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
   end
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
   end
   M = M*basis_mat_inv(O, copy = false)
-  PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
+  PM = pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
   return NfRelOrdFracIdl{T, S, U}(O, PM)
 end
@@ -368,7 +368,7 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
       C[(i - 1)*d + j] = pba[i][2]*pbb[j][2]
     end
   end
-  PM = PseudoMatrix(M, C)
+  PM = pseudo_matrix(M, C)
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
   if T != nf_elem
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)

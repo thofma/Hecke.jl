@@ -483,7 +483,7 @@ end
 
 function _prime_decomposition_type(fmodp)
   discdeg = _factor_distinct_deg(fmodp)
-  nfacts = sum(x for x in values(discdeg))
+  nfacts = sum(Int[x for x in values(discdeg)])
   res = Array{Tuple{Int, Int}}(undef, nfacts)
   s = 1
   for (k, v) in discdeg

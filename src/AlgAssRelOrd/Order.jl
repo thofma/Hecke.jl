@@ -92,7 +92,7 @@ function assure_has_basis_pmatrix(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
   end
-  O.basis_pmatrix = PseudoMatrix(M, C)
+  O.basis_pmatrix = pseudo_matrix(M, C)
   return nothing
 end
 
@@ -469,7 +469,7 @@ function maximal_order_via_absolute(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   for i = 1:degree(OC)
     elem_to_mat_row!(M, i, BtoA(CtoB(elem_in_algebra(basis(OC, copy = false)[i], copy = false))))
   end
-  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
+  PM = sub(pseudo_hnf(pseudo_matrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
   O = Order(A, PM)
   O.is_maximal = 1
   return O
@@ -539,7 +539,7 @@ function any_order(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <:
   for i = 1:dim(A)
     M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
   end
-  PM = PseudoMatrix(M)
+  PM = pseudo_matrix(M)
   PM = pseudo_hnf(PM, :lowerleft, true)
   O = Order(A, sub(PM, 2:dim(A) + 1, 1:dim(A)))
   return O
@@ -583,12 +583,12 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
       M[i, j] = deepcopy(b[j, 1])
     end
   end
-  PM = PseudoMatrix(M, [pseudo_basis(O, copy = false)[i][2] for i in 1:dim(A)])
+  PM = pseudo_matrix(M, [pseudo_basis(O, copy = false)[i][2] for i in 1:dim(A)])
   PM = pseudo_hnf(PM, :upperright)
 
 
   M = sub(PM.matrix, 1:n, 1:n)
-  PM = PseudoMatrix(M, PM.coeffs[1:n])
+  PM = pseudo_matrix(M, PM.coeffs[1:n])
   U = similar(PM.matrix, 0, 0)
   steinitz_form!(PM, U, false)
 
@@ -618,7 +618,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
     elem_to_mat_row!(N, i, iM*pseudo_basis(O, copy = false)[i][1]*M)
   end
 
-  PN = PseudoMatrix(N, deepcopy(basis_pmatrix(O, copy = false).coeffs))
+  PN = pseudo_matrix(N, deepcopy(basis_pmatrix(O, copy = false).coeffs))
   PN = pseudo_hnf(PN, :lowerleft)
 
   niceorder = Order(A, PN)

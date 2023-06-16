@@ -80,7 +80,7 @@ function assure_has_basis_pmatrix(O::NfRelOrd{T, S, U}) where {T, S, U}
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
   end
-  O.basis_pmatrix = PseudoMatrix(M, C)
+  O.basis_pmatrix = pseudo_matrix(M, C)
   return nothing
 end
 
@@ -499,7 +499,7 @@ end
 
 function EquationOrder(L::NumField)
   M = identity_matrix(base_field(L), degree(L))
-  PM = PseudoMatrix(M)
+  PM = pseudo_matrix(M)
   O = Order(L, PM)
   O.basis_mat_inv = M
   O.is_equation_order = true
@@ -508,7 +508,7 @@ end
 
 function EquationOrder(L::NfRel{nf_elem})
   M = identity_matrix(base_field(L), degree(L))
-  PM = PseudoMatrix(M)
+  PM = pseudo_matrix(M)
   O = Order(L, PM)
   O.basis_mat_inv = M
   O.is_equation_order = true
@@ -685,7 +685,7 @@ function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}
 
     Umodp = divexact(Tmodp, d)
     U = fq_poly_to_nf_elem_poly(Kx, immF, Umodp)
-    PM = PseudoMatrix(representation_matrix(a*U(gen(L))), [ K(1)*OK for i = 1:degree(O) ])
+    PM = pseudo_matrix(representation_matrix(a*U(gen(L))), [ K(1)*OK for i = 1:degree(O) ])
     PN = vcat(basis_pmatrix(O), PM)
     PN = sub(pseudo_hnf_full_rank_with_modulus(PN, p, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
     OO = typeof(O)(L, PN)
@@ -802,7 +802,7 @@ function MaximalOrder(O::NfRelOrd{S, T, U}) where {S, T, U <: NonSimpleNumFieldE
     B[i] = BK
   end
   Bp = product_pseudobasis(B)
-  MOstart = PseudoMatrix(basis_matrix(U[x[1] for x in Bp]), fractional_ideal_type(Obase_K)[x[2] for x in Bp])
+  MOstart = pseudo_matrix(basis_matrix(U[x[1] for x in Bp]), fractional_ideal_type(Obase_K)[x[2] for x in Bp])
   Ostart = Order(L, MOstart)
   lp = ideal_type(Obase_K)[]
   for i = 1:length(fields)
@@ -940,7 +940,7 @@ function non_simple_order(O::NfRelOrd, m::NumFieldMor{<:NfRel, <:NfRelNS})
   for i = 1:d
     elem_to_mat_row!(M, i, m(L(B[i])))
   end
-  PM = pseudo_hnf(PseudoMatrix(M, Hecke.basis_pmatrix(O).coeffs), :lowerleft, true)
+  PM = pseudo_hnf(pseudo_matrix(M, Hecke.basis_pmatrix(O).coeffs), :lowerleft, true)
   return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1]), elem_type(L_ns)}(L_ns, PM)
 end
 
@@ -1027,7 +1027,7 @@ function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{NfRelElem
       append!(bas, b)
       if length(bas) >= n
         BK = basis_matrix(bas)
-        B = pseudo_hnf(PseudoMatrix(BK), :lowerleft)
+        B = pseudo_hnf(pseudo_matrix(BK), :lowerleft)
         rk = nrows(BK) - n + 1
         while is_zero_row(BK, rk)
           rk += 1
@@ -1123,7 +1123,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
       if isempty(els_to_add)
         break
       end
-      BK = PseudoMatrix(basis_matrix(els_to_add))
+      BK = pseudo_matrix(basis_matrix(els_to_add))
       BK = vcat(B, BK)
       B = pseudo_hnf(BK, :lowerleft, true)
       rk = nrows(BK) - n + 1
@@ -1185,7 +1185,7 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   u = divrem(t, d)[1]
   U = map_coefficients(K, map_coefficients(x -> x.elem, u), parent = Kx)
   M = representation_matrix(pi*L(U))
-  PM = PseudoMatrix(representation_matrix(pi*L(U)), [ K(1)*OK for i = 1:degree(O) ])
+  PM = pseudo_matrix(representation_matrix(pi*L(U)), [ K(1)*OK for i = 1:degree(O) ])
   BM = basis_pmatrix(O)
   PN = vcat(BM, PM)
   PN = sub(pseudo_hnf_full_rank_with_modulus(PN, P, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
