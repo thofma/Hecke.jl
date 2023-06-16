@@ -73,7 +73,7 @@ function is_maximal(O::AlgAssAbsOrd)
     if !(typeof(A) <: AlgGrp) && j == 1
       continue
     end
-    d2 = discriminant(pmaximal_overorder(O, Int(p)))
+    d2 = discriminant(pmaximal_overorder(O, p))
     if d != d2
       O.is_maximal = 2
       return false
@@ -695,7 +695,7 @@ function pmaximal_overorder_meataxe(O::AlgAssAbsOrd{S, T}, p::Union{ZZRingElem, 
   return O
 end
 
-function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Int)
+function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Union{ZZRingElem, Int})
   #First, the head order by computing the pradical and its ring of multipliers
   d = discriminant(O)
   @vtime :AlgAssOrd 1 I = pradical(O, p)
@@ -814,7 +814,7 @@ function new_maximal_order(O::AlgAssAbsOrd{S, T}, cache_in_substructures::Bool =
       if mod(d, p^2) != 0
         continue
       end
-      OO += pmaximal_overorder(O, Int(p))
+      OO += pmaximal_overorder(O, p)
     end
     OO.is_maximal = 1
   end
@@ -850,11 +850,11 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
       if mod(d, p^2) != 0
         continue
       end
-      OO += pmaximal_overorder(O, Int(p))
+      OO += pmaximal_overorder(O, p)
     end
 
     for (p, _) in factor(ppio(discriminant(OO), ZZ(degree(O)))[2])
-      OO += pmaximal_overorder(O, Int(p))
+      OO += pmaximal_overorder(O, p)
     end
 
     OO.is_maximal = 1

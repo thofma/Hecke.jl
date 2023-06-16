@@ -115,29 +115,118 @@ end
     saturate(A::ZZMatrix) -> ZZMatrix
 
 Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \cap
-\mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of rows of
-$A$.
+\mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of columns
+of $A$.
 
-Equivalently, return $TA$ for an invertible rational matrix $T$ such that $TA$
-is integral and the elementary divisors of $TA$ are all trivial.
+Equivalently, return $TA$ (minus zero rows) for an invertible rational matrix
+$T$ such that $TA$ is integral and the elementary divisors of $TA$ are all
+trivial.
+
+# Examples
+
+```jldoctest
+julia> saturate(ZZ[1 2 3;4 5 6;7 0 7])
+[1    2    3]
+[1    1    1]
+[0   -1   -1]
+
+julia> saturate(ZZ[1 2 3;4 5 6;7 8 9])
+[1   2   3]
+[1   1   1]
+
+julia> saturate(ZZ[1 2 3;4 5 6])
+[1   2   3]
+[1   1   1]
+
+julia> saturate(ZZ[1 2;3 4;5 6])
+[1   2]
+[1   1]
+
+```
 """
-function saturate(A::ZZMatrix)
-  #row saturation: want
-  #  TA in Z, T in Q and elem_div TA = [1]
-  #
-  #  AT = H (in HNF), then A = HT^-1 and H^-1A = T^-1
-  # since T is uni-mod, H^-1 A is in Z with triv. elm. div
-  H = transpose(A)
-  H = hnf!(H)
-  H = sub(H, 1:ncols(H), 1:ncols(H))
-    ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), H, H)
-  Hi, d = pseudo_inv(H)
-  S = Hi*A
-  divexact!(S, S, d)
-  #@hassert :HNF 1  d*Sd == S
-  return S
+saturate(A::ZZMatrix) = transpose(column_saturate(transpose(A)))
+column_saturate(A::ZZMatrix) = hnf_with_column_saturate_and_rank(A)[2]
+function hnf_with_column_saturate_and_rank(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix, Int}
+  # Let UA = [H; 0matrix] in HNF and SH = A = U⁻¹[H; 0matrix].
+  # We have S == U⁻¹[:, 1:rank(H)] in ZZ with trivial elementary divisors.
+  # For any invertible H' with HH' = 1, also S = SHH' = AH'.
+  H = hnf(A)
+  k, p = pivots_of_ref(H)
+  ps = 1:findlast(p) # `findall(p)` impossible in `view`
+  return H, solve_left(view(H, 1:k, ps), view(A, :, ps)), k
 end
+
+function hnf_with_transform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
+  # Typically the entries of T = S⁻¹ will explode compared to A, S, and U.
+  # Thus, `inv(S)` needs the larger part of the runtime here.
+  # We may improve this in the case, extra columns were added.
+  H, S = hnf_with_backtransform_via_saturate(A)
+  return H, inv(S)
+end
+
+function hnf_with_backtransform_via_saturate(A::ZZMatrix) :: Tuple{ZZMatrix, ZZMatrix}
+  # Want (H, U) from UA = H. As computing U along the way gets slow,
+  # instead compute U⁻¹ satisfying A = U⁻¹H after the fact from H.
+  # If H has full row rank, the solution S to SH = A is U⁻¹.
+  # Otherwise, the columns of S after the first rank(H) get multiplied with zero.
+  # So, we may choose them arbitrarily, and must choose them s.t. S becomes unimodular.
+  # TODO Find out, how to choose them efficiently.
+  # Most of the computation time goes into the HNF.
+  m = nrows(A); k = 0
+  H, S, k = hnf_with_column_saturate_and_rank(A)
+  while k != m
+    # Probably not efficient, but working.
+    # We could also add the columns to A for the same effect.
+    A = add_random_cols(S, m-k)
+    # This needs some time again:
+    h, S, k = hnf_with_column_saturate_and_rank(A)
+    # The following holds, due to S being unimodular:
+    @assert h[1:k, 1:k] == identity_matrix(base_ring(h), k)
+  end
+  return H, S
+end
+
+add_random_rows(A::MatrixElem, k::Int) = [A; rand(MatrixSpace(base_ring(A), k, ncols(A)), -1:1)]
+add_random_cols(A::MatrixElem, k::Int) = [A rand(MatrixSpace(base_ring(A), nrows(A), k), -1:1)]
+# May fail, but faster:
+# add_guessed_rows(A::MatrixElem, k::Int) = (R = base_ring(A); m = nrows(A); [A [zero(A, m-k, k); identity_matrix(R, k)]])
+# Deterministic, but needs an extra rref computation:
+function add_independent_rows(A::MatrixElem)
+  rk, R, = rref(A)
+  needed_rows = ncols(A) - rk
+  c = non_pivot_cols_of_ref(R)
+  @assert length(c) == needed_rows
+  B = zero(A, nrows(A) + needed_rows, ncols(A))
+  B[axes(A)...] = A
+  for (i, j) in zip(nrows(A)+1:nrows(B), c)
+    B[i, j] = one(base_ring(B))
+  end
+  return B
+end
+add_independent_cols(A::MatrixElem) = transpose!(add_independent_rows(transpose(A)))
+
+# H must be in row echolon form
+function pivots_of_ref(H::MatrixElem) :: Tuple{Int, BitVector}
+  p = falses(ncols(H))
+  i = 1
+  for j in axes(H, 2)
+    i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (p[i] = true; i+=1)
+  end
+  return i-1, p
+end
+function rank_of_ref(H::MatrixElem)
+  i = 1
+  for j in axes(H, 2)
+    i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (i+=1)
+  end
+  return i-1
+end
+pivot_cols_of_ref(H::MatrixElem) = findall(pivots_of_ref(H)[2])
+non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
+
+transpose!(A::Union{ZZMatrix, QQMatrix}) = is_square(A) ? transpose!(A, A) : transpose(A)
 
 function transpose!(A::ZZMatrix, B::ZZMatrix)
   ccall((:fmpz_mat_transpose, libflint), Nothing,
