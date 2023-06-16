@@ -211,7 +211,7 @@ julia> infinite_places(K)
 ```
 """
 function infinite_places(K::NumField)
-  return infinite_place.(complex_embeddings(K, conjugates = false))
+  return place_type(K)[infinite_place(i) for i in complex_embeddings(K, conjugates = false)]
 end
 
 @doc raw"""
@@ -230,7 +230,7 @@ julia> infinite_places(K)
  Infinite place corresponding to (Complex embedding corresponding to 2.24 of real quadratic field defined by x^2 - 5)
 ```
 """
-real_places(K::NumField) = infinite_place.(real_embeddings(K))
+real_places(K::NumField) = place_type(K)[infinite_place(i) for i in real_embeddings(K)]
 
 @doc raw"""
     complex_places(K::NumField) -> Vector{InfPlc}

@@ -91,7 +91,7 @@ end
     Ms[i, i - 1] = K(1)
     Cs[i] = ideal(OK, K(QQFieldElem(1, 2)))
   end
-  Bs = Hecke.PseudoMatrix(Ms, Cs)
+  Bs = Hecke.pseudo_matrix(Ms, Cs)
   @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
 
@@ -109,7 +109,7 @@ end
     Ms[i, i - 4] = K(3)
     Cs[i] = ideal(OK, K(QQFieldElem(1, 4)))
   end
-  Bs = Hecke.PseudoMatrix(Ms, Cs)
+  Bs = Hecke.pseudo_matrix(Ms, Cs)
   @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
 
@@ -152,7 +152,7 @@ end
   f1 = x1^2 + 28x1 + 36
    K1, a1 = number_field(f1, "a1", cached = false)
   OK1 = maximal_order(K1)
-  PM1 = PseudoMatrix(matrix(Q1, [1 0; 2 1]), [ Q1(1)*Z1, Q1(QQFieldElem(1, 4))*Z1 ])
+  PM1 = pseudo_matrix(matrix(Q1, [1 0; 2 1]), [ Q1(1)*Z1, Q1(QQFieldElem(1, 4))*Z1 ])
   @test basis_pmatrix(OK1, copy = false) == PM1
 
   Q2, q2 = number_field(x1, "q2", cached = false)
@@ -161,7 +161,7 @@ end
   f2 = x2^2 + 28x2 + 36
    K2, a2 = number_field(f2, "a2", cached = false)
   OK2 = maximal_order(K2)
-  PM2 = PseudoMatrix(matrix(Q2, [1 0; 2 1]), [ Q2(1)*Z2, Q2(QQFieldElem(1, 4))*Z2 ])
+  PM2 = pseudo_matrix(matrix(Q2, [1 0; 2 1]), [ Q2(1)*Z2, Q2(QQFieldElem(1, 4))*Z2 ])
   @test basis_pmatrix(OK2, copy = false) == PM2
 
   #Q3, q3 = number_field(x2, "q3")
@@ -170,7 +170,7 @@ end
   #f3 = x3^2 + 28x3 + 36
   # K3, a3 = number_field(f3, "a3")
   #OK3 = maximal_order(K3)
-  #PM3 = PseudoMatrix(matrix(Q3, [1 0; 2 1]), [ Q3(1)*Z3, Q3(QQFieldElem(1, 4))*Z3 ])
+  #PM3 = pseudo_matrix(matrix(Q3, [1 0; 2 1]), [ Q3(1)*Z3, Q3(QQFieldElem(1, 4))*Z3 ])
   #@test basis_pmatrix(OK3, copy = false) == PM3
 end
 

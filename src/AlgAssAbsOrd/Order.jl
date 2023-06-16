@@ -431,6 +431,7 @@ function rand(rng::AbstractRNG,
               sp::SamplerTrivial{<:Make2{<:RingElem,<:AlgAssAbsOrd,<:UnitRange}})
   O, R = sp[][1:2]
   O(map(ZZRingElem, rand(rng, R, degree(O))))
+
 end
 
 RandomExtensions.make(O::AlgAssAbsOrd, n::IntegerUnion) =

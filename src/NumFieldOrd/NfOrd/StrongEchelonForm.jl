@@ -652,7 +652,7 @@ function test_pseudohnf()
       end
     end
 
-    pm = PseudoMatrix(matrix(K, 5, 5, [ rand(-2^10:2^10) for i in 1:25]), rand(lp, 5))
+    pm = pseudo_matrix(matrix(K, 5, 5, [ rand(-2^10:2^10) for i in 1:25]), rand(lp, 5))
 
     @time d = numerator(det(pm))
 

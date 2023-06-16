@@ -70,6 +70,8 @@
 
 @deprecate fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool) where {T, S, U} fractional_ideal(O, M; M_in_hnf)
 
+@deprecate PseudoMatrix pseudo_matrix
+
 # Things that moved to Nemo
 
 # > 0.18.1

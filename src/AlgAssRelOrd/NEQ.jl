@@ -446,7 +446,7 @@ function _issubmodule(modules::Vector{<: PMat}, O::NfRelOrd, LtoA::NfRelToAbsAlg
   for i = 1:length(B)
     elem_to_mat_row!(M, i, LtoA(B[i]))
   end
-  PM = pseudo_hnf_kb(PseudoMatrix(M), :lowerleft)
+  PM = pseudo_hnf_kb(pseudo_matrix(M), :lowerleft)
   for i = 1:nrows(PM)
     if !is_zero_row(PM.matrix, i)
       PM = sub(PM, i:nrows(PM), 1:ncols(PM))

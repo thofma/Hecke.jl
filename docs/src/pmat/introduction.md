@@ -45,9 +45,9 @@ into one in pseudo-hnf while maintaining the module.
 In general to create a `PMat` one has to specify a matrix and a vector of ideals:
 
 ```@docs
-PseudoMatrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
-PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
-PseudoMatrix(m::Generic.Mat{nf_elem})
+pseudo_matrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
+pseudo_matrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
+pseudo_matrix(m::Generic.Mat{nf_elem})
 ```
 (Those functions are also available as `pseudo_matrix`)
 ## Operations

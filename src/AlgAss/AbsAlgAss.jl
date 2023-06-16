@@ -609,9 +609,11 @@ end
 
 Random.gentype(::Type{T}) where {T<:AbsAlgAss} = elem_type(T)
 
-function rand(rng::AbstractRNG, Asp::Random.SamplerTrivial{<:AbsAlgAss{T}}) where T
+function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbsAlgAss{T}}
   A = Asp[]
-  c = rand(rng, base_ring(A), dim(A))
+  c = [rand(rng, base_ring(A)) for i in 1:dim(A)]
+#  c = rand(rng, base_ring(A), dim(A))
+#  Using the above makes @inferred Random.rand(Random.GLOBAL_RNG, -1:1, 10) fail
   return A(c)
 end
 

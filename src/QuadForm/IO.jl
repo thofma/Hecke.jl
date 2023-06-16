@@ -179,7 +179,7 @@ function to_magma(io::IO, L::HermLat; target = "L")
       println(io, bas, ">];")
     end
   end
-  println(io, "M := Module(PseudoMatrix(C, M));")
+  println(io, "M := Module(pseudo_matrix(C, M));")
   println(io, "$target := HermitianLattice(M, F);")
 end
 
@@ -214,7 +214,7 @@ function to_magma(io::IO, L::QuadLat; target = "L")
       println(io, bas, ">];")
     end
   end
-  println(io, "M := Module(PseudoMatrix(C, M));")
+  println(io, "M := Module(pseudo_matrix(C, M));")
   println(io, "$target := LatticeModule(M, F);")
 end
 
