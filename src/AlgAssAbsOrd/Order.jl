@@ -842,6 +842,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
     OO = _maximal_order_via_decomposition(O)
   else
     d = discriminant(O)
+    @assert degree(O) < 2^31 # squares do not overflow
     fac = factor(degree(O)) # the order of the group
 
     OO = O
