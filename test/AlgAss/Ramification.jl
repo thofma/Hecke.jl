@@ -126,9 +126,11 @@
     QQi, i = cyclotomic_field(4, :i)
     QQi2x2 = matrix_algebra(QQi, 2)
     QQi2x2i = AlgAss(QQi, i .* multiplication_table(QQi2x2))
+    QQi2x2ip1 = AlgAss(QQi, (i+1) .* multiplication_table(QQi2x2))
 
     @test schur_index(QQi2x2) == 1 # harmless
     @test schur_index(QQi2x2i) == 1
+    @test schur_index(QQi2x2ip1) == 1
 
     # A usecase where QQi2x2i can pop up
     X = zero_matrix(QQ, 4, 4)
