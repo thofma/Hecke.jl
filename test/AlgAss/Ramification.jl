@@ -118,4 +118,21 @@
 
   A = matrix_algebra(QQ, 2)
   @test schur_index(A) == 1
+
+  @testset "ignore complex embeddings" begin
+    # The schur index of QQ[i]^{2×2} is 1
+    # Test this for various ways of writing QQ[i]^{2×2}
+
+    X = zero_matrix(QQ, 4, 4)
+    Y = zero_matrix(QQ, 4, 4)
+    IM = QQ[0 -1;1 0]
+    X[1:2,1:2] = Y[1:2,3:4] = Y[3:4,1:2] = IM
+    QQIM2x2 = matrix_algebra(QQ, [X, Y])
+    QQIM2x2overQQi = Hecke._as_algebra_over_center(QQIM2x2)
+
+    QQi, i = cyclotomic_field(4, :i)
+    QQi2x2 = matrix_algebra(QQi, 2)
+    QQi2x2i = AlgAss(QQi, i * multiplication_table(QQi2x2))
+    @test schur_index(QQIM2x2overQQi) == schur_index(QQi2x2i) == schur_index(QQi2x2) == 1
+  end
 end
