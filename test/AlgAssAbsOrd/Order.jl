@@ -206,4 +206,11 @@
     M = maximal_order(R)
     @test (@inferred index(R, M)) == 2
   end
+
+  @testset "numbers larger than 2^$p0" for p0 in [32, 64]
+    p = next_prime(ZZ(2)^p0)
+    A = matrix_algebra(QQ, [QQ[0 1;p^4 0]])
+    O = maximal_order(A)
+    @test discriminant(O) == 1
+  end
 end
