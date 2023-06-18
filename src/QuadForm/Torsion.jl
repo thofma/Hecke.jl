@@ -386,9 +386,29 @@ end
 
 ################################################################################
 #
-#  Equality
+#  Equalities and hashes
 #
 ################################################################################
+
+# To compare torsion quadratic module defined by quotients of lattices (defined
+# in a same quadratic space), we just compare the top and the bottom lattices as
+# embedded in the fixed ambient space.
+# Of course, for a similar quotient one could mix up change the moduli for the
+# given form, so we require those moduli to agree on both sides.
+function Base.:(==)(S::TorQuadModule, T::TorQuadModule)
+  modulus_bilinear_form(S) != modulus_bilinear_form(T) && return false
+  modulus_quadratic_form(S) != modulus_quadratic_form(T) && return false
+  relations(S) != relations(T) && return false
+  return cover(S) == cover(T)
+end
+
+# Follow precisely the equlity test above
+function Base.hash(T::TorQuadModule, u::UInt)
+  u = Base.hash(modulus_bilinear_form(T), u)
+  u = Base.hash(modulus_quadratic_form(T), u)
+  u = Base.hash(relations(T), u)
+  return Base.hash(cover(T), u)
+end
 
 function Base.:(==)(a::TorQuadModuleElem, b::TorQuadModuleElem)
   if parent(a) !== parent(b)
@@ -396,6 +416,15 @@ function Base.:(==)(a::TorQuadModuleElem, b::TorQuadModuleElem)
   else
     return data(a) == data(b)
   end
+end
+
+# Elements in the same parents and with the same data. Even though the equality
+# of the parents is soft, the "data" comparison enforces strong equality of the
+# parents (`===`) because of we want strong equality on the underlying abelian
+# group structure.
+function Base.hash(a::TorQuadModuleElem, u::UInt)
+  h = xor(hash(parent(a)), hash(data(a)))
+  return xor(h, u)
 end
 
 iszero(a::TorQuadModuleElem) = iszero(a.data)

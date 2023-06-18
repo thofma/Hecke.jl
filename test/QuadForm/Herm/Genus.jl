@@ -582,3 +582,19 @@ end
   @test all(p -> sig[p] == sig2[p], S)
 end
 
+@testset "Hashes" begin
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  f = x - 1
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  g = t^2 + 3
+  E, b = number_field(g, "b", cached = false)
+  D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
+  L = hermitian_lattice(E, gens, gram = D)
+  p1 = minimum(support(3*maximal_order(E))[1])
+  p2 = minimum(support(2*maximal_order(E))[1])
+  @test length(unique!([Hecke._genus(L), genus(L)])) == 1
+  @test length(unique!([genus(L, p1), genus(L, p1)])) == 1
+  @test length(unique!([genus(L, p2), genus(L, p2)])) == 1
+end

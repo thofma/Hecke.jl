@@ -195,3 +195,18 @@
     end
   end
 end
+
+@testset "Hashes" begin
+  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  f = x - 1;
+  K, a = number_field(f, "a", cached = false)
+  D = matrix(K, 3, 3, [4, 0, 0, 0, 10, 0, 0, 0, 20]);
+  gens = Vector{nf_elem}[map(K, [0, 1, 0]), map(K, [0, 1, 0]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, -1//2, -1//4]), map(K, [-5//4, -1//2, -1//4])]
+  L = quadratic_lattice(K, gens, gram = D)
+  L2 = lattice(ambient_space(L), pseudo_matrix(L))
+  p1 = support(5*maximal_order(K))[1]
+  p2 = support(2*maximal_order(K))[1]
+  @test length(unique!([genus(L), genus(L2)])) == 1
+  @test length(unique!([genus(L, p1), genus(L, p1)])) == 1
+  @test length(unique!([genus(L, p2), genus(L, p2)])) == 1
+end

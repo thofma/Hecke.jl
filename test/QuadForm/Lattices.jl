@@ -359,3 +359,9 @@ end
   @test_throws ArgumentError trace_lattice_with_isometry(E8, order = 3)
 end
 
+@testset "Hashes" begin
+  E, b = cyclotomic_field_as_cm_extension(14)
+  V = hermitian_space(E, 2)
+  L = lattice(rescale(V, b+inv(b)))
+  @test length(unique!([L, intersect(L, L)])) == 1
+end
