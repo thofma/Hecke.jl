@@ -119,15 +119,14 @@ function schur_index(A::AbsAlgAss{QQFieldElem}, ::PosInf)
   @req iscentral(A) "Algebra must be central"
   @req issimple(A) "Algebra must be simple"
 
-  if dim(A) % 4 != 0
-    return 1
-  end
+  dim(A) % 4 == 0 || return 1
 
-  x = trace_signature(A)
+  x, = trace_signature(A)
   n = root(dim(A), 2)
-  if x[1] == divexact(n * (n + 1), 2)
+  if x == divexact(n * (n+1), 2)
     return 1
   else
+    @assert x == divexact(n * (n-1), 2)
     return 2
   end
 end
@@ -140,10 +139,10 @@ function schur_index(A::AbsAlgAss{nf_elem}, P::InfPlc)
 
   x, = trace_signature(A, P)
   n = root(dim(A), 2)
-  if x == n * (n+1) / 2
+  if x == divexact(n * (n+1), 2)
     return 1
   else
-    @assert x == n * (n-1) / 2
+    @assert x == divexact(n * (n-1), 2)
     return 2
   end
 end
