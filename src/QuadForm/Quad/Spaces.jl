@@ -818,6 +818,7 @@ is_isotropic(V::QuadSpace{QQField,QQMatrix}, p::Int) = is_isotropic(V, ZZ(p))
 is_isotropic(V::QuadSpace{QQField,QQMatrix}, p::PosInf) = _isisotropic(diagonal(V), p)
 
 function is_isotropic(V::QuadSpace, p)
+  @req is_prime(p) "p must be prime"
   @hassert :Lattice 1 base_ring(V) == nf(order(p))
   d = det(V)
   n = rank(V)
@@ -829,7 +830,7 @@ function is_isotropic(V::QuadSpace, p)
   elseif n == 2
     return is_local_square(-d, p)
   elseif n == 3
-    return hasse_invariant(V, p) == hilbert_symbol(K(-1), K(-1), p)
+    return hasse_invariant(V, p) == hilbert_symbol(K(-1), -d, p)
   elseif n == 4
     return !is_local_square(d, p) || (hasse_invariant(V, p) == hilbert_symbol(K(-1), K(-1), p))
   else
