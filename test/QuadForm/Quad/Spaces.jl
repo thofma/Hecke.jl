@@ -510,3 +510,17 @@ end
   end
   S, inj, proj = @inferred biproduct(V, V, V)
 end
+
+@testset "fix is_isotropic" begin
+  # Example Chapter 4, 1. (i) from Cassels
+  V = quadratic_space(QQ, diagonal_matrix(QQ, [5,-1,-3]))
+  # So by Cassels, Lemma 2.5, V is isotropic at all primes except 3 and 5
+  @test hilbert_symbol(QQ(-1), QQ(-15), ZZ(3)) != hasse_invariant(V, 3)
+  # What was previously implemented was then wrong because of the following
+  # inequality
+  @test hilbert_symbol(QQ(-1), QQ(-1), ZZ(3)) != hilbert_symbol(QQ(-1), QQ(-15), ZZ(3))
+  @test !is_isotropic(V, 3)
+  @test hilbert_symbol(QQ(-1), QQ(-15), ZZ(5)) != hasse_invariant(V, 5)
+  @test !is_isotropic(V, 5)
+  @test_throws ArgumentError is_isotropic(V, 4)
+end
