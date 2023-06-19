@@ -130,7 +130,7 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
 
   #Case 2: G has a block +- [1 0 ; 0 -1] on the diagonal
   for i = 2:n
-    if G[i-1,i] == 0 && G[i-1,i-1]*G[i,i] == -1
+    if G[i-1,i] == 0 && abs(G[i-1,i-1])==1 &&abs(G[i,i])==1 && sign(G[i-1,i-1])*sign(G[i,i]) == -1
   
       H[i,i-1] = -1
       sol = H[i,:]
