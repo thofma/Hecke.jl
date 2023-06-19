@@ -1,4 +1,4 @@
-# Helper function to check how reduced is a basis
+# Helper function to check how reduced a basis is
 function find_gamma(H::MatElem{QQFieldElem})
   O,M = Hecke._gram_schmidt(H,QQ)
   d = diagonal(O)
