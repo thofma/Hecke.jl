@@ -1,45 +1,45 @@
-############################################################
-# This is (with permission) a port of the program qfsolve.gp by Denis
-# Simon which implemented an algorithm published in
-# D. Simon, Solving quadratic equations using reduced unimodular quadratic forms,
-# Mathematics of Computation, Volume 74, Number 251, January 2005, Pages 1531-1543.
-# (https://www.jstor.org/stable/4100193)
-
-export lll_gram_indef_isotropic, lll_gram_indef_with_transform,
-       lll_gram_indef_ternary_hyperbolic
-
-################################################################################
+###############################################################################
 #
-#  Indefinite LLL reduction
+#  Indefinite LLL-reduction
 #
-################################################################################
+#  This is (with permission) a port of the program qfsolve.gp by Denis
+#  Simon which implemented an algorithm published in
+#  D. Simon, Solving quadratic equations using reduced unimodular quadratic
+#  forms, Mathematics of Computation, Volume 74, Number 251, January 2005,
+#  Pages 1531-1543. (https://www.jstor.org/stable/4100193)
+#
+###############################################################################
 
-################################################################################
-#  Helpful
-################################################################################
+export lll_gram_indef_isotropic
+export lll_gram_indef_ternary_hyperbolic
+export lll_gram_indef_with_transform
 
-#=
+###############################################################################
+#
+#  Helpful functions
+#
+###############################################################################
+
+"""
   _mathnf(A::MatElem{ZZRingElem}) -> MatElem{ZZRingElem}, MatElem{ZZRingElem}
 
-Given a rectangular matrix $A$ of dimension $nxm$. Compute the Hermite normal
-form $H$ of dimension $nxm$ and the unimodular transformation matrix $U$ such
-that $AU$ = $H$. The first n-rank(A) columns are zero and the rest are in
-Gauß-form.
-=#
+Given an integer matrix `A`, compute the lower triangular Hermite normal form
+`H` of `transpose(A)` and a unimodular transformation matrix `U` such that
+`AU` = `transpose(H)`.
+"""
 function _mathnf(A::MatElem{ZZRingElem})
   H, U = hnf_with_transform(reverse_cols(transpose(A)))
   H = reverse_rows(reverse_cols(transpose(H)))
   U = reverse_cols(transpose(U))
-
   return H, U
 end
 
-#=
+"""
     _is_indefinite(A::MatElem{QQFieldElem}) -> Bool
 
-Takes a Gram-matrix of a non-degenerate quadratic form and return true if the
-form is indefinite and otherwise false.
-=#
+Given a full-rank symmetric matrix `A` with rational entries, return whether
+non-degenerate quadratic form with Gram matrix `A` is indefinite.
+"""
 function _is_indefinite(A::MatElem{QQFieldElem})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = diagonal(O)
@@ -50,17 +50,15 @@ function _is_indefinite(A::MatElem{QQFieldElem})
   return bool
 end
 
-################################################################################
-#                           linear algebra
-################################################################################
+"""
+  _complete_to_basis(v::MatElem{ZZRingElem}; redflag::Bool = false)
+                                                      -> MatElem{ZZRingElem}
 
-#=
-  _complete_to_basis(v::MatElem{ZZRingElem}; redflag::Bool = false) -> MatElem{ZZRingElem}
-
-Given a rectangular matrix $nxm$ with $n != m$, compute a unimodular matrix
-with the last column equal to the last column of $v$. If redflag = true,
-it LLL-reduce the $n-m$ first columns if $n > m$.
-=#
+Given a rectangular matrix nxm with `n < m`, compute a unimodular matrix
+with the last row equal to the last row of `v`.
+If `v` is a square matrix, return the identity matrix of size nxn.
+If `redflag` is set to `true`, it LLL-reduces the `m-n` first rows.
+"""
 function _complete_to_basis(v::MatElem{ZZRingElem}, redflag::Bool = false)
   
   n = nrows(v)
@@ -70,42 +68,48 @@ function _complete_to_basis(v::MatElem{ZZRingElem}, redflag::Bool = false)
     return identity_matrix(v)
   end
 
-  U = inv(transpose(_mathnf(transpose(v))[2]))
+  U = inv(_mathnf(v)[2])
 
-  if n == 1 || !redflag || m > n
+  if m == 1 || !redflag || n > m
     return U
   end
 
-  re = U[:,1:n-m]
-  re = transpose(lll_with_transform(transpose(re))[2])
+  re = U[1:m-n, :]
+  re = lll_with_transform(re)[2]
 
-  l = diagonal_matrix(re,one(parent(v[1:m,1:m])))
-  re = U*l
+  l = diagonal_matrix(re,one(parent(v[1:n,1:n])))
+  re = l*U
 
   return re
 end
 
-################################################################################
-#                           Quadratic Equations
-################################################################################
+###############################################################################
+#
+#  Solving indefinite quadratic equations
+#
+###############################################################################
 
-#=
+"""
     _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false)
-                                  -> MatElem{ZZRingElem}, MatElem{ZZRingElem}, MatElem{ZZRingElem}
+                                                         -> MatElem{ZZRingElem},
+                                                            MatElem{ZZRingElem},
+                                                            MatElem{ZZRingElem}
 
 
-Try to compute a non-zero vector in the kernel of $G$ with small coefficients.
-`G` must be symmetric and non-degenerate.
-Return $G,I,sol$ where $I$ is the identity matrix and $sol$ is non-trivial
-norm 0 vector or the empty vector if no non-trivial vector is found.
-If base = true and a norm 0 vector is obtained, return $H * G * H^T$, $H$ and
-$sol$ where $sol$ is the first column of $H$ with norm 0.
-=#
-function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false, check::Bool = false)
+Given a full-rank symmetric matrix `G` with integer entries, try to compute
+an isotropic vector for the integral quadratic form with Gram matrix `G`.
 
-  if check && (!is_symmetric(G) || det(G) == 0)
-      error("G must be non-degenrate and symmetric.")
-  end
+Return `G, I, sol` where `I` is the identity matrix and `sol` is an isotropic
+vector. If no isotropic vector is found, `sol` is by default an empty vector.
+
+If `base` is set to `true` and an isotropic vector `sol` is found, return
+`H * G * H^T`, `H` and `sol` where `H` is unimodular matrix of base change
+whose first row is equal to `sol`.
+"""
+function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
+                                                            check::Bool = false)
+
+  @req !check || (is_symmetric(G) && det(G) != 0) "G must be non-degenerate and symmetric."
 
   n = ncols(G)
   H = identity_matrix(base_ring(G),n)
@@ -113,30 +117,30 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false, 
   #Case 1: A basis vector is isotropic
   for i = 1:n
     if G[i,i] == 0
-      sol = H[:,i]
+      sol = H[i, :]
       if !base
-        return G, transpose(H), transpose(sol)
+        return G, H, sol
       end
-      H[:,i] = H[:,1]
-      H[:,1] = sol
+      H[i,:] = H[1,:]
+      H[1,:] = sol
 
-      return transpose(H)*G*H, transpose(H), transpose(sol)
+      return H*G*transpose(H), H, sol
     end
   end
 
   #Case 2: G has a block +- [1 0 ; 0 -1] on the diagonal
   for i = 2:n
-    if G[i-1,i] == 0 && G[i-1,i-1]*G[i,i] == -1
+    if G[i-1,i] == 0 && abs(G[i-1,i-1])==1 &&abs(G[i,i])==1 && sign(G[i-1,i-1])*sign(G[i,i]) == -1
   
-      H[i-1,i] = -1
-      sol = H[:,i]
+      H[i,i-1] = -1
+      sol = H[i,:]
       if !base
-        return G, transpose(H), transpose(sol)
+        return G, H, sol
       end
-      H[:,i] = H[:,1]
-      H[:,1] = sol
+      H[i,:] = H[1,:]
+      H[1,:] = sol
 
-      return transpose(H)*G*H, transpose(H), transpose(sol)
+      return H*G*transpose(H), H, sol
     end
   end
 
@@ -146,38 +150,44 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false, 
     if det(GG) != 0
       continue
     end
-    sol = kernel(GG)[2][:,1]
+    sol = left_kernel(GG)[2][1,:]
     sol = divexact(sol,content(sol))
-    sol = vcat(sol,zero_matrix(base_ring(sol),n-i,1))
+    sol = hcat(sol,zero_matrix(base_ring(sol),1,n-i))
     if !base
-      return G, transpose(H), transpose(sol)
+      return G, H, transpose(sol)
     end
     H = _complete_to_basis(sol)
-    H[:,n] = - H[:,1]
-    H[:,1] = sol
+    H[n,:] = - H[1,:]
+    H[1,:] = sol
 
-    return transpose(H)*G*H, transpose(H), transpose(sol)
+    return H*G*transpose(H), H, sol
   end
 
-  return G, transpose(H), ZZRingElem[]
+  return G, H, ZZRingElem[]
 end
 
 ###############################################################################
-#                           Quadratic Forms Reduction
+#
+#  Reduction of indefinite form
+#
 ###############################################################################
 
 @doc raw"""
     lll_gram_indef_isotropic(G::MatElem{ZZRingElem}, base::Bool = false)
-                           -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}, MatElem{ZZRingElem}}
+                                                        -> MatElem{ZZRingElem},
+                                                           MatElem{ZZRingElem},
+                                                           MatElem{ZZRingElem}}
 
-Given an indefinite Gram matrix `G` of a matrix with rational entries `M`, such that
-$det(G) \neq 0$, return `G`, `I` and `sol` where `I` is the identity-matrix and
-`sol` is an isotropic vector if such a vector is found.
+Given a full-rank symmetric matrix `G` with integer entries which defines the
+Gram matrix of an indefinite integral quadratic form `L`, return `G`, `I` and
+`sol` where `I` is the identity matrix and `sol` is an isotropic vector of `L`,
+if such a vector is found.
 
-Otherwise compute an LLL-reduction of `M` and return `G`, the transformation matrix
-`U` and `ZZRingElem[]`.
+If no isotropic vector of `L` is found, compute an LLL-reduced basis `U` of `L`
+and return `G`, the LLL-reduced basis matrix `U` and the empty vector `ZZRingElem[]`.
 
-If `base` is set to `true`, the first output is replaced by `U*G*transpose(U)`.
+If `base` is set to `true`, the first output is replaced by `U*G*transpose(U)`,
+the Gram matrix of `L` with respect to `U`.
 
 # Examples
 ```jldoctest
@@ -208,50 +218,53 @@ function lll_gram_indef_isotropic(G::MatElem{ZZRingElem}; base::Bool = false)
 
     M1 = identity_matrix(QQ,n)
     for j = 1:n
-      M1[i,j] = - QD[i,j]//QD[i,i]
+      M1[j,i] = - QD[i,j]//QD[i,i]
     end
 
     M1[i,i] = 1
-    M = M*M1
-    QD = transpose(M1)*QD*M1
+    M = M1*M
+    QD = M1*QD*transpose(M1)
   end
 
   M = inv(M)
-  QD = transpose(M)*map_entries(abs, QD)*M
+  QD = M*map_entries(abs, QD)*transpose(M)
   QD = QD*denominator(QD)
   QD_cont = divexact(QD,content(QD))
   QD_cont = change_base_ring(ZZ,QD_cont)
   rank_QD = rank(QD_cont)
 
-  S = transpose(lll_gram_with_transform(QD_cont)[2])
-  S = S[:,ncols(S)-rank_QD+1:ncols(S)]
+  S = lll_gram_with_transform(QD_cont)[2]
+  S = S[nrows(S)-rank_QD+1:nrows(S), :]
 
-  if ncols(S) < n
+  if nrows(S) < n
     S = _complete_to_basis(S)
   end
 
-  red = _quadratic_form_solve_triv(transpose(S)*G*S; base = base)
+  red = _quadratic_form_solve_triv(S*G*transpose(S); base = base)
   r1 = red[1]
-  r2 = S*transpose(red[2])
+  r2 = red[2]*S
   r3 = red[3]
 
   if r3 != ZZRingElem[]
-    r3 = S*transpose(r3)
-    return r1, transpose(r2), transpose(r3)
+    r3 = r3*S
+    return r1, r2, r3
   end
 
-  return r1, transpose(r2), r3
+  return r1, r2, r3
 end
 
 @doc raw"""
     lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = false)
-                                         -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}}
+                                                        -> MatElem{ZZRingElem},
+                                                           MatElem{ZZRingElem}
 
-Given an indefinite Gram matrix `G` of a matrix with rational entries `M`, such
-that $det(G) \neq 0$, compute an LLL-reduction of `M` and return `(G', U)` where
-`G'` is the Gram matrix associated to the reduction of `M` and `U` is the
-transformation matrix. If `G` is not unimodular, eventually the algorithm
-has to be applied more than once.
+Given a full-rank symmetric matrix `G` with integer entries which defines the
+Gram matrix of an non-degenerate indefinite integral quadratic form `L`, compute
+an LLL-reduced basis `U` of `L` and return `(G', U)` where `G'` is the Gram
+matrix of `L` with respect to `U`.
+
+Note: if `G` is not unimodular, eventually the algorithm has to be applied
+more than once.
 
 # Examples
 ```jldoctest
@@ -268,11 +281,7 @@ julia> lll_gram_indef_with_transform(G)
 """
 function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = false)
 
-  if check
-    if !issymmetric(G) || det(G) == 0 || !_is_indefinite(change_base_ring(QQ,G))
-      error("Input should be a non-degenerate indefinite Gram matrix.")
-    end
-  end
+  @req !check || (issymmetric(G) && det(G) != 0 && _is_indefinite(change_base_ring(QQ,G))) "Input should be a non-degenerate indefinite Gram matrix."
 
   red = lll_gram_indef_isotropic(G; base = true)
 
@@ -281,16 +290,16 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
     return red[1] , red[2]
   end
 
-  U1 = transpose(red[2])
+  U1 = red[2]
   G2 = red[1]
-  U2 = _mathnf(G2[1,:])[2]
-  G3 = transpose(U2)*G2*U2
+  U2 = transpose(_mathnf(G2[1,:])[2])
+  G3 = U2*G2*transpose(U2)
 
   #The first line of the matrix G3 only contains 0, except some 'g' on the right, where g² | det G.
   n = ncols(G)
   U3 = identity_matrix(ZZ,n)
-  U3[1,n] = round(- G3[n,n]//2*1//G3[1,n])
-  G4 = transpose(U3)*G3*U3
+  U3[n,1] = round(- G3[n,n]//2*1//G3[1,n])
+  G4 = U3*G3*transpose(U3)
 
   #The coeff G4[n,n] is reduced modulo 2g
   U = G4[[1,n],[1,n]]
@@ -301,75 +310,75 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
     V = G4[[1,n], 2:(n-1)]
   end
 
-  B = map_entries(round, -inv(change_base_ring(QQ,U))*V )
+  B = map_entries(round, -inv(change_base_ring(QQ,U))*V)
   U4 = identity_matrix(ZZ,n)
 
   for j = 2:n-1
-    U4[1,j] = B[1,j-1]
-    U4[n,j] = B[2,j-1]
+    U4[j,1] = B[1,j-1]
+    U4[j,n] = B[2,j-1]
   end
 
-  G5 = transpose(U4)*G4*U4
+  G5 = U4*G4*transpose(U4)
 
   # The last column of G5 is reduced
   if n  < 4
-    return G5, transpose(U1*U2*U3*U4)
+    return G5, U4*U3*U2*U1
   end
 
   red = lll_gram_indef_with_transform(G5[2:n-1,2:n-1])
   One = identity_matrix(ZZ,1)
-  U5 = diagonal_matrix(One,transpose(red[2]),One)
-  G6 = transpose(U5)*G5*U5
+  U5 = diagonal_matrix(One,red[2],One)
+  G6 = U5*G5*transpose(U5)
 
-  return G6, transpose(U1*U2*U3*U4*U5)
+  return G6, U5*U4*U3*U2*U1
 end
 
 @doc raw"""
     lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool = false)
-                                         -> Tuple{MatElem{ZZRingElem}, MatElem{ZZRingElem}}
+                                                        -> MatElem{ZZRingElem},
+                                                           MatElem{ZZRingElem}
 
-Given a Gram matrix `G` of a matrix with rational entries `M`, where `G` is a 3x3 matrix
-with $det(G) = -1$ and $sign(G) =  [2,1]$, compute an LLL-reduction of `M` and return
-the associated Gram matrix to the reduction together with the transformation matrix.
+Given a full-rank symmetric matrix `G` with integer entries which defines the
+Gram matrix of a non-degenerate ternary hyperbolic integral quadratic form `L`,
+compute an LLL-reduced basis `U` of `L` and return `(G', U)` where `G'` is the
+Gram matrix of `L` with respect to `U`.
 
 # Examples
 ```jldoctest
 julia> G = ZZ[1 0 0; 0 4 3; 0 3 2];
 
 julia> lll_gram_indef_ternary_hyperbolic(G)
-([0 0 -1; 0 1 0; -1 0 0], [0 1 -2; 1 0 0; 0 1 -1])
+([0 0 -1; 0 1 0; -1 0 0], [-1 -1 0; 0 0 -1; -2 -1 0])
 ```
 """
 function lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool = false)
 
-  if check
-    if det(G) != -1 || is_symmetric(G) == false || ncols(G) != 3 || _check_for_lll_gram_indefinite2(change_base_ring(QQ, G)) == false
-      error("Input should be a Gram matrix 3x3 with det(G) = -1 and sign(G) = [2,1].")
-    end
-  end
+  @req !check || (is_symmetric(G) && ncols(G) != 3 && _check_for_lll_gram_indefinite2(change_base_ring(QQ, G))) "Input should be the Gram matrix of a non-degenerate indefinite integral form of rank 3"
 
-  red = lll_gram_indef_isotropic(G; base = true)
+  e = det(G) == -1 ? 1 : -1
+
+  red = lll_gram_indef_isotropic(e*G; base = true)
 
   #We always find an isotropic vector
   U1 = ZZ[0 0 1; 0 1 0; 1 0 0]
-  G2 = transpose(U1)*red[1]*U1
+  G2 = U1*red[1]*transpose(U1)
 
   #G2 has a 0 at the bottom right corner
   g = gcdx(G2[3,1],G2[3,2])
-  U2 = ZZ[g[2] G2[3,2]//g[1] 0; g[3] -G2[3,1]//g[1] 0; 0 0 -1]
-  G3 = transpose(U2)*G2*U2
+  U2 = ZZ[g[2] g[3] 0; G2[3,2]//g[1] -G2[3,1]//g[1] 0; 0 0 -1]
+  G3 = U2*G2*transpose(U2)
 
   #G3 has 0 under the codiagonal
   cc = mod(G3[1,1],2)
-  U3 = ZZ[1 0 0; cc 1 0;round(-(G3[1,1]+cc*(2*G3[1,2]+G3[2,2]*cc))//2//G3[1,3]) round(-(G3[1,2]+cc*G3[2,2])//G3[1,3]) 1]
+  U3 = ZZ[1 cc round(-(G3[1,1]+cc*(2*G3[1,2]+G3[2,2]*cc))//2//G3[1,3]); 0 1 round(-(G3[1,2]+cc*G3[2,2])//G3[1,3]); 0 0 1]
 
-  return transpose(U3)*G3*U3, transpose(U1*U2*U3)*red[2]
+  return e*U3*G3*transpose(U3), red[2]*U3*U2*U1
 end
 
 function _check_for_lll_gram_indefinite2(A::MatElem{QQFieldElem})
   O, M = Hecke._gram_schmidt(A,QQ)
   d = [sign(O[i,i]) for i=1:3]
-  if sum(d) != 1 || any(i -> d[i] == 0,1:3)
+  if abs(sum(d)) != 1 || any(i -> d[i] == 0,1:3)
     return false
   end
   return true
