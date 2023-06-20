@@ -34,7 +34,7 @@
 
 # Deprecated during 0.18.*
 
-@deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZZGenus, LocalZZGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
+@deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZZGenus, ZZLocalGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
 
 @deprecate ideal(A::AbsAlgAss{S}, M::PMat{S, T}, M_in_hnf::Bool) where { S <: NumFieldElem, T } ideal(A, M; M_in_hnf)
 

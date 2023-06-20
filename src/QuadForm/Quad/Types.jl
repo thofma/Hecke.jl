@@ -2,7 +2,7 @@ export QuadGenus
 export QuadLat
 export QuadLocalGenus
 export ZZGenus
-export LocalZZGenus
+export ZZLocalGenus
 
 ###############################################################################
 #
@@ -13,7 +13,7 @@ export LocalZZGenus
 ### Local
 
 @doc raw"""
-    LocalZZGenus
+    ZZLocalGenus
 
 Local genus symbol over a p-adic ring.
 
@@ -45,11 +45,11 @@ Reference: [CS99](@cite) Chapter 15, Section 7.
 - `symbol`: the list of invariants for Jordan blocks `A_t,...,A_t` given
   as a list of lists of integers
 """
-mutable struct LocalZZGenus
+mutable struct ZZLocalGenus
   _prime::ZZRingElem
   _symbol::Vector{Vector{Int}}
 
-  function LocalZZGenus(prime, symbol, check=true)
+  function ZZLocalGenus(prime, symbol, check=true)
     if check
       if prime == 2
         @assert all(length(g)==5 for g in symbol)
@@ -77,10 +77,10 @@ non-degenerate integer_lattice.
 """
 @attributes mutable struct ZZGenus
   _signature_pair::Tuple{Int, Int}
-  _symbols::Vector{LocalZZGenus} # assumed to be sorted by their primes
+  _symbols::Vector{ZZLocalGenus} # assumed to be sorted by their primes
   _representative::ZZLat
 
-  function ZZGenus(signature_pair, symbols::Vector{LocalZZGenus})
+  function ZZGenus(signature_pair, symbols::Vector{ZZLocalGenus})
     G = new()
     G._signature_pair = signature_pair
     sort!(symbols, by = x->prime(x))
