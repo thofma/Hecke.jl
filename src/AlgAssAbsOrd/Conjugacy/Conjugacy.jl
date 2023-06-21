@@ -340,11 +340,15 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     return false, zero_matrix(FlintZZ, 0, 0)
   end
 
+  @vprint :Conjugacy 1 "Computing commutator algebra\n"
   Z = CommutatorAlgebra(A)
+  @vprint :Conjugacy 1 "Computing decomposition\n"
   _compute_decomposition!(Z)
   Ks, ns = _decomposition_type(Z)
   AA = _matrix_algebra(Ks, ns)
+  @vprint :Conjugacy 1 "Computing basis of integral commutator algebra\n"
   O = _basis_of_integral_commutator_algebra(A, A)
+  @vprint :Conjugacy 1 "Computing basis of another integral commutator algebra\n"
   I = _basis_of_integral_commutator_algebra(A, B)
   @vprintln :Conjugacy 1 "Algebra has dimension $(length(O))"
   @vprintln :Conjugacy 1 "Semisimple quotient has dimension $(dim(AA))"
