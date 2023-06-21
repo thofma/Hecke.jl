@@ -32,7 +32,7 @@ matrix_algebra_type(K::Field) = matrix_algebra_type(typeof(K))
 
 matrix_algebra_type(::Type{T}) where {T <: Field} = AlgMat{elem_type(T), dense_matrix_type(elem_type(T))}
 
-# Returns the dimension d of the coefficient_ring of A, so that dim(A) = degree(A)^2 + d.
+# Returns the dimension d of the coefficient_ring of A, so that dim(A) is up to degree(A)^2 * d.
 function dim_of_coefficient_ring(A::AlgMat)
   if base_ring(A) == coefficient_ring(A)
     return 1
@@ -510,6 +510,25 @@ end
 #  Inclusion of matrices
 #
 ################################################################################
+
+@attr function basis_matrix_transform(A::AlgMat)
+  _, U, pivots = basis_matrix_rref(A)
+  return inv(U), pivots
+end
+
+function _matrix_in_algebra(M::S, A::AlgMat{T, S})::Vector{Q} where {T, Q, S<:MatElem{Q}}
+  @assert size(M) == (degree(A), degree(A))
+  U, pivots = basis_matrix_transform(A) # U*basis_matrix(A)[:, pivots] == I
+
+  if coefficient_ring(A) == base_ring(A)
+    ind = CartesianIndices(axes(M))
+    t = [M[I] for I in ind[pivots]] # = M[ind[pivots]] if it were supported
+  else
+    ind = CartesianIndices((axes(M)..., dim_of_coefficient_ring(A)))
+    t = [coefficients(M[I[2], I[3]])[I[1]] for I in ind[pivots]]
+  end
+  return U*t
+end
 
 function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = Val{false}) where {S, T, U}
   if nrows(M) != degree(A) || ncols(M) != degree(A)

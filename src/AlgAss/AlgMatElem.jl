@@ -20,16 +20,10 @@ end
 ################################################################################
 
 function assure_has_coeffs(a::AlgMatElem)
-  if a.has_coeffs
-    return nothing
+  if !a.has_coeffs
+    a.coeffs = _matrix_in_algebra(matrix(a), parent(a))
+    a.has_coeffs = true
   end
-
-  A = parent(a)
-  Ma = matrix(a)
-  b, c = _check_matrix_in_algebra(Ma, A)
-  @assert b "The element is not in the algebra."
-  a.coeffs = c
-  a.has_coeffs = true
   return nothing
 end
 
@@ -235,7 +229,7 @@ end
 
 function (A::AlgMat{T, S})(M::S; check::Bool = true) where {T, S}
   @assert base_ring(M) === coefficient_ring(A)
-  if check 
+  if check
     b, c = _check_matrix_in_algebra(M, A)
     @req b "Matrix not an element of the matrix algebra"
     z = AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
