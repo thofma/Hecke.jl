@@ -105,7 +105,7 @@ end
 
 function *(a::T, b::T) where {T <: AlgMatElem}
   parent(a) != parent(b) && error("Parents don't match.")
-  return parent(a)(matrix(a, copy = false)*matrix(b, copy = false))
+  return parent(a)(matrix(a, copy = false)*matrix(b, copy = false), check = false)
 end
 
 ################################################################################

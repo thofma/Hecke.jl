@@ -166,12 +166,39 @@ function assure_has_multiplication_table(A::AlgMat{T, S}) where { T, S }
     return nothing
   end
 
-  B = basis(A)
   d = dim(A)
+  de = degree(A)
   mt = Array{T, 3}(undef, d, d, d)
+  K = base_ring(A)
+
+  if is_canonical(A) # this is M_n(K)
+    cartesiantolinear = LinearIndices((de, de))
+    lineartocartesian = CartesianIndices((de, de))
+    for i in 1:d
+      itup = lineartocartesian[i]
+      for j in 1:d
+        jtup = lineartocartesian[j]
+        k = 0
+        if itup[2] == jtup[1]
+          k = cartesiantolinear[itup[1], jtup[2]]
+        end
+        for l in 1:d
+          if l == k
+            mt[i, j, l] = one(K)
+          else
+            mt[i, j, l] = zero(K)
+          end
+        end
+      end
+    end
+    A.mult_table = mt
+    return nothing
+  end
+
+  B = basis(A)
   for i in 1:d
     for j in 1:d
-      mt[i, j, :] = coefficients(B[i]*B[j], copy = false)
+      mt[i, j, :] = coefficients(B[i] * B[j], copy = false)
     end
   end
   A.mult_table = mt
@@ -569,7 +596,7 @@ end
 
 function AlgAss(A::AlgMat{T, S}) where {T, S}
   K = base_ring(A)
-  B = AlgAss(K, multiplication_table(A); check=false)
+  B = AlgAss(K, multiplication_table(A), coefficients(one(A)), check = false)
   B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
   AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
