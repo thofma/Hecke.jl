@@ -1756,7 +1756,7 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
   end
   disc = order(T)
   determinant = ZZ(-1)^s_minus * disc
-  local_symbols = LocalZZGenus[]
+  local_symbols = ZZLocalGenus[]
   P = prime_divisors(2 * disc)
   sort!(P) # expects primes in ascending order
   for p in P
@@ -1768,7 +1768,7 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
       G_p = change_base_ring(ZZ, G_p)
       genus_p = genus(G_p, p, valuation(elementary_divisors(D)[end], p))
     else
-      genus_p = LocalZZGenus(p, Vector{Int}[])
+      genus_p = ZZLocalGenus(p, Vector{Int}[])
     end
     rk = rank - length(elementary_divisors(D))
     if rk > 0
@@ -1857,7 +1857,7 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
     for b1 in block1
       for b2 in block2
         sym2[1:3] = [b0, b1, b2]
-        local_symbols[1] = LocalZZGenus(2, copy(sym2))
+        local_symbols[1] = ZZLocalGenus(2, copy(sym2))
         genus = ZZGenus(signature_pair, local_symbols)
         if _isglobal_genus(genus)
           return genus

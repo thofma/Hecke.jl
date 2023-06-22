@@ -95,7 +95,7 @@ represents(G1::ZZGenus, G2::ZZGenus)
 ## Local genus Symbols
 
 ```@docs
-LocalZZGenus
+ZZLocalGenus
 ```
 
 ### Creation
@@ -107,34 +107,34 @@ genus(A::ZZMatrix, p)
 
 ### Attributes
 ```@docs
-prime(S::LocalZZGenus)
-iseven(S::LocalZZGenus)
-symbol(S::LocalZZGenus, scale::Int)
-hasse_invariant(S::LocalZZGenus)
-det(S::LocalZZGenus)
-dim(S::LocalZZGenus)
-rank(S::LocalZZGenus)
-excess(S::LocalZZGenus)
-signature(S::LocalZZGenus)
-oddity(S::LocalZZGenus)
-scale(S::LocalZZGenus)
-norm(S::LocalZZGenus)
-level(S::LocalZZGenus)
+prime(S::ZZLocalGenus)
+iseven(S::ZZLocalGenus)
+symbol(S::ZZLocalGenus, scale::Int)
+hasse_invariant(S::ZZLocalGenus)
+det(S::ZZLocalGenus)
+dim(S::ZZLocalGenus)
+rank(S::ZZLocalGenus)
+excess(S::ZZLocalGenus)
+signature(S::ZZLocalGenus)
+oddity(S::ZZLocalGenus)
+scale(S::ZZLocalGenus)
+norm(S::ZZLocalGenus)
+level(S::ZZLocalGenus)
 ```
 ### Representative
 ```@docs
-representative(S::LocalZZGenus)
-gram_matrix(S::LocalZZGenus)
-rescale(S::LocalZZGenus, a::RationalUnion)
+representative(S::ZZLocalGenus)
+gram_matrix(S::ZZLocalGenus)
+rescale(S::ZZLocalGenus, a::RationalUnion)
 ```
 
 ### Direct sums
 ```@docs
-direct_sum(S1::LocalZZGenus, S2::LocalZZGenus)
+direct_sum(S1::ZZLocalGenus, S2::ZZLocalGenus)
 ```
 
 ### Embeddings/Representations
 ```@docs
-represents(G1::LocalZZGenus, G2::LocalZZGenus)
+represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
 ```
 
