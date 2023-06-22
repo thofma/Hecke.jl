@@ -9,7 +9,7 @@ using Aqua
     project_extras=true,
     stale_deps=(ignore=[:GAP, :Polymake],),
     deps_compat=(ignore=[:GAP, :Polymake],),
-    project_toml_formatting=true,
+    project_toml_formatting=VERSION >= v"1.9",
     piracy=false            # TODO: fix piracy
   )
 end

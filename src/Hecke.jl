@@ -59,8 +59,6 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
 
-using Requires
-
 using LazyArtifacts
 
 using LinearAlgebra
@@ -184,24 +182,6 @@ function __init__()
   global R = _RealRing()
 
   global flint_rand_ctx = flint_rand_state()
-
-  @require GAP="c863536a-3901-11e9-33e7-d5cd0df7b904" begin
-    include("FieldFactory/fields.jl")
-    include("FieldFactory/FrobeniusExtensions.jl")
-    include("ModAlgAss/GAPMeatAxe.jl")
-    #@require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
-    #  import .Revise
-    #  #Revise.track(Hecke, joinpath(pkgdir, "src/FieldFactory/fields.jl"))
-    #  #Revise.track(Hecke, "FieldFactory/abelian_layer.jl")
-    #  #Revise.track(Hecke, "FieldFactory/brauer.jl")
-    #  #Revise.track(Hecke, "FieldFactory/merge.jl")
-    #  #Revise.track(Hecke, "FieldFactory/read_write.jl")
-    #end
-  end
-
-  @require Polymake="d720cf60-89b5-51f5-aff5-213f193123e7" begin
-    include("AlgAssRelOrd/NEQ_polymake.jl")
-  end
 
   resize!(_RealRings, Threads.nthreads())
   for i in 1:Threads.nthreads()
@@ -912,5 +892,35 @@ using .NormRel
 #    include(joinpath("..", "system", "precompile.jl"))
 #  end
 #end
+
+################################################################################
+#
+#  Extended methods by GAPExt
+#
+################################################################################
+
+function fields
+end
+
+function IdGroup
+end
+
+function check_obstruction
+end
+
+function field_context
+end
+
+function primitive_frobenius_extensions
+end
+
+################################################################################
+#
+#  Extended methods by PolymakeExt
+#
+################################################################################
+
+function solve_mixed
+end
 
 end # module

@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - 1.8
+          - 1.9
         julia-arch:
           - x64
         os:
@@ -43,8 +43,9 @@ jobs:
         uses: julia-actions/cache@v1
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@latest
-      - run: julia --color=yes --project -e 'using Pkg; Pkg.add(PackageSpec(name="Polymake")); Pkg.add(PackageSpec(name="GAP"));'
-        #- run: julia --color=yes --project -e 'using Pkg; Pkg.add(PackageSpec(name="Polymake"));'
+      - name: "Install GAP/Polymake"
+        continue-on-error: true
+        run: julia --color=yes -e 'using Pkg; Pkg.add([PackageSpec(name="GAP"), PackageSpec(name="Polymake")]);'
       - name: "Run long tests"
         uses: julia-actions/julia-runtest@latest
         env:
