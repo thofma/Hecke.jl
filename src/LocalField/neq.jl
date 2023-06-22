@@ -272,7 +272,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
     last_val = e*valuation(cur_b-one)
 #    @show expo_mult
     @assert e*valuation(cur_b-one) >= l
-    @assert all(x->e*valuation(x-one) >= l, cur_a)
+    @assert all(x->isone(x) || e*valuation(x-one) >= l, cur_a)
 
     A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
     h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
