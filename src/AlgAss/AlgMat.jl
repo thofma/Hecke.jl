@@ -511,14 +511,12 @@ end
 #
 ################################################################################
 
-@attr function basis_matrix_transform(A::AlgMat)
-  _, U, pivots = basis_matrix_rref(A)
-  return inv(U), pivots
-end
-
 function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
   @assert size(M) == (degree(A), degree(A))
-  U, pivots = basis_matrix_transform(A) # U*basis_matrix(A)[:, pivots] == I
+  _, U, pivots = basis_matrix_rref(A)
+  # U * basis_matrix(A)[:, pivots] == R[:, pivots] == I, thus
+  # U = inv(basis_matrix(A)[:, pivots]). So, for t = M[pivots],
+  # summing (t*U)[i]*basis(A)[i] gives back M, for all M in the basis and hence for all M.
 
   if coefficient_ring(A) == base_ring(A)
     ind = CartesianIndices(axes(M))
@@ -527,7 +525,7 @@ function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
     ind = CartesianIndices((dim_of_coefficient_ring(A), axes(M)...))
     t = [coefficients(M[I[2], I[3]]; copy=false)[I[1]] for I in ind[pivots]]
   end
-  return U*t
+  return t*U
 end
 
 function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = Val{false}) where {S, T, U}
