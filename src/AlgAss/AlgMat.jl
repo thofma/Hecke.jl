@@ -517,6 +517,7 @@ function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
   # U * basis_matrix(A)[:, pivots] == R[:, pivots] == I, thus
   # U = inv(basis_matrix(A)[:, pivots]). So, for t = M[pivots],
   # summing (t*U)[i]*basis(A)[i] gives back M, for all M in the basis and hence for all M.
+  # Note: Unless `isbasis=true` was given in the constructor, basis(A) is already in rref, and U == I.
 
   if coefficient_ring(A) == base_ring(A)
     ind = CartesianIndices(axes(M))

@@ -15,6 +15,11 @@
     @test dim(A) == 4
   end
 
+  @testset "multiplication table" begin
+    M = matrix_algebra(QQ, [matrix(QQ,[4;;])]; isbasis=true)
+    @test multiplication_table(M) == [4;;;]
+  end
+
   @testset "Radical" begin
 
     mats = [[0 0 0 0 0 0 0 0 0 0;
