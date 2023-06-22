@@ -516,7 +516,7 @@ end
   return inv(U), pivots
 end
 
-function _matrix_in_algebra(M::S, A::AlgMat{T, S})::Vector{Q} where {T, Q, S<:MatElem{Q}}
+function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
   @assert size(M) == (degree(A), degree(A))
   U, pivots = basis_matrix_transform(A) # U*basis_matrix(A)[:, pivots] == I
 
@@ -524,8 +524,8 @@ function _matrix_in_algebra(M::S, A::AlgMat{T, S})::Vector{Q} where {T, Q, S<:Ma
     ind = CartesianIndices(axes(M))
     t = [M[I] for I in ind[pivots]] # = M[ind[pivots]] if it were supported
   else
-    ind = CartesianIndices((axes(M)..., dim_of_coefficient_ring(A)))
-    t = [coefficients(M[I[2], I[3]])[I[1]] for I in ind[pivots]]
+    ind = CartesianIndices((dim_of_coefficient_ring(A), axes(M)...))
+    t = [coefficients(M[I[2], I[3]]; copy=false)[I[1]] for I in ind[pivots]]
   end
   return U*t
 end
