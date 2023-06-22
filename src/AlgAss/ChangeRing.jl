@@ -179,7 +179,7 @@ function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
     end
   end
 
-  B = AlgAss(F, mult_table, y)
+  B = AlgAss(F, mult_table, y; check = get_assertion_level(:AlgAss)>0)
   B.is_commutative = is_commutative(A)
 
   return B, AlgAssResMor(B, A, f, absbasis)

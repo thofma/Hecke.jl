@@ -1,5 +1,7 @@
 export is_split, multiplication_table, restrict_scalars, center
 
+add_assertion_scope(:AlgAss)
+
 ################################################################################
 #
 #  Basic field access
@@ -313,9 +315,9 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   if isone(BO[1])
     one = zeros(Fp, r)
     one[1] = Fp(1)
-    A = AlgAss(Fp, mult_table, one)
+    A = AlgAss(Fp, mult_table, one; check = get_assertion_level(:AlgAss)>0)
   else
-    A = AlgAss(Fp, mult_table)
+    A = AlgAss(Fp, mult_table; check = get_assertion_level(:AlgAss)>0)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -975,9 +977,9 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     fl, vv = solve(LL, e.coeffs)
     @assert fl
     #@assert v == vv[1:r]
-    eA = AlgAss(R, mult_table, vv[1:r])
+    eA = AlgAss(R, mult_table, vv[1:r]; check = get_assertion_level(:AlgAss)>0)
   else
-    eA = AlgAss(R, mult_table)
+    eA = AlgAss(R, mult_table; check = get_assertion_level(:AlgAss)>0)
   end
 
   if A.is_commutative == 1
