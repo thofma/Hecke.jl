@@ -243,7 +243,7 @@ function matrix_algebra(R::Ring, n::Int)
     for j = 1:n
       M = zero_matrix(R, n, n)
       M[j, i] = one(R)
-      B[ni + j] = A(M; check = get_assertion_level(:AlgAss)>1)
+      B[ni + j] = A(M, check = false)
     end
   end
   A.basis = B
@@ -274,7 +274,7 @@ function matrix_algebra(R::Ring, S::Ring, n::Int)
       for j = 1:n
         M = zero_matrix(S, n, n)
         M[j, i] = S[k]
-        B[ni + j] = A(M; check = get_assertion_level(:AlgAss)>1)
+        B[ni + j] = A(M, check = false)
       end
     end
   end
@@ -302,12 +302,12 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
     for i = 1:dim(A)
-      bas[i] = A(gens[i]; check = get_assertion_level(:AlgAss)>1)
+      bas[i] = A(gens[i]; check = false)
     end
     A.basis = bas
     return A
   end
-  A.gens = map(x -> A(x,; check = get_assertion_level(:AlgAss)>1), gens)
+  A.gens = map(x -> A(x, check = false), gens)
 
   d = degree(A)
   d2 = degree(A)^2
