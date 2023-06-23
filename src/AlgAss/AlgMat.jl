@@ -1,7 +1,5 @@
 export matrix_algebra
 
-add_assertion_scope(:AlgMat)
-
 ################################################################################
 #
 #  Basic field access

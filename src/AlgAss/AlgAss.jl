@@ -145,7 +145,7 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = 
   A = AlgAss{T}(R, mult_table, one)
   if check
     @req check_associativity(A) "Multiplication table does not define associative operation"
-    @req check_distributivity(A) "Multiplication table does not define associative operation"
+    @req check_distributivity(A) "Multiplication table does not define distributive operation"
   end
   return A
 end
@@ -164,7 +164,7 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = true) where {T}
   end
   if check
     @req check_associativity(A) "Multiplication table does not define associative operation"
-    @req check_distributivity(A) "Multiplication table does not define associative operation"
+    @req check_distributivity(A) "Multiplication table does not define distributive operation"
   end
   return A
 end
