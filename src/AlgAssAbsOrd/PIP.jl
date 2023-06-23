@@ -1459,7 +1459,7 @@ function _my_direct_product(algebras)
     push!(maps, BtoA)
     push!(pre_maps, AtoB)
   end
-  A = AlgAss(K, mt)
+  A = AlgAss(K, mt; check = get_assertion_level(:AlgAss)>0)
   A.decomposition = [ (algebras[i], hom(algebras[i], A, maps[i], pre_maps[i])) for i in 1:length(algebras) ]
   return A
 end

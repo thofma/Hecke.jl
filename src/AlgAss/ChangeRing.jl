@@ -360,7 +360,7 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
   end
 
 
-  B = AlgAss(L, mult_table, y)
+  B = AlgAss(L, mult_table, y; check = get_assertion_level(:AlgAss)>0)
   B.is_commutative = A.is_commutative
 
   BtoA = AlgAssExtMor(B, A, CtoL, basisCinA, basisCinL, iMM, elem_type(A)[A[i] for i in AoverC])

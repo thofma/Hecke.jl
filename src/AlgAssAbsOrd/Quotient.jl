@@ -27,7 +27,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
       mt[i, j, :] = (coordinates(bij) * V)[k:end]
     end
   end
-  quoAlg = AlgAss(QQ, mt)
+  quoAlg = AlgAss(QQ, mt; check = get_assertion_level(:AlgAss)>0)
   ord = Order(quoAlg, basis(quoAlg))
   #
   bminvO = QQMatrix(basis_mat_inv(O))

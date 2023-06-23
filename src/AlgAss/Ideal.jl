@@ -483,7 +483,7 @@ function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
     end
   end
 
-  B = AlgAss(K, mult_table)
+  B = AlgAss(K, mult_table; check = get_assertion_level(:AlgAss)>0)
   AtoB = hom(A, B, NN, N)
   return B, AtoB
 end
@@ -531,7 +531,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   mult_table = _build_subalgebra_mult_table!(A, M)
   # M is now in rref
 
-  B = AlgAss(K, mult_table)
+  B = AlgAss(K, mult_table; check = get_assertion_level(:AlgAss)>0)
   MM = sub(M, 1:dim(B), 1:dim(A))
 
   AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(MM)}(A, B)

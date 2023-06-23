@@ -2045,7 +2045,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
     end
   end
 
-  A = AlgAss(K, mult_tb)
+  A = AlgAss(K, mult_tb; check = get_assertion_level(:AlgAss)>0)
   B = basis(A)
   sigma(a) = A([a.coeffs[2], a.coeffs[1]])
   inv2 = inv(A(2))

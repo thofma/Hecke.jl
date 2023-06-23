@@ -228,7 +228,7 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
       end
     end
   end
-  B = AlgAss(K, mult, one(A).coeffs, check = false)
+  B = AlgAss(K, mult, one(A).coeffs; check = get_assertion_level(:AlgAss)>0)
   B.is_commutative = A.is_commutative
   B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple

@@ -169,7 +169,7 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = true) where {T}
   return A
 end
 
-function AlgAss(R::Ring, d::Int, arr::Vector{T}) where {T}
+function AlgAss(R::Ring, d::Int, arr::Vector{T}; check::Bool = true) where {T}
   if d == 0
     return _zero_algebra(R)
   end
@@ -207,7 +207,7 @@ function AlgAss(f::PolyElem)
   end
   one = map(R, zeros(Int, n))
   one[1] = R(1)
-  A = AlgAss(R, mult_table, one)
+  A = AlgAss(R, mult_table, one; check = get_assertion_level(:AlgAss)>0)
   A.is_commutative = 1
   return A
 end
@@ -444,7 +444,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
     end
   end
 
-  A = AlgAss(Fp, mult_table)
+  A = AlgAss(Fp, mult_table; check = get_assertion_level(:AlgAss)>0)
   if is_commutative(O)
     A.is_commutative = 1
   end
@@ -592,9 +592,9 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   if isone(new_basisO[basis_elts[1]][1])
     one = zeros(Fp, length(basis_elts))
     one[1] = Fp(1)
-    A = AlgAss(Fp, mult_table, one)
+    A = AlgAss(Fp, mult_table, one; check = get_assertion_level(:AlgAss)>0)
   else
-    A = AlgAss(Fp, mult_table)
+    A = AlgAss(Fp, mult_table; check = get_assertion_level(:AlgAss)>0)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -747,9 +747,9 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   if isone(new_basisI[basis_elts[1]][1])
     one = zeros(Fp, length(basis_elts))
     one[1] = Fp(1)
-    A = AlgAss(Fp, mult_table, one)
+    A = AlgAss(Fp, mult_table, one; check = get_assertion_level(:AlgAss)>0)
   else
-    A = AlgAss(Fp, mult_table)
+    A = AlgAss(Fp, mult_table; check = get_assertion_level(:AlgAss)>0)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -823,7 +823,7 @@ function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
   for i = 1:n
     oneA[i + (i - 1)*n] = oneK
   end
-  A = AlgAss(K, mult_table, oneA)
+  A = AlgAss(K, mult_table, oneA; check = get_assertion_level(:AlgAss)>0)
   A.is_commutative = ( n == 1 ? 1 : 2 )
   return A
 end
@@ -1024,7 +1024,7 @@ function subalgebra(A::AlgAss{T}, basis::Vector{AlgAssElem{T, AlgAss{T}}}; is_co
     elem_to_mat_row!(M, i, basis[i])
   end
   mt = _build_subalgebra_mult_table!(A, M, is_commutative = is_commutative)
-  B = AlgAss(base_ring(A), mt)
+  B = AlgAss(base_ring(A), mt; check = get_assertion_level(:AlgAss)>0)
   return B, hom(B, A, sub(M, 1:length(basis), 1:dim(A)))
 end
 
@@ -1413,7 +1413,7 @@ function direct_product(a::AlgAss{T}, _algebras::AlgAss{T}...; task::Symbol = :s
     end
     offset += dd
   end
-  A = AlgAss(base_ring(algebras[1]), mt)
+  A = AlgAss(base_ring(algebras[1]), mt; check = get_assertion_level(:AlgAss)>0)
   if task == :none
     return A
   end
@@ -1506,7 +1506,7 @@ function quaternion_algebra2(K::Field, a::T, b::T) where { T <: FieldElem }
   M[4, 3, 2] = b
   M[4, 4, 1] = -a*b
 
-  return AlgAss(K, M, [ one(K), zero(K), zero(K), zero(K) ])
+  return AlgAss(K, M, [ one(K), zero(K), zero(K), zero(K) ]; check = get_assertion_level(:AlgAss)>0)
 end
 
 quaternion_algebra2(K::Field, a::Int, b::Int) = quaternion_algebra2(K, K(a), K(b))
@@ -1531,7 +1531,7 @@ function opposite_algebra(A::AlgAss)
   end
   o = one(A).coeffs
 
-  B = AlgAss(K, z, o)
+  B = AlgAss(K, z, o; check = get_assertion_level(:AlgAss)>0)
   return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d))
 end
 

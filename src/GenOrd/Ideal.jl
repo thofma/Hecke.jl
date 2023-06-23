@@ -792,9 +792,9 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   if isone(BO[1])
     one = zeros(FQ, r)
     one[1] = FQ(1)
-    A = AlgAss(FQ, mult_table, one)
+    A = AlgAss(FQ, mult_table, one; check = get_assertion_level(:AlgAss)>0)
   else
-    A = AlgAss(FQ, mult_table)
+    A = AlgAss(FQ, mult_table; check = get_assertion_level(:AlgAss)>0)
   end
   if is_commutative(O)
     A.is_commutative = 1

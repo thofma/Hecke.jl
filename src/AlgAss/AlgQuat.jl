@@ -387,7 +387,7 @@ function _change_basis(A::AlgAss, bas)
     end
   end
 
-  B = AlgAss(K, mt)
+  B = AlgAss(K, mt; check = get_assertion_level(:AlgAss)>0)
   h = hom(B, A, M, invM)
   return B, h
 end
@@ -515,6 +515,6 @@ end
 
 function AlgAss(A::AlgQuat)
   K = base_ring(A)
-  B = AlgAss(K, A.mult_table)
+  B = AlgAss(K, A.mult_table; check = get_assertion_level(:AlgAss)>0)
   return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
 end
