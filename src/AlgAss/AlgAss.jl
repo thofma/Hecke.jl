@@ -1,5 +1,7 @@
 export is_split, multiplication_table, restrict_scalars, center
 
+add_assertion_scope(:AlgAss)
+
 ################################################################################
 #
 #  Basic field access
@@ -136,19 +138,29 @@ function _zero_algebra(R::Ring)
   return A
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where {T}
+raw"""
+    associative_algebra(R::Ring, mult_table::Array{T, 3}[, one::Vector{T}]; check::Bool = true) where T
+
+    Associative Algebra over `R` with generators $e_1,\dots,e_d$ where `size(mult_table) == (d, d, d)` and $e_ie_j$ = `sum(mult_table[i,j,k]*e[k] for k in 1:d)`.
+    Unless `check = false`, this includes (time consuming) associativity and distributivity checks.
+    If `one` is given, record the element with the according coefficient vector as one element of the algebra.
+"""
+associative_algebra(R::Ring, mult_table::Array{<:Any, 3}; check::Bool = true) = AlgAss(R, mult_table; check)
+associative_algebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where T = AlgAss(R, mult_table, one; check)
+
+function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = get_assertion_level(:AlgAss)>0) where {T}
   if size(mult_table, 1) == 0
     return _zero_algebra(R)
   end
   A = AlgAss{T}(R, mult_table, one)
   if check
     @req check_associativity(A) "Multiplication table does not define associative operation"
-    @req check_distributivity(A) "Multiplication table does not define associative operation"
+    @req check_distributivity(A) "Multiplication table does not define distributive operation"
   end
   return A
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = true) where {T}
+function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = get_assertion_level(:AlgAss)>0) where {T}
   if size(mult_table, 1) == 0
     return _zero_algebra(R)
   end
@@ -162,11 +174,12 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = true) where {T}
   end
   if check
     @req check_associativity(A) "Multiplication table does not define associative operation"
-    @req check_distributivity(A) "Multiplication table does not define associative operation"
+    @req check_distributivity(A) "Multiplication table does not define distributive operation"
   end
   return A
 end
 
+# Does anyone actually use this?
 function AlgAss(R::Ring, d::Int, arr::Vector{T}) where {T}
   if d == 0
     return _zero_algebra(R)
