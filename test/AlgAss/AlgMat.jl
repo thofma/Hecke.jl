@@ -16,8 +16,9 @@
   end
 
   @testset "multiplication table" begin
-    M = matrix_algebra(QQ, [matrix(QQ,[4;;])]; isbasis=true)
-    @test multiplication_table(M) == [4;;;]
+    M = matrix_algebra(QQ, [matrix(QQ, 1, 1, [4])]; isbasis=true)
+    @test Hecke._matrix_in_algebra(matrix(QQ, 1, 1, [1]), M) == [QQ(1, 4)]
+    @test multiplication_table(M) == fill(QQ(4), 1, 1, 1)
   end
 
   @testset "Radical" begin
