@@ -1899,7 +1899,7 @@ end
     pivots_of_ref(H::MatrixElem) -> Tuple{Int, BitVector}
 
 Return `rank(H), p` such that `p[j]` states whether the `j`th column is a pivot column.
-The input `H` must be in row echolon form.
+The input `H` must be in row echelon form.
 
 See also: `rank_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
 """
@@ -1916,7 +1916,7 @@ end
 """
     rank_of_ref(H::MatrixElem) -> Int
 
-Rank of a row echolon matrix.
+Rank of a row echelon matrix.
 
 See also: `pivots_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
 """
@@ -1932,7 +1932,7 @@ end
 """
     pivot_cols_of_ref(H::MatrixElem) -> Vector{Int}
 
-Vector of the indices of pivot columns of a row echolon matrix in increasing order.
+Vector of the indices of pivot columns of a row echelon matrix in increasing order.
 
 See also: `pivots_of_ref`, `rank_of_ref`, `non_pivot_cols_of_ref`.
 """
@@ -1941,7 +1941,7 @@ pivot_cols_of_ref(H::MatrixElem) = findall(pivots_of_ref(H)[2])
 """
     non_pivot_cols_of_ref(H::MatrixElem) -> Vector{Int}
 
-Vector of the indices of non-pivot columns of a row echolon matrix in increasing order.
+Vector of the indices of non-pivot columns of a row echelon matrix in increasing order.
 
 See also: `pivots_of_ref`, `rank_of_ref`, `pivot_cols_of_ref`
 """
