@@ -1902,6 +1902,19 @@ Return `rank(H), p` such that `p[j]` states whether the `j`th column is a pivot 
 The input `H` must be in row echelon form.
 
 See also: `rank_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
+
+# Examples
+```jldoctest
+julia> pivots_of_ref(QQ[1 1; 0 1])
+(2, Bool[1, 1])
+
+julia> pivots_of_ref(QQ[1 1; 0 0])
+(1, Bool[1, 0])
+
+julia> pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+(3, Bool[0, 1, 1, 1, 0])
+
+```
 """
 function pivots_of_ref(H::MatrixElem) :: Tuple{Int, BitVector}
   p = falses(ncols(H))
@@ -1919,6 +1932,19 @@ end
 Rank of a row echelon matrix.
 
 See also: `pivots_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
+
+# Examples
+```jldoctest
+julia> rank_of_ref(QQ[1 1; 0 1])
+2
+
+julia> pivots_of_ref(QQ[1 1; 0 0])
+1
+
+julia> pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+3
+
+```
 """
 function rank_of_ref(H::MatrixElem)
   i = 1
@@ -1935,6 +1961,25 @@ end
 Vector of the indices of pivot columns of a row echelon matrix in increasing order.
 
 See also: `pivots_of_ref`, `rank_of_ref`, `non_pivot_cols_of_ref`.
+
+# Examples
+```jldoctest
+julia> pivot_cols_of_ref(QQ[1 1; 0 1])
+2-element Vector{Int64}:
+ 1
+ 2
+
+julia> pivot_cols_of_ref(QQ[1 1; 0 0])
+1-element Vector{Int64}:
+ 1
+
+julia> pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+3-element Vector{Int64}:
+ 2
+ 3
+ 4
+
+```
 """
 pivot_cols_of_ref(H::MatrixElem) = findall(pivots_of_ref(H)[2])
 
@@ -1944,6 +1989,22 @@ pivot_cols_of_ref(H::MatrixElem) = findall(pivots_of_ref(H)[2])
 Vector of the indices of non-pivot columns of a row echelon matrix in increasing order.
 
 See also: `pivots_of_ref`, `rank_of_ref`, `pivot_cols_of_ref`
+
+# Examples
+```jldoctest
+julia> non_pivot_cols_of_ref(QQ[1 1; 0 1])
+Int64[]
+
+julia> non_pivot_cols_of_ref(QQ[1 1; 0 0])
+1-element Vector{Int64}:
+ 2
+
+julia> non_pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+2-element Vector{Int64}:
+ 1
+ 5
+
+```
 """
 non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 
