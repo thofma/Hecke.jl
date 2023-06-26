@@ -1,4 +1,4 @@
-export is_split, multiplication_table, restrict_scalars, center
+export associative_algebra, is_split, multiplication_table, restrict_scalars, center
 
 add_assertion_scope(:AlgAss)
 
@@ -196,7 +196,12 @@ function AlgAss(R::Ring, d::Int, arr::Vector{T}) where {T}
   return AlgAss(R, mult_table)
 end
 
-# Constructs the algebra R[X]/f
+raw"""
+    associative_algebra(f::PolyElem)
+
+Associative algebra $R[x]/f$.
+"""
+associative_algebra(f::PolyElem) = AlgAss(f)
 function AlgAss(f::PolyElem)
   R = base_ring(parent(f))
   n = degree(f)
