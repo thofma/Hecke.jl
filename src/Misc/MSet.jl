@@ -48,7 +48,7 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
 end
 
 Base.isempty(s::MSet) = isempty(s.dict)
-Base.length(s::MSet) = BigInt(sum(values(s.dict)))
+Base.length(s::MSet) = sum(values(s.dict))
 Base.IteratorSize(::Type{MSet}) = Base.HasLength()
 Base.IteratorEltype(::Type{MSet}) = Base.HasEltype()
 Base.eltype(::Type{MSet{T}}) where {T} = T
