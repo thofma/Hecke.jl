@@ -48,7 +48,7 @@ end
 
   # creation
 
-  @test_throws ArgumentError AlgAss(QQ, map(QQ, reshape([1 2 1 2; 1 2 1 2], 2, 2, 2)))
+  @test_throws ArgumentError associative_algebra(QQ, map(QQ, reshape([1 2 1 2; 1 2 1 2], 2, 2, 2)))
 
   @testset "Change of ring" begin
 
@@ -106,7 +106,7 @@ end
     # Extend from F_p^m to F_p^n
     Fqx, x = Fq["x"]
     f = x^2 + 5x + 2
-    A = AlgAss(f)
+    A = associative_algebra(f)
     B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fq)
     @test absolute_degree(base_ring(B)) == degree(f)*degree(Fq)
@@ -124,7 +124,7 @@ end
     mt[2, 1, 2] = Fp(1)
     mt[2, 2, 1] = Fp(1)
     mt[2, 2, 2] = Fp(1)
-    A = AlgAss(Fp, mt)
+    A = associative_algebra(Fp, mt)
     B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fp)
     @test degree(base_ring(B)) == dim(A)
@@ -220,7 +220,7 @@ end
 
     K, a = number_field(x^2 - 2, "a")
     HH = Hecke.quaternion_algebra2(2, 3)
-    A = AlgAss(K, map(K, HH.mult_table))
+    A = associative_algebra(K, map(K, HH.mult_table))
     Ps = real_places(K)
     @test is_split(A, Ps[1])
     @test is_split(A, Ps[2])
