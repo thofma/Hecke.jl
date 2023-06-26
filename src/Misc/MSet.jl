@@ -109,6 +109,17 @@ Base.union!(s::MSet, xs) = (for x=xs; push!(s,x); end; s)
 Base.union!(s::MSet, xs::AbstractArray) = (for x=xs; push!(s,x); end; s)
 
 
+function Base.filter(pred, s::MSet)
+  t = similar(s)
+  for (x, m) in s.dict
+    if pred(x)
+      push!(t, x, m)
+    end
+  end
+  return t
+end
+
+
 @doc raw"""
     multiplicities(s::MSet)
 
@@ -160,7 +171,7 @@ end
 @doc raw"""
     subsets(s::MSet)
 
-An iterator for all sub-multi-sets of `s`.    
+An iterator for all sub-multi-sets of `s`.
 """
 function subsets(s::MSet{T}) where T
   # subsets are represented by integers in a weird base
