@@ -155,7 +155,8 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   return S
 end
 
-transpose!(A::Union{ZZMatrix, QQMatrix}) = transpose!(A, A)
+transpose!(A::Union{ZZMatrix, QQMatrix}) = is_square(A) ? transpose!(A, A) : transpose(A)
+transpose!(A::MatrixElem) = transpose(A)
 
 function transpose!(A::ZZMatrix, B::ZZMatrix)
   ccall((:fmpz_mat_transpose, libflint), Nothing,
@@ -1894,30 +1895,57 @@ function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   return C
 end
 
-#@doc raw"""
-#    find_pivot(A::MatElem{<:RingElem}) -> Vector{Int}
-#
-#Find the pivot-columns of the reduced row echelon matrix $A$.
-#"""
-#function find_pivot(A::MatElem{<:RingElem})
-#  @assert is_rref(A)
-#  p = Int[]
-#  j = 0
-#  for i=1:nrows(A)
-#    j += 1
-#    if j > ncols(A)
-#      return p
-#    end
-#    while iszero(A[i,j])
-#      j += 1
-#      if j > ncols(A)
-#        return p
-#      end
-#    end
-#    push!(p, j)
-#  end
-#  return p
-#end
+"""
+    pivots_of_ref(H::MatrixElem) -> Tuple{Int, BitVector}
+
+Return `rank(H), p` such that `p[j]` states whether the `j`th column is a pivot column.
+The input `H` must be in row echolon form.
+
+See also: `rank_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
+"""
+function pivots_of_ref(H::MatrixElem) :: Tuple{Int, BitVector}
+  p = falses(ncols(H))
+  i = 1
+  for j in axes(H, 2)
+    i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (p[j] = true; i+=1)
+  end
+  return i-1, p
+end
+
+"""
+    rank_of_ref(H::MatrixElem) -> Int
+
+Rank of a row echolon matrix.
+
+See also: `pivots_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
+"""
+function rank_of_ref(H::MatrixElem)
+  i = 1
+  for j in axes(H, 2)
+    i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (i+=1)
+  end
+  return i-1
+end
+
+"""
+    pivot_cols_of_ref(H::MatrixElem) -> Vector{Int}
+
+Vector of the indices of pivot columns of a row echolon matrix in increasing order.
+
+See also: `pivots_of_ref`, `rank_of_ref`, `non_pivot_cols_of_ref`.
+"""
+pivot_cols_of_ref(H::MatrixElem) = findall(pivots_of_ref(H)[2])
+
+"""
+    non_pivot_cols_of_ref(H::MatrixElem) -> Vector{Int}
+
+Vector of the indices of non-pivot columns of a row echolon matrix in increasing order.
+
+See also: `pivots_of_ref`, `rank_of_ref`, `pivot_cols_of_ref`
+"""
+non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 
 #@doc raw"""
 #    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
