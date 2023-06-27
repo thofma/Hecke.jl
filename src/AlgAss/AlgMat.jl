@@ -614,7 +614,7 @@ end
 
 function AlgAss(A::AlgMat{T, S}) where {T, S}
   K = base_ring(A)
-  B = AlgAss(K, multiplication_table(A), coefficients(one(A)), check = false)
+  B = AlgAss(K, multiplication_table(A), coefficients(one(A)))
   B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
   AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
