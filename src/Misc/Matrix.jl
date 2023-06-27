@@ -1905,13 +1905,13 @@ See also: `rank_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
 
 # Examples
 ```jldoctest
-julia> pivots_of_ref(QQ[1 1; 0 1])
+julia> Hecke.pivots_of_ref(QQ[1 1; 0 1])
 (2, Bool[1, 1])
 
-julia> pivots_of_ref(QQ[1 1; 0 0])
+julia> Hecke.pivots_of_ref(QQ[1 1; 0 0])
 (1, Bool[1, 0])
 
-julia> pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+julia> Hecke.pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
 (3, Bool[0, 1, 1, 1, 0])
 
 ```
@@ -1935,13 +1935,13 @@ See also: `pivots_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
 
 # Examples
 ```jldoctest
-julia> rank_of_ref(QQ[1 1; 0 1])
+julia> Hecke.rank_of_ref(QQ[1 1; 0 1])
 2
 
-julia> pivots_of_ref(QQ[1 1; 0 0])
+julia> Hecke.pivots_of_ref(QQ[1 1; 0 0])
 1
 
-julia> pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+julia> Hecke.pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
 3
 
 ```
@@ -1964,16 +1964,16 @@ See also: `pivots_of_ref`, `rank_of_ref`, `non_pivot_cols_of_ref`.
 
 # Examples
 ```jldoctest
-julia> pivot_cols_of_ref(QQ[1 1; 0 1])
+julia> Hecke.pivot_cols_of_ref(QQ[1 1; 0 1])
 2-element Vector{Int64}:
  1
  2
 
-julia> pivot_cols_of_ref(QQ[1 1; 0 0])
+julia> Hecke.pivot_cols_of_ref(QQ[1 1; 0 0])
 1-element Vector{Int64}:
  1
 
-julia> pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+julia> Hecke.pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
 3-element Vector{Int64}:
  2
  3
@@ -1992,14 +1992,14 @@ See also: `pivots_of_ref`, `rank_of_ref`, `pivot_cols_of_ref`
 
 # Examples
 ```jldoctest
-julia> non_pivot_cols_of_ref(QQ[1 1; 0 1])
+julia> Hecke.non_pivot_cols_of_ref(QQ[1 1; 0 1])
 Int64[]
 
-julia> non_pivot_cols_of_ref(QQ[1 1; 0 0])
+julia> Hecke.non_pivot_cols_of_ref(QQ[1 1; 0 0])
 1-element Vector{Int64}:
  2
 
-julia> non_pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+julia> Hecke.non_pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
 2-element Vector{Int64}:
  1
  5
