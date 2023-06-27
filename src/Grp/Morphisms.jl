@@ -22,7 +22,7 @@ Returns one element of the preimage of $g$ under $f$.
 """
 function preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
   h = findfirst(x -> f(x) == g, collect(f.domain))
-   if h == nothing
+   if h === nothing
      error("$g has no preimage under $f")
    end
    return f.domain[h]
@@ -36,7 +36,7 @@ element $h$ with $f(h) = g$.
 """
 function has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
   h = findfirst(x -> f(x) == g, collect(f.domain))
-   if h == nothing
+   if h === nothing
      return false
    end
    return (true, f.domain[h])

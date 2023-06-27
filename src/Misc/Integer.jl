@@ -1037,7 +1037,7 @@ Base.eltype(::Divisors{T}) where T = T
 
 function Base.iterate(D::Divisors)
   x = iterate(D.s)
-  if x == nothing
+  if x === nothing
     return x
   end
   return D.f(x[1]), x[2]
@@ -1045,7 +1045,7 @@ end
 
 function Base.iterate(D::Divisors, i)
   x = iterate(D.s, i)
-  if x == nothing
+  if x === nothing
     return x
   end
   return D.f(x[1]), x[2]

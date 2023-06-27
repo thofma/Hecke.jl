@@ -161,9 +161,9 @@ function main()
     set_verbose_level(:FieldsNonFancy, 3)
   end
 
-  if dbound == nothing && rdbound == nothing
+  if dbound === nothing && rdbound === nothing
     error("One of --disc-bound or --rootdisc-bound must be specified")
-  elseif dbound != nothing && rdbound != nothing
+  elseif dbound !== nothing && rdbound !== nothing
     error("Only one of --disc-bound or --rootdisc-bound can be set")
   end
 

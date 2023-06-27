@@ -44,7 +44,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   A = abelian_group(rels)
   n = dim(ambient_space(M))
   BM = basis_matrix(M)
-  if gens != nothing && length(gens)>0
+  if gens !== nothing && length(gens)>0
     gens_in_A = elem_type(A)[]
     for g in gens
       @req length(g) == n "Generator not an element of the ambient space"
@@ -70,7 +70,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   end
   # mS : S -> A
   # generators of S lifted along M -> M/N = A -> S
-  if gens != nothing  && length(gens)>0
+  if gens !== nothing  && length(gens)>0
     gens_lift = gens
   else
     gens_lift = Vector{QQFieldElem}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]

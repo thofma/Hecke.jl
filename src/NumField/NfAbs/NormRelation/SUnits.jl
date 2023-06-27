@@ -408,7 +408,7 @@ function _find_perm(v::Vector{NfOrdIdl}, w::Vector{NfOrdIdl})
   p = Dict{Int, Int}()
   for i = 1:length(v)
     pi = findfirst(isequal(v[i]), w)
-    @assert pi != nothing
+    @assert pi !== nothing
     p[pi] = i
   end
   return p

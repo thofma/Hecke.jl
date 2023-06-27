@@ -80,7 +80,7 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
     return quadratic_lattice(QQ, B, gram = gram, check = check)
   end
   @assert length(gens[1]) > 0
-  if gram == nothing
+  if gram === nothing
     gram = identity_matrix(QQ, length(gens[1]))
   end
   if check
@@ -1730,7 +1730,7 @@ function _irreducible_components_pos_def(L::ZZLat, upper_bound=nothing)
 
   # fall back to short vectors
   for c in components3
-    if upper_bound == nothing
+    if upper_bound === nothing
       ub = maximum([abs(i) for i in diagonal(gram_matrix(c))])
     else
       ub = upper_bound

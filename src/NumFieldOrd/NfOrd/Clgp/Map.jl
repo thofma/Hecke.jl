@@ -423,7 +423,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
     end
   end
   c = get_attribute(O, :ClassGrpCtx)
-  if c == nothing
+  if c === nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
     c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
