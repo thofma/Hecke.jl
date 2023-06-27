@@ -1938,10 +1938,10 @@ See also: `pivots_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
 julia> Hecke.rank_of_ref(QQ[1 1; 0 1])
 2
 
-julia> Hecke.pivots_of_ref(QQ[1 1; 0 0])
+julia> Hecke.rank_of_ref(QQ[1 1; 0 0])
 1
 
-julia> Hecke.pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+julia> Hecke.rank_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
 3
 
 ```
