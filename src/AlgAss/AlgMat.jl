@@ -32,7 +32,7 @@ matrix_algebra_type(K::Field) = matrix_algebra_type(typeof(K))
 
 matrix_algebra_type(::Type{T}) where {T <: Field} = AlgMat{elem_type(T), dense_matrix_type(elem_type(T))}
 
-# Returns the dimension d of the coefficient_ring of A, so that dim(A) = degree(A)^2 + d.
+# Returns the dimension d of the coefficient_ring of A, so that dim(A) is up to degree(A)^2 * d.
 function dim_of_coefficient_ring(A::AlgMat)
   if base_ring(A) == coefficient_ring(A)
     return 1
@@ -511,6 +511,24 @@ end
 #
 ################################################################################
 
+function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
+  @assert size(M) == (degree(A), degree(A))
+  _, U, pivots = basis_matrix_rref(A)
+  # U * basis_matrix(A)[:, pivots] == R[:, pivots] == I, thus
+  # U = inv(basis_matrix(A)[:, pivots]). So, for t = M[pivots],
+  # summing (t*U)[i]*basis(A)[i] gives back M, for all M in the basis and hence for all M.
+  # Note: Unless `isbasis=true` was given in the constructor, basis(A) is already in rref, and U == I.
+
+  if coefficient_ring(A) == base_ring(A)
+    ind = CartesianIndices(axes(M))
+    t = [M[I] for I in ind[pivots]] # = M[ind[pivots]] if it were supported
+  else
+    ind = CartesianIndices((dim_of_coefficient_ring(A), axes(M)...))
+    t = [coefficients(M[I[2], I[3]]; copy=false)[I[1]] for I in ind[pivots]]
+  end
+  return t*U
+end
+
 function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = Val{false}) where {S, T, U}
   if nrows(M) != degree(A) || ncols(M) != degree(A)
     if short == Val{true}
@@ -596,7 +614,7 @@ end
 
 function AlgAss(A::AlgMat{T, S}) where {T, S}
   K = base_ring(A)
-  B = AlgAss(K, multiplication_table(A), coefficients(one(A)), check = false)
+  B = AlgAss(K, multiplication_table(A), coefficients(one(A)))
   B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
   AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))

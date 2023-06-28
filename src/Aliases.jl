@@ -210,7 +210,7 @@
 @alias ZLat ZZLat
 @alias Zgenera integer_genera
 @alias Zlattice integer_lattice
-@alias ZpGenus LocalZZGenus
+@alias ZpGenus ZZLocalGenus
 
 # Deprecated during 0.17.*
 @alias real_field real_number_field

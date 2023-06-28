@@ -343,7 +343,7 @@ end
 function _cIteratorGivenSigma(s::Int, t::Int, x::Vector{Int},
                               y::Vector{Int}, p::IntegerUnion, sigma::Vector{Int})
   pp = Int(p)
-  tau = Nemo.inv!(perm(sigma))
+  tau = Vector{Int}(Nemo.inv!(perm(sigma)))
   indice, it = getintervals(t, s, x, y, pp, sigma, tau)
   return cIteratorGivenSigma{typeof(it)}(s, t, x, y, pp, sigma, tau, indice, it)
 end

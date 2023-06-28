@@ -38,8 +38,8 @@
   @test Hecke._two_adic_symbol(A, 2) == [[0, 2, 3, 1, 4], [1, 1, 1, 1, 1], [2, 1, 1, 1, 1]]
 
   #equality testing
-  g1 = LocalZZGenus(2,[[0, 2, 7, 0, 0], [3, 1, 7, 1, 7]])
-  g2 = LocalZZGenus(2,[[0, 2, 3, 0, 0], [3, 1, 3, 1, 3]])
+  g1 = ZZLocalGenus(2,[[0, 2, 7, 0, 0], [3, 1, 7, 1, 7]])
+  g2 = ZZLocalGenus(2,[[0, 2, 3, 0, 0], [3, 1, 3, 1, 3]])
   @test g1 != g2
 
   g1 = genus(A, 3)
