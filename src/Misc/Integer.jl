@@ -4,200 +4,14 @@
 #
 ################################################################################
 
-function rem(a::ZZRingElem, b::UInt)
-  return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), a, b)
-end
-
-
-function isless(a::BigFloat, b::Nemo.ZZRingElem)
-  if _fmpz_is_small(b)
-    c = ccall((:mpfr_cmp_si, :libmpfr), Int32, (Ref{BigFloat}, Int), a, b.d)
-  else
-    c = ccall((:mpfr_cmp_z, :libmpfr), Int32, (Ref{BigFloat}, UInt), a, unsigned(b.d) << 2)
-  end
-  return c < 0
-end
-
-function mulmod(a::UInt, b::UInt, n::UInt, ni::UInt)
-  ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), a, b, n, ni)
-end
-
-
-# TODO (CF):
-# should be Bernstein'ed: this is slow for large valuations
-# returns the maximal v s.th. z mod p^v == 0 and z div p^v
-#   also useful if p is not prime....
-#
-# TODO: what happens to z = 0???
-
-function remove(z::T, p::T) where T <: Integer
-  z == 0 && return (0, z)
-  v = 0
-  @assert p > 1
-  while mod(z, p) == 0
-    z = div(z, p)
-    v += 1
-  end
-  return (v, z)
-end
-
-function remove(z::Rational{T}, p::T) where T <: Integer
-  z == 0 && return(0, z)
-  v, d = remove(denominator(z), p)
-  w, n = remove(numerator(z), p)
-  return w-v, n//d
-end
-
-function valuation(z::T, p::T) where T <: Integer
-  z == 0 && return 0
-  v = 0
-  @assert p > 1
-  while mod(z, p) == 0
-    z = div(z, p)
-    v += 1
-  end
-  return v
-end
-
-function valuation(z::Rational{T}, p::T) where T <: Integer
-  z == 0 && error("Not yet implemented")
-  v = valuation(denominator(z), p)
-  w = valuation(numerator(z), p)
-  return w-v
-end
-
-function remove!(a::ZZRingElem, b::ZZRingElem)
-  v = ccall((:fmpz_remove, libflint), Clong, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, a, b)
-  return v, a
-end
-
-function remove!(a::QQFieldElem, b::ZZRingElem)
-  nr = ccall((:fmpq_numerator_ptr, libflint), Ptr{ZZRingElem}, (Ref{QQFieldElem}, ), a)
-  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), nr, nr, b)
-  #QQFieldElem's are simplified: either num OR den will be non-trivial
-  if vn != 0
-    return vn, a
-  end
-  nr = ccall((:fmpq_denominator_ptr, libflint), Ptr{ZZRingElem}, (Ref{QQFieldElem}, ), a)
-  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), nr, nr, b)
-  return -vn, a
-end
-
-function valuation!(a::QQFieldElem, b::ZZRingElem)
-  nr = ccall((:fmpq_numerator_ptr, libflint), Ptr{ZZRingElem}, (Ref{QQFieldElem}, ), a)
-  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), nr, nr, b)
-  #QQFieldElem's are simplified: either num OR den will be non-trivial
-  if vn != 0
-    return vn
-  end
-  nr = ccall((:fmpq_denominator_ptr, libflint), Ptr{ZZRingElem}, (Ref{QQFieldElem}, ), a)
-  vn = ccall((:fmpz_remove, libflint), Clong, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), nr, nr, b)
-  return -vn
-end
-
-function *(a::ZZRingElem, b::BigFloat)
-  return BigInt(a)*b
-end
-
-function BigFloat(a::QQFieldElem)
-  r = BigFloat(0)
-  ccall((:fmpq_get_mpfr, libflint), Nothing, (Ref{BigFloat}, Ref{QQFieldElem}, Int32), r, a, __get_rounding_mode())
-  return r
-end
-
-function isless(a::Float64, b::QQFieldElem) return a<b*1.0; end
-function isless(a::QQFieldElem, b::Float64) return a*1.0<b; end
-
-function isless(a::Float64, b::ZZRingElem) return a<b*1.0; end
-function isless(a::ZZRingElem, b::Float64) return a*1.0<b; end
-
 is_commutative(::ZZRing) = true
-
-#function ^(a::ZZRingElem, k::ZZRingElem)
-#  if a == 0
-#    if k == 0
-#      return ZZRingElem(1)
-#    end
-#    return ZZRingElem(0)
-#  end
-#
-#  if a == 1
-#    return ZZRingElem(1)
-#  end
-#  if a == -1
-#    if isodd(k)
-#      return ZZRingElem(-1)
-#    else
-#      return ZZRingElem(1)
-#    end
-#  end
-#  return a^Int(k)
-#end
-
-function ^(a::QQFieldElem, k::ZZRingElem)
-  if a == 0
-    if k == 0
-      return QQFieldElem(1)
-    end
-    return QQFieldElem(0)
-  end
-
-  if a == 1
-    return QQFieldElem(1)
-  end
-  if a == -1
-    if isodd(k)
-      return QQFieldElem(-1)
-    else
-      return QQFieldElem(1)
-    end
-  end
-  return a^Int(k)
-end
-
-function //(a::ZZRingElem, b::QQFieldElem)
-  return QQFieldElem(a)//b
-end
-
-function *(a::ZZRingElem, b::Float64)
-  return BigInt(a)*b
-end
-
-function *(b::Float64, a::ZZRingElem)
-  return BigInt(a)*b
-end
-
-function *(a::QQFieldElem, b::Float64)
-  return Rational(a)*b
-end
-
-function *(b::Float64, a::QQFieldElem)
-  return Rational(a)*b
-end
 
 function Float64(a::QQFieldElem)
   b = a*ZZRingElem(2)^53
   Float64(div(numerator(b), denominator(b)))/(Float64(2)^53) #CF 2^53 is bad in 32bit
 end
 
-function convert(R::Type{Rational{Base.GMP.BigInt}}, a::Nemo.ZZRingElem)
-  return R(BigInt(a))
-end
-
-log(a::ZZRingElem) = log(BigInt(a))
-log(a::QQFieldElem) = log(numerator(a)) - log(denominator(a))
-
-one(::ZZRingElem) = ZZRingElem(1)
-zero(::ZZRingElem) = ZZRingElem(0)
-
-isinteger(::ZZRingElem) = true
-isfinite(::ZZRingElem) = true
-
 Integer(a::ZZRingElem) = BigInt(a)
-
-function divisible(x::Integer, y::Integer)
-  return iszero(rem(x, y))
-end
 
 @doc raw"""
     modord(a::ZZRingElem, m::ZZRingElem) -> Int
@@ -226,7 +40,6 @@ function modord(a::Integer, m::Integer)
   end
   return i
 end
-
 
 function neg!(a::ZZRingElem)
   ccall((:fmpz_neg, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), a, a)
@@ -260,10 +73,6 @@ _in_unit_range(r::fmpzUnitRange, val::ZZRingElem) = r.start <= val <= r.stop
 show(io::IO, r::fmpzUnitRange) = print(io, repr(first(r)), ':', repr(last(r)))
 
 in(x::IntegerUnion, r::fmpzUnitRange) = first(r) <= x <= last(r)
-
-in(x::IntegerUnion, r::AbstractRange{ZZRingElem}) =
-  !isempty(r) && first(r) <= x <= last(r) &&
-    mod(convert(ZZRingElem,x),step(r)) == mod(first(r),step(r))
 
 mod(i::IntegerUnion, r::fmpzUnitRange) = mod(i-first(r), length(r)) + first(r)
 
@@ -324,13 +133,7 @@ function rand(rng::AbstractRNG, g::RangeGeneratorfmpz)
   return rand(rng, g.a)
 end
 
-function Base.getindex(a::StepRange{ZZRingElem,ZZRingElem}, i::ZZRingElem)
-  a.start+(i-1)*Base.step(a)
-end
 
-function Base.divrem(a::ZZRingElem, b::Int)
-  return (div(a, b), rem(a, b))
-end
 
 ############################################################
 # more unsafe function that Bill does not want to have....
@@ -361,97 +164,6 @@ function gcd!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
    return z
 end
 
-################################################################################
-#
-#  power detection
-#
-################################################################################
-#compare to Oscar/examples/PerfectPowers.jl which is, for large input,
-#far superiour over gmp/ fmpz_is_perfect_power
-
-@doc raw"""
-    is_power(a::ZZRingElem) -> Int, ZZRingElem
-    is_power(a::Integer) -> Int, Integer
-
-Returns $e$, $r$ such that $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
-"""
-function is_power(a::ZZRingElem)
-  if iszero(a)
-    error("must not be zero")
-  end
-  if isone(a)
-    return 0, a
-  end
-  if a < 0
-    e, r = is_power(-a)
-    if isone(e)
-      return 1, a
-    end
-    v, s = iszero(e) ? (0, 0) : remove(e, 2)
-    return s, -r^(2^v)
-  end
-  rt = ZZRingElem()
-  e = 1
-  while true
-    ex = ccall((:fmpz_is_perfect_power, libflint), Int, (Ref{ZZRingElem}, Ref{ZZRingElem}), rt, a)
-    if ex == 1 || ex == 0
-      return e, a
-    end
-    e *= ex
-    a = rt
-  end
-end
-
-function is_power(a::Integer)
-  e, r = is_power(ZZRingElem(a))
-  return e, typeof(a)(r)
-end
-
-@doc raw"""
-    is_power(a::QQFieldElem) -> Int, QQFieldElem
-    is_power(a::Rational) -> Int, Rational
-
-Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
-"""
-function is_power(a::QQFieldElem)
-  e, r = is_power(numerator(a))
-  if e==1
-    return e, a
-  end
-  f, s = is_power(denominator(a))
-  g = gcd(e, f)
-  return g, r^div(e, g)//s^div(f, g)
-end
-
-function is_power(a::Rational)
-  T = typeof(denominator(a))
-  e, r = is_power(QQFieldElem(a))
-  return e, T(numerator(r))//T(denominator(r))
-end
-
-@doc raw"""
-    is_power(a::ZZRingElem, n::Int) -> Bool, ZZRingElem
-    is_power(a::QQFieldElem, n::Int) -> Bool, QQFieldElem
-    is_power(a::Integer, n::Int) -> Bool, Integer
-
-Tests if $a$ is an $n$-th power. Return `true` and the root if successful.
-"""
-function is_power(a::ZZRingElem, n::Int)
-   if a < 0 && iseven(n)
-    return false, a
-  end
-  b = iroot(a, n)
-  return b^n == a, b
-end
-
-function is_power(a::QQFieldElem, n::Int)
-  fl, nu = is_power(numerator(a), n)
-  if !fl
-    return fl, a
-  end
-  fl, de = is_power(denominator(a), n)
-  return fl, QQFieldElem(nu, de)
-end
 
 ################################################################################
 #
@@ -521,22 +233,6 @@ function submul!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
   ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
 end
 
-################################################################################
-#
-#  Number of bits
-#
-################################################################################
-
-
-@doc raw"""
-    nbits(a::Integer) -> Int
-
-  Returns the number of bits necessary to represent $a$.
-"""
-function nbits(a::Integer)
-  return ndigits(a, base=2)
-end
-
 
 ################################################################################
 #
@@ -556,14 +252,6 @@ function mod_sym(a::ZZRingElem, b::ZZRingElem)
   end
 end
 
-@doc raw"""
-    isinteger(a::QQFieldElem) -> Bool
-
-Returns `true` iff the denominator of $a$ is one.
-"""
-function isinteger(a::QQFieldElem)
-  return isone(denominator(a))
-end
 
 ################################################################################
 #
@@ -882,42 +570,12 @@ function _factors_trial_division(n::ZZRingElem, np::Int = 10^5)
 
 end
 
-function ceil(::Type{ZZRingElem}, a::BigFloat)
-  return ZZRingElem(ceil(BigInt, a))
-end
-
-function ceil(::Type{Int}, a::QQFieldElem)
-  return Int(ceil(ZZRingElem, a))
-end
-
-function floor(::Type{ZZRingElem}, a::BigFloat)
-  return ZZRingElem(floor(BigInt, a))
-end
-
-function floor(::Type{Int}, a::QQFieldElem)
-  return Int(floor(ZZRingElem, a))
-end
-
-function round(::Type{ZZRingElem}, a::BigFloat)
-  return ZZRingElem(round(BigInt, a))
-end
-
-function round(::Type{Int}, a::BigFloat)
-  return Int(round(ZZRingElem, a))
-end
-
-/(a::BigFloat, b::ZZRingElem) = a/BigInt(b)
-
 function rand!(A::Vector{ZZRingElem}, v::StepRange{ZZRingElem, ZZRingElem})
   for i in 1:length(A)
     A[i] = rand(v)
   end
   return A
 end
-
-Base.isless(a::Int, b::ZZRingElem) = a < b
-
-Base.isless(a::ZZRingElem, b::Int) = a < b
 
 function (::Type{Base.Rational{BigInt}})(x::QQFieldElem)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
@@ -1330,10 +988,6 @@ function quo(::ZZRing, a::Integer)
   return R, f
 end
 
-function (::ZZRing)(x::Rational{Int})
-  @assert denominator(x) == 1
-  return ZZRingElem(numerator(x))
-end
 
 module BitsMod
 
@@ -1482,8 +1136,6 @@ export bits, Limbs
 ^(a::NfAbsOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
 
 #^(a::NfRelOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
-is_negative(n::IntegerUnion) = cmp(n, 0) < 0
-is_positive(n::IntegerUnion) = cmp(n, 0) > 0
 
 function _generic_power(a, n::IntegerUnion)
   fits(Int, n) && return a^Int(n)
@@ -1499,25 +1151,6 @@ function _generic_power(a, n::IntegerUnion)
     end
   end
   return r
-end
-
-#square-and-multiply algorithm to compute f^e mod g
-function powermod(f::T, e::ZZRingElem, g::T) where {T}
-    #small exponent -> use powermod
-    if nbits(e) <= 63
-        return powermod(f, Int(e), g)
-    else
-        #go through binary representation of exponent and multiply with res
-        #or (res and f)
-        res = parent(f)(1)
-        for b=bits(e)
-            res = mod(res^2, g)
-            if b
-                res = mod(res*f, g)
-            end
-        end
-        return res
-    end
 end
 
 
@@ -1619,92 +1252,6 @@ end
 
 ################################################################################
 #
-#  is_squarefree
-#
-################################################################################
-
-#TODO (Hard): Implement this properly.
-@doc raw"""
-    is_squarefree(n::Union{Int, ZZRingElem}) -> Bool
-
-Returns true if $n$ is squarefree, false otherwise.
-"""
-function is_squarefree(n::Union{Int,ZZRingElem})
-  if iszero(n)
-    error("Argument must be non-zero")
-  end
-  if isone(abs(n))
-    return true
-  end
-  e, b = is_power(n)
-  if e > 1
-    return false
-  end
-  return isone(maximum(values(factor(n).fac)))
-end
-
-################################################################################
-#
-#  Rounding and friends
-#
-################################################################################
-
-Base.floor(::Type{ZZRingElem}, x::ZZRingElem) = x
-
-Base.ceil(::Type{ZZRingElem}, x::ZZRingElem) = x
-
-Base.floor(::Type{ZZRingElem}, x::Int) = ZZRingElem(x)
-
-Base.ceil(::Type{ZZRingElem}, x::Int) = ZZRingElem(x)
-
-Base.floor(::Type{ZZRingElem}, x::QQFieldElem) = fdiv(numerator(x), denominator(x))
-
-Base.ceil(::Type{ZZRingElem}, x::QQFieldElem) = cdiv(numerator(x), denominator(x))
-
-Base.round(x::QQFieldElem, ::RoundingMode{:Up}) = ceil(x)
-
-Base.round(::Type{ZZRingElem}, x::QQFieldElem, ::RoundingMode{:Up}) = ceil(ZZRingElem, x)
-
-Base.round(x::QQFieldElem, ::RoundingMode{:Down}) = floor(x)
-
-Base.round(::Type{ZZRingElem}, x::QQFieldElem, ::RoundingMode{:Down}) = floor(ZZRingElem, x)
-
-function Base.round(x::QQFieldElem, ::RoundingMode{:Nearest})
-  d = denominator(x)
-  n = numerator(x)
-  if d == 2
-    if mod(n, 4) == 1
-      if n > 0
-        return div(n, d)
-      else
-        return div(n, d) - 1
-      end
-    else
-      if n > 0
-        return div(n, d) + 1
-      else
-        return div(n, d)
-      end
-    end
-  end
-
-  return floor(x + 1//2)
-end
-
-Base.round(x::QQFieldElem, ::RoundingMode{:NearestTiesAway}) = sign(x) * floor(abs(x) + 1//2)
-
-Base.round(::Type{ZZRingElem}, x::QQFieldElem, ::RoundingMode{:NearestTiesAway}) = sign(x) == 1 ? floor(ZZRingElem, abs(x) + 1//2) : -floor(ZZRingElem, abs(x) + 1//2)
-
-function Base.round(::Type{ZZRingElem}, a::QQFieldElem)
-  return round(ZZRingElem, a, RoundNearestTiesAway)
-end
-
-function Base.round(a::QQFieldElem)
-  return round(ZZRingElem, a)
-end
-
-################################################################################
-#
 #  Squarefree part
 #
 ################################################################################
@@ -1745,9 +1292,6 @@ function factor(a::QQFieldElem, ::ZZRing)
   end
   return fn
 end
-
-#missing in Nemo...
-Hecke.clog(a::Int, b::Int) = clog(ZZRingElem(a), b)
 
 ################################################################################
 #
