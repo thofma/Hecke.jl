@@ -88,6 +88,33 @@ function quadroots(a, b, c, p)
   end
 end
 
+function quadroots(a, b, c, _res::Union{Function, MapFromFunc})
+  #F_p = GF(p, cached = false)
+  aa = _res(a)
+  F = parent(aa)
+  R, x = polynomial_ring(F, "x", cached = false)
+  f = aa*x^2 + _res(b)*x + _res(c)
+
+  if degree(f) == -1
+    return true
+  elseif degree(f) == 0
+    return false
+  elseif degree(f) == 1
+    return true
+  end
+
+  fac = factor(f)
+  p = first(keys(fac.fac))
+
+  if fac[p] == 2 # f has a double zero
+    return true
+  elseif length(fac) == 2 # f splits into two different linear factors
+    return true
+  else # f does not have a root
+    return false
+  end
+end
+
 function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = residue_field(R, pIdeal)
