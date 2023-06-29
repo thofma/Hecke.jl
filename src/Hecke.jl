@@ -92,21 +92,11 @@ using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 
 import Nemo
 
-# TODO: remove/simplify the following once Nemo has IntegerUnion
-# (and the version adding IntegerUnion is required in Project.toml)
-if isdefined(Nemo, :IntegerUnion)
-  import Nemo.IntegerUnion
-else
-  const IntegerUnion = Union{Integer, Nemo.ZZRingElem}
-end
-
-const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, Nemo.QQFieldElem}
-
 import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!, :factor]
+           :can_solve, :set_entry!,]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue
@@ -118,11 +108,12 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              elem_to_mat_row!, elem_from_mat_row, fpFieldElem, fpMatrix,
              FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
-             force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry
+             force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
        next_prime, is_power, number_field, factor, @vtime, RationalUnion
 
+const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
 ###############################################################################
 #
