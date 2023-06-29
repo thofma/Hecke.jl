@@ -179,42 +179,6 @@ function Mor(O::NfOrd, F::fqPolyRepField, h::fpPolyRingElem)
   return NfOrdToFqNmodMor(O, F, h)
 end
 
-
-function evaluate(f::ZZPolyRingElem, r::fqPolyRepFieldElem)
-  #Horner - stolen from Claus
-
-  if length(f) == 0
-    return parent(r)()
-  end
-
-  l = f.length-1
-  s = parent(r)(coeff(f, l))
-  for i =l-1:-1:0
-    s = s*r + parent(r)(coeff(f, i))
-  end
-  return s
-end
-
-function evaluate!(z::fqPolyRepFieldElem, f::ZZPolyRingElem, r::fqPolyRepFieldElem)
-  #Horner - stolen from Claus
-
-  zero!(z)
-
-  if length(f) == 0
-    return z
-  end
-
-  l = f.length-1
-  set!(z, parent(r)(coeff(f, l)))
-  #s = parent(r)(coeff(f, l))
-  for i =l-1:-1:0
-    mul!(z, z, r)
-    add!(z, z, parent(r)(coeff(f, i)))
-    #s = s*r + parent(r)(coeff(f, i))
-  end
-  return z
-end
-
 function _get_coeff_raw(x::fqPolyRepFieldElem, i::Int)
   u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, i)
   return u

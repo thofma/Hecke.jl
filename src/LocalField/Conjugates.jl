@@ -389,11 +389,6 @@ function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
   return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
 end
 
-function matrix(a::Vector{Vector{T}}) where {T}
-  return matrix(permutedims(reduce(hcat, a), (2, 1)))
-end
-
-
 function eval_f_fs(f::PolyElem, x::RingElem)
   d = Int[]
   for i=1:degree(f)

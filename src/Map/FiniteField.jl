@@ -1,19 +1,3 @@
-function prime_field(K::NumField)
-  return QQField()
-end
-
-function prime_field(F::fqPolyRepField; cached::Bool = true)
-  return Native.GF(Int(characteristic(F)), cached = cached)
-end
-
-function prime_field(F::FqPolyRepField; cached::Bool = true)
-  return Native.GF(characteristic(F), cached = cached)
-end
-
-function prime_field(F::T; cached::Bool = true) where T <: Union{fpField, FpField}
-  return F
-end
-
 function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   @assert parent(a) == K
 

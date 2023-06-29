@@ -26,10 +26,6 @@ function mul_into!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
   return a
 end
 
-function copy(a::ZZRingElem)
-  return deepcopy(a)
-end
-
 function copy_into!(a, b)
   return b
 end

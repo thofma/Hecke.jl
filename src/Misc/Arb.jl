@@ -26,12 +26,6 @@ function muleq!(z::arb, x::arb, y::ZZRingElem)
   return nothing
 end
 
-function addmul!(z::arb, x::arb, y::ZZRingElem)
-  q = max(bits(z), bits(x))
-  ccall((:arb_addmul_fmpz, libarb), Nothing, (Ref{arb}, Ref{arb}, Ref{ZZRingElem}, Int), z, x, y, q)
-  return nothing
-end
-
 function abs!(z::arb, x::arb)
   ccall((:arb_abs, libarb), Nothing, (Ref{arb}, Ref{arb}, Int), z, x, parent(x).prec)
   return nothing
@@ -153,30 +147,6 @@ function lower_bound(x::arb, ::Type{ZZRingElem})
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), tarf)
 
   return bound
-end
-
-################################################################################
-#
-#  Signs for arb and acb
-#
-################################################################################
-
-function sign(::Type{Int}, x::arb)
-  if is_positive(x)
-    return 1
-  elseif is_negative(x)
-    return -1
-  else
-    error("Could not determine sign")
-  end
-end
-
-function sign(::Type{Int}, x::acb)
-  if isreal(x)
-    return sign(Int, real(x))
-  else
-    error("Element is not real")
-  end
 end
 
 ################################################################################
