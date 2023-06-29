@@ -786,8 +786,6 @@ end
 #
 ################################################################################
 
-order(::ZZRingElem) = FlintZZ
-
 uniformizer(p::ZZRingElem) = p
 
 is_dyadic(p::ZZRingElem) = p == 2
@@ -1153,29 +1151,6 @@ end
 ################################################################################
 
 _eltseq(M::MatElem) = [M[i, j] for i in 1:nrows(M) for j in 1:ncols(M)]
-
-################################################################################
-#
-#  Create a matrix from rows
-#
-################################################################################
-
-function matrix(K::Ring, R::Vector{<:Vector})
-  if length(R) == 0
-    return zero_matrix(K, 0, 0)
-  else
-    n = length(R)
-    m = length(R[1])
-    z = zero_matrix(K, n, m)
-    for i in 1:n
-      @assert length(R[i]) == m
-      for j in 1:m
-        z[i, j] = R[i][j]
-      end
-    end
-    return z
-  end
-end
 
 ################################################################################
 #

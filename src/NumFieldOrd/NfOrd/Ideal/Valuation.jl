@@ -5,10 +5,6 @@
 ################################################################################
 
 
-function valuation(a::UInt, b::UInt)
-  return ccall((:n_remove, libflint), Int, (Ref{UInt}, UInt), a, b)
-end
-
 # CF:
 # The idea is that valuations are mostly small, eg. in the class group
 # algorithm. So this version computes the completion and the embedding into it

@@ -1,10 +1,7 @@
 
-export conjugates_init, is_constant, is_squarefree, conjugates, angle, cos,
+export conjugates_init, is_squarefree, conjugates, angle, cos,
        sin, abs, abs2, sqrt
 
-function is_constant(f::PolyElem)
-  return f.length<2
-end
 
 function conjugates_init(f_in::Union{ZZPolyRingElem, QQPolyRingElem})
   local f::ZZPolyRingElem
@@ -198,17 +195,4 @@ function *(a::ZZMatrix, b::Matrix{BigFloat})
   return mult!(c, a, b)
 end
 
-for (s,f) in ((:trunc, Base.trunc), (:round, Base.round), (:ceil, Base.ceil), (:floor, Base.floor))
-  @eval begin
-    function ($s)(a::Matrix{BigFloat})
-      s = Base.size(a)
-      m = zero_matrix(FlintZZ, s[1], s[2])
-      for i = 1:s[1]
-        for j = 1:s[2]
-          m[i,j] = FlintZZ(BigInt(($f)(a[i,j])))
-        end
-      end
-      return m
-    end
-  end
-end
+

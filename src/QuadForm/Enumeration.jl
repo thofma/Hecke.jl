@@ -758,11 +758,6 @@ function _deepcopy_cheap(x::QQFieldElem)
   return z
 end
 
-function is_negative(x::QQFieldElem)
-  c = ccall((:fmpq_sgn, libflint), Cint, (Ref{QQFieldElem}, ), x)
-  return c < 0
-end
-
 function is_lessorequal(x::QQFieldElem, y::UInt)
   c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{QQFieldElem}, UInt), x, y)
   return c <= 0
@@ -1064,22 +1059,6 @@ end
   return z
 end
 
-@inline function sub!(z::QQFieldElem, a::QQFieldElem, b::QQFieldElem)
-  ccall((:fmpq_sub, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), z, a, b)
-  return z
-end
-
-@inline function sub!(z::QQFieldElem, a::QQFieldElem, b::ZZRingElem)
-   ccall((:fmpq_sub_fmpz, libflint), Nothing,
-         (Ref{QQFieldElem}, Ref{QQFieldElem}, Ref{ZZRingElem}), z, a, b)
-   return z
-end
-
-@inline function neg!(z::QQFieldElem, a::QQFieldElem)
-  ccall((:fmpq_neg, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, a)
-  return z
-end
-
 @inline function isqrt!(z::ZZRingElem, a::ZZRingElem)
   ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, a)
   return z
@@ -1093,16 +1072,6 @@ isqrt!(z::Int, x::Int) = isqrt(x)
 
 add_two!(z::Int, x::Int) = x + 2
 
-sub!(z::Rational{Int}, x::Rational{Int}, y::Int) = x - y
-
-neg!(z::Rational{Int}, x::Rational{Int}) = -x
-
 ceil!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(ceil(x))
 
-add!(z::Rational{Int}, x::Rational{Int}, y::Int) = x + y
-
-mul!(z::Rational{Int}, x::Rational{Int}, y::Int) = x * y
-
 numerator!(z::Int, x::Rational{Int}) = numerator(x)
-
-is_negative(x::Rational) = x.num < 0

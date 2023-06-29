@@ -187,20 +187,6 @@ function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, bi::fmpz_p
   return r
 end
 
-@doc raw"""
-    round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem) -> ZZRingElem
-
-Computes `round(a//b)`.
-"""
-function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem)
-  s = sign(a)*sign(b)
-  bs = abs(b)
-  as = abs(a)
-  r = s*div(2*as+bs, 2*bs)
-#  @assert r == round(ZZRingElem, a//b)
-  return r
-end
-
 #TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
 #      to save on multiplications
 function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}, O)
@@ -521,16 +507,6 @@ function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::lll_ctx = ll
    return d, z
 end
 
-function tdivpow2!(B::ZZMatrix, t::Int)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), B, B, t)
-end
-
-function Nemo.tdivpow2(B::ZZMatrix, t::Int)
-  C = similar(B)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), C, B, t)
-  return C
-end
-
 function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingElem, bnd::ZZRingElem)
   b = maximum(nbits, B)
   sc = max(0, b-55)
@@ -767,7 +743,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
         sz = nbits(vH.pM[2]) - div(r, 1) - prec_scale
       end
       push!(really_used, n)
-      tdivpow2!(B, sz+prec_scale)
+      Nemo.tdivpow2!(B, sz+prec_scale)
       d = tdivpow2(vH.pM[2], sz)
 
       bnd = r*ZZRingElem(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2

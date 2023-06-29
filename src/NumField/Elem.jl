@@ -7,31 +7,6 @@ export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
 #
 ################################################################################
 
-is_unit(a::NumFieldElem) = !iszero(a)
-
-canonical_unit(a::NumFieldElem) = a
-
-################################################################################
-#
-#  Base case for dot products
-#
-################################################################################
-
-dot(x::ZZRingElem, y::NumFieldElem) = x * y
-
-dot(x::Integer, y::NumFieldElem) = x * y
-
-dot(x::NumFieldElem, y::Integer) = x * y
-
-function dot(a::Vector{<: NumFieldElem}, b::Vector{ZZRingElem})
-  d = zero(parent(a[1]))
-  t = zero(d)
-  for i=1:length(a)
-    mul!(t, a[i], b[i])
-    add!(d, d, t)
-  end
-  return d
-end
 
 function dot(a::Vector{NfAbsNSElem}, b::Vector{ZZRingElem})
   Qxy = parent(a[1].data)

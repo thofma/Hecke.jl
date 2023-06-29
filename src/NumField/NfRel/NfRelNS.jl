@@ -45,15 +45,6 @@ mS(gen(S))
 mS\gens(K)[2]
 =#
 
-#to make the MPoly module happy, divrem needs it...
-function Base.div(a::nf_elem, b::nf_elem)
-  return a//b
-end
-
-function Nemo.rem(a::nf_elem, b::nf_elem)
-  return parent(a)(0)
-end
-
 #non-simple fields are quotients by multivariate polynomials
 #this could be extended to arbitrary zero-dimensional quotients, but
 #I don't need this here.

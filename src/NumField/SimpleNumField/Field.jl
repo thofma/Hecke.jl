@@ -165,10 +165,6 @@ function absolute_discriminant(K::NfRel)
   return d
 end
 
-function discriminant(K::QQField)
-  return one(K)
-end
-
 ################################################################################
 #
 #  Is subfield

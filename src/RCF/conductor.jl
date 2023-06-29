@@ -1509,11 +1509,6 @@ function lcm(A::AbstractArray{<:NfAbsOrdIdl})
   return a
 end
 
-#TODO: should be done in Nemo/AbstractAlgebra s.w.
-#      needed by ^ (the generic power in Base using square and multiply)
-Base.copy(f::Generic.MPoly) = deepcopy(f)
-Base.copy(f::Generic.Poly) = deepcopy(f)
-
 
 @doc raw"""
     lorenz_module(k::AnticNumberField, n::Int) -> NfOrdIdl

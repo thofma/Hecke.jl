@@ -190,23 +190,3 @@ function gcd!(f::Nemo.fpPolyRingElem, g::Nemo.fpPolyRingElem, h::Nemo.fpPolyRing
   ccall((:nmod_poly_gcd, libflint), Nothing, (Ref{Nemo.fpPolyRingElem}, Ref{Nemo.fpPolyRingElem}, Ref{Nemo.fpPolyRingElem}), f, g, h)
   return f
 end
-
-function (R::Nemo.zzModPolyRing)(g::QQPolyRingElem)
-  return fmpq_poly_to_nmod_poly(R, g)
-end
-
-function (R::Nemo.fpPolyRing)(g::QQPolyRingElem)
-  return fmpq_poly_to_gfp_poly(R, g)
-end
-
-function (R::Nemo.ZZModPolyRing)(g::QQPolyRingElem)
-  return fmpq_poly_to_fmpz_mod_poly(R, g)
-end
-
-function (R::Nemo.FpPolyRing)(g::QQPolyRingElem)
-  return fmpq_poly_to_gfp_fmpz_poly(R, g)
-end
-
-function (R::Nemo.FqPolyRing)(g::QQPolyRingElem)
-  return fmpq_poly_to_fq_default_poly(R, g)
-end

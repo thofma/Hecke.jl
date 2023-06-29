@@ -207,24 +207,6 @@ function _block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpFi
   return b
 end
 
-function AbstractAlgebra.map_coefficients(F::fpField, f::QQMPolyRingElem; parent = polynomial_ring(F, nvars(parent(f)), cached = false)[1])
-  dF = denominator(f)
-  d = F(dF)
-  if iszero(d)
-    error("Denominator divisible by p!")
-  end
-  m = inv(d)
-  ctx = MPolyBuildCtx(parent)
-  for x in zip(coefficients(f), exponent_vectors(f))
-    el = numerator(x[1]*dF)
-    push_term!(ctx, F(el)*m, x[2])
-  end
-  return finish(ctx)
-end
-
-
-
-
 function _sieve_primitive_elements(B::Vector{nf_elem})
   K = parent(B[1])
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]

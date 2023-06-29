@@ -148,17 +148,6 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function AbstractAlgebra.is_symmetric(M::MatElem)
-  for i in 1:nrows(M)
-    for j in i:ncols(M)
-      if M[i, j] != M[j, i]
-        return false
-      end
-    end
-  end
-  return true
-end
-
 function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true)
   # Compute the necessary short vectors
 
@@ -1618,12 +1607,6 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
 
   return SS
 end
-
-ZZMatrix(M::Matrix{Int}) = matrix(FlintZZ, M)
-
-zero_matrix(::Type{Int}, r, c) = zeros(Int, r, c)
-
-base_ring(::Vector{Int}) = Int
 
 function _one(::Type{Matrix{Int}}, n::Int)
   z = zeros(Int, n, n)
