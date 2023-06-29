@@ -135,7 +135,6 @@
 @alias isone_sided is_one_sided
 @alias ispairwise_coprime is_pairwise_coprime
 @alias ispositive_definite is_positive_definite
-@alias ispositive_entry is_positive_entry
 @alias ispower_trager is_power_trager
 @alias ispower_unram is_power_unram
 @alias isprimary is_primary
