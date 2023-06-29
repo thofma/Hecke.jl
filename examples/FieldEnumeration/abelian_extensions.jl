@@ -135,9 +135,9 @@ function main()
     error("Input file must be specified by --input")
   end
 
-  if dbound == nothing && rdbound == nothing
+  if dbound === nothing && rdbound === nothing
     error("One of --disc-bound or --rootdisc-bound must be specified")
-  elseif dbound != nothing && rdbound != nothing
+  elseif dbound !== nothing && rdbound !== nothing
     error("Only one of --disc-bound or --rootdisc-bound can be set")
   end
 

@@ -272,7 +272,7 @@ function _norm_equation_absolute(NC::NormCache, order_num::Int; max_num_fields::
     if degree(K) == n
       UK, mUK = unit_group_fac_elem(OK)
       i = findfirst(x -> norm(mUK(x)) == -1, gens(UK))
-      if i != nothing
+      if i !== nothing
         NC.norm_minus_one[order_num] = KtoA(evaluate(mUK(UK[i])))
       end
     end

@@ -245,7 +245,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
         s = QQFieldElem[]
         for x = k[1]
           @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
-          if y == nothing
+          if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
             lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'

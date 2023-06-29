@@ -400,7 +400,7 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::ZZRingElem, b::Hec
   while !(aa === nothing)
     push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa, 1))
     aa = iterate(ta, sa)
-    if !aa == nothing
+    if !aa === nothing
       aa, sa = aa
     end
   end

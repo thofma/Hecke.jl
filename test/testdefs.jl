@@ -19,7 +19,7 @@ function runtests(name, path; isolate=false, seed=nothing)
         end
         res_and_time_data = @timed @testset "$name" begin
             # Random.seed!(nothing) will fail
-            seed != nothing && Random.seed!(seed)
+            seed !== nothing && Random.seed!(seed)
             Base.include(m, "$path")
         end
         rss = Sys.maxrss()

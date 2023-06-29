@@ -102,7 +102,7 @@ function _compute_decomposition!(C::CommutatorAlgebra)
     M = invariant_factors_grouped[l][3]
     for (i, j, e) in M
       o = findfirst(x -> x[1] == e, D)
-      if o == nothing
+      if o === nothing
         push!(D, (e, Tuple{Int, Int}[(i, j)]))
       else
         push!(D[o][2], (i, j))
