@@ -6,13 +6,6 @@
 
 is_commutative(::ZZRing) = true
 
-function Float64(a::QQFieldElem)
-  b = a*ZZRingElem(2)^53
-  Float64(div(numerator(b), denominator(b)))/(Float64(2)^53) #CF 2^53 is bad in 32bit
-end
-
-Integer(a::ZZRingElem) = BigInt(a)
-
 @doc raw"""
     modord(a::ZZRingElem, m::ZZRingElem) -> Int
     modord(a::Integer, m::Integer)
@@ -45,95 +38,6 @@ function neg!(a::ZZRingElem)
   ccall((:fmpz_neg, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), a, a)
   return a
 end
-
-##
-## Ranges
-##
-# Note, we cannot get a UnitRange as this is only legal for subtypes of Real.
-# So, we use an AbstractUnitRange here mostly copied from `base/range.jl`.
-# `StepRange`s on the other hand work out of the box thanks to duck typing.
-
-struct fmpzUnitRange <: AbstractUnitRange{ZZRingElem}
-  start::ZZRingElem
-  stop::ZZRingElem
-  fmpzUnitRange(start, stop) = new(start, fmpz_unitrange_last(start, stop))
-end
-fmpz_unitrange_last(start::ZZRingElem, stop::ZZRingElem) =
-  ifelse(stop >= start, stop, start - one(ZZRingElem))
-
-Base.:(:)(a::ZZRingElem, b::ZZRingElem) = fmpzUnitRange(a, b)
-
-@inline function getindex(r::fmpzUnitRange, i::ZZRingElem)
-    val = r.start + (i - 1)
-    @boundscheck _in_unit_range(r, val) || throw_boundserror(r, i)
-    val
-end
-_in_unit_range(r::fmpzUnitRange, val::ZZRingElem) = r.start <= val <= r.stop
-
-show(io::IO, r::fmpzUnitRange) = print(io, repr(first(r)), ':', repr(last(r)))
-
-in(x::IntegerUnion, r::fmpzUnitRange) = first(r) <= x <= last(r)
-
-mod(i::IntegerUnion, r::fmpzUnitRange) = mod(i-first(r), length(r)) + first(r)
-
-Base.:(:)(a::ZZRingElem, b::Integer) = (:)(promote(a,b)...)
-Base.:(:)(a::Integer, b::ZZRingElem) = (:)(promote(a,b)...)
-
-# Construct StepRange{ZZRingElem, T} where +(::ZZRingElem, zero(::T)) must be defined
-Base.:(:)(a::ZZRingElem, s, b::Integer) = ((a_,b_)=promote(a,b); a_:s:b_)
-Base.:(:)(a::Integer, s, b::ZZRingElem) = ((a_,b_)=promote(a,b); a_:s:b_)
-
-#TODO
-# need to be mapped onto proper Flint primitives
-# flints needs a proper interface to randomness - I think
-# currently one simply cannot use it at all
-#
-# should be tied(?) to the Julia rng stuff?
-# similarly, all the derived rand functions should probably also do this
-#
-# inspired by/copied from a former BigInt implementation from the stdlib in
-# `Random/src/generation.jl`
-#
-
-function rand(rng::AbstractRNG, a::fmpzUnitRange)
-  m = Base.last(a) - Base.first(a)
-  m < 0 && error("range empty")
-  nd = ndigits(m, 2)
-  nl, high = divrem(nd, 8*sizeof(Base.GMP.Limb))
-  if high>0
-    mask = m>>(nl*8*sizeof(Base.GMP.Limb))
-  end
-  s = ZZRingElem(0)
-  while true
-    s = ZZRingElem(0)
-    for i=1:nl
-      s = s << (8*sizeof(Base.GMP.Limb))
-      s += rand(rng, Base.GMP.Limb)
-    end
-    if high >0
-      s = s << high
-      s += rand(rng, 0:Base.GMP.Limb(mask))
-    end
-    if s <= m break; end
-  end
-  return s + first(a)
-end
-
-struct RangeGeneratorfmpz# <: Base.Random.RangeGenerator
-  a::StepRange{ZZRingElem, ZZRingElem}
-end
-
-function Random.RangeGenerator(r::StepRange{ZZRingElem,ZZRingElem})
-    m = last(r) - first(r)
-    m < 0 && throw(ArgumentError("range must be non-empty"))
-    return RangeGeneratorfmpz(r)
-end
-
-function rand(rng::AbstractRNG, g::RangeGeneratorfmpz)
-  return rand(rng, g.a)
-end
-
-
 
 ############################################################
 # more unsafe function that Bill does not want to have....
