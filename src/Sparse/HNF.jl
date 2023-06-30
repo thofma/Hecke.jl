@@ -172,20 +172,7 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
   return g
 end
 
-function mod_sym(a::T, b::T) where {T}
-  return mod(a, b)
-end
-function mod_sym!(a::T, b::T) where {T}
-  return mod!(a, b)
-end
 
-function mod_sym!(a::ZZRingElem, b::ZZRingElem)
-  mod!(a, a, b)
-  if a>div(b, 2)
-    sub!(a, a, b)
-  end
-  return a
-end
 
 ################################################################################
 #

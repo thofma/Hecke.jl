@@ -874,13 +874,6 @@ function coprime_denominator(a::nf_elem, b::ZZRingElem)
   return z
 end
 
-function mod_sym!(a::nf_elem, b::ZZRingElem)
-  ccall((:nf_elem_smod_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-        a, a, b, parent(a))
-  return a
-end
-
 function mod(b::nf_elem, p::ZZRingElem)
   K = parent(b)
   if is_defining_polynomial_nice(parent(b))

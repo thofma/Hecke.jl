@@ -64,19 +64,6 @@ end
 
 
 
-@doc raw"""
-    mod_sym!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
-
-Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
-"""
-function mod_sym!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
-  for i = 1:nrows(A)
-    for j = 1:ncols(A)
-      mod_sym!(A[i, j], m)
-    end
-  end
-end
-
 function small_coeff(a::nf_elem, B::ZZRingElem, i::Int)
   z = ZZRingElem()
   Nemo.num_coeff!(z, a, i)
