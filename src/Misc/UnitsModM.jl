@@ -1,10 +1,6 @@
 export UnitGroup, solvemod, gen_mod_pk,
        disc_log_bs_gs, disc_log_ph, disc_log_mod
 
-function order(x::Generic.ResidueRingElem{ZZRingElem}, fp::Dict{ZZRingElem, Int64})
-  error("missing")
-end
-
 @doc raw"""
     is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
 
@@ -673,58 +669,3 @@ end
 
 unit_group(A::Nemo.ZZModRing) = UnitGroup(A)
 unit_group(A::Nemo.zzModRing) = UnitGroup(A)
-
-
-## Make zzModRing iteratible
-
-Base.iterate(R::zzModRing) = (zero(R), zero(UInt))
-
-function Base.iterate(R::zzModRing, st::UInt)
-  if st == R.n - 1
-    return nothing
-  end
-
-  return R(st + 1), st + 1
-end
-
-Base.IteratorEltype(::Type{zzModRing}) = Base.HasEltype()
-Base.eltype(::Type{zzModRing}) = zzModRingElem
-
-Base.IteratorSize(::Type{zzModRing}) = Base.HasLength()
-Base.length(R::zzModRing) = R.n
-
-## Make ZZModRing iteratible
-
-Base.iterate(R::Nemo.ZZModRing) = (zero(R), zero(ZZRingElem))
-
-function Base.iterate(R::Nemo.ZZModRing, st::ZZRingElem)
-  if st == R.n - 1
-    return nothing
-  end
-
-  return R(st + 1), st + 1
-end
-
-Base.IteratorEltype(::Type{Nemo.ZZModRing}) = Base.HasEltype()
-Base.eltype(::Type{Nemo.ZZModRing}) = ZZModRingElem
-
-Base.IteratorSize(::Type{Nemo.ZZModRing}) = Base.HasLength()
-Base.length(R::Nemo.ZZModRing) = Integer(R.n)
-
-## Make fpField iteratible
-
-Base.iterate(R::fpField) = (zero(R), zero(UInt))
-
-function Base.iterate(R::fpField, st::UInt)
-  if st == R.n - 1
-    return nothing
-  end
-
-  return R(st + 1), st + 1
-end
-
-Base.IteratorEltype(::Type{fpField}) = Base.HasEltype()
-Base.eltype(::Type{fpField}) = fpFieldElem
-
-Base.IteratorSize(::Type{fpField}) = Base.HasLength()
-Base.length(R::fpField) = R.n

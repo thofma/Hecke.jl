@@ -2,14 +2,6 @@ export is_integral
 
 ################################################################################
 #
-#  Copy
-#
-################################################################################
-
-Base.copy(d::nf_elem) = deepcopy(d)
-
-################################################################################
-#
 #  Basis matrix
 #
 ################################################################################
@@ -59,12 +51,6 @@ end
 #
 ################################################################################
 
-function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, libantic), Nothing,
-         (Ref{nf_elem}, Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}),
-         a, b, c, a.parent)
-end
-
 function set_den!(a::nf_elem, d::ZZRingElem)
   ccall((:nf_elem_set_den, libantic), Nothing,
         (Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
@@ -77,13 +63,6 @@ function set_num_coeff!(a::nf_elem, i::Int, b::ZZRingElem)
         a, i, b, parent(a))
 end
 
-function divexact!(z::nf_elem, x::nf_elem, y::ZZRingElem)
-  ccall((:nf_elem_scalar_div_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-        z, x, y, parent(x))
-  return z
-end
-
 function gen!(r::nf_elem)
    a = parent(r)
    ccall((:nf_elem_gen, libantic), Nothing,
@@ -91,21 +70,6 @@ function gen!(r::nf_elem)
    return r
 end
 
-function one!(r::nf_elem)
-   a = parent(r)
-   ccall((:nf_elem_one, libantic), Nothing,
-         (Ref{nf_elem}, Ref{AnticNumberField}), r, a)
-   return r
-end
-
-function one(r::nf_elem)
-   a = parent(r)
-   return one(a)
-end
-
-function zero(r::nf_elem)
-   return zero(parent(r))
-end
 
 ################################################################################
 #
@@ -219,27 +183,6 @@ function is_norm_divisible_pp(a::nf_elem, n::ZZRingElem)
   return iszero(el)
 end
 
-################################################################################
-#
-#  Numerator
-#
-################################################################################
-
-@doc raw"""
-    numerator(a::nf_elem) -> nf_elem
-
-For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with
-$b\in Z[t]$, $\deg(a) = \deg(b)$ and $d>0$ minimal in $Z$.
-This function returns $b$.
-"""
-function numerator(a::nf_elem)
-   _one = one(FlintZZ)
-   z = deepcopy(a)
-   ccall((:nf_elem_set_den, libantic), Nothing,
-         (Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-         z, _one, a.parent)
-   return z
-end
 
 ################################################################################
 #
@@ -950,14 +893,6 @@ end
 
 mod(x::nf_elem, y::Integer) = mod(x, ZZRingElem(y))
 
-#Assuming that the denominator of a is one, reduces all the coefficients modulo p
-# non-symmetric (positive) residue system
-function mod!(a::nf_elem, b::ZZRingElem)
-  ccall((:nf_elem_mod_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-        a, a, b, parent(a))
-  return a
-end
 
 function rem(a::nf_elem, b::ZZRingElem)
   c = deepcopy(a)

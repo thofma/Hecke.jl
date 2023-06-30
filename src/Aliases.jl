@@ -122,7 +122,6 @@
 @alias ismaximal_order_known is_maximal_order_known
 @alias ismodular is_modular
 @alias isnegative_definite is_negative_definite
-@alias isnilpotent is_nilpotent
 @alias isnorm is_norm
 @alias isnorm_divisible is_norm_divisible
 @alias isnorm_divisible_pp is_norm_divisible_pp

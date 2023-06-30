@@ -54,15 +54,6 @@ function is_normalized(w::Vector{Int})
   end
 end
 
-function neg!(w::Vector{Int})
-  w .*= -1
-end
-
-function neg!(w::ZZMatrix)
-  ccall((:fmpz_mat_neg, libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}), w, w)
-  return w
-end
-
 function find_point(w, V::VectorList)
   fl, k = has_point(w, V)
   @assert fl

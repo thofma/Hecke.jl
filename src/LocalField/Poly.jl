@@ -719,7 +719,6 @@ function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, q
   return res*res1
 end
 
-degree(::FlintPadicField) = 1
 base_field(Q::FlintQadicField) = base_ring(defining_polynomial(Q))
 
 function norm(f::PolyElem{T}) where T <: Union{qadic, LocalFieldElem}
@@ -730,10 +729,6 @@ function norm(f::PolyElem{T}) where T <: Union{qadic, LocalFieldElem}
   PQ = elem_type(base_field(K))[tr(x) for x in P]
   N = power_sums_to_polynomial(PQ)
   return inflate(N, i)
-end
-
-function norm(f::PolyElem{padic})
-  return f
 end
 
 @doc raw"""

@@ -256,8 +256,6 @@ function _explode(x::Generic.MatSpaceElem{nf_elem})
   return z
 end
 
-Base.:(*)(x::QQFieldElem, y::AbstractAlgebra.Generic.MatSpaceElem{nf_elem}) = base_ring(y)(x) * y
-
 function _to_absolute_basis(v, m, ns, Ks)
   w = Vector{QQFieldElem}(undef, m)
   k = 1

@@ -265,39 +265,11 @@ function radiuslttwopower(x::acb, e::Int)
   return ok
 end
 
-function round(x::arb, p::Int)
-  z = ArbField(p, cached = false)()
-  ccall((:arb_set_round, libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
-  return z
-end
-
-function round(x::acb, p::Int)
-  z = AcbField(p, cached = false)()
-  ccall((:acb_set_round, libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
-  return z
-end
-
 function arb_trim(x::arb)
   z = arb()
   ccall((:arb_trim, libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}), z, x)
   z.parent = ArbField(arb_bits(z), cached = false)
   return z
-end
-
-function round!(z::arb, x::arb, p::Int)
-  ccall((:arb_set_round, libarb), Nothing, (Ref{Nemo.arb}, Ref{Nemo.arb}, Int), z, x, p)
-  z.parent = ArbField(p, cached = false)
-  return z
-end
-
-function round!(z::acb, x::acb, p::Int)
-  ccall((:acb_set_round, libarb), Nothing, (Ref{Nemo.acb}, Ref{Nemo.acb}, Int), z, x, p)
-  z.parent = AcbField(p, cached = false)
-  return z
-end
-
-function bits(x::arb)
-  return ccall((:arb_bits, libarb), Int, (Ref{Nemo.arb}, ), x)
 end
 
 function rel_error_bits(x::arb)

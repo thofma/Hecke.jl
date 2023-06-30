@@ -38,7 +38,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, fqPolyRepField, HeckeMap, NfOrdToF
     function _image(x::NfOrdElem)
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::QQPolyRingElem
-      fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
+      Nemo.fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
       ccall((:nmod_poly_rem, libflint), Nothing,
             (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ptr{Nothing}),
             tmp_gfp_poly, tmp_gfp_poly, g, pointer_from_objref(F)+sizeof(ZZRingElem))
@@ -328,7 +328,7 @@ function image(f::NfOrdToFqMor, x::NfOrdElem)
     O = domain(f)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
-    fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
+    Nemo.fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
     ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{Nemo.fmpz_mod_ctx_struct}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring.ninv)
     ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), u, f.tmp_gfp_fmpz_poly, F)
     ccall((:fq_reduce, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), u, F)
@@ -391,7 +391,7 @@ mutable struct NfOrdToGFMor <: Map{NfOrd, fpField, HeckeMap, NfOrdToFqNmodMor}
     let g = g, tmp_gfp_poly = tmp_gfp_poly, O = O, F = F
     	function _image(x::NfOrdElem)
       	gg = parent(nf(O).pol)(elem_in_nf(x))::QQPolyRingElem
-      	fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
+      	Nemo.fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
       	ccall((:nmod_poly_rem, libflint), Nothing,
         	    (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ptr{Nothing}),
           	  tmp_gfp_poly, tmp_gfp_poly, g, pointer_from_objref(F)+sizeof(ZZRingElem))
@@ -461,7 +461,7 @@ mutable struct NfOrdToGFFmpzMor <: Map{NfOrd, Nemo.FpField, HeckeMap, NfOrdToGFF
     let g = g, tmp_gfp_poly = tmp_gfp_poly, O = O, F = F
     	function _image(x::NfOrdElem)
       	gg = parent(nf(O).pol)(elem_in_nf(x))::QQPolyRingElem
-      	fmpq_poly_to_gfp_fmpz_poly_raw!(tmp_gfp_poly, gg)
+      	Nemo.fmpq_poly_to_gfp_fmpz_poly_raw!(tmp_gfp_poly, gg)
 				rem!(tmp_gfp_poly, tmp_gfp_poly, g)
       	return coeff(tmp_gfp_poly, 0)
 			end
@@ -619,7 +619,7 @@ function image(f::NfOrdToFqFieldMor, x::NfOrdElem)
     O = domain(f)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
-    fmpq_poly_to_fq_default_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
+    Nemo.fmpq_poly_to_fq_default_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
     ccall((:fq_default_poly_rem, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{Nemo.FqField}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring)
     res = F.forwardmap(f.tmp_gfp_fmpz_poly)::FqFieldElem
     @assert parent(res) === F
@@ -1308,38 +1308,13 @@ end
 
 # Helper
 
-function mul!(z::fpFieldElem, x::fpFieldElem, y::ZZRingElem)
-  R = parent(x)
-  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, R.n)
-  r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
-             x.data, d, R.n, R.ninv)
-  z.data = r
-  return z
-end
+
 
 function mul_mod(x::UInt, y::ZZRingElem, R)
   d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, R.n)
   r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
              x, d, R.n, R.ninv)
   return r
-end
-
-function mul!(z::Nemo.FpFieldElem, x::Nemo.FpFieldElem, y::ZZRingElem)
-  R = parent(x)
-  ccall((:fmpz_mod, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}),
-        z.data, y, R.n)
-
-  ccall((:fmpz_mod_mul, libflint), Nothing,
-        (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{Nemo.fmpz_mod_ctx_struct}),
-        z.data, x.data, z.data, R.ninv)
-  return z
-end
-
-function rem!(z::fpPolyRingElem, a::fpPolyRingElem, b::fpPolyRingElem)
-  ccall((:nmod_poly_rem, libflint), Nothing,
-        	    (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ptr{Nothing}),
-          	  z, a, b, pointer_from_objref(base_ring(z))+sizeof(ZZRingElem))
-  return z
 end
 
 function evaluate_raw(x::fpPolyRingElem, y::fpFieldElem)

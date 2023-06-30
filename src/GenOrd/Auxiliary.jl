@@ -72,24 +72,6 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
   return H[1:ncols(M), :]
 end
 
-function Base.divrem(a::ZZModRingElem, b::ZZModRingElem)
-  R = parent(a)
-  r = rem(a, b)
-  return divexact(a-r, b), r
-end
-
-function Base.div(a::ZZModRingElem, b::ZZModRingElem)
-  R = parent(a)
-  r = rem(a, b)
-  return divexact(a-r, b)
-end
-
-function Base.rem(a::ZZModRingElem, b::ZZModRingElem)
-  R = parent(a)
-  r = R(rem(lift(a), gcd(modulus(R), lift(b))))
-  return r
-end
-
 function function_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::String = "_a"; check::Bool = true, cached::Bool = false)
   return FunctionField(f, s, cached = cached)
 end
@@ -153,20 +135,11 @@ function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
 end
 
-function (R::QQPolyRing)(a::Generic.RationalFunctionFieldElem{QQFieldElem})
-  @assert isone(denominator(a))
-  return R(numerator(a))
-end
-
 #######################################################################
 #
 # support for ZZ
 #
 #######################################################################
-
-denominator(a::QQFieldElem, ::ZZRing) = denominator(a)
-
-numerator(a::QQFieldElem, ::ZZRing) = numerator(a)
 
 integral_split(a::QQFieldElem, ::ZZRing) = (numerator(a), denominator(a))
 

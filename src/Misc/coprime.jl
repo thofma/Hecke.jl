@@ -1,12 +1,6 @@
 import Nemo.isone, Nemo.divexact, Base.copy
 export divexact!, gcd_into!, coprime_base, coprime_base_insert
 
-function divexact!(a::ZZRingElem, b::ZZRingElem)
-  ccall((:fmpz_divexact, libflint), Nothing,
-          (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, a, b)
-  return a
-end
-
 function gcd_into!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
   ccall((:fmpz_gcd, libflint), Nothing,
           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)

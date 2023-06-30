@@ -1049,11 +1049,6 @@ end
   return z
 end
 
-@inline function divexact!(z::QQFieldElem, a::QQFieldElem, b::QQFieldElem)
-  ccall((:fmpq_div, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), z, a, b)
-  return z
-end
-
 @inline function add_two!(z::ZZRingElem, x::ZZRingElem)
   ccall((:fmpz_add_ui, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Int), z, x, 2)
   return z
@@ -1063,8 +1058,6 @@ end
   ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, a)
   return z
 end
-
-divexact!(z::Rational{Int}, x::Rational{Int}, y::Rational{Int}) = divexact(x, y)
 
 floor!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(floor(x))
 

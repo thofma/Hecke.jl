@@ -63,19 +63,6 @@ function evaluate(f::QQPolyRingElem, r::BigComplex)
   return s
 end
 
-function evaluate(f::QQPolyRingElem, r::T) where T <: RingElem
-  R = parent(r)
-  if iszero(f)
-    return zero(R)
-  end
-  l = length(f) - 1
-  s = R(coeff(f, l))
-  for i in l-1:-1:0
-    s = s*r + R(coeff(f, i))
-  end
-  return s
-end
-
 function evaluate(f::ZZPolyRingElem, r::BigComplex)
   #Horner - not elegant, but workable
   l = f.length-1
@@ -145,17 +132,6 @@ function length(a::nf_elem, p::Int = 50)
   return sum([x*x for x in m])
 end
 
-function setprecision!(x::BigFloat, p::Int)
-  ccall((:mpfr_prec_round, :libmpfr), Nothing, (Ref{BigFloat}, Clong, Int32), x, p, Base.MPFR.ROUNDING_MODE[])
-end
-
-function Base.setprecision(x::BigFloat, p::Int)
-  setprecision(BigFloat, p) do
-    y = BigFloat()
-    ccall((:mpfr_set, :libmpfr), Nothing, (Ref{BigFloat}, Ref{BigFloat}, Int32), y, x, Base.MPFR.ROUNDING_MODE[])
-    return y
-  end
-end
 
 function minkowski_matrix(K::AnticNumberField, p::Int = 50)
   c = roots_ctx(K)
@@ -185,14 +161,3 @@ function minkowski_matrix(K::AnticNumberField, p::Int = 50)
   setprecision(old)
   return m
 end
-
-
-function *(a::ZZMatrix, b::Matrix{BigFloat})
-  s = Base.size(b)
-  ncols(a) == s[1] || error("dimensions do not match")
-
-  c = Array{BigFloat}(undef, nrows(a), s[2])
-  return mult!(c, a, b)
-end
-
-

@@ -81,26 +81,6 @@ function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
   error("something wrong")
 end
 
-
-function evaluate(f::QQPolyRingElem, a::nf_elem)
-  #Base.show_backtrace(stdout, Base.stacktrace())
-  R = parent(a)
-  if iszero(f)
-    return zero(R)
-  end
-  if a == gen(R) && parent(f) == parent(parent(a).pol)
-    return R(f)
-  end
-  l = length(f) - 1
-  s = R(coeff(f, l))
-  for i in l-1:-1:0
-    #s = s*a + R(coeff(f, i))
-    mul!(s, s, a)
-    add!(s, s, coeff(f, i))
-  end
-  return s
-end
-
 Base.copy(f::NfToNfMor) = f
 
 ################################################################################

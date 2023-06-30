@@ -62,18 +62,7 @@ function modular_lift(ap::Vector{fqPolyRepMatrix}, me::modular_env)
   return A
 end
 
-@doc raw"""
-    mod!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
 
-Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
-"""
-function mod!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
-  for i=1:nrows(A)
-    for j=1:ncols(A)
-      mod!(A[i, j], m)
-    end
-  end
-end
 
 @doc raw"""
     mod_sym!(A::Generic.Mat{nf_elem}, m::ZZRingElem)
@@ -221,18 +210,6 @@ function denominator_ideal(M::Vector{nf_elem}, den::nf_elem)
   return d
 end
 
-@doc raw"""
-    divexact!(A::Generic.Mat{nf_elem}, p::ZZRingElem)
-
-Inplace: divide each entry of $A$ by $p$.
-"""
-function divexact!(A::Generic.Mat{nf_elem}, p::ZZRingElem)
-  for i=1:nrows(A)
-    for j=1:ncols(A)
-      A[i,j] = A[i,j]//p
-    end
-  end
-end
 
 #TODO/ To experiment:
 # - vector reconstruction ala Storjohan

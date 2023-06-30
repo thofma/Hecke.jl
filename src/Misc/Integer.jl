@@ -13,61 +13,26 @@ is_commutative(::ZZRing) = true
   The multiplicative order of a modulo $m$ (not a good algorithm).
 """
 function modord(a::ZZRingElem, m::ZZRingElem)
-  gcd(a,m)!=1 && error("1st argument not a unit")
+  gcd(a, m) != 1 && error("1st argument not a unit")
   i = 1
   b = a % m
   while b != 1
     i += 1
-    b = b*a % m
+    b = b * a % m
   end
   return i
 end
 
 function modord(a::Integer, m::Integer)
-  gcd(a,m)!=1 && error("1st argument not a unit")
+  gcd(a, m) != 1 && error("1st argument not a unit")
   i = 1
   b = a % m
   while b != 1
     i += 1
-    b = b*a % m
+    b = b * a % m
   end
   return i
 end
-
-function neg!(a::ZZRingElem)
-  ccall((:fmpz_neg, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), a, a)
-  return a
-end
-
-############################################################
-# more unsafe function that Bill does not want to have....
-############################################################
-
-
-function mod!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
-  ccall((:fmpz_mod, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
-  return z
-end
-
-function divexact!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
-  iszero(y) && throw(DivideError())
-  ccall((:fmpz_divexact, libflint), Nothing,
-        (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
-  return z
-end
-
-function lcm!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
-   ccall((:fmpz_lcm, libflint), Nothing,
-         (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
-   return z
-end
-
-function gcd!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
-   ccall((:fmpz_gcd, libflint), Nothing,
-         (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
-   return z
-end
-
 
 ################################################################################
 #
@@ -88,14 +53,14 @@ mutable struct fmpz_comb
   function fmpz_comb(primes::Vector{UInt})
     z = new()
     ccall((:fmpz_comb_init, libflint), Nothing, (Ref{fmpz_comb}, Ptr{UInt}, Int),
-            z, primes, length(primes))
+      z, primes, length(primes))
     finalizer(_fmpz_comb_clear_fn, z)
     return z
   end
 end
 
 function _fmpz_comb_clear_fn(z::fmpz_comb)
-  ccall((:fmpz_comb_clear, libflint), Nothing, (Ref{fmpz_comb}, ), z)
+  ccall((:fmpz_comb_clear, libflint), Nothing, (Ref{fmpz_comb},), z)
 end
 
 mutable struct fmpz_comb_temp
@@ -107,26 +72,26 @@ mutable struct fmpz_comb_temp
   function fmpz_comb_temp(comb::fmpz_comb)
     z = new()
     ccall((:fmpz_comb_temp_init, libflint), Nothing,
-            (Ref{fmpz_comb_temp}, Ref{fmpz_comb}), z, comb)
+      (Ref{fmpz_comb_temp}, Ref{fmpz_comb}), z, comb)
     finalizer(_fmpz_comb_temp_clear_fn, z)
     return z
   end
 end
 
 function _fmpz_comb_temp_clear_fn(z::fmpz_comb_temp)
-  ccall((:fmpz_comb_temp_clear, libflint), Nothing, (Ref{fmpz_comb_temp}, ), z)
+  ccall((:fmpz_comb_temp_clear, libflint), Nothing, (Ref{fmpz_comb_temp},), z)
 end
 
 
 function fmpz_multi_crt_ui!(z::ZZRingElem, a::Vector{UInt}, b::fmpz_comb, c::fmpz_comb_temp)
   ccall((:fmpz_multi_CRT_ui, libflint), Nothing,
-          (Ref{ZZRingElem}, Ptr{UInt}, Ref{fmpz_comb}, Ref{fmpz_comb_temp}, Cint),
-          z, a, b, c, 1)
+    (Ref{ZZRingElem}, Ptr{UInt}, Ref{fmpz_comb}, Ref{fmpz_comb_temp}, Cint),
+    z, a, b, c, 1)
   return z
 end
 
 function _fmpz_preinvn_struct_clear_fn(z::fmpz_preinvn_struct)
-  ccall((:fmpz_preinvn_clear, libflint), Nothing, (Ref{fmpz_preinvn_struct}, ), z)
+  ccall((:fmpz_preinvn_clear, libflint), Nothing, (Ref{fmpz_preinvn_struct},), z)
 end
 
 function fdiv_qr_with_preinvn!(q::ZZRingElem, r::ZZRingElem, g::ZZRingElem, h::ZZRingElem, hinv::fmpz_preinvn_struct)
@@ -145,12 +110,12 @@ end
 ################################################################################
 
 function mod_sym(a::ZZRingElem, b::ZZRingElem)
-  c = mod(a,b)
-  @assert c>=0
-  if b > 0 && 2*c > b
-    return c-b
-  elseif b < 0 && 2*c > -b
-    return c+b
+  c = mod(a, b)
+  @assert c >= 0
+  if b > 0 && 2 * c > b
+    return c - b
+  elseif b < 0 && 2 * c > -b
+    return c + b
   else
     return c
   end
@@ -163,8 +128,8 @@ end
 #
 ################################################################################
 
-mutable struct MapSUnitGrpZFacElem <: Map{GrpAbFinGen, FacElemMon{QQField}, HeckeMap, MapSUnitGrpZFacElem}
-  header::MapHeader{GrpAbFinGen, FacElemMon{QQField}}
+mutable struct MapSUnitGrpZFacElem <: Map{GrpAbFinGen,FacElemMon{QQField},HeckeMap,MapSUnitGrpZFacElem}
+  header::MapHeader{GrpAbFinGen,FacElemMon{QQField}}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZFacElem()
@@ -176,8 +141,8 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-mutable struct MapSUnitGrpZ <: Map{GrpAbFinGen, QQField, HeckeMap, MapSUnitGrpZ}
-  header::MapHeader{GrpAbFinGen, QQField}
+mutable struct MapSUnitGrpZ <: Map{GrpAbFinGen,QQField,HeckeMap,MapSUnitGrpZ}
+  header::MapHeader{GrpAbFinGen,QQField}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZ()
@@ -198,22 +163,22 @@ rational numbers divisible only by primes in $S$.
 The second return value is the map mapping group elements to rationals
 in factored form or rationals back to group elements.
 """
-function sunit_group_fac_elem(S::Vector{T}) where T <: Integer
-  return sunit_group_fac_elem(ZZRingElem[x for x=S])
+function sunit_group_fac_elem(S::Vector{T}) where {T<:Integer}
+  return sunit_group_fac_elem(ZZRingElem[x for x = S])
 end
 
 function sunit_group_fac_elem(S::Vector{ZZRingElem})
   S = coprime_base(S)  #TODO: for S-units use factor???
-  G = abelian_group(vcat(ZZRingElem[2], ZZRingElem[0 for i=S]))
+  G = abelian_group(vcat(ZZRingElem[2], ZZRingElem[0 for i = S]))
   S = vcat(ZZRingElem[-1], S)
 
   mp = MapSUnitGrpZFacElem()
   mp.idl = S
 
-  Sq = QQFieldElem[x for x=S]
+  Sq = QQFieldElem[x for x = S]
 
   function dexp(a::GrpAbFinGenElem)
-    return FacElem(Sq, ZZRingElem[a.coeff[1,i] for i=1:length(S)])
+    return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(S)])
   end
 
   mp.header = MapHeader(G, FacElemMon(FlintQQ), dexp)
@@ -222,9 +187,9 @@ function sunit_group_fac_elem(S::Vector{ZZRingElem})
 end
 
 function preimage(f::MapSUnitGrpZFacElem, a::ZZRingElem)
-  g = Int[a>=0 ? 0 : 1]
+  g = Int[a >= 0 ? 0 : 1]
   S = f.idl
-  g = vcat(g, Int[valuation(a, x) for x=S[2:end]])
+  g = vcat(g, Int[valuation(a, x) for x = S[2:end]])
   return domain(f)(g)
 end
 
@@ -241,7 +206,7 @@ function preimage(f::MapSUnitGrpZFacElem, a::QQFieldElem)
 end
 
 function preimage(f::MapSUnitGrpZFacElem, a::FacElem)
-  return sum(GrpAbFinGenElem[e*preimage(f, k) for (k,e) = a.fac])
+  return sum(GrpAbFinGenElem[e * preimage(f, k) for (k, e) = a.fac])
 end
 
 @doc raw"""
@@ -253,8 +218,8 @@ rational numbers divisible only by primes in $S$.
 The second return value is the map mapping group elements to rationals
 or rationals back to group elements.
 """
-function sunit_group(S::Vector{T}) where T <: Integer
-  return sunit_group(ZZRingElem[x for x=S])
+function sunit_group(S::Vector{T}) where {T<:Integer}
+  return sunit_group(ZZRingElem[x for x = S])
 end
 
 function sunit_group(S::Vector{ZZRingElem})
@@ -308,12 +273,12 @@ end
 
 function flint_rand_state()
   A = flint_rand_ctx_t()
-  A.a = ccall((:flint_rand_alloc, libflint), Ptr{Nothing}, (Int, ), 1)
-  ccall((:flint_randinit, libflint), Nothing, (Ptr{Nothing}, ), A.a)
+  A.a = ccall((:flint_rand_alloc, libflint), Ptr{Nothing}, (Int,), 1)
+  ccall((:flint_randinit, libflint), Nothing, (Ptr{Nothing},), A.a)
 
   function clean_rand_state(A::flint_rand_ctx_t)
-    ccall((:flint_randclear, libflint), Nothing, (Ptr{Nothing}, ), A.a)
-    ccall((:flint_rand_free, libflint), Nothing, (Ptr{Nothing}, ), A.a)
+    ccall((:flint_randclear, libflint), Nothing, (Ptr{Nothing},), A.a)
+    ccall((:flint_rand_free, libflint), Nothing, (Ptr{Nothing},), A.a)
     nothing
   end
   finalizer(clean_rand_state, A)
@@ -322,13 +287,13 @@ end
 
 global flint_rand_ctx
 
-function ecm(a::ZZRingElem, B1::UInt, B2::UInt, ncrv::UInt, rnd = flint_rand_ctx)
+function ecm(a::ZZRingElem, B1::UInt, B2::UInt, ncrv::UInt, rnd=flint_rand_ctx)
   f = ZZRingElem()
   r = ccall((:fmpz_factor_ecm, libflint), Int32, (Ref{ZZRingElem}, UInt, UInt, UInt, Ptr{Nothing}, Ref{ZZRingElem}), f, ncrv, B1, B2, rnd.a, a)
   return r, f
 end
 
-function ecm(a::ZZRingElem, B1::Int, B2::Int, ncrv::Int, rnd = flint_rand_ctx)
+function ecm(a::ZZRingElem, B1::Int, B2::Int, ncrv::Int, rnd=flint_rand_ctx)
   return ecm(a, UInt(B1), UInt(B2), UInt(ncrv), rnd)
 end
 
@@ -336,7 +301,7 @@ end
 B1 = [2, 11, 50, 250, 1000, 3000, 11000, 43000, 110000, 260000, 850000, 2900000];
 nC = [25, 90, 300, 700, 1800, 5100, 10600, 19300, 49000, 124000, 210000, 340000];
 
-function ecm(a::ZZRingElem, max_digits::Int = div(ndigits(a), 3), rnd = flint_rand_ctx)
+function ecm(a::ZZRingElem, max_digits::Int=div(ndigits(a), 3), rnd=flint_rand_ctx)
   n = ndigits(a, 10)
   B1s = 15
 
@@ -344,9 +309,9 @@ function ecm(a::ZZRingElem, max_digits::Int = div(ndigits(a), 3), rnd = flint_ra
   s = max(div(max_digits - 10, 5), 1)
   #i = s = max(i, s)
   while i <= s
-    e, f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
+    e, f = ecm(a, B1[i] * 1000, B1[i] * 1000 * 100, nC[i], rnd)
     if e != 0
-      return (e,f)
+      return (e, f)
     end
     i += 1
     if i > length(B1)
@@ -357,16 +322,16 @@ function ecm(a::ZZRingElem, max_digits::Int = div(ndigits(a), 3), rnd = flint_ra
 end
 
 function factor_trial_range(N::ZZRingElem, start::Int=0, np::Int=10^5)
-   F = Nemo.fmpz_factor()
-   ccall((:fmpz_factor_trial_range, libflint), Nothing, (Ref{Nemo.fmpz_factor}, Ref{ZZRingElem}, UInt, UInt), F, N, start, np)
-   res = Dict{ZZRingElem, Int}()
-   for i in 1:F.num
-     z = ZZRingElem()
-     ccall((:fmpz_factor_get_fmpz, libflint), Nothing,
-           (Ref{ZZRingElem}, Ref{Nemo.fmpz_factor}, Int), z, F, i - 1)
-     res[z] = unsafe_load(F.exp, i)
-   end
-   return res, canonical_unit(N)
+  F = Nemo.fmpz_factor()
+  ccall((:fmpz_factor_trial_range, libflint), Nothing, (Ref{Nemo.fmpz_factor}, Ref{ZZRingElem}, UInt, UInt), F, N, start, np)
+  res = Dict{ZZRingElem,Int}()
+  for i in 1:F.num
+    z = ZZRingElem()
+    ccall((:fmpz_factor_get_fmpz, libflint), Nothing,
+      (Ref{ZZRingElem}, Ref{Nemo.fmpz_factor}, Int), z, F, i - 1)
+    res[z] = unsafe_load(F.exp, i)
+  end
+  return res, canonical_unit(N)
 end
 
 const big_primes = ZZRingElem[]
@@ -404,7 +369,7 @@ function factor(N::ZZRingElem)
   return Nemo.Fac(c, r)
 end
 
-function factor_insert!(r::Dict{ZZRingElem, Int}, N::ZZRingElem, scale::Int = 1)
+function factor_insert!(r::Dict{ZZRingElem,Int}, N::ZZRingElem, scale::Int=1)
   #assumes N to be positive
   #        no small divisors
   #        no big_primes
@@ -424,9 +389,9 @@ function factor_insert!(r::Dict{ZZRingElem, Int}, N::ZZRingElem, scale::Int = 1)
     s = Nemo.factor(N) #MPQS
     for (p, k) in s
       if haskey(r, p)
-        r[p] += k*scale
+        r[p] += k * scale
       else
-        r[p] = k*scale
+        r[p] = k * scale
       end
     end
     return r
@@ -437,16 +402,16 @@ function factor_insert!(r::Dict{ZZRingElem, Int}, N::ZZRingElem, scale::Int = 1)
     s = Nemo.factor(N)
     for (p, k) in s
       if haskey(r, p)
-        r[p] += k*scale
+        r[p] += k * scale
       else
-        r[p] = k*scale
+        r[p] = k * scale
       end
     end
     return r
   end
   cp = coprime_base([N, f])
   for i = cp
-    factor_insert!(r, i, scale*valuation(N, i))
+    factor_insert!(r, i, scale * valuation(N, i))
   end
   return r
 end
@@ -463,7 +428,7 @@ end
 #  need ecm to find small factors
 # then recurse...
 
-function _factors_trial_division(n::ZZRingElem, np::Int = 10^5)
+function _factors_trial_division(n::ZZRingElem, np::Int=10^5)
   res, u = factor_trial_range(n, 0, np)
   factors = ZZRingElem[]
   for (p, v) in res
@@ -474,12 +439,6 @@ function _factors_trial_division(n::ZZRingElem, np::Int = 10^5)
 
 end
 
-function rand!(A::Vector{ZZRingElem}, v::StepRange{ZZRingElem, ZZRingElem})
-  for i in 1:length(A)
-    A[i] = rand(v)
-  end
-  return A
-end
 
 function (::Type{Base.Rational{BigInt}})(x::QQFieldElem)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
@@ -508,7 +467,7 @@ mutable struct Divisors{T}
   s#::Iterator
   f::Function
   U::GrpAbFinGen
-  function Divisors(a::T; units::Bool = false, power::Int = 1) where {T}
+  function Divisors(a::T; units::Bool=false, power::Int=1) where {T}
     r = new{T}()
     r.n = a
     r.lf = MSet{T}()
@@ -524,12 +483,12 @@ mutable struct Divisors{T}
       U, mU = unit_group(parent(a))
       r.U = U
       g = r.f
-      r.f = x->mU(x[1]) * g(x[2])
+      r.f = x -> mU(x[1]) * g(x[2])
       r.s = Base.Iterators.ProductIterator((U, r.s))
     end
-   return r
+    return r
   end
-  function Divisors(a::NfOrdIdl; units::Bool = false, power::Int = 1)
+  function Divisors(a::NfOrdIdl; units::Bool=false, power::Int=1)
     r = new{NfOrdIdl}()
     r.n = a
     r.lf = MSet{NfOrdIdl}()
@@ -543,7 +502,7 @@ mutable struct Divisors{T}
     r.s = subsets(r.lf)
     return r
   end
-  function Divisors(a::FacElem{NfOrdIdl}; units::Bool = false, power::Int = 1)
+  function Divisors(a::FacElem{NfOrdIdl}; units::Bool=false, power::Int=1)
     r = new{NfOrdIdl}()
     r.n = evaluate(a)
     r.lf = MSet{NfOrdIdl}()
@@ -558,7 +517,7 @@ mutable struct Divisors{T}
     return r
   end
 
-  function Divisors(a::FacElem{ZZRingElem, ZZRing}; units::Bool = false, power::Int = 1)
+  function Divisors(a::FacElem{ZZRingElem,ZZRing}; units::Bool=false, power::Int=1)
     r = new{ZZRingElem}()
     r.n = evaluate(a)
     r.lf = MSet{ZZRingElem}()
@@ -574,18 +533,18 @@ mutable struct Divisors{T}
       U, mU = unit_group(parent(a))
       r.U = U
       g = r.f
-      r.f = x->mU(x[1]) * g(x[2])
+      r.f = x -> mU(x[1]) * g(x[2])
       r.s = Base.Iterators.ProductIterator((U, r.s))
     end
-   return r
+    return r
   end
-  function Divisors(a::Fac{ZZRingElem}; units::Bool = false, power::Int = 1)
-    return Divisors(FacElem(a), units = units, power = power)
+  function Divisors(a::Fac{ZZRingElem}; units::Bool=false, power::Int=1)
+    return Divisors(FacElem(a), units=units, power=power)
   end
 end
 Base.IteratorSize(::Divisors) = Base.HasLength()
 Base.length(D::Divisors) = length(D.s)
-Base.eltype(::Divisors{T}) where T = T
+Base.eltype(::Divisors{T}) where {T} = T
 
 function Base.iterate(D::Divisors)
   x = iterate(D.s)
@@ -618,10 +577,10 @@ The unit group of $\mathbb{Z}$, i.e. $C_2$ and the map translating between the g
 """
 function unit_group(::ZZRing)
   G = abelian_group([2])
-  exp = function(z::GrpAbFinGenElem)
+  exp = function (z::GrpAbFinGenElem)
     return isodd(z[1]) ? ZZRingElem(-1) : ZZRingElem(1)
   end
-  log = function(z::ZZRingElem)
+  log = function (z::ZZRingElem)
     return z == -1 ? G[1] : G[0]
   end
   return G, MapFromFunc(exp, log, G, FlintZZ)
@@ -634,10 +593,10 @@ The unit group of , i.e. $C_2$ and the map translating between the group and $\m
 """
 function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   G = abelian_group([2])
-  exp = function(z::GrpAbFinGenElem)
+  exp = function (z::GrpAbFinGenElem)
     return isodd(z[1]) ? T(-1) : T(1)
   end
-  log = function(z::T)
+  log = function (z::T)
     return z == -1 ? G[1] : G[0]
   end
   return G, MapFromFunc(exp, log, G, R)
@@ -658,18 +617,18 @@ holds. The elements are returned in factored form.
 function euler_phi_inv_fac_elem(n::ZZRingElem)
   lp = ZZRingElem[]
   for d = Divisors(n)
-    if is_prime(d+1)
-      push!(lp, d+1)
+    if is_prime(d + 1)
+      push!(lp, d + 1)
     end
   end
-#  println("possible primes: ", lp)
+  #  println("possible primes: ", lp)
 
-  E = Tuple{ZZRingElem, Vector{Tuple{ZZRingElem, Int}}}[]
-  res = FacElem{ZZRingElem, ZZRing}[]
+  E = Tuple{ZZRingElem,Vector{Tuple{ZZRingElem,Int}}}[]
+  res = FacElem{ZZRingElem,ZZRing}[]
   for p = lp
     v = valuation(n, p)
-    for i=0:v
-      push!(E, ((p-1)*p^i, [(p, i+1)]))
+    for i = 0:v
+      push!(E, ((p - 1) * p^i, [(p, i + 1)]))
       if E[end][1] == n
         push!(res, FacElem(Dict(E[end][2])))
       end
@@ -685,10 +644,10 @@ function euler_phi_inv_fac_elem(n::ZZRingElem)
         if p <= pm
           continue
         end
-        if nn % (p-1) == 0
+        if nn % (p - 1) == 0
           v = valuation(nn, p)
           for i = 0:v
-            push!(F, (e[1]*(p-1)*p^i, vcat(e[2], [(p, i+1)])))
+            push!(F, (e[1] * (p - 1) * p^i, vcat(e[2], [(p, i + 1)])))
             if F[end][1] == n
               push!(res, FacElem(Dict(F[end][2])))
             end
@@ -707,36 +666,36 @@ end
 #whowever, prod(p/(p-1) for p = PrimesSet(1, 1000000)) < 25
 #so for 32-bit input, the output is also small
 function euler_phi_inv(n::Int)
-  @assert n>0
+  @assert n > 0
   T = Int
   if nbits(n) > 55 #to be safe...
     return T[T(x) for x = euler_phi_inv(ZZ(n))]
   end
   lp = T[]
   for d = Divisors(n)
-    if is_prime(d+1)
-      push!(lp, d+1)
+    if is_prime(d + 1)
+      push!(lp, d + 1)
     end
   end
-#  println("possible primes: ", lp)
+  #  println("possible primes: ", lp)
 
-  E = Tuple{T, T, T}[]
+  E = Tuple{T,T,T}[]
   res = T[]
   for p = lp
     v = valuation(n, p)
-    push!(E, (p-1, p, p))
-    if n == p-1
+    push!(E, (p - 1, p, p))
+    if n == p - 1
       push!(res, p)
     end
-    for i=1:v
-      push!(E, (p*E[end][1], p*E[end][2], p))
+    for i = 1:v
+      push!(E, (p * E[end][1], p * E[end][2], p))
       if E[end][1] == n
         push!(res, prod(E[end][2]))
       end
     end
   end
   while true
-    F = Tuple{T, T, T}[]
+    F = Tuple{T,T,T}[]
     for e = E
       nn = divexact(n, e[1])
       pm = e[3]
@@ -744,14 +703,14 @@ function euler_phi_inv(n::Int)
         if p <= pm
           continue
         end
-        if nn % (p-1) == 0
+        if nn % (p - 1) == 0
           v = valuation(nn, p)
-          push!(F, (e[1]*(p-1), e[2]*p, p))
+          push!(F, (e[1] * (p - 1), e[2] * p, p))
           if F[end][1] == n
             push!(res, F[end][2])
           end
           for i = 1:v
-            push!(F, (p*F[end][1], p*F[end][2], p))
+            push!(F, (p * F[end][1], p * F[end][2], p))
             if F[end][1] == n
               push!(res, F[end][2])
             end
@@ -767,13 +726,11 @@ function euler_phi_inv(n::Int)
 end
 
 
-function euler_phi(x::Fac{ZZRingElem})
-  return prod((p-1)*p^(v-1) for (p,v) = x.fac)
-end
 
-function euler_phi(x::FacElem{ZZRingElem, ZZRing})
+
+function euler_phi(x::FacElem{ZZRingElem,ZZRing})
   x = factor(x)
-  return prod((p-1)*p^(v-1) for (p,v) = x.fac)
+  return prod((p - 1) * p^(v - 1) for (p, v) = x.fac)
 end
 
 function carmichael_lambda(x::Fac{ZZRingElem})
@@ -785,7 +742,7 @@ function carmichael_lambda(x::Fac{ZZRingElem})
     if v == 2
       c = two
     elseif v > 2
-      c = two^(v-2)
+      c = two^(v - 2)
     else
       c = ZZRingElem(1)
     end
@@ -796,7 +753,7 @@ function carmichael_lambda(x::Fac{ZZRingElem})
   if length(y) == 0
     return c
   end
-  return lcm(c, reduce(lcm, (p-1)*p^(v-1) for (p,v) = y))
+  return lcm(c, reduce(lcm, (p - 1) * p^(v - 1) for (p, v) = y))
 end
 
 function carmichael_lambda(x::ZZRingElem)
@@ -805,22 +762,22 @@ function carmichael_lambda(x::ZZRingElem)
     c = ZZRingElem(1)
   else
     x = factor(x)
-    c = reduce(lcm, (p-1)*p^(v-1) for (p,v) = x.fac)
+    c = reduce(lcm, (p - 1) * p^(v - 1) for (p, v) = x.fac)
   end
   if v == 2
     c = lcm(2, c)
   elseif v > 2
-    c = lcm(ZZRingElem(2)^(v-2), c)
+    c = lcm(ZZRingElem(2)^(v - 2), c)
   end
   return c
 end
 
-function carmichael_lambda(x::FacElem{ZZRingElem, ZZRing})
+function carmichael_lambda(x::FacElem{ZZRingElem,ZZRing})
   x = factor(x)
   return carmichael_lambda(x)
 end
 
-function carmichael_lambda(n::T) where {T <: Integer}
+function carmichael_lambda(n::T) where {T<:Integer}
   return T(carmichael_lambda(ZZRingElem(n)))
 end
 
@@ -841,18 +798,18 @@ The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
 holds.
 """
 function euler_phi_inv(n::ZZRingElem)
-  return [ evaluate(x) for x = euler_phi_inv_fac_elem(n)]
+  return [evaluate(x) for x = euler_phi_inv_fac_elem(n)]
 end
 
-function factor(a::FacElem{ZZRingElem, ZZRing})
+function factor(a::FacElem{ZZRingElem,ZZRing})
   b = simplify(a)
-  c = Dict{ZZRingElem, Int}()
+  c = Dict{ZZRingElem,Int}()
   s = ZZRingElem(1)
-  for (p,k) = b.fac
+  for (p, k) = b.fac
     lp = factor(p)
     s *= lp.unit
-    for (q,w) = lp.fac
-      c[q] = w*k
+    for (q, w) = lp.fac
+      c[q] = w * k
     end
   end
   l = Fac{ZZRingElem}()
@@ -876,186 +833,26 @@ end
 =#
 
 radical(a::ZZRingElem) = prod(keys(factor(a).fac))
-function radical(a::T) where {T <: Integer}
+function radical(a::T) where {T<:Integer}
   return T(radical(ZZRingElem(a)))
 end
 
 function quo(::ZZRing, a::ZZRingElem)
   R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(x -> R(x), y->lift(y), FlintZZ, R)
+  f = MapFromFunc(x -> R(x), y -> lift(y), FlintZZ, R)
   return R, f
 end
 
 function quo(::ZZRing, a::Integer)
   R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(x -> R(x), y->lift(y), FlintZZ, R)
+  f = MapFromFunc(x -> R(x), y -> lift(y), FlintZZ, R)
   return R, f
 end
 
 
-module BitsMod
+^(a::NfAbsOrdIdl, n::IntegerUnion) = Nemo._generic_power(a, n)
 
-using Hecke
-import Nemo
-import Base: ^, show, getindex, iterate, length
-import Hecke.bits
-export bits, Limbs
-
-
-const hb = UInt(1)<<63
-
-#= not used - lacks length
-struct BitsUInt
-  a::UInt
-end
-
-function bits(a::UInt)
-  l = nbits(a)
-  return BitsUInt(a<<(sizeof(a)*8-l))
-end
-
-
-function Base.iterate(x::BitsUInt)
-  return iterate(x, x.a)
-end
-
-@inline function Base.iterate(x::BitsUInt, u::UInt)
-  iszero(u) && return nothing
-  return (u&hb) != 0, u<<1
-end
-=#
-
-
-struct Limbs
-  a::ZZRingElem
-  len::Int
-  b::Ptr{UInt}
-  function Limbs(a::ZZRingElem; MSW::Bool = true)
-    if Nemo._fmpz_is_small(a)
-      return new(a, 0, convert(Ptr{UInt}, 0))
-    end
-    z = convert(Ptr{Cint}, unsigned(a.d)<<2)
-    len = unsafe_load(z, 2)
-    d = convert(Ptr{Ptr{UInt}}, unsigned(a.d) << 2) + 2*sizeof(Cint)
-    p = unsafe_load(d)
-    if !MSW
-      new(a, -len, p)
-    else
-      new(a, len, p)
-    end
-  end
-end
-
-function show(io::IO, L::Limbs)
-  print(io, "limb-access for: ", L.a)
-end
-
-@inline function getindex(L::Limbs, i::Int)
-  if L.len == 0
-    return UInt(abs(L.a.d)) #error???
-  end
-  @boundscheck @assert i <= abs(L.len)
-  return unsafe_load(L.b, i)
-end
-
-function iterate(L::Limbs)
-  L.len < 0 && return L[1], 1
-
-  return L[L.len], L.len
-end
-
-function iterate(L::Limbs, i::Int)
-  if L.len < 0
-    i > -L.len && return nothing
-    return L[i+1], i+1
-  end
-  i == 0 && return nothing
-  return L[i-1], i-1
-end
-
-length(L::Limbs) = L.len+1
-
-#=
-#from https://github.com/JuliaLang/julia/issues/11592
-#compiles directly down to the ror/rol in assembly
-for T in Base.BitInteger_types
-  mask = UInt8(sizeof(T) << 3 - 1)
-  @eval begin
-    ror(x::$T, k::Integer) = (x >>> ($mask & k)) | (x <<  ($mask & -k))
-    rol(x::$T, k::Integer) = (x <<  ($mask & k)) | (x >>> ($mask & -k))
-  end
-end
-=#
-
-struct BitsFmpz
-  L::Limbs
-
-  function BitsFmpz(b::ZZRingElem)
-    return new(Limbs(b))
-  end
-end
-
-function iterate(B::BitsFmpz)
-  L = B.L
-  a = L[L.len]
-  b = UInt(1) << (nbits(a)-1)
-  return true, (b, L.len)
-end
-
-@inline function iterate(B::BitsFmpz, s::Tuple{UInt, Int})
-  b = s[1] >> 1
-  if b == 0
-    l = s[2] - 1
-    if l < 1
-      return nothing
-    end
-    b = hb
-    a = B.L[l]
-    return a&b != 0, (b, l)
-  end
-  return B.L[s[2]]&b != 0, (b, s[2])
-end
-
-function show(io::IO, B::BitsFmpz)
-  print(io, "bit iterator for:", B.L.a)
-end
-
-length(B::BitsFmpz) = nbits(B.L.a)
-
-bits(a::ZZRingElem) = BitsFmpz(a)
-#= wrong order, thus disabled
-
-function getindex(B::BitsFmpz, i::Int)
-  return ccall((:fmpz_tstbit, libflint), Int, (Ref{ZZRingElem}, Int), B.L.a, i) != 0
-end
-=#
-
-end
-
-using .BitsMod
-export bits, Limbs
-
-^(a::T, n::IntegerUnion) where {T <: RingElem} = _generic_power(a, n)
-
-^(a::NfAbsOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
-
-#^(a::NfRelOrdIdl, n::IntegerUnion)  = _generic_power(a, n)
-
-function _generic_power(a, n::IntegerUnion)
-  fits(Int, n) && return a^Int(n)
-  if is_negative(n)
-    a = inv(a)
-    n = -n
-  end
-  r = one(parent(a))
-  for b = bits(n)
-    r = mul!(r, r, r)
-    if b
-      r = mul!(r, r, a)
-    end
-  end
-  return r
-end
+#^(a::NfRelOrdIdl, n::IntegerUnion)  = Nemo._generic_power(a, n)
 
 
 ################################################################################
@@ -1082,8 +879,8 @@ function primes_up_to(n::Int)
   b = sqrt(n)
   while i <= b
     if list[i]
-      j = 3*i
-      s = 2*i
+      j = 3 * i
+      s = 2 * i
       while j <= n
         list[j] = false
         j += s
@@ -1105,7 +902,7 @@ end
 
 Returns a vector containing all the squarefree numbers up to $n$.
 """
-function squarefree_up_to(n::Int; coprime_to::Vector{ZZRingElem} = ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
+function squarefree_up_to(n::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem}=ZZRingElem[])
 
   @assert isempty(coprime_to) || isempty(prime_base)
   if !isempty(prime_base)
