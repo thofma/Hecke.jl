@@ -4,18 +4,6 @@
 #
 ################################################################################
 
-AbstractAlgebra.promote_rule(::Type{S}, ::Type{ZZRingElem}) where S <: NumFieldElem = S
-
-AbstractAlgebra.promote_rule(::Type{ZZRingElem}, ::Type{S}) where S <: NumFieldElem = S
-
-AbstractAlgebra.promote_rule(::Type{S}, ::Type{QQFieldElem}) where S <: NumFieldElem = S
-
-AbstractAlgebra.promote_rule(::Type{QQFieldElem}, ::Type{S}) where S <: NumFieldElem = S
-
-AbstractAlgebra.promote_rule(::Type{T}, ::Type{S}) where {S <: NumFieldElem, T <: Integer} = S
-
-AbstractAlgebra.promote_rule(::Type{S}, ::Type{T}) where {S <: NumFieldElem, T <: Integer} = S
-
 AbstractAlgebra.promote_rule(::Type{NfRelElem{nf_elem}}, ::Type{nf_elem}) = NfRelElem{nf_elem}
 
 AbstractAlgebra.promote_rule(::Type{NfRelNSElem{nf_elem}}, ::Type{nf_elem}) = NfRelNSElem{nf_elem}

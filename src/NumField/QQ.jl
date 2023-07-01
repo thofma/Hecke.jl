@@ -190,7 +190,7 @@ function signs(a::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, l::Vecto
   return Dict(inf => sign(a))
 end
 
-function is_positive(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::Union{PosInf, Vector{PosInf}})
+function is_positive(x::FacElem{QQFieldElem}, ::Union{PosInf, Vector{PosInf}})
   return sign(x) == 1
 end
 
@@ -198,7 +198,7 @@ function is_totally_positive(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldEl
   return sign(x) == 0
 end
 
-function is_negative(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::Union{PosInf, Vector{PosInf}})
+function is_negative(x::FacElem{QQFieldElem}, ::Union{PosInf, Vector{PosInf}})
   return sign(x) == -1
 end
 

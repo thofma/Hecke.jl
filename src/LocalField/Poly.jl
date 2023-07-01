@@ -6,18 +6,6 @@ add_assertion_scope(:padic_poly)
 #
 ################################################################################
 
-function setprecision!(f::Generic.Poly{qadic}, N::Int)
-  for i=1:length(f)
-    setprecision!(f.coeffs[i], N)
-  end
-  set_length!(f, normalise(f, length(f)))
-  return f
-end
-
-function Base.setprecision(f::Generic.Poly{qadic}, N::Int)
-  g = map_coefficients(x->setprecision(x, N), f, parent = parent(f))
-  return g
-end
 
 function setprecision_fixed_precision(f::Generic.Poly{qadic}, N::Int)
   f = setprecision(f, N)
@@ -158,7 +146,7 @@ function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldE
   return uniformizer(K)^numerator(e)
 end
 
-function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where T <:Union{padic, qadic, LocalFieldElem}
+function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where {T<:LocalFieldElem}
   x = rem(y, z)
   return x
 end

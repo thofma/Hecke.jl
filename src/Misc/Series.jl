@@ -227,15 +227,6 @@ function Hecke.residue_field(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn 
   return k, MapFromFunc(x -> coeff(x, 0), y -> set_precision(S(y), 1), S, k)
 end
 
-#TODO: in Nemo, rename to setprecision
-#      fix/report series add for different length
-function set_precision(a::SeriesElem, i::Int)
-  b = deepcopy(a)
-  set_precision!(b, i)
-  return b
-end
-
-
 function rational_reconstruction(a::SeriesElem; parent::PolyRing = polynomial_ring(base_ring(a), cached = false)[1])
   C = base_ring(a)
   Ct = parent

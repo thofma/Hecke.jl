@@ -380,29 +380,6 @@ function Nemo.degree(K::NfRelNS)
   return prod(Int[total_degree(x) for x=K.pol])
 end
 
-function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
-  if length(f)==0
-    return R()
-  end
-  j = 1
-  c = 0
-  while j<= ngens(parent(f))
-    if f.exps[j, 1] != 0
-      if c==0
-        c = j
-      else
-        error("poly is not univariate")
-      end
-    end
-    j += 1
-  end
-  g = R()
-  for i=1:length(f)
-    setcoeff!(g, Int(f.exps[c, i]), f.coeffs[i])
-  end
-  return g
-end
-
 function basis(K::NfRelNS)
   k = base_field(K)
   kxy = parent(K.pol[1])

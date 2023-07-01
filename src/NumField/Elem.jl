@@ -246,37 +246,6 @@ the minimal polynomial of $a$ over the rationals $\mathbf{Q}$.
 """
 absolute_minpoly(::NumFieldElem)
 
-################################################################################
-#
-#  Powering with ZZRingElem
-#
-################################################################################
-
-function ^(x::NumFieldElem, y::ZZRingElem)
-  if fits(Int, y)
-    return x^Int(y)
-  end
-
-  return _power(x, y)
-end
-
-# We test once if it fits, otherwise we would have to check for every ^-call
-function _power(x::NumFieldElem, y::ZZRingElem)
-  res = parent(x)()
-  if y < 0
-    res = _power(inv(x), -y)
-  elseif y == 0
-    res = parent(x)(1)
-  elseif y == 1
-    res = deepcopy(x)
-  elseif mod(y, 2) == 0
-    z = _power(x, div(y, 2))
-    res = z*z
-  else
-    res = _power(x, y - 1) * x
-  end
-  return res
-end
 
 ################################################################################
 #

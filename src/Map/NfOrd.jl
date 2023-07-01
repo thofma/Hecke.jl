@@ -983,7 +983,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D:
 
     if !((quo != 0 && vv != 0) || !iszero(v))
       if !cached
-        nf_elem_to_gfp_poly!(t, k)
+        Nemo.nf_elem_to_gfp_poly!(t, k)
         D[i] = zero(parent(t))
         set!(D[i], t)
       end
@@ -996,7 +996,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{nf_elem, AnticNumberField}, D:
           (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), s, D[i], Fq)
         _reduce(s)
       else
-        nf_elem_to_gfp_poly!(t, k)
+        Nemo.nf_elem_to_gfp_poly!(t, k)
         #tt = deepcopy(t)
         if isassigned(D, i)
           y = D[i]
@@ -1055,13 +1055,13 @@ function image(mF::NfToFqNmodMor_easy, a::nf_elem, n_quo::Int = 0)
 end
 
 function _nf_to_gfp_elem(b::nf_elem, a_tmp::fpPolyRingElem, def_pol::fpPolyRingElem)
-  nf_elem_to_gfp_poly!(a_tmp, b)
+  Nemo.nf_elem_to_gfp_poly!(a_tmp, b)
   rem!(a_tmp, a_tmp, def_pol)
   return coeff(a_tmp, 0)
 end
 
 function _nf_to_gfp_elem(b::nf_elem, a_tmp::FpPolyRingElem, def_pol::FpPolyRingElem)
-  nf_elem_to_gfp_fmpz_poly!(a_tmp, b)
+  Nemo.nf_elem_to_gfp_fmpz_poly!(a_tmp, b)
   rem!(a_tmp, a_tmp, def_pol)
   return coeff(a_tmp, 0)
 end
@@ -1145,7 +1145,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
 
     if iszero(vv) && !cached
       D[i] = zero(parent(t))
-      nf_elem_to_gfp_poly!(t, k)
+      Nemo.nf_elem_to_gfp_poly!(t, k)
       set!(D[i], t)
     end
 
@@ -1153,7 +1153,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{nf_elem, AnticNumberField}, D::Vec
       if cached
         s = evaluate_raw(D[i], evaluateat)
       else
-        nf_elem_to_gfp_poly!(t, k)
+        Nemo.nf_elem_to_gfp_poly!(t, k)
         #tt = deepcopy(t)
         if isassigned(D, i)
           y = D[i]
@@ -1215,7 +1215,7 @@ function image(mF::NfToGFMor_easy, a::nf_elem, D::Vector, cached::Bool, n_quo::I
     #rem!(t, D[1], p)
     #s = coeff(t, 0)
   else
-    nf_elem_to_gfp_poly!(t, a)
+    Nemo.nf_elem_to_gfp_poly!(t, a)
     D[1] = deepcopy(t)
     #rem!(t, t, p)
     #s = coeff(t, 0)

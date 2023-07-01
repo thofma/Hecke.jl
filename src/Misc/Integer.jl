@@ -98,30 +98,6 @@ function fdiv_qr_with_preinvn!(q::ZZRingElem, r::ZZRingElem, g::ZZRingElem, h::Z
   ccall((:fmpz_fdiv_qr_preinvn, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{fmpz_preinvn_struct}), q, r, g, h, hinv)
 end
 
-function submul!(z::ZZRingElem, x::ZZRingElem, y::ZZRingElem)
-  ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, x, y)
-end
-
-
-################################################################################
-#
-#  Modular reduction with symmetric residue system
-#
-################################################################################
-
-function mod_sym(a::ZZRingElem, b::ZZRingElem)
-  c = mod(a, b)
-  @assert c >= 0
-  if b > 0 && 2 * c > b
-    return c - b
-  elseif b < 0 && 2 * c > -b
-    return c + b
-  else
-    return c
-  end
-end
-
-
 ################################################################################
 #
 #  sunit group

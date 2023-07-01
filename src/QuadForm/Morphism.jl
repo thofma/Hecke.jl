@@ -793,7 +793,6 @@ function _operate(point, A::ZZMatrix, V)
   return _operate(point, A, V, zero_matrix(FlintZZ, 1, ncols(A)))
 end
 
-Base.replace!(::typeof(-), m::ZZMatrix) = -m
 
 function _operate(point, A, V, tmp)
 # 	V.v is a sorted list of length V.n of vectors

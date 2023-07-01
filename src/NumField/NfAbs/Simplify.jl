@@ -253,7 +253,7 @@ function _block(a::nf_elem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRing
   _R = Native.GF(Int(characteristic(base_ring(ap))), cached = false)
   _Ry, _ = polynomial_ring(_R, "y", cached = false)
   _tmp = _Ry()
-  nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
+  Nemo.nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
   set_length!(ap, length(_tmp))
   for i in 0:(length(_tmp) - 1)
     setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))

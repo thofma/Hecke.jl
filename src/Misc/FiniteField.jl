@@ -17,19 +17,6 @@ function _reduce(a::FqPolyRepFieldElem)
   #end
 end
 
-function (R::FqPolyRepField)(x::ZZModPolyRingElem)
-  z = R()
-  ccall((:fq_set_fmpz_mod_poly, libflint), Nothing, (Ref{Nemo.FqPolyRepFieldElem}, Ref{Nemo.ZZModPolyRingElem}, Ref{Nemo.FqPolyRepField}), z, x, R)
-  #ccall((:fq_reduce, libflint), Nothing, (Ref{Nemo.FqPolyRepFieldElem}, Ref{Nemo.FqPolyRepField}), z, R)
-  return z
-end
-
-function (R::FqPolyRepField)(x::FpPolyRingElem)
-  z = R()
-  ccall((:fq_set_fmpz_mod_poly, libflint), Nothing, (Ref{Nemo.FqPolyRepFieldElem}, Ref{Nemo.FpPolyRingElem}, Ref{Nemo.FqPolyRepField}), z, x, R)
-  ccall((:fq_reduce, libflint), Nothing, (Ref{Nemo.FqPolyRepFieldElem}, Ref{Nemo.FqPolyRepField}), z, R)
-  return z
-end
 
 #TODO: move elsewhere - and use. There are more calls to nmod_set/reduce
 function (A::fqPolyRepField)(x::zzModPolyRingElem)
@@ -51,7 +38,7 @@ function (A::fqPolyRepField)(x::fpPolyRingElem)
 end
 
 function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp::zzModPolyRingElem)
-  nf_elem_to_nmod_poly!(a_tmp, b)
+  Nemo.nf_elem_to_nmod_poly!(a_tmp, b)
   ccall((:fq_nmod_set, libflint), Nothing,
                      (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
                                      a, a_tmp, K)
@@ -59,7 +46,7 @@ function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp:
 end
 
 function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp::fpPolyRingElem)
-  nf_elem_to_gfp_poly!(a_tmp, b)
+  Nemo.nf_elem_to_gfp_poly!(a_tmp, b)
   ccall((:fq_nmod_set, libflint), Nothing,
                      (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}),
                                      a, a_tmp, K)
@@ -67,7 +54,7 @@ function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp:
 end
 
 function _nf_to_fq!(a::FqPolyRepFieldElem, b::nf_elem, K::FqPolyRepField, a_tmp::FpPolyRingElem)
-  nf_elem_to_gfp_fmpz_poly!(a_tmp, b)
+  Nemo.nf_elem_to_gfp_fmpz_poly!(a_tmp, b)
   ccall((:fq_set, libflint), Nothing,
                      (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}),
                                      a, a_tmp, K)

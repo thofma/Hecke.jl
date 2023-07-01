@@ -234,13 +234,6 @@ function (F::fpField)(a::RelFinFieldElem)
   return F(coeff(a, 0))
 end
 
-function (F::fpField)(a::fqPolyRepFieldElem)
-  for i = 1:degree(parent(a))-1
-    @assert iszero(coeff(a, i))
-  end
-  return F(coeff(a, 0))
-end
-
 function (F::FpField)(a::RelFinFieldElem)
   for i = 1:degree(parent(a))-1
     @assert iszero(coeff(a, i))
@@ -248,12 +241,6 @@ function (F::FpField)(a::RelFinFieldElem)
   return F(coeff(a, 0))
 end
 
-function (F::FpField)(a::FqPolyRepFieldElem)
-  for i = 1:degree(parent(a))-1
-    @assert iszero(coeff(a, i))
-  end
-  return F(coeff(a, 0))
-end
 
 ################################################################################
 #
@@ -765,13 +752,7 @@ function is_irreducible(f::PolyElem{T}) where T <: RelFinFieldElem
   return length(l.fac) == 1
 end
 
-function (Rx::fpPolyRing)(a::fqPolyRepFieldElem)
-  el = Rx()
-  for i = 0:degree(parent(a))
-    setcoeff!(el, i, base_ring(Rx)(coeff(a, i)))
-  end
-  return el
-end
+
 
 function norm(f::PolyElem{fqPolyRepFieldElem})
   Fx = parent(f)

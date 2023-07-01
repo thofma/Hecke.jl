@@ -1,21 +1,6 @@
 import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, modular_init, crt_signed
 
-@inline function rem!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
-  ccall((:fmpz_mod, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
-  return a
-end
-
-function rem!(a::ZZModPolyRingElem, b::ZZModPolyRingElem, c::ZZModPolyRingElem)
-  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
-  return a
-end
-
-function rem!(a::FpPolyRingElem, b::FpPolyRingElem, c::FpPolyRingElem)
-  ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{fmpz_mod_ctx_struct}), a, b, c, a.parent.base_ring.ninv)
-  return a
-end
-
 mutable struct crt_env{T}
   pr::Vector{T}
   id::Vector{T}
@@ -778,7 +763,7 @@ end
 @inbounds function inner_eval(z::Vector{Tuple{fqPolyRepFieldElem, ZZRingElem, Int}})
   sort!(z, lt = (a,b) -> isless(b[2], a[2]))
   t = z[1][3] #should be largest...
-  it = [BitsMod.bits(i[2]) for i=z]
+  it = [bits(i[2]) for i=z]
   is = map(iterate, it)
   u = one(z[1][1])
   K = parent(u)
@@ -860,7 +845,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
     if iszero(mod(denominator(c), me.p))
       throw(BadPrime(me.p))
     end
-    nf_elem_to_nmod_poly!(r, c, true)
+    Nemo.nf_elem_to_nmod_poly!(r, c, true)
     crt_inv!(me.rp, r, me.ce)
     for j=1:me.ce.n
       u = coeff(me.Rp[j], i)

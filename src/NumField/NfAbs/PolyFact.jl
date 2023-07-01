@@ -419,7 +419,6 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 end
 
 ###############################################
-Base.log2(a::ZZRingElem) = log2(BigInt(a)) # stupid: there has to be faster way
 
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
@@ -860,14 +859,6 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     #TODO: see Fieker/Friedrichs comment above
     b = [ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   end #the big while
-end
-
-function Base.map!(f, M::ZZMatrix)
-  for i=1:nrows(M)
-    for j=1:ncols(M)
-      M[i,j] = f(M[i,j])
-    end
-  end
 end
 
 #does not seem to be faster than the direct approach. (not modular)

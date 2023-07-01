@@ -911,8 +911,6 @@ end
 #
 ################################################################################
 
-Nemo.is_cyclo_type(::NumField) = false
-
 function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}} = Val{true}) where {T, S}
   if Nemo.is_cyclo_type(a) && Nemo.is_cyclo_type(parent(b))
     return force_coerce_cyclo(a, b, throw_error)::elem_type(a)

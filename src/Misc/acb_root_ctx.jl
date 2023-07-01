@@ -285,10 +285,6 @@ function set!(z::arb, x::arb)
   return z
 end
 
-function bits(x::acb)
-  return ccall((:acb_bits, libarb), Int, (Ref{Nemo.acb}, ), x)
-end
-
 function rel_error_bits(x::acb)
   return ccall((:acb_rel_error_bits, libarb), Int, (Ref{Nemo.acb}, ), x)
 end

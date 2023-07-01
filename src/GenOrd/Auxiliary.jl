@@ -208,42 +208,6 @@ end
 
 (R::Generic.RationalFunctionField{T})(x::KInftyElem{T}) where {T <: FieldElem} = x.d
 
-base_ring_type(::Type{AbstractAlgebra.Generic.PolyRing{T}}) where {T} = parent_type(T)
-
-base_ring_type(::Type{AcbPolyRing}) = AcbField
-
-base_ring_type(::Type{ArbPolyRing}) = ArbField
-
-base_ring_type(::Type{QQPolyRing}) = QQField
-
-base_ring_type(::Type{ZZModPolyRing}) = Nemo.ZZModRing
-
-base_ring_type(::Type{ZZPolyRing}) = ZZRing
-
-base_ring_type(::Type{FqPolyRing}) = FqField
-
-base_ring_type(::Type{fqPolyRepPolyRing}) = fqPolyRepField
-
-base_ring_type(::Type{FqPolyRepPolyRing}) = FqPolyRepField
-
-base_ring_type(::Type{FpPolyRing}) = Nemo.FpField
-
-base_ring_type(::Type{fpPolyRing}) = Nemo.fpField
-
-base_ring_type(::Type{zzModPolyRing}) = Nemo.zzModRing
-
-function (R::Generic.PolyRing{T})(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}) where {T <: RingElem, U}
-  @assert isone(denominator(x))
-  @assert parent(numerator(x)) === R
-  return numerator(x)
-end
-
-function (R::PolyRing{T})(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}) where {T <: RingElem, U}
-  @assert isone(denominator(x))
-  @assert parent(numerator(x)) === R
-  return numerator(x)
-end
-
 # RationalFunctionFieldElem{T}, PolyRing{T}
 function Hecke.numerator(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
   return numerator(a)
@@ -312,7 +276,6 @@ function Hecke.integral_split(M::MatElem{<:AbstractAlgebra.FieldElem}, S::Generi
   return m, den
 end
 
-Nemo.ngens(R::MPolyRing) = Nemo.nvars(R)
 #TODO: move elsewhere?
 function Hecke.lcm(a::Vector{<:RingElem})
   if length(a) == 0

@@ -893,68 +893,6 @@ function rem(a::nf_elem, b::ZZRingElem)
   return c
 end
 
-function mod_sym(a::nf_elem, b::ZZRingElem, b2::ZZRingElem)
-  return mod_sym(a, b)
-  return z
-end
-
-function mod_sym(a::nf_elem, b::ZZRingElem)
-  c = deepcopy(a)
-  mod_sym!(c, b)
-  return c
-end
-
-################################################################################
-#
-#  Conversion to zzModPolyRingElem and ZZModPolyRingElem
-#
-################################################################################
-
-function nf_elem_to_nmod_poly!(r::zzModPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
-        (Ref{zzModPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
-        r, a, a.parent, Cint(useden))
-  return nothing
-end
-
-function nf_elem_to_gfp_poly!(r::fpPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
-        (Ref{fpPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
-        r, a, a.parent, Cint(useden))
-  return nothing
-end
-
-function (R::Nemo.zzModPolyRing)(a::nf_elem)
-  r = R()
-  nf_elem_to_nmod_poly!(r, a)
-  return r
-end
-
-function (R::Nemo.fpPolyRing)(a::nf_elem)
-  r = R()
-  nf_elem_to_gfp_poly!(r, a)
-  return r
-end
-
-function nf_elem_to_fmpz_mod_poly!(r::ZZModPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{ZZModPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
-        r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
-  return nothing
-end
-
-function nf_elem_to_gfp_fmpz_poly!(r::FpPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{FpPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
-        r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
-  return nothing
-end
-
-function (R::Nemo.ZZModPolyRing)(a::nf_elem)
-  r = R()
-  nf_elem_to_fmpz_mod_poly!(r, a)
-  return r
-end
 
 ################################################################################
 #
