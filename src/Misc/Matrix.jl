@@ -155,7 +155,8 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   return S
 end
 
-transpose!(A::Union{ZZMatrix, QQMatrix}) = transpose!(A, A)
+transpose!(A::Union{ZZMatrix, QQMatrix}) = is_square(A) ? transpose!(A, A) : transpose(A)
+transpose!(A::MatrixElem) = transpose(A)
 
 function transpose!(A::ZZMatrix, B::ZZMatrix)
   ccall((:fmpz_mat_transpose, libflint), Nothing,
@@ -1894,30 +1895,118 @@ function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   return C
 end
 
-#@doc raw"""
-#    find_pivot(A::MatElem{<:RingElem}) -> Vector{Int}
-#
-#Find the pivot-columns of the reduced row echelon matrix $A$.
-#"""
-#function find_pivot(A::MatElem{<:RingElem})
-#  @assert is_rref(A)
-#  p = Int[]
-#  j = 0
-#  for i=1:nrows(A)
-#    j += 1
-#    if j > ncols(A)
-#      return p
-#    end
-#    while iszero(A[i,j])
-#      j += 1
-#      if j > ncols(A)
-#        return p
-#      end
-#    end
-#    push!(p, j)
-#  end
-#  return p
-#end
+"""
+    pivots_of_ref(H::MatrixElem) -> Tuple{Int, BitVector}
+
+Return `rank(H), p` such that `p[j]` states whether the `j`th column is a pivot column.
+The input `H` must be in row echelon form.
+
+See also: `rank_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
+
+# Examples
+```jldoctest
+julia> Hecke.pivots_of_ref(QQ[1 1; 0 1])
+(2, Bool[1, 1])
+
+julia> Hecke.pivots_of_ref(QQ[1 1; 0 0])
+(1, Bool[1, 0])
+
+julia> Hecke.pivots_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+(3, Bool[0, 1, 1, 1, 0])
+
+```
+"""
+function pivots_of_ref(H::MatrixElem) :: Tuple{Int, BitVector}
+  p = falses(ncols(H))
+  i = 1
+  for j in axes(H, 2)
+    i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (p[j] = true; i+=1)
+  end
+  return i-1, p
+end
+
+"""
+    rank_of_ref(H::MatrixElem) -> Int
+
+Rank of a row echelon matrix.
+
+See also: `pivots_of_ref`, `pivot_cols_of_ref`, `non_pivot_cols_of_ref`.
+
+# Examples
+```jldoctest
+julia> Hecke.rank_of_ref(QQ[1 1; 0 1])
+2
+
+julia> Hecke.rank_of_ref(QQ[1 1; 0 0])
+1
+
+julia> Hecke.rank_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+3
+
+```
+"""
+function rank_of_ref(H::MatrixElem)
+  i = 1
+  for j in axes(H, 2)
+    i == nrows(H)+1 && break
+    is_zero_entry(H, i, j) || (i+=1)
+  end
+  return i-1
+end
+
+"""
+    pivot_cols_of_ref(H::MatrixElem) -> Vector{Int}
+
+Vector of the indices of pivot columns of a row echelon matrix in increasing order.
+
+See also: `pivots_of_ref`, `rank_of_ref`, `non_pivot_cols_of_ref`.
+
+# Examples
+```jldoctest
+julia> Hecke.pivot_cols_of_ref(QQ[1 1; 0 1])
+2-element Vector{Int64}:
+ 1
+ 2
+
+julia> Hecke.pivot_cols_of_ref(QQ[1 1; 0 0])
+1-element Vector{Int64}:
+ 1
+
+julia> Hecke.pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+3-element Vector{Int64}:
+ 2
+ 3
+ 4
+
+```
+"""
+pivot_cols_of_ref(H::MatrixElem) = findall(pivots_of_ref(H)[2])
+
+"""
+    non_pivot_cols_of_ref(H::MatrixElem) -> Vector{Int}
+
+Vector of the indices of non-pivot columns of a row echelon matrix in increasing order.
+
+See also: `pivots_of_ref`, `rank_of_ref`, `pivot_cols_of_ref`
+
+# Examples
+```jldoctest
+julia> Hecke.non_pivot_cols_of_ref(QQ[1 1; 0 1])
+Int64[]
+
+julia> Hecke.non_pivot_cols_of_ref(QQ[1 1; 0 0])
+1-element Vector{Int64}:
+ 2
+
+julia> Hecke.non_pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
+2-element Vector{Int64}:
+ 1
+ 5
+
+```
+"""
+non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 
 #@doc raw"""
 #    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
