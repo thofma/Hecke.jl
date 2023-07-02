@@ -156,10 +156,8 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
   end
 end
 
-if Nemo.version() > v"0.28.0"
-  function FqPolyRingToFqMor(h::FqPolyRepPolyRingElem)
-    return FqPolyRingToFqMor{FqPolyRepPolyRing, FqPolyRepField, FqPolyRepPolyRingElem, FpMatrix}(h)
-  end
+function FqPolyRingToFqMor(h::FqPolyRepPolyRingElem)
+  return FqPolyRingToFqMor{FqPolyRepPolyRing, FqPolyRepField, FqPolyRepPolyRingElem, FpMatrix}(h)
 end
 
 function FqPolyRingToFqMor(h::fqPolyRepPolyRingElem)
