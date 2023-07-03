@@ -25,7 +25,7 @@ function preimage(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, Loca
   Qq = base_field(Kp)
   Qpx = parent(defining_polynomial(Qq))
   coeffs = Vector{nf_elem}()
-  #careful: we're woring in a limited precision world and the lift
+  #careful: we're working in a limited precision world and the lift
   #can be waaaay to large
   if abs(valuation(a)) > 100
     global last_a = a
