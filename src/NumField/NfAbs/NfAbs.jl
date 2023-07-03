@@ -59,7 +59,7 @@ function radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Boo
 end
 
 function radical_extension(n::Int, gen::ZZRingElem; cached::Bool = true, check::Bool = true)
-  x = gen(Globals.Qx)
+  x = Hecke.gen(Globals.Qx)
   return number_field(x^n - gen, cached = cached, check = check)
 end
 
@@ -802,7 +802,7 @@ function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false
     end
   end
 
-  K, a = number_field(lg[1])#, check = false)
+  K, a = number_field(lg[1], check = false, cached = false)
   ggl = [map_coefficients(K, lg[1])]
   ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - a)
 
@@ -843,7 +843,7 @@ function _splitting_field(fl::Vector{<:PolyElem{<:NumFieldElem}}; do_roots::Type
     end
   end
 
-  K, a = number_field(lg[1], check = false)
+  K, a = number_field(lg[1], check = false, cached = false)
   do_embedding = length(lg) > 1 || degree(K)>2 || (do_roots == Val{true})
   Ks, nk, mk = collapse_top_layer(K, do_embedding = do_embedding)
   if !do_embedding
