@@ -613,7 +613,7 @@ end
 
 
 function _C22_exts_abexts(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
-  Qx, x = polynomial_ring(FlintZZ, "x")
+  Qx, x = polynomial_ring(FlintZZ, "x", cached = false)
   pairs = _find_pairs(bound, only_real, unramified_outside = unramified_outside)
   return (_ext_with_autos(Qx, x, i, j) for (i, j) in pairs)
 end
@@ -665,7 +665,11 @@ function _C22_with_max_ord(l)
   list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}()
   Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   K = number_field(x-1, cached = false)[1]
-  for (p1, p2) in l
+  @vprintln :AbExt 1 "Constructing the C2xC2 extension: $(length(l))"
+  for (i, (p1, p2)) in enumerate(l)
+    if i % 10000 == 0
+      @vprintln :AbExt 1 "Left: $(length(l) - i)"
+    end
     Kns, g = number_field(ZZPolyRingElem[p1, p2], check = false, cached = false)
     S, mS = simple_extension(Kns, check = false, cached = false, simplified = true)
     Hecke._assure_has_inverse_data(mS)
@@ -704,30 +708,37 @@ function _disc(a::Int, b::Int, c::Int, bound::Int)
   a1 = mod(a, 4)
   b1 = mod(b, 4)
   if a1 == 1 && b1 == 1
-    return a*b*c <= bound
+    return widemul(a, b) * c <= bound
   end
   c1 = mod(c, 4)
   if a1 == 1 || b1 == 1 || c1 == 1
-    return 16*a*b*c <= bound
+    return 16*widemul(a, b)*c <= bound
   else
-    return 64*a*b*c <= bound
+    return 64*widemul(a, b)*c <= bound
   end
 end
 
 function _pairs_totally_real(pairs, ls, bound)
-  b1=floor(Int, Base.sqrt(bound))
-  pairs[1, 1:length(ls)] .= false
-  pairs[1:length(ls), 1] .= false
+  #b1=floor(Int, Base.sqrt(bound))
+  b1 = isqrt(bound)
+  # We look for Q(sqrt{a},sqrt{b})
+  # Remove all with a = 1
+  pairs[1, :] .= false
+  # Remove all with b = 1
+  pairs[:, 1] .= false
+  # Because of symmetry, look at only one half of the pairs
   for j = 2:length(ls)
-    for i = j:length(ls)
-      pairs[i, j] = false
-    end
+    @inbounds pairs[j:end, j] .= false
   end
+  @vprintln :AbExt 1 "Number of quadratic discriminants to check: $(length(ls))"
   for j = 2:length(ls)
+    if j % 10000 == 0
+      @vprintln :AbExt 1 "Left: $(length(ls) - j)"
+    end
     second = ls[j]
     for i = 2:j-1
-      if pairs[i, j]
-        first = ls[i]
+      if (@inbounds pairs[i, j])
+        first = @inbounds ls[i]
         g = gcd(first, second)
         if isone(g)
           third = first*second
@@ -735,22 +746,22 @@ function _pairs_totally_real(pairs, ls, bound)
           third = divexact(first*second, g^2)
         end
         if abs(third) > b1
-          pairs[i, j] = false
+          @inbounds pairs[i, j] = false
           continue
         end
         k = searchsortedfirst(ls, third)
         if i < k
-          pairs[i, k] = false
+          @inbounds pairs[i, k] = false
         else
-          pairs[k, i] = false
+          @inbounds pairs[k, i] = false
         end
         if j < k
-          pairs[j, k] = false
+          @inbounds pairs[j, k] = false
         else
-          pairs[k, j] = false
+          @inbounds pairs[k, j] = false
         end
         if !_disc(first, second, third, bound)
-          pairs[i, j] = false
+          @inbounds pairs[i, j] = false
         end
       end
     end
@@ -768,9 +779,9 @@ end
 
 
 function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[] )
-
   #first, we need the squarefree numbers
-  b1=ceil(Int, Base.sqrt(bound))
+  #b1=ceil(Int, Base.sqrt(bound))
+  b1 = isqrt(bound)
   ls = squarefree_up_to(b1, prime_base = unramified_outside)
   #The first step is to enumerate all the totally real extensions.
   pairs = trues(length(ls), length(ls))
@@ -781,7 +792,11 @@ function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Ve
   ls1 = -ls
   #Now, all the others.
   pairs[1:length(ls), 2:length(ls)] .= true
+  @vprintln :AbExt 1 "Number of quadratic discriminants to check: $(length(ls))"
   for j = 2:length(ls)
+    if j % 10000 == 0
+      @vprintln :AbExt 1 "Left: $(length(ls) - j)"
+    end
     second = ls[j]
     for i = 1:length(ls)
       if pairs[i, j]
