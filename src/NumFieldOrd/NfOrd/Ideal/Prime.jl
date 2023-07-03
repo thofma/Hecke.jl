@@ -897,6 +897,11 @@ function factor_easy(I::NfOrdIdl)
   return ideals
 end
 
+function is_squarefree(A::NfAbsOrdIdl)
+  l = factor(A)
+  return all(isone, values(l))
+end
+
 function _prefactorization(I::NfOrdIdl)
   @assert has_2_elem(I)
   n = I.gen_one
