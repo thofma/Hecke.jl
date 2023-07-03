@@ -20,15 +20,13 @@ function is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem
   return true
 end
 
-if Nemo.version() > v"0.15.1"
-  function is_primitive_root(x::Nemo.ZZModRingElem, M::ZZRingElem, fM::Fac{ZZRingElem})
-    for (p, l) in fM
-      if x^divexact(M, p) == 1
-        return false
-      end
+function is_primitive_root(x::Nemo.ZZModRingElem, M::ZZRingElem, fM::Fac{ZZRingElem})
+  for (p, l) in fM
+    if x^divexact(M, p) == 1
+      return false
     end
-    return true
   end
+  return true
 end
 
 #=

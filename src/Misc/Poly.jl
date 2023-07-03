@@ -45,18 +45,16 @@ function (::ZZRing)(a::Nemo.zzModRingElem)
   return ZZRingElem(a.data)
 end
 
-if Nemo.version() > v"0.15.1"
-  function ZZRingElem(a::Nemo.ZZModRingElem)
-    return a.data
-  end
+function ZZRingElem(a::Nemo.ZZModRingElem)
+  return a.data
+end
 
-  function lift(::ZZRing, a::Nemo.ZZModRingElem)
-    return a.data
-  end
+function lift(::ZZRing, a::Nemo.ZZModRingElem)
+  return a.data
+end
 
-  function (::ZZRing)(a::Nemo.ZZModRingElem)
-    return a.data
-  end
+function (::ZZRing)(a::Nemo.ZZModRingElem)
+  return a.data
 end
 
 function div(f::PolyElem, g::PolyElem)

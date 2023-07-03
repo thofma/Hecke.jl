@@ -351,13 +351,11 @@ function can_make_small(Q::Generic.ResidueRing{ZZRingElem})
   end
 end
 
-if Nemo.version() > v"0.15.1"
-  function can_make_small(Q::Nemo.ZZModRing)
-    if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
-      return true
-    else
-      return false
-    end
+function can_make_small(Q::Nemo.ZZModRing)
+  if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
+    return true
+  else
+    return false
   end
 end
 
@@ -368,13 +366,11 @@ function make_small(Q::Generic.ResidueRing{ZZRingElem})
   return R, f, g
 end
 
-if Nemo.version() > v"0.15.1"
-  function make_small(Q::Nemo.ZZModRing)
-    R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
-    f = (x -> R(data(x))::zzModRingElem)
-    g = (x -> Q(x.data)::Nemo.ZZModRingElem)
-    return R, f, g
-  end
+function make_small(Q::Nemo.ZZModRing)
+  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
+  f = (x -> R(data(x))::zzModRingElem)
+  g = (x -> Q(x.data)::Nemo.ZZModRingElem)
+  return R, f, g
 end
 
 

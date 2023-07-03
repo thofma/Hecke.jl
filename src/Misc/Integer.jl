@@ -228,16 +228,6 @@ function modord(a::Integer, m::Integer)
 end
 
 
-if Nemo.version() <= v"0.15.1"
-  function isodd(a::ZZRingElem)
-    ccall((:fmpz_is_odd, libflint), Int, (Ref{ZZRingElem},), a) == 1
-  end
-
-  function iseven(a::ZZRingElem)
-    ccall((:fmpz_is_even, libflint), Int, (Ref{ZZRingElem},), a) == 1
-  end
-end
-
 function neg!(a::ZZRingElem)
   ccall((:fmpz_neg, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), a, a)
   return a

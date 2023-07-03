@@ -647,17 +647,14 @@ function lift_nonsymmetric(a::fpMatrix)
   return z
 end
 
-
-if Nemo.version() > v"0.15.1"
-  function lift(a::Generic.Mat{Nemo.ZZModRingElem})
-    z = zero_matrix(FlintZZ, nrows(a), ncols(a))
-    for i in 1:nrows(a)
-      for j in 1:ncols(a)
-        z[i, j] = lift(a[i, j])
-      end
+function lift(a::Generic.Mat{Nemo.ZZModRingElem})
+  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  for i in 1:nrows(a)
+    for j in 1:ncols(a)
+      z[i, j] = lift(a[i, j])
     end
-    return z
   end
+  return z
 end
 
 function lift_unsigned(a::zzModMatrix)
