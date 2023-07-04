@@ -101,10 +101,24 @@ Base.IteratorSize(::Sqfr) = Base.SizeUnknown()
 Base.HasEltype(::Sqfr{T}) where T = T
 Base.eltype(::Type{PrimeIdealsSet}) = NfOrdIdl
 
+function Base.intersect(A::GrpAbFinGen, B::GrpAbFinGen...)
+  for b = B
+    A = intersect(A, b)
+  end
+  return A
+end
+
 function s3_extensions(k::AnticNumberField, d::ZZRingElem)
   zk = maximal_order(k)
   dk = abs(discriminant(zk))
   K, mkK = normal_closure(k)
+  A, mA = automorphism_group(PermGroup, K)
+
+  genk = mkK(gen(k))
+
+  s = [a for a in A if !isone(a) && mA(a)(genk) == genk]
+  @assert length(s) == 1
+  ss = s[1]
 
   #this should be the norm of the rel. disc for the S3 extension
   #S3 -> disc = A B^2 for A the conductor of the quadratic field and
@@ -120,7 +134,7 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem)
   kr = Hecke.rewrite_with_conductor(kr)
 
   @show :should_use, nB, log(nB)/log(10)
-  nB = min(nB, ZZ(10^6))
+#  nB = min(nB, ZZ(10^5))
 
   P = PrimeIdealsSet(zk, 1, iroot(nB, 2), coprimeto = 3)
   #if the norm of P is larger than sqrt(B) only one prime can be added..
@@ -160,14 +174,23 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem)
   sort!(wild, lt = (a,b) -> norm(a) <= norm(b))
 
   function one_ideal(C)
-    r = ray_class_field(C, n_quo = 3)
+    r = ray_class_field(minimum(C)*ZK, n_quo = 3)
     degree(r) == 1 && return
-    s = subfields(r, degree = 3)
-    for A = s
+    R = gmodule(r, mA)
+    @assert R.G == domain(mA) == AbstractAlgebra.Group(R)
+    ac = action(R, ss)
+    s = stable_subgroups(R.M, [ac], quotype = [3], op = (R, x) -> sub(R, x, false))
+    for B = s
+      CC = mapreduce(x->image(GrpAbFinGenMap(B[2]*action(R, x)), false)[2], (x,y) -> intersect(x, y, false)[2], domain(mA))
+      if divexact(degree(r), order(codomain(CC))) != 27
+        continue
+      end
+      A = fixed_field(r, B[1])
       conductor(A)[1] == C || continue
-      degree(normal_closure(A)) == 27 || continue
+      AA = fixed_field(r, CC)
+#      @assert degree(normal_closure(A)) == 27 
 
-      G, s = galois_group(A, QQ)
+      G, s = galois_group(AA, QQ)
       if small_group_identification(G) == (216, 159)
         q = number_field(A)
         qa = absolute_simple_field(q)[1]
@@ -193,30 +216,43 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem)
   Q = PrimeIdealsSet(zk, iroot(nB+1, 2), nB, coprimeto = 3)
   Q = Iterators.filter(fil, Q)
 
+  id_cnt = 0
+
   for I = S 
     for J = wild
-      if norm(I) * norm(J) <= nB
-        if norm(I) * norm(J) <= iroot(nB, 2)
+      id_cnt += 1
+      nIJ = norm(I) * norm(J)
+      if nIJ <= nB
+        if nIJ <= iroot(nB, 2)
           push!(small_id, I*J)
         end
-        @show norm(I) * norm(J)
+        @show norm(I) * norm(J), minimum(I*J)
+        @show :bingo
         C = Hecke.induce_image(mkK, I*J, target = ZK)
         one_ideal(C)
       else
         break
       end
     end
+    if id_cnt % 150 == 0
+ #     @time Base.GC.gc()
+    end
   end
+
   sort!(small_id, lt = (a,b) -> norm(a) <= norm(b))
   @show length(small_id)
   for q = Q
     for I = small_id
+      id_cnt += 1
       if norm(q) * norm(I) <= nB
         @show norm(I) * norm(q)
         C = Hecke.induce_image(mkK, I*q, target = ZK)
         one_ideal(C)
       else
         break
+      end
+      if id_cnt % 150 == 0
+#        @time Base.GC.gc()
       end
     end
   end
