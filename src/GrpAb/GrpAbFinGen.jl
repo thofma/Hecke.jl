@@ -1377,7 +1377,7 @@ function Base.intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap,
   while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
     i -= 1
   end
-   return sub(GH, [mG(GrpAbFinGenElem(G, view(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)], add_to_lattice, L)
+   return sub(GH, [mG(GrpAbFinGenElem(G, view(h, j:j, ngens(GH)+1:ncols(h)))) for j=i+1:nrows(h)], add_to_lattice, L, simplify = true)
 end
 
 
