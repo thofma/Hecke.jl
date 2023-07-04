@@ -492,6 +492,268 @@ function round_scale!(b::ZZMatrix, a::arb_mat, l::Int)
   return b
 end
 
+function round!(b::ZZMatrix, a::arb_mat)
+  s = size(a)
+  for i = 1:s[1]
+    for j = 1:s[2]
+      b[i, j] = round(ZZRingElem, a[i, j])
+    end
+  end
+  return b
+end
+
+
+function shift!(g::ZZMatrix, l::Int)
+  for i=1:nrows(g)
+    for j=1:ncols(g)
+      z = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), g, i-1, j-1)
+      if l > 0
+        ccall((:fmpz_mul_2exp, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, l)
+      else
+        ccall((:fmpz_tdiv_q_2exp, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, -l)
+      end
+    end
+  end
+  return g
+end
+
+################################################################################
+#
+#  Reduce the entries of a matrix modulo p
+#
+################################################################################
+
+@doc raw"""
+    mod!(M::ZZMatrix, p::ZZRingElem)
+
+Reduces every entry modulo $p$ in-place, i.e. applies the mod function to every entry.
+Positive residue system.
+"""
+function mod!(M::ZZMatrix, p::ZZRingElem)
+  GC.@preserve M begin
+    for i=1:nrows(M)
+      for j=1:ncols(M)
+        z = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), M, i - 1, j - 1)
+        ccall((:fmpz_mod, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), z, z, p)
+      end
+    end
+  end
+  return nothing
+end
+
+@doc raw"""
+    mod(M::ZZMatrix, p::ZZRingElem) -> ZZMatrix
+
+Reduces every entry modulo $p$, i.e. applies the mod function to every entry.
+"""
+function mod(M::ZZMatrix, p::ZZRingElem)
+  N = deepcopy(M)
+  mod!(N, p)
+  return N
+end
+
+@doc raw"""
+    mod_sym!(M::ZZMatrix, p::ZZRingElem)
+
+Reduces every entry modulo $p$ in-place, into the symmetric residue system.
+"""
+function mod_sym!(M::ZZMatrix, B::ZZRingElem)
+  @assert !iszero(B)
+  ccall((:fmpz_mat_scalar_smod, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}), M, M, B)
+end
+mod_sym!(M::ZZMatrix, B::Integer) = mod_sym!(M, ZZRingElem(B))
+
+@doc raw"""
+    mod_sym(M::ZZMatrix, p::ZZRingElem) -> ZZMatrix
+
+Reduces every entry modulo $p$ into the symmetric residue system.
+"""
+function mod_sym(M::ZZMatrix, B::ZZRingElem)
+  N = zero_matrix(FlintZZ, nrows(M), ncols(M))
+  ccall((:fmpz_mat_scalar_smod, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}), N, M, B)
+  return N
+end
+mod_sym(M::ZZMatrix, B::Integer) = mod_sym(M, ZZRingElem(B))
+
+
+################################################################################
+#
+#  Special map entries
+#
+################################################################################
+
+function map_entries(R::zzModRing, M::ZZMatrix)
+  MR = zero_matrix(R, nrows(M), ncols(M))
+  ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{zzModMatrix}, Ref{ZZMatrix}), MR, M)
+  return MR
+end
+
+
+################################################################################
+#
+#  Concatenation of matrices
+#
+################################################################################
+
+@doc raw"""
+    vcat(A::Vector{Generic.Mat}) -> Generic.Mat
+    vcat(A::Array{ZZMatrix}, 1}) -> ZZMatrix
+
+Forms a big matrix by vertically concatenating the matrices in $A$.
+All component matrices need to have the same number of columns.
+"""
+function vcat(A::Vector{T})  where {S <: RingElem, T <: MatElem{S}}
+  if any(x->ncols(x) != ncols(A[1]), A)
+    error("Matrices must have same number of columns")
+  end
+  M = zero_matrix(base_ring(A[1]), sum(nrows, A), ncols(A[1]))
+  s = 0
+  for i=A
+    for j=1:nrows(i)
+      for k=1:ncols(i)
+        M[s+j, k] = i[j,k]
+      end
+    end
+    s += nrows(i)
+  end
+  return M
+end
+
+function vcat(A::Vector{ZZMatrix})
+  n = ncols(A[1])
+  if any(x->ncols(x) != n, A)
+    error("Matrices must have same number of columns")
+  end
+  M = zero_matrix(base_ring(A[1]), sum(nrows, A), ncols(A[1]))
+  s = 0
+  for i=A
+    for j=1:nrows(i)
+      GC.@preserve M i begin
+        M_ptr = Nemo.mat_entry_ptr(M, s+j, 1)
+        i_ptr = Nemo.mat_entry_ptr(i, j, 1)
+        for k = 1:n
+          ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), M_ptr, i_ptr)
+          M_ptr += sizeof(ZZRingElem)
+          i_ptr += sizeof(ZZRingElem)
+        end
+      end
+    end
+    s += nrows(i)
+  end
+  return M
+end
+
+function vcat(A::Vector{zzModMatrix})
+  if any(x->ncols(x) != ncols(A[1]), A)
+    error("Matrices must have same number of columns")
+  end
+  M = zero_matrix(base_ring(A[1]), sum(nrows, A), ncols(A[1]))
+  s = 0
+  for i=A
+    for j=1:nrows(i)
+      for k=1:ncols(i)
+        M[s+j, k] = i[j,k]
+      end
+    end
+    s += nrows(i)
+  end
+  return M
+end
+
+function Base.vcat(A::MatElem...)
+  r = nrows(A[1])
+  c = ncols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert ncols(A[i]) == c
+    @assert base_ring(A[i]) == R
+    r += nrows(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:nrows(A[i])
+      X[o, :] = A[i][j, :]
+      o += 1
+    end
+  end
+  return X
+end
+
+function Base.hcat(A::Vector{T}) where {S <: RingElem, T <: MatElem{S}}
+  if any(x->nrows(x) != nrows(A[1]), A)
+    error("Matrices must have same number of rows")
+  end
+  M = zero_matrix(base_ring(A[1]), nrows(A[1]), sum(ncols, A))
+  s = 0
+  for i = A
+    for j=1:ncols(i)
+      for k=1:nrows(i)
+        M[k, s + j] = i[k,j]
+      end
+    end
+    s += ncols(i)
+  end
+  return M
+end
+
+function Base.hcat(A::MatElem...)
+  r = nrows(A[1])
+  c = ncols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert nrows(A[i]) == r
+    @assert base_ring(A[i]) == R
+    c += ncols(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:ncols(A[i])
+      X[:, o] = A[i][:, j]
+      o += 1
+    end
+  end
+  return X
+end
+
+
+function Base.cat(A::MatElem...;dims)
+  @assert dims == (1,2) || isa(dims, Int)
+
+  if isa(dims, Int)
+    if dims == 1
+      return hcat(A...)
+    elseif dims == 2
+      return vcat(A...)
+    else
+      error("dims must be 1, 2, or (1,2)")
+    end
+  end
+
+  local X
+  for i=1:length(A)
+    if i==1
+      X = hcat(A[1], zero_matrix(base_ring(A[1]), nrows(A[1]), sum(Int[ncols(A[j]) for j=2:length(A)])))
+    else
+      X = vcat(X, hcat(zero_matrix(base_ring(A[1]), nrows(A[i]), sum(ncols(A[j]) for j=1:i-1)), A[i], zero_matrix(base_ring(A[1]), nrows(A[i]), sum(Int[ncols(A[j]) for j=i+1:length(A)]))))
+    end
+  end
+  return X
+end
+#= seems to be in AA now
+function Base.hvcat(rows::Tuple{Vararg{Int}}, A::MatElem...)
+  B = hcat([A[i] for i=1:rows[1]]...)
+  o = rows[1]
+  for j=2:length(rows)
+    C = hcat([A[i+o] for i=1:rows[j]]...)
+    o += rows[j]
+    B = vcat(B, C)
+  end
+  return B
+end
+=#
+
 ################################################################################
 #
 #  Smith normal form with trafo
