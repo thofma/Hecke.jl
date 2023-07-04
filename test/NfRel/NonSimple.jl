@@ -16,5 +16,9 @@
     @test string(a) isa String
   end
 
-  
+  @testset "coercion" begin
+    @test QQ(2*a^0) == 2*one(QQ)
+    @test_throws ArgumentError QQ(a)
+    @test_throws ErrorException QQ(gen(K) * a^0)
+  end
 end

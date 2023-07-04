@@ -110,4 +110,15 @@
       @test chip == sum([x^i for i=0:p-1])
     end
   end
+
+  @testset "coercion" begin
+    K, a = Hecke.rationals_as_number_field()
+    Kt, t = K["t"]
+    L, b = number_field(t - 1, "b")
+    Lt, t = L["t"]
+    M, o = number_field(t^3 + 2, "o")
+    @test QQ(2*b^0) == 2*one(QQ)
+    @test QQ(2*o^0) == 2*one(QQ)
+    @test_throws ArgumentError QQ(o)
+  end
 end

@@ -483,6 +483,12 @@ function in(a::NfRelElem{nf_elem}, K::AnticNumberField)
   return true
 end
 
+function (K::QQField)(a::NfRelElem)
+  for i in 2:degree(parent(a))
+    @req iszero(coeff(a, i - 1)) "Element must be rational"
+  end
+  return QQ(coeff(a, 0))
+end
 
 ################################################################################
 #
