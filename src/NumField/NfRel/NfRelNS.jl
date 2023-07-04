@@ -838,3 +838,14 @@ end
 
 absolute_discriminant(K::NfRelNS) = discriminant(K, FlintQQ)
 
+################################################################################
+#
+#  Coercion
+#
+################################################################################
+
+function (K::QQField)(a::NfRelNSElem)
+  d = data(a)
+  @req is_constant(d) "Element must be rational"
+  return QQ(constant_coefficient(d))
+end

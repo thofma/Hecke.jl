@@ -1238,3 +1238,14 @@ end
 function Base.hash(a::NfAbsNSElem, h::UInt)
   return Base.hash(a.data, h)
 end
+
+################################################################################
+#
+#  Coercion
+#
+################################################################################
+
+function (K::QQField)(a::NfAbsNSElem)
+  @req is_constant(a.data) "Element must be rational"
+  return constant_coefficient(a.data)
+end
