@@ -325,7 +325,7 @@ function add_scaled_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingEl
   sr = add_scaled_row(Ai, Aj, c, sr)
   @assert _t === sr
   swap!(Aj, sr)
-  return sr
+  return Aj
 end
 
 function sparse_row(M::ZZMatrix)
