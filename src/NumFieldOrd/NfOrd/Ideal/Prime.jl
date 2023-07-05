@@ -1107,10 +1107,18 @@ function Base.iterate(S::PrimeIdealsSet)
   O = S.order
   found_prime = false
   start = true
-  p, pstate = iterate(S.primes)
+  ps = iterate(S.primes)
+  if ps === nothing
+    return ps
+  end
+  p, pstate = ps
   while !found_prime
     if !start
-      p, pstate = iterate(S.primes, pstate)
+      ps = iterate(S.primes, pstate)
+      if ps === nothing
+        return ps
+      end
+      p, pstate = ps
     else
       start = false
     end
