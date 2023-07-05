@@ -134,7 +134,7 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem)
   kr = Hecke.rewrite_with_conductor(kr)
 
   @show :should_use, nB, log(nB)/log(10)
-#  nB = min(nB, ZZ(10^5))
+  nB = min(nB, ZZ(10^5))
 
   P = PrimeIdealsSet(zk, 1, iroot(nB, 2), coprimeto = 3)
   #if the norm of P is larger than sqrt(B) only one prime can be added..
@@ -162,7 +162,11 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem)
     return res
   end
   P = Iterators.filter(fil, P)
-  S = Sqfr(collect(P), norm, nB)
+  _P = collect(P)
+  if length(_P) == 0
+    push!(_P, 1*ZK)
+  end
+  S = Sqfr(_P, norm, nB)
 
   l3 = prime_decomposition(zk, 3)
 
