@@ -192,7 +192,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
     return Sel(map(lift, vec(collect(sol))))
   end
 
-  return Sel, MapFromFunc(toK, toSel, Sel, codomain(mU)) 
+  return Sel, MapFromFunc(Sel, codomain(mU), toK, toSel) 
 end
 
 @doc raw"""
@@ -203,7 +203,7 @@ ie. returned explicitly wrt the basis of the number field.
 """    
 function pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
-  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem([y], ZZRingElem[1])), G, number_field(order(S[1])))
+  return G, MapFromFunc(G, number_field(order(S[1])), x->evaluate(mp(x)), y->preimage(mp, FacElem([y], ZZRingElem[1])))
 end
 
 @doc raw"""
@@ -257,7 +257,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{ZZRingElem}; algo::Symbol = :r
   function toG(a::Integer)
     return toF(FacElem(QQ, QQFieldElem[a], ZZRingElem[1]), parent = R)
   end
-  return G, MapFromFunc(toQ, toG, G, R)
+  return G, MapFromFunc(G, R, toQ, toG)
 end
 
 function pselmer_group_fac_elem(p::Int, S::Vector{<:Integer}; algo::Symbol = :raw, check::Bool = true)
@@ -301,7 +301,7 @@ end
 
 function pselmer_group(p::Int, S::Vector{ZZRingElem}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
-  return G, MapFromFunc(x->evaluate(mp(x)), y->preimage(mp, FacElem(QQ, QQFieldElem[y], ZZRingElem[1], parent = codomain(mp))), G, QQ)
+  return G, MapFromFunc(G, QQ, x->evaluate(mp(x)), y->preimage(mp, FacElem(QQ, QQFieldElem[y], ZZRingElem[1], parent = codomain(mp))))
 end
 function pselmer_group(p::Int, S::Vector{<:Integer}; check::Bool = true, algo::Symbol = :raw)
   return pselmer_group(p, map(ZZRingElem, S), check = check, algo = algo)

@@ -48,7 +48,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fpField, Nemo.FpField}
    f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = GAP.Obj(lift(x))*e
    finv(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
 
-   return MapFromFunc(f, finv, F, G)
+   return MapFromFunc(F, G, f, finv)
 end
 
 function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.FqPolyRepField}
@@ -62,7 +62,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
    if d == 1
       f1(x::Union{Nemo.fqPolyRepFieldElem, Nemo.FqPolyRepFieldElem}) = GAP.Obj(coeff(x, 0))*e
       finv1(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
-      return MapFromFunc(f1, finv1, F, Fp_gap)
+      return MapFromFunc(F, Fp_gap, f1, finv1)
    end
 
    # non-prime fields: convert the defining polynomial to GAP...
@@ -114,7 +114,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
       return sum([ v_int[i]*Basis_F[i] for i = 1:d ])
    end
 
-   return MapFromFunc(f, finv, F, G)
+   return MapFromFunc(F, G, f, finv)
 end
 
 function __to_gap(h, x::Vector)

@@ -559,7 +559,7 @@ function unit_group(::ZZRing)
   log = function (z::ZZRingElem)
     return z == -1 ? G[1] : G[0]
   end
-  return G, MapFromFunc(exp, log, G, FlintZZ)
+  return G, MapFromFunc(G, FlintZZ, exp, log)
 end
 
 @doc raw"""
@@ -575,7 +575,7 @@ function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   log = function (z::T)
     return z == -1 ? G[1] : G[0]
   end
-  return G, MapFromFunc(exp, log, G, R)
+  return G, MapFromFunc(G, R, exp, log)
 end
 
 #Nemo.fpField = zzModRingElem?
@@ -815,13 +815,13 @@ end
 
 function quo(::ZZRing, a::ZZRingElem)
   R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(x -> R(x), y -> lift(y), FlintZZ, R)
+  f = MapFromFunc(FlintZZ, R, x -> R(x), y->lift(y))
   return R, f
 end
 
 function quo(::ZZRing, a::Integer)
   R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(x -> R(x), y -> lift(y), FlintZZ, R)
+  f = MapFromFunc(FlintZZ, R, x -> R(x), y->lift(y))
   return R, f
 end
 

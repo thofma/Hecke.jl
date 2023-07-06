@@ -1869,7 +1869,7 @@ Return the product $\prod_p \QQ_p* / (\QQ_p*)^2$ where `p in primes`.
 function local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
   K, _ = Hecke.rationals_as_number_field()
   # f : QQ -> K
-  f = MapFromFunc(x -> K(x), x -> coeff(x, 0), QQ, K)
+  f = MapFromFunc(QQ, K, x -> K(x), x -> coeff(x, 0))
   OK = maximal_order(K)
   primes_as_ideals = [prime_decomposition(OK, p)[1][1] for p in primes]
   stuff = [Hecke.local_multiplicative_group_modulo_squares(P) for P in primes_as_ideals]
@@ -1900,7 +1900,7 @@ function local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
     @assert backwardmap(z) == x
     return z
   end
-  diagonal_morphism = inv(MapFromFunc(forwardmap, backwardmap, A, QQ))
+  diagonal_morphism = inv(MapFromFunc(A, QQ, forwardmap, backwardmap))
   projd = Any[(primes[i],proj[i]*maps[i]*inv(f)) for i in 1:length(primes)]
   injd = Any[(primes[i],f*inv(maps[i])*inj[i]) for i in 1:length(primes)]
   return A, Dict(projd), Dict(injd), diagonal_morphism
@@ -1951,7 +1951,7 @@ Further Delta is in bijection with the proper spinor genera of `G`.
   B,b = sub(A,gens_local_automorphs)
   C,c = sub(B, [preimage(b,i) for i in gens_automorph])
   Delta, proj = cokernel(c, false)
-  binv = MapFromFunc(x -> preimage(b, x), b, A, B)
+  binv = MapFromFunc(A, B, x -> preimage(b, x), b)
   f1 = compose(diagonal_map, binv)
   f2 = compose(f1, proj)
   f3 = Dict([(p,compose(compose(inj[p], binv), proj)) for p in keys(inj)])

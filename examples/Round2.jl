@@ -311,7 +311,7 @@ function radical_basis_power(O::Order, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = MapFromFunc(x->F(x), y->lift(y), parent(p), F)
+    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   q = characteristic(F)
@@ -345,7 +345,7 @@ function radical_basis_trace(O::Order, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = MapFromFunc(x->R(x), y->lift(y), parent(p), R)
+    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
   end
 
   TT = map_entries(mR, T)
@@ -362,7 +362,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = MapFromFunc(x->F(x), y->lift(y), parent(p), F)
+    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
   end
   @assert isa(F, Generic.RationalFunctionField) && characteristic(F) != 0
   q = characteristic(F)
@@ -488,7 +488,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = MapFromFunc(x->R(x), y->lift(y), parent(p), R)
+    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
@@ -588,7 +588,7 @@ end
 
 function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
   K, _ = number_field(p)
-  return K, MapFromFunc(x->K(x), y->R(y), R, K)
+  return K, MapFromFunc(R, K, x->K(x), y->R(y))
 end
 
 function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T}
@@ -659,7 +659,7 @@ function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
-  return F, MapFromFunc(x->F(data(x)), y->R(lift(y)), R, F)
+  return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(y)))
 end
 
 Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
@@ -1059,13 +1059,14 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
   F = GF(b.c)
   Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
-  return Ft, MapFromFunc(x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
-                         y->HessQRElem(a, ZZRingElem(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))), a, Ft)
+  return Ft, MapFromFunc(a, Ft,
+                         x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
+                         y->HessQRElem(a, ZZRingElem(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))))
 end
 
 function Nemo.residue_ring(a::HessQR, b::HessQRElem)
   F = residue_ring(FlintZZ, b.c)
-  return F, MapFromFunc(x->F(x.c), y->a(lift(y)), a, F)
+  return F, MapFromFunc(a, F, x->F(x.c), y->a(lift(y)))
 end
 
 function Hecke.factor(a::HessQRElem)

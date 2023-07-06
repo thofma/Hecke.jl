@@ -136,7 +136,7 @@ end
 ###########################################################
 
 """
-    MapFromFunc(f, [g], D, C)
+    MapFromFunc(D, C, f, [g])
 
 Creates the map `D -> C, x -> f(x)` given the callable
 object `f`. If `g` is provided, it is assumed to satisfy
@@ -147,14 +147,14 @@ object `f`. If `g` is provided, it is assumed to satisfy
 ```jldoctest
 julia> F = GF(2);
 
-julia> f = MapFromFunc(x -> F(numerator(x)) * inv(F(denominator(x))), QQ, F)
+julia> f = MapFromFunc(QQ, F, x -> F(numerator(x)) * inv(F(denominator(x))))
 Map from
 Rational field to Finite field of characteristic 2 defined by a julia-function
 
 julia> f(QQ(1//3))
 1
 
-julia> f = MapFromFunc(x -> F(numerator(x)) * inv(F(denominator(x))), y -> QQ(lift(y)),  QQ, F)
+julia> f = MapFromFunc(QQ, F, x -> F(numerator(x)) * inv(F(denominator(x))), y -> QQ(lift(y)),)
 Map from
 Rational field to Finite field of characteristic 2 defined by a julia-function with inverse
 
@@ -167,14 +167,14 @@ mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
   f
   g
 
-  function MapFromFunc{R, T}(f, D::R, C::T) where {R, T}
+  function MapFromFunc{R, T}(D::R, C::T, f) where {R, T}
     n = new{R, T}()
     n.header = Hecke.MapHeader(D, C, f)
     n.f = f
     return n
   end
 
-  function MapFromFunc{R, T}(f, g, D::R, C::T) where {R, T}
+  function MapFromFunc{R, T}(D::R, C::T, f, g) where {R, T}
     n = new{R, T}()
     n.header = Hecke.MapHeader(D, C, f, g)
     n.f = f
@@ -213,19 +213,19 @@ function Base.show(io::IO, M::MapFromFunc)
   end
 end
 
-function MapFromFunc(f, D, C)
-  return MapFromFunc{typeof(D), typeof(C)}(f, D, C)
+function MapFromFunc(D, C, f)
+  return MapFromFunc{typeof(D), typeof(C)}(D, C, f)
 end
 
-function MapFromFunc(f, g, D, C)
-  return MapFromFunc{typeof(D), typeof(C)}(f, g, D, C)
+function MapFromFunc(D, C, f, g)
+  return MapFromFunc{typeof(D), typeof(C)}(D, C, f, g)
 end
 
 function Base.inv(M::MapFromFunc)
   if isdefined(M, :g)
-     return MapFromFunc(M.g, M.f, codomain(M), domain(M))
+     return MapFromFunc(codomain(M), domain(M), M.g, M.f)
   else
-     return MapFromFunc(x->preimage(M, x), codomain(M), domain(M))
+     return MapFromFunc(codomain(M), domain(M), x->preimage(M, x))
   end
 end
 

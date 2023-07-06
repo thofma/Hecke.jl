@@ -617,5 +617,5 @@ function completion(K::AnticNumberField, ca::qadic)
     end
     return r#*K(p)^valuation(x)
   end
-  return parent(ca), MapFromFunc(inj, lif, K, parent(ca))
+  return parent(ca), MapFromFunc(K, parent(ca), inj, lif)
 end

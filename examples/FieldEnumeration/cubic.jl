@@ -42,9 +42,9 @@ function induce_action(phi::Hecke.NfToNfMor, mR::T) where T <: Map{GrpAbFinGen,
 Hecke.FacElemMon{Hecke.NfOrdIdlSet}}
 #function induce_action(phi::Hecke.NfToNfMor, mR::Hecke.MapRayClassGrpFacElem{Hecke.GrpAbFinGen})
   lp, x = Hecke.find_gens(
-        Hecke.MapFromFunc(x->preimage(mR, FacElem(Dict(x=>1))),
-                          base_ring(codomain(mR)),
-                          domain(mR)),
+        Hecke.MapFromFunc(base_ring(codomain(mR)),
+                          domain(mR),
+                          x->preimage(mR, FacElem(Dict(x=>1)))),
         PrimesSet(100, -1))
   return hom(x, GrpAbFinGenElem[preimage(mR, Hecke.induce_image(p, phi)) for p = lp])
 end

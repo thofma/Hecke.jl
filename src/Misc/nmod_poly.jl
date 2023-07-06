@@ -1207,7 +1207,7 @@ end
 
 function quo(R::fqPolyRepPolyRing, f::fqPolyRepPolyRingElem)
   Q = residue_ring(R, f)
-  mQ = MapFromFunc(x -> Q(x), y -> lift(y), R, Q)
+  mQ = MapFromFunc(R, Q, x -> Q(x), y -> lift(y))
   return Q, mQ
 end
 

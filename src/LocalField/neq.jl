@@ -1080,7 +1080,7 @@ function one_unit_group(K::LocalField)
       return G(ex)
     end
   end
-  return G, MapFromFunc(from_G, to_G, G, K)
+  return G, MapFromFunc(G, K, from_G, to_G)
 end
 
 function teichmuller(a::LocalFieldElem)
@@ -1133,7 +1133,7 @@ function unit_group(K::LocalField)
     return inj[1](v*Z[1]) + inj[2](preimage(mu, r)) + inj[3](preimage(mU, x))
   end
 
-  return G, MapFromFunc(from_G, to_G, G, K)
+  return G, MapFromFunc(G, K, from_G, to_G)
 end
 
 #=
@@ -1157,7 +1157,7 @@ function unit_group(R::QadicRing)
     return inj[1](preimage(mu, r)) + inj[2](preimage(mU, x))
   end
 
-  return G, MapFromFunc(from_G, to_G, G, K)
+  return G, MapFromFunc(G, K, from_G, to_G)
 end
 
 =#

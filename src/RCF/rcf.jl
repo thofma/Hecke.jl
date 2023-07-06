@@ -1000,9 +1000,9 @@ function _rcf_descent(CF::ClassField_pp)
     @vprintln :ClassField 2 "finding Artin map..."
     #TODO can only use non-indx primes, easy primes...
     cp = lcm([minimum(defining_modulus(CF)[1]), index(Zk), index(ZK)])
-    #@vtime :ClassField 2 lp, f1 = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
+    #@vtime :ClassField 2 lp, f1 = find_gens(MapFromFunc(IdealSet(Zk), AutA, canFrob),
     #                  PrimesSet(200, -1), cp)
-    lp, f1 = find_gens_descent(MapFromFunc(canFrob, IdealSet(Zk), AutA), CF, cp)
+    lp, f1 = find_gens_descent(MapFromFunc(IdealSet(Zk), AutA, canFrob), CF, cp)
     imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
     h = hom(f1, imgs)
     @hassert :ClassField 1 is_surjective(h)
