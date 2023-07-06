@@ -199,10 +199,10 @@ end
 function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
-  m = maximum(degree, keys(factor(K.pol, GF(p)).fac))
+  m = maximum(degree, keys(factor(GF(p), K.pol).fac))
   while m > 4
     p = next_prime(p)
-    m = maximum(degree, keys(factor(K.pol, GF(p)).fac))
+    m = maximum(degree, keys(factor(GF(p), K.pol).fac))
   end
          #experimentally, the runtime is dominated by log
   u = FacElem{nf_elem, AnticNumberField}[]

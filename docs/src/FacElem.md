@@ -79,9 +79,9 @@ isone(x::FacElem{QQFieldElem, S} where S)
 factor_coprime(::FacElem{ZZRingElem, S} where S)
 factor_coprime(::FacElem{NfOrdIdl, NfOrdIdlSet})
 factor_coprime(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor_coprime(::FacElem{nf_elem, AnticNumberField}, ::NfOrdIdlSet)
+factor_coprime(::NfOrdIdlSet, ::FacElem{nf_elem, AnticNumberField})
 factor(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor(::FacElem{nf_elem, AnticNumberField}, ::NfOrdIdlSet)
+factor(::NfOrdIdlSet, ::FacElem{nf_elem, AnticNumberField})
 ```
 
 For factorised algebraic numbers a unique simplification is not possible,

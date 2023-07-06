@@ -314,7 +314,7 @@ absolute_basis(K::FlintPadicField) = padic[one(K)]
 function find_irreducible_polynomial(K, n::Int)
   Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = cyclotomic(ppio(degree(K), n)*n, x)
-  lf = factor(f, K)
+  lf = factor(K, f)
   return first(keys(lf[1]))
 end
 
@@ -392,7 +392,7 @@ function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQa
   old = precision(K)
 #  @assert n>=0
   setprecision!(K, n)
-  v = try 
+  v = try
         setprecision(f, base_field(K), ceil(Int, n/ramification_index(K)))
       finally
         setprecision!(K, old)

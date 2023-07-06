@@ -37,7 +37,7 @@ ideal(::NfAbsOrd, ::NfAbsOrdElem)
 
 *(::NfOrd, ::NfOrdElem)
 factor(::NfOrdIdl)
-factor(::nf_elem, ::NfOrdIdlSet)
+factor(::NfOrdIdlSet, ::nf_elem)
 coprime_base(::Vector{NfOrdIdl})
 ```
 

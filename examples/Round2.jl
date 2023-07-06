@@ -702,7 +702,7 @@ function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{T}, S::PolyRi
   return numerator(a), denominator(a)
 end
 
-function Hecke.factor(a::Generic.RationalFunctionFieldElem{T}, R::Generic.PolyRing{T}) where {T}
+function Hecke.factor(R::Generic.PolyRing{T}, a::Generic.RationalFunctionFieldElem{T}) where {T}
   @assert parent(numerator(a)) == R
   f1 = factor(numerator(a))
   f2 = factor(denominator(a))
@@ -1074,7 +1074,7 @@ function Hecke.factor(a::HessQRElem)
   return Fac(R(a.f), Dict((R(p),k) for (p,k) = f.fac))
 end
 
-function Hecke.factor(a::Generic.RationalFunctionFieldElem, R::HessQR)
+function Hecke.factor(R::HessQR, a::Generic.RationalFunctionFieldElem)
   d1 = reduce(lcm, map(denominator, coefficients(numerator(a))), init = ZZRingElem(1))
   f1 = factor(R(d1*numerator(a)))
   d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = ZZRingElem(1))
@@ -1388,7 +1388,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   return Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf.fac))
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}, F::Generic.FunctionField{T}) where {T}
+function Hecke.factor(F::Generic.FunctionField{T}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}) where {T}
   return factor(map_coefficients(F, f))
 end
 #plain vanilla Trager, possibly doomed in pos. small char.

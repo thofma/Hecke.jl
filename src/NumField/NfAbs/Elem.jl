@@ -275,17 +275,17 @@ end
 ################################################################################
 
 @doc raw"""
-    factor(f::ZZPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
-    factor(f::QQPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
+    factor(K::number_field, f::ZZPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
+    factor(K::number_field, f::QQPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
 
 The factorisation of $f$ over $K$.
 """
-function factor(f::QQPolyRingElem, K::AnticNumberField)
+function factor(K::AnticNumberField, f::QQPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
-function factor(f::ZZPolyRingElem, K::AnticNumberField)
+function factor(K::AnticNumberField, f::ZZPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
@@ -523,23 +523,23 @@ end
 ################################################################################
 
 @doc raw"""
-    roots(f::ZZPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
+    roots(K::AnticNumberField, f::ZZPolyRingElem) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(f::ZZPolyRingElem, K::AnticNumberField; kw...)
+function roots(K::AnticNumberField, f::ZZPolyRingElem; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
 @doc raw"""
-    roots(f::QQPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
+    roots(K::AnticNumberField, f::QQPolyRingElem) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(f::QQPolyRingElem, K::AnticNumberField; kw...)
+function roots(K::AnticNumberField, f::QQPolyRingElem; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end

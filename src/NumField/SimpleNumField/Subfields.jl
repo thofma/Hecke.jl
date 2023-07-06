@@ -22,7 +22,7 @@ function _principal_subfields_basis(K::SimpleNumField)
   #f in Kx
   #fk = Kx([coeff(f,i) for i in 0:n])
   #determine roots
-  rts = roots(f, K)
+  rts = roots(K, f)
   ar_lin_fac = elem_type(Kx)[x - root for root in rts]
   fK = change_base_ring(K, f, parent = Kx)
   ##divide by roots

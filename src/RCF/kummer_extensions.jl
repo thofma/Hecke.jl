@@ -556,7 +556,7 @@ end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
   Zk = maximal_order(base_ring(a))
-  lp = factor_coprime(a, IdealSet(Zk))
+  lp = factor_coprime(IdealSet(Zk), a)
   lp1 = Dict{NfOrdIdl, ZZRingElem}((x, ZZRingElem(y)) for (x, y) in lp)
   return reduce_mod_powers(a, n, lp1)
 end

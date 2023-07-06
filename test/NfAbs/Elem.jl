@@ -157,7 +157,7 @@ end
   Qx, x = QQ["x"]
   f = x^3-39*x-65
   K, a = number_field(f, "a")
-  r = @inferred roots(f, K)
+  r = @inferred roots(K, f)
   @test length(r) == 3
   @test all(iszero, (f(b) for b in r))
 end

@@ -673,7 +673,7 @@ end
     There are also bounds on the coefficients which are sometimes tight
 =#
 
-function roots(f::ZZPolyRingElem, ::QQField; max_roots::Int=degree(f))
+function roots(::QQField, f::ZZPolyRingElem; max_roots::Int=degree(f))
   if degree(f) < 1
       return QQFieldElem[]
   end
@@ -711,29 +711,17 @@ function roots(f::ZZPolyRingElem, ::QQField; max_roots::Int=degree(f))
 end
 
 function roots(f::ZZPolyRingElem; max_roots::Int=degree(f))
-  r = roots(f, FlintQQ, max_roots=max_roots)
+  r = roots(FlintQQ, f, max_roots=max_roots)
   return ZZRingElem[FlintZZ(x) for x = r if denominator(x) == 1]
 end
 
 function roots(f::QQPolyRingElem; max_roots::Int=degree(f))
-  Zx, x = polynomial_ring(FlintZZ, cached=false)
-  g = Zx(denominator(f) * f)
-  return roots(g, FlintQQ)
+  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  g = Zx(denominator(f)*f)
+  return roots(FlintQQ, g)
 end
 
-function roots(f::Union{ZZPolyRingElem,QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
-  g = factor(f)
-  r = elem_type(R)[]
-  C = AcbField(precision(R))
-  for k = keys(g.fac)
-      s, _ = signature(k)
-      rt = roots(k, C)
-      append!(r, map(real, rt[1:s]))
-  end
-  return r
-end
-
-function roots(f::Union{ZZPolyRingElem,QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   lf = factor(f)
   return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
 end
@@ -747,26 +735,38 @@ function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   return all_rts, rl_rts, compl_rts
 end
 
-function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   d = Dict{acb_poly, Int}()
   Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
   for (k,v) = g.fac
-    for r = roots(k, R)
+    for r = roots(R, k)
       d[t-r] = v
     end
   end
   return Fac(Rt(g.unit), d)
 end
 
-function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
+  g = factor(f)
+  r = elem_type(R)[]
+  C = AcbField(precision(R))
+  for k = keys(g.fac)
+    s, _ = signature(k)
+    rt = roots(C, k)
+    append!(r, map(real, rt[1:s]))
+  end
+  return r
+end
+
+function factor(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   d = Dict{arb_poly, Int}()
   Rx, x = polynomial_ring(R, String(var(parent(f))), cached = false)
   C = AcbField(precision(R))
   for (k,v) = g.fac
     s, t = signature(k)
-    r = roots(k, C)
+    r = roots(C, k)
     for i=1:s
       d[x-real(r[i])] = v
     end
@@ -805,10 +805,6 @@ function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
   d = leading_coefficient(b)
   return one(parent(d)), divexact(b, d)
 end
-
-
-
-
 
 
 @doc raw"""

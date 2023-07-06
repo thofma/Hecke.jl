@@ -669,7 +669,7 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
   K, gK = Native.FiniteField(p, d, "a", cached = cached)
   k, mk = absolute_field(base_field(F))
   def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F))
-  img_gen_k = roots(defining_polynomial(k), K)[1]
+  img_gen_k = roots(K, defining_polynomial(k))[1]
   mp = hom(k, K, img_gen_k)
   g = map_coefficients(mp, def_pol_new)
   img_gen_F = roots(g)[1]
