@@ -225,7 +225,7 @@ end
 ################################################################################
 
 function support(a::QQFieldElem, R::ZZRing)
-  return ZZIdl[p*R for (p, _) in factor(a, R)]
+  return ZZIdl[p*R for (p, _) in factor(R, a)]
 end
 
 ################################################################################
