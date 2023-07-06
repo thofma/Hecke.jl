@@ -1035,32 +1035,6 @@ end
 #    from sage.rings.all import polynomial_ring
 #    from sage.modules.free_module_element import vector
 
-function roots(f::ZZModPolyRingElem, p::ZZRingElem, e::Int)
-  F = Fac{ZZRingElem}()
-  F.unit = one(ZZRingElem)
-  F[p] = e
-  return roots(f, F)
-end
-function roots(f::ZZModPolyRingElem, fac::Fac{ZZRingElem})
-  res = Nemo.fmpz_mod_poly_factor(base_ring(f))
-  _fac = Nemo.fmpz_factor()
-  for (p, e) in fac
-    ccall((:_fmpz_factor_append, libflint), Cvoid, (Ref{Nemo.fmpz_factor}, Ref{ZZRingElem}, UInt), _fac, p, UInt(e))
-  end
-  ccall((:fmpz_mod_poly_roots_factored, libflint), Cvoid, (Ref{Nemo.fmpz_mod_poly_factor}, Ref{ZZModPolyRingElem}, Cint, Ref{Nemo.fmpz_factor}, Ref{Nemo.fmpz_mod_ctx_struct}), res, f, 1, _fac, base_ring(f).ninv)
-  _res = Tuple{Nemo.ZZModRingElem, Int}[]
-  for i in 1:res.num
-    g = parent(f)()
-    ccall((:fmpz_mod_poly_factor_get_fmpz_mod_poly, libflint), Nothing,
-          (Ref{Nemo.ZZModPolyRingElem}, Ref{Nemo.fmpz_mod_poly_factor}, Int,
-           Ref{Nemo.fmpz_mod_ctx_struct}),
-          g, res, i - 1, base_ring(f).ninv)
-    e = unsafe_load(res.exp, i)
-    push!(_res, (-coeff(g, 0), e))
-  end
-  return _res
-end
-
 function _normalize_twobytwo(G, p)
   # p = ZZRingElem(2)
 

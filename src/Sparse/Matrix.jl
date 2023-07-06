@@ -1222,10 +1222,6 @@ function identity_matrix(::Type{SMat}, R::Ring, n::Int)
   return A
 end
 
-function identity_matrix(::Type{MatElem}, R::Ring, n::Int)
-  return identity_matrix(R, n)
-end
-
 @doc raw"""
     zero_matrix(::Type{SMat}, R::Ring, n::Int)
 

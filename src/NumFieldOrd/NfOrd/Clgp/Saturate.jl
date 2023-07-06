@@ -259,7 +259,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
           bad_prime = true
           break
         end
-        Hecke.nf_elem_to_gfp_poly!(t, k)
+        Nemo.nf_elem_to_gfp_poly!(t, k)
         #evaluations = evaluate(t, evaluateat[1:lfacts])
         for j = 1:lfacts
           ev_t = evaluate(t, evaluateat[j])#evaluations[j]

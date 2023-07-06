@@ -96,14 +96,6 @@ function _exp(a::ZZModAbsPowerSeriesRingElem)
   return r
 end
 
-function lift(R::ZZAbsPowerSeriesRing, f::ZZModAbsPowerSeriesRingElem)
-  r = R()
-  for i=0:length(f)-1
-    setcoeff!(r, i, lift(coeff(f, i)))
-  end
-  return r
-end
-
 function _psi_lower(N::ZZRingElem, pr, a::Int=776, cl = ceil)
   p = ZZRingElem(next_prime(2^60))
   n = nbits(N)

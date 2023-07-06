@@ -104,11 +104,6 @@ function MapHeader(domain::D, codomain::C, image, preimage) where {D, C}
   return MapHeader{D, C}(domain, codomain, image, preimage)
 end
 
-
-function preimage(f::AbstractAlgebra.Generic.CompositeMap, a)
-  return preimage(f.map1, preimage(f.map2, a))
-end
-
 preimage_function(f) = a -> preimage(f, a)
 image_function(f) = a -> image(f, a)
 

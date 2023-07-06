@@ -242,12 +242,6 @@ function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::IntegerUnion,
   end
 end
 
-Nemo.fits(::Type{Int}, a::Int) = true
-function Nemo.fits(::Type{Int}, a::Integer)
-  #TODO: possibly not optimal?
-  return a % Int == a
-end
-
 function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
   if typeof(p) != Int && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)

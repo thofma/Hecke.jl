@@ -556,26 +556,6 @@ function unique_fmpz_mat(C::Nemo.arb_mat)
   return true, v
 end
 
-function Base.round(::Type{ZZRingElem}, x::arb)
-  if radius(x) > 1e-1
-    throw(InexactError(:round, ZZRingElem, x))
-  end
-  return setprecision(BigFloat, precision(parent(x))) do
-    round(ZZRingElem, BigFloat(x))
-  end
-end
-
-function Base.round(::Type{ZZMatrix}, C::Nemo.arb_mat)
-  v = zero_matrix(FlintZZ, nrows(C), ncols(C))
-
-  for i=1:nrows(C)
-    for j=1:ncols(C)
-      v[i,j] = round(ZZRingElem, C[i,j])
-    end
-  end
-  return v
-end
-
 function round_approx(::Type{ZZMatrix}, C::Nemo.arb_mat)
   v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 

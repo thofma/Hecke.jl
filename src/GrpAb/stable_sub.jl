@@ -18,31 +18,6 @@ function show(io::IO, M::ZpnGModule)
   print(io, "Module over Z/", M.R.n, "Z with structure ", M.V)
 end
 
-#
-#  Lifts a matrix from F_p to Z/p^nZ
-#
-
-function lift(M::fqPolyRepMatrix, R::Nemo.zzModRing)
-  @hassert :StabSub 1 is_prime_power(modulus(R))
-  N=zero_matrix(R,nrows(M),ncols(M))
-  for i=1:nrows(M)
-    for j=1:ncols(M)
-      N[i,j]=FlintZZ(coeff(M[i,j],0))
-    end
-  end
-  return N
-end
-
-function lift(M::fpMatrix, R::Nemo.zzModRing)
-  @hassert :StabSub 1 is_prime_power(modulus(R))
-  N=zero_matrix(R, nrows(M), ncols(M))
-  for i=1:nrows(M)
-    for j=1:ncols(M)
-      N[i,j] = R(lift(M[i,j]))
-    end
-  end
-  return N
-end
 
 #  Action of a matrix on an element of the group
 function *(x::GrpAbFinGenElem, M::zzModMatrix)

@@ -1,10 +1,7 @@
 
-export conjugates_init, is_constant, is_squarefree, conjugates, angle, cos,
+export conjugates_init, is_squarefree, conjugates, angle, cos,
        sin, abs, abs2, sqrt
 
-function is_constant(f::PolyElem)
-  return f.length<2
-end
 
 function conjugates_init(f_in::Union{ZZPolyRingElem, QQPolyRingElem})
   local f::ZZPolyRingElem
@@ -62,19 +59,6 @@ function evaluate(f::QQPolyRingElem, r::BigComplex)
   s = BigComplex(BigFloat(coeff(f, l)))
   for i =l-1:-1:0
     s = s*r+BigComplex(BigFloat(coeff(f, i)))
-  end
-  return s
-end
-
-function evaluate(f::QQPolyRingElem, r::T) where T <: RingElem
-  R = parent(r)
-  if iszero(f)
-    return zero(R)
-  end
-  l = length(f) - 1
-  s = R(coeff(f, l))
-  for i in l-1:-1:0
-    s = s*r + R(coeff(f, i))
   end
   return s
 end
@@ -148,17 +132,6 @@ function length(a::nf_elem, p::Int = 50)
   return sum([x*x for x in m])
 end
 
-function setprecision!(x::BigFloat, p::Int)
-  ccall((:mpfr_prec_round, :libmpfr), Nothing, (Ref{BigFloat}, Clong, Int32), x, p, Base.MPFR.ROUNDING_MODE[])
-end
-
-function Base.setprecision(x::BigFloat, p::Int)
-  setprecision(BigFloat, p) do
-    y = BigFloat()
-    ccall((:mpfr_set, :libmpfr), Nothing, (Ref{BigFloat}, Ref{BigFloat}, Int32), y, x, Base.MPFR.ROUNDING_MODE[])
-    return y
-  end
-end
 
 function minkowski_matrix(K::AnticNumberField, p::Int = 50)
   c = roots_ctx(K)
@@ -187,28 +160,4 @@ function minkowski_matrix(K::AnticNumberField, p::Int = 50)
   c.minkowski_mat_p = p
   setprecision(old)
   return m
-end
-
-
-function *(a::ZZMatrix, b::Matrix{BigFloat})
-  s = Base.size(b)
-  ncols(a) == s[1] || error("dimensions do not match")
-
-  c = Array{BigFloat}(undef, nrows(a), s[2])
-  return mult!(c, a, b)
-end
-
-for (s,f) in ((:trunc, Base.trunc), (:round, Base.round), (:ceil, Base.ceil), (:floor, Base.floor))
-  @eval begin
-    function ($s)(a::Matrix{BigFloat})
-      s = Base.size(a)
-      m = zero_matrix(FlintZZ, s[1], s[2])
-      for i = 1:s[1]
-        for j = 1:s[2]
-          m[i,j] = FlintZZ(BigInt(($f)(a[i,j])))
-        end
-      end
-      return m
-    end
-  end
 end

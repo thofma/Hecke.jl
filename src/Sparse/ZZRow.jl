@@ -350,13 +350,6 @@ function get_tmp(A::SMat{ZZRingElem})
   return SRow(ZZ, Int[], ZZRingElem_Array())
 end
 
-function mul!(a::ZZRingElem, b::ZZRingElem, c::Ptr{Int})
-  ccall((:fmpz_mul, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{Int}), a, b, c)
-end
-
-function add!(a::ZZRingElem, b::ZZRingElem, c::Ptr{Int})
-  ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{Int}), a, b, c)
-end
 
 function transform_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, sr::SRow{ZZRingElem}, tr::SRow{ZZRingElem}) 
   empty!(sr)

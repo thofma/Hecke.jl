@@ -544,26 +544,6 @@ function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPol
 end
 
 
-function Hecke.mod!(f::ZZPolyRingElem, p::ZZRingElem)
-  for i=0:degree(f)
-    setcoeff!(f, i, mod(coeff(f, i), p))
-  end
-end
-
-function Hecke.mod(f::ZZPolyRingElem, p::ZZRingElem)
-  g = parent(f)()
-  for i=0:degree(f)
-    setcoeff!(g, i, mod(coeff(f, i), p))
-  end
-  return g
-end
-
-function Hecke.mod_sym!(f::ZZPolyRingElem, p::ZZRingElem)
-  for i=0:degree(f)
-    setcoeff!(f, i, Hecke.mod_sym(coeff(f, i), p))
-  end
-end
-
 #=
 import Base.//, Base.==
 

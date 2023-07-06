@@ -64,10 +64,6 @@ function Base.setprecision(a::LocalFieldElem, n::Int)
   return setprecision!(b, n)
 end
 
-function setprecision!(a::padic, n::Int)
-  return setprecision(a, n)
-end
-
 function setprecision!(a::LocalFieldElem, n::Int)
   K = parent(a)
   e = ramification_index(K)

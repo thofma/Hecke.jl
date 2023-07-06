@@ -1086,10 +1086,6 @@ end
 #
 ################################################################################
 
-function log(a::ZZRingElem, b::ZZRingElem)
-  log(b)/log(a)
-end
-
 function replace_all_squares_modulo(f, g, F)
   # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
   # the result will be in Z[x]

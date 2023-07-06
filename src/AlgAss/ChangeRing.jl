@@ -74,8 +74,6 @@ mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, HeckeMap, AlgAssResMor}
   end
 end
 
-degree(::QQField) = 1
-
 domain(f::AlgAssResMor) = f.domain
 
 codomain(f::AlgAssResMor) = f.codomain

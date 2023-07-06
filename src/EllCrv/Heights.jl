@@ -960,14 +960,3 @@ function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb
  
   return beta_bound
 end
-
-#This should probably go somewhere else. (Taking the nth derivative)
-function derivative(x::acb_poly, n::Int64)
-  for i in (1:n)
-    x = derivative(x)
-  end
-  return x
-end
-
-
-

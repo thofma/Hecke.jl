@@ -187,20 +187,6 @@ function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, bi::fmpz_p
   return r
 end
 
-@doc raw"""
-    round(::ZZRingElem, a::ZZRingElem, b::ZZRingElem) -> ZZRingElem
-
-Computes `round(a//b)`.
-"""
-function Base.round(::Type{ZZRingElem}, a::ZZRingElem, b::ZZRingElem)
-  s = sign(a)*sign(b)
-  bs = abs(b)
-  as = abs(a)
-  r = s*div(2*as+bs, 2*bs)
-#  @assert r == round(ZZRingElem, a//b)
-  return r
-end
-
 #TODO: think about computing pM[1][1,:]//pM[2] as a "float" approximation
 #      to save on multiplications
 function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}, O)
@@ -433,7 +419,6 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
 end
 
 ###############################################
-Base.log2(a::ZZRingElem) = log2(BigInt(a)) # stupid: there has to be faster way
 
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
@@ -519,16 +504,6 @@ function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::lll_ctx = ll
    d = Int(ccall((:fmpz_lll_wrapper_with_removal_knapsack, libflint), Cint,
     (Ref{ZZMatrix}, Ptr{nothing}, Ref{ZZRingElem}, Ref{lll_ctx}), z, C_NULL, b, ctx))
    return d, z
-end
-
-function tdivpow2!(B::ZZMatrix, t::Int)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), B, B, t)
-end
-
-function Nemo.tdivpow2(B::ZZMatrix, t::Int)
-  C = similar(B)
-  ccall((:fmpz_mat_scalar_tdiv_q_2exp, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Cint), C, B, t)
-  return C
 end
 
 function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingElem, bnd::ZZRingElem)
@@ -767,7 +742,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
         sz = nbits(vH.pM[2]) - div(r, 1) - prec_scale
       end
       push!(really_used, n)
-      tdivpow2!(B, sz+prec_scale)
+      Nemo.tdivpow2!(B, sz+prec_scale)
       d = tdivpow2(vH.pM[2], sz)
 
       bnd = r*ZZRingElem(2)^(2*prec_scale) + degree(K)*(ncols(M)-r)*div(r, 2)^2
@@ -884,14 +859,6 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     #TODO: see Fieker/Friedrichs comment above
     b = [ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(x)+ 2*prec_scale)) for x = b]
   end #the big while
-end
-
-function Base.map!(f, M::ZZMatrix)
-  for i=1:nrows(M)
-    for j=1:ncols(M)
-      M[i,j] = f(M[i,j])
-    end
-  end
 end
 
 #does not seem to be faster than the direct approach. (not modular)

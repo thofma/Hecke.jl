@@ -135,15 +135,6 @@ function _lift_to_Q!(z, K::fpMatrix)
   return z
 end
 
-function addmul!(A::fpMatrix, B::fpMatrix, C::fpFieldElem, D::fpMatrix)
-  ccall((:nmod_mat_scalar_addmul_ui, libflint), Cvoid, (Ref{fpMatrix}, Ref{fpMatrix}, Ref{fpMatrix}, UInt), A, B, D, C.data)
-  return A
-end
-
-function mul!(A::fpMatrix, B::fpFieldElem, D::fpMatrix)
-  ccall((:nmod_mat_scalar_mul_ui, libflint), Cvoid, (Ref{fpMatrix}, Ref{fpMatrix}, UInt), A, C, B.data)
-end
-
 function pmaximal_sublattices(L::ModAlgAssLat, p::Int; filter = nothing, composition_factors = nothing)
   res = typeof(L)[]
   if composition_factors === nothing

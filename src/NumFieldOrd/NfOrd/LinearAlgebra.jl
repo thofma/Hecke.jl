@@ -962,17 +962,6 @@ function _spans_subset_of_pseudohnf(M::PMat{T, S}, P::PMat{T, S}, shape::Symbol 
   return true
 end
 
-function sub(M::Generic.Mat, rows::UnitRange{Int}, cols::UnitRange{Int})
-  @assert step(rows) == 1 && step(cols) == 1
-  z = zero_matrix(base_ring(M), length(rows), length(cols))
-  for i in rows
-    for j in cols
-      z[i - first(rows) + 1, j - first(cols) + 1] = M[i, j]
-    end
-  end
-  return z
-end
-
 function sub(P::PMat, rows::UnitRange{Int}, cols::UnitRange{Int})
   m = sub(P.matrix, rows, cols)
   return pseudo_matrix(m, P.coeffs[rows])
@@ -1588,24 +1577,6 @@ mutable struct ModDed
 end
 
 base_ring(M::ModDed) = M.base_ring
-
-function is_upper_triangular(A::Generic.Mat)
-   m = nrows(A)
-   n = ncols(A)
-   d = 0
-   for r = 1:m
-      for c = 1:n
-         if !iszero(A[r, c])
-            if c <= d
-               return false
-            end
-            d = c
-            break
-         end
-      end
-   end
-   return true
-end
 
 function show(io::IO, M::ModDed)
    print(io, "Module over $(M.base_ring) with defining pseudo-matrix")
