@@ -1,13 +1,10 @@
-add_verbosity_scope(:BrauerObst)
-
-
 ################################################################################
 #
 #  Obstruction Interface
 #
 ################################################################################
 
-function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
+function Hecke.check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
            i::Int, invariants::Vector{Int})
 
   d = degree(list[1])
@@ -111,7 +108,7 @@ function check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
 end
 
 
-function check_obstruction(F::FieldsTower, cocycles::Vector{cocycle_ctx},
+function Hecke.check_obstruction(F::FieldsTower, cocycles::Vector{cocycle_ctx},
                             p::Int, obstruction_at::Vector{Bool})
   #I assume that the kernel of the embedding problem is a p-group
   @assert is_prime(p)
@@ -180,7 +177,7 @@ end
 #
 ################################################################################
 
-function iszero(c::cocycle_ctx)
+function Base.iszero(c::cocycle_ctx)
   E = GAP.Globals.Source(c.projection)
   A = GAP.Globals.Image(c.inclusion)
   return !iszero(length(GAP.Globals.ComplementClassesRepresentatives(E, A)))

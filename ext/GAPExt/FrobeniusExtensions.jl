@@ -100,7 +100,7 @@ global _frobenius_groups = Dict{Tuple{Int, Int}, Tuple{Tuple{Int, Int}, Vector{I
   (75, 2) => ((3, 1), [5, 5])
 )
 
-function primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B::ZZRingElem; only_real::Bool = false, only_non_real::Bool = false)
+function Hecke.primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B::ZZRingElem; only_real::Bool = false, only_non_real::Bool = false)
   @req haskey(_frobenius_groups, id) "id ($id) must be small group id of a transitive Frobenius group " *
                                      "with abelian Frobenius kernel and solvable quotient and degree " *
                                      "bounded by 30."
@@ -113,7 +113,7 @@ function primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B::ZZRin
   k = 1
   s = (reldeg - 1)//sid[1] # (|F| - 1)/|H|
   #Ms = abelian_fields(QQ, [l], max(ZZRingElem(1), upper_bound(ZZRingElem, R(B)^(1//s))))
-  Ms = fields(sid[1], sid[2], max(ZZRingElem(1), upper_bound(ZZRingElem, R(B)^(1//s))))
+  Ms = Hecke.fields(sid[1], sid[2], max(ZZRingElem(1), upper_bound(ZZRingElem, R(B)^(1//s))))
   ll = length(Ms)
   target_id = id
 

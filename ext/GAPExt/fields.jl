@@ -1,10 +1,5 @@
 export fields
 
-add_verbosity_scope(:Fields)
-add_assertion_scope(:Fields)
-
-add_verbosity_scope(:FieldsNonFancy)
-
 
 ################################################################################
 #
@@ -58,20 +53,9 @@ function Base.show(io::IO, F::FieldsTower)
   return nothing
 end
 
-include("./merge.jl")
-include("./abelian_layer.jl")
-include("./read_write.jl")
-include("./conductors.jl")
-include("./brauer.jl")
-include("./chain.jl")
-include("./maximal_abelian_subextension.jl")
-include("./non_normal.jl")
-
-Generic.degree(F::FieldsTower) = degree(F.field)
+Hecke.degree(F::FieldsTower) = degree(F.field)
 Hecke.maximal_order(F::FieldsTower) = maximal_order(F.field)
-number_field(F::FieldsTower) = F.field
-
-
+Hecke.number_field(F::FieldsTower) = F.field
 
 function ramified_primes(F::FieldsTower)
   if !isdefined(F, :ramified_primes)
@@ -87,7 +71,7 @@ end
 #
 ################################################################################
 
-function field_context(K::AnticNumberField)
+function Hecke.field_context(K::AnticNumberField)
   layers = Vector{NfToNfMor}[]
   autsK = automorphism_list(K, copy = false)
   lll(maximal_order(K))
@@ -482,7 +466,7 @@ end
 #
 ###############################################################################
 
-function fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::ZZRingElem; only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function Hecke.fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound::ZZRingElem; only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   G = GAP.Globals.SmallGroup(a, b)
   L = GAP.Globals.DerivedSeries(G)
   lvl = _real_level(L)
@@ -533,14 +517,14 @@ function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::
   b1 = iroot(absolute_bound, g2[1])
   b2 = iroot(absolute_bound, g1[1])
   @vprintln :Fields 1 "The group is the product of $(g1) and $(g2)"
-  l2 = fields(g2[1], g2[2], b2, only_real = only_real, unramified_outside = unramified_outside)
+  l2 = Hecke.fields(g2[1], g2[2], b2, only_real = only_real, unramified_outside = unramified_outside)
   if isempty(l2)
     return FieldsTower[]
   end
   if g1 == g2
     return _merge(l2, l2, absolute_bound, red, redfirst, g1, g2)
   end
-  l1 = fields(g1[1], g1[2], b1, only_real = only_real, unramified_outside = unramified_outside)
+  l1 = Hecke.fields(g1[1], g1[2], b1, only_real = only_real, unramified_outside = unramified_outside)
   if isempty(l1)
     return FieldsTower[]
   end
@@ -548,7 +532,7 @@ function fields_direct_product(g1, g2, red::Int, redfirst::Int, absolute_bound::
 end
 
 
-function fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product::Bool = true, only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product::Bool = true, only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   if a == 1
     @assert b == 1
     K = rationals_as_number_field()[1]
@@ -617,7 +601,7 @@ function fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product
   else
     bound = iroot(absolute_bound, prod(invariants))
   end
-  list = fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1), unramified_outside = unramified_outside)
+  list = Hecke.fields(IdGroup[1], IdGroup[2], bound; using_direct_product = using_direct_product, only_real = (only_real || lvl == length(L)-1), unramified_outside = unramified_outside)
   if isempty(list)
     return list
   end
