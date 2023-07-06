@@ -82,8 +82,6 @@
 
 @deprecate factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) factor(I, a)
 
-@deprecate factor(f::QQPolyRingElem, R::T) where T <: Union{Nemo.fqPolyRepField, Nemo.fpField} factor(R, f)
-
 @deprecate factor(a::Generic.RationalFunctionFieldElem{T}, R::S) where {T, S<:PolyRing{T}} factor(R, a)
 
 @deprecate factor(a::Generic.RationalFunctionFieldElem, R::HessQR) factor(R, a)
@@ -100,12 +98,6 @@
 
 @deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; refine::Bool) factor_coprime(I, a, refine = refine)
 @deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) factor_coprime(I, a)
-
-@deprecate roots(f::QQPolyRingElem, R::T) where T <: Union{Nemo.fqPolyRepField, Nemo.fpField} roots(R, f)
-
-@deprecate roots(f::fpPolyRingElem, K::fqPolyRepField) roots(K, f)
-
-@deprecate roots(f::FpPolyRingElem, K::FqPolyRepField) roots(K, f)
 
 @deprecate roots(f::QQPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
 @deprecate roots(f::ZZPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
