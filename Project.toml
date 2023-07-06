@@ -30,7 +30,7 @@ PolymakeExt = "Polymake"
 [compat]
 AbstractAlgebra = "^0.31.0"
 GAP = "0.9.6"
-Nemo = "^0.35.0"
+Nemo = "^0.35.1"
 Polymake = "0.9.2"
 RandomExtensions = "0.4.3"
 julia = "1.6"
