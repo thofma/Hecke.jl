@@ -112,7 +112,7 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              valuation!
 
 export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, is_power, number_field, factor, @vtime, RationalUnion
+       next_prime, is_power, number_field, factor, @vtime, RationalUnion, conjugate
 
 const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
