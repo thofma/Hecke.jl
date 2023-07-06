@@ -486,7 +486,7 @@ function _torsion_units_gen(K::NumField)
     end
     for i = v:-1:1
       f = cyclotomic(Int(p)^i, x)
-      r = roots(f, K)
+      r = roots(K, f)
       if length(r) > 0
         mul!(gen, gen, r[1])
         ord *= Int(p)^(i)

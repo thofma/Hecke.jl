@@ -27,17 +27,17 @@ end
 ########### any_root computes a single root in the finite field extensions####
 
 import Nemo: any_root
-function any_root(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField})
+function any_root(F::Union{fqPolyRepField, Hecke.RelFinField}, f::Union{fpPolyRingElem, fqPolyRepPolyRingElem})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    return any_root(g)
 end
 
-function roots(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField})
+function roots(F::Union{fqPolyRepField, Hecke.RelFinField}, f::Union{fpPolyRingElem, fqPolyRepPolyRingElem})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    return roots(g)
 end
 
-function any_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField)
+function any_root(F::Hecke.RelFinField, f::Hecke.AbstractAlgebra.Generic.Poly)
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f)])
    fac = factor(g)
    if length(fac) == 1
@@ -422,7 +422,7 @@ function norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField}, b::Union{fpF
    while !is_irreducible(f)
       f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
    end
-   return (-1)^(n)*any_root(f,F)
+   return (-1)^(n)*any_root(F, f)
 end
 
 function basis(K::RelFinField)

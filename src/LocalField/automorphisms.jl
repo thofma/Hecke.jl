@@ -122,7 +122,7 @@ function absolute_automorphism_list(K::LocalField{qadic, S}) where S
   auts = morphism_type(K)[]
   for f in autsk
     fnew = map_coefficients(f, defining_polynomial(K))
-    rt = roots(fnew, K)
+    rt = roots(K, fnew)
     for x in rt
       push!(auts, hom(K, K, f, x))
     end

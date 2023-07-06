@@ -152,7 +152,7 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
-  rt_base_field = roots(Zx(K.pol), F)
+  rt_base_field = roots(F, Zx(K.pol))
   tmp = Fpx()
   g = Lrel.pol
   rt = Dict{FqPolyRepFieldElem, Vector{FqPolyRepFieldElem}}()
@@ -276,7 +276,7 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
-  rt_base_field = roots(Zx(K.pol), F)
+  rt_base_field = roots(F, Zx(K.pol))
   rt = Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}()
   Rxy = polynomial_ring(F, ngens(Lrel), cached = false)[1]
   tmp = Fpx()

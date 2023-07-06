@@ -90,7 +90,7 @@ end
 #Function that finds an embedding of k into K
 function Nemo.embed_any(k::FinField, K::FinField)
   f = defining_polynomial(k)
-  rt = roots(f, K)[1]
+  rt = roots(K, f)[1]
   return hom(k, K, rt)
 end
 

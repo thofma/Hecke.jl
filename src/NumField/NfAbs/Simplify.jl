@@ -145,7 +145,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   Ft = polynomial_ring(F, "t", cached = false)[1]
   rt = Vector{Vector{fqPolyRepFieldElem}}(undef, ngens(K))
   for i = 1:length(pols)
-    rt[i] = roots(pols[i], F)
+    rt[i] = roots(F, pols[i])
   end
   rt_all = Vector{Vector{fqPolyRepFieldElem}}(undef, degree(K))
   ind = 1
@@ -219,7 +219,7 @@ function _sieve_primitive_elements(B::Vector{nf_elem})
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
-  rt = roots(f, F)
+  rt = roots(F, f)
 
   n = degree(K)
   indices = Int[]
@@ -358,7 +358,7 @@ function polredabs(K::AnticNumberField)
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
-  rt = roots(f, F)
+  rt = roots(F, f)
 
   n = degree(K)
 

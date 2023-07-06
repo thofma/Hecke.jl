@@ -399,7 +399,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
         return true, A.princ_gen_fac_elem
       else
         #a = A.princ_gen_fac_elem
-        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
       end
     else
       if isdefined(A, :princ_gen)
@@ -409,7 +409,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
       if support === Val{false}
         return true, a
       else
-        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
       end
     end
   end

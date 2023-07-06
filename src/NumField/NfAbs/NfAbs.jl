@@ -396,7 +396,7 @@ end
 
 function _issubfield(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
-  R = roots(f, L, max_roots = 1)
+  R = roots(L, f, max_roots = 1)
   if isempty(R)
     return false, L()
   else
@@ -565,7 +565,7 @@ Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 2 fields together with the embedding of $K \to C$ and $L \to C$.
 """
 function compositum(K::AnticNumberField, L::AnticNumberField)
-  lf = factor(K.pol, L)
+  lf = factor(L, K.pol)
   d = degree(first(lf.fac)[1])
   if any(x->degree(x) != d, keys(lf.fac))
     error("2nd field cannot be normal")
@@ -875,7 +875,7 @@ The normal closure of $K$ together with the embedding map.
 """
 function normal_closure(K::AnticNumberField)
   s = splitting_field(K.pol)
-  r = roots(K.pol, s)[1]
+  r = roots(s, K.pol)[1]
   return s, hom(K, s, r, check = false)
 end
 

@@ -13,7 +13,7 @@ function _automorphisms(K::NfAbsNS; is_abelian::Bool = false)
   pols = QQPolyRingElem[is_univariate(x)[2] for x in K.pol]
   rt = Vector{Vector{NfAbsNSElem}}(undef, length(pols))
   for i = 1:length(pols)
-    rt[i] = roots(pols[i], K)
+    rt[i] = roots(K, pols[i])
   end
   auts = Vector{NfAbsNSToNfAbsNS}(undef, prod(length(x) for x in rt))
   ind = 1
@@ -677,7 +677,7 @@ function absolute_automorphism_list(K::NumField)
 end
 
 function _automorphisms(K::NumField{QQFieldElem}, F::NumField, L::QQField)
-  rt = roots(defining_polynomial(K), F)
+  rt = roots(F, defining_polynomial(K))
   auts = morphism_type(K, F)[hom(K, F, x) for x in rt]
   return auts
 end

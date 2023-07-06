@@ -37,7 +37,7 @@ end
 function relative_simple_extension(m::NfToNfMor)
   k = domain(m)
   K = codomain(m)
-  lf = factor(K.pol, k)
+  lf = factor(k, K.pol)
   rel_deg = divexact(degree(K), degree(k))
   pols = [f for (f, v) in lf if degree(f) == rel_deg]
   p = pols[1]
