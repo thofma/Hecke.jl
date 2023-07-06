@@ -1,10 +1,3 @@
-function mul!(z::acb, x::acb, y::arb)
-  ccall((:acb_mul_arb, libarb), Nothing, (Ref{acb}, Ref{acb}, Ref{arb}, Int),
-        z, x, y, parent(z).prec)
-  return z
-end
-
-
 ################################################################################
 #
 #  Small interface to characters

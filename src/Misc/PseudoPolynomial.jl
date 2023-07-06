@@ -287,19 +287,5 @@ function divides(a::NfAbsOrdElem, b::NfAbsOrdElem)
   end
 end
 
-function leading_monomial(f::Generic.MPoly)
-  R = parent(f)
-  l = length(f)
-  if l == 0
-    return f
-  end
-  A = f.exps
-  r, c = size(A)
-  e = A[1:r, 1:1]
-  return R([one(base_ring(R))], e)
-end
 
-function leading_coefficient(f::Generic.MPoly)
-  return f.coeffs[1]
-end
 

@@ -55,21 +55,6 @@ end
        See what Dan did in this case.
 =#
 
-function set_precision(f::PolyElem{T}, n::Int) where {T <: SeriesElem}
-  g = parent(f)()
-  for i=0:length(f)
-    setcoeff!(g, i, set_precision(coeff(f, i), n))
-  end
-  return g
-end
-
-function set_precision!(f::PolyElem{T}, n::Int) where {T <: SeriesElem}
-  for i=0:length(f)
-    setcoeff!(f, i, set_precision!(coeff(f, i), n))
-  end
-  return f
-end
-
 mutable struct HenselCtxFqRelSeries{T}
   f :: ZZMPolyRingElem # bivariate
   n :: Int # number of factors
@@ -274,18 +259,6 @@ function check_qadic(a::qadic)
   p = prime(parent(a))^a.N
   a.val = v
   @assert all(x->abs(x) < p, coefficients(f))
-end
-
-function shift_right(a::qadic, n::Int)
-  b = deepcopy(a)
-  b.val -= n
-  return b
-end
-
-function shift_left(a::qadic, n::Int)
-  b = deepcopy(a)
-  b.val += n
-  return b
 end
 
 function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
@@ -1316,11 +1289,6 @@ function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
     f += rand(k, c)*x^rand(0:d)*y^rand(0:d)
   end
   return norm(f)
-end
-
-function Hecke.is_irreducible(a::QQMPolyRingElem)
-  af = factor(a)
-  return !(length(af.fac) > 1 || any(x->x>1, values(af.fac)))
 end
 
 # f is bivariate. return f(xvar, 0) where xvar is in the multivar ring R

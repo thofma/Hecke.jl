@@ -210,12 +210,6 @@ function Base.iterate(C::LatCloseEnumCtx{X, elem_type}, start = nothing) where {
   return (x, dist), st
 end
 
-function sub!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{ZZRingElem})
-  for i in 1:length(z)
-    sub!(z[i], x[i], y[i])
-  end
-  return z
-end
 
 ################################################################################
 #

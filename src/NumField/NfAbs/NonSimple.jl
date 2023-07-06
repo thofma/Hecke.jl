@@ -104,12 +104,6 @@ function Nemo.one!(a::NfAbsNSElem)
   return a
 end
 
-function Nemo.one!(a::QQMPolyRingElem)
-  ccall((:fmpq_mpoly_one, libflint), Nothing,
-      (Ref{QQMPolyRingElem}, Ref{QQMPolyRing}), a, parent(a))
-  return a
-end
-
 ################################################################################
 #
 #  Random
@@ -1133,10 +1127,6 @@ end
 
 #TODO: find a better algo.
 function degree(a::NfAbsNSElem)
-  return degree(minpoly(a))
-end
-
-function degree(a::nf_elem)
   return degree(minpoly(a))
 end
 

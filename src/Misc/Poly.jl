@@ -6,70 +6,7 @@ export rational_reconstruction, farey_lift, div, leading_coefficient,
 
 import Nemo: fmpz_mod_ctx_struct
 
-function polynomial_ring(R::Ring; cached::Bool = false)
-  return polynomial_ring(R, "x", cached = cached)
-end
 
-################################################################################
-#
-#  Content
-#
-################################################################################
-
-function content(a::PolyElem{<: FieldElem})
-  return one(base_ring(a))
-end
-
-
-function ZZRingElem(a::Generic.ResidueRingElem{Nemo.ZZRingElem})
-  return a.data
-end
-
-function ZZRingElem(a::Nemo.zzModRingElem)
-  return ZZRingElem(a.data)
-end
-
-function lift(::ZZRing, a::Generic.ResidueRingElem{Nemo.ZZRingElem})
-  return a.data
-end
-
-function (::ZZRing)(a::Generic.ResidueRingElem{Nemo.ZZRingElem})
-  return a.data
-end
-
-function lift(::ZZRing, a::Nemo.zzModRingElem)
-  return ZZRingElem(a.data)
-end
-
-function (::ZZRing)(a::Nemo.zzModRingElem)
-  return ZZRingElem(a.data)
-end
-
-function ZZRingElem(a::Nemo.ZZModRingElem)
-  return a.data
-end
-
-function lift(::ZZRing, a::Nemo.ZZModRingElem)
-  return a.data
-end
-
-function (::ZZRing)(a::Nemo.ZZModRingElem)
-  return a.data
-end
-
-function div(f::PolyElem, g::PolyElem)
-  q, r = divrem(f,g)
-  return q
-end
-
-function rem(f::PolyElem, g::PolyElem)
-  return mod(f, g)
-end
-
-function rem!(z::T, f::T, g::T) where T <: PolyElem
-  z = rem(f, g)
-  return z
-end
 
 @doc raw"""
     induce_rational_reconstruction(a::ZZPolyRingElem, M::ZZRingElem) -> QQPolyRingElem
@@ -91,25 +28,7 @@ function induce_rational_reconstruction(a::ZZPolyRingElem, M::ZZRingElem; parent
   return true, b
 end
 
-function resultant(f::ZZPolyRingElem, g::ZZPolyRingElem, d::ZZRingElem, nb::Int)
-  z = ZZRingElem()
-  ccall((:fmpz_poly_resultant_modular_div, libflint), Nothing,
-     (Ref{ZZRingElem}, Ref{ZZPolyRingElem}, Ref{ZZPolyRingElem}, Ref{ZZRingElem}, Int),
-     z, f, g, d, nb)
-  return z
-end
 
-function rem!(z::fqPolyRepPolyRingElem, x::fqPolyRepPolyRingElem, y::fqPolyRepPolyRingElem)
-  ccall((:fq_nmod_poly_rem, libflint), Nothing, (Ref{fqPolyRepPolyRingElem}, Ref{fqPolyRepPolyRingElem}, Ref{fqPolyRepPolyRingElem}, Ref{fqPolyRepField}),
-       z, x, y, base_ring(parent(x)))
-  return z
-end
-
-function rem!(z::FqPolyRepPolyRingElem, x::FqPolyRepPolyRingElem, y::FqPolyRepPolyRingElem)
-  ccall((:fq_poly_rem, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRing}),
-       z, x, y, parent(x))
-  return z
-end
 
 ################################################################################
 #
@@ -396,111 +315,6 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int
   return hensel_lift(f, g, h, p, k)[1]
 end
 
-modulus(F::Generic.ResidueRing{ZZRingElem}) = F.modulus
-
-modulus(F::Generic.ResidueField{ZZRingElem}) = F.modulus
-
-function fmpq_poly_to_nmod_poly_raw!(r::zzModPolyRingElem, a::QQPolyRingElem)
-  ccall((:fmpq_poly_get_nmod_poly, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{QQPolyRingElem}), r, a)
-end
-
-function fmpq_poly_to_gfp_poly_raw!(r::fpPolyRingElem, a::QQPolyRingElem)
-  ccall((:fmpq_poly_get_nmod_poly, libflint), Nothing, (Ref{fpPolyRingElem}, Ref{QQPolyRingElem}), r, a)
-end
-
-function fmpq_poly_to_fq_default_poly_raw!(r::FqPolyRingElem, a::QQPolyRingElem, t1::ZZPolyRingElem = ZZPolyRingElem(), t2::ZZRingElem = ZZRingElem())
-  ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), t1, a)
-  ccall((:fq_default_poly_set_fmpz_poly, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{ZZPolyRingElem}, Ref{FqField}), r, t1, r.parent.base_ring)
-  ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{ZZRingElem}, Ref{QQPolyRingElem}), t2, a)
-  if !isone(t2)
-    #res = ccall((:fmpz_invmod, libflint), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t2, t2, characteristic(base_ring(r)))
-    #res 
-    #@assert res != 0
-    ccall((:fq_default_poly_scalar_div_fq_default, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqFieldElem}, Ref{FqField}), r, r, coefficient_ring(r)(t2), coefficient_ring(r))
-  end
-end
-
-function fmpq_poly_to_fmpz_mod_poly_raw!(r::ZZModPolyRingElem, a::QQPolyRingElem, t1::ZZPolyRingElem = ZZPolyRingElem(), t2::ZZRingElem = ZZRingElem())
-  ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), t1, a)
-  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{ZZModPolyRingElem}, Ref{ZZPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, t1, r.parent.base_ring.ninv)
-  ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{ZZRingElem}, Ref{QQPolyRingElem}), t2, a)
-  if !isone(t2)
-    res = ccall((:fmpz_invmod, libflint), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t2, t2, modulus(base_ring(r)))
-    @assert res != 0
-    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZRingElem}, Ref{fmpz_mod_ctx_struct}), r, r, t2, r.parent.base_ring.ninv)
-  end
-end
-
-function fmpq_poly_to_gfp_fmpz_poly_raw!(r::FpPolyRingElem, a::QQPolyRingElem, t1::ZZPolyRingElem = ZZPolyRingElem(), t2::ZZRingElem = ZZRingElem())
-  ccall((:fmpq_poly_get_numerator, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), t1, a)
-  ccall((:fmpz_mod_poly_set_fmpz_poly, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{ZZPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, t1, r.parent.base_ring.ninv)
-  ccall((:fmpq_poly_get_denominator, libflint), Nothing, (Ref{ZZRingElem}, Ref{QQPolyRingElem}), t2, a)
-  if !isone(t2)
-    res = ccall((:fmpz_invmod, libflint), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t2, t2, modulus(base_ring(r)))
-    @assert res != 0
-    ccall((:fmpz_mod_poly_scalar_mul_fmpz, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{ZZRingElem}, Ref{fmpz_mod_ctx_struct}), r, r, t2, r.parent.base_ring.ninv)
-  end
-end
-
-function fmpq_poly_to_nmod_poly(Rx::Nemo.zzModPolyRing, f::QQPolyRingElem)
-  g = Rx()
-  fmpq_poly_to_nmod_poly_raw!(g, f)
-  return g
-end
-
-function fmpq_poly_to_gfp_poly(Rx::Nemo.fpPolyRing, f::QQPolyRingElem)
-  g = Rx()
-  fmpq_poly_to_gfp_poly_raw!(g, f)
-  return g
-end
-
-function fmpz_poly_to_nmod_poly_raw!(r::zzModPolyRingElem, a::ZZPolyRingElem)
-  ccall((:fmpz_poly_get_nmod_poly, libflint), Nothing,
-                  (Ref{zzModPolyRingElem}, Ref{ZZPolyRingElem}), r, a)
-
-end
-
-function fmpz_poly_to_gfp_poly_raw!(r::fpPolyRingElem, a::ZZPolyRingElem)
-  ccall((:fmpz_poly_get_nmod_poly, libflint), Nothing,
-                  (Ref{fpPolyRingElem}, Ref{ZZPolyRingElem}), r, a)
-
-end
-
-function fmpz_poly_to_nmod_poly(Rx::Nemo.zzModPolyRing, f::ZZPolyRingElem)
-  g = Rx()
-  fmpz_poly_to_nmod_poly_raw!(g, f)
-  return g
-end
-
-function fmpq_poly_to_fmpz_mod_poly(Rx::Nemo.ZZModPolyRing, f::QQPolyRingElem)
-  g = Rx()
-  fmpq_poly_to_fmpz_mod_poly_raw!(g, f)
-  return g
-end
-
-function fmpq_poly_to_gfp_fmpz_poly(Rx::Nemo.FpPolyRing, f::QQPolyRingElem)
-  g = Rx()
-  fmpq_poly_to_gfp_fmpz_poly_raw!(g, f)
-  return g
-end
-
-function fmpq_poly_to_fq_default_poly(Rx::Nemo.FqPolyRing, f::QQPolyRingElem)
-  g = Rx()
-  fmpq_poly_to_fq_default_poly_raw!(g, f)
-  return g
-end
-
-function fmpz_poly_to_fmpz_mod_poly_raw!(r::ZZModPolyRingElem, a::ZZPolyRingElem)
-  ccall((:fmpz_poly_get_fmpz_mod_poly, libflint), Nothing,
-        (Ref{ZZModPolyRingElem}, Ref{ZZPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, a, r.parent.base_ring.ninv)
-
-end
-
-function fmpz_poly_to_fmpz_mod_poly(Rx::Nemo.ZZModPolyRing, f::ZZPolyRingElem)
-  g = Rx()
-  fmpz_poly_to_fmpz_mod_poly_raw!(g, f)
-  return g
-end
 
 ################################################################################
 #
@@ -575,145 +389,6 @@ function rresx(f::ZZPolyRingElem, g::ZZPolyRingElem)
   l = lcm(denominator(q), denominator(w))
   Zx = parent(f)
   return l, Zx(l*q), Zx(l*w)
-end
-
-
-
-
-################################################################################
-#
-#  QQPolyRingElem with denominator 1 to ZZPolyRingElem
-#
-################################################################################
-
-function (a::ZZPolyRing)(b::QQPolyRingElem)
-  (!isone(denominator(b))) && error("Denominator has to be 1")
-  z = a()
-  ccall((:fmpq_poly_get_numerator, libflint), Nothing,
-              (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), z, b)
-  return z
-end
-
-##############################################################
-# all of this should be in Nemo/AbstractAlgebra
-#
-#TODO:
-# expand systematically for all finite fields
-# and for ZZRingElem/QQFieldElem poly
-# for fun: is_power(a::nf_elem)
-#
-
-function factor(f::QQPolyRingElem, R::T) where T <: Union{Nemo.fqPolyRepField, Nemo.fpField}
-  Rt, t = polynomial_ring(R, "t", cached=false)
-  return factor(Rt(f))
-end
-
-function roots(f::QQPolyRingElem, R::T) where T <: Union{Nemo.fqPolyRepField, Nemo.fpField}
-  Rt, t = polynomial_ring(R, "t", cached=false)
-  fp = polynomial_ring(FlintZZ, cached = false)[1](f*denominator(f))
-  fpp = Rt(fp)
-  return roots(fpp)
-end
-
-function roots(f::fpPolyRingElem, K::fqPolyRepField)
-  @assert characteristic(K) == characteristic(base_ring(f))
-  Kx = polynomial_ring(K, cached = false)[1]
-  coeffsff = Vector{elem_type(K)}(undef, degree(f)+1)
-  for i=0:degree(f)
-    coeffsff[i+1] = K(lift(coeff(f, i)))
-  end
-  ff = Kx(coeffsff)
-  return roots(ff)
-end
-
-function roots(f::FpPolyRingElem, K::FqPolyRepField)
-  @assert characteristic(K) == characteristic(base_ring(f))
-  Kx = polynomial_ring(K, cached = false)[1]
-  coeffsff = Vector{FqPolyRepFieldElem}(undef, degree(f)+1)
-  for i=0:degree(f)
-    coeffsff[i+1] = K(lift(coeff(f, i)))
-  end
-  ff = Kx(coeffsff)
-  return roots(ff)
-end
-
-function is_power(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem, FqFieldElem}, m::Int)
-  if iszero(a)
-    return true, a
-  end
-  s = order(parent(a))
-  if gcd(s - 1, m) == 1
-    return true, a^invmod(FlintZZ(m), s-1)
-  end
-  St, t = polynomial_ring(parent(a), "t", cached=false)
-  f = t^m-a
-  rt = roots(f)
-  if length(rt) > 0
-    return true, rt[1]
-  else
-    return false, a
-  end
-end
-
-function roots(f::T) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem} # should be in Nemo and
-                                    # made available for all finite fields I guess.
-  q = size(base_ring(f))
-  x = gen(parent(f))
-  if degree(f) < q
-    x = powermod(x, q, f)-x
-  else
-    x = x^Int(q)-x
-  end
-  f = gcd(f, x)
-  l = factor(f).fac
-  return elem_type(base_ring(f))[-divexact(constant_coefficient(x), leading_coefficient(x)) for x = keys(l) if degree(x)==1]
-end
-
-
-function setcoeff!(z::fqPolyRepPolyRingElem, n::Int, x::ZZRingElem)
-   ccall((:fq_nmod_poly_set_coeff_fmpz, libflint), Nothing,
-         (Ref{fqPolyRepPolyRingElem}, Int, Ref{ZZRingElem}, Ref{fqPolyRepField}),
-         z, n, x, base_ring(parent(z)))
-     return z
-end
-
-###############################################################################
-#
-#  Sturm sequence
-#
-###############################################################################
-
-function _divide_by_content(f::ZZPolyRingElem)
-  p = primpart(f)
-  if sign(leading_coefficient(f))== sign(leading_coefficient(p))
-    return p
-  else
-    return -p
-  end
-end
-
-function sturm_sequence(f::ZZPolyRingElem)
-  g = f
-  h = _divide_by_content(derivative(g))
-  seq = ZZPolyRingElem[g,h]
-  while true
-    r = _divide_by_content(pseudorem(g,h))
-    # r has the same sign as pseudorem(g, h)
-    # To get a pseudo remainder sequence for the Sturm sequence,
-    # we need r to be the pseudo remainder of |lc(b)|^(a - b + 1),
-    # so we need some adjustment. See
-    # https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Sturm_sequence_with_pseudo-remainders
-    if leading_coefficient(h) < 0 && isodd(degree(g) - degree(h) + 1)
-      r = -r
-    end
-    if r != 0
-      push!(seq, -r)
-      g, h = h, -r
-    else
-      break
-    end
-  end
-  return seq
 end
 
 function _number_of_sign_changes(a::Vector{Int})
@@ -867,103 +542,6 @@ function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::NumFieldEmb; start_prec:
   end
 end
 
-################################################################################
-#
-#  Squarefree factorization in characteristic 0
-#
-################################################################################
-
-# TODO: Implement the things from
-# "Square-Free Algorithms in Positive Characteristic" by Gianni--Trager
-# This should avoid the full factorization for function fields
-# (and/or finitely generated fields in general?!)
-
-function factor_squarefree(f::PolyElem{<:FieldElement})
-  R = coefficient_ring(f)
-  if iszero(characteristic(R))
-    return _factor_squarefree_char_0(f)
-  else
-    fac = factor(f)
-    es = unique!([e for (p, e) in fac])
-    facs = Vector{typeof(f)}(undef, length(es))
-    for i in 1:length(facs)
-      facs[i] = one(parent(f))
-    end
-    for (p, e) in fac
-      i = findfirst(isequal(e), es)
-      facs[i] *= p
-    end
-  end
-  return Fac(unit(fac),
-             Dict{typeof(f), Int}(facs[i] => es[i] for i in 1:length(es)))
-end
-
-
-# This is Musser's algorithm
-function _factor_squarefree_char_0(f::PolyElem)
-  @assert iszero(characteristic(base_ring(f)))
-  res = Dict{typeof(f), Int}()
-  if is_constant(f)
-    return Fac(f, res)
-  end
-  c = leading_coefficient(f)
-  f = divexact(f, c)
-  di = gcd(f, derivative(f))
-  if isone(di)
-    res[f] = 1
-    return Fac(parent(f)(c), res)
-  end
-  ei = divexact(f, di)
-  i = 1
-  while !is_constant(ei)
-    eii = gcd(di, ei)
-    dii = divexact(di, eii)
-    if degree(eii) != degree(ei)
-      res[divexact(ei, eii)] = i
-    end
-    i = i +1
-    di = dii
-    ei = eii
-  end
-  return Fac(parent(f)(c), res)
-end
-
-
-function factor_equal_deg(x::fpPolyRingElem, d::Int)
-  if degree(x) == d
-    return fpPolyRingElem[x]
-  end
-  fac = Nemo.gfp_poly_factor(x.mod_n)
-  ccall((:nmod_poly_factor_equal_deg, libflint), UInt,
-          (Ref{Nemo.gfp_poly_factor}, Ref{fpPolyRingElem}, Int),
-          fac, x, d)
-  res = Vector{fpPolyRingElem}(undef, fac.num)
-  for i in 1:fac.num
-    f = parent(x)()
-    ccall((:nmod_poly_factor_get_poly, libflint), Nothing,
-            (Ref{fpPolyRingElem}, Ref{Nemo.gfp_poly_factor}, Int), f, fac, i-1)
-    res[i] = f
-  end
-  return res
-end
-
-function factor_equal_deg(x::FpPolyRingElem, d::Int)
-  if degree(x) == d
-    return FpPolyRingElem[x]
-  end
-  fac = Nemo.gfp_fmpz_poly_factor(base_ring(x))
-  ccall((:fmpz_mod_poly_factor_equal_deg, libflint), UInt,
-        (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{FpPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}),
-          fac, x, d, x.parent.base_ring.ninv)
-  res = Vector{FpPolyRingElem}(undef, fac.num)
-  for i in 1:fac.num
-    f = parent(x)()
-    ccall((:fmpz_mod_poly_factor_get_fmpz_mod_poly, libflint), Nothing,
-          (Ref{FpPolyRingElem}, Ref{Nemo.gfp_fmpz_poly_factor}, Int, Ref{fmpz_mod_ctx_struct}), f, fac, i-1, x.parent.base_ring.ninv)
-    res[i] = f
-  end
-  return res
-end
 
 ################################################################################
 #
@@ -1095,81 +673,78 @@ end
     There are also bounds on the coefficients which are sometimes tight
 =#
 
-function mulhigh_n(a::ZZPolyRingElem, b::ZZPolyRingElem, n::Int)
-  c = parent(a)()
-  #careful: as part of the interface, the coeffs 0 - (n-1) are random garbage
-  ccall((:fmpz_poly_mulhigh_n, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{ZZPolyRingElem}, Ref{ZZPolyRingElem}, Cint), c, a, b, n)
-  return c
-end
-function mulhigh(a::PolyElem{T}, b::PolyElem{T}, n::Int) where {T}
-  return mulhigh_n(a, b, degree(a) + degree(b) - n)
-end
-
-
-function roots(f::ZZPolyRingElem, ::QQField; max_roots::Int = degree(f))
+function roots(f::ZZPolyRingElem, ::QQField; max_roots::Int=degree(f))
   if degree(f) < 1
-    return QQFieldElem[]
+      return QQFieldElem[]
   end
   if degree(f) == 1
-    return QQFieldElem[-constant_coefficient(f)//leading_coefficient(f)]
+      return QQFieldElem[-constant_coefficient(f)//leading_coefficient(f)]
   end
 
   g = gcd(f, derivative(f))
   if isone(g)
-    h = f
+      h = f
   else
-    h = divexact(f, g)
+      h = divexact(f, g)
   end
   if degree(h) == 1
-    return QQFieldElem[-constant_coefficient(h)//leading_coefficient(h)]
+      return QQFieldElem[-constant_coefficient(h)//leading_coefficient(h)]
   end
   h = primpart(h)
 
   global p_start
   p = p_start
-  bd = leading_coefficient(h)+maximum(abs, coefficients(h))
+  bd = leading_coefficient(h) + maximum(abs, coefficients(h))
   while true
-    p = next_prime(p)
-    k = GF(p)
-    hp = change_base_ring(k, h)
-    if !is_squarefree(hp)
-      continue
-    end
-    k = ceil(Int, log(bd)/log(p))
-    Hp = factor_mod_pk(h, p, k)
-    pk = ZZRingElem(p)^k
-    r = QQFieldElem[mod_sym(-constant_coefficient(x)*leading_coefficient(h), pk)//leading_coefficient(h) for x = keys(Hp) if degree(x) == 1]
-    return [x for x = r if iszero(f(x)) ]
+      p = next_prime(p)
+      k = GF(p)
+      hp = change_base_ring(k, h)
+      if !is_squarefree(hp)
+          continue
+      end
+      k = ceil(Int, log(bd) / log(p))
+      Hp = factor_mod_pk(h, p, k)
+      pk = ZZRingElem(p)^k
+      r = QQFieldElem[mod_sym(-constant_coefficient(x) * leading_coefficient(h), pk) // leading_coefficient(h) for x = keys(Hp) if degree(x) == 1]
+      return [x for x = r if iszero(f(x))]
   end
 end
 
-function roots(f::ZZPolyRingElem; max_roots::Int = degree(f))
-  r = roots(f, FlintQQ, max_roots = max_roots)
+function roots(f::ZZPolyRingElem; max_roots::Int=degree(f))
+  r = roots(f, FlintQQ, max_roots=max_roots)
   return ZZRingElem[FlintZZ(x) for x = r if denominator(x) == 1]
 end
 
-function roots(f::QQPolyRingElem; max_roots::Int = degree(f))
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
-  g = Zx(denominator(f)*f)
+function roots(f::QQPolyRingElem; max_roots::Int=degree(f))
+  Zx, x = polynomial_ring(FlintZZ, cached=false)
+  g = Zx(denominator(f) * f)
   return roots(g, FlintQQ)
 end
 
-function roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
+function roots(f::Union{ZZPolyRingElem,QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
+  g = factor(f)
+  r = elem_type(R)[]
+  C = AcbField(precision(R))
+  for k = keys(g.fac)
+      s, _ = signature(k)
+      rt = roots(k, C)
+      append!(r, map(real, rt[1:s]))
+  end
+  return r
+end
+
+function roots(f::Union{ZZPolyRingElem,QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
   lf = factor(f)
   return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
 end
 
-function _roots(f::QQPolyRingElem, ::PosInf; prec::Int = 64)
+function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   g = squarefree_part(f)
-  all_rts =  _roots(g, prec)
+  all_rts = _roots(g, prec)
   rl_rts = real.(filter(isreal, all_rts))
   compl_rts = filter(x -> !isreal(x) && ispositive(imag(x)), all_rts)
   @assert length(rl_rts) + 2 * length(compl_rts) == degree(g)
   return all_rts, rl_rts, compl_rts
-end
-
-function (f::acb_poly)(x::acb)
-  return evaluate(f, x)
 end
 
 function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...)
@@ -1182,18 +757,6 @@ function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::
     end
   end
   return Fac(Rt(g.unit), d)
-end
-
-function roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
-  g = factor(f)
-  r = elem_type(R)[]
-  C = AcbField(precision(R))
-  for k = keys(g.fac)
-    s, _ = signature(k)
-    rt = roots(k, C)
-    append!(r, map(real, rt[1:s]))
-  end
-  return r
 end
 
 function factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...)
@@ -1243,61 +806,9 @@ function gcd_with_failure(a::Generic.Poly{T}, b::Generic.Poly{T}) where T
   return one(parent(d)), divexact(b, d)
 end
 
-function mod(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
-  check_parent(f, g)
-  if length(g) == 0
-    throw(DivideError())
-  end
-  if length(f) >= length(g)
-    f = deepcopy(f)
-    b = leading_coefficient(g)
-    g = inv(b)*g
-    c = base_ring(f)()
-    while length(f) >= length(g)
-      l = -leading_coefficient(f)
-      for i = 1:length(g)
-        c = mul!(c, coeff(g, i - 1), l)
-        u = coeff(f, i + length(f) - length(g) - 1)
-        u = addeq!(u, c)
-        f = setcoeff!(f, i + length(f) - length(g) - 1, u)
-      end
-      set_length!(f, normalise(f, length(f) - 1))
-    end
-  end
-  return f
-end
-Nemo.normalise(f::ZZPolyRingElem, ::Int) = degree(f)+1
-Nemo.set_length!(f::ZZPolyRingElem, ::Int) = nothing
 
-function Base.divrem(f::AbstractAlgebra.PolyElem{T}, g::AbstractAlgebra.PolyElem{T}) where {T <: RingElem}
-  check_parent(f, g)
-  if length(g) == 0
-     throw(DivideError())
-  end
-  if length(f) < length(g)
-     return zero(parent(f)), f
-  end
-  f = deepcopy(f)
-  binv = inv(leading_coefficient(g))
-  g = divexact(g, leading_coefficient(g))
-  qlen = length(f) - length(g) + 1
-  q = zero(parent(f))
-  fit!(q, qlen)
-  c = zero(base_ring(f))
-  while length(f) >= length(g)
-     q1 = leading_coefficient(f)
-     l = -q1
-     q = setcoeff!(q, length(f) - length(g), q1*binv)
-     for i = 1:length(g)
-        c = mul!(c, coeff(g, i - 1), l)
-        u = coeff(f, i + length(f) - length(g) - 1)
-        u = addeq!(u, c)
-        f = setcoeff!(f, i + length(f) - length(g) - 1, u)
-     end
-     set_length!(f, normalise(f, length(f) - 1))
-  end
-  return q, f
-end
+
+
 
 
 @doc raw"""
@@ -1358,52 +869,6 @@ function prod1(a::Vector{T}; inplace::Bool = false) where T <: PolyElem
   return prod1(anew, inplace = true)
 end
 
-################################################################################
-#
-#  Random polynomial
-#
-################################################################################
-
-@doc raw"""
-    Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{ZZRingElem} -> PolyElem{T}
-
-Find a random polynomial of degree=$n$.
-"""
-function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{ZZRingElem}
-    f = Rt()
-    R = base_ring(Rt)
-    for i = 0:n
-        setcoeff!(f, i, rand(R))
-    end
-    return f
-end
-
-################################################################################
-#
-#  Squarefreeness
-#
-################################################################################
-
-function is_squarefree(f::PolyElem)
-  R = coefficient_ring(f)
-
-  if iszero(f) || degree(f) == 0
-    return true
-  end
-
-  if !is_monic(f)
-    g = divexact(f, leading_coefficient(f))
-  else
-    g = f
-  end
-
-  if characteristic(R) == 0 || R isa FinField
-    return  is_constant(gcd(g, derivative(g)))
-  else
-    fac = factor_squarefree(g)
-    return all(e <= 1 for (_, e) in fac)
-  end
-end
 
 ################################################################################
 #
@@ -1516,4 +981,3 @@ end
 
 Base.IteratorSize(::FactorsOfSquarefree) = Base.SizeUnknown()
 Base.eltype(::FactorsOfSquarefree{T}) where T = T
-

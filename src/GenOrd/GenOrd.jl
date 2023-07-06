@@ -464,7 +464,7 @@ end
 
 function powermod(a::GenOrdElem, n::ZZRingElem, p::RingElem)
   c = one(parent(a))
-  for i = BitsMod.bits(n)
+  for i = bits(n)
     c *= c
     if i
       c *= a

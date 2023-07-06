@@ -292,7 +292,7 @@ end
 
 function Hecke.powermod(a::OrderElem, n::ZZRingElem, p::RingElem)
   c = parent(a)(1)
-  for i = Hecke.BitsMod.bits(n)
+  for i = Hecke.bits(n)
     c *= c
     if i
       c *= a

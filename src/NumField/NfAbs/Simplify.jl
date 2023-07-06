@@ -207,24 +207,6 @@ function _block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpFi
   return b
 end
 
-function AbstractAlgebra.map_coefficients(F::fpField, f::QQMPolyRingElem; parent = polynomial_ring(F, nvars(parent(f)), cached = false)[1])
-  dF = denominator(f)
-  d = F(dF)
-  if iszero(d)
-    error("Denominator divisible by p!")
-  end
-  m = inv(d)
-  ctx = MPolyBuildCtx(parent)
-  for x in zip(coefficients(f), exponent_vectors(f))
-    el = numerator(x[1]*dF)
-    push_term!(ctx, F(el)*m, x[2])
-  end
-  return finish(ctx)
-end
-
-
-
-
 function _sieve_primitive_elements(B::Vector{nf_elem})
   K = parent(B[1])
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
@@ -271,7 +253,7 @@ function _block(a::nf_elem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRing
   _R = Native.GF(Int(characteristic(base_ring(ap))), cached = false)
   _Ry, _ = polynomial_ring(_R, "y", cached = false)
   _tmp = _Ry()
-  nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
+  Nemo.nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
   set_length!(ap, length(_tmp))
   for i in 0:(length(_tmp) - 1)
     setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))

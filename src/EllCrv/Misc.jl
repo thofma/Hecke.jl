@@ -56,26 +56,6 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    zeros(f::ZZPolyRingElem) -> Vector{ZZRingElem}
-
-Computes the integer zeros of a given polynomial $f$.
-"""
-function zeros(f::ZZPolyRingElem)
-
-  fac = factor(f)
-  zeros = Nemo.ZZRingElem[]
-
-    # check if there are monic linear factors <-> zeros
-  for i in fac
-    if degree(i[1]) == 1 && leading_coefficient(i[1]) == 1
-      push!(zeros, -coeff(i[1],0))
-    end
-  end
-
-  return zeros
-end
-
 
 # @doc raw"""
 #     quadroots(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, p::ZZRingElem) -> Bool
@@ -232,9 +212,6 @@ function normal_basis(K::T, L::T) where T<:FinField
     end
   end
 end
-
-
-jacobi_symbol(x::Integer, y::ZZRingElem) = jacobi_symbol(ZZRingElem(x), y)
 
 
 function mod(a::nf_elem, I::NfOrdIdl)

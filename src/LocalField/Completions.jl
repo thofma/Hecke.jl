@@ -256,9 +256,7 @@ end
   return coeffs_eisenstein, xZp
 end
 
-function round(::Type{Int}, a::QQFieldElem)
-  return round(Int, Rational{BigInt}(a))
-end
+
 
 function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, LocalFieldElem{qadic, EisensteinLocalField}}, new_prec::Int)
   P = prime(f)

@@ -206,8 +206,6 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
   return t
 end
 
-degree(F::Union{ fpField, Generic.ResidueField{ZZRingElem} }) = 1
-
 function get_coeff_fmpz!(x::fqPolyRepFieldElem, n::Int, z::ZZRingElem)
   ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), z, ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n))
   return z
@@ -215,16 +213,6 @@ end
 
 function get_coeff_fmpz!(x::FqPolyRepFieldElem, n::Int, z::ZZRingElem)
   ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), z, x, n)
-  return z
-end
-
-function lift!(x::fpFieldElem, z::ZZRingElem)
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), z, x.data)
-  return z
-end
-
-function lift!(x::Generic.ResidueFieldElem{ZZRingElem}, z::ZZRingElem)
-  ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, x.data)
   return z
 end
 

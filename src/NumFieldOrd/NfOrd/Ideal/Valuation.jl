@@ -5,10 +5,6 @@
 ################################################################################
 
 
-function valuation(a::UInt, b::UInt)
-  return ccall((:n_remove, libflint), Int, (Ref{UInt}, UInt), a, b)
-end
-
 # CF:
 # The idea is that valuations are mostly small, eg. in the class group
 # algorithm. So this version computes the completion and the embedding into it
@@ -35,7 +31,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   let h = h, g = g, P = P, uP = uP
     function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
-      nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
+      Nemo.nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
       c = Nemo.coeff_raw(h, 0)
       v = c==0 ? typemax(Int) : valuation(c, uP)
@@ -55,7 +51,7 @@ function val_func_no_index(p::NfOrdIdl)
   # TODO (GF): Change to proper GF to use nmod if possible
   Rx, g = polynomial_ring(Native.GF(P, cached=false), cached=false)
   Zx = polynomial_ring(FlintZZ, cached = false)[1]
-  nf_elem_to_gfp_fmpz_poly!(g, p.gen_two.elem_in_nf, false)
+  Nemo.nf_elem_to_gfp_fmpz_poly!(g, p.gen_two.elem_in_nf, false)
   f = Rx(K.pol)
   g = gcd(g, f)
   g = lift(Zx, g)
@@ -68,7 +64,7 @@ function val_func_no_index(p::NfOrdIdl)
   let h = h, g = g, P = P
     function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
-      nf_elem_to_fmpz_mod_poly!(h, x, false) # ignores the denominator
+      Nemo.nf_elem_to_fmpz_mod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
       _coeff_as_fmpz!(c, h, 0)
       v = iszero(c) ? 100 : valuation(c, P)

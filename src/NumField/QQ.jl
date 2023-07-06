@@ -164,7 +164,6 @@ fractional_ideal_type(::QQField) = ZZFracIdl
 elem_in_nf(x::ZZRingElem) = FlintQQ(x)
 
 nf(::ZZRing) = FlintQQ
-number_field(::ZZRing) = FlintQQ
 
 # Infinite places
 
@@ -191,7 +190,7 @@ function signs(a::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, l::Vecto
   return Dict(inf => sign(a))
 end
 
-function is_positive(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::Union{PosInf, Vector{PosInf}})
+function is_positive(x::FacElem{QQFieldElem}, ::Union{PosInf, Vector{PosInf}})
   return sign(x) == 1
 end
 
@@ -199,7 +198,7 @@ function is_totally_positive(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldEl
   return sign(x) == 0
 end
 
-function is_negative(x::Union{QQFieldElem, ZZRingElem, FacElem{QQFieldElem}}, p::Union{PosInf, Vector{PosInf}})
+function is_negative(x::FacElem{QQFieldElem}, ::Union{PosInf, Vector{PosInf}})
   return sign(x) == -1
 end
 
@@ -279,10 +278,6 @@ sunit_group_fac_elem(S::Vector{ZZIdl}) = sunit_group_fac_elem([gen(i) for i in S
 # If this causes trouble, we need to change it to ArbField(p, cached = false)(x)
 evaluate(x::QQFieldElem, ::PosInf, p::Int) = x
 
-real(x::QQFieldElem) = x
-
-norm(x::ZZRingElem) = abs(x)
-
 
 ################################################################################
 #
@@ -320,5 +315,3 @@ lifted_denominator(x::ZZRingElem) = ZZRingElem(1)
 ################################################################################
 
 absolute_basis(Q::QQField) = [one(Q)]
-
-gen(Q::QQField) = one(Q)

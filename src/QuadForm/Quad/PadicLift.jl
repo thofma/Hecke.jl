@@ -396,13 +396,3 @@ function _crt(V::Vector{ZZMatrix},B::Vector{ZZRingElem}, prec::Vector{Int})
   end
   return sol
 end
-
-@doc raw"""
-    valuation(G::QQMatrix, p)
-
-Return the minimum valuation of the entries of `G`.
-"""
-function valuation(G::QQMatrix, p)
-  return minimum([x==0 ? inf : valuation(x,p) for x in G])
-end
-

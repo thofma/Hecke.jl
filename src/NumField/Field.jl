@@ -205,28 +205,7 @@ function is_normal_basis_generator(a::NumFieldElem)
   return rank(A) == n
 end
 
-#trivia to make life easier
-
-gens(L::SimpleNumField{T}) where {T} = [gen(L)]
-
-function gen(L::SimpleNumField{T}, i::Int) where {T}
-  i == 1 || error("index must be 1")
-  return gen(L)
-end
-
 gen(L::NonSimpleNumField{T}, i::Int) where {T} = L(gen(parent(L.pol[1]), i))
-
-function Base.getindex(L::SimpleNumField{T}, i::Int) where {T}
-  if i == 0
-    return one(L)
-  elseif i == 1
-    return gen(L)
-  else
-    error("index has to be 0 or 1")
-  end
-end
-
-ngens(L::SimpleNumField{T}) where {T} = 1
 
 function Base.getindex(L::NonSimpleNumField{T}, i::Int) where {T}
   i == 0 && return one(L)

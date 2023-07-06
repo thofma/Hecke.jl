@@ -246,30 +246,6 @@ function siegel_reduction(tau::acb_mat)
   end
 end
 
-*(x::acb, y::arb_mat) = x * _acb_mat(y)
-*(x::arb_mat, y::acb) = y * x
-*(x::arb_mat, y::acb_mat) = _acb_mat(x) * y
-*(x::acb_mat, y::arb_mat) = x * _acb_mat(y)
-+(x::arb_mat, y::acb_mat) = _acb_mat(x) + y
-+(x::acb_mat, y::arb_mat) = y + x
--(x::arb_mat, y::acb_mat) = x + (-y)
--(x::acb_mat, y::arb_mat) = x + (-y)
-//(x::arb_mat, y::arb) = map(t -> t//y, x)
-
-
-function _acb_mat(A::arb_mat)
-  p = precision(base_ring(A))
-  Cc = AcbField(p)
-  return change_base_ring(Cc, A)
-end
-
-function real(tau::acb_mat)
-  return map(real, tau)
-end
-
-function imag(tau::acb_mat)
-  return map(imag, tau)
-end
 
 function cholesky_decomposition(x::arb_mat)
   z = similar(x, nrows(x), ncols(x))
@@ -306,9 +282,5 @@ function shortest_vectors(M::arb_mat)
   L = integer_lattice(d)
   U = shortest_vectors(L)
   return map(matrix, [map(R, u)*M for u in U])
-end
-
-function norm(v::arb_mat)
-  return sqrt(sum([a^2 for a in v]))
 end
 

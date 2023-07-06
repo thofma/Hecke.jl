@@ -1020,9 +1020,6 @@ end
 #    without 1st computing the complete inv
 # .../ enter rresx and rres!
 
-function (A::Nemo.AnticNumberField)(a::Nemo.ZZPolyRingElem)
-  return A(FlintQQ["x"][1](a))
-end
 
 function _minmod(a::ZZRingElem, b::NfAbsOrdElem)
   return mod(denominator(inv(b.elem_in_nf), parent(b)), a)

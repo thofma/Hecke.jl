@@ -57,7 +57,6 @@
 @alias isdefining_polynomial_nice is_defining_polynomial_nice
 @alias isdefinite is_definite
 @alias isdegenerate is_degenerate
-@alias isdiagonal is_diagonal
 @alias isdiagonalisable is_diagonalisable
 @alias isdiscriminant is_discriminant
 @alias isdivisible is_divisible
@@ -116,7 +115,6 @@
 @alias islocally_isomorphic is_locally_isomorphic
 @alias islocally_isomorphic_with_isomophism is_locally_isomorphic_with_isomophism
 @alias islocally_represented_by is_locally_represented_by
-@alias islower_triangular is_lower_triangular
 @alias ismaximal is_maximal
 @alias ismaximal_integral is_maximal_integral
 @alias ismaximal_known is_maximal_known
@@ -124,7 +122,6 @@
 @alias ismaximal_order_known is_maximal_order_known
 @alias ismodular is_modular
 @alias isnegative_definite is_negative_definite
-@alias isnilpotent is_nilpotent
 @alias isnorm is_norm
 @alias isnorm_divisible is_norm_divisible
 @alias isnorm_divisible_pp is_norm_divisible_pp
@@ -137,7 +134,6 @@
 @alias isone_sided is_one_sided
 @alias ispairwise_coprime is_pairwise_coprime
 @alias ispositive_definite is_positive_definite
-@alias ispositive_entry is_positive_entry
 @alias ispower_trager is_power_trager
 @alias ispower_unram is_power_unram
 @alias isprimary is_primary
