@@ -46,7 +46,16 @@ function gauss_legendre_path_parameters(points, gamma::CPath, prec::Int)
 end
 
 function split_line_segment(points, gamma::CPath, prec::Int)
+  if !isdefined(gamma, :int_par_r)
+    gauss_legendre_line_parameters(points, gamma)
+  end 
   
+  if get_int_param_r(gamma) < Rc(1.2)
+    if Abs(real(get_t)) le (3/4) then
+      x = Gamma`Evaluate(Parent(Gamma`StartPt)!Re(Gamma`WP))
+    else
+      x = Gamma`Evaluate(Sign(Re(Gamma`WP))*(3/4));
+		end
 end
 
 function gauss_legendre_line_parameters(points::Vector{acb}, gamma::CPath)
@@ -64,11 +73,11 @@ function gauss_legendre_line_parameters(points::Vector{acb}, gamma::CPath)
     #Consider ellipse E = {z in C : |z-1| + |z+1| = 2cosh(r)}
     #Now picking r_k to be the following, we ensure that t_p lies on the boundary
     #and not on the ellipse if radius < r_k  
-    r_k = (abs(t_p + 1) + abs(t_p - 1))//2
+    r_p = (abs(t_p + 1) + abs(t_p - 1))//2
     
-    @req r_k > 1 "Error in computation of r_k"
-    if r_k < r_0
-      r_0 = r_k
+    @req r_p > 1 "Error in computation of r_k"
+    if r_p < r_0
+      r_0 = r_p
       set_t_of_closest_d_point(gamma, t_p)
     end
   end
@@ -81,6 +90,85 @@ function gauss_legendre_line_parameters(points::Vector{acb}, gamma::CPath)
   return r_0
   
 end
+
+function gauss_legendre_arc_parameters(points::Vector{acb}, gamma::CPath)
+  Cc = parent(points[1])
+  Rr = ArbField(precision(Cc))
+  r_0 = Rr(5.0)
+  
+  Rpi = pi(Rr)
+  I = onei(Cc)
+  
+  a = start_arc(gamma)
+  b = end_arc(gamma)
+  c = center(gamma)
+  r = radius(gamma)
+  or = orientation(gamma)
+  
+  for p in points
+    if p != c
+      #We find t_p such that gamma(t_p) = p 
+      t_p = or/(b - a) * (-2 * I * log((p - c)/(r * exp(I*(b + a)/2))));
+      
+      r_p = abs(im(2 * asinh(atanh(u_k)/(Rpi)))
+    end
+   
+    
+    @req r_p > 1 "Error in computation of r_k"
+    if r_p < r_0
+      r_0 = r_p
+      set_t_of_closest_d_point(gamma, t_p)
+    end
+  end
+  
+  #Not sure why yet
+  if r_0 == Rr(5.0)
+    push!(bounds(gamma), 1)
+  end
+
+  return r_0
+  
+end
+
+function gauss_legendre_circle_parameters(points::Vector{acb}, gamma::CPath)
+  Cc = parent(points[1])
+  Rr = ArbField(precision(Cc))
+  r_0 = Rr(5.0)
+  
+  Rpi = pi(Rr)
+  I = onei(Cc)
+  
+  a = start_arc(gamma)
+  b = end_arc(gamma)
+  c = center(gamma)
+  r = radius(gamma)
+  or = orientation(gamma)
+  
+  for p in points
+    if p != c
+      #We find t_p such that gamma(t_p) = p 
+      t_p = or/Rpi * I * log((c - p) /(r* exp(I * a)));
+      
+      r_p = abs(im(2 * asinh(atanh(u_k)/(Rpi)))
+    end
+   
+    
+    @req r_p > 1 "Error in computation of r_k"
+    if r_p < r_0
+      r_0 = r_p
+      set_t_of_closest_d_point(gamma, t_p)
+    end
+  end
+  
+  #Not sure why yet
+  if r_0 == Rr(5.0)
+    push!(bounds(gamma), 1)
+  end
+
+  return r_0
+  
+end
+
 
 function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
   Rc = ArbField(prec)

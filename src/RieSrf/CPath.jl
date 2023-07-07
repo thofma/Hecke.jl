@@ -8,7 +8,7 @@
 
 export CPath
 
-export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation
+export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation, start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point, get_t_of_closest_d_point
 
 ################################################################################
 #
@@ -21,6 +21,8 @@ mutable struct CPath
   path_type::Int
   start_point::acb
   end_point::acb
+  start_arc::arb
+  end_arc::arb
   C::AcbField
   
   center::acb
@@ -31,9 +33,9 @@ mutable struct CPath
   orientation::Int
   permutation::Perm{Int}
   
-  int_params::arb
+  int_param_r::arb
   t_of_closed_D_point::acb
-  bounds::Array{Int}
+  int_params_M::Array{Int}
   
   #Path type index:
   #0 is a line
@@ -92,6 +94,7 @@ mutable struct CPath
     phi_a = mod2pi(angle(a_diff))
     phi_b = mod2pi(angle(b_diff))
     
+    
     if orientation == 1
       if phi_b < phi_a
         phi_b += 2*piC
@@ -101,6 +104,11 @@ mutable struct CPath
         phi_a += 2*piC
       end
     end
+   
+    
+    
+    P.start_arc = phi_a
+    P.end_arc = phi_b
    
     #Arc
     if path_type == 1
@@ -208,6 +216,15 @@ function end_point(G::CPath)
   return G.end_point
 end
 
+function start_arc(G::CPath)
+  return G.start_arc
+end
+
+function end_arc(G::CPath)
+  return G.end_arc
+end
+
+
 function center(G::CPath)
   if 1 <= path_type(G) <= 2
     return G.center
@@ -244,9 +261,19 @@ function set_t_of_closest_d_point(G::CPath, t::acb)
   G.t_of_closest_d_point = t
 end
 
-function get_t_of_closest_d_point(G::CPath, t::acb)
-  G.t_of_closest_d_point = t
+function get_t_of_closest_d_point(G::CPath)
+  return G.t_of_closest_d_point
 end
+
+function set_int_param_r(G::CPath, r::arb)
+  G.int_params_r = r
+end
+
+function get_int_param_r(G::CPath, t::acb)
+  return G.int_params_r
+end
+
+
 
 ################################################################################
 #
