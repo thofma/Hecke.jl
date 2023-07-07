@@ -1236,6 +1236,10 @@ end
 ################################################################################
 
 function (K::QQField)(a::NfAbsNSElem)
-  @req is_constant(a.data) "Element must be rational"
-  return constant_coefficient(a.data)
+  @req is_constant(data(a)) "Element must be rational"
+  return constant_coefficient(data(a))
+end
+
+function is_rational(a::NfAbsNSElem)
+  return is_constant(data(a))
 end

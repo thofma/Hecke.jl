@@ -817,3 +817,8 @@ function (K::QQField)(a::NfRelNSElem)
   @req is_constant(d) "Element must be rational"
   return QQ(constant_coefficient(d))
 end
+
+function is_rational(a::NfRelNSElem)
+  d = data(a)
+  return is_constant(d) && is_rational(constant_coefficient(d))
+end
