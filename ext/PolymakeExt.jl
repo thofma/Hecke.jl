@@ -3,16 +3,11 @@ module PolymakeExt
 using Hecke, Polymake
 
 import Hecke:
-  solve_mixed,
-  ncols,
-  nrows
+  solve_mixed
 
 # Needs polymake (obviously)
 
 # Returns all vectors v such that Av == b and Cv >= 0.
-
-Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
-Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
 function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_matrix(FlintZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)
@@ -133,7 +128,7 @@ end
 
 Solves $Ax = b$ under $Cx >= d$, assumes a finite solution set.
 """
-function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
+function Hecke.solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
   n = ncols(A)
   A = cat(A, identity_matrix(FlintZZ, ncols(d)), dims=(1,2))
   b = vcat(b, identity_matrix(FlintZZ, ncols(d)))
