@@ -81,5 +81,14 @@ test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
   @test parent(a * T^2 + a) === ET
   @test sprint(show, a * T^2) isa String
   @test sprint(show, "text/plain", a * T^2) isa String
+
+  # coercion
+  k, = Hecke.rationals_as_number_field()
+  kt, t = k["t"]
+  K, _a = number_field(t^2 - 2)
+  E, a = Hecke.embedded_field(K, real_embeddings(K)[1])
+  @test @inferred is_rational(a^0)
+  @test !is_rational(a)
+  @test (@inferred QQ(2*a^0)) == 2 * one(QQ)
 end
 

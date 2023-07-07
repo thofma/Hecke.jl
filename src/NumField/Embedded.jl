@@ -279,3 +279,17 @@ end
 function AbstractAlgebra.promote_rule(::Type{EmbeddedNumFieldElem{T}}, ::Type{EmbeddedNumFieldElem{T}}) where {T <: NumFieldElem}
   return EmbeddedNumFieldElem{T}
 end
+
+################################################################################
+#
+#  Coercion
+#
+################################################################################
+
+function (QQ::QQField)(x::EmbeddedNumFieldElem)
+  return QQ(data(x))
+end
+
+function is_rational(x::EmbeddedNumFieldElem)
+  return is_rational(data(x))
+end

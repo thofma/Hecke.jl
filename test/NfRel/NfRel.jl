@@ -120,5 +120,8 @@
     @test QQ(2*b^0) == 2*one(QQ)
     @test QQ(2*o^0) == 2*one(QQ)
     @test_throws ArgumentError QQ(o)
+    @test is_rational(2*b^0)
+    @test is_rational(2*o^0)
+    @test !is_rational(o)
   end
 end

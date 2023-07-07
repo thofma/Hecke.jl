@@ -490,6 +490,15 @@ function (K::QQField)(a::NfRelElem)
   return QQ(coeff(a, 0))
 end
 
+function is_rational(a::NfRelElem)
+  for i in 2:degree(parent(a))
+    if !iszero(coeff(a, i - 1))
+      return false
+    end
+  end
+  return true
+end
+
 ################################################################################
 #
 #  Basis & representation matrix
