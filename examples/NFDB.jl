@@ -329,7 +329,7 @@ function _get(K, s)
   end
 end
 
-function _create_record(K::AnticNumberField; compute = [])
+function _create_record(K::AnticNumberField; compute = [], keep_field = true)
   f = defining_polynomial(K)
   data = Dict{Symbol, Any}()
   data[:poly] = f
@@ -340,7 +340,9 @@ function _create_record(K::AnticNumberField; compute = [])
     data[p] = c
   end
   D = NFDBRecord{1}(data)
-  D.K = K
+  if keep_field
+    D.K = K
+  end
   return D
 end
 
@@ -984,6 +986,13 @@ function Base.merge(D::Vector{NFDB{1}})
   end
 
   return R
+end
+
+# should call update_properties! afterwards
+function unsafe_add!(DB::NFDB, K::AnticNumberField)
+  D = _create_record(K, keep_field = false)
+  push!(DB.fields, D)
+  return D
 end
 
 names32 = [ "C32", "C2.C4^2", "C4*C8", "C2.OD16", "C2^2:C8", "C2^2.D4",
