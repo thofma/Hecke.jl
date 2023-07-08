@@ -496,7 +496,7 @@ function is_rational(a::NfRelElem)
       return false
     end
   end
-  return true
+  return is_rational(coeff(a, 0))
 end
 
 ################################################################################
