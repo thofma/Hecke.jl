@@ -100,7 +100,6 @@ jobs:
           echo '${{ env.oscar_run_tests }}'
           julia --color=yes --project=oscar-dev/project/ -e '${{ env.oscar_run_tests }}'
       - name: "Run doctests"
-        if: matrix.julia-version == '~1.9.0-0' || matrix.julia-version == '1.9'
         run: |
           echo '${{ env.oscar_run_doctests }}'
           julia --color=yes --project=oscar-dev/project/ -e '${{ env.oscar_run_doctests }}'
