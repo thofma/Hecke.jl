@@ -901,7 +901,10 @@ end
 
 
 function Base.hash(G::ZZGenus, u::UInt)
-  h = hash(reduce(xor,(hash(x) for x in local_symbols(G))), hash(signature_pair(G)))
+  h = hash(signature_pair(G))
+  for x in local_symbols(G)
+    h = xor(h, hash(x))
+  end
   return xor(h, u)
 end
 
@@ -911,7 +914,10 @@ function Base.hash(G::ZZLocalGenus, u::UInt)
     h = xor(hash(prime(G)),  hash(symbol(G)))
   else
     # symbol is not unique but at least scales and ranks
-    h = xor(hash(prime(G), reduce(xor,(hash(s[1:2]) for s in symbol(G)))))
+    h = hash(prime(G))
+    for s in symbol(G)
+      h = xor(h, hash(s[1:2]))
+    end
   end
   return xor(h, u)
 end

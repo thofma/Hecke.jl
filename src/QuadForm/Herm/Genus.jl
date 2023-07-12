@@ -1024,7 +1024,10 @@ function Base.hash(g::HermLocalGenus, u::UInt)
   u = Base.hash(base_field(g), u)   # We do equality only over the same parent base field
   u = Base.hash(prime(g), u)
   # In any case, scale valuations and rank must agree
-  h = xor(hash(det(g)), reduce(xor, (hash(s[1:2]) for s in g.data)))
+  h = hash(det(g))
+  for s in g.data
+    h = xor(h, hash(s[1:2]))
+  end
 
   # In the split and unramified cases, we have collected all the invariants.
   # Otherwise, we need to split between dyadic and non-dyadic case. For the
@@ -1038,13 +1041,19 @@ function Base.hash(g::HermLocalGenus, u::UInt)
       # share blocks with same scales and ranks, they should also share those
       # determinant value.
       # See equality test above
-      h = xor(h, reduce(xor, (hash(s[3]) for s in g.data if iseven(s[1]))))
+      for s in g.data
+        if iseven(s[1])
+          h = xor(h, hash(s[3]))
+        end
+      end
     else
       # Ramified & dyadic: the only things that are invariant are the values of
       # the ni's and the blocks for which the scale valuations are twice the
       # norm valuations.
       # See equality test above
-      h = xor(h, reduce(xor, (hash(g.data[i][1] == 2*g.norm_val[i]) for i = 1:length(g.data))))
+      for i in 1:length(g.data)
+        h = xor(h, hash(g.data[i][1] == 2*g.norm_val[i]))
+      end
       h = xor(h, hash(g.ni))
     end
   end
