@@ -135,16 +135,16 @@
   end
 
   @testset "CanSolve" begin
-    @test can_solve(binary_quadratic_form(3,2,2), 28) == (true, (2, 2))
-    @test can_solve(binary_quadratic_form(2,1,3), 3) == (true, (0, 1))
-    @test can_solve(binary_quadratic_form(2,1,3), 5) == (false, (0, 0))
-    @test can_solve(binary_quadratic_form(2,1,3), 6) == (true, (1, 1))
-    @test can_solve(binary_quadratic_form(2,-1,3), 3) == (true, (0, 1))
-    @test can_solve(binary_quadratic_form(2,-1,3), 5) == (false, (0, 0))
-    @test can_solve(binary_quadratic_form(2,-1,3), 6) == (true, (-1, 1))
-    @test can_solve(binary_quadratic_form(1,1,6), 3) == (false, (0, 0))
-    @test can_solve(binary_quadratic_form(1,1,6), 5) == (false, (0, 0))
-    @test can_solve(binary_quadratic_form(1,1,6), 6) == (true, (0, 1))
+    @test can_solve_with_solution(binary_quadratic_form(3,2,2), 28) == (true, (2, 2))
+    @test can_solve_with_solution(binary_quadratic_form(2,1,3), 3) == (true, (0, 1))
+    @test can_solve_with_solution(binary_quadratic_form(2,1,3), 5) == (false, (0, 0))
+    @test can_solve_with_solution(binary_quadratic_form(2,1,3), 6) == (true, (1, 1))
+    @test can_solve_with_solution(binary_quadratic_form(2,-1,3), 3) == (true, (0, 1))
+    @test can_solve_with_solution(binary_quadratic_form(2,-1,3), 5) == (false, (0, 0))
+    @test can_solve(binary_quadratic_form(2,-1,3), 6)
+    @test can_solve_with_solution(binary_quadratic_form(1,1,6), 3) == (false, (0, 0))
+    @test !can_solve(binary_quadratic_form(1,1,6), 5)
+    @test can_solve_with_solution(binary_quadratic_form(1,1,6), 6) == (true, (0, 1))
   end
 
   @testset "PrimeForm" begin
