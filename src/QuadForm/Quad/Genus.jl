@@ -1690,11 +1690,7 @@ function Base.hash(G::QuadGenus, u::UInt)
   u = Base.hash(base_field(G), u)   # We compare symbol over the same parent base field
   # The theory/definition tells us that a genus symbols is uniquely determined by its
   # signatures (infinite local data) and the local symbol (finite local data).
-
-  h = hash(signatures(G))
-  for x in local_symbols(G)
-    h = xor(h, hash(x))
-  end
+  h = xor(hash(signatures(G)), reduce(xor, (hash(x) for x in local_symbols(G))))
   return xor(h,u)
 end
 
