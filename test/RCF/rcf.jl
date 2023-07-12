@@ -3,7 +3,7 @@
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
-  function doit(u::UnitRange, p::Int = 3)
+  function doit(u::AbstractUnitRange, p::Int = 3)
     cnt = 0
     for i in u
       I = ideal(Z, i)

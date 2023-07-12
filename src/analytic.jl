@@ -88,21 +88,21 @@ function dickman_rho(x::Number, prec::Int=55)
 end
 
 @doc raw"""
-    dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
+    dickman_rho(x::Number, e::AbstractUnitRange{Int}, prec::Int=55) Number[]
 
 Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
 """
-function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
+function dickman_rho(b::Number, e::AbstractUnitRange{Int}, prec::Int = 55)
   if b < 0
     error("argument must be positive")
   end
 
-  x = b*e.stop
+  x = b*last(e)
   k = ceil(x)
   rc = rho_coeff(x, prec, all = true)
   val = Array{typeof(b)}(undef, length(e))
 
-  x = b*e.start
+  x = b*first(e)
   if x <= 1
     val[1] = one(b)
   elseif x <= 2
@@ -114,7 +114,7 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
     val[1] = analytic_eval(rc[f[1]], k-x)
   end
   vi = 2
-  for l in (e.start+1):e.stop
+  for l in (first(e)+1):last(e)
     x += b
     if x <= 1
       val[vi] = one(b)
@@ -267,14 +267,14 @@ function psi_guess(x::Number, B::Int)
 end
 
 @doc raw"""
-    psi_guess(x::Number, e::UnitRange, B::Int) Number
+    psi_guess(x::Number, e::AbstractUnitRange, B::Int) Number
 
 Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
 of $B$-smooth integers bounded by $x^i$ for $i \in e$.
 """
-function psi_guess(x::Number, B::Int, e::UnitRange)
-  val = typeof(x)[x^e.start]
-  for i=(e.start + 1):e.stop
+function psi_guess(x::Number, B::Int, e::AbstractUnitRange)
+  val = typeof(x)[x^first(e)]
+  for i=(first(e) + 1):last(e)
     push!(val, val[end]*x)
   end
   d = dickman_rho(log(x)/log(B), e)

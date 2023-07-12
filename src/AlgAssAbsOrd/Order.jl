@@ -425,10 +425,10 @@ end
 #
 ################################################################################
 
-RandomExtensions.maketype(O::AlgAssAbsOrd, R::UnitRange) = elem_type(O)
+RandomExtensions.maketype(O::AlgAssAbsOrd, R::AbstractUnitRange) = elem_type(O)
 
 function rand(rng::AbstractRNG,
-              sp::SamplerTrivial{<:Make2{<:RingElem,<:AlgAssAbsOrd,<:UnitRange}})
+              sp::SamplerTrivial{<:Make2{<:RingElem,<:AlgAssAbsOrd,<:AbstractUnitRange}})
   O, R = sp[][1:2]
   O(map(ZZRingElem, rand(rng, R, degree(O))))
 
@@ -438,11 +438,11 @@ RandomExtensions.make(O::AlgAssAbsOrd, n::IntegerUnion) =
   make(O, Integer(-n):Integer(n))
 
 @doc raw"""
-    rand(O::AlgAssAbsOrd, R::UnitRange) -> AlgAssAbsOrdElem
+    rand(O::AlgAssAbsOrd, R::AbstractUnitRange) -> AlgAssAbsOrdElem
 
 Returns a random element of $O$ whose coefficients lie in $R$.
 """
-rand(O::AlgAssAbsOrd, R::UnitRange) = rand(Random.GLOBAL_RNG, O, R)
+rand(O::AlgAssAbsOrd, R::AbstractUnitRange) = rand(Random.GLOBAL_RNG, O, R)
 
 @doc raw"""
     rand(O::AlgAssAbsOrd, n::IntegerUnion) -> AlgAssAbsOrdElem
@@ -453,7 +453,7 @@ rand(O::AlgAssAbsOrd, n::ZZRingElem) = rand(Random.GLOBAL_RNG, O, n)
 rand(O::AlgAssAbsOrd, n::Integer) = rand(Random.GLOBAL_RNG, O, n)
 # these two methods can't be merged with a Union, because of ambiguities
 
-rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Union{ZZRingElem,UnitRange}) = rand(rng, make(O, n))
+rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Union{ZZRingElem, <:AbstractUnitRange}) = rand(rng, make(O, n))
 rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Integer) = rand(rng, make(O, n))
 
 

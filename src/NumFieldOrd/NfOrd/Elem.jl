@@ -537,7 +537,7 @@ function rand!(z::NfAbsOrdElem{S, T}, B::Vector{NfAbsOrdElem{S, T}}, R) where {S
   return z
 end
 
-function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
+function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::AbstractUnitRange{T}) where T <: Integer
   y = O()
   B = basis(O, copy = false)
   for i in 1:degree(O)
@@ -548,12 +548,12 @@ function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
 end
 
 @doc raw"""
-    rand(O::NfOrd, R::UnitRange{Integer}) -> NfAbsOrdElem
+    rand(O::NfOrd, R::AbstractUnitRange{Integer}) -> NfAbsOrdElem
 
 Computes a coefficient vector with entries uniformly distributed in `R` and returns
 the corresponding element of the order.
 """
-function rand(O::NfOrd, R::UnitRange{T}) where T <: Integer
+function rand(O::NfOrd, R::AbstractUnitRange{T}) where T <: Integer
   z = O()
   rand!(z, O, R)
   return z

@@ -160,16 +160,11 @@ mutable struct TrafoPartialDense{S} <: Trafo
   rows::UnitRange{Int}
   cols::UnitRange{Int}
   U::S
-
-  function TrafoPartialDense{S}(i::Int, rows::UnitRange{Int},
-                                cols::UnitRange{Int}, U::S) where {S}
-    return new(i, rows, cols, U)
-  end
 end
 
-function TrafoPartialDense(i::Int, rows::UnitRange{Int},
-                           cols::UnitRange{Int}, U::S) where S
-  return TrafoPartialDense{S}(i, rows, cols, U)
+function TrafoPartialDense(i::Int, rows::AbstractUnitRange{Int},
+                           cols::AbstractUnitRange{Int}, U::S) where S
+  return TrafoPartialDense{S}(i, UnitRange(rows), UnitRange(cols), U)
 end
 
 # this is shorthand for the permutation matrix corresponding to

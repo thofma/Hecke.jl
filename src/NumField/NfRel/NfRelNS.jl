@@ -654,7 +654,7 @@ function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
   return evaluate(res, new_vals)
 end
 
-function rand(L::NfRelNS, rg::UnitRange)
+function rand(L::NfRelNS, rg::AbstractUnitRange)
   B = absolute_basis(L)
   return rand(B, rg)
 end

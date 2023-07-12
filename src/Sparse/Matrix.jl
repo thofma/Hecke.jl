@@ -729,12 +729,12 @@ end
 ################################################################################
 
 @doc raw"""
-    sub(A::SMat, r::UnitRange, c::UnitRange) -> SMat
+    sub(A::SMat, r::AbstractUnitRange, c::AbstractUnitRange) -> SMat
 
 Return the submatrix of $A$, where the rows correspond to $r$ and the columns
 correspond to $c$.
 """
-function sub(A::SMat{T}, r::UnitRange, c::UnitRange) where T
+function sub(A::SMat{T}, r::AbstractUnitRange, c::AbstractUnitRange) where T
   B = sparse_matrix(base_ring(A))
   B.nnz = 0
   B.c = length(c)
@@ -744,7 +744,7 @@ function sub(A::SMat{T}, r::UnitRange, c::UnitRange) where T
     for j=1:length(ra.values)
       if ra.pos[j] in c
         push!(rw.values, ra.values[j])
-        push!(rw.pos, ra.pos[j]-c.start+1)
+        push!(rw.pos, ra.pos[j]-first(c)+1)
       end
     end
     push!(B, rw)

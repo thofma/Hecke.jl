@@ -320,7 +320,7 @@ end
 #
 ################################################################################
 
-function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
+function sub(x::FakeFmpqMat, r::AbstractUnitRange{Int}, c::AbstractUnitRange{Int})
   z = FakeFmpqMat(sub(x.num, r, c), x.den)
   return z
 end

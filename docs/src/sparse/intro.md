@@ -122,7 +122,7 @@ zero_matrix(::Type{SMat}, ::Ring, ::Int, ::Int)
 ```
 Slices:
 ```@docs
-sub(::SMat{T}, ::UnitRange, ::UnitRange) where {T}
+sub(::SMat{T}, ::AbstractUnitRange, ::AbstractUnitRange) where {T}
 ```
 
 Transpose:

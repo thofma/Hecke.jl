@@ -185,15 +185,15 @@ function Base.view(M::NfMatElem, r1::Int , r2::Int, c1::Int, c2::Int)
   return NfMatElem(M, r1, r2, c1, c2)
 end
 
-function Base.view(M::NfMatElem, r::UnitRange{Int}, c::UnitRange{Int})
-  return Base.view(M, r.start, r.stop, c.start, c.stop)
+function Base.view(M::NfMatElem, r::AbstractUnitRange{Int}, c::AbstractUnitRange{Int})
+  return Base.view(M, first(r), last(r), first(c), last(c))
 end
 
-function Base.view(M::NfMatElem, r::Colon, c::UnitRange{Int})
+function Base.view(M::NfMatElem, r::Colon, c::AbstractUnitRange{Int})
   return Base.view(M, 1:nrows(M), c)
 end
 
-function Base.view(M::NfMatElem, r::UnitRange{Int}, c::Colon)
+function Base.view(M::NfMatElem, r::AbstractUnitRange{Int}, c::Colon)
   return Base.view(M, r, 1:ncols(M))
 end
 
@@ -343,8 +343,8 @@ _rrange(::NfMatElem, r::Int) = r:r
 _crange(::NfMatElem, c::Int) = c:c
 _rrange(M::NfMatElem, r::Colon) = 1:nrows(M)
 _crange(M::NfMatElem, c::Colon) = 1:ncols(M)
-_rrange(::NfMatElem, r::UnitRange{Int}) = r
-_crange(::NfMatElem, c::UnitRange{Int}) = c
+_rrange(::NfMatElem, r::AbstractUnitRange{Int}) = r
+_crange(::NfMatElem, c::AbstractUnitRange{Int}) = c
 _rrange(::NfMatElem, r::Vector{Int}) = r
 _crange(::NfMatElem, c::Vector{Int}) = c
 
@@ -386,10 +386,10 @@ end
   ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{nf_elem_raw}, Ref{AnticNumberField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
-function Base.setindex!(M::NfMatElem, N::NfMatElem, r::UnitRange{Int}, c::UnitRange{Int})
+function Base.setindex!(M::NfMatElem, N::NfMatElem, r::AbstractUnitRange{Int}, c::AbstractUnitRange{Int})
   for i = r
     for j = c
-      M[i,j] = N[i-r.start+1,j-c.start+1] #getindex_raw(N, i, j)
+      M[i,j] = N[i-first(r)+1,j-first(c)+1] #getindex_raw(N, i, j)
     end
   end
 end

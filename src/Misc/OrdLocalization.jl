@@ -425,7 +425,7 @@ end
 RandomExtensions.maketype(R::OrdLoc, _) = elem_type(R)
 
 function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{OrdLocElem{T}, OrdLoc{T},
-                                                           UnitRange{Int}}}) where {T}
+                                                           <:AbstractUnitRange{Int}}}) where {T}
    O, r = sp[][1:end]
    X = make(nf(O), r)
    while true
@@ -436,7 +436,7 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{OrdLocElem{T}, OrdLoc
    end
 end
 
-rand(rng::AbstractRNG, R::OrdLoc, r::UnitRange{Int}) = rand(rng, make(R, r))
+rand(rng::AbstractRNG, R::OrdLoc, r::AbstractUnitRange{Int}) = rand(rng, make(R, r))
 
 rand(K::OrdLoc{T}, r::AbstractVector) where {T <: nf_elem} = rand(Random.GLOBAL_RNG, K, r)
 
