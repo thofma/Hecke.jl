@@ -318,12 +318,20 @@ biproduct(x::Vararg{ZZLat}) = biproduct(collect(x))
 @doc raw"""
     orthogonal_submodule(L::ZZLat, S::ZZLat) -> ZZLat
 
-Return the largest submodule of `L` orthogonal to `S`.
+Return the largest submodule of ``L`` orthogonal to ``S``.
 """
 function orthogonal_submodule(L::ZZLat, S::ZZLat)
   @assert ambient_space(L)==ambient_space(S) "L and S must have the same ambient space"
+  return orthogonal_submodule(L, basis_matrix(S))
+end
+
+@doc raw"""
+    orthogonal_submodule(L::ZZLat, S::QQMatrix) -> ZZLat
+
+Return the largest submodule of ``L`` orthogonal to each row of ``S``.
+"""
+function orthogonal_submodule(L::ZZLat, C::QQMatrix)
   B = basis_matrix(L)
-  C = basis_matrix(S)
   V = ambient_space(L)
   G = gram_matrix(V)
   M = B * G * transpose(C)
@@ -685,6 +693,27 @@ function root_lattice(R::Symbol, n::Int)
   else
     error("Type (:$R) must be :A, :D or :E")
   end
+end
+
+@doc raw"""
+    root_lattice(R::Vector{Tuple{Symbol,Int}}) -> ZZLat
+
+Return the root lattice of type `R`.
+
+#Example
+```jldoctest
+julia> root_lattice([(:A,2),(:A,1)])
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[ 2   -1   0]
+[-1    2   0]
+[ 0    0   2]
+
+```
+"""
+function root_lattice(R::Vector{Tuple{Symbol,Int}})
+  S = [gram_matrix(root_lattice(i[1],i[2])) for i in R]
+  return integer_lattice(gram=block_diagonal_matrix(S))
 end
 
 function _root_lattice_A(n::Int)
