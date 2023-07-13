@@ -962,7 +962,7 @@ function _spans_subset_of_pseudohnf(M::PMat{T, S}, P::PMat{T, S}, shape::Symbol 
   return true
 end
 
-function sub(P::PMat, rows::UnitRange{Int}, cols::UnitRange{Int})
+function sub(P::PMat, rows::AbstractUnitRange{Int}, cols::AbstractUnitRange{Int})
   m = sub(P.matrix, rows, cols)
   return pseudo_matrix(m, P.coeffs[rows])
 end

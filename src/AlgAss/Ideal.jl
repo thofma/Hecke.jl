@@ -579,7 +579,7 @@ function rand(rng::AbstractRNG, a_sp::Random.SamplerTrivial{<:AbsAlgAssIdl})
   return x
 end
 
-function rand(a::AbsAlgAssIdl, rng::UnitRange{Int})
+function rand(a::AbsAlgAssIdl, rng::AbstractUnitRange{Int})
   A = algebra(a)
   x = A()
   for b in basis(a, copy = false)

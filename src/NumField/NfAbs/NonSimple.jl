@@ -112,7 +112,7 @@ end
 
 RandomExtensions.maketype(K::NfAbsNS, r) = elem_type(K)
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<:UnitRange}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<:AbstractUnitRange}})
   K, r = sp[][1:end]
   # TODO: This is super slow
   b = basis(K, copy = false)
@@ -123,8 +123,8 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<
   return z
 end
 
-rand(K::NfAbsNS, r::UnitRange) = rand(GLOBAL_RNG, K, r)
-rand(rng::AbstractRNG, K::NfAbsNS, r::UnitRange) = rand(rng, make(K, r))
+rand(K::NfAbsNS, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
+rand(rng::AbstractRNG, K::NfAbsNS, r::AbstractUnitRange) = rand(rng, make(K, r))
 
 ################################################################################
 #
