@@ -1169,7 +1169,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermGenus)
   print(io, Indent())
   for (pl, v) in sig
     println(io)
-    print(IOContext(io, :supercompact =>true), pl)
+    print(IOContext(io, :supercompact =>true), Lowercase(), pl)
     print(io, " => ")
     print(io, v)
   end
@@ -1183,7 +1183,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermGenus)
   for g in G.LGS
     println(io)
     print(IOContext(io, :compact => true), prime(g), " => ")
-    print(IOContext(io, :supercompact => true), g)
+    print(IOContext(io, :supercompact => true), Lowercase(), g)
   end
   print(io, Dedent())
 end

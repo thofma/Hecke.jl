@@ -1613,7 +1613,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadGenus)
   print(io, Indent())
   for (pl, v) in sig
     println(io)
-    Base.show(IOContext(io, :supercompact => true), pl)
+    Base.show(IOContext(io, :supercompact => true), Lowercase(), pl)
     print(io, " => ", v)
   end
   print(io, Dedent())
@@ -1626,7 +1626,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadGenus)
   for g in lgs
     println(io)
     print(IOContext(io, :compact => true), prime(g), " => ")
-    print(IOContext(io, :supercompact => true), g)
+    print(IOContext(io, :supercompact => true), Lowercase(), g)
   end
   print(io, Dedent())
 end

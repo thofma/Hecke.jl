@@ -209,4 +209,8 @@ end
   @test length(unique!([genus(L), genus(L2)])) == 1
   @test length(unique!([genus(L, p1), genus(L, p1)])) == 1
   @test length(unique!([genus(L, p2), genus(L, p2)])) == 1
+
+  L = lattice(quadratic_space(QQ, 0))
+  G = genus(L)
+  @test length(unique([G, G, G])) == 1
 end

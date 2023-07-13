@@ -597,4 +597,8 @@ end
   @test length(unique!([Hecke._genus(L), genus(L)])) == 1
   @test length(unique!([genus(L, p1), genus(L, p1)])) == 1
   @test length(unique!([genus(L, p2), genus(L, p2)])) == 1
+
+  L = lattice(hermitian_space(E, 0))
+  G = genus(L)
+  @test length(unique([G ,G, G])) == 1
 end
