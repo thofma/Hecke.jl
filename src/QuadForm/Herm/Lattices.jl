@@ -251,7 +251,7 @@ function scale(L::HermLat)
   for i in 1:d
     push!(to_sum, involution(L)(to_sum[i]))
   end
-  s = sum(to_sum)
+  s = sum(to_sum, init = zero(base_field(L))*base_ring(L))
   L.scale = s
   return s
 end
@@ -292,8 +292,10 @@ $\mathcal O_E$ are returned.
 If `dyadic == true`, the prime ideals dividing $2*\mathcal O_K$ are returned.
 """
 function bad_primes(L::HermLat; discriminant::Bool = false, dyadic::Bool = false)
-  bp = support(norm(scale(L)))
-  union!(bp, support(norm(volume(L))))
+  bp = support(norm(volume(L)))
+  if !is_zero(scale(L))
+    union!(bp, support(norm(scale(L))))
+  end
   discriminant && union!(bp, support(Hecke.discriminant(base_ring(L))))
   dyadic && union!(bp, support(2*fixed_ring(L)))
   return bp
