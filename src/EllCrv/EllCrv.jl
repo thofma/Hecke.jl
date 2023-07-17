@@ -47,7 +47,7 @@ export EllipticCurve, infinity, base_field, base_change, j_invariant,
 #
 ################################################################################
 
-mutable struct EllCrv{T}
+@attributes mutable struct EllCrv{T}
   base_field::Ring
   short::Bool
   a_invars::Tuple{T, T, T, T, T}
@@ -1095,4 +1095,18 @@ function replace_all_squares_modulo(f, g, F)
     z = z + coeff(f, 2*i)*powermod(g, i, F)
   end
   return z
+end
+
+################################################################################
+#
+#  Hash
+#
+################################################################################
+
+function Base.hash(P::EllCrvPt, h::UInt)
+  if is_infinite(P)
+    return xor(h, UInt(0x8e54c9525d4f3979))
+  else
+    return xor(hash(P.coordx, h), hash(P.coordy, h))
+  end
 end

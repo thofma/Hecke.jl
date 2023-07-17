@@ -52,16 +52,17 @@ Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
 Return a random point on the elliptic curve $E$ defined over a finite field.
 """
 function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
+  # Algorithm 6 of Miller, "The Weil Pairing, and Its Efficient Calculation"
   E = Esp[]
   R = base_field(E)
-  return_infinity = rand(rng, 0:order(R))
-  if return_infinity == 1
-    return infinity(E)
-  end
 
   if E.short == false
     while true
-    # choose random x-coordinate and check if there exists a corresponding y-coordinate
+      return_infinity = rand(rng, 0:order(R))
+      if return_infinity == 1
+        return infinity(E)
+      end
+      # choose random x-coordinate and check if there exists a corresponding y-coordinate
       x = rand(rng, R)
       a1, a2, a3, a4, a6 = a_invars(E)
       Ry, y = polynomial_ring(R,"y")
@@ -78,6 +79,11 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
   while true
   # choose random x-coordinate and check if it is a square in F_q
   # if not, choose new x-coordinate
+    return_infinity = rand(rng, 0:order(R))
+    if return_infinity == 1
+      return infinity(E)
+    end
+
     x = rand(rng, R)
     _,_,_, a4, a6 = a_invars(E)
     Ry, y = polynomial_ring(R,"y")
@@ -207,7 +213,7 @@ function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
   Q = Int(q + 1) * P
 
   # step 2
-  m = Int( ceil(Int(q)^(1//4)) )
+  m = Int(ceil(Int(q)^(1//4)))
 
   list_points = []
   for j = 0:m
@@ -279,7 +285,7 @@ function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
     end
   end
 
-  return ZZ(M)
+  return abs(ZZ(M))
 end
 
 @doc raw"""
@@ -291,6 +297,28 @@ of this point.
 function order(P::EllCrvPt{T}) where T<:FinFieldElem
   return elem_order_bsgs(P)
 end
+
+function _order_elem_via_fac(P::EllCrvPt{<:FinFieldElem})
+  E = parent(P)
+  n = order(E)
+  fn = _order_factored(E)
+  o = one(ZZ)
+  for (p, e) in fn
+    q = p^e
+    m = divexact(n, q)
+    Q = m*P # order dividing q = p^e
+    for i in 0:e
+      if is_infinite(Q)
+        break
+      else
+        o = o * p
+        Q = p * Q
+      end
+    end
+  end
+  return o
+end
+
 
 ################################################################################
 #
@@ -770,7 +798,7 @@ end
 Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
 $\#E(\mathbf F)$.
 """
-function order(E::EllCrv{T}) where T<:FinFieldElem
+@attr fmpz function order(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
@@ -789,6 +817,13 @@ function order(E::EllCrv{T}) where T<:FinFieldElem
   return ZZ(order_via_schoof(E)) # bsgs may only return candidate list
 end
 
+# don't use @attr, because I need that the attribute has this
+# name
+function _order_factored(E::EllCrv{<:FinFieldElem})
+  return get_attribute!(E, :order_factored) do
+    return factor(order(E))
+  end::Fac{fmpz}
+end
 
 @doc raw"""
     trace_of_frobenius(E::EllCrv{FinFieldElem}) -> Int
@@ -958,7 +993,7 @@ function monte_carlo_test(E, n)
   return true
 end
 
-#Based on Sage implementation in ell_finite_field.py
+# Inspired from Sage implementation in ell_finite_field.py
 @doc raw"""
     supersingular_polynomial(p::IntegerUnion)
 Return the polynomial whose roots correspond to j-invariants
@@ -983,3 +1018,129 @@ function supersingular_polynomial(p::IntegerUnion)
   return R
 end
 
+################################################################################
+#
+#  Group structure
+#
+################################################################################
+
+# return (m, d) and (P, Q) such that d divides m, P, Q generate E(K),
+# P has order m = lcm(d, m) = exp(E(K)), and
+# E(K) = Z/d x Z/m.
+#
+# If m = 1, return [1], []
+# If m != 1, d = 1, return [m], [P] (cyclic)
+# If m != 1, d != 1, return [m, d], [P, Q]
+#
+# Not that Q does not necessarily has order d, nor that
+# E(K) = <P> x <Q>
+#
+# Algorithm 2 from
+# "The Weil Pairing, and Its Efficient Calculation", Victor S. Miller
+# J. Cryptology (2004) 17: 235–261
+# DOI: 10.1007/s00145-004-0315-8
+#
+#
+@attr Tuple{Vector{fmpz}, Vector{EllCrvPt{T}}} function _grp_struct_with_gens(E::EllCrv{T}) where {T <: FinFieldElem}
+  N = order(E)
+  K = base_field(E)
+  # TODO:
+  # we do not have a multiplicative_order for field elements, so go
+  # via disc_log :(
+  A, AtoK = unit_group(K)
+  f = _order_factored(E)
+
+  if is_one(order(E))
+    return ZZRingElem[], elem_type(E)[]
+  end
+
+  while true
+    P, Q = rand(E), rand(E)
+    s = _order_elem_via_fac(P)
+    t = _order_elem_via_fac(Q)
+    m = lcm(s, t)
+    zeta = weil_pairing(P, Q, Int(m))
+    d = order(AtoK\(zeta))
+    if m*d == N
+      # P and Q are generators of E
+      # I want to message P and Q to find a generator
+      # with order lcm(s, t) = m
+      cc = one(ZZ)
+      dd = one(ZZ)
+      for (p,_) in f
+        mi = valuation(s, p)
+        ni = valuation(t, p)
+        if mi < ni
+          cc *= p^mi
+        else
+          dd *= p^ni
+        end
+      end
+      P = cc * P + dd * Q
+      @assert Hecke._order_elem_via_fac(P) == m
+      if is_one(m)
+        return [m], typeof(P)[]
+      elseif is_one(d)
+        return [m], [P]
+      else
+        return [m, d], [P, Q]
+      end
+    end
+  end
+end
+
+function gens(E::EllCrv{<:FinFieldElem})
+  return _grp_struct_with_gens(E)[2]
+end
+
+function abelian_group(E::EllCrv{<:FinFieldElem})
+  _invdiv, _gens = _grp_struct_with_gens(E)
+  if length(_gens) == 0
+    strct = fmpz[]
+    gens = elem_type(E)[]
+  elseif length(_gens) == 1
+    strct = copy(_invdiv)
+    gens = _gens[1]
+  elseif length(_gens) == 2
+    P, Q = _gens
+    # P generates a cyclic group of maximal order.
+    # We change Q to Q - l*P, to make it not intersect
+    # <P> (and still have the correct order)
+    n1, n2 = _invdiv
+    n = order(E)
+    @assert Hecke._order_elem_via_fac(P) == n1
+    @assert n2 == divexact(n, n1)
+    _, k = ppio(n1, n2)
+    Q = k * Q
+    nQ = n2 * _order_elem_via_fac(n2 * Q) # could use that n2 * Q is killed by n1/k/n2
+    S = divexact(n, nQ) * P
+    T = n2 * Q
+    x = disc_log(S, T, divexact(nQ, n2))
+    Q = Q - x * divexact(n1, nQ) * P
+    @assert _order_elem_via_fac(Q) == n2
+    gens = Q, P
+    strct = [n2, n1]
+  end
+  dlog = function(Q)
+    error("Not implemented yet")
+  end
+  return abelian_group(strct), dlog
+end
+
+################################################################################
+#
+#  Discrete logarithm
+#
+################################################################################
+
+# Just piggy back on the generic one
+
+function disc_log(P::EllCrvPt{T}, Q::EllCrvPt{T}) where {T <: FinFieldElem}
+  n = _order_elem_via_fac(P)
+  return disc_log(P, Q, n)
+end
+
+# n must be a multiple of the order of P
+function disc_log(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::IntegerUnion) where {T <: FinFieldElem}
+  return disc_log_ph(P, Q, n, 1, (x, y) -> x + y, x -> -x, (x, n) -> n*x)
+end
