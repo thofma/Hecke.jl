@@ -1,4 +1,4 @@
-export embedded_number_field
+export embedded_number_field, EmbeddedField, EmbeddedElem
 
 ################################################################################
 #
@@ -6,76 +6,76 @@ export embedded_number_field
 #
 ################################################################################
 
-mutable struct EmbeddedNumField{S, E} <: Field
+mutable struct EmbeddedField{S, E} <: Field
   field::S
   embedding::E
 end
 
-mutable struct EmbeddedNumFieldElem{T} <: FieldElem
+mutable struct EmbeddedElem{T} <: FieldElem
   parent
   element::T
 
-  function EmbeddedNumFieldElem{T}(parent, element::T) where {T}
+  function EmbeddedElem{T}(parent, element::T) where {T}
     @assert Hecke.parent(element) === number_field(parent)
     return new{T}(parent, element)
   end
 end
 
-function (E::EmbeddedNumField{S})(x::T) where {S, T <: NumFieldElem}
+function (E::EmbeddedField{S})(x::T) where {S, T <: NumFieldElem}
   if elem_type(S) === T
     @assert parent(x) === number_field(E)
-    return EmbeddedNumFieldElem{T}(E, x)
+    return EmbeddedElem{T}(E, x)
   else
     return E(number_field(E)(x))
   end
 end
 
-function (E::EmbeddedNumField)(x::EmbeddedNumFieldElem)
+function (E::EmbeddedField)(x::EmbeddedElem)
   @assert parent(x) === E
   return x
 end
 
-function (E::EmbeddedNumField)(x::RingElement)
+function (E::EmbeddedField)(x::RingElement)
   return E(number_field(E)(x))
 end
 
-function hash(x::EmbeddedNumFieldElem, h::UInt)
+function hash(x::EmbeddedElem, h::UInt)
   return xor(hash(data(x), h), 0x5cccaf5d1346dc53%UInt)
 end
 
-function Base.deepcopy_internal(x::EmbeddedNumFieldElem, id::IdDict)
+function Base.deepcopy_internal(x::EmbeddedElem, id::IdDict)
   return parent(x)(Base.deepcopy_internal(data(x), id))
 end
 
-number_field(K::EmbeddedNumField) = K.field
+number_field(K::EmbeddedField) = K.field
 
-embedding(K::EmbeddedNumField) = K.embedding
+embedding(K::EmbeddedField) = K.embedding
 
-parent(x::EmbeddedNumFieldElem{T}) where {T} = x.parent::parent_type(x)
+parent(x::EmbeddedElem{T}) where {T} = x.parent::parent_type(x)
 
-elem_type(::Type{EmbeddedNumField{S, E}}) where {S, E} = EmbeddedNumFieldElem{elem_type(S)}
+elem_type(::Type{EmbeddedField{S, E}}) where {S, E} = EmbeddedElem{elem_type(S)}
 
-elem_type(K::EmbeddedNumField{S, E}) where {S, E} = elem_type(EmbeddedNumField{S, E})
+elem_type(K::EmbeddedField{S, E}) where {S, E} = elem_type(EmbeddedField{S, E})
 
-parent_type(::Type{EmbeddedNumFieldElem{T}}) where {T} = EmbeddedNumField{parent_type(T), embedding_type(parent_type(T))}
+parent_type(::Type{EmbeddedElem{T}}) where {T} = EmbeddedField{parent_type(T), embedding_type(parent_type(T))}
 
-parent_type(x::EmbeddedNumFieldElem{T}) where {T} = parent_type(EmbeddedNumFieldElem{T})
+parent_type(x::EmbeddedElem{T}) where {T} = parent_type(EmbeddedElem{T})
 
-data(x::EmbeddedNumFieldElem) = x.element
+data(x::EmbeddedElem) = x.element
 
 function embedded_field(K::SimpleNumField, i::NumFieldEmb)
   @assert number_field(i) === K
-  E = EmbeddedNumField(K, i)
+  E = EmbeddedField(K, i)
   return E, E(gen(K))
 end
 
 function embedded_field(K::NonSimpleNumField, i::NumFieldEmb)
   @assert number_field(i) === K
-  E = EmbeddedNumField(K, i)
+  E = EmbeddedField(K, i)
   return E, E.(gens(K))
 end
 
-(E::EmbeddedNumField)() = zero(E)
+(E::EmbeddedField)() = zero(E)
 
 unary_ops = [:(-)]
 
@@ -83,7 +83,7 @@ binary_ops = [:(+), :(*), :(-), :(div), :(//)]
 
 for b in unary_ops
   @eval begin
-    function ($b)(x::EmbeddedNumFieldElem)
+    function ($b)(x::EmbeddedElem)
       return parent(x)($(b)(data(x)))
     end
   end
@@ -91,33 +91,33 @@ end
 
 for b in binary_ops
   @eval begin
-    function ($b)(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
+    function ($b)(x::EmbeddedElem, y::EmbeddedElem)
       return parent(x)($(b)(data(x), data(y)))
     end
   end
 end
 
-function divexact(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem; check::Bool = true)
+function divexact(x::EmbeddedElem, y::EmbeddedElem; check::Bool = true)
   return parent(x)(divexact(data(x), data(y), check = check))
 end
 
-function ==(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
+function ==(x::EmbeddedElem, y::EmbeddedElem)
   return ==(data(x), data(y))
 end
 
-iszero(x::EmbeddedNumFieldElem) = iszero(data(x))
+iszero(x::EmbeddedElem) = iszero(data(x))
 
-isone(x::EmbeddedNumFieldElem) = isone(data(x))
+isone(x::EmbeddedElem) = isone(data(x))
 
-is_unit(x::EmbeddedNumFieldElem) = is_unit(data(x))
+is_unit(x::EmbeddedElem) = is_unit(data(x))
 
-zero(E::EmbeddedNumField) = E(zero(number_field(E)))
+zero(E::EmbeddedField) = E(zero(number_field(E)))
 
-one(E::EmbeddedNumField) = E(one(number_field(E)))
+one(E::EmbeddedField) = E(one(number_field(E)))
 
 # Now the ordering
 
-function isless(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
+function isless(x::EmbeddedElem, y::EmbeddedElem)
   i = embedding(parent(x))
   # Need to exclude equality
   if x == y
@@ -137,13 +137,13 @@ function isless(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
   end
 end
 
-isless(x::EmbeddedNumFieldElem, y) = isless(x, parent(x)(y))
+isless(x::EmbeddedElem, y) = isless(x, parent(x)(y))
 
-isless(x, y::EmbeddedNumFieldElem) = isless(parent(y)(x), y)
+isless(x, y::EmbeddedElem) = isless(parent(y)(x), y)
 
 # Support comparing with floats
 
-function isless(x::EmbeddedNumFieldElem, y::AbstractFloat)
+function isless(x::EmbeddedElem, y::AbstractFloat)
   i = embedding(parent(x))
   # Need to exclude equality
   p = 32
@@ -174,7 +174,7 @@ function isless(x::EmbeddedNumFieldElem, y::AbstractFloat)
   end
 end
 
-function isless(y::AbstractFloat, x::EmbeddedNumFieldElem)
+function isless(y::AbstractFloat, x::EmbeddedElem)
   i = embedding(parent(x))
   # Need to exclude equality
   p = 32
@@ -211,24 +211,24 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, E::EmbeddedNumField)
+function Base.show(io::IO, E::EmbeddedField)
   print(io, "Embedded field\n$(number_field(E))\nat\n$(embedding(E))")
 end
 
 # I overload this to get the value at the embedding
 # (But I don't want this in the general printing routines, e.g., over polynomial
 # rings.)
-function Base.show(io::IO, ::MIME"text/plain", x::EmbeddedNumFieldElem)
+function Base.show(io::IO, ::MIME"text/plain", x::EmbeddedElem)
   print(io, "$(data(x))")
   a = Float64(real(embedding(parent(x))(data(x), 32)))
   print(io, @sprintf " (%.2f)" a)
 end
 
-function Base.show(io::IO, x::EmbeddedNumFieldElem)
+function Base.show(io::IO, x::EmbeddedElem)
   print(io, "$(data(x))")
 end
 
-function AbstractAlgebra.expressify(x::EmbeddedNumFieldElem; context = nothing)
+function AbstractAlgebra.expressify(x::EmbeddedElem; context = nothing)
   AbstractAlgebra.expressify(data(x), context = context)
 end
 
@@ -256,7 +256,7 @@ end
 #
 ################################################################################
 
-(E::EmbeddedNumField)(v::Vector) = E(number_field(E)(v))
+(E::EmbeddedField)(v::Vector) = E(number_field(E)(v))
 
 ################################################################################
 #
@@ -264,20 +264,20 @@ end
 #
 ################################################################################
 
-function AbstractAlgebra.promote_rule(::Type{EmbeddedNumFieldElem{T}}, ::Type{S}) where {T <: NumFieldElem, S <: RingElement}
+function AbstractAlgebra.promote_rule(::Type{EmbeddedElem{T}}, ::Type{S}) where {T <: NumFieldElem, S <: RingElement}
   if T === S
     return Union{}
   else
     if AbstractAlgebra.promote_rule(T, S) === T
-      return EmbeddedNumFieldElem{T}
+      return EmbeddedElem{T}
     else
       return Union{}
     end
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{EmbeddedNumFieldElem{T}}, ::Type{EmbeddedNumFieldElem{T}}) where {T <: NumFieldElem}
-  return EmbeddedNumFieldElem{T}
+function AbstractAlgebra.promote_rule(::Type{EmbeddedElem{T}}, ::Type{EmbeddedElem{T}}) where {T <: NumFieldElem}
+  return EmbeddedElem{T}
 end
 
 ################################################################################
@@ -286,10 +286,10 @@ end
 #
 ################################################################################
 
-function (QQ::QQField)(x::EmbeddedNumFieldElem)
+function (QQ::QQField)(x::EmbeddedElem)
   return QQ(data(x))
 end
 
-function is_rational(x::EmbeddedNumFieldElem)
+function is_rational(x::EmbeddedElem)
   return is_rational(data(x))
 end
