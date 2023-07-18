@@ -1633,7 +1633,8 @@ function lll(L::ZZLat; same_ambient::Bool = true)
   rank(L) == 0 && return L
   def = is_definite(L)
   G = gram_matrix(L)
-  M = change_base_ring(ZZ, denominator(G)*G)
+  d = denominator(G)
+  M = change_base_ring(ZZ, d*G)
   if def
     neg = M[1,1] < 0
     if neg
@@ -1657,7 +1658,7 @@ function lll(L::ZZLat; same_ambient::Bool = true)
     B2 = U*basis_matrix(L)
     return lattice(ambient_space(L), B2, check = false)::ZZLat
   else
-    return integer_lattice(gram = G2)
+    return integer_lattice(gram = (1//d)*change_base_ring(QQ, G2))
   end
 end
 
