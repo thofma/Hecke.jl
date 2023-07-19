@@ -1,4 +1,4 @@
-test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
+test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
 
 @testset "Embedded number field" begin
   Qx, x = QQ["x"]

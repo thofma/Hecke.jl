@@ -210,3 +210,7 @@
 
 # Deprecated during 0.17.*
 @alias real_field real_number_field
+
+# Depcrecated during 0.19.*
+@alias EmbeddedNumField EmbeddedField
+@alias EmbeddedNumFieldElem EmbeddedElem
