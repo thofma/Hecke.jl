@@ -364,6 +364,7 @@ Uses Baby-Step-Giant-Step, requires $a$ to be invertible.
 function disc_log_bs_gs(a::T, b::T, o::Integer) where {T <: RingElem}
   return disc_log_bs_gs(a, b, ZZRingElem(o))
 end
+
 function disc_log_bs_gs(a::T, b::T, o::ZZRingElem) where {T <: RingElem}
   b==1 && return ZZRingElem(0)
   b==a && return ZZRingElem(1)
