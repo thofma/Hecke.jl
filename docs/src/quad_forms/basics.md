@@ -2,8 +2,8 @@
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote
-    using Hecke
-  end
+  using Hecke
+end
 ```
 
 ## Creation of spaces

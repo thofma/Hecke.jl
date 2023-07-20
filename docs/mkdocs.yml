@@ -93,6 +93,11 @@ nav:
       - Genera for hermitian lattices: 'quad_forms/genusherm.md'
       - Genera for integer lattices: 'quad_forms/Zgenera.md'
       - Discriminant groups: 'quad_forms/discriminant_group.md'
+    - Elliptic curves:
+      - Introduction: 'elliptic_curves/intro.md'
+      - Basics: 'elliptic_curves/basics.md'
+      - Finite fields: 'elliptic_curves/finite_fields.md'
+      - Number fields: 'elliptic_curves/number_fields.md'
     - Abelian groups:
       - Introduction:     abelian/introduction.md
       - Elements:     abelian/elements.md

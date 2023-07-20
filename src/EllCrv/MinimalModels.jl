@@ -111,7 +111,7 @@ function laska_kraus_connell(E::EllCrv{QQFieldElem})
   na6 = divexact(b6 - na3, 4)
 
 
-  return EllipticCurve([na1, na2, na3, na4, na6])::EllCrv{QQFieldElem}
+  return elliptic_curve([na1, na2, na3, na4, na6])::EllCrv{QQFieldElem}
 end
 
 ################################################################################
@@ -315,7 +315,7 @@ function _semi_global_minimal_model(E::EllCrv{T}) where T <:nf_elem
 end
 
 function c4c6_model(c4, c6)
-  return EllipticCurve([-c4//48, -c6//864])
+  return elliptic_curve([-c4//48, -c6//864])
 end
 
 function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
@@ -326,7 +326,7 @@ function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
   Plist3 = prime_ideals_over(OK, 3)
   dat = Tuple{Bool, NfOrdElem}[check_kraus_conditions_at_3(c4, c6, P) for P in Plist3]
   if !all(Bool[d[1] for d in dat])
-    return false, EllipticCurve(OK.nf, [0, 0, 0, 0, 0], false)
+    return false, elliptic_curve(OK.nf, [0, 0, 0, 0, 0], false)
   end
 
   #We are fine at all primes dividing 3 now. We need to combine the b2
@@ -344,7 +344,7 @@ function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
   Plist2 = prime_ideals_over(OK, 2)
   dat = [check_kraus_conditions_at_2(c4, c6, P) for P in Plist2]
   if !all(Bool[d[1] for d in dat])
-    return false, EllipticCurve(OK.nf, [0, 0, 0, 0, 0], false)
+    return false, elliptic_curve(OK.nf, [0, 0, 0, 0, 0], false)
   end
 
   #We are fine at all primes dividing 2 now. We need to combine the a1

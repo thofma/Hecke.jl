@@ -380,7 +380,7 @@ function points_at_infinity(C::HypellCrv{T}) where T
   return infi
 end
 
-function points_with_x(C::HypellCrv{T}, x) where T<: FinFieldElem
+function points_with_x_coordinate(C::HypellCrv{T}, x) where T<: FinFieldElem
   R = base_field(C)
   Ry, y = polynomial_ring(R,"y")
   equ = homogeneous_equation(C)
@@ -393,7 +393,7 @@ function points_with_x(C::HypellCrv{T}, x) where T<: FinFieldElem
   return pts
 end
 
-function points_with_x(C::HypellCrv{T}, x) where T
+function points_with_x_coordinate(C::HypellCrv{T}, x) where T
   R = base_field(C)
   Ry, y = polynomial_ring(R,"y")
   equ = homogeneous_equation(C)
