@@ -1116,22 +1116,16 @@ end
     zeta = weil_pairing(P, Q, Int(m))
     d = order(AtoK\(zeta))
     if m*d == N
-      # P and Q are generators of E
-      # I want to message P and Q to find a generator
-      # with order lcm(s, t) = m
-      cc = one(ZZ)
-      dd = one(ZZ)
-      for (p,_) in f
-        mi = valuation(s, p)
-        ni = valuation(t, p)
-        if mi < ni
-          cc *= p^mi
-        else
-          dd *= p^ni
-        end
+      if s != m && t != m
+        continue
       end
-      P = cc * P + dd * Q
+
+      if t == m
+        P, Q = Q, P
+      end
+
       @assert Hecke._order_elem_via_fac(P) == m
+
       if is_one(m)
         return [m], typeof(P)[]
       elseif is_one(d)
