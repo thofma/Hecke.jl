@@ -165,9 +165,9 @@ function spinor_genera_in_genus(L, mod_out)
       if i > ncols(Gr)
         error("Lattice is degenerated")
       end
-      @assert !iszero(Gr[1, i])
-      spinornorm = 2 * Gr[1, i]
     end
+    @assert !iszero(Gr[1, i])
+    spinornorm = 2 * Gr[1, i]
   end
 
   # 2) At a place p where spinornorm does not generate norm(L_p)
