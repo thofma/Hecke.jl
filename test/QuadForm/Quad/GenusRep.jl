@@ -111,6 +111,10 @@
   L = integer_lattice(B, gram = G);
   @test length(genus_representatives(L))==1
 
+  U = hyperbolic_plane_lattice()
+  L = direct_sum(U, U)[1]
+  G = genus(L)
+  @test length(representatives(G)) == 1
 end
 
 @testset "Genus Representatives Number Field" begin
