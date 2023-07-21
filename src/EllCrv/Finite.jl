@@ -68,7 +68,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
       Ry, y = polynomial_ring(R,"y")
       f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
       ys = roots(f)
-      if length(ys)!=0
+      if length(ys) != 0
         t = rand(rng, ys)
         P = E([x,t])
         return P
@@ -123,8 +123,6 @@ function order_via_exhaustive_search(E::EllCrv{T}) where T<:FinFieldElem
   return order
 end
 
-
-
 ################################################################################
 #
 # Order via Legendre symbol
@@ -178,13 +176,22 @@ end
 ################################################################################
 
 @doc raw"""
-    hasse_interval(E::EllCrv) -> Vector{ZZRingElem}
+    hasse_interval(E::EllCrv) -> (ZZRingElem, ZZRingElem)
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, return an array
-`[l, b]` > of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
+`[l, b]` of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
 Hasse's theorem.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(GF(3), [1, 2]);
+
+julia> hasse_interval(E)
+(0, 8)
+```
 """
-function hasse_interval(E::EllCrv{T}) where T<:FinFieldElem
+function hasse_interval(E::EllCrv{<: FinFieldElem})
   R = base_field(E)
   characteristic(R) == 0 && error("Base field must be finite")
   q = order(R)
@@ -193,7 +200,7 @@ function hasse_interval(E::EllCrv{T}) where T<:FinFieldElem
   l = q + 1 - 2*(s + 1)
   b = q + 1 + 2*(s + 1)
 
-  return [l, b]
+  return l, b
 end
 
 # section 4.3.4
@@ -289,19 +296,42 @@ function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
 end
 
 @doc raw"""
-    order(P::EllCrvPt) -> ZZRingElem
+    order(P::EllCrvPt, [fac::Fac{ZZRingElem}]) -> ZZRingElem
 
-Given a point on an elliptic curve over a finite field, return the order
+Given a point $P$ on an elliptic curve $E$ over a finite field, return the order
 of this point.
+
+Optionally, one can supply the factorization of a multiple of the point order,
+for example the order of $E$.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(GF(101), [1, 2]);
+
+julia> P = E([17, 65]);
+
+julia> order(P)
+100
+
+julia> fac = factor(order(E))
+1 * 5^2 * 2^2
+
+julia> order(P, fac)
+100
+```
 """
 function order(P::EllCrvPt{T}) where T<:FinFieldElem
   return elem_order_bsgs(P)
 end
 
-function _order_elem_via_fac(P::EllCrvPt{<:FinFieldElem})
+function order(P::EllCrvPt{T}, fac::Fac{ZZRingElem}) where T<:FinFieldElem
+  return _order_elem_via_fac(P, fac)
+end
+
+function _order_elem_via_fac(P::EllCrvPt{<:FinFieldElem}, fn = _order_factored(parent(P)))
   E = parent(P)
   n = order(E)
-  fn = _order_factored(E)
   o = one(ZZ)
   for (p, e) in fn
     q = p^e
@@ -318,7 +348,6 @@ function _order_elem_via_fac(P::EllCrvPt{<:FinFieldElem})
   end
   return o
 end
-
 
 ################################################################################
 #
@@ -411,7 +440,7 @@ function order_via_bsgs(E::EllCrv{T}) where T<:FinFieldElem
       end
     end
     _, _, _, a4, a6 = a_invars(E)
-    Eprime = EllipticCurve([a4*d^2, a6*d^3]) # quadratic twist
+    Eprime = elliptic_curve([a4*d^2, a6*d^3]) # quadratic twist
     bb = order_via_bsgs(Eprime)[1]
     output = [2*p + 2 - bb]
   end
@@ -424,7 +453,6 @@ end
 #  Schoof's algorithm
 #
 ################################################################################
-
 
 @doc raw"""
     order_via_schoof(E::EllCrv) -> ZZRingElem
@@ -793,10 +821,19 @@ end
 ################################################################################
 
 @doc raw"""
-    order(E::EllCrv{NemoResidue}) -> Nemo.ZZRingElem
+    order(E::EllCrv{<: FinFieldElem}) -> ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
 $\#E(\mathbf F)$.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(GF(101), [1, 2]);
+
+julia> order(E)
+100
+```
 """
 @attr fmpz function order(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
@@ -806,7 +843,7 @@ $\#E(\mathbf F)$.
   p == 0 && error("Characteristic must be nonzero")
 
   # char 2 or 3
-  if p == 2 || p==3
+  if p == 2 || p == 3
     return ZZ(order_via_exhaustive_search(E))
   end
 
@@ -828,19 +865,36 @@ end
 @doc raw"""
     trace_of_frobenius(E::EllCrv{FinFieldElem}) -> Int
 
-Return the trace of the Frobenius endomorphism on the elliptic curve E
-over $\mathbf{F}_q$. This is equal to q + 1 - n where n is the
-number of points on E over $\mathbf{F}_q$.
+Return the trace of the Frobenius endomorphism on the elliptic curve $E$
+over $\mathbf{F}_q$. This is equal to $q + 1 - n$ where n is the
+number of points on $E$ over $\mathbf{F}_q$.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(GF(101), [1, 2]);
+
+julia> trace_of_frobenius(E) == 101 + 1 - order(E)
+true
+```
 """
 function trace_of_frobenius(E::EllCrv{T}) where T<:FinFieldElem
   return order(base_field(E))+1 - order(E)
 end
 
 @doc raw"""
-    trace_of_frobenius(E::EllCrv{FinFieldElem}, Int) -> Int
+    trace_of_frobenius(E::EllCrv{<: FinFieldElem}, r::Int) -> ZZRingElem
 
 Return the trace of the $r$-th power of the Frobenius endomorphism on
-the elliptic curve E."""
+the elliptic curve $E$.
+
+```jldoctest
+julia> E = elliptic_curve(GF(101, 2), [1, 2]);
+
+julia> trace_of_frobenius(E, 2)
+18802
+```
+"""
 function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
   K = base_field(E)
   q = order(K)
@@ -1089,11 +1143,54 @@ end
   end
 end
 
-function gens(E::EllCrv{<:FinFieldElem})
+@doc raw"""
+    gens(E::EllCrv{<:FinFieldElem}) -> Vector{EllCrvPt}
+
+Return a list of generators of the group of rational points on $E$.
+
+# Examples
+
+```jldoctest; filter = r"Point.*" 
+julia> E = elliptic_curve(GF(101, 2), [1, 2]);
+
+julia> gens(E)
+2-element Vector{EllCrvPt{fqPolyRepFieldElem}}:
+ Point  (93*o + 10 : 22*o + 69 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+ Point  (89*o + 62 : 14*o + 26 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+
+julia> E = elliptic_curve(GF(101), [1, 2]);
+
+julia> gens(E)
+1-element Vector{EllCrvPt{fpFieldElem}}:
+ Point  (50 : 69 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+```
+"""
+function gens(E::EllCrv{T}) where {T <: FinFieldElem}
   return _grp_struct_with_gens(E)[2]
 end
 
-function abelian_group(E::EllCrv{<:FinFieldElem})
+@doc raw"""
+    abelian_group(E::EllCrv{<:FinFieldElem}) -> GrpAbFinGen, Map
+
+Return an abelian group $A$ isomorphic to the group of rational points of $E$
+and a map $E \to A$.
+
+!!! warning
+    The map is not implemented yet.
+
+```jldoctest
+julia> E = elliptic_curve(GF(101, 2), [1, 2]);
+
+julia> A, _ = abelian_group(E);
+
+julia> A
+GrpAb: Z/2 x Z/5200
+```
+"""
+function abelian_group(E::EllCrv{U}) where {U <: FinFieldElem}
   _invdiv, _gens = _grp_struct_with_gens(E)
   if length(_gens) == 0
     strct = fmpz[]
@@ -1135,12 +1232,38 @@ end
 
 # Just piggy back on the generic one
 
-function disc_log(P::EllCrvPt{T}, Q::EllCrvPt{T}) where {T <: FinFieldElem}
+@doc raw"""
+    disc_log(P::EllCrvPt, Q::EllCrvPt, [n::IntegerUnion]) -> ZZRingElem
+
+Return the discrete logarithm $m$ of $Q$ with respect to the base $P$, that is,
+$mP = Q$.
+
+If a multiple $n$ of the order of $P$ is known, this can be supplied as an optional
+argument.
+
+```jldoctest
+julia> E = elliptic_curve(GF(101), [1, 2]);
+
+julia> P = E([6, 74])
+Point  (6 : 74 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+
+julia> Q = E([85, 43])
+Point  (85 : 43 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+
+julia> disc_log(P, Q)
+13
+```
+"""
+function disc_log(P::EllCrvPt, Q::EllCrvPt)
+  @req parent(P) === parent(Q) "Points must lie on the same elliptic curve"
   n = _order_elem_via_fac(P)
   return disc_log(P, Q, n)
 end
 
 # n must be a multiple of the order of P
 function disc_log(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::IntegerUnion) where {T <: FinFieldElem}
+  @req parent(P) === parent(Q) "Points must lie on the same elliptic curve"
   return disc_log_ph(P, Q, n, 1, (x, y) -> x + y, x -> -x, (x, n) -> n*x)
 end

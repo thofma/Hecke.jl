@@ -756,7 +756,7 @@ function Hecke.order_via_exhaustive_search(coeff::Array{T}) where T<:FinFieldEle
   F = parent(coeff[1])
   order = FlintZZ(0)
   for x in F
-    ys = points_with_x(coeff, x)
+    ys = points_with_x_coordinate(coeff, x)
     order += length(ys)
   end
   return order
@@ -773,7 +773,7 @@ function points_with_x!(res, x::QQFieldElem, f)
   end
 end
 
-function points_with_x(coeff::Array{T}, x::T) where T
+function points_with_x_coordinate(coeff::Array{T}, x::T) where T
   n = length(coeff) - 1
   test, y = is_square_with_sqrt(sum([coeff[i + 1]*x^i for i in (0:n)]))
   pts = []

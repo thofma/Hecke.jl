@@ -82,7 +82,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
   Anew = -divexact(c4, 48)
   Bnew = -divexact(c6, 864)
 
-  EE = EllipticCurve([Anew, Bnew])::EllCrv{T}
+  EE = elliptic_curve([Anew, Bnew])::EllCrv{T}
 
   # we are hitting https://github.com/JuliaLang/julia/issues/15276
 
@@ -230,7 +230,7 @@ function integral_model_old(E::EllCrv{QQFieldElem})
   mue = lcm(denominator(A), denominator(B))
   Anew = mue^4 * A
   Bnew = mue^6 * B
-  E_int = EllipticCurve([Anew, Bnew])
+  E_int = elliptic_curve([Anew, Bnew])
 
   trafo_int = function(P) # transformes a point on E into a point on E_int
     if P.is_infinite

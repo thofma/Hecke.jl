@@ -47,7 +47,7 @@ export tates_algorithm_global, tates_algorithm_local, tidy_model,
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc raw"""
     tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl)
-    -> EllipticCurve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
+    -> elliptic_curve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
@@ -133,7 +133,7 @@ function _tates_algorithm(E, P)
   # Now the model is P-integral
 
   while true
-    E = EllipticCurve(K, [a1, a2, a3, a4, a6])
+    E = elliptic_curve(K, [a1, a2, a3, a4, a6])
     b2, b4, b6, b8 = b_invars(E)
     c4, c6 = c_invars(E)
     delta = discriminant(E)
@@ -400,7 +400,7 @@ end
 
 @doc raw"""
     tates_algorithm_local(E::EllCrv{QQFieldElem}, p:: Int)
-    -> EllipticCurve{QQFieldElem}, String, ZZRingElem, ZZRingElem, Bool
+    -> elliptic_curve{QQFieldElem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a
 minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
@@ -1097,7 +1097,7 @@ function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
 
   a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E)))
 
-  return EllipticCurve(K, [a1, a2, a3, a4, a6])
+  return elliptic_curve(K, [a1, a2, a3, a4, a6])
 
 end
 

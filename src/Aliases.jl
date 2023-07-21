@@ -214,3 +214,5 @@
 # Depcrecated during 0.19.*
 @alias EmbeddedNumField EmbeddedField
 @alias EmbeddedNumFieldElem EmbeddedElem
+@alias EllipticCurve elliptic_curve
+@alias points_with_x points_with_x_coordinate

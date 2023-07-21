@@ -36,10 +36,10 @@
 
 export EllCrv, EllCrvPt
 
-export EllipticCurve, infinity, base_field, base_change, j_invariant,
+export elliptic_curve, infinity, base_field, base_change, j_invariant,
        elliptic_curve_from_j_invariant, is_finite, is_infinite, is_on_curve, +, *,
        //, a_invars, b_invars, c_invars, equation, hyperelliptic_polynomials,
-       points_with_x, division_points
+       points_with_x_coordinate, division_points
 
 ################################################################################
 #
@@ -191,54 +191,76 @@ end
 #
 ################################################################################
 
-function EllipticCurve(x::Vector{T}; check::Bool = true) where T <: RingElem
+@doc raw"""
+    elliptic_curve([K::Field], x::Vector; check::Bool = true) -> EllCrv
+
+Construct an elliptic curve with Weierstrass equation specified by
+the coefficients in `x`, which must have either length 2 or 5.
+
+Per default, it is checked whether the discriminant is non-zero. This can be
+disabled by setting `check = false`.
+
+# Examples
+
+```jldoctest
+julia> elliptic_curve(QQ, [1, 2, 3, 4, 5])
+Elliptic curve with equation
+y^2 + x*y + 3*y = x^3 + 2*x^2 + 4*x + 5
+
+julia> elliptic_curve(GF(3), [1, 1])
+Elliptic curve with equation
+y^2 = x^3 + x + 1
+```
+"""
+elliptic_curve
+
+function elliptic_curve(x::Vector{T}; check::Bool = true) where T <: RingElem
   E = EllCrv{T}(x, check)
   return E
 end
 
-function EllipticCurve(K::Field, x::Vector{T}; check::Bool = true) where T
+function elliptic_curve(K::Field, x::Vector{T}; check::Bool = true) where T
   if T === elem_type(K)
-    return EllipticCurve(x, check = check)
+    return elliptic_curve(x, check = check)
   else
-    return EllipticCurve(elem_type(K)[K(z) for z in x], check = check)
+    return elliptic_curve(elem_type(K)[K(z) for z in x], check = check)
   end
 end
 
-#  Implicit promotion in characteristic 0
-function EllipticCurve(x::Vector{<: IntegerUnion}; check::Bool = true)
-  return EllipticCurve(QQFieldElem[QQ(z) for z in x], check = check)
+# Implicit promotion in characteristic 0
+function elliptic_curve(x::Vector{<: IntegerUnion}; check::Bool = true)
+  return elliptic_curve(QQFieldElem[QQ(z) for z in x], check = check)
 end
 
-function EllipticCurve(x::Vector{Rational{T}}; check::Bool = true) where {T <: IntegerUnion}
-  return EllipticCurve(QQFieldElem[QQ(z) for z in x], check = check)
-end
-
-@doc raw"""
-    EllipticCurve(f::PolyElem; check::Bool = true) -> EllCrv
-
-Return the elliptic curve $y^2 = f(x)$. The polynomial $f$ must be monic of
-degree 3.
-"""
-function EllipticCurve(f::PolyElem{<: FieldElem}; check::Bool = true)
-  @req ismonic(f) "Polynomial must be monic"
-  @req degree(f) == 3 "Polynomial must be of degree 3"
-  R = base_ring(f)
-  a1 = zero(R)
-  a3 = zero(R)
-  coeffs = coefficients(f)
-  a2 = coeffs[2]
-  a4 = coeffs[1]
-  a6 = coeffs[0]
-  return EllipticCurve([a1, a2, a3, a4, a6], check = check)
+function elliptic_curve(x::Vector{Rational{T}}; check::Bool = true) where {T <: IntegerUnion}
+  return elliptic_curve(QQFieldElem[QQ(z) for z in x], check = check)
 end
 
 @doc raw"""
-    EllipticCurve(f::PolyElem; h::PolyElem, check::Bool = true) -> EllCrv
+    elliptic_curve(f::PolyElem, [h::PolyElem,] check::Bool = true) -> EllCrv
 
-Return the elliptic curve $y^2 + h(x)y = f(x)$. The polynomial $f$ must be monic of
-degree 3 and $h$ of degree at most 1.
+Return the elliptic curve $y^2 + h(x)y = f(x)$ respectively $y^2 + y = f(x)$,
+if no $h$ is specified. The polynomial $f$ must be monic of degree 3 and $h$ of
+degree at most 1.
+
+Per default, it is checked whether the discriminant is non-zero. This can be
+disabled by setting `check = false`.
+
+# Examples
+
+```jldoctest
+julia> Qx, x = QQ["x"];
+
+julia> elliptic_curve(x^3 + x + 1)
+Elliptic curve with equation
+y^2 = x^3 + x + 1
+
+julia> elliptic_curve(x^3 + x + 1, x)
+Elliptic curve with equation
+y^2 + x*y = x^3 + x + 1
+```
 """
-function EllipticCurve(f::PolyElem{T}, h::PolyElem{T}, check::Bool = true) where T
+function elliptic_curve(f::PolyElem{T}, h::PolyElem{T} = zero(parent(f)); check::Bool = true) where T
   @req ismonic(f) "First polynomial must be monic"
   @req degree(f) == 3 "First polynomial must be of degree 3"
   @req degree(h) <= 1 "Second polynomial must be of degree at most 1"
@@ -250,31 +272,42 @@ function EllipticCurve(f::PolyElem{T}, h::PolyElem{T}, check::Bool = true) where
   a2 = coeffsf[2]
   a4 = coeffsf[1]
   a6 = coeffsf[0]
-  return EllipticCurve([a1, a2, a3, a4, a6], check = check)
+  return elliptic_curve([a1, a2, a3, a4, a6], check = check)
 end
 
-function EllipticCurve(f::PolyElem{T}, g, check::Bool = true) where T
-  return EllipticCurve(f, parent(f)(g))
+function elliptic_curve(f::PolyElem{T}, g; check::Bool = true) where T
+  return elliptic_curve(f, parent(f)(g))
 end
 
 @doc raw"""
     elliptic_curve_from_j_invariant(j::FieldElem) -> EllCrv
 
-Return an elliptic curve with the given j-invariant.
+Return an elliptic curve with the given $j$-invariant.
+
+# Examples
+
+```jldoctest
+julia> K = GF(3)
+Finite field of characteristic 3
+
+julia> elliptic_curve_from_j_invariant(K(2))
+Elliptic curve with equation
+y^2 + x*y = x^3 + 1
+```
 """
 function elliptic_curve_from_j_invariant(j::FieldElem)
   K = parent(j)
   char = characteristic(K)
 
   if j == zero(K) && char != 3
-    return EllipticCurve(K, [0, 0, 1, 0, 0])
+    return elliptic_curve(K, [0, 0, 1, 0, 0])
   end
 
   if j == K(1728)
-    return EllipticCurve(K, [0, 0, 0, 1, 0])
+    return elliptic_curve(K, [0, 0, 0, 1, 0])
   end
 
-  return EllipticCurve(K, [1, 0, 0, divexact(-36, j - 1728), divexact(-1,j-1728)])
+  return elliptic_curve(K, [1, 0, 0, divexact(-36, j - 1728), divexact(-1,j-1728)])
 end
 
 function elliptic_curve_from_j_invariant(j::IntegerUnion)
@@ -305,17 +338,22 @@ end
 @doc raw"""
     base_change(K::Field, E::EllCrv) -> EllCrv
 
-Return the base change of the elliptic curve $E$ over K if coercion is
+Return the base change of the elliptic curve $E$ over $K$ if coercion is
 possible.
 """
 function base_change(K::Field, E::EllCrv)
   a1, a2, a3, a4, a6 = a_invars(E)
-  return EllipticCurve(K, map(K, [a1, a2, a3, a4, a6])::Vector{elem_type(K)})
+  return elliptic_curve(K, map(K, [a1, a2, a3, a4, a6])::Vector{elem_type(K)})
 end
 
+@doc raw"""
+    base_change(f, E::EllCrv) -> EllCrv
+
+Return the base change of the elliptic curve $E$ using the map $f$.
+"""
 function base_change(f, E::EllCrv)
   a1, a2, a3, a4, a6 = a_invars(E)
-  return EllipticCurve(map(f, [a1, a2, a3, a4, a6]))
+  return elliptic_curve(map(f, [a1, a2, a3, a4, a6]))
 end
 
 ################################################################################
@@ -342,8 +380,8 @@ end
 @doc raw"""
     a_invars(E::EllCrv{T}) -> Tuple{T, T, T, T, T}
 
-Return the Weierstrass coefficients of E as a tuple (a1, a2, a3, a4, a6)
-such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6.
+Return the Weierstrass coefficients of $E$ as a tuple $(a_1, a_2, a_3, a_4, a_6)$
+such that $E$ is given by $y^2 + a_1xy + a_3y = x^3 + a_2x^2 + a_4x + a_6$.
 """
 function a_invars(E::EllCrv)
   return E.a_invars
@@ -352,15 +390,15 @@ end
 @doc raw"""
     coefficients(E::EllCrv{T}) -> Tuple{T, T, T, T, T}
 
-Return the Weierstrass coefficients of E as a tuple (a1, a2, a3, a4, a6)
-such that E is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6.
+Return the Weierstrass coefficients of $E$ as a tuple (a1, a2, a3, a4, a6)
+such that $E$ is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6.
 """
 coefficients(E::EllCrv) = a_invars(E)
 
 @doc raw"""
     b_invars(E::EllCrv{T}) -> Tuple{T, T, T, T}
 
-Return the b-invariants of E as a tuple (b2, b4, b6, b8).
+Return the b-invariants of $E$ as a tuple $(b_2, b_4, b_6, b_8)$.
 """
 function b_invars(E::EllCrv)
   if isdefined(E, :b_invars)
@@ -378,9 +416,9 @@ function b_invars(E::EllCrv)
 end
 
 @doc raw"""
-    c_invars(E::EllCrv{T}) -> Tuple{T, T, T, T}
+    c_invars(E::EllCrv{T}) -> Tuple{T, T}
 
-Return the c-invariants of E as a tuple (c4, c6).
+Return the c-invariants of $E as a tuple $(c_4, c_6)$.
 """
 function c_invars(E::EllCrv)
   if isdefined(E, :c_invars)
@@ -402,9 +440,9 @@ end
 ################################################################################
 
 @doc raw"""
-    discriminant(E::EllCrv{T}) -> T
+    discriminant(E::EllCrv) -> FieldElem
 
-Compute the discriminant of $E$.
+Return the discriminant of $E$.
 """
 function discriminant(E::EllCrv{T}) where T
   if isdefined(E, :disc)
@@ -431,7 +469,7 @@ end
 
 # p. 46 Washington, p. 72 Cohen
 @doc raw"""
-    j_invariant(E::EllCrv{T}) -> T
+    j_invariant(E::EllCrv) -> FieldElem
 
 Compute the j-invariant of $E$.
 """
@@ -441,22 +479,18 @@ function j_invariant(E::EllCrv{T}) where T
   end
 
   if E.short == true
-
     R = base_field(E)
     a1, a2, a3, a4, a6 = a_invars(E)
     j = divexact(-1728*(4*a4)^3,discriminant(E))
     E.j = j
     return j::T
   else
-
     c4, c6 = c_invars(E)
-
     j = divexact(c4^3, discriminant(E))
     E.j = j
     return j::T
   end
 end
-
 
 ################################################################################
 #
@@ -465,33 +499,61 @@ end
 ################################################################################
 
 @doc raw"""
-    equation(E::EllCrv) -> Poly
+    equation([R::MPolyRing,] E::EllCrv) -> MPolyElem
 
-Return the equation defining the elliptic curve E.
+Return the equation defining the elliptic curve $E$ as a bivariate polynomial.
+If the polynomial ring $R$ is specified, it must by a bivariate polynomial
+ring.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2, 3, 4, 5]);
+
+julia> equation(E)
+-x^3 - 2*x^2 + x*y - 4*x + y^2 + 3*y - 5
+```
 """
 function equation(E::EllCrv)
   K = base_field(E)
   Kxy,(x,y) = polynomial_ring(K, ["x","y"])
+  return equation(Kxy, E)
+end
 
+function equation(Kxy::MPolyRing, E::EllCrv)
+  K = base_field(E)
+  @req base_ring(Kxy) === K "Base field of elliptic curve and polynomial ring must coincide"
+  x, y = gens(Kxy)
   a1, a2, a3, a4, a6 = a_invars(E)
-
   return y^2 + a1*x*y + a3*y - (x^3 + a2*x^2 + a4*x + a6)
 end
 
 @doc raw"""
-    hyperelliptic_polynomials(E::EllCrv) -> Poly, Poly
+    hyperelliptic_polynomials([R::PolyRing,] E::EllCrv) -> PolyElem, PolyElem
 
-Return f, h such that E is given by y^2 + h*y = f
+Return univariate polynomials $f, h$ such that $E$ is given by $y^2 + h*y = f$.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2, 3, 4, 5]);
+
+julia> hyperelliptic_polynomials(E)
+(x^3 + 2*x^2 + 4*x + 5, x + 3)
+```
 """
 function hyperelliptic_polynomials(E::EllCrv)
-
   K = base_field(E)
   Kx, x = polynomial_ring(K,"x")
-  a1, a2, a3, a4, a6 = a_invars(E)
-
-  return x^3 + a2*x^2 + a4*x + a6, a1*x + a3
+  return hyperelliptic_polynomials(Kx, E)
 end
 
+function hyperelliptic_polynomials(Kx::PolyRing, E::EllCrv)
+  x = gen(Kx)
+  @req base_ring(Kx) === base_field(E) "Base field of elliptic curve and polynomial ring must coincide"
+  a1, a2, a3, a4, a6 = a_invars(E)
+  return x^3 + a2*x^2 + a4*x + a6, a1*x + a3
+end
 
 ################################################################################
 #
@@ -499,6 +561,30 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    (E::EllCrv)(coords::Vector; check::Bool = true)
+
+Return the point $P$ of $E$ with coordinates specified by `coords`, which can
+be either affine coordinates (`length(coords) == 2`) or projective coordinates
+(`length(coords) == 3`).
+
+Per default, it is checked whether the point lies on $E$. This can be disabled
+by setting `check = false`.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2]);
+
+julia> E([1, -2])
+Point  (1 : -2 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+
+julia> E([2, -4, 2])
+Point  (1 : -2 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+```
+"""
 function (E::EllCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
   if !(2 <= length(coords) <= 3) 
     error("Points need to be given in either affine coordinates (x, y) or projective coordinates (x, y, z)")
@@ -529,6 +615,22 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    parent(P::EllCrvPt) -> EllCrv
+
+Return the elliptic curve on which $P$ lies.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2]);
+
+julia> P = E([1, -2]);
+
+julia> E == parent(P)
+true
+```
+"""
 function parent(P::EllCrvPt)
   return P.parent
 end
@@ -542,22 +644,21 @@ end
 @doc raw"""
     infinity(E::EllCrv) -> EllCrvPt
 
-Return the point at infinity.
+Return the point at infinity with project coordinates $[0 : 1 : 0]$.
 """
 function infinity(E::EllCrv{T}) where T
   infi = EllCrvPt{T}(E)
   return infi
 end
 
-
-function points_with_x(E::EllCrv{T}, x) where T
+function points_with_x_coordinate(E::EllCrv{T}, x) where T
   R = base_field(E)
   x = R(x)
   a1, a2, a3, a4, a6 = a_invars(E)
   Ry, y = polynomial_ring(R,"y")
   f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
   ys = roots(f)
-  pts = []
+  pts = elem_type(E)[]
    for yi in ys
      push!(pts, E([x, yi]))
    end
@@ -591,12 +692,24 @@ end
 ################################################################################
 
 @doc raw"""
-    is_on_curve(E::EllCrv{T}, coords::Vector{T}) -> Bool
+    is_on_curve(E::EllCrv, coords::Vector) -> Bool
 
 Return true if `coords` defines a point on $E$ and false otherwise. The array
 `coords` must have length 2.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2]);
+
+julia> is_on_curve(E, [1, -2])
+true
+
+julia> is_on_curve(E, [1, -1])
+false
+```
 """
-function is_on_curve(E::EllCrv{T}, coords::Vector{T}) where T
+function is_on_curve(E::EllCrv, coords::Vector)
   length(coords) != 2 && error("Array must be of length 2")
   a1, a2, a3, a4, a6 = a_invars(E)
   x = coords[1]
@@ -620,7 +733,7 @@ end
 
 ################################################################################
 #
-#  ElemType
+#  Element type
 #
 ################################################################################
 
@@ -692,11 +805,7 @@ function show(io::IO, E::EllCrv)
 end
 
 function show(io::IO, P::EllCrvPt)
-    #if P.is_infinite
-    #    print(io, "Point at infinity of $(P.parent)")
-    #else
-        print(io, "Point  ($(P[1]) : $(P[2]) : $(P[3]))  of $(P.parent)")
-    #end
+  print(io, "Point  ($(P[1]) : $(P[2]) : $(P[3]))  of $(P.parent)")
 end
 
 
@@ -711,6 +820,18 @@ end
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
 
 Add two points on an elliptic curve.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2]);
+
+julia> P = E([1, -2]);
+
+julia> P + P
+Point  (-1 : 0 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+```
 """
 function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   parent(P) != parent(Q) && error("Points must live on the same curve")
@@ -725,7 +846,7 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   E = P.parent
 
   # Distinguish between long and short form
-  if E.short == true
+  if E.short
     if P[1] != Q[1]
         m = divexact(Q[2] - P[2], Q[1] - P[1])
         x = m^2 - P[1] - Q[1]
@@ -770,15 +891,13 @@ function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   return Erg
 end
 
-@doc raw"""
-    -(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
-
-Subtract two points on an elliptic curve.
-"""
+#@doc raw"""
+#    -(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
+#
+#Subtract two points on an elliptic curve.
+#"""
 function -(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
-
-  return P+(-Q)
-
+  return P + (-Q)
 end
 
 ################################################################################
@@ -787,11 +906,11 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    -(P::EllCrvPt) -> EllCrvPt
-
-Compute the inverse of the point $P$ on an elliptic curve.
-"""
+#@doc raw"""
+#    -(P::EllCrvPt) -> EllCrvPt
+#
+#Compute the inverse of the point $P$ on an elliptic curve.
+#"""
 function -(P::EllCrvPt)
   E = P.parent
 
@@ -809,12 +928,12 @@ function -(P::EllCrvPt)
   return Q
 end
 
-@doc raw"""
-    ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
-
-Return true if $P$ and $Q$ are equal and live over the same elliptic curve
-$E$.
-"""
+#@doc raw"""
+#    ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
+#
+#Return true if $P$ and $Q$ are equal and live over the same elliptic curve
+#$E$.
+#"""
 function ==(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   # both are infinite
   if P.is_infinite && Q.is_infinite
@@ -846,7 +965,7 @@ end
 
 Compute the point $nP$.
 """
-function *(n ::S, P::EllCrvPt) where S<:Union{Integer, ZZRingElem}
+function *(n::S, P::EllCrvPt) where S<:Union{Integer, ZZRingElem}
   B = infinity(P.parent)
   C = P
 
@@ -873,7 +992,6 @@ function *(n ::S, P::EllCrvPt) where S<:Union{Integer, ZZRingElem}
   return B
 end
 
-
 ################################################################################
 #
 #  Multiplication (as maps) and division by m
@@ -881,8 +999,7 @@ end
 ################################################################################
 
 #Returns the numerator of the multiplication by m map
-function multiplication_by_m_numerator(E::EllCrv, m::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
-
+function multiplication_by_m_numerator(E::EllCrv, m::S, x = polynomial_ring(base_field(E),"x", cached = false)[2]) where S<:Union{Integer, ZZRingElem}
   p = characteristic(base_field(E))
   if p == 2
     #See Blake, Seroussi, Smart - Elliptic Curves in Cryptography III.4.2
@@ -996,20 +1113,32 @@ end
 @doc raw"""
     division_points(P::EllCrvPt, m::Int) -> EllCrvPt
 
-Compute the set of points Q defined over the base field such that m*Q = P.
-Returns the empty set if no such points exist.
+Compute the set of points $Q$ defined over the base field such that $mQ = P$.
+Returns the empty list if no such points exist.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2]);
+
+julia> division_points(infinity(E), 2)
+2-element Vector{EllCrvPt{QQFieldElem}}:
+ Point  (0 : 1 : 0)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+ Point  (-1 : 0 : 1)  of Elliptic curve with equation
+y^2 = x^3 + x + 2
+```
 """
 function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, ZZRingElem}
-
-  if m==0
+  if m == 0
     return typeof(P)[]
   end
 
-  if m==1
+  if m == 1
     return [P]
   end
 
-  if m<0
+  if m < 0
     m = -m
     P = -P
   end
@@ -1019,17 +1148,17 @@ function division_points(P::EllCrvPt, m::S) where S<:Union{Integer, ZZRingElem}
   E = parent(P)
   nP = -P
   twotors = (P == nP)
+  _, x = polynomial_ring(base_field(E), cached = false)
 
   if is_infinite(P)
     push!(divpoints, P)
-    g = division_polynomial_univariate(E, m)[1]
+    g = division_polynomial_univariate(E, m, x)[1]
   else
-    g = multiplication_by_m_numerator(E,m) - P[1]*multiplication_by_m_denominator(E,m)
+    g = multiplication_by_m_numerator(E, m, x) - P[1]*multiplication_by_m_denominator(E, m, x)
     if twotors
       if mod(m, 2) == 0
         g = sqrt(g)
       else
-        x = gen(parent(g))
         g0 = x - P[1]
         g = numerator(g//g0)
         g = sqrt(g)

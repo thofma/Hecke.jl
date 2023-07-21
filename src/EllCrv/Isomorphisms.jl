@@ -43,7 +43,7 @@ mutable struct EllCrvIso{T} <: Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<
     a4new = divexact(a4 - s*a3 + 2*r*a2 - (t + r*s)*a1 + 3*r^2 - 2*s*t, u^4)
     a6new = divexact(a6 + r*a4 + r^2*a2 + r^3 - t*a3 - t^2 - r*t*a1, u^6)
 
-    F = EllipticCurve([a1new, a2new, a3new, a4new, a6new])
+    F = elliptic_curve([a1new, a2new, a3new, a4new, a6new])
     f.codomain = F
     f.header = MapHeader(E, F)
     return f
