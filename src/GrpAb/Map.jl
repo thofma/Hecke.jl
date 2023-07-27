@@ -402,6 +402,8 @@ Returns whether $h$ is bijective.
   return is_injective(A) && is_surjective(A)
 end
 
+is_isomorphism(A::GrpAbFinGenMap) = is_bijective(A)
+
 ###############################################################################
 #
 #  Compose and Squash for abelian group maps
