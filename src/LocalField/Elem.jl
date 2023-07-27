@@ -411,7 +411,7 @@ end
 
 function norm(a::LocalFieldElem)
   K = parent(a)
-  return det(representation_matrix(a))
+  return AbstractAlgebra.det_df(representation_matrix(a))
   #the resultant is not quite stable (yet), it is not using the
   #fun factor stuff...
   res = setprecision(base_ring(a.data), precision(a.data)) do
