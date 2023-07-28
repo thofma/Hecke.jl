@@ -46,46 +46,100 @@ export tates_algorithm_global, tates_algorithm_local, tidy_model,
 
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc raw"""
-    tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal:: NfOrdIdl)
-    -> elliptic_curve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
+    tates_algorithm_local(E::EllCrv{nf_elem}, p:: NfOrdIdl)
+    -> EllipticCurve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
 
-Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a
-minimal model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol,
-$f$ is the conductor valuation at $p$, $c$ is the local Tamagawa number
-at $p$ and s is false if and only if $E$ has non-split
-multiplicative reduction.
+Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a minimal
+model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol, $f$ is the
+conductor valuation at $p$, $c$ is the local Tamagawa number at $p$ and `s` is
+false if and only if $E$ has non-split multiplicative reduction.
 """
-function tates_algorithm_local(E::EllCrv{nf_elem}, pIdeal::NfOrdIdl)
-  return _tates_algorithm(E, pIdeal)
+function tates_algorithm_local(E, P)
+  return _tates_algorithm(E, P)
 end
 
 # internal version
 # extend this for global fields
-function _tates_algorithm(E, P)
-  K = base_field(E)
-  OK = maximal_order(K)
+
+function _tates_algorithm(E::EllCrv{nf_elem}, P::NfOrdIdl)
+  OK = order(P)
   F, _mF = residue_field(OK, P)
-  mF = extend(_mF, K)
-
-  p = minimum(P)
-  pis2 = p == 2
-  pis3 = p == 3
-  pi = uniformizer(P)
-
-  # valuation
+  mF = extend(_mF, nf(OK))
   _val(x) = iszero(x) ? inf : valuation(x, P)
-
-  # reduction and lift
   _lift(y) = mF\y
   _red(x) = mF(x)
-  # reduction
   _redmod(x) = mF\(mF(x))
-  # inverse mod
   _invmod(x) = mF\(inv(mF(x)))
-  # divisibility check
-  _pdiv(x) = iszero(x) || valuation(x, P) > 0
+  pi = uniformizer(P)
+  return __tates_algorithm_generic(E, OK, _val, _redmod, _red, _lift, _invmod, pi)
+end
+
+function _tates_algorithm(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, ::typeof(degree))
+  K = base_field(E)
+  R = base_ring(K.fraction_field)
+  Kl = localization(K, degree)
+  F, _mF = residue_field(Kl, Kl(1//gen(K)))
+  mF = x -> _mF(Kl(x))
+  _val = x -> iszero(x) ? inf : degree(denominator(x)) - degree(numerator(x))
+  _res = mF
+  _mod = x -> K(preimage(_mF, (_res(x))))
+  _invmod = x -> K(preimage(_mF, inv(_res(x))))
+  _uni = 1//gen(K)
+  _lift = x -> K(preimage(_mF, x))
+  return __tates_algorithm_generic(E, R, _val, _mod, _res, _lift, _invmod, _uni)
+end
+
+function _tates_algorithm(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, f::PolyRingElem)
+  @req is_irreducible(f) "Polynomial must be irreducible"
+  R = parent(f)
+  K = base_field(E)
+  @assert R === base_ring(K.fraction_field)
+  F, _mF = residue_field(R, f)
+  mF = x -> _mF(numerator(x))/_mF(denominator(x))
+  _val = x -> iszero(x) ? inf : valuation(numerator(x), f) - valuation(denominator(x), f)
+  _res = mF
+  _mod = x -> K(preimage(_mF, (_res(x))))
+  _invmod = x -> K(preimage(_mF, inv(_res(x))))
+  _uni = K(f)
+  _lift = x -> K(preimage(_mF, x))
+  return __tates_algorithm_generic(E, R, _val, _mod, _res, _lift, _invmod, _uni)
+end
+
+function _tates_algorithm(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, x)
+  K = base_field(E)
+  @assert parent(x) === K
+  t = gen(K)
+  if is_one(denominator(x))
+    return _tates_algorithm(E, numerator(x))
+  else
+    @assert x == 1//t
+    return _tates_algorithm(E, degree)
+  end
+end
+
+function _tates_algorithm(E::EllCrv{QQFieldElem}, _p::IntegerUnion)
+  p = ZZ(_p)
+  F = GF(p, cached = false)
+  _invmod = x -> QQ(lift(inv(F(x))))
+  _uni = p
+  return __tates_algorithm_generic(E, ZZ, x -> is_zero(x) ? inf : valuation(x, p), x -> smod(x, p), x -> F(x), x -> QQ(lift(x)), _invmod, p)
+end
+
+function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi)
+  #K = base_field(E)
+  #OK = maximal_order(K)
+  #F, _mF = residue_field(OK, P)
+  #mF = extend(_mF, K)
+
+  K = base_field(E)
+  F = parent(_red(one(K)))
+  p = characteristic(F)
+  pis2 = p == 2
+  pis3 = p == 3
+  ## divisibility check
+  _pdiv(x) = _val(x) > 0
   # p/2
-  onehalfmodp = pis2 ? ZZ(0) : invmod(ZZ(2), p)
+  onehalfmodp = p == 0 ? QQ(1//2) : (pis2 ? ZZ(0) : invmod(ZZ(2), ZZ(p)))
   # root mod P
   _rootmod(x, e) = begin
     fl, y = is_power(_red(x), e)
@@ -107,19 +161,19 @@ function _tates_algorithm(E, P)
     # Non-integral at P, lets make integral
     e = 0
     if !iszero(a1)
-      e = max(e, -val(a1))
+      e = max(e, -_val(a1))
     end
     if !iszero(a2)
-      e = max(e, ceil(Int, -val(a2)//2))
+      e = max(e, ceil(Int, -_val(a2)//2))
     end
     if !iszero(a3)
-      e = max(e, ceil(Int, -val(a2)//3))
+      e = max(e, ceil(Int, -_val(a3)//3))
     end
     if !iszero(a4)
-      e = max(e, ceil(Int, -val(a2)//4))
+      e = max(e, ceil(Int, -_val(a4)//4))
     end
     if !iszero(a6)
-      e = max(e, ceil(Int, -val(a2)//6))
+      e = max(e, ceil(Int, -_val(a6)//6))
     end
 
     pie = pi^e
@@ -139,7 +193,7 @@ function _tates_algorithm(E, P)
     delta = discriminant(E)
     vD = _val(delta)
     if vD == 0 # Good reduction
-      return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     # change coords so that p|a3,a4,a6
@@ -191,28 +245,28 @@ function _tates_algorithm(E, P)
       end
       Kp = KodairaSymbol("I$(vD)")
       fp = FlintZZ(1)
-      return (E, Kp, fp, cp, split)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, fp, cp, split)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(a6) < 2 # Type II
       Kp = KodairaSymbol("II")
       fp = FlintZZ(vD)
       cp = FlintZZ(1)
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(b8) < 3 # Type III
       Kp = KodairaSymbol("III")
       fp = FlintZZ(vD - 1)
       cp = FlintZZ(2)
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(b6) < 3 # Type IV
       cp = _hasroot(one(K), a3//pi, -a6//pi^2) ? ZZ(3) : ZZ(1)
       Kp = KodairaSymbol("IV")
       fp = FlintZZ(vD - 2)
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     # Change coords so that p|a1,a2, p^2|a3,a4, p^3|a6
@@ -259,7 +313,7 @@ function _tates_algorithm(E, P)
       Kp = KodairaSymbol("I0*")
       fp = FlintZZ(vD - 4)
       cp = ZZ(1 + _nrootscubic(b, c, d))
-      return (E, Kp, fp, cp, true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     elseif sw == 2
       # One double root, so type I*m for some m
       # Change coords so that the double root is T = 0 mod p
@@ -329,7 +383,7 @@ function _tates_algorithm(E, P)
       m = ix + iy - 5
       fp = vD - m - 4
       Kp = KodairaSymbol("I$(m)*")
-      return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     elseif sw == 3
       # Triple root
       # Change coordinates so that T = 0 mod p
@@ -358,7 +412,7 @@ function _tates_algorithm(E, P)
         cp = _hasroot(one(K), a3t, -a6t) ? 3 : 1
         Kp = KodairaSymbol("IV*")
         fp = FlintZZ(vD - 6)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
 
       # Change coordinates so that p^3|a3, p^5|a6
@@ -377,14 +431,14 @@ function _tates_algorithm(E, P)
         Kp = KodairaSymbol("III*")
         fp = FlintZZ(vD - 7)
         cp = FlintZZ(2)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
 
       if _val(a6) < 6 # Type II*
         Kp = KodairaSymbol("II*")
         fp = FlintZZ(vD - 8)
         cp = FlintZZ(1)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllCrv{nf_elem}, KodairaSymbol,  ZZRingElem, ZZRingElem, Bool}
+        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol,  ZZRingElem, ZZRingElem, Bool}
       end
 
       # Non-minimal equation, dividing out
@@ -396,7 +450,6 @@ function _tates_algorithm(E, P)
     end
   end
 end
-
 
 @doc raw"""
     tates_algorithm_local(E::EllCrv{QQFieldElem}, p:: Int)

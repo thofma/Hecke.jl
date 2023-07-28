@@ -140,7 +140,7 @@ end
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
 is a prime ideal.
 """
-function minimal_model(E::EllCrv{nf_elem}, p::NfOrdIdl)
+function minimal_model(E::EllCrv, p)
   Ep = tates_algorithm_local(E, p)
   Ep = Ep[1]
   phi = isomorphism(E, Ep)
@@ -616,4 +616,48 @@ function sqrt_mod_4(x::NfOrdElem, P::NfOrdIdl)
   end
   return false, zero(OK)
 end
+
+function reduce_model(E::EllCrv{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
+  Kt = base_field(E)
+  Rt = base_ring(Kt.fraction_field)
+  d = discriminant(E)
+  E, = minimal_model(E, degree)
+  for (g, e) in factor(d, Rt)
+    g = AbstractAlgebra.MPolyFactor.make_monic(g)
+    E, = minimal_model(E, g)
+  end
+  return E
+end
+
+function _minimize(E::EllCrv{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
+  Kt = base_field(E)
+  Rt = base_ring(Kt.fraction_field)
+  d = discriminant(E)
+  for (g, e) in factor(d, Rt)
+    g = AbstractAlgebra.MPolyFactor.make_monic(g)
+    E = _minimize(E, Kt(g), e)
+  end
+  return E
+end
+
+function _minimize(E::EllCrv, u, e)
+  v = one(u)
+  if abs(e) > 11
+    v = u^(fdiv(ZZ(e), 12))
+  end
+  if -12 < e < 0
+    v *= inv(u)
+  end
+  E, = transform_rstu(E, [0, 0, 0, v])
+  return E
+end
+
+#def minimize(E,factored_disc=None):
+#    if factored_disc is None:
+#        factored_disc = E.discriminant().factor()
+#    u = [e for e in factored_disc if abs(e[1])>11]
+#    u = prod(e[0]^(e[1]//12) for e in u)
+#    u *= prod(e[0]^-1 for e in factored_disc if -12<e[1]<0)
+#    E1 = E.change_weierstrass_model((u,0,0,0))
+#    return E1,u
 
