@@ -52,5 +52,20 @@
     D = discriminant(F)*OK
     @test minD*P^12 == D
   end
+
+  # _minimize and integral model
+  Kt, t = RationalFunctionField(QQ, "t")
+  E = EllipticCurve(Kt.([0, t^21, 1//216, -7//1296, 1//t]))
+  EE, = integral_model(E)
+  @test all(p -> is_one(denominator(p)) && is_one(denominator(numerator(p))), a_invars(EE))
+  EE = Hecke.reduce_model(E)
+  @test all(p -> is_one(denominator(p)) && is_one(denominator(numerator(p))), a_invars(EE))
+
+  Qx, x = QQ["x"]
+  K, z = number_field(x^2 + 1, "z", cached = false)
+  Kt, t = RationalFunctionField(K, "t")
+  E = EllipticCurve(Kt.([0, t^21, (z + 1)//216, -7//1296, (z + 3)//t]))
+  EE, = integral_model(E)
+  EE = Hecke.reduce_model(E)
 end
 

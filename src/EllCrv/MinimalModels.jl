@@ -35,7 +35,7 @@
 ################################################################################
 
 export minimal_model, has_global_minimal_model, semi_global_minimal_model, minimal_discriminant,
-       global_minimality_class, tidy_model
+       global_minimality_class, tidy_model, integral_model
 
 ################################################################################
 #
@@ -618,25 +618,18 @@ function sqrt_mod_4(x::NfOrdElem, P::NfOrdIdl)
 end
 
 function reduce_model(E::EllCrv{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
-  Kt = base_field(E)
-  Rt = base_ring(Kt.fraction_field)
-  d = discriminant(E)
-  E, = minimal_model(E, degree)
-  for (g, e) in factor(d, Rt)
-    g = AbstractAlgebra.MPolyFactor.make_monic(g)
-    E, = minimal_model(E, g)
-  end
-  return E
+  return _minimize(E)
 end
 
 function _minimize(E::EllCrv{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
   Kt = base_field(E)
   Rt = base_ring(Kt.fraction_field)
+  E, = integral_model(E)
   d = discriminant(E)
-  for (g, e) in factor(d, Rt)
-    g = AbstractAlgebra.MPolyFactor.make_monic(g)
-    E = _minimize(E, Kt(g), e)
+  for (g, e) in _factor_rational_function_field(d)
+    E = _minimize(E, g, e)
   end
+  E, = integral_model(E)
   return E
 end
 
@@ -661,3 +654,207 @@ end
 #    E1 = E.change_weierstrass_model((u,0,0,0))
 #    return E1,u
 
+# ef get_unit(Ell):
+#     r"""
+#     """
+#     a4 = Ell.a4().numerator()
+#     a6 = Ell.a6().numerator()
+#     U = a4.base_ring().unit_group(proof=False)
+#     n = U.ngens()
+#     a4 = a4.numerator()
+#     a6 = a6.numerator()
+#     E = [[e//4 for e in U(my_fac_nf(a).unit()).exponents()] for a in a4.coefficients()]
+#     E += [[e//6 for e in U(my_fac_nf(a).unit()).exponents()] for a in a6.coefficients()]
+#     u = 1
+#     for k in range(n):
+#         u*=U.gen(k).value()^min(e[k] for e in E)
+#     return u
+# 
+#
+function _factor_nf(n::QQFieldElem)
+  f = factor(ZZ, n)
+  return Fac(QQ(f.unit), Dict(QQ(p) => e for (p, e) in f))
+end
+
+function _factor_nf(n::nf_elem)
+  K = parent(n)
+  F = factor(IdealSet(maximal_order(K)), n)
+  D = Dict{nf_elem, Int}()
+  for (I, e) in F
+    fl, a = is_principal(I)
+    !fl && error("Prime ideal factor not principal")
+    D[elem_in_nf(a)] = e
+  end
+  unit = evaluate(FacElem(n) * inv(FacElem(K, D)))
+  @assert abs(norm(unit)) == 1 && is_integral(unit)
+  @assert evaluate(FacElem(K, D)) * unit == n
+  return Fac(unit, D)
+end
+
+function _factor_rational_function_field(p)
+  Kt = parent(p)
+  n = numerator(p)
+  d = denominator(p)
+  K = base_ring(parent(p))
+  R = maximal_order(K)
+
+  my_facp = function(pol)
+    denom = lcm([denominator(c) for c in coefficients(pol)])
+    g = _gcd([R(denom*c) for c in coefficients(pol)])
+    return _factor_nf(elem_in_nf(g)/K(denom)), denom*pol/g
+  end
+
+  fn, pn = my_facp(n)
+  @assert _evaluate(fn) * pn == n
+  fd, pd = my_facp(d)
+  new_unit = fn.unit * inv(fd.unit)
+  D = Dict{elem_type(Kt), Int}()
+  for (p, e) in fn
+    p = Kt(p)
+    D[p] = e
+  end
+  for (p, e) in fd
+    p = Kt(p)
+    if !haskey(D, p)
+      D[p] = -e
+    else
+      D[p] = D[p] - e
+    end
+  end
+  # now take care of the polynomials
+  facpn = factor(pn)
+  # pn is primitive and integral
+  # we assume R is a UFD
+  
+  u = unit(facpn)
+  for (p, e) in facpn
+    uu, pp = _make_primitive(p)
+    D[Kt(pp)] = e
+    u = u/uu
+  end
+  new_unit = new_unit * u
+  @assert is_unit(u)
+  facpd = factor(pd)
+  u = unit(facpd)
+  for (p, e) in facpd
+    uu, pp = _make_primitive(p)
+    p = Kt(pp)
+    u = u/uu
+    if !haskey(D, p)
+      D[p] = -e
+    else
+      D[p] = D[p] - e
+    end
+  end
+  @assert is_unit(u)
+  new_unit = new_unit/u
+  @assert new_unit * prod(p^e for (p, e) in D) == p
+
+  return Fac(Kt(new_unit), D)
+end
+
+function _gcd(a::Vector{ZZRingElem})
+  return gcd(a)
+end
+
+function _gcd(a::Vector{NfOrdElem})
+  @assert length(a) > 0
+  R = parent(a[1])
+  I = sum(b * R for b in a)
+  fl, g = is_principal(I)
+  !fl && error("Elements do not have a GCD")
+  return g
+end
+
+function _evaluate(a::Fac)
+  return unit(a) * prod(p^e for (p, e) in a; init = one(unit(a)))
+end
+
+function _make_primitive(pol)
+  R = maximal_order(base_ring(parent(pol)))
+  K = base_ring(parent(pol))
+  denom = lcm([denominator(c) for c in coefficients(pol)])
+  g = _gcd([R(denom*c) for c in coefficients(pol)])
+  return K(denom)/K(g), denom*pol/g
+end
+
+#@doc raw"""
+#    integral_model(E::EllCrv) -> EllCrv, EllCrvIso, EllCrvIso
+#
+#Given an elliptic curve over a field $K$, return an isomorphic elliptic curve
+#with integral Weierstrass equation (over the ring $R$), where $R$ is defined as
+#follows:
+#- if $K$ is the field of rational numbers, then $R = \mathbf{Z}$,
+#- if $K = k(t)$, is a rational function field with $k$ the field of rational
+#  numbers or a number field, then $R = S[t]$, where $S$ is the ring of integers
+#  of $k$.
+#
+#!!! note
+#    This function is experimental. The interface might change in the future.
+#"""
+#function integral_model(E::EllCrv{QQFieldElem})
+#  ai = collect(a_invars(E))
+#  wts = [1, 2, 3, 4, 6]
+#  for a in ai
+#    if !is_integral(a)
+#      for (p, _) in factor(denominator(a))
+#        e = floor(Int, minimum([valuation(ai[i], p)//wts[i] for i in 1:5 if !is_zero(ai[i])]))
+#        ai = [ai[i]/QQ(p)^(Int(e * wts[i])) for i in 1:5]
+#      end
+#    end
+#  end
+#  @assert all(is_integral, ai)
+#  return elliptic_curve(ai)
+#end
+
+function integral_model(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{QQFieldElem}})
+  Zx = Hecke.Globals.Zx
+  K = base_field(E)
+  ai = collect(a_invars(E))
+  aiorig = ai
+  wts = [1, 2, 3, 4, 6]
+  for a in aiorig
+    n, d = integral_split(a, Zx)
+    if !is_one(d)
+      for (p, _) in factor(d)
+        e = floor(Int, minimum([_fake_valuation(ai[i], p)//wts[i] for i in 1:5 if !is_zero(ai[i])]))
+        ai = [ai[i]/K(p)^(Int(e * wts[i])) for i in 1:5]
+      end
+    end
+  end
+  @assert all(x -> is_one(integral_split(x, Zx)[2]), ai)
+  EE = elliptic_curve(ai)
+  phi = isomorphism(E, EE)
+  return EE, phi, inv(phi)
+end
+
+function integral_model(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{nf_elem}})
+  K = base_field(E)
+  ai = collect(a_invars(E))
+  aiorig = ai
+  wts = [1, 2, 3, 4, 6]
+  facs = [is_zero(aiorig[i]) ? nothing : _factor_rational_function_field(ai[i]) for i in 1:5]
+  for j in 1:5
+    if is_zero(aiorig[j])
+      continue
+    end
+    if any(((p, e),) -> e < 0, facs[j])
+      for (p, e) in facs[j]
+        if e > 0
+          continue
+        end
+        e = floor(Int, minimum([get(facs[i].fac, p, 0)//wts[i] for i in 1:5 if !is_zero(aiorig[i])]))
+        ai = [ai[i]/K(p)^(Int(e * wts[i])) for i in 1:5]
+      end
+    end
+  end
+  #@assert all(x -> is_one(integral_split(x, Zx)[2]), ai)
+  EE = elliptic_curve(ai)
+  phi = isomorphism(E, EE)
+  return EE, phi, inv(phi)
+end
+
+function _fake_valuation(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{QQFieldElem}, y)
+  n, d = integral_split(x, parent(y))
+  return valuation(n, y) - valuation(d, y)
+end
