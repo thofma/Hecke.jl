@@ -5,7 +5,7 @@ function field_extension(h::Union{ fqPolyRepPolyRingElem, FqPolyRepPolyRingElem 
   return codomain(m), m
 end
 
-field_extension(h::FqPolyRingElem) = _residue_field(h)
+field_extension(h::FqPolyRingElem) = Nemo._residue_field(h)
 
 mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap, FqPolyRingToFqMor}
   header::MapHeader{S, T}
