@@ -139,5 +139,66 @@
     @test @inferred is_supersingular(E) == false
     @inferred is_probable_supersingular(E)
   end
-  
+
+  @testset "Order of points" begin
+    K = GF(103)
+    E = EllipticCurve(K, [1, 18])
+    P = E([33, 91])
+    @test order(P) == 19
+    @test Hecke._order_elem_via_fac(P) == 19
+    P = E([38, 82])
+    @test order(P) == 114
+    @test Hecke._order_elem_via_fac(P) == 114
+  end
+
+  @testset "Abelian group structure and disc log" begin
+    E = EllipticCurve(GF(11), [2, 5])
+    A, = abelian_group(E)
+    @test elementary_divisors(A) == [10]
+    P = rand(E)
+    Q = rand(1:10) * P
+    m = disc_log(P, Q)
+    @test m * P == Q
+
+    E = EllipticCurve(GF(41), [2, 5])
+    A, = abelian_group(E)
+    @test elementary_divisors(A) == [2, 22]
+    P = rand(E)
+    Q = rand(1:22) * P
+    m = disc_log(P, Q)
+    @test m * P == Q
+
+    # trivial group
+    E = EllipticCurve(GF(2), [0, 0, 1, 1, 1])
+    A, = abelian_group(E)
+    @test elementary_divisors(A) == []
+    P = rand(E)
+    Q = rand(E)
+    m = disc_log(P, Q)
+    @test m * P == Q
+
+    F = GF(3)
+    Fx, x = F["x"]
+    f = x^6 + 2*x^4 + x^2 + 2*x + 2
+    F, a = FiniteField(f)
+    E = EllipticCurve([a^4 + a^3 + 2*a^2 + 2*a, 2*a^5 + 2*a^3 + 2*a^2 + 1])
+    A, = abelian_group(E)
+    @test elementary_divisors(A) == [26, 26]
+    P = rand(E)
+    Q = rand(1:26) * P
+    m = disc_log(P, Q)
+    @test m * P == Q
+
+    F = GF(101)
+    Fx, x = F["x"]
+    f = x^3 + 3*x + 99
+    F, a = FiniteField(f)
+    E = EllipticCurve([2*a^2 + 48*a + 27, 89*a^2 + 76*a + 24])
+    A, = abelian_group(E)
+    @test elementary_divisors(A) == [1031352]
+    P = rand(E)
+    Q = rand(1:1031352) * P
+    m = disc_log(P, Q)
+    @test m * P == Q
+  end
 end

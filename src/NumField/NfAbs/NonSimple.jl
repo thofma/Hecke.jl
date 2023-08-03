@@ -104,12 +104,6 @@ function Nemo.one!(a::NfAbsNSElem)
   return a
 end
 
-function Nemo.one!(a::QQMPolyRingElem)
-  ccall((:fmpq_mpoly_one, libflint), Nothing,
-      (Ref{QQMPolyRingElem}, Ref{QQMPolyRing}), a, parent(a))
-  return a
-end
-
 ################################################################################
 #
 #  Random
@@ -118,7 +112,7 @@ end
 
 RandomExtensions.maketype(K::NfAbsNS, r) = elem_type(K)
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<:UnitRange}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<:AbstractUnitRange}})
   K, r = sp[][1:end]
   # TODO: This is super slow
   b = basis(K, copy = false)
@@ -129,8 +123,8 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<
   return z
 end
 
-rand(K::NfAbsNS, r::UnitRange) = rand(GLOBAL_RNG, K, r)
-rand(rng::AbstractRNG, K::NfAbsNS, r::UnitRange) = rand(rng, make(K, r))
+rand(K::NfAbsNS, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
+rand(rng::AbstractRNG, K::NfAbsNS, r::AbstractUnitRange) = rand(rng, make(K, r))
 
 ################################################################################
 #
@@ -872,7 +866,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   end
   h = hom(Ka, K, pe, inverse = emb)
   embed(h)
-  embed(MapFromFunc(x->preimage(h, x), K, Ka))
+  embed(MapFromFunc(K, Ka, x->preimage(h, x)))
   return Ka, h
 end
 
@@ -1136,10 +1130,6 @@ function degree(a::NfAbsNSElem)
   return degree(minpoly(a))
 end
 
-function degree(a::nf_elem)
-  return degree(minpoly(a))
-end
-
 #TODO: Improve the algorithm
 function primitive_element(K::NfAbsNS)
   g = gens(K)
@@ -1237,4 +1227,19 @@ end
 
 function Base.hash(a::NfAbsNSElem, h::UInt)
   return Base.hash(a.data, h)
+end
+
+################################################################################
+#
+#  Coercion
+#
+################################################################################
+
+function (K::QQField)(a::NfAbsNSElem)
+  @req is_constant(data(a)) "Element must be rational"
+  return constant_coefficient(data(a))
+end
+
+function is_rational(a::NfAbsNSElem)
+  return is_constant(data(a))
 end

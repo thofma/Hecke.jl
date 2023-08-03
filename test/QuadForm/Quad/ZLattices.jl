@@ -575,6 +575,9 @@ end
   L = integer_lattice(gram=QQ[1//2;])
   @inferred lll(L)
 
+  L = rescale(root_lattice(:A, 3), 1//2)
+  @test genus(lll(L, same_ambient=false)) == genus(L)
+
   # Primitive extensions
 
   M = root_lattice(:E, 6)

@@ -64,17 +64,7 @@ else
   end
 end
 
-function cmpabs(a::Int, b::Int)
-  a = abs(a)
-  b = abs(b)
-  if a > b
-    return 1
-  elseif a == b
-    return 0
-  else
-    return -1
-  end
-end
+
 ################################################################################
 #
 #  Multiplicative representation

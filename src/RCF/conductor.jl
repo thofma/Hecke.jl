@@ -942,7 +942,7 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
     return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]
   end
 
-  lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
+  lp, sR = find_gens(MapFromFunc(IdealSet(base_ring(R)), domain(fR), x->preimage(fR, x)),
                              PrimesSet(100, -1), minimum(mR))
 
   if map == false
@@ -1508,11 +1508,6 @@ function lcm(A::AbstractArray{<:NfAbsOrdIdl})
   end
   return a
 end
-
-#TODO: should be done in Nemo/AbstractAlgebra s.w.
-#      needed by ^ (the generic power in Base using square and multiply)
-Base.copy(f::Generic.MPoly) = deepcopy(f)
-Base.copy(f::Generic.Poly) = deepcopy(f)
 
 
 @doc raw"""

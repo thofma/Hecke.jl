@@ -29,7 +29,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   @vprintln :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals"
 
   c = get_attribute(O, :ClassGrpCtx)
-  if c == nothing
+  if c === nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
     c = get_attribute(L, :ClassGrpCtx)

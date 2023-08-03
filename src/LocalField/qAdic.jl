@@ -1,115 +1,7 @@
 add_verbosity_scope(:qAdic)
 add_assertion_scope(:qAdic)
 
-export setprecision!, defining_polynomial
-
-function Base.setprecision(q::qadic, N::Int)
-  r = parent(q)()
-  r.N = N
-  ccall((:padic_poly_set, libflint), Nothing, (Ref{qadic}, Ref{qadic}, Ref{FlintQadicField}), r, q, parent(q))
-  return r
-end
-
-function Base.setprecision(q::padic, N::Int)
-  r = parent(q)()
-  r.N = N
-  ccall((:padic_set, libflint), Nothing, (Ref{padic}, Ref{padic}, Ref{FlintPadicField}), r, q, parent(q))
-  return r
-end
-
-function setprecision!(q::qadic, N::Int)
-  if N >= q.N
-    q.N = N
-  end
-  q.N = N
-  ccall((:qadic_reduce, libflint), Nothing, (Ref{qadic}, Ref{FlintQadicField}), q, parent(q))
-#  @assert N >= q.N
-  return q
-end
-
-function setprecision!(Q::FlintQadicField, n::Int)
-  Q.prec_max = n
-end
-
-function setprecision!(Q::FlintPadicField, n::Int)
-  Q.prec_max = n
-end
-
-function Base.setprecision(f::Generic.MPoly{qadic}, N::Int)
-  return map_coefficients(x->setprecision(x, N), f, parent = parent(f))
-end
-
-function setprecision!(a::AbstractArray{qadic}, N::Int)
-  for x = a
-    setprecision!(x, N)
-  end
-end
-
-function Base.setprecision(a::AbstractArray{qadic}, N::Int)
-  return map(x->setprecision(x, N), a)
-end
-
-function setprecision!(a::Generic.MatSpaceElem{qadic}, N::Int)
-  setprecision!(a.entries, N)
-end
-
-function Base.setprecision(a::Generic.MatSpaceElem{qadic}, N::Int)
-  b = deepcopy(a)
-  setprecision!(b, N)
-  return B
-end
-
-function tr(r::qadic)
-  t = coefficient_ring(parent(r))()
-  ccall((:qadic_trace, libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
-  return t
-end
-
-function norm(r::qadic)
-  t = coefficient_ring(parent(r))()
-  ccall((:qadic_norm, libflint), Nothing, (Ref{padic}, Ref{qadic}, Ref{FlintQadicField}), t, r, parent(r))
-  return t
-end
-
-function setcoeff!(x::fqPolyRepFieldElem, n::Int, u::UInt)
-  ccall((:nmod_poly_set_coeff_ui, libflint), Nothing,
-                (Ref{fqPolyRepFieldElem}, Int, UInt), x, n, u)
-end
-
-function (Rx::Generic.PolyRing{padic})(a::qadic)
-  Qq = parent(a)
-  #@assert Rx === parent(defining_polynomial(Qq))
-  R = base_ring(Rx)
-  coeffs = Vector{padic}(undef, degree(Qq))
-  for i = 1:length(coeffs)
-    c = R()
-    ccall((:padic_poly_get_coeff_padic, libflint), Nothing,
-           (Ref{padic}, Ref{qadic}, Int, Ref{FlintQadicField}), c, a, i-1, parent(a))
-    coeffs[i] = c
-  end
-  return Rx(coeffs)
-end
-
-
-function coeff(x::qadic, i::Int)
-  R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
-  c = R()
-  ccall((:padic_poly_get_coeff_padic, libflint), Nothing,
-           (Ref{padic}, Ref{qadic}, Int, Ref{FlintQadicField}), c, x, i, parent(x))
-  return c
-end
-
-function setcoeff!(x::qadic, i::Int, y::padic)
-  ccall((:padic_poly_set_coeff_padic, libflint), Nothing,
-           (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, y, parent(x))
-end
-
-function setcoeff!(x::qadic, i::Int, y::UInt)
-  R = FlintPadicField(prime(parent(x)), parent(x).prec_max)
-  Y = R(ZZRingElem(y))
-  ccall((:padic_poly_set_coeff_padic, libflint), Nothing,
-           (Ref{qadic}, Int, Ref{padic}, Ref{FlintQadicField}), x, i, Y, parent(x))
-end
+export defining_polynomial
 
 @attributes FlintQadicField
 
@@ -140,7 +32,7 @@ function residue_field(Q::FlintQadicField)
     end
     return z
   end
-  mk = MapFromFunc(pro, lif, Q, k)
+  mk = MapFromFunc(Q, k, pro, lif)
   set_attribute!(Q, :ResidueFieldMap => mk)
   return k, mk
 end
@@ -158,19 +50,10 @@ function residue_field(Q::FlintPadicField)
     z = Q(lift(x))
     return z
   end
-  return k, MapFromFunc(pro, lif, Q, k)
+  return k, MapFromFunc(Q, k, pro, lif)
 end
 
-function coefficient_ring(Q::FlintQadicField)
-  return FlintPadicField(prime(Q), precision(Q))
-end
 coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
-
-function prime(R::PadicField, i::Int)
-  p = ZZRingElem()
-  ccall((:padic_ctx_pow_ui, libflint), Cvoid, (Ref{ZZRingElem}, Int, Ref{PadicField}), p, i, R)
-  return p
-end
 
 function getUnit(a::padic)
   u = ZZRingElem()
@@ -196,27 +79,10 @@ function lift_reco(::QQField, a::padic; reco::Bool = false)
   end
 end
 
-function *(A::ZZMatrix, B::MatElem{padic})
-  return matrix(base_ring(B), A) * B
-end
 
 uniformizer(Q::FlintQadicField) = Q(prime(Q))
-Base.precision(Q::FlintQadicField) = Q.prec_max
 
 uniformizer(Q::FlintPadicField) = Q(prime(Q))
-Base.precision(Q::FlintPadicField) = Q.prec_max
-
-nrows(A::Matrix{T}) where {T} = size(A)[1]
-ncols(A::Matrix{T}) where {T} = size(A)[2]
-
-import Base.^
-^(a::qadic, b::qadic) = exp(b*log(a))
-^(a::padic, b::padic) = exp(b*log(a))
-
-import Base.//
-//(a::qadic, b::qadic) = divexact(a, b)
-//(a::padic, b::qadic) = divexact(a, b)
-//(a::qadic, b::padic) = divexact(a, b)
 
 function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
   Pt, t = polynomial_ring(P, cached = false)

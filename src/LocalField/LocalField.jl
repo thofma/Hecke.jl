@@ -314,7 +314,7 @@ absolute_basis(K::FlintPadicField) = padic[one(K)]
 function find_irreducible_polynomial(K, n::Int)
   Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = cyclotomic(ppio(degree(K), n)*n, x)
-  lf = factor(f, K)
+  lf = factor(K, f)
   return first(keys(lf[1]))
 end
 
@@ -392,20 +392,8 @@ function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQa
   old = precision(K)
 #  @assert n>=0
   setprecision!(K, n)
-  v = try 
+  v = try
         setprecision(f, base_field(K), ceil(Int, n/ramification_index(K)))
-      finally
-        setprecision!(K, old)
-      end
-  return v
-end
-
-function setprecision(f::Function, K::Union{FlintPadicField, FlintQadicField}, n::Int)
-  old = precision(K)
-#  @assert n>=0
-  setprecision!(K, n)
-  v = try 
-        f()
       finally
         setprecision!(K, old)
       end
@@ -459,7 +447,7 @@ function residue_field(K::LocalField{S, EisensteinLocalField}) where {S <: Field
     @assert parent(a) === ks
     return setprecision(K(mks\(a)), precision(K))
   end
-  mp = MapFromFunc(proj, lift, K, ks)
+  mp = MapFromFunc(K, ks, proj, lift)
 
   K.residue_field_map = mp
 
@@ -497,7 +485,7 @@ function residue_field(K::LocalField{S, UnramifiedLocalField}) where {S <: Field
      end
      return sum(col)
    end
-   mp = MapFromFunc(proj, lift, K, kk)
+   mp = MapFromFunc(K, kk, proj, lift)
    K.residue_field_map = mp
   return kk, mp
 end

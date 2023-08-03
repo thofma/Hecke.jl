@@ -1,10 +1,18 @@
-# Stolen from examples/polymake.jl
+module PolymakeExt
+
+using Hecke, Polymake
+
+import Hecke:
+  solve_mixed,
+  ncols,
+  nrows
+
 # Needs polymake (obviously)
 
 # Returns all vectors v such that Av == b and Cv >= 0.
 
-nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
-ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
+Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
+Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
 function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_matrix(FlintZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)
@@ -91,7 +99,7 @@ end
 
 Solves $Ax = b$ under $Cx >= 0$, assumes a finite solution set.
 """
-function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)  # Ax == b && Cx >= 0
+function Hecke.solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)  # Ax == b && Cx >= 0
   p = _polytope(A = A, b = b, C = C)
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
@@ -132,4 +140,6 @@ function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
   C = [C -d; zero_matrix(FlintZZ, ncols(d), ncols(C)) identity_matrix(FlintZZ, ncols(d))]
   s = solve_mixed(A, b, C)
   return s[:, 1:n]
+end
+
 end

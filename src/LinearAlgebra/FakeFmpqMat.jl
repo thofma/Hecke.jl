@@ -224,12 +224,6 @@ function QQMatrix(x::FakeFmpqMat)
   return z
 end
 
-function QQMatrix(x::ZZMatrix)
-  z = zero_matrix(FlintQQ, nrows(x), ncols(x))
-  ccall((:fmpq_mat_set_fmpz_mat, libflint), Nothing, (Ref{QQMatrix}, Ref{ZZMatrix}), z, x)
-  return z
-end
-
 function _fmpq_mat_to_fmpz_mat_den(x::QQMatrix)
   z = zero_matrix(FlintZZ, nrows(x), ncols(x))
   d = ZZRingElem()
@@ -326,7 +320,7 @@ end
 #
 ################################################################################
 
-function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
+function sub(x::FakeFmpqMat, r::AbstractUnitRange{Int}, c::AbstractUnitRange{Int})
   z = FakeFmpqMat(sub(x.num, r, c), x.den)
   return z
 end

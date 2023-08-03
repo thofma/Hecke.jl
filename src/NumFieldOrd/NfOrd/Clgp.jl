@@ -469,11 +469,11 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   end
 
   U = get_attribute(O, :UnitGrpCtx)
-  if U != nothing && U.finished
-    return unit_group_fac_elem(U::UnitGrpCtx)
+  if U !== nothing && U.finished
+    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}})
   end
   c = get_attribute(O, :ClassGrpCtx)
-  if c == nothing
+  if c === nothing
     O = lll(maximal_order(nf(O)))
   end
   _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
@@ -488,7 +488,7 @@ Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
 function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c = get_attribute(O, :ClassGrpCtx)
-  if c == nothing
+  if c === nothing
     O = lll(maximal_order(nf(O)))
   end
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)

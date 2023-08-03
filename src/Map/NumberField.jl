@@ -4,6 +4,14 @@ struct NfMorSet{T}
   field::T
 end
 
+function elem_type(::Type{NfMorSet{T}}) where {T}
+  return morphism_type(T, T)
+end
+
+function elem_type(::NfMorSet{T}) where {T}
+  return elem_type(NfMorSet{T})
+end
+
 function show(io::IO, S::NfMorSet{T}) where {T}
   print(io, "Set of automorphisms of ", S.field)
 end
@@ -79,26 +87,6 @@ function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
     end
   end
   error("something wrong")
-end
-
-
-function evaluate(f::QQPolyRingElem, a::nf_elem)
-  #Base.show_backtrace(stdout, Base.stacktrace())
-  R = parent(a)
-  if iszero(f)
-    return zero(R)
-  end
-  if a == gen(R) && parent(f) == parent(parent(a).pol)
-    return R(f)
-  end
-  l = length(f) - 1
-  s = R(coeff(f, l))
-  for i in l-1:-1:0
-    #s = s*a + R(coeff(f, i))
-    mul!(s, s, a)
-    add!(s, s, coeff(f, i))
-  end
-  return s
 end
 
 Base.copy(f::NfToNfMor) = f

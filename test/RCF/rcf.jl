@@ -3,7 +3,7 @@
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
-  function doit(u::UnitRange, p::Int = 3)
+  function doit(u::AbstractUnitRange, p::Int = 3)
     cnt = 0
     for i in u
       I = ideal(Z, i)
@@ -327,4 +327,9 @@ end
   @test degree(t) == 4
   @test !is_normal(t)
   @test normal_closure(t) == S
+end
+
+@testset "Conductor fix" begin
+  flds = abelian_fields(QQ, [2, 2], ZZ(4225), only_real = true)
+  @test length(flds) == 4
 end

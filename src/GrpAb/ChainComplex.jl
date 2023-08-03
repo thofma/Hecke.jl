@@ -150,9 +150,9 @@ end
 function map_range(C::ComplexOfMorphisms)
   r = object_range(C)
   if is_chain_complex(C)
-    return r.start:r.step:r.stop+1
+    return first(r):step(r):last(r)+1
   else
-    return r.start:r.stop-1
+    return first(r):last(r)-1
   end
 end
 
@@ -481,7 +481,7 @@ function cochain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}
 end
 
 Base.lastindex(C::ComplexOfMorphisms) = lastindex(range(C))
-function getindex(C::ComplexOfMorphisms{T}, u::UnitRange) where T
+function getindex(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
   return ComplexOfMorphisms(T, [map(C, i) for i = u])
 end
@@ -493,7 +493,7 @@ end
 
 #TODO: Why?
 # what is the intend, the specs? In particular: seed/ start?
-function extract_map_range(C::ComplexOfMorphisms{T}, u::UnitRange) where T
+function extract_map_range(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
   return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start, direction=:right)
 end
@@ -503,7 +503,7 @@ function extract_map_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start-length(C)-1)
 end
 
-function extract_object_range(C::ComplexOfMorphisms{T}, u::UnitRange) where T
+function extract_object_range(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
   return ComplexOfMorphisms(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right)
 end

@@ -26,18 +26,18 @@ end
 
 ########### any_root computes a single root in the finite field extensions####
 
-import Nemo:any_root
-function any_root(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField})
+import Nemo: any_root
+function any_root(F::Union{fqPolyRepField, Hecke.RelFinField}, f::Union{fpPolyRingElem, fqPolyRepPolyRingElem})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    return any_root(g)
 end
 
-function roots(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField})
+function roots(F::Union{fqPolyRepField, Hecke.RelFinField}, f::Union{fpPolyRingElem, fqPolyRepPolyRingElem})
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
    return roots(g)
 end
 
-function any_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField)
+function any_root(F::Hecke.RelFinField, f::Hecke.AbstractAlgebra.Generic.Poly)
    g = polynomial(F, [coeff(f,i) for i = 0:degree(f)])
    fac = factor(g)
    if length(fac) == 1
@@ -79,20 +79,6 @@ function norm_equation(F::Union{FlintQadicField, Hecke.LocalField{padic, Hecke.U
   @assert trace(lA) == la
   A = exp(lA)*prime(parent(a))^divexact(v, degree(F))
   return A*T
-end
-
-function Nemo.basis(k::Nemo.fpField)
-  return [k(1)]
-end
-
-function Nemo.basis(k::Nemo.fpField, l::Nemo.fpField)
-  @assert k == l
-  return [k(1)]
-end
-
-function Nemo.basis(K::fqPolyRepField, k::Nemo.fpField)
-  @assert characteristic(K) == characteristic(k)
-  return basis(K)
 end
 
 function Nemo.basis(K::FinField, k::FinField)
@@ -145,15 +131,6 @@ function one_unit_group_gens(K::Union{FlintQadicField, Hecke.LocalField})
   end
 end
 
-function root(a::FinFieldElem, n::ZZRingElem)
-  return root(a, Int(n))
-end
-function root(a::FinFieldElem, n::Integer)
-  k = parent(a)
-  kt, t = polynomial_ring(k, "t", cached = false)
-  r = roots(t^n-a)
-  return r[1]
-end
 
 function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
   p = prime(K)
@@ -239,7 +216,6 @@ function coordinates(a::Union{qadic, LocalFieldElem}, k)
   return c
 end
 coordinates(a::padic, ::FlintPadicField) = [a]
-prime_field(k::FlintPadicField) = k
 lift(a::Hecke.QadicRingElem{FlintPadicField, padic}) = lift(a.x)
 
 function setprecision!(A::Generic.MatSpaceElem{Hecke.QadicRingElem{FlintPadicField, padic}}, n::Int)
@@ -446,7 +422,7 @@ function norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField}, b::Union{fpF
    while !is_irreducible(f)
       f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
    end
-   return (-1)^(n)*any_root(f,F)
+   return (-1)^(n)*any_root(F, f)
 end
 
 function basis(K::RelFinField)
@@ -455,10 +431,6 @@ function basis(K::RelFinField)
     push!(b, b[end]*gen(K))
   end
   return b
-end
-
-function base_field(K::fqPolyRepField)
-  return Native.GF(Int(characteristic(K)))
 end
 
 absolute_frobenius_matrix(K::fqPolyRepField, d::Int = 1) = frobenius_matrix(K, d)
@@ -771,18 +743,7 @@ function local_fundamental_class_serre(L::Hecke.LocalField, K::Union{Hecke.Local
   return local_fundamental_class_serre(hom(K, L, L(gen(K))))
 end
 
-function gens(k::FlintPadicField, K::FlintPadicField)
-  return [k(1)]
-end
 
-function gen(k::Nemo.fpField)
-  return k(1)
-end
-
-function defining_polynomial(k::Nemo.fpField)
-  kx, x = polynomial_ring(k, cached = false)
-  return x-k(1)
-end
 
 function local_fundamental_class_serre(mKL::LocalFieldMor)
   K = domain(mKL)
@@ -1119,7 +1080,7 @@ function one_unit_group(K::LocalField)
       return G(ex)
     end
   end
-  return G, MapFromFunc(from_G, to_G, G, K)
+  return G, MapFromFunc(G, K, from_G, to_G)
 end
 
 function teichmuller(a::LocalFieldElem)
@@ -1172,7 +1133,7 @@ function unit_group(K::LocalField)
     return inj[1](v*Z[1]) + inj[2](preimage(mu, r)) + inj[3](preimage(mU, x))
   end
 
-  return G, MapFromFunc(from_G, to_G, G, K)
+  return G, MapFromFunc(G, K, from_G, to_G)
 end
 
 #=
@@ -1196,7 +1157,7 @@ function unit_group(R::QadicRing)
     return inj[1](preimage(mu, r)) + inj[2](preimage(mU, x))
   end
 
-  return G, MapFromFunc(from_G, to_G, G, K)
+  return G, MapFromFunc(G, K, from_G, to_G)
 end
 
 =#

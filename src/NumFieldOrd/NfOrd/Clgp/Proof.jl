@@ -68,8 +68,8 @@ function class_group_proof(clg::ClassGrpCtx, lb::ZZRingElem, ub::ZZRingElem; ext
   np = Int(floor(log(abs(discriminant(O)))/log(2)/2))
   no_primes = 0
   no_ideals = 0
-  if do_it.start > 1
-    p = ZZRingElem(next_prime(do_it.start))
+  if first(do_it) > 1
+    p = ZZRingElem(next_prime(first(do_it)))
   end
   r = ZZRingElem()
   _no_of_primes = logarithmic_integral(Float64(ub)) - logarithmic_integral(Float64(lb))
@@ -82,7 +82,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::ZZRingElem, ub::ZZRingElem; ext
     interval = 1000
   end
 
-  while p < do_it.stop
+  while p < last(do_it)
     no_primes += 1
 
     @v_do :ClassGroupProof if no_primes % interval == 0

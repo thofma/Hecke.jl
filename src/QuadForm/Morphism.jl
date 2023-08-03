@@ -54,15 +54,6 @@ function is_normalized(w::Vector{Int})
   end
 end
 
-function neg!(w::Vector{Int})
-  w .*= -1
-end
-
-function neg!(w::ZZMatrix)
-  ccall((:fmpz_mat_neg, libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}), w, w)
-  return w
-end
-
 function find_point(w, V::VectorList)
   fl, k = has_point(w, V)
   @assert fl
@@ -147,17 +138,6 @@ function Base.show(io::IO, C::ZLatAutoCtx)
 end
 
 dim(C::ZLatAutoCtx) = C.dim
-
-function AbstractAlgebra.is_symmetric(M::MatElem)
-  for i in 1:nrows(M)
-    for j in i:ncols(M)
-      if M[i, j] != M[j, i]
-        return false
-      end
-    end
-  end
-  return true
-end
 
 function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true)
   # Compute the necessary short vectors
@@ -813,7 +793,6 @@ function _operate(point, A::ZZMatrix, V)
   return _operate(point, A, V, zero_matrix(FlintZZ, 1, ncols(A)))
 end
 
-Base.replace!(::typeof(-), m::ZZMatrix) = -m
 
 function _operate(point, A, V, tmp)
 # 	V.v is a sorted list of length V.n of vectors
@@ -1618,12 +1597,6 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
 
   return SS
 end
-
-ZZMatrix(M::Matrix{Int}) = matrix(FlintZZ, M)
-
-zero_matrix(::Type{Int}, r, c) = zeros(Int, r, c)
-
-base_ring(::Vector{Int}) = Int
 
 function _one(::Type{Matrix{Int}}, n::Int)
   z = zeros(Int, n, n)

@@ -20,7 +20,7 @@ end
   for i = 1:length(lP)
     I_new = A[2](lP1[1])
     id = findfirst(isequal(I_new), lP1)
-    @test id != nothing
+    @test id !== nothing
   end
   f = hom(K, K, a^4//12+a//2)
   E = EquationOrder(K)
@@ -78,3 +78,18 @@ end
   fl, tau = Hecke.is_cm_field(K)
   @test fl
 end
+
+@testset "parents" begin
+  Qx, x = FlintQQ["x"]
+  f = x - 1
+  K, a = number_field(f, "a", cached = false)
+  G, mG = automorphism_group(K)
+  @test elem_type(codomain(mG)) == typeof(mG(one(G)))
+  Kt, t = polynomial_ring(K)
+  L, b = number_field(t^3-2)
+  G, mG = automorphism_group(L)
+  @test elem_type(codomain(mG)) == typeof(mG(one(G)))
+  G, mG = absolute_automorphism_group(L)
+  @test elem_type(codomain(mG)) == typeof(mG(one(G)))
+end
+

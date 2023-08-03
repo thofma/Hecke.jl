@@ -136,7 +136,7 @@ end
   f = x^4 + 24*x^2+28
   K, a = number_field(f, "a", cached = false);
   g = x^8-1
-  @test length(factor(g, K)) == 4
+  @test length(factor(K, g)) == 4
 
   K, a = number_field(x^3 - 2, "a")
   Kx, x = polynomial_ring(K, "x")
@@ -157,7 +157,7 @@ end
   Qx, x = QQ["x"]
   f = x^3-39*x-65
   K, a = number_field(f, "a")
-  r = @inferred roots(f, K)
+  r = @inferred roots(K, f)
   @test length(r) == 3
   @test all(iszero, (f(b) for b in r))
 end

@@ -471,7 +471,7 @@ function update!(L::RelLattice)
       Base.delete!(L.weak_vertices_rev, k)
       continue
     end
-    @assert L.weak_vertices_rev[k].value != nothing
+    @assert L.weak_vertices_rev[k].value !== nothing
     a = L.weak_vertices_rev[k].value
     @assert k == objectid(a)
     @assert L.graph.degrees[k] < 2
@@ -524,7 +524,7 @@ function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D
   if b
     @assert pG[1] == pH[1]
     M = L.weak_vertices_rev[pG[1]].value::T
-    @assert M != nothing
+    @assert M !== nothing
 
     mG = eval_path(L, M, pG)
     mH = eval_path(L, M, pH)

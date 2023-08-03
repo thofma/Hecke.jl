@@ -7,42 +7,6 @@
 #  return M.header.preim
 #end
 
-function show(io::IO, M::Map)
-  @show_name(io, M)
-  if get(io, :compact, false)
-    print(io, domain(M), " --> ", codomain(M), "\n")
-    return
-  end
-  io = Base.IOContext(io, :compact => true)
-  print(io, "Map with following data\n")
-  print(io, "Domain:\n")
-  print(io, "=======\n")
-  print(io, domain(M))
-  print(io, "\nCodomain:\n")
-  print(io, "=========\n")
-  print(io, codomain(M))
-end
-
-function preimage(M::Map{D, C}, a) where {D, C}
-  if isdefined(M.header, :preimage)
-    p = M.header.preimage(a)::elem_type(D)
-    @assert parent(p) === domain(M)
-    return p
-  end
-  error("No preimage function known")
-end
-
-function image(M::Map{D, C}, a) where {D, C}
-  if isdefined(M, :header)
-    if isdefined(M.header, :image)
-      return M.header.image(a)::elem_type(C)
-    else
-      error("No image function known")
-    end
-  else
-    return M(a)
-  end
-end
 
 function show(io::IO, M::InverseMap)
   @show_name(io, M)
@@ -57,9 +21,6 @@ end
 #function show(io::IO, M::CoerceMap)
 #  println(io, "Coerce: $(domain(M)) -> $(codomain(M))")
 #end
-
-\(f::Map, x) = preimage(f, x)
-
 
 function change(D::Dict{K, V}, k::K, def::V, new::Function) where {K, V}
   i = Base.ht_keyindex2!(D, k)

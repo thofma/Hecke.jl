@@ -165,9 +165,9 @@ function spinor_genera_in_genus(L, mod_out)
       if i > ncols(Gr)
         error("Lattice is degenerated")
       end
-      @assert !iszero(Gr[1, i])
-      spinornorm = 2 * Gr[1, i]
     end
+    @assert !iszero(Gr[1, i])
+    spinornorm = 2 * Gr[1, i]
   end
 
   # 2) At a place p where spinornorm does not generate norm(L_p)
@@ -1458,7 +1458,7 @@ function non_square(F::FinField)
 end
 
 function inv(f::Hecke.LocMultGrpModSquMap)
-  return MapFromFunc(x -> preimage(f, x), codomain(f), domain(f))
+  return MapFromFunc(codomain(f), domain(f), x -> preimage(f, x))
 end
 
 ################################################################################

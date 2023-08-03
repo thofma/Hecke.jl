@@ -470,7 +470,7 @@ function discriminant(L::AbstractLat)
   d = det(gram_matrix_of_rational_span(L))
   v = involution(L)
   C = coefficient_ideals(L)
-  I = prod(J for J in C)
+  I = prod(C, init = one(base_field(L))*base_ring(L))
   return d * I * v(I)
 end
 

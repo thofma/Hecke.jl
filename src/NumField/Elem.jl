@@ -7,31 +7,6 @@ export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
 #
 ################################################################################
 
-is_unit(a::NumFieldElem) = !iszero(a)
-
-canonical_unit(a::NumFieldElem) = a
-
-################################################################################
-#
-#  Base case for dot products
-#
-################################################################################
-
-dot(x::ZZRingElem, y::NumFieldElem) = x * y
-
-dot(x::Integer, y::NumFieldElem) = x * y
-
-dot(x::NumFieldElem, y::Integer) = x * y
-
-function dot(a::Vector{<: NumFieldElem}, b::Vector{ZZRingElem})
-  d = zero(parent(a[1]))
-  t = zero(d)
-  for i=1:length(a)
-    mul!(t, a[i], b[i])
-    add!(d, d, t)
-  end
-  return d
-end
 
 function dot(a::Vector{NfAbsNSElem}, b::Vector{ZZRingElem})
   Qxy = parent(a[1].data)
@@ -89,77 +64,77 @@ end
 #
 ################################################################################
 
-## rand(::Vector{NumFieldElem}, ::UnitRange)
+## rand(::Vector{NumFieldElem}, ::AbstractUnitRange)
 
 @doc doc"""
-    rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
-    rand([rng::AbstractRNG], make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange)) -> NumFieldElem
+    rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::AbstractUnitRange) -> NumFieldElem
+    rand([rng::AbstractRNG], make(F::NumField, b::Vector{NumFieldElem}, r::AbstractUnitRange)) -> NumFieldElem
 
 A random linear combination of elements in `b`, with parent `F` and coefficients in `r`.
 """
-rand(b::Vector{<: NumFieldElem}, r::UnitRange) = rand(Random.GLOBAL_RNG, b, r)
+rand(b::Vector{<: NumFieldElem}, r::AbstractUnitRange) = rand(Random.GLOBAL_RNG, b, r)
 
-function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::UnitRange)
+function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::AbstractUnitRange)
   length(b) == 0 && error("Array must not be empty")
   return rand(rng, make(parent(b[1]), b, r))
 end
 
 function rand(rng::AbstractRNG,
               sp::SamplerTrivial{<:Make3{<:NumFieldElem{T},<:NumField{T},
-                                         <:Vector{<:NumFieldElem{T}},<:UnitRange}}) where {T}
+                                         <:Vector{<:NumFieldElem{T}},<:AbstractUnitRange}}) where {T}
   return rand!(rng, zero(sp[][1]), sp)
 end
 
 
-## rand(::Vector{<: NumFieldElem}, ::UnitRange, ::Int)
+## rand(::Vector{<: NumFieldElem}, ::AbstractUnitRange, ::Int)
 
 @doc doc"""
-    rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::UnitRange, terms::Int) -> NumFieldElem
+    rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::AbstractUnitRange, terms::Int) -> NumFieldElem
     rand([rng::AbstractRNG],
-         make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange, terms::Int)) -> NumFieldElem
+         make(F::NumField, b::Vector{NumFieldElem}, r::AbstractUnitRange, terms::Int)) -> NumFieldElem
 
 A random linear combination (with repetitions) of `terms` elements of `b`
 with parent `F` and coefficients in `r`.
 """
-function rand(b::Vector{<: NumFieldElem}, r::UnitRange, terms::Int)
+function rand(b::Vector{<: NumFieldElem}, r::AbstractUnitRange, terms::Int)
   return rand(Random.GLOBAL_RNG, b, r, terms)
 end
 
-function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::UnitRange, terms::Int)
+function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::AbstractUnitRange, terms::Int)
   length(b) == 0 && error("Array must not be empty")
   return rand(rng, make(parent(b[1]), b, r, terms))
 end
 
 function rand(rng::AbstractRNG,
               sp::SamplerTrivial{<:Make4{<:NumFieldElem{T},<:NumField{T},
-                                         <:Vector{<:NumFieldElem{T}},<:UnitRange,Int}}) where {T}
+                                         <:Vector{<:NumFieldElem{T}},<:AbstractUnitRange,Int}}) where {T}
   return rand!(rng, zero(sp[][1]), sp)
 end
 
 
-## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::UnitRange, terms::Int)
+## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::AbstractUnitRange, terms::Int)
 
 @doc doc"""
     rand!([rng::AbstractRNG], c::NumFieldElem, b::Vector{NumFieldElem},
-          r::UnitRange, terms::Int) -> NumFieldElem
+          r::AbstractUnitRange, terms::Int) -> NumFieldElem
     rand!([rng::AbstractRNG], c::NumFieldElem,
-          make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange, terms::Int)) -> NumFieldElem
+          make(F::NumField, b::Vector{NumFieldElem}, r::AbstractUnitRange, terms::Int)) -> NumFieldElem
 
 Sets `c` to a random linear combination (with repetitions) of \code{terms}
 elements of `b` with coefficients in `r`. The element `c` is returned.
 In the second form, `F` must be the parent of `c`.
 """
-function rand!(c::T, b::Vector{T}, r::UnitRange, terms::Int) where {T <: NumFieldElem}
+function rand!(c::T, b::Vector{T}, r::AbstractUnitRange, terms::Int) where {T <: NumFieldElem}
   rand!(Random.GLOBAL_RNG, c, b, r, terms)
 end
 
-function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::UnitRange, terms::Int) where {T <: NumFieldElem}
+function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::AbstractUnitRange, terms::Int) where {T <: NumFieldElem}
   return rand!(rng, c, make(parent(c), b, r, terms))
 end
 
 function rand!(rng::AbstractRNG, c::NumFieldElem{T},
                sp::SamplerTrivial{<:Make4{<:NumFieldElem{T},<:NumField{T},
-                                          <:Vector{<:NumFieldElem{T}},<:UnitRange,Int}}) where {T}
+                                          <:Vector{<:NumFieldElem{T}},<:AbstractUnitRange,Int}}) where {T}
   F, b, r, terms = sp[][1:end]
 
   length(b) == 0 && error("Array must not be empty")
@@ -178,29 +153,29 @@ function rand!(rng::AbstractRNG, c::NumFieldElem{T},
 end
 
 
-## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::UnitRange)
+## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::AbstractUnitRange)
 
 @doc doc"""
-    rand!(c::NumFieldElem, b::Vector{NumFieldElem}, r::UnitRange) -> NumFieldElem
-    rand!(c::NumFieldElem, make(F::NumField, b::Vector{NumFieldElem}, r::UnitRange)) -> NumFieldElem
+    rand!(c::NumFieldElem, b::Vector{NumFieldElem}, r::AbstractUnitRange) -> NumFieldElem
+    rand!(c::NumFieldElem, make(F::NumField, b::Vector{NumFieldElem}, r::AbstractUnitRange)) -> NumFieldElem
 
 Sets `c` to a random linear combination of elements in `b` with coefficients
 in `r`. The element `c` is returned.
 In the second form, `F` must be the parent of `c`.
 """
-function rand!(c::T, b::Vector{T}, r::UnitRange) where {T <: NumFieldElem}
+function rand!(c::T, b::Vector{T}, r::AbstractUnitRange) where {T <: NumFieldElem}
   return rand!(GLOBAL_RNG, c, b, r)
 end
 
-function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::UnitRange) where {T <: NumFieldElem}
+function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::AbstractUnitRange) where {T <: NumFieldElem}
   return rand!(rng, c, make(parent(c), b, r))
 end
 
-RandomExtensions.maketype(F::NumField{T}, ::Vector{<:NumFieldElem{T}}, ::UnitRange, ::Int...) where {T} = elem_type(F)
+RandomExtensions.maketype(F::NumField{T}, ::Vector{<:NumFieldElem{T}}, ::AbstractUnitRange, ::Int...) where {T} = elem_type(F)
 
 function rand!(rng::AbstractRNG, c::NumFieldElem{T},
                sp::SamplerTrivial{<:Make3{<:NumFieldElem{T},<:NumField{T},
-                                          <:Vector{<:NumFieldElem{T}},<:UnitRange}}) where {T}
+                                          <:Vector{<:NumFieldElem{T}},<:AbstractUnitRange}}) where {T}
   F, b, r = sp[][1:end]
 
   length(b) == 0 && error("Array must not be empty")
@@ -271,37 +246,6 @@ the minimal polynomial of $a$ over the rationals $\mathbf{Q}$.
 """
 absolute_minpoly(::NumFieldElem)
 
-################################################################################
-#
-#  Powering with ZZRingElem
-#
-################################################################################
-
-function ^(x::NumFieldElem, y::ZZRingElem)
-  if fits(Int, y)
-    return x^Int(y)
-  end
-
-  return _power(x, y)
-end
-
-# We test once if it fits, otherwise we would have to check for every ^-call
-function _power(x::NumFieldElem, y::ZZRingElem)
-  res = parent(x)()
-  if y < 0
-    res = _power(inv(x), -y)
-  elseif y == 0
-    res = parent(x)(1)
-  elseif y == 1
-    res = deepcopy(x)
-  elseif mod(y, 2) == 0
-    z = _power(x, div(y, 2))
-    res = z*z
-  else
-    res = _power(x, y - 1) * x
-  end
-  return res
-end
 
 ################################################################################
 #

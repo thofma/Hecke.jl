@@ -279,12 +279,6 @@ end
   return true
 end
 
-#(::Colon)(x::Int, y::Nothing) = 1:0
-
-Base.:(:)(x::Int, y::Nothing) = 1:0
-
-Base.:(:)(x::Int, y::ZZRingElem) = ZZRingElem(x):y
-
 function SigmaIteratorGivenY(s, x, y)
   t = something(findlast(!iszero, y), 0)
   SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, t, x, y, sigma),

@@ -1,20 +1,3 @@
-@doc raw"""
-    lift(a::padic) -> ZZRingElem
-
-Returns the positive canonical representative in $\mathbb{Z}$. $a$ needs
-to be integral.
-"""
-function lift(a::padic)
-  b = ZZRingElem()
-  R = parent(a)
-
-  if iszero(a)
-    return ZZ(0)
-  end
-  ccall((:padic_get_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{padic}, Ref{FlintPadicField}), b, a, R)
-  return b
-end
-
 function _lift(a::padic)
   R = parent(a)
   v = valuation(a)
@@ -26,22 +9,6 @@ function _lift(a::padic)
   end
 end
 
-function Base.setprecision(f::Generic.Poly{padic}, N::Int)
-  g = parent(f)()
-  fit!(g, length(f))
-  for i=1:length(f)
-    g.coeffs[i] = setprecision!(f.coeffs[i], N)
-  end
-  set_length!(g, normalise(g, length(f)))
-  return g
-end
-
-function setprecision!(f::Generic.Poly{padic}, N::Int)
-  for i=1:length(f)
-    f.coeffs[i] = setprecision!(f.coeffs[i], N)
-  end
-  return f
-end
 
 """
 The log of `1-x`, x needs to have a valuation >1

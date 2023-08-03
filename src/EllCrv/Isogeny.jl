@@ -878,7 +878,7 @@ function compute_codomain(E::EllCrv, v, w)
   a1, a2, a3, a4, a6 = a_invars(E)
   newa4 = a4 - 5*v
   newa6 = a6 - (a1^2 + 4*a2)*v - 7*w
-  return EllipticCurve([a1, a2, a3, newa4, newa6])
+  return elliptic_curve([a1, a2, a3, newa4, newa6])
 end
 
 function to_bivariate(f::AbstractAlgebra.Generic.Poly{S}) where S<:PolyElem{T} where T<:FieldElem

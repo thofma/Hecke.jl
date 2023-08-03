@@ -32,6 +32,10 @@ pages = [
 					      "quad_forms/Zgenera.md",
 					      "quad_forms/discriminant_group.md"
 					    ],
+         "Elliptic curves" => [ "elliptic_curves/intro.md",
+                                "elliptic_curves/basics.md",
+                                "elliptic_curves/finite_fields.md",
+                                "elliptic_curves/number_fields.md",],
          "Abelian groups" => "abelian/introduction.md",
          "Class field theory" => "class_fields/intro.md",
          "Misc" =>  ["FacElem.md",
@@ -63,6 +67,16 @@ pages = [
 
 # Remove the module prefix
 Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
+
+# the .id in the anchor is derived from the signature, which sometimes contain "<:"
+# it seems mkdocs does not handle "<:" that well inside an <a href="...">.
+function Base.getproperty(obj::Documenter.Anchors.Anchor, sym::Symbol)
+  if sym === :id
+    return replace(getfield(obj, sym), "<:" => "")
+  else
+    return getfield(obj, sym)
+  end
+end
 
 function make(Hecke::Module; strict = false,
                              local_build::Bool = false,

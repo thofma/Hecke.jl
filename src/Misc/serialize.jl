@@ -66,7 +66,7 @@ function _bizarre(a::Int, b::Int)
   return length(Hecke.class_group(Hecke.wildanger_field(a, b)[1])[1])
 end
 
-function parallel_work(f::Function, r::UnitRange)
+function parallel_work(f::Function, r::AbstractUnitRange)
   l = length(workers())
   @vprintln :Par 1 "using $l workers"
   cache = []

@@ -242,12 +242,6 @@ function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::IntegerUnion,
   end
 end
 
-Nemo.fits(::Type{Int}, a::Int) = true
-function Nemo.fits(::Type{Int}, a::Integer)
-  #TODO: possibly not optimal?
-  return a % Int == a
-end
-
 function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
   if typeof(p) != Int && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
@@ -1390,7 +1384,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
         t = x[ti]
         g = gcd(d, degree(t[1]))
         d = lcm(d, degree(t[1]))
-        r = roots(t[1], Fq)
+        r = roots(Fq, t[1])
         if g == 1
           push!(rt, [r[1]])
         else

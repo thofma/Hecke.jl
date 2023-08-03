@@ -66,7 +66,7 @@ function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Dict{FqPolyRepFieldE
   for (r, vr) in rt
     coeffs = Vector{FqPolyRepFieldElem}(undef, degree(pol)+1)
     for i = 0:degree(pol)
-      nf_elem_to_gfp_fmpz_poly!(tmp, coeff(pol, i))
+      Nemo.nf_elem_to_gfp_fmpz_poly!(tmp, coeff(pol, i))
       coeffs[i+1] = evaluate(tmp, r)
     end
     g = Fx(coeffs)
@@ -152,7 +152,7 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
-  rt_base_field = roots(Zx(K.pol), F)
+  rt_base_field = roots(F, Zx(K.pol))
   tmp = Fpx()
   g = Lrel.pol
   rt = Dict{FqPolyRepFieldElem, Vector{FqPolyRepFieldElem}}()
@@ -161,7 +161,7 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
   for r in rt_base_field
     coeff_gF = FqPolyRepFieldElem[]
     for i = 0:degree(g)
-      nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
+      Nemo.nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
       push!(coeff_gF, evaluate(tmp, r))
     end
     gF = Fx(coeff_gF)
@@ -276,7 +276,7 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
-  rt_base_field = roots(Zx(K.pol), F)
+  rt_base_field = roots(F, Zx(K.pol))
   rt = Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}()
   Rxy = polynomial_ring(F, ngens(Lrel), cached = false)[1]
   tmp = Fpx()
@@ -287,7 +287,7 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
       g = to_univariate(Kx, f)
       coeff_gF = FqPolyRepFieldElem[]
       for i = 0:degree(g)
-        nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
+        Nemo.nf_elem_to_gfp_fmpz_poly!(tmp, coeff(g, i))
         push!(coeff_gF, evaluate(tmp, r))
       end
       gF = Fx(coeff_gF)
@@ -354,7 +354,7 @@ function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{FqPolyRepFiel
   for (r, vr) in rt
     ctx = MPolyBuildCtx(Rxy)
     for (c, v) in zip(coefficients(pol), exponent_vectors(pol))
-      nf_elem_to_gfp_fmpz_poly!(tmp, c)
+      Nemo.nf_elem_to_gfp_fmpz_poly!(tmp, c)
       push_term!(ctx, evaluate(tmp, r), v)
     end
     g = finish(ctx)

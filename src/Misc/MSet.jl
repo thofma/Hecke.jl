@@ -1,30 +1,30 @@
-export MSet, multiplicities, subsets
+export MSet, multiplicities, multiplicity, subsets
 
 @doc raw"""
-Type for a multi-set, ie. a set where elements are not unique, they
-(can) have a multiplicity. MSets can be created from any finite iterator.
+Type for a multi-set, i.e. a set where elements are not unique, they
+(can) have a multiplicity. `MSet`s can be created from any finite iterator.
 
-#EXAMPLE
-```julia
+# Example
+```jldoctest
 julia> MSet([1,1,2,3,4,4,5])
-MSet(5, 4 : 2, 2, 3, 1 : 2
+MSet(5, 4 : 2, 2, 3, 1 : 2)
 
 ```
-4 : 2 means the element 4 has multiplicity 2, ie. was included twice.
+`4 : 2` means the element `4` has multiplicity `2`, i.e. was included twice.
 """
 mutable struct MSet{T} <: AbstractSet{T}
-  dict::Dict{T, Int}
-  MSet{T}() where {T} = new(Dict{T,Int}())
-  MSet{T}(itr) where {T} = union!(new(Dict{T,Int}()), itr)
+  dict::Dict{T,Int}
+
+  MSet{T}() where {T} = new{T}(Dict{T,Int}())
+  MSet{T}(itr) where {T} = union!(new{T}(Dict{T,Int}()), itr)
 end
 
 MSet() = MSet{Any}()
 MSet(itr) = MSet{eltype(itr)}(itr)
 
 
-Base.eltype(::Type{MSet{T}}) where {T} = T
-Base.similar(s::MSet{T}) where {T} = MSet{T}()
-Base.similar(s::MSet, T::Type) = MSet{T}()
+Base.similar(::MSet{T}) where {T} = MSet{T}()
+Base.similar(::MSet, T::Type) = MSet{T}()
 
 #TODO: compact printing, remove trailing , ... the works...
 function Base.show(io::IO, ::MIME"text/plain", s::MSet)
@@ -48,30 +48,34 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
 end
 
 Base.isempty(s::MSet) = isempty(s.dict)
-Base.length(s::MSet)  = BigInt(sum(values(s.dict)))
-Base.IteratorSize(s::MSet) = Base.HasLength()
-Base.IteratorEltype(s::MSet) = Base.HasEltype()
-Base.eltype(s::MSet{T}) where {T} = T
+Base.length(s::MSet) = sum(values(s.dict))
+Base.IteratorSize(::Type{MSet}) = Base.HasLength()
+Base.IteratorEltype(::Type{MSet}) = Base.HasEltype()
+Base.eltype(::Type{MSet{T}}) where {T} = T
 Base.in(x, s::MSet) = haskey(s.dict, x)
-function Base.push!(s::MSet, x, mult::Int = 1)
+
+function Base.push!(s::MSet, x, mult::Int=1)
   add_to_key!(s.dict, x, mult)
-  #if haskey(s.dict, x)
-  #  s.dict[x] += mult
-  #else
-  #  s.dict[x] = mult
-  #end
 end
 
-function Base.pop!(s::MSet, x)
-  s.dict[x] -= 1
-  if s.dict[x] == 0
-    delete!(s.dict, x)
-  end
-  return x
+function Base.pop!(s::MSet{T}, x) where {T}
+  y = x isa T ? x : T(x)
+  y in s || throw(KeyError(y))
+  add_to_key!(s.dict, y, -1)
+  return y
 end
-Base.pop!(s::MSet, x, deflt) = x in s ? pop!(s, x) : deflt
+
+function Base.pop!(s::MSet{T}, x, default) where {T}
+  y = x isa T ? x : T(x)
+  return y in s ? pop!(s, y) : (default isa T ? default : T(default))
+end
 Base.pop!(s::MSet) = (val = iterate(s.dict)[1][1]; pop!(s, val))
-Base.delete!(s::MSet, x) = (delete!(s.dict, x); s)
+
+function Base.delete!(s::MSet{T}, x) where {T}
+  y = x isa T ? x : T(x)
+  delete!(s.dict, y)
+  return s
+end
 
 Base.copy(s::MSet) = union!(similar(s), s)
 
@@ -105,24 +109,36 @@ Base.union!(s::MSet, xs) = (for x=xs; push!(s,x); end; s)
 Base.union!(s::MSet, xs::AbstractArray) = (for x=xs; push!(s,x); end; s)
 
 
+function Base.filter(pred, s::MSet)
+  t = similar(s)
+  for (x, m) in s.dict
+    if pred(x)
+      push!(t, x, m)
+    end
+  end
+  return t
+end
+
+
 @doc raw"""
     multiplicities(s::MSet)
 
-Return an iterator for the multiplicities of all the elements.    
+Return an iterator for the multiplicities of all the elements.
 """
 function multiplicities(s::MSet)
   return values(s.dict)
 end
 
 @doc raw"""
-    multiplicity(s::MSet, xs)
-  
-The multiplicity of the element xs in the multi-set s - or zero if
-  xs is not in s,
+    multiplicity(s::MSet, x)
+
+The multiplicity of the element `x`` in the multi-set `s - or zero if
+  `x` is not in `s`,
 """
-function multiplicity(s::MSet, xs)
-  if haskey(s.dict, xs)
-    return s.dict[xs]
+function multiplicity(s::MSet{T}, x::T) where {T}
+  y = x isa T ? x : T(x)
+  if haskey(s.dict, y)
+    return s.dict[y]
   else
     return 0
   end
@@ -141,6 +157,7 @@ function Base.setdiff(s::MSet, itrs...)
   end
   return s
 end
+
 ############################################
 # subsets iterator
 ############################################
@@ -154,7 +171,7 @@ end
 @doc raw"""
     subsets(s::MSet)
 
-An iterator for all sub-multi-sets of `s`.    
+An iterator for all sub-multi-sets of `s`.
 """
 function subsets(s::MSet{T}) where T
   # subsets are represented by integers in a weird base
@@ -197,9 +214,9 @@ function Base.length(M::MSubSetItr)
   return M.length
 end
 
-Base.IteratorSize(M::MSubSetItr) = Base.HasLength()
-Base.IteratorEltype(M::MSubSetItr) = Base.HasEltype()
-Base.eltype(M::MSubSetItr{T}) where {T} = MSet{T}
+Base.IteratorSize(::Type{MSubSetItr}) = Base.HasLength()
+Base.IteratorEltype(::Type{MSubSetItr}) = Base.HasEltype()
+Base.eltype(::Type{MSubSetItr{T}}) where {T} = MSet{T}
 
 function Base.show(io::IO, M::MSubSetItr)
   println(io, "subset iterator of length $(M.length) for $(M.b) with multiplicities $(M.m)")
@@ -253,16 +270,15 @@ function Base.length(M::SubSetItr)
   return M.length
 end
 
-Base.IteratorSize(M::SubSetItr) = Base.HasLength()
-Base.IteratorEltype(M::SubSetItr) = Base.HasEltype()
-Base.eltype(M::SubSetItr{T}) where {T} = Set{T}
+Base.IteratorSize(::Type{SubSetItr}) = Base.HasLength()
+Base.IteratorEltype(::Type{SubSetItr}) = Base.HasEltype()
+Base.eltype(::Type{SubSetItr{T}}) where {T} = Set{T}
 
 function Base.show(io::IO, M::SubSetItr)
   println(io, "subset iterator of length $(M.length) for $(M.b)")
 end
 
 #only subsets of a given size
-
 struct SubSetSizeItr{T}
   b::Vector{T}
   k::Int #subsets of size k only
@@ -329,17 +345,14 @@ function Base.length(M::SubSetSizeItr)
   return M.length
 end
 
-Base.IteratorSize(M::SubSetSizeItr) = Base.HasLength()
-Base.IteratorEltype(M::SubSetSizeItr) = Base.HasEltype()
-Base.eltype(M::SubSetSizeItr{T}) where {T} = Set{T}
+Base.IteratorSize(::Type{SubSetSizeItr}) = Base.HasLength()
+Base.IteratorEltype(::Type{SubSetSizeItr}) = Base.HasEltype()
+Base.eltype(::Type{SubSetSizeItr{T}}) where {T} = Set{T}
 
 function Base.getindex(S::SubSetSizeItr, i::Int)
   return Hecke.int_to_elt(S, i)
 end
 
-
 function Base.show(io::IO, M::SubSetSizeItr)
   println(io, "subset iterator of length $(M.length) for $(M.b) and subsets of size $(M.k)")
 end
-
-

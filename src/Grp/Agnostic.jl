@@ -214,3 +214,68 @@ function _multiplication_table(G, op)
   end
   return z
 end
+
+################################################################################
+#
+#  Discrete logarithm
+#
+################################################################################
+
+function disc_log_bs_gs(a::T, b::T, o::ZZRingElem, op, inv, pow) where {T}
+  _one = pow(a, 0)
+  b == _one && return ZZRingElem(0)
+  b == a && return ZZRingElem(1)
+  @assert parent(a) === parent(b)
+  if o < 100 #TODO: benchmark
+    ai = inv(a)
+    for g=1:Int(o)
+      b = op(b, ai)
+      b == _one && return ZZRingElem(g)
+    end
+    throw("disc_log failed")
+  end
+  r = isqrt(o) + 1
+  baby = Dict{typeof(a), Int}()
+  baby[_one] = 0
+  baby[a] = 1
+  ba = a
+  for i=2:r-1
+    ba = op(ba, a)
+    baby[ba] = i
+    ba == b && return ZZRingElem(i)
+  end
+  giant = op(ba, a)
+  @assert giant == pow(a, r)
+  b == giant && return ZZRingElem(r)
+  giant = inv(giant)
+  g = ZZRingElem(0)
+  for i=1:r+1
+    b = op(b, giant)
+    g += r
+    if haskey(baby, b)
+      return ZZRingElem(baby[b] + g)
+    end
+  end
+  throw("disc_log failed")
+end
+
+#@doc raw"""
+#    disc_log_ph(a::T, b::T, o::ZZRingElem, r::Int)
+#
+#Tries to find $g$ s.th. $a^g == b$ under the assumption that $ord(a) | o^r$
+#Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size($o$) steps.
+#Requires $a$ to be invertible.
+#"""
+function disc_log_ph(a::T, b::T, o::ZZRingElem, r::Int, op, inv, pow) where {T}
+  #searches for g sth. a^g = b
+  # a is of order o^r
+  # Pohlig-Hellmann a^g = b => (a^o)^g = b^g
+  g = 0
+  aa = pow(a, o^(r - 1))
+  for s=r:-1:1
+    bb = op(b, pow(inv(a), g))
+    gg = disc_log_bs_gs(aa, pow(bb, o^(s-1)), o, op, inv, pow)
+    g = g+o^(r-s)*gg
+  end
+  return g
+end

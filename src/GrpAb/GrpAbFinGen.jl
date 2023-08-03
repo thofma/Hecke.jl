@@ -925,7 +925,7 @@ function tensor_product(G::GrpAbFinGen...; task::Symbol = :map)
     return reverse(g[p[1]])
   end
 
-  return T, MapFromFunc(pure, inv_pure, TupleParent(Tuple([g[0] for g = G])), T)
+  return T, MapFromFunc(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
 end
 
 ⊗(G::GrpAbFinGen...) = tensor_product(G..., task = :none)
@@ -1703,7 +1703,7 @@ function find_isomorphism_with_abelian_group(G::Vector{NfToNfMor})
       el = compose_mod(el, pow(Rx(S[i].prim_img), (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), v[i], gen(Rx)), Rx(K.pol))
     end
 		ind = findfirst(x -> Rx(x.prim_img) == el, G)
-		@assert ind != nothing
+		@assert ind !== nothing
     AsnftoG[a] = G[ind]
   end
 

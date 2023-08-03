@@ -617,17 +617,17 @@ function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbsAlgAss
   return A(c)
 end
 
-function rand(A::AbsAlgAss{nf_elem}, rng::UnitRange{Int} = -10:10)
+function rand(A::AbsAlgAss{nf_elem}, rng::AbstractUnitRange{Int} = -10:10)
   c = nf_elem[rand(base_ring(A), rng) for i = 1:dim(A)]
   return A(c)
 end
 
-function rand(A::AbsAlgAss{T}, rng::UnitRange{Int}) where T
+function rand(A::AbsAlgAss{T}, rng::AbstractUnitRange{Int}) where T
   c = T[rand(base_ring(A), rng) for i = 1:dim(A)]
   return A(c)
 end
 
-function rand(A::AlgAss{QQFieldElem}, rng::UnitRange{Int} = -20:20)
+function rand(A::AlgAss{QQFieldElem}, rng::AbstractUnitRange{Int} = -20:20)
   c = [QQFieldElem(rand(FlintZZ, rng)) for i = 1:dim(A)]
   return A(c)
 end

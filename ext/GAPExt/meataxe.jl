@@ -1,5 +1,5 @@
 ## `ZZRingElem` to GAP integer
-function GAP.julia_to_gap(obj::ZZRingElem)
+function _julia_to_gap(obj::ZZRingElem)
   Nemo._fmpz_is_small(obj) && return GAP.julia_to_gap(Int(obj))
   GC.@preserve obj begin
     x = Nemo._as_bigint(obj)
@@ -9,7 +9,7 @@ end
 
 # Basically the same as the usual image function but without a type check since
 # we don't have elem_type(C) in this case
-function image(M::MapFromFunc{D, C}, a) where {D, C <: GAP.GapObj}
+function _image(M::MapFromFunc{D, C}, a) where {D, C <: GAP.GapObj}
   if isdefined(M, :header)
     if isdefined(M.header, :image)
       return M.header.image(a)
@@ -21,7 +21,7 @@ function image(M::MapFromFunc{D, C}, a) where {D, C <: GAP.GapObj}
   end
 end
 
-function preimage(M::MapFromFunc{D, C}, a) where {D, C <: GAP.GapObj}
+function _preimage(M::MapFromFunc{D, C}, a) where {D, C <: GAP.GapObj}
   if isdefined(M, :header)
     if isdefined(M.header, :preimage)
       return M.header.preimage(a)
@@ -42,13 +42,13 @@ end
 # computes the isomorphism between the Oscar field F and the corresponding GAP field
 function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fpField, Nemo.FpField}
    p = characteristic(F)
-   G = GAP.Globals.GF(GAP.Obj(p))
+   G = GAP.Globals.GF(_julia_to_gap(p))
    e = GAP.Globals.One(G)
 
-   f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = GAP.Obj(lift(x))*e
+   f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = _julia_to_gap(lift(x))*e
    finv(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
 
-   return MapFromFunc(f, finv, F, G)
+   return MapFromFunc(F, G, f, finv)
 end
 
 function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.FqPolyRepField}
@@ -62,7 +62,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
    if d == 1
       f1(x::Union{Nemo.fqPolyRepFieldElem, Nemo.FqPolyRepFieldElem}) = GAP.Obj(coeff(x, 0))*e
       finv1(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
-      return MapFromFunc(f1, finv1, F, Fp_gap)
+      return MapFromFunc(F, Fp_gap, f1, finv1)
    end
 
    # non-prime fields: convert the defining polynomial to GAP...
@@ -114,19 +114,19 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
       return sum([ v_int[i]*Basis_F[i] for i = 1:d ])
    end
 
-   return MapFromFunc(f, finv, F, G)
+   return MapFromFunc(F, G, f, finv)
 end
 
 function __to_gap(h, x::Vector)
-  return GAP.Globals.GModuleByMats(GAP.julia_to_gap([GAP.julia_to_gap(map(h, Matrix(y))) for y in x]), codomain(h))
+  return GAP.Globals.GModuleByMats(GAP.julia_to_gap([GAP.julia_to_gap(map(x -> _image(h, x), Matrix(y))) for y in x]), codomain(h))
 end
 
 function __gap_matrix_to_julia(h, g)
-  return matrix(domain(h), [map(y -> preimage(h, y), gg) for gg in GAP.gap_to_julia(g)])
+  return matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in GAP.gap_to_julia(g)])
 end
 
 function __to_julia(h, C)
-  return [ matrix(domain(h), [map(y -> preimage(h, y), gg) for gg in GAP.gap_to_julia(g)]) for g in GAP.Globals.MTX.Generators(C)]
+  return [ matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in GAP.gap_to_julia(g)]) for g in GAP.Globals.MTX.Generators(C)]
 end
 
 function Hecke.stub_composition_factors(x::Vector{T}) where {T <: MatElem}

@@ -3,14 +3,6 @@ export splitting_field, is_subfield, is_defining_polynomial_nice,
 
 ################################################################################
 #
-#  Base field
-#
-################################################################################
-
-base_field(K::AnticNumberField) = FlintQQ
-
-################################################################################
-#
 #  Order type
 #
 ################################################################################
@@ -43,7 +35,7 @@ is_simple(::AnticNumberField) = true
 function number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
-  mp = MapFromFunc(y -> S(Qx(y)), x -> K(lift(x)), K, S)
+  mp = MapFromFunc(K, S, y -> S(Qx(y)), x -> K(lift(x)))
   return K, mp
 end
 
@@ -244,24 +236,6 @@ function relative_class_number(K::AnticNumberField)
   return divexact(h, hp)
 end
 
-################################################################################
-#
-#  Basis
-#
-################################################################################
-
-function basis(K::AnticNumberField)
-  n = degree(K)
-  g = gen(K);
-  d = Array{typeof(g)}(undef, n)
-  b = K(1)
-  for i = 1:n-1
-    d[i] = b
-    b *= g
-  end
-  d[n] = b
-  return d
-end
 
 ################################################################################
 #
@@ -422,7 +396,7 @@ end
 
 function _issubfield(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
-  R = roots(f, L, max_roots = 1)
+  R = roots(L, f, max_roots = 1)
   if isempty(R)
     return false, L()
   else
@@ -591,7 +565,7 @@ Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 2 fields together with the embedding of $K \to C$ and $L \to C$.
 """
 function compositum(K::AnticNumberField, L::AnticNumberField)
-  lf = factor(K.pol, L)
+  lf = factor(L, K.pol)
   d = degree(first(lf.fac)[1])
   if any(x->degree(x) != d, keys(lf.fac))
     error("2nd field cannot be normal")
@@ -797,8 +771,6 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   end
 end
 
-
-copy(f::QQPolyRingElem) = parent(f)(f)
 gcd_into!(a::QQPolyRingElem, b::QQPolyRingElem, c::QQPolyRingElem) = gcd(b, c)
 
 @doc raw"""
@@ -895,14 +867,6 @@ function _splitting_field(fl::Vector{<:PolyElem{<:NumFieldElem}}; do_roots::Type
   end
 end
 
-function Base.:(^)(a::nf_elem, e::UInt)
-  b = parent(a)()
-  ccall((:nf_elem_pow, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, UInt, Ref{AnticNumberField}),
-        b, a, e, parent(a))
-  return b
-end
-
 
 @doc raw"""
     normal_closure(K::AnticNumberField) -> AnticNumberField, NfToNfMor
@@ -911,17 +875,8 @@ The normal closure of $K$ together with the embedding map.
 """
 function normal_closure(K::AnticNumberField)
   s = splitting_field(K.pol)
-  r = roots(K.pol, s)[1]
+  r = roots(s, K.pol)[1]
   return s, hom(K, s, r, check = false)
-end
-
-function set_name!(K::AnticNumberField, s::String)
-  set_attribute!(K, :name => s)
-end
-
-function set_name!(K::AnticNumberField)
-  s = find_name(K)
-  s === nothing || set_name!(K, string(s))
 end
 
 ################################################################################
@@ -955,8 +910,6 @@ end
 #  more general coercion, field lattice
 #
 ################################################################################
-
-Nemo.is_cyclo_type(::NumField) = false
 
 function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}} = Val{true}) where {T, S}
   if Nemo.is_cyclo_type(a) && Nemo.is_cyclo_type(parent(b))
@@ -1005,7 +958,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   s === nothing && return s
   all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s if filter(f))
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
   end
   new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
@@ -1026,7 +979,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
           b = base_field(domain(f))
           ob = objectid(b)
           if !haskey(all_chain, ob)
-            g = MapFromFunc(x->domain(f)(x), b, domain(f))
+            g = MapFromFunc(b, domain(f), x->domain(f)(x))
             all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
             push!(new_k, b)
           end
@@ -1044,7 +997,7 @@ function find_one_chain(t::NumField, a::NumField)
   ot = objectid(t)
   all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s)
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(x->a(x), base_field(a), a)]
+    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
   end
   new_k = Any[domain(f) for f = s]
   if haskey(all_chain, ot)
@@ -1071,7 +1024,7 @@ function find_one_chain(t::NumField, a::NumField)
         b = base_field(domain(f))
         ob = objectid(b)
         if !haskey(all_chain, ob)
-          g = MapFromFunc(x->domain(f)(x), b, domain(f))
+          g = MapFromFunc(b, domain(f), x->domain(f)(x))
           all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
           push!(new_k, b)
         end
@@ -1318,7 +1271,3 @@ function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{V
   # now ff is a polynomial for b w.r.t. the fa-th cyclotomic field
   return a(ff)
 end
-
-(::QQField)(a::nf_elem) = (is_rational(a) && return coeff(a, 0)) || error("not a rational")
-(::ZZRing)(a::nf_elem) = (isinteger(a) && return numerator(coeff(a, 0))) || error("not an integer")
-

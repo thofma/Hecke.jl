@@ -154,33 +154,45 @@ end
 #
 ################################################################################
 
+# Keyword argument `sol` only for internal use, to avoid to compute a solution
+# in case one just wants to decide on representation.
 @doc raw"""
-     can_solve_with_solution(f::QuadBin, n::Int64)
-For a binary quadratic form $f$ with negative discriminant and an integer $n$,
-returns tuple (`true`, (`x`,`y`)) if $f$(`x`,`y`) = $n$ for integers `x`,`y`.
-If no such integers exist, return (`false`,(0,0))
+     can_solve_with_solution(f::QuadBin, n::IntegerUnion)
+                                           -> Bool, Tuple{ZZRingElem, ZZRingElem}
+
+For a binary quadratic form `f` with negative discriminant and an integer `n`,
+return the tuple `(true, (x, y))` if $f(x, y) = n$ for integers `x`, `y`.
+If no such integers exist, return `(false, (0, 0))`
 """
-function can_solve(f::QuadBin, n::Int64)
-    if discriminant(f) >= 0
-        @error("$f has non-negative discriminant")
+function can_solve_with_solution(f::QuadBin, n::IntegerUnion; sol::Bool = true)
+  @req discriminant(f) < 0 "f must have negative discriminant"
+  for y in 1:Int(floor(sqrt(Int(4*f[1]*n)//abs(Int(discriminant(f))))))
+    #now f(x,y) quadratic in one variable -> use quadratic formula
+    aq = f[1]
+    bq = f[2] * y
+    cq = f[3] * y^2 - n
+    d = bq^2 - 4*aq*cq
+    if is_square(d)
+      if divides(-bq + sqrt(d), 2*aq)[1]
+        !sol && return true, (ZZ(0), ZZ(0))
+        return true, (divexact(-bq + sqrt(d), 2*aq), ZZ(y))
+      end
+      if divides(-bq - sqrt(d), 2*aq)[1]
+        !sol && return true, (ZZ(0), ZZ(0))
+        return true, (divexact(-bq - sqrt(d), 2*aq), ZZ(y))
+      end
     end
-    for y in 1:Int64(floor(sqrt(Int64(4*f[1]*n)//abs(Int64(discriminant(f))))))
-        #now f(x,y) quadratic in one variable -> use quadratic formula
-        aq = f[1]
-        bq = f[2] * y
-        cq = f[3] * y^2 - n
-        d = bq^2 - 4*aq*cq
-        if is_square(d)
-            if divides(-bq + sqrt(d), 2*aq)[1]
-                return(true, (divexact(-bq + sqrt(d), 2*aq), ZZ(y)))
-            end
-            if divides(-bq - sqrt(d), 2*aq)[1]
-                return(true, (divexact(-bq - sqrt(d), 2*aq), ZZ(y)))
-            end
-        end
-    end
-    return (false, (FlintZZ(0),ZZ(0)))
+  end
+  return false, (ZZ(0), ZZ(0))
 end
+
+@doc raw"""
+     can_solve(f::QuadBin, n::IntegerUnion) -> Bool
+
+For a binary quadratic form `f` with negative discriminant and an integer `n`,
+return whether `f` represents `n`.
+"""
+can_solve(f::QuadBin, n::IntegerUnion) = can_solve_with_solution(f, n, sol = false)[1]
 
 ###############################################################################
 #

@@ -145,7 +145,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   Ft = polynomial_ring(F, "t", cached = false)[1]
   rt = Vector{Vector{fqPolyRepFieldElem}}(undef, ngens(K))
   for i = 1:length(pols)
-    rt[i] = roots(pols[i], F)
+    rt[i] = roots(F, pols[i])
   end
   rt_all = Vector{Vector{fqPolyRepFieldElem}}(undef, degree(K))
   ind = 1
@@ -207,24 +207,6 @@ function _block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpFi
   return b
 end
 
-function AbstractAlgebra.map_coefficients(F::fpField, f::QQMPolyRingElem; parent = polynomial_ring(F, nvars(parent(f)), cached = false)[1])
-  dF = denominator(f)
-  d = F(dF)
-  if iszero(d)
-    error("Denominator divisible by p!")
-  end
-  m = inv(d)
-  ctx = MPolyBuildCtx(parent)
-  for x in zip(coefficients(f), exponent_vectors(f))
-    el = numerator(x[1]*dF)
-    push_term!(ctx, F(el)*m, x[2])
-  end
-  return finish(ctx)
-end
-
-
-
-
 function _sieve_primitive_elements(B::Vector{nf_elem})
   K = parent(B[1])
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
@@ -237,7 +219,7 @@ function _sieve_primitive_elements(B::Vector{nf_elem})
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
-  rt = roots(f, F)
+  rt = roots(F, f)
 
   n = degree(K)
   indices = Int[]
@@ -271,7 +253,7 @@ function _block(a::nf_elem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRing
   _R = Native.GF(Int(characteristic(base_ring(ap))), cached = false)
   _Ry, _ = polynomial_ring(_R, "y", cached = false)
   _tmp = _Ry()
-  nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
+  Nemo.nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
   set_length!(ap, length(_tmp))
   for i in 0:(length(_tmp) - 1)
     setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
@@ -376,7 +358,7 @@ function polredabs(K::AnticNumberField)
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
-  rt = roots(f, F)
+  rt = roots(F, f)
 
   n = degree(K)
 

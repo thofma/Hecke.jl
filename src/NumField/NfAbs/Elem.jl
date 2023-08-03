@@ -2,14 +2,6 @@ export is_integral
 
 ################################################################################
 #
-#  Copy
-#
-################################################################################
-
-Base.copy(d::nf_elem) = deepcopy(d)
-
-################################################################################
-#
 #  Basis matrix
 #
 ################################################################################
@@ -55,84 +47,9 @@ end
 
 ################################################################################
 #
-#  Characteristic polynomial
-#
-################################################################################
-
-function charpoly(Qx::QQPolyRing, a::nf_elem)
-  f = charpoly(Qx, representation_matrix(a))
-  return f
-end
-
-function charpoly(a::nf_elem)
-  f = charpoly(parent(parent(a).pol), a)
-  return f
-end
-
-function charpoly(a::nf_elem, ::QQField)
-  return charpoly(a)
-end
-
-function charpoly(Zx::ZZPolyRing, a::nf_elem)
-  f = charpoly(a)
-  if !isone(denominator(f))
-    error("Element is not integral")
-  end
-  return Zx(f)
-end
-
-function charpoly(a::nf_elem, Z::ZZRing)
-  return charpoly(polynomial_ring(Z, cached = false)[1], a)
-end
-
-################################################################################
-#
-#  Minimal polynomial
-#
-################################################################################
-
-@doc raw"""
-    minpoly(a::nf_elem) -> QQPolyRingElem
-
-The minimal polynomial of $a$.
-"""
-function minpoly(Qx::QQPolyRing, a::nf_elem)
-  f = minpoly(Qx, representation_matrix(a))
-  return f
-end
-
-function minpoly(a::nf_elem)
-  f = minpoly(parent(parent(a).pol), a)
-  return f
-end
-
-function minpoly(a::nf_elem, ::QQField)
-  return minpoly(a)
-end
-
-function minpoly(a::nf_elem, ZZ::ZZRing)
-  return minpoly(polynomial_ring(ZZ, cached = false)[1], a)
-end
-
-function minpoly(Zx::ZZPolyRing, a::nf_elem)
-  f = minpoly(a)
-  if !isone(denominator(f))
-    error("Element is not integral")
-  end
-  return Zx(f)
-end
-
-################################################################################
-#
 #  Unsafe operations
 #
 ################################################################################
-
-function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, libantic), Nothing,
-         (Ref{nf_elem}, Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}),
-         a, b, c, a.parent)
-end
 
 function set_den!(a::nf_elem, d::ZZRingElem)
   ccall((:nf_elem_set_den, libantic), Nothing,
@@ -146,13 +63,6 @@ function set_num_coeff!(a::nf_elem, i::Int, b::ZZRingElem)
         a, i, b, parent(a))
 end
 
-function divexact!(z::nf_elem, x::nf_elem, y::ZZRingElem)
-  ccall((:nf_elem_scalar_div_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-        z, x, y, parent(x))
-  return z
-end
-
 function gen!(r::nf_elem)
    a = parent(r)
    ccall((:nf_elem_gen, libantic), Nothing,
@@ -160,21 +70,6 @@ function gen!(r::nf_elem)
    return r
 end
 
-function one!(r::nf_elem)
-   a = parent(r)
-   ccall((:nf_elem_one, libantic), Nothing,
-         (Ref{nf_elem}, Ref{AnticNumberField}), r, a)
-   return r
-end
-
-function one(r::nf_elem)
-   a = parent(r)
-   return one(a)
-end
-
-function zero(r::nf_elem)
-   return zero(parent(r))
-end
 
 ################################################################################
 #
@@ -288,27 +183,6 @@ function is_norm_divisible_pp(a::nf_elem, n::ZZRingElem)
   return iszero(el)
 end
 
-################################################################################
-#
-#  Numerator
-#
-################################################################################
-
-@doc raw"""
-    numerator(a::nf_elem) -> nf_elem
-
-For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with
-$b\in Z[t]$, $\deg(a) = \deg(b)$ and $d>0$ minimal in $Z$.
-This function returns $b$.
-"""
-function numerator(a::nf_elem)
-   _one = one(FlintZZ)
-   z = deepcopy(a)
-   ccall((:nf_elem_set_den, libantic), Nothing,
-         (Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-         z, _one, a.parent)
-   return z
-end
 
 ################################################################################
 #
@@ -401,17 +275,17 @@ end
 ################################################################################
 
 @doc raw"""
-    factor(f::ZZPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
-    factor(f::QQPolyRingElem, K::number_field) -> Fac{Generic.Poly{nf_elem}}
+    factor(K::number_field, f::ZZPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
+    factor(K::number_field, f::QQPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
 
 The factorisation of $f$ over $K$.
 """
-function factor(f::QQPolyRingElem, K::AnticNumberField)
+function factor(K::AnticNumberField, f::QQPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
-function factor(f::ZZPolyRingElem, K::AnticNumberField)
+function factor(K::AnticNumberField, f::ZZPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
@@ -649,23 +523,23 @@ end
 ################################################################################
 
 @doc raw"""
-    roots(f::ZZPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
+    roots(K::AnticNumberField, f::ZZPolyRingElem) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(f::ZZPolyRingElem, K::AnticNumberField; kw...)
+function roots(K::AnticNumberField, f::ZZPolyRingElem; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
 @doc raw"""
-    roots(f::QQPolyRingElem, K::AnticNumberField) -> Vector{nf_elem}
+    roots(K::AnticNumberField, f::QQPolyRingElem) -> Vector{nf_elem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(f::QQPolyRingElem, K::AnticNumberField; kw...)
+function roots(K::AnticNumberField, f::QQPolyRingElem; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
@@ -1000,13 +874,6 @@ function coprime_denominator(a::nf_elem, b::ZZRingElem)
   return z
 end
 
-function mod_sym!(a::nf_elem, b::ZZRingElem)
-  ccall((:nf_elem_smod_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-        a, a, b, parent(a))
-  return a
-end
-
 function mod(b::nf_elem, p::ZZRingElem)
   K = parent(b)
   if is_defining_polynomial_nice(parent(b))
@@ -1019,14 +886,6 @@ end
 
 mod(x::nf_elem, y::Integer) = mod(x, ZZRingElem(y))
 
-#Assuming that the denominator of a is one, reduces all the coefficients modulo p
-# non-symmetric (positive) residue system
-function mod!(a::nf_elem, b::ZZRingElem)
-  ccall((:nf_elem_mod_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
-        a, a, b, parent(a))
-  return a
-end
 
 function rem(a::nf_elem, b::ZZRingElem)
   c = deepcopy(a)
@@ -1034,68 +893,6 @@ function rem(a::nf_elem, b::ZZRingElem)
   return c
 end
 
-function mod_sym(a::nf_elem, b::ZZRingElem, b2::ZZRingElem)
-  return mod_sym(a, b)
-  return z
-end
-
-function mod_sym(a::nf_elem, b::ZZRingElem)
-  c = deepcopy(a)
-  mod_sym!(c, b)
-  return c
-end
-
-################################################################################
-#
-#  Conversion to zzModPolyRingElem and ZZModPolyRingElem
-#
-################################################################################
-
-function nf_elem_to_nmod_poly!(r::zzModPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
-        (Ref{zzModPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
-        r, a, a.parent, Cint(useden))
-  return nothing
-end
-
-function nf_elem_to_gfp_poly!(r::fpPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_nmod_poly_den, libantic), Nothing,
-        (Ref{fpPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
-        r, a, a.parent, Cint(useden))
-  return nothing
-end
-
-function (R::Nemo.zzModPolyRing)(a::nf_elem)
-  r = R()
-  nf_elem_to_nmod_poly!(r, a)
-  return r
-end
-
-function (R::Nemo.fpPolyRing)(a::nf_elem)
-  r = R()
-  nf_elem_to_gfp_poly!(r, a)
-  return r
-end
-
-function nf_elem_to_fmpz_mod_poly!(r::ZZModPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{ZZModPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
-        r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
-  return nothing
-end
-
-function nf_elem_to_gfp_fmpz_poly!(r::FpPolyRingElem, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_fmpz_mod_poly_den, libantic), Nothing,
-        (Ref{FpPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}, Cint, Ref{fmpz_mod_ctx_struct}),
-        r, a, a.parent, Cint(useden), r.parent.base_ring.ninv)
-  return nothing
-end
-
-function (R::Nemo.ZZModPolyRing)(a::nf_elem)
-  r = R()
-  nf_elem_to_fmpz_mod_poly!(r, a)
-  return r
-end
 
 ################################################################################
 #

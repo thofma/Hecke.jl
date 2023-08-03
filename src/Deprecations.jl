@@ -72,6 +72,50 @@
 
 @deprecate PseudoMatrix pseudo_matrix
 
+@deprecate factor(a::QQFieldElem, Z::ZZRing) factor(Z, a)
+
+@deprecate factor(f::QQPolyRingElem, K::AnticNumberField) factor(K, f)
+
+@deprecate factor(f::ZZPolyRingElem, K::AnticNumberField) factor(K, f)
+
+@deprecate factor(a::nf_elem, I::NfOrdIdlSet) factor(I, a)
+
+@deprecate factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) factor(I, a)
+
+@deprecate factor(a::Generic.RationalFunctionFieldElem{T}, R::S) where {T, S<:PolyRing{T}} factor(R, a)
+
+@deprecate factor(a::Generic.RationalFunctionFieldElem, R::HessQR) factor(R, a)
+
+@deprecate factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}, F::Generic.FunctionField{T}) where {T} factor(F, f)
+
+@deprecate factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, R::ArbField) factor(R, f)
+
+@deprecate factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, C::AcbField) factor(C, f)
+
+@deprecate factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...) factor(R, f, abs_tol, initial_prec...)
+
+@deprecate factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...) factor(R, f, abs_tol, initial_prec...)
+
+@deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; refine::Bool = false) factor_coprime(I, a, refine = refine)
+
+@deprecate roots(f::QQPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
+@deprecate roots(f::ZZPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
+
+@deprecate roots(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField}) roots(F, f)
+
+@deprecate roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::ArbField, abs_tol::Int=R.prec, initial_prec::Int...) roots(R, f, abs_tol, initial_prec...)
+
+@deprecate roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...) roots(R, f, abs_tol, initial_prec...)
+
+@deprecate roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int = degree(f)) roots(Q, f; max_roots = max_roots)
+
+@deprecate roots(f::ZZPolyRingElem, Q::QQField; max_roots::Int = degree(f)) roots(Q, f; max_roots = max_roots)
+
+@deprecate any_root(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField}) any_root(F, f)
+
+@deprecate any_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField) any_root(F, f)
+
+
 # Things that moved to Nemo
 
 # > 0.18.1

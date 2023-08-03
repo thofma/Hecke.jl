@@ -78,7 +78,7 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
   while true
     precnew = attempt*prec
 
-    if phi == nothing
+    if phi === nothing
       b2, b4, b6, b8 = map(ArbField(precnew), b_invars(E))
     else
       b2, b4, b6, b8 = map(real, (map(evaluation_function(phi, precnew), b_invars(E))))
@@ -130,7 +130,7 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
   while true
     precnew = attempt*prec
 
-    if phi == nothing
+    if phi === nothing
       b2, b4, b6, b8 = map(AcbField(precnew), b_invars(E))
     else
       b2, b4, b6, b8 = map(evaluation_function(phi, precnew), b_invars(E))

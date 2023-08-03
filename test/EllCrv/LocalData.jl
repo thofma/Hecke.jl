@@ -17,10 +17,20 @@
     @test f == 1
     @test c == 1
 
+    _, K, f, c = Hecke._tates_algorithm(E, 2)
+    @test K == "I1"
+    @test f == 1
+    @test c == 1
+
     @test reduction_type(E, 2) == "Nonsplit multiplicative"
 
     Ep, K, f, c = tates_algorithm_local(E, 3)
     @test a_invars(tidy_model(Ep)) == a_invars(E)
+    @test K == "I2"
+    @test f == 1
+    @test c == 2
+
+    _, K, f, c = Hecke._tates_algorithm(E, 3)
     @test K == "I2"
     @test f == 1
     @test c == 2
@@ -31,7 +41,12 @@
     @test f == 2
     @test c == 2
 
-     @test reduction_type(E, 5) == "Additive"
+    _, K, f, c = Hecke._tates_algorithm(E, 5)
+    @test K == "III*"
+    @test f == 2
+    @test c == 2
+
+    @test reduction_type(E, 5) == "Additive"
 
     Ep, K, f, c = tates_algorithm_local(E, 13)
     @test a_invars(tidy_model(Ep)) == a_invars(E)
@@ -299,5 +314,85 @@
     P = lp[2][1]
   end
   @test @inferred kodaira_symbol(E, P) == "I0"
+
+  # rational function field
+  QQt, t = RationalFunctionField(QQ, "t")
+  E = elliptic_curve_from_j_invariant(t)
+   _, K, f, c, s = tates_algorithm_local(E, 1//t)
+  @test K == "I1"
+  @test f == 1
+  @test c == 1
+  @test s == true
+
+   _, K, f, c, s = tates_algorithm_local(E, t)
+  @test K == "II"
+  @test f == 2
+  @test c == 1
+  @test s == true
+
+   _, K, f, c, s = tates_algorithm_local(E, t - 1728)
+  @test K == "III*"
+  @test f == 2
+  @test c == 2
+  @test s == true
+
+  E = elliptic_curve_from_j_invariant(t^3 + t + 1)
+   _, K, f, c, s = tates_algorithm_local(E, 1//t)
+  @test K == "I3"
+  @test f == 1
+  @test c == 3
+  @test s == true
+
+   _, K, f, c, s = tates_algorithm_local(E, t^3 + t - 1727)
+  @test K == "III*"
+  @test f == 2
+  @test c == 2
+  @test s == true
+
+   _, K, f, c, s = tates_algorithm_local(E, t^3 + t + 1)
+  @test K == "II"
+  @test f == 2
+  @test c == 1
+  @test s == true
+
+  k, a = quadratic_field(2)
+  kt, t = RationalFunctionField(k, "t")
+  E = elliptic_curve_from_j_invariant(1//(t^2 + t + a))
+
+   _, K, f, c, s = tates_algorithm_local(E, 1//t)
+  @test K == "IV"
+  @test f == 2
+  @test c == 1
+  @test s == true
+
+   _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1//1728*(1728*a - 1))
+  @test K == "III*"
+  @test f == 2
+  @test c == 2
+  @test s == true
+
+   _, K, f, c, s = tates_algorithm_local(E, t^2 + t + a)
+  @test K == "I1"
+  @test f == 1
+  @test c == 1
+  @test s == true
+
+  kt, t = RationalFunctionField(GF(2), "t")
+  E = elliptic_curve_from_j_invariant(t^3/(t^2 + t + 1))
+   _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1)
+  @test K == "I1"
+  @test f == 1
+  @test c == 1
+  @test s == true
+   _, K, f, c, s = tates_algorithm_local(E, t)
+  @test K == "I0*"
+  @test f == 5
+  @test c == 2
+  @test s == true
+   _, K, f, c, s = tates_algorithm_local(E, 1//t)
+  @test K == "I1"
+  @test f == 1
+  @test c == 1
+  @test s == true
 end
 

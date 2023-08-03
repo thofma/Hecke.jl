@@ -10,7 +10,7 @@
 
   integral_closure(parent(numerator(t)), F)
   integral_closure(Hecke.Globals.Zx, F)
-  factor(F.pol, F)
+  factor(F, F.pol)
 end
 
 @testset "FldNum" begin

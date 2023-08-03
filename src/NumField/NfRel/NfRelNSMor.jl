@@ -1,5 +1,3 @@
-@inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars
-
 function _prod(A, b)
   for a in A
     b = b * a
@@ -87,10 +85,6 @@ function _get_polys_from_auto(f::NfRelNSToNfRelNSMor_nf_elem, Qxy)
     res[i] = multivariate_from_tower(image_generators(f)[i].data, Qxy)
   end
   return res
-end
-
-function Base.hash(f::zzModMPolyRingElem, h::UInt)
-  return UInt(1)
 end
 
 function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
@@ -226,10 +220,6 @@ function powermod(a::S, i::Union{Int, ZZRingElem}, modu::Vector{S}) where S <:MP
   return b
 end
 
-function mulmod(a::S, b::S, mod::Vector{S}) where S <:MPolyRingElem{T} where T <: RingElem
-  return divrem(a*b, mod)[2]
-end
-
 
 function _compose_mod(a, vars, vals, powers, modu)
   S = parent(a)
@@ -251,19 +241,6 @@ function _compose_mod(a, vars, vals, powers, modu)
     push!(r, mulmod(t, finish(M), modu))
   end
   return finish(r)
-end
-
-
-function change_base_ring(p::MPolyRingElem{T}, g, new_polynomial_ring) where {T <: RingElement}
-  cvzip = zip(coefficients(p), exponent_vectors(p))
-  M = MPolyBuildCtx(new_polynomial_ring)
-  for (c, v) in cvzip
-    res = g(c)
-    if !iszero(res)
-      push_term!(M, g(c), v)
-    end
-  end
-  return finish(M)::elem_type(new_polynomial_ring)
 end
 
 
@@ -305,7 +282,7 @@ end
 
 function _automorphisms(L::NfRelNS{T}) where T
   Kx, _ = polynomial_ring(base_field(L), "x", cached = false)
-  rts = Vector{elem_type(L)}[roots(to_univariate(Kx, x), L) for x in L.pol]
+  rts = Vector{elem_type(L)}[roots(L, to_univariate(Kx, x)) for x in L.pol]
   auts = Vector{morphism_type(L)}(undef, prod(length(x) for x in rts))
   ind = 1
   it = cartesian_product_iterator([1:length(rts[i]) for i in 1:length(rts)], inplace = true)

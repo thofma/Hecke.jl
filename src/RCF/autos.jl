@@ -29,9 +29,9 @@ function automorphism_group(C::ClassField)
     end
     push!(zz, t)
   end
-  f = MapFromFunc(x->prod(z[i]^x[i] for i=1:length(z)),
-                  y->A([findfirst(isequal(y(gen(K, i))), zz[i])-1 for i=1:length(z)]),
-                  A, G)
+  f = MapFromFunc(A, G,
+                  x->prod(z[i]^x[i] for i=1:length(z)),
+                  y->A([findfirst(isequal(y(gen(K, i))), zz[i])-1 for i=1:length(z)]))
   set_attribute!(C, :RelAuto => f)                
   return A, f                      
 end
@@ -277,7 +277,7 @@ end
 
 function rel_auto_generic(A::ClassField_pp)
   K = A.A
-  imgs = roots(K.pol, K)
+  imgs = roots(K, K.pol)
   homs = morphism_type(K)[hom(K, K, x, check = false) for x in imgs]
   return small_generating_set(homs, *)[1]
 end
@@ -594,7 +594,7 @@ function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
     imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(Cp))
     for j = 1:length(gA)
       pol = map_coefficients(autos[i], Cp[j].A.pol)
-      imgs[j] = roots(pol, A)[1]
+      imgs[j] = roots(A, pol)[1]
     end
     rts[i] = imgs
   end

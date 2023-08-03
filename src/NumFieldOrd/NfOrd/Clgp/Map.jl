@@ -399,7 +399,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
         return true, A.princ_gen_fac_elem
       else
         #a = A.princ_gen_fac_elem
-        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
       end
     else
       if isdefined(A, :princ_gen)
@@ -409,7 +409,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
       if support === Val{false}
         return true, a
       else
-        #return true, a, factor_coprime(a, IdealSet(order(A)), refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
       end
     end
   end
@@ -423,7 +423,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
     end
   end
   c = get_attribute(O, :ClassGrpCtx)
-  if c == nothing
+  if c === nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
     c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
@@ -554,26 +554,6 @@ function unique_fmpz_mat(C::Nemo.arb_mat)
     end
   end
   return true, v
-end
-
-function Base.round(::Type{ZZRingElem}, x::arb)
-  if radius(x) > 1e-1
-    throw(InexactError(:round, ZZRingElem, x))
-  end
-  return setprecision(BigFloat, precision(parent(x))) do
-    round(ZZRingElem, BigFloat(x))
-  end
-end
-
-function Base.round(::Type{ZZMatrix}, C::Nemo.arb_mat)
-  v = zero_matrix(FlintZZ, nrows(C), ncols(C))
-
-  for i=1:nrows(C)
-    for j=1:ncols(C)
-      v[i,j] = round(ZZRingElem, C[i,j])
-    end
-  end
-  return v
 end
 
 function round_approx(::Type{ZZMatrix}, C::Nemo.arb_mat)

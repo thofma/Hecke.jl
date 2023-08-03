@@ -55,21 +55,6 @@ end
        See what Dan did in this case.
 =#
 
-function set_precision(f::PolyElem{T}, n::Int) where {T <: SeriesElem}
-  g = parent(f)()
-  for i=0:length(f)
-    setcoeff!(g, i, set_precision(coeff(f, i), n))
-  end
-  return g
-end
-
-function set_precision!(f::PolyElem{T}, n::Int) where {T <: SeriesElem}
-  for i=0:length(f)
-    setcoeff!(f, i, set_precision!(coeff(f, i), n))
-  end
-  return f
-end
-
 mutable struct HenselCtxFqRelSeries{T}
   f :: ZZMPolyRingElem # bivariate
   n :: Int # number of factors
@@ -276,18 +261,6 @@ function check_qadic(a::qadic)
   @assert all(x->abs(x) < p, coefficients(f))
 end
 
-function shift_right(a::qadic, n::Int)
-  b = deepcopy(a)
-  b.val -= n
-  return b
-end
-
-function shift_left(a::qadic, n::Int)
-  b = deepcopy(a)
-  b.val += n
-  return b
-end
-
 function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
   for i = 0:length(f)
@@ -471,7 +444,7 @@ function analytic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; prec::I
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
   C = AcbField(prec)
-  rt = Hecke.roots(g, C)[1:max_roots]
+  rt = Hecke.roots(C, g)[1:max_roots]
   @assert all(x->parent(x) == C, rt)
   Cs, s = power_series_ring(C, pr+2, "s", cached = false)
   Cst, t = polynomial_ring(Cs, cached = false)
@@ -503,7 +476,7 @@ function symbolic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; max_roo
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
   lg = factor(g)
-  rt = vcat([Hecke.roots(x, number_field(x)[1]) for x = keys(lg.fac)]...)
+  rt = vcat([Hecke.roots(number_field(x)[1], x) for x = keys(lg.fac)]...)
   rt = rt[1:min(length(rt), max_roots)]
   RT = []
   for i = 1:length(rt)
@@ -623,7 +596,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   local p
   while true
     p_max = next_prime(p_max)
-    gp = factor(g, Native.GF(p_max, cached = false))
+    gp = factor(Native.GF(p_max, cached = false), g)
     if any(x->x>1, values(gp.fac))
       @vprintln :AbsFact 1 "not squarefree mod $p_max"
       continue
@@ -1318,11 +1291,6 @@ function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
   return norm(f)
 end
 
-function Hecke.is_irreducible(a::QQMPolyRingElem)
-  af = factor(a)
-  return !(length(af.fac) > 1 || any(x->x>1, values(af.fac)))
-end
-
 # f is bivariate. return f(xvar, 0) where xvar is in the multivar ring R
 function _yzero_image(R, f, xvar::Int)
   z = MPolyBuildCtx(R)
@@ -1555,7 +1523,7 @@ export factor_absolute, is_absolutely_irreducible
 
 #application (for free)
 
-function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, C::AcbField)
+function factor(C::AcbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{acb}, Int}()
   Cx, x = polynomial_ring(C, map(String, symbols(parent(f))), cached = false)
@@ -1579,7 +1547,7 @@ function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, C::AcbField)
   return Fac(map_coefficients(C, fa[1], parent = Cx), D)
 end
 
-function factor(f::Union{QQMPolyRingElem, ZZMPolyRingElem}, R::ArbField)
+function factor(R::ArbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
   fa = factor_absolute(f)
   D = Dict{Generic.MPoly{arb}, Int}()
   Rx, x = polynomial_ring(R, map(String, symbols(parent(f))), cached = false)

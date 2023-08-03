@@ -145,7 +145,7 @@ function _subfield_primitive_element_from_basis(K::AnticNumberField, as::Vector{
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
-  rt = roots(f, F)
+  rt = roots(F, f)
   indices = Int[]
   for i = 1:length(as)
     b = _block(as[i], rt, ap)

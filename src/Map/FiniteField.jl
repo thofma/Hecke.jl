@@ -1,19 +1,3 @@
-function prime_field(K::NumField)
-  return QQField()
-end
-
-function prime_field(F::fqPolyRepField; cached::Bool = true)
-  return Native.GF(Int(characteristic(F)), cached = cached)
-end
-
-function prime_field(F::FqPolyRepField; cached::Bool = true)
-  return Native.GF(characteristic(F), cached = cached)
-end
-
-function prime_field(F::T; cached::Bool = true) where T <: Union{fpField, FpField}
-  return F
-end
-
 function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   @assert parent(a) == K
 
@@ -106,7 +90,7 @@ end
 #Function that finds an embedding of k into K
 function Nemo.embed_any(k::FinField, K::FinField)
   f = defining_polynomial(k)
-  rt = roots(f, K)[1]
+  rt = roots(K, f)[1]
   return hom(k, K, rt)
 end
 

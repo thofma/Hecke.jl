@@ -292,18 +292,6 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
 end
 =#
 
-function Nemo.gcd(a::ResElem{T}, b::ResElem{T}) where T <: IntegerUnion
-  m = modulus(a)
-  return parent(a)(gcd(gcd(a.data, m), b.data))
-end
-
-function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: IntegerUnion
-  m = modulus(a)
-  R = parent(a)
-  g, u, v = gcdx(ZZRingElem(a.data), ZZRingElem(b.data))
-  G, U, V = gcdx(g, ZZRingElem(m))
-  return R(G), R(U)*R(u), R(U)*R(v)
-end
 
 @doc raw"""
     annihilator(a::ResElem{ZZRingElem}) -> r
@@ -318,92 +306,10 @@ function annihilator(a::ResElem{T}) where T <: IntegerUnion
   return R(divexact(m, gcd(m, a.data)))
 end
 
-@doc raw"""
-    is_unit(f::Union{ZZModPolyRingElem,zzModPolyRingElem}) -> Bool
-
-Tests if $f$ is a unit in the polynomial ring, i.e. if
-$f = u + n$ where $u$ is a unit in the coeff. ring
-and $n$ is nilpotent.
-"""
-function Nemo.is_unit(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}
-  if !is_unit(constant_coefficient(f))
-    return false
-  end
-  for i=1:degree(f)
-    if !is_nilpotent(coeff(f, i))
-      return false
-    end
-  end
-  return true
-end
-
-@doc raw"""
-    is_nilpotent(a::ResElem{ZZRingElem}) -> Bool
-    is_nilpotent(a::ResElem{Integer}) -> Bool
-
-Tests if $a$ is nilpotent.
-"""
-function is_nilpotent(a::ResElem{T}) where T <: IntegerUnion
-  #a is nilpontent if it is divisible by all primes divising the modulus
-  # the largest exponent a prime can divide is nbits(m)
-  l = nbits(modulus(a))
-  return iszero(a^l)
-end
-
 function is_zerodivisor(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}
   c = content(f)
   return is_nilpotent(c)
 end
-
-function Nemo.inv(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}
-  if !is_unit(f)
-    error("impossible inverse")
-  end
-  Rx = parent(f)
-  g = Rx(inv(constant_coefficient(f)))
-  #lifting: to invert a, start with an inverse b mod m, then
-  # then b -> b*(2-ab) is an inverse mod m^2
-  # starting with this g, and using the fact that all coeffs are nilpotent
-  # we have an inverse modulo s.th. nilpotent. Hence it works
-  c = Rx()
-  mul!(c, f, g)
-  while !isone(c)
-    mul!(g, g, 2-c)
-    mul!(c, f, g)
-  end
-  return g
-end
-
-function Nemo.invmod(f::ZZModPolyRingElem, M::ZZModPolyRingElem)
-  if !is_unit(f)
-    r = parent(f)()
-    i = ccall((:fmpz_mod_poly_invmod, libflint), Int, (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, f, M, f.parent.base_ring.ninv)
-    if iszero(i)
-      error("not yet implemented")
-    else
-      return r
-    end
-  end
-  if !is_unit(leading_coefficient(M))
-    error("not yet implemented")
-  end
-  g = parent(f)(inv(constant_coefficient(f)))
-  #lifting: to invert a, start with an inverse b mod m, then
-  # then b -> b*(2-ab) is an inverse mod m^2
-  # starting with this g, and using the fact that all coeffs are nilpotent
-  # we have an inverse modulo s.th. nilpotent. Hence it works
-  c = f*g
-  rem!(c, c, M)
-  while !isone(c)
-    mul!(g, g, 2-c)
-    rem!(g, g, M)
-    mul!(c, f, g)
-    rem!(c, c, M)
-  end
-  return g
-end
-
-
 
 function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f1, g1)
@@ -1301,7 +1207,7 @@ end
 
 function quo(R::fqPolyRepPolyRing, f::fqPolyRepPolyRingElem)
   Q = residue_ring(R, f)
-  mQ = MapFromFunc(x -> Q(x), y -> lift(y), R, Q)
+  mQ = MapFromFunc(R, Q, x -> Q(x), y -> lift(y))
   return Q, mQ
 end
 
@@ -1321,15 +1227,6 @@ function unit_group_pp(f::fqPolyRepPolyRingElem, k::Int)
 end
 
 =#
-function basis(K::fqPolyRepField)
-  b = fqPolyRepFieldElem[]
-  for i=1:degree(K)
-    x = K()
-    setcoeff!(x, i-1, UInt(1))
-    push!(b, x)
-  end
-  return b
-end
 
 function unit_group_1_part(f::fqPolyRepPolyRingElem, k::Int)
   pr = [k]
@@ -1379,7 +1276,7 @@ function FlintFiniteField(f::fqPolyRepPolyRingElem, s::AbstractString = "o"; cac
   k = base_ring(f)
   p = characteristic(k)
   K, o = FlintFiniteField(p, degree(k)*degree(f), s, cached = cached)
-  r = roots(f, K)[1]  # not working, embeddings are missing
+  r = roots(K, f)[1]  # not working, embeddings are missing
   fl || error("s.th. went wrong")
   return K, r
 end
@@ -1436,16 +1333,6 @@ function taylor_shift(x::zzModPolyRingElem, c::UInt)
   ccall((:nmod_poly_taylor_shift, libflint), Nothing,
           (Ref{zzModPolyRingElem}, Ref{zzModPolyRingElem}, UInt), r, x, c)
   return r
-end
-
-function evaluate(f::fpPolyRingElem, v::Vector{fpFieldElem})
-  F = base_ring(f)
-  v1 = UInt[x.data for x in v]
-  res = UInt[UInt(1) for x in v]
-  ccall((:nmod_poly_evaluate_nmod_vec, libflint), Nothing,
-          (Ptr{UInt}, Ref{fpPolyRingElem}, Ptr{UInt}, UInt),
-          res, f, v1, UInt(length(v)))
-  return fpFieldElem[fpFieldElem(x, F) for x in res]
 end
 
 
@@ -1636,10 +1523,4 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem,
     end
     return false
   end
-end
-
-function addmul!(z::T, x::T, y::T) where {T <: RingElement}
-  zz = parent(z)()
-  zz = mul!(zz, x, y)
-  return addeq!(z, zz)
 end

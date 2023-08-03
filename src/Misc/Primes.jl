@@ -2,25 +2,6 @@ export PrimesSet
 
 ################################################################################
 #
-#  Missing is_prime functionality
-#
-################################################################################
-
-# Fallback
-function is_prime(x::Integer)
-  return is_prime(ZZRingElem(x))
-end
-
-function next_prime(x::BigInt, proved::Bool = true)
-  return BigInt(next_prime(ZZRingElem(x), proved))
-end
-
-function next_prime(x::T, proved::Bool = true) where {T <: Integer}
-  return T(next_prime(BigInt(x), proved))
-end
-
-################################################################################
-#
 #  Primes iterator
 #
 ################################################################################

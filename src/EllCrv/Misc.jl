@@ -56,26 +56,6 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    zeros(f::ZZPolyRingElem) -> Vector{ZZRingElem}
-
-Computes the integer zeros of a given polynomial $f$.
-"""
-function zeros(f::ZZPolyRingElem)
-
-  fac = factor(f)
-  zeros = Nemo.ZZRingElem[]
-
-    # check if there are monic linear factors <-> zeros
-  for i in fac
-    if degree(i[1]) == 1 && leading_coefficient(i[1]) == 1
-      push!(zeros, -coeff(i[1],0))
-    end
-  end
-
-  return zeros
-end
-
 
 # @doc raw"""
 #     quadroots(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, p::ZZRingElem) -> Bool
@@ -87,6 +67,33 @@ function quadroots(a, b, c, p)
   F_p = GF(p, cached = false)
   R, x = polynomial_ring(F_p, "x", cached = false)
   f = F_p(a)*x^2 + F_p(b)*x + F_p(c)
+
+  if degree(f) == -1
+    return true
+  elseif degree(f) == 0
+    return false
+  elseif degree(f) == 1
+    return true
+  end
+
+  fac = factor(f)
+  p = first(keys(fac.fac))
+
+  if fac[p] == 2 # f has a double zero
+    return true
+  elseif length(fac) == 2 # f splits into two different linear factors
+    return true
+  else # f does not have a root
+    return false
+  end
+end
+
+function quadroots(a, b, c, _res::Union{Function, MapFromFunc})
+  #F_p = GF(p, cached = false)
+  aa = _res(a)
+  F = parent(aa)
+  R, x = polynomial_ring(F, "x", cached = false)
+  f = aa*x^2 + _res(b)*x + _res(c)
 
   if degree(f) == -1
     return true
@@ -232,9 +239,6 @@ function normal_basis(K::T, L::T) where T<:FinField
     end
   end
 end
-
-
-jacobi_symbol(x::Integer, y::ZZRingElem) = jacobi_symbol(ZZRingElem(x), y)
 
 
 function mod(a::nf_elem, I::NfOrdIdl)

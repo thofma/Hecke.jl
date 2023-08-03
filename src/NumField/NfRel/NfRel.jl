@@ -483,6 +483,21 @@ function in(a::NfRelElem{nf_elem}, K::AnticNumberField)
   return true
 end
 
+function (K::QQField)(a::NfRelElem)
+  for i in 2:degree(parent(a))
+    @req iszero(coeff(a, i - 1)) "Element must be rational"
+  end
+  return QQ(coeff(a, 0))
+end
+
+function is_rational(a::NfRelElem)
+  for i in 2:degree(parent(a))
+    if !iszero(coeff(a, i - 1))
+      return false
+    end
+  end
+  return is_rational(coeff(a, 0))
+end
 
 ################################################################################
 #
@@ -770,7 +785,7 @@ end
 
 RandomExtensions.maketype(L::NfRel, B) = elem_type(L)
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelElem,<:NfRel,<:UnitRange}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelElem,<:NfRel,<:AbstractUnitRange}})
   L, B = sp[][1:end]
   k = base_field(L)
   pb = basis(L)
@@ -782,8 +797,8 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelElem,<:NfRel,<
   return z
 end
 
-rand(L::NfRel, B::UnitRange{Int}) = rand(GLOBAL_RNG, L, B)
-rand(rng::AbstractRNG, L::NfRel, B::UnitRange{Int}) = rand(rng, make(L, B))
+rand(L::NfRel, B::AbstractUnitRange{Int}) = rand(GLOBAL_RNG, L, B)
+rand(rng::AbstractRNG, L::NfRel, B::AbstractUnitRange{Int}) = rand(rng, make(L, B))
 
 ################################################################################
 #

@@ -400,7 +400,7 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::ZZRingElem, b::Hec
   while !(aa === nothing)
     push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa, 1))
     aa = iterate(ta, sa)
-    if !aa == nothing
+    if !aa === nothing
       aa, sa = aa
     end
   end
@@ -543,26 +543,6 @@ function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPol
   return finish(bt)
 end
 
-
-function Hecke.mod!(f::ZZPolyRingElem, p::ZZRingElem)
-  for i=0:degree(f)
-    setcoeff!(f, i, mod(coeff(f, i), p))
-  end
-end
-
-function Hecke.mod(f::ZZPolyRingElem, p::ZZRingElem)
-  g = parent(f)()
-  for i=0:degree(f)
-    setcoeff!(g, i, mod(coeff(f, i), p))
-  end
-  return g
-end
-
-function Hecke.mod_sym!(f::ZZPolyRingElem, p::ZZRingElem)
-  for i=0:degree(f)
-    setcoeff!(f, i, Hecke.mod_sym(coeff(f, i), p))
-  end
-end
 
 #=
 import Base.//, Base.==

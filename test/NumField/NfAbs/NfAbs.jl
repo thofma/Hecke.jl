@@ -64,5 +64,5 @@ end
  Qx, x = polynomial_ring(FlintQQ, "x")
  f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37
  K, a = number_field(f)
- @test length(factor(f, K).fac) == 4
+ @test length(factor(K, f).fac) == 4
 end

@@ -26,7 +26,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
     if gcd(p-1, i) > 1
       continue
     end
-    lp = factor(f, GF(p))
+    lp = factor(GF(p), f)
     if any(x->x>1, values(lp.fac))
       continue
     end

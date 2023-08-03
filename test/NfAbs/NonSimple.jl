@@ -170,4 +170,12 @@
     @test is_isomorphic(L, K)
   end
 
+  @testset "coercion" begin
+    Qx, x = FlintQQ["x"]
+    K, (a, b) = number_field([x^2 - 2, x^3 - 3])
+    @test (@inferred QQ(2*a^0)) == 2*one(QQ)
+    @test @inferred is_rational(2*a^0)
+    @test_throws ArgumentError QQ(a)
+    @test @inferred !is_rational(a)
+  end
 end

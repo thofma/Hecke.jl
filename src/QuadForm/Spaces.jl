@@ -271,6 +271,15 @@ Shortcut for `v * gram_matrix(V) * adjoint(w)`.
 """
 inner_product(V::AbstractSpace, v::MatElem, w::MatElem)
 
+@doc raw"""
+    inner_product(L::AbstractLat, v::Vector, w::Vector) -> FieldElem
+
+Return the inner product of `v` and `w` with respect to the bilinear form of
+the `rational_span(L)`. In case ``L`` is free and ``G`` its gram matrix,
+this is ``v G w^t``.
+"""
+inner_product(L::AbstractLat, v, w) = inner_product(rational_span(L), v, w)
+
 _inner_product(L::AbstractLat, v, w) = inner_product(ambient_space(L), v, w)
 
 ################################################################################
