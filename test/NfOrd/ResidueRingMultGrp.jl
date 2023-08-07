@@ -702,4 +702,12 @@
       @test mG3(g)*mG3(h) == mG3(g + h)
     end
   end
+
+  # zero-rings
+  K, a = rationals_as_number_field()
+  OK = maximal_order(K)
+  I = ideal(OK, 1)
+  Q, mQ = quo(OK, I)
+  @test is_unit(zero(Q))
+  @test divides(zero(Q), zero(Q))[1]
 end

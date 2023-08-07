@@ -1429,7 +1429,7 @@ function direct_product(a::AlgAss{T}, _algebras::AlgAss{T}...; task::Symbol = :s
     end
     offset += dd
   end
-  A = AlgAss(base_ring(algebras[1]), mt)
+  A = AlgAss(base_ring(algebras[1]), mt; check = false)
   if task == :none
     return A
   end

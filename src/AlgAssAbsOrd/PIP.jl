@@ -2499,7 +2499,7 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
 
   @vprintln :PIP "new preprocessing units"
   local_coeffs = _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted, inv_special_basis_matrix_Hinv)
-
+  @vprintln :PIP "Lengths $(length.(local_coeffs))"
   #@time for i in 1:length(dec)
   #  _local_coeffs = Vector{QQFieldElem}[]
   #  m = dec_sorted[i][2]::morphism_type(AlgAss{QQFieldElem}, typeof(A))
@@ -2545,10 +2545,10 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
     end
   end
 
-  #@info "Lengths $(length.(local_coeffs))"
-  #@info "Unrestricted length of last block: $(length(local_coeffs[end]))"
-  #@info "Restricted lengths (integral) of the last block $(length.(indices_integral))"
-  #@info "Restricted lengths (non-integral) of the last block $(length.(indices_nonintegral))"
+  @vprintln :PIP "Lengths $(length.(local_coeffs))"
+  @vprintln :PIP "Unrestricted length of last block: $(length(local_coeffs[end]))"
+  @vprintln :PIP "Restricted lengths (integral) of the last block $(length.(indices_integral))"
+  @vprintln :PIP "Restricted lengths (non-integral) of the last block $(length.(indices_nonintegral))"
 
   dd = dim(A)
 
@@ -2563,9 +2563,9 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
     _vtemp = reduce(.+, (local_coeffs[i][x[i]] for i in 1:length(local_coeffs)))
     el = A(_vtemp * (H * special_basis_matrix))
     @assert el * O == I
-    @vprintln :PIP "Checking with old method"
-    ffl, xx = _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
-    @assert ffl
+    #@vprintln :PIP "Checking with old method"
+    #ffl, xx = _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
+    #@assert ffl
     return true, el
   end
 
@@ -2846,7 +2846,7 @@ function _twists(Y)
   QG = algebra(order(Y))
   ZG = order(Y)
   G = group(QG)
-  n = order(G)
+  n = degree(ZG)
   rep1 = QQMatrix[ representation_matrix(QG(g), :right) for g in gens(G)];
   A = outer_automorphisms(G)
   @info "Outer automorphisms $(length(A))"
