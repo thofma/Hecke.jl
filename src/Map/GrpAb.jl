@@ -333,6 +333,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
 
     function _preimage(a::AbsOrdQuoRingElem)
       @assert parent(a) === Q
+      @assert is_unit(a)
       return G(disc_log(a))
     end
 

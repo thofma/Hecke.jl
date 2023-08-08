@@ -396,7 +396,11 @@ function _one(Q::AbsOrdQuoRing)
 end
 
 function one(Q::AbsOrdQuoRing)
-  return elem_type(Q)(Q, one(base_ring(Q)))
+  if isdefined(Q, :one)
+    return deepcopy(Q.one)#elem_type(Q)(Q, one(base_ring(Q)))
+  else
+    return elem_type(Q)(Q, one(base_ring(Q)))
+  end
 end
 
 function zero(Q::AbsOrdQuoRing)
@@ -470,7 +474,13 @@ end
 function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
 
-  iszero(y) && error("Dividing by zero")
+  if iszero(y)
+    if iszero(x)
+      return true, zero(parent(x))
+    else
+      return false, x
+    end
+  end
 
   if iszero(x)
     return true, zero(parent(x))
@@ -578,9 +588,6 @@ end
 ################################################################################
 
 function is_invertible(x::AbsOrdQuoRingElem)
-  if iszero(x)
-    return false, x
-  end
   return is_divisible(one(parent(x)), x)
 end
 

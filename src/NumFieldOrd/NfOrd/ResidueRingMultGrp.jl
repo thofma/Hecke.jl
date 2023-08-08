@@ -194,6 +194,9 @@ function _multgrp_mod_p(p::NfOrdIdl, pnumv::ZZRingElem = ZZRingElem(0))
         while el != y
           el *= gen_quo
           res += 1
+          if res > n
+            error("should not happen")
+          end
         end
         return ZZRingElem[res]
       else

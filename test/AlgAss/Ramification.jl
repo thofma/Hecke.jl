@@ -142,4 +142,10 @@
 
     @test schur_index(QQIM2x2overQQi) == 1
   end
+
+  # Eichler
+  QG = QQ[small_group(6, 1)]
+  @test is_eichler(QG)
+  QG = QQ[small_group(8, 4)]
+  @test !is_eichler(QG)
 end

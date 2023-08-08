@@ -205,9 +205,23 @@ end
 #
 ################################################################################
 
+function is_eichler(A::AbsAlgAss)
+  if issimple(A) && iscentral(A)
+    return _is_eichler_csa(A)
+  end
+  d = decompose(A)
+  for (B, _) in d
+    BC, = _as_algebra_over_center(B)
+    if !_is_eichler_csa(BC)
+      return false
+    end
+  end
+  return true
+end
+
 # Tests whether A fulfils the Eichler condition relative to the maximal Z-order
 # of base_ring(A)
-function is_eichler(A::AbsAlgAss{nf_elem})
+function _is_eichler_csa(A::AbsAlgAss{nf_elem})
   @assert issimple(A)
   @assert iscentral(A)
 
@@ -229,7 +243,7 @@ function is_eichler(A::AbsAlgAss{nf_elem})
   return false
 end
 
-function is_eichler(A::AbsAlgAss{QQFieldElem})
+function _is_eichler_csa(A::AbsAlgAss{QQFieldElem})
   @assert issimple(A)
   @assert iscentral(A)
   if dim(A) != 4
