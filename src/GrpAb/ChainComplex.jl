@@ -308,7 +308,6 @@ function Base.pushfirst!(C::ComplexOfMorphisms{T}, M::Map{<:T, <:T}) where {T}
   set_attribute!(C, :show=>nothing)
 end
 
-
 function shift(C::ComplexOfMorphisms{T}, n::Int) where T
   if iseven(n)
     ComplexOfMorphisms(T, copy(C.maps), seed = C.seed+n, typ = C.typ)
@@ -329,6 +328,77 @@ map_type(C::ComplexOfMorphisms) = valtype(C.maps)
 
 Hecke.base_ring(::GrpAbFinGen) = ZZ
 
+function get_name(M, na::String)
+  name = get_attribute(M, :name)
+  if name !== nothing
+    return name
+  end
+  name = AbstractAlgebra.find_name(M)
+  if name !== nothing
+    return name
+  end
+  return na
+end
+
+function pres_show(io::IO, C::ComplexOfMorphisms)
+  Cn = get_attribute(C, :name)
+  if Cn === nothing
+    Cn = "F"
+  end
+
+  name_mod = String[]
+  rank_mod = Int[]
+
+  rng = range(C)
+  arr = ("<--", "--")
+
+  R = Nemo.base_ring(C[first(rng)])
+  R_name = get_name(R, "$R")
+ 
+  for i=reverse(rng)
+    M = C[i]
+    if i == -1 #the object that is presented
+      push!(name_mod, get_name(M, "M"))
+      push!(rank_mod, 0)
+    else
+      push!(name_mod, get_name(M, "$R_name^$(rank(M))"))
+      push!(rank_mod, rank(M))
+    end
+  end
+
+  io = IOContext(io, :compact => true)
+#  print(io, "Presentation")
+#  N = get_attribute(C, :free_res)
+#  if N !== nothing
+#    print(io, " of ", N)
+#  end
+#  print(io, "\n")
+
+  pos = 0
+  pos_mod = Int[]
+  
+  for i=1:length(name_mod)
+    print(io, name_mod[i])
+    push!(pos_mod, pos)
+    pos += length(name_mod[i])
+    if i < length(name_mod)
+      print(io, " ", arr[1], arr[2], " ")
+      pos += length(arr[1]) + length(arr[2]) + 2
+    end
+  end
+#  print(io, "\n")
+#  len = 0 
+#  for i=1:length(name_mod)
+#    if i>1
+#      print(io, " "^(pos_mod[i] - pos_mod[i-1]-len +1))
+#    end
+#    print(io, rng[i])
+#    len += length("$(rng[i])")
+#  end
+#  print(io, "\n")
+end
+
+
 function free_show(io::IO, C::ComplexOfMorphisms)
   Cn = get_attribute(C, :name)
   if Cn === nothing
@@ -339,19 +409,16 @@ function free_show(io::IO, C::ComplexOfMorphisms)
   rank_mod = Int[]
 
   rng = range(C)
-  if C.typ == :chain
-    arr = ("--", "-->")
-  else
-    arr = ("<--", "--")
-  end
+  rng = first(rng)-1:-1:0
+  arr = ("<--", "--")
 
   R = Nemo.base_ring(C[first(rng)])
   R_name = get_attribute(R, :name)
   if R_name === nothing
     R_name = "$R"
   end
-
-  for i=rng
+ 
+  for i=reverse(rng)
     M = C[i]
     if get_attribute(M, :name) !== nothing
       push!(name_mod, get_attribute(M, :name))
@@ -371,25 +438,27 @@ function free_show(io::IO, C::ComplexOfMorphisms)
 
   pos = 0
   pos_mod = Int[]
+  
   for i=1:length(name_mod)
     print(io, name_mod[i])
     push!(pos_mod, pos)
     pos += length(name_mod[i])
     if i < length(name_mod)
-      print(io, arr[1], arr[2], " ")
-      pos += length(arr[1]) + length(arr[2]) + 1
+      print(io, " ", arr[1], arr[2], " ")
+      pos += length(arr[1]) + length(arr[2]) + 2
     end
   end
+
   print(io, "\n")
   len = 0
   for i=1:length(name_mod)
     if i>1
       print(io, " "^(pos_mod[i] - pos_mod[i-1]-len))
     end
-    print(io, rank_mod[i])
-    len += length("$(rank_mod[i])")
+    print(io, reverse(rng)[i])
+    len = length("$(reverse(rng)[i])")
   end
-  print(io, "\n")
+#  print(io, "\n")
 end
 
 function show(io::IO, C::ComplexOfMorphisms)
@@ -406,37 +475,25 @@ function show(io::IO, C::ComplexOfMorphisms)
   mis_mod = Tuple{Int, <:Any}[]
 
   rng = range(C)
+  arr = ("<--", "--")
   if is_chain_complex(C)
-    arr = ("--", "-->")
     dir = 1
   else
-    arr = ("<--", "--")
-    arr = ("--", "-->")
     dir = 0
   end
 
   for i=rng
     M = obj(C, i)
-#    if get_attribute(M, :name) !== nothing
-#      name_mod[i] = get_attribute(M, :name)
-#    else
       if is_chain_complex(C)
         name_mod[i] = "$(Cn)_$i"
       else
         name_mod[i] = "$(Cn)^$i"
       end
-#      AbstractAlgebra.set_name!(M)
-#      if get_attribute(M, :name) !== nothing
-#        name_mod[i] = get_attribute(M, :name)
-#      else
-#        push!(mis_mod, (i, M))
-#      end
-#    end
   end
 
   io = IOContext(io, :compact => true)
-  for i=rng
-    if i == first(rng)
+  for i=reverse(rng)
+    if i == last(rng)
       print(io, name_mod[i])
       continue
     end
@@ -447,9 +504,6 @@ function show(io::IO, C::ComplexOfMorphisms)
     for (i, M) = mis_mod
       print(io, "\t$(name_mod[i]) = ", M, "\n")
     end
-#    for (i, phi) = mis_map
-#      print(io, "\tphi_$i = ", phi, "\n")
-#    end
   end
 end
 
