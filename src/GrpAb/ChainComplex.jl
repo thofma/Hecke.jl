@@ -335,7 +335,7 @@ function get_name(M, na::String)
   end
   name = AbstractAlgebra.find_name(M)
   if name !== nothing
-    return name
+    return String(name)
   end
   return na
 end
