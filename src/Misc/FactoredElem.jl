@@ -529,7 +529,11 @@ function _ev(d::Dict{fqPolyRepFieldElem, ZZRingElem}, z::fqPolyRepFieldElem)
 end
 
 function _ev(d::Dict{T, ZZRingElem}, oe::T) where T
-  z = copy(oe)
+  if T <: RingElement
+    z = deepcopy(oe)
+  else # mainly for ideals?
+    z = copy(oe)
+  end
   if length(d)==0
     return z
   elseif length(d)==1
