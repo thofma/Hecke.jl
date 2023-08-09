@@ -334,7 +334,6 @@
     @test length(l) == 66
   end
 
-  #=
   @testset "HomAlg" begin
     G = abelian_group([3 1; 0 3])
     S, mS = snf(G)
@@ -345,6 +344,8 @@
       Th = hom(T, T, map(mH, [rand(H) for x = 1:2])) #induced map in tensor product
       Dh = hom(D, D, map(mH, rand(H, (2,2)))) #induced map on direct prod
     end
+    #=
+
     C, mC = free_resolution(G)
     push!(C, mC)
     push!(C, zero_map(G))
@@ -360,14 +361,13 @@
     @test !is_exact(E)
     E = tensor_product(C, T)
     @test !is_exact(E)
-
+  =#
     A = abelian_group([3 1; 0 3])
     B = abelian_group([9 2 1; 0 12 1; 0 0 25])
     C = abelian_group([3, 4, 0])
     @test is_isomorphic(hom(tensor_product(A, B, task = :none), C)[1],
                        hom(A, hom(B, C)[1])[1])
   end
-  =#
 
   @testset "Complement" begin
     d = rand(2:1000)
