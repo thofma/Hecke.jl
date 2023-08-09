@@ -603,7 +603,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
   c = [x[2] for x = r]
 
   function phi(r::GrpAbFinGenElem)
-    return GrpAbFinGenMap(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i]*c[i] for i=1:ngens(R)]), check = true) * mH)
+    return GrpAbFinGenMap(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i] * c[i] for i=1:length(c)]), check = true) * mH)
   end
 
   function ihp(r::GrpAbFinGenMap)
@@ -611,8 +611,8 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
     if ngens(sG) == 0
       return R[0]
     end
-    local m = transpose(vcat([preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)]))
-    return R([divexact(m[i], c[i]) for i = 1:ngens(R)])
+    local mm = transpose(vcat([preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)]))
+    return R([divexact(mm[j,i], c[(i-1)*m+j]) for i=1:n for j=1:m])
   end
   return R, MapFromFunc(R, MapParent(G, H, "homomorphisms"), phi, ihp)
 end
