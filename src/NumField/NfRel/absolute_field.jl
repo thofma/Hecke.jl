@@ -101,13 +101,36 @@ function absolute_simple_field(K::AnticNumberField)
 end
 
 function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool = false)
-  return simple_extension(K, cached = cached, simplified = simplify)
+  abs = get_attribute(K, :abs_simple_field)
+  if abs !== nothing 
+    if haskey(abs, simplify)
+      return abs[simplify][1]::AnticNumberField, abs[simplify][2]
+    end
+  else
+    abs = Dict{Bool, Tuple{AnticNumberField, Map}}()
+    set_attribute!(K, :abs_simple_field => abs)
+  end
+  L, mL = simple_extension(K, cached = cached, simplified = simplify)
+  abs[simplify] = (L, mL)
+  return L, mL
 end
 
 function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool = false)
   local Kabs::AnticNumberField
+
+  abs = get_attribute(K, :abs_simple_field)
+  if abs !== nothing 
+    if haskey(abs, simplify)
+      return abs[simplify][1]::AnticNumberField, abs[simplify][2]
+    end
+  else
+    abs = Dict{Bool, Tuple{AnticNumberField, Map}}()
+    set_attribute!(K, :abs_simple_field => abs)
+  end
+
   if simplify
     Kabs, mp = simplified_absolute_field(K, cached = cached)
+    abs[simplify] = (Kabs, mp)
     return Kabs, mp
   end
   el = absolute_primitive_element(K)
@@ -115,24 +138,37 @@ function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool
   Kabs, gKabs = number_field(f, cached = cached, check = false)
   mp = hom(Kabs, K, el)
   embed(mp)
+  abs[simplify] = (Kabs, mp)
   return Kabs, mp
 end
 
 #Special function for NfRel{nf_elem}. In this case, we can easily construct the
 #inverse of the isomorphism, so we do it separately
 function absolute_simple_field(K::NfRel{nf_elem}; cached::Bool = false, simplify::Bool = false)
+
+  abs = get_attribute(K, :abs_simple_field)
+  if abs !== nothing 
+    if haskey(abs, simplify)
+      return abs[simplify][1]::AnticNumberField, abs[simplify][2]
+    end
+  else
+    abs = Dict{Bool, Tuple{AnticNumberField, Map}}()
+    set_attribute!(K, :abs_simple_field => abs)
+  end
+
   local Ka::AnticNumberField
   if simplify
     Ka, mp = simplified_absolute_field(K, cached = cached)
+    abs[simplify] = (Kabs, mp)
     return Ka, mp
   end
   Ka, a, b, c = _absolute_field(K, cached = cached)
   h1 = hom(Ka, K, c, inverse = (a, b))
   embed(h1)
   embed(MapFromFunc(K, Ka, x->preimage(h1, x)))
+  abs[simplify] = (Ka, h1)
   return Ka, h1
 end
-
 
 #Trager: p4, Algebraic Factoring and Rational Function Integration
 function _absolute_field(K::NfRel; cached::Bool = false, do_embedding::Bool = true)
