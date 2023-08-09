@@ -765,7 +765,13 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
       end
     end
     if !found
-      stable -= 1
+      if of_closure
+        stable -= 1
+      elseif length(l_pols) == 1
+        stable -= (order(Q) <= n)
+      else
+        stable -= 1
+      end
       if stable < 0
         break
       end
