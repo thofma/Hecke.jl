@@ -102,12 +102,13 @@ end
 
 function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool = false)
   abs = get_attribute(K, :abs_simple_field)
+  MT = morphism_type(AnticNumberField, NfAbsNS)
   if abs !== nothing 
-    if haskey(abs, simplify)
-      return abs[simplify][1]::AnticNumberField, abs[simplify][2]
+    if haskey(abs::Dict{Bool, Tuple{AnticNumberField, MT}}, simplify)
+      return abs[simplify]::Tuple{AnticNumberField, MT}
     end
   else
-    abs = Dict{Bool, Tuple{AnticNumberField, Map}}()
+    abs = Dict{Bool, Tuple{AnticNumberField, MT}}()
     set_attribute!(K, :abs_simple_field => abs)
   end
   L, mL = simple_extension(K, cached = cached, simplified = simplify)
@@ -117,14 +118,15 @@ end
 
 function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool = false)
   local Kabs::AnticNumberField
+  MT = morphism_type(AnticNumberField, typeof(K))
 
   abs = get_attribute(K, :abs_simple_field)
   if abs !== nothing 
     if haskey(abs, simplify)
-      return abs[simplify][1]::AnticNumberField, abs[simplify][2]
+      return abs[simplify]::Tuple{AnticNumberField, MT}
     end
   else
-    abs = Dict{Bool, Tuple{AnticNumberField, Map}}()
+    abs = Dict{Bool, Tuple{AnticNumberField, MT}}()
     set_attribute!(K, :abs_simple_field => abs)
   end
 
@@ -145,14 +147,15 @@ end
 #Special function for NfRel{nf_elem}. In this case, we can easily construct the
 #inverse of the isomorphism, so we do it separately
 function absolute_simple_field(K::NfRel{nf_elem}; cached::Bool = false, simplify::Bool = false)
+  MT = morphism_type(AnticNumberField, typeof(K))
 
   abs = get_attribute(K, :abs_simple_field)
   if abs !== nothing 
     if haskey(abs, simplify)
-      return abs[simplify][1]::AnticNumberField, abs[simplify][2]
+      return abs[simplify]::Tuple{AnticNumberField, MT}
     end
   else
-    abs = Dict{Bool, Tuple{AnticNumberField, Map}}()
+    abs = Dict{Bool, Tuple{AnticNumberField, MT}}()
     set_attribute!(K, :abs_simple_field => abs)
   end
 
