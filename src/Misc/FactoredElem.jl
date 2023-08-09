@@ -224,8 +224,19 @@ function show(io::IO, x::FacElemMon)
   print(io, "Factored elements over $(x.base_ring)")
 end
 
+function AbstractAlgebra.expressify(x::FacElem; context=nothing)
+  if length(x.fac) == 0
+    return Expr(:1)
+  end
+  prod = Expr(:call, :*)
+  for (k,v) = x.fac
+    push!(prod.args, Expr(:call, :^, AbstractAlgebra.expressify(k, context=context), v))
+  end
+  return prod
+end
+
 function show(io::IO, x::FacElem)
-  print(io, "Factored element with data\n$(x.fac)")
+   AbstractAlgebra.show_via_expressify(io, x)
 end
 
 ################################################################################
