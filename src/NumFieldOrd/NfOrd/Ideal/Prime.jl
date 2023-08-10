@@ -897,6 +897,11 @@ function factor_easy(I::NfOrdIdl)
   return ideals
 end
 
+function is_squarefree(A::NfAbsOrdIdl)
+  l = factor(A)
+  return all(isone, values(l))
+end
+
 function _prefactorization(I::NfOrdIdl)
   @assert has_2_elem(I)
   n = I.gen_one
@@ -1102,10 +1107,18 @@ function Base.iterate(S::PrimeIdealsSet)
   O = S.order
   found_prime = false
   start = true
-  p, pstate = iterate(S.primes)
+  ps = iterate(S.primes)
+  if ps === nothing
+    return ps
+  end
+  p, pstate = ps
   while !found_prime
     if !start
-      p, pstate = iterate(S.primes, pstate)
+      ps = iterate(S.primes, pstate)
+      if ps === nothing
+        return ps
+      end
+      p, pstate = ps
     else
       start = false
     end

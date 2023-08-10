@@ -765,7 +765,13 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
       end
     end
     if !found
-      stable -= 1
+      if of_closure
+        stable -= 1
+      elseif length(l_pols) == 1
+        stable -= (order(Q) <= n)
+      else
+        stable -= 1
+      end
       if stable < 0
         break
       end
@@ -1327,7 +1333,14 @@ function normal_closure(C::ClassField)
   act = Hecke.induce_action(D, aut1)
 
   k = kernel(h, true)[1]
-  k = intersect(k, intersect([x(k)[1] for x = act]))
+  ko = order(k)
+  while true
+    k = intersect(k, intersect([x(k)[1] for x = act]))
+    if ko == order(k)
+      break
+    end
+    ko = order(k)
+  end
 
   return fixed_field(D, k)
 end
@@ -1359,14 +1372,22 @@ function is_normal(C::ClassField)
   K = base_field(C)
   aut = automorphism_list(K)
   if length(aut) == degree(K)
-    return is_normal_easy(C)
+    return is_normal_easy(C, aut)
   else
     return is_normal_difficult(C)
   end
 end
 
-function is_normal_easy(C::ClassField)
-  aut = automorphism_list(base_field(C))
+function is_normal(C::ClassField, mk::NfToNfMor)
+  K = base_field(C)
+  @assert codomain(mk) == K
+  g = mk(gen(domain(mk)))
+  aut = [x for x = automorphism_list(K) if x(g) == g]
+  return is_normal_easy(C, aut)
+end
+
+
+function is_normal_easy(C::ClassField, aut::Vector{NfToNfMor} = automorphism_list(base_field(C)))
   c, inf = conductor(C)
   if any(x-> c != induce_image(x, c), aut)
     return false

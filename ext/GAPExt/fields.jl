@@ -533,6 +533,7 @@ end
 
 
 function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_product::Bool = true, only_real::Bool = false, unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+#fields with galois group: small_group(a, b)
   if a == 1
     @assert b == 1
     K = rationals_as_number_field()[1]

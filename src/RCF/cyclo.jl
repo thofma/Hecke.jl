@@ -300,6 +300,13 @@ function fixed_field(A::ClassField, s::GrpAbFinGen)
   return ray_class_field(A.rayclassgroupmap, mq*mmq)
 end
 
+function fixed_field(A::ClassField, s::Map{GrpAbFinGen, GrpAbFinGen})
+  mq = A.quotientmap
+  q, mmq = quo(codomain(mq), s)
+  return ray_class_field(A.rayclassgroupmap, mq*mmq)
+end
+
+
 function compositum(k::AnticNumberField, A::ClassField)
   c, mk, mA = compositum(k, base_field(A))
   return extend_base_field(A, mA)

@@ -87,16 +87,16 @@ function class_group_disc_log(r::SRow{ZZRingElem}, c::ClassGrpCtx)
     return C[0]
   end
 #  println("start with $r")
+
+  tmp = get_tmp(c.M.basis)
   while length(r.pos)>0 && r.pos[1] < s
-    r = add_scaled_row(c.M.basis[r.pos[1]], r, -r.values[1])
+    r = add_scaled_row!(c.M.basis[r.pos[1]], r, -r.values[1], tmp)
     mod!(r, c.h)
   end
+  release_tmp(c.M.basis, tmp)
 
 #  println("reduced to $r")
   rr = zero_matrix(FlintZZ, 1, nrows(T))
-  for i = 1:nrows(T)
-    rr[1,i] = 0
-  end
   for (p,v) = r
     rr[1, p-s+1] = v
   end

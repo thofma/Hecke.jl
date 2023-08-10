@@ -1458,9 +1458,10 @@ end
 
 Compute the factorisation of f in Q[X] over C, returns an array with first
 component the leading coefficient, and then, for each irreducible factor over Q[X]
-a tuple, containing
-- an irreducible factor over a number field
-- the product of all the other conjugate factors over this field
+a pair, containing
+- a tuple with
+  - an irreducible factor over a number field
+  - the product of all the other conjugate factors over this field
 - the multiplicity.
 
 Recall that for each irreducible over Q there is one (minimal) number field

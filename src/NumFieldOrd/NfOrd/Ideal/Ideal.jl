@@ -44,11 +44,6 @@ export deepcopy, parent, order, basis, basis_matrix, basis_mat_inv, minimum, nor
        ==, in, +, *, intersect, lcm, idempotents, mod, pradical
 
 add_assertion_scope(:Rres)
-new = !true
-
-function toggle()
-  global new = !new
-end
 
 ################################################################################
 #
@@ -728,12 +723,8 @@ function assure_has_norm(A::NfAbsOrdIdl)
   end
 
   if has_2_elem(A) && A.gens_weakly_normal == 1
-    #if new
-      A.norm = _normmod(A.gen_one^degree(order(A)), A.gen_two)
-      @hassert :Rres 1 A.norm == gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
-    #else
-    #  A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
-    #end
+    A.norm = _normmod(A.gen_one^degree(order(A)), A.gen_two)
+    @hassert :Rres 1 A.norm == gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
     return nothing
   end
 
