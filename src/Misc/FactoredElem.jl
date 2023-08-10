@@ -235,9 +235,7 @@ function AbstractAlgebra.expressify(x::FacElem; context=nothing)
   return prod
 end
 
-function show(io::IO, x::FacElem)
-   AbstractAlgebra.show_via_expressify(io, x)
-end
+@enable_all_show_via_expressify FacElem
 
 ################################################################################
 #
