@@ -462,8 +462,8 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
      Hecke.@eval _with_polymake = $with_polymake
      assertions(true)
      @info("Running tests for $x in same session")
-     include(setup_file)
-     include(test_file)
+     Base.include(Main, setup_file)
+     Base.include(Main, test_file)
      assertions(false)
    end
 end

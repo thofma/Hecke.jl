@@ -23,7 +23,7 @@ end
 
 Hecke.assertions(true)
 
-if long_test
+if Hecke.long_test
   macro long_test(ex)
     ex
   end
@@ -33,7 +33,7 @@ else
   end
 end
 
-if _with_gap
+if Hecke._with_gap
   macro with_gap(ex)
     ex
   end
@@ -43,7 +43,7 @@ else
   end
 end
 
-if _with_polymake
+if Hecke._with_polymake
   macro with_polymake(ex)
     ex
   end
