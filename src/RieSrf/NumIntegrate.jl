@@ -38,24 +38,59 @@ function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: Int
   return abscissae, weights
 end
 
-function gauss_legendre_path_parameters(points, gamma::CPath, prec::Int)
+function gauss_legendre_parameters(r, err, Bound = 10^5)
 
-  if path_type(gamma) == 1
-    split_line_segment(points, gamma, prec)
+  R = ArbField(10);
+  N = ceil((log(64*R(Bound/15))-log(R(err))-log(1-exp(acosh(r))^(-2)))/acosh(r))-1;
+  return N
+end
+
+function gauss_legendre_path_parameters(points, gamma::CPath, err)
+
+  if path_type(gamma) == 0
+    split_line_segment(points, gamma, err)
+  else if path_type(gamma) == 1
+    gauss_legendre_arc_parameters(points, gamma)
+  else if path_type(gamma) == 2
+    gauss_legendre_arc_parameters(points, gamma)
+    #point?
   end
 end
 
-function split_line_segment(points, gamma::CPath, prec::Int)
+function split_line_segment(points, gamma::CPath, err)
   if !isdefined(gamma, :int_par_r)
     gauss_legendre_line_parameters(points, gamma)
   end 
   
+  paths = [gamma]
+  
   if get_int_param_r(gamma) < Rc(1.2)
-    if Abs(real(get_t)) le (3/4) then
-      x = Gamma`Evaluate(Parent(Gamma`StartPt)!Re(Gamma`WP))
+    t = get_t_of_closest_d_point(gamma)
+    if abs(real(t)) < (3/4) 
+      x = evaluate(gamma, t)
     else
-      x = Gamma`Evaluate(Sign(Re(Gamma`WP))*(3/4));
-		end
+      x = evaluate(gamma(sign(real(t))*3/4))
+    end
+    gam1 = c_line(start_point(gamma), x)
+    gam2 = c_line(x, end_point(gamma))
+    
+    set_int_param_r(gam1, gauss_legendre_line_parameters(points, gam1))
+    set_int_param_r(gam2, gauss_legendre_line_parameters(points, gam2))
+    
+    N = gauss_legendre_parameters(get_int_param_r(gamma), err)
+    N1 = gauss_legendre_parameters(get_int_param_r(gam1), err)
+    N2 = gauss_legendre_parameters(get_int_param_r(gam2), err)
+    
+    
+    set_int_params_N(gamma, N)
+    set_int_params_N(gam1, N1)
+    set_int_params_N(gam2, N2)
+    
+    if N - N1 - N2 >= 10
+      paths = hcat(split_line_segment(points, gam1, err), split_line_segment(points, gam2, err))
+    end
+  end
+  return paths
 end
 
 function gauss_legendre_line_parameters(points::Vector{acb}, gamma::CPath)
@@ -110,7 +145,7 @@ function gauss_legendre_arc_parameters(points::Vector{acb}, gamma::CPath)
       #We find t_p such that gamma(t_p) = p 
       t_p = or/(b - a) * (-2 * I * log((p - c)/(r * exp(I*(b + a)/2))));
       
-      r_p = abs(im(2 * asinh(atanh(u_k)/(Rpi)))
+      r_p = abs(im(2 * asinh(atanh(u_k)/(Rpi))))
     end
    
     
@@ -149,7 +184,7 @@ function gauss_legendre_circle_parameters(points::Vector{acb}, gamma::CPath)
       #We find t_p such that gamma(t_p) = p 
       t_p = or/Rpi * I * log((c - p) /(r* exp(I * a)));
       
-      r_p = abs(im(2 * asinh(atanh(u_k)/(Rpi)))
+      r_p = abs(im(2 * asinh(atanh(u_k)/(Rpi))))
     end
    
     

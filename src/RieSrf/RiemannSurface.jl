@@ -105,10 +105,6 @@ function embedding(RS::RiemannSurface)
   return RS.embedding
 end
 
-function small_period_matrix(RS::RiemannSurface)
-  return tau
-end
-
 function precision(RS::RiemannSurface)
   return RS.prec
 end
@@ -117,6 +113,9 @@ function function_field(RS::RiemannSurface)
   return RS.function_field
 end
 
+function basis_of_differentials(RS::RiemannSurface)
+  return RS.basis_of_differentials
+end
 
 function assure_has_discriminant_points(RS::RiemannSurface)
   if isdefined(RS, :discriminant_points)

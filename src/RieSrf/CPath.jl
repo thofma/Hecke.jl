@@ -36,7 +36,7 @@ mutable struct CPath
   int_param_r::arb
   t_of_closed_D_point::acb
   int_params_M::Array{Int}
-  
+  int_params_N::Array{Int}
   #Path type index:
   #0 is a line
   #1 is an arc
@@ -269,8 +269,17 @@ function set_int_param_r(G::CPath, r::arb)
   G.int_params_r = r
 end
 
-function get_int_param_r(G::CPath, t::acb)
+function get_int_param_r(G::CPath)
   return G.int_params_r
+end
+
+
+function set_int_param_N(G::CPath, N::Int)
+  G.int_params_N = N
+end
+
+function get_int_param_r(G::CPath)
+  return G.int_params_N
 end
 
 
