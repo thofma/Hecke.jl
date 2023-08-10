@@ -35,7 +35,8 @@
 ################################################################################
 
 export local_height, canonical_height, naive_height, height_pairing, 
-  regulator, neron_tate_height, CPS_dvev_real, CPS_dvev_complex, CPS_non_archimedean, CPS_height_bounds, derivative, refine_alpha_bound
+regulator, neron_tate_height, CPS_dvev_real, CPS_dvev_complex, CPS_non_archimedean,
+CPS_height_bounds, derivative, refine_alpha_bound
 
 ################################################################################
 #
@@ -43,15 +44,8 @@ export local_height, canonical_height, naive_height, height_pairing,
 #
 ################################################################################
 
-@doc raw"""
-    naive_height(P::EllCrvPt{QQFieldElem}, prec) -> arb
-
-Return the naive height of a point $P$ on an elliptic curve defined over
-$\mathbb{Q}$.
-"""
-function naive_height(P::EllCrvPt{QQFieldElem}, prec::Int = 100)
+function naive_height_coordinate(x::QQFieldElem, prec::Int = 100)
   attempt = 1
-  x = P[1]
   p = numerator(x)
   q = denominator(x)
   r = max(abs(p), abs(q))
@@ -69,18 +63,21 @@ function naive_height(P::EllCrvPt{QQFieldElem}, prec::Int = 100)
 end
 
 @doc raw"""
-    naive_height(P::EllCrvPt{nf_elem}, prec) -> arb
+    naive_height(P::EllCrvPt{QQFieldElem}, prec) -> arb
 
 Return the naive height of a point $P$ on an elliptic curve defined over
-a number field.
+$\mathbb{Q}$.
 """
-function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
+function naive_height(P::EllCrvPt{QQFieldElem}, prec::Int = 100)
+  return naive_height_coordinate(P[1], prec)
+end
+
+function naive_height_coordinate(x::nf_elem, prec::Int = 100)
   attempt = 1
   
-  K = base_field(parent(P))
+  K = parent(x)
   OK = ring_of_integers(K)
   
-  x = P[1]
   q = K(denominator(x))
   
   N = norm(ideal(OK, x) + 1*OK)
@@ -114,6 +111,17 @@ function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
     attempt = 2*attempt
   end
 end
+
+@doc raw"""
+    naive_height(P::EllCrvPt{nf_elem}, prec) -> arb
+
+Return the naive height of a point $P$ on an elliptic curve defined over
+a number field.
+"""
+function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
+  return naive_height_coordinate(P[1], prec)
+end
+
 
 ################################################################################
 #
