@@ -74,7 +74,16 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
 
   m = vcat(M.map, rels(codomain(M)))
   G = domain(M)
-  if isdefined(G, :exponent) && fits(Int, G.exponent) && is_prime(G.exponent)
+  H = codomain(M)
+  #CF: problem
+  # f:U = C_2 -> G = C_4: x -> 2*x
+  #want pre-image of 2*C_4[1], as matrix x*[2] = [2]
+  #(with obvious solution [1])
+  #but mod 2 this collapses to x[0] = [0]
+  #with solution 0
+  #the map is no longer injective....
+  if isdefined(G, :exponent) && fits(Int, G.exponent) && is_prime(G.exponent) &&
+    isdefined(H, :exponent) && G.exponent == H.exponent
     e = G.exponent
     RR = Native.GF(Int(e))
     fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, vcat([x.coeff for x = a])), side = :left)
