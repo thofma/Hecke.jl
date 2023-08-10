@@ -23,7 +23,7 @@ end
 
 Hecke.assertions(true)
 
-if Hecke.long_test
+if isdefined(Hecke, :long_test) || isdefined(Main, :long_test)
   macro long_test(ex)
     ex
   end
@@ -33,7 +33,7 @@ else
   end
 end
 
-if Hecke._with_gap
+if isdefined(Hecke, :_with_gap) || isdefined(Main, :_with_gap)
   macro with_gap(ex)
     ex
   end
@@ -43,7 +43,7 @@ else
   end
 end
 
-if Hecke._with_polymake
+if isdefined(Hecke, :_with_polymake) || isdefined(Main, :_with_polymake)
   macro with_polymake(ex)
     ex
   end
