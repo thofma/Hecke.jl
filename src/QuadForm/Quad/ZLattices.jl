@@ -437,9 +437,8 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
   end
 
   # Now gens are with respect to the basis of L
-  @hassert :Lattice 1 all(change_base_ring(FlintQQ, gens[i]) * GL *
-                          transpose(change_base_ring(FlintQQ, gens[i])) == GL
-                                                        for i in 1:length(gens))
+  @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(FlintQQ, gens[i]) * GL *
+                          transpose(change_base_ring(FlintQQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
   L.automorphism_group_order = order

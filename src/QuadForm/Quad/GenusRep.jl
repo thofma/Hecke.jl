@@ -98,7 +98,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
 
   if !is_definite(L)
     @vprintln :GenRep 1 "Genus representatives of indefinite lattice"
-    return spinor_genera_in_genus(L, [])
+    return spinor_genera_in_genus(L, ideal_type(base_ring(L))[])
   end
 
   res = typeof(L)[]
@@ -300,7 +300,7 @@ function spinor_norm(L, p)
     # cf. Kneser 1956, Satz 3:
     _SN, mS = sub(V, twonormvectors)
     #@assert length(rels(_SN)) == 0 # free
-    SN = [ mS(s) for s in gens(_SN) ]
+    SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
   else
     bong = good_bong(L, p)
     @hassert :GenRep 1 is_good_bong(bong, p)
@@ -350,7 +350,7 @@ function spinor_norm(L, p)
       alpha = minimum(div(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) for i in 1:(rank(L) - 2) if mod(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) == 0)
       # SN = SN + one_plus_power_of_P(alpha, V, g, P)
       _G, _mG = _one_plus_power_of_p(alpha, V, g, p)
-      _SN, mS = sub(V, append!(SN, [_mG(g) for g in gens(_G)]))
+      _SN, mS = sub(V, append!(SN, eltype(SN)[_mG(g) for g in gens(_G)]))
       #@assert length(rels(_SN)) == 0 # free
       SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
@@ -404,11 +404,11 @@ function maximal_norm_splitting(L, p)
   K = nf(R)
   e = ramification_index(p)
   uni = uniformizer(p)
-  J, G, _ = jordan_decomposition(L, p)
+  J, _G, _ = jordan_decomposition(L, p)
   # join J into one matrix of base vectors
   JJ = reduce(vcat, J)
   # join the individual Gram matrices:
-  A = diagonal_matrix(G)
+  A = diagonal_matrix(_G)
 
   # read the finer decomposition:
   G = dense_matrix_type(elem_type(K))[]
@@ -451,7 +451,7 @@ function maximal_norm_splitting(L, p)
     # Unary components already have maximal norm.
 
     # The maximal norm splitting condition is violated at index i.
-    find_j = append!([valuation(aL[k], p) for k in (i+1):length(aL)], [2*(sL[i] - sL[k]) + valuation(aL[k], p) for k in 1:(i - 1)])
+    find_j = append!(ZZRingElem[valuation(aL[k], p) for k in (i+1):length(aL)], ZZRingElem[2*(sL[i] - sL[k]) + valuation(aL[k], p) for k in 1:(i - 1)])
     @assert length(find_j) > 0
     min, j = findmin(find_j)
     if j <= length(aL) - i
@@ -511,7 +511,7 @@ function maximal_norm_splitting(L, p)
     end
   end
 
-  @assert all(k -> nrows(G[k]) in [1,2], 1:length(G))
+  @assert all(let G = G; k -> nrows(G[k]) in [1,2]; end, 1:length(G))
   return G, JJ
 end
 
@@ -523,8 +523,8 @@ end
 
 function has_propertyA(L, p)
   @assert is_dyadic(p)
-  rL, sL, wL, aL = _genus_symbol_kirschmer(L, p).data
-  nL = [valuation(aL[i], p) for i in 1:length(aL)]
+  rL, sL::Vector{Int}, wL, aL = _genus_symbol_kirschmer(L, p).data
+  nL = ZZRingElem[valuation(aL[i], p) for i in 1:length(aL)]
   r = maximum(rL)
   if r > 2
     @vprintln :GenRep 1 """Property A is violated over dyadic prime:
@@ -573,8 +573,8 @@ function G_function(a, V, g, p)
   elseif 2*e < R && R <= 4 * e
     if d <= 2 * e - R//2
       @vprintln :GenRep 2 "G_function case A"
-      O = _one_plus_power_of_p(R + d - 2*e, V, g, p)
-      return _intersect(N_function(-a, g, p), _sum(O, sub(V, [g\(a)])))
+      OO = _one_plus_power_of_p(R + d - 2*e, V, g, p)
+      return _intersect(N_function(-a, g, p), _sum(OO, sub(V, [g\(a)])))
     else
       @vprintln :GenRep 2 "G_function case B"
       @assert R % 2 == 0
@@ -684,10 +684,11 @@ end
 # element of real_places(nf(base_ring(L))). All places, finite or infinite, which
 # are unspecified are interpreted as 1.}
 function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}[]) where {T}
+  #local s::nf_elem
   R = order(base_ring(codomain(mRCG)))
   F = nf(R)
   IP = defining_modulus(mRCG)[2]
-  the_idele_inf = [1 for i in IP]
+  the_idele_inf = Int[1 for i in IP]
   if length(atinfinity) != 0
     for pl in atinfinity
       if pl[1] in IP
@@ -701,7 +702,7 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
   rayprimes = collect(keys(mRCG.fact_mod))
   exponents = Int[mRCG.fact_mod[p] for p in rayprimes]
   factors = ideal_type(R)[rayprimes[i]^exponents[i] for i in 1:length(rayprimes)]
-  the_idele = [ one(F) for p in rayprimes ]
+  the_idele = elem_type(F)[ one(F) for p in rayprimes ]
   for i in idele
     j = findfirst(isequal(i[1]), rayprimes)
     if j isa Int # found
@@ -757,10 +758,10 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
     x = mQ\inv(mQ(x)) # x = invmod(x, M)
   end
 
-  sgns = [ sign(s, IP[j]) * the_idele_inf[j] for j in 1:length(IP)]
+  sgns = Int[ sign(s, IP[j]) * the_idele_inf[j] for j in 1:length(IP)]
 
   A, _exp, _log = sign_map(R, _embedding.(IP), M)
-  t = x * (1 + _exp(A([ sgns[j] == sign(x, IP[j]) ? 0 : 1 for j in 1:length(IP)])))
+  t = x * (1 + _exp(A(Int[ sgns[j] == sign(x, IP[j]) ? 0 : 1 for j in 1:length(IP)])))
   @assert x - t in M
   @assert all(sign(t, IP[j]) == sgns[j] for j in 1:length(IP))
   #t = crt(M, IP, x, sgns)
@@ -768,9 +769,8 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
   s = s * t
 
   # Check if everything is ok.
-  @hassert :GenRep 1 all(isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))) for k in 1:length(the_idele))
-  @hassert :GenRep 1 all(sign(s * the_idele_inf[j], IP[j]) == 1 for j in 1:length(IP))
-
+  @hassert :GenRep 1 all(let s = s; k -> isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))); end, 1:length(the_idele))
+  @hassert :GenRep 1 all(let s = s, the_idele_inf = the_idele_inf; j -> sign(s * the_idele_inf[j], IP[j]) == 1 end, 1:length(IP))
 
   # We first interpret it as the ideal which will actually have to be mapped:
   # i.e., we just collect the p-valuations at the noncritical places (p notin RayPrimes):
@@ -935,10 +935,10 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
     G = automorphism_group_generators(L)
     @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
     adjust_gens = eltype(G)[solve_left(B, B*g) for g in G]
-    @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
+    @hassert :GenRep 1 all(let form = form; g -> g * form * transpose(g) == form; end, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
     adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
-    @hassert :GenRep 1 all(g -> g * pform * transpose(g) == pform, adjust_gens_mod_p)
+    @hassert :GenRep 1 all(let form = form; g -> g * pform * transpose(g) == pform; end, adjust_gens_mod_p)
     q = order(k)
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
@@ -958,9 +958,9 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   pMmat = _module_scale_ideal(p, pseudo_matrix(L))
 
   # TODO: This is too slow
-  _dotk(u, v) = (matrix(k, 1, n, u) * pform * matrix(k, n, 1, v))[1, 1]
+  _dotk = let k = k; (u, v) -> (matrix(k, 1, n, u) * pform * matrix(k, n, 1, v))[1, 1]; end
 
-  _dotF(u, v) = (matrix(F, 1, n, u) * form * matrix(F, n, 1, v))[1, 1]
+  _dotF = let form = form; (u, v) -> (matrix(F, 1, n, u) * form * matrix(F, n, 1, v))[1, 1]; end
 
   keep = true
   cont = true
@@ -984,7 +984,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
       continue # can only happen if p is even
     elseif val == e + 1
       # make val > e + 1
-      bas = [zero(k) for i in 1:n]
+      bas = elem_type(k)[zero(k) for i in 1:n]
       r = 0
       for i in 1:n
         bas[i] = one(k)
@@ -995,7 +995,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
         bas[i] = zero(k)
       end
       @assert r != 0
-      u = [zero(F) for i in 1:n]
+      u = elem_type(F)[zero(F) for i in 1:n]
       u[r] = one(F)
       a = (h\(hext((nrm//(2 * pi * _dotF(x, u))))))
       @. x = x - a * pi * u
@@ -1131,7 +1131,7 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   k = findfirst(i -> !(ncols(gram_matrices[i]) in [1, 2]), 1:length(gram_matrices))
   if k !== nothing
     @vprintln :GenRep 2 "not maximal norm splitting: components are not all unary or binary";
-    return false, -k, []
+    return false, -something(k), []
   end
   # test if binary components are modular:
   for i in 1:length(gram_matrices)
@@ -1143,14 +1143,13 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   # test if sL[1] \supseteq sL[2] \supseteq ... \supseteq sL[#sL]:
   for i in 1:length(scales) - 1
     if scales[i] > scales[i + 1]
-      throw(Error("Your lattice is weird"))
-      return fail, 0, []
+      error("Your lattice is weird")
     end
   end
 
   NU, _ = _norm_upscaled(gram_matrices, p)
   # test if nL[i] = n(L^{sL[i]}):
-  fail = []
+  fail = Int[]
   for i in 1:length(scales)
     @assert NU[i] <= normsval[i]
     if NU[i] < normsval[i]
@@ -1162,7 +1161,7 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   if length(fail) > 0
     return false, fail[1], fail
   end
-  return true, 0, []
+  return true, 0, Int[]
 end
 
 function _ismaximal_norm_splitting(G, p)
@@ -1181,9 +1180,8 @@ function _norm_upscaled(G, p)
   sL = Int[ minimum(Union{Int, PosInf}[iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j]) for g in G]
   e = ramification_index(p)
   uni = elem_in_nf(uniformizer(p))
-  aL = []
-  uL = []
-  wL = []
+  aL = typeof(uni)[]
+  uL = ZZRingElem[]
   for i in 1:t
     GG = diagonal_matrix([ j < i ? uni^(2*(sL[i] - sL[j])) * G[j] : G[j] for j in 1:t])
     # the norm is 2*Scale + <ideals generated by the diagonals>, cf. § 94 O'Meara.
@@ -1253,10 +1251,10 @@ function _one_plus_power_of_p(k, V, g, p)
   # See Beli 2003, Def. 1.
   # We expect V, g = local_multiplicative_group_modulo_squares(p)
   r = ngens(V)
-  it = Iterators.product([collect(0:1) for i in 1:r]...)
+  it = cartesian_product_iterator([0, 1], r, inplace = false)#Iterators.product([collect(0:1) for i in 1:r]...)
   S = [ g(V(collect(v))) for v in it ]
   SS = [ s for s in S if relative_quadratic_defect(s, p) >= k ]
-  return sub(V, [g\(s) for s in SS])
+  return sub(V, elem_type(V)[g\(s) for s in SS])
 end
 
 function _intersect(_V, _W)
@@ -2186,9 +2184,9 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   @assert d > 0
   Qx = Hecke.Globals.Qx
   x = gen(Qx)
-  f = x^2 - d * x + (d^2 - d)//4
-  @assert isone(denominator(f))
-  K, a = number_field(f, "a", cached = false) # a is (d + \sqrt(d))//2
+  ff = x^2 - d * x + (d^2 - d)//4
+  @assert isone(denominator(ff))
+  K, a = number_field(ff, "a", cached = false) # a is (d + \sqrt(d))//2
   O = equation_order(K)
   C, _dlog, _exp = narrow_picard_group(O)
   res = QuadBin{ZZRingElem}[]
@@ -2196,7 +2194,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   # So if proper = true, we don't have to do anything
   # and if proper = false, we have to sieve using is_equivalent
   for c in C
-    I = _exp(c)
+    I::NfOrdFracIdl = _exp(c)
     J = numerator(I)
     f = _ideal_to_form(J, d)
     if proper || all(h -> !is_equivalent(h, f, proper = false), res)
@@ -2278,7 +2276,9 @@ function automorphism_group_generators(g::QuadBin{ZZRingElem})
       t = t * matrix(ZZ, 2, 2, [1, -n, 0, 1])
       push!(gens, t * matrix(FlintZZ, 2, 2, [1,0,0,-1]) * inv(t) )
     end
-    @assert all(T -> _action(g, T) == g, gens)
+    for T in gens
+      @assert _action(g, T) == g
+    end
     return gens
   end
   Qx = Hecke.Globals.Qx
@@ -2311,7 +2311,9 @@ function automorphism_group_generators(g::QuadBin{ZZRingElem})
     T[2, 2] = divexact(_x - _y * g.b, 2)
     push!(gens, T)
   end
-  @assert all(T -> _action(g, T) == g, gens)
+  for T in gens
+    @assert _action(g, T) == g
+  end
   # Now test if g is ambiguous or not
   gg = binary_quadratic_form(g.a, -g.b, g.c)
   fl = is_equivalent(g, gg, proper = true)
@@ -2396,7 +2398,9 @@ function automorphism_group_generators(g::QuadBin{ZZRingElem})
     end
   end
 
-  @assert all(T -> _action(gorig, T) == gorig, gens)
+  for T in gens
+    @assert _action(gorig, T) == gorig
+  end
 
   return gens
 end

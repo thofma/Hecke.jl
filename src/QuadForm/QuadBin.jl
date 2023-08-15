@@ -546,8 +546,10 @@ end
 # TODO (TH):
 # - Make the functions operate on (a, b, c)
 # - Don't build up T, just do the operations directly on U
-function _reduction_indefinite(f)
+function _reduction_indefinite(_ff)
   # Compute a reduced form in the proper equivalence class of f
+  local f::QuadBin{ZZRingElem} = _ff
+  local _f
   RR = ArbField(53, cached = false)
   U = identity_matrix(FlintZZ, 2)
   d = sqrt(RR(discriminant(f)))

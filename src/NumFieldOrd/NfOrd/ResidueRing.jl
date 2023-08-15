@@ -397,7 +397,7 @@ end
 
 function one(Q::AbsOrdQuoRing)
   if isdefined(Q, :one)
-    return deepcopy(Q.one)#elem_type(Q)(Q, one(base_ring(Q)))
+    return deepcopy(Q.one::elem_type(Q))#elem_type(Q)(Q, one(base_ring(Q)))
   else
     return elem_type(Q)(Q, one(base_ring(Q)))
   end

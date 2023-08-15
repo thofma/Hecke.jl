@@ -518,19 +518,20 @@ mutable struct Divisors{T}
     return Divisors(FacElem(a), units=units, power=power)
   end
 end
+
 Base.IteratorSize(::Divisors) = Base.HasLength()
 Base.length(D::Divisors) = length(D.s)
-Base.eltype(::Divisors{T}) where {T} = T
+Base.eltype(::Type{Divisors{T}}) where {T} = T
 
-function Base.iterate(D::Divisors)
+function Base.iterate(D::Divisors{T}) where {T}
   x = iterate(D.s)
   if x === nothing
     return x
   end
-  return D.f(x[1]), x[2]
+  return D.f(x[1])::T, x[2]
 end
 
-function Base.iterate(D::Divisors, i)
+function Base.iterate(D::Divisors{T}, i) where {T}
   x = iterate(D.s, i)
   if x === nothing
     return x
