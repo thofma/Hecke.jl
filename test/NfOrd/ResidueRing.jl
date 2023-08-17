@@ -32,8 +32,8 @@ end
   I = 2 * O
   Q, mQ = quo(O, I)
   b = FacElem(Dict(K(2) => -1, K(6) => 1, K(3) => -1, K(5) => 2))
-  @test isone(mQ(b))
-  @test isone(mQ(O(5)))
+  @test @inferred isone(mQ(b))
+  @test @inferred isone(mQ(O(5)))
 
   I = conductor(O, maximal_order(O))
   Q, mQ = quo(O, I)

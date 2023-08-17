@@ -154,28 +154,28 @@ function _local_factor_cho(L, p)
   _, G, S = jordan_decomposition(L, p)
   k, h = residue_field(R, p)
   hext = extend(h, K)
-  V = []
+  V = Tuple{eltype(S), dense_matrix_type(k)}[]
 
   for s in S
-    AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
+    AG = diagonal_matrix(eltype(G)[2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
     _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
     @assert all(is_square(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
-    Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
-    for i in 1:ncols(Q)
-      for j in 1:ncols(Q)
+    _Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
+    for i in 1:ncols(_Q)
+      for j in 1:ncols(_Q)
         if i > j
-          Q[i, j] = 0
+          _Q[i, j] = 0
         elseif i < j
-          Q[i, j] *= 2
+          _Q[i, j] *= 2
         end
       end
     end
 
-    Q = map_entries(hext, Q)
+    Q = map_entries(hext, _Q)
 
-    BB = []
+    BB = dense_matrix_type(k)[]
     for i in 1:nrows(B)
       b = zero_matrix(k, 1, nrows(B))
       b[1, i] = 1
@@ -196,9 +196,8 @@ function _local_factor_cho(L, p)
 
     VV = vector_space(k, nrows(B))
 
-    SS, mSS = sub(VV, [ VV([rad[i, j] for j in 1:ncols(rad) ]) for i in 1:nrows(rad)])
-    W, g = quo(VV, SS)
-
+    SS, mSS = sub(VV, elem_type(VV)[ VV(elem_type(k)[rad[i, j] for j in 1:ncols(rad)]) for i in 1:nrows(rad)])
+    W, g = quo(VV, SS)::Tuple{Generic.QuotientModule{elem_type(k)}, Generic.ModuleHomomorphism{elem_type(k)}}
     @assert length(rels(W)) == 0
 
     if ngens(W) == 0
@@ -206,13 +205,13 @@ function _local_factor_cho(L, p)
     else
       BBelts = elem_type(k)[]
       for w in gens(W)
-        _w = preimage(g, w)
+        _w = preimage(g, w)::elem_type(VV)
         for j in 1:rank(VV)
           push!(BBelts, _w[j])
         end
       end
-      BB = matrix(k, ngens(W), ncols(Q), BBelts)
-      push!(V, (s, BB * Q * transpose(BB)))
+      BBB = matrix(k, ngens(W), ncols(Q), BBelts)
+      push!(V, (s, BBB * Q * transpose(BBB)))
     end
   end
 
@@ -224,8 +223,7 @@ function _local_factor_cho(L, p)
   alpha = Int[]
 
   for i in 1:length(G)
-    j = findfirst(v -> v[1] == S[i], V)
-    @assert j !== nothing
+    j = something(findfirst(v -> v[1] == S[i], V))
     v = V[j]
     if ncols(v[2]) != 0 && (!((S[i] - 1) in S) || !(PT[i-1])) && (!((S[i] + 1) in S) || !PT[i + 1])
       push!(alpha, i)

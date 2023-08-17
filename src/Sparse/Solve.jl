@@ -402,7 +402,7 @@ function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) 
 
   rk, mu = rref(mu, truncate = true)
   p = find_pivot(mu)
-  if any(i -> i > ncolsA, p)
+  if any(let ncolsA = ncolsA; i -> i > ncolsA; end, p)
     return (false, sparse_matrix(K))
   end
   sol = zero_matrix(SMat, K, ncolsA, ncolsB)
