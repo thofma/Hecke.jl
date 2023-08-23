@@ -266,7 +266,6 @@ function elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem)
   a2 = coeff(f, [x,y], [2,0])
   a3 = -coeff(f, [x,y], [0,1])
   a1 = -coeff(f, [x,y], [1,1])
-  @show [a1,a2,a3,a4,a6]
   a_invars = [my_const(i) for i in [a1,a2,a3,a4,a6]]
   (a1,a2,a3,a4,a6) = a_invars
   @assert f == (-(y^2 + a1*x*y + a3*y) + (x^3 + a2*x^2 + a4*x + a6))
