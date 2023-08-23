@@ -236,6 +236,44 @@ function elliptic_curve(x::Vector{Rational{T}}; check::Bool = true) where {T <: 
   return elliptic_curve(QQFieldElem[QQ(z) for z in x], check = check)
 end
 
+# A constructor to create an elliptic curve from a bivariate polynomial. 
+# One can specify how to interpret the polynomial via the second and the 
+# third argument.
+@doc raw"""
+    elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem) -> EllCrv
+
+Construct an elliptic curve from a bivariate polynomial `f` in long Weierstrass form. 
+The second and third argument specify variables of the `parent` of `f` so that 
+``f = c ⋅ (-y² + x³ - a₁ ⋅ xy + a₂ ⋅ x² - a₃ ⋅ y + a₄ ⋅ x + a₆)``.
+"""
+function elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem)
+  R = parent(f)
+  @assert ngens(R) == 2 "polynomial must be bivariate"
+  @assert x in gens(R) && y in gens(R) "second and third argument must be ring variables"
+  k = coefficient_ring(f)
+  kf = k
+  if !(k isa Field)
+    kf = fraction_field(k)
+  end
+  # coeff returns a polynomial in parent(f); we pick out the constant coefficient.
+  my_const = t->(iszero(t) ? zero(coefficient_ring(parent(t))) : first(coefficients(t)))
+  c = my_const(coeff(f, [x, y], [3, 0])::MPolyRingElem)
+  @assert parent(c)===k
+  f = inv(c)*f
+  @assert coeff(f, [x,y], [0,2]) == -1 "coefficient of y^2 must be -1"
+  a6 = coeff(f, [x,y], [0,0])
+  a4 = coeff(f, [x,y], [1,0])
+  a2 = coeff(f, [x,y], [2,0])
+  a3 = -coeff(f, [x,y], [0,1])
+  a1 = -coeff(f, [x,y], [1,1])
+  a_invars = [my_const(i) for i in [a1,a2,a3,a4,a6]]
+  (a1,a2,a3,a4,a6) = a_invars
+  @assert f == (-(y^2 + a1*x*y + a3*y) + (x^3 + a2*x^2 + a4*x + a6))
+  E = EllipticCurve(kf, kf.([a1,a2,a3,a4,a6]))
+  return E
+end
+
+
 @doc raw"""
     elliptic_curve(f::PolyElem, [h::PolyElem,] check::Bool = true) -> EllCrv
 
