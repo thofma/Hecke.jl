@@ -295,11 +295,11 @@ end
 @testset "additional constructors" begin
   R, (x, y) = polynomial_ring(QQ, [:x, :y])
   f = y^2 - x^3 - 3*x^2 + 7*x - 4
-  Hecke.elliptic_curve(f, x, y)
+  elliptic_curve(f, x, y)
 
   pt, t = polynomial_ring(QQ, :t)
   kt = fraction_field(pt)
   R, (x, y) = polynomial_ring(kt, [:x, :y])
   f = y^2 - x^3 - 3*t*x^2 + 7*x - 4*t^2 - 3
-  Hecke.elliptic_curve(f, x, y)
+  elliptic_curve(f, x, y)
 end
