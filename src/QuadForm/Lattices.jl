@@ -1060,10 +1060,10 @@ end
 
 # TODO: add jldoctest
 @doc raw"""
-    trace_lattice_with_isometry(H::AbstractLat{T}; alpha::FieldElem = one(base_field(H)),
-                                                   beta::FieldElem = gen(base_field(H)),
-                                                   order::Integer = 2) where T
-                                                                       -> ZZLat, QQMatrix
+    trace_lattice_with_isometry(H::AbstractLat{T};
+                                alpha::FieldElem = one(base_field(H)),
+                                beta::FieldElem = gen(base_field(H)),
+                                order::Integer = 2) where T  -> ZZLat, QQMatrix
 
 Given a lattice `H` which is either:
 
@@ -1096,15 +1096,16 @@ function trace_lattice_with_isometry(H::AbstractLat{T}; alpha::FieldElem = one(b
                                                         beta::FieldElem = gen(base_field(H)),
                                                         order::Integer = 2) where T
 
-  return trace_lattice_with_isometry_and_transfer_data(H, alpha=alpha, beta=beta, order=order)[1:2]
+  return trace_lattice_with_isometry_and_transfer_data(H; alpha, beta, order)[1:2]
 end
 
 # TODO: add jldoctest
 @doc raw"""
-    trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha::FieldElem = one(base_field(H)),
-                                                                     beta::FieldElem = gen(base_field(H)),
-                                                                     order::Integer = 2) where T
-                                                                        -> ZZLat, QQMatrix, AbstractSpaceRes
+    trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T};
+                                                  alpha::FieldElem = one(base_field(H)),
+                                                  beta::FieldElem = gen(base_field(H)),
+                                                  order::Integer = 2) where T
+                                                       -> ZZLat, QQMatrix, AbstractSpaceRes
 
 Return the trace lattice of `H` together with the associated isometry corresponding
 to multiplication by `beta` (see [`trace_lattice(::AbstractLat)`](@ref)) and with
@@ -1123,7 +1124,6 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
 
   n = degree(H)
 
-  # will be useful to shorten code of lattices with isometry on Oscar
   if E == QQ
     @req order in [1,2] "For ZZLat the order must be 1 or 2"
     V = ambient_space(H)
@@ -1152,7 +1152,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
     v2 = res(v)
     v2 = beta.*v2
     v3 = (res\v2)
-    iso = vcat(iso, transpose(matrix(v3)))
+    iso = vcat!(iso, transpose(matrix(v3)))
     v[i] = zero(QQ)
   end
 
@@ -1190,7 +1190,7 @@ function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::Fi
     v2 = res(v)
     v2 = beta.*v2
     v3 = (res\v2)
-    iso = vcat(iso, transpose(matrix(v3)))
+    iso = vcat!(iso, transpose(matrix(v3)))
     v[i] = zero(QQ)
   end
 
@@ -1243,7 +1243,7 @@ end
 #TODO: add jldoctest
 @doc raw"""
     hermitian_structure(L::ZZLat, f::QQMatrix; check::Bool = true
-                                              ambient_representation::Bool = true)
+                                               ambient_representation::Bool = true)
                                                                      -> HermLat
 
 Given a $\mathbb{Z}$-lattice `L` together with an isometry `f` with irreducible minimal polynomial,
@@ -1262,20 +1262,17 @@ If `check == true`, then the function checks whether the minimal polynomial of t
 span of `L` is irreducible.
 """
 function hermitian_structure(L::ZZLat, f::QQMatrix; check::Bool = true,
-                                                   ambient_representation::Bool = true,
-                                                   res = nothing,
-                                                   E = nothing)
+                                                    ambient_representation::Bool = true,
+                                                    res = nothing,
+                                                    E = nothing)
 
-  return hermitian_structure_with_transfer_data(L, f, check=check,
-                                                      ambient_representation = ambient_representation,
-                                                      res = res,
-                                                      E = E)[1]
+  return hermitian_structure_with_transfer_data(L, f; check, ambient_representation, res, E)[1]
 end
 
 # TODO: add jldoctest
 @doc raw"""
     hermitian_structure_with_transfer_data(L::ZZLat, f::QQMatrix; check::Bool = true,
-                                                                 ambient_representation::Bool = true)
+                                                                  ambient_representation::Bool = true)
                                                                               -> HermLat, AbstractSpaceRes
 
 Given a $\mathbb{Z}$-lattice `L` together with an isometry `f` with irreducible minimal polynomial,
@@ -1294,9 +1291,9 @@ If `check == true`, then the function checks whether the minimal polynomial of t
 span of `L` is irreducible.
 """
 function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::Bool = true,
-                                                                       ambient_representation::Bool = true,
-                                                                       res = nothing,
-                                                                       E = nothing)
+                                                                        ambient_representation::Bool = true,
+                                                                        res = nothing,
+                                                                        E = nothing)
 
   # Since the minimal polynomial of f might not be irreducible, but the one
   # of its restriction to _L is, we are only concerned about _L inside

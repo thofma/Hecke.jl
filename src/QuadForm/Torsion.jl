@@ -997,7 +997,7 @@ function _isometry_semiregular(T::TorQuadModule, U::TorQuadModule)
     return (false, hz)
   end
   NTtoNU = hom(NT, NU, identity_matrix(ZZ, ngens(NT)))
-  TtoU = compose(TtoNT, compose(NTtoNU, inv(UtoNU)))
+  TtoU = hom(T, U, matrix(compose(TtoNT, compose(NTtoNU, inv(UtoNU)))))
   @hassert :Lattice 1 is_bijective(TtoU)
   @hassert :Lattice 1 all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
   return (true, TtoU)
@@ -1058,7 +1058,7 @@ function _isometry_degenerate(T::TorQuadModule, U::TorQuadModule)
   D = block_diagonal_matrix([I, M])
   phi = hom(Tsub, Usub, D)
   @hassert :Lattice 1 is_bijective(phi)
-  TtoU = compose(inv(TsubinT), compose(phi, UsubinU))
+  TtoU = hom(T, U, matrix(compose(inv(TsubinT), compose(phi, UsubinU))))
   @hassert :Lattice 1 all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
   return (true, TtoU)
 end
@@ -1074,7 +1074,7 @@ function _isometry_non_split_degenerate(T::TorQuadModule, U::TorQuadModule)
     f = pop!(waiting)
     i = length(f)
     if i == n
-      return (true, compose(inv(TstoT), hom(Ts, U, f)))
+      return (true, hom(T, U, matrix(compose(inv(TstoT), hom(Ts, U, f)))))
     end
 
     t = Ts[i+1]
@@ -1216,7 +1216,7 @@ function is_isometric_with_isometry(T::TorQuadModule, U::TorQuadModule)
     Uabs, UabstoUab = snf(abelian_group(U))
     fabs = hom(Tabs, Uabs, identity_matrix(ZZ, length(elementary_divisors(T))))
     fab = compose(inv(TabstoTab), compose(fabs, UabstoUab))
-    return true, hom(T, U, fab.map)
+    return true, hom(T, U, matrix(fab))
   else
     is_zero(gram_matrix_quadratic(U)) && return (false, hz)
   end
@@ -1346,7 +1346,7 @@ function is_anti_isometric_with_anti_isometry(T::TorQuadModule, U::TorQuadModule
     Uabs, UabstoUab = snf(abelian_group(U))
     fabs = hom(Tabs, Uabs, identity_matrix(ZZ, length(elementary_divisors(T))))
     fab = compose(inv(TabstoTab), compose(fabs, UabstoUab))
-    return true, hom(T, U, fab.map)
+    return true, hom(T, U, matrix(fab))
   else
     is_zero(gram_matrix_quadratic(U)) && return (false, hz)
   end
