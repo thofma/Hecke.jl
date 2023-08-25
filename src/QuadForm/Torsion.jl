@@ -997,7 +997,7 @@ function _isometry_semiregular(T::TorQuadModule, U::TorQuadModule)
     return (false, hz)
   end
   NTtoNU = hom(NT, NU, identity_matrix(ZZ, ngens(NT)))
-  TtoU = hom(T, U, matrix(compose(TtoNT, compose(NTtoNU, inv(UtoNU)))))
+  TtoU = hom(T, U, TorQuadModuleElem[UtoNU\(NTtoNU(TtoNT(a))) for a in gens(T)])
   @hassert :Lattice 1 is_bijective(TtoU)
   @hassert :Lattice 1 all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
   return (true, TtoU)
@@ -1058,7 +1058,7 @@ function _isometry_degenerate(T::TorQuadModule, U::TorQuadModule)
   D = block_diagonal_matrix([I, M])
   phi = hom(Tsub, Usub, D)
   @hassert :Lattice 1 is_bijective(phi)
-  TtoU = hom(T, U, matrix(compose(inv(TsubinT), compose(phi, UsubinU))))
+  TtoU = hom(T, U, TorQuadModuleElem[UsubinU(phi(TsubinT\(a))) for a in gens(T)])
   @hassert :Lattice 1 all(a -> a*a == TtoU(a)*TtoU(a), gens(T))
   return (true, TtoU)
 end
@@ -1074,7 +1074,8 @@ function _isometry_non_split_degenerate(T::TorQuadModule, U::TorQuadModule)
     f = pop!(waiting)
     i = length(f)
     if i == n
-      return (true, hom(T, U, matrix(compose(inv(TstoT), hom(Ts, U, f)))))
+      TstoU = hom(Ts, U, f)
+      return (true, hom(T, U, TorQuadModuleElem[TstoU(TstoT\(a)) for a in gens(T)]))
     end
 
     t = Ts[i+1]
