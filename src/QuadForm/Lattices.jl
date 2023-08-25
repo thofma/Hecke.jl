@@ -1152,7 +1152,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
     v2 = res(v)
     v2 = beta.*v2
     v3 = (res\v2)
-    iso = vcat!(iso, transpose(matrix(v3)))
+    iso = vcat(iso, matrix(QQ, 1, length(v3), v3))::QQMatrix
     v[i] = zero(QQ)
   end
 
@@ -1190,7 +1190,7 @@ function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::Fi
     v2 = res(v)
     v2 = beta.*v2
     v3 = (res\v2)
-    iso = vcat!(iso, transpose(matrix(v3)))
+    iso = vcat(iso, matrix(QQ, 1, length(v3), v3))::QQMatrix
     v[i] = zero(QQ)
   end
 
