@@ -294,12 +294,12 @@ Creates the ideal $(x, y)$ of $\mathcal O$.
 """
 function ideal(O::NfAbsOrd, x::ZZRingElem, y::NfAbsOrdElem)
   @assert parent(y) === O
-  return NfAbsOrdIdl(deepcopy(x), deepcopy(y))
+  return NfAbsOrdIdl(x, y)
 end
 
 function ideal(O::NfAbsOrd, x::Integer, y::NfAbsOrdElem)
   @assert parent(y) === O
-  return NfAbsOrdIdl(ZZRingElem(x), deepcopy(y))
+  return NfAbsOrdIdl(ZZRingElem(x), y)
 end
 
 function ideal(O::NfAbsOrd)
