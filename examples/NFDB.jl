@@ -190,14 +190,15 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                               :lmfdb_label => (String, x -> ""),
                               :is_abelian => (Bool, x -> is_abelian(automorphism_group(x)[1])),
                               :non_simple => (Vector{QQPolyRingElem}, x -> non_simple_extension(x)),
-                              :galois_group => (Tuple{Int, Int}, x -> error()))
+                              :galois_group => (Tuple{Int, Int}, x -> error()),
+                              :p_adic_regulator => (Dict{ZZRingElem, QQFieldElem}, (x, y) -> _p_adic_regulator(x, y)))
 
 
 for (k, v) in properties_comp
   @eval ($k)(D::NFDBRecord) = D[Symbol($k)]::($(v[1]))
 end
 
-Base.getindex(D::NFDBRecord, s) = getindex(D.data, s)
+Base.getindex(D::NFDBRecord, s, x...) = getindex(D.data, s, x...)
 
 properties(D::NFDBRecord) = collect(keys(D.data))
 
@@ -214,48 +215,71 @@ function field(D::NFDBRecord; cached = false)
   end
 end
 
-function setindex!(D::NFDBRecord, s, k::Symbol)
+function setindex!(D::NFDBRecord, s, k::Symbol, x...)
   if !(k in record_info_v1.name_tuples)
     error("asdsD")
   end
   if haskey(D.data, k)
-    error("Data for $k already exists")
+    if k !== :p_adic_regulator || (k === :p_adic_regulator && haskey(D.data[k], x...))
+      error("Data for $k already exists")
+    end
   end
 
-  if !(s isa properties_comp[k][1])
+  if (k === :p_adic_regulator && !(s isa Union{Integer, Rational{<:Integer}, QQFieldElem})) || (k !== :p_adic_regulator! && (s isa properties_comp[k][1]))
     error("$s has the wrong type (expected $(properties_comp[k][1]))")
   end
 
-  D.data[k] = s
+  if k === :p_adic_regulator
+    if haskey(D.data, k)
+      @assert !haskey(D.data[k], x)
+      D.data[k][x...] = s
+    else
+      D.data[k] = Dict{ZZRingElem, QQFieldElem}(x... => s)
+    end
+  else
+    D.data[k] = s
+  end
   return D
 end
 
-function compute!(D::NFDBRecord, s::Symbol)
+function compute!(D::NFDBRecord, s::Symbol, x...)
   if haskey(D.data, s)
-    return D.data[s]
+    if s === :p_adic_regulator && haskey(D.data[s], x)
+      return D.data[s][x]
+    elseif s !== :p_adic_regulator
+      return D.data[s]
+    end
   end
   K = field(D)
-  d = _get(K, s)
-  D.data[s] = d
+  d = _get(K, s, x...)
+  if s === :p_adic_regulator
+    if haskey(D.data, :p_adic_regulator)
+      D.data[s][x...] = d
+    else
+      D.data[s] = Dict{ZZRingElem, QQFieldElem}(x... => d)
+    end
+  else
+    D.data[s] = d
+  end
   return d
 end
 
-function compute!(D::NFDB, S::Vector{Symbol})
+function compute!(D::NFDB, S::Vector)
   for s in S
     compute!(D, s)
   end
 end
 
-function compute!(D::NFDB, s::Symbol)
-  PB = Pkg.GitTools.MiniProgressBar(header = "Computing $s")
-  PB.max = length(D.fields)
-  rate = 0.0
-  length_eta = 0
+function compute!(D::NFDB, s::Symbol, x...)
+  #PB = Pkg.GitTools.MiniProgressBar(header = "Computing $s")
+  #PB.max = length(D.fields)
+  #rate = 0.0
+  #length_eta = 0
   for i in 1:length(D.fields)
-    compute!(D[i], s)
-    PB.current = i
-    Pkg.GitTools.showprogress(stdout, PB)#ETA)
-    flush(stdout)
+    compute!(D[i], s, x...)
+    #PB.current = i
+    #Pkg.GitTools.showprogress(stdout, PB)#ETA)
+    #flush(stdout)
   end
 end
 
@@ -277,7 +301,8 @@ const record_info_v1 = NFDBRecordInfo([:id,
                                        :lmfdb_label,
                                        :is_abelian,
                                        :non_simple,
-                                       :galois_group])
+                                       :galois_group,
+                                       :p_adic_regulator])
 
 
 @assert length(record_info_v1.name_tuples) <= 56
@@ -321,9 +346,9 @@ function Base.get(D::NFDBRecord{1}, s::Symbol)
   end
 end
 
-function _get(K, s)
+function _get(K, s, x...)
   if haskey(properties_comp, s)
-    return (properties_comp[s][2])(K)
+    return (properties_comp[s][2])(K, x...)
   else
     error("Invalid property :$(s) of number field")
   end
@@ -368,11 +393,19 @@ _parse_as(::Type{QQPolyRingElem}) = Vector{QQFieldElem}
 
 _parse_as(::Type{Vector{QQPolyRingElem}}) = Vector{Vector{QQFieldElem}}
 
+_parse_as(::Type{Dict{ZZRingElem, QQFieldElem}}) = Vector{Tuple{ZZRingElem, QQFieldElem}}
+
 create(::Type{QQPolyRingElem}, v::Vector{QQFieldElem}) = Hecke.Globals.Qx(v)
 
 create(::Type{Vector{QQPolyRingElem}}, v::Vector{Vector{QQFieldElem}}) = [ Hecke.Globals.Qx(w) for w in v]
 
+create(::Type{Dict{ZZRingElem, QQFieldElem}}, v::Vector{Tuple{ZZRingElem, QQFieldElem}}) = Dict{ZZRingElem, QQFieldElem}(w[1] => w[2] for w in v)
+
 create(T, v) = v
+
+function _stringify(x::Dict{ZZRingElem, QQFieldElem})
+  return replace(_stringify([(k, v) for (k, v) in x]), " " => "")
+end
 
 function _stringify(x::QQPolyRingElem)
   return _stringify([coeff(x, i) for i in 0:degree(x)])
@@ -1101,4 +1134,108 @@ function Base.iterate(D::NFDB, i = 1)
     return nothing
   end
   return D[i], i + 1
+end
+
+################################################################################
+#
+#  p-adic regulator
+#
+################################################################################
+
+function _p_adic_regulator(K, p)
+  if !is_normal(K)
+    return _padic_regulator_non_normal(K, p)
+  end
+  OK = maximal_order(K)
+  P = prime_ideals_over(OK, p)[1]
+  U, mU = unit_group_fac_elem(OK)
+  A, mA = automorphism_group(K)
+  @req order(A) == degree(K) "Field must be normal"
+  @req is_totally_real(K) "Field must be totally real"
+  r = rank(U)
+  prec = 64
+  _det = Hecke.AbstractAlgebra.det_df
+  while true
+    if prec > 2^15
+      error("Precision >= 2^15, something is wrong")
+    end
+    C, mC = completion(K, P, prec)
+    Rmat = zero_matrix(C, r, r)
+    for i in 1:r
+      for j in 1:r
+        Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1]))) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
+      end
+    end
+    z = _det(Rmat)
+    if !is_zero(z)
+      return valuation(z)
+    else
+      prec = 2*prec
+    end
+  end
+end
+
+function _evaluate_log_of_fac_elem(mC, P, e)
+  C = codomain(mC)
+  K = base_ring(e)
+  pi = K(uniformizer(P))
+  # at the moment log() works only for valuation == 0,
+  # but since we have a unit, we can just scale in every factor
+  l = sum(n * log(mC(pi^(-valuation(b, P)) * b)) for (b, n) in e; init = zero(C))
+  return l
+end
+
+function _padic_regulator_non_normal(K, p)
+  @req is_totally_real(K) "Field must be totally real"
+  a = gen(K)
+  N, KtoN = normal_closure(K)
+  ON = maximal_order(N)
+  P = prime_ideals_over(ON, p)[1]
+  # first identiy the distinct p-adic completions of K
+  A, mA = automorphism_group(N)
+  d = degree(N)
+  prec = 32 
+  auts = Int[]
+  while true
+    empty!(auts)
+    C, mC = completion(N, P, prec)
+    images_of_primitive_element = elem_type(C)[]
+    for i in 1:d
+      z = mC(mA(A[i])(KtoN(a)))
+      if z in images_of_primitive_element
+        continue
+      else
+        push!(images_of_primitive_element, z)
+        push!(auts, i)
+      end
+    end
+    if length(images_of_primitive_element) == degree(K)
+      break
+    end
+    prec = 2 * prec
+  end
+
+  OK = ring_of_integers(K)
+  U, mU = unit_group_fac_elem(OK)
+  r = rank(U)
+  prec = 64
+  _det = Hecke.AbstractAlgebra.det_df
+  while true
+    if prec > 2^15
+      error("Precision >= 2^15, something is wrong")
+    end
+    C, mC = completion(N, P, prec)
+    Rmat = zero_matrix(C, r, r)
+    for i in 1:r
+      for j in 1:r
+        Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[auts[i]])(KtoN(mU(U[j + 1])))) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
+      end
+    end
+    z = _det(Rmat)
+    if !is_zero(z)
+      return valuation(z)
+    else
+      prec = 2*prec
+    end
+  end
 end
