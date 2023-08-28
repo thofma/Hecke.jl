@@ -339,7 +339,7 @@ Assuming that the order $\mathcal O$ contains the equation order
 $\mathbf Z[\alpha]$ of the ambient number field, this function returns the
 index $[ \mathcal O : \mathbf Z]$.
 """
-function index(O::NfAbsOrd; copy::Bool = true)
+function index(O::NfAbsOrd; copy::Bool = false)
   if !isdefined(O, :index)
     i = gen_index(O)
     !isone(denominator(i)) && error("Order does not contain the equation order")

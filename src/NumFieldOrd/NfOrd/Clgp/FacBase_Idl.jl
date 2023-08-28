@@ -29,7 +29,7 @@ function NfFactorBase(O::NfOrd, B::Int;
 end
 
 function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
-  lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
+  lp = sort(lp, lt = function(a,b) return norm(a, copy = false) > norm(b, copy = false); end)
   FB = NfFactorBase()
   FB.size = length(lp)
   FB.ideals = lp

@@ -280,9 +280,9 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(x::NfAbsOrdFracIdl, dict::IdDict)
-  z = NfAbsOrdFracIdl(numerator(x), denominator(x))
+  z = NfAbsOrdFracIdl(numerator(x, copy = false), denominator(x, copy = false))
   if isdefined(x, :basis_matrix)
-    z.basis_matrix = deepcopy(x.basis_matrix)
+    z.basis_matrix = Base.deepcopy_internal(x.basis_matrix, dict)
   end
   return z
 end

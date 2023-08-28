@@ -1365,6 +1365,16 @@ end
 
 ################################################################################
 #
+#  Canonical basis matrix
+#
+################################################################################
+
+@attr FakeFmpqMat function _canonical_basis_matrix(L::ZZLat)
+  return hnf(FakeFmpqMat(basis_matrix(L)))
+end
+
+################################################################################
+#
 #  Equality and hash
 #
 ################################################################################
@@ -1379,9 +1389,7 @@ function Base.:(==)(L1::ZZLat, L2::ZZLat)
   if V1 != V2
     return false
   end
-  B1 = basis_matrix(L1)
-  B2 = basis_matrix(L2)
-  return hnf(FakeFmpqMat(B1)) == hnf(FakeFmpqMat(B2))
+  return _canonical_basis_matrix(L1) == _canonical_basis_matrix(L2)
 end
 
 function Base.hash(L::ZZLat, u::UInt)
