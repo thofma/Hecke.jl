@@ -777,6 +777,9 @@ function _compute_matrix_algebras_from_reps(A, res)
   idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
   data = DefaultSmallGroupDB().db[smallid[1]][smallid[2]]
   Qx = Globals.Qx
+  if length(data.fields) == 0
+    return nothing
+  end
   for j in data.galrep
     if data.schur[j] != 1
       continue
