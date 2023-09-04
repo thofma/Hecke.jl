@@ -776,7 +776,7 @@ function Base.hash(g::QuadLocalGenus, u::UInt)
   # For the dyadic case, weights, witt invariants and norms should be the same,
   # according to the next equality test. Then, there is no other invariants we
   # can attach to the local genus. (because local genera with different
-  # uniformizer can be equal under certain condtions, for instance).
+  # uniformizer can be equal under certain conditions, for instance).
   if is_dyadic(g)
     h = xor(h, hash(weights(g)))
     h = xor(h, hash(witt_invariant(g)))

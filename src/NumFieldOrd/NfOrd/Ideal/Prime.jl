@@ -1381,7 +1381,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
       k = Q[t]/(t^2-2, t^2-3, t^3-5), p = 11
       then splitting is [2], [1,1], [1,2]
       and I need 6 ideals of degree 2
-      taking ony one root of the deg 2 factors gives a total of 4 ideals only
+      taking only one root of the deg 2 factors gives a total of 4 ideals only
       I'd need 1 for the 1st factor, and 2 for the subsequent deg 2 factors.
       Why, I am not quite sure
       So I do all roots (which are too many) and sieve later.

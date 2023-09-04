@@ -739,7 +739,7 @@ function exp(a::LocalFieldElem)
   el = one(K)
   res = res
   den = setprecision!(one(Qp), N)
-  #precision is suboptimal, its truncated badly, thus loosing it
+  #precision is suboptimal, its truncated badly, thus losing it
   max_i = QQFieldElem(N)//(valuation(a) - QQFieldElem(1, p-1)) + 1
   bound = Int(floor(ZZRingElem, max_i))
   for i = 1:bound
