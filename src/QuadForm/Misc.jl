@@ -12,7 +12,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::VecSpaceRes)
   io = pretty(io)
   println(io, "Map of change of scalars")
   println(io, Indent(), "from vector space of dimension ", n, " over ", Lowercase(), QQ)
-  print(io, "to vector space of dimension ", m, " over ", Lowercase())
+  print(io, "to   vector space of dimension ", m, " over ", Lowercase())
   print(io, f.field)
   print(io, Dedent())
 end
@@ -29,7 +29,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::AbstractSpaceRes)
   io = pretty(io)
   println(io, "Map of change of scalars")
   println(io, Indent(), "from ", Lowercase(), domain(f))
-  print(io, "to ", Lowercase(), codomain(f))
+  print(io, "to   ", Lowercase(), codomain(f))
   print(io, Dedent())
 end
 
