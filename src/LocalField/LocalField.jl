@@ -165,7 +165,7 @@ absolute_base_field(L::FlintQadicField) = base_field(L)
 ################################################################################
 
 function degree(K::LocalField)
-  return degree(defining_polynomial(K, 1)) #inf. recursion loos otherwise
+  return degree(defining_polynomial(K, 1)) #inf. recursion loop otherwise
 end
 
 function absolute_degree(::FlintPadicField)

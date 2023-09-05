@@ -53,7 +53,7 @@ function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
         and using universal lower bounds on the size of units (Dobrowski)
         and the successive minimal, we can get a lower bound on the
         regulator of <e_i>. Hadramat gives an upper bound on reg(<u_i>)
-        (regulator in the sence of lattice disciminant)
+        (regulator in the sense of lattice disciminant)
 
         Think: can we use the p-adic regulator to help???
                possibly increase precision until we either have

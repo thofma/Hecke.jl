@@ -1191,7 +1191,7 @@ function _padic_regulator_non_normal(K, p)
   N, KtoN = normal_closure(K)
   ON = maximal_order(N)
   P = prime_ideals_over(ON, p)[1]
-  # first identiy the distinct p-adic completions of K
+  # first identify the distinct p-adic completions of K
   A, mA = automorphism_group(N)
   d = degree(N)
   prec = 32 

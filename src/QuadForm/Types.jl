@@ -161,7 +161,7 @@ of $W$
 mutable struct AbstractSpaceRes{S, T} <: Map{S, T, HeckeMap, AbstractSpaceRes}
   header::MapHeader{S, T}
   btop::MatrixElem        # A given basis for the top space
-  ibtop::MatrixElem       # The inverse of the previous base matrix, to avoid computing it everytime
+  ibtop::MatrixElem       # The inverse of the previous base matrix, to avoid computing it every time
   bdown::MatrixElem       # A given basis the bottom space
   ibdown::MatrixElem      # Same as ibtop
 
