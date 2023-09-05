@@ -42,12 +42,12 @@ jobs:
       - name: "Cache artifacts"
         uses: julia-actions/cache@v1
       - name: "Build package"
-        uses: julia-actions/julia-buildpkg@latest
+        uses: julia-actions/julia-buildpkg@v1
       - name: "Install GAP/Polymake"
         continue-on-error: true
         run: julia --color=yes -e 'using Pkg; Pkg.add([PackageSpec(name="GAP"), PackageSpec(name="Polymake")]);'
       - name: "Run long tests"
-        uses: julia-actions/julia-runtest@latest
+        uses: julia-actions/julia-runtest@v1
         env:
           HECKE_TESTLONG: "1"
           HECKE_TEST_PARALLEL: "2"
