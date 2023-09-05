@@ -108,7 +108,7 @@ function _image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
       l = l + 1
     end
   end
-  return vec(collect(matrix(E, 1, length(z), z)*bdown))
+  return vec(collect(matrix(E, 1, length(z), z)*bdown))::Vector{elem_type(E)}
 end
 
 ### Preimage functions
@@ -178,7 +178,7 @@ function _preimage(f::AbstractSpaceRes{S, T}, w::Vector) where {S, T}
       k = k + 1
     end
   end
-  return vec(collect(matrix(QQ, 1, length(z), z)*btop))
+  return vec(collect(matrix(QQ, 1, length(z), z)*btop))::Vector{elem_type(K)}
 end
 
 ################################################################################
