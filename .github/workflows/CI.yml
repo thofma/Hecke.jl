@@ -45,9 +45,9 @@ jobs:
       - name: "Cache artifacts"
         uses: julia-actions/cache@v1
       - name: "Build package"
-        uses: julia-actions/julia-buildpkg@latest
+        uses: julia-actions/julia-buildpkg@v1
       - name: "Run tests"
-        uses: julia-actions/julia-runtest@latest
+        uses: julia-actions/julia-runtest@v1
         env:
           HECKE_TEST_PARALLEL: "2"
         with:
@@ -77,8 +77,8 @@ jobs:
         with:
           version: '1.9'
       - uses: julia-actions/cache@v1
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-docdeploy@latest
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
