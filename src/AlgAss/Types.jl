@@ -1,8 +1,8 @@
 export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem, AlgMat, AlgMatElem
 
-abstract type AbsAlgAss{T} <: Ring end
+abstract type AbsAlgAss{T} <: NCRing end
 
-abstract type AbsAlgAssElem{T} <: RingElem end
+abstract type AbsAlgAssElem{T} <: NCRingElem end
 
 ################################################################################
 #
