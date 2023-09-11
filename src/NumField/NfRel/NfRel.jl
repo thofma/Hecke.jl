@@ -443,10 +443,6 @@ function add!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return c
 end
 
-function check_parent(a, b)
-  return a==b
-end
-
 ################################################################################
 #
 #  Hash function
