@@ -346,13 +346,3 @@ mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
     return z
   end
 end
-
-################################################################################
-#
-#  Polynomial ring hack
-#
-################################################################################
-
-function AbstractAlgebra.polynomial_ring(A::AbsAlgAss, s::Symbol; cached::Bool = true)
-  return invoke(Generic.polynomial_ring, Tuple{AbstractAlgebra.NCRing, Symbol}, A, s; cached = cached)
-end
