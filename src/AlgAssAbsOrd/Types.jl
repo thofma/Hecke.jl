@@ -5,7 +5,7 @@
 ################################################################################
 
 # Orders in algebras over the rationals
-@attributes mutable struct AlgAssAbsOrd{S, T} <: Ring
+@attributes mutable struct AlgAssAbsOrd{S, T} <: NCRing
   algebra::S                       # Algebra containing the order
   dim::Int
   basis#::Vector{AlgAssAbsOrdElem{S, T}}
@@ -79,7 +79,7 @@ end
 
 const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
 
-@attributes mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
+@attributes mutable struct AlgAssAbsOrdElem{S, T} <: NCRingElem
   elem_in_algebra::T
   coordinates::Vector{ZZRingElem}
   has_coord::Bool # needed for mul!
