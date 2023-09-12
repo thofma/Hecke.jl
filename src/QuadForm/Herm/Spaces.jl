@@ -111,7 +111,7 @@ end
 
 is_quadratic(V::HermSpace) = false
 
-ishermitian(V::HermSpace) = true
+is_hermitian(V::HermSpace) = true
 
 _base_algebra(V::HermSpace) = V.E
 

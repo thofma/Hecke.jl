@@ -37,7 +37,7 @@
   V = @inferred hermitian_space(E, FlintQQ[1 2; 2 1])
   @test V === hermitian_space(E, FlintQQ[1 2; 2 1])
   @test V !== hermitian_space(E, FlintQQ[1 2; 2 1], cached = false)
-  @test ishermitian(V)
+  @test is_hermitian(V)
   @test !is_definite(V)
   @test involution(V) == s
   @test det(V) == -discriminant(V)
