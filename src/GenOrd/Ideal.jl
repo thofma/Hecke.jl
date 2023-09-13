@@ -251,8 +251,7 @@ end
 
 
 function Base.:(+)(a::GenOrdIdl, b::GenOrdIdl)
-  check_parent(a, b)
-  O = order(a)
+  @req order(a) === order(b) "Ideals must have same order"
 
   if iszero(a)
     return b
