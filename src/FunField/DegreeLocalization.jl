@@ -33,7 +33,7 @@ function check_parent(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldEleme
 end
 
 function Base.hash(a::KInftyElem, h::UInt)
-  b = 0x32ba43ad011affd1%UInt 
+  b = 0x32ba43ad011affd1%UInt
   return xor(b, hash(data(a), h))
 end
 
@@ -384,7 +384,7 @@ function RandomExtensions.make(S::KInftyRing, vs...)
   if length(vs) == 1 && elem_type(R) == Random.gentype(vs[1])
     RandomExtensions.Make(S, vs[1]) # forward to default Make constructor
   else
-    make(S, make(R, vs...))
+    RandomExtensions.Make(S, make(R, vs...))
   end
 end
 
