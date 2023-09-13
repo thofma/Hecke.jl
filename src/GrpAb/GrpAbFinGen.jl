@@ -218,10 +218,11 @@ function show_gen(io::IO, A::GrpAbFinGen)
 end
 
 function show_snf(io::IO, A::GrpAbFinGen)
+  io = pretty(io)
   if get(io, :compact, false)
     print(io, "Abelian group with structure: ")
   else
-    print(io, "GrpAb: ")
+    print(io, LowercaseOff(), "GrpAb: ")
   end
   show_snf_structure(io, A)
 end
@@ -229,16 +230,17 @@ end
 function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
   @assert is_snf(A)
   len = length(A.snf)
+  io = pretty(io)
   if len == 0
-    print(io, "Z/1")
+    print(io, LowercaseOff(), "Z/1")
     return
   end
 
   if A.snf[1] == 0
     if len == 1
-      print(io, "Z")
+      print(io, LowercaseOff(), "Z")
     else
-      print(io, "Z^$(len)")
+      print(io, LowercaseOff(), "Z^$(len)")
     end
     return
   end
@@ -251,7 +253,7 @@ function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
       j += 1
     end
     if iszero(inv)
-      print(io, "Z")
+      print(io, LowercaseOff(), "Z")
       if j > 1
         print(io, "^($j)")
       end
@@ -259,7 +261,7 @@ function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
       if j > 1
         print(io, "(Z/$(inv))^$(j)")
       else
-        print(io, "Z/$(inv)")
+        print(io, LowercaseOff(), "Z/$(inv)")
       end
     end
     if i + j - 1 < len
