@@ -65,7 +65,7 @@
     @test (@inferred dim(V)) == 2
     @test (@inferred rank(V)) == 0
     @test @inferred is_quadratic(V)
-    @test @inferred !ishermitian(V)
+    @test @inferred !is_hermitian(V)
     @test (@inferred fixed_field(V)) === K
 
     @test_throws ArgumentError quadratic_space(K, zero_matrix(K, 1, 2))

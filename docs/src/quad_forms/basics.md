@@ -84,7 +84,7 @@ In all the other cases, we say that $V$ is *indefinite*.
 ```@docs
 is_regular(::AbstractSpace)
 is_quadratic(::AbstractSpace)
-ishermitian(::AbstractSpace)
+is_hermitian(::AbstractSpace)
 is_positive_definite(::AbstractSpace)
 is_negative_definite(::AbstractSpace)
 is_definite(::AbstractSpace)
@@ -102,7 +102,7 @@ E, b = number_field(t^2-a*t+1, "b");
 Q = quadratic_space(K, K[0 1; 1 0]);
 H = hermitian_space(E, 3);
 is_regular(Q), is_regular(H)
-is_quadratic(Q), ishermitian(H)
+is_quadratic(Q), is_hermitian(H)
 is_definite(Q), is_positive_definite(H)
 ```
 ---

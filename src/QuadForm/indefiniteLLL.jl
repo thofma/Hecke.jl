@@ -281,7 +281,7 @@ julia> lll_gram_indef_with_transform(G)
 """
 function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = false)
 
-  @req !check || (issymmetric(G) && det(G) != 0 && _is_indefinite(change_base_ring(QQ,G))) "Input should be a non-degenerate indefinite Gram matrix."
+  @req !check || (is_symmetric(G) && det(G) != 0 && _is_indefinite(change_base_ring(QQ,G))) "Input should be a non-degenerate indefinite Gram matrix."
 
   red = lll_gram_indef_isotropic(G; base = true)
 

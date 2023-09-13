@@ -1,4 +1,4 @@
-export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, is_quadratic, is_regular,
+export ambient_space, rank, gram_matrix, inner_product, involution, is_hermitian, is_quadratic, is_regular,
        is_local_square, is_isometric, is_rationally_isometric, is_isotropic, is_isotropic_with_vector, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
        restrict_scalars, orthogonal_complement, orthogonal_projection
@@ -173,7 +173,7 @@ is_quadratic(::AbstractSpace)
 
 Return whether the space `V` is hermitian.
 """
-ishermitian(::AbstractSpace)
+is_hermitian(::AbstractSpace)
 
 ################################################################################
 #
@@ -439,7 +439,7 @@ is_isometric(L::AbstractSpace, M::AbstractSpace)
 function _isdefinite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
+  if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
     return zero(K)
   end
   D = diagonal(V)
@@ -467,7 +467,7 @@ Return whether the space `V` is positive definite.
 function is_positive_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
+  if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
     return false
   end
   D = diagonal(V)
@@ -487,7 +487,7 @@ Return whether the space `V` is negative definite.
 function is_negative_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
+  if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
     return false
   end
   D = diagonal(V)
@@ -679,7 +679,7 @@ end
 function _biproduct(x::Vector{T}) where T <: AbstractSpace
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
-  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> ishermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
+  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> is_hermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
   G = diagonal_matrix(gram_matrix.(x))
   V = is_quadratic(x[1]) ? quadratic_space(K, G) : hermitian_space(K, G)
   n = sum(dim.(x))
