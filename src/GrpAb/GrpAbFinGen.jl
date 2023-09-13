@@ -39,7 +39,8 @@ export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfin
        direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
        psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, is_exact, free_resolution, obj, map,
-       primary_part, is_free, is_pure, is_neat, direct_sum, biproduct
+       primary_part, is_free, is_pure, is_neat, direct_sum, biproduct,
+       canonical_injection, canonical_injections, canonical_projection, canonical_projections
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
@@ -598,7 +599,7 @@ with the injections $G_i \to D$.
 For finite abelian groups, finite direct sums and finite direct products agree and
 they are therefore called biproducts.
 If one wants to obtain $D$ as a direct product together with the projections
-$ D \to G_i$, one should call `direct_product(G...)`.
+$D \to G_i$, one should call `direct_product(G...)`.
 If one wants to obtain $D$ as a biproduct together with the projections and the
 injections, one should call `biproduct(G...)`.
 
