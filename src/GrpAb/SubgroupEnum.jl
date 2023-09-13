@@ -602,7 +602,11 @@ function _ptype(G, p)
                        for i in 1:length(Gsnf.snf) if Gsnf.snf[i] > 1]
   reverse!(x)
   t = findlast(!iszero, x)
-  return x[1:t]
+  if t === nothing
+    return x[1:0]
+  else
+    return x[1:t]
+  end
 end
 
 # Same as above but now allow a function to be applied to the output
