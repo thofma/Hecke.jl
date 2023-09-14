@@ -1410,7 +1410,7 @@ julia> N = matrix(ZZ, 2, 2, [1 1;
 [0   1]
 
 julia> multiplicative_order(N)
-PosInf()
+infinity
 ```
 """
 function multiplicative_order(f::Union{ZZMatrix, QQMatrix})

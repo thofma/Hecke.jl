@@ -78,8 +78,8 @@ intersect(mG::GrpAbFinGenMap, mH::GrpAbFinGenMap)
 ### Direct Products
 ```@docs
 direct_product(G::GrpAbFinGen...)
-Hecke.canonical_injection(G::GrpAbFinGen, i::Int)
-Hecke.canonical_projection(G::GrpAbFinGen, i::Int)
+canonical_injection(G::GrpAbFinGen, i::Int)
+canonical_projection(G::GrpAbFinGen, i::Int)
 flat(G::GrpAbFinGen)
 ```
 

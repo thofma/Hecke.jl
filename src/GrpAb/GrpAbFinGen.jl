@@ -39,7 +39,8 @@ export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfin
        direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
        psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, is_exact, free_resolution, obj, map,
-       primary_part, is_free, is_pure, is_neat, direct_sum, biproduct
+       primary_part, is_free, is_pure, is_neat, direct_sum, biproduct,
+       canonical_injection, canonical_injections, canonical_projection, canonical_projections
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
@@ -218,10 +219,11 @@ function show_gen(io::IO, A::GrpAbFinGen)
 end
 
 function show_snf(io::IO, A::GrpAbFinGen)
+  io = pretty(io)
   if get(io, :compact, false)
     print(io, "Abelian group with structure: ")
   else
-    print(io, "GrpAb: ")
+    print(io, LowercaseOff(), "GrpAb: ")
   end
   show_snf_structure(io, A)
 end
@@ -229,16 +231,17 @@ end
 function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
   @assert is_snf(A)
   len = length(A.snf)
+  io = pretty(io)
   if len == 0
-    print(io, "Z/1")
+    print(io, LowercaseOff(), "Z/1")
     return
   end
 
   if A.snf[1] == 0
     if len == 1
-      print(io, "Z")
+      print(io, LowercaseOff(), "Z")
     else
-      print(io, "Z^$(len)")
+      print(io, LowercaseOff(), "Z^$(len)")
     end
     return
   end
@@ -251,7 +254,7 @@ function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
       j += 1
     end
     if iszero(inv)
-      print(io, "Z")
+      print(io, LowercaseOff(), "Z")
       if j > 1
         print(io, "^($j)")
       end
@@ -259,7 +262,7 @@ function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
       if j > 1
         print(io, "(Z/$(inv))^$(j)")
       else
-        print(io, "Z/$(inv)")
+        print(io, LowercaseOff(), "Z/$(inv)")
       end
     end
     if i + j - 1 < len
@@ -598,7 +601,7 @@ with the injections $G_i \to D$.
 For finite abelian groups, finite direct sums and finite direct products agree and
 they are therefore called biproducts.
 If one wants to obtain $D$ as a direct product together with the projections
-$ D \to G_i$, one should call `direct_product(G...)`.
+$D \to G_i$, one should call `direct_product(G...)`.
 If one wants to obtain $D$ as a biproduct together with the projections and the
 injections, one should call `biproduct(G...)`.
 

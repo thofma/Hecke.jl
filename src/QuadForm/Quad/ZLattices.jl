@@ -2146,25 +2146,7 @@ with gram matrix
 [ 0    0   -3    2]
 
 julia> glue, iS, iR = glue_map(M, S, R)
-(Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^2 -> Q/2Z)
+(Map: finite quadratic module -> finite quadratic module, Map: finite quadratic module -> finite quadratic module, Map: finite quadratic module -> finite quadratic module)
 
 julia> is_bijective(glue)
 true

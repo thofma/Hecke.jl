@@ -73,7 +73,7 @@ end
 
 is_quadratic(V::QuadSpace) = true
 
-ishermitian(V::QuadSpace) = false
+is_hermitian(V::QuadSpace) = false
 
 _base_algebra(V::QuadSpace) = V.K
 
