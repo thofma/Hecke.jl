@@ -6,7 +6,7 @@
 
 # S is the element type of the base field of the algebra, T the fractional ideal
 # type of this field
-mutable struct AlgAssRelOrd{S, T, U} <: Ring
+mutable struct AlgAssRelOrd{S, T, U} <: NCRing
   algebra::U
   dim::Int
   pseudo_basis#::Vector{Tuple{AbsAlgAssElem{S}, T}}
@@ -58,7 +58,7 @@ end
 #
 ################################################################################
 
-mutable struct AlgAssRelOrdElem{S, T, U} <: RingElem
+mutable struct AlgAssRelOrdElem{S, T, U} <: NCRingElem
   parent::AlgAssRelOrd{S, T, U}
   elem_in_algebra::AbsAlgAssElem{S}
   coordinates::Vector{S}

@@ -1837,7 +1837,7 @@ end
 RandomExtensions.maketype(P::AlgAssAbsOrdIdl, ::Int) = elem_type(algebra(P))
 
 function rand(rng::AbstractRNG,
-              sp::SamplerTrivial{<:Make2{<:RingElem,<:AlgAssAbsOrdIdl,Int}})
+              sp::SamplerTrivial{<:Make2{<:NCRingElem,<:AlgAssAbsOrdIdl,Int}})
   a, B = sp[][1:end]
   r = rand(rng, -B:B, dim(algebra(a)))
   b = basis(a, copy = false)

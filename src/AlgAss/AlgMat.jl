@@ -256,12 +256,12 @@ end
 
 # Constructs Mat_n(S) as an R-algebra
 @doc raw"""
-    matrix_algebra(R::Ring, S::Ring, n::Int) -> AlgMat
+    matrix_algebra(R::Ring, S::NCRing, n::Int) -> AlgMat
 
 Returns $\mathrm{Mat}_n(S)$ as an $R$-algebra.
 It is assumed that $S$ is an $R$-algebra.
 """
-function matrix_algebra(R::Ring, S::Ring, n::Int)
+function matrix_algebra(R::Ring, S::NCRing, n::Int)
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   n2 = n^2
   A.dim = n2*dim(S)
@@ -369,7 +369,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
 end
 
 @doc raw"""
-    matrix_algebra(R::Ring, S::Ring, gens::Vector{<: MatElem};
+    matrix_algebra(R::Ring, S::NCRing, gens::Vector{<: MatElem};
                    isbasis::Bool = false)
       -> AlgMat
 
@@ -380,7 +380,7 @@ If `isbasis` is `true`, it is assumed that the given matrices are an $R$-basis
 of this algebra, i. e. that the spanned $R$-module is closed under
 multiplication.
 """
-function matrix_algebra(R::AbstractAlgebra.NCRing, S::AbstractAlgebra.NCRing, gens::Vector{<:MatElem}; isbasis::Bool = false)
+function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bool = false)
   @assert length(gens) > 0
   A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])

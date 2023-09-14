@@ -1,8 +1,8 @@
 export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem, AlgMat, AlgMatElem
 
-abstract type AbsAlgAss{T} <: Ring end
+abstract type AbsAlgAss{T} <: NCRing end
 
-abstract type AbsAlgAssElem{T} <: RingElem end
+abstract type AbsAlgAssElem{T} <: NCRingElem end
 
 ################################################################################
 #
@@ -279,7 +279,7 @@ end
 # T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
 @attributes mutable struct AlgMat{T, S} <: AbsAlgAss{T}
   base_ring::Ring
-  coefficient_ring::Ring
+  coefficient_ring::NCRing
   one::S
   basis
   basis_matrix # matrix over the base_ring
@@ -312,7 +312,7 @@ end
     return A
   end
 
-  function AlgMat{T, S}(R1::Ring, R2::Ring) where {T, S}
+  function AlgMat{T, S}(R1::Ring, R2::NCRing) where {T, S}
     A = new{T, S}()
     A.base_ring = R1
     A.coefficient_ring = R2
@@ -345,14 +345,4 @@ mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
     z.has_coeffs = false
     return z
   end
-end
-
-################################################################################
-#
-#  Polynomial ring hack
-#
-################################################################################
-
-function AbstractAlgebra.polynomial_ring(A::AbsAlgAss, s::Symbol; cached::Bool = true)
-  return invoke(Generic.polynomial_ring, Tuple{AbstractAlgebra.NCRing, Symbol}, A, s; cached = cached)
 end
