@@ -1144,43 +1144,19 @@ Gram matrix quadratic form:
 [   0      0      0      0   4//3]
 
 julia> bool, phi = is_isometric_with_isometry(T,U)
-(true, Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^5 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^5 -> Q/2Z)
+(true, Map: finite quadratic module -> finite quadratic module)
 
 julia> is_bijective(phi)
 true
 
 julia> T2, _ = sub(T, [-T[4], T[2]+T[3]+T[5]])
-(Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^5 -> Q/2Z)
+(Finite quadratic module: (Z/3)^2 -> Q/2Z, Map: finite quadratic module -> finite quadratic module)
 
 julia> U2, _ = sub(T, [T[4], T[2]+T[3]+T[5]])
-(Finite quadratic module: (Z/3)^2 -> Q/2Z, Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^5 -> Q/2Z)
+(Finite quadratic module: (Z/3)^2 -> Q/2Z, Map: finite quadratic module -> finite quadratic module)
 
 julia> bool, phi = is_isometric_with_isometry(U2, T2)
-(true, Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^2 -> Q/2Z)
+(true, Map: finite quadratic module -> finite quadratic module)
 
 julia> is_bijective(phi)
 true
@@ -1254,13 +1230,7 @@ Gram matrix quadratic form:
 [4//5]
 
 julia> bool, phi = is_anti_isometric_with_anti_isometry(T, T)
-(true, Map with following data
-Domain:
-=======
-Finite quadratic module: Z/5 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: Z/5 -> Q/2Z)
+(true, Map: finite quadratic module -> finite quadratic module)
 
 julia> a = gens(T)[1];
 
@@ -1305,13 +1275,7 @@ Gram matrix quadratic form:
 [3//5]
 
 julia> bool, phi = is_anti_isometric_with_anti_isometry(T,T)
-(true, Map with following data
-Domain:
-=======
-Finite quadratic module: Z/15 -> Q/Z
-Codomain:
-=========
-Finite quadratic module: Z/15 -> Q/Z)
+(true, Map: finite quadratic module -> finite quadratic module)
 
 julia> a = gens(T)[1];
 
