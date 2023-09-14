@@ -658,3 +658,18 @@ absolute_minpoly(a::nf_elem) = minpoly(a)
 absolute_minpoly(a::NfAbsNS) = minpoly(a)
 
 absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
+
+################################################################################
+#
+#  Integral multiplicator
+#
+################################################################################
+
+function _integral_multiplicator(a::Union{PolyElem, MPolyElem})
+  return lcm(ZZRingElem[_integral_multiplicator(c) for c in coefficients(a)])
+end
+
+function _integral_multiplicator(a::NumFieldElem)
+  f = minpoly(a)
+  return _integral_multiplicator(f)
+end

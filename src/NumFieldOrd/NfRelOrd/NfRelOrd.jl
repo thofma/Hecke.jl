@@ -506,7 +506,52 @@ function EquationOrder(L::NumField)
   return O
 end
 
+function any_order(K::NfRel)
+  f = defining_polynomial(K)
+  de = _integral_multiplicator(f)
+  g = f * de
+  if is_monic(g)
+    return equation_order(K)
+  else
+    d = degree(g)
+    M = zero_matrix(base_field(K), d, d)
+    M[1, 1] = 1
+    for i in 2:d
+      for j in i:-1:2
+        M[i, j] = coeff(g, d - (i - j))
+      end
+    end
+    B = pseudo_hnf(pseudo_matrix(M), :lowerleft)
+    return Order(K, B)
+  end
+end
+
+function any_order(K::NfRelNS)
+  normalized_gens = Vector{elem_type(K)}(undef, ngens(K))
+  g = gens(K)
+  pols = defining_polynomials(K)
+  for i in 1:ngens(K)
+    f = _integral_multiplicator(K.pol[i]) * K.pol[i]
+    if isone(coeff(f, 1))
+      normalized_gens[i] = g[i]
+    else
+      normalized_gens[i] = coeff(f, 1) * g[i]
+    end
+  end
+
+  b = Vector{elem_type(K)}(undef, degree(K))
+  ind = 1
+  it = cartesian_product_iterator([1:degrees(K)[i] for i in 1:ngens(K)], inplace = true)
+  for i in it
+    b[ind] = prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i))
+    ind += 1
+  end
+  return Order(K, basis_matrix(b))
+end
+
 function EquationOrder(L::NfRel{nf_elem})
+  a = gen(L)
+  @req is_integral(a) "Generator of must be integral"
   M = identity_matrix(base_field(L), degree(L))
   PM = pseudo_matrix(M)
   O = Order(L, PM)

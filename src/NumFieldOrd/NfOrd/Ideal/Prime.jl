@@ -904,6 +904,9 @@ end
 
 function _prefactorization(I::NfOrdIdl)
   @assert has_2_elem(I)
+  if !is_defining_polynomial_nice(nf(I))
+    return __prefactorization(I)
+  end
   n = I.gen_one
   if has_minimum(I)
     n = minimum(I)
@@ -919,6 +922,10 @@ function _prefactorization(I::NfOrdIdl)
 end
 
 function _prefactorization(I::NfAbsOrdIdl)
+  return __prefactorization(I)
+end
+
+function __prefactorization(I::NfAbsOrdIdl)
   return coprime_base(ZZRingElem[I.gen_one, norm(I), minimum(I)])
 end
 

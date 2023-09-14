@@ -822,3 +822,14 @@ function is_rational(a::NfRelNSElem)
   d = data(a)
   return is_constant(d) && is_rational(constant_coefficient(d))
 end
+#
+#################################################################################
+##
+##  Integral multiplicator
+##
+#################################################################################
+#
+#function _integral_multiplicator(a::NfRelNSElem)
+#  f = minpoly(a)
+#  return lcm(ZZRingElem[_integral_multiplicator(c) for c in coefficients(f)])
+#end

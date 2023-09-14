@@ -197,7 +197,7 @@ function residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true)
   if check
     !is_prime(P) && error("Ideal must be prime")
   end
-  if !is_maximal_known(O) || !is_maximal(O)
+  if !is_maximal_known(O) || !is_maximal(O) || !is_defining_polynomial_nice(nf(O))
     return _residue_field_generic_fq_default(O, P)
   end
   if !is_index_divisor(O, minimum(P)) && has_2_elem(P)

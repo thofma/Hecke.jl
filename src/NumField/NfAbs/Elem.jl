@@ -950,3 +950,13 @@ function complex_conjugate(a::nf_elem)
   end
   error("Not implemented yet: element must be in an at most quadratic field")
 end
+
+################################################################################
+#
+#  Integral multiplicator
+#
+################################################################################
+
+_integral_multiplicator(a::nf_elem) = denominator(minpoly(a))
+
+_integral_multiplicator(a::QQPolyRingElem) = denominator(a)
