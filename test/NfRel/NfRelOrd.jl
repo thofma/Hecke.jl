@@ -212,3 +212,19 @@ K, a = quadratic_field(5)
 Kt, t = K["t"]
 L, b = number_field(polynomial(K, [-2, 0, 0, 1]), "b");
 @test_throws Hecke.NotImplemented extend(equation_order(L), [b])
+
+# Towards non-nice equations
+
+begin
+  Qx, x = QQ["x"]
+  K, a = number_field(x - 1)
+  Kt, t = K["t"]
+  L, b = number_field(t^2 + 1//2)
+  c = Hecke._integral_multiplicator(b)
+  @test is_integral(c * b)
+  O = any_order(L)
+  @test nf(O) === L
+  L, b = number_field([t^2 + 1//2])
+  O = any_order(L)
+  @test nf(O) === L
+end

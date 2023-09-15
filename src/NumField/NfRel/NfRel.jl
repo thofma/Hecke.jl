@@ -922,3 +922,13 @@ function cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
   return E, b
 end
 
+#################################################################################
+##
+##  Integral multiple
+##
+#################################################################################
+#
+#function _integral_multiplicator(a::NfRelElem)
+#  f = minpoly(a)
+#  return lcm(ZZRingElem[_integral_multiplicator(c) for c in coefficients(f)])
+#end

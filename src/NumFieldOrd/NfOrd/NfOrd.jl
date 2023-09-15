@@ -882,16 +882,23 @@ function any_order(K::AnticNumberField)
 end
 
 function any_order(K::NfAbsNS)
-  normalized_gens = Vector{NfAbsNSElem}(undef, degree(K))
+  normalized_gens = Vector{NfAbsNSElem}(undef, ngens(K))
   g = gens(K)
   for i in 1:ngens(K)
     f = denominator(K.pol[i]) * K.pol[i]
+    @show f
+    @show isone(coeff(f, 1))
+    @show coeff(f, 1)
+    @show typeof(f)
+    @show g[i]
     if isone(coeff(f, 1))
       normalized_gens[i] = g[i]
     else
       normalized_gens[i] = coeff(f, 1) * g[i]
     end
   end
+
+  @show normalized_gens
 
   b = Vector{NfAbsNSElem}(undef, degree(K))
   ind = 1
