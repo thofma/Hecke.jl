@@ -8,7 +8,7 @@
     @test length(l)==47
     l1 = collect(Hecke.C22_extensions(10^4))
     @test length(l1)==47
-    @test length(abelian_fields(FlintQQ, [3], ZZRingElem(10)^3)) == 5
+    @test length(abelian_extensions(FlintQQ, [3], ZZRingElem(10)^3)) == 5
 
     K, a = number_field(x^2+1, "a")
     auts = small_generating_set(automorphism_list(K, copy = false))

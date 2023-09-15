@@ -160,8 +160,15 @@ function is_quaternion_algebra(A::AlgAss)
   K = base_ring(A)
   G = zero_matrix(K, 4, 4)
   B = copy(basis(A))
-  @assert dot(B[1].coeffs, one(A).coeffs) != 0
-  B[1] = one(A)
+  # Make one(A) the first element of B
+  for i in 1:4
+    if dot(B[i].coeffs, one(A).coeffs) != 0
+      B[i] = one(A)
+      B[1], B[i] = B[i], B[1]
+      break
+    end
+  end
+  @assert B[1] == one(A)
   for i in 1:4
     for j in 1:4
       G[i, j] = trred(B[i] * f(B[j]))//2
