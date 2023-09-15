@@ -187,14 +187,14 @@ function image(f::MapFromFunc, x)
   @req parent(x) === domain(f) "Element not in the domain"
   y = f.f(x)
   @req parent(y) === codomain(f) "Image not in the codomain"
-  return y
+  return y::elem_type(codomain(f))
 end
 
 function preimage(f::MapFromFunc, y)
   @req parent(y) === codomain(f) "Element not in the codomain"
   x = f.g(y)
   @req parent(x) === domain(f) "Preimage not in the domain"
-  return x
+  return x::elem_type(domain(f))
 end
 
 function Base.show(io::IO, M::MapFromFunc)

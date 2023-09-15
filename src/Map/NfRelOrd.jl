@@ -72,7 +72,7 @@ function NfRelOrdToFqMor(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T
     ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, F)
     z.poly_of_the_field = hh
     d = degree(hh)
-    FF, mFF = Nemo._residue_field(hh; absolute = true)
+    FF, mFF2 = Nemo._residue_field(hh; absolute = true)
 
     function _image(x::NfRelOrdElem)
       f = parent(nf(O).pol)(elem_in_nf(x))
@@ -81,11 +81,11 @@ function NfRelOrdToFqMor(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T
       else
         ff = Fx([ mmF(coeff(f, i)) for i = 0:degree(f) ])
       end
-      return mFF(ff)
+      return mFF2(ff)
     end
 
     function _preimage(x::FqFieldElem)
-      f = preimage(mFF, x)
+      f = preimage(mFF2, x)
       immF = pseudo_inv(mmF)
       #xp = Nemo._as_poly(x)
       y = nf(O)([ immF(coeff(f, i)) for i = 0:(d - 1) ])
@@ -173,7 +173,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
   poly_of_the_field
   P
   map_subfield::Union{NfOrdToFqFieldMor, NfRelOrdToFqFieldRelMor}
-  
+
     function NfRelOrdToFqFieldRelMor{S}(O::S, P, mapsub) where {S}
     z = new{S}()
     z.P = P
@@ -194,7 +194,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
       hh = FKx()
       ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, FK)
       z.poly_of_the_field = hh
-      
+
       FE, mE = Nemo._residue_field(hh)
 #
 #      FE = RelFinField(hh, :v)
