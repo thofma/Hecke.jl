@@ -1135,6 +1135,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
     return H, f, AbstractSpaceRes(V, V, identity_matrix(E, n), identity_matrix(E, n))
   end
 
+  @req H isa HermLat "H must be hermitian or defined over the integers"
   @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
 
   # This function perform the trace construction on the level of the
