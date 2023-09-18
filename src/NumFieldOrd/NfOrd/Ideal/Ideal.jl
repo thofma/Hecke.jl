@@ -596,7 +596,7 @@ end
 @doc raw"""
     minimum(A::NfAbsOrdIdl) -> ZZRingElem
 
-Returns the smallest nonnegative element in $A \cap \mathbf Z$.
+Returns the smallest non-negative element in $A \cap \mathbf Z$.
 """
 function minimum(A::NfAbsOrdIdl; copy::Bool = true)
   assure_has_minimum(A)
