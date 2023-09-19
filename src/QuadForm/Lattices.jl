@@ -1135,7 +1135,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
     return H, f, AbstractSpaceRes(V, V, identity_matrix(E, n), identity_matrix(E, n))
   end
 
-  @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "The base field of H must be CM"
+  @req H isa HermLat "H must be hermitian or defined over the integers"
   @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
 
   # This function perform the trace construction on the level of the
@@ -1178,7 +1178,6 @@ function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::Fi
   @req parent(beta) === E "beta must be an element of the base algebra of H"
   @req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
 
-  @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "The base field of H must be CM"
   @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
 
   Lres = restrict_scalars(H, res)
@@ -1342,7 +1341,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
     end
   else
     @req E isa NfRel "E must be a relative number field"
-    @req (degree(E) == 2) && (is_totally_complex(E)) && (is_totally_real(base_field(E))) "E must be a CM-field"
+    @req degree(E) == 2 "E must be a degree 2 extension of a number field"
     b = gen(E)
     chi = absolute_minpoly(b)
     R = parent(chi)
@@ -1390,9 +1389,9 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   for i=1:m
     for j=1:m
       vi = deepcopy(v)
-      vi[1,1+(i-1)*euler_phi(n)] = one(QQ)
+      vi[1,1+(i-1)*n2] = one(QQ)
       vj = deepcopy(v)
-      vj[1,1+(j-1)*euler_phi(n)] = one(QQ)
+      vj[1,1+(j-1)*n2] = one(QQ)
       a = matrix(QQ, 1, n2, [(vi*mb^k*G*transpose(vj))[1] for k in 0:n2-1])
       co = solve_left(trace_mat, a)
       gram[i,j] = (co*bs)[1]

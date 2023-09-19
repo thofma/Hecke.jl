@@ -359,6 +359,13 @@ end
   @test_throws ArgumentError trace_lattice_with_isometry(E8, order = 3)
 end
 
+@testset "Fix #1210: trace equivalence for infinite isometries" begin
+  L = integer_lattice(; gram=QQ[1 2; 2 1])
+  f = QQ[4 -1; 1 0]
+  H, res = @inferred hermitian_structure_with_transfer_data(L, f)
+  @test trace_lattice_with_isometry(H, res) == (L, f)
+end
+
 @testset "Hashes" begin
   E, b = cyclotomic_field_as_cm_extension(14)
   V = hermitian_space(E, 2)
