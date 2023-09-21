@@ -691,36 +691,36 @@ end
 #
 ################################################################################
 
-function *(b::T, A::SMat{T}) where {T <: RingElem}
-  B = sparse_matrix(base_ring(A), 0, ncols(A))
+function *(b::T, A::SMat{T}) where T
+  B = sparse_matrix(base_ring(A), nrows(A), ncols(A))
   if iszero(b)
     return B
   end
-  for a = A
+  for a in A
     push!(B, b*a)
   end
   return B
 end
 
-function *(b::Integer, A::SMat{T}) where T
+function *(b::Union{NCRingElem,RingElement}, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
-function *(b::ZZRingElem, A::SMat{T}) where {T <: RingElement}
-  return base_ring(A)(b)*A
-end
-
-function *(b::ZZRingElem, A::SMat{ZZRingElem})
+function *(A::SMat{T}, b::T) where T
+  B = sparse_matrix(base_ring(A), nrows(A), ncols(A))
   if iszero(b)
-    return zero_matrix(SMat, FlintZZ, nrows(A), ncols(A))
+    return B
   end
-  B = sparse_matrix(base_ring(A))
-  B.c = ncols(A)
   for a in A
-    push!(B, b * a)
+    push!(B, a*b)
   end
   return B
 end
+
+function *(A::SMat{T}, b::Union{NCRingElem,RingElement}) where T
+  return A*base_ring(A)(b)
+end
+
 
 ################################################################################
 #

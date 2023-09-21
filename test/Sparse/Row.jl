@@ -100,7 +100,9 @@
   for T in [Int, BigInt, ZZRingElem]
     b = T(2)
     B = @inferred b * A
-    @test B == map_entries(x -> T(2) * x, A)
+    @test B == map_entries(x -> b * x, A)
+    B = @inferred A * b
+    @test B == map_entries(x -> x * b, A)
 
     b = T(2)
     B = @inferred div(A, b)

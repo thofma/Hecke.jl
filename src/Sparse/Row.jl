@@ -476,7 +476,29 @@ function *(b::T, A::SRow{T}) where T
   if iszero(b)
     return B
   end
-  for (p,v) = A
+  for (p,v) in A
+    nv = b*v
+    if !iszero(nv)  # there are zero divisors - potentially
+      push!(B.pos, p)
+      push!(B.values, nv)
+    end
+  end
+  return B
+end
+
+function *(b::Union{NCRingElem,RingElement}, A::SRow{T}) where T
+  if length(A.values) == 0
+    return sparse_row(base_ring(A))
+  end
+  return base_ring(A)(b)*A
+end
+
+function *(A::SRow{T}, b::T) where T
+  B = sparse_row(parent(b))
+  if iszero(b)
+    return B
+  end
+  for (p,v) in A
     nv = v*b
     if !iszero(nv)  # there are zero divisors - potentially
       push!(B.pos, p)
@@ -486,11 +508,11 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-function *(b::Integer, A::SRow{T}) where T
+function *(A::SRow{T}, b::Union{NCRingElem,RingElement}) where T
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
-  return base_ring(A)(b)*A
+  return A*base_ring(A)(b)
 end
 
 function div(A::SRow{T}, b::T) where T

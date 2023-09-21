@@ -177,18 +177,31 @@ using Hecke.SparseArrays
   E = @inferred 0 * D
   @test E == zero_matrix(SMat, FlintZZ, 3)
   @test E == sparse_matrix(FlintZZ, 3, 3)
+  E = @inferred D * 0
+  @test E == zero_matrix(SMat, FlintZZ, 3)
+  @test E == sparse_matrix(FlintZZ, 3, 3)
   E = @inferred BigInt(2) * D
   @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
+  E = @inferred D * BigInt(2)
+  @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
   E = @inferred ZZRingElem(2) * D
+  @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
+  E = @inferred D * ZZRingElem(2)
   @test E == sparse_matrix(FlintZZ, [2 10 6; 0 0 0; 0 2 0])
 
   R = residue_ring(FlintZZ, 6)
   D = sparse_matrix(R, [1 2 2; 0 0 1; 2 2 2])
   E = @inferred ZZRingElem(3) * D
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
+  E = @inferred D * ZZRingElem(3)
+  @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
   E = @inferred Int(3) * D
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
+  E = @inferred D * Int(3)
+  @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
   E = @inferred R(3) * D
+  @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
+  E = @inferred D * R(3)
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
 
   # Submatrix
