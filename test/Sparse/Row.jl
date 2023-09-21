@@ -154,5 +154,8 @@
   C = sparse_row(FlintZZ, [1, 2, 4, 5], ZZRingElem[-10, 100, 1, 1])
   @test minimum(C) == ZZRingElem(-10)
 
-
+  # Conversion
+  A = sparse_row(FlintZZ, [1, 3, 4, 5], ZZRingElem[-5, 2, -10, 1])
+  @test Vector(A, 3) == ZZRingElem[-5, 0, 2]
+  @test Vector(A, 6) == ZZRingElem[-5, 0, 2, -10, 1, 0]
 end

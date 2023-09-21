@@ -75,6 +75,12 @@ mod_sym!(::SRow{ZZRingElem}, ::Integer)
 maximum(::typeof(abs), ::SRow{ZZRingElem})
 ```
 
+### Conversion to/from julia and AbstractAlgebra types
+
+```@docs
+Vector(r::SRow, n::Int)
+```
+
 ## Sparse matrices
 
 Let $R$ be a commutative ring. Sparse matrices with base ring $R$ are modelled by

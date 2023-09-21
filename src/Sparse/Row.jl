@@ -1,3 +1,5 @@
+import Base.Vector
+
 export sparse_row, dot, scale_row!, add_scaled_row, permute_row
 
 ################################################################################
@@ -675,4 +677,23 @@ Returns the smallest entry of $A$.
 """
 function minimum(A::SRow)
   return minimum(A.values)
+end
+
+################################################################################
+#
+#  Conversion to julia types
+#
+################################################################################
+
+@doc raw"""
+    Vector(a::SMat{T}, n::Int) -> Vector{T}
+
+The first `n` entries of `a`, as a julia vector.
+"""
+function Vector(r::SRow, n::Int)
+  A = elem_type(base_ring(r))[zero(base_ring(r)) for _ in 1:n]
+  for i in intersect(r.pos, 1:n)
+    A[i] = r[i]
+  end
+  return A
 end
