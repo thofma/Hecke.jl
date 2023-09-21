@@ -691,36 +691,35 @@ end
 #
 ################################################################################
 
-function *(b::T, A::SMat{T}) where T
-  B = sparse_matrix(base_ring(A), nrows(A), ncols(A))
+function *(b::T, A::SMat{T}) where {T}
   if iszero(b)
-    return B
+    return sparse_matrix(base_ring(A), nrows(A), ncols(A))
   end
+  B = sparse_matrix(base_ring(A), 0, ncols(A))
   for a in A
-    push!(B, b*a)
+    push!(B, b * a)
   end
   return B
 end
 
 function *(b, A::SMat)
-  return base_ring(A)(b)*A
+  return base_ring(A)(b) * A
 end
 
-function *(A::SMat{T}, b::T) where T
-  B = sparse_matrix(base_ring(A), nrows(A), ncols(A))
+function *(A::SMat{T}, b::T) where {T}
   if iszero(b)
-    return B
+    return sparse_matrix(base_ring(A), nrows(A), ncols(A))
   end
+  B = sparse_matrix(base_ring(A), 0, ncols(A))
   for a in A
-    push!(B, a*b)
+    push!(B, a * b)
   end
   return B
 end
 
 function *(A::SMat, b)
-  return A*base_ring(A)(b)
+  return A * base_ring(A)(b)
 end
-
 
 ################################################################################
 #
