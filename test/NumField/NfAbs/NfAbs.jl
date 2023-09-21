@@ -66,3 +66,13 @@ end
  K, a = number_field(f)
  @test length(factor(K, f).fac) == 4
 end
+
+@testset "automorphisms" begin
+  Qx, x = QQ["x"]
+  K, a = number_field([x^2 - 2, x^2 - 3], "a", cached = false)
+  @test is_normal(K)
+  @test length(automorphism_list(K)) == 4
+  K, a = number_field([x^2 - 2, x^3 - 2], "a", cached = false)
+  @test !is_normal(K)
+  @test length(automorphism_list(K)) == 2
+end
