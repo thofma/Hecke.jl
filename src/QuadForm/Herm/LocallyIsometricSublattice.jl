@@ -203,7 +203,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
         end
         _Y0 = vcat(B[1:r-1], mtype[B[n - 1] + s * B[n]])
       else
-        SS = Int[ i for i in 1:n if !(i in NN)]
+        SS = setdiff(1:n, NN)
         if det(c, 1) == 1
           Y0 = Int[]
         else
@@ -222,7 +222,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
             v = B[n - 1]
             B[n - 1] = B[n - 1] + E(s) * B[n]
             B[n] = B[n] - s * _G[n, n]//_G[n - 1, n - 1] * v
-            NN = Int[i for i in NN if i < n - 1]
+            filter!(i -> i < n - 1, NN)
             SS = Int[n - 1, n]
           end
           push!(Y0, SS[1])

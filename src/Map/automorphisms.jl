@@ -10,7 +10,7 @@ export absolute_automorphism_list, absolute_automorphism_group
 
 
 function _automorphisms(K::NfAbsNS; is_abelian::Bool = false)
-  pols = QQPolyRingElem[is_univariate(x)[2] for x in K.pol]
+  pols = QQPolyRingElem[to_univariate(Globals.Qx, x) for x in K.pol]
   rt = Vector{Vector{NfAbsNSElem}}(undef, length(pols))
   for i = 1:length(pols)
     rt[i] = roots(K, pols[i])
@@ -19,7 +19,7 @@ function _automorphisms(K::NfAbsNS; is_abelian::Bool = false)
   ind = 1
   I = cartesian_product_iterator([1:length(x) for x in rt], inplace = true)
   for i in I
-    auts[ind] = hom(K, K, elem_type(K)[rt[i[j]] for j = 1:length(pols)])
+    auts[ind] = hom(K, K, elem_type(K)[rt[j][i[j]] for j = 1:length(pols)])
     ind += 1
   end
   return auts

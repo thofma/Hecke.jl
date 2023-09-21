@@ -148,18 +148,27 @@ object `f`. If `g` is provided, it is assumed to satisfy
 julia> F = GF(2);
 
 julia> f = MapFromFunc(QQ, F, x -> F(numerator(x)) * inv(F(denominator(x))))
-Map from
-Rational field to Finite field of characteristic 2 defined by a julia-function
+Map defined by a julia-function
+  from rational field
+  to finite field of characteristic 2
 
 julia> f(QQ(1//3))
 1
 
+julia> println(f)
+Map: QQ -> GF(2)
+
 julia> f = MapFromFunc(QQ, F, x -> F(numerator(x)) * inv(F(denominator(x))), y -> QQ(lift(y)),)
-Map from
-Rational field to Finite field of characteristic 2 defined by a julia-function with inverse
+Map defined by a julia-function with inverse
+  from rational field
+  to finite field of characteristic 2
 
 julia> preimage(f, F(1))
 1
+
+julia> println(f)
+Map: QQ -> GF(2)
+
 ```
 """
 mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
@@ -187,30 +196,26 @@ function image(f::MapFromFunc, x)
   @req parent(x) === domain(f) "Element not in the domain"
   y = f.f(x)
   @req parent(y) === codomain(f) "Image not in the codomain"
-  return y
+  return y::elem_type(codomain(f))
 end
 
 function preimage(f::MapFromFunc, y)
   @req parent(y) === codomain(f) "Element not in the codomain"
   x = f.g(y)
   @req parent(x) === domain(f) "Preimage not in the domain"
-  return x
+  return x::elem_type(domain(f))
 end
 
-function Base.show(io::IO, M::MapFromFunc)
+function Base.show(io::IO, ::MIME"text/plain", M::MapFromFunc)
   @show_name(io, M)
-
-  io = IOContext(io, :compact => true)
-#  println(io, "Map from the $(M.f) julia-function")
-  println(io, "Map from")
-  show(io, domain(M))
-  print(io, " to ")
-  show(io, codomain(M))
-  print(io, " defined by a julia-function")
+  io = pretty(io)
+  print(io, "Map defined by a julia-function")
   if isdefined(M, :g)
-#    println(io, "with inverse by $(M.g)")
     print(io, " with inverse")
   end
+  println(io)
+  println(io, Indent(),"from ", Lowercase(), domain(M))
+  print(io, "to ", Lowercase(), codomain(M), Dedent())
 end
 
 function MapFromFunc(D, C, f)
