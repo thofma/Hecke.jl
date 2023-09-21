@@ -227,7 +227,7 @@ $\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
 Note that in this case it may happen that $p\mathcal O$ is not the product of the
 $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
+function prime_decomposition(O::NfAbsOrd{<:NumField{QQFieldElem}, <:Any}, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
   if typeof(p) != Int && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
@@ -235,7 +235,7 @@ function prime_decomposition(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::IntegerUnion,
     return prime_decomposition(O, ZZRingElem(p), degree_limit, lower_limit, cached = cached)
   end
 
-  if !divisible(numerator(discriminant(nf(O))), p)
+  if (nf(O) isa NfAbsNS || nf(O) isa AnticNumberField) && !divisible(numerator(discriminant(nf(O))), p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
