@@ -486,7 +486,7 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-function *(b::Union{NCRingElem,RingElement}, A::SRow{T}) where T
+function *(b, A::SRow)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
@@ -508,7 +508,7 @@ function *(A::SRow{T}, b::T) where T
   return B
 end
 
-function *(A::SRow{T}, b::Union{NCRingElem,RingElement}) where T
+function *(A::SRow, b)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end

@@ -702,7 +702,7 @@ function *(b::T, A::SMat{T}) where T
   return B
 end
 
-function *(b::Union{NCRingElem,RingElement}, A::SMat{T}) where T
+function *(b, A::SMat)
   return base_ring(A)(b)*A
 end
 
@@ -717,7 +717,7 @@ function *(A::SMat{T}, b::T) where T
   return B
 end
 
-function *(A::SMat{T}, b::Union{NCRingElem,RingElement}) where T
+function *(A::SMat, b)
   return A*base_ring(A)(b)
 end
 
