@@ -1320,9 +1320,9 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   @req !is_finite(n) || n > 2 "Isometry must have infinite order or order bigger than 2"
 
   if check
-    G = gram_matrix(ambient_space(L))
+    gram = gram_matrix(ambient_space(L))
     @req is_irreducible(minpoly(f)) "The minimal polynomial of f must be irreducible"
-    @req f*G*transpose(f) == G "f does not define an isometry of the space of L"
+    @req f*gram*transpose(f) == gram "f does not define an isometry of the space of L"
     @req divides(rank(L), n2)[1] "The degree of the minimal polynomial of f must divide the rank of L"
   end
 
