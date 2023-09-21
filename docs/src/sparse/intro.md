@@ -79,6 +79,8 @@ maximum(::typeof(abs), ::SRow{ZZRingElem})
 
 ```@docs
 Vector(r::SRow, n::Int)
+sparse_row(A::MatElem)
+dense_row(r::SRow, n::Int)
 ```
 
 ## Sparse matrices
