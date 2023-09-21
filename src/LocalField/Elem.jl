@@ -693,7 +693,9 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   e = absolute_ramification_index(parent(a))
   v = valuation(n, prime(parent(a)))
   if v > 0
-    b = setprecision(a.data, precision(a.data)+v)
+    b = setprecision(base_ring(a.data), precision(a.data)+v) do
+            setprecision(a.data, precision(a.data)+v)
+        end
   else
     b = a.data
   end

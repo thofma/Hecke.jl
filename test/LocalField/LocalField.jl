@@ -286,4 +286,15 @@
     n, x = Hecke.image_of_logarithm_one_units(Qp)
     @test n == 1 && length(x) == 1
   end
+
+  @testset "log problems" begin
+    Qx, x = QQ["x"]
+    f = x^4 - 52*x^2 + 26
+    K, a = number_field(f; cached = false)
+    u = 1//5*a^2 - 51//5
+    OK = maximal_order(K)
+    P = prime_decomposition(OK, 2)[1][1]
+    C, mC = completion(K, P)
+    @test valuation(log(mC(u))) == 1//2
+  end
 end
