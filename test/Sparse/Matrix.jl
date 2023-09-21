@@ -286,6 +286,8 @@ using Hecke.SparseArrays
 
   # Conversion to julia types
   D = sparse_matrix(FlintZZ, [1 5 3; 0 -10 0; 0 1 0])
+  @test Matrix(D) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
+  @test Array(D) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
   E = SparseArrays.sparse(D)
   @test Matrix(E) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
   @test Array(E) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]

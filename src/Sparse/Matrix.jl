@@ -1401,14 +1401,14 @@ end
 
 The same matrix, but as a julia matrix.
 """
-function Matrix(a::SMat)
-  A = zero_matrix(base_ring(a), nrows(a), ncols(a))
-  for i = 1:nrows(a)
-    for (k, c) = a[i]
-      A[i, k] = c
+function Matrix(A::SMat)
+  M = elem_type(base_ring(A))[zero(base_ring(A)) for _ in 1:nrows(A), _ in 1:ncols(A)]
+  for i in 1:nrows(A)
+    for (k, c) in A[i]
+      M[i, k] = c
     end
   end
-  return A
+  return M
 end
 
 @doc raw"""
@@ -1416,14 +1416,14 @@ end
 
 The same matrix, but as a two-dimensional julia array.
 """
-function Array(a::SMat)
-  A = zero_matrix(base_ring(a), nrows(a), ncols(a))
-  for i = 1:nrows(a)
-    for (k, c) = a[i]
-      A[i, k] = c
+function Array(A::SMat)
+  M = elem_type(base_ring(A))[zero(base_ring(A)) for _ in 1:nrows(A), _ in 1:ncols(A)]
+  for i in 1:nrows(A)
+    for (k, c) in A[i]
+      M[i, k] = c
     end
   end
-  return A
+  return M
 end
 
 #TODO: write a kronnecker-row-product, this is THE
