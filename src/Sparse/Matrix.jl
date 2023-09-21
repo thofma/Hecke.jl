@@ -691,35 +691,34 @@ end
 #
 ################################################################################
 
-function *(b::T, A::SMat{T}) where {T <: RingElem}
+function *(b::T, A::SMat{T}) where {T}
+  if iszero(b)
+    return sparse_matrix(base_ring(A), nrows(A), ncols(A))
+  end
   B = sparse_matrix(base_ring(A), 0, ncols(A))
-  if iszero(b)
-    return B
-  end
-  for a = A
-    push!(B, b*a)
-  end
-  return B
-end
-
-function *(b::Integer, A::SMat{T}) where T
-  return base_ring(A)(b)*A
-end
-
-function *(b::ZZRingElem, A::SMat{T}) where {T <: RingElement}
-  return base_ring(A)(b)*A
-end
-
-function *(b::ZZRingElem, A::SMat{ZZRingElem})
-  if iszero(b)
-    return zero_matrix(SMat, FlintZZ, nrows(A), ncols(A))
-  end
-  B = sparse_matrix(base_ring(A))
-  B.c = ncols(A)
   for a in A
     push!(B, b * a)
   end
   return B
+end
+
+function *(b, A::SMat)
+  return base_ring(A)(b) * A
+end
+
+function *(A::SMat{T}, b::T) where {T}
+  if iszero(b)
+    return sparse_matrix(base_ring(A), nrows(A), ncols(A))
+  end
+  B = sparse_matrix(base_ring(A), 0, ncols(A))
+  for a in A
+    push!(B, a * b)
+  end
+  return B
+end
+
+function *(A::SMat, b)
+  return A * base_ring(A)(b)
 end
 
 ################################################################################
@@ -1397,18 +1396,33 @@ function SparseArrays.sparse(A::SMat{T}) where T
 end
 
 @doc raw"""
+    Matrix(A::SMat{T}) -> Matrix{T}
+
+The same matrix, but as a julia matrix.
+"""
+function Matrix(A::SMat)
+  M = elem_type(base_ring(A))[zero(base_ring(A)) for _ in 1:nrows(A), _ in 1:ncols(A)]
+  for i in 1:nrows(A)
+    for (k, c) in A[i]
+      M[i, k] = c
+    end
+  end
+  return M
+end
+
+@doc raw"""
     Array(A::SMat{T}) -> Matrix{T}
 
 The same matrix, but as a two-dimensional julia array.
 """
-function Array(A::SMat{T}) where T
-  R = zero_matrix(base_ring(A), A.r, A.c)
-  for i=1:nrows(A)
-    for j=1:length(A.rows[i].pos)
-      R[i, A.rows[i].pos[j]] = A.rows[i].values[j]
+function Array(A::SMat)
+  M = elem_type(base_ring(A))[zero(base_ring(A)) for _ in 1:nrows(A), _ in 1:ncols(A)]
+  for i in 1:nrows(A)
+    for (k, c) in A[i]
+      M[i, k] = c
     end
   end
-  return R
+  return M
 end
 
 #TODO: write a kronnecker-row-product, this is THE

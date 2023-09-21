@@ -1,3 +1,5 @@
+import Nemo: can_solve, can_solve_with_solution
+
 function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)
@@ -346,6 +348,14 @@ function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   return sol
 end
 
+function can_solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+  c = sparse_matrix(base_ring(b))
+  push!(c, b)
+
+  # b is a row, so this is always from the left
+  return can_solve(a, c, side = :left)
+end
+
 function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = sparse_matrix(base_ring(b))
   push!(c, b)
@@ -381,6 +391,28 @@ function find_pivot(A::SMat{T}) where T <: RingElement
     push!(p, j)
   end
   return p
+end
+
+function can_solve(A::SMat{T}, B::SMat{T}; side::Symbol = :right) where T <: FieldElement
+  @assert side == :right || side == :left "Unsupported argument :$side for side: Must be :left or :right."
+  K = base_ring(A)
+  if side == :right
+    # sparse matrices might have omitted zero rows, so checking compatibility of
+    # the dimensions does not really make sense (?)
+    #nrows(A) != nrows(B) && error("Incompatible matrices")
+    mu = hcat(A, B)
+    ncolsA = ncols(A)
+    ncolsB = ncols(B)
+  else # side == :left
+    #ncols(A) != ncols(B) && error("Incompatible matrices")
+    mu = hcat(transpose(A), transpose(B))
+    ncolsA = nrows(A) # They are transposed
+    ncolsB = nrows(B)
+  end
+
+  rk, mu = rref(mu, truncate = true)
+  p = find_pivot(mu)
+  return !any(let ncolsA = ncolsA; i -> i > ncolsA; end, p)
 end
 
 function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) where T <: FieldElement

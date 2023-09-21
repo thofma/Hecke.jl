@@ -75,6 +75,14 @@ mod_sym!(::SRow{ZZRingElem}, ::Integer)
 maximum(::typeof(abs), ::SRow{ZZRingElem})
 ```
 
+### Conversion to/from julia and AbstractAlgebra types
+
+```@docs
+Vector(r::SRow, n::Int)
+sparse_row(A::MatElem)
+dense_row(r::SRow, n::Int)
+```
+
 ## Sparse matrices
 
 Let $R$ be a commutative ring. Sparse matrices with base ring $R$ are modelled by
@@ -207,6 +215,7 @@ Other:
 sparse(::SMat)
 ZZMatrix(::SMat{ZZRingElem})
 ZZMatrix(::SMat{T}) where {T <: Integer}
-Array(::SMat{T}) where {T}
+Matrix(::SMat)
+Array(::SMat)
 ```
 

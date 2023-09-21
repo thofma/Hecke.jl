@@ -100,7 +100,9 @@
   for T in [Int, BigInt, ZZRingElem]
     b = T(2)
     B = @inferred b * A
-    @test B == map_entries(x -> T(2) * x, A)
+    @test B == map_entries(x -> b * x, A)
+    B = @inferred A * b
+    @test B == map_entries(x -> x * b, A)
 
     b = T(2)
     B = @inferred div(A, b)
@@ -154,5 +156,11 @@
   C = sparse_row(FlintZZ, [1, 2, 4, 5], ZZRingElem[-10, 100, 1, 1])
   @test minimum(C) == ZZRingElem(-10)
 
-
+  # Conversion
+  A = sparse_row(FlintZZ, [1, 3, 4, 5], ZZRingElem[-5, 2, -10, 1])
+  @test Vector(A, 3) == ZZRingElem[-5, 0, 2]
+  @test Vector(A, 6) == ZZRingElem[-5, 0, 2, -10, 1, 0]
+  @test dense_row(A, 3) == matrix(FlintZZ, 1, 3, [-5, 0, 2])
+  @test dense_row(A, 6) == matrix(FlintZZ, 1, 6, [-5, 0, 2, -10, 1, 0])
+  @test sparse_row(dense_row(A, 6)) == A
 end

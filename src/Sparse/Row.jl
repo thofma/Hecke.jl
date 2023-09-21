@@ -1,4 +1,6 @@
-export sparse_row, dot, scale_row!, add_scaled_row, permute_row
+import Base.Vector
+
+export sparse_row, dot, scale_row!, add_scaled_row, permute_row, dense_row
 
 ################################################################################
 #
@@ -474,7 +476,29 @@ function *(b::T, A::SRow{T}) where T
   if iszero(b)
     return B
   end
-  for (p,v) = A
+  for (p,v) in A
+    nv = b*v
+    if !iszero(nv)  # there are zero divisors - potentially
+      push!(B.pos, p)
+      push!(B.values, nv)
+    end
+  end
+  return B
+end
+
+function *(b, A::SRow)
+  if length(A.values) == 0
+    return sparse_row(base_ring(A))
+  end
+  return base_ring(A)(b)*A
+end
+
+function *(A::SRow{T}, b::T) where T
+  B = sparse_row(parent(b))
+  if iszero(b)
+    return B
+  end
+  for (p,v) in A
     nv = v*b
     if !iszero(nv)  # there are zero divisors - potentially
       push!(B.pos, p)
@@ -484,11 +508,11 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-function *(b::Integer, A::SRow{T}) where T
+function *(A::SRow, b)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
-  return base_ring(A)(b)*A
+  return A*base_ring(A)(b)
 end
 
 function div(A::SRow{T}, b::T) where T
@@ -675,4 +699,50 @@ Returns the smallest entry of $A$.
 """
 function minimum(A::SRow)
   return minimum(A.values)
+end
+
+################################################################################
+#
+#  Conversion from/to julia and AbstractAlgebra types
+#
+################################################################################
+
+@doc raw"""
+    Vector(a::SMat{T}, n::Int) -> Vector{T}
+
+The first `n` entries of `a`, as a julia vector.
+"""
+function Vector(r::SRow, n::Int)
+  A = elem_type(base_ring(r))[zero(base_ring(r)) for _ in 1:n]
+  for i in intersect(r.pos, 1:n)
+    A[i] = r[i]
+  end
+  return A
+end
+
+@doc raw"""
+    sparse_row(A::MatElem)
+
+Convert `A` to a sparse row. 
+`nrows(A) == 1` must hold.
+"""
+function sparse_row(A::MatElem)
+  @assert nrows(A) == 1
+  if ncols(A) == 0
+    return sparse_row(base_ring(A))
+  end
+  return Hecke.sparse_matrix(A)[1]
+end
+
+@doc raw"""
+    dense_row(r::SRow, n::Int)
+
+Convert `r[1:n]` to a dense row, that is an AbstractAlgebra matrix.
+"""
+function dense_row(r::SRow, n::Int)
+  A = zero_matrix(base_ring(r), 1, n)
+  for i in intersect(r.pos, 1:n)
+    A[1,i] = r[i]
+  end
+  return A
 end
