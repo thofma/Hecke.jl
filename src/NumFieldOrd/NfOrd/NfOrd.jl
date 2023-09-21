@@ -1059,7 +1059,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
       end
       if phase == 1
         # [1] -> [1, e] -> [1, e, e, e^2] -> ... otherwise
-        push!(bas, copy(f))
+        push!(bas, deepcopy(f))
       else
         b = elem_type(K)[e*x for x in bas]
         append!(bas, b)
