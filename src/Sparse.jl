@@ -17,7 +17,7 @@
   One (+one with trafo) is probably enough
 =#
 
-import Base.push!, Base.max, Nemo.nbits, Base.Array,
+import Base.push!, Base.max, Nemo.nbits, Base.Array, Base.Matrix,
        Base.hcat,
        Base.vcat, Base.max, Base.min
 

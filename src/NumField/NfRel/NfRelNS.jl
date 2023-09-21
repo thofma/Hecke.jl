@@ -496,16 +496,6 @@ function minpoly_dense(a::NfRelNSElem)
   end
 end
 
-function Base.Matrix(a::SMat)
-  A = zero_matrix(base_ring(a), nrows(a), ncols(a))
-  for i = 1:nrows(a)
-    for (k, c) = a[i]
-      A[i, k] = c
-    end
-  end
-  return A
-end
-
 function minpoly_sparse(a::NfRelNSElem)
   K = parent(a)
   n = degree(K)

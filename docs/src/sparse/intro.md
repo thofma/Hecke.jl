@@ -207,6 +207,7 @@ Other:
 sparse(::SMat)
 ZZMatrix(::SMat{ZZRingElem})
 ZZMatrix(::SMat{T}) where {T <: Integer}
-Array(::SMat{T}) where {T}
+Matrix(::SMat)
+Array(::SMat)
 ```
 

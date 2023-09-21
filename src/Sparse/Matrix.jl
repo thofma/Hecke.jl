@@ -1397,18 +1397,33 @@ function SparseArrays.sparse(A::SMat{T}) where T
 end
 
 @doc raw"""
+    Matrix(A::SMat{T}) -> Matrix{T}
+
+The same matrix, but as a julia matrix.
+"""
+function Matrix(a::SMat)
+  A = zero_matrix(base_ring(a), nrows(a), ncols(a))
+  for i = 1:nrows(a)
+    for (k, c) = a[i]
+      A[i, k] = c
+    end
+  end
+  return A
+end
+
+@doc raw"""
     Array(A::SMat{T}) -> Matrix{T}
 
 The same matrix, but as a two-dimensional julia array.
 """
-function Array(A::SMat{T}) where T
-  R = zero_matrix(base_ring(A), A.r, A.c)
-  for i=1:nrows(A)
-    for j=1:length(A.rows[i].pos)
-      R[i, A.rows[i].pos[j]] = A.rows[i].values[j]
+function Array(a::SMat)
+  A = zero_matrix(base_ring(a), nrows(a), ncols(a))
+  for i = 1:nrows(a)
+    for (k, c) = a[i]
+      A[i, k] = c
     end
   end
-  return R
+  return A
 end
 
 #TODO: write a kronnecker-row-product, this is THE
