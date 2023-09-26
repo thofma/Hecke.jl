@@ -876,6 +876,7 @@ export tensor_product
 export theta
 export tidy_model
 export torsion_bound
+export torsion_free_rank
 export torsion_points
 export torsion_points_division_poly
 export torsion_points_lutz_nagell
