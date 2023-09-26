@@ -1235,9 +1235,54 @@ Return a sparse $n$ times $m$ zero matrix over $R$.
 """
 zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int) = sparse_matrix(R, n, m)
 
+similar(A::SMat) = sparse_matrix(base_ring(A), nrows(A), ncols(A))
+
+similar(A::SMat, m::Int, n::Int) = sparse_matrix(base_ring(A), m, n)
+
 ################################################################################
 #
-#  Julias concatenatin syntax
+#  (Block) diagonal matrices
+#
+################################################################################
+
+function diagonal_matrix(V::Vector{<:SMat{T}}) where {T}
+  return block_diagonal_matrix(V)
+end
+
+function diagonal_matrix(x::SMat{T}, xs::SMat{T}...) where {T}
+  return block_diagonal_matrix([x, xs...])
+end
+
+@doc raw"""
+    block_diagonal_matrix(xs::Vector{SMat})
+
+Return the block diagonal matrix with the matrices in `xs` on the diagonal.
+Requires all blocks to have the same base ring.
+"""
+function block_diagonal_matrix(xs::Vector{<:SMat{T}}) where {T}
+  @req length(xs) > 0 "At least one matrix is required"
+  R = base_ring(xs[1])
+  @req all(x -> base_ring(x) == R, xs) "All matrices must have the same base ring"
+  rows = sum(nrows(N) for N in xs)
+  cols = sum(ncols(N) for N in xs)
+  M = similar(xs[1], rows, cols)
+  i_offset = 0
+  j_offset = 0
+  for x in xs
+    for (i, x_row) in enumerate(x)
+      M_row = sparse_row(R, x_row.pos .+ j_offset, x_row.values)
+      setindex!(M, M_row, i_offset + i)
+    end
+    i_offset += nrows(x)
+    j_offset += ncols(x)
+  end
+
+  return M
+end
+
+################################################################################
+#
+#  Julias concatenation syntax
 #
 ################################################################################
 
