@@ -264,6 +264,17 @@ using Hecke.SparseArrays
   @test D == sparse_matrix(FlintZZ, [0 0 0; 0 0 0; 0 0 0; 0 0 0]);
   @test D == sparse_matrix(FlintZZ, 4, 3)
 
+  # Block diag matrix
+
+  D1 = sparse_matrix(FlintZZ, [1 5; 0 1])
+  D2 = sparse_matrix(FlintZZ, [2 3 8; 4 0 0])
+  D = @inferred block_diagonal_matrix([D1, D2])
+  @test D == sparse_matrix(FlintZZ, [1 5 0 0 0; 0 1 0 0 0; 0 0 2 3 8; 0 0 4 0 0])
+  D = @inferred diagonal_matrix([D1, D2])
+  @test D == sparse_matrix(FlintZZ, [1 5 0 0 0; 0 1 0 0 0; 0 0 2 3 8; 0 0 4 0 0])
+  D = @inferred diagonal_matrix(D1, D2)
+  @test D == sparse_matrix(FlintZZ, [1 5 0 0 0; 0 1 0 0 0; 0 0 2 3 8; 0 0 4 0 0])
+
   # Concatenation syntax
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 -10 0; 0 1 0])
