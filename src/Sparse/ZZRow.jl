@@ -249,7 +249,7 @@ function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, ZZRingElem}}; sort::Bool =
   return SRow(R, l, a)
 end
 
-function sparse_row(R::ZZRing, pos::Vector{Int64}, val::Vector{ZZRingElem}; sort::Bool = true)
+function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{ZZRingElem}; sort::Bool = true)
   if sort
     p = sortperm(pos)
     pos = pos[p]

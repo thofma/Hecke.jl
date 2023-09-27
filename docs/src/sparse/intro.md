@@ -127,6 +127,7 @@ There are special constructors:
 identity_matrix(::Type{SMat}, ::Ring, ::Int)
 zero_matrix(::Type{SMat}, ::Ring, ::Int)
 zero_matrix(::Type{SMat}, ::Ring, ::Int, ::Int)
+block_diagonal_matrix(xs::Vector{<:SMat{T}}) where {T}
 ```
 Slices:
 ```@docs
