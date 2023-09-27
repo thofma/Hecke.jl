@@ -643,9 +643,13 @@ end
 
 ################################################################################
 #
-#  Addition
+#  Arithmetics
 #
 ################################################################################
+
+function -(A::SMat)
+  return map_entries(-, A)
+end
 
 function +(A::SMat{T}, B::SMat{T}) where T
   nrows(A) != nrows(B) && error("Matrices must have same number of rows")
