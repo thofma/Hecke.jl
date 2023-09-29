@@ -2,7 +2,7 @@
 
   @testset "Minimal Submodules" begin
 
-    F, a = FiniteField(3,1,"a")
+    F, a = finite_field(3,1,"a")
     R = residue_ring(FlintZZ,9)
 
     V=abelian_group([3,3,9,9])

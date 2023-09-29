@@ -576,7 +576,7 @@ end
 ################################################################################
 
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
-  K, _ = FiniteField(p,"o")
+  K, _ = finite_field(p,"o")
   return K, MapFromFunc(R, K, x->K(x), y->R(y))
 end
 

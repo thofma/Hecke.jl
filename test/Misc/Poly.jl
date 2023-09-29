@@ -130,7 +130,7 @@ end
 @testset "Cyclotomic polynomials" begin
   listp = Hecke.primes_up_to(50)
   for i in 1:20
-    Fp, _ = FiniteField(rand(listp), cached=false)
+    Fp, _ = finite_field(rand(listp), cached=false)
     Fpt, _ = polynomial_ring(Fp, "t", cached=false)
     chi = @inferred cyclotomic_polynomial(rand(1:100), Fpt)
     @test is_cyclotomic_polynomial(chi)

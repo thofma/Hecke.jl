@@ -14,7 +14,7 @@ function residue_field(Q::FlintQadicField)
   Fpt = polynomial_ring(Fp, cached = false)[1]
   g = defining_polynomial(Q) #no Conway if parameters are too large!
   f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
-  k = Native.FiniteField(f, "o", cached = false)[1]
+  k = Native.finite_field(f, "o", cached = false)[1]
   pro = function(x::qadic)
     v = valuation(x)
     v < 0 && error("elt non integral")

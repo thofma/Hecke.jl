@@ -15,7 +15,7 @@
       @test 4<=Hecke._min_val(error, 3)
     end
 
-    k = Hecke.Native.FiniteField(2)[1]
+    k = Hecke.Native.finite_field(2)[1]
     Y = matrix(k, 3, 3, [0,0,1, 0,0,1, 1,1,0])
     b = [k(i) for i in [1, 0, 0]]
     g = [k(i) for i in [0, 1, 0]]

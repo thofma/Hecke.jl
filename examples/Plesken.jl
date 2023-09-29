@@ -214,7 +214,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
 
 
   if (p-1) % r == 0
-    R = FiniteField(p)
+    R = finite_field(p)
     descent = false
   else
     f = cyclotomic(r, polynomial_ring(FlintZZ)[2])
@@ -283,7 +283,7 @@ end
 
 function plesken_as(p::ZZRingElem, r::Int, s::Int)
   @assert p==r
-  R = FiniteField(p)
+  R = finite_field(p)
   g = R(-1)
   t = 1
   while s>1
@@ -300,12 +300,12 @@ function plesken_2(p::ZZRingElem, r::Int, s::Int)
   @assert r==2
   #Plesken, 1.27
   if valuation(p-1, 2) >1
-    R = FiniteField(p)
+    R = finite_field(p)
     g = primitive_root_r_div_qm1(p, r)
     t = 1
   else
     @assert valuation(p+1, 2)>1
-    R = FiniteField(p)
+    R = finite_field(p)
     Rx,x = polynomial_ring(R, "t_1")
     R = residue_ring(Rx, x^2+1)
     g = primitive_root_r_div_qm1(R, 2)

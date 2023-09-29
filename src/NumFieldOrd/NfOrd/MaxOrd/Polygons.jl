@@ -307,7 +307,7 @@ Computes the residual polynomial of the side $L$ of the Newton Polygon $N$.
 function residual_polynomial(N::NewtonPolygon{ZZPolyRingElem}, L::Line)
   F = GF(N.p, cached = false)
   Ft = polynomial_ring(F, "t", cached = false)[1]
-  FF = FiniteField(Ft(N.phi), "a", cached = false)[1]
+  FF = finite_field(Ft(N.phi), "a", cached = false)[1]
   return residual_polynomial(FF, L, N.development, N.p)
 end
 
@@ -407,7 +407,7 @@ function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
     isone(m) && continue
     fac = factor(gg)
     for (g, m1) in fac
-      F, a = Native.FiniteField(g, "a", cached = false)
+      F, a = Native.finite_field(g, "a", cached = false)
       phi = lift(Zx, g)
       dev, quos = phi_development_with_quos(Zx(f), phi)
       N = _newton_polygon(dev, p)
@@ -929,7 +929,7 @@ function decomposition_type_polygon(O::NfOrd, p::Union{ZZRingElem, Int})
       continue
     end
     Nl = filter(x -> slope(x)<0, N.lines)
-    F, a = Native.FiniteField(g, "a", cached = false)
+    F, a = Native.finite_field(g, "a", cached = false)
     pols = dense_poly_type(elem_type(F))[]
     for ll in Nl
       rp = residual_polynomial(F, ll, dev, p)

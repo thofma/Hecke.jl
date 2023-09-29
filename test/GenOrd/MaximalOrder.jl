@@ -23,7 +23,7 @@ end
 end
 
 @testset "FldFin" begin
-  for q = [GF(17), GF(next_prime(ZZRingElem(10)^30)), FiniteField(5, 2)[1], FiniteField(next_prime(ZZRingElem(10)^25), 2, "a", cached = false)[1]]
+  for q = [GF(17), GF(next_prime(ZZRingElem(10)^30)), finite_field(5, 2)[1], finite_field(next_prime(ZZRingElem(10)^25), 2, "a", cached = false)[1]]
     qt, t = RationalFunctionField(q, "t", cached = false)
     qtx, x = polynomial_ring(qt, cached = false)
     f = x^3+(t+1)^5*(x+1)+(t^2+t+1)^7

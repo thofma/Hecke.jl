@@ -157,7 +157,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     lp = factor(gp).fac
 
     #set up the mod p data:
-    #need FiniteField as I need to factor (roots)
+    #need finite_field as I need to factor (roots)
     # I want to find a residue field with less roots
     for gp_factor in keys(lp)
       deg_p = degree(gp_factor)
@@ -425,7 +425,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   #later we'll get the HNF matrix for selected powers as well
 
   #set up the mod p data:
-  #need FiniteField as I need to factor (roots)
+  #need finite_field as I need to factor (roots)
 
   rt = roots(fp)
 

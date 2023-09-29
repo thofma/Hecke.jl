@@ -58,7 +58,7 @@ function _ispadic_normal_form_odd(G, p)
 
   o = identity_matrix(QQ, 1)
 
-  F,  = FiniteField(p, 1, cached = false)
+  F,  = finite_field(p, 1, cached = false)
 
   for i in 1:length(blocks)
     if all(==(o), blocks[i])
