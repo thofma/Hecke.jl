@@ -315,6 +315,12 @@ using Hecke.SparseArrays
   E = SparseArrays.sparse(D)
   @test Matrix(E) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
   @test Array(E) == ZZRingElem[1 5 3; 0 -10 0; 0 1 0]
+
+  # kronecker_product
+  D1 = sparse_matrix(FlintZZ, [12 403 -23; 0 0 122; -1 2 99])
+  D2 = sparse_matrix(FlintZZ, [81 0 2; 31 0 -5])
+  E = @inferred kronecker_product(D1, D2)
+  @test E == sparse_matrix(kronecker_product(matrix(D1), matrix(D2)))
 end
 
 @testset "Oscar #2128" begin
@@ -327,4 +333,9 @@ end
   S0 = sparse_matrix(ZZ,[1 0; 0 1])
   S1 = sparse_matrix(ZZ,[-1 0; 0 -1])
   @test S0 + S1 == sparse_matrix(ZZ, 2, 2)
+end
+
+@testset "Hecke #1227" begin
+  A = sparse_matrix(FlintZZ, [2 0; 0 0])
+  @test kronecker_product(A, A) == sparse_matrix(FlintZZ, [4 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0])
 end
