@@ -171,6 +171,9 @@ using Hecke.SparseArrays
   DminusE = @inferred D - E
   @test DminusE == sparse_matrix(FlintZZ, [0 0 3; -1 1 -1; 0 1 0])
 
+  minusD = @inferred -D
+  @test minusD == sparse_matrix(FlintZZ, [-1 -5 -3; 0 -1 0; 0 -1 0])
+
   # Scalar multiplication
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
