@@ -60,7 +60,7 @@ end
   @test haskey(l, one(FlintQQ))
   @test l[one(FlintQQ)] == 2
 
-  K, a = CyclotomicField(3, "a")
+  K, a = cyclotomic_field(3, "a")
   lK = eigvals(M, K)
   @test length(keys(lK)) == 3
   @test haskey(lK, one(K)) && haskey(lK, a) && haskey(lK, -a - 1)

@@ -1,7 +1,7 @@
 @testset "NumField/NfAbs/NfAbs" begin
   cyclo_expl = function(n, m)
-    Fn, zn = CyclotomicField(n)
-    Fnm, znm = CyclotomicField(n*m)
+    Fn, zn = cyclotomic_field(n)
+    Fnm, znm = cyclotomic_field(n*m)
     x = zn
     x_up = Hecke.force_coerce_cyclo(Fnm, x)
     x_down = Hecke.force_coerce_cyclo(Fn, x_up)

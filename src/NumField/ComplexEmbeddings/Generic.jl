@@ -146,7 +146,7 @@ This is the same as `g * f`.
 # Examples
 
 ```jldoctest
-julia> K, a = CyclotomicField(5, "a");
+julia> K, a = cyclotomic_field(5, "a");
 
 julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 
@@ -175,7 +175,7 @@ all embedings of $K$ which restrict to $e$ along $f$.
 # Example
 
 ```jldoctest
-julia> K, a = CyclotomicField(5, "a");
+julia> K, a = cyclotomic_field(5, "a");
 
 julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 
