@@ -130,3 +130,12 @@
   @test is_isometric(V1, V2)
 
 end
+
+@testset "diagonal with transform" begin
+  E, b = cyclotomic_field_as_cm_extension(3)
+  K = base_field(E)
+  s = involution(E)
+  Vh = hermitian_space(E, E[1 b 1; s(b) 4 s(b); 1 b 1])
+  diag, U = @inferred diagonal_with_transform(Vh)
+  @test diagonal(map_entries(K, U*gram_matrix(Vh)*map_entries(s, transpose(U)))) == diag
+end

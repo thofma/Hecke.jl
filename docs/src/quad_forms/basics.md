@@ -115,6 +115,7 @@ gram_matrix(::AbstractSpace{T}, ::Vector{Vector{U}}) where {T, U}
 inner_product(::AbstractSpace, ::Vector, ::Vector)
 orthogonal_basis(::AbstractSpace)
 diagonal(::AbstractSpace)
+diagonal_with_transform(::AbstractSpace)
 restrict_scalars(::AbstractSpace, ::QQField, ::FieldElem)
 ```
 
