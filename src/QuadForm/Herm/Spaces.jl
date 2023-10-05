@@ -161,7 +161,7 @@ function _diagonal(V::HermSpace, with_transform::Bool = true)
   D, U = _gram_schmidt(g, involution(V))
   diagE = append!(zeros(base_ring(V),k), diagonal(D))
   diagK = map(fixed_field(V), diagE)
-  !with_transform && return diagK, E[;]
+  !with_transform && return diagK, matrix(E, 0, 0, elem_type(E)[])
   B[k+1:end, :] = U*view(B, k+1:nrows(B), :)
   return diagK, B
 end

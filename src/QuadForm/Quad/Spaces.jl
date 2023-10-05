@@ -202,7 +202,7 @@ function _diagonal(V::QuadSpace, with_transform::Bool = true)
   g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
   D, U = _gram_schmidt(g, involution(V))
   diag = append!(zeros(base_ring(V), k), diagonal(D))
-  !with_transform && return diag, E[;]
+  !with_transform && return diag, matrix(E, 0, 0, elem_type(E)[])
   B[k+1:end, :] = U*view(B, k+1:nrows(B), :)
   return diag, B
 end
