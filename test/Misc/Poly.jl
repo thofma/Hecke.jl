@@ -73,12 +73,12 @@
 end
 
 @testset "roots" begin
-  o = CyclotomicField(2)[1](1)
+  o = cyclotomic_field(2)[1](1)
   @test issetequal(roots(o, 2), [o, -o])
-  o = CyclotomicField(1)[1](1)
+  o = cyclotomic_field(1)[1](1)
   @test issetequal(roots(o, 2), [o, -o])
 
-  o, a = CyclotomicField(4)
+  o, a = cyclotomic_field(4)
   _, x = o["x"]
   @test length(roots(x^2-a^2//4)) == 2
 

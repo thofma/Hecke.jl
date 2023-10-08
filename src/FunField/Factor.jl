@@ -34,7 +34,7 @@ function to_mpoly(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   end
   return finish(Fc)
 end
- 
+
 function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   Pf = parent(f)
   lf = factor(to_mpoly(f))
@@ -44,7 +44,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   @assert iszero(f) || sum(degree(x)*y for (x,y) = fa; init = 0) == degree(f)
   return fa
 end
- 
+
 function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   Pf = parent(f)
   lf = factor_absolute(to_mpoly(f))
@@ -55,7 +55,7 @@ function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
     h = gh[2]
     k = base_ring(g)
     kt, t = RationalFunctionField(k, base_ring(Pf).S, cached = false)
-    ktx, x = PolynomialRing(kt, symbols(Pf)[1], cached = false)
+    ktx, x = polynomial_ring(kt, symbols(Pf)[1], cached = false)
     push!(la, [from_mpoly(g, ktx), from_mpoly(h, ktx)]=>v)
   end
   return la
