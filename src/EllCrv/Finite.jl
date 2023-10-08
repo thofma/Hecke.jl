@@ -990,7 +990,7 @@ function _embed_into_p2(j, L)
     if degree(p) <= 1
       return L(_to_z(j))
     end
-    F, a = FiniteField(p)
+    F, a = finite_field(p)
     e = embed(F, L)
     return e(gen(F))
   end

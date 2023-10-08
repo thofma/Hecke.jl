@@ -86,7 +86,7 @@ end
 
     # Restrict from F_q to F_p
     Fp = GF(7)
-    Fq, a = FiniteField(7, 3, "a")
+    Fq, a = finite_field(7, 3, "a")
 
     A = AlgAss(MatrixAlgebra(Fq, 2))
     B, BtoA = Hecke.restrict_scalars(A, Fp)
@@ -168,7 +168,7 @@ end
 
   @testset "Matrix Algebra" begin
     Fp = GF(7)
-    Fq, a = FiniteField(7, 2, "a")
+    Fq, a = finite_field(7, 2, "a")
 
     A = AlgAss(MatrixAlgebra(Fq, 3))
     B, AtoB = Hecke._as_matrix_algebra(A)

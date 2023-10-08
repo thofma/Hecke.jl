@@ -180,7 +180,7 @@
     F = GF(3)
     Fx, x = F["x"]
     f = x^6 + 2*x^4 + x^2 + 2*x + 2
-    F, a = FiniteField(f)
+    F, a = finite_field(f)
     E = EllipticCurve([a^4 + a^3 + 2*a^2 + 2*a, 2*a^5 + 2*a^3 + 2*a^2 + 1])
     A, = abelian_group(E)
     @test elementary_divisors(A) == [26, 26]
@@ -192,7 +192,7 @@
     F = GF(101)
     Fx, x = F["x"]
     f = x^3 + 3*x + 99
-    F, a = FiniteField(f)
+    F, a = finite_field(f)
     E = EllipticCurve([2*a^2 + 48*a + 27, 89*a^2 + 76*a + 24])
     A, = abelian_group(E)
     @test elementary_divisors(A) == [1031352]

@@ -121,7 +121,7 @@
   E = EllipticCurve(F, [0, 1, 1, 1, 1])
   @test is_kernel_polynomial(E, x + 1)
 
-  F, o = FiniteField(47, 2, "o")
+  F, o = finite_field(47, 2, "o")
   E = EllipticCurve(F, [0, o])
   Fx, x = F["x"]
   f = x^3 + (7*o + 11)*x^2 + (25*o + 33)*x + 25*o

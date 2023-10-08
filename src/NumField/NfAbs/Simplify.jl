@@ -139,7 +139,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
   p, d = _find_prime(pols)
-  F = Native.FiniteField(p, d, "w", cached = false)[1]
+  F = Native.finite_field(p, d, "w", cached = false)[1]
   Fp = Native.GF(p, cached = false)
   Fpt = polynomial_ring(Fp, ngens(K))[1]
   Ft = polynomial_ring(F, "t", cached = false)[1]

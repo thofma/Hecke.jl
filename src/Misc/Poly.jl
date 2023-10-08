@@ -882,7 +882,7 @@ specified, return the `n`-th cyclotomic polynomial over the integers.
 # Examples
 
 ```jldoctest
-julia> F, _ = FiniteField(5)
+julia> F, _ = finite_field(5)
 (Finite field of characteristic 5, 1)
 
 julia> Ft, _ = F["t"]
