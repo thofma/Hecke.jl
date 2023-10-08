@@ -416,10 +416,6 @@ function _factors_trial_division(n::ZZRingElem, np::Int=10^5)
 end
 
 
-function (::Type{Base.Rational{BigInt}})(x::QQFieldElem)
-  return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
-end
-
 export euler_phi_inv, Divisors, carmichael_lambda
 
 @doc raw"""
