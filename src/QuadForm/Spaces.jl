@@ -1,7 +1,7 @@
 export ambient_space, rank, gram_matrix, inner_product, involution, is_hermitian, is_quadratic, is_regular,
        is_local_square, is_isometric, is_rationally_isometric, is_isotropic, is_isotropic_with_vector, quadratic_space,
        hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
-       restrict_scalars, orthogonal_complement, orthogonal_projection
+       restrict_scalars, orthogonal_complement, orthogonal_projection, diagonal_with_transform
 
 ################################################################################
 #
@@ -318,6 +318,19 @@ the diagonal space $\langle a_1,\dotsc,a_n \rangle$.
 The elements are contained in the fixed field of `V`.
 """
 diagonal(V::AbstractSpace)
+
+@doc raw"""
+    diagonal_with_transform(V::AbstractSpace) -> Vector{FieldElem},
+                                                             MatElem{FieldElem}
+
+Return a vector of elements $a_1,\dotsc,a_n$ such that the space `V` is
+isometric to the diagonal space $\langle a_1,\dotsc,a_n \rangle$. The second
+output is a matrix `U` whose rows span an orthogonal basis of `V` for which the
+Gram matrix is given by the diagonal matrix of the $a_i$'s.
+
+The elements are contained in the fixed field of `V`.
+"""
+diagonal_with_transform(V::AbstractSpace)
 
 ################################################################################
 #

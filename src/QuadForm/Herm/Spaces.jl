@@ -148,14 +148,22 @@ inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W}= v*gram_matrix(
 #
 ################################################################################
 
-function diagonal(V::HermSpace)
+diagonal(V::HermSpace) = _diagonal(V, false)[1]
+
+diagonal_with_transform(V::HermSpace) = _diagonal(V)
+
+function _diagonal(V::HermSpace, with_transform::Bool = true)
+  E = base_ring(V)
   g = gram_matrix(V)
   k, K = left_kernel(g)
   B = complete_to_basis(K)
   g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
-  D, _ = _gram_schmidt(g, involution(V))
-  D = append!(zeros(base_ring(V),k), diagonal(D))
-  return map(fixed_field(V), D)
+  D, U = _gram_schmidt(g, involution(V))
+  diagE = append!(zeros(base_ring(V),k), diagonal(D))
+  diagK = map(fixed_field(V), diagE)
+  !with_transform && return diagK, matrix(E, 0, 0, elem_type(E)[])
+  B[k+1:end, :] = U*view(B, k+1:nrows(B), :)
+  return diagK, B
 end
 
 ################################################################################

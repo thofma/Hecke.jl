@@ -524,3 +524,10 @@ end
   @test !is_isotropic(V, 5)
   @test_throws ArgumentError is_isotropic(V, 4)
 end
+
+@testset "diagonal with transform" begin
+  K, a = cyclotomic_field(8)
+  V = quadratic_space(K, K[a 3 a; 3 3 3; a 3 a])
+  diag, U = @inferred diagonal_with_transform(V)
+  @test diagonal(U*gram_matrix(V)*transpose(U)) == diag
+end
