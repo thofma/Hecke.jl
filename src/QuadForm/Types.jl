@@ -360,9 +360,11 @@ Gram matrix quadratic form:
 [   0      0      0   4//3]
 
 julia> abelian_group_homomorphism(f)
-Map: GrpAb: (Z/3)^2 x Z/12 -> (General) abelian group with relation matrix
-[4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
-with structure of GrpAb: (Z/3)^2 x Z/12
+Map
+  from GrpAb: (Z/3)^2 x Z/12
+  to (General) abelian group with relation matrix
+  [4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
+  with structure of GrpAb: (Z/3)^2 x Z/12
 ```
 
 Note that an object of type `TorQuadModuleMor` needs not to be a morphism
@@ -397,7 +399,9 @@ Gram matrix quadratic form:
 [2   4   3//2]
 
 julia> f = hom(T, T6, gens(T6))
-Map: finite quadratic module -> finite quadratic module
+Map
+  from finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z
+  to finite quadratic module: (Z/3)^2 x Z/12 -> Q/12Z
 
 julia> T[1]*T[1] == f(T[1])*f(T[1])
 false
