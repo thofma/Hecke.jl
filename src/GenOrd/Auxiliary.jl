@@ -283,7 +283,3 @@ function Hecke.lcm(a::Vector{<:RingElem})
   end
   return reduce(lcm, a)
 end
-
-function rational_function_field(k::Field, s::VarName = :t)
-  return RationalFunctionField(k, s)
-end
