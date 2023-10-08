@@ -1,5 +1,5 @@
 k = QQ
-kx, x = RationalFunctionField(k, "x")
+kx, x = rational_function_field(k, "x")
 kt = parent(numerator(x))
 ky, y = polynomial_ring(kx, "y")
 

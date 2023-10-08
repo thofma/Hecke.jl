@@ -3,7 +3,7 @@ import Hecke: divisor
 flds = [QQ, rationals_as_number_field()[1]]
 
 @testset "Differentials" for k in flds
-  kx, x = RationalFunctionField(k, "x")
+  kx, x = rational_function_field(k, "x")
   kt = parent(numerator(x))
   ky, y = polynomial_ring(kx, "y")
 

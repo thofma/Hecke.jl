@@ -73,19 +73,19 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
 end
 
 function function_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::String = "_a"; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
+  return function_field(f, s, cached = cached)
 end
 
 function function_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::Symbol; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
+  return function_field(f, s, cached = cached)
 end
 
 function extension_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::String = "_a"; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
+  return function_field(f, s, cached = cached)
 end
 
 function extension_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::Symbol; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
+  return function_field(f, s, cached = cached)
 end
 
 function Hecke.basis(F::Generic.FunctionField)
