@@ -64,7 +64,7 @@
     #@test O7 == O77
     #@test !(O7 === O77)
 
-    O8 = Order(K6, [a1])
+    O8 = Order(K1, [a1])
     @test O8 == EquationOrder(K1)
 
     @test_throws ErrorException Order(K1, [a1, a1, a1], isbasis = true)
