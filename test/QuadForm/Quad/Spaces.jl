@@ -29,6 +29,8 @@
   Qx, x = polynomial_ring(FlintQQ, "x")
   K1, a1 = number_field(x^2 - 2, "a1")
   K2, a2 = number_field(x^3 - 2, "a2")
+  
+  K1t, t = polynomial_ring(K1, "t")
   L, b = number_field(t^2 + a1)
 
   for K in [k, K1, K2, L]
