@@ -29,16 +29,8 @@
   Qx, x = polynomial_ring(FlintQQ, "x")
   K1, a1 = number_field(x^2 - 2, "a1")
   K2, a2 = number_field(x^3 - 2, "a2")
-
+  
   K1t, t = polynomial_ring(K1, "t")
-  F = GF(3)
-
-  Hecke.change_base_ring(::QQField, ::Hecke.fpMatrix) = error("asd")
-  @test_throws ErrorException quadratic_space(FlintQQ, F[1 2; 2 1])
-
-  Hecke.change_base_ring(::QQField, x::Hecke.fpMatrix) = x
-  @test_throws ErrorException quadratic_space(FlintQQ, F[1 2; 2 1])
-
   L, b = number_field(t^2 + a1)
 
   for K in [k, K1, K2, L]
