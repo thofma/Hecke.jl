@@ -1,7 +1,7 @@
 @testset "Ideals for orders over function fields" begin
 
   k = GF(7)
-  kx, x = RationalFunctionField(k, "x")
+  kx, x = rational_function_field(k, "x")
   kt = parent(numerator(x))
   ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^2+x)
@@ -26,7 +26,7 @@
 
 
   k = QQ
-  kx, x = RationalFunctionField(k, "x")
+  kx, x = rational_function_field(k, "x")
   kt = parent(numerator(x))
   ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^2+x*y+x^3+y^3)

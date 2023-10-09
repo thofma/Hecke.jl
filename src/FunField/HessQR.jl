@@ -335,7 +335,7 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
   F = GF(b.c)
-  Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
+  Ft, t = rational_function_field(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
   return Ft, MapFromFunc(a, Ft,
                          x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),

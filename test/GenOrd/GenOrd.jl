@@ -12,7 +12,7 @@ end
   test_Ring_interface(O)
 
   k = GF(5)
-  kx, x = RationalFunctionField(k, "x")
+  kx, x = rational_function_field(k, "x")
   kt = parent(numerator(x))
   ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^3+(4*x^3 + 4*x^2 + 2*x +2)*y^2 + (3*x+3)*y +2)

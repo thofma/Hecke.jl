@@ -60,7 +60,7 @@ If `v` is a square matrix, return the identity matrix of size nxn.
 If `redflag` is set to `true`, it LLL-reduces the `m-n` first rows.
 """
 function _complete_to_basis(v::MatElem{ZZRingElem}, redflag::Bool = false)
-  
+
   n = nrows(v)
   m = ncols(v)
 
@@ -131,7 +131,7 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
   #Case 2: G has a block +- [1 0 ; 0 -1] on the diagonal
   for i = 2:n
     if G[i-1,i] == 0 && abs(G[i-1,i-1])==1 &&abs(G[i,i])==1 && sign(G[i-1,i-1])*sign(G[i,i]) == -1
-  
+
       H[i,i-1] = -1
       sol = H[i,:]
       if !base
@@ -298,7 +298,7 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
   #The first line of the matrix G3 only contains 0, except some 'g' on the right, where g² | det G.
   n = ncols(G)
   U3 = identity_matrix(ZZ,n)
-  U3[n,1] = round(- G3[n,n]//2*1//G3[1,n])
+  U3[n,1] = round(ZZRingElem, - G3[n,n]//2*1//G3[1,n])
   G4 = U3*G3*transpose(U3)
 
   #The coeff G4[n,n] is reduced modulo 2g
@@ -310,7 +310,7 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
     V = G4[[1,n], 2:(n-1)]
   end
 
-  B = map_entries(round, -inv(change_base_ring(QQ,U))*V)
+  B = map_entries(x->round(ZZRingElem, x), -inv(change_base_ring(QQ,U))*V)
   U4 = identity_matrix(ZZ,n)
 
   for j = 2:n-1

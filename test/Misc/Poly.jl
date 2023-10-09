@@ -116,7 +116,7 @@ end
   @test @inferred is_squarefree(x * (x + 1))
   @test @inferred !is_squarefree(x * (x + 1)^2)
 
-  F, a = RationalFunctionField(GF(3), "a")
+  F, a = rational_function_field(GF(3), "a")
   Fx, x = F["x"]
   @test @inferred is_squarefree(x)
   @test @inferred is_squarefree(2*x^0)

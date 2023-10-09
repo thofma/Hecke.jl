@@ -54,7 +54,7 @@ function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
     g = gh[1]
     h = gh[2]
     k = base_ring(g)
-    kt, t = RationalFunctionField(k, base_ring(Pf).S, cached = false)
+    kt, t = rational_function_field(k, base_ring(Pf).S, cached = false)
     ktx, x = polynomial_ring(kt, symbols(Pf)[1], cached = false)
     push!(la, [from_mpoly(g, ktx), from_mpoly(h, ktx)]=>v)
   end
@@ -121,7 +121,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   end
 
   while true
-    G, b = FunctionField(lf[1], "b", cached = false)
+    G, b = function_field(lf[1], "b", cached = false)
     if length(lf) == 1 && degree(G) < 3
       return G
     end

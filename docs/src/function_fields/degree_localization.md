@@ -36,7 +36,7 @@ localization(K::Generic.RationalFunctionField{T}, ::typeof(degree)) where T <: F
 
 ```@repl
 using Hecke # hide
-K, x = RationalFunctionField(FlintQQ, "x");
+K, x = rational_function_field(FlintQQ, "x");
 R = localization(K, degree)
 ```
 
@@ -51,7 +51,7 @@ the degree localization
 
 ```@repl
 using Hecke # hide
-K, x = RationalFunctionField(FlintQQ, "x");
+K, x = rational_function_field(FlintQQ, "x");
 R = localization(K, degree)
 
 a = R()

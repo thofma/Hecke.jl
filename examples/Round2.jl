@@ -1057,7 +1057,7 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
   @assert is_prime(b.c)
   F = GF(b.c)
-  Ft, t = RationalFunctionField(F, String(var(a.R)), cached = false)
+  Ft, t = rational_function_field(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
   return Ft, MapFromFunc(a, Ft,
                          x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
@@ -1330,9 +1330,9 @@ Hecke.example("Round2.jl")
 
 ?GenericRound2
 
-Qt, t = RationalFunctionField(QQ, "t")
+Qt, t = rational_function_field(QQ, "t")
 Qtx, x = polynomial_ring(Qt, "x")
-F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
+F, a = function_field(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
 integral_closure(localization(Qt, degree), F)
 integral_closure(Hecke.Globals.Zx, F)
@@ -1345,7 +1345,7 @@ integral_closure(localization(ZZ, 2), k)
 
 more interesting and MUCH harder:
 
-G, b = FunctionField(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
+G, b = function_field(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
 
 =#
 
@@ -1442,7 +1442,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   end
 
   while true
-    G, b = FunctionField(lf[1], "b", cached = false)
+    G, b = function_field(lf[1], "b", cached = false)
     if length(lf) == 1 && degree(G) < 3
       return G
     end

@@ -316,7 +316,7 @@
   @test @inferred kodaira_symbol(E, P) == "I0"
 
   # rational function field
-  QQt, t = RationalFunctionField(QQ, "t")
+  QQt, t = rational_function_field(QQ, "t")
   E = elliptic_curve_from_j_invariant(t)
    _, K, f, c, s = tates_algorithm_local(E, 1//t)
   @test K == "I1"
@@ -356,7 +356,7 @@
   @test s == true
 
   k, a = quadratic_field(2)
-  kt, t = RationalFunctionField(k, "t")
+  kt, t = rational_function_field(k, "t")
   E = elliptic_curve_from_j_invariant(1//(t^2 + t + a))
 
    _, K, f, c, s = tates_algorithm_local(E, 1//t)
@@ -377,7 +377,7 @@
   @test c == 1
   @test s == true
 
-  kt, t = RationalFunctionField(GF(2), "t")
+  kt, t = rational_function_field(GF(2), "t")
   E = elliptic_curve_from_j_invariant(t^3/(t^2 + t + 1))
    _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1)
   @test K == "I1"

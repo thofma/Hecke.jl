@@ -213,9 +213,9 @@ using .HessMain
 #=
   this should work:
 
-Qt, t = RationalFunctionField(QQ, "t")
+Qt, t = rational_function_field(QQ, "t")
 Qtx, x = polynomial_ring(Qt, "x")
-F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
+F, a = function_field(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
 integral_closure(localization(Qt, degree), F)
 integral_closure(Hecke.Globals.Zx, F)
@@ -228,6 +228,6 @@ integral_closure(localization(ZZ, 2), k)
 
 more interesting and MUCH harder:
 
-G, b = FunctionField(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
+G, b = function_field(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
 
 =#
