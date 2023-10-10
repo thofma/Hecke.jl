@@ -9,6 +9,10 @@
   print(IOContext(io, :supercompact => true), m)
   @test length(String(take!(io))) == 39
 
+  M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
+  show(io, MIME"text/plain"(), m)
+  @test length(String(take!(io))) == 983
+
   m = @inferred multiset(Int[x^3%8 for x = 1:50])
   @test !isempty(m)
   @test length(m) == 50

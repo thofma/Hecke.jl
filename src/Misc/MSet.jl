@@ -211,7 +211,7 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
       end
     else
       lmax = maximum(length(sprint(show, a)) for a in un[1:szh])
-      for i in 1:sz
+      for i in 1:szh
         println(io)
         k = un[i]
         lk = length(sprint(show, k))
