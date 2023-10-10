@@ -67,7 +67,7 @@ following functions:
 
 ```@docs
 multiplicities(::MSet)
-multiplicity(::MSet{T}, ::T) where T
+multiplicity(::MSet, ::Any)
 ```
 
 Finally, the sum and difference for `MSet` are also available. Difference is

@@ -9,9 +9,19 @@
   print(IOContext(io, :supercompact => true), m)
   @test length(String(take!(io))) == 39
 
-  M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
-  show(io, MIME"text/plain"(), M)
-  @test length(String(take!(io))) == 945
+  withenv("LINES" => 24, "COLUMNS" => 80) do
+    M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
+    show(io, MIME"text/plain"(), M)
+    @test length(String(take!(io))) == 945
+
+    M = MSet{String}("$i"^100 for j in 1:4 for i in 1:130)
+    show(io, MIME"text/plain"(), M)
+    @test length(String(take!(io))) == 1422
+  end
+
+  m = MSet{Int}()
+  show(io, MIME"text/plain"(), m)
+  @test length(String(take!(io))) == 13
 
   m = @inferred multiset(Int[x^3%8 for x = 1:50])
   @test !isempty(m)
@@ -58,6 +68,24 @@
   @test all(x -> x > 1, val)
 
   @test isempty(setdiff(m, m))
+
+  m = MSet(Dict("a" => 4, "b" => 1, "c" => 9))
+  @test length(setdiff!(m, unique(m), unique(m))) == 9
+  m3 = sum(m, m, m)
+  @test length(m3) == 27
+  m = multiset(Int[x^3%8 for x = 1:50])
+  @test length(union(m, m3)) == 77
+  @test union(m3, m3, m3) == m3
+
+  @test_throws ArgumentError union!(m, m3)
+
+  m1 = multiset(fill(3,4))
+  m2 = multiset(fill(2,6))
+  m3 = multiset(Int[2,2,3,3,4,4])
+  m4 = multiset(Int[3,4,4])
+  @test isempty(intersect(m1, m2, m3))
+  intersect!(m3, m1, m4)
+  @test length(m3) == 1
 end
 
 @testset "Sub-multi-set iterator" begin

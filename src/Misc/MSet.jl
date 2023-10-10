@@ -203,7 +203,7 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
     print(io,"()")
   else
     io = pretty(io)
-    szh, szw = displaysize(io)
+    szh, szw = displaysize()
     szh -= 5
     szw -= 10
     print(io, " with ", ItemQuantity(length(s), "element"), ":")
@@ -313,8 +313,8 @@ end
 Base.setdiff(s::MSet, itrs...) = setdiff!(copy(s), itrs...)
 
 function Base.setdiff!(s::MSet, itrs...)
-  for x in itr
-    setdiff!(s, itr)
+  for x in itrs
+    setdiff!(s, x)
   end
   return s
 end
@@ -382,8 +382,8 @@ end
 function Base.issubset(s1::MSet{T}, s2::MSet{U}) where {T, U}
   @req promote_type(T, U) == U "Cannot compare multi-sets"
   !issubset(U[convert(U, x) for x in keys(s1.dict)], unique(s2)) && return false
-  for x in unique(s1)
-    (multiplicity(s1, x) > multiplicity(s2, convert(U, x))) && return false
+  for (x, k) in s1.dict
+    (k > multiplicity(s2, convert(U, x))) && return false
   end
   return true
 end
@@ -441,12 +441,12 @@ function Base.sum(s1::MSet, s2::MSet)
   T = Base.promote_eltype(s1, s2)
   s = similar(s1, T)
   d = s.dict
-  for x in unique(s1)
-    add_to_key!(d, convert(T, x), multiplicity(s1, x))
+  for (x, k) in s1.dict
+    add_to_key!(d, convert(T, x),  k)
   end
 
-  for y in unique(s2)
-    add_to_key!(d, convert(T, y), multiplicity(s2, y))
+  for (y, k) in s2.dict
+    add_to_key!(d, convert(T, y), k)
   end
   return s
 end
@@ -464,22 +464,20 @@ function Base.union(s1::MSet, s2::MSet)
   T = Base.promote_eltype(s1, s2)
   s = similar(s1, T)
   d = s.dict
-  un1 = unique(s1)
-  un2 = unique(s2)
-  for x in un1
-    j = findfirst(y -> x == y, un2)
-    if j === nothing
-      d[convert(T, x)] = multiplicity(s1, x)
+  for (x, k) in s1.dict
+    fi1 = filter(y -> x == y[1], s2.dict)
+    if isempty(fi1)
+      d[convert(T, x)] = k
     else
-      k = max(multiplicity(s1, x), multiplicity(s2, un2[j]))
+      k = max(k, multiplicity(s2, first(fi1)[2]))
       d[convert(T, x)] =  k
     end
   end
 
-  for y in un2
-    j = findfirst(x -> x == y, un1)
-    if j === nothing
-      d[convert(T, y)] = multiplicity(s2, y)
+  for (y, k) in s2.dict
+    fi2 = filter(x -> x[1] == y, s1.dict)
+    if isempty(fi2)
+      d[convert(T, y)] = k
     end
   end
   return s
@@ -495,18 +493,18 @@ function Base.union!(s1::MSet{T}, s2::MSet{U}) where {T, U}
   un1 = unique(s1)
   un2 = unique(s2)
   d = s1.dict
-  for x in un1
-    j = findfirst(y -> x == y, un2)
-    if j !== nothing
-      k = max(multiplicity(s1, x), multiplicity(s2, un2[j]))
+  for (x, k) in s1.dict
+    fi1 = filter(y -> x == y[1], s2.dict)
+    if !isempty(fi1)
+      k = max(k, multiplicity(s2, first(fi1)[2]))
       d[x] =  k
     end
   end
 
-  for y in un2
-    j = findfirst(x -> x == y, un1)
-    if j === nothing
-      d[convert(T, y)] = multiplicity(s2, y)
+  for (y, k) in s2.dict
+    fi2 = filter(x -> x == y[1], s1.dict)
+    if isempty(fi2)
+      d[convert(T, y)] = k
     end
   end
   return s1
@@ -518,15 +516,13 @@ function Base.union!(s::MSet, itrs...)
 end
 
 function Base.intersect(s1::MSet, s2::MSet)
-  un1 = unique(s1)
-  un2 = unique(s2)
-  val = filter(x -> any(y -> x == y, un2), un1)
+  val = collect(filter(x -> any(y -> x == y, keys(s2.dict)), keys(s1.dict)))
   T = promote_type(eltype(s1), typeof.(val)...)
   s = similar(s1, T)
   d = s.dict
   for x in val
-    y = un2[findfirst(y -> x == y, un2)]
-    d[T(x)] = min(multiplicity(s1, x), multiplicity(s2, y))
+    y = first(filter(y -> x == y[1], s2.dict))
+    d[T(x)] = min(multiplicity(s1, x), y[2])
   end
   return s
 end
@@ -537,17 +533,15 @@ function Base.intersect(s::MSet, itrs...)
 end
 
 function Base.intersect!(s1::MSet{T}, s2::MSet) where {T}
-  un1 = unique(s1)
-  un2 = unique(s2)
-  val = filter(x -> any(y -> x == y, un2), un1)
+  val = collect(filter(x -> any(y -> x == y, keys(s2.dict)), keys(s1.dict)))
   @req promote_type(T, typeof.(val)...) == T "Cannot coerce elements"
   d = s1.dict
-  for x in un1
+  for (x, k) in d
     if !(x in val)
       delete!(s1, x)
     else
-      y = un2[findfirst(y -> x == y, un2)]
-      d[x] = min(multiplicity(s1, x), multiplicity(s2, y))
+      y = first(filter(y -> x == y[1], s2.dict))
+      d[x] = min(k, y[2])
     end
   end
   return s1
@@ -615,7 +609,7 @@ function multiplicities(s::MSet)
 end
 
 @doc raw"""
-    multiplicity(s::MSet{T}, x::T) -> Int
+    multiplicity(s::MSet, x) -> Int
 
 Return the multiplicity of the element `x` in the multi-set `s`. If `x` is not
 in `s`, return 0.
