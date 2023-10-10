@@ -318,7 +318,7 @@ function degree_set(fa::Dict{Int, Int})
     ind += v
   end
   M = MSet(T)
-  return Set(sum(s) for s = subsets(M) if length(s) > 0)
+  return Set(sum(collect(s)) for s = subsets(M) if length(s) > 0)
 end
 
 @doc raw"""

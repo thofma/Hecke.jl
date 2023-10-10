@@ -4,6 +4,14 @@ export multiplicity
 export multiset
 export subsets
 
+###############################################################################
+#
+#  Multi-sets
+#
+###############################################################################
+
+### Type and constructors
+
 @doc raw"""
     MSet{T} <: AbstractSet{T}
 
@@ -26,7 +34,15 @@ mutable struct MSet{T} <: AbstractSet{T}
   dict::Dict{T,Int}
 
   MSet{T}() where {T} = new{T}(Dict{T,Int}())
-  MSet{T}(itr) where {T} = union!(new{T}(Dict{T,Int}()), itr)
+
+  function MSet{T}(itr) where {T}
+    s = new{T}(Dict{T, Int}())
+    for x in itr
+      push!(s, x)
+    end
+    return s
+  end
+
   MSet{T}(d::Dict{T, Int}) where {T} = new{T}(d)
   MSet{T}(l::Vector{T}, m::Vector{Int}) where {T} = MSet{T}(Dict(zip(l, m)))
 end
@@ -90,7 +106,7 @@ MSet{String} with 14 elements:
   "a" : 4
 ```
 """
-multiset(iter) = MSet(iter)
+multiset(itr) = MSet(itr)
 
 function multiset(d::Dict{T, Int}) where {T}
   @req minimum(collect(values(d))) > 0 "The values of d must be positive integers"
@@ -147,6 +163,10 @@ MSet{QQFieldElem}()
 Base.similar(::MSet{T}) where {T} = MSet{T}()
 Base.similar(::MSet, T::Type) = MSet{T}()
 
+Base.copy(s::MSet) = union!(similar(s), s)
+
+### Show methods
+
 # We try to adopt the same conventions as in Oscar, so one-line printing should
 # stay in one line, and we do not give details about what is in the MSet: the
 # detailled printing will take care of it
@@ -190,9 +210,9 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
     print(io, Indent())
     d = s.dict
     un = collect(keys(d))
+    rmax = maximum(ndigits(k) for k in values(d))
+    offmax = szw - (rmax + 3)
     if length(un) <= szh
-      rmax = maximum(ndigits(k) for k in values(d))
-      offmax = szw - (rmax + 3)
       lmax = min(maximum(length(sprint(show, a)) for a in un), offmax)
       for k in un
         pk = sprint(show, k)
@@ -210,16 +230,21 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
         end
       end
     else
-      lmax = maximum(length(sprint(show, a)) for a in un[1:szh])
+      lmax = min(maximum(length(sprint(show, a)) for a in un[1:szh]), offmax)
       for i in 1:szh
         println(io)
         k = un[i]
+        pk = sprint(show, k)
         lk = length(sprint(show, k))
         v = d[k]
-        if v > 1
-          print(io, "$k", " "^(lmax-lk+1), ": $v")
+        if lk > offmax
+          print(io, pk[1:offmax-length(" \u2026")], " \u2026")
         else
-          print(io, "$k")
+          print(io, pk)
+        end
+        lk = min(offmax, lk)
+        if v > 1
+          print(io, " "^(lmax-lk+1), ": $v")
         end
       end
       println(io)
@@ -228,40 +253,14 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
   end
 end
 
+### Iteration
+
 Base.isempty(s::MSet) = isempty(s.dict)
 Base.length(s::MSet) = sum(values(s.dict))
 Base.IteratorSize(::Type{MSet}) = Base.HasLength()
 Base.IteratorEltype(::Type{MSet}) = Base.HasEltype()
 Base.eltype(::Type{MSet{T}}) where {T} = T
-Base.in(x, s::MSet) = haskey(s.dict, x)
-
-function Base.push!(s::MSet, x, mult::Int=1)
-  add_to_key!(s.dict, x, mult)
-end
-
-function Base.pop!(s::MSet{T}, x) where {T}
-  y = x isa T ? x : T(x)
-  y in s || throw(KeyError(y))
-  add_to_key!(s.dict, y, -1)
-  return y
-end
-
-function Base.pop!(s::MSet{T}, x, default) where {T}
-  y = x isa T ? x : T(x)
-  return y in s ? pop!(s, y) : (default isa T ? default : T(default))
-end
-
-Base.pop!(s::MSet) = (val = iterate(s.dict)[1][1]; pop!(s, val))
-
-function Base.delete!(s::MSet{T}, x) where {T}
-  y = x isa T ? x : T(x)
-  delete!(s.dict, y)
-  return s
-end
-
-Base.copy(s::MSet) = union!(similar(s), s)
-
-==(s1::MSet, s2::MSet) = s1.dict == s2.dict
+Base.in(x, s::MSet) = any(y -> x == y, keys(s.dict))
 
 function Base.iterate(s::MSet)
   I = iterate(s.dict)
@@ -280,25 +279,250 @@ function Base.iterate(s::MSet, state)
   end
 end
 
-Base.union(s::MSet) = copy(s)
+### MSets operations
 
-function Base.union(s::MSet, sets...)
-  T = Base.promote_eltype(s, sets...)
-  u = MSet{T}()
-  union!(u, s)
-  for t in sets
-    union!(u, t)
-  end
-  return u
+function Base.push!(s::MSet{T}, x, mult::Int=1) where {T}
+  @req promote_type(T, typeof(x)) == T "Cannot coerce element"
+  y = x isa T ? x : T(x)
+  add_to_key!(s.dict, y, mult)
 end
 
-function Base.union!(s::MSet, xs)
-  T = eltype(s)
-  @req promote_type(T, eltype(xs)) == T "Cannot coerce elements"
-  for x in xs
-    push!(s, convert(T, x))
+function Base.pop!(s::MSet{T}, x) where {T}
+  @req promote_type(T, typeof(x)) == T "Cannot coerce element"
+  y = x isa T ? x : T(x)
+  y in s || throw(KeyError(y))
+  add_to_key!(s.dict, y, -1)
+  return y
+end
+
+function Base.pop!(s::MSet{T}, x, default) where {T}
+  @req promote_type(T, typeof(x)) == T "Cannot coerce element"
+  y = x isa T ? x : T(x)
+  return y in s ? pop!(s, y) : (default isa T ? default : T(default))
+end
+
+Base.pop!(s::MSet) = (val = iterate(s.dict)[1][1]; pop!(s, val))
+
+function Base.delete!(s::MSet{T}, x) where {T}
+  @req promote_type(T, typeof(x)) == T "Cannot coerce element"
+  y = x isa T ? x : T(x)
+  delete!(s.dict, y)
+  return s
+end
+
+Base.setdiff(s::MSet, itrs...) = setdiff!(copy(s), itrs...)
+
+function Base.setdiff!(s::MSet, itrs...)
+  for x in itr
+    setdiff!(s, itr)
   end
   return s
+end
+
+function Base.setdiff!(s::MSet, itr)
+  for x in itr
+    pop!(s, x, x)
+  end
+  return s
+end
+
+@doc raw"""
+    Base.:(-)(s::MSet, itrs::MSet...) -> MSet
+
+Return the multi-set associated to the complement in `s` of the collections
+in `itrs`.
+
+Alias for `setdiff(s, itrs...)`.
+
+# Examples
+```jldoctest
+julia> m = multiset("A very nice sentence")
+MSet{Char} with 20 elements:
+  'n' : 3
+  'e' : 5
+  'A'
+  'y'
+  'i'
+  'r'
+  's'
+  't'
+  ' ' : 3
+  'c' : 2
+  'v'
+
+julia> n = multiset("A nice sentence")
+MSet{Char} with 15 elements:
+  'n' : 3
+  'A'
+  'c' : 2
+  'i'
+  'e' : 4
+  's'
+  't'
+  ' ' : 2
+
+julia> n-m
+MSet{Char}()
+
+julia> m-n
+MSet{Char} with 5 elements:
+  'e'
+  'y'
+  'r'
+  ' '
+  'v'
+```
+"""
+Base.:(-)(s::MSet, itrs::MSet...) = setdiff(s, itrs...)
+
+function Base.unique(s::MSet)
+  return collect(keys(s.dict))
+end
+
+function Base.issubset(s1::MSet{T}, s2::MSet{U}) where {T, U}
+  @req promote_type(T, U) == U "Cannot compare multi-sets"
+  !issubset(U[convert(U, x) for x in keys(s1.dict)], unique(s2)) && return false
+  for x in unique(s2)
+    (multiplicity(s1, x) > multiplicity(s2, x)) && return false
+  end
+  return true
+end
+
+@doc raw"""
+    Base.sum(s::MSet, itrs::MSet...) -> MSet
+    Base.:(+)(s::MSet, itrs::MSet...) -> MSet
+
+Return the multi-sets associated to the disjoint union of `s` and the
+collections of objects in `itrs`.
+
+# Examples
+```jldoctest
+julia> m = multiset("A nice sentence")
+MSet{Char} with 15 elements:
+  'n' : 3
+  'A'
+  'c' : 2
+  'i'
+  'e' : 4
+  's'
+  't'
+  ' ' : 2
+
+julia> n = multiset("A very nice sentence")
+MSet{Char} with 20 elements:
+  'n' : 3
+  'e' : 5
+  'A'
+  'y'
+  'i'
+  'r'
+  's'
+  't'
+  ' ' : 3
+  'c' : 2
+  'v'
+
+julia> m + n
+MSet{Char} with 35 elements:
+  'n' : 6
+  'e' : 9
+  'A' : 2
+  's' : 2
+  'i' : 2
+  't' : 2
+  'y'
+  'r'
+  ' ' : 5
+  'c' : 4
+  'v'
+```
+"""
+function Base.sum(s1::MSet, s2::MSet)
+  T = Base.promote_eltype(s1, s2)
+  s = similar(s1, T)
+  d = s.dict
+  val = union(unique(s1), unique(s2))
+  for x in val
+    d[x] = multiplicity(s1, x) + multiplicity(s2, x)
+  end
+  return s
+end
+
+function Base.sum(s::MSet, itrs::MSet...)
+  s2 = sum(s, itrs[1])
+  return sum(s2, itrs[2:end]...)
+end
+
+Base.:(+)(s::MSet, itrs::MSet...) = sum(s, itrs...)
+
+Base.union(s::MSet) = copy(s)
+
+function Base.union(s1::MSet, s2::MSet)
+  T = Base.promote_eltype(s1, s2)
+  s = similar(s1, T)
+  d = s.dict
+  val = union(unique(s1), unique(s2))
+  for x in val
+    d[x] = max(multiplicity(s1, x), multiplicity(s2, x))
+  end
+  return s
+end
+
+function Base.union(s::MSet, itrs...)
+  s2 = union(s, multiset(itrs[1]))
+  return union(s2, itrs[2:end]...)
+end
+
+function Base.union!(s1::MSet{T}, s2::MSet{U}) where {T, U}
+  @req promote_type(T, U) == T "Cannot coerce elements"
+  val = union(unique(s1), T[convert(T, x) for x in keys(s2.dict)])
+  d = s1.dict
+  for x in val
+    d[x] = max(multiplicity(s1, x), multiplicity(s2, x))
+  end
+  return s1
+end
+
+function Base.union!(s::MSet, itrs...)
+  union!(s, multiset(itrs[1]))
+  return union!(s, itrs[2:end]...)
+end
+
+function Base.intersect(s1::MSet, s2::MSet)
+  val = unique(s1)
+  filter!(x -> any(y -> x == y, keys(s2.dict)), val)
+  T = promote_type(eltype(s1), typeof.(val)...)
+  s = similar(s1, T)
+  d = s.dict
+  for x in val
+    d[x] = min(multiplicity(s1, x), multiplicity(s2, x))
+  end
+  return s
+end
+
+function Base.intersect(s::MSet, itrs...)
+  s2 = intersect(s, multiset(itrs[1]))
+  return intersect(s2, itrs[2:end]...)
+end
+
+function Base.intersect!(s1::MSet{T}, s2::MSet) where {T}
+  val = unique(s1)
+  filter!(x -> any(y -> x == y, keys(s2.dict)), val)
+  @req promote_type(T, typeof.(val)...) == T "Cannot coerce elements"
+  d = s1.dict
+  for x in unique(s1)
+    if !(x in val)
+      delete!(s1, x)
+    else
+      d[x] = min(multiplicity(s1, x), multiplicity(s2, T(x)))
+    end
+  end
+  return s1
+end
+
+function Base.intersect!(s::MSet, itrs...)
+  s2 = intersect!(s, multiset(itrs[1]))
+  return intersect!(s2, itrs[2:end]...)
 end
 
 function Base.filter(pred, s::MSet)
@@ -380,7 +604,8 @@ julia> multiplicity(m, 6)
 0
 ```
 """
-function multiplicity(s::MSet{T}, x::T) where {T}
+function multiplicity(s::MSet{T}, x) where {T}
+  @req promote_type(T, typeof(x)) == T "Cannot coerce element"
   y = x isa T ? x : T(x)
   if haskey(s.dict, y)
     return s.dict[y]
@@ -389,29 +614,13 @@ function multiplicity(s::MSet{T}, x::T) where {T}
   end
 end
 
-function Base.unique(s::MSet)
-  return collect(keys(s.dict))
-end
+###############################################################################
+#
+#  Sub-set iterators
+#
+###############################################################################
 
-Base.setdiff(s::MSet, itrs...) = setdiff!(copy(s), itrs...)
-
-function Base.setdiff!(s::MSet, itrs...)
-  for x in itr
-    setdiff!(s, itr)
-  end
-  return s
-end
-
-function Base.setdiff!(s::MSet, itr)
-  for x in itr
-    pop!(s, x)
-  end
-  return s
-end
-
-############################################
-# subsets iterator
-############################################
+### Sub-multi-sets
 
 struct MSubSetItr{T}
   b::Vector{T}
@@ -430,12 +639,6 @@ function subsets(s::MSet{T}) where T
   # subset (bi, ni) -> sum ni gi where gi = prod (mj+1)
   b = unique(s)
   m = Int[multiplicity(s, x) for x in b]
-  #= not needed for the iterator
-  g = [1]
-  for i=2:length(b)
-    push!(g, g[end]*(m[i]+1))
-  end
-  =#
   return MSubSetItr{T}(b, m, length(m) == 0 ? 1 : prod(x+1 for x in m))
 end
 
@@ -485,7 +688,8 @@ end
 
 #... to be completed from base/Set.jl ...
 
-#subsets for Set
+### Arbitrary sub-sets
+
 struct SubSetItr{T}
   b::Vector{T}
   length::Int
@@ -547,7 +751,8 @@ function Base.show(io::IO, ::MIME"text/plain", M::SubSetItr)
   print(io, Dedent(), "of length ", M.length)
 end
 
-#only subsets of a given size
+### Sub-sets of a given size
+
 struct SubSetSizeItr{T}
   b::Vector{T}
   k::Int #subsets of size k only

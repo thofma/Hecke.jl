@@ -27,21 +27,39 @@ multiset
 
 ### Functions
 
-Existing functions for any collection of objects which are currently available
+One can iterate over an `MSet` as on a regular `Set`. Here is moreover a list
+of functions defined for collections of objects which are currently available
 for `MSet`:
 
-* `similar`
-* `isempty`
-* `length`
-* `eltype`
-* `push!`
-* `copy`
 * `==`
+* `all`
+* `any`
+* `copy`
+* `delete!`
+* `eltype`
+* `filter`
+* `filter!`
+* `in`
+* `intersect`
+* `intersect!`
+* `isempty`
+* `issubset`
+* `length`
+* `pop!`
+* `push!`
+* `setdiff`
+* `setdiff!`
+* `similar`
 * `unique`
+* `union`
+* `union!`
+* ...
 
-One can also iterate over an `MSet`, and use `filter` for a given predicate on
-the keys of the underlying dictionary (not on their values!). One can also test
-containment.
+Note that `pop!` and `delete!` for `MSet` are available but have a different behaviour.
+For an element `x` in an multi-set `M <: MSet`, then `pop!(M, x)` will remove
+*one* instance of `x` in `M` - in particular `multiplicity(M, x)` will drop by
+$1$. Much stronger, `delete!(M, x)` will remove *all* instances of `x` in `M` and
+so `multiplicity(M, x)` will be $0$.
 
 While `unique` will return the keys of the underlying dictionary, one can access
 the values (i.e. the multiplicities of the elements in the multi-set) via the
@@ -52,16 +70,13 @@ multiplicities(::MSet)
 multiplicity(::MSet{T}, ::T) where T
 ```
 
-Note that `pop!` and `delete!` for `MSet` are available but have a different behaviour.
-For an element `x` in an multi-set `M <: MSet`, then `pop!(M, x)` will remove
-*one* instance of `x` in `M` - in particular `multiplicity(M, x)` will drop by
-$1$. Much stronger, `delete!(M, x)` will remove *all* instances of `x` in `M` and
-so `multiplicity(M, x)` will be $0$.
+Finally, the sum and difference for `MSet` are also available. Difference is
+given by the complements of sets and the sum is given by disjoint union of sets.
 
-Finally, one can take unions (`union`, `union!`) of an `MSet` with other
-finite collections of objects. Note that `union!` will require coercion of
-elements. Similarly, one can compare an `MSet` with another collection with the
-`setdiff/setdiff!` functions.
+```@docs
+sum(::MSet, ::Mset)
+Base.:(-)(::MSet, ::MSet...)
+```
 
 ## Sub-set iterators
 

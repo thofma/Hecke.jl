@@ -10,8 +10,8 @@
   @test length(String(take!(io))) == 39
 
   M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
-  show(io, MIME"text/plain"(), m)
-  @test length(String(take!(io))) == 983
+  show(io, MIME"text/plain"(), M)
+  @test length(String(take!(io))) == 945
 
   m = @inferred multiset(Int[x^3%8 for x = 1:50])
   @test !isempty(m)
@@ -37,11 +37,15 @@
 
   m = @inferred multiset(Dict("a" => 4, "b" => 1, "c" => 9))
   lis = @inferred collect(m)
+  @test length(m) == length(lis)
 
-  m2 = @inferred union(m, lis)
+  m2 = @inferred m + m
   for i in m
     @test multiplicity(m2, i) == 2*multiplicity(m, i)
   end
+
+  m3 = @inferred m-m
+  @test length(m3) == 0
 
   @test union(m) == m
   @test length(filter(x -> multiplicity(m, x) != 1, m)) == length(m) - 1
@@ -68,6 +72,10 @@ end
   @test length(String(take!(io))) == 35
   @test eltype(M) == typeof(m)
   @test length(collect(M)) == length(M)
+
+  n = collect(M)[end]
+  @test union(m, n) == m
+  @test intersect(m, n) == n
 end
 
 @testset "Sub-set iterators" begin
