@@ -179,7 +179,7 @@ function function_field(O::GenOrd)
   return O.F
 end
 
-@deprecate field_of_fractions function_field
+@deprecate field_of_fractions(O::GenOrd) function_field(O::GenOrd)
 
 @doc raw"""
     constant_field(K::FunctionField) -> Field
