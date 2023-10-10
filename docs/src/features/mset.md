@@ -11,7 +11,7 @@ end
 
 ### Type and constructors
 
-Objects of type `Mset` consists of a dictionary whose keys are the elements in
+Objects of type `MSet` consists of a dictionary whose keys are the elements in
 the set, and the values are their respective multiplicity.
 
 ```@docs
@@ -74,7 +74,7 @@ Finally, the sum and difference for `MSet` are also available. Difference is
 given by the complements of sets and the sum is given by disjoint union of sets.
 
 ```@docs
-sum(::MSet, ::Mset)
+sum(::MSet, ::MSet)
 Base.:(-)(::MSet, ::MSet...)
 ```
 

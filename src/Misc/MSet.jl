@@ -382,8 +382,8 @@ end
 function Base.issubset(s1::MSet{T}, s2::MSet{U}) where {T, U}
   @req promote_type(T, U) == U "Cannot compare multi-sets"
   !issubset(U[convert(U, x) for x in keys(s1.dict)], unique(s2)) && return false
-  for x in unique(s2)
-    (multiplicity(s1, x) > multiplicity(s2, x)) && return false
+  for x in unique(s1)
+    (multiplicity(s1, x) > multiplicity(s2, convert(U, x))) && return false
   end
   return true
 end
@@ -441,9 +441,12 @@ function Base.sum(s1::MSet, s2::MSet)
   T = Base.promote_eltype(s1, s2)
   s = similar(s1, T)
   d = s.dict
-  val = union(unique(s1), unique(s2))
-  for x in val
-    d[x] = multiplicity(s1, x) + multiplicity(s2, x)
+  for x in unique(s1)
+    add_to_key!(d, convert(T, x), multiplicity(s1, x))
+  end
+
+  for y in unique(s2)
+    add_to_key!(d, convert(T, y), multiplicity(s2, y))
   end
   return s
 end
@@ -461,9 +464,23 @@ function Base.union(s1::MSet, s2::MSet)
   T = Base.promote_eltype(s1, s2)
   s = similar(s1, T)
   d = s.dict
-  val = union(unique(s1), unique(s2))
-  for x in val
-    d[x] = max(multiplicity(s1, x), multiplicity(s2, x))
+  un1 = unique(s1)
+  un2 = unique(s2)
+  for x in un1
+    j = findfirst(y -> x == y, un2)
+    if j === nothing
+      d[convert(T, x)] = multiplicity(s1, x)
+    else
+      k = max(multiplicity(s1, x), multiplicity(s2, un2[j]))
+      d[convert(T, x)] =  k
+    end
+  end
+
+  for y in un2
+    j = findfirst(x -> x == y, un1)
+    if j === nothing
+      d[convert(T, y)] = multiplicity(s2, y)
+    end
   end
   return s
 end
@@ -475,10 +492,22 @@ end
 
 function Base.union!(s1::MSet{T}, s2::MSet{U}) where {T, U}
   @req promote_type(T, U) == T "Cannot coerce elements"
-  val = union(unique(s1), T[convert(T, x) for x in keys(s2.dict)])
+  un1 = unique(s1)
+  un2 = unique(s2)
   d = s1.dict
-  for x in val
-    d[x] = max(multiplicity(s1, x), multiplicity(s2, x))
+  for x in un1
+    j = findfirst(y -> x == y, un2)
+    if j !== nothing
+      k = max(multiplicity(s1, x), multiplicity(s2, un2[j]))
+      d[x] =  k
+    end
+  end
+
+  for y in un2
+    j = findfirst(x -> x == y, un1)
+    if j === nothing
+      d[convert(T, y)] = multiplicity(s2, y)
+    end
   end
   return s1
 end
@@ -489,13 +518,15 @@ function Base.union!(s::MSet, itrs...)
 end
 
 function Base.intersect(s1::MSet, s2::MSet)
-  val = unique(s1)
-  filter!(x -> any(y -> x == y, keys(s2.dict)), val)
+  un1 = unique(s1)
+  un2 = unique(s2)
+  val = filter(x -> any(y -> x == y, un2), un1)
   T = promote_type(eltype(s1), typeof.(val)...)
   s = similar(s1, T)
   d = s.dict
   for x in val
-    d[x] = min(multiplicity(s1, x), multiplicity(s2, x))
+    y = un2[findfirst(y -> x == y, un2)]
+    d[T(x)] = min(multiplicity(s1, x), multiplicity(s2, y))
   end
   return s
 end
@@ -506,15 +537,17 @@ function Base.intersect(s::MSet, itrs...)
 end
 
 function Base.intersect!(s1::MSet{T}, s2::MSet) where {T}
-  val = unique(s1)
-  filter!(x -> any(y -> x == y, keys(s2.dict)), val)
+  un1 = unique(s1)
+  un2 = unique(s2)
+  val = filter(x -> any(y -> x == y, un2), un1)
   @req promote_type(T, typeof.(val)...) == T "Cannot coerce elements"
   d = s1.dict
-  for x in unique(s1)
+  for x in un1
     if !(x in val)
       delete!(s1, x)
     else
-      d[x] = min(multiplicity(s1, x), multiplicity(s2, T(x)))
+      y = un2[findfirst(y -> x == y, un2)]
+      d[x] = min(multiplicity(s1, x), multiplicity(s2, y))
     end
   end
   return s1
@@ -604,11 +637,11 @@ julia> multiplicity(m, 6)
 0
 ```
 """
-function multiplicity(s::MSet{T}, x) where {T}
-  @req promote_type(T, typeof(x)) == T "Cannot coerce element"
-  y = x isa T ? x : T(x)
-  if haskey(s.dict, y)
-    return s.dict[y]
+function multiplicity(s::MSet, x)
+  un = unique(s)
+  j = findfirst(y -> x == y, un)
+  if j !== nothing
+    return s.dict[un[j]]
   else
     return 0
   end
