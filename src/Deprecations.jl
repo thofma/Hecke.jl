@@ -115,6 +115,9 @@
 
 @deprecate any_root(f::Hecke.AbstractAlgebra.Generic.Poly, F::Hecke.RelFinField) any_root(F, f)
 
+# Deprecated during 0.22.*
+
+@deprecate field_of_fractions(O::GenOrd) function_field(O::GenOrd)
 
 # Things that moved to Nemo
 
