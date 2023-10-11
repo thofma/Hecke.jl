@@ -205,10 +205,10 @@ Matrices support the usual operations as well
 
 Various products:
 ```@docs
-Hecke.mul(::SMat{T}, ::AbstractVector{T}) where {T}
-Hecke.mul(::SMat{T}, ::AbstractMatrix{T})  where {T}
-Hecke.mul(::SMat{T}, ::MatElem{T}) where {T}
-Hecke.mul(::SRow{T}, ::SMat{T}) where {T}
+*(::SMat{T}, ::AbstractVector{T}) where {T}
+*(::SMat{T}, ::AbstractMatrix{T})  where {T}
+*(::SMat{T}, ::MatElem{T}) where {T}
+*(::SRow{T}, ::SMat{T}) where {T}
 ```
 
 Other:

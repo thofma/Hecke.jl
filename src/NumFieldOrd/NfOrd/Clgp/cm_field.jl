@@ -29,7 +29,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
       add_unit!(U, u)
     else
       img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(mL, cache_mL, x), v) for (x,v) = u.fac if !iszero(v)))
-      valofnewelement = mul(mS.valuations[i], vals_subfield)
+      valofnewelement = mS.valuations[i] * vals_subfield
       Hecke.class_group_add_relation(c, u, valofnewelement, add_orbit = false, always = false)
     end
   end

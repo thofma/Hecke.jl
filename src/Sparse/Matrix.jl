@@ -516,11 +516,11 @@ end
 
 # (dense Vector{T}) * SMat{T} as (dense Vector{T})
 @doc raw"""
-    mul(A::SMat{T}, b::AbstractVector{T}) -> Vector{T}
+    *(A::SMat{T}, b::AbstractVector{T}) -> Vector{T}
 
 Return the product $A \cdot b$ as a dense vector.
 """
-function mul(A::SMat{T}, b::AbstractVector{T}) where T
+function *(A::SMat{T}, b::AbstractVector{T}) where T
   @assert length(b) == ncols(A)
   c = Vector{T}(undef, nrows(A))
   mul!(c, A, b)
@@ -544,11 +544,11 @@ end
 
 # - SMat{T} * Matrix{T} as Matrix{T}
 @doc raw"""
-    mul(A::SMat{T}, b::AbstractMatrix{T}) -> Matrix{T}
+    *(A::SMat{T}, b::AbstractMatrix{T}) -> Matrix{T}
 
 Return the product $A \cdot b$ as a dense array.
 """
-function mul(A::SMat{T}, b::AbstractMatrix{T}) where T
+function *(A::SMat{T}, b::AbstractMatrix{T}) where T
   sz = size(b)
   @assert sz[1] == ncols(A)
   c = Array{T}(undef, sz[1], sz[2])
@@ -570,26 +570,24 @@ function mul!(c::MatElem{T}, A::SMat{T}, b::MatElem{T}) where T
 end
 
 # - SMat{T} * MatElem{T} as MatElem{T}
-
 @doc raw"""
-    mul(A::SMat{T}, b::MatElem{T}) -> MatElem
+    *(A::SMat{T}, b::MatElem{T}) -> MatElem
 
 Return the product $A \cdot b$ as a dense matrix.
 """
-function mul(A::SMat{T}, b::MatElem{T}) where T
+function *(A::SMat{T}, b::MatElem{T}) where T
   @assert nrows(b) == ncols(A)
   c = similar(b, nrows(A), ncols(b))
   return mul!(c, A, b)
 end
 
 # - SRow{T} * SMat{T} as SRow{T}
-
 @doc raw"""
-    mul(A::SRow, B::SMat) -> SRow
+    *(A::SRow, B::SMat) -> SRow
 
 Return the product $A\cdot B$ as a sparse row.
 """
-function mul(A::SRow{T}, B::SMat{T}) where T
+function *(A::SRow{T}, B::SMat{T}) where T
   C = sparse_row(base_ring(B))
   for (p, v) in A
     if iszero(v)

@@ -20,7 +20,7 @@
 
   fl, sol = can_solve_with_solution(M, b.rows[1])
   @test fl
-  @test mul(sol, M) == b.rows[1]
+  @test sol * M == b.rows[1]
 
   for i in 1:10
     r = 10

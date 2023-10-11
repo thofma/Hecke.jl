@@ -40,7 +40,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
 
       for l=1:ngens(Szk)
         u = mS(Szk[l])  #do compact rep here???
-        valofnewelement = mul(mS.valuations[l], z)
+        valofnewelement = mS.valuations[l] * z
         el_to_add = FacElem(Dict{nf_elem, AnticNumberField}((N(x, i, j), v) for (x,v) = u.fac))
         Hecke.class_group_add_relation(c, el_to_add, valofnewelement)#, always = false)
       end
@@ -81,7 +81,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
       u = mS(Szk[l])
       for j in 1:length(induced)
         aut = autos[j]
-        valofnewelement = mul(mS.valuations[l], induced[j])
+        valofnewelement = mS.valuations[l] * induced[j]
         el_to_add = FacElem(Dict{nf_elem, AnticNumberField}((aut(embedding(N, i)(x)), v) for (x,v) = u.fac))
         Hecke.class_group_add_relation(c, el_to_add, valofnewelement)#, always = false)
       end
@@ -228,7 +228,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           push!(add_unit_later, img_u)
         end
       else
-        valofnewelement = mul(mS.valuations[l], z)
+        valofnewelement = mS.valuations[l] * z
         #=
         if isdefined(c.M, :basis)
           push!(deb_rr, (deepcopy(c.M.basis), deepcopy(valofnewelement)))
