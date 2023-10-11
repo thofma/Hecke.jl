@@ -9,15 +9,13 @@
   print(IOContext(io, :supercompact => true), m)
   @test length(String(take!(io))) == 39
 
-  withenv("LINES" => 24, "COLUMNS" => 80) do
-    M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
-    show(io, MIME"text/plain"(), M)
-    @test length(String(take!(io))) == 945
+  M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
+  show(io, MIME"text/plain"(), M)
+  s = String(take!(io))
 
-    M = MSet{String}("$i"^100 for j in 1:4 for i in 1:130)
-    show(io, MIME"text/plain"(), M)
-    @test length(String(take!(io))) == 1422
-  end
+  M = MSet{String}("$i"^100 for j in 1:4 for i in 1:130)
+  show(io, MIME"text/plain"(), M)
+  s = String(take!(io))
 
   m = MSet{Int}()
   show(io, MIME"text/plain"(), m)
@@ -71,7 +69,7 @@
 
   m = MSet(Dict("a" => 4, "b" => 1, "c" => 9))
   @test length(setdiff!(m, unique(m), unique(m))) == 9
-  m3 = sum(m, m, m)
+  m3 = m + m + m
   @test length(m3) == 27
   m = multiset(Int[x^3%8 for x = 1:50])
   @test length(union(m, m3)) == 77

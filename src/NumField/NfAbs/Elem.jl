@@ -462,7 +462,7 @@ function _ds(fa)
   @assert all(x->x == 1, values(fa.fac))
   T = Int[degree(x) for x = keys(fa.fac)]
   M = MSet(T)
-  return Set(sum(collect(s)) for s = subsets(M) if length(s) > 0)
+  return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
 
 function _degset(f::ZZPolyRingElem, p::Int)

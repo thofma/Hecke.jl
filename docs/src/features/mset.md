@@ -74,7 +74,7 @@ Finally, the sum and difference for `MSet` are also available. Difference is
 given by the complements of sets and the sum is given by disjoint union of sets.
 
 ```@docs
-sum(::MSet, ::MSet)
+Base.:(+)(::MSet, ::MSet)
 Base.:(-)(::MSet, ::MSet...)
 ```
 

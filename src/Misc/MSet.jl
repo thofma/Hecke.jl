@@ -109,7 +109,7 @@ MSet{String} with 14 elements:
 multiset(itr) = MSet(itr)
 
 function multiset(d::Dict{T, Int}) where {T}
-  @req minimum(collect(values(d))) > 0 "The values of d must be positive integers"
+  @req minimum(values(d)) > 0 "The values of d must be positive integers"
   return MSet{T}(d)
 end
 
@@ -122,7 +122,7 @@ end
 @doc raw"""
     multiset(T::Type) -> MSet{T}
 
-Create an unitialized multi-set `M` with elements of type `T`.
+Create an empty multi-set `M` with elements of type `T`.
 
 # Examples
 ```jldoctest
@@ -138,10 +138,10 @@ multiset() = MSet()
 multiset(T::DataType) = MSet{T}()
 
 @doc raw"""
-    Base.similar(M::MSet{T}) -> MSet{T}
-    Base.similar(M::MSet, T::Type) -> MSet{T}
+    similar(M::MSet{T}) -> MSet{T}
+    similar(M::MSet, T::Type) -> MSet{T}
 
-Create an unitialized multi-set with elements of type `T`.
+Create an empty multi-set with elements of type `T`.
 
 # Examples
 ```jldoctest
@@ -165,6 +165,9 @@ Base.similar(::MSet, T::Type) = MSet{T}()
 
 Base.copy(s::MSet) = union!(similar(s), s)
 
+# Only for internal use
+dict(s::MSet) = s.dict
+
 ### Show methods
 
 # We try to adopt the same conventions as in Oscar, so one-line printing should
@@ -182,7 +185,8 @@ function Base.show(io::IO, s::MSet{T}) where {T}
   else
     print(io, "MSet(")
     first = true
-    for (k, v) in s.dict
+    d = dict(s)
+    for (k, v) in d
       first || print(io, ", ")
       first = false
       if v > 1
@@ -208,16 +212,14 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
     szw -= 10
     print(io, " with ", ItemQuantity(length(s), "element"), ":")
     print(io, Indent())
-    d = s.dict
-    un = collect(keys(d))
+    d = dict(s)
     rmax = maximum(ndigits(k) for k in values(d))
     offmax = szw - (rmax + 3)
-    if length(un) <= szh
-      lmax = min(maximum(length(sprint(show, a)) for a in un), offmax)
-      for k in un
+    if length(d) <= szh
+      lmax = min(maximum(length(sprint(show, a)) for a in keys(d)), offmax)
+      for (k, v) in d
         pk = sprint(show, k)
         lk = length(pk)
-        v = d[k]
         println(io)
         if lk > offmax
           print(io, pk[1:offmax-length(" \u2026")], " \u2026")
@@ -230,10 +232,10 @@ function Base.show(io::IO, ::MIME"text/plain", s::MSet)
         end
       end
     else
-      lmax = min(maximum(length(sprint(show, a)) for a in un[1:szh]), offmax)
-      for i in 1:szh
+      un = collect(keys(d))[1:szh]
+      lmax = min(maximum(length(sprint(show, a)) for a in un), offmax)
+      for k in un
         println(io)
-        k = un[i]
         pk = sprint(show, k)
         lk = length(sprint(show, k))
         v = d[k]
@@ -260,7 +262,8 @@ Base.length(s::MSet) = sum(values(s.dict))
 Base.IteratorSize(::Type{MSet}) = Base.HasLength()
 Base.IteratorEltype(::Type{MSet}) = Base.HasEltype()
 Base.eltype(::Type{MSet{T}}) where {T} = T
-Base.in(x, s::MSet) = any(y -> x == y, keys(s.dict))
+Base.in(x::T, s::MSet{T}) where {T} = haskey(dict(s), x)
+Base.in(x, s::MSet{T}) where {T} = haskey(dict(s), convert(T, x))
 
 function Base.iterate(s::MSet)
   I = iterate(s.dict)
@@ -298,7 +301,7 @@ end
 function Base.pop!(s::MSet{T}, x, default) where {T}
   @req promote_type(T, typeof(x)) == T "Cannot coerce element"
   y = x isa T ? x : T(x)
-  return y in s ? pop!(s, y) : (default isa T ? default : T(default))
+  return y in s ? pop!(s, y) : (default isa T ? default : convert(T, default))
 end
 
 Base.pop!(s::MSet) = (val = iterate(s.dict)[1][1]; pop!(s, val))
@@ -327,7 +330,7 @@ function Base.setdiff!(s::MSet, itr)
 end
 
 @doc raw"""
-    Base.:(-)(s::MSet, itrs::MSet...) -> MSet
+    (-)(s::MSet, itrs...) -> MSet
 
 Return the multi-set associated to the complement in `s` of the collections
 in `itrs`.
@@ -373,24 +376,24 @@ MSet{Char} with 5 elements:
   'v'
 ```
 """
-Base.:(-)(s::MSet, itrs::MSet...) = setdiff(s, itrs...)
+Base.:(-)(s::MSet, itrs...) = setdiff(s, itrs...)
 
 function Base.unique(s::MSet)
-  return collect(keys(s.dict))
+  return collect(keys(dict(s)))
 end
 
 function Base.issubset(s1::MSet{T}, s2::MSet{U}) where {T, U}
   @req promote_type(T, U) == U "Cannot compare multi-sets"
-  !issubset(U[convert(U, x) for x in keys(s1.dict)], unique(s2)) && return false
-  for (x, k) in s1.dict
-    (k > multiplicity(s2, convert(U, x))) && return false
+  for (x, k) in dict(s1)
+    y = convert(U, x)
+    !haskey(dict(s2), y) && return false
+    k > multiplicity(s2, y) && return false
   end
   return true
 end
 
 @doc raw"""
-    Base.sum(s::MSet, itrs::MSet...) -> MSet
-    Base.:(+)(s::MSet, itrs::MSet...) -> MSet
+    (+)(s::MSet, itrs...) -> MSet
 
 Return the multi-sets associated to the disjoint union of `s` and the
 collections of objects in `itrs`.
@@ -437,72 +440,45 @@ MSet{Char} with 35 elements:
   'v'
 ```
 """
-function Base.sum(s1::MSet, s2::MSet)
+function Base.:(+)(s1::MSet, s2::MSet)
   T = Base.promote_eltype(s1, s2)
   s = similar(s1, T)
-  d = s.dict
-  for (x, k) in s1.dict
+  d = dict(s)
+  for (x, k) in dict(s1)
     add_to_key!(d, convert(T, x),  k)
   end
 
-  for (y, k) in s2.dict
+  for (y, k) in dict(s2)
     add_to_key!(d, convert(T, y), k)
   end
   return s
 end
 
-function Base.sum(s::MSet, itrs::MSet...)
-  s2 = sum(s, itrs[1])
-  return sum(s2, itrs[2:end]...)
+function Base.:(+)(s::MSet, itrs...)
+  s2 = s + multiset(itrs[1])
+  return (+)(s2, itrs[2:end]...)
 end
-
-Base.:(+)(s::MSet, itrs::MSet...) = sum(s, itrs...)
 
 Base.union(s::MSet) = copy(s)
 
-function Base.union(s1::MSet, s2::MSet)
-  T = Base.promote_eltype(s1, s2)
-  s = similar(s1, T)
-  d = s.dict
-  for (x, k) in s1.dict
-    fi1 = filter(y -> x == y[1], s2.dict)
-    if isempty(fi1)
-      d[convert(T, x)] = k
-    else
-      k = max(k, multiplicity(s2, first(fi1)[2]))
-      d[convert(T, x)] =  k
-    end
-  end
-
-  for (y, k) in s2.dict
-    fi2 = filter(x -> x[1] == y, s1.dict)
-    if isempty(fi2)
-      d[convert(T, y)] = k
-    end
-  end
-  return s
-end
-
 function Base.union(s::MSet, itrs...)
-  s2 = union(s, multiset(itrs[1]))
-  return union(s2, itrs[2:end]...)
+  T = Base.promote_eltype(s, itrs...)
+  return union!(similar(s, T), s, itrs...)
 end
 
 function Base.union!(s1::MSet{T}, s2::MSet{U}) where {T, U}
   @req promote_type(T, U) == T "Cannot coerce elements"
-  un1 = unique(s1)
-  un2 = unique(s2)
-  d = s1.dict
-  for (x, k) in s1.dict
-    fi1 = filter(y -> x == y[1], s2.dict)
+  d = dict(s1)
+  for (x, k) in d
+    fi1 = filter(isequal(x), keys(dict(s2)))
     if !isempty(fi1)
-      k = max(k, multiplicity(s2, first(fi1)[2]))
+      k = max(k, multiplicity(s2, first(fi1)))
       d[x] =  k
     end
   end
 
-  for (y, k) in s2.dict
-    fi2 = filter(x -> x == y[1], s1.dict)
+  for (y, k) in dict(s2)
+    fi2 = filter(isequal(y), keys(d))
     if isempty(fi2)
       d[convert(T, y)] = k
     end
@@ -515,32 +491,20 @@ function Base.union!(s::MSet, itrs...)
   return union!(s, itrs[2:end]...)
 end
 
-function Base.intersect(s1::MSet, s2::MSet)
-  val = collect(filter(x -> any(y -> x == y, keys(s2.dict)), keys(s1.dict)))
-  T = promote_type(eltype(s1), typeof.(val)...)
-  s = similar(s1, T)
-  d = s.dict
-  for x in val
-    y = first(filter(y -> x == y[1], s2.dict))
-    d[T(x)] = min(multiplicity(s1, x), y[2])
-  end
-  return s
-end
-
 function Base.intersect(s::MSet, itrs...)
-  s2 = intersect(s, multiset(itrs[1]))
-  return intersect(s2, itrs[2:end]...)
+  T = Base.promote_eltype(s, itrs...)
+  return intersect!(union!(similar(s, T), s), itrs...)
 end
 
 function Base.intersect!(s1::MSet{T}, s2::MSet) where {T}
-  val = collect(filter(x -> any(y -> x == y, keys(s2.dict)), keys(s1.dict)))
+  val = intersect(keys(dict(s1)), keys(dict(s2)))
   @req promote_type(T, typeof.(val)...) == T "Cannot coerce elements"
-  d = s1.dict
+  d = dict(s1)
   for (x, k) in d
     if !(x in val)
       delete!(s1, x)
     else
-      y = first(filter(y -> x == y[1], s2.dict))
+      y = first(filter(y -> x == y[1], dict(s2)))
       d[x] = min(k, y[2])
     end
   end
@@ -554,7 +518,7 @@ end
 
 function Base.filter(pred, s::MSet)
   t = similar(s)
-  for (x, m) in s.dict
+  for (x, m) in dict(s)
     if pred(x)
       push!(t, x, m)
     end
@@ -563,8 +527,7 @@ function Base.filter(pred, s::MSet)
 end
 
 function Base.filter!(pred, s::MSet)
-  un = unique(s)
-  for x in un
+  for x in keys(dict(s))
     if !pred(x)
       delete!(s, x)
     end
@@ -605,11 +568,11 @@ julia> collect(mult_m)
 ```
 """
 function multiplicities(s::MSet)
-  return values(s.dict)
+  return values(dict(s))
 end
 
 @doc raw"""
-    multiplicity(s::MSet, x) -> Int
+    multiplicity(s::MSet{T}, x::T) -> Int
 
 Return the multiplicity of the element `x` in the multi-set `s`. If `x` is not
 in `s`, return 0.
@@ -631,11 +594,10 @@ julia> multiplicity(m, 6)
 0
 ```
 """
-function multiplicity(s::MSet, x)
-  un = unique(s)
-  j = findfirst(y -> x == y, un)
-  if j !== nothing
-    return s.dict[un[j]]
+function multiplicity(s::MSet{T}, x::T) where {T}
+  y = x isa T ? x : T(x)
+  if haskey(dict(s), y)
+    return dict(s)[y]
   else
     return 0
   end
