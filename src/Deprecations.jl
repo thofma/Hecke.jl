@@ -123,7 +123,7 @@
 
 @deprecate mul(A::SMat{T}, b::MatElem{T}) where T A*b
 
-@deprecate mul(A::SRow{T}, B::SMat{T}) where T A*b
+@deprecate mul(A::SRow{T}, B::SMat{T}) where T A*B
 
 
 # Things that moved to Nemo
