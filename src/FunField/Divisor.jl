@@ -171,15 +171,10 @@ function ideals(D)
 end
 
 @doc raw"""
-    field_of_fractions(O::GenOrd) -> FunctionField
     function_field(O::GenOrd) -> FunctionField
 
 Return the function field of O.
 """
-function field_of_fractions(O::GenOrd)
-  return O.F
-end
-
 function function_field(O::GenOrd)
   return O.F
 end
