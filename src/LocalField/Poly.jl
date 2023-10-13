@@ -835,7 +835,7 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic,
   H = HenselCtxdr{T}(f, vlfp)
   lift(H, precision(f))
   for i = 1:H.n
-    D[ks[i]] = H.lf[i]
+    D[ks[i]] = setprecision(H.lf[i], precision(f))
   end
   return D
 end

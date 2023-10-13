@@ -101,7 +101,7 @@ function _roots(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldEle
   g = f(pi*x+r)
   g = divexact(g, _content(g))
   rtg = roots(g)
-  rts = elem_type(K)[setprecision(r, precision(y)) + pi*y for y in rtg]
+  rts = elem_type(K)[setprecision(r, precision(y)+1) + pi*y for y in rtg]
   return rts
 end
 

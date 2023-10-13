@@ -79,6 +79,15 @@
     @test length(Hecke.slope_factorization(2*x+1)) == 1
   end
 
+  @testset "Roots" begin
+    _, t = PadicField(3, 10)["t"]
+    f = ((t-1+81)*(t-1+2*81))
+    rt = roots(f)
+    @test length(rt) == 2
+    @test rt[1] != rt[2]
+    @test all(iszero, map(f, rt))
+  end
+
   @testset "Resultant" begin
     R, x = polynomial_ring(PadicField(853, 2), "x")
     a = 4*x^5 + x^4 + 256*x^3 + 192*x^2 + 48*x + 4
