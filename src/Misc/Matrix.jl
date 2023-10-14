@@ -1468,3 +1468,20 @@ function solve(L::LinearSolveCtx, b::Vector)
   #end
   return fl, deepcopy(w)
 end
+
+################################################################################
+#
+#  Determinant of triangular matrix
+#
+################################################################################
+
+# Compute the determinant of a (lower-left or upper-right) triangular matrix by
+# multiplying the diagonal entries. Nothing is checked.
+function _det_triangular(M::MatElem)
+  R = base_ring(M)
+  d = one(R)
+  for i in 1:nrows(M)
+    mul!(d, d, M[i, i])
+  end
+  return d
+end
