@@ -147,7 +147,6 @@ function class_group_proof(clg::ClassGrpCtx, lb::ZZRingElem, ub::ZZRingElem; ext
         end
         f, r = is_smooth!(clg.FB.fb_int, numerator(n))
         if f
-          M = SMat{Int}()
           fl = _factor!(clg.FB, a, false, n)[1]
           if fl
             break
