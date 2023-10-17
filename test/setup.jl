@@ -34,7 +34,7 @@ else
   end
 end
 
-if (isdefined(Hecke, :_with_gap) && Hecke._with_gap) || 
+if (isdefined(Hecke, :_with_gap) && Hecke._with_gap) ||
    (isdefined(Main, :_with_gap) && Main._with_gap)
   macro with_gap(ex)
     ex
@@ -45,7 +45,7 @@ else
   end
 end
 
-if (isdefined(Hecke, :_with_polymake) && Hecke._with_polymake) || 
+if (isdefined(Hecke, :_with_polymake) && Hecke._with_polymake) ||
    (isdefined(Main, :_with_polymake) && Main._with_polymake)
   macro with_polymake(ex)
     ex

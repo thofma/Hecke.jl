@@ -811,19 +811,19 @@ struct KodairaSymbol
     if K[1]!='I'
       error("String does not represent a valid Kodaira symbol.")
     end
-    
+
     n = lastindex(K)
-    
+
     if K[n]=='*'
       m = parse(Int, K[2:n-1])
       return KodairaSymbol(-4 - m)
     else
       m = parse(Int, K[2:n])
       return KodairaSymbol(4 + m)
-    end  
-    
+    end
+
     error("String does not represent a valid Kodaira symbol.")
-    
+
   end
 end
 
@@ -879,17 +879,17 @@ function ==(K::KodairaSymbol, s::String)
     if s[1] != 'I'
       error("String does not represent a valid Kodaira symbol.")
     end
- 
+
     n = lastindex(s)
 
     if s[n]=='*'
       m = parse(Int, s[2:n-1])
-      return K.ksymbol == -4 - m 
+      return K.ksymbol == -4 - m
     else
       m = parse(Int, s[2:n])
       return K.ksymbol == 4 + m
-    end  
-    
+    end
+
     error("String does not represent a valid Kodaira symbol.")
 end
 
@@ -897,7 +897,7 @@ end
 function show(io::IO, K::KodairaSymbol)
   m = K.ksymbol
 
-  if m == 1 
+  if m == 1
     print(io, "I0")
   elseif m == -1
     print(io, "I0*")
@@ -914,15 +914,15 @@ function show(io::IO, K::KodairaSymbol)
   elseif m == -4
     print(io, "IV*")
   end
-      
-  if m > 4 
+
+  if m > 4
     m = m - 4
     print(io, "I$(m)")
   elseif m < -4
     m = m + 4
     m = -m
     print(io, "I$(m)*")
-  end  
+  end
 end
 
 
@@ -1026,7 +1026,7 @@ function reduction_type(E::EllCrv{QQFieldElem}, p)
     return "Good"
   end
 
-  if Kp.ksymbol > 4  
+  if Kp.ksymbol > 4
     if split
       return "Split multiplicative"
     else
@@ -1052,7 +1052,7 @@ function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
     return "Good"
   end
 
-  if Kp.ksymbol > 4  
+  if Kp.ksymbol > 4
     if split
       return "Split multiplicative"
     else

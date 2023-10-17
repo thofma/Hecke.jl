@@ -51,30 +51,30 @@ function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
   end
   E = parent(P)
   K = base_field(E)
-  
+
   if is_infinite(P) || is_infinite(Q)
     if P == Q
       #Degenerate case
       return one(K)
     end
-    
+
     if is_infinite(P)
       #Vertical line
       return R[1] - Q[1]
     end
-    
+
     if is_infinite(Q)
-      #Vertical line 
+      #Vertical line
       return R[1] - P[1]
     end
   end
-  
+
   if P == Q
     #Line tangent to P
     a1, a2, a3, a4, a6 = a_invars(E)
     num = 3*P[1]^2 + 2*a2*P[1] + a4 - a1*P[2]
     denom = 2*P[2] + a1*P[1] + a3
-  
+
     if denom == 0
       return R[1] - P[1]
     end
@@ -88,7 +88,7 @@ function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
       slope = (Q[2] - P[2])// (Q[1] - P[1])
     end
   end
-  
+
   return R[2] - P[2] - slope * (R[1] - P[1])
 end
 
@@ -99,17 +99,17 @@ function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   @req parent(P) == parent(Q) "P and Q need to lie on the same curve"
   @req is_finite(Q) "Q must be finite"
   @req n != 0 "n must be non-zero"
-  
+
   n_negative = n < 0
-  if n_negative 
+  if n_negative
     n = -n
   end
-  
+
   t = one(base_field(parent(P)))
   V = P
   nbinary = digits(n, base=2)
   i = nbits(n) - 1
-  
+
   while i > 0
     S = 2 * V
     ell = straight_line(V, V, Q)
@@ -131,7 +131,7 @@ function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
     end
     i = i - 1
   end
-  
+
   if n_negative
     vee = straight_line(V, -V, Q)
     if iszero(vee) || iszero(t)
@@ -139,7 +139,7 @@ function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
     end
     t = 1//(t*vee)
   end
-  return true, t 
+  return true, t
 end
 
 @doc raw"""
@@ -154,11 +154,11 @@ function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
   O = infinity(E)
   @req E == parent(Q) "P and Q need to be points on the same curve."
   @req n*P == O && n*Q == O "P and Q need to be n-torsion points."
-  
+
   if P == Q || P == O || Q == O
     return one(K)
   end
-  
+
   fl, m1 = _try_miller(P, Q, n)
   fl2, m2 = _try_miller(Q, P, n)
   if !fl || !fl2
@@ -173,7 +173,7 @@ end
 
 Given an $n$-torsion point $P$ and another point $Q$ on an elliptic curve over
 a finite field $K$. Return the Tate pairing $t_n(P, Q)$ by returning a
-representative of the coset modulo $n$-th powers. 
+representative of the coset modulo $n$-th powers.
 
 See also [reduced_tate_pairing](@ref) if one wants an $n$-th root.
 """
@@ -211,12 +211,12 @@ See also [`tate_pairing`](@ref).
 function reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
   E = parent(P)
   @req E == parent(Q) "P and Q need to be points on the same curve."
-  K = base_field(E) 
+  K = base_field(E)
   d = degree(K)
   q = order(K)
   @req divisible(q - 1, n) "K needs to contain the nth roots of unity."
   @req n*P == infinity(E) "P must be of order n."
-  
+
   e = div(q - 1, n)
   return tate_pairing(P, Q, n)^e
 end

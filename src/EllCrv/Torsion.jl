@@ -349,7 +349,7 @@ end
     torsion_bound(E::EllCrv{nf_elem}, n::Int) -> ZZRingElem
 
 
-Bound the order of the torsion subgroup of $E by considering 
+Bound the order of the torsion subgroup of $E by considering
 the order of the reduction of $E$ modulo $n$ distinct primes
 with good reduction
 """
@@ -373,7 +373,7 @@ function torsion_bound(E::EllCrv{nf_elem}, n::Int)
       end
     end
     p = next_prime(p)
-  end 
+  end
   return(ZZRingElem(bound))
 end
 
