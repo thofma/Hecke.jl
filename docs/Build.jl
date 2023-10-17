@@ -44,6 +44,7 @@ pages = [
                      "misc/conjugacy.md",
                      ],
          "Extra features" => ["features/macros.md",
+                              "features/mset.md",
                              ],
          "Examples" => "examples.md",
          "References" => "references.md",

@@ -125,6 +125,7 @@
 
 @deprecate mul(A::SRow{T}, B::SMat{T}) where T A*B
 
+@deprecate field_of_fractions(O::GenOrd) function_field(O::GenOrd)
 
 # Things that moved to Nemo
 

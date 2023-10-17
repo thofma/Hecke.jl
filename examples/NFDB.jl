@@ -994,10 +994,12 @@ end
 #
 ################################################################################
 
-function Base.merge!(R::NFDB{1}, D1::NFDB{1})
+function Base.merge!(R::NFDB{1}, D1::NFDB{1}; skip_update = false)
   sizehint!(R.fields, length(R) + length(D1))
   append!(R.fields, D1.fields)
-  update_properties!(R)
+  if !skip_update
+    update_properties!(R)
+  end
   return R
 end
 
@@ -1014,9 +1016,12 @@ function Base.merge(D::Vector{NFDB{1}})
   end
 
   R = NFDB{1}()
+  sizehint!(R.fields, sum(length(d) for d in D))
   for i in 1:length(D)
-    merge!(R, D[i])
+    merge!(R, D[i], skip_update = true)
   end
+
+  update_properties!(R)
 
   return R
 end
