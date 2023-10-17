@@ -669,7 +669,7 @@ end
 #     for k in range(n):
 #         u*=U.gen(k).value()^min(e[k] for e in E)
 #     return u
-# 
+#
 #
 function _factor_nf(n::QQFieldElem)
   f = factor(ZZ, n)
@@ -725,7 +725,7 @@ function _factor_rational_function_field(p)
   facpn = factor(pn)
   # pn is primitive and integral
   # we assume R is a UFD
-  
+
   u = unit(facpn)
   for (p, e) in facpn
     uu, pp = _make_primitive(p)

@@ -35,7 +35,7 @@
 ################################################################################
 
 export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order_via_legendre,
-       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular, 
+       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular,
        is_ordinary, is_probable_supersingular, supersingular_polynomial
 
 ################################################################################
@@ -924,34 +924,34 @@ Return true when the elliptic curve is supersingular. The result is proven to be
 """
 function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   K = base_field(E)
-  
+
   p = characteristic(K)
   j = j_invariant(E)
-  
+
   if j^(p^2) != j
     return false
   end
-  
+
   if p<= 3
     return j == 0
   end
-  
+
   L = Native.GF(p, 2)
   Lx, X = polynomial_ring(L, "X")
   Lxy, Y = polynomial_ring(Lx, "Y")
   Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
-  
+
   jL = _embed_into_p2(j, L)
-  
+
   js = roots(Phi2(jL))
-  
+
   if length(js) < 3
     return false
   end
-  
+
   newjs = [jL, jL, jL]
   f = elem_type(Lx)[zero(Lx), zero(Lx), zero(Lx)]
-  
+
   m = nbits(p) - 1
   for k in (1 : m)
     for i in (1 : 3)
@@ -1016,7 +1016,7 @@ function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   j = j_invariant(E)
   K = base_field(E)
   p = characteristic(K)
-  
+
   local degj::Int
 
   if degree(K) == 1
@@ -1024,7 +1024,7 @@ function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
   else
     degj = degree(minpoly(j))
   end
-  
+
   if degj == 1
     return monte_carlo_test(E, p+1)
   elseif degj == 2
@@ -1036,14 +1036,14 @@ end
 
 function monte_carlo_test(E, n)
   E_O = infinity(E)
-  
+
   for i in (1:10)
     P = rand(E)
     if n*P != E_O
       return false
     end
   end
-  
+
   return true
 end
 
@@ -1060,7 +1060,7 @@ function supersingular_polynomial(p::IntegerUnion)
   if p < 3
     return J
   end
-  
+
   m = divexact((p-1), 2)
   KXT, (X, T) = polynomial_ring(K, ["X", "T"])
   H = sum([binomial(m, i)^2 *T^i for i in (0:m)])
@@ -1144,7 +1144,7 @@ Return a list of generators of the group of rational points on $E$.
 
 # Examples
 
-```jldoctest; filter = r"Point.*" 
+```jldoctest; filter = r"Point.*"
 julia> E = elliptic_curve(GF(101, 2), [1, 2]);
 
 julia> gens(E)

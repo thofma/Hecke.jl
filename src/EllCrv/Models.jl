@@ -291,7 +291,7 @@ function is_integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
 end
 
 @doc raw"""
-    is_local_integral_model(E::EllCrv{nf_elem}, P::NfOrdIdl) -> Bool 
+    is_local_integral_model(E::EllCrv{nf_elem}, P::NfOrdIdl) -> Bool
 
 Given an elliptic curve $E$ over a number field $K$ and a prime ideal, return
 true if $E$ is a local integral model of $E$.

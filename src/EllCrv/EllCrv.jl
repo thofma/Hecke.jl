@@ -164,11 +164,11 @@ end
 
 function Base.getindex(P::EllCrvPt, i::Int)
   @req 1 <= i <= 3 "Index must be 1, 2 or 3"
-  
+
   K = base_field(parent(P))
-  
+
   if is_infinite(P)
-    if i == 1 
+    if i == 1
       return zero(K)
     elseif i == 2
       return one(K)
@@ -236,14 +236,14 @@ function elliptic_curve(x::Vector{Rational{T}}; check::Bool = true) where {T <: 
   return elliptic_curve(QQFieldElem[QQ(z) for z in x], check = check)
 end
 
-# A constructor to create an elliptic curve from a bivariate polynomial. 
-# One can specify how to interpret the polynomial via the second and the 
+# A constructor to create an elliptic curve from a bivariate polynomial.
+# One can specify how to interpret the polynomial via the second and the
 # third argument.
 @doc raw"""
     elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem) -> EllCrv
 
-Construct an elliptic curve from a bivariate polynomial `f` in long Weierstrass form. 
-The second and third argument specify variables of the `parent` of `f` so that 
+Construct an elliptic curve from a bivariate polynomial `f` in long Weierstrass form.
+The second and third argument specify variables of the `parent` of `f` so that
 ``f = c ⋅ (-y² + x³ - a₁ ⋅ xy + a₂ ⋅ x² - a₃ ⋅ y + a₄ ⋅ x + a₆)``.
 """
 function elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem)
@@ -624,10 +624,10 @@ y^2 = x^3 + x + 2
 ```
 """
 function (E::EllCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
-  if !(2 <= length(coords) <= 3) 
+  if !(2 <= length(coords) <= 3)
     error("Points need to be given in either affine coordinates (x, y) or projective coordinates (x, y, z)")
   end
-  
+
   if length(coords) == 3
     if coords[1] == 0 && coords[3] == 0
       if coords[2] != 0
@@ -636,7 +636,7 @@ function (E::EllCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
         error("The triple [0: 0: 0] does not define a point in projective space.")
       end
     end
-    coords = [coords[1]//coords[3], coords[2]//coords[3]] 
+    coords = [coords[1]//coords[3], coords[2]//coords[3]]
   end
   if S === T
     parent(coords[1]) != base_field(E) &&
@@ -1122,18 +1122,18 @@ function multiplication_by_m_y_coord(E::EllCrv, m::S, x = polynomial_ring(base_f
   psi_m_univ = division_polynomial_univariate(E, m, x)[2]
   psi_mplus = division_polynomial(E, m+1, x, y)
   psi_mmin2 = division_polynomial(E, m-2, x, y)
-  
-  if p == 3 && j_invariant(E) != 0   
-    if iseven(m) 
+
+  if p == 3 && j_invariant(E) != 0
+    if iseven(m)
       num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2) - a1*(x* psi_m_univ^2*B6 -psi_mmin*psi_mplus)*psi_m_univ
        denom = 2*B6^2*psi_m_univ^3
     else
       num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2) - a1*(x* psi_m_univ^2 -psi_mmin*psi_mplus*B6)*psi_m_univ
-      denom = 4*y*psi_m_univ^3 
+      denom = 4*y*psi_m_univ^3
     end
     return num//denom
   end
-  
+
 
   num = (psi_mplus2*psi_mmin^2 - psi_mmin2*psi_mplus^2)
 

@@ -599,7 +599,7 @@ end
 
 function Base.getindex(f::EllCrvIso, i::Int)
   @req 1 <= i <= 3 "Index must be 1, 2 or 3"
-  
+
   return rational_maps(f)[i]
 end
 
@@ -626,7 +626,7 @@ function show(io::IO, f::EllCrvIso)
   E1 = domain(f)
   E2 = codomain(f)
   fx, fy, fz = rational_maps(f)
-  print(io, "Isomorphism from 
+  print(io, "Isomorphism from
   $(E1) to \n
   $(E2) given by \n
   (x : y : 1) -> ($(fx) : $(fy) : $(fz) )")

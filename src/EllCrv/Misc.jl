@@ -119,9 +119,9 @@ function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = residue_field(R, pIdeal)
   P, x = polynomial_ring(F, "x", cached = false)
-  
+
   t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [a, b, c]]
-  
+
   f = t[1]*x^2 + t[2]*x + t[3]
 
   if degree(f) == -1
@@ -179,7 +179,7 @@ function nrootscubic(b::nf_elem, c::nf_elem, d::nf_elem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = residue_field(R, pIdeal)
   P, x = polynomial_ring(F, "x", cached = false)
-  
+
   t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [b,c,d]]
 
   f = x^3 + t[1]*x^2 + t[2]*x + t[3]
