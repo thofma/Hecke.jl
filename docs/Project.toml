@@ -6,3 +6,4 @@ DocumenterMarkdown = "997ab1e6-3595-5248-9280-8efb232c3433"
 [compat]
 Documenter = "~0.27"
 DocumenterCitations = "0.2.5"
+DocumenterMarkdown = "0.2.2"
