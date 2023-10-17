@@ -187,19 +187,19 @@ end
 #
 ################################################################################
 
-function number_field(f::PolyElem{T}, S::Symbol;
+function number_field(f::PolyRingElem{T}, S::Symbol;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
   check && !is_irreducible(f) && error("Polynomial must be irreducible")
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
-function number_field(f::PolyElem{T}, s::String;
+function number_field(f::PolyRingElem{T}, s::String;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
     S = Symbol(s)
     return number_field(f, S, cached = cached, check = check)
 end
-function number_field(f::PolyElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
+function number_field(f::PolyRingElem{<: NumFieldElem}; cached::Bool = false, check::Bool = true)
   return number_field(f, "_\$", cached = cached, check = check)
 end
 

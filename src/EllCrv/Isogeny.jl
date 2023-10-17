@@ -54,7 +54,7 @@ end
 
 
 #Maybe this can be done more efficiently
-function is_kernel_polynomial(E::EllCrv{T}, f::PolyElem{T}, check::Bool = false) where T
+function is_kernel_polynomial(E::EllCrv{T}, f::PolyRingElem{T}, check::Bool = false) where T
   @req base_ring(f) === base_field(E) "Polynomial and elliptic curve must be defined over same field"
 
   #Assume f to be square-free
@@ -135,16 +135,16 @@ end
 
 
 @doc raw"""
-    is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyElem)
+    is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRingElem)
 
 Return whether `E` has a cyclic isogeny of with kernel polynomial
 `f`.
 """
-function is_cyclic_kernel_polynomial(E::EllCrv, f::PolyElem)
+function is_cyclic_kernel_polynomial(E::EllCrv, f::PolyRingElem)
   return is_kernel_polynomial(E, f, true)
 end
 
-function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyElem)
+function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRingElem)
   @req base_ring(f) === base_field(E) "Polynomial and elliptic curve must be defined over the same field"
   @req is_prime(p) || p ==1 "p needs to be prime"
   m2 = div(p, 2)
@@ -881,7 +881,7 @@ function compute_codomain(E::EllCrv, v, w)
   return elliptic_curve([a1, a2, a3, newa4, newa6])
 end
 
-function to_bivariate(f::AbstractAlgebra.Generic.Poly{S}) where S<:PolyElem{T} where T<:FieldElem
+function to_bivariate(f::AbstractAlgebra.Generic.Poly{S}) where S<:PolyRingElem{T} where T<:FieldElem
   Rxy = parent(f)
   Rx = base_ring(Rxy)
   R = base_ring(Rx)
@@ -897,7 +897,7 @@ function to_bivariate(f::AbstractAlgebra.Generic.Poly{S}) where S<:PolyElem{T} w
   return newf
 end
 
-function to_bivariate(f::PolyElem{T}) where T<:FieldElem
+function to_bivariate(f::PolyRingElem{T}) where T<:FieldElem
 
   K = base_ring(f)
 

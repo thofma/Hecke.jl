@@ -2,7 +2,7 @@ module PolyRoot
 
 using Hecke
 
-function is_power(f::PolyElem{T}, n::Int) where {T <: FieldElem}
+function is_power(f::PolyRingElem{T}, n::Int) where {T <: FieldElem}
   #iteration is for roots of x^-n -f^(n-1) which has root f^((1-n)/n)
   #or root(f, n)^(1-n)
 

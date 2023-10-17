@@ -275,7 +275,7 @@ end
 
 
 @doc raw"""
-    elliptic_curve(f::PolyElem, [h::PolyElem,] check::Bool = true) -> EllCrv
+    elliptic_curve(f::PolyRingElem, [h::PolyRingElem,] check::Bool = true) -> EllCrv
 
 Return the elliptic curve $y^2 + h(x)y = f(x)$ respectively $y^2 + y = f(x)$,
 if no $h$ is specified. The polynomial $f$ must be monic of degree 3 and $h$ of
@@ -298,7 +298,7 @@ Elliptic curve with equation
 y^2 + x*y = x^3 + x + 1
 ```
 """
-function elliptic_curve(f::PolyElem{T}, h::PolyElem{T} = zero(parent(f)); check::Bool = true) where T
+function elliptic_curve(f::PolyRingElem{T}, h::PolyRingElem{T} = zero(parent(f)); check::Bool = true) where T
   @req ismonic(f) "First polynomial must be monic"
   @req degree(f) == 3 "First polynomial must be of degree 3"
   @req degree(h) <= 1 "Second polynomial must be of degree at most 1"
@@ -313,7 +313,7 @@ function elliptic_curve(f::PolyElem{T}, h::PolyElem{T} = zero(parent(f)); check:
   return elliptic_curve([a1, a2, a3, a4, a6], check = check)
 end
 
-function elliptic_curve(f::PolyElem{T}, g; check::Bool = true) where T
+function elliptic_curve(f::PolyRingElem{T}, g; check::Bool = true) where T
   return elliptic_curve(f, parent(f)(g))
 end
 
@@ -537,7 +537,7 @@ end
 ################################################################################
 
 @doc raw"""
-    equation([R::MPolyRing,] E::EllCrv) -> MPolyElem
+    equation([R::MPolyRing,] E::EllCrv) -> MPolyRingElem
 
 Return the equation defining the elliptic curve $E$ as a bivariate polynomial.
 If the polynomial ring $R$ is specified, it must by a bivariate polynomial
@@ -567,7 +567,7 @@ function equation(Kxy::MPolyRing, E::EllCrv)
 end
 
 @doc raw"""
-    hyperelliptic_polynomials([R::PolyRing,] E::EllCrv) -> PolyElem, PolyElem
+    hyperelliptic_polynomials([R::PolyRing,] E::EllCrv) -> PolyRingElem, PolyRingElem
 
 Return univariate polynomials $f, h$ such that $E$ is given by $y^2 + h*y = f$.
 

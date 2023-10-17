@@ -1149,11 +1149,11 @@ function primitive_element(K::NfAbsNS)
 end
 
 @doc raw"""
-    factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
+    factor(f::PolyRingElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
 
 The factorisation of $f$ (using Trager's method).
 """
-function factor(f::PolyElem{NfAbsNSElem})
+function factor(f::PolyRingElem{NfAbsNSElem})
   Kx = parent(f)
   K = base_ring(f)
 
@@ -1199,7 +1199,7 @@ function factor(f::PolyElem{NfAbsNSElem})
   end
   @vtime :PolyFactor 2 fac = factor(N)
 
-  res = Dict{PolyElem{NfAbsNSElem}, Int64}()
+  res = Dict{PolyRingElem{NfAbsNSElem}, Int64}()
 
   for i in keys(fac.fac)
     t = change_base_ring(K, i, parent = Kx)

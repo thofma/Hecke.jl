@@ -18,14 +18,14 @@ export HyperellipticCurve, genus, points_at_infinity, base_field, base_change, i
 
 mutable struct HypellCrv{T}
   base_field::Ring
-  f::PolyElem{T}
-  h::PolyElem{T}
+  f::PolyRingElem{T}
+  h::PolyRingElem{T}
   f_hom::MPolyRingElem{T}
   h_hom::MPolyRingElem{T}
   g::Int
   disc::T
 
-  function HypellCrv{T}(f::PolyElem, h::PolyElem, check::Bool = true) where {T}
+  function HypellCrv{T}(f::PolyRingElem, h::PolyRingElem, check::Bool = true) where {T}
     n = degree(f)
     m = degree(h)
     g = div(degree(f) - 1, 2)
@@ -146,13 +146,13 @@ end
 ################################################################################
 
 @doc raw"""
-    HyperellipticCurve(f::PolyElem, g::PolyElem; check::Bool = true) -> HypellCrv
+    HyperellipticCurve(f::PolyRingElem, g::PolyRingElem; check::Bool = true) -> HypellCrv
 
 Return the hyperelliptic curve $y^2 + h(x)y = f(x)$. The polynomial $f$ 
 must be monic of degree 2g + 1 > 3 or of degree 2g + 2 > 4 and the 
 polynomial h must be of degree < g + 2. Here g will be the genus of the curve.
 """
-function HyperellipticCurve(f::PolyElem{T}, h::PolyElem{T}; check::Bool = true) where T <: FieldElem
+function HyperellipticCurve(f::PolyRingElem{T}, h::PolyRingElem{T}; check::Bool = true) where T <: FieldElem
   @req ismonic(f) "Polynomial must be monic"
   @req degree(f) >= 3 "Polynomial must be of degree 3"
 
@@ -160,12 +160,12 @@ function HyperellipticCurve(f::PolyElem{T}, h::PolyElem{T}; check::Bool = true) 
 end
 
 @doc raw"""
-    HyperellipticCurve(f::PolyElem; check::Bool = true) -> HypellCrv
+    HyperellipticCurve(f::PolyRingElem; check::Bool = true) -> HypellCrv
 
 Return the hyperelliptic curve $y^2 = f(x)$. The polynomial $f$ must be monic of
 degree larger than 3.
 """
-function HyperellipticCurve(f::PolyElem{T}; check::Bool = true) where T <: FieldElem
+function HyperellipticCurve(f::PolyRingElem{T}; check::Bool = true) where T <: FieldElem
   @req ismonic(f) "Polynomial must be monic"
   @req degree(f) >= 3 "Polynomial must be of degree 3"
   R = parent(f)

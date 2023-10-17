@@ -714,7 +714,7 @@ end
 ################################################################################
 
 @doc raw"""
-    minpoly(a::AbsAlgAssElem) -> PolyElem
+    minpoly(a::AbsAlgAssElem) -> PolyRingElem
 
 Returns the minimal polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.
@@ -731,7 +731,7 @@ function Generic.minpoly(R::PolyRing, a::AbsAlgAssElem)
 end
 
 @doc raw"""
-    charpoly(a::AbsAlgAssElem) -> PolyElem
+    charpoly(a::AbsAlgAssElem) -> PolyRingElem
 
 Returns the characteristic polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.
@@ -773,7 +773,7 @@ function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
 end
 
 @doc raw"""
-    reduced_charpoly(a::AbsAlgAssElem) -> PolyElem
+    reduced_charpoly(a::AbsAlgAssElem) -> PolyRingElem
 
 Returns the reduced characteristic polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.

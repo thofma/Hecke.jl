@@ -280,7 +280,7 @@ function apply!(b::fqPolyRepFieldElem, a::fqPolyRepFieldElem, F::FrobeniusCtx)
   return b
 end
 
-function splitting_field(f::PolyElem{<:FinFieldElem}; do_roots::Bool = false)
+function splitting_field(f::PolyRingElem{<:FinFieldElem}; do_roots::Bool = false)
   lf = factor(f)
   k = base_ring(f)
   d = reduce(lcm, [degree(x) for x = keys(lf.fac)], init = 1)

@@ -2271,7 +2271,7 @@ function _is_valid(q::QuadSpaceCls{K}) where {K}
   neg_hasse = [p for p in keys(q.LGS) if hasse_invariant(q.LGS[p])==-1]
 
   if dim == 0
-    return issquare(q.det) && length(neg_hasse)==0
+    return is_square(q.det) && length(neg_hasse)==0
   end
   inf_plcs = keys(q.signature_tuples)
   all(Bool[sign(q.det, K === QQField ? p : _embedding(p)) == (-1)^(q.signature_tuples[p][3]) for p in inf_plcs]) || return false

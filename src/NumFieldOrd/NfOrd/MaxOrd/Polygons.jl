@@ -200,11 +200,11 @@ end
 ###############################################################################
 
 @doc raw"""
-    phi_development(f::PolyElem, phi::PolyElem) -> Vector{PolyElem}
+    phi_development(f::PolyRingElem, phi::PolyRingElem) -> Vector{PolyRingElem}
 
 Computes an array of polynomials $[a_0, \ldots, a_s]$ such that $\sum a_i \phi^i = f$.
 """
-function phi_development(f::T, phi::T) where T <: PolyElem
+function phi_development(f::T, phi::T) where T <: PolyRingElem
   dev = Vector{T}()
   g = f
   while degree(g) >= degree(phi)
@@ -222,7 +222,7 @@ end
 ###############################################################################
 
 @doc raw"""
-    newton_polygon(f::PolyElem{T}, phi::PolyElem{T}) where T <: Union{padic, qadic}
+    newton_polygon(f::PolyRingElem{T}, phi::PolyRingElem{T}) where T <: Union{padic, qadic}
 
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
 where $a_i$ are the coefficients of the $\phi$-development of $f$.
@@ -331,7 +331,7 @@ function residual_polynomial(F, L::Line, dev::Vector{ZZPolyRingElem}, p::Union{I
 
 end
 
-function phi_development_with_quos(f::T, phi::T) where T <: PolyElem
+function phi_development_with_quos(f::T, phi::T) where T <: PolyRingElem
   dev = Vector{T}()
   quos = Vector{T}()
   g = f

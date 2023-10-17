@@ -389,7 +389,7 @@ function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
   return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
 end
 
-function eval_f_fs(f::PolyElem, x::RingElem)
+function eval_f_fs(f::PolyRingElem, x::RingElem)
   d = Int[]
   for i=1:degree(f)
     if !iszero(coeff(f, i))

@@ -9,7 +9,7 @@ base_ring(x::PIDIdeal) = parent(x.gen)
 
 _can_canonicalize(::Type{ZZRingElem}) = true
 
-_can_canonicalize(::Type{<:PolyElem{T}}) where {T <: FieldElem} = true
+_can_canonicalize(::Type{<:PolyRingElem{T}}) where {T <: FieldElem} = true
 
 _can_canonicalize(::Type{<:FieldElem}) = true
 
@@ -21,7 +21,7 @@ function _canonicalize(x::ZZRingElem)
   end
 end
 
-function _canonicalize(x::PolyElem{ <: FieldElem})
+function _canonicalize(x::PolyRingElem{ <: FieldElem})
   if is_monic(x)
     return x
   else

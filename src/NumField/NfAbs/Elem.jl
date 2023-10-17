@@ -240,12 +240,12 @@ end
 ################################################################################
 
 @doc raw"""
-    norm(f::PolyElem{nf_elem}) -> QQPolyRingElem
+    norm(f::PolyRingElem{nf_elem}) -> QQPolyRingElem
 
 >The norm of $f$, that is, the product of all conjugates of $f$ taken
 >coefficientwise.
 """
-function norm(f::PolyElem{nf_elem})
+function norm(f::PolyRingElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
   f, i = deflate(f)
@@ -290,7 +290,7 @@ function factor(K::AnticNumberField, f::ZZPolyRingElem)
   return factor(f1)
 end
 
-function nice(f::PolyElem{nf_elem})
+function nice(f::PolyRingElem{nf_elem})
   if degree(f) < 10
     return "$f"
   end
@@ -302,11 +302,11 @@ function nice(f::PolyElem{nf_elem})
 end
 
 @doc raw"""
-    factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::PolyRingElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
 The factorisation of $f$.
 """
-function factor(f::PolyElem{nf_elem}; algo::Symbol=:default)
+function factor(f::PolyRingElem{nf_elem}; algo::Symbol=:default)
   @assert algo in [:default, :trager, :van_hoeij]
   Kx = parent(f)
   K = base_ring(f)
@@ -345,7 +345,7 @@ function factor(f::PolyElem{nf_elem}; algo::Symbol=:default)
 end
 
   #assumes that f is a squarefree polynomial
-function _factor(f::PolyElem{nf_elem}; algo::Symbol = :default)
+function _factor(f::PolyRingElem{nf_elem}; algo::Symbol = :default)
 
   K = base_ring(f)
   f = f*(1//leading_coefficient(f))
@@ -358,7 +358,7 @@ function _factor(f::PolyElem{nf_elem}; algo::Symbol = :default)
 return lf
 end
 
-function factor_trager(f::PolyElem{nf_elem})
+function factor_trager(f::PolyRingElem{nf_elem})
   k = 0
   g = f
   @vprintln :PolyFactor 1 "Using Trager's method"
@@ -412,7 +412,7 @@ function factor_trager(f::PolyElem{nf_elem})
   return res
 end
 
-function is_irreducible(f::PolyElem{nf_elem})
+function is_irreducible(f::PolyRingElem{nf_elem})
   isresult_right, result = is_irreducible_easy(f)
   if isresult_right
     return result
@@ -421,7 +421,7 @@ function is_irreducible(f::PolyElem{nf_elem})
   return length(fac) == 1
 end
 
-function is_irreducible_easy(f::PolyElem{nf_elem})
+function is_irreducible_easy(f::PolyRingElem{nf_elem})
   if degree(f) == 1
     return true, true
   end
@@ -485,7 +485,7 @@ function (R::fpPolyRing)(f::fqPolyRepPolyRingElem)
   return g
 end
 
-function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
+function _degset(f::PolyRingElem{nf_elem}, p::Int, normal::Bool = false)
   K = base_ring(f)
 
   me = modular_init(K, p, deg_limit = 1)
@@ -623,11 +623,11 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
 end
 
 @doc raw"""
-    has_root(f::PolyElem{nf_elem}) -> Bool, nf_elem
+    has_root(f::PolyRingElem{nf_elem}) -> Bool, nf_elem
 
 Tests if $f$ has a root and return it.
 """
-function has_root(f::PolyElem{nf_elem})
+function has_root(f::PolyRingElem{nf_elem})
   rt = roots(f, max_roots = 1)
   if length(rt) == 0
     return false, zero(base_ring(f))

@@ -58,11 +58,11 @@ end
 mutable struct HenselCtxFqRelSeries{T}
   f :: ZZMPolyRingElem # bivariate
   n :: Int # number of factors
-  lf :: Vector{PolyElem{T}} # T should be zzModRelPowerSeriesRingElem or fqPolyRepRelPowerSeriesRingElem
-  cf :: Vector{PolyElem{T}} # the cofactors for lifting
+  lf :: Vector{PolyRingElem{T}} # T should be zzModRelPowerSeriesRingElem or fqPolyRepRelPowerSeriesRingElem
+  cf :: Vector{PolyRingElem{T}} # the cofactors for lifting
   t :: Int # shift, not used, so might be wrong.
 
-  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyElem{S}}, lg::Vector{<:PolyElem{S}}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.zzModRingElem}}
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyRingElem{S}}, lg::Vector{<:PolyRingElem{S}}, n::Int, s::Int = 0) where {S <: Union{Nemo.FinFieldElem, Nemo.zzModRingElem}}
     @assert ngens(parent(f)) == 2
     k = base_ring(lf[1])
     R, t = power_series_ring(k, 10, "t", cached = false) #, model = :capped_absolute)
@@ -76,7 +76,7 @@ mutable struct HenselCtxFqRelSeries{T}
     return r
   end
 
-  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyElem{<:SeriesElem{qadic}}}, lc::Vector{<:PolyElem{<:SeriesElem{qadic}}}, n::Int, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyRingElem{<:SeriesElem{qadic}}}, lc::Vector{<:PolyRingElem{<:SeriesElem{qadic}}}, n::Int, s::Int = 0)
     @assert ngens(parent(f)) == 2
     r = new{elem_type(base_ring(lf[1]))}()
     r.f = f
@@ -102,13 +102,13 @@ mutable struct HenselCtxFqRelSeries{T}
     return HenselCtxFqRelSeries(f, lf, s)
   end
 
-  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Array{<:PolyElem{<:SeriesElem{<:FinFieldElem}}}, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Array{<:PolyRingElem{<:SeriesElem{<:FinFieldElem}}}, s::Int = 0)
     k, mk = residue_field(base_ring(lf[1]))
     kt, t = polynomial_ring(k, cached = false)
     return HenselCtxFqRelSeries(f, [map_coefficients(mk, x, parent = kt) for x = lf], s)
   end
 
-  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Array{<:PolyElem{<:FinFieldElem}}, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Array{<:PolyRingElem{<:FinFieldElem}}, s::Int = 0)
     n = length(lf)
     lg = typeof(lf[1])[]
     i = 1
@@ -137,19 +137,19 @@ function Hecke.precision(H::HenselCtxFqRelSeries{<:Generic.RelSeries{qadic}})
   return precision(coeff(coeff(H.lf[1], 0), 0)), precision(coeff(H.lf[1], 0))
 end
 
-function shift_coeff_left!(f::PolyElem{<:SeriesElem}, n::Int)
+function shift_coeff_left!(f::PolyRingElem{<:SeriesElem}, n::Int)
   for i=0:length(f)
     setcoeff!(f, i, shift_left(coeff(f, i), n))
   end
 end
 
-function shift_coeff_right!(f::PolyElem{<:SeriesElem}, n::Int)
+function shift_coeff_right!(f::PolyRingElem{<:SeriesElem}, n::Int)
   for i=0:length(f)
     setcoeff!(f, i, shift_right(coeff(f, i), n))
   end
 end
 
-function shift_coeff_left(f::PolyElem{<:SeriesElem}, n::Int)
+function shift_coeff_left(f::PolyRingElem{<:SeriesElem}, n::Int)
   g = parent(f)()
   for i=0:length(f)
     setcoeff!(g, i, shift_left(coeff(f, i), n))
@@ -157,7 +157,7 @@ function shift_coeff_left(f::PolyElem{<:SeriesElem}, n::Int)
   return g
 end
 
-function shift_coeff_right(f::PolyElem{<:SeriesElem}, n::Int)
+function shift_coeff_right(f::PolyRingElem{<:SeriesElem}, n::Int)
   g = parent(f)()
   for i=0:length(f)
     setcoeff!(g, i, shift_right(coeff(f, i), n))
@@ -229,12 +229,12 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   end
 end
 
-function _set_precision(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+function _set_precision(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
   g = deepcopy(f)
   return _set_precision!(g, n)
 end
 
-function _set_precision!(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+function _set_precision!(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
   for i=0:length(f)
     c = coeff(f, i)
     for j=0:pol_length(c)
@@ -244,7 +244,7 @@ function _set_precision!(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   return f
 end
 # TODO: bad names...
-function _shift_coeff_left(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+function _shift_coeff_left(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
   for i = 0:length(f)
     setcoeff!(g, i, map_coefficients(x -> shift_left(x, n), coeff(f, i), parent = base_ring(f)))
@@ -261,7 +261,7 @@ function check_qadic(a::qadic)
   @assert all(x->abs(x) < p, coefficients(f))
 end
 
-function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
+function _shift_coeff_right(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
   g = parent(f)()
   for i = 0:length(f)
     @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i)))
@@ -270,11 +270,11 @@ function _shift_coeff_right(f::PolyElem{<:SeriesElem{qadic}}, n::Int)
   return g
 end
 
-mutable struct Preinv{T, S <: PolyElem{T}}
+mutable struct Preinv{T, S <: PolyRingElem{T}}
   f::S
   n::Int
   fi::S
-  function Preinv(f::PolyElem)
+  function Preinv(f::PolyRingElem)
     r = new{elem_type(base_ring(f)), typeof(f)}()
     r.f = reverse(f)
     @assert degree(f) == degree(r.f)
@@ -284,7 +284,7 @@ mutable struct Preinv{T, S <: PolyElem{T}}
   end
 end
 
-preinv(f::PolyElem) = Preinv(f)
+preinv(f::PolyRingElem) = Preinv(f)
 
 function lift(P::Preinv)
   f = truncate(P.f, 2*P.n)
@@ -293,7 +293,7 @@ function lift(P::Preinv)
 end
 # von zur Gathen: Modern Computer Algebra, p 243:
 #  9.1. Division with remainder using Newton iteration
-function Base.rem(g::PolyElem, P::Preinv)
+function Base.rem(g::PolyRingElem, P::Preinv)
   if degree(g) < degree(P.f)
     return g
   end
@@ -318,7 +318,7 @@ function Base.rem(g::PolyElem, P::Preinv)
   return r
 end
 
-function check_data(f::PolyElem{<:SeriesElem{qadic}})
+function check_data(f::PolyRingElem{<:SeriesElem{qadic}})
   for c = coefficients(f)
     for i=1:pol_length(c)
       check_qadic(polcoeff(c, i))
@@ -392,17 +392,17 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
 end
 
 mutable struct RootCtxSingle{T}
-  f::PolyElem{T}
+  f::PolyRingElem{T}
   R::T  # the root
   o::T  # inv(f'(R)) for the double lifting.
 
-  function RootCtxSingle(f::PolyElem{S}, K::fqPolyRepField) where {S <: SeriesElem}
+  function RootCtxSingle(f::PolyRingElem{S}, K::fqPolyRepField) where {S <: SeriesElem}
     #not used I think
     RR,  = power_series_ring(K, max_precision(R), string(var(R)), cached = false) #can't get the model
     return RootCtxSingle(f, RR)
   end
 
-  function RootCtxSingle(f::PolyElem{<:SeriesElem{T}}, r::T) where {T}
+  function RootCtxSingle(f::PolyRingElem{<:SeriesElem{T}}, r::T) where {T}
     R = base_ring(parent(f))
     k, mk = residue_field(R)
     g = map_coefficients(mk, f)
@@ -412,7 +412,7 @@ mutable struct RootCtxSingle{T}
     return new{elem_type(R)}(f, R([r], 1, 1, 0), R([o], 1, 1, 0))
   end
 
-  function RootCtxSingle(f::PolyElem{S}, RR::fqPolyRepRelPowerSeriesRing) where {S <: SeriesElem}
+  function RootCtxSingle(f::PolyRingElem{S}, RR::fqPolyRepRelPowerSeriesRing) where {S <: SeriesElem}
     K = base_ring(RR)
     R = base_ring(f) # should be a series ring
     r = new{elem_type(RR)}()
@@ -1011,7 +1011,7 @@ function field(RC::RootCtx, m::MatElem)
   SQq, _ = power_series_ring(Qq, tf+2, "s", cached = false)
   SQqt, _ = polynomial_ring(SQq, cached = false)
 
-  mc(f) = # PolyElem{SeriesElem{Fq}} -> PolyElem{SeriesElem{Qq}}
+  mc(f) = # PolyRingElem{SeriesElem{Fq}} -> PolyRingElem{SeriesElem{Qq}}
     map_coefficients(x->map_coefficients(y->setprecision(preimage(mk, y), 1), x, parent = SQq), f, parent = SQqt)
 
 

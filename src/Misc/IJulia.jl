@@ -12,7 +12,7 @@ function Base.show(io::IO, ::MIME"text/html", a::Nemo.fpFieldElem)
   print(io, "\$")
 end
 
-function math_html(io::IO, a::PolyElem)
+function math_html(io::IO, a::PolyRingElem)
   f = "$a"
   if parent(a).S in [Symbol("_\$1")]
     f = replace(f, "_\$1" => "x")
@@ -22,7 +22,7 @@ function math_html(io::IO, a::PolyElem)
   print(io, f)
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::PolyElem)
+function Base.show(io::IO, ::MIME"text/html", a::PolyRingElem)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")

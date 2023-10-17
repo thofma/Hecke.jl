@@ -901,7 +901,7 @@ function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
   a = q +1 - order(E)
   R, x = polynomial_ring(QQ)
   f = x^2 - a*x + q
-  if isirreducible(f)
+  if is_irreducible(f)
     L, alpha = number_field(f)
     return ZZ(trace(alpha^n))
   else

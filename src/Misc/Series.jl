@@ -19,7 +19,7 @@ function Nemo.integral(f::RelPowerSeriesRingElem{T}) where T
   return g
 end
 
-function *(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
+function *(f::PolyRingElem{<:SeriesElem{qadic}}, g::PolyRingElem{<:SeriesElem{qadic}})
   if degree(f) > 2 &&  degree(g) > 2
     fg = mymul_ks(f, g)
 #    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
@@ -138,7 +138,7 @@ function mymul_ks(f::SeriesElem{qadic}, g::SeriesElem{qadic})
 end
 
 
-function mymul_ks(f::PolyElem{<:SeriesElem{qadic}}, g::PolyElem{<:SeriesElem{qadic}})
+function mymul_ks(f::PolyRingElem{<:SeriesElem{qadic}}, g::PolyRingElem{<:SeriesElem{qadic}})
   nf = degree(f)
   ng = degree(g)
   rf = minimum(precision, coefficients(f))
@@ -243,10 +243,10 @@ function rational_reconstruction(a::padic)
   return rational_reconstruction(Hecke.lift(a), prime(parent(a), precision(a)))
 end
 
-Hecke.gcd_into!(a::PolyElem, b::PolyElem, c::PolyElem) = gcd(b, c)
+Hecke.gcd_into!(a::PolyRingElem, b::PolyRingElem, c::PolyRingElem) = gcd(b, c)
 
 
-function Hecke.squarefree_part(a::PolyElem)
+function Hecke.squarefree_part(a::PolyRingElem)
   return divexact(a, gcd(a, derivative(a)))
 end
 

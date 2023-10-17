@@ -138,7 +138,7 @@ abstract type DocuDummy end
 number_field(::DocuDummy)
 
 @doc (@doc _doc_stub_nf)
-number_field(f::PolyElem{<: NumFieldElem}, s::String;
+number_field(f::PolyRingElem{<: NumFieldElem}, s::String;
             cached::Bool = false, check::Bool = false)
 
 ################################################################################

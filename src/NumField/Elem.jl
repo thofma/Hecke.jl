@@ -215,7 +215,7 @@ basis_matrix(v::Vector{<: NumFieldElem})
 ################################################################################
 
 @doc doc"""
-    charpoly(a::NumFieldElem) -> PolyElem
+    charpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the characteristic polynomial of $a$ over the base field of $K$.
@@ -223,7 +223,7 @@ the characteristic polynomial of $a$ over the base field of $K$.
 charpoly(::NumFieldElem)
 
 @doc doc"""
-    absolute_charpoly(a::NumFieldElem) -> PolyElem
+    absolute_charpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the characteristic polynomial of $a$ over the rationals $\mathbf{Q}$.
@@ -231,7 +231,7 @@ the characteristic polynomial of $a$ over the rationals $\mathbf{Q}$.
 absolute_charpoly(::NumFieldElem)
 
 @doc doc"""
-    minpoly(a::NumFieldElem) -> PolyElem
+    minpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the minimal polynomial of $a$ over the base field of $K$.
@@ -239,7 +239,7 @@ the minimal polynomial of $a$ over the base field of $K$.
 minpoly(::NumFieldElem)
 
 @doc doc"""
-    absolute_minpoly(a::NumFieldElem) -> PolyElem
+    absolute_minpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the minimal polynomial of $a$ over the rationals $\mathbf{Q}$.
@@ -409,19 +409,19 @@ absolute_norm(a::QQFieldElem) = a
 ################################################################################
 
 @doc doc"""
-    norm(f::PolyElem{<:NumFieldElem}) -> PolyElem
+    norm(f::PolyRingElem{<:NumFieldElem}) -> PolyRingElem
 
 Returns the norm of $f$, that is, the product of all conjugates of $f$ taken
 coefficientwise.
 """
-function norm(f::PolyElem{<: NumFieldElem})
+function norm(f::PolyRingElem{<: NumFieldElem})
   K = base_ring(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = elem_type(base_field(K))[tr(x) for x in P]
   return power_sums_to_polynomial(PQ)
 end
 
-function norm(f::PolyElem{<:NumFieldElem}, k::NumField)
+function norm(f::PolyRingElem{<:NumFieldElem}, k::NumField)
   K = base_ring(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = elem_type(base_field(K))[tr(x, k) for x in P]
@@ -432,21 +432,21 @@ norm(a::QQPolyRingElem) = a
 
 absolute_norm(a::QQPolyRingElem) = a
 
-function absolute_norm(f::PolyElem{nf_elem})
+function absolute_norm(f::PolyRingElem{nf_elem})
   return norm(f)
 end
 
-function absolute_norm(f::PolyElem{<: NumFieldElem})
+function absolute_norm(f::PolyRingElem{<: NumFieldElem})
   return absolute_norm(norm(f))
 end
 
-function is_irreducible(f::PolyElem{<: NumFieldElem})
+function is_irreducible(f::PolyRingElem{<: NumFieldElem})
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
   return sum(values(lf.fac)) == 1
 end
 
-function AbstractAlgebra.factor(f::PolyElem{<: NumFieldElem})
+function AbstractAlgebra.factor(f::PolyRingElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, mKa = absolute_simple_field(K)
 
@@ -457,7 +457,7 @@ function AbstractAlgebra.factor(f::PolyElem{<: NumFieldElem})
   return res
 end
 
-function roots(f::PolyElem{<: NumFieldElem})
+function roots(f::PolyRingElem{<: NumFieldElem})
   lf = factor(f)
   @assert degree(unit(lf)) == 0
   scale = inv(coeff(unit(lf), 0))
@@ -665,7 +665,7 @@ absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, Fli
 #
 ################################################################################
 
-function _integral_multiplicator(a::Union{PolyElem, MPolyElem})
+function _integral_multiplicator(a::Union{PolyRingElem, MPolyRingElem})
   return lcm(ZZRingElem[_integral_multiplicator(c) for c in coefficients(a)])
 end
 

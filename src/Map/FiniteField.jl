@@ -140,6 +140,6 @@ function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqPolyRepFi
   return minpoly(gen(codomain(mp)), mp)
 end
 
-function Nemo.any_root(f::PolyElem{T}) where T <: FinFieldElem
+function Nemo.any_root(f::PolyRingElem{T}) where T <: FinFieldElem
   return roots(f)[1]
 end

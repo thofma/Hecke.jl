@@ -355,7 +355,7 @@ function dual_space(M::ModAlgAss{S, T, V}) where {S, T, V}
   return Amodule(G)
 end
 
-function _subst(f::Nemo.PolyElem{T}, a::MatElem{T}) where {T <: Nemo.RingElement}
+function _subst(f::Nemo.PolyRingElem{T}, a::MatElem{T}) where {T <: Nemo.RingElement}
    n = degree(f)
    if n < 0
       return similar(a)

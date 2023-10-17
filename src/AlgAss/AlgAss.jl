@@ -197,12 +197,12 @@ function AlgAss(R::Ring, d::Int, arr::Vector{T}) where {T}
 end
 
 raw"""
-    associative_algebra(f::PolyElem)
+    associative_algebra(f::PolyRingElem)
 
 Associative algebra $R[x]/f$.
 """
-associative_algebra(f::PolyElem) = AlgAss(f)
-function AlgAss(f::PolyElem)
+associative_algebra(f::PolyRingElem) = AlgAss(f)
+function AlgAss(f::PolyRingElem)
   R = base_ring(parent(f))
   n = degree(f)
   Rx = parent(f)

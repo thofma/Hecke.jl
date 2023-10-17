@@ -161,7 +161,7 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   return a2, b2, fsa
 end
 
-function gcd_euclid(a::AbstractAlgebra.PolyElem{nf_elem}, b::AbstractAlgebra.PolyElem{nf_elem})
+function gcd_euclid(a::AbstractAlgebra.PolyRingElem{nf_elem}, b::AbstractAlgebra.PolyRingElem{nf_elem})
    check_parent(a, b)
    if length(a) > length(b)
       (a, b) = (b, a)
@@ -437,7 +437,7 @@ end
 #
 ################################################################################
 
-function nf_poly_to_xy(f::PolyElem, Qxy::PolyRing, Qx::PolyRing)
+function nf_poly_to_xy(f::PolyRingElem, Qxy::PolyRing, Qx::PolyRing)
   K = base_ring(f)
   Qy = parent(defining_polynomial(K))
   y = gen(Qx)
@@ -503,7 +503,7 @@ end
 
 
 
-function landau_mignotte_bound(f::PolyElem{nf_elem})
+function landau_mignotte_bound(f::PolyRingElem{nf_elem})
   Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
   for i=0:degree(f)
@@ -516,7 +516,7 @@ end
 
 
 
-function cld_bound(f::PolyElem{nf_elem}, k::Vector{Int})
+function cld_bound(f::PolyRingElem{nf_elem}, k::Vector{Int})
   @assert all(kk -> 0 <= kk < degree(f), k)
   Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
@@ -535,7 +535,7 @@ function cld_bound(f::PolyElem{nf_elem}, k::Vector{Int})
   end
   return bb
 end
-cld_bound(f::PolyElem{nf_elem}, k::Int) = cld_bound(f, [k])[1]
+cld_bound(f::PolyRingElem{nf_elem}, k::Int) = cld_bound(f, [k])[1]
 
 function cld_bound(f::ZZPolyRingElem, k::Int)
   @assert 0 <= k < degree(f)

@@ -7,7 +7,7 @@ export component, non_simple_extension
 ################################################################################
 
 @doc raw"""
-    number_field(f::Vector{PolyElem{<:NumFieldElem}}, s::String="_\$", check = true)
+    number_field(f::Vector{PolyRingElem{<:NumFieldElem}}, s::String="_\$", check = true)
                                               -> NumField, Vector{NumFieldElem}
 
 Given a list $f_1, \ldots, f_n$ of univariate polynomials in $K[x]$ over
@@ -33,7 +33,7 @@ abstract type DocuDummy2 end
 number_field(::DocuDummy2)
 
 @doc (@doc _doc_stub_nf2)
-number_field(::Vector{<:PolyElem{<:Union{NumFieldElem, QQFieldElem}}}, ::String, check::Bool = true)
+number_field(::Vector{<:PolyRingElem{<:Union{NumFieldElem, QQFieldElem}}}, ::String, check::Bool = true)
 
 ################################################################################
 #
@@ -74,7 +74,7 @@ basis(::NonSimpleNumField)
 export defining_polynomials
 
 @doc raw"""
-    defining_polynomials(L::NonSimpleNumField) -> Vector{PolyElem}
+    defining_polynomials(L::NonSimpleNumField) -> Vector{PolyRingElem}
 
 Given a non-simple number field $L/K$, constructed as $L =
 K[x]/(f_1,\dotsc,f_r)$, return the vector containing the $f_i$'s.

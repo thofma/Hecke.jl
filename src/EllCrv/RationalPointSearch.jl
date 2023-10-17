@@ -532,9 +532,9 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
 
     chunk = _chunk
     #for (j, x) in enumerate(F)
-    #  @inbounds chunk[j] = issquare(sum([az[i + 1]*x^i for i in (0:n)]))
+    #  @inbounds chunk[j] = is_square(sum([az[i + 1]*x^i for i in (0:n)]))
     #end
-    chunk = Bool[issquare(sum([az[i + 1]*x^i for i in (0:n)])) for x in F]
+    chunk = Bool[is_square(sum([az[i + 1]*x^i for i in (0:n)])) for x in F]
     chunk_odd = vcat(chunk[2:2:p], chunk[1:2:p])
     chunk_even = vcat(chunk[1:2:p], chunk[2:2:p])
 

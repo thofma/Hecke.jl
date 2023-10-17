@@ -774,13 +774,13 @@ end
 gcd_into!(a::QQPolyRingElem, b::QQPolyRingElem, c::QQPolyRingElem) = gcd(b, c)
 
 @doc raw"""
-    splitting_field(f::PolyElem{nf_elem}) -> AnticNumberField
+    splitting_field(f::PolyRingElem{nf_elem}) -> AnticNumberField
 
 Computes the splitting field of $f$ as an absolute field.
 """
-splitting_field(f::PolyElem{nf_elem}; do_roots::Bool = false) = splitting_field([f], do_roots = do_roots)
+splitting_field(f::PolyRingElem{nf_elem}; do_roots::Bool = false) = splitting_field([f], do_roots = do_roots)
 
-function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false, coprime::Bool = false)
+function splitting_field(fl::Vector{<:PolyRingElem{nf_elem}}; do_roots::Bool = false, coprime::Bool = false)
   if !coprime
     fl = coprime_base(fl)
   end
@@ -820,7 +820,7 @@ function splitting_field(fl::Vector{<:PolyElem{nf_elem}}; do_roots::Bool = false
 end
 
 
-function _splitting_field(fl::Vector{<:PolyElem{<:NumFieldElem}}; do_roots::Type{Val{T}} = Val{false}, coprime::Bool = false) where T
+function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::Type{Val{T}} = Val{false}, coprime::Bool = false) where T
   if !coprime
     fl = coprime_base(fl)
   end
