@@ -1639,14 +1639,14 @@ function vcat(P::PMat, Q::PMat)
 end
 
 function vcat(A::Vector{ <: PMat })
-  m = vcat([ P.matrix for P in A ])
-  c = vcat([ P.coeffs for P in A ]...)
+  m = reduce(vcat, [P.matrix for P in A])
+  c = reduce(vcat, [P.coeffs for P in A])
   return pseudo_matrix(m, c)
 end
 
 function vcat(A::PMat...)
-  m = vcat([ P.matrix for P in A ])
-  c = vcat([ P.coeffs for P in A ]...)
+  m = reduce(vcat, [P.matrix for P in A])
+  c = reduce(vcat, [P.coeffs for P in A])
   return pseudo_matrix(m, c)
 end
 

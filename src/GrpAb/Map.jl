@@ -86,10 +86,10 @@ function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
     isdefined(H, :exponent) && G.exponent == H.exponent
     e = G.exponent
     RR = Native.GF(Int(e))
-    fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, vcat([x.coeff for x = a])), side = :left)
+    fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, reduce(vcat, [x.coeff for x = a])), side = :left)
     p = map_entries(x -> lift(x), p)
   else
-    fl, p = can_solve_with_solution(m, vcat([x.coeff for x = a]), side = :left)
+    fl, p = can_solve_with_solution(m, reduce(vcat, [x.coeff for x = a]), side = :left)
   end
 
   if fl
@@ -159,7 +159,7 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
     return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, ZZRingElem[]), check = check)
   end
 
-  M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
+  M = reduce(vcat, [hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
   if isdefined(GB, :exponent) && nrows(M) >= ncols(M)
@@ -180,7 +180,7 @@ Creates the homomorphism which maps $G[i]$ to $B[i]$.
 function hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   GB = parent(B[1])
   @assert length(B) == ngens(G)
-  M = vcat([B[i].coeff for i = 1:length(B)])
+  M = reduce(vcat, [B[i].coeff for i = 1:length(B)])
   h = hom(G, GB, M, check = check)
   return h
 end
@@ -191,7 +191,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::
   if length(B) == 0
     M = zero_matrix(ZZ, ngens(G), ngens(H))
   else
-    M = vcat([x.coeff for x = B]...)
+    M = reduce(vcat, [x.coeff for x = B])
   end
   #=
   M = zero_matrix(FlintZZ, ngens(G), ngens(H))
@@ -620,7 +620,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
     if ngens(sG) == 0
       return R[0]
     end
-    local mm = transpose(vcat([preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)]))
+    local mm = transpose(reduce(vcat, [preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)]))
     return R([divexact(mm[j,i], c[(i-1)*m+j]) for i=1:n for j=1:m])
   end
   return R, MapFromFunc(R, MapParent(G, H, "homomorphisms"), phi, ihp)

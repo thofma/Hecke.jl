@@ -186,7 +186,7 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
   wild = [1*zk]
   for (P, e) = l3
     b = floor(Int, 3//2*(1+e))
-    wild = vcat([[P^i * x for x = wild] for i=1:b]...)
+    wild = reduce(vcat, [[P^i * x for x = wild] for i=1:b])
   end
   sort!(wild, lt = (a,b) -> norm(a) <= norm(b))
 
@@ -282,12 +282,12 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
       return
     end
 
-    m2, map2 = sub(R.M, vcat([lift(mat(x[2])) for x = i2]), !false)
+    m2, map2 = sub(R.M, reduce(vcat, [lift(mat(x[2])) for x = i2]), !false)
     sub_m2 = Hecke.stable_subgroups(m2, [GrpAbFinGenMap(map2*x*pseudo_inv(map2)) for x = R.ac], quotype = [3, 3], op = (R, x) -> sub(R, x, !false))
     m1 = []
     target_ind = 0
     for (k,v) = ii
-      m, mp = sub(R.M, vcat([lift(mat(i1[x][2])) for x = v]))
+      m, mp = sub(R.M, reduce(vcat, [lift(mat(i1[x][2])) for x = v]))
       push!(m1, mp)
       if target == k
         target_ind = length(m1)
@@ -302,7 +302,7 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
       if length(m1) == 1
         rest = sub(R.M, [R.M[0]])
       else
-        rest = sub(R.M, vcat([matrix(m1[j]) for j=1:length(m1) if i != j]), !false)
+        rest = sub(R.M, reduce(vcat, [matrix(m1[j]) for j=1:length(m1) if i != j]), !false)
       end
       for s = sub_m2
         rr = rest[1]+map2(s[2](s[1])[1])[1]
@@ -534,7 +534,7 @@ function s3_extensions2(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
   wild = [1*zk]
   for (P, e) = l3
     b = floor(Int, 3//2*(1+e))
-    wild = vcat([[P^i * x for x = wild] for i=1:b]...)
+    wild = reduce(vcat, [[P^i * x for x = wild] for i=1:b])
   end
   sort!(wild, lt = (a,b) -> norm(a) <= norm(b))
   _wild = sort(collect(Set(minimum(x) for x = wild)))
@@ -589,12 +589,12 @@ function s3_extensions2(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
       return
     end
 
-    m2, map2 = sub(R.M, vcat([lift(mat(x[2])) for x = i2]), !false)
+    m2, map2 = sub(R.M, reduce(vcat, [lift(mat(x[2])) for x = i2]), !false)
     sub_m2 = Hecke.stable_subgroups(m2, [GrpAbFinGenMap(map2*x*pseudo_inv(map2)) for x = R.ac], quotype = [3, 3], op = (R, x) -> sub(R, x, !false))
     m1 = []
     target_ind = 0
     for (k,v) = ii
-      m, mp = sub(R.M, vcat([lift(mat(i1[x][2])) for x = v]))
+      m, mp = sub(R.M, reduce(vcat, [lift(mat(i1[x][2])) for x = v]))
       push!(m1, mp)
       if target == k
         target_ind = length(m1)
@@ -609,7 +609,7 @@ function s3_extensions2(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
       if length(m1) == 1
         rest = sub(R.M, [R.M[0]])
       else
-        rest = sub(R.M, vcat([matrix(m1[j]) for j=1:length(m1) if i != j]), !false)
+        rest = sub(R.M, reduce(vcat, [matrix(m1[j]) for j=1:length(m1) if i != j]), !false)
       end
       for s = sub_m2
         rr = rest[1]+map2(s[2](s[1])[1])[1]

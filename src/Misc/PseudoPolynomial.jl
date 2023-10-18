@@ -82,7 +82,7 @@ function _contains(a::nf_elem, I)
   d = lcm(dena, lcm([denominator(id) for id in I]))
   v = matrix(FlintZZ, 1, degree(OK), coordinates(OK(d * a)))
   @assert all(isone(denominator(basis_matrix(d * id))) for id in I)
-  M = vcat([numerator(basis_matrix(d * id)) for id in I ])
+  M = reduce(vcat, [numerator(basis_matrix(d * id)) for id in I ])
   b, w = cansolve(M', v')
   @assert b
   res = nf_elem[]

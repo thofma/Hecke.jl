@@ -124,7 +124,7 @@ function is_norm(K::AnticNumberField, a::ZZRingElem; extra::Vector{ZZRingElem}=Z
     #@assert norm(evaluate(x)) == evaluate(image(mu, h[end]))
   end
   s, ms = sub(u, h)
-  mp = GrpAbFinGenMap(U, u, vcat([x.coeff for x=h]))
+  mp = GrpAbFinGenMap(U, u, reduce(vcat, [x.coeff for x=h]))
 
   fl, p = haspreimage(mp, preimage(mu, a))
   if fl
