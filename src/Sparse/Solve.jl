@@ -290,7 +290,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
     last = (sol, ZZRingElem(1))
 
     while true
-      bp = mul(bp, Tp)
+      bp = bp * Tp
       zp = solve_ut(Ep, bp)
       z = lift(zp)
 
@@ -298,7 +298,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
 
       pp *= ZZRingElem(p)
 
-  #    @hassert :HNF 1  iszero(SRow(b_orig - Hecke.mul(sol, A), pp))
+  #    @hassert :HNF 1  iszero(SRow(b_orig - sol * A, pp))
 
       if is_int
         fl = true
@@ -310,9 +310,9 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
       end
       if fl
   #      @hassert :HNF 1  SRow(de*sol, pp) == SRow(nu, pp)
-  #      @hassert :HNF 1  SRow(mul(nu, A), pp) == SRow(de*b_orig, pp)
+  #      @hassert :HNF 1  SRow(nu*A, pp) == SRow(de*b_orig, pp)
         if last == (nu, de)
-          if mul(nu, A) == de*b_orig
+          if nu*A == de*b_orig
             l = lcm(den_all, de)
             if l == den_all
               push!(sol_all, div(l, de)*nu)
@@ -329,8 +329,8 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
         end
       end
 
-  #    @hassert :HNF 1  SRow(Hecke.mul(z, A), p) == bp
-      b = b - mul(z, A)
+  #    @hassert :HNF 1  SRow(z*A, p) == bp
+      b = b - z*A
 
       for i=1:length(b.values)
   #      @hassert :HNF 1  b.values[i] % p == 0

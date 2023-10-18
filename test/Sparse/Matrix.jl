@@ -136,24 +136,24 @@ using Hecke.SparseArrays
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
   v = ZZRingElem[1, 2, 3]
-  w = @inferred mul(D, v)
+  w = @inferred D * v
   @test w == ZZRingElem[20, 0, 2]
-  w = @inferred mul(D, view(v, 1:3))
+  w = @inferred D * view(v, 1:3)
   @test w == ZZRingElem[20, 0, 2]
 
   v = ZZRingElem[1 2 3; 0 0 4; 0 0 0]
-  w = @inferred mul(D, v)
+  w = @inferred D * v
   @test w == ZZRingElem[1 2 23; 0 0 0; 0 0 4]
   v = ZZRingElem[1 1 1; 1 2 3; 0 0 4; 0 0 0]
-  w = @inferred mul(D, view(v, 2:4, :))
+  w = @inferred D * view(v, 2:4, :)
   @test w == ZZRingElem[1 2 23; 0 0 0; 0 0 4]
 
   v = matrix(FlintZZ, ZZRingElem[1 2 3; 0 0 4; 0 0 0])
-  w = @inferred mul(D, v)
+  w = @inferred D * v
   @test w == matrix(FlintZZ, ZZRingElem[1 2 23; 0 0 0; 0 0 4])
 
   v = sparse_row(FlintZZ, [2], ZZRingElem[1])
-  w = @inferred mul(v, D)
+  w = @inferred v * D
   @test w == sparse_row(FlintZZ)
 
   # Addition

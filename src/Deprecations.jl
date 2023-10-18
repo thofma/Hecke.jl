@@ -117,6 +117,14 @@
 
 # Deprecated during 0.22.*
 
+@deprecate mul(A::SMat{T}, b::AbstractVector{T}) where T A*b
+
+@deprecate mul(A::SMat{T}, b::AbstractMatrix{T}) where T A*b
+
+@deprecate mul(A::SMat{T}, b::MatElem{T}) where T A*b
+
+@deprecate mul(A::SRow{T}, B::SMat{T}) where T A*B
+
 @deprecate field_of_fractions(O::GenOrd) function_field(O::GenOrd)
 
 # Things that moved to Nemo

@@ -471,7 +471,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
   if support === Val{false}
     return true, e
   else
-    prime_exponents = mul(sparse_row(FlintZZ, collect(1:length(base)), rs), vcat(c.M.bas_gens, c.M.rel_gens))
+    prime_exponents = sparse_row(FlintZZ, collect(1:length(base)), rs) * vcat(c.M.bas_gens, c.M.rel_gens)
     prime_exp = [ prime_exponents[i] for i in 1:length(c.FB.ideals)]
     invx = inv(x)
     dinvx = denominator(invx)
