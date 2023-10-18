@@ -814,7 +814,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpA
     error("both groups need to be direct products")
   end
   @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
-  h = hom(G, H, vcat([hcat([matrix(A[i,j]) for j=1:c]) for i=1:r]))
+  h = hom(G, H, vcat([reduce(hcat, [matrix(A[i,j]) for j=1:c]) for i=1:r]))
   return h
 end
 

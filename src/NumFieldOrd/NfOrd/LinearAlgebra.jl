@@ -1659,13 +1659,13 @@ end
 
 function hcat(A::Vector{ <: PMat })
   @assert all( P -> P.coeffs == A[1].coeffs, A)
-  m = hcat([ P.matrix for P in A ])
+  m = reduce(hcat, [P.matrix for P in A])
   return pseudo_matrix(m, A[1].coeffs)
 end
 
 function hcat(A::PMat...)
   @assert all( P -> P.coeffs == A[1].coeffs, A)
-  m = hcat([ P.matrix for P in A ])
+  m = reduce(hcat, [P.matrix for P in A])
   return pseudo_matrix(m, A[1].coeffs)
 end
 

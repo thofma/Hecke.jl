@@ -486,7 +486,7 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
   II, d = pseudo_inv(I)
   @assert II*I == d
 
-  m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
+  m = reduce(hcat, [divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)])
   m = transpose(m)
   if is_prime
     x = residue_field(parent(p), p)
@@ -534,7 +534,7 @@ function ring_of_multipliers(O::GenOrd, I::MatElem)
   II, d = pseudo_inv(I)
   @assert II*I == d
 
-  m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
+  m = reduce(hcat, [divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)])
   m = transpose(m)
   n = degree(O)
   mm = hnf(m[1:n, 1:n])
