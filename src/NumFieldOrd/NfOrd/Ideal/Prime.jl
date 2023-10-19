@@ -1343,7 +1343,7 @@ function _fac_and_lift(f::QQMPolyRingElem, p, degree_limit, lower_limit)
   return lifted_fac
 end
 
-function is_pairwise_coprime(A::Vector{T}) where {T <: PolyElem}
+function is_pairwise_coprime(A::Vector{T}) where {T <: PolyRingElem}
   return is_squarefree(prod(A))
 end
 

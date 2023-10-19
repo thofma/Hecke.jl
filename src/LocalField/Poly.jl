@@ -54,7 +54,7 @@ end
 #  E = eisenstein_extension(cyclotomic(3, gen(Hecke.Globals.Zx))(t+1))[1]
 #  Es, s = E["s"]
 #  roots(s^9-1) #at precision 100, drops from 3 to 1 sec..
-function Nemo.use_karamul(a::PolyElem{T}, b::PolyElem{T}) where T <: Union{padic, qadic, Hecke.LocalFieldElem}
+function Nemo.use_karamul(a::PolyRingElem{T}, b::PolyRingElem{T}) where T <: Union{padic, qadic, Hecke.LocalFieldElem}
 
    return length(a) > 50 && length(b) > 50
 end
@@ -459,7 +459,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return (DD, UU, VV)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
 end
 
-function divexact(f1::AbstractAlgebra.PolyElem{T}, g1::AbstractAlgebra.PolyElem{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyRingElem{T}) where T <: Union{padic, qadic, LocalFieldElem}
    check_parent(f1, g1)
    iszero(g1) && throw(DivideError())
    if iszero(f1)
@@ -509,8 +509,8 @@ end
 #
 ################################################################################
 
-reduced_resultant(f::T, g::T) where T <: PolyElem = rres(f, g)
-reduced_discriminant(f::PolyElem) = rres(f, derivative(f))
+reduced_resultant(f::T, g::T) where T <: PolyRingElem = rres(f, g)
+reduced_discriminant(f::PolyRingElem) = rres(f, derivative(f))
 
 function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
   Kt = parent(f)
@@ -709,7 +709,7 @@ end
 
 base_field(Q::FlintQadicField) = base_ring(defining_polynomial(Q))
 
-function norm(f::PolyElem{T}) where T <: Union{qadic, LocalFieldElem}
+function norm(f::PolyRingElem{T}) where T <: Union{qadic, LocalFieldElem}
   Kx = parent(f)
   K = base_ring(f)
   f, i = deflate(f)
@@ -842,9 +842,9 @@ end
 
 
 mutable struct HenselCtxdr{S}
-  f::PolyElem{S}
-  lf::Vector{PolyElem{S}}
-  la::Vector{PolyElem{S}}
+  f::PolyRingElem{S}
+  lf::Vector{PolyRingElem{S}}
+  la::Vector{PolyRingElem{S}}
   p::S #always the uniformizer
   n::Int
 
@@ -853,7 +853,7 @@ mutable struct HenselCtxdr{S}
     return new(f, lfp, la, p, n)
   end
 
-  function HenselCtxdr{T}(f::S, lfp::Vector{S}) where {S <: PolyElem{T}} where T <: Union{padic, qadic, LocalFieldElem}
+  function HenselCtxdr{T}(f::S, lfp::Vector{S}) where {S <: PolyRingElem{T}} where T <: Union{padic, qadic, LocalFieldElem}
     # @assert sum(map(degree, lfp)) == degree(f)
 #    if sum(map(degree, lfp)) < degree(f)
 #      push!(lfp, one(parent(lfp[1])))
@@ -876,7 +876,7 @@ mutable struct HenselCtxdr{S}
     return new(f, lfp, la, uniformizer(Q), n)
   end
 
-  function HenselCtxdr{S}(f::PolyElem{S}, lfp::Vector{T}) where {S, T}
+  function HenselCtxdr{S}(f::PolyRingElem{S}, lfp::Vector{T}) where {S, T}
 #    if sum(map(degree, lfp)) < degree(f)
 #      push!(lfp, one(parent(lfp[1])))
 #    end
@@ -899,7 +899,7 @@ mutable struct HenselCtxdr{S}
     return new(f, map(x -> map_coefficients(y -> setprecision(lift(y, Q), 1), x, parent = Qx), lfp), la, uniformizer(Q), n)
   end
 
-  function HenselCtxdr{S}(f::PolyElem{S}) where S
+  function HenselCtxdr{S}(f::PolyRingElem{S}) where S
     Q = base_ring(f)
     K, mK = residue_field(Q)
     fp = change_base_ring(f, mK)

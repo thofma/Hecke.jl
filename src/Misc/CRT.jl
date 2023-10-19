@@ -270,11 +270,11 @@ end
 
 
 @doc raw"""
-    crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
+    crt(r1::PolyRingElem, m1::PolyRingElem, r2::PolyRingElem, m2::PolyRingElem) -> PolyRingElem
 
 Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
 """
-function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T}) where T
+function crt(r1::PolyRingElem{T}, m1::PolyRingElem{T}, r2::PolyRingElem{T}, m2::PolyRingElem{T}) where T
   g, u, v = gcdx(m1, m2)
   m = m1*m2
   return (r1*v*m2 + r2*u*m1) % m
@@ -451,12 +451,12 @@ function induce_crt(a::ZZPolyRingElem, p::ZZRingElem, b::ZZPolyRingElem, q::ZZRi
 end
 
 @doc raw"""
-    induce_crt(L::Vector{PolyElem}, c::crt_env{ZZRingElem}) -> ZZPolyRingElem
+    induce_crt(L::Vector{PolyRingElem}, c::crt_env{ZZRingElem}) -> ZZPolyRingElem
 
 Given ZZRingElem\_poly polynomials $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
-function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyElem}
+function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyRingElem}
   Zx, x = FlintZZ["x"]
   res = Zx()
   m = maximum(degree(x) for x = L)

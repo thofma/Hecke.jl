@@ -193,7 +193,7 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
 
 
   if j1!=0 && j1!=1728
-    return issquare(c6//_c6)
+    return is_square(c6//_c6)
   else
     Rx, x = polynomial_ring(K, "x")
     if j1 == 1728
@@ -309,7 +309,7 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   _c4, _c6 = c_invars(E2)
   usq = (c6//_c6)//(c4//_c4)
 
-  issquare(usq) || error("Curves are not isomorphic")
+  is_square(usq) || error("Curves are not isomorphic")
   u = sqrt(usq)
   phi = isomorphism(E1s, [0, 0, 0, u])
   F = codomain(phi)

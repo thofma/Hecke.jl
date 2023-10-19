@@ -880,7 +880,7 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   return approx_dv, approx_ev
 end
 
-function refine_alpha_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb, r::arb, alpha_bound::arb, prec)
+function refine_alpha_bound(P::PolyRingElem, Q::PolyRingElem, E,  mu::arb, a::arb, b::arb, r::arb, alpha_bound::arb, prec)
 
   C = AcbField(prec, cached = false)
   Rc = ArbField(prec, cached = false)
@@ -925,7 +925,7 @@ end
 
 
 
-function refine_beta_bound(P::PolyElem, Q::PolyElem, E,  mu::arb, a::arb, b::arb, r::arb, beta_bound::arb, prec)
+function refine_beta_bound(P::PolyRingElem, Q::PolyRingElem, E,  mu::arb, a::arb, b::arb, r::arb, beta_bound::arb, prec)
 
   C = AcbField(prec, cached = false)
   Rc = ArbField(prec, cached = false)

@@ -591,7 +591,7 @@ function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
   return K, MapFromFunc(R, K, x->K(x), y->R(y))
 end
 
-function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T}
+function (F::Generic.FunctionField{T})(p::PolyRingElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
   R = parent(gen(F).num)
@@ -1352,7 +1352,7 @@ G, b = function_field(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
 module FactorFF
 using Hecke
 
-function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
+function Hecke.norm(f::PolyRingElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = elem_type(base_field(K))[tr(x) for x in P]

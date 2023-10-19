@@ -22,15 +22,15 @@
 #  return QQFieldElem(n, d)
 #end
 #
-#function serialize(s::AbstractSerializer, t::PolyElem{T}) where T
-#  Serialization.serialize_type(s, PolyElem{T})
+#function serialize(s::AbstractSerializer, t::PolyRingElem{T}) where T
+#  Serialization.serialize_type(s, PolyRingElem{T})
 #  serialize(s, length(t))
 #  for i=0:length(t)
 #    serialize(s, coeff(t, i))
 #  end
 #end
 #
-#function deserialize(s::AbstractSerializer, ::Type{PolyElem{T}}) where T
+#function deserialize(s::AbstractSerializer, ::Type{PolyRingElem{T}}) where T
 #  L = T[]
 #  l = deserialize(s)
 #  for i=0:l

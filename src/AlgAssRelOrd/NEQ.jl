@@ -412,7 +412,7 @@ function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ 
   return _as_subfield(A, x, minpoly(x))
 end
 
-function _as_subfield(A::AbsAlgAss{QQFieldElem}, x::AbsAlgAssElem{QQFieldElem}, f::PolyElem{QQFieldElem})
+function _as_subfield(A::AbsAlgAss{QQFieldElem}, x::AbsAlgAssElem{QQFieldElem}, f::PolyRingElem{QQFieldElem})
   s = one(A)
   M = zero_matrix(FlintQQ, degree(f), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -424,7 +424,7 @@ function _as_subfield(A::AbsAlgAss{QQFieldElem}, x::AbsAlgAssElem{QQFieldElem}, 
   return K, NfAbsToAbsAlgAssMor(K, A, M)
 end
 
-function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}, f::PolyElem{T}) where { T <: Union{ nf_elem, NfRelElem } }
+function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}, f::PolyRingElem{T}) where { T <: Union{ nf_elem, NfRelElem } }
   s = one(A)
   M = zero_matrix(base_ring(A), degree(f), dim(A))
   elem_to_mat_row!(M, 1, s)

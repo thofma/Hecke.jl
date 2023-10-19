@@ -214,7 +214,7 @@ end
 
 
 @doc raw"""
-    companion_matrix(p::PolyElem) -> MatElem
+    companion_matrix(p::PolyRingElem) -> MatElem
 
 Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
 
@@ -226,7 +226,7 @@ Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
     $-a_0$  $-a_1$  $-a_2$  $\dots$  $-a_{n-1}$
 
 """
-function companion_matrix(p::PolyElem)
+function companion_matrix(p::PolyRingElem)
   K = base_ring(p)
   p1 = divexact(p, leading_coefficient(p))
   M = zero_matrix(K, degree(p), degree(p))
@@ -239,7 +239,7 @@ function companion_matrix(p::PolyElem)
   return M
 end
 
-function jordan_block(p::PolyElem, e::Int)
+function jordan_block(p::PolyRingElem, e::Int)
   K = base_ring(p)
   M = zero_matrix(K, degree(p)*e, degree(p)*e)
   C = companion_matrix(p)
@@ -336,7 +336,7 @@ function maximal_vector(M::MatElem{T}, Kt, max_deg::Int = -1) where T <: FieldEl
 end
 
 #Finds a1, b1 such that a1*b1 = a*b/gcd(a, b) and a1, b1 are coprime
-function coprime_fact(a::PolyElem{T}, b::PolyElem{T}) where T <: FieldElem
+function coprime_fact(a::PolyRingElem{T}, b::PolyRingElem{T}) where T <: FieldElem
   d = gcd(a, b)
   if isone(d)
     return a, b
@@ -501,7 +501,7 @@ function pre_factorization(pols::Vector)
   return factors
 end
 
-function factor_over(f::PolyElem{T}, l::Vector) where T <: FieldElem
+function factor_over(f::PolyRingElem{T}, l::Vector) where T <: FieldElem
   exps = Vector{Int}(undef, length(l))
   for i = 1:length(l)
     exps[i] = Int(valuation(f, l[i]))

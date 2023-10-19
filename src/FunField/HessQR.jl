@@ -352,7 +352,7 @@ function Nemo.residue_ring(a::HessQR, b::HessQRElem)
      y->HessQRElem(a, ZZRingElem(1), lift(parent(b.f), numerator(y, false)), lift(parent(b.f), denominator(y, false))))
 end
 
-function +(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
+function +(a::FracElem{T}, b::FracElem{T}) where T <: PolyRingElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
   na = numerator(a, false)
   da = denominator(a, false)
 
@@ -365,7 +365,7 @@ function +(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} whe
   return parent(a)(da, db)
 end
 
-function -(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
+function -(a::FracElem{T}, b::FracElem{T}) where T <: PolyRingElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
   na = numerator(a, false)
   da = denominator(a, false)
 
@@ -378,7 +378,7 @@ function -(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} whe
   return parent(a)(da, db)
 end
 
-function *(a::FracElem{T}, b::FracElem{T}) where T <: PolyElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
+function *(a::FracElem{T}, b::FracElem{T}) where T <: PolyRingElem{<:ResElem{S}} where S <: Hecke.IntegerUnion
   na = numerator(a, false)
   da = denominator(a, false)
 

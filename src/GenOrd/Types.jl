@@ -172,7 +172,7 @@ end
     z.order = O
     if isa(b, KInftyElem)
       b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyElem)
+    elseif isa(b, PolyRingElem)
       b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
     end
     z.num = a

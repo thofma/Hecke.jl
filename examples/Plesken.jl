@@ -36,7 +36,7 @@ function steinitz(a::ResElem{ZZRingElem})
   return lift(a)
 end
 
-function steinitz(a::ResElem{T}) where T <: Union{zzModPolyRingElem, fqPolyRepPolyRingElem, PolyElem}
+function steinitz(a::ResElem{T}) where T <: Union{zzModPolyRingElem, fqPolyRepPolyRingElem, PolyRingElem}
   f = [steinitz(coeff(a.data, i))::ZZRingElem for i=0:degree(a.data)]
   ZZx = polynomial_ring(FlintZZ)[1]
   S = base_ring(base_ring(parent(a)))
@@ -83,7 +83,7 @@ function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: Union{fqPolyRepP
   return f
 end
 
-function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyElem
+function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyRingElem
   R = parent(a)
   RX, X = polynomial_ring(R)
   o = Set{typeof(X)}()
@@ -97,7 +97,7 @@ function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyElem
   return f
 end
 
-function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fqPolyRepPolyRingElem}
+function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyRingElem, fqPolyRepPolyRingElem}
   R = parent(a)
   S = base_ring(base_ring(R))
   M = matrix_space(S, deg, degree(R.modulus))()

@@ -492,7 +492,7 @@ K"orper definieren ??
   return L3[1]
 end
 
-function Q1Q2(f::PolyElem)
+function Q1Q2(f::PolyRingElem)
   q1 = parent(f)()
   q2 = parent(f)()
   g = gen(parent(f))

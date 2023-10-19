@@ -214,7 +214,7 @@ function _my_eval(a, x::T) where T
   return finish(b)
 end
 my_eval(a::AbstractVector{T}, x::T) where {T} = _my_eval(a, x)
-function my_eval(f::PolyElem{T}, x::T) where T
+function my_eval(f::PolyRingElem{T}, x::T) where T
   return _my_eval(coefficients(f), x)
 end
 

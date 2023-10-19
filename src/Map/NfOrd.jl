@@ -218,7 +218,7 @@ function (f::NfOrdQuoMap)(I::NfOrdIdl)
 end
 
 
-function (f::NfOrdQuoMap)(p::PolyElem{NfOrdElem})
+function (f::NfOrdQuoMap)(p::PolyRingElem{NfOrdElem})
   F = codomain(f)
   Fx,_ = polynomial_ring(F, "_\$", cached = false)
 
@@ -712,7 +712,7 @@ function extend(f::T, K::AnticNumberField) where T <: Union{NfOrdToFqNmodMor, Nf
 end
 
 #=
-function (f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor})(p::PolyElem{NfOrdElem})
+function (f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor})(p::PolyRingElem{NfOrdElem})
   return map_coefficients(f, p)
 end
 =#

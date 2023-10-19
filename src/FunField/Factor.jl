@@ -1,7 +1,7 @@
 module FactorFF
 using Hecke
 
-function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
+function Hecke.norm(f::PolyRingElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = elem_type(base_field(K))[tr(x) for x in P]

@@ -31,7 +31,7 @@ the narrow class group, or strict class group.
 ```@docs
 ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
 class_group(K::Nemo.AnticNumberField)
-norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
+norm_group(f::Nemo.PolyRingElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
 norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
 ```
 

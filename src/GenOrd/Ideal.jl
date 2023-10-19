@@ -227,7 +227,7 @@ end
 ###########################################################################################
 
 
-(O::GenOrd)(p::PolyElem) = O(O.F(p))
+(O::GenOrd)(p::PolyRingElem) = O(O.F(p))
 Hecke.is_commutative(O::GenOrd) = true
 
 Nemo.elem_type(::Type{GenOrd}) = GenOrdElem
@@ -391,7 +391,7 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
   O = order(A)
   if isa(b, KInftyElem)
     b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyElem)
+  elseif isa(b, PolyRingElem)
     b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
   end
   bm = divexact(basis_matrix(A), b)
@@ -439,7 +439,7 @@ function assure_has_minimum(A::GenOrdIdl)
 
   if isa(den, KInftyElem)
     A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
-  elseif isa(den, PolyElem)
+  elseif isa(den, PolyRingElem)
     A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
   end
 
@@ -472,7 +472,7 @@ function assure_has_norm(A::GenOrdIdl)
     b = det(basis_matrix(A))
     if isa(b, KInftyElem)
       A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyElem)
+    elseif isa(b, PolyRingElem)
       A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
     end
     return nothing
@@ -482,7 +482,7 @@ function assure_has_norm(A::GenOrdIdl)
     b = det(basis_matrix(A))
     if isa(b, KInftyElem)
       A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyElem)
+    elseif isa(b, PolyRingElem)
       A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
     end
     return nothing
@@ -492,7 +492,7 @@ function assure_has_norm(A::GenOrdIdl)
   b = det(basis_matrix(A))
   if isa(b, KInftyElem)
     A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyElem)
+  elseif isa(b, PolyRingElem)
     A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
   end
   return nothing
@@ -598,7 +598,7 @@ function Hecke.index(O::GenOrd)
   return index
 end
 
-function prime_dec_nonindex(O::GenOrd, p::PolyElem, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0)
   K, mK = residue_field(parent(p),p)
   fact = factor(poly_to_residue(K, O.F.pol))
   result = []

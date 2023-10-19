@@ -107,7 +107,7 @@ mutable struct CoerceMap{D, C} <: Map{D, C, HeckeMap, CoerceMap}
     return z
   end
 
-  function CoerceMap(domain::Generic.ResidueRing{S}, codomain::Generic.ResidueRing{T}) where {S, T <: PolyElem}
+  function CoerceMap(domain::Generic.ResidueRing{S}, codomain::Generic.ResidueRing{T}) where {S, T <: PolyRingElem}
     z = new{Generic.ResidueRing{S}, Generic.ResidueRing{T}}()
 
     image = function(a::Generic.ResidueRingElem)

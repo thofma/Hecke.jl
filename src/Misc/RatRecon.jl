@@ -10,12 +10,12 @@ export rational_reconstruction, farey_lift, berlekamp_massey
 
 
 @doc raw"""
-    rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
+    rational_reconstruction(a::PolyRingElem{S}, b::PolyRingElem{S}, n::Int, m::Int)
 
  Returns `true` and $x, y$ s.th. $ay = x mod b$ and $degree(x) <= n$, $degree(y) <= m$
    or `false` (and garbage) if this is not possible.
 """
-function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int) where S
+function rational_reconstruction(a::PolyRingElem{S}, b::PolyRingElem{S}, n::Int, m::Int) where S
   R = a.parent
   if degree(a) <= n return true, a, R(1); end
 
@@ -40,12 +40,12 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 end
 
 @doc raw"""
-    rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
+    rational_reconstruction{S}(a::PolyRingElem{S}, b::PolyRingElem{S})
 
  Returns `true` and $x/y$ s.th. $ay = x mod b$ and $degree(x), degree(y) <= degree(b)/2$
    or `false` (and garbage) if this is not possible. Shortcut to the more general function.
 """
-function rational_reconstruction(a::PolyElem{T}, b::PolyElem{T}; ErrorTolerant::Bool = false) where T
+function rational_reconstruction(a::PolyRingElem{T}, b::PolyRingElem{T}; ErrorTolerant::Bool = false) where T
   return rational_reconstruction_subres(a, b, ErrorTolerant = ErrorTolerant)
 end
 function rational_reconstruction(a::QQPolyRingElem, b::QQPolyRingElem; ErrorTolerant::Bool = false)
@@ -169,7 +169,7 @@ end
 # from Dereje
 ###############################################################################
 
-function rational_reconstruction_subres(g::PolyElem{T}, f::PolyElem{T}, bnd::Int = -1; ErrorTolerant::Bool = false) where T
+function rational_reconstruction_subres(g::PolyRingElem{T}, f::PolyRingElem{T}, bnd::Int = -1; ErrorTolerant::Bool = false) where T
     # the denominator is normalized
     R_2 = g.parent
     r_1 = R_2(1); t_1 = R_2(0)

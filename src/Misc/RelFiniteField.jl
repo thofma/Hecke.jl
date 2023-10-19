@@ -5,12 +5,12 @@
 ################################################################################
 
 mutable struct RelFinField{T} <: FinField
-  defining_polynomial::PolyElem{T}
+  defining_polynomial::PolyRingElem{T}
   var::Symbol
   absolute_field::Nemo.FinFieldMorphism
   basis_tr::Vector{T}
 
-  function RelFinField(f::PolyElem{T}, v::Symbol) where T
+  function RelFinField(f::PolyRingElem{T}, v::Symbol) where T
     K = new{T}()
     K.defining_polynomial = f
     K.var = v
@@ -175,7 +175,7 @@ function (F::RelFinField{T})(x::S) where {S <: IntegerUnion, T}
   return F(parent(defining_polynomial(F))(x))
 end
 
-function (F::RelFinField{T})(x::PolyElem{T}) where T
+function (F::RelFinField{T})(x::PolyRingElem{T}) where T
   r = mod(x, defining_polynomial(F))
   return RelFinFieldElem{typeof(F), typeof(r)}(F, r)
 end
@@ -556,7 +556,7 @@ function Native.finite_field(f::T, s::String = "a" ; cached::Bool = true, check:
   return F, gen(F)
 end
 
-function Native.finite_field(f::PolyElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
+function Native.finite_field(f::PolyRingElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
   if check
     @assert is_irreducible(f)
   end
@@ -732,7 +732,7 @@ end
 #
 ################################################################################
 
-function factor(f::PolyElem{T}) where T <: RelFinFieldElem
+function factor(f::PolyRingElem{T}) where T <: RelFinFieldElem
   K = base_ring(f)
   Kx = parent(f)
   F, mF = absolute_field(K)
@@ -747,14 +747,14 @@ function factor(f::PolyElem{T}) where T <: RelFinFieldElem
   return Fac(map_coefficients(mF, lfF.unit, parent = Kx), facs)
 end
 
-function is_irreducible(f::PolyElem{T}) where T <: RelFinFieldElem
+function is_irreducible(f::PolyRingElem{T}) where T <: RelFinFieldElem
   l = factor(f)
   return length(l.fac) == 1
 end
 
 
 
-function norm(f::PolyElem{fqPolyRepFieldElem})
+function norm(f::PolyRingElem{fqPolyRepFieldElem})
   Fx = parent(f)
   Fp = prime_field(base_ring(Fx))
   Fpx = polynomial_ring(Fp, "x", cached = false)[1]

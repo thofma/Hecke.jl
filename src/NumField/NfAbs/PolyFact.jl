@@ -1,20 +1,20 @@
 abstract type Hensel end
 
 mutable struct HenselCtxQadic <: Hensel
-  f::PolyElem{qadic}
-  lf::Vector{PolyElem{qadic}}
-  la::Vector{PolyElem{qadic}}
+  f::PolyRingElem{qadic}
+  lf::Vector{PolyRingElem{qadic}}
+  la::Vector{PolyRingElem{qadic}}
   p::qadic
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
   #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fqPolyRepPolyRingElem})
+  function HenselCtxQadic(f::PolyRingElem{qadic}, lfp::Vector{fqPolyRepPolyRingElem})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     K, mK = residue_field(Q)
     i = 1
-    la = Vector{PolyElem{qadic}}()
+    la = Vector{PolyRingElem{qadic}}()
     n = length(lfp)
     while i < length(lfp)
       f1 = lfp[i]
@@ -29,7 +29,7 @@ mutable struct HenselCtxQadic <: Hensel
     return new(f, map(x->setprecision(map_coefficients(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
-  function HenselCtxQadic(f::PolyElem{qadic})
+  function HenselCtxQadic(f::PolyRingElem{qadic})
     Q = base_ring(f)
     K, mK = residue_field(Q)
     fp = map_coefficients(mK, f, cached = false)
@@ -113,8 +113,8 @@ end
 # tighter implementation
 mutable struct HenselCtxPadic <: Hensel
   X::HenselCtx
-  f::PolyElem{padic}
-  function HenselCtxPadic(f::PolyElem{padic})
+  f::PolyRingElem{padic}
+  function HenselCtxPadic(f::PolyRingElem{padic})
     r = new()
     r.f = f
     Zx = polynomial_ring(FlintZZ, cached = false)[1]
@@ -231,13 +231,13 @@ function is_prime_nice(K::AnticNumberField, p::Int)
 end
 
 @doc raw"""
-    factor_new(f::PolyElem{nf_elem}) -> Vector{PolyElem{nf_elem}}
+    factor_new(f::PolyRingElem{nf_elem}) -> Vector{PolyRingElem{nf_elem}}
 
 Direct factorisation over a number field, using either Zassenhaus' approach
 with the potentially exponential recombination or a van Hoeij like approach using LLL.
 The decision is based on the number of local factors.
 """
-function factor_new(f::PolyElem{nf_elem})
+function factor_new(f::PolyRingElem{nf_elem})
   k = base_ring(f)
   local zk::NfOrd
   if is_maximal_order_known(k)
@@ -322,7 +322,7 @@ function degree_set(fa::Dict{Int, Int})
 end
 
 @doc raw"""
-    zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyElem{nf_elem}}
+    zassenhaus(f::PolyRingElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyRingElem{nf_elem}}
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
@@ -330,7 +330,7 @@ is computed. In the last step, all combinations of the local factors are tried t
 correct factorisation.
 $f$ needs to be square-free and square-free modulo $P$ as well.
 """
-function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
+function zassenhaus(f::PolyRingElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
   @vprintln :PolyFactor 1 "Using (relative) Zassenhaus"
 
   K = base_ring(parent(f))
@@ -530,7 +530,7 @@ end
 
 
 @doc raw"""
-    van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyElem{nf_elem}}
+    van_hoeij(f::PolyRingElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyRingElem{nf_elem}}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
 $P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
@@ -538,7 +538,7 @@ to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
-function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
+function van_hoeij(f::PolyRingElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   @vprintln :PolyFactor 1 "Using (relative) van Hoeij"
   @vprintln :PolyFactor 2 "with p = $P"
   @assert all(x->denominator(x) == 1, coefficients(f))
@@ -868,7 +868,7 @@ end
 # fixed "most" of it...
 #Update: f, K large enough, this wins. Need bounds...
 
-function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
+function norm_mod(f::PolyRingElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   K = base_ring(f)
   k = Native.GF(p)
   s = 0
@@ -903,7 +903,7 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   return lift(Zx, pol)
 end
 
-function norm_mod(f::PolyElem{nf_elem}, Zx::ZZPolyRing = Globals.Zx)
+function norm_mod(f::PolyRingElem{nf_elem}, Zx::ZZPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.
   # equivalently: the norm is integral...
   p = p_start
