@@ -36,6 +36,8 @@ is_commutative(O::AlgAssAbsOrd) = is_commutative(algebra(O))
 
 is_maximal_known(O::AlgAssAbsOrd) = O.is_maximal != 0
 
+@inline is_maximal_known_and_maximal(O::AlgAssAbsOrd) = isone(O.is_maximal)
+
 @doc raw"""
     is_maximal(O::AlgAssAbsOrd) -> Bool
 
@@ -134,72 +136,6 @@ function Order(A::S, M::FakeFmpqMat; check::Bool = true, cached::Bool = true) wh
   else
     return AlgAssAbsOrd{S, elem_type(S)}(A, deepcopy(M), cached)
   end
-end
-
-function _order(A::S, gens::Vector{T}; cached::Bool = true, check::Bool = true) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
-  if one(A) in gens
-    cur = gens
-  else
-    cur = append!([one(A)], gens)
-  end
-  local Bmat::FakeFmpqMat
-  Bmat = basis_matrix(cur, FakeFmpqMat)
-  if length(cur) > dim(A)
-    # There are too many generators, so we replace them by
-    # a basis for the Z-span
-    Bmat = hnf!(Bmat)
-    # We need to cut it off :(
-    # This is an upper-right HNF
-    nn = 1
-    while is_zero_row(Bmat, nn)
-      nn += 1
-    end
-
-    if nn != 1
-      Bmat = FakeFmpqMat(Bmat.num[nn:nrows(Bmat), 1:ncols(Bmat)], Bmat.den)
-    end
-    cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
-    gens = cur_bas
-  else
-    cur_bas = [elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
-  end
-
-  prods = Vector{elem_type(A)}(undef, 2 * length(cur_bas) * length(gens))
-
-  while true
-    k = length(cur_bas)
-    resize!(prods, 2*k*length(gens))
-    l = 1
-    for i = 1:k
-      for j in 1:length(gens)
-        if isdefined(prods, l)
-          mul!(prods[l], cur_bas[i], gens[j])
-        else
-          prods[l] = cur_bas[i] * gens[j]
-        end
-        l +=1
-        if isdefined(prods, l)
-          mul!(prods[l], gens[j], cur_bas[i])
-        else
-          prods[l] = gens[j] * cur_bas[i]
-        end
-        l += 1
-      end
-    end
-    Ml = hnf(basis_matrix(prods, FakeFmpqMat))
-    r = findfirst(i -> !is_zero_row(Ml.num, i), 1:nrows(Ml))
-    nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
-    if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
-      break
-    end
-    Bmat = nBmat
-    cur_bas = elem_type(A)[elem_from_mat_row(A, Bmat.num, i, Bmat.den) for i in 1:nrows(Bmat)]
-  end
-  if nrows(Bmat) != dim(A)
-    error("Elements do not generate an order")
-  end
-
-  return Order(A, Bmat, cached = cached, check = check)
 end
 
 function _equation_order(A::AbsAlgAss{QQFieldElem})
@@ -315,6 +251,11 @@ function basis_alg(O::AlgAssAbsOrd{S, T}; copy::Bool = true) where {S, T}
   else
     return O.basis_alg::Vector{T}
   end
+end
+
+function basis(O::AlgAssAbsOrd{S, T}, A::S; copy::Bool = true) where {S, T}
+  @req algebra(O) === A "Algebras do not match"
+  return basis_alg(O, copy = copy)
 end
 
 ################################################################################

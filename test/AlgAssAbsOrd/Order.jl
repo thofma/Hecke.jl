@@ -213,4 +213,46 @@
     O = maximal_order(A)
     @test discriminant(O) == 1
   end
+
+  @testset "order by generators" begin
+    Qx, x = QQ["x"]
+    A = associative_algebra(x^4 - 10*x^2 + 1) # number field QQ(sqrt(2), sqrt(3))
+    a = basis(A)[2]
+    b = 1//2*a^3 - 9//2*a # sqrt(2)
+    c = 1//2*a^3 - 11//2*a # sqrt(3)
+
+    O = Order(A, [ a, b, a*b ])
+    @test discriminant(O) == 9216
+    @test O == Order(A, [ a, b ])
+    @test O == Order(A, [ a, b ], check = false)
+
+    d = 1//4*a^3 + 1//4*a^2 + 3//4*a + 3//4
+    OO = Hecke._order(A, [d], extends = O)
+    @test is_maximal(OO)
+    @test_throws ErrorException Order(A, [ b ])
+
+    # Example where the non-commutative stuff happens:
+    # One needs to multiply "from both sides" and the "while true" loop in
+    # _order is necessary
+    # This is basically the example above but as 3x3 matrices
+    K, a = number_field(x^4 - 10*x^2 + 1, "a")
+    b = 1//2*a^3 - 9//2*a # sqrt(2)
+    c = 1//2*a^3 - 11//2*a # sqrt(3)
+    A = matrix_algebra(K, 3)
+    B, BtoA = Hecke.restrict_scalars(A, QQ)
+    g = map(z -> preimage(BtoA, z), [
+                                     A(matrix(K, [ b 0 0; 0 0 0; 0 0 0 ])),
+                                     A(matrix(K, [ c 0 0; 0 0 0; 0 0 0 ])),
+                                     A(matrix(K, [ 0 1 0; 0 0 0; 0 0 0 ])),
+                                     A(matrix(K, [ 0 0 0; 0 0 1; 0 0 0 ])),
+                                     A(matrix(K, [ 0 0 0; 1 0 0; 0 0 0 ])),
+                                     A(matrix(K, [ 0 0 0; 0 0 0; 0 1 0 ]))
+                                    ])
+    O = Order(B, g)
+    @test discriminant(O) == ZZ(9216)^9
+    @test O == Order(B, g, check = false)
+    d = 1//4*a^3 + 1//4*a^2 + 3//4*a + 3//4
+    OO = Hecke._order(B, [BtoA\A(matrix(K, [ d 0 0; 0 0 0; 0 0 0 ]))], extends = O)
+    @test discriminant(OO) == ZZ(2304)^9
+  end
 end
