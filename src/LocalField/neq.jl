@@ -205,7 +205,7 @@ end
 function coordinates(a::Union{qadic, LocalFieldElem}, k)
   c = [coeff(a, i) for i=0:degree(parent(a))-1]
   while absolute_degree(parent(c[1])) > absolute_degree(k)
-    c = vcat([[coeff(x, i) for i=0:(degree(parent(c[1]))-1)] for x = c]...)
+    c = reduce(vcat, [[coeff(x, i) for i=0:(degree(parent(c[1]))-1)] for x = c])
   end
   if parent(c[1]) != k
     if isa(parent(c[1]), FlintQadicField) && degree(parent(c[1])) ==1
@@ -300,7 +300,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
     end
 
     expo += s.coeff * expo_mult
-    expo_mult = vcat([_mk(x).coeff for x = gens(_k)]...)*expo_mult
+    expo_mult = reduce(vcat, [_mk(x).coeff for x = gens(_k)])*expo_mult
     cur_a = [prod(cur_a[i]^_mk(x)[i] for i=1:length(cur_a)) for x = gens(_k)]
 #    @show [e*valuation(x-1) for x = cur_a]
 
@@ -562,8 +562,8 @@ struct MapEvalCtx
     mat = matrix(prime_field(domain(M)),
                  absolute_degree(domain(M)),
                  absolute_degree(codomain(M)),
-                 vcat([absolute_coordinates(M(x))
-                      for x = absolute_basis(domain(M))]...))
+                 reduce(vcat, [absolute_coordinates(M(x))
+                      for x = absolute_basis(domain(M))]))
 
     return new(domain(M), codomain(M), mat)
   end

@@ -141,10 +141,10 @@ function norm_equation2_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
   @assert Hecke.is_maximal(R)
   lp = factor(k*R)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
-  C = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
+  C = reduce(vcat, [matrix(FlintZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
 
   lp = factor(k)
-  A = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(Hecke.factored_norm(ms(s[i])), p) for i=1:ngens(s)]) for p = keys(lp.fac)])
+  A = reduce(vcat, [matrix(FlintZZ, 1, ngens(s), [valuation(Hecke.factored_norm(ms(s[i])), p) for i=1:ngens(s)]) for p = keys(lp.fac)])
   b = matrix(FlintZZ, length(lp.fac), 1, [valuation(k, p) for p = keys(lp.fac)])
 
   so = solve_mixed(A, b, C)
@@ -225,9 +225,9 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
   q, mms = snf(q)
   mq = mq*inv(mms)
 
-  C = vcat([matrix(FlintZZ, 1, ngens(q), [valuation(mS(preimage(mq, q[i])), p) for i=1:ngens(q)]) for p = keys(lp)])
+  C = reduce(vcat, [matrix(FlintZZ, 1, ngens(q), [valuation(mS(preimage(mq, q[i])), p) for i=1:ngens(q)]) for p = keys(lp)])
 
-  A = vcat([matrix(FlintZZ, 1, ngens(q), [valuation(norm(mkK, mS(preimage(mq, g))), p) for g in gens(q)]) for p = keys(la)])
+  A = reduce(vcat, [matrix(FlintZZ, 1, ngens(q), [valuation(norm(mkK, mS(preimage(mq, g))), p) for g in gens(q)]) for p = keys(la)])
   b = matrix(FlintZZ, length(la), 1, [valuation(a, p) for p = keys(la)])
 
   so = solve_mixed(A, b, C)

@@ -79,7 +79,7 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
     if ngens(D) == 0
       r.map = matrix(FlintZZ, 0, ngens(codomain(M)), ZZRingElem[])
     else
-      r.map = vcat([M(D[i]).coeff for i=1:ngens(D)])
+      r.map = reduce(vcat, [M(D[i]).coeff for i=1:ngens(D)])
     end
     return r
   end

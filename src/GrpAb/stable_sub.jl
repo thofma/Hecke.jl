@@ -334,7 +334,7 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
     end
     mH = Hecke.GrpAbFinGenMap(S.V,K,A)
     sg, msg = kernel(mH)
-    push!(list, vcat([ (mS(msg(y))).coeff for y in gens(sg)]))
+    push!(list, reduce(vcat, [(mS(msg(y))).coeff for y in gens(sg)]))
   end
   return list
 
@@ -762,7 +762,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
 
   MatSnf=map(mS.map, R)
   for j=1:length(list)
-    list[j]=list[j]*MatSnf #vcat([W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:nrows(list[j])])
+    list[j]=list[j]*MatSnf #reduce(vcat, [W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:nrows(list[j])])
   end
 
   #
@@ -771,7 +771,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
 
   minlist=minimal_submodules(N,ord, lf)
   for x in minlist
-    push!(list, vcat([W((mS( S.V(ZZRingElem[FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
+    push!(list, reduce(vcat, [W((mS( S.V(ZZRingElem[FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
   end
   return (x for x in list)
 

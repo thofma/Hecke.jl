@@ -784,7 +784,7 @@ function matrix(M::Map{GrpAbFinGen, GrpAbFinGen})
     return M.map
   end
   G = domain(M)
-  return vcat([M(g).coeff for g = gens(G)])
+  return reduce(vcat, [M(g).coeff for g = gens(G)])
 end
 
 function matrix(M::Generic.IdentityMap{GrpAbFinGen})
@@ -814,7 +814,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpA
     error("both groups need to be direct products")
   end
   @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
-  h = hom(G, H, vcat([hcat([matrix(A[i,j]) for j=1:c]) for i=1:r]))
+  h = hom(G, H, reduce(vcat, [reduce(hcat, [matrix(A[i,j]) for j=1:c]) for i=1:r]))
   return h
 end
 
@@ -823,7 +823,7 @@ function _flat(G::GrpAbFinGen)
   if s === nothing
     return [G]
   end
-  return vcat([_flat(x) for x = s]...)
+  return reduce(vcat, [_flat(x) for x = s])
 end
 
 function _tensor_flat(G::GrpAbFinGen)
@@ -831,7 +831,7 @@ function _tensor_flat(G::GrpAbFinGen)
   if s === nothing
     return [G]
   end
-  return vcat([_tensor_flat(x) for x = s]...)
+  return reduce(vcat, [_tensor_flat(x) for x = s])
 end
 
 

@@ -58,7 +58,7 @@ function multi_quad_with_emb(d::Vector{ZZRingElem})
     for i=1:div(length(lp), 2)
       K, m1, m2 = compositum(lp[2*i-1], lp[2*i])
       push!(ld, K)
-      push!(lau, vcat([ m1(x) for x = aut[2*i-1]], [ m2(x) for x = aut[2*i]]))
+      push!(lau, vcat([m1(x) for x = aut[2*i-1]], [m2(x) for x = aut[2*i]]))
     end
     if isodd(length(lp))
       push!(ld, lp[end])

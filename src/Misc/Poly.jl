@@ -723,7 +723,7 @@ end
 
 function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   lf = factor(f)
-  return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
+  return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]))
 end
 
 function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)

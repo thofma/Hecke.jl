@@ -476,7 +476,7 @@ function symbolic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; max_roo
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
   lg = factor(g)
-  rt = vcat([Hecke.roots(number_field(x)[1], x) for x = keys(lg.fac)]...)
+  rt = reduce(vcat, [Hecke.roots(number_field(x)[1], x) for x = keys(lg.fac)])
   rt = rt[1:min(length(rt), max_roots)]
   RT = []
   for i = 1:length(rt)

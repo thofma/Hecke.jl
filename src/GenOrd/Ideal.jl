@@ -178,7 +178,7 @@ function assure_has_basis_matrix(A::GenOrdIdl)
 
   @hassert :NfOrd 1 has_2_elem(A)
 
-  V = hnf(vcat([representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
+  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
   d = ncols(V)
   A.basis_matrix = V[d+1:2*d,1:d]
   return nothing
@@ -272,7 +272,7 @@ function Base.:(*)(a::GenOrdIdl, b::GenOrdIdl)
   O = order(a)
   Ma = basis_matrix(a)
   Mb = basis_matrix(b)
-  V = hnf(vcat([Mb*representation_matrix(O([Ma[i,o] for o in 1:ncols(Ma)])) for i in 1:ncols(Ma)]),:lowerleft)
+  V = hnf(reduce(vcat, [Mb*representation_matrix(O([Ma[i,o] for o in 1:ncols(Ma)])) for i in 1:ncols(Ma)]),:lowerleft)
   d = ncols(V)
   return GenOrdIdl(O, V[d*(d-1)+1:d^2,1:d])
 end

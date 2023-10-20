@@ -438,7 +438,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
   II, d = pseudo_inv(I)
   @assert II*I == d
 #  return II, d, [representation_matrix(O(vec(collect(I[i, :])))) for i=1:nrows(I)]
-  m = hcat([divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)]...)
+  m = reduce(hcat, [divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)])
   m = m'
   n = degree(O)
   mm = hnf(m[1:n, 1:n])
