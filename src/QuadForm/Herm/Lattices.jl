@@ -65,10 +65,10 @@ function hermitian_lattice(E::NumField, B::PMat; gram = nothing, check::Bool = t
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
-    gram = map_entries(E, gram)
-    V = hermitian_space(E, gram)
+    gramE = map_entries(E, gram)
+    V = hermitian_space(E, gramE)
   end
-  return lattice(V, B, check = check)
+  return lattice(V, B; check)
 end
 
 @doc raw"""
@@ -84,7 +84,7 @@ matrix over `E` of size the number of columns of `basis`.
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram, check = check)
+hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis); gram, check)
 
 @doc raw"""
     hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) -> HermLat
@@ -103,7 +103,7 @@ function hermitian_lattice(E::NumField, gens::Vector; gram = nothing)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(E, 0, nrows(gram), []))
-    L = hermitian_lattice(E, pm, gram = gram, check = false)
+    L = hermitian_lattice(E, pm; gram, check = false)
     return L
   end
   @assert length(gens[1]) > 0
@@ -115,8 +115,8 @@ function hermitian_lattice(E::NumField, gens::Vector; gram = nothing)
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
-    gram = map_entries(E, gram)
-    V = hermitian_space(E, gram)
+    gramE = map_entries(E, gram)
+    V = hermitian_space(E, gramE)
   end
   return lattice(V, gens)
 end
@@ -129,9 +129,9 @@ lattice inside the hermitian space over `E` with Gram matrix `gram`.
 """
 function hermitian_lattice(E::NumField; gram::MatElem)
   @req is_square(gram) "gram must be a square matrix"
-  gram = map_entries(E, gram)
-  B = pseudo_matrix(identity_matrix(E, ncols(gram)))
-  return hermitian_lattice(E, B, gram = gram, check = false)
+  gramE = map_entries(E, gram)
+  B = pseudo_matrix(identity_matrix(E, ncols(gramE)))
+  return hermitian_lattice(E, B; gram = gramE, check = false)
 end
 
 ################################################################################
@@ -227,8 +227,8 @@ function norm(L::HermLat)
   K = base_ring(G)
   R = base_ring(L)
   C = coefficient_ideals(L)
-  to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C))
-  to_sum = to_sum + R * reduce(+, [tr(C[i] * G[i, j] * v(C[j])) for j in 1:length(C) for i in 1:(j-1)], init = ZZ(0)*inv(1*base_ring(R)))
+  to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C); init = 0*R)
+  to_sum = reduce(+, tr(C[i] * G[i, j] * v(C[j]))*R for j in 1:length(C) for i in 1:(j-1); init = to_sum)
   n = minimum(numerator(to_sum))//denominator(to_sum)
   L.norm = n
   return n
@@ -251,7 +251,7 @@ function scale(L::HermLat)
   for i in 1:d
     push!(to_sum, involution(L)(to_sum[i]))
   end
-  s = sum(to_sum, init = zero(base_field(L))*base_ring(L))
+  s = sum(to_sum; init = 0*base_ring(L))
   L.scale = s
   return s
 end
@@ -270,7 +270,7 @@ function rescale(L::HermLat, a::Union{FieldElem, RationalUnion})
   K = fixed_field(L)
   b = base_field(L)(K(a))
   gramamb = gram_matrix(ambient_space(L))
-  return hermitian_lattice(base_field(L), pseudo_matrix(L),
+  return hermitian_lattice(base_field(L), pseudo_matrix(L);
                            gram = b * gramamb)
 end
 
@@ -359,7 +359,7 @@ function jordan_decomposition(L::HermLat, p)
 
   k = 1
   while k <= n
-    G = S * F * transpose(_map(S, aut))
+    G = S * F * transpose(map(aut, S))
     X = Union{Int, PosInf}[ iszero(G[i, i]) ? inf : valuation(G[i, i], P) for i in k:n]
     m, ii = findmin(X)
     ii = ii + (k - 1)
@@ -392,7 +392,7 @@ function jordan_decomposition(L::HermLat, p)
       for l in 1:ncols(S)
         S[i, l] = S[i, l] + aut(lambda) * S[j, l]
       end
-      G = S * F * transpose(_map(S, aut))
+      G = S * F * transpose(map(aut, S))
       @assert valuation(G[i, i], P) == m
       j = i
     end
@@ -416,7 +416,7 @@ function jordan_decomposition(L::HermLat, p)
       k = k + 2
     else
       swap_rows!(S, i, k)
-      X1 = S * F * transpose(_map(view(S, k:k, 1:ncols(S)), aut))
+      X1 = S * F * transpose(map(aut, view(S, k:k, 1:ncols(S))))
       for l in (k + 1):n
         for o in 1:ncols(S)
           S[l, o] = S[l, o] - X1[l, 1]//X1[k, 1] * S[k, o]
@@ -427,14 +427,14 @@ function jordan_decomposition(L::HermLat, p)
   end
 
   if !ram
-    G = S * F * transpose(_map(S, aut))
+    G = S * F * transpose(map(aut, S))
     @assert is_diagonal(G)
   end
 
   push!(blocks, n + 1)
 
   matrices = typeof(F)[ sub(S, blocks[i]:(blocks[i+1] - 1), 1:ncols(S)) for i in 1:(length(blocks) - 1)]
-  return matrices, typeof(F)[ m * F * transpose(_map(m, aut)) for m in matrices], exponents
+  return matrices, typeof(F)[ m * F * transpose(map(aut, m)) for m in matrices], exponents
 end
 
 ################################################################################
@@ -472,12 +472,12 @@ function _ismaximal_integral(L::HermLat, p)
 
   absolute_map = absolute_simple_field(ambient_space(L))[2]
 
-  M = local_basis_matrix(L, p, type = :submodule)
+  M = local_basis_matrix(L, p; type = :submodule)
   G = gram_matrix(ambient_space(L), M)
   F, h = residue_field(R, D[1][1])
   hext = extend(h, E)
   sGmodp = map_entries(hext, s * G)
-  Vnullity, V = kernel(sGmodp, side = :left)
+  Vnullity, V = kernel(sGmodp; side = :left)
   if Vnullity == 0
     return true, zero_matrix(E, 0, 0)
   end
@@ -589,7 +589,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     end
     # new we look for zeros of ax^2 + by^2
     kk, h = residue_field(R, P)
-    while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]) > 1
+    while sum(S[i] * nrows(B[i]) for i in 1:length(B); init = 0) > 1
       k = 0
       for i in 1:(length(S) + 1)
         if S[i] == 1

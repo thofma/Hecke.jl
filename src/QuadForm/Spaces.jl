@@ -10,7 +10,7 @@ export ambient_space, rank, gram_matrix, inner_product, involution, is_hermitian
 ################################################################################
 
 function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false)
-  @req base_ring(V) == base_ring(W) "Spaces must have the same base field"
+  @req base_ring(V) === base_ring(W) "Spaces must have the same base field"
   @req nrows(B) == dim(V) && ncols(B) == dim(W) """
   Dimension mismatch. Matrix ($(nrows(B))x$(ncols(B))) must be of
   dimensions $(dim(V))x$(dim(W)).
@@ -18,7 +18,7 @@ function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false
   if check
     GV = gram_matrix(V)
     GW = gram_matrix(W)
-    fl = B * GW * transpose(_map(B, involution(W))) == GV
+    fl = B * GW * transpose(map(involution(W), B)) == GV
     if !fl
       error("Matrix does not define a morphism of spaces")
     end
@@ -40,7 +40,7 @@ end
 
 function image(f::AbstractSpaceMor, L::AbstractLat)
   V = domain(f)
-  @req V==ambient_space(L) "L not in domain"
+  @req V === ambient_space(L) "L not in domain"
   W = codomain(f)
   if is_injective(f)
     B = pseudo_matrix(L)
@@ -54,23 +54,23 @@ end
 
 function image(f::AbstractSpaceMor, L::ZZLat)
   V = domain(f)
-  @req V==ambient_space(L) "L not in domain"
+  @req V === ambient_space(L) "L not in domain"
   W = codomain(f)
   B = basis_matrix(L)*f.matrix
   isbasis = is_injective(f)
-  return lattice(W, B, isbasis=isbasis, check=false)
+  return lattice(W, B; isbasis=isbasis, check=false)
 end
 
 function preimage(f::AbstractSpaceMor, L::ZZLat)
   V = domain(f)
   W = codomain(f)
-  @req W==ambient_space(L) "L not in codomain"
-  ok, B = can_solve_with_solution(f.matrix, basis_matrix(L), side=:left)
+  @req W === ambient_space(L) "L not in codomain"
+  ok, B = can_solve_with_solution(f.matrix, basis_matrix(L); side=:left)
   if !ok
     # intersect with the image
     L1 = intersect(lattice(W, f.matrix) , L)
     L2 = primitive_closure(L, L1)
-    ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2), side=:left)
+    ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2); side=:left)
     @assert ok
   end
   return lattice(V, B)
@@ -232,10 +232,10 @@ Return the Gram matrix of the rows of `M` with respect to the Gram matrix of the
 function gram_matrix(V::AbstractSpace{T}, M::MatElem{S}) where {S, T}
   @req ncols(M) == dim(V) "Matrix must have $(dim(V)) columns ($(ncols(M)))"
   if S === elem_type(T)
-    return M * gram_matrix(V) * transpose(_map(M, involution(V)))
+    return M * gram_matrix(V) * transpose(map(involution(V), M))
   else
     Mc = change_base_ring(base_ring(V), M)
-    return Mc * gram_matrix(V) * transpose(_map(Mc, involution(V)))
+    return Mc * gram_matrix(V) * transpose(map(involution(V), Mc))
   end
 end
 
@@ -642,7 +642,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
       r = r + 1
     end
   end
-  Vres = quadratic_space(FlintQQ, G, check = false)
+  Vres = quadratic_space(FlintQQ, G; check = false)
   VrestoV = AbstractSpaceRes(Vres, V, identity_matrix(QQ, rank(Vres)), identity_matrix(E, rank(V)))
   return Vres, VrestoV
 end
@@ -660,7 +660,7 @@ Given a space `V` and a subspace `W` with basis matrix `M`, return a basis
 matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbstractSpace, M::MatElem)
-  N = gram_matrix(V) * _map(transpose(M), involution(V))
+  N = gram_matrix(V) * map(involution(V), transpose(M))
   r, K = left_kernel(N)
   @assert r == nrows(K)
   return K

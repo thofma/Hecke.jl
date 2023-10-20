@@ -89,7 +89,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
 
   if rank(L) == 2
     if is_definite(L)
-      return _genus_representatives_binary_quadratic_definite(L, max = max, use_auto = true, use_mass = true)
+      return _genus_representatives_binary_quadratic_definite(L; max, use_auto = true, use_mass = true)
     else
       @req degree(base_ring(L)) == 1 "Binary indefinite quadratic lattices must be only over the rationals"
       return _genus_representatives_binary_quadratic_indefinite_rationals(L)
@@ -119,14 +119,14 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
 
   for LL in spinor_genera
     @hassert :GenRep 3 all(!is_isometric_with_isometry(X, LL)[1] for X in res)
-    new_lat =  iterated_neighbours(LL, p, use_auto = use_auto,
+    new_lat =  iterated_neighbours(LL, p; use_auto,
                                           max = max - length(res),
                                           mass = _mass//length(spinor_genera))
     append!(res, new_lat)
   end
 
   if max > length(res) && use_mass
-    if sum(QQFieldElem[1//automorphism_group_order(LL) for LL in res]) != _mass
+    if sum(1//automorphism_group_order(LL) for LL in res; init = QQ(0)) != _mass
       error("Something very wrong")
     end
   end
@@ -145,7 +145,7 @@ function spinor_genera_in_genus(L, mod_out)
   C = SpinorGeneraCtx(L)
 
   # We don't need minimal generators, to make them not too large.
-  Gr = gram_matrix_of_generators(L, minimal = false)
+  Gr = gram_matrix_of_generators(L; minimal = false)
 
   R = base_ring(L)
   F = nf(R)
@@ -155,7 +155,7 @@ function spinor_genera_in_genus(L, mod_out)
   # The smaller the element, the better
   for d in diagonal(Gr)
     if (iszero(spinornorm) && !iszero(d)) || (!iszero(d) && abs(norm(d)) < abs(norm(spinornorm)))
-      spinornorm = d
+      add!(spinornorm, spinornorm, d)
     end
   end
   if iszero(spinornorm)
@@ -167,7 +167,7 @@ function spinor_genera_in_genus(L, mod_out)
       end
     end
     @assert !iszero(Gr[1, i])
-    spinornorm = 2 * Gr[1, i]
+    add!(spinornorm, spinornorm, 2 * Gr[1, i])
   end
 
   # 2) At a place p where spinornorm does not generate norm(L_p)
@@ -216,7 +216,7 @@ function spinor_genera_in_genus(L, mod_out)
   res = typeof(L)[ L ]
 
   for p in primes
-    N = neighbours(L, p, max = 1)[1]
+    N = only(neighbours(L, p; max = 1))
     pN = pseudo_matrix(N)
     for i in 1:length(res)
       pM = pseudo_matrix(res[i])
@@ -233,11 +233,11 @@ end
 
 function _smallest_norm_good_prime(L)
   OK = base_ring(L)
-  lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if is_dyadic(p) || !is_modular(L, p)[1]]
+  lp = ideal_type(OK)[p for p in bad_primes(L; even = true) if is_dyadic(p) || !is_modular(L, p)[1]]
   limit = 20
   while true
     lq = prime_ideals_up_to(OK, limit)
-    sort!(lq, by = norm)
+    sort!(lq; by = norm)
     for q in lq
       if !(q in lp)
         return q
@@ -271,7 +271,7 @@ function spinor_norm(L, p)
       # Which of the two is the case?
       # TODO: It is not a good idea to rely on implementation details of
       #       local_multiplicative_group_modulo_squares
-      if length(unique([e % 2 for e in E])) == 1
+      if length(unique!([e % 2 for e in E])) == 1
         return gens(V)[1:ngens(V) - 1], V, g, true
       else
         return gens(V), V, g, false
@@ -382,7 +382,7 @@ function good_bong(L, p)
   for i in 1:length(G)
     GG = G[i]
     if nrows(GG) == 2
-      bong = append!(bong, _make_bong_dim_2(quadratic_lattice(K, identity_matrix(K, 2), gram = GG), p))
+      bong = append!(bong, _make_bong_dim_2(quadratic_lattice(K, identity_matrix(K, 2); gram = GG), p))
     elseif nrows(GG) == 1
       push!(bong, GG[1, 1])
     else
@@ -474,11 +474,11 @@ function maximal_norm_splitting(L, p)
         end
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
 
-        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
+        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)); gram = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
       end
       # Apply case 1 to the reversed orthogonal sum of the dual lattices:
 
-      steps = reverse!(steps)
+      reverse!(steps)
       # Update Gram matrices for the reversed, dualized lattice:
       for k in 1:length(G)
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
@@ -488,8 +488,8 @@ function maximal_norm_splitting(L, p)
       # Component i is now at position #aL-i+1
       @assert length(steps[length(aL) - i + 1]) == 2
       beli_correction!(L, G, JJ, steps, length(aL) - i + 1, length(aL) - j + 1, p)
-      steps = reverse!(steps)
-      G = reverse!(G)
+      reverse!(steps)
+      reverse!(G)
       # Update norms/scales from the updated Gram matrices:
       sL, aL, uL, wL = _scales_and_norms(G, p, uni)
       # Dualize again
@@ -511,7 +511,7 @@ function maximal_norm_splitting(L, p)
     end
   end
 
-  @assert all(let G = G; k -> nrows(G[k]) in [1,2]; end, 1:length(G))
+  @assert all(k -> nrows(G[k]) in [1,2], 1:length(G))
   return G, JJ
 end
 
@@ -769,8 +769,8 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
   s = s * t
 
   # Check if everything is ok.
-  @hassert :GenRep 1 all(let s = s; k -> isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))); end, 1:length(the_idele))
-  @hassert :GenRep 1 all(let s = s, the_idele_inf = the_idele_inf; j -> sign(s * the_idele_inf[j], IP[j]) == 1 end, 1:length(IP))
+  @hassert :GenRep 1 all(k -> isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))), 1:length(the_idele))
+  @hassert :GenRep 1 all(j -> sign(s * the_idele_inf[j], IP[j]) == 1, 1:length(IP))
 
   # We first interpret it as the ideal which will actually have to be mapped:
   # i.e., we just collect the p-valuations at the noncritical places (p notin RayPrimes):
@@ -799,7 +799,7 @@ function _compute_ray_class_group(L)
   MM = ideal_type(R)[]
   Mfact = Dict{ideal_type(R), Int}()
 
-  for p in bad_primes(L, even = true)
+  for p in bad_primes(L; even = true)
     spinors, V, g, exactlytheunits = spinor_norm(L, p)
     # we only need to carry around those finite places where the Spinor norm is
     # not exactly the units:
@@ -842,7 +842,7 @@ function _get_critical_primes(L, mRCG, inf_plc, mQ, full = true)
   critical_primes = ideal_type(R)[]
   Q = codomain(mQ)
 
-  bad = prod(bad_primes(L, even = true))
+  bad = prod(bad_primes(L; even = true))
 
   maxnorm = 50
   goodprimes = [ p for p in prime_ideals_up_to(R, maxnorm) if is_coprime(p, bad)]

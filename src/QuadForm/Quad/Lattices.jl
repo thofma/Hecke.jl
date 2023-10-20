@@ -65,9 +65,9 @@ function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = tru
     @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(K, gram)
-    V = quadratic_space(K, gram, check = check)
+    V = quadratic_space(K, gram; check)
   end
-  return lattice(V, B, check = check)
+  return lattice(V, B; check)
 end
 
 @doc raw"""
@@ -87,7 +87,7 @@ By default, `basis` is checked to be of full rank. This test can be disabled by 
 If $K = \mathbb{Q}$, then the output lattice is of type `ZZLat`, seen as a lattice
 over the ring $\mathbb{Z}$.
 """
-quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true) = quadratic_lattice(K, pseudo_matrix(basis), gram = gram, check = check)
+quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true) = quadratic_lattice(K, pseudo_matrix(basis); gram, check)
 
 @doc raw"""
     quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> Union{ZZLat, QuadLat}
@@ -109,7 +109,7 @@ function quadratic_lattice(K::Field, gens::Vector; gram = nothing, check::Bool =
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(K, 0, nrows(gram), []))
-    L = quadratic_lattice(K, pm, gram = gram)
+    L = quadratic_lattice(K, pm; gram)
     return L
   end
   @assert length(gens[1]) > 0
@@ -122,7 +122,7 @@ function quadratic_lattice(K::Field, gens::Vector; gram = nothing, check::Bool =
     @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gram = map_entries(K, gram)
-    V = quadratic_space(K, gram, check = check)
+    V = quadratic_space(K, gram; check)
   end
   return lattice(V, gens)
 end
@@ -140,7 +140,7 @@ function quadratic_lattice(K::Field ; gram::MatElem, check::Bool = true)
   @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(K, gram)
   B = pseudo_matrix(identity_matrix(K, ncols(gram)))
-  return quadratic_lattice(K, B, gram = gram, check = check)
+  return quadratic_lattice(K, B; gram, check)
 end
 
 ################################################################################
@@ -232,8 +232,7 @@ function scale(L::QuadLat)
   end
   G = gram_matrix_of_rational_span(L)
   C = coefficient_ideals(L)
-  to_sum = [ G[i, j] * C[i] * involution(L)(C[j]) for j in 1:length(C) for i in 1:j]
-  s = sum(to_sum)
+  s = sum(G[i, j] * C[i] * involution(L)(C[j]) for j in 1:length(C) for i in 1:j)
   L.scale = s
   return s
 end
@@ -256,7 +255,7 @@ function rescale(L::QuadLat, a)
   K = fixed_field(L)
   b = K(a)
   gramamb = gram_matrix(ambient_space(L))
-  return quadratic_lattice(base_field(L), pseudo_matrix(L), gram = b * gramamb)
+  return quadratic_lattice(base_field(L), pseudo_matrix(L); gram = b * gramamb)
 end
 
 ################################################################################
@@ -277,7 +276,7 @@ function bad_primes(L::QuadLat; even::Bool = false)
   end::Dict{Bool, Vector{ideal_type(base_ring(L))}}
 
   get!(bp, even) do
-    return _bad_primes(L, even = even)
+    return _bad_primes(L; even)
   end::Vector{ideal_type(base_ring(L))}
 end
 
@@ -463,7 +462,7 @@ function is_maximal_integral(L::QuadLat, p)
   k, h = residue_field(R, p)
   hext = extend(h, K)
 
-  BM = local_basis_matrix(L, p, type = :submodule)
+  BM = local_basis_matrix(L, p; type = :submodule)
 
   G = 2 * gram_matrix(ambient_space(L), BM)
 
@@ -480,7 +479,7 @@ function is_maximal_integral(L::QuadLat, p)
     @assert ok
     _v = matrix(k, 1, length(__v), __v)
     e = map_entries(x -> hext\x, _v * V)
-    sp = (e * G * transpose(e))[1, 1]
+    sp = only(e * G * transpose(e))
     valv = iszero(sp) ? inf : valuation(sp, p)
     @assert valv >= 2
     v = e
@@ -492,7 +491,7 @@ function is_maximal_integral(L::QuadLat, p)
       xV = matrix(k, 1, length(x), x) * V
       e = elem_type(K)[ hext\(xV[1, i]) for i in 1:ncols(xV) ]
       v = matrix(K, 1, length(e), e)
-      _z = (v * G * transpose(v))[1, 1]
+      _z = only(v * G * transpose(v))
       # Test if valv >= val2 + 2
       if iszero(_z)
         break
@@ -522,7 +521,7 @@ function is_maximal_integral(L::QuadLat)
     return false, L
   end
 
-  for p in bad_primes(L, even = true)
+  for p in bad_primes(L; even = true)
     ok, LL = is_maximal_integral(L, p)
     if !ok
       return false, LL
@@ -565,7 +564,7 @@ function maximal_integral_lattice(V::QuadSpace)
   R = order(n)
   if !isone(norm(n))
     fa = factor(n)
-    d = prod(typeof(n)[fractional_ideal(R, p)^(fld(e, 2)) for (p, e) in fa])
+    d = prod(fractional_ideal(R, p)^(fld(e, 2)) for (p, e) in fa)
     # fld = fdiv = floored division
     L = lattice(V, _module_scale_ideal(inv(d), pseudo_matrix(L)))
     n = norm(L)
@@ -577,7 +576,7 @@ end
 
 function maximal_integral_lattice(L::QuadLat)
   @req is_integral(norm(L)) "Lattice must be integral"
-  for p in bad_primes(L, even = true)
+  for p in bad_primes(L; even = true)
     L = maximal_integral_lattice(L, p)
   end
   return L

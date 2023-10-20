@@ -52,32 +52,32 @@ true
 ```
 """
 function integer_lattice(B::QQMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
-  V = quadratic_space(FlintQQ, gram, check=check)
-  return lattice(V, B, check=check)
+  V = quadratic_space(FlintQQ, gram; check)
+  return lattice(V, B; check)
 end
 
 function integer_lattice(B::ZZMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
-  V = quadratic_space(FlintQQ, gram, check=check)
-  return lattice(V, B, check=check)
+  V = quadratic_space(FlintQQ, gram; check)
+  return lattice(V, B; check)
 end
 
 ### Documentation in ./Lattices.jl
-quadratic_lattice(::QQField, B::Union{ZZMatrix, QQMatrix}; gram = identity_matrix(QQ, ncols(B)), check::Bool = true) = integer_lattice(B, gram = gram, check = check)
+quadratic_lattice(::QQField, B::Union{ZZMatrix, QQMatrix}; gram = identity_matrix(QQ, ncols(B)), check::Bool = true) = integer_lattice(B; gram, check)
 
 function integer_lattice(;gram, check=true)
   n = nrows(gram)
-  return lattice(quadratic_space(FlintQQ, gram, check=check), identity_matrix(FlintQQ, n), check=check)
+  return lattice(quadratic_space(FlintQQ, gram; check), identity_matrix(FlintQQ, n); check)
 end
 
 ### Documentation in ./Lattices.jl
-quadratic_lattice(::QQField; gram, check::Bool = true) = integer_lattice(gram = gram, check = check)
+quadratic_lattice(::QQField; gram, check::Bool = true) = integer_lattice(; gram, check)
 
 ### Documentation in ./Lattices.jl
 function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bool = true) where T <: Union{QQMatrix, ZZMatrix, Vector{RationalUnion}}
   if length(gens) == 0
     @assert gram !== nothing
     B = zero_matrix(QQ, 0, nrows(gram))
-    return quadratic_lattice(QQ, B, gram = gram, check = check)
+    return quadratic_lattice(QQ, B; gram, check)
   end
   @assert length(gens[1]) > 0
   if gram === nothing
@@ -94,7 +94,7 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
   for i in 1:length(gens)
     B[i,:] = gens[i]
   end
-  return lattice(V, B, isbasis = false)
+  return lattice(V, B; isbasis = false)
 end
 
 @doc raw"""
@@ -102,10 +102,12 @@ end
 
 Return the $\mathbb Z$-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
-function lattice(V::QuadSpace{QQField, QQMatrix}, B::MatElem{<:RationalUnion}; isbasis::Bool = true, check::Bool = true)
-  @req dim(V) == ncols(B) "Ambient space and the matrix B have incompatible dimension"
-  if typeof(B) !== QQMatrix
-    B = map_entries(QQ, B)
+function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; isbasis::Bool = true, check::Bool = true)
+  @req dim(V) == ncols(_B) "Ambient space and the matrix B have incompatible dimension"
+  if typeof(_B) !== QQMatrix
+    B = map_entries(QQ, _B)
+  else
+    B = _B
   end
 
   # We need to produce a basis matrix
@@ -126,7 +128,7 @@ end
 function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true)
   @req !check || (rank(B) == nrows(B)) "The rows of B must define a free system of vectors"
   V = ambient_space(L)
-  return lattice(V, B, check = false)
+  return lattice(V, B; check = false)
 end
 
 @doc raw"""
@@ -154,7 +156,7 @@ function rescale(L::ZZLat, r::RationalUnion)
   B = basis_matrix(L)
   gram_space = gram_matrix(ambient_space(L))
   Vr = quadratic_space(QQ, r*gram_space)
-  return lattice(Vr, B, check = false)
+  return lattice(Vr, B; check = false)
 end
 
 ################################################################################
@@ -262,7 +264,7 @@ the projections $L \to L_i$, one should call `biproduct(x)`.
 function direct_sum(x::Vector{ZZLat})
   W, inj = direct_sum(ambient_space.(x))
   B = _biproduct(x)
-  return lattice(W, B, check = false), inj
+  return lattice(W, B; check = false), inj
 end
 
 direct_sum(x::Vararg{ZZLat}) = direct_sum(collect(x))
@@ -286,7 +288,7 @@ the projections $L \to L_i$, one should call `biproduct(x)`.
 function direct_product(x::Vector{ZZLat})
   W, proj = direct_product(ambient_space.(x))
   B = _biproduct(x)
-  return lattice(W, B, check = false), proj
+  return lattice(W, B; check = false), proj
 end
 
 direct_product(x::Vararg{ZZLat}) = direct_product(collect(x))
@@ -310,7 +312,7 @@ one should call `direct_product(x)`.
 function biproduct(x::Vector{ZZLat})
   W, inj, proj = biproduct(ambient_space.(x))
   B = _biproduct(x)
-  return lattice(W, B, check = false), inj, proj
+  return lattice(W, B; check = false), inj, proj
 end
 
 biproduct(x::Vararg{ZZLat}) = biproduct(collect(x))
@@ -321,7 +323,7 @@ biproduct(x::Vararg{ZZLat}) = biproduct(collect(x))
 Return the largest submodule of ``L`` orthogonal to ``S``.
 """
 function orthogonal_submodule(L::ZZLat, S::ZZLat)
-  @assert ambient_space(L)==ambient_space(S) "L and S must have the same ambient space"
+  @assert ambient_space(L) === ambient_space(S) "L and S must have the same ambient space"
   return orthogonal_submodule(L, basis_matrix(S))
 end
 
@@ -338,7 +340,7 @@ function orthogonal_submodule(L::ZZLat, C::QQMatrix)
   _, K = left_kernel(M)
   K = change_base_ring(ZZ, K*denominator(K))
   Ks = saturate(K)
-  return lattice(V, Ks*B, check = false)
+  return lattice(V, Ks*B; check = false)
 end
 
 ################################################################################
@@ -371,7 +373,7 @@ end
 # L.automorphism_group_generators
 # L.automorphism_group_order
 function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
-                                           try_small::Bool = true)
+                                            try_small::Bool = true)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -437,8 +439,8 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
   end
 
   # Now gens are with respect to the basis of L
-  @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(FlintQQ, gens[i]) * GL *
-                          transpose(change_base_ring(FlintQQ, gens[i])) == GL; end, 1:length(gens))
+  @hassert :Lattice 1 all(i -> change_base_ring(FlintQQ, gens[i]) * GL *
+                          transpose(change_base_ring(FlintQQ, gens[i])) == GL, 1:length(gens))
 
   L.automorphism_group_generators = gens
   L.automorphism_group_order = order
@@ -515,11 +517,11 @@ function is_isometric(L::ZZLat, M::ZZLat)
   end
 
   if rank(L) == 2
-    A = gram_matrix(L)
-    B = gram_matrix(M)
-    d = denominator(A)
-    A = change_base_ring(ZZ, d * A)
-    B = change_base_ring(ZZ, d * B)
+    _A = gram_matrix(L)
+    _B = gram_matrix(M)
+    d = denominator(_A)
+    A = change_base_ring(ZZ, d * _A)
+    B = change_base_ring(ZZ, d * _B)
     q1 = binary_quadratic_form(ZZ, A[1,1], 2 * A[1,2], A[2,2])
     q2 = binary_quadratic_form(ZZ, B[1,1], 2 * B[1,2], B[2,2])
     return is_isometric(q1, q2)
@@ -551,8 +553,8 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   @req i==j "The lattices must have the same signatures"
 
   if i < 0
-    L = rescale(L,-1)
-    M = rescale(M,-1)
+    L = rescale(L, -1)
+    M = rescale(M, -1)
   end
 
   GL = gram_matrix(L)
@@ -641,7 +643,7 @@ function is_sublattice(M::ZZLat, N::ZZLat)
     return false
   end
 
-  hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+  hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
 
   if !hassol || !isone(denominator(_rels))
     return false
@@ -662,7 +664,7 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
      return false, basis_matrix(M)
    end
 
-   hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side=:left)
+   hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
 
    if !hassol || !isone(denominator(_rels))
      return false, basis_matrix(M)
@@ -684,11 +686,11 @@ Return the root lattice of type `R` given by `:A`, `:D` or `:E` with parameter `
 """
 function root_lattice(R::Symbol, n::Int)
   if R === :A
-    return integer_lattice(gram = _root_lattice_A(n))
+    return integer_lattice(; gram = _root_lattice_A(n))
   elseif R === :E
-    return integer_lattice(gram = _root_lattice_E(n))
+    return integer_lattice(; gram = _root_lattice_E(n))
   elseif R === :D
-    return integer_lattice(gram = _root_lattice_D(n))
+    return integer_lattice(; gram = _root_lattice_D(n))
   else
     error("Type (:$R) must be :A, :D or :E")
   end
@@ -711,13 +713,13 @@ with gram matrix
 ```
 """
 function root_lattice(R::Vector{Tuple{Symbol,Int}})
-  S = [gram_matrix(root_lattice(i[1],i[2])) for i in R]
-  return integer_lattice(gram=block_diagonal_matrix(S))
+  S = QQMatrix[gram_matrix(root_lattice(i[1], i[2])) for i in R]
+  return integer_lattice(; gram=block_diagonal_matrix(S))
 end
 
 function _root_lattice_A(n::Int)
   n < 0 && error("Parameter ($n) for root lattice of type :A must be positive")
-  z = zero_matrix(FlintQQ, n, n)
+  z = zero_matrix(QQ, n, n)
   for i in 1:n
     z[i, i] = 2
     if i > 1
@@ -733,11 +735,11 @@ end
 function _root_lattice_D(n::Int)
   n < 2 && error("Parameter ($n) for root lattices of type :D must be greater or equal to 2")
   if n == 2
-    G = matrix(ZZ, [2 0 ;0 2])
+    G = matrix(QQ, [2 0 ;0 2])
   elseif n == 3
     return _root_lattice_A(n)
   else
-    G = zero_matrix(ZZ, n, n)
+    G = zero_matrix(QQ, n, n)
     G[1,3] = G[3,1] = -1
     for i in 1:n
       G[i,i] = 2
@@ -776,7 +778,7 @@ function _root_lattice_E(n::Int)
         0 0 0 0 0 -1 2 0;
         0 0 -1 0 0 0 0 2]
   end
-  return matrix(ZZ, G)
+  return matrix(QQ, G)
 end
 
 ################################################################################
@@ -794,9 +796,9 @@ main diagonal and 1's elsewhere.
 """
 function integer_lattice(S::Symbol, n::RationalUnion = 1)
   @req S === :H || S === :U "Only available for the hyperbolic plane"
-  gram = n*identity_matrix(QQ, 2)
-  gram = reverse_cols!(gram)
-  return integer_lattice(gram = gram)
+  gram = scalar_matrix(2, n)
+  reverse_cols!(gram)
+  return integer_lattice(; gram)
 end
 
 @doc raw"""
@@ -835,7 +837,7 @@ hyperbolic_plane_lattice(n::RationalUnion = 1) = integer_lattice(:H, n)
 function dual(L::ZZLat)
   G = gram_matrix(L)
   new_bmat = inv(G)*basis_matrix(L)
-  return lattice(ambient_space(L), new_bmat, check = false)
+  return lattice(ambient_space(L), new_bmat; check = false)
 end
 
 ################################################################################
@@ -1005,7 +1007,7 @@ function intersect(M::ZZLat, N::ZZLat)
   H = vcat(BMint, BNint)
   k, K = left_kernel(H)
   BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
-  return lattice(ambient_space(M), BI, check = false)
+  return lattice(ambient_space(M), BI; check = false)
 end
 
 ################################################################################
@@ -1023,7 +1025,7 @@ function +(M::ZZLat, N::ZZLat)
   while is_zero_row(B, i)
     i += 1
   end
-  return lattice(ambient_space(M), B[i:end, 1:ncols(B)], check = false)
+  return lattice(ambient_space(M), B[i:end, 1:ncols(B)]; check = false)
 end
 
 ################################################################################
@@ -1076,7 +1078,7 @@ function _to_ZLat(L::QuadLat, K, V)
       bm[i, j] = a * FlintQQ(pmm[i, j])
     end
   end
-  return lattice(V, bm, check = false)
+  return lattice(V, bm; check = false)
 end
 
 function _to_ZLat(L::QuadLat;
@@ -1120,9 +1122,10 @@ function genus_representatives(L::ZZLat)
   G = genus_representatives(LL)
   res = ZZLat[]
   for N in G
-    push!(res, _to_ZLat(N, K = K))
+    push!(res, _to_ZLat(N; K))
   end
-  return [rescale(L, 1//s) for L in res]
+  map!(L -> rescale(L, 1//s), res, res)
+  return res
 end
 
 ################################################################################
@@ -1135,7 +1138,7 @@ end
 function _maximal_integral_lattice(L::ZZLat)
   LL = _to_number_field_lattice(L)
   M = maximal_integral_lattice(LL)
-  return _to_ZLat(M, V = ambient_space(L))
+  return _to_ZLat(M; V = ambient_space(L))
 end
 
 @doc raw"""
@@ -1198,7 +1201,7 @@ function is_maximal_even(L::ZZLat, p)
     return true, L
   end
   G = change_base_ring(ZZ, gram_matrix(L))
-  k = Native.GF(p)
+  k = GF(p)
   Gmodp = change_base_ring(k, G)
   r, V = left_kernel(Gmodp)
   VZ = lift(V[1:r,:])
@@ -1212,10 +1215,10 @@ function is_maximal_even(L::ZZLat, p)
     end
     _v = matrix(k, 1, length(__v), __v)
     v = lift(_v)
-    sp = (v * H * transpose(v))[1,1]
+    sp = only(v * H * transpose(v))
     valv = iszero(sp) ? inf : valuation(sp, p)
     v = v * VZ
-    sp = (v * G * transpose(v))[1,1]
+    sp = only(v * G * transpose(v))
     valv = iszero(sp) ? inf : valuation(sp, p)
     @assert valv >= 2
     v = QQ(1, p) * change_base_ring(QQ,v)
@@ -1247,7 +1250,7 @@ function is_maximal_even(L::ZZLat, p)
       ok, v = findzero_mod4(D)
     end
     if !ok
-      D, B1 = _two_adic_normal_forms(D, p, partial = true)
+      D, B1 = _two_adic_normal_forms(D, p; partial = true)
       B = B1 * B
       ok, v = _is_isotropic_with_vector_mod4(D)
       if !ok
@@ -1261,7 +1264,7 @@ function is_maximal_even(L::ZZLat, p)
   end
   v = v * basis_matrix(L)
   B = vcat(basis_matrix(L), v)
-  LL = lattice(ambient_space(L), B, isbasis=false)
+  LL = lattice(ambient_space(L), B; isbasis=false)
   @assert det(L) ==  det(LL) * p^2 && valuation(norm(LL), p) >= 0
   @assert denominator(scale(LL))==1
   @assert p!=2 || mod(ZZ(norm(LL)),2)==0
@@ -1301,7 +1304,7 @@ function _is_isotropic_with_vector_mod4(Gnormal)
     end
   end
   if nrows(G) == 3
-    if D[3] in [R4(1),R4(3)]
+    if D[3] in [R4(1), R4(3)]
       return false, v
     end
     @assert D[3] == R4(2)
@@ -1356,7 +1359,7 @@ function Base.:(*)(a::RationalUnion, L::ZZLat)
   else
     B = a*basis_matrix(L)
   end
-  return lattice_in_same_ambient_space(L, B, check = false)
+  return lattice_in_same_ambient_space(L, B; check = false)
 end
 
 function Base.:(*)(L::ZZLat, a::RationalUnion)
@@ -1420,8 +1423,8 @@ completions except at `p` where `M'` is locally isometric to the lattice `L`.
 """
 function local_modification(M::ZZLat, L::ZZLat, p)
   # notation
-  d = denominator(inv(gram_matrix(L)))
-  level = valuation(d,p)
+  _d = denominator(inv(gram_matrix(L)))
+  level = valuation(_d, p)
   d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
 
   @req is_isometric(L.space, M.space, p) "Quadratic spaces must be locally isometric at p"
@@ -1431,18 +1434,18 @@ function local_modification(M::ZZLat, L::ZZLat, p)
   L_max = rescale(L_max, 1//s)
 
   # invert the gerstein operations
-  GLm, U = padic_normal_form(gram_matrix(L_max), p, prec=level+3)
+  GLm, U = padic_normal_form(gram_matrix(L_max), p; prec=level+3)
   B1 = inv(U*basis_matrix(L_max))
 
-  GM, UM = padic_normal_form(gram_matrix(M), p, prec=level+3)
+  GM, UM = padic_normal_form(gram_matrix(M), p; prec=level+3)
   # assert GLm == GM at least modulo p^prec
   B2 = B1 * UM * basis_matrix(M)
-  Lp = lattice(M.space, B2, check = false)
+  Lp = lattice(M.space, B2; check = false)
 
   # the local modification
   S = intersect(Lp, M) + d * M
   # confirm result
-  @hassert :Lattice 2 genus(S, p)==genus(L, p)
+  @hassert :Lattice 2 genus(S, p) == genus(L, p)
   return S
 end
 
@@ -1467,7 +1470,7 @@ function kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = tru
   bL = basis_matrix(L)
   if ambient_representation
     if !is_square(bL)
-      fl, finL = can_solve_with_solution(bL, bL * f, side = :left)
+      fl, finL = can_solve_with_solution(bL, bL * f; side = :left)
       @req fl "f must preserve the lattice L"
     else
       finL = bL * f * inv(bL)
@@ -1476,7 +1479,7 @@ function kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = tru
     finL = f
   end
   k, K = left_kernel(change_base_ring(ZZ, finL))
-  return lattice(ambient_space(L), K*basis_matrix(L), check = false)
+  return lattice(ambient_space(L), K*basis_matrix(L); check = false)
 end
 
 ################################################################################
@@ -1505,11 +1508,9 @@ function invariant_lattice(L::ZZLat, G::Vector{<:MatElem};
     return L
   end
 
-  M = kernel_lattice(L, G[1] - 1,
-                     ambient_representation = ambient_representation)
+  M = kernel_lattice(L, G[1] - 1; ambient_representation)
   for i in 2:length(G)
-    N = kernel_lattice(L, G[i] - 1,
-                       ambient_representation = ambient_representation)
+    N = kernel_lattice(L, G[i] - 1; ambient_representation)
     M = intersect(M, N)
   end
   return M
@@ -1517,7 +1518,7 @@ end
 
 function invariant_lattice(L::ZZLat, G::MatElem;
                            ambient_representation::Bool = true)
-  return kernel_lattice(L, G - 1, ambient_representation = ambient_representation)
+  return kernel_lattice(L, G - 1; ambient_representation)
 end
 
 @doc raw"""
@@ -1536,7 +1537,7 @@ represented with respect to the ambient space of $L$. Otherwise, the
 endomorphism is represented with respect to the basis of $L$.
 """
 coinvariant_lattice(L::ZZLat, G::Union{MatElem, Vector{<:MatElem}}; ambient_representation::Bool = true) =
-  orthogonal_submodule(L, invariant_lattice(L, G, ambient_representation = ambient_representation))
+  orthogonal_submodule(L, invariant_lattice(L, G; ambient_representation))
 
 ################################################################################
 #
@@ -1564,7 +1565,7 @@ function Base.in(v::QQMatrix, L::ZZLat)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   @req nrows(v) == 1 "Must be a row vector."
   B = basis_matrix(L)
-  fl, w = can_solve_with_solution(B, v, side=:left)
+  fl, w = can_solve_with_solution(B, v; side=:left)
   return fl && isone(denominator(w))
 end
 
@@ -1582,14 +1583,14 @@ is_primitive(::ZZLat, ::Union{Vector, QQMatrix})
 function is_primitive(L::ZZLat, v::Vector{<: RationalUnion})
   @req v in L "v is not contained in L"
   is_zero(v) && return true
-  M = lattice_in_same_ambient_space(L, matrix(QQ,1,length(v), v), check = false)
+  M = lattice_in_same_ambient_space(L, matrix(QQ,1,length(v), v); check = false)
   return is_primitive(L, M)
 end
 
 function is_primitive(L::ZZLat, v::QQMatrix)
   @req v in L "v is not contained in L"
   is_zero(v) && return true
-  M = lattice_in_same_ambient_space(L, v, check = false)
+  M = lattice_in_same_ambient_space(L, v; check = false)
   return is_primitive(L, M)
 end
 
@@ -1608,16 +1609,16 @@ divisibility(::ZZLat, ::Union{Vector, QQMatrix})
 function divisibility(L::ZZLat, v::Vector{<: RationalUnion})
   @req length(v) == degree(L) "The vector should have the same length as the degree of the lattice"
   imv = matrix(QQ, 1, length(v), v)*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
-  imv = fractional_ideal(ZZ, vec(collect(imv)))
-  return gen(imv)
+  I = fractional_ideal(ZZ, vec(collect(imv)))
+  return gen(I)
 end
 
 function divisibility(L::ZZLat, v::QQMatrix)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice"
   @req nrows(v) == 1 "v must be a row vector"
   imv = v*gram_matrix(ambient_space(L))*transpose(basis_matrix(L))
-  imv = fractional_ideal(ZZ, vec(collect(imv)))
-  return gen(imv)
+  I = fractional_ideal(ZZ, vec(collect(imv)))
+  return gen(I)
 end
 
 ################################################################################
@@ -1663,9 +1664,9 @@ function lll(L::ZZLat; same_ambient::Bool = true)
   end
   if same_ambient
     B2 = U*basis_matrix(L)
-    return lattice(ambient_space(L), B2, check = false)::ZZLat
+    return lattice(ambient_space(L), B2; check = false)::ZZLat
   else
-    return integer_lattice(gram = (1//d)*change_base_ring(QQ, G2))
+    return integer_lattice(; gram = (1//d)*change_base_ring(QQ, G2))
   end
 end
 
@@ -1740,7 +1741,7 @@ function irreducible_components(L::ZZLat)
   Lpos = rescale(L, -1)
   irr = _irreducible_components_pos_def(Lpos)
   V = ambient_space(L)
-  return ZZLat[lattice(V, basis_matrix(i), check = false) for i in irr]
+  return ZZLat[lattice(V, basis_matrix(i); check = false) for i in irr]
 end
 
 function _irreducible_components_pos_def(L::ZZLat, upper_bound=nothing)
@@ -1756,7 +1757,7 @@ function _irreducible_components_pos_def(L::ZZLat, upper_bound=nothing)
     end
   end
   # try once more with an lll -- maybe we are lucky
-  components3 = []
+  components3 = ZZLat[]
   for c in components2
     if all(abs(i)==2 for i in diagonal(gram_matrix(c)))
       push!(irreducible, c)
@@ -1768,13 +1769,13 @@ function _irreducible_components_pos_def(L::ZZLat, upper_bound=nothing)
   # fall back to short vectors
   for c in components3
     if upper_bound === nothing
-      ub = maximum([abs(i) for i in diagonal(gram_matrix(c))])
+      ub = maximum(abs(i) for i in diagonal(gram_matrix(c)))
     else
       ub = upper_bound
     end
     append!(irreducible, _irreducible_components_short_vectors(c, ub))
   end
-  @hassert :Lattice 0 sum(Int[rank(i) for i in irreducible], init=0) == rank(L)
+  @hassert :Lattice 0 sum(rank(i) for i in irreducible; init=0) == rank(L)
   return irreducible
 end
 
@@ -1796,18 +1797,18 @@ function _irreducible_components_gram(L::ZZLat)
     while flag
       flag = false
       for c in B
-        if any([inner_product(V, a, c) != 0 for a in basis])
+        if any(a -> inner_product(V, a, c) != 0, basis)
           push!(basis,c)
-          deleteat!(B,findfirst(==(c), B))
+          deleteat!(B, findfirst(==(c), B))
           flag = true
           break
         end
       end
     end
-    S = lattice(ambient_space(L),reduce(vcat, basis), check = false)
+    S = lattice(ambient_space(L),reduce(vcat, basis); check = false)
     push!(components, S)
   end
-  @hassert :Lattice 0 sum(Int[rank(i) for i in components], init=0)==rank(L)
+  @hassert :Lattice 0 sum(rank(i) for i in components; init=0) == rank(L)
   return components
 end
 
@@ -1815,9 +1816,9 @@ end
 function _irreducible_components_short_vectors(L, ub)
   sv = short_vectors(L, ub)
   if length(sv) == 0
-    return [lattice(ambient_space(L), zero_matrix(QQ, 0, degree(L)))]
+    return ZZLat[lattice(ambient_space(L), zero_matrix(QQ, 0, degree(L)))]
   end
-  sort!(sv, by=(i->i[2]))
+  sort!(sv; by=(i->i[2]))
   B = matrix(ZZ, 1, rank(L), sv[1][1])
   G = change_base_ring(ZZ,gram_matrix(L))
   l = sv[1][2]
@@ -1834,7 +1835,7 @@ function _irreducible_components_short_vectors(L, ub)
     if (B*G*s[1])[1] == 0
       continue
     end
-    v = matrix(ZZ,1,rank(L),s[1])
+    v = matrix(ZZ, 1, rank(L), s[1])
     reduce_mod_hnf_ur!(v, B)
     if iszero(v)
       continue
@@ -1849,7 +1850,7 @@ function _irreducible_components_short_vectors(L, ub)
   if nrows(B) == rank(L)
     return [L]
   end
-  L1 = lattice(ambient_space(L), B*basis_matrix(L), check = false)
+  L1 = lattice(ambient_space(L), B*basis_matrix(L); check = false)
   L2 = orthogonal_submodule(L, L1)
   return append!([L1], _irreducible_components_short_vectors(L2, ub))
 end
@@ -1910,7 +1911,7 @@ function root_lattice_recognition_fundamental(L::ZZLat)
   V = ambient_space(L)
   ADE,components = root_lattice_recognition(L)
   components_new = ZZLat[]
-  basis = zero_matrix(QQ,0,degree(L))
+  basis = zero_matrix(QQ, 0, degree(L))
   for i in 1:length(ADE)
     ade = ADE[i]
     S = components[i]
@@ -1920,7 +1921,7 @@ function root_lattice_recognition_fundamental(L::ZZLat)
     push!(components_new, Snew)
     basis = vcat(basis, BS)
   end
-  C = lattice(ambient_space(L), basis, check = false)
+  C = lattice(ambient_space(L), basis; check = false)
   return C, ADE, components_new
 end
 
@@ -1942,13 +1943,13 @@ function ADE_type(G::MatrixElem)
   r = rank(G)
   d = abs(det(G))
   if r == 8 && d==1
-    return (:E,8)
+    return (:E, 8)
   end
   if r == 7 && d == 2
-    return (:E,7)
+    return (:E, 7)
   end
   if r == 6 && d ==3
-    return (:E,6)
+    return (:E, 6)
   end
   if d == r + 1
     return (:A, r)
@@ -1956,7 +1957,7 @@ function ADE_type(G::MatrixElem)
   if d == 4
     return (:D, r)
   end
-  error("not a definite root lattice")
+  error("Not a definite root lattice")
 end
 
 function _ADE_type_with_isometry_irreducible(L)
@@ -1964,9 +1965,9 @@ function _ADE_type_with_isometry_irreducible(L)
   R = root_lattice(ADE...)
   e = sign(gram_matrix(L)[1,1])
   if e == -1
-    R = rescale(R,-1)
+    R = rescale(R, -1)
   end
-  t, T = is_isometric_with_isometry(R, L, ambient_representation=false)
+  t, T = is_isometric_with_isometry(R, L; ambient_representation=false)
   @hassert :Lattice 1 t
   return ADE, T
 end
@@ -2007,10 +2008,10 @@ function root_sublattice(L::ZZLat)
   if is_negative_definite(L)
     L = rescale(L,-1)
   end
-  sv = reduce(vcat, ZZMatrix[matrix(ZZ,1,rank(L),a[1]) for a in short_vectors(L, 2)],init=zero_matrix(ZZ,0,rank(L)))
+  sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
   hnf!(sv)
-  B = sv[1:rank(sv),:]*basis_matrix(L)
-  return lattice(V, B, check=false)
+  B = sv[1:rank(sv), :]*basis_matrix(L)
+  return lattice(V, B; check=false)
 end
 
 ################################################################################
@@ -2053,13 +2054,13 @@ false
 function primitive_closure(M::ZZLat, N::ZZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must be in the same ambient space"
 
-  ok, B = can_solve_with_solution(basis_matrix(M), basis_matrix(N), side = :left)
+  ok, B = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side = :left)
 
   @req ok "N must be contained in the rational span of M"
 
   Bz = numerator(FakeFmpqMat(B))
   Bz = saturate(Bz)
-  return lattice(ambient_space(M), Bz*basis_matrix(M), check = false)
+  return lattice(ambient_space(M), Bz*basis_matrix(M); check = false)
 end
 
 @doc raw"""
@@ -2165,7 +2166,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   orth = orthogonal_submodule(lattice(ambient_space(L)), SR)
   bSR = vcat(basis_matrix(S), basis_matrix(R), basis_matrix(orth))
   ibSR = inv(bSR)
-  I = identity_matrix(QQ,degree(L))
+  I = identity_matrix(QQ, degree(L))
   prS = ibSR * I[:,1:rank(S)] * basis_matrix(S)
   prR = ibSR * I[:,rank(S)+1:rank(R)+rank(S)] * basis_matrix(R)
   bL = basis_matrix(L)
@@ -2176,7 +2177,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   for i in 1:rank(L)
     d = bL[i,:]
     g = DS(vec(collect(d * prS)))
-    if all(i == 0 for i in lift(g))
+    if all(is_zero, lift(g))
       continue
     end
     push!(gens, g)
@@ -2184,7 +2185,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   end
   HS, iS = sub(DS, gens)
   HR, iR = sub(DR, imgs)
-  glue_map = hom(HS, HR, [HR(lift(i)) for i in imgs])
+  glue_map = hom(HS, HR, TorQuadModuleElem[HR(lift(i)) for i in imgs])
   @hassert :Lattice 2 is_bijective(glue_map)
   @hassert :Lattice 2 overlattice(glue_map) == L
   return glue_map, iS, iR
@@ -2237,12 +2238,12 @@ function overlattice(glue_map::TorQuadModuleMor)
   R = relations(codomain(glue_map))
   glue = [lift(g) + lift(glue_map(g)) for g in gens(domain(glue_map))]
   z = zero_matrix(QQ, 0, degree(S))
-  glue = reduce(vcat, [matrix(QQ, 1, degree(S), g) for g in glue], init=z)
+  glue = reduce(vcat, [matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
   glue = vcat(basis_matrix(S + R), glue)
   glue = FakeFmpqMat(glue)
   B = hnf(glue)
   B = QQ(1, denominator(glue))*change_base_ring(QQ, numerator(B))
-  return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:], check=false)
+  return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:]; check=false)
 end
 
 ################################################################################

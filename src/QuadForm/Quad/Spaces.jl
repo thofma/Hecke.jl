@@ -24,7 +24,7 @@ equals to the identity matrix.
 function quadratic_space(K::Field, n::Int; cached::Bool = true)
   @req n >= 0 "Dimension ($n) must be non negative"
   G = identity_matrix(K, n)
-  return quadratic_space(K, G, cached = cached)
+  return quadratic_space(K, G; cached)
 end
 
 @doc raw"""
@@ -35,7 +35,6 @@ The matrix `G` must be square and symmetric.
 """
 function quadratic_space(K::Field, G::MatElem; check::Bool = true, cached::Bool = true)
   if check
-    @req is_square(G) "Gram matrix must be square ($(nrows(G)) x $(ncols(G))"
     @req is_symmetric(G) "Gram matrix must be symmetric"
     @req (K isa NumField || K isa QQField)  "K must be a number field"
   end
@@ -62,7 +61,7 @@ end
 
 function rescale(q::QuadSpace, r; cached::Bool = true)
   r = fixed_field(q)(r)
-  return quadratic_space(base_ring(q), r*gram_matrix(q), check=false)
+  return quadratic_space(base_ring(q), r*gram_matrix(q); cached, check = false)
 end
 
 ################################################################################
@@ -199,7 +198,7 @@ function _diagonal(V::QuadSpace, with_transform::Bool = true)
   g = gram_matrix(V)
   k, K = left_kernel(g)
   B = complete_to_basis(K)
-  g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
+  g = B[k+1:end, :]*g*transpose(B[k+1:end,:])
   D, U = _gram_schmidt(g, involution(V))
   diag = append!(zeros(base_ring(V), k), diagonal(D))
   !with_transform && return diag, matrix(E, 0, 0, elem_type(E)[])
@@ -251,12 +250,12 @@ end
 function det_ndeg(L::QuadSpace)
   D = diagonal(L)
   K = base_ring(L)
-  return prod(K, [d for d in D if d!=0])
+  return prod(K, d for d in D if d!=0)
 end
 
 function dim_radical(L::QuadSpace)
   D = diagonal(L)
-  return count([d==0 for d in D])
+  return count(iszero, D)
 end
 
 function _hasse_witt(K, h, n, d, p)
@@ -398,7 +397,7 @@ end
 
 function _quadratic_form_invariants(M::QQMatrix; minimal = true)
   G, _ = _gram_schmidt(M, identity)
-  ker = count(d==0 for d in diagonal(G))
+  ker = count(iszero, diagonal(G))
   D = [d for d in diagonal(G) if d!=0]
   sup = ZZRingElem[]
   for i in 1:length(D)
@@ -429,12 +428,12 @@ function _quadratic_form_invariants(M::QQMatrix; minimal = true)
 end
 
 function _quadratic_form_invariants(M; minimal = true)
-  return _quadratic_form_invariants(M, maximal_order(base_ring(M)), minimal = minimal)
+  return _quadratic_form_invariants(M, maximal_order(base_ring(M)); minimal)
 end
 
 function _quadratic_form_invariants(M, O; minimal = true)
   G, _ = _gram_schmidt(M, identity)
-  ker = count(d==0 for d in diagonal(G))
+  ker = count(iszero, diagonal(G))
   D = [d for d in diagonal(G) if d!=0]
 
   K = base_ring(M)
@@ -458,7 +457,7 @@ function _quadratic_form_invariants(M, O; minimal = true)
     end
   end
   I = [ (P, count(x -> is_negative(x, P), D)) for P in real_places(K) ];
-  return ncols(M), ker, reduce(*, D, init = one(K)), F, I
+  return ncols(M), ker, reduce(*, D; init = one(K)), F, I
 end
 
 @doc raw"""
@@ -513,10 +512,10 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   end
 
   finite = unique(finite)
-  @hassert :Lattice 1 all(is_prime(p) for p in finite)
+  @hassert :Lattice 1 all(is_prime, finite)
 
   if dim == 2
-    ok = all(Bool[!is_local_square(-det, p) for p in finite])
+    ok = all(p -> !is_local_square(-det, p), finite)
 
     if !ok
       #q = ZZRingElem[p for p in finite if is_local_square(-det, p)][1]
@@ -555,9 +554,9 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
     d = (-1)^k
     f = (k % 4 >= 2) ? Set(ZZRingElem[2]) : Set(ZZRingElem[])
     PP = append!(ZZRingElem[p for (p, e) in factor(2 * det)], finite)
-    PP = unique!(PP)
+    unique!(PP)
     finite = ZZRingElem[ p for p in PP if hilbert_symbol(d, -det, p) * (p in f ? -1 : 1) * (p in finite ? -1 : 1) == -1]
-    finite = unique!(finite)
+    unique!(finite)
     D = append!(D, Int[-1 for i in 1:k])
     det = isodd(k) ? -det : det
     dim = 3
@@ -568,18 +567,18 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   if dim == 3
     #// The primes at which the form is anisotropic
     PP = append!(ZZRingElem[p for (p, e) in factor(2 * det)], finite)
-    PP = unique!(PP)
-    PP = filter!(p -> hilbert_symbol(-1, -det, p) != (p in finite ? -1 : 1), PP)
+    unique!(PP)
+    filter!(p -> hilbert_symbol(-1, -det, p) != (p in finite ? -1 : 1), PP)
     #// Find some a such that for all p in PP: -a*Det is not a local square
     #// TODO: Find some smaller a?! The approach below is very lame.
-    a = prod(ZZRingElem[det % p == 0 ? one(FlintZZ) : p for p in PP])
+    a = prod(p for p in PP if det % p != 0; init = one(FlintZZ))
     if negative == 3
       a = -a
       negative = 2
     end
 
     PP = append!(ZZRingElem[p for (p, e) in factor(2 * det * a)], finite)
-    PP = unique!(PP)
+    unique!(PP)
     finite = ZZRingElem[ p for p in PP if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
     det = squarefree_part(det * a)
     dim = 2
@@ -589,8 +588,8 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   #// The binary case
   a = _find_quaternion_algebra(QQFieldElem(-det)::QQFieldElem, finite::Vector{ZZRingElem}, negative == 2 ? PosInf[inf] : PosInf[])
   Drat = map(FlintQQ, D)
-  Drat = append!(Drat, QQFieldElem[a, squarefree_part(FlintZZ(det * a))])
-
+  push!(Drat, a)
+  push!(Drat, squarefree_part(FlintZZ(det * a)))
   M = diagonal_matrix(Drat)
 
   _, _, d, f, n = _quadratic_form_invariants(M)
@@ -613,13 +612,13 @@ end
 function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{<:InfPlc, Int})
   @hassert :Lattice 1 dim >= 1
   @hassert :Lattice 1 !iszero(det)
-  K::AnticNumberField = parent(det)
+  K = parent(det)
   inf_plcs = real_places(K)
   @hassert :Lattice 1 length(inf_plcs) == length(negative)
   # All real places must be present
-  @hassert :Lattice 1 all(Bool[0 <= c <= dim for (_, c) in negative])
+  @hassert :Lattice 1 all(n -> 0 <= n[2] <= dim, negative)
   # Impossible negative entry at plc
-  @hassert :Lattice 1 all(Bool[sign(det, p) == (-1)^(negative[p]) for p in inf_plcs])
+  @hassert :Lattice 1 all(p -> sign(det, p) == (-1)^(negative[p]), inf_plcs)
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1
@@ -636,12 +635,12 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     OK = maximal_order(K)::order_type(K)
   end
 
-  finite = unique(finite)
+  unique!(finite)
 
   # Finite places check
 
   if dim == 2
-    ok = all(Bool[!is_local_square(-det, p) for p in finite])
+    ok = all(p -> !is_local_square(-det, p), finite)
     if !ok
       q = eltype(finite)[p for p in finite if is_local_square(-det, p)][1]
       error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
@@ -672,14 +671,14 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   local D::Vector{nf_elem}
   if dim >= 4
     D0, dim, det, finite, negative = _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
-    append!(D,D0)
+    append!(D, D0)
   end
 #  // The ternary case
   if dim == 3
     PP = append!(support(K(2), OK), finite)
     append!(PP, support(det, OK))
-    PP = unique!(PP)
-    PP = ideal_type(OK)[p for p in PP if hilbert_symbol(K(-1), -det, p) != (p in finite ? -1 : 1)]
+    unique!(PP)
+    filter!(p -> hilbert_symbol(K(-1), -det, p) != (p in finite ? -1 : 1), PP)
 #    // The primes at which the form is anisotropic
 
 #    // Find some a such that for all p in PP: -a*Det is not a local square
@@ -701,7 +700,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     else
       b = _weak_approximation_coprime(idx, S, 1 * OK)
     end
-    a = a * b
+    a *= b
 
 #    // Adjust invariants for the last time:
     s = signs(a)
@@ -712,9 +711,9 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
     append!(PP, support(det, OK))
     append!(PP, support(a, OK))
     append!(PP, finite)
-    PP = unique!(PP)
+    unique!(PP)
     finite = ideal_type(OK)[p for p in PP if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
-    det = det * a
+    det *= a
     # TODO: reduce det
     push!(D, a)
   end
@@ -765,7 +764,7 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
     let negative = negative, dim = dim
       k = minimum(vcat(Int[dim - 3], Int[s[_embedding(p)] == 1 ? (dim - c) : c for (p, c) in negative]))
     end
-    D2 = append!(D2, elem_type(K)[x for i in 1:k])
+    append!(D2, elem_type(K)[x for i in 1:k])
     dim = dim - k
     for (p, n) in negative
       if s[_embedding(p)] == -1
@@ -778,16 +777,16 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
   local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
   _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
-  PP = append!(support(K(2)*det, OK), finite)
-  PP = append!(PP, keys(_f))
-  PP::Vector{ideal_type(OK)} = unique!(PP)
+  PP = append!(support(K(2)*det, OK), finite)::Vector{ideal_type(OK)}
+  append!(PP, keys(_f))
+  unique!(PP)
   local _finite::Vector{ideal_type(OK)}
   let finite = finite
     _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]::Vector{ideal_type(OK)}
   end
   finite = _finite
 
-  det::nf_elem = det * _d
+  det *= _d
   #    # TODO: reduce det modulo squares
   return D2, dim, det, finite, negative
 end
@@ -806,7 +805,7 @@ function _isisotropic(D::Array, p)
     return false
   end
   K = parent(D[1])
-  d = reduce(*, D, init = one(K))
+  d = reduce(*, D; init = one(K))
   if d == 0
     return true
   elseif n <= 1
