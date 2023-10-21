@@ -1402,7 +1402,6 @@ mutable struct FactorBaseSingleP{T}
   pt::FactorBase{T}
   lp::Vector{Tuple{Int,NfOrdIdl}}
   lf::Vector{T}
-  doit::Function
 
   function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}})
     Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]

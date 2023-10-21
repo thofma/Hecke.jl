@@ -4,6 +4,37 @@
 #
 ################################################################################
 
+function Base.deepcopy_internal(FB::NfFactorBase, dict::IdDict)
+  c = NfFactorBase()
+  c.fb = Dict(x => deepcopy(y) for (x, y) in FB.fb) # should be shallow
+  c.size = FB.size
+  c.fb_int = Base.deepcopy_internal(FB.fb_int, dict)
+  c.ideals = [deepcopy(p) for p in FB.ideals]  # Not shallow,
+                                               # otherwise the ideals reference each other
+  c.rw = copy(FB.rw)
+  c.mx = FB.mx
+  return c
+end
+
+function Base.deepcopy_internal(FB::FactorBase{T}, dict::IdDict) where {T}
+  return FactorBase(FB.base)
+end
+
+function Base.deepcopy_internal(FBS::FactorBaseSingleP{T}, dict::IdDict) where {T}
+  lp = [(e, deepcopy(P)) for (e, P) in FBS.lp]
+  if T === zzModPolyRingElem
+    return FactorBaseSingleP(Int(FBS.P), lp)
+  else
+    @assert T === ZZModPolyRingElem
+    return FactorBaseSingleP(FBS.P, lp)
+  end
+end
+#mutable struct FactorBaseSingleP{T}
+#  P::ZZRingElem
+#  pt::FactorBase{T}
+#  lp::Vector{Tuple{Int,NfOrdIdl}}
+#  lf::Vector{T}
+
 function show(io::IO, c::ClassGrpCtx)
   println(io, "Ctx for class group of ", order(c.FB.ideals[1]))
   println(io, "Factorbase with ", length(c.FB.ideals), " ideals of norm up to ", norm(c.FB.ideals[1]))
