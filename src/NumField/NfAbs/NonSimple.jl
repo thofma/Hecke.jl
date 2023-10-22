@@ -817,7 +817,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   g = gens(K)
   if n == 1
     #The extension is already simple
-    f = to_unvariate(Globals.Qx, K.pol[1])
+    f = to_univariate(Globals.Qx, K.pol[1])
     Ka, a = number_field(f, "a", cached = cached, check = check)
     mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
