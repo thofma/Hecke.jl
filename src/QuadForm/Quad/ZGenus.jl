@@ -134,7 +134,7 @@ function _p_adic_symbol(A::ZZMatrix, p::ZZRingElem, val::Int)
   q = p^m0
   n = nrows(A)
   A = divexact(A, q)
-  Fp = GF(p)
+  Fp = Native.GF(p)
   A_p = change_base_ring(Fp, A)
   bp, B_p = left_kernel(A_p)
   rref!(B_p)
@@ -204,7 +204,7 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   m0 = minimum(valuation(c,2) for c in A if c!=0)
   q = ZZ(2)^m0
   A = divexact(A, q)
-  A_2 = change_base_ring(GF(2), A)
+  A_2 = change_base_ring(Native.GF(2), A)
   k2, B_2 = left_kernel(A_2)
   rref!(B_2)
   B_2 = B_2[1:k2,1:end]
@@ -2143,11 +2143,11 @@ end
 
 Return the diagonal factor `M_p` as a function of the species.
 """
-function _M_p(species, p)
+function _M_p(species, _p)
   if species == 0
     return QQ(1)
   end
-  p = QQ(p)
+  p = QQ(_p)
   n = abs(species)
   s = Int(div(n + 1,2))
   mp = 2 * prod(1 - p^(-2*k) for k in 1:s-1; init = QQ(1))

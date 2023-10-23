@@ -612,7 +612,7 @@ end
 function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{<:InfPlc, Int})
   @hassert :Lattice 1 dim >= 1
   @hassert :Lattice 1 !iszero(det)
-  K = parent(det)
+  K::AnticNumberField = parent(det)
   inf_plcs = real_places(K)
   @hassert :Lattice 1 length(inf_plcs) == length(negative)
   # All real places must be present

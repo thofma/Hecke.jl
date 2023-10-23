@@ -21,7 +21,6 @@ function SpinorGeneraCtx(L::QuadLat)
   RCG, mRCG, Gens = _compute_ray_class_group(L)
 
   # 1) Map the generators into the class group to create the factor group.
-
   subgroupgens = GrpAbFinGenElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
 
   for g in gens(RCG)
@@ -155,7 +154,7 @@ function spinor_genera_in_genus(L, mod_out)
   # The smaller the element, the better
   for d in diagonal(Gr)
     if (iszero(spinornorm) && !iszero(d)) || (!iszero(d) && abs(norm(d)) < abs(norm(spinornorm)))
-      add!(spinornorm, spinornorm, d)
+      spinornorm = d
     end
   end
   if iszero(spinornorm)
@@ -167,7 +166,7 @@ function spinor_genera_in_genus(L, mod_out)
       end
     end
     @assert !iszero(Gr[1, i])
-    add!(spinornorm, spinornorm, 2 * Gr[1, i])
+    spinornorm = 2 * Gr[1, i]
   end
 
   # 2) At a place p where spinornorm does not generate norm(L_p)
@@ -510,8 +509,9 @@ function maximal_norm_splitting(L, p)
       end
     end
   end
-
-  @assert all(k -> nrows(G[k]) in [1,2], 1:length(G))
+  # We use the `let bla = bla; ...; end` due to type stability; see the
+  # JuliaLang issue 15276
+  @assert all(let G = G; k -> nrows(G[k]) in [1,2]; end, 1:length(G))
   return G, JJ
 end
 
@@ -768,10 +768,11 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
 
   s = s * t
 
+  # We use the `let bla = bla; ...; end` due to type stability; see the
+  # JuliaLang issue 15276
   # Check if everything is ok.
-  @hassert :GenRep 1 all(k -> isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))), 1:length(the_idele))
-  @hassert :GenRep 1 all(j -> sign(s * the_idele_inf[j], IP[j]) == 1, 1:length(IP))
-
+  @hassert :GenRep 1 all(let s = s; k -> isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))); end, 1:length(the_idele))
+  @hassert :GenRep 1 all(let s = s, the_idele_inf = the_idele_inf; j -> sign(s * the_idele_inf[j], IP[j]) == 1; end, 1:length(IP))
   # We first interpret it as the ideal which will actually have to be mapped:
   # i.e., we just collect the p-valuations at the noncritical places (p notin RayPrimes):
 

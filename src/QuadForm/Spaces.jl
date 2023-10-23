@@ -18,7 +18,7 @@ function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false
   if check
     GV = gram_matrix(V)
     GW = gram_matrix(W)
-    fl = B * GW * transpose(map(involution(W), B)) == GV
+    fl = B * GW * transpose(_map(B, involution(W))) == GV
     if !fl
       error("Matrix does not define a morphism of spaces")
     end
@@ -232,10 +232,10 @@ Return the Gram matrix of the rows of `M` with respect to the Gram matrix of the
 function gram_matrix(V::AbstractSpace{T}, M::MatElem{S}) where {S, T}
   @req ncols(M) == dim(V) "Matrix must have $(dim(V)) columns ($(ncols(M)))"
   if S === elem_type(T)
-    return M * gram_matrix(V) * transpose(map(involution(V), M))
+    return M * gram_matrix(V) * transpose(_map(M, involution(V)))
   else
     Mc = change_base_ring(base_ring(V), M)
-    return Mc * gram_matrix(V) * transpose(map(involution(V), Mc))
+    return Mc * gram_matrix(V) * transpose(_map(Mc, involution(V)))
   end
 end
 
@@ -660,7 +660,7 @@ Given a space `V` and a subspace `W` with basis matrix `M`, return a basis
 matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbstractSpace, M::MatElem)
-  N = gram_matrix(V) * map(involution(V), transpose(M))
+  N = gram_matrix(V) * _map(transpose(M), involution(V))
   r, K = left_kernel(N)
   @assert r == nrows(K)
   return K

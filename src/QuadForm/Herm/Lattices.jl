@@ -227,7 +227,7 @@ function norm(L::HermLat)
   K = base_ring(G)
   R = base_ring(L)
   C = coefficient_ideals(L)
-  to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C); init = 0*R)
+  to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C); init = fractional_ideal(R, zero(K)))
   to_sum = reduce(+, tr(C[i] * G[i, j] * v(C[j]))*R for j in 1:length(C) for i in 1:(j-1); init = to_sum)
   n = minimum(numerator(to_sum))//denominator(to_sum)
   L.norm = n
@@ -251,7 +251,7 @@ function scale(L::HermLat)
   for i in 1:d
     push!(to_sum, involution(L)(to_sum[i]))
   end
-  s = sum(to_sum; init = 0*base_ring(L))
+  s = sum(to_sum; init = fractional_ideal(base_ring(L), zero(base_field(L))))
   L.scale = s
   return s
 end
@@ -359,7 +359,7 @@ function jordan_decomposition(L::HermLat, p)
 
   k = 1
   while k <= n
-    G = S * F * transpose(map(aut, S))
+    G = S * F * transpose(_map(S, aut))
     X = Union{Int, PosInf}[ iszero(G[i, i]) ? inf : valuation(G[i, i], P) for i in k:n]
     m, ii = findmin(X)
     ii = ii + (k - 1)
@@ -392,7 +392,7 @@ function jordan_decomposition(L::HermLat, p)
       for l in 1:ncols(S)
         S[i, l] = S[i, l] + aut(lambda) * S[j, l]
       end
-      G = S * F * transpose(map(aut, S))
+      G = S * F * transpose(_map(S, aut))
       @assert valuation(G[i, i], P) == m
       j = i
     end
@@ -416,7 +416,7 @@ function jordan_decomposition(L::HermLat, p)
       k = k + 2
     else
       swap_rows!(S, i, k)
-      X1 = S * F * transpose(map(aut, view(S, k:k, 1:ncols(S))))
+      X1 = S * F * transpose(_map(view(S, k:k, 1:ncols(S)), aut))
       for l in (k + 1):n
         for o in 1:ncols(S)
           S[l, o] = S[l, o] - X1[l, 1]//X1[k, 1] * S[k, o]
@@ -427,14 +427,14 @@ function jordan_decomposition(L::HermLat, p)
   end
 
   if !ram
-    G = S * F * transpose(map(aut, S))
+    G = S * F * transpose(_map(S, aut))
     @assert is_diagonal(G)
   end
 
   push!(blocks, n + 1)
 
   matrices = typeof(F)[ sub(S, blocks[i]:(blocks[i+1] - 1), 1:ncols(S)) for i in 1:(length(blocks) - 1)]
-  return matrices, typeof(F)[ m * F * transpose(map(aut, m)) for m in matrices], exponents
+  return matrices, typeof(F)[ m * F * transpose(_map(m, aut)) for m in matrices], exponents
 end
 
 ################################################################################

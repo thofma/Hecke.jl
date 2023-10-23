@@ -1500,7 +1500,7 @@ Return the radical `\{x \in T | b(x,T) = 0 and q(x)=0\}` of the quadratic form
 function radical_quadratic(T::TorQuadModule)
   Kb, ib = radical_bilinear(T)
   G = gram_matrix_quadratic(Kb)*1//modulus_bilinear_form(Kb)
-  F = GF(2; cached=false)
+  F = Native.GF(2; cached=false)
   G2 = matrix(F, nrows(G), 1, F.(diagonal(G)))
   r, kermat = left_kernel(G2)
   kermat = lift(kermat[1:r,:])

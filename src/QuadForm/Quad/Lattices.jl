@@ -215,7 +215,7 @@ function norm(L::QuadLat)
   G = gram_matrix_of_rational_span(L)
   C = coefficient_ideals(L)
   K = nf(order(C[1]))
-  n = sum(G[i, i] * C[i]^2 for i in 1:length(C)) + K(2) * scale(L)
+  n = sum(G[i, i] * C[i]^2 for i in 1:length(C); init = fractional_ideal(base_ring(L), zero(base_field(L)))) + K(2) * scale(L)
   L.norm = n
   return n
 end
@@ -232,7 +232,8 @@ function scale(L::QuadLat)
   end
   G = gram_matrix_of_rational_span(L)
   C = coefficient_ideals(L)
-  s = sum(G[i, j] * C[i] * involution(L)(C[j]) for j in 1:length(C) for i in 1:j)
+  s = sum(G[i, j] * C[i] * involution(L)(C[j]) for j in 1:length(C) for i in 1:j;
+          init = fractional_ideal(base_ring(L), zero(base_field(L))))
   L.scale = s
   return s
 end

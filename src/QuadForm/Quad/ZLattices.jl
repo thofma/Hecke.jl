@@ -439,8 +439,8 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
   end
 
   # Now gens are with respect to the basis of L
-  @hassert :Lattice 1 all(i -> change_base_ring(FlintQQ, gens[i]) * GL *
-                          transpose(change_base_ring(FlintQQ, gens[i])) == GL, 1:length(gens))
+  @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(FlintQQ, gens[i]) * GL *
+                          transpose(change_base_ring(FlintQQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
   L.automorphism_group_order = order
@@ -1201,7 +1201,7 @@ function is_maximal_even(L::ZZLat, p)
     return true, L
   end
   G = change_base_ring(ZZ, gram_matrix(L))
-  k = GF(p)
+  k = Native.GF(p)
   Gmodp = change_base_ring(k, G)
   r, V = left_kernel(Gmodp)
   VZ = lift(V[1:r,:])

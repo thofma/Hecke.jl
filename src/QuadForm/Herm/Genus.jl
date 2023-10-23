@@ -631,7 +631,7 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_dyadic = is_dyadic
   z.is_ramified = is_ramified
   z.is_split = is_split
-  keep = [i for (i, s) in enumerate(data) if s[2] != 0]  # We keep only blocks of non-zero rank
+  keep = Int[i for (i, s) in enumerate(data) if s[2] != 0]  # We keep only blocks of non-zero rank
   z.data = data[keep]
   return z
 end
@@ -791,7 +791,7 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_split = false
   # We test the cheap thing
   @req z.is_dyadic && z.is_ramified "Prime must be dyadic and ramified"
-  keep = [i for (i, s) in enumerate(data) if s[2] != 0]    # We only keep the blocks of non-zero rank
+  keep = Int[i for (i, s) in enumerate(data) if s[2] != 0]    # We only keep the blocks of non-zero rank
   z.norm_val = norms[keep]
   z.data = data[keep]
   z.ni = _get_ni_from_genus(z)
