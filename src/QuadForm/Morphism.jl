@@ -218,8 +218,6 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
     end
   end
 
-  #
-
   C.v = Vector{ZZMatrix}(undef, length(C.G))
 
   for i in 1:length(C.G)
@@ -246,36 +244,34 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   for i in 1:dim(C)
     C.g[i] = ZZMatrix[]
   end
-  C.ng = zeros(Int, dim(C))
   C.nsg = zeros(Int, dim(C))
   C.orders = Vector{Int}(undef, dim(C))
 
   # -Id is always an automorphism
   C.g[1] = ZZMatrix[-identity_matrix(FlintZZ, dim(C))]
-  C.ng[1] = 1
 
   # Calculate orbit lengths
 
   nH = 0
 
   for i in 1:dim(C)
-    nH += C.ng[i]
+    nH += length(C.g[i])
   end
 
   H = Vector{ZZMatrix}(undef, nH)
 
   if auto
     for i in 1:dim(C)
-      if C.ng[i] > 0
+      if !isempty(C.g[i])
         nH = 0
         for j in i:dim(C)
-          for k in 1:C.ng[j]
+          for k in 1:length(C.g[j])
             nH += 1
             H[nH] = C.g[j][k]
           end
         end
-        #@assert _orbitlen_naive(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V) == _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
-        C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V, C)
+        #@assert _orbitlen_naive(C.std_basis[i], C.fp_diagonal[i], H, C.V) == _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, C.V)
+        C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, C.V, C)
       else
         C.orders[i] = 1
       end
@@ -290,8 +286,6 @@ end
 # The following functions tries to initialize a ZLatAutoCtx with entries in Int.
 # The return value is flag, Csmall
 function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = 0)
-  # Compute the necessary short vectors
-  @vprintln :Lattice 1 "Computing short vectors of length $max"
   automorphism_mode = bound == ZZRingElem(-1)
 
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -308,6 +302,8 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   end
   @assert bound > 0
 
+  # Compute the necessary short vectors
+  @vprintln :Lattice 1 "Computing short vectors of length $bound"
   @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound, Int)
 
   vectors = Vector{Vector{Int}}(undef, length(V))
@@ -415,6 +411,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   Csmall.v = Vector{Matrix{Int}}(undef, length(C.G))
 
   # Here needs to be another overflow check
+  # JS: "needs to be" or is it carried out?
   @inbounds for i in 1:length(Csmall.G)
     A = zeros(Int, length(Csmall.V.vectors), dim(C))
     for j in 1:length(Csmall.V.vectors)
@@ -425,7 +422,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
     Csmall.v[i] = A
   end
 
-  if false
+  if false # JS: Is this for debugging?
     for i in 1:length(Csmall.G)
       for j in 1:length(Csmall.V.vectors)
         for k in 1:length(Csmall.V.vectors)
@@ -439,7 +436,6 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   for i in 1:dim(Csmall)
     Csmall.g[i] = Matrix{Int}[]
   end
-  Csmall.ng = zeros(Int, dim(Csmall))
   Csmall.nsg = zeros(Int, dim(Csmall))
   Csmall.orders = Vector{Int}(undef, dim(Csmall))
 
@@ -449,30 +445,31 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
     mid[i, i] = -1
   end
   Csmall.g[1] = Matrix{Int}[mid]
-  Csmall.ng[1] = 1
 
   # Calculate orbit lengths
-
+  # JS: If g is hard-coded to ([-I_n], [ ], ..., [ ]), we don't need all this?
+  #     Do we want to add the option of getting generators by the user like in
+  #     Souvignier's code? Otherwise the nested for-loops don't do much.
   nH = 0
 
   for i in 1:dim(Csmall)
-    nH += Csmall.ng[i]
+    nH += length(Csmall.g[i])
   end
 
   H = Vector{Matrix{Int}}(undef, nH)
 
   if automorphism_mode
     for i in 1:dim(Csmall)
-      if Csmall.ng[i] > 0
+      if !isempty(Csmall.g[i])
         nH = 0
         for j in i:dim(Csmall)
-          for k in 1:Csmall.ng[j]
+          for k in 1:length(Csmall.g[j])
             nH += 1
             H[nH] = Csmall.g[j][k]
           end
         end
-        #@assert _orbitlen_naive(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V) == _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V)
-        Csmall.orders[i] = _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V, Csmall)
+        #@assert _orbitlen_naive(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, Csmall.V) == _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, Csmall.V)
+        Csmall.orders[i] = _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, Csmall.V, Csmall)
       else
         Csmall.orders[i] = 1
       end
@@ -864,7 +861,7 @@ function fingerprint(C::ZLatAutoCtx)
 end
 
 # computes min(#O, orblen), where O is the orbit of pt under the first nG matrices in G
-function _orbitlen(point::Int, orblen::Int, G::Vector{T}, nG, V, C) where {T}
+function _orbitlen(point::Int, orblen::Int, G::Vector{T}, V, C) where {T}
   n = length(V)
   orb = ones(Int, orblen)
   orb[1] = point
@@ -877,10 +874,10 @@ function _orbitlen(point::Int, orblen::Int, G::Vector{T}, nG, V, C) where {T}
   #flag[pt] = 1;
   len = 1
   cnd = 1
-  #@show G, nG
+  #@show G
   while cnd <= len && len < orblen
     i = 1
-    while i <= nG && len < orblen
+    while i <= length(G) && len < orblen
       imag = _operate(orb[cnd], G[i], V, C.operate_tmp)
       if !flag[imag + n + 1]
         # the image is a new point in the orbit
@@ -983,12 +980,12 @@ function _find_point(w::ZZMatrix, V)
   end
 end
 
-function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, nG::Int, V)
+function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, V)
   working_list = Int[point]
   orbit = Int[point]
   while !isempty(working_list)
     current_point = pop!(working_list)
-    for i in 1:nG
+    for i in 1:length(G)
       if current_point < 0
         new_point_coord = -V[abs(current_point)] * G[i]
       else
@@ -1008,32 +1005,21 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   #println("Working with depth $(C.depth) and integer type $S")
   dim = Hecke.dim(C)
 
-  candidates = Vector{Vector{Int}}(undef, dim) # candidate list for the image of the i-th basis vector
-
+  candidates = Vector{Vector{Int}}(undef, dim)
   for i in 1:dim
+    # candidate list for the image of the i-th basis vector
     candidates[i] = zeros(Int, C.fp_diagonal[i])
   end
 
   x = Vector{Int}(undef, dim)
   bad = Vector{Int}(undef, 2 * length(C.V))
 
-  sta = 1
+  sta = 1 # JS: In Souvignier's code, sta (or flags.STAB) can be set so that only
+          #     the point stabilizer of the first sta basis vectors is computed.
+          #     Here the variable is not used?
   for step in sta:dim
     @vprintln :Lattice 1 "Entering step $step"
-    nH = 0
-    for i in step:dim
-      nH += C.ng[i]
-    end
-    #@show nH
-    H = Vector{T}(undef, nH)
-    nH = 0
-    @inbounds for i in step:dim
-      for j in 1:C.ng[i]
-        nH += 1
-        #@show C.g[i]
-        H[nH] = C.g[i][j]
-      end
-    end
+    H = reduce(vcat, C.g[step:dim])
     @inbounds for i in 1:2*length(C.V)
       bad[i] = 0
     end
@@ -1045,13 +1031,13 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     #@show candidates
     if C.fp_diagonal[step] > 1
       nC = cand(candidates[step], step, x, C)
-    else # there is only one candidates
+    else # there is only one candidate
       candidates[step] = Int[C.std_basis[step]]
       nC = 1
     end
     #@show nC
     #@show candidates
-    orb = orbit(C.std_basis[step], 1, H, nH, C.V, C)
+    orb = orbit(C.std_basis[step], 1, H, C.V, C)
     C.orders[step] = length(orb)
     # delete the orbit of the step-th basis vector from the candidates
     #nC = delete(candidates[step], nC, orb, C.orders[step])
@@ -1061,28 +1047,22 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     while nC > 0 && ((im = candidates[step][1]) != 0)
       @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
       #@show im
-      found = 0
+      found = false
       # try C.V[im] as the image of the step-th basis vector
       x[step] = im
       if step < dim
-        #@show candidates
         if cand(candidates[step + 1], step + 1, x, C) == C.fp_diagonal[step + 1]
-          #@show candidates
-          #@show "right before aut"
-          #@show step + 1, x
           found = aut(step + 1, x, candidates, C)
-        else
-          found = 0
         end
       else
-        found = 1
+        found = true
       end
 
       #@show found
 
-      if found == 0
+      if !found
         # x[1],...,x[step] cannot be continued
-        oc = orbit(im, 1, H, nH, C.V, C)
+        oc = orbit(im, 1, H, C.V, C)
         # delete the orbit of im from the candidates for x[step]
         #
         # This could go very bad ...
@@ -1095,33 +1075,19 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
       else
         #@show x, step
         # a new generator has been found
-        C.ng[step] += 1
-        # append the new generator to C.>g[step]
-        #@show "================================"
-        ##@show C.g, step
-        Gstep = resize!(C.g[step], C.ng[step])
-        ##@show C.g, step
-        matgen(x, dim, C.per, C.V)
-        Gstep[C.ng[step]] = matgen(x, dim, C.per, C.V)
-        C.g[step] = Gstep
-        nH += 1
-        H = Vector{T}(undef, nH)
-        nH = 0
-        @inbounds for i in step:dim
-          for j in 1:C.ng[i]
-            nH += 1
-            H[nH] = C.g[i][j]
-          end
-        end
+        # append the new generator to C.g[step] and to H
+        push!(C.g[step], matgen(x, dim, C.per, C.V))
+        insert!(H, length(C.g[step]), C.g[step][end])
         # compute the new orbit of std_basis[step]
-        orb = orbit(C.std_basis[step], 1, H, nH, C.V, C)
+        orb = orbit(C.std_basis[step], 1, H, C.V, C)
         C.orders[step] = length(orb)
         # delete the orbit from the candidates for x[step]
         setdiff!(candidates[step], orb)
-        nC = length(candidates[step])
+        #nC = length(candidates[step])
         #nC = delete(candidates[step], nC, orb, C.orders[step])
-        # compute the new orbit of the vectors, which could be continued to an automorphism
-        oc = orbit(bad, nbad, H, nH, C.V, C)
+        # compute the new orbit of the vectors, which could not be continued
+        # to an automorphism
+        oc = orbit(bad, nbad, H, C.V, C)
         # delete the orbit from the candidates
         setdiff!(candidates[step], oc)
         nC = length(candidates[step])
@@ -1129,28 +1095,29 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         #empty!(oc)
       end
     end
+    # JS: This whole block is not doing anything because of an "if false".
+    #     Do we use sta (or flags.STAB in Souvignier's code) at all?
     if step == sta
       # test, whether on step flags.STAB some generators may be omitted
       tries = C.nsg[step]
-      while tries <= C.ng[step]
-      #for tries in C.nsg[step]:C.ng[step]
+      while tries <= length(C.g[step])
+        #for tries in C.nsg[step]:length(C.g[step])
         nH = 0
         for j in 1:(tries-1)
           nH += 1
           H[nH] = C.g[step][j]
         end
-        for j in (tries + 1):(C.ng[step]-1)
+        for j in (tries + 1):(length(C.g[step])-1)
           nH += 1
           H[nH] = C.g[step][j]
         end
         for i in (step + 1):dim
-          for j in 1:C.ng[i]
+          for j in 1:length(C.g[i])
             nH += 1
             H[nH] = C.g[i][j]
-            if false #_orbitlen(C.std_basis[step], C.orders[step], H, nH, C.V) == C.orders[step]
+            if false #_orbitlen(C.std_basis[step], C.orders[step], H, C.V) == C.orders[step]
               # /* the generator g[step][tries] can be omitted */
-              C.ng[step] -= 1
-              for i in tries:(C.ng[step] - 1)
+              for i in tries:(length(C.g[step]) - 1)
                 C.g[step][i] = C.g[step][i + 1]
               end
               tries -= 1
@@ -1177,7 +1144,7 @@ function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   orde = prod(ZZRingElem.(C.orders))
 
   for i in 1:dim(C)
-    for j in (C.nsg[i] + 1):C.ng[i]
+    for j in (C.nsg[i] + 1):length(C.g[i])
       push!(gens, C.g[i][j])
     end
   end
@@ -1187,17 +1154,16 @@ end
 
 function aut(step, x, candidates, C)
   dim = Hecke.dim(C)
-  found = 0
+  found = false
   x[step + 1:length(x)] .= 0
-  while candidates[step][1] != 0 && found == 0
+  while candidates[step][1] != 0 && !found
     if step < dim
       x[step] = candidates[step][1]
-      #/* check, whether x[1]...x[step] is a partial automorphism and compute the candidates for x[step + 1]
+      # check, whether x[1]...x[step] is a partial automorphism and compute the
+      # candidates for x[step + 1]
 			if (cand(candidates[step + 1], step + 1, x, C) == C.fp_diagonal[step + 1])
         found = aut(step + 1, x, candidates, C)
-      end
-      if found == 1
-        return found
+        found && break
       end
       orb = Int[x[step]]
       # delete the chosen vector from the list of candidates
@@ -1206,26 +1172,22 @@ function aut(step, x, candidates, C)
       #setdiff!(candidates[step], orb)
       # This should be made faster to not always go to the end
       # Actually I should copy the delete function
-      #@show candidates[step], k
       for i in (k + 1):length(candidates[step])
         candidates[step][i - 1] = candidates[step][i]
       end
       candidates[step][end] = 0
-      #@show candidates[step]
     else
       x[dim] = candidates[dim][1]
-      found = 1
+      found = true
     end
   end
   return found
 end
 
 function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
-  #@show candidates, I, x, C, comb
   dep = C.depth
   use_vector_sums = (I > 1 && dep > 0)
   dim = Hecke.dim(C)
-  #len = length(C.G) * DEP
   vec = Vector{S}(undef, dim)
   vec2 = Vector{S}(undef, dim)
   if use_vector_sums
@@ -1241,7 +1203,6 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     end
   end
   # candidates is the list for the candidates
-  #@show C.fp_diagonal[I], length(candidates)
   for i in 1:C.fp_diagonal[I]
     candidates[i] = 0
   end
@@ -1271,21 +1232,16 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         if xk > 0
           #vec[k] = _dot_product(Vvj, C.G[i], C.V[xk])
           vec[k] = _dot_product_with_row(Vvj, C.v[i], xk)
-          #@assert _tutut == vec[k]
           if !_issym
             #vec2[k] = _dot_product(C.V[xk], C.G[i], Vvj)
             vec2[k] = _dot_product_with_row(C.V[xk], C.v[i], j)
-            #@assert vec2[k] == _tutut2
           end
         else
           #vec[k] = -_dot_product(Vvj, C.G[i], C.V[-xk])
           vec[k] = -_dot_product_with_row(Vvj, C.v[i], -xk)
-          #@assert _tutut == vec[k]
-
           if !_issym
             #vec2[k] = -_dot_product(C.V[-xk], C.G[i], Vvj)
             vec2[k] = -_dot_product_with_row(C.V[-xk], C.v[i], j)
-            #@assert vec2[k] == _tutut2
           end
         end
       end
@@ -1317,6 +1273,7 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
 
       if good && C.V.lengths[j][i] == C.G[i][C.per[I], C.per[I]]
         # C.V[j] is a candidate for x[I] with respec to the form C.G[i]
+        # JS: I guess this should be -C.V[j] in the comment?
         #@show "here"
         okm += 1
       end
@@ -1421,7 +1378,7 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   return nr
 end
 
-function orbit(pt, npt, G, nG, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
+function orbit(pt, npt, G, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # Assumes that V is sorted
   orb = Vector{Int}(undef, npt)
   n = length(V)
@@ -1434,7 +1391,7 @@ function orbit(pt, npt, G, nG, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   norb = npt
   cnd = 1
   while cnd <= norb
-    for i in 1:nG
+    for i in 1:length(G)
       im = _operate(orb[cnd], G[i], V, C.operate_tmp)
       if !flag[im + n + 1]
         # this is a new point
@@ -1501,7 +1458,7 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
 
   nH = 0
   for i in I:dim
-    nH += C.ng[i]
+    nH += length(C.g[i])
   end
 
   Hj = Vector{T}(undef, nH + 1)
@@ -1511,7 +1468,7 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
 
   k = 0
   for i in I:dim
-    for j in 1:C.ng[i]
+    for j in 1:length(C.g[i])
       k += 1
       H[k] = C.g[i][j]
     end
@@ -1583,17 +1540,16 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
           Hj[1] = S
           nHj = 1
           for k in j:dim
-            for l in 1:C.ng[k]
+            for l in 1:length(C.g[k])
               nHj += 1
               Hj[nHj] = C.g[k][l]
             end
           end
-          tmplen = _orbitlen(C.std_basis[j], C.fp_diagonal[j], Hj, nHj, V, C)
+          tmplen = _orbitlen(C.std_basis[j], C.fp_diagonal[j], Hj, V, C)
           if tmplen > C.orders[j] || fail >= Maxfail
 #/* the new stabilizer element S either enlarges the orbit of e[j]
 #   or it is one of the additional elements after MAXFAIL failures */
             C.orders[j] = tmplen
-            C.ng[j] = C.ng[j] + 1
             C.nsg[j] = C.nsg[j] + 1
             #@show C.g[j]
             #@show C.nsg[j]
@@ -1796,7 +1752,7 @@ function iso(step, x, C, Ci, Co, G)
       # this is remove orb from C[step], and then adding 0's at the end to make
       # it again as big as in the beginning. This can be done more efficiently.
       nc = length(C[step])
-      orb = orbit(x[step], 1, G, length(G), Co.V, Co)
+      orb = orbit(x[step], 1, G, Co.V, Co)
       no = length(orb)
       setdiff!(C[step], orb)
       newnc = length(C[step])
@@ -1879,12 +1835,12 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
           H[nH + 1] = w[orb[cnd] + n + 1] * G[i] * inv(w[im + n + 1])
           #	psolve((*H)[nH], A, B, dim, V.prime);
           rpt = rand(1:(n + 1))
-          templen = _orbitlen(rpt, 2*n, H, nH + 1, V)
+          templen = _orbitlen(rpt, 2*n, H, V)
           while templen < orblen
 #/* the orbit of this vector is shorter than a previous one, hence choose a new
 #   random vector */
             rpt = rand(1:(n + 1))
-            tmplen = _orbitlen(rpt, 2*n, H, nH + 1, V)
+            tmplen = _orbitlen(rpt, 2*n, H, V)
           end
           if tmplen > orblen
 #/* the new stabilizer element H[nH] enlarges the group generated by H */

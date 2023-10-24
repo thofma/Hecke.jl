@@ -405,31 +405,22 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
+  # Make the Gram matrix small
   Glll, T = lll_gram_with_transform(res[1])
-  Ttr = transpose(T)
-  res_orig = copy(res)
   res[1] = Glll
 
-  bm = basis_matrix(L)
-
-  # Make the Gram matrix small
-
   C = ZLatAutoCtx(res)
+  fl = false
   if try_small
     fl, Csmall = try_init_small(C, depth = depth)
     if fl
-      auto(Csmall)
-      _gens, order = _get_generators(Csmall)
+      _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(FlintZZ, g) for g in _gens]
-    else
-      init(C, depth = depth)
-      auto(C)
-      gens, order = _get_generators(C)
     end
-  else
+  end
+  if !try_small || !fl
     init(C, depth = depth)
-    auto(C)
-    gens, order = _get_generators(C)
+    gens, order = auto(C)
   end
 
   # Now translate back

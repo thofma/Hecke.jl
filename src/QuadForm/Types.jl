@@ -466,11 +466,11 @@ end
 ###############################################################################
 
 mutable struct VectorList{S, T}
-  vectors::Vector{S}
-  lengths::Vector{Vector{T}}
-  lookup::Dict{S, Int}
-  issorted::Bool
-  use_dict::Bool
+  vectors::Vector{S} # list of (short) vectors
+  lengths::Vector{Vector{T}} # lengths[i] contains the lengths of vectors[i] wrt to several forms
+  lookup::Dict{S, Int} # v => i iff vectors[i] == v
+  issorted::Bool # whether the vectors are sorted
+  use_dict::Bool # whether lookup is used
 
   function VectorList{S, T}() where {S, T}
     return new{S, T}()
@@ -488,27 +488,33 @@ mutable struct SCPComb{S, T, V}
 end
 
 mutable struct ZLatAutoCtx{S, T, V}
-  G::Vector{T}
-  Gtr::Vector{T}
+  G::Vector{T} # Gram matrices
+  Gtr::Vector{T} # transposed Gram matrices
   dim::Int
   max::S
-  V::VectorList{V, S}
-  v::Vector{T}
-  per::Vector{Int}
-  fp::Matrix{Int}
-  fp_diagonal::Vector{Int}
-  std_basis::Vector{Int}
-  scpcomb::Vector{SCPComb{S, T, V}}
-  depth::Int
+  V::VectorList{V, S} # list of (short) vectors
+  v::Vector{T} # list of matrices, v[i][j, k] is the dot product of V[j] with
+               # the k-th row of G[i]
+               # v[i][j, :] is the (matrix) product G[i]*V[j]
+  per::Vector{Int} # permutation of the basis vectors such that in every step
+                   # the number of possible continuations is minimal
+  fp::Matrix{Int} # the "fingerprint": fp[1, i] = number vectors v such that v
+                  # has same length as b_i for all forms
+  fp_diagonal::Vector{Int} # diagonal of the fingerprint matrix
+  std_basis::Vector{Int} # index of the the standard basis vectors in V.vectors
+  scpcomb::Vector{SCPComb{S, T, V}} # cache for the vector sum optimization
+  depth::Int # depth of the vector sums (0 == no vector sums)
 
-  orders::Vector{Int}
-  ng::Vector{Int}
-  nsg::Vector{Int}
-  g::Vector{Vector{T}}
+  orders::Vector{Int} # orbit length of b_i under <g[i], ..., g[end]>
+  nsg::Vector{Int} # the first nsg[i] elements of g[i] lie in <g[1], ..., g[i-1]>
+  g::Vector{Vector{T}} # generators for (subgroups of) the iterative stabilizers:
+                       # <g[1], ..., g[i]> is the point-wise stabilizer of the
+                       # basis vectors b_1, ..., b_{i - 1} in the full automorphism
+                       # group
   prime::S
 
-  is_symmetric::BitArray{1}
-  operate_tmp::V
+  is_symmetric::BitArray{1} # whether G[i] is symmetric
+  operate_tmp::V # temp storage for orbit computation
 
   function ZLatAutoCtx(G::Vector{ZZMatrix})
     z = new{ZZRingElem, ZZMatrix, ZZMatrix}()
