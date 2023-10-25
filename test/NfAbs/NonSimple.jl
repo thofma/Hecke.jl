@@ -178,4 +178,17 @@
     @test_throws ArgumentError QQ(a)
     @test @inferred !is_rational(a)
   end
+
+  K, (a,) = @inferred number_field([x])
+  @test tr(a) == 0
+  @test tr(one(K)) == 1
+  K, (a, b) = @inferred number_field([x - 1, x])
+  @test tr(a) == 1
+
+  R, x = polynomial_ring(QQ)
+  K, _ =   number_field([x])
+  KK, f = absolute_simple_field(K)
+  @test domain(f) === KK
+  @test codomain(f) === K
+  @test degree(KK) == 1
 end

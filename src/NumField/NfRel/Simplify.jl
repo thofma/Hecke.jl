@@ -186,7 +186,7 @@ function _find_prime(L::NfRelNS{nf_elem})
   candidates = Vector{Tuple{NfOrdIdl, Int}}(undef, n_attempts)
   i = 1
   pols = L.pol
-  threshold = absolute_degree(L)^2
+  threshold = max(absolute_degree(L)^2, 2)
   polsR = Vector{FqPolyRingElem}(undef, length(pols))
   while i < n_attempts+1
     p = next_prime(p)
