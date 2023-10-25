@@ -403,13 +403,22 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 end
 
 @doc raw"""
-    class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
+    class_group(O::NfOrd; bound = -1,
+                          redo = false,
+                          GRH = true)   -> GrpAbFinGen, Map
 
-Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
-The inverse of the map is the projection onto the group of ideals modulo the
-group of principal ideals.
-`redo` allows to trigger a re-computation, thus avoiding the cache.
-`bound`, when given, is the bound for the factor base.
+Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$. The
+inverse of the map is the projection onto the group of ideals modulo the group
+of principal ideals.
+
+By default, the correctness is guarenteed only assuming the Generalized Riemann
+Hypothesis (GRH).
+
+Keyword arguments:
+
+- `redo`: Trigger a recomputation, thus avoiding the cache.
+- `bound`: When specified, this is used for the bound for the factor base.
+- `GRH`: If `false`, the correctness of the result does not depend on GRH.
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,

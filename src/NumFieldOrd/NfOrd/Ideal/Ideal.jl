@@ -61,7 +61,9 @@ function Base.deepcopy_internal(A::NfAbsOrdIdl, dict::IdDict)
   B = typeof(A)(order(A))
   for i in fieldnames(typeof(A))
     if isdefined(A, i)
-      if i == :valuation || i == :order
+      if i === :valuation
+        continue
+      elseif i === :order
         setfield!(B, i, getfield(A, i))
       else
         setfield!(B, i, Base.deepcopy_internal(getfield(A, i), dict))

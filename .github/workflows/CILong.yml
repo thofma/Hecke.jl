@@ -56,3 +56,40 @@ jobs:
       - name: "Upload coverage data to Codecov"
         continue-on-error: true
         uses: codecov/codecov-action@v3
+  test_threaded:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        julia-version:
+          - 1.9
+        julia-arch:
+          - x64
+        os:
+          - macOS-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # For Codecov, we must also fetch the parent of the HEAD commit to
+          # be able to properly deal with PRs / merges
+          fetch-depth: 2
+      - name: "Set up Julia"
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.julia-arch }}
+      - name: "Cache artifacts"
+        uses: julia-actions/cache@v1
+      - name: "Build package"
+        uses: julia-actions/julia-buildpkg@v1
+      - name: "Run threaded tests"
+        uses: julia-actions/julia-runtest@v1
+        env:
+          HECKE_TEST_THREADS: "1"
+          JULIA_NUM_THEADS: "2"
+      - name: "Process code coverage"
+        uses: julia-actions/julia-processcoverage@v1
+      - name: "Upload coverage data to Codecov"
+        continue-on-error: true
+        uses: codecov/codecov-action@v3

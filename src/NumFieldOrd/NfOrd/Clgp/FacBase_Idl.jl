@@ -107,7 +107,6 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   ret = true
   for p in keys(d)
     vp = valuation!(n, p)
-#    s::Vector{Tuple{Int, Int}}, vp::Int = FB.fb[p].doit(a, vp)
     s::Vector{Tuple{Int, Int}}, vp::Int = fb_doit(a, vp, FB.fb[p], QQFieldElem(p)^vp)
     if !iszero(vp)
       ret = false
