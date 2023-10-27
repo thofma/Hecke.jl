@@ -27,7 +27,7 @@ function _local_factor_dyadic(L::HermLat, p)
   G = _genus_symbol_kirschmer(L, p)::Vector{Tuple{Int, Int, Bool, Int, elem_type(K)}}
   # I should check if I can get this from the standard genus symbol
 
-  if !(issubset([g[2] for g in G], [0, 1]))
+  if any(g -> g[2] != 0 || g[2] != 1, G)
     return zero(QQFieldElem)
   end
 
@@ -157,7 +157,7 @@ function _local_factor_generic(L::HermLat, p)
     sa = ss * a
     t = (1 + _exp(A(Int[ sign(sa, rlp[j]) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
     @assert t - 1 in p
-    @assert all(Bool[sign(t, rlp[i]) == sign(sa, rlp[i]) for i in 1:length(rlp)])
+    @assert all(sign(t, rlp[i]) == sign(sa, rlp[i]) for i in 1:length(rlp))
     ss = ss * t
   end
   L = rescale(L, ss)
@@ -170,7 +170,7 @@ function _local_factor_generic(L::HermLat, p)
   end
   f = _local_factor_maximal(L, p)
   for i in 1:(length(chain) - 1)
-    M, E = maximal_sublattices(chain[i + 1], P, use_auto = def)
+    M, E = maximal_sublattices(chain[i + 1], P; use_auto = def)
     lM = length(M)
     _f = 0
     for j in 1:lM
@@ -180,7 +180,7 @@ function _local_factor_generic(L::HermLat, p)
     end
 
     f = f * _f
-    M, E = minimal_superlattices(chain[i], P, use_auto = def)
+    M, E = minimal_superlattices(chain[i], P; use_auto = def)
     lM = length(M)
     _f = 0
     for j in 1:lM
@@ -244,7 +244,7 @@ function local_factor(L::HermLat, p)
 
   for i in 1:length(s)
     mi = ncols(G[i])
-    ri = sum(Int[ncols(G[j]) for j in (i + 1):length(s)])
+    ri = sum(ncols(G[j]) for j in (i + 1):length(s); init = 0)
     if ram
       N = N - div(s[i], 2) * mi^2
       if isodd(s[i])
@@ -281,7 +281,7 @@ function _standard_mass(L::HermLat, prec::Int = 10)
   stdmass = QQFieldElem(2)^(1 - n * m)
   # K is totally real, so I can get the exact value "cheaply"
   for i in 2:2:m
-    stdmass = stdmass * dedekind_zeta_exact(K, 1 - i)
+    mul!(stdmass, stdmass, dedekind_zeta_exact(K, 1 - i))
   end
 
   wprec = 2 * prec
@@ -292,7 +292,7 @@ function _standard_mass(L::HermLat, prec::Int = 10)
   local relzeta::arb
 
   while true
-    relzeta = prod(arb[_L_function(E, 1 - i, wprec) for i in 1:2:m])
+    relzeta = prod(_L_function(E, 1 - i, wprec) for i in 1:2:m; init = one(ArbField(wprec, cached = false)))
     if radiuslttwopower(relzeta * _stdmass, -prec)
       break
     end
@@ -346,7 +346,7 @@ function local_mass(L::HermLat)
   @req is_definite(L) "Lattice must be definite"
   lf = QQFieldElem(1)
 
-  for p in bad_primes(L, discriminant = true)
+  for p in bad_primes(L; discriminant = true)
     lf *= local_factor(L, p)
   end
 
@@ -368,6 +368,6 @@ function _gauss(m, k, q)
 end
 
 function _gauss0(m, q)
-  return QQFieldElem(prod(ZZRingElem[1 - q^i for i in 1:m]))
+  return QQFieldElem(prod(1 - q^i for i in 1:m; init = ZZ(1)))
 end
 

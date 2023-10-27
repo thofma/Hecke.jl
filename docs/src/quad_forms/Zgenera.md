@@ -101,8 +101,8 @@ ZZLocalGenus
 ### Creation
 
 ```@docs
-genus(L::ZZLat, p)
-genus(A::ZZMatrix, p)
+genus(::ZZLat, ::IntegerUnion)
+genus(::QQMatrix, ::IntegerUnion)
 ```
 
 ### Attributes

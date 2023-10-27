@@ -74,22 +74,13 @@ function _image(f::VecSpaceRes{S, T}, v::Vector{QQFieldElem}) where {S, T}
   return z
 end
 
-function image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
-  if v isa Vector{elem_type(base_ring(domain(f)))}
-    vv = v
-  else
-    vv = map(base_ring(domain(f)), v)
-  end
-  return _image(f, vv)
-end
-
 # f makes f.btop correspond with f.bdown. So for a vector v in
 # the domain of f, we get its coordinates in the basis f.btop
 # using f.ibtop, we do the exntension of scalars. This gives
 # the coordinates in the basis f.bdown of the codomain of f
 # which we therefore multiply to f.bdown to get coordinates
 # in the standard basis
-function _image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
+function image(f::AbstractSpaceRes{S, T}, v::Union{Vector, MatrixElem}) where {S, T}
   E = base_ring(codomain(f))
   ibtop = f.ibtop
   bdown = f.bdown
@@ -97,18 +88,25 @@ function _image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
   d = absolute_degree(E)
   m = rank(domain(f))
   B = absolute_basis(E)
-  @req length(v) == m "Vector must have length $m ($(length(v)))"
-  vl = vec(collect(transpose(matrix(v))*ibtop))
+  if v isa MatElem
+    @req size(v) == (1, m) || size(v) == (m, 1) "Matrix should be a column or row vector of length $m ($(size(v)))"
+    if ncols(v) == 1
+      v = transpose(v)
+    end
+  else
+    @req length(v) == m "Vector must have length $m ($(length(v)))"
+  end
+  v *= ibtop
   z = Vector{elem_type(E)}(undef, n)
   l = 1
   for i in 1:n
     z[i] = zero(E)
     for k in 1:d
-      z[i] = z[i] + vl[l] * B[k]
+      z[i] = z[i] + v[l] * B[k]
       l = l + 1
     end
   end
-  return vec(collect(matrix(E, 1, length(z), z)*bdown))::Vector{elem_type(E)}
+  return (z*bdown)::Vector{elem_type(E)}
 end
 
 ### Preimage functions

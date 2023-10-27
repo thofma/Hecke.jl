@@ -49,7 +49,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
     for g in gens
       @req length(g) == n "Generator not an element of the ambient space"
       fl, v = can_solve_with_solution(BM,
-                                      matrix(FlintQQ, 1, n, g),
+                                      matrix(FlintQQ, 1, n, g);
                                       side = :left)
       @req denominator(v) == 1 "Generator not an element of the lattice"
       ginA = A(change_base_ring(FlintZZ, v))
@@ -78,9 +78,9 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * transpose(basis_matrix(N))
   if iszero(modulus)
-    modulus = reduce(gcd, [a for a in num], init = zero(QQFieldElem))
+    modulus = reduce(gcd, num; init = zero(QQFieldElem))
   end
-  norm = reduce(gcd, diagonal(gram_matrix(N)), init = zero(QQFieldElem))
+  norm = reduce(gcd, diagonal(gram_matrix(N)); init = zero(QQFieldElem))
 
   if iszero(modulus_qf)
     modulus_qf = gcd(norm, 2 * modulus)
@@ -94,7 +94,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   T.ab_grp = S
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
-  T.gens_lift_mat = matrix(FlintQQ, length(gens_lift), degree(M), reduce(vcat, gens_lift, init = QQFieldElem[]))
+  T.gens_lift_mat = matrix(FlintQQ, length(gens_lift), degree(M), reduce(vcat, gens_lift; init = QQFieldElem[]))
   T.modulus = modulus
   T.modulus_qf = modulus_qf
   T.value_module = QmodnZ(modulus)
@@ -121,11 +121,11 @@ quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{
 @attr function discriminant_group(L::ZZLat)::TorQuadModule
   @req is_integral(L) "The lattice must be integral"
   if rank(L) == 0
-    T = torsion_quadratic_module(dual(L), L, modulus = one(QQ), modulus_qf = QQ(2))
+    T = torsion_quadratic_module(dual(L), L; modulus = one(QQ), modulus_qf = QQ(2))
   else
     T = torsion_quadratic_module(dual(L), L)
   end
-  set_attribute!(T,:is_degenerate => false)
+  set_attribute!(T, :is_degenerate => false)
   return T
 end
 
@@ -724,7 +724,7 @@ end
 Return the abelian group homomorphism between `T` and `U` sending every
 elements of `T` to the zero element of `U`.
 """
-trivial_morphism(T::TorQuadModule, U::TorQuadModule) = hom(T, U, TorQuadModuleElem[id(U) for a in gens(T)])
+trivial_morphism(T::TorQuadModule, U::TorQuadModule) = hom(T, U, zero_matrix(ZZ, ngens(T), ngens(U)))
 
 @doc raw"""
     trivial_morphism(T::TorQuadModule) -> TorQuadModuleMor
@@ -857,7 +857,7 @@ function has_complement(i::TorQuadModuleMor)
     return (false, sub(T, TorQuadModuleElem[])[2])
   end
   Qab = domain(jab)
-  Q, j = sub(T, [T(jab(a)) for a in gens(Qab)])
+  Q, j = sub(T, TorQuadModuleElem[T(jab(a)) for a in gens(Qab)])
   return (true, j)
 end
 
@@ -1079,7 +1079,7 @@ function _isometry_non_split_degenerate(T::TorQuadModule, U::TorQuadModule)
     end
 
     t = Ts[i+1]
-    card = prod([order(Ts[k]) for k in 1:(i+1)], init = ZZ(1))
+    card = prod([order(Ts[k]) for k in 1:(i+1)]; init = ZZ(1))
     for u in u_cand[i+1]
       if all(k -> u*f[k] == t*Ts[k], 1:i)
         fnew = copy(f)
@@ -1345,18 +1345,18 @@ Return the submodule of `T` defined by `generators` and the inclusion morphism.
 function sub(T::TorQuadModule, gens::Vector{TorQuadModuleElem})
   @req all(parent(x)===T for x in gens) "generators must lie in T"
   if length(gens) > 0
-    _gens = [lift(g) for g in gens]
+    _gens = Vector{QQFieldElem}[lift(g) for g in gens]
     V = ambient_space(T.cover)
     _gens_mat = matrix(QQ, _gens)
-    gens_new = [basis_matrix(T.rels); _gens_mat]
-    cover = lattice(V, gens_new, isbasis = false)
+    gens_new = [basis_matrix(T.rels); _gens_mat]::QQMatrix
+    cover = lattice(V, gens_new; isbasis = false)
   else
     cover = T.rels
     _gens = nothing
   end
-  S = torsion_quadratic_module(cover, T.rels, gens=_gens, modulus=modulus_bilinear_form(T),
+  S = torsion_quadratic_module(cover, T.rels; gens=_gens, modulus=modulus_bilinear_form(T),
                                modulus_qf=modulus_quadratic_form(T))
-  imgs = [T(lift(g)) for g in Hecke.gens(S)]
+  imgs = TorQuadModuleElem[T(lift(g)) for g in Hecke.gens(S)]
   inclusion = hom(S, T, imgs)
   return S, inclusion
 end
@@ -1416,11 +1416,11 @@ function torsion_quadratic_module(q::QQMatrix)
   Q = change_base_ring(FlintZZ, d * q)
   S, U, V = snf_with_transform(Q)
   D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
-  L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)), gram = d^2 * q)
-  denoms = [denominator(D[i, i]) for i in 1:ncols(D)]
+  L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)); gram = d^2 * q)
+  denoms = QQFieldElem[denominator(D[i, i]) for i in 1:ncols(D)]
   rels = diagonal_matrix(denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
-  return torsion_quadratic_module(L, LL, modulus = QQFieldElem(1))
+  return torsion_quadratic_module(L, LL; modulus = QQFieldElem(1))
 end
 
 TorQuadModule(q::QQMatrix) = torsion_quadratic_module(q)
@@ -1432,8 +1432,7 @@ Return the primary part of `T` as a submodule.
 """
 function primary_part(T::TorQuadModule, m::ZZRingElem)
   S, i = primary_part(T.ab_grp, m, false)
-  genprimary = [i(s) for s in gens(S)]
-  submod = sub(T, [T(a) for a in genprimary])
+  submod = sub(T, TorQuadModuleElem[T(i(s)) for s in gens(S)])
   return submod
 end
 
@@ -1460,7 +1459,7 @@ function orthogonal_submodule(T::TorQuadModule, S::TorQuadModule)
   ortho = intersect(lattice(V, B), lattice(V, orthogonal))
   Borth = basis_matrix(ortho)
   gens_orth = [T(vec(collect(Borth[i,:]))) for i in 1:nrows(Borth)]
-  gens_orth = [v for v in gens_orth if !iszero(v)]
+  filter!(!iszero, gens_orth)
   return sub(T, gens_orth)
 end
 
@@ -1501,7 +1500,7 @@ Return the radical `\{x \in T | b(x,T) = 0 and q(x)=0\}` of the quadratic form
 function radical_quadratic(T::TorQuadModule)
   Kb, ib = radical_bilinear(T)
   G = gram_matrix_quadratic(Kb)*1//modulus_bilinear_form(Kb)
-  F = Native.GF(2, cached=false)
+  F = Native.GF(2; cached=false)
   G2 = matrix(F, nrows(G), 1, F.(diagonal(G)))
   r, kermat = left_kernel(G2)
   kermat = lift(kermat[1:r,:])
@@ -1528,7 +1527,7 @@ function rescale(T::TorQuadModule, k::RingElement)
   M = lattice(V, basis_matrix(C))
   N = lattice(V, basis_matrix(T.rels))
   gene = ngens(T) == 0 ? nothing : lift.(gens(T))
-  return torsion_quadratic_module(M, N, gens = gene,
+  return torsion_quadratic_module(M, N; gens = gene,
                                         modulus = abs(k)*modulus_bilinear_form(T),
                                         modulus_qf = abs(k)*modulus_quadratic_form(T))
 end
@@ -1549,8 +1548,8 @@ function normal_form(T::TorQuadModule; partial=false)
   end
   if is_degenerate(T)
     K, _ = radical_quadratic(T)
-    N = torsion_quadratic_module(cover(T), cover(K), modulus=modulus_bilinear_form(T), modulus_qf=modulus_quadratic_form(T))
-    i = hom(T, N, [N(lift(g)) for g in gens(T)])
+    N = torsion_quadratic_module(cover(T), cover(K); modulus=modulus_bilinear_form(T), modulus_qf=modulus_quadratic_form(T))
+    i = hom(T, N, TorQuadModuleElem[N(lift(g)) for g in gens(T)])
   else
     N = T
     i = identity_map(T)
@@ -1570,17 +1569,17 @@ function normal_form(T::TorQuadModule; partial=false)
     # so we should work with the lattice q_p --> q_p^-1
     q_p1 = inv(q_p)
     prec = 2*valuation(exponent(T), p) + 5
-    D, U = padic_normal_form(q_p1, p, prec=prec, partial=partial)
+    D, U = padic_normal_form(q_p1, p; prec, partial)
     R = residue_ring(ZZ, ZZ(p)^prec)
-    U = map_entries(x->R(ZZ(x)),U)
-    U = transpose(inv(U))
+    UR = map_entries(x->R(ZZ(x)), U)
+    UR = transpose(inv(UR))
 
     # the inverse is in normal form - so to get a normal form for
     # the original one
     # it is enough to massage each 1x1 resp. 2x2 block.
     denom = denominator(q_p)
     q_pR = map_entries(x->R(ZZ(x)), denom*q_p)
-    D = U * q_pR * transpose(U)
+    D = UR * q_pR * transpose(UR)
     D = map_entries(x->R(mod(lift(x),denom)), D)
     if p != 2
        # follow the conventions of Miranda-Morrison
@@ -1589,13 +1588,12 @@ function normal_form(T::TorQuadModule; partial=false)
     end
 
     D1, U1 = _normalize(D, ZZ(p), false)
-    U = U1 * U
-
+    UR = U1 * UR
     #apply U to the generators
-    n1 = ncols(U)
+    n1 = ncols(UR)
     Gp =  gens(D_p);
-    for i in 1:nrows(U)
-      g = sum(lift(U[i,j]) * Gp[j] for j in 1:ncols(U))
+    for i in 1:nrows(UR)
+      g = sum(lift(UR[i,j]) * Gp[j] for j in 1:ncols(UR))
       push!(normal_gens, I_p(g))
     end
   end
@@ -1729,9 +1727,9 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
     if length(elementary_divisors(D)) != 0
       G_p = inv(gram_matrix_quadratic(D))
       # get rid of denominators without changing the local equivalence class
-      G_p *= denominator(G_p)^2
-      G_p = change_base_ring(ZZ, G_p)
-      genus_p = genus(G_p, p, valuation(elementary_divisors(D)[end], p))
+      map_entries!(x -> x*denominator(G_p)^2, G_p, G_p)
+      G_pZZ = change_base_ring(ZZ, G_p)
+      genus_p = genus(G_pZZ, p, valuation(elementary_divisors(D)[end], p))
     else
       genus_p = ZZLocalGenus(p, Vector{Int}[])
     end
@@ -1739,13 +1737,13 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
     if rk > 0
       if p == 2
         det = remove(determinant, 2)[2]
-        det *= prod([di[3] for di in genus_p._symbol])
-        det = mod(det, 8)
-        push!(genus_p._symbol, [0, rk, det, 0, 0])
+        mul!(det, det, prod(di[3] for di in genus_p._symbol; init = ZZ(1)))
+        mod!(det, det, ZZ(8))
+        push!(genus_p._symbol, Int[0, rk, det, 0, 0])
       else
-        det = jacobi_symbol(remove(determinant, p)[2], p)
-        det = det * prod([di[3] for di in genus_p._symbol])
-        push!(genus_p._symbol, [0, rk, det])
+        det = ZZ(jacobi_symbol(remove(determinant, p)[2], p))
+        mul!(det, det, prod(di[3] for di in genus_p._symbol; init = ZZ(1)))
+        push!(genus_p._symbol, Int[0, rk, det])
       end
     end
     sort!(genus_p._symbol)
@@ -1755,13 +1753,13 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
   # but it may be empty
   sym2 = local_symbols[1]._symbol
   if sym2[1][1] != 0
-    sym2 = pushfirst!(sym2, [0, 0, 1, 0, 0])
+    sym2 = pushfirst!(sym2, Int[0, 0, 1, 0, 0])
   end
   if length(sym2) <= 1 || sym2[2][1] != 1
-    sym2 = insert!(sym2, 2, [1, 0, 1, 0, 0])
+    sym2 = insert!(sym2, 2, Int[1, 0, 1, 0, 0])
   end
   if length(sym2) <= 2 || sym2[3][1] != 2
-    sym2 = insert!(sym2, 3, [2, 0, 1, 0, 0])
+    sym2 = insert!(sym2, 3, Int[2, 0, 1, 0, 0])
   end
   if modulus_quadratic_form(T) == 1
     # in this case the blocks of scales 1, 2, 4 are under determined
@@ -1771,15 +1769,15 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
     # the form is odd
     block0 = [b for b in _blocks(sym2[1]) if b[4] == 1]
 
-    o = sym2[2][4]
+    o = sym2[2][4]::Int
     # no restrictions on determinant and
     # oddity beyond existence
     # but we know if even or odd
     block1 = [b for b in _blocks(sym2[2]) if b[4] == o]
 
-    d = sym2[3][3]
-    o = sym2[3][4]
-    t = sym2[3][5]
+    d = sym2[3][3]::Int
+    o = sym2[3][4]::Int
+    t = sym2[3][5]::Int
     # if the jordan block of scale 2 is even we know it
     if o == 0
       block2 = [sym2[3]]
@@ -1797,9 +1795,9 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
       block0 = [b for b in _blocks(sym2[1]) if b[4] == 0]
 
       # if the jordan block of scale 2 is even we know it
-      d = sym2[2][3]
-      o = sym2[2][4]
-      t = sym2[2][5]
+      d = sym2[2][3]::Int
+      o = sym2[2][4]::Int
+      t = sym2[2][5]::Int
       if o == 0
         block1 = [sym2[2]]
       else
@@ -1933,7 +1931,7 @@ function +(T::TorQuadModule, U::TorQuadModule)
   rS = relations(T) + relations(U)
   geneT = [lift(a) for a in gens(T)]
   geneU = [lift(b) for b in gens(U)]
-  S = torsion_quadratic_module(cS, rS, gens = unique([g for g in vcat(geneT, geneU) if !is_zero(g)]), modulus = modulus_bilinear_form(T), modulus_qf = modulus_quadratic_form(T))
+  S = torsion_quadratic_module(cS, rS; gens = filter!(!iszero, union!(geneT, geneU)), modulus = modulus_bilinear_form(T), modulus_qf = modulus_quadratic_form(T))
   return S
 end
 
@@ -1954,7 +1952,7 @@ function _biproduct(x::Vector{TorQuadModule}; proj = true)
     gene = [injC[i](lift(a)) for a in gens(x[i])]
     push!(gensinj, gene)
   end
-  S = torsion_quadratic_module(C, R, gens = reduce(vcat, gensinj), modulus = mbf, modulus_qf = mqf)
+  S = torsion_quadratic_module(C, R; gens = reduce(vcat, gensinj), modulus = mbf, modulus_qf = mqf)
   for i in 1:length(x)
     T = x[i]
     iT = hom(T, S, S.(gensinj[i]))
