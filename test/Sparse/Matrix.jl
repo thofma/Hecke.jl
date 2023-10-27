@@ -207,6 +207,34 @@ using Hecke.SparseArrays
   E = @inferred D * R(3)
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
 
+  # Dot product
+
+  D = sparse_matrix(ZZ, [4 -2; -2 2])
+  E = sparse_matrix(ZZ, [3 0 0; 0 0 3; 0 3 0])
+
+  @test dot(sparse_row(ZZ, [1], [1]), D, sparse_row(ZZ, [1], [1])) == 4
+  @test dot(sparse_row(ZZ, [1, 2], [1, 1]), D, sparse_row(ZZ, [1, 2], [1, 2])) == 2
+  @test dot(sparse_row(ZZ, [1], [1]), D, sparse_row(ZZ, [2], [1])) == -2
+
+  @test dot(sparse_row(ZZ, [1, 4], [1, 2]), D, sparse_row(ZZ, [2], [1])) == -2
+  @test dot(sparse_row(ZZ, [1, 4], [1, 2]), E, sparse_row(ZZ, [2], [1])) == 0
+  @test dot(sparse_row(ZZ, [1, 3], [1, 2]), E, sparse_row(ZZ, [2], [1])) == 6
+
+  @test dot(ZZRingElem[1, 0], D, ZZRingElem[1, 0]) == 4
+  @test dot(ZZRingElem[1, 1], D, ZZRingElem[1, 2]) == 2
+  @test dot(ZZRingElem[1, 0], D, ZZRingElem[0, 1]) == -2
+
+  @test dot(ZZ[1 0], D, ZZ[1 0]) == 4
+  @test dot(ZZ[1; 1], D, ZZ[1 2]) == 2
+  @test dot(ZZ[1 0], D, ZZ[0; 1]) == -2
+
+  @test_throws ArgumentError dot(ZZRingElem[1], D, ZZRingElem[0, 1])
+  @test_throws ArgumentError dot(ZZRingElem[1, 0, 0], D, ZZRingElem[0, 1])
+  @test_throws ArgumentError dot(ZZRingElem[1, 0], D, ZZRingElem[0, 1, 0])
+
+  @test_throws ArgumentError dot(ZZ[1 0 0], D, ZZ[1 0])
+  @test_throws ArgumentError dot(ZZ[1 0; 0 0], D, ZZ[1 0 0 0])
+
   # Submatrix
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])

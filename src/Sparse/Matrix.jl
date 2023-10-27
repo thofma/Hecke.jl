@@ -729,59 +729,87 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    dot(x::SRow{T}, A::SMat{T}, y::SRow{T}) where T -> T
+
+Return the generalized dot product `dot(x, A*y)`.
+"""
 function dot(x::SRow{T}, A::SMat{T}, y::SRow{T}) where T
   v = T(0)
-
   px = 1
-  py = 1
-  for i in 1:length(A.rows), j in 1:length(A[i].pos)
-    while px <= length(x.pos) && x.pos[px] < A[i].pos[j]
+  for i in 1:length(A.rows)
+    while px <= length(x.pos) && x.pos[px] < i
       px += 1
     end
     if px > length(x.pos)
       break
+    elseif x.pos[px] > i
+      continue
     end
 
-    while py <= length(y.pos) && y.pos[py] < A[i].pos[j]
-      py += 1
-    end
-    if py > length(y.pos)
-      break
+    s = T(0)
+    py = 1
+    for j in 1:length(A[i].pos)
+      while py <= length(y.pos) && y.pos[py] < A[i].pos[j]
+        py += 1
+      end
+      if py > length(y.pos)
+        break
+      elseif y.pos[py] > A[i].pos[j]
+        continue
+      end
+
+      s += A[i].values[j] * y.values[py]
     end
 
-    if x.pos[px] == A[i].pos[j] == y.pos[py]
-      v += x.values[px] * A[i].values[j] * y.values[py]
-    end
+    v += x.values[px] * s
   end
 
   return v
 end
 
+@doc raw"""
+    dot(x::AbstractVector{T}, A::SMat{T}, y::AbstractVector{T}) where T -> T
+
+Return the generalized dot product `dot(x, A*y)`.
+"""
 function dot(x::AbstractVector{T}, A::SMat{T}, y::AbstractVector{T}) where T
-  @assert length(x) == length(y)
+  @req length(x) == length(A.rows) == length(y) "incompatible matrix dimensions"
 
   v = T(0)
-  for i in 1:length(A.rows), j in 1:length(A[i].pos)
-    if A[i].pos[j] > length(x) || A[i].pos[j] > length(y)
-      error("incompatible matrix dimensions")
+  for i in 1:length(A.rows)
+    s = T(0)
+    for j in 1:length(A[i].pos)
+      if A[i].pos[j] > length(y)
+        error("incompatible matrix dimensions")
+      end
+      s += A[i].values[j] * y[A[i].pos[j]]
     end
-    v += x[A[i].pos[j]] * A[i].values[j] * y[A[i].pos[j]]
+    v += x[i] * s
   end
 
   return v
 end
 
-# support dot product for vector matrices
+@doc raw"""
+    dot(x::MatrixElem{T}, A::SMat{T}, y::MatrixElem{T}) where T -> T
+
+Return the generalized dot product `dot(x, A*y)`.
+"""
 function dot(x::MatrixElem{T}, A::SMat{T}, y::MatrixElem{T}) where T
-  @assert length(x) == length(y)
+  @req length(x) == length(A.rows) == length(y) "incompatible matrix dimensions"
   len = length(x)
 
   v = T(0)
-  for i in 1:length(A.rows), j in 1:length(A[i].pos)
-    if A[i].pos[j] > len || A[i].pos[j] > len
-      error("incompatible matrix dimensions")
+  for i in 1:length(A.rows)
+    s = T(0)
+    for j in 1:length(A[i].pos)
+      if A[i].pos[j] > len
+        error("incompatible matrix dimensions")
+      end
+      s += A[i].values[j] * y[A[i].pos[j]]
     end
-    v += x[A[i].pos[j]] * A[i].values[j] * y[A[i].pos[j]] # this will throw if x or y is not a vector
+    v += x[i] * s
   end
 
   return v
