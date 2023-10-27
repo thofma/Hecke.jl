@@ -1534,7 +1534,7 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   end
 
   G = gram_matrix_of_rational_span(L)
-  @hassert :Lattice 1 all(g * G * map(involution(L), transpose(g)) == G
+  @hassert :Lattice 1 all(g * G * _map(transpose(g), involution(L)) == G
                             for g in t_gens)
 
   pm = pseudo_matrix(L)
@@ -1579,7 +1579,7 @@ function automorphism_group_generators(L::AbstractLat; ambient_representation::B
     if check
       Grel = gram_matrix(rational_span(L))
       for g in gens
-        @assert g * Grel * map(involution(L), transpose(g)) == Grel
+        @assert g * Grel * _map(transpose(g), involution(L)) == Grel
       end
     end
     return copy(gens)
@@ -1594,7 +1594,7 @@ function automorphism_group_generators(L::AbstractLat; ambient_representation::B
       flag = true
       Gamb = gram_matrix(ambient_space(L))
       for g in gens
-        if g * Gamb * map(involution(L), transpose(g)) != Gamb
+        if g * Gamb * _map(transpose(g), involution(L)) != Gamb
           flag = false
         end
       end
@@ -1705,7 +1705,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     fl, s2 = can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM; side = :left)
     T = s1 * change_base_ring(E, T) * s2
     @hassert :Lattice 1 T * gram_matrix(rational_span(M)) *
-                                map(involution(L), transpose(T)) ==
+                            _map(transpose(T), involution(L)) ==
                                 gram_matrix(rational_span(L))
     if !ambient_representation
       return true, T
@@ -1718,7 +1718,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
       T = inv(BL)*T*BM
 
       @hassert :Lattice 1 T * gram_matrix(ambient_space(M)) *
-                              map(involution(L), transpose(T)) ==
+                              _map(transpose(T), involution(L)) ==
                                   gram_matrix(ambient_space(L))
       return true, T
     end
