@@ -725,6 +725,70 @@ end
 
 ################################################################################
 #
+#  Dot product
+#
+################################################################################
+
+function dot(x::SRow{T}, A::SMat{T}, y::SRow{T}) where T
+  v = T(0)
+
+  px = 1
+  py = 1
+  for i in 1:length(A.rows), j in 1:length(A[i].pos)
+    while px <= length(x.pos) && x.pos[px] < A[i].pos[j]
+      px += 1
+    end
+    if px > length(x.pos)
+      break
+    end
+
+    while py <= length(y.pos) && y.pos[py] < A[i].pos[j]
+      py += 1
+    end
+    if py > length(y.pos)
+      break
+    end
+
+    if x.pos[px] == A[i].pos[j] == y.pos[py]
+      v += x.values[px] * A[i].values[j] * y.values[py]
+    end
+  end
+
+  return v
+end
+
+function dot(x::AbstractVector{T}, A::SMat{T}, y::AbstractVector{T}) where T
+  @assert length(x) == length(y)
+
+  v = T(0)
+  for i in 1:length(A.rows), j in 1:length(A[i].pos)
+    if A[i].pos[j] > length(x) || A[i].pos[j] > length(y)
+      error("incompatible matrix dimensions")
+    end
+    v += x[A[i].pos[j]] * A[i].values[j] * y[A[i].pos[j]]
+  end
+
+  return v
+end
+
+# support dot product for vector matrices
+function dot(x::MatrixElem{T}, A::SMat{T}, y::MatrixElem{T}) where T
+  @assert length(x) == length(y)
+  len = length(x)
+
+  v = T(0)
+  for i in 1:length(A.rows), j in 1:length(A[i].pos)
+    if A[i].pos[j] > len || A[i].pos[j] > len
+      error("incompatible matrix dimensions")
+    end
+    v += x[A[i].pos[j]] * A[i].values[j] * y[A[i].pos[j]] # this will throw if x or y is not a vector
+  end
+
+  return v
+end
+
+################################################################################
+#
 #  Submatrix
 #
 ################################################################################
