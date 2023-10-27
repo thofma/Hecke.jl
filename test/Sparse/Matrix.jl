@@ -342,3 +342,10 @@ end
   A = sparse_matrix(FlintZZ, [2 0; 0 0])
   @test kronecker_product(A, A) == sparse_matrix(FlintZZ, [4 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0])
 end
+
+@testset "Hecke #1261" begin
+  D1 = sparse_matrix(FlintZZ, [3 0 4 0; 0 3 0 4; 0 0 2 0; 0 0 0 2])
+  D2 = identity_matrix(SMat, FlintZZ, 2)
+  E = kronecker_product(D1, D2)
+  @test E == sparse_matrix(kronecker_product(matrix(D1), matrix(D2)))
+end
