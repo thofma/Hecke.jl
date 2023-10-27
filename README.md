@@ -69,28 +69,32 @@ Here is a quick example of using Hecke:
 
 ```julia
 julia> using Hecke
-...
 
 Welcome to
 
-  _    _           _
- | |  | |         | |
- | |__| | ___  ___| | _____
- |  __  |/ _ \/ __| |/ / _ \
- | |  | |  __/ (__|   <  __/
- |_|  |_|\___|\___|_|\_\___|
+    _    _           _
+   | |  | |         | |
+   | |__| | ___  ___| | _____
+   |  __  |/ _ \/ __| |/ / _ \
+   | |  | |  __/ (__|   <  __/
+   |_|  |_|\___|\___|_|\_\___|
 
-Version 0.10.12...
- ... which comes with absolutely no warrant whatsoever
-(c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana
+Version 0.22.4...
+ ... which comes with absolutely no warranty whatsoever
+(c) 2015-2023 by Claus Fieker, Tommy Hofmann and Carlo Sircana
+
 
 julia> Qx, x = polynomial_ring(FlintQQ, "x");
+
 julia> f = x^3 + 2;
+
 julia> K, a = number_field(f, "a");
+
 julia> O = maximal_order(K);
+
 julia> O
-Maximal order of Number field over Rational Field with defining polynomial x^3 + 2
-with basis [1,a,a^2]
+Maximal order of Number field of degree 3 over QQ
+with basis nf_elem[1, a, a^2]
 ```
 
 ## Documentation
