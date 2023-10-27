@@ -18,7 +18,7 @@ y = joinpath(Hecke.pkgdir, "test", "$x.jl")
 ################################################################################
 
 if "threads" in ARGS || get(ENV, "HECKE_TEST_THREADS", "false") in ["1", "true"]
-  @info "Running only threading tests: threads.jl"
+  @info "Running only threading tests with $(Threads.nthreads()): threads.jl"
   include("threads.jl")
   exit()
 end
