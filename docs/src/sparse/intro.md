@@ -211,6 +211,12 @@ Various products:
 *(::SRow{T}, ::SMat{T}) where {T}
 ```
 
+```@docs
+dot(::SRow{T}, ::SMat{T}, ::SRow{T}) where T
+dot(::MatrixElem{T}, ::SMat{T}, ::MatrixElem{T}) where T
+dot(::AbstractVector{T}, ::SMat{T}, ::AbstractVector{T}) where T
+```
+
 Other:
 ```@docs
 sparse(::SMat)
