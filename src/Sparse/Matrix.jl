@@ -1484,13 +1484,12 @@ function kronecker_product(A::SMat{T}, B::SMat{T}) where {T}
       p = Int[]
       v = T[]
       if !iszero(rA)
-        o = (rA.pos[1]-1)*ncols(B)
         for (pp, vv) = rA
+          o = (pp-1)*ncols(B)
           for (qq, ww) = rB
-            push!(p, qq+o)
+            push!(p, o+qq)
             push!(v, vv*ww)
           end
-          o += ncols(B)
         end
       end
       push!(C, sparse_row(base_ring(A), p, v))
