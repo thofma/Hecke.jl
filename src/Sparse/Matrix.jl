@@ -735,7 +735,7 @@ end
 Return the generalized dot product `dot(x, A*y)`.
 """
 function dot(x::SRow{T}, A::SMat{T}, y::SRow{T}) where T
-  v = T(0)
+  v = zero(T)
   px = 1
   for i in 1:length(A.rows)
     while px <= length(x.pos) && x.pos[px] < i
@@ -747,7 +747,7 @@ function dot(x::SRow{T}, A::SMat{T}, y::SRow{T}) where T
       continue
     end
 
-    s = T(0)
+    s = zero(T)
     py = 1
     for j in 1:length(A[i].pos)
       while py <= length(y.pos) && y.pos[py] < A[i].pos[j]
@@ -776,7 +776,7 @@ Return the generalized dot product `dot(x, A*y)`.
 function dot(x::AbstractVector{T}, A::SMat{T}, y::AbstractVector{T}) where T
   @req length(x) == length(A.rows) == length(y) "incompatible matrix dimensions"
 
-  v = T(0)
+  v = zero(T)
   for i in 1:length(A.rows)
     s = T(0)
     for j in 1:length(A[i].pos)
@@ -800,9 +800,9 @@ function dot(x::MatrixElem{T}, A::SMat{T}, y::MatrixElem{T}) where T
   @req length(x) == length(A.rows) == length(y) "incompatible matrix dimensions"
   len = length(x)
 
-  v = T(0)
+  v = zero(T)
   for i in 1:length(A.rows)
-    s = T(0)
+    s = zero(T)
     for j in 1:length(A[i].pos)
       if A[i].pos[j] > len
         error("incompatible matrix dimensions")
