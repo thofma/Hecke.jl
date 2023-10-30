@@ -522,7 +522,7 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         R = mul!(R, T, R)
         ccall((:fmpz_mat_transpose, libflint), Nothing,
            (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
-        if isupper_triangular(S)
+        if is_upper_triangular(S)
           break
         end
       end

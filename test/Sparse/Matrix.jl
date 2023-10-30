@@ -283,11 +283,11 @@ using Hecke.SparseArrays
   @test b == QQFieldElem(-10)
 
   D = sparse_matrix(FlintZZ, [0 2 0; 0 0 1; 0 0 0])
-  @test @inferred isupper_triangular(D)
+  @test @inferred is_upper_triangular(D)
   D = sparse_matrix(FlintZZ, [0 0 2; 0 0 1; 0 0 0])
-  @test !isupper_triangular(D)
+  @test !is_upper_triangular(D)
   D = sparse_matrix(FlintZZ, [0 0 0; 0 0 0; 0 0 0])
-  @test @inferred isupper_triangular(D)
+  @test @inferred is_upper_triangular(D)
 
   # Zero and identity matrix
 
