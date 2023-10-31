@@ -4,7 +4,7 @@
 #       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors,
 #       Hecke.rank, Hecke.det
 
-export det_mc, id, isupper_triangular, norm2, hadamard_bound2,
+export det_mc, id, is_upper_triangular, norm2, hadamard_bound2,
        hnf, hnf!, echelon_with_transform
 
 add_verbosity_scope(:HNF)
@@ -78,7 +78,7 @@ function check_index(M::ModuleCtx_fmpz)
 
   if isdefined(M, :basis)
     C = copy(M.basis)
-    @assert isupper_triangular(C)
+    @assert is_upper_triangular(C)
     @assert M.basis_idx != 0
   else
     d = abs(det_mc(M.bas_gens))
@@ -98,7 +98,7 @@ function check_index(M::ModuleCtx_fmpz)
       C.c = max(C.c, h.pos[end])
     end
     M.max_indep = copy(C)
-    @assert isupper_triangular(C)
+    @assert is_upper_triangular(C)
     M.basis_idx = prod([C[i,i] for i=1:nrows(C)])
   end
 

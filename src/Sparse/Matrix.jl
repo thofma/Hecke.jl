@@ -1244,11 +1244,11 @@ end
 ################################################################################
 
 @doc raw"""
-    isupper_triangular(A::SMat)
+    is_upper_triangular(A::SMat)
 
 Returns true if and only if $A$ is upper (right) triangular.
 """
-function isupper_triangular(A::SMat)
+function is_upper_triangular(A::SMat)
   for i=2:A.r
     if iszero(A[i - 1])
       if iszero(A[i])

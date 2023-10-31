@@ -3,7 +3,7 @@ import Nemo: can_solve, can_solve_with_solution
 function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)
-  @hassert :HNF 2  isupper_triangular(A)
+  @hassert :HNF 2  is_upper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
   # the transformation
   # supposed to be over a field...
@@ -88,7 +88,7 @@ function rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem)
 end
 
 function solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
-  @hassert :HNF 1  isupper_triangular(A)
+  @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
 
   sol = sparse_row(FlintZZ)
@@ -114,7 +114,7 @@ function solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
 end
 
 function solve_ut(A::SMat{ZZRingElem}, b::SMat{ZZRingElem})
-  @hassert :HNF 1  isupper_triangular(A)
+  @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
   d = ZZRingElem(1)
   r = sparse_matrix(FlintZZ)
@@ -149,7 +149,7 @@ Uses the dense (zzModMatrix) determinant on $A$ for various primes $p$.
 function det_mc(A::SMat{ZZRingElem})
 
   @hassert :HNF 1  A.r == A.c
-  if isupper_triangular(A)
+  if is_upper_triangular(A)
     z = ZZRingElem[ A[i, i] for i in 1:A.r]
     return prod(z)
   end
@@ -190,7 +190,7 @@ Uses the dense (zzModMatrix) determinant on $A$ for various primes $p$.
 """
 function det(A::SMat{ZZRingElem})
   @hassert :HNF 1  A.r == A.c
-  if isupper_triangular(A)
+  if is_upper_triangular(A)
     return prod(ZZRingElem[A[i,i] for i=1:A.r]) end
 
   b = div(nbits(hadamard_bound2(A)), 2)
@@ -268,7 +268,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
   reverse_rows!(Ep)
   Ep = transpose(Ep)
   reverse_rows!(Ep)
-#  @hassert :HNF 1  Hecke.isupper_triangular(Ep)
+#  @hassert :HNF 1  Hecke.is_upper_triangular(Ep)
 
   reverse_rows!(Tp)
   Tp = transpose(Tp)

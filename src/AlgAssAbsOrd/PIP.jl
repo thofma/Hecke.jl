@@ -1673,7 +1673,7 @@ function _GLn_generators_quadratic(OK, n)
   res = dense_matrix_type(K)[]
   for w in v[3]
     mat = matrix(K, 2, 2, [i(L(u)) for u in w])
-    @assert isunit(det(mat))
+    @assert is_unit(det(mat))
     push!(res, mat)
   end
   return res

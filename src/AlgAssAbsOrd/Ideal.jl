@@ -2123,7 +2123,7 @@ function _lattice_with_local_conditions_contained(O, ps, Is)
   end
 
   for I in Is
-    @assert isunit(denominator(I, O))
+    @assert is_unit(denominator(I, O))
   end
 
   for i in 1:length(ps)

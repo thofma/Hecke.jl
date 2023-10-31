@@ -137,7 +137,7 @@ function _unit_group_maximal(O::AlgAssAbsOrd)
         U, mU = unit_groups[i]
         OK = codomain(mU)
         y = OK(AtoK(elem_in_algebra(x, copy = false)))
-        @assert isunit(y)
+        @assert is_unit(y)
         u = mU\y
         g = hcat(g, u.coeff)
       end
