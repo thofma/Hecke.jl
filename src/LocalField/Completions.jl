@@ -10,7 +10,7 @@ function image(f::CompletionMap, a::nf_elem)
   end
   Qx = parent(parent(a).pol)
   z = evaluate(Qx(a), f.prim_img)
-  if !isunit(z) 
+  if !is_unit(z) 
     v = valuation(a, f.P)
     a = a*uniformizer(f.P).elem_in_nf^-v
     z = evaluate(Qx(a), f.prim_img)

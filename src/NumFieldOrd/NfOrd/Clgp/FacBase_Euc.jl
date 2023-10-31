@@ -50,21 +50,21 @@ function is_smooth(c::FactorBase{T}, a::T) where T
     a = divexact(a, g)
     g = gcd(g, a)
   end
-  return isunit(a)
+  return is_unit(a)
 end
 
 function is_smooth!(c::FactorBase{ZZRingElem}, a::ZZRingElem)
   @assert a != 0
   g = gcd(c.prod, a)
   if isone(g)
-    return isunit(a), a
+    return is_unit(a), a
   end
   b = copy(a)
   while !isone(g)
     divexact!(b, b, g)
     gcd!(g, g, b)
   end
-  return isunit(b), b
+  return is_unit(b), b
 end
 
 

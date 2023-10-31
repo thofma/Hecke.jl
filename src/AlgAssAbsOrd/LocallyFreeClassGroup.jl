@@ -334,8 +334,8 @@ function _unit_group_generators(A::AlgMat{<:FinFieldElem})
     for i in 2:d
       g2[i, i - 1] = -1
     end
-    @assert isunit(det(g1))
-    @assert isunit(det(g2))
+    @assert is_unit(det(g1))
+    @assert is_unit(det(g2))
     push!(res, g1, g2)
   end
   return map(A, res)
