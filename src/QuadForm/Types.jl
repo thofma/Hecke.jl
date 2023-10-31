@@ -465,15 +465,6 @@ end
 #
 ###############################################################################
 
-mutable struct SCPComb
-  rank::Int
-  trans::ZZMatrix
-  coef::ZZMatrix
-  F::Vector{ZZMatrix}
-
-  SCPComb() = new()
-end
-
 mutable struct VectorList{S, T}
   vectors::Vector{S}
   lengths::Vector{Vector{T}}
@@ -484,6 +475,16 @@ mutable struct VectorList{S, T}
   function VectorList{S, T}() where {S, T}
     return new{S, T}()
   end
+end
+
+# scalar product combinations
+mutable struct SCPComb{S, T, V}
+  scpcombs::VectorList{V, S} # list of vectors s with <w, e_i> = s_i for w a short vector
+  trans::T # transformation matrix mapping the vector sums to a basis
+  coef::T # "inverse" of trans: maps the basis to the vector sums
+  F::Vector{T} # Gram matrices of the basis
+
+  SCPComb{S, T, V}() where {S, T, V} = new{S, T, V}()
 end
 
 mutable struct ZLatAutoCtx{S, T, V}
@@ -497,7 +498,8 @@ mutable struct ZLatAutoCtx{S, T, V}
   fp::Matrix{Int}
   fp_diagonal::Vector{Int}
   std_basis::Vector{Int}
-  scpcomb::SCPComb
+  scpcomb::Vector{SCPComb{S, T, V}}
+  depth::Int
 
   orders::Vector{Int}
   ng::Vector{Int}

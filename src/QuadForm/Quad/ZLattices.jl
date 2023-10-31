@@ -373,7 +373,7 @@ end
 # L.automorphism_group_generators
 # L.automorphism_group_order
 function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
-                                            try_small::Bool = true)
+                                            try_small::Bool = true, depth::Int = 0)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -416,18 +416,18 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
 
   C = ZLatAutoCtx(res)
   if try_small
-    fl, Csmall = try_init_small(C)
+    fl, Csmall = try_init_small(C, depth = depth)
     if fl
       auto(Csmall)
       _gens, order = _get_generators(Csmall)
       gens = ZZMatrix[matrix(FlintZZ, g) for g in _gens]
     else
-      init(C)
+      init(C, depth = depth)
       auto(C)
       gens, order = _get_generators(C)
     end
   else
-    init(C)
+    init(C, depth = depth)
     auto(C)
     gens, order = _get_generators(C)
   end
@@ -450,10 +450,10 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = true)
+function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = true, depth::Int = 0)
 
   @req rank(L) in [0, 2] || is_definite(L) "The lattice must be definite or of rank at most 2"
-  assert_has_automorphisms(L)
+  assert_has_automorphisms(L, depth = depth)
 
   gens = L.automorphism_group_generators
   if !ambient_representation
