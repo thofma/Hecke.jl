@@ -84,7 +84,7 @@ function _prime_partition(do_it, nt)
   end
   @assert first(do_it) == 1
   ub = last(do_it)
-  np = ceil(Int, logarithmic_integral(1.0*ub))
+  np = ceil(Int, max(10.0, logarithmic_integral(1.0*ub)))
   primes_per_thread = ceil(Int, np//nt)
   intervals = collect(Iterators.partition(1:np, primes_per_thread))
   res = UnitRange{Int}[]
