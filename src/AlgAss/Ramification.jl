@@ -56,7 +56,7 @@ function is_split(A::AbsAlgAss{nf_elem})
 end
 
 function is_split(A::AbsAlgAss, P::InfPlc)
-  if iscomplex(P)
+  if is_complex(P)
     return true
   end
   return schur_index(A, P) == 1
@@ -116,8 +116,8 @@ Determine the Schur index of $A$ at $p$, where $p$ is either a prime or `inf`.
 schur_index(A::AbsAlgAss{QQFieldElem}, ::Union{IntegerUnion, PosInf})
 
 function schur_index(A::AbsAlgAss{QQFieldElem}, ::PosInf)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   dim(A) % 4 == 0 || return 1
 
@@ -132,8 +132,8 @@ function schur_index(A::AbsAlgAss{QQFieldElem}, ::PosInf)
 end
 
 function schur_index(A::AbsAlgAss{nf_elem}, P::InfPlc)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   dim(A) % 4 == 0 && is_real(P) || return 1
 
@@ -150,8 +150,8 @@ end
 #  Schur Index at p
 
 function schur_index(A::AbsAlgAss, p::IntegerUnion)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   d = discriminant(maximal_order(A))
   v = valuation(d, p)
@@ -164,8 +164,8 @@ function schur_index(A::AbsAlgAss, p::IntegerUnion)
 end
 
 function schur_index(A::AbsAlgAss{<: NumFieldElem}, p::NumFieldOrdIdl)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   M = maximal_order(A)
   d = discriminant(maximal_order(A))
@@ -206,7 +206,7 @@ end
 ################################################################################
 
 function is_eichler(A::AbsAlgAss)
-  if issimple(A) && iscentral(A)
+  if is_simple(A) && is_central(A)
     return _is_eichler_csa(A)
   end
   d = decompose(A)
@@ -222,8 +222,8 @@ end
 # Tests whether A fulfils the Eichler condition relative to the maximal Z-order
 # of base_ring(A)
 function _is_eichler_csa(A::AbsAlgAss{nf_elem})
-  @assert issimple(A)
-  @assert iscentral(A)
+  @assert is_simple(A)
+  @assert is_central(A)
 
   if !istotally_real(base_ring(A))
     return true
@@ -244,8 +244,8 @@ function _is_eichler_csa(A::AbsAlgAss{nf_elem})
 end
 
 function _is_eichler_csa(A::AbsAlgAss{QQFieldElem})
-  @assert issimple(A)
-  @assert iscentral(A)
+  @assert is_simple(A)
+  @assert is_central(A)
   if dim(A) != 4
     return true
   end

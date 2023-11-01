@@ -160,13 +160,13 @@
 
   @testset "Trivial" begin
     G = abelian_group([1])
-    @test @inferred istrivial(G)
+    @test @inferred is_trivial(G)
     G = abelian_group([1, 1, 1])
-    @test @inferred istrivial(G)
+    @test @inferred is_trivial(G)
     G = abelian_group([3, 3])
-    @test @inferred !istrivial(G)
+    @test @inferred !is_trivial(G)
     G = abelian_group([3, 5])
-    @test @inferred !istrivial(G)
+    @test @inferred !is_trivial(G)
   end
 
   @testset "Isomorphism" begin
