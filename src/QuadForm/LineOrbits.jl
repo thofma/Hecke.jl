@@ -16,7 +16,7 @@ function LineEnumCtx(K::T, n) where {T}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(q^n - 1, q - 1)
+  length = divexact(BigInt(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -29,7 +29,7 @@ function LineEnumCtx(K::T, n::Int) where {T <: Union{fpField, FpField}}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(q^n - 1, q - 1)
+  length = divexact(BigInt(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -58,11 +58,37 @@ Base.length(P::LineEnumCtx) = P.length
 
 Base.eltype(::Type{LineEnumCtx{T, S}}) where {T, S} = Vector{S}
 
+base_field(P::LineEnumCtx) = P.K
+
 depth(P::LineEnumCtx) = P.depth
 
 dim(P::LineEnumCtx) = P.dim
 
 primitive_element(P::LineEnumCtx) = P.a
+
+function Base.getindex(P::LineEnumCtx{T}, i::Integer) where {T <: Union{fpField, FpField}}
+  1 <= i <= length(P) || Base.throw_boundserror(P, i)
+  K = base_field(P)
+  v = fill(zero(K), dim(P))
+  if i == 1
+    v[end] = one(K)
+    return v
+  end
+  p = size(K)
+  j = i-2
+  n = findfirst(n -> sum(BigInt(p)^i for i in 1:n) > j, 1:256)
+  v[end-n] = one(K)
+  j = n == 1 ? j : j-sum(BigInt(p)^k for k in 1:(n-1))
+  str = base(ZZ(j), Int(p))
+  for k in 1:length(str)
+    v[end-length(str)+k] = K(Int(str[k])-48)
+  end
+  return v
+end
+
+function Base.rand(P::LineEnumCtx{T}) where {T <: Union{fpField, FpField}}
+  return P[Base.rand(1:length(P))]
+end
 
 ################################################################################
 #
