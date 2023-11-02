@@ -158,6 +158,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl, Zk::NfOrd = maximal_order(domai
   for (s, e) in gp
     if iszero(s(hp) % Gp)
       p = ideal_from_poly(Zk, Int(minimum(P)), s, e)
+      @hassert :NfOrd 1 is_consistent(p)
       return p
     end
   end
