@@ -16,7 +16,7 @@ function LineEnumCtx(K::T, n::Int) where {T}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(ZZ(q)^n - 1, q - 1)
+  length = divexact(BigInt(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -29,7 +29,7 @@ function LineEnumCtx(K::T, n::Int) where {T <: Union{fpField, FpField}}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(ZZ(q)^n - 1, q - 1)
+  length = divexact(BigInt(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -54,7 +54,7 @@ function Base.show(io::IO, P::LineEnumCtx)
   end
 end
 
-Base.length(P::LineEnumCtx) = Int(P.length)
+Base.length(P::LineEnumCtx) = P.length
 
 Base.eltype(::Type{LineEnumCtx{T, S}}) where {T, S} = Vector{S}
 

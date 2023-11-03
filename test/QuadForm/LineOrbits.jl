@@ -6,6 +6,6 @@
   show(io, P)
   for i in 1:100
     v = rand(P)
-    @test gcd(v) == 1
+    @test !iszero(v) && isone(v[findfirst(!iszero, v)])
   end
 end

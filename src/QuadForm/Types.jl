@@ -444,7 +444,7 @@ mutable struct LineEnumCtx{T, S}
   dim::Int
   depth::Int
   v::Vector{S}
-  length::IntegerUnion
+  length::BigInt
 end
 
 ###############################################################################
