@@ -54,7 +54,7 @@ function Base.show(io::IO, P::LineEnumCtx)
   end
 end
 
-Base.length(P::LineEnumCtx) = BigInt(P.length)
+Base.length(P::LineEnumCtx) = Int(P.length)
 
 Base.eltype(::Type{LineEnumCtx{T, S}}) where {T, S} = Vector{S}
 
