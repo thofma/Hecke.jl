@@ -1146,7 +1146,7 @@ function _sub_integer_snf(G::GrpAbFinGen, n::ZZRingElem, add_to_lattice::Bool = 
     ind += 1
   end
   if ind == ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
-    Gnew = GrpAbFinGenElem(Int[])
+    Gnew = GrpAbFinGen(Int[])
     mp = hom(Gnew, G, GrpAbFinGenElem[])
     if add_to_lattice
       append!(L, mp)

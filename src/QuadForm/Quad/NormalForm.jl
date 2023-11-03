@@ -836,9 +836,10 @@ function _min_nonsquare(p)
   Rx, x = polynomial_ring(GF(p, cached = false), "x", cached = false)
   for i in 1:p
     if length(factor(x^2 - i)) == 1
-      return i
+      return Int(i)
     end
   end
+  error("this can't be reached")
 end
 
 function _issquare(d::Nemo.ZZModRingElem, p::ZZRingElem)
