@@ -12,7 +12,7 @@ function Base.push!(C::GrpAbFinGen, a::GrpAbFinGenElem)
   return sub(parent(a), g)
 end
 
-#TODO: should be exported, but at this point, index is not yet a symbol, so it can't be extended. 
+#TODO: should be exported, but at this point, index is not yet a symbol, so it can't be extended.
 #Should move to GrpAb
 function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
   return divexact(order(G), order(U))
@@ -57,7 +57,7 @@ true
 """
 function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
   @assert all(x->order(x) == order(S[1]), S)
-  @assert isprime(p) #maybe not necessary
+  @assert is_prime(p) #maybe not necessary
 
   #TODO: need primes above p as well?
   ZK = order(S[1])
@@ -79,7 +79,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
     end
     p, pos = iterate(P, pos)
   end
-  
+
   if length(D) + length(S) == 0
     U, mU = Hecke.unit_group_fac_elem(ZK)
   else
@@ -103,9 +103,9 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
   #the forward map has a couple of possibilities:
   # - take any lift to k, map to U map to K
   # -                            U and when mapping to K, reduce exponents
-  # -                                                     use comp. rep. 
+  # -                                                     use comp. rep.
   #
-  # the backward map is more tricky, but the indirect route via 
+  # the backward map is more tricky, but the indirect route via
   # class field theory (Frobenius) works for Magma - it should work here.
 
   function toK(x::GrpAbFinGenElem; algo::Symbol = algo)
@@ -174,14 +174,14 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
                isa(e, BadPrime) || rethrow(e)
                nothing
              end
-        va === nothing && continue     
+        va === nothing && continue
         disc_log_data[pi] = (mF*pseudo_inv(mu), va)
         v = try preimage(mu, mF(x))[1]
             catch e
               isa(e, Hecke.BadPrime) || rethrow(e)
               -1
             end
-        v == -1 && continue    
+        v == -1 && continue
         dx = vcat(dx, matrix(Fp, 1, 1, [v]))
         dl = vcat(dl, matrix(Fp, 1, ngens(Sel), va))
       end
@@ -192,15 +192,15 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
     return Sel(map(lift, vec(collect(sol))))
   end
 
-  return Sel, MapFromFunc(Sel, codomain(mU), toK, toSel) 
+  return Sel, MapFromFunc(Sel, codomain(mU), toK, toSel)
 end
 
 @doc raw"""
     pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
 
-Similar to the `pselmer_group_fac_elem`, the difference is that the elements here are evaluated, 
+Similar to the `pselmer_group_fac_elem`, the difference is that the elements here are evaluated,
 ie. returned explicitly wrt the basis of the number field.
-"""    
+"""
 function pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
   return G, MapFromFunc(G, number_field(order(S[1])), x->evaluate(mp(x)), y->preimage(mp, FacElem([y], ZZRingElem[1])))
@@ -231,7 +231,7 @@ julia> k, mk = kernel(h);
 """
 function pselmer_group_fac_elem(p::Int, S::Vector{ZZRingElem}; algo::Symbol = :raw, check::Bool = true)
   R = FacElemMon(QQ)
-  @assert all(x->(x == -1) || isprime(x), S)
+  @assert all(x->(x == -1) || is_prime(x), S)
   if -1 in S
     @assert p == 2
   end
@@ -274,7 +274,7 @@ function Hecke.is_power(a::FacElem{QQFieldElem, QQField}, p::Int)
     if v % p != 0
       return false
     end
-    if !is_power(k, p)[1] 
+    if !is_power(k, p)[1]
       return false
     end
   end

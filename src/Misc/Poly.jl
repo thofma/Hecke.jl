@@ -730,7 +730,7 @@ function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   g = squarefree_part(f)
   all_rts = _roots(g, prec)
   rl_rts = real.(filter(isreal, all_rts))
-  compl_rts = filter(x -> !isreal(x) && ispositive(imag(x)), all_rts)
+  compl_rts = filter(x -> !isreal(x) && is_positive(imag(x)), all_rts)
   @assert length(rl_rts) + 2 * length(compl_rts) == degree(g)
   return all_rts, rl_rts, compl_rts
 end

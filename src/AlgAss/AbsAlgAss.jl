@@ -469,7 +469,7 @@ Given an étale algebra $A$, return the simple components of $A$
 as fields $K$ together with the projection $A \to K$.
 """
 function components(::Type{Field}, A::AbsAlgAss)
-  @assert iscommutative(A)
+  @assert is_commutative(A)
   return as_number_fields(A)
 end
 

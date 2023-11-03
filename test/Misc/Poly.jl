@@ -21,8 +21,8 @@
 
     while p < 4096
       l = roots(ArbField(p, cached = false), f)
-      sgtpos = count(ispositive, l)
-      sgtneg = count(isnegative, l)
+      sgtpos = count(is_positive, l)
+      sgtneg = count(is_negative, l)
       sgtz = count(iszero, l)
       if sgtpos + sgtneg + sgtz != length(l)
         p *= 2

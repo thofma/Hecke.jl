@@ -1781,7 +1781,7 @@ Returns the prime ideal factorization of $I$ as a dictionary.
 function factor(I::AlgAssAbsOrdIdl)
   @assert is_commutative(algebra(I))
   O = order(I)
-  @hassert :AlgAssOrd ismaximal(O)
+  @hassert :AlgAssOrd is_maximal(O)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
   @hassert :AlgAssOrd _test_ideal_sidedness(I, O, :left)

@@ -1138,7 +1138,7 @@ end
 Return the reduction of $E$ modulo the prime ideal p if p has good reduction
 """
 function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
-  if !isprime(p)
+  if !is_prime(p)
     throw(DomainError(p,"p is not a prime ideal"))
   end
 

@@ -5,9 +5,9 @@
 ################################################################################
 
 function unit_group(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
+  @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group) do
-    if ismaximal(O)
+    if is_maximal(O)
       U, mU = _unit_group_maximal(O)
     else
       OK = maximal_order(O)
@@ -20,9 +20,9 @@ function unit_group(O::AlgAssAbsOrd)
 end
 
 function unit_group_fac_elem(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
+  @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group_fac_elem) do
-    if ismaximal(O)
+    if is_maximal(O)
       U, mU = _unit_group_maximal_fac_elem(O)
     else
       OK = maximal_order(O)
@@ -192,7 +192,7 @@ function unit_group_positive(O::AlgAssAbsOrd, rlpl)
       uinK = co[i][2](u)
       for r in rlpl[i]
         @assert number_field(r) === co[i][1]
-        if ispositive(uinK, r)
+        if is_positive(uinK, r)
           push!(imu, 0)
         else
           push!(imu, 1)

@@ -437,7 +437,7 @@ function maximal_norm_splitting(L, p)
     sL, aL, uL, wL = _scales_and_norms(G, p, uni)
 
     failset_old = failset
-    b, i, failset = __ismaximal_norm_splitting(G, sL, aL, p)
+    b, i, failset = __is_maximal_norm_splitting(G, sL, aL, p)
     @assert isempty(failset_old) || length(failset_old) > length(failset)
     if b
       break
@@ -1123,7 +1123,7 @@ function _scales_and_norms(G, p, uni)
   # scales, norm generators, norm valuations, weight valuations of a (Jordan) decomposition of L
 end
 
-function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
+function __is_maximal_norm_splitting(gram_matrices, scales, norms, p)
   #  Scales: list of valuations of scales
   #  Norms: list of generators of norms
   #  occurring in a Genus symbol of L at p, as calculated by GenusSymbol(L, p).
@@ -1165,7 +1165,7 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   return true, 0, Int[]
 end
 
-function _ismaximal_norm_splitting(G, p)
+function _is_maximal_norm_splitting(G, p)
   sL, aL, _, _ = scales_and_norms(G, p, uniformizer(p))
   return __is_maximal_norm_splitting(G, sL, aL, p)
 end

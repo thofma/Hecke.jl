@@ -1,5 +1,4 @@
 # make some Julia names compatible with our naming conventions
-@alias is_trivial istrivial
 @alias is_hermitian ishermitian
 
 # for backwards compatibility

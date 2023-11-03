@@ -299,7 +299,7 @@ y^2 + x*y = x^3 + x + 1
 ```
 """
 function elliptic_curve(f::PolyRingElem{T}, h::PolyRingElem{T} = zero(parent(f)); check::Bool = true) where T
-  @req ismonic(f) "First polynomial must be monic"
+  @req is_monic(f) "First polynomial must be monic"
   @req degree(f) == 3 "First polynomial must be of degree 3"
   @req degree(h) <= 1 "Second polynomial must be of degree at most 1"
   R = base_ring(f)

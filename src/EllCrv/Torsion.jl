@@ -392,7 +392,7 @@ having found a basis that spans p^r points.
 """
 function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf_elem, QQFieldElem}
 
-  if !isprime(p)
+  if !is_prime(p)
     error("p should be a prime number")
   end
 

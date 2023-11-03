@@ -1248,7 +1248,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     return false, zero_matrix(QQ, 0, dim(q))
   end
   # treat the degenerate case
-  if !isregular(q)
+  if !is_regular(q)
     g = gram_matrix(q)
     r, B = left_kernel(g)
     C = _basis_complement(B)

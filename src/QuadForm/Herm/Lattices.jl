@@ -457,7 +457,7 @@ end
 
 # Checks whether L is p-maximal integral. If not, a minimal integral
 # over-lattice at p is returned
-function _ismaximal_integral(L::HermLat, p)
+function _is_maximal_integral(L::HermLat, p)
   R = base_ring(L)
   E = nf(R)
   D = prime_decomposition(R, p)
@@ -646,7 +646,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
       B, G, S = jordan_decomposition(L, p)
     end
     v = valuation(volume(L), P)
-    ok, x = _ismaximal_integral(L, p)
+    ok, x = _is_maximal_integral(L, p)
     while !ok
       LL = L
       LLL = pseudo_matrix(x, fractional_ideal_type(R)[invP])
@@ -659,7 +659,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
         return false, L
       end
       is_max = false
-      ok, x = _ismaximal_integral(L, p)
+      ok, x = _is_maximal_integral(L, p)
     end
     @assert iseven(v)
     v = div(v, 2)
