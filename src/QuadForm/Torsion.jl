@@ -118,7 +118,7 @@ $$D \times D \to \mathbb{Q} / \mathbb{Z} \qquad (x,y) \mapsto \Phi(x,y) + \mathb
 If `L` is even, then the discriminant group is equipped with the discriminant
 quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{Z}$.
 """
-@attr function discriminant_group(L::ZZLat)::TorQuadModule
+@attr TorQuadModule function discriminant_group(L::ZZLat)
   @req is_integral(L) "The lattice must be integral"
   if rank(L) == 0
     T = torsion_quadratic_module(dual(L), L; modulus = one(QQ), modulus_qf = QQ(2))
