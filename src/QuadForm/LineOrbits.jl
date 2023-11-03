@@ -7,7 +7,7 @@
 # We iterate through K by adding 1 in the prime field case and by multiplying
 # with a primitive element in the general case.
 
-function LineEnumCtx(K::T, n) where {T}
+function LineEnumCtx(K::T, n::Int) where {T}
   a = primitive_element(K)
   v = Vector{elem_type(K)}(undef, n)
   for i in 1:n
@@ -16,7 +16,7 @@ function LineEnumCtx(K::T, n) where {T}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(BigInt(q)^n - 1, q - 1)
+  length = divexact(ZZ(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -29,7 +29,7 @@ function LineEnumCtx(K::T, n::Int) where {T <: Union{fpField, FpField}}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(BigInt(q)^n - 1, q - 1)
+  length = divexact(ZZ(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -54,7 +54,7 @@ function Base.show(io::IO, P::LineEnumCtx)
   end
 end
 
-Base.length(P::LineEnumCtx) = P.length
+Base.length(P::LineEnumCtx) = BigInt(P.length)
 
 Base.eltype(::Type{LineEnumCtx{T, S}}) where {T, S} = Vector{S}
 
@@ -66,28 +66,16 @@ dim(P::LineEnumCtx) = P.dim
 
 primitive_element(P::LineEnumCtx) = P.a
 
-function Base.getindex(P::LineEnumCtx{T}, i::Integer) where {T <: Union{fpField, FpField}}
-  1 <= i <= length(P) || Base.throw_boundserror(P, i)
+function Base.rand(P::LineEnumCtx)
   K = base_field(P)
-  v = fill(zero(K), dim(P))
-  if i == 1
-    v[end] = one(K)
-    return v
+  n = dim(P)
+  v = rand(K, n)
+  while iszero(v)
+    v = rand(K, n)
   end
-  p = size(K)
-  j = i-2
-  n = findfirst(n -> sum(BigInt(p)^i for i in 1:n) > j, 1:256)
-  v[end-n] = one(K)
-  j = n == 1 ? j : j-sum(BigInt(p)^k for k in 1:(n-1))
-  str = base(ZZ(j), Int(p))
-  for k in 1:length(str)
-    v[end-length(str)+k] = K(Int(str[k])-48)
-  end
+  j = findfirst(!iszero, v)
+  map!(x -> x*inv(v[j]), v, v)
   return v
-end
-
-function Base.rand(P::LineEnumCtx{T}) where {T <: Union{fpField, FpField}}
-  return P[Base.rand(1:length(P))]
 end
 
 ################################################################################
