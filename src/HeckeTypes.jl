@@ -1042,6 +1042,9 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     C.princ_gen_fac_elem = FacElem(nf(O)(x))
     C.is_principal = 1
     C.princ_gen_special = (1, abs(x), ZZRingElem(0))
+    if is_zero(x)
+      C.iszero = 1
+    end
     C.gen_one = ZZRingElem(x)
     C.gen_two = O(x)
     C.norm = ZZRingElem(abs(x))^degree(O)
@@ -1059,6 +1062,9 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     C.princ_gen_fac_elem = FacElem(nf(O)(x))
     C.is_principal = 1
     C.princ_gen_special = (2, Int(0), abs(x))
+    if is_zero(x)
+      C.iszero = 1
+    end
     C.gen_one = x
     C.gen_two = O(x)
     C.norm = abs(x)^degree(O)
