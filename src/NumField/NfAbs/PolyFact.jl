@@ -8,7 +8,7 @@ mutable struct HenselCtxQadic <: Hensel
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
   #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyRingElem{qadic}, lfp::Vector{fqPolyRepPolyRingElem})
+  function HenselCtxQadic(f::PolyRingElem{qadic}, lfp::Vector{FqPolyRingElem})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)

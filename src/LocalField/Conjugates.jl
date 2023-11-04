@@ -558,21 +558,21 @@ function completion(K::AnticNumberField, ca::qadic)
   while length(pa) < d
     push!(pa, pa[end]*pa[2])
   end
-  m = matrix(Native.GF(p), d, d, [coeff(pa[i], j-1) for j=1:d for i=1:d])
-  o = matrix(Native.GF(p), d, 1, [coeff(gen(R), j-1) for j=1:d])
+  m = matrix(Nemo._GF(p), d, d, [lift(ZZ, coeff(pa[i], j-1)) for j=1:d for i=1:d])
+  o = matrix(Nemo._GF(p), d, 1, [lift(ZZ, coeff(gen(R), j-1)) for j=1:d])
   s = solve(m, o)
   @hassert :qAdic 1 m*s == o
   a = K()
   for i=1:d
-    _num_setcoeff!(a, i-1, lift(s[i,1]))
+    _num_setcoeff!(a, i-1, lift(ZZ, s[i, 1]))
   end
   f = defining_polynomial(parent(ca), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
-  o = matrix(Native.GF(p), d, 1, [coeff(fso, j-1) for j=1:d])
+  o = matrix(Nemo._GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
   s = solve(m, o)
   b = K()
   for i=1:d
-    _num_setcoeff!(b, i-1, lift(s[i,1]))
+    _num_setcoeff!(b, i-1, lift(ZZ, s[i,1]))
   end
 
   #TODO: don't use f, use the factors i the HenselCtx

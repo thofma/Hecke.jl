@@ -27,8 +27,8 @@ end
 ########### any_root computes a single root in the finite field extensions####
 
 import Nemo: any_root
-function any_root(F::Union{fqPolyRepField, Hecke.RelFinField}, f::Union{fpPolyRingElem, fqPolyRepPolyRingElem})
-   g = polynomial(F, [coeff(f,i) for i = 0:degree(f) ] )
+function any_root(F::Union{fqPolyRepField, Hecke.RelFinField, FqField}, f::PolyElem)
+   g = change_base_ring(F, f; cached = false)
    return any_root(g)
 end
 
@@ -83,11 +83,12 @@ end
 
 function Nemo.basis(K::FinField, k::FinField)
   b = basis(K)
-  K = base_ring(K)
+  K = base_field(K)
   while absolute_degree(K) > absolute_degree(k)
     b = [x*y for x = basis(K) for y = b]
-    K = base_ring(K)
+    K = base_field(K)
   end
+  @show K, k
   if K != k
     error("subfield not in tower")
   end
@@ -139,7 +140,7 @@ function _unit_group_gens_case2(K::Union{FlintQadicField, Hecke.LocalField})
 
   k, mk = residue_field(K)
   @assert absolute_degree(k) == f
-  omega = basis(k, prime_field(k))
+  omega = absolute_basis(k)
   @assert isone(omega[1]) #this has to change...
   mu_0 = valuation(e, p)+1
   e_0 = divexact(e, (p-1)*p^(mu_0-1))
@@ -192,7 +193,7 @@ function _unit_group_gens_case1(K::Union{FlintQadicField, Hecke.LocalField})
   k, mk = residue_field(K)
   @assert absolute_degree(k) == f
 
-  b = [preimage(mk, x) for x = basis(k, prime_field(k))]
+  b = [preimage(mk, x) for x = absolute_basis(k)]
   F_K = [ lambda for lambda = 1:ceil(Int, p*e//(p-1))-1 if lambda % p != 0]
   @assert length(F_K) == e
 
@@ -412,15 +413,16 @@ end
 Find an element `x` in `F` such that the norm from `F` down to the parent of
 `b` is exactly `b`.
 """
-function norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField}, b::Union{fpFieldElem, fqPolyRepFieldElem})
+function norm_equation(F::Union{fqPolyRepField, Hecke.RelFinField, FqField}, b::Union{fpFieldElem, fqPolyRepFieldElem, FqFieldElem})
    if iszero(b)
       return zero(F)
    end
    k = parent(b)
-   n = degree(F,k)
-   f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
+   n = degree(F, k)
+   kt, = polynomial_ring(k, "t", cached = false)
+   f = kt(vcat([b],[rand(k) for i = 1:n-1],[one(k)]))
    while !is_irreducible(f)
-      f = polynomial(k,vcat([b],[rand(k) for i = 1:n-1],[1]))
+     f = kt(vcat([b],[rand(k) for i = 1:n-1],[one(k)]))
    end
    return (-1)^(n)*any_root(F, f)
 end
@@ -796,6 +798,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   rE, mE = residue_field(E)
   rL, mL = residue_field(L)
   rK, mK = residue_field(K)
+  # how is this supposed to work?
   mrKL = hom(rK, rL, mL(mKL(preimage(mK, gen(rK)))))
   q = order(rK)
 
