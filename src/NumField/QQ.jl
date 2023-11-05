@@ -149,6 +149,9 @@ gcd(I::ZZIdl, n::T) where T <: Union{ZZRingElem, Int} = ZZIdl(gcd(I.gen, n))
 gcd(n::T, I::ZZIdl) where T <: Union{ZZRingElem, Int} = ZZIdl(gcd(I.gen, n))
 
 isone(I::ZZIdl) = isone(I.gen)
+iszero(I::ZZIdl) = iszero(gen(I))
+is_maximal(I::ZZIdl) = is_prime(gen(I))
+is_prime(I::ZZIdl) = is_zero(I) || is_maximal(I)
 
 maximal_order(::QQField) = ZZ
 
