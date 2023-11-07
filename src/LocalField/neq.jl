@@ -448,7 +448,14 @@ end
 absolute_representation_matrix(a::fqPolyRepField) = representation_matrix(a)
 absolute_representation_matrix(a::fpFieldElem) = matrix(parent(a), 1, 1, [a])
 
-function absolute_representation_matrix(a::RelFinFieldElem)
+function absolute_frobenius_matrix(a::FqField, d::Int = 1)
+  b = absolute_basis(a)
+  b = [absolute_frobenius(x, d) for x = b]
+  return matrix([absolute_coordinates(x) for x = b])
+end
+
+
+function absolute_representation_matrix(a::Union{RelFinFieldElem, FqFieldElem})
   b = a .* absolute_basis(parent(a))
   return matrix([absolute_coordinates(x) for x = b])
 end
