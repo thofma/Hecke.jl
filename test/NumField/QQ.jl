@@ -15,12 +15,34 @@
   @test I == ideal(ZZ, ZZRingElem[2])
   @test I == ideal(ZZ, ZZRingElem[8, 26])
 
+  @test !is_zero(I)
+  @test !is_one(I)
+  @test is_maximal(I)
+  @test is_prime(I)
+
   J = 4*ZZ
 
   @test I + J == 2 * ZZ
   @test gcd(I, J) == 2 * ZZ
   @test intersect(I, J) == 4 * ZZ
   @test lcm(I, J) == 4 * ZZ
+
+  @test !is_zero(J)
+  @test !is_one(J)
+  @test !is_maximal(J)
+  @test !is_prime(J)
+
+  J = 0*ZZ
+  @test is_zero(J)
+  @test !is_one(J)
+  @test !is_maximal(J)
+  @test is_prime(J)
+
+  J = 1*ZZ
+  @test !is_zero(J)
+  @test is_one(J)
+  @test !is_maximal(J)
+  @test !is_prime(J)
 
   I = QQ(1, 2)*ZZ
   @test I ==  ZZ * QQ(1, 2)
