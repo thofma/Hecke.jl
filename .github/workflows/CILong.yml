@@ -23,6 +23,11 @@ jobs:
       matrix:
         julia-version:
           - 1.9
+          - 1.9
+          - 1.9
+          - 1.9
+          - 1.9
+          - 1.9
         julia-arch:
           - x64
         os:

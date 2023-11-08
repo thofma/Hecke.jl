@@ -30,6 +30,15 @@ running_under_rr() = false
 @everywhere using Hecke
 @everywhere using Hecke.RandomExtensions
 
+if VERSION >= v"1.8.0"
+  # Enable GC logging to help track down certain GC related issues.
+  # Note that several test files need to temporarily disable and then
+  # re-enable this. If we need to disable this globally, those files
+  # need to be adjusted as well.
+  @everywhere GC.enable_logging(true)
+end
+
+
 if short_test
   @everywhere short_test = true
 else

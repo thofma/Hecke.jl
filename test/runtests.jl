@@ -104,18 +104,18 @@ end
 
 no_parallel = false
 
-if haskey(ENV, "HECKE_TEST_PARALLEL")
-  if ENV["HECKE_TEST_PARALLEL"] == "false"
-    isparallel = false
-    n_proces = 0
-    no_parallel = true
-  end
+if get(ENV, "HECKE_TEST_PARALLEL", "false") == "false"
+  isparallel = false
+  n_proces = 0
+  no_parallel = true
 end
 
 fl = get(ENV, "CI", "false")
 
 if fl === "true"
   @info "Running on CI"
+else
+  @info "Not running on CI"
 end
 
 if fl === "true" && !no_parallel && !Sys.iswindows()
@@ -127,6 +127,7 @@ if fl === "true" && !no_parallel && !Sys.iswindows()
     # there is not enough memory to support >= 2 jobs
     isparallel = false
   end
+  n_procs = 1
 end
 
 # Special consideration for Windows on CI
@@ -266,6 +267,14 @@ if short_test
   @info "Running short tests"
   include(joinpath("..", "system", "precompile.jl"))
 else
+  if VERSION >= v"1.8.0"
+    # Enable GC logging to help track down certain GC related issues.
+    # Note that several test files need to temporarily disable and then
+    # re-enable this. If we need to disable this globally, those files
+    # need to be adjusted as well.
+    GC.enable_logging(true)
+  end
+
   if !isparallel
     # We are not short
     k, a = quadratic_field(5)
