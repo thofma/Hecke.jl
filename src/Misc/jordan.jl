@@ -81,6 +81,7 @@ function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
   E = rref(v)[2]
   w = v*M
   res = Hecke.cleanvect(E, w)
+  v = deepcopy(v) # the output should not "share" entries with the input
   while !iszero(res)
     v = vcat(v, w)
     E = vcat(E, res)

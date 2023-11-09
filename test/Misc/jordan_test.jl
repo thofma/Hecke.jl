@@ -51,6 +51,12 @@
   @test CF == C
   @test TM * C * inv(TM) == CF
 
+  # Issue #1279
+  K, _ = number_field(x^2 - 2)
+  M = matrix(K, [ 0 1 1; 1//2 0 0 ; 1//2 0 0 ])
+  J, S = jordan_normal_form(M)
+  @test J == S*M*inv(S)
+  @test Set([ J[1, 1], J[2, 2], J[3, 3] ]) == Set([ K(), K(1), K(-1) ])
 end
 
 @testset "Spectrum and eigenspaces" begin
