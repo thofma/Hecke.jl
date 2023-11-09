@@ -193,6 +193,5 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
   }
     =#
   end
-end
 
 end # module
