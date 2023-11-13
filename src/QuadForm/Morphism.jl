@@ -2137,7 +2137,7 @@ end
 
 # Add the 1 x n matrix r to the ith row of the m x n matrix A.
 # If sign == true, subtract r.
-function add_to_row!(A::Union{Matrix, MatElem{T}}, r::Union{Vector, MatElem{T}}, i::Int, sign::Bool = false) where T
+function add_to_row!(A::Union{Matrix, MatElem}, r::Union{Vector, MatElem}, i::Int, sign::Bool = false)
   @assert ncols(A) == length(r)
   @assert 1 <= i && i <= nrows(A)
   @inbounds for j in 1:ncols(A)
