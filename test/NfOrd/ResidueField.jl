@@ -50,5 +50,21 @@
       @test (mF3\(a4) - b) in P
     end
   end
+
+  # 1284
+
+  P, x = polynomial_ring(ZZ)
+  K, a = number_field(x^5 + x^3 - x^2 - x - 1)
+  M = Order(K, [1, 121*a, a^2 - 17*a, a^3 - 72*a, a^4 - 76*a])
+  P = prime_ideals_over(M, 11)
+
+  for i in 1:1000
+    for p in P
+      k, h = residue_field(M, p, false)
+      y = Hecke.primitive_element(k)
+      tmp = preimage(h, y)
+      @test h(tmp) == y
+    end
+  end
 end
 
