@@ -490,43 +490,88 @@ end
 _zero_vector(::Type{ZZRingElem}, len::Int) = zero_matrix(FlintZZ, 1, len)
 _zero_vector(::Type{Int}, len::Int) = zeros(Int, len)
 
-function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int, I::Int) where {S, T, V}
-  len = length(C.G)*dep
+function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
 
-  scalar_products = Vector{V}()
-  look_up = Dict{V, Int}()
-  vector_sums = Vector{V}()
+  scalar_products = Vector{Vector{V}}(undef, dim(C))
+  look_up = Vector{Dict{V, Int}}(undef, dim(C))
+  vector_sums = Vector{Vector{V}}(undef, dim(C))
+  for i in 1:dim(C)
+    scalar_products[i] = Vector{V}()
+    look_up[i] = Dict{V, Int}()
+    vector_sums[i] = Vector{V}()
+  end
 
+  s = _zero_vector(S, length(C.G)*dep)
+  # Can't use zeros since then scpvec[1] === scpvec[2] which collides with the
+  # in place operations in case S == ZZRingElem
+  scpvec = Vector{S}(undef, length(C.G)*dim(C))
+  @inbounds for i in 1:length(scpvec)
+    scpvec[i] = zero(S)
+  end
+  tmp1 = zero(S)
+  tmp2 = zero(S)
+  tmp3 = zero(S)
   for w in C.V.vectors
-    scpvec = _zero_vector(S, len)
-    tmp = zero(S)
-    for i in I:-1:max(I - dep + 1, 1)
-      for j in 1:length(C.G)
-        scpvec[(j - 1)*dep + I - i + 1] = _dot_product_with_row!(scpvec[(j - 1)*dep + I - i + 1], w, C.v[j], C.std_basis[i], tmp)
+    @inbounds for i in 1:length(C.G)
+      for j in 1:dim(C)
+        t = (i - 1)*dim(C) + j
+        scpvec[t] = _dot_product_with_row!(scpvec[t], w, C.v[i], C.std_basis[j], tmp1, tmp2, tmp3)
       end
     end
-    if !is_normalized(scpvec)
-      neg!(scpvec)
-      w = -w # Cannot do this in place because w is an element of C.V.vectors
-    end
-    k = get(look_up, scpvec, 0)
-    is0 = is_zero(scpvec)
-    if k > 0
-      if !is0
-        vector_sums[k] += w
+    minusW = -w
+    for I in 1:dim(C)
+      sign_s = 0
+      # Extract the subset of the scalar products which are relevant for the basis
+      # vector I. Directly normalize the vector (i.e. make it positive)
+      @inbounds for j in 0:length(C.G) - 1
+        t = j*dim(C) + I + 1
+        for i in 1:min(dep, I)
+          scpvecti = scpvec[t - i]
+          if is_zero(sign_s) && !is_zero(scpvecti)
+            sign_s = scpvecti > 0 ? 1 : -1
+          end
+          if sign_s == -1
+            s[j*dep + i] = -scpvecti
+          else
+            s[j*dep + i] = scpvecti # Danger! s shares elements with scpvec (if S == ZZRingElem)
+          end
+        end
+        for i in I + 1:dep
+          s[j*dep + i] = S(0)
+        end
       end
-    else
-      push!(scalar_products, scpvec)
-      !is0 ? push!(vector_sums, w) : push!(vector_sums, _zero_vector(S, dim(C)))
-      look_up[scpvec] = length(scalar_products)
+      ww = w
+      if sign_s == -1
+        ww = minusW
+      end
+      k = get(look_up[I], s, 0)
+      is0 = is_zero(sign_s)
+      if k > 0
+        if !is0
+          if S <: ZZRingElem
+            addeq!(vector_sums[I][k], ww)
+          else
+            @inbounds for l in 1:dim(C)
+              vector_sums[I][k][l] += ww[l]
+            end
+          end
+        end
+      else
+        s_deep = deepcopy(s)
+        push!(scalar_products[I], s_deep)
+        !is0 ? push!(vector_sums[I], deepcopy(ww)) : push!(vector_sums[I], _zero_vector(S, dim(C)))
+        look_up[I][s_deep] = length(scalar_products[I])
+      end
     end
   end
 
-  C.scpcomb[I].scpcombs = VectorList{V, S}()
-  C.scpcomb[I].scpcombs.vectors = scalar_products
-  C.scpcomb[I].scpcombs.lookup = look_up
-  C.scpcomb[I].scpcombs.use_dict = true
-  C.scpcomb[I].scpcombs.issorted = false
+  for I in 1:dim(C)
+    C.scpcomb[I].scpcombs = VectorList{V, S}()
+    C.scpcomb[I].scpcombs.vectors = scalar_products[I]
+    C.scpcomb[I].scpcombs.lookup = look_up[I]
+    C.scpcomb[I].scpcombs.use_dict = true
+    C.scpcomb[I].scpcombs.issorted = false
+  end
 
   return vector_sums
 end
@@ -552,49 +597,53 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
 
   C.scpcomb = Vector{SCPComb{S1, S2, S3}}(undef, dim(C))
   for i in 1:C.dim
-    if small
-      H_nbits = 0
-    end
     C.scpcomb[i] = SCPComb{S1, S2, S3}()
-    vector_sums = vs_scalar_products(C, depth, i)
+  end
+  vector_sums = vs_scalar_products(C, depth)
 
-    # JS: Souvignier uses LLL for the row reduction and also to compute the
-    # coefficients in the basis
+  for i in 1:C.dim
+    if small
+      B_nbits = 0
+    end
 
     # Compute a basis of the lattice spanned by vector_sums
     if !small
-      M = reduce(vcat, vector_sums)
+      M = reduce(vcat, vector_sums[i])
     else
-      # We need to convert to ZZRingElem since we don't have an HNF for Ints
-      M = zero_matrix(FlintZZ, length(vector_sums), length(vector_sums[1]))
-      for i in 1:nrows(M)
-        for j in 1:ncols(M)
-          M[i, j] = vector_sums[i][j]
+      # We need to convert to ZZRingElem since we don't have LLL for Ints
+      M = zero_matrix(FlintZZ, length(vector_sums[i]), length(vector_sums[i][1]))
+      for r in 1:nrows(M)
+        for c in 1:ncols(M)
+          M[r, c] = vector_sums[i][r][c]
         end
       end
     end
-    H, T = hnf_with_transform(M)
+    B, T = lll_with_transform(M)
     # Compute the coefficients of the vector sums in the basis
     invT = inv(T)
 
-    # Remove the zero rows from H (the corresponding rows / columns from T and invT)
-    k = nrows(H)
-    for i in nrows(H):-1:1
-      !is_zero_row(H, i) && break
-      k -= 1
+    # Remove the zero rows from B and the corresponding rows / columns from T
+    # and invT. The zero rows are on the top.
+    k = 1
+    for r in 1:nrows(B)
+      !is_zero_row(B, r) && break
+      k += 1
     end
+
     if !small
-      H = sub(H, 1:k, 1:ncols(H))
-      C.scpcomb[i].trans = sub(T, 1:k, 1:ncols(T))
-      C.scpcomb[i].coef = sub(invT, 1:nrows(invT), 1:k)
+      B = sub(B, k:nrows(B), 1:ncols(B))
+      C.scpcomb[i].trans = sub(T, k:nrows(T), 1:ncols(T))
+      C.scpcomb[i].coef = sub(invT, 1:nrows(invT), k:ncols(invT))
     else
-      Hint = Matrix{Int}(undef, k, ncols(H))
-      C.scpcomb[i].trans = Matrix{Int}(undef, k, ncols(T))
-      C.scpcomb[i].coef = Matrix{Int}(undef, nrows(invT), k)
-      @inbounds for r in 1:k
+      kk = nrows(B) - k + 1
+      Bint = Matrix{Int}(undef, kk, ncols(B))
+      C.scpcomb[i].trans = Matrix{Int}(undef, kk, ncols(T))
+      C.scpcomb[i].coef = Matrix{Int}(undef, nrows(invT), kk)
+      @inbounds for r in 1:kk
+        rk1 = r + k - 1
         for c in 1:ncols(T)
-          t = T[r, c]
-          it = invT[c, r]
+          t = T[rk1, c]
+          it = invT[c, rk1]
           # Check whether everything fits Int; we want to return false and
           # not throw an error
           if !fits(Int, t) || !fits(Int, it)
@@ -603,26 +652,26 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
           C.scpcomb[i].trans[r, c] = S1(t)
           C.scpcomb[i].coef[c, r] = S1(it)
         end
-        for c in 1:ncols(H)
-          t = H[r, c]
+        for c in 1:ncols(B)
+          t = B[rk1, c]
           if !fits(Int, t)
             return false
           end
-          H_nbits = max(H_nbits, nbits(t) + 1)
-          Hint[r, c] = S1(t)
+          B_nbits = max(B_nbits, nbits(t) + 1)
+          Bint[r, c] = S1(t)
         end
       end
-      H = Hint
+      B = Bint
     end
 
     if small
       nrows_nbits = nbits(size(C.G[1], 1))
-      H_nbits > abs_maxbits_vectors && return false
-      G_nbits + H_nbits + nrows_nbits + 1 > bitbound && return false
+      B_nbits > abs_maxbits_vectors && return false
+      G_nbits + B_nbits + nrows_nbits + 1 > bitbound && return false
     end
     # Compute the Gram matrices of the basis w.r.t. C.G[:]
-    transpH = transpose(H)
-    C.scpcomb[i].F = [ H*G*transpH for G in C.G ]
+    transpB = transpose(B)
+    C.scpcomb[i].F = [ B*G*transpB for G in C.G ]
   end
   return true
 end
@@ -697,6 +746,11 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
 
   tmp1 = zero(eltype(V[1]))
   tmp2 = zero(eltype(V[1]))
+  tmp3 = zero(eltype(V[1]))
+  tmp4 = zero(eltype(V[1]))
+  tmp5 = zero(eltype(V[1]))
+  tmp6 = zero(eltype(V[1]))
+  is_small = eltype(V[1]) <: Int
 
   for j in 1:n
     Wj = W[j]
@@ -704,7 +758,13 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
     good_scalar = true
     good_length = true
     @inbounds for k in 1:f
-      if Wj[k] != F[k][J, J]
+      # getindex for ZZMatrix is super slow, so we need to do this the long way round...
+      if is_small
+        tmp1 = F[k][J, J]
+      else
+        getindex!(tmp1, F[k], J, J)
+      end
+      if Wj[k] != tmp1
         good_length = false
         break
       end
@@ -716,8 +776,17 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
 
     @inbounds for k in 1:f
       for i in 1:I
-        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == F[k][J, per[i]]) ||
-              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != F[k][per[i], J])
+        if is_small
+          tmp5 = F[k][J, per[i]]
+          if !_issymmetric[k]
+            tmp6 = F[k][per[i], J]
+          end
+        else
+          getindex!(tmp5, F[k], J, per[i])
+          !_issymmetric[k] && getindex!(tmp6, F[k], per[i], J)
+        end
+        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) == tmp5) ||
+              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) != tmp6)
           good_scalar = false
           break
         end
@@ -742,8 +811,17 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
 
     @inbounds for k in 1:f
       for i in 1:I
-        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == -F[k][J, per[i]]) ||
-              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != -F[k][per[i], J])
+        if is_small
+          tmp5 = F[k][J, per[i]]
+          if !_issymmetric[k]
+            tmp6 = F[k][per[i], J]
+          end
+        else
+          getindex!(tmp5, F[k], J, per[i])
+          !_issymmetric[k] && getindex!(tmp6, F[k], per[i], J)
+        end
+        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) == -tmp5) ||
+              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) != -tmp6)
           good_scalar = false
           break
         end
@@ -1980,11 +2058,15 @@ end
 #
 ################################################################################
 
-function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem)
-  mul!(t, v[1, 1], A[1, k])
+function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
+  getindex!(tmp2, v, 1, 1)
+  getindex!(tmp3, A, 1, k)
+  mul!(t, tmp2, tmp3)
   for i in 2:ncols(v)
-    mul!(tmp, v[1, i], A[i, k])
-    addeq!(t, tmp)
+    getindex!(tmp2, v, 1, i)
+    getindex!(tmp3, A, i, k)
+    mul!(tmp1, tmp2, tmp3)
+    addeq!(t, tmp1)
   end
   return t
 end
@@ -1995,11 +2077,15 @@ function _dot_product_with_column(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingE
   return t
 end
 
-function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem)
-  mul!(t, v[1, 1], A[k, 1])
+function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
+  getindex!(tmp2, v, 1, 1)
+  getindex!(tmp3, A, k, 1)
+  mul!(t, tmp2, tmp3)
   for i in 2:ncols(v)
-    mul!(tmp, v[1, i], A[k, i])
-    addeq!(t, tmp)
+    getindex!(tmp2, v, 1, i)
+    getindex!(tmp3, A, k, i)
+    mul!(tmp1, tmp2, tmp3)
+    addeq!(t, tmp1)
   end
   return t
 end
@@ -2010,7 +2096,7 @@ function _dot_product_with_row(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem
   return t
 end
 
-function _dot_product_with_column!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int)
+function _dot_product_with_column!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int, tmp2::Int = 0, tmp3::Int = 0)
   @inbounds t = v[1] * A[1, k]
   @inbounds for i in 2:length(v)
     t = t + v[i] * A[i, k]
@@ -2026,7 +2112,7 @@ function _dot_product_with_column(v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::I
   return t
 end
 
-function _dot_product_with_row!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int)
+function _dot_product_with_row!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int, tmp2::Int = 0, tmp3::Int = 0)
   @inbounds t = v[1] * A[k, 1]
   @inbounds for i in 2:length(v)
     t = t + v[i] * A[k, i]
