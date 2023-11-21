@@ -124,8 +124,13 @@ end
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function abelian_group(M::AbstractVector{<:IntegerUnion}; name::String = "")
-  return abelian_group(GrpAbFinGen, M, name=name)
+function abelian_group(M::AbstractVector{<:Union{Any, IntegerUnion}}; name::String = "")
+  if eltype(M) === Any
+    _M = convert(Vector{ZZRingElem}, (ZZ.(M)))::Vector{ZZRingElem}
+    return abelian_group(GrpAbFinGen, _M, name=name)
+  else
+    return abelian_group(GrpAbFinGen, M, name=name)
+  end
 end
 
 function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:IntegerUnion}; name::String = "")

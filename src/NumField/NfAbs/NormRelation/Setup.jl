@@ -997,7 +997,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
 
   reverse!(all_non_trivial_subs)
 
-  QG = AlgGrp(FlintQQ, G)
+  QG = AlgGrp(FlintQQ, G, cached = false)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(all_non_trivial_subs))
   for i in 1:length(all_non_trivial_subs)

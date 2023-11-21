@@ -79,7 +79,7 @@ end
 
 function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   parent(a) != parent(b) && error("Parents don't match.")
-  c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false))
+  c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false), check = false)
   if a.has_coeffs && b.has_coeffs
     c.coeffs = [ coefficients(a, copy = false)[i] + coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
     c.has_coeffs = true
@@ -157,7 +157,7 @@ function *(a::AlgMatElem, b::T) where {T <: RingElem}
   if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
-  return A(matrix(a, copy = false)*b)::elem_type(A)
+  return A(matrix(a, copy = false)*b, check = false)::elem_type(A)
 end
 
 function *(b::T, a::AlgMatElem) where {T <: RingElem}
@@ -165,17 +165,17 @@ function *(b::T, a::AlgMatElem) where {T <: RingElem}
   if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
-  return A(b*matrix(a, copy = false))::elem_type(A)
+  return A(b*matrix(a, copy = false), check = false)::elem_type(A)
 end
 
 function *(a::AlgMatElem{S, T, U}, b::U) where { S, T, U <: MatElem }
   A = parent(a)
-  return A(matrix(a, copy = false)*b)
+  return A(matrix(a, copy = false)*b, check = false)
 end
 
 function *(b::U, a::AlgMatElem{S, T, U}) where { S, T, U <: MatElem }
   A = parent(a)
-  return A(b*matrix(a, copy = false))
+  return A(b*matrix(a, copy = false), check = false)
 end
 
 ################################################################################
@@ -224,7 +224,7 @@ end
 
 function (A::AlgMat)()
   n = degree(A)
-  return A(zero_matrix(coefficient_ring(A), n, n))
+  return A(zero_matrix(coefficient_ring(A), n, n), check = false)
 end
 
 function (A::AlgMat{T, S})(M::S; check::Bool = true) where {T, S}
@@ -262,7 +262,7 @@ function (A::AlgMat{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
     #M = add!(M, M, matrix(basis(A)[i], copy = false)*v[i])
     M += matrix(B[i], copy = false)*R(v[i])
   end
-  a = A(M)
+  a = A(M; check = false)
   if copy
     a.coeffs = Base.copy(v)
   else

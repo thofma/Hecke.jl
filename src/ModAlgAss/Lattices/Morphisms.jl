@@ -124,7 +124,9 @@ function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion
     fl = _is_loc_iso_abs_irred(L, M, p, Val{false})
   else
     fl = _is_loc_iso_gen(L, M, p, Val{false})
-    @assert _is_loc_iso_gen(L, M, p, Val{false}) == _is_loc_iso_abs_irred(L, M, p, Val{false})
+    if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
+      @assert _is_loc_iso_gen(L, M, p, Val{false}) == _is_loc_iso_abs_irred(L, M, p, Val{false})
+    end
   end
   return fl
 end
@@ -181,4 +183,151 @@ function _is_loc_iso_abs_irred(L::ModAlgAssLat,
   else
     return iszero(valuation(det(T), p))
   end
+end
+
+################################################################################
+#
+#  Isomorphism
+#
+################################################################################
+
+function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat)
+  E, f, O, I = _hom_space_as_ideal(L, M)
+  fl, beta = __isprincipal(O, I, :right)
+  if !fl 
+    return false, zero_map(L.V, M.V)
+  else
+    isom = f(beta)
+    # test something
+    @assert isom(L) == M
+    return true, isom
+  end
+end
+
+function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat)
+  # the hom_space function wants L and M sitting inside the same ambient space
+  # there is some choice we can make
+  # we try to choose the order, where we already computed the endomorphism
+  # algebra
+
+  if get_attribute(L.V, :endomorphism_algebra) !== nothing && isdefined(domain(get_attribute(L.V, :endomorphism_algebra)), :decomposition)
+    fl, iso = is_isomorphic_with_isomorphism(M.V, L.V)
+    if !fl
+      return false, zero_map(L.V, M.V)
+    end
+    MM = iso(M)
+    fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM)
+    if fl
+      _iso = LtoMM * inv(iso)
+      @assert _iso(L) == M
+      return true, _iso
+    else
+      return false, zero_map(L.V, M.V)
+    end
+  else
+    fl, iso = is_isomorphic_with_isomorphism(L.V, M.V)
+    if !fl
+      return false, zero_map(L.V, M.V)
+    end
+    LL = iso(L)
+    fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M)
+    if fl
+      _iso = iso * LLtoM
+      @assert _iso(L) == M
+      return true, _iso
+    else
+      return false, zero_map(L.V, M.V)
+    end
+  end
+end
+
+function is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
+  return is_isomorphic_with_isomorphism(L, M)[1]
+end
+
+################################################################################
+#
+#  Freeness test
+#
+################################################################################
+
+function is_free(L::ModAlgAssLat)
+  O = L.base_ring
+  if !is_free(L.V)
+    return false
+  end
+  @assert L.V.free_rank == 1
+  return is_isomorphic(L, free_lattice(O, 1))
+end
+
+function is_free_with_basis(L::ModAlgAssLat)
+  if !is_free(L.V)
+    return false, elem_type(L.V)[]
+  end
+  d = L.V.free_rank
+  @assert d != -1
+  @assert d == 1
+  O = L.base_ring
+  A = algebra(O)
+  M = free_lattice(O, d)
+  V = M.V
+  fl, iso = is_isomorphic_with_isomorphism(L, M)
+  if fl
+    return true, [preimage(iso, _element_of_standard_free_module(V, [elem_in_algebra(one(M.base_ring)) for i in 1:d]))]
+  else
+    return false, elem_type(L.V)[]
+  end
+end
+
+function is_locally_free(L::ModAlgAssLat, p::IntegerUnion)
+  if !is_free(L.V)
+    return false
+  end
+  d = L.V.free_rank
+  @assert d != -1
+  O = L.base_ring
+  M = free_lattice(O, d)
+  fl, LL, MM = _can_transport_into_same_ambient_module(L, M)
+  if !fl
+    return false
+  else
+    return is_locally_isomorphic(LL, MM, p)[1]
+  end
+end
+
+function _can_transport_into_same_ambient_module(L, M)
+  if L.V === M.V
+    return true, L, M
+  end
+  fl, iso = is_isomorphic_with_isomorphism(M.V, L.V)
+  if !fl
+    return false, L, M
+  end
+  MM = iso(M)
+  return true, L, MM
+end
+
+################################################################################
+#
+#  Testing Aut(G)-isomorphism
+#
+################################################################################
+
+function is_aut_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
+  for T in _twists(M)
+    if is_isomorphic(L, T)
+      return true
+    end
+  end
+  return false
+end
+
+
+function _make_compatible(L::ModAlgAssLat, M::ModAlgAssLat)
+  G = group(algebra(L.base_ring))
+  H = group(algebra(M.base_ring))
+  @assert is_isomorphic(G, H)
+  i = isomorphism(G, H)
+  h = hom(algebra(L.base_ring), algebra(M.base_ring), i)
+  return change_base_ring(h, L.base_ring, M)
 end

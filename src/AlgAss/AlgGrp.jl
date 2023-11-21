@@ -126,12 +126,21 @@ end
 #
 ################################################################################
 
+function show(io::IO, ::MIME"text/plain", A::AlgGrp)
+  io = pretty(io)
+  println(io, "Group algebra")
+  print(io, Indent())
+  println(io, "of ", Lowercase(), group(A))
+  print(io, "over ", Lowercase(), base_ring(A))
+  print(io, Dedent())
+end
+
 function show(io::IO, A::AlgGrp)
-  compact = get(io, :compact, false)
-  if compact
+  if get(io, :supercompact, false)
     print(io, "Group algebra of dimension ", dim(A), " over ", base_ring(A))
   else
-    print(io, "Group algebra of group\n", group(A), "\nover\n", base_ring(A))
+    print(io, "Group algebra of group of order ", order(group(A)), " over ")
+    print(IOContext(io, :supercompact => true), base_ring(A))
   end
 end
 
@@ -491,121 +500,121 @@ end
 
 automorphism_map(f::NfToAlgGrpMor) = f.mG
 
-function galois_module(K::AnticNumberField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
-  G = domain(aut)
-  A = FlintQQ[G]
-  return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
-end
-
-function _galois_module(K::AnticNumberField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
-  G = domain(aut)
-  alpha = normal_basis_generator
-
-  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
-  for (i, g) in enumerate(G)
-    f = aut(g)
-    basis_alpha[A.group_to_base[g]] = f(alpha)
-  end
-
-  M = zero_matrix(base_field(K), degree(K), degree(K))
-  for i = 1:degree(K)
-    a = basis_alpha[i]
-    for j = 1:degree(K)
-      M[i, j] = coeff(a, j - 1)
-    end
-  end
-
-  invM = inv(M)
-
-  z = NfToAlgGrpMor{QQFieldElem, GrpGen, GrpGenElem}()
-  z.K = K
-  z.mG = aut
-  z.A = A
-  z.M = M
-  z.Minv = invM
-
-  return A, z
-end
-
-function galois_module(K::AnticNumberField, A::AlgGrp; normal_basis_generator = normal_basis(K))
-  G = group(A)
-  Au, mAu = automorphism_group(K)
-  fl, f = is_isomorphic_with_map(G, Au)
-  @assert fl
-  aut = Vector{NfToNfMor}(undef, order(G))
-  for g in G
-    aut[g[]] = mAu(f(g))
-  end
-  h = GrpGenToNfMorSet(G, aut, K)
-
-  return _galois_module(K, A, h, normal_basis_generator = normal_basis(K))
-end
-
-domain(f::NfToAlgGrpMor) = f.K
-
-codomain(f::NfToAlgGrpMor) = f.A
-
-function image(f::NfToAlgGrpMor, x::nf_elem)
-  K = domain(f)
-  @assert parent(x) === K
-  A = codomain(f)
-
-  t = zero_matrix(base_field(K), 1, degree(K))
-  for i = 1:degree(K)
-    t[1, i] = coeff(x, i - 1)
-  end
-  y = t*f.Minv
-  return A([ y[1, i] for i = 1:degree(K) ])
-end
-
-function preimage(f::NfToAlgGrpMor, x::AlgGrpElem)
-  K = domain(f)
-  t = matrix(base_field(K), 1, degree(K), coefficients(x))
-  y = t*f.M
-  v = QQFieldElem[ y[1, i] for i = 1:degree(K) ]
-  return K(v)
-end
-
-# Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
-# to Q[G] and one from Q[G] to K
-function _galois_module(K::AnticNumberField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
-  G = domain(to_automorphisms)
-  A = FlintQQ[G]
-  alpha = normal_basis_generator
-
-  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
-  for (i, g) in enumerate(G)
-    f = to_automorphisms(g)
-    basis_alpha[A.group_to_base[g]] = f(alpha)
-  end
-
-  M = zero_matrix(base_field(K), degree(K), degree(K))
-  for i = 1:degree(K)
-    a = basis_alpha[i]
-    for j = 1:degree(K)
-      M[i, j] = coeff(a, j - 1)
-    end
-  end
-
-  invM = inv(M)
-
-  function KtoA(x::nf_elem)
-    t = zero_matrix(base_field(K), 1, degree(K))
-    for i = 1:degree(K)
-      t[1, i] = coeff(x, i - 1)
-    end
-    y = t*invM
-    return A([ y[1, i] for i = 1:degree(K) ])
-  end
-
-  function AtoK(x::AlgGrpElem)
-    t = matrix(base_field(K), 1, degree(K), coefficients(x))
-    y = t*M
-    return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
-  end
-
-  return A, KtoA, AtoK
-end
+#function galois_module(K::AnticNumberField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#  G = domain(aut)
+#  A = FlintQQ[G]
+#  return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
+#end
+#
+#function _galois_module(K::AnticNumberField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#  G = domain(aut)
+#  alpha = normal_basis_generator
+#
+#  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
+#  for (i, g) in enumerate(G)
+#    f = aut(g)
+#    basis_alpha[A.group_to_base[g]] = f(alpha)
+#  end
+#
+#  M = zero_matrix(base_field(K), degree(K), degree(K))
+#  for i = 1:degree(K)
+#    a = basis_alpha[i]
+#    for j = 1:degree(K)
+#      M[i, j] = coeff(a, j - 1)
+#    end
+#  end
+#
+#  invM = inv(M)
+#
+#  z = NfToAlgGrpMor{QQFieldElem, GrpGen, GrpGenElem}()
+#  z.K = K
+#  z.mG = aut
+#  z.A = A
+#  z.M = M
+#  z.Minv = invM
+#
+#  return A, z
+#end
+#
+#function galois_module(K::AnticNumberField, A::AlgGrp; normal_basis_generator = normal_basis(K))
+#  G = group(A)
+#  Au, mAu = automorphism_group(K)
+#  fl, f = is_isomorphic_with_map(G, Au)
+#  @assert fl
+#  aut = Vector{NfToNfMor}(undef, order(G))
+#  for g in G
+#    aut[g[]] = mAu(f(g))
+#  end
+#  h = GrpGenToNfMorSet(G, aut, K)
+#
+#  return _galois_module(K, A, h, normal_basis_generator = normal_basis(K))
+#end
+#
+#domain(f::NfToAlgGrpMor) = f.K
+#
+#codomain(f::NfToAlgGrpMor) = f.A
+#
+#function image(f::NfToAlgGrpMor, x::nf_elem)
+#  K = domain(f)
+#  @assert parent(x) === K
+#  A = codomain(f)
+#
+#  t = zero_matrix(base_field(K), 1, degree(K))
+#  for i = 1:degree(K)
+#    t[1, i] = coeff(x, i - 1)
+#  end
+#  y = t*f.Minv
+#  return A([ y[1, i] for i = 1:degree(K) ])
+#end
+#
+#function preimage(f::NfToAlgGrpMor, x::AlgGrpElem)
+#  K = domain(f)
+#  t = matrix(base_field(K), 1, degree(K), coefficients(x))
+#  y = t*f.M
+#  v = QQFieldElem[ y[1, i] for i = 1:degree(K) ]
+#  return K(v)
+#end
+#
+## Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
+## to Q[G] and one from Q[G] to K
+#function _galois_module(K::AnticNumberField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#  G = domain(to_automorphisms)
+#  A = FlintQQ[G]
+#  alpha = normal_basis_generator
+#
+#  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
+#  for (i, g) in enumerate(G)
+#    f = to_automorphisms(g)
+#    basis_alpha[A.group_to_base[g]] = f(alpha)
+#  end
+#
+#  M = zero_matrix(base_field(K), degree(K), degree(K))
+#  for i = 1:degree(K)
+#    a = basis_alpha[i]
+#    for j = 1:degree(K)
+#      M[i, j] = coeff(a, j - 1)
+#    end
+#  end
+#
+#  invM = inv(M)
+#
+#  function KtoA(x::nf_elem)
+#    t = zero_matrix(base_field(K), 1, degree(K))
+#    for i = 1:degree(K)
+#      t[1, i] = coeff(x, i - 1)
+#    end
+#    y = t*invM
+#    return A([ y[1, i] for i = 1:degree(K) ])
+#  end
+#
+#  function AtoK(x::AlgGrpElem)
+#    t = matrix(base_field(K), 1, degree(K), coefficients(x))
+#    y = t*M
+#    return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
+#  end
+#
+#  return A, KtoA, AtoK
+#end
 
 const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
                 reps=Vector{Vector{Rational{BigInt}}}[[[1],[1],[1],[1]],
@@ -928,13 +937,13 @@ function _absolute_basis(A)
   n = degree(K)
   B = Vector{elem_type(A)}()
   bK = basis(K)
-  for i in 1:n
-    for j in 1:m
+  for i in 1:m
+    for j in 1:n
       v = Vector{elem_type(K)}(undef, m)
       for k in 1:m
-        v[i] = zero(K)
+        v[k] = zero(K)
       end
-      v[j] = bK[j]
+      v[i] = bK[j]
       push!(B, A(v))
     end
   end
@@ -1107,7 +1116,7 @@ function is_almost_maximally_ramified(K::AnticNumberField, p::ZZRingElem)
   return true
 end
 
-function hom(KG::AlgGrp, KH::AlgGrp, m::GrpGenToGrpGenMor)
+function hom(KG::AlgGrp, KH::AlgGrp, m::Map)
   @assert base_ring(KG) === base_ring(KH)
   K = base_ring(KG)
   M = zero_matrix(K, dim(KG), dim(KH))

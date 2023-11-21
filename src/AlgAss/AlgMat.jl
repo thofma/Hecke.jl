@@ -221,6 +221,22 @@ function multiplication_table(A::AlgMat; copy::Bool = true)
   end
 end
 
+function denominator_of_multiplication_table(A::AlgMat)
+  get_attribute!(A, :denominator_of_multiplication_table) do
+    den = one(ZZ)
+    mt = multiplication_table(A)
+    d = degree(A)
+    for i in 1:d
+      for j in 1:d
+        for k in 1:d
+          den = lcm!(den, den, denominator(mt[i, j, k]))
+        end
+      end
+    end
+    return den
+  end::ZZRingElem
+end
+
 ################################################################################
 #
 #  Construction

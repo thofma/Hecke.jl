@@ -592,7 +592,7 @@ function _solve_norm_equation_over_center_quaternion(M, x)
     end
   end
   #@show nrm
-  V = _short_vectors_gram(G, nrm)
+  V = _short_vectors_gram(Vector, G, nrm)
   for i in 1:length(V)
     if V[i][2] == nrm
       y = sum(V[i][1][j] * B[j] for j in 1:4)
@@ -725,7 +725,7 @@ function _lift_norm_one_unit_quaternion(x, F)
 
   #@show normred(elem_in_algebra(x))
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  V = _short_vectors_gram(G, ZZRingElem(1))
+  V = _short_vectors_gram(Vector, G, ZZRingElem(1))
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:4)
     @assert normred(y) == 1

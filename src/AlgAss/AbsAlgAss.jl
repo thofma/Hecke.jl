@@ -1473,7 +1473,8 @@ end
 
 # Given epimorphism h : A -> B, transport the refined wedderburn decomposition
 # of A to B
-function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
+function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor; is_anti::Bool = false)
+  # is_anti = h is anti-morphism
   A = domain(h)
   B = codomain(h)
 
@@ -1510,7 +1511,15 @@ function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
         CtoBc = hom(C, Bc, M, inv(M))
         if isdefined(C, :isomorphic_full_matrix_algebra)
           CM, CtoCM = C.isomorphic_full_matrix_algebra
+          #bmat = basis_matrix([CM(transpose(matrix(x)), check = false) for x in basis(CM)])
+          #ff = hom(CM, CM, bmat, inv(bmat))
           f = AbsAlgAssMorGen(Bc, CM, inv(CtoBc).mat * CtoCM.M, CtoCM.Minv * CtoBc.mat)
+          if is_anti
+            BB = matrix([coefficients(CM(transpose(matrix(f(b))), check = false)) for b in basis(Bc)])
+            BBinv = matrix([coefficients(preimage(CtoCM, CM(transpose(matrix(b)), check = false))) for b in _absolute_basis(CM)])
+            #BBinv = inv(BB)
+            f = AbsAlgAssMorGen(Bc, CM, BB, BBinv)
+          end
           Bc.isomorphic_full_matrix_algebra = CM, f
         end
       end

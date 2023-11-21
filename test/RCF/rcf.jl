@@ -330,10 +330,9 @@ end
 end
 
 @testset "Conductor fix" begin
-  flds = abelian_fields(QQ, [2, 2], ZZ(4225), only_real = true)
+  flds = abelian_extensions(QQ, [2, 2], ZZ(4225), only_real = true)
   @test length(flds) == 4
 end
-
 
 @testset "Kaiser-Lorenz" begin
   Qx, x = QQ["x"]

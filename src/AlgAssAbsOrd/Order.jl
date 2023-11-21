@@ -1,4 +1,4 @@
-export algebra
+export algebra, integral_group_ring
 
 add_assertion_scope(:AlgAssOrd)
 add_verbosity_scope(:AlgAssOrd)
@@ -147,6 +147,16 @@ function _equation_order(A::AbsAlgAss{QQFieldElem})
     b[i] = b[i - 1]*a
   end
   return Order(A, b)
+end
+
+################################################################################
+#
+#  Integral group ring
+#
+################################################################################
+
+function integral_group_ring(A::AlgGrp{QQFieldElem})
+  return Order(A, basis(A))
 end
 
 ################################################################################
