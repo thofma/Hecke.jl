@@ -239,15 +239,8 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; isbasis::Bool = fals
 end
 
 function _subfield_from_primitive_element(K::AnticNumberField, s::nf_elem)
-  Qx = QQ["x"][1]
-  if is_maximal_order_known(K) && s in maximal_order(K)
-    OK = maximal_order(K)
-    @vtime :Subfields 1 f = Qx(minpoly(representation_matrix(OK(s, false))))
-  else
-    # Don't return a defining polynomial with denominators
-    s = denominator(s) * s
-    @vtime :Subfields 1 f = minpoly(Qx, s)
-  end
+  @vtime :Subfields 1 f = minpoly(Globals.Qx, s)
+  f = denominator(f) * f
   L, _ = number_field(f, cached = false)
   return L, hom(L, K, s, check = false)
 end
