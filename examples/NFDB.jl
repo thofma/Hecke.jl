@@ -523,6 +523,11 @@ function _parse(::Type{Int}, io, start = Base.read(io, UInt8))
   end
   lo = UInt8('0')
   up = UInt8('9')
+
+  if !(lo <= b <= up)
+    error("Not a number")
+  end
+
   while !eof(io) && lo <= b <= up
     res = res * exp + (b - lo)
     b = Base.read(io, UInt8)
@@ -595,6 +600,10 @@ function _parse(::Type{ZZRingElem}, io, start = Base.read(io, UInt8))
   lo = UInt8('0')
   up = UInt8('9')
   mi = UInt8('-')
+
+  if !((lo <= b <= up) || b == mi)
+    error("Not a number")
+  end
 
   while (lo <= b <= up) || b == mi
     Base.write(n, b)
