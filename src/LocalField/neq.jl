@@ -27,7 +27,7 @@ end
 ########### any_root computes a single root in the finite field extensions####
 
 import Nemo: any_root
-function any_root(F::Union{fqPolyRepField, Hecke.RelFinField, FqField}, f::PolyElem)
+function any_root(F::Union{fqPolyRepField, Hecke.RelFinField, FqField}, f::PolyRingElem)
    g = change_base_ring(F, f; cached = false)
    return any_root(g)
 end

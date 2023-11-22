@@ -2207,7 +2207,7 @@ end
 ################################################################################
 
 @doc raw"""
-    submodules(T::TorQuadMod; kw...)
+    submodules(T::TorQuadModule; kw...)
 
 Return the submodules of `T` as an iterator. Possible keyword arguments to
 restrict the submodules:
@@ -2224,7 +2224,7 @@ function submodules(T::TorQuadModule; kw...)
 end
 
 @doc raw"""
-    stable_submodules(T::TorQuadMod, act::Vector{TorQuadModuleMor}; kw...)
+    stable_submodules(T::TorQuadModule, act::Vector{TorQuadModuleMor}; kw...)
 
 Return the submodules of `T` stable under the endomorphisms in `act` as
 an iterator. Possible keyword arguments to restrict the submodules:
