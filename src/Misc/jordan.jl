@@ -849,7 +849,7 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
 
   # Compute transformation matrix
   CE = common_eigenspaces(L, side = :left)
-  A =  Hecke.vcat(collect(values(CE)))
+  A = reduce(vcat, values(CE))
 
   # Compute diagonal forms
   D = [ zero_matrix(base_ring(L[1]), nrows(L[1]), ncols(L[1])) for i = 1:length(L) ]

@@ -334,7 +334,7 @@ function fixed_field(K::AnticNumberField, A::Vector{NfToNfMor}; simplify::Bool =
   if length(ar_mat) == 0
     return K, id_hom(K)
   else
-    bigmatrix = hcat(ar_mat)
+    bigmatrix = reduce(hcat, ar_mat)
     k, Ker = kernel(bigmatrix, side = :left)
     bas = Vector{elem_type(K)}(undef, k)
     if simplify
@@ -397,7 +397,7 @@ function fixed_field(K::NfRel, A::Vector{T}; simplify::Bool = true) where {T <: 
   if length(ar_mat) == 0
     return K, id_hom(K)
   else
-    bigmatrix = hcat(ar_mat)
+    bigmatrix = reduce(hcat, ar_mat)
     k, Ker = kernel(bigmatrix, side = :left)
     bas = Vector{elem_type(K)}(undef, k)
     for i in 1:k
