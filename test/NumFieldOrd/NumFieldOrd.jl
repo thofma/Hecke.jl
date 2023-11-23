@@ -129,7 +129,7 @@ end
   @test Order(K, [1]) == equation_order(K)
   @test Order(K, []) == equation_order(K)
 
-  K, a = NumberField(x^4 - 10*x^2 + 1, "a")
+  K, a = number_field(x^4 - 10*x^2 + 1, "a")
   x = 1//2*a^3 - 9//2*a # sqrt(2)
   y = 1//2*a^3 - 11//2*a # sqrt(3)
   O = Order(K, [x, y, x*y])
