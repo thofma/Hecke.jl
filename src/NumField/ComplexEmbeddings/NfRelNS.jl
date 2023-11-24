@@ -228,3 +228,27 @@ function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfRelNS, <: Any, <: Any})
   i = findfirst(cn)
   return emb[i]
 end
+
+################################################################################
+#
+#  Creation of complex embedding
+#
+################################################################################
+
+function complex_embedding(K::NfRelNS, e::NumFieldEmb, r::Vector{acb})
+  @req number_field(e) === base_field(K) "Embedding must be embedding of base field"
+  embs = complex_embeddings(K)
+  cnt = 0
+  local eee::embedding_type(K)
+  for ee in embs
+    if ee.base_field_emb != e
+      continue
+    end
+    if all(x -> overlaps(x[1], x[2]), zip(ee.data, r))
+      eee = ee
+      cnt += 1
+    end
+  end
+  cnt != 1 && error("Something wrong")
+  return eee
+end
