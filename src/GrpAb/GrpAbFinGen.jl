@@ -217,7 +217,7 @@ end
 function show_gen(io::IO, A::GrpAbFinGen)
   print(io, "(General) abelian group with relation matrix\n$(A.rels)")
   if isdefined(A, :snf_map)
-    println(io, "\nwith structure of ", domain(A.snf_map))
+    print(io, "\nwith structure of ", domain(A.snf_map))
   end
 end
 
