@@ -192,43 +192,44 @@ end
 
 function _find_nearest_complex_embedding(K::NfAbsNS, x)
   r = complex_embeddings(K)
-  t = []
+  t = Vector{arb}[]
   for e in r
     embedded_gens = map(e, gens(K))
     gen_diffs = map(abs, embedded_gens - x)
     push!(t, gen_diffs)
   end
 
+  _, i = findmin(map(y -> sum(y), t))
+
   check_overlaps = y -> isempty(filter(x -> !overlaps(x...), y))
-  for i in 1:length(t)
-    for j in (i + 1):length(t)
-      if check_overlaps([(t[i][s], t[j][s]) for s in 1:length(gens(K))])
-        embedded_roots = [e.roots for e in r]
-        roots_to_tuple = x -> (Float64(real(x)), Float64(imag(x)))
-        possible = [map(roots_to_tuple, roots) for roots in embedded_roots]
-        s = IOBuffer()
-        for k in 1:length(possible)
-          for w in 1:length(possible[k])
-            @printf s "%.2f + i * %.2f" possible[k][w][1] possible[k][w][2]
-            if w < length(possible[k])
+  for j in 1:length(t)
+    if j == i
+      continue
+    end
+    if check_overlaps([(t[i][s], t[j][s]) for s in 1:length(gens(K))])
+      embedded_roots = [e.roots for e in r]
+      roots_to_tuple = x -> (Float64(real(x)), Float64(imag(x)))
+      possible = [map(roots_to_tuple, roots) for roots in embedded_roots]
+      s = IOBuffer()
+      for k in 1:length(possible)
+        for w in 1:length(possible[k])
+          @printf s "%.2f + i * %.2f" possible[k][w][1] possible[k][w][2]
+          if w < length(possible[k])
             print(s, ", ")
           end
 
-          end
-          if k < length(possible)
-            print(s, "\n")
-          end
         end
-        ss = String(take!(s))
-        error("""Given approximation not close enough to a vector of roots. \n 
-              Possible vector of roots are:
-              $ss
-              """)
+        if k < length(possible)
+          print(s, "\n")
+        end
       end
+      ss = String(take!(s))
+      error("""Given approximation not close enough to a vector of roots. \n 
+            Possible vector of roots are:
+            $ss
+            """)
     end
   end
-  _, i = findmin(map(y -> +(y...), t))
-
   return r[i]
 end
 
