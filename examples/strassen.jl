@@ -16,9 +16,52 @@
 
 module Strassen
 using Hecke
+using LinearAlgebra, Profile, Base.Intrinsics
 import Hecke.AbstractAlgebra, Hecke.Nemo
+import Hecke.Nemo: add!, mul!, zero!, sub!, solve_triu!, solve_tril!
 
 const cutoff = 1500
+
+#creates an unimodular n x n matrix where the inverse is much larger
+#than the original matrix. Entries are chosen in U
+function rand_mat(n::Int, U::AbstractArray=1:10)
+  C = zero_matrix(ZZ, n, n)
+  for i=1:n-1
+    C[i, i+1] = 1
+  end
+  for i=2:n
+    C[n, i] = rand(U)
+  end
+  C[n,1] = 1
+  for i=2:n-1
+    C[i,i] = rand(U)
+  end
+  return C
+end
+
+function perturb!(A, n::Int = 100, c::AbstractRange = -10:10)
+  for i=1:n 
+    x = rand(c)
+    while iszero(x)
+      x = rand(c)
+    end
+    if rand(0:1) == 1
+      k = rand(1:nrows(A))
+      l = rand(1:nrows(A))
+      while l == k
+        l = rand(1:nrows(A))
+      end
+      A[k, :] += x*A[l, :]
+    else
+      k = rand(1:ncols(A))
+      l = rand(1:ncols(A))
+      while l == k
+        l = rand(1:ncols(A))
+      end
+      A[:, k] += x*A[:, l]
+    end
+  end
+end
 
 function Nemo.mul!(C::AbstractArray, A::AbstractArray, B::AbstractArray, add::Bool = false)
   @assert size(C) == (2,2) && size(A) == (2,2) && size(B) == (2,2)
@@ -45,7 +88,7 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
   @assert a == sC[1] && b == sB[1] && c == sC[2]
 
   if (a <= cutoff || b <= cutoff || c <= cutoff)
-      mul!(C, A, B)
+      Nemo.mul!(C, A, B)
       return
   end
 
@@ -201,21 +244,21 @@ function zero!(A::MatElem{T}) where {T}
   error("not done yet")
 end
 
-function zero!(A::fpMatrix)
-  ccall((:nmod_mat_zero, Nemo.libflint), Cvoid, (Ref{fpMatrix}, ), A)
-end
+#function zero!(A::fpMatrix)
+#  ccall((:nmod_mat_zero, Nemo.libflint), Cvoid, (Ref{fpMatrix}, ), A)
+#end
 
-function zero!(A::ZZMatrix)
-  ccall((:fmpz_mat_zero, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, ), A)
-end
+#function zero!(A::ZZMatrix)
+#  ccall((:fmpz_mat_zero, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, ), A)
+#end
+#
+#function sub!(A::ZZMatrix, B::ZZMatrix, C::ZZMatrix)
+#  ccall((:fmpz_mat_sub, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), A, B, C)
+#end
 
-function sub!(A::ZZMatrix, B::ZZMatrix, C::ZZMatrix)
-  ccall((:fmpz_mat_sub, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), A, B, C)
-end
-
-function sub!(A::fpMatrix, B::fpMatrix, C::fpMatrix)
-  ccall((:fmpz_mat_sub, Nemo.libflint), Cvoid, (Ref{fpMatrix}, Ref{fpMatrix}, Ref{fpMatrix}), A, B, C)
-end
+#function sub!(A::fpMatrix, B::fpMatrix, C::fpMatrix)
+#  ccall((:fmpz_mat_sub, Nemo.libflint), Cvoid, (Ref{fpMatrix}, Ref{fpMatrix}, Ref{fpMatrix}), A, B, C)
+#end
 
 function mul_strassen(A::MatElem{T}, B::MatElem{T}; cutoff::Int = cutoff) where {T}
   C = zero_matrix(base_ring(A), nrows(A), ncols(B))
@@ -234,7 +277,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}; cutoff::Int 
   @assert a == sC[1] && b == sB[1] && c == sC[2]
 
   if (a <= cutoff || b <= cutoff || c <= cutoff)
-      mul!(C, A, B)
+      Nemo.mul!(C, A, B)
       return
   end
 
@@ -328,7 +371,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}; cutoff::Int 
       #nmod_mat_window_init(Cc, C, 0, 2*bnc, a, c);
       Cc = view(C, 1:a, 2*bnc+1:c)
       #nmod_mat_mul(Cc, A, Bc);
-      mul!(Cc, A, Bc)
+      Nemo.mul!(Cc, A, Bc)
   end
 
   if a > 2*anr #last row of A by B -> last row of C
@@ -337,7 +380,7 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}; cutoff::Int 
       #nmod_mat_window_init(Cr, C, 2*anr, 0, a, c);
       Cr = view(C, 2*anr+1:a, 1:c)
       #nmod_mat_mul(Cr, Ar, B);
-      mul!(Cr, Ar, B)
+     Nemo.mul!(Cr, Ar, B)
   end
 
   if b > 2*anc # last col of A by last row of B -> C
@@ -348,8 +391,103 @@ function mul_strassen!(C::MatElem{T}, A::MatElem{T}, B::MatElem{T}; cutoff::Int 
       #nmod_mat_window_init(Cb, C, 0, 0, 2*anr, 2*bnc);
       Cb = view(C, 1:2*anr, 1:2*bnc)
       #nmod_mat_addmul(Cb, Cb, Ac, Br);
-      mul!(Cb, Ac, Br, true)
+      Nemo.mul!(Cb, Ac, Br, true)
   end
+end
+
+function apply!(A::fpMatrix, P::Perm{Int}; offset::Int = 0)
+  n = length(P.d)
+  t = zeros(Int, n-offset)
+  for i=1:n-offset
+    t[i] = unsafe_load(reinterpret(Ptr{Int}, A.rows), P.d[i] + offset)
+  end
+  for i=1:n-offset
+    unsafe_store!(reinterpret(Ptr{Int}, A.rows), t[i], i + offset)
+  end
+end
+
+function apply!(Q::Perm{Int}, P::Perm{Int}; offset::Int = 0)
+  n = length(P.d)
+  t = zeros(Int, n-offset)
+  for i=1:n-offset
+    t[i] = Q.d[P.d[i] + offset]
+  end
+  for i=1:n-offset
+    Q.d[i + offset] = t[i]
+  end
+end
+
+#takes the result of lu! and turns it into a proper lu
+function Nemo.lu(P::Perm, U, r::Int)
+  m = nrows(U)
+  n = ncols(U)
+  R = base_ring(U)
+  L = similar(U, m, m)
+
+  for i = 1:m
+    for j = 1:n
+      if i > j
+        L[i, j] = U[i, j]
+        U[i, j] = R(0)
+      elseif i == j
+        L[i, j] = R(1)
+      elseif j <= m
+        L[i, j] = R(0)
+      end
+    end
+  end
+  return r, P, L, U
+end
+
+function lu!_strassen(P::Perm{Int}, Ai; cutoff::Int = 300)
+  m = nrows(A)
+
+  @assert length(P.d) == m
+  n = ncols(A)
+  if n < cutoff
+    return lu!(P, A)
+  end
+  n1 = div(n, 2)
+  for i=1:m
+    P.d[i] = i
+  end
+  P1 = Hecke.AbstractAlgebra.Perm(m)
+  A0 = view(A, 1:m, 1:n1)
+  r1 = lu!_strassen(P1, A0; cutoff)
+  @assert r1 == n1
+  if r1 > 0 
+    apply!(A, P1)
+    apply!(P, P1)
+  end
+
+  A00 = view(A, 1:r1, 1:r1)
+  A10 = view(A, r1+1:m, 1:r1)
+  A01 = view(A, 1:r1, n1+1:n)
+  A11 = view(A, r1+1:m, n1+1:n)
+
+  if r1 > 0
+    #Note: A00 is a view of A0 thus a view of A
+    # A0 is lu!, thus implicitly two triangular matrices giving the
+    # lu decomosition. solve_tril! looks ONLY at the lower part of A00
+    Nemo.solve_tril!(A01, A00, A01, 1)
+    X = A10 * A01
+    Nemo.sub!(A11, A11, X)
+  end
+
+  P1 = Perm(nrows(A11))
+  r2 = lu!_strassen(P1, A11)
+  apply!(A, P1, offset = r1)
+  apply!(P, P1, offset = r1)
+
+  if (r1 != n1)
+    for i=1:m-r1
+      for j=1:min(i, r2)
+        A[r1+i-1, r1+j-1] = A[r1+i-1, n1+j-1]
+        A[r1+i-1, n1+j-1] = 0
+      end
+    end
+  end
+  return r1 + r2
 end
 
 #
@@ -368,7 +506,8 @@ end
 #    pre-alloced tmp for the recursion
 #
 function inv_strassen(A)
-  if isodd(ncols(A)) || ncols(A) < 500
+#  @show size(A)
+  if isodd(ncols(A)) || ncols(A) < 400
     return inv(A)
   end
 #  @show :strassen, ncols(A)
@@ -404,11 +543,11 @@ function inv_strassen(A)
   return [X11 X12; X21 X22]
 end
 
-function solve_triu_left_strassen(b::MatElem, T::MatElem; cutoff::Int = cutoff)
-  #b*inv(T)
+function solve_triu_strassen(T::MatElem, b::MatElem; cutoff::Int = cutoff)
+  #b*inv(T), thus solves Tx = b for T upper triangular
   n = ncols(T)
   if n <= 50
-    R = solve_triu_left(b, T)
+    R = solve_triu(T, b)
     return R
   end
 
@@ -425,21 +564,21 @@ function solve_triu_left_strassen(b::MatElem, T::MatElem; cutoff::Int = cutoff)
   B = view(T, 1:n2, 1+n2:n)
   C = view(T, 1+n2:n, 1+n2:n)
 
-  S = solve_triu_left_strassen(U, A; cutoff)
-  R = solve_triu_left_strassen(X, A; cutoff)
+  S = solve_triu_strassen(A, U; cutoff)
+  R = solve_triu_strassen(A, X; cutoff)
 
   SS = mul_strassen(S, B; cutoff)
   sub!(SS, V, SS)
-  SS = solve_triu_left_strassen(SS, C; cutoff)
+  SS = solve_triu_strassen(C, SS; cutoff)
 
   RR = mul_strassen(R, B; cutoff)
   sub!(RR, Y, RR)
-  RR = solve_triu_left_strassen(RR, C; cutoff)
+  RR = solve_triu_strassen(C, RR; cutoff)
 
   return [S SS; R RR]
 end
 
-function solve_triu_left(b::ZZMatrix, U::ZZMatrix)
+function AbstractAlgebra.solve_triu(U::ZZMatrix, b::ZZMatrix)
    n = ncols(U)
    m = nrows(b)
    R = base_ring(U)
@@ -495,7 +634,7 @@ function Hecke.hadamard_bound2(M::ZZMatrix)
     if iszero(r)
       return r
     end
-    mul!(H, H, r)
+    Nemo.mul!(H, H, r)
   end
   return H
 end
@@ -557,16 +696,252 @@ function infinity_norm(A::ZZMatrix)
 end
 
 @inline function Nemo.mat_entry_ptr(b::fpMatrix, i::Int, j::Int)
-  unsafe_load(reinterpret(Ptr{Ptr{Clong}}, b.rows), i) + (j-1)*sizeof(Clong)
+  unsafe_load(reinterpret(Ptr{Ptr{Culong}}, b.rows), i) + (j-1)*sizeof(Culong)
 end
 
 function induce_crt!(A::ZZMatrix, p::ZZRingElem, B::fpMatrix, ::Integer; signed::Bool = false)
   #the second modulus is implicit in B: B.n
 
   ccall((:fmpz_mat_CRT_ui, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{fpMatrix}, Int), A, A, p, B, signed)
-  mul!(p, p, B.n)
+  Nemo.mul!(p, p, B.n)
   return
 end
+
+function vector_int(a::fpMatrix)
+  b = zeros(Int, nrows(a) * ncols(a))
+  vector_int!(b, a)
+  return b
+end
+
+function vector_int!(a::Vector{Int}, b::fpMatrix)
+  ccall(:memcpy, Cvoid, (Ref{Int}, Ptr{Clong}, Int), a, b.entries, nrows(b)*ncols(b) * 8)
+end
+
+function _map_entries(k::Nemo.fpField, A::ZZMatrix)
+  #turns A into a fpMatrix with julias memory manager,
+  #create a "view" where the view_parent is a julia-Uint array with the
+  #entries
+  # => no finaliser
+  # => matrix(entries) can be used as a 1-dim julia array
+  #    (for broadcast)
+  u = zeros(Int, nrows(A)*ncols(A))
+  a = Nemo.fpMatrix()
+  a.base_ring = k
+  a.entries = reinterpret(Ptr{Cvoid}, pointer(u))
+  v = zeros(UInt, nrows(A))
+  for i=1:nrows(A)
+    v[i] = a.entries + (i-1)*ncols(A)*8
+  end
+  a.view_parent = (u, v)
+  a.rows = reinterpret(Ptr{Cvoid}, pointer(v))
+  a.r = nrows(A)
+  a.c = ncols(A)
+  change_prime(a, UInt(characteristic(k)))
+  map_entries!(a, k, A)
+  return a
+end
+
+@inline myround(a, p, pi) = @fastmath a-p*Base.rint_llvm(a*pi)
+
+function Nemo.mod!(A::AbstractArray{Float64}, p::Int)
+  return Nemo.mod!(A, Float64(p), 1.0/Float64(p))
+end
+
+function Nemo.mod!(A::AbstractArray{Float64}, pf::Float64, pfi::Float64)
+#  pf = Float64(p)
+#  pfi = 1/pf
+#  A = reshape(A, nrows(A)*ncols(A))
+#  A .= (x->myround(x, pf, pfi)).(A) 
+#  return
+  Ap = pointer(A)
+  @fastmath for i= 1:length(A)
+    a = Base.Intrinsics.pointerref(Ap, 1, 1)
+#    a = unsafe_load(Ap)
+    a -= pf*Base.rint_llvm(a*pfi)
+#     a = Base.modf(a, pf)
+    Base.Intrinsics.pointerset(Ap, a, 1, 1)
+#    unsafe_store!(Ap, a)
+    Ap += sizeof(Float64)
+  end
+end
+
+# Input: B vector of matrices as Double64 meant to be mod q[i]
+# Output: RE vector of matrices ...                       p[i]
+
+function change_rns!(RE::Vector{Matrix{Float64}}, p::Vector{Int}, q::Vector{Int}, B::Vector{<:AbstractArray{Float64}}, U::Vector{Matrix{Float64}} = []) 
+  T = Float64
+  bd = Int[]  # mixed radix rep (wrt to q) of (prod(q)-1)/2
+  pr = mapreduce(ZZ, *, q)
+  pr = div(pr, 2)
+  for i = q
+    push!(bd, pr % i)
+    pr = divexact(pr - bd[end], i)
+  end
+
+  qinv = Int[0]
+  for i=2:length(B)
+    push!(qinv, invmod(Int(mapreduce(ZZ, *, q[1:i-1]) % q[i]), q[i]))
+  end
+  cp = [x-Int(mapreduce(ZZ, *, q) % x) for x = p]
+
+  if length(U) < 1
+    push!(U, copy(B[1]))
+  else
+    U[1] .= B[1]
+  end
+  @fastmath for i=2:length(B)
+    if length(U) < i
+      push!(U, copy(U[i-1]))
+    else
+      U[i] .= U[i-1]
+    end
+    for j=i-2:-1:1
+      BLAS.scal!((q[j] % T(q[i])), U[i])
+      BLAS.axpy!(1.0, U[j], U[i])
+      mod!(U[i], q[i])
+    end
+    BLAS.scal!(T((qinv[i]*(q[i]-1)) % q[i]), U[i])
+    BLAS.axpy!(T(qinv[i]), B[i], U[i])
+    mod!(U[i], q[i])
+  end
+
+  for j = 1:length(p)
+    if length(RE) < j
+      push!(RE, copy(U[length(B)]))
+    else
+      RE[j] .= U[length(B)]
+    end
+    mod!(RE[j], p[j])
+    @fastmath for i=length(B)-1:-1:1
+      BLAS.scal!(T(q[i] % p[j]), RE[j])
+      BLAS.axpy!(1.0, U[i], RE[j])
+      mod!(RE[j], p[j])
+    end
+  end
+
+  for i=1:length(RE[1])
+    for j=1:length(B)
+      if U[j][i] > bd[j]
+        for k=1:length(p)
+          RE[k][i] = (RE[k][i] + cp[k]) % p[k]
+        end
+        break
+      elseif U[j][i] < bd[j]
+        break
+      end
+    end
+  end
+  return RE
+end
+
+# Storjohann's unimodular certification
+# We use CRT to obtain the modular inverse B0
+# The p-adic Hensel-lifting version (below) seems to be faster
+function UniCertZ_CRT_rns(A::ZZMatrix)
+  n = nrows(A);
+  #assume ncols == n
+  H = hadamard_bound2(A)
+  EntrySize = maximum(nbits, A)
+  e = max(16, 2+ceil(Int, 2*log2(n)+EntrySize))
+  println("Modulus X has  $e bits");
+  
+  B0 = Matrix{Float64}[]
+  m = ZZ(1); p = 2^21;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
+  Xp = Int[]
+  @time while nbits(m) < e
+    p = next_prime(p);
+    push!(Xp, p)
+    ZZmodP = GF(p, cached = false);
+    MatModP = map_entries(ZZmodP, A)
+    B00 = inv_strassen(MatModP)
+    push!(B0, map(Float64, lift(B00)).entries)
+    Nemo.mul!(m, m, p)
+  end
+  println("Got modular inverses");
+  #m is the X
+
+  Ap = Matrix{Float64}[]
+  m_inv = fpFieldElem[]
+  Y = ZZ(1)
+  Yp = Int[]
+  while nbits(Y) < Int(1+ceil(log2(n)+EntrySize)) 
+    p = next_prime(p)
+    push!(Yp, p)
+    k = GF(p, cached = false)
+    push!(Ap, map(Float64, lift(map_entries(k, A))).entries)
+    push!(m_inv, inv(k(m)))
+    Nemo.mul!(Y, Y, p)
+  end
+
+  # Compute max num iters in k
+  k = (n-1)*(EntrySize+log2(n)/2) - (2*log2(n) + EntrySize);
+  k = k/log2(m);
+  k = 2+ceil(Int, log2(k));
+  println("Max num iters is k=$(k)");
+
+  t = similar(B0[1])
+  RY = Matrix{Float64}[]
+  U = Matrix{Float64}[]
+  change_rns!(RY, Yp, Xp, B0, U)
+  for i = 1:length(Ap)
+    x = Ap[i]
+    t = RY[i]
+    t .= -x*t
+    mod!(t, Yp[i])
+    for j=1:n
+      t[j,j] += 1.0
+    end
+    BLAS.scal!(Float64(lift(m_inv[i])), t)
+    mod!(t, Yp[i])
+  end
+
+  if all(iszero, RY)
+    return true
+  end
+
+  RX = map(similar, B0)
+  MY = map(similar, Ap)
+  R = similar(B0[1])
+  M = similar(B0[1])
+  T = similar(M)
+
+  MX = Matrix{Float64}[]
+
+  for i in 0:k-1
+    println("UniCertZ: loop: i=$(i)");
+    @time change_rns!(RX, Xp, Yp, RY, U)
+    @time for t = 1:length(RX)
+      BLAS.gemm!('n', 'n', 1.0, RX[t], RX[t], 0.0, M)
+      Nemo.mod!(M, Xp[t])
+      if length(MX) < t
+        push!(MX, B0[t] * M)
+      else
+        BLAS.gemm!('n', 'n', 1.0, B0[t], M, 0.0, MX[t])
+      end
+      Nemo.mod!(MX[t], Xp[t])
+    end
+    @time change_rns!(MY, Yp, Xp, MX, U)
+    @time for k=1:length(Ap)
+      S = RY[k]
+      M = similar(S)
+      BLAS.gemm!('n', 'n', 1.0, S, S, 0.0, M)
+#      change_rns2!(M, Yp[k], Xp, MX, U)
+#      S .= S*S
+      BLAS.gemm!('n', 'n', -1.0, Ap[k], MY[k], 1.0, M)
+#      S .-= Ap[k] * M
+      mod!(M, Yp[k])
+      BLAS.scal!(Float64(lift(m_inv[k])), M)
+      mod!(M, Yp[k])
+      RY[k], M = M, RY[k]
+    end
+
+    if all(iszero, RY)
+      return true
+    end
+  end #for
+  return false
+end
+
 
 # Storjohann's unimodular certification
 # We use CRT to obtain the modular inverse B0
@@ -663,7 +1038,8 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100)
 
   f = true
   local Ap::fpMatrix
-  @time while nbits(prod_p) < Ainf + n #+ 100
+  small = Ainf+n
+  @time while nbits(prod_p) < small + 20
     if f
       f = false
       Ap = map_entries(Nemo.fpField(p, false), A)
@@ -677,7 +1053,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100)
     else
       det_p = crt(det_p, prod_p, d, ZZ(p))
     end
-    mul!(prod_p, prod_p, p)
+    Nemo.mul!(prod_p, prod_p, p)
     p = next_prime(p)
   end
   det_p = mod_sym(det_p, prod_p)
@@ -720,7 +1096,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100)
         map_entries!(Ap, Nemo.fpField(p, false), A)
         d = _det(Ap)
         det_p = crt(det_p, prod_p, d, ZZ(p))
-        mul!(prod_p, prod_p, ZZ(p))
+        Nemo.mul!(prod_p, prod_p, ZZ(p))
       end
       mis = mod_sym(det_p*invmod(d1, prod_p), prod_p)
       return d1*mis
@@ -728,34 +1104,37 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100)
     @time T1 = hcol(TS, d)  
     push!(T, T1)
     @show :solve
-    @time AT = solve_triu_left_strassen(AT, T1)
+    @time AT = solve_triu_strassen(T1, AT)
     @show nbits(prod_p), nbits(d1)
     @show nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)))
-    if abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)) < ZZ(2)^100
+    if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small 
       break
     end
     @show nbits(d), Ainf
     if nbits(d) < Ainf + n
+      @show :doin_hnf
+      global last_hnf = (AT, d)
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
     @show Had / nbits(d1)  
-      AT = solve_triu_left_strassen(AT, h)
-      if abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)) < ZZ(2)^100
+      AT = solve_triu_strassen(h, AT)
+      if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
     end
   end
   det_p = invmod(d1, prod_p)*det_p
   @show det_p = mod_sym(det_p, prod_p)
-  @assert abs(det_p) < ZZ(2)^100
+  @assert nbits(abs(det_p)) < small
   h = hnf_modular_eldiv(AT, det_p)
   @show det(h) // det_p, det(h)
   d1 *= det(h)
-  AT = solve_triu_left_strassen(AT, h)
+  AT = solve_triu_strassen(h, AT)
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)
     #need to cost this as well
+    global last_AT = AT
     @time fl = UniCertZ_CRT(AT)
     #           @assert fl == is_unit(det(ZAT));
     if fl
@@ -779,13 +1158,13 @@ function ratrec(a::ZZMatrix, b::ZZRingElem)
     for j=1:ncols(a)
 #      @show i, j
       ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ref{fmpz}, Ptr{fmpz}), T, a_ptr)
-      mul!(T, T, D)
-      mod!(T, T, b)
+      Nemo.mul!(T, T, D)
+      Nemo.mod!(T, T, b)
       fl = ratrec!(n, d, T, b)
       fl || return fl, A, D
       if !isone(d)
         D = D*d
-        mul!(A, A, d)
+        Nemo.mul!(A, A, d)
       end
       ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{fmpz}, Ref{fmpz}), A_ptr, n)
 
@@ -816,11 +1195,11 @@ function ratrec!(n::ZZRingElem, d::ZZRingElem, a::ZZRingElem, b::ZZRingElem)
   l = 1
   N = deepcopy(b)
   D = ZZ(2)
-#  @show :start
-  @assert 0<a<b
+
+#  @assert 0<a<b
   done = false
   while !done && D <= N
-    mul!(D, D, D)
+    Nemo.mul!(D, D, D)
     div!(N, b, D)
     shift_right!(N, N, 1)
     if D>N
@@ -828,12 +1207,11 @@ function ratrec!(n::ZZRingElem, d::ZZRingElem, a::ZZRingElem, b::ZZRingElem)
       D = div(D, 2)
       done = true
     end
-#    @show N, D, b, 2*N*D
-    @assert 2*N*D < b
-#    @show a<N, nbits(a), nbits(N)
+
+#    @assert 2*N*D < b
+
     fl = ccall((:_fmpq_reconstruct_fmpz_2, Nemo.libflint), Bool, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), n, d, a, b, N, D)
-#    @show fl, nbits(D), nbits(d), k - nbits(n)-nbits(d)
-#    @show n, d
+
     if fl && (nbits(n)+nbits(d) < k - 30 || D>N)
       return fl
     end
@@ -880,6 +1258,7 @@ mutable struct DixonCtx
   end
 end
 #copied from flint to allow the use of adaptive reconstruction,
+#support cases with small primes and Float64
 function dixon_init(A::ZZMatrix, B::ZZMatrix)
   D = DixonCtx()
   D.A = A
@@ -932,11 +1311,11 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
   nexti = 1
   while ppow <= D.bound
     map_entries!(D.d_mod, Nemo.fpField(D.p, false), d)
-    mul!(D.y_mod, D.Ainv, D.d_mod)
+    Nemo.mul!(D.y_mod, D.Ainv, D.d_mod)
 
     ccall((:fmpz_mat_scalar_addmul_nmod_mat_fmpz, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}, Ref{fmpz}), D.x, D.y_mod, ppow)
 
-    mul!(ppow, ppow, D.p)
+    Nemo.mul!(ppow, ppow, D.p)
     if ppow > D.bound
       break
     end
@@ -949,7 +1328,8 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
 
       if fl
         # fl = (D.A*num == den*B)
-        sz = max(maximum(nbits, D.A) + maximum(nbits, num) + nbits(ncols(B)) + 1, 
+        sz = max(maximum(nbits, D.A) + maximum(nbits, num) 
+                                     + nbits(ncols(B)) + 1, 
                  maximum(nbits, B) + nbits(den))
         if sz < nbits(ppow)
           @show "no prod neccessary"
@@ -977,20 +1357,18 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
 
     prod = ZZ(1)
     if false
-      mul!(D.Ay, D.A, lift(D.y_mod))
+      Nemo.mul!(D.Ay, D.A, lift(D.y_mod))
     else
       for j=1:length(D.crt_primes)
         change_prime(D.y_mod, D.crt_primes[j])
         change_prime(D.Ay_mod, D.crt_primes[j])
 
-        mul!(D.Ay_mod, D.A_mod[j], D.y_mod)
+        Nemo.mul!(D.Ay_mod, D.A_mod[j], D.y_mod)
         if j == 1
           lift!(D.Ay, D.Ay_mod)
           prod = ZZ(D.crt_primes[j])
         else
           induce_crt!(D.Ay, prod, D.Ay_mod, D.crt_primes[j], signed = true)
-#          ccall((:fmpz_mat_CRT_ui, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{fmpz}, Ref{fpMatrix}, Int), Ay, Ay, prod, Ay_mod, 1)
-#          prod *= crt_primes[j]
         end
       end
       change_prime(D.y_mod, D.p)
