@@ -218,13 +218,14 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
     end
   end
 
-  C.v = Vector{ZZMatrix}(undef, length(C.G))
+  C.v = Vector{Vector{ZZMatrix}}(undef, length(C.G))
 
   for i in 1:length(C.G)
-    A = zero_matrix(FlintZZ, length(C.V), dim(C))
+    A = Vector{ZZMatrix}(undef, length(C.V))
     for j in 1:length(C.V)
+      A[j] = zero_matrix(FlintZZ, dim(C), 1)
       for k in 1:dim(C)
-        A[j, k] = _dot_product_with_row(C.V[j], C.G[i], k)
+        A[j][k, 1] = _dot_product_with_row(C.V[j], C.G[i], k)
       end
     end
     C.v[i] = A
@@ -384,6 +385,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   Csmall.dim = n
   Csmall.is_symmetric = C.is_symmetric
   Csmall.operate_tmp = zeros(Int, n)
+  Csmall.dot_product_tmp = Int[ 0 ]
 
   @assert C.is_symmetric[1]
 
@@ -408,15 +410,16 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
 
   #
 
-  Csmall.v = Vector{Matrix{Int}}(undef, length(C.G))
+  Csmall.v = Vector{Vector{Vector{Int}}}(undef, length(Csmall.G))
 
   # Here needs to be another overflow check
   # JS: "needs to be" or is it carried out?
   @inbounds for i in 1:length(Csmall.G)
-    A = zeros(Int, length(Csmall.V.vectors), dim(C))
+    A = Vector{Vector{Int}}(undef, length(Csmall.V))
     for j in 1:length(Csmall.V.vectors)
+      A[j] = Vector{Int}(undef, dim(Csmall))
       for k in 1:dim(Csmall)
-        A[j, k] = _dot_product_with_row(Csmall.V.vectors[j], Csmall.G[i], k)
+        A[j][k] = _dot_product_with_row(Csmall.V.vectors[j], Csmall.G[i], k)
       end
     end
     Csmall.v[i] = A
@@ -508,14 +511,11 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
   @inbounds for i in 1:length(scpvec)
     scpvec[i] = zero(S)
   end
-  tmp1 = zero(S)
-  tmp2 = zero(S)
-  tmp3 = zero(S)
   for w in C.V.vectors
     @inbounds for i in 1:length(C.G)
       for j in 1:dim(C)
         t = (i - 1)*dim(C) + j
-        scpvec[t] = _dot_product_with_row!(scpvec[t], w, C.v[i], C.std_basis[j], tmp1, tmp2, tmp3)
+        scpvec[t] = _dot_product_with_entry!(scpvec[t], w, C.v[i], C.std_basis[j], C.dot_product_tmp)
       end
     end
     minusW = -w
@@ -730,18 +730,12 @@ function _get_vectors_of_length(G::ZZLat, max::ZZRingElem)
   return _get_vectors_of_length(FakeFmpqMat(gram_matrix(G)), max)
 end
 
-function possible(C::ZLatAutoCtx, per, I, J)
+function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
   V = C.V.vectors
   W = C.V.lengths
   F = C.G
-  Ftr = C.Gtr
-  n = length(W)
-  f = length(F)
   _issymmetric = C.is_symmetric
-  return possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
-end
 
-function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
   count = 0
 
   tmp1 = zero(eltype(V[1]))
@@ -752,12 +746,11 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
   tmp6 = zero(eltype(V[1]))
   is_small = eltype(V[1]) <: Int
 
-  for j in 1:n
+  for j in 1:length(W)
     Wj = W[j]
     Vj = V[j]
-    good_scalar = true
     good_length = true
-    @inbounds for k in 1:f
+    @inbounds for k in 1:length(F)
       # getindex for ZZMatrix is super slow, so we need to do this the long way round...
       if is_small
         tmp1 = F[k][J, J]
@@ -770,46 +763,13 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
       end
     end
 
-    if !good_length
-      continue
-    end
-
-    @inbounds for k in 1:f
-      for i in 1:I
-        if is_small
-          tmp5 = F[k][J, per[i]]
-          if !_issymmetric[k]
-            tmp6 = F[k][per[i], J]
-          end
-        else
-          getindex!(tmp5, F[k], J, per[i])
-          !_issymmetric[k] && getindex!(tmp6, F[k], per[i], J)
-        end
-        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) == tmp5) ||
-              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) != tmp6)
-          good_scalar = false
-          break
-        end
-      end
-
-      if !good_scalar
-        break
-      end
-    end
-
-    if good_length && good_scalar
-      count = count + 1
-    end
-
-    if !good_length
-      continue
-    end
+    !good_length && continue
 
     # length is correct
 
-    good_scalar = true
-
-    @inbounds for k in 1:f
+    good_scalar_plus = true
+    good_scalar_minus = true
+    @inbounds for k in 1:length(F)
       for i in 1:I
         if is_small
           tmp5 = F[k][J, per[i]]
@@ -820,21 +780,41 @@ function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
           getindex!(tmp5, F[k], J, per[i])
           !_issymmetric[k] && getindex!(tmp6, F[k], per[i], J)
         end
-        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) == -tmp5) ||
-              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4) != -tmp6)
-          good_scalar = false
+        tmp1 = _dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4)
+        if tmp1 != tmp5
+          good_scalar_plus = false
+        end
+        if tmp1 != -tmp5
+          good_scalar_minus = false
+        end
+        if !good_scalar_plus && !good_scalar_minus
           break
         end
 
+        if !_issymmetric[k]
+          tmp1 = _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4)
+          if tmp1 != tmp6
+            good_scalar_plus = false
+          end
+          if tmp1 != -tmp6
+            good_scalar_minus = false
+          end
+          if !good_scalar_plus && !good_scalar_minus
+            break
+          end
+        end
       end
 
-      if !good_scalar
+      if !good_scalar_plus && !good_scalar_minus
         break
       end
     end
 
-    if good_scalar
-      count = count + 1
+    if good_scalar_plus
+      count += 1
+    end
+    if good_scalar_minus
+      count += 1
     end
   end
   return count
@@ -1105,38 +1085,29 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     @inbounds for i in 1:(step - 1)
       x[i] = C.std_basis[i]
     end
-    #@show C.fp_diagonal[step]
-    #@show candidates
     if C.fp_diagonal[step] > 1
-      nC = cand(candidates[step], step, x, C)
+      cand(candidates[step], step, x, C)
     else # there is only one candidate
       candidates[step] = Int[C.std_basis[step]]
-      nC = 1
     end
-    #@show nC
-    #@show candidates
     orb = orbit(C.std_basis[step], 1, H, C.V, C)
     C.orders[step] = length(orb)
     # delete the orbit of the step-th basis vector from the candidates
     #nC = delete(candidates[step], nC, orb, C.orders[step])
     setdiff!(candidates[step], orb)
     nC = length(candidates[step])
-    #@show step, nC
     while nC > 0 && ((im = candidates[step][1]) != 0)
       @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
-      #@show im
       found = false
       # try C.V[im] as the image of the step-th basis vector
       x[step] = im
       if step < dim
-        if cand(candidates[step + 1], step + 1, x, C) == C.fp_diagonal[step + 1]
+        if cand(candidates[step + 1], step + 1, x, C)
           found = aut(step + 1, x, candidates, C)
         end
       else
         found = true
       end
-
-      #@show found
 
       if !found
         # x[1],...,x[step] cannot be continued
@@ -1151,7 +1122,6 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         nbad += 1
         bad[nbad] = im
       else
-        #@show x, step
         # a new generator has been found
         # append the new generator to C.g[step] and to H
         push!(C.g[step], matgen(x, dim, C.per, C.V))
@@ -1175,6 +1145,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     end
     # JS: This whole block is not doing anything because of an "if false".
     #     Do we use sta (or flags.STAB in Souvignier's code) at all?
+    #=
     if step == sta
       # test, whether on step flags.STAB some generators may be omitted
       tries = C.nsg[step]
@@ -1205,6 +1176,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         tries += 1
       end
     end
+    =#
     if step < dim && C.orders[step] > 1
      # /* calculate stabilizer elements fixing the basis-vectors
      #    C.std_basis[1]...fp.e[step] */
@@ -1230,7 +1202,7 @@ function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   return gens, orde
 end
 
-function aut(step, x, candidates, C)
+function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLatAutoCtx)
   dim = Hecke.dim(C)
   found = false
   x[step + 1:length(x)] .= 0
@@ -1239,7 +1211,7 @@ function aut(step, x, candidates, C)
       x[step] = candidates[step][1]
       # check, whether x[1]...x[step] is a partial automorphism and compute the
       # candidates for x[step + 1]
-			if (cand(candidates[step + 1], step + 1, x, C) == C.fp_diagonal[step + 1])
+			if cand(candidates[step + 1], step + 1, x, C)
         found = aut(step + 1, x, candidates, C)
         found && break
       end
@@ -1262,12 +1234,19 @@ function aut(step, x, candidates, C)
   return found
 end
 
-function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
+function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   dep = C.depth
   use_vector_sums = (I > 1 && dep > 0)
   dim = Hecke.dim(C)
   vec = Vector{S}(undef, dim)
   vec2 = Vector{S}(undef, dim)
+  for i in 1:dim
+    vec[i] = zero(S)
+    vec2[i] = zero(S)
+  end
+  tmp1 = zero(S)
+  tmp2 = zero(S)
+  tmp3 = zero(S)
   if use_vector_sums
     comb = C.scpcomb[I - 1]
     n = length(comb.scpcombs.vectors)
@@ -1285,76 +1264,79 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     candidates[i] = 0
   end
 
-  nr = 0
-  fail = 0
-  @inbounds for j in 1:length(C.V)
-    if fail != 0
-      break
+  # If S == ZZRingElem then getting entries of the matrices C.G is slow, so we
+  # store all the entries we need a lot in vectors.
+  rowsI = Vector{Vector{S}}(undef, length(C.G))
+  minusRowsI = Vector{Vector{S}}(undef, length(C.G))
+  colsI = Vector{Vector{S}}(undef, length(C.G))
+  minusColsI = Vector{Vector{S}}(undef, length(C.G))
+  diagI = Vector{S}(undef, length(C.G))
+  for i in 1:length(C.G)
+    rowsI[i] = Vector{S}(undef, I - 1)
+    minusRowsI[i] = Vector{S}(undef, I - 1)
+    colsI[i] = Vector{S}(undef, I - 1)
+    minusColsI[i] = Vector{S}(undef, I - 1)
+    diagI[i] = C.G[i][C.per[I], C.per[I]]
+    for k in 1:I - 1
+      rowsI[i][k] = C.G[i][C.per[I], C.per[k]]
+      minusRowsI[i][k] = -rowsI[i][k]
+      if C.is_symmetric[i]
+        colsI[i][k] = C.G[i][C.per[k], C.per[I]]
+        minusColsI[i][k] = -colsI[i][k]
+      end
     end
+  end
+
+  nr = 0
+  @inbounds for j in 1:length(C.V)
     Vvj = C.V[j]
-    okp = 0
-    okm = 0
-    use_vector_sums && zero!(scpvec)
-    #@show C.V[j]
+    okp = true
+    okm = true
     for i in 1:length(C.G)
       _issym = C.is_symmetric[i]
       Cvi = C.v[i]
-      #@show Cvi
 
     # vec is the vector of scalar products of V.v[j] with the first I base vectors
     #   x[1]...x[I]
 
       for k in 1:(I - 1)
-        #@show x[k]
         xk = x[k]
         if xk > 0
-          #vec[k] = _dot_product(Vvj, C.G[i], C.V[xk])
-          vec[k] = _dot_product_with_row(Vvj, C.v[i], xk)
+          vec[k] = _dot_product_with_entry!(vec[k], Vvj, C.v[i], xk, C.dot_product_tmp)
           if !_issym
-            #vec2[k] = _dot_product(C.V[xk], C.G[i], Vvj)
-            vec2[k] = _dot_product_with_row(C.V[xk], C.v[i], j)
+            vec2[k] = _dot_product_with_entry!(vec2[k], C.V[xk], C.v[i], j, C.dot_product_tmp)
           end
         else
-          #vec[k] = -_dot_product(Vvj, C.G[i], C.V[-xk])
-          vec[k] = -_dot_product_with_row(Vvj, C.v[i], -xk)
+          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, C.v[i], -xk, C.dot_product_tmp)
           if !_issym
-            #vec2[k] = -_dot_product(C.V[-xk], C.G[i], Vvj)
-            vec2[k] = -_dot_product_with_row(C.V[-xk], C.v[i], j)
+            vec2[k] = -_dot_product_with_entry!(vec2[k], C.V[-xk], C.v[i], j, C.dot_product_tmp)
           end
         end
       end
 
-      good = true
       for k in 1:(I - 1)
-        if vec[k] != C.G[i][C.per[I], C.per[k]] || (!_issym && vec2[k] != C.G[i][C.per[k], C.per[I]])
-          good = false
+        if vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k])
+          okp = false
           break
         end
       end
 
-      #@show "pos", Vvj, good
-
-      if good && C.V.lengths[j][i] == C.G[i][C.per[I], C.per[I]]
-        # C.V[j] is a candidate for x[I] with respec to the form C.G[i]
-        okp += 1
+      if okp && C.V.lengths[j][i] != diagI[i]
+        okp = false
       end
+      # if okp == true then C.V[j] is a candidate for x[I] with respect to the form C.G[i]
 
-      good = true
       for k in 1:(I - 1)
-        if vec[k] != -C.G[i][C.per[I], C.per[k]] || (!_issym && vec2[k] != -C.G[i][C.per[k], C.per[I]])
-          good = false
+        if vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k])
+          okm = false
           break
         end
       end
 
-      #@show "neg", Vvj, good
-
-      if good && C.V.lengths[j][i] == C.G[i][C.per[I], C.per[I]]
-        # C.V[j] is a candidate for x[I] with respec to the form C.G[i]
-        # JS: I guess this should be -C.V[j] in the comment?
-        #@show "here"
-        okm += 1
+      if okm && C.V.lengths[j][i] != diagI[i]
+        okm = false
       end
+      # if okm == true then -C.V[j] is a candidate for x[I] with respect to the form C.G[i]
 
       if use_vector_sums
         for k in I - 1:-1:max(1, I - dep) # basically I - 1 - dep + 1, ..., I - 1
@@ -1362,9 +1344,14 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         end
       end
 
-      if okp < i && okm < i
-        break
-      end
+      # JS: I think this is wrong if we use vector sums.
+      #     If the for loop breaks out here, scpvec is not filled correctly and
+      #     then looking it up will fail and hence return false although just the
+      #     candidate C.V[j] is bad (but not necessarily the whole branch in the
+      #     search tree).
+      #if okp < i && okm < i
+      #  break
+      #end
     end
 
     if use_vector_sums
@@ -1379,53 +1366,49 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         if !is0
           # the scalar products scpvec are found and we add the vector to the
           # corresponding vector sum
-          xvec = add_to_row!(xvec, Vvj, k, sign)
+          if sign
+            ww = -Vvj
+          else
+            ww = Vvj
+          end
+          xvec = add_to_row!(xvec, ww, k, tmp1, tmp2, tmp3)
         end
       else
         # scpvec is not found, hence x[1], ..., x[I - 1] is not a partial automorphism
         #println("Did not find scpvec")
-        fail = 1
+        return false
       end
     end
 
-    if okp == length(C.G)
+    if okp
       # V.v[j] is a candidate for x[I]
       if nr < C.fp_diagonal[I]
         nr += 1
         candidates[nr] = j
       else
         # there are too many candidates
-        fail = 1
+        return false
       end
     end
 
-    #@show nr
-
-    #@show okm == length(C.G)
-
-    if okm == length(C.G)
+    if okm
       # -V.v[j] is a candidate for x[I]
       if nr < C.fp_diagonal[I]
         nr += 1
         candidates[nr] = -j
       else
         # there are too many candidates
-        fail = 1
+        return false
       end
     end
-
-    #@show nr
   end
 
-  #@show fail
-
-  if fail == 1
-    nr = 0
+  if nr < C.fp_diagonal[I]
+    # there are not enough candidates
+    return false
   end
-  #@show nr
-  old_nr = nr # JS only for printing
 
-  if nr == C.fp_diagonal[I] && use_vector_sums
+  if use_vector_sums
     # compute the basis of the lattice generated by the vectors in xvec via the
     # transformation matrix comb.trans
     xbase = comb.trans*xvec
@@ -1433,27 +1416,17 @@ function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     # check, whether the base xbase has the right scalar products
     transpxbase = transpose(xbase)
     for i in 1:length(C.G)
-      # JS: Optimize this by checking entry by entry instead of building the whole matrix?
       if xbase*C.G[i]*transpxbase != comb.F[i]
-        nr = 0
-        break
+        return false
       end
     end
-  end
 
-  if nr == C.fp_diagonal[I] && use_vector_sums
-    # JS: Optimize this by building the product row by row?
     if xvec != comb.coef*xbase
-      nr = 0
+      return false
     end
   end
 
-  if nr < old_nr
-    #print("old_nr: $old_nr, nr: $nr; ")
-  end
-  #@show nr
-  #println()
-  return nr
+  return true
 end
 
 function orbit(pt, npt, G, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
@@ -2077,6 +2050,12 @@ function _dot_product_with_column(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingE
   return t
 end
 
+function _dot_product_with_entry!(t::ZZRingElem, v::ZZMatrix, A::Vector{ZZMatrix}, k::Int, tmp::ZZMatrix)
+  @inbounds mul!(tmp, v, A[k])
+  getindex!(t, tmp, 1, 1)
+  return t
+end
+
 function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
   getindex!(tmp2, v, 1, 1)
   getindex!(tmp3, A, k, 1)
@@ -2116,6 +2095,15 @@ function _dot_product_with_row!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, 
   @inbounds t = v[1] * A[k, 1]
   @inbounds for i in 2:length(v)
     t = t + v[i] * A[k, i]
+  end
+  return t
+end
+
+function _dot_product_with_entry!(t::Int, v::Vector{Int}, A::Vector{Vector{Int}}, k::Int, tmp::Vector{Int})
+  @inbounds A = A[k]
+  @inbounds t = v[1] * A[1]
+  @inbounds for i in 2:length(v)
+    t = t + v[i] * A[i]
   end
   return t
 end
@@ -2222,16 +2210,23 @@ function _psolve(X, A, B, n, p)
 end
 
 # Add the 1 x n matrix r to the ith row of the m x n matrix A.
-# If sign == true, subtract r.
-function add_to_row!(A::Union{Matrix, MatElem}, r::Union{Vector, MatElem}, i::Int, sign::Bool = false)
+function add_to_row!(A::Matrix{Int}, r::Vector{Int}, i::Int, tmp1::Int = 0, tmp2::Int = 0, tmp3::Int = 0)
   @assert ncols(A) == length(r)
   @assert 1 <= i && i <= nrows(A)
   @inbounds for j in 1:ncols(A)
-    if sign
-      A[i, j] -= r[j]
-    else
-      A[i, j] += r[j]
-    end
+    A[i, j] += r[j]
+  end
+  return A
+end
+
+function add_to_row!(A::ZZMatrix, r::ZZMatrix, i::Int, tmp1::ZZRingElem = FlintZZ(), tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
+  @assert ncols(A) == length(r)
+  @assert 1 <= i && i <= nrows(A)
+  @inbounds for j in 1:ncols(A)
+    getindex!(tmp1, A, i, j)
+    getindex!(tmp2, r, 1, j)
+    add!(tmp3, tmp1, tmp2)
+    A[i, j] = tmp3
   end
   return A
 end

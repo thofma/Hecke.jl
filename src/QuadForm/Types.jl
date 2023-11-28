@@ -493,9 +493,10 @@ mutable struct ZLatAutoCtx{S, T, V}
   dim::Int
   max::S
   V::VectorList{V, S} # list of (short) vectors
-  v::Vector{T} # list of matrices, v[i][j, k] is the dot product of V[j] with
-               # the k-th row of G[i]
-               # v[i][j, :] is the (matrix) product G[i]*V[j]
+  v::Vector{Vector{V}} # list of list of vectors (n x 1 matrices),
+                       # v[i][j][k] is the dot product of V[j] with
+                       # the k-th row of G[i]
+                       # v[i][j] is the (matrix) product G[i]*V[j]
   per::Vector{Int} # permutation of the basis vectors such that in every step
                    # the number of possible continuations is minimal
   fp::Matrix{Int} # the "fingerprint": fp[1, i] = number vectors v such that v
@@ -515,6 +516,7 @@ mutable struct ZLatAutoCtx{S, T, V}
 
   is_symmetric::BitArray{1} # whether G[i] is symmetric
   operate_tmp::V # temp storage for orbit computation
+  dot_product_tmp::V # temp storage for dot product computation
 
   function ZLatAutoCtx(G::Vector{ZZMatrix})
     z = new{ZZRingElem, ZZMatrix, ZZMatrix}()
@@ -523,6 +525,7 @@ mutable struct ZLatAutoCtx{S, T, V}
     z.dim = nrows(G[1])
     z.is_symmetric = falses(length(G))
     z.operate_tmp = zero_matrix(FlintZZ, 1, ncols(G[1]))
+    z.dot_product_tmp = zero_matrix(FlintZZ, 1, 1)
 
     for i in 1:length(z.G)
       z.is_symmetric[i] = is_symmetric(z.G[i])
