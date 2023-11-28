@@ -1060,6 +1060,11 @@ function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, V)
 end
 
 function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
+  # If S == ZZRingElem, we produce a ZLatAutoCtx with integer entries allowing
+  # overflow. This is used in `cand`: Only if `cand` returns true for the
+  # Int-version, we run the computation for the ZZRingElem-version for
+  # verification.
+  D = _make_small(C)
   #println("Working with depth $(C.depth) and integer type $S")
   dim = Hecke.dim(C)
 
@@ -1086,7 +1091,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
       x[i] = C.std_basis[i]
     end
     if C.fp_diagonal[step] > 1
-      cand(candidates[step], step, x, C)
+      cand(candidates[step], step, x, C, D)
     else # there is only one candidate
       candidates[step] = Int[C.std_basis[step]]
     end
@@ -1102,8 +1107,8 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
       # try C.V[im] as the image of the step-th basis vector
       x[step] = im
       if step < dim
-        if cand(candidates[step + 1], step + 1, x, C)
-          found = aut(step + 1, x, candidates, C)
+        if cand(candidates[step + 1], step + 1, x, C, D)
+          found = aut(step + 1, x, candidates, C, D)
         end
       else
         found = true
@@ -1202,7 +1207,7 @@ function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   return gens, orde
 end
 
-function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLatAutoCtx)
+function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLatAutoCtx, D::ZLatAutoCtx)
   dim = Hecke.dim(C)
   found = false
   x[step + 1:length(x)] .= 0
@@ -1211,8 +1216,8 @@ function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLat
       x[step] = candidates[step][1]
       # check, whether x[1]...x[step] is a partial automorphism and compute the
       # candidates for x[step + 1]
-			if cand(candidates[step + 1], step + 1, x, C)
-        found = aut(step + 1, x, candidates, C)
+			if cand(candidates[step + 1], step + 1, x, C, D)
+        found = aut(step + 1, x, candidates, C, D)
         found && break
       end
       orb = Int[x[step]]
@@ -1234,7 +1239,18 @@ function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLat
   return found
 end
 
-function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
+function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{ZZRingElem}, D::ZLatAutoCtx{Int})
+  if _cand(candidates, I, x, D)
+    # _cand with Integers return true, so we have to verify the result with
+    # ZZRingElem
+    return _cand(candidates, I, x, C)
+  end
+  return false
+end
+
+cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{Int}, D::ZLatAutoCtx) = _cand(candidates, I, x, C)
+
+function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   dep = C.depth
   use_vector_sums = (I > 1 && dep > 0)
   dim = Hecke.dim(C)
@@ -2262,3 +2278,92 @@ max_nbits(v::ZZMatrix) = maximum([nbits(v[1, i]) for i in 1:ncols(v)])
 #
 # Hecke.fingerprint(C)
 # reduce(hcat, [C.fp[:, i] for i in 1:8][C.per]) == [240 240 2160 240 240 240 240 240; 0 56 126 126 126 126 126 126; 0 0 27 27 72 72 72 72; 0 0 0 10 40 16 40 40; 0 0 0 0 8 8 24 24; 0 0 0 0 0 4 6 12; 0 0 0 0 0 0 3 6; 0 0 0 0 0 0 0 2]
+
+function _int_with_overflow(a::ZZRingElem)
+  fits(Int, a) && return Int(a)
+  return BigInt(a) % Int
+end
+
+function _int_vector_with_overflow(a::ZZMatrix, tmp::ZZRingElem)
+  if nrows(a) == 1
+    b = Vector{Int}(undef, ncols(a))
+    for i in 1:ncols(a)
+      getindex!(tmp, a, 1, i)
+      b[i] = _int_with_overflow(tmp)
+    end
+  else
+    b = Vector{Int}(undef, nrows(a))
+    for i in 1:nrows(a)
+      getindex!(tmp, a, i, 1)
+      b[i] = _int_with_overflow(tmp)
+    end
+  end
+  return b
+end
+
+function _int_matrix_with_overflow(a::ZZMatrix, tmp::ZZRingElem)
+  b = Matrix{Int}(undef, nrows(a), ncols(a))
+  for i in 1:nrows(a)
+    for j in 1:ncols(a)
+      getindex!(tmp, a, i, j)
+      b[i, j] = _int_with_overflow(tmp)
+    end
+  end
+  return b
+end
+
+function _make_small(V::VectorList{ZZMatrix, ZZRingElem})
+  tmp = FlintZZ()
+  W = VectorList{Vector{Int}, Int}()
+  W.vectors = [ _int_vector_with_overflow(v, tmp) for v in V.vectors ]
+  if isdefined(V, :lengths)
+    W.lengths = Vector{Vector{Int}}(undef, length(V.lengths))
+    for i in 1:length(V.lengths)
+      W.lengths[i] = [ _int_with_overflow(x) for x in V.lengths[i] ]
+    end
+  end
+  W.issorted = V.issorted
+  W.use_dict = V.use_dict
+  if W.use_dict
+    W.lookup = Dict{Vector{Int}, Int}()
+    for i in 1:length(W.vectors)
+      W.lookup[W.vectors[i]] = i
+    end
+  end
+  return W
+end
+
+_make_small(C::ZLatAutoCtx{Int}) = C
+
+# Forces the entries of C in Ints. Only the fields relevant for `cand` are filled.
+function _make_small(C::ZLatAutoCtx{ZZRingElem})
+  tmp = FlintZZ()
+  D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
+  D.G = [ _int_matrix_with_overflow(M, tmp) for M in C.G ]
+  D.dim = C.dim
+  D.V = _make_small(C.V)
+  D.v = Vector{Vector{Int}}(undef, length(C.v))
+  for i in 1:length(C.v)
+    D.v[i] = [ _int_vector_with_overflow(M, tmp) for M in C.v[i] ]
+  end
+  D.per = C.per
+  D.fp = C.fp
+  D.fp_diagonal = C.fp_diagonal
+  D.std_basis = C.std_basis
+
+  if isdefined(C, :scpcomb)
+    D.scpcomb = Vector{SCPComb{Int, Matrix{Int}, Vector{Int}}}(undef, length(C.scpcomb))
+    for i in 1:length(C.scpcomb)
+      D.scpcomb[i] = SCPComb{Int, Matrix{Int}, Vector{Int}}()
+      D.scpcomb[i].scpcombs = _make_small(C.scpcomb[i].scpcombs)
+      D.scpcomb[i].trans = _int_matrix_with_overflow(C.scpcomb[i].trans, tmp)
+      D.scpcomb[i].coef = _int_matrix_with_overflow(C.scpcomb[i].coef, tmp)
+      D.scpcomb[i].F = [ _int_matrix_with_overflow(M, tmp) for M in C.scpcomb[i].F ]
+    end
+  end
+
+  D.depth = C.depth
+  D.is_symmetric = C.is_symmetric
+  D.dot_product_tmp = Int[ 0 ]
+  return D
+end
