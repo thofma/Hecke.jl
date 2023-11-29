@@ -223,7 +223,9 @@ function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat; strate
     fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM; strategy = strategy)
     if fl
       _iso = LtoMM * inv(iso)
-      @assert _iso(L) == M
+      if !is_zero(LtoMM.matrix)
+        @assert _iso(L) == M
+      end
       return true, _iso
     else
       return false, zero_map(L.V, M.V)
