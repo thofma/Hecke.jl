@@ -359,10 +359,10 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   Xp = Int[]
   @time while nbits(m) < e
     p = next_prime(p);
-    push!(Xp, p)
     ZZmodP = GF(p, cached = false);
     MatModP = map_entries(ZZmodP, A)
     B00 = inv_strassen(MatModP)
+    push!(Xp, p)
     push!(B0, map(Float64, lift(B00)).entries)
     Nemo.mul!(m, m, p)
   end
@@ -507,6 +507,9 @@ function _det(a::fpMatrix)
   return ZZ(r)
 end
 
+function t_det(h::ZZMatrix)
+  return Hecke.prod_diagonal(h)
+end
 
 # Determinant algorithm: U is the range for random RHS matrix (default -100:100)
 # Answer is !!! CORRECT UP TO SIGN !!!
@@ -578,10 +581,13 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   while !det_small
     b = rand(matrix_space(ZZ,n,1),U); 
     if f
+      @show :solve_init
       D = dixon_init(A, b)
       f = false
     end
+    @show :solving
     @time TS, d = dixon_solve(D, b)
+    @assert D*TS == d*b
     for i=1:length(T)
       TS = T[i]*TS
     end
@@ -614,7 +620,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     @time T1 = hcol(TS, d)  
     push!(T, T1)
     @show :solve
-    @time AT = Strassrn.solve_triu(T1, AT)
+    @time AT = Strassen.solve_triu(T1, AT)
 #    @show nbits(prod_p), nbits(d1)
 #    @show nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)))
     if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small 
@@ -626,7 +632,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
     @show Had / nbits(d1)  
-      AT = Strassen.solve_triu(h, AT)
+      AT = Nemo.solve_triu_left(h, AT)
       if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
@@ -635,11 +641,12 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   det_p = invmod(d1, prod_p)*det_p
   @show det_p = mod_sym(det_p, prod_p)
   @assert nbits(abs(det_p)) < small
-  h = hnf_modular_eldiv(AT, det_p)
-  @show det(h) // det_p, det(h)
-  d1 *= det(h)
+  @show :hnf
+  @time h = hnf_modular_eldiv(AT, det_p)
+  @show t_det(h) // det_p, det(h)
+  d1 *= t_det(h)
 
-  AT = Strassen.solve_triu(h, AT)
+  @time AT = Nemo.solve_triu_left(h, AT)
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)
