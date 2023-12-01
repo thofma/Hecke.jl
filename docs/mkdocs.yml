@@ -114,6 +114,7 @@ nav:
       - Misc: misc.md
     - Extra features:
       - Macros: features/macros.md
+      - Multi-sets: features/mset.md
     - References: 'references.md'
     - Examples: 'examples.md'
     - Developer:

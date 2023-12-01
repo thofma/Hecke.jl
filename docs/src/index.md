@@ -42,40 +42,48 @@ Here is a quick example of using Hecke:
 
 ```julia
 julia> using Hecke
-...
 
 Welcome to
 
-  _    _           _
- | |  | |         | |
- | |__| | ___  ___| | _____
- |  __  |/ _ \/ __| |/ / _ \
- | |  | |  __/ (__|   <  __/
- |_|  |_|\___|\___|_|\_\___|
+    _    _           _
+   | |  | |         | |
+   | |__| | ___  ___| | _____
+   |  __  |/ _ \/ __| |/ / _ \
+   | |  | |  __/ (__|   <  __/
+   |_|  |_|\___|\___|_|\_\___|
 
-Version 0.9.0 ...
+Version 0.22.8...
  ... which comes with absolutely no warranty whatsoever
-(c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana
+(c) 2015-2023 by Claus Fieker, Tommy Hofmann and Carlo Sircana
+
 
 julia> Qx, x = polynomial_ring(FlintQQ, "x");
+
 julia> f = x^3 + 2;
+
 julia> K, a = number_field(f, "a");
+
 julia> O = maximal_order(K);
+
 julia> O
-Maximal order of Number field over Rational Field with defining polynomial x^3 + 2
-with basis [1,a,a^2]
+Maximal order of Number field of degree 3 over QQ
+with basis nf_elem[1, a, a^2]
 ```
 
 The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
 
 ```
-help?> signature
-search: signature
+help?> absolute_degree
+search: absolute_degree absolute_inertia_degree absolute_coordinates is_absolutely_irreducible
 
-  ----------------------------------------------------------------------------
+  absolute_degree(a::FqField)
 
-  signature(O::NfMaximalOrder) -> Tuple{Int, Int}
+  Return the degree of the given finite field over the prime field.
 
-  |  Returns the signature of the ambient number field of \mathcal O.
+  ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+  absolute_degree(L::NumField) -> Int
+
+  Given a number field L/K, this function returns the degree of L over \mathbf Q.
 ```
 
