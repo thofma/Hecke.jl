@@ -21,7 +21,7 @@ function reduce(A::SMat{zzModRingElem}, g::SRow{zzModRingElem})
 end
 
 function _reduce_field(A::SMat{T}, g::SRow{T}) where {T}
-  @hassert :HNF 1  isupper_triangular(A)
+  @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   # supposed to be a field...
   if A.r == A.c
@@ -58,7 +58,7 @@ Given an upper triangular matrix $A$ over a field and a sparse row $g$, this
 function reduces $g$ modulo $A$.
 """
 function reduce(A::SMat{T}, g::SRow{T}) where {T}
-  @hassert :HNF 1  isupper_triangular(A)
+  @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   #until the 1st (pivot) change in A
   new_g = false
@@ -121,7 +121,7 @@ integer $m$, this function reduces $g$ modulo $A$ and returns $g$
 modulo $m$ with respect to the symmetric residue system.
 """
 function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
-  @hassert :HNF 1  isupper_triangular(A)
+  @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   g = deepcopy(g)
   mod_sym!(g, m)
@@ -214,7 +214,7 @@ for all $j > 1$. It is assumed that $A$ is upper triangular.
 If such an index does not exist, find the smallest index larger.
 """
 function find_row_starting_with(A::SMat, p::Int)
-#  @hassert :HNF 1  isupper_triangular(A)
+#  @hassert :HNF 1  is_upper_triangular(A)
   start = 0
   stop = nrows(A)+1
   while start < stop - 1
@@ -272,7 +272,7 @@ If `trafo` is set to `Val{true}`, then additionally an array of transformations
 is returned.
 """
 function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) where {N, T}
-#  @hassert :HNF 1  isupper_triangular(A)
+#  @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
 
   with_transform = (trafo == Val{true})

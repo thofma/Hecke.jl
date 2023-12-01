@@ -78,6 +78,10 @@ function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZM
   return Hecke.lift(a) + O(K, p^v)
 end
 
+function lift(a::FqFieldElem, K::PadicField)
+  return Hecke.lift(ZZ, a) + O(K, prime(K))
+end
+
 function lift(a::FinFieldElem, K::LocalField)
   k, mk = residue_field(K)
   @assert k === parent(a)
@@ -883,6 +887,8 @@ mutable struct HenselCtxdr{S}
 #    @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
+    @assert residue_field(Q)[1] === coefficient_ring(lfp[1])
+    k, Qtok = residue_field(Q)
     i = 1
     la = Vector{typeof(f)}()
     n = length(lfp)
@@ -891,12 +897,12 @@ mutable struct HenselCtxdr{S}
       f2 = lfp[i+1]
       g, a, b = gcdx(f1, f2)
       @assert isone(g)
-      push!(la, map_coefficients(x -> setprecision(lift(x, Q), 1), a, parent = Qx))
-      push!(la, map_coefficients(x -> setprecision(lift(x, Q), 1), b, parent = Qx))
+      push!(la, map_coefficients(x -> setprecision(Qtok\x, 1), a, parent = Qx))
+      push!(la, map_coefficients(x -> setprecision(Qtok\x, 1), b, parent = Qx))
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x -> map_coefficients(y -> setprecision(lift(y, Q), 1), x, parent = Qx), lfp), la, uniformizer(Q), n)
+    return new(f, map(x -> map_coefficients(y -> setprecision(Qtok\y, 1), x, parent = Qx), lfp), la, uniformizer(Q), n)
   end
 
   function HenselCtxdr{S}(f::PolyRingElem{S}) where S

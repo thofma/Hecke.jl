@@ -305,8 +305,8 @@ function generators(L::AbstractLat; minimal::Bool = false)
     d = ncols(St)
     for i in 1:nrows(St)
       if base_ring(L) isa NfOrd
-        I = numerator(St.coeffs[i])
-        den = denominator(St.coeffs[i])
+        I = numerator(coefficient_ideals(St)[i])
+        den = denominator(coefficient_ideals(St)[i])
         _assure_weakly_normal_presentation(I)
         push!(v, T[K(I.gen_one)//den * matrix(St)[i, j] for j in 1:d])
         push!(v, T[K(I.gen_two)//den * matrix(St)[i, j] for j in 1:d])
@@ -387,7 +387,7 @@ the output is a hermitian (resp. quadratic) lattice.
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-lattice(V::AbstractSpace, basis::MatElem ; check::Bool = true) = lattice(V, pseudo_matrix(basis), check = check)
+lattice(V::AbstractSpace, basis::MatElem ; check::Bool = true) = lattice(V, pseudo_matrix(basis); check)
 
 @doc raw"""
     lattice(V::AbstractSpace, gens::Vector) -> AbstractLat
@@ -398,16 +398,16 @@ is a hermitian (resp. quadratic) lattice.
 
 If `gens` is empty, the function returns the zero lattice in `V`.
 """
-function lattice(V::Hecke.AbstractSpace, gens::Vector)
-  if length(gens) == 0
+function lattice(V::Hecke.AbstractSpace, _gens::Vector)
+  if length(_gens) == 0
     pm = pseudo_matrix(matrix(base_ring(V), 0, dim(V), []))
-    return lattice(V, pm, check = false)
+    return lattice(V, pm; check = false)
   end
-  @assert length(gens[1]) > 0
-  @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
-  @req length(gens[1]) == dim(V) "Incompatible arguments: the length of the elements of gens must correspond to the dimension of V"
+  @assert length(_gens[1]) > 0
+  @req all(v -> length(v) == length(_gens[1]), _gens) "All vectors in gens must be of the same length"
+  @req length(_gens[1]) == dim(V) "Incompatible arguments: the length of the elements of gens must correspond to the dimension of V"
   F = base_ring(V)
-  gens = [map(F, v) for v in gens]
+  gens = [map(F, v) for v in _gens]
   M = zero_matrix(F, length(gens), length(gens[1]))
   for i=1:nrows(M)
     for j=1:ncols(M)
@@ -420,7 +420,7 @@ function lattice(V::Hecke.AbstractSpace, gens::Vector)
     i += 1
   end
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
-  L = lattice(V, pm, check = false)
+  L = lattice(V, pm; check = false)
   L.generators = gens
   return L
 end
@@ -432,7 +432,7 @@ Given an ambient space `V`, return the lattice with the standard basis
 matrix. If `V` is hermitian (resp. quadratic) then the output is a hermitian
 (resp. quadratic) lattice.
 """
-lattice(V::AbstractSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)), check = false)
+lattice(V::AbstractSpace) = lattice(V, identity_matrix(base_ring(V), rank(V)); check = false)
 
 ################################################################################
 #
@@ -449,7 +449,7 @@ If `minimal == true`, then a minimal generating set is used. Note that computing
 minimal generators is expensive.
 """
 function gram_matrix_of_generators(L::AbstractLat; minimal::Bool = false)
-  m = generators(L, minimal = minimal)
+  m = generators(L; minimal)
   M = matrix(nf(base_ring(L)), m)
   return gram_matrix(ambient_space(L), M)
 end
@@ -470,7 +470,7 @@ function discriminant(L::AbstractLat)
   d = det(gram_matrix_of_rational_span(L))
   v = involution(L)
   C = coefficient_ideals(L)
-  I = prod(C, init = one(base_field(L))*base_ring(L))
+  I = prod(C; init = one(base_field(L))*base_ring(L))
   return d * I * v(I)
 end
 
@@ -1145,7 +1145,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
   # This will correspond to multiplication by beta along the transfer
   iso = zero_matrix(QQ, 0, degree(Lres))
 
-  v = vec(zeros(QQ, 1, degree(Lres)))
+  v = zero_matrix(QQ, 1, degree(Lres))
 
   for i in 1:degree(Lres)
     v[i] = one(QQ)
@@ -1181,8 +1181,10 @@ function trace_lattice_with_isometry(H::HermLat, res::AbstractSpaceRes; beta::Fi
   @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
 
   Lres = restrict_scalars(H, res)
+
   iso = zero_matrix(QQ, 0, degree(Lres))
-  v = vec(zeros(QQ, 1, degree(Lres)))
+
+  v = zero_matrix(QQ, 1, degree(Lres))
 
   for i in 1:degree(Lres)
     v[i] = one(QQ)
@@ -1204,22 +1206,12 @@ end
 # by b. This function requires f to be invertible, b to be have norm 1,
 # b and f must have the same (absolute) minimal polynomial and the number
 # of rows of f should be divisible by the absolute degree of the parent of b
-function _admissible_basis(f::QQMatrix, b::NfRelElem; check::Bool = true)
-  chi = absolute_minpoly(b)
-
-  if check
-    @assert norm(b) == 1
-    chi_f = minpoly(parent(chi), f)
-    @assert chi == chi_f
-    @assert divides(ncols(f), degree(chi))[1]
-  end
-
-  m = divexact(ncols(f), degree(chi))
-  _mb = absolute_representation_matrix(b)
-
+#
+# Here _mb is the asolute multiplication matrix of b and mb is a block diagonal
+# matrix consisting of an appropriate number of copies of _mb 
+function _admissible_basis(f::QQMatrix, _mb::QQMatrix, mb::QQMatrix)
   # we look for a basis on which f acts blockwise
   # as multiplication by b along extension of scalars
-  mb = block_diagonal_matrix([_mb for i in 1:m])
   bca = Hecke._basis_of_commutator_algebra(f, _mb)
   @assert !is_empty(bca)
 
@@ -1262,8 +1254,8 @@ span of `L` is irreducible.
 """
 function hermitian_structure(L::ZZLat, f::QQMatrix; check::Bool = true,
                                                     ambient_representation::Bool = true,
-                                                    res = nothing,
-                                                    E = nothing)
+                                                    res::Union{Nothing, AbstractSpaceRes} = nothing,
+                                                    E::Union{Nothing, NfRel} = nothing)
 
   return hermitian_structure_with_transfer_data(L, f; check, ambient_representation, res, E)[1]
 end
@@ -1291,8 +1283,8 @@ span of `L` is irreducible.
 """
 function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::Bool = true,
                                                                         ambient_representation::Bool = true,
-                                                                        res = nothing,
-                                                                        E = nothing)
+                                                                        res::Union{Nothing, AbstractSpaceRes} = nothing,
+                                                                        E::Union{Nothing, NfRel} = nothing)
 
   # Since the minimal polynomial of f might not be irreducible, but the one
   # of its restriction to _L is, we are only concerned about _L inside
@@ -1300,9 +1292,9 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   # "full rank version". Otherwise, we keep it as is and consider f as
   # acting on the ambient space (which is isometric to the rational span of _L)
   if rank(_L) != degree(_L)
-    L = integer_lattice(gram = gram_matrix(_L))
+    L = integer_lattice(;gram = gram_matrix(_L))
     if ambient_representation
-      ok, f = can_solve_with_solution(basis_matrix(_L), basis_matrix(_L)*f, side=:left)
+      ok, f = can_solve_with_solution(basis_matrix(_L), basis_matrix(_L)*f; side=:left)
       @req ok "Isometry does not restrict to L"
     end
   else
@@ -1323,7 +1315,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
     gram = gram_matrix(ambient_space(L))
     @req is_irreducible(minpoly(f)) "The minimal polynomial of f must be irreducible"
     @req f*gram*transpose(f) == gram "f does not define an isometry of the space of L"
-    @req divides(rank(L), n2)[1] "The degree of the minimal polynomial of f must divide the rank of L"
+    @req is_divisible_by(rank(L), n2) "The degree of the minimal polynomial of f must divide the rank of L"
   end
 
   # for regular users, `res` and `E` will always be `nothing`
@@ -1335,12 +1327,11 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
       E, b = cyclotomic_field_as_cm_extension(n)
     else
       Etemp, btemp = number_field(minpoly(f))
-      K, a = number_field(minpoly(btemp + inv(btemp)), "a", cached=false)
+      K, a = number_field(minpoly(btemp + inv(btemp)), "a"; cached=false)
       Kt, t = K["t"]
-      E, b = number_field(t^2-a*t+1, "b", cached=false)
+      E, b = number_field(t^2-a*t+1, "b"; cached=false)
     end
   else
-    @req E isa NfRel "E must be a relative number field"
     @req degree(E) == 2 "E must be a degree 2 extension of a number field"
     b = gen(E)
     chi = absolute_minpoly(b)
@@ -1360,14 +1351,14 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
     l = res.btop
     @assert l*f == mb*l
     BL = basis_matrix(L)
-    gene = Vector{elem_type(base_ring(W))}[res(vec(collect(BL[i, :]))) for i in 1:degree(L)]
+    gene = Vector{elem_type(base_ring(W))}[res(BL[i, :]) for i in 1:degree(L)]
     Lh = lattice(W, gene)
     return Lh, res
   end
 
   # here we get an "admissible basis", i.e. a nice basis on which
   # f acts as multiplication by b after extending scalars
-  l = _admissible_basis(f, b, check=false)
+  l = _admissible_basis(f, _mb, mb)
 
   # we construct the gram matrix of the hermitian space in which to extend the scalars.
   # For this we change the basis of the ambient space/rational span of L and
@@ -1377,7 +1368,6 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   gram = matrix(zeros(E, m, m))
   s = involution(E)
   G = l*gram_matrix(ambient_space(L))*transpose(l)
-  v = zero_matrix(QQ, 1, rank(L))
   bs = absolute_basis(E)
   trace_mat = zero_matrix(QQ, n2, n2)
   for i in 1:n2
@@ -1388,13 +1378,9 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
 
   for i=1:m
     for j=1:m
-      vi = deepcopy(v)
-      vi[1,1+(i-1)*n2] = one(QQ)
-      vj = deepcopy(v)
-      vj[1,1+(j-1)*n2] = one(QQ)
-      a = matrix(QQ, 1, n2, [(vi*mb^k*G*transpose(vj))[1] for k in 0:n2-1])
+      a = reduce(hcat, view(mb^k, 1+(i-1)*n2, :)*view(G, :, 1+(j-1)*n2) for k in 0:n2-1)
       co = solve_left(trace_mat, a)
-      gram[i,j] = (co*bs)[1]
+      gram[i,j] = only(co*bs)
     end
   end
 
@@ -1411,7 +1397,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   # once we have the map between the ambient spaces, it just remain to transfer
   # the lattice
   BL = basis_matrix(L)
-  gene = Vector{elem_type(E)}[res(vec(collect(BL[i, :]))) for i in 1:degree(L)]
+  gene = Vector{elem_type(E)}[res(BL[i, :]) for i in 1:degree(L)]
 
   Lh = lattice(W, gene)
   return Lh, res
@@ -1484,8 +1470,7 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   # Make the Gram matrix small
   Glll, T = lll_gram_with_transform(ZgramL[1])
   Ttr = transpose(T)
-  ZgramLorig = ZgramL
-  ZgramL = copy(ZgramL)
+  ZgramLorig = copy(ZgramL)
   for i in 1:length(ZgramL)
     ZgramL[i] = T * ZgramL[i] * Ttr
   end
@@ -1539,8 +1524,8 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   # Now translate to get the automorphisms with respect to basis_matrix(L)
   BmatL = basis_matrix_of_rational_span(L)
 
-  b1, s1 = can_solve_with_solution(BabsmatL, BmatL, side = :left)
-  b2, s2 = can_solve_with_solution(BmatL, BabsmatL, side = :left)
+  b1, s1 = can_solve_with_solution(BabsmatL, BmatL; side = :left)
+  b2, s2 = can_solve_with_solution(BmatL, BabsmatL; side = :left)
 
   t_gens = Vector{typeof(BmatL)}(undef, length(gens))
 
@@ -1633,7 +1618,7 @@ Given a definite lattice `L`, return the order of the automorphism group of `L`.
 automorphism_group_order(L::AbstractLat; redo::Bool = false)
 
 function automorphism_group_order(L::AbstractLat; redo::Bool = false)
-  assert_has_automorphisms(L, redo = redo)
+  assert_has_automorphisms(L; redo)
   return L.automorphism_group_order
 end
 
@@ -1648,7 +1633,7 @@ end
 
 Return whether the lattices `L` and `M` are isometric.
 """
-is_isometric(L::AbstractLat, M::AbstractLat) = is_isometric_with_isometry(L, M, ambient_representation=false)[1]
+is_isometric(L::AbstractLat, M::AbstractLat) = is_isometric_with_isometry(L, M; ambient_representation=false)[1]
 
 
 @doc raw"""
@@ -1716,8 +1701,8 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
 
   if b
     T = change_base_ring(FlintQQ, inv(TL)*T*TM)
-    fl, s1 = can_solve_with_solution(BabsmatL, basis_matrix_of_rational_span(L), side = :left)
-    fl, s2 = can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM, side = :left)
+    fl, s1 = can_solve_with_solution(BabsmatL, basis_matrix_of_rational_span(L); side = :left)
+    fl, s2 = can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM; side = :left)
     T = s1 * change_base_ring(E, T) * s2
     @hassert :Lattice 1 T * gram_matrix(rational_span(M)) *
                             _map(transpose(T), involution(L)) ==
@@ -1752,7 +1737,7 @@ function maximal_sublattices(L::AbstractLat, p; use_auto::Bool = false,
                                            callback = false, max = inf)
   @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
-  B = local_basis_matrix(L, p, type = :submodule)
+  B = local_basis_matrix(L, p; type = :submodule)
   full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
@@ -1783,7 +1768,7 @@ function maximal_sublattices(L::AbstractLat, p; use_auto::Bool = false,
   E = Int[]
   for i in 1:length(Ls)
     if use_auto
-      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]), side = :left)[2]))
+      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]); side = :left)[2]))
     else
       m = map_entries(y -> hext\y, Ls[i])
     end
@@ -1815,7 +1800,7 @@ function minimal_superlattices(L::AbstractLat, p; use_auto::Bool = false,
                                              callback = false, max = inf)
   @req base_ring(L) == order(p) "Incompatible arguments: p must be an ideal in the base ring of L"
 
-  B = local_basis_matrix(L, p, type = :submodule)
+  B = local_basis_matrix(L, p; type = :submodule)
   full_rank = rank(matrix(L.pmat)) == Hecke.max(nrows(L.pmat), ncols(L.pmat))
   n = nrows(B)
   R = base_ring(L)
@@ -2076,7 +2061,7 @@ function primitive_closure(M::AbstractLat, N::AbstractLat)
   Nres = restrict_scalars(N, f)
   Lres = primitive_closure(Mres, Nres)
   B = basis_matrix(Lres)
-  B2 = [f(vec(collect(B[i,:]))) for i in 1:nrows(B)]
+  B2 = [f(B[i,:]) for i in 1:nrows(B)]
   return lattice(ambient_space(M), B2)
 end
 

@@ -32,10 +32,8 @@
 #
 ################################################################################
 
-import AbstractAlgebra.GroupsCore: istrivial
-
 export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfinite,
-       is_infinite, rank, order, exponent, istrivial, is_isomorphic,
+       is_infinite, rank, order, exponent, is_trivial, is_isomorphic,
        direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
        psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
        dual, chain_complex, is_exact, free_resolution, obj, map,
@@ -126,8 +124,13 @@ end
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function abelian_group(M::AbstractVector{<:IntegerUnion}; name::String = "")
-  return abelian_group(GrpAbFinGen, M, name=name)
+function abelian_group(M::AbstractVector{<:Union{Any, IntegerUnion}}; name::String = "")
+  if eltype(M) === Any
+    _M = convert(Vector{ZZRingElem}, (ZZ.(M)))::Vector{ZZRingElem}
+    return abelian_group(GrpAbFinGen, _M, name=name)
+  else
+    return abelian_group(GrpAbFinGen, M, name=name)
+  end
 end
 
 function abelian_group(::Type{GrpAbFinGen}, M::AbstractVector{<:IntegerUnion}; name::String = "")
@@ -214,7 +217,7 @@ end
 function show_gen(io::IO, A::GrpAbFinGen)
   print(io, "(General) abelian group with relation matrix\n$(A.rels)")
   if isdefined(A, :snf_map)
-    println(io, "\nwith structure of ", domain(A.snf_map))
+    print(io, "\nwith structure of ", domain(A.snf_map))
   end
 end
 
@@ -563,11 +566,11 @@ exponent_gen(A::GrpAbFinGen) = exponent(snf(A)[1])
 ################################################################################
 
 @doc raw"""
-    istrivial(A::GrpAbFinGen) -> Bool
+    is_trivial(A::GrpAbFinGen) -> Bool
 
 Return whether $A$ is the trivial group.
 """
-istrivial(A::GrpAbFinGen) = isfinite(A) && isone(order(A))
+is_trivial(A::GrpAbFinGen) = isfinite(A) && isone(order(A))
 
 ################################################################################
 #
@@ -644,7 +647,7 @@ For finite abelian groups, finite direct sums and finite direct products agree a
 they are therefore called biproducts.
 If one wants to obtain $D$ as a direct sum together with the injections $G_i \to D$,
 one should call `direct_sum(G...)`.
-If one wants to obtain $D$ as a direct product together with the projections $D \to G_i$, 
+If one wants to obtain $D$ as a direct product together with the projections $D \to G_i$,
 one should call `direct_product(G...)`.
 
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
@@ -723,7 +726,7 @@ end
 ⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
 export ⊕
 
-#TODO: use matrices as above - or design special maps that are not tied 
+#TODO: use matrices as above - or design special maps that are not tied
 #      to matrices but operate directly.
 @doc raw"""
     canonical_injections(G::GrpAbFinGen) -> Vector{GrpAbFinGenMap}
@@ -736,7 +739,7 @@ function canonical_injections(G::GrpAbFinGen)
   D === nothing && error("1st argument must be a direct product")
   return [canonical_injection(G, i) for i=1:length(D)]
 end
- 
+
 @doc raw"""
     canonical_injection(G::GrpAbFinGen, i::Int) -> GrpAbFinGenMap
 
@@ -762,7 +765,7 @@ function canonical_projections(G::GrpAbFinGen)
   D === nothing && error("1st argument must be a direct product")
   return [canonical_projection(G, i) for i=1:length(D)]
 end
- 
+
 @doc raw"""
     canonical_projection(G::GrpAbFinGen, i::Int) -> GrpAbFinGenMap
 
@@ -1148,7 +1151,7 @@ function _sub_integer_snf(G::GrpAbFinGen, n::ZZRingElem, add_to_lattice::Bool = 
     ind += 1
   end
   if ind == ngens(G) && gcd(n, G.snf[ind]) == G.snf[ind]
-    Gnew = GrpAbFinGenElem(Int[])
+    Gnew = GrpAbFinGen(Int[])
     mp = hom(Gnew, G, GrpAbFinGenElem[])
     if add_to_lattice
       append!(L, mp)
@@ -2071,7 +2074,7 @@ end
     has_complement(f::GrpAbFinGenMap) -> Bool, GrpAbFinGenMap
     has_complement(U::GrpAbFinGen, G::GrpAbFinGen) -> Bool, GrpAbFinGenMap
 
-Given a map representing a subgroup of a group $G$, 
+Given a map representing a subgroup of a group $G$,
 or a subgroup `U` of a group `G`, return either true and
 an injection of a complement in $G$, or false.
 

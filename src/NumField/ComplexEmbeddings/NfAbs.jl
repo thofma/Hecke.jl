@@ -257,25 +257,26 @@ function _find_nearest_complex_embedding(K::AnticNumberField, x)
   r = complex_embeddings(K)
   diffs = [e(gen(K)) - x for e in r]
   t = [abs(z) for z in diffs]
-  for i in 1:length(t)
-    for j in (i + 1):length(t)
-      if overlaps(t[i], t[j]) 
-        possible = [ (Float64(real(e.r)), Float64(imag(e.r))) for e in r]
-        s = IOBuffer()
-        for i in 1:length(possible)
-          @printf s "%.2f + i * %.2f" possible[i][1] possible[i][2]
-          if i < length(possible)
-            print(s, ", ")
-          end
+  _, i = findmin(t)
+  for j in 1:length(t)
+    if j == i
+      continue
+    end
+    if overlaps(t[i], t[j]) 
+      possible = [ (Float64(real(e.r)), Float64(imag(e.r))) for e in r]
+      s = IOBuffer()
+      for i in 1:length(possible)
+        @printf s "%.2f + i * %.2f" possible[i][1] possible[i][2]
+        if i < length(possible)
+          print(s, ", ")
         end
-        ss = String(take!(s))
-        error("""Given approximation not close enough to a root. Possible roots are:
-                 $ss
-              """)
       end
+      ss = String(take!(s))
+      error("""Given approximation not close enough to a root. Possible roots are:
+            $ss
+            """)
     end
   end
-  _, i = findmin(t)
   return r[i]
 end
 

@@ -86,7 +86,7 @@ function is_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl
 end
 
 function ring_of_multipliers(I::NfOrdFracIdl)
-  return ring_of_multipliers(numerator(I, copy = false)*denominator(I, copy = false))
+  return ring_of_multipliers(numerator(I, copy = false))
 end
 
 ###############################################################################

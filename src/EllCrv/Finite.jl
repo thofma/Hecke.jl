@@ -835,7 +835,7 @@ julia> order(E)
 100
 ```
 """
-@attr fmpz function order(E::EllCrv{T}) where T<:FinFieldElem
+@attr ZZRingElem function order(E::EllCrv{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
@@ -859,7 +859,7 @@ end
 function _order_factored(E::EllCrv{<:FinFieldElem})
   return get_attribute!(E, :order_factored) do
     return factor(order(E))
-  end::Fac{fmpz}
+  end::Fac{ZZRingElem}
 end
 
 @doc raw"""
@@ -1095,7 +1095,7 @@ end
 # DOI: 10.1007/s00145-004-0315-8
 #
 #
-@attr Tuple{Vector{fmpz}, Vector{EllCrvPt{T}}} function _grp_struct_with_gens(E::EllCrv{T}) where {T <: FinFieldElem}
+@attr Tuple{Vector{ZZRingElem}, Vector{EllCrvPt{T}}} function _grp_struct_with_gens(E::EllCrv{T}) where {T <: FinFieldElem}
   N = order(E)
   K = base_field(E)
   # TODO:
@@ -1187,7 +1187,7 @@ GrpAb: Z/2 x Z/5200
 function abelian_group(E::EllCrv{U}) where {U <: FinFieldElem}
   _invdiv, _gens = _grp_struct_with_gens(E)
   if length(_gens) == 0
-    strct = fmpz[]
+    strct = ZZRingElem[]
     gens = elem_type(E)[]
   elseif length(_gens) == 1
     strct = copy(_invdiv)

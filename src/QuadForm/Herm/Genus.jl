@@ -129,7 +129,7 @@ $\mathfrak p$ of $\mathcal O_K$, return the rank of any hermitian lattice whose
 $\mathfrak p$-adic completion has local genus symbol `g`.
 """
 function rank(G::HermLocalGenus)
-  return reduce(+, (rank(G, i) for i in 1:length(G)), init = Int(0))
+  return reduce(+, rank(G, i) for i in 1:length(G); init = Int(0))
 end
 
 @doc raw"""
@@ -161,7 +161,7 @@ The returned value is $1$ or $-1$ depending on whether the determinant is a loca
 norm in `K`.
 """
 function det(G::HermLocalGenus)
-  return reduce(*, (det(G, i) for i in 1:length(G)), init = Int(1))
+  return reduce(*, det(G, i) for i in 1:length(G); init = Int(1))
 end
 
 @doc raw"""
@@ -631,7 +631,7 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_dyadic = is_dyadic
   z.is_ramified = is_ramified
   z.is_split = is_split
-  keep = [i for (i,s) in enumerate(data) if s[2] != 0]  # We keep only blocks of non-zero rank
+  keep = Int[i for (i, s) in enumerate(data) if s[2] != 0]  # We keep only blocks of non-zero rank
   z.data = data[keep]
   return z
 end
@@ -791,7 +791,7 @@ function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}},
   z.is_split = false
   # We test the cheap thing
   @req z.is_dyadic && z.is_ramified "Prime must be dyadic and ramified"
-  keep = [i for (i,s) in enumerate(data) if s[2] != 0]    # We only keep the blocks of non-zero rank
+  keep = Int[i for (i, s) in enumerate(data) if s[2] != 0]    # We only keep the blocks of non-zero rank
   z.norm_val = norms[keep]
   z.data = data[keep]
   z.ni = _get_ni_from_genus(z)
@@ -980,7 +980,7 @@ function ==(G1::HermLocalGenus, G2::HermLocalGenus)
     # in particular normal.
 
     # Thus we only have to check Theorem 3.3.6 4.
-    return all(i -> det(G1, i) == det(G2, i), [i for i in 1:t if iseven(scale(G1,i))])
+    return all(det(G1, i) == det(G2, i) for i in 1:t if iseven(scale(G1, i)))
   end
 
   # Dyadic ramified case
@@ -1354,7 +1354,7 @@ function direct_sum(G1::HermGenus, G2::HermGenus)
   prim = eltype(primes(G1))[]
   P1 = Set(primes(G1))
   P2 = Set(primes(G2))
-  for p in union(P1, P2)
+  for p in union!(P1, P2)
     g1 = G1[p]
     g2 = G2[p]
     g3 = direct_sum(g1, g2)
@@ -1367,7 +1367,7 @@ function direct_sum(G1::HermGenus, G2::HermGenus)
   # For genera of hermitian lattices, are bad all primes dividing 2 and those
   # dividing the discriminant of the field extension (discriminant of the
   # maximal order of the top field in E/K).
-  bd = union(support(2*maximal_order(base_field(E))), support(discriminant(maximal_order(E))))
+  bd = union!(support(2*maximal_order(base_field(E))), support(discriminant(maximal_order(E))))
   # We keep only the local symbols which are defined over bad primes or which
   # are not unimodular.
   # Unimodular <=> There is only one Jordan block, and it is a scale valuation 0
@@ -1423,7 +1423,7 @@ function genus(L::Vector{<:HermLocalGenus}, signatures::Dict{<:InfPlc, Int})
   @req all(g -> rank(g) == r, L) "Local genus symbols must have the same rank"
   E = base_field(first(L))
   @req all(g -> base_field(g) == E, L) "Local genus symbols must be defined over the same extension E/K"
-  bd = union(support(2*maximal_order(base_field(E))), support(discriminant(maximal_order(E))))
+  bd = union!(support(2*maximal_order(base_field(E))), support(discriminant(maximal_order(E))))
   filter!(g -> (prime(g) in bd) || (scales(g) != Int[0]), L)
   return HermGenus(E, r, L, signatures)
 end
@@ -1448,7 +1448,7 @@ Return the global genus symbol `G` of the hermitian lattice `L`. `G` satisfies:
 end
 
 function _genus(L::HermLat)
-  bad = bad_primes(L, discriminant = true, dyadic = true)
+  bad = bad_primes(L; discriminant = true, dyadic = true)
 
   K = base_field(L)
   k = base_field(K)
@@ -1470,7 +1470,7 @@ end
 function _check_global_genus(LGS, signatures)
   _non_norm = _non_norm_primes(LGS, ignore_split = true)
   P = length(_non_norm)
-  I = length([(s, N) for (s, N) in signatures if isodd(mod(N, 2))])
+  I = count(v -> isodd(mod(v[2], 2)), signatures)
   if mod(P + I, 2) == 1
     return false
   end
@@ -1547,7 +1547,7 @@ function _hermitian_form_with_invariants(E, dim, P, N)
       push!(D, el)
     end
   end
-  push!(D, a * prod(D, init = one(E)))
+  push!(D, a * prod(D; init = one(E)))
   Dmat = diagonal_matrix(D)
   dim0, P0, N0 = _hermitian_form_invariants(Dmat)
   @assert dim == dim0
@@ -1601,9 +1601,9 @@ function representative(G::HermGenus)
   @vprintln :Lattice 1 "Finding maximal integral lattice"
   M = maximal_integral_lattice(V)
   lp = primes(G)
-  bd = union(support(2*fixed_ring(M)), support(discriminant(maximal_order(E))))
-  lp = union(lp, bd)
-  for p in lp
+  bd = union!(support(2*fixed_ring(M)), support(discriminant(maximal_order(E))))
+  union!(bd, lp)
+  for p in bd
     @vprintln :Lattice 1 "Finding representative for $g at $(prime(g))..."
     g = G[p]
     L = representative(g)
@@ -1694,14 +1694,14 @@ function hermitian_local_genera(E, p, rank::Int, det_val::Int, min_scale::Int, m
       dets = Vector{Int}[]
       for b in g
         if mod(b[1], 2) == 0
-          push!(dets, [1, -1])
+          push!(dets, Int[1, -1])
         end
         if mod(b[1], 2) == 1
-          push!(dets, [hyperbolic_det^(div(b[2], 2))])
+          push!(dets, Int[hyperbolic_det^(div(b[2], 2))])
         end
       end
 
-      for d in cartesian_product_iterator(dets, inplace = true)# Iterators.product(dets...)
+      for d in cartesian_product_iterator(dets)# Iterators.product(dets...)
         g2 = Vector{Tuple{Int, Int, Int}}(undef, length(g))
         for k in 1:n
           # Again the 0 for dummy purposes
@@ -1728,7 +1728,7 @@ function hermitian_local_genera(E, p, rank::Int, det_val::Int, min_scale::Int, m
     for b in g
       if mod(b[2], 2) == 1
         @assert iseven(b[1])
-        push!(det_norms, [[1, div(b[1], 2)], [-1, div(b[1], 2)]])
+        push!(det_norms, Vector{Int}[Int[1, div(b[1], 2)], Int[-1, div(b[1], 2)]])
       end
       if mod(b[2], 2) == 0
         dn = Vector{Int}[]
@@ -1748,7 +1748,7 @@ function hermitian_local_genera(E, p, rank::Int, det_val::Int, min_scale::Int, m
       end
     end
 
-    for dn in cartesian_product_iterator(det_norms, inplace = true)
+    for dn in cartesian_product_iterator(det_norms)
       g2 = Vector{Tuple{Int, Int, Int, Int}}(undef, length(g))
       for k in 1:n
         g2[k] = (g[k][1], g[k][2], dn[k][1], dn[k][2])
@@ -1783,25 +1783,20 @@ function hermitian_genera(E::Hecke.NfRel, rank::Int, signatures::Dict{<: InfPlc,
   @req rank >= 0 "Rank must be a non-negative integer"
   K = base_field(E)
   OE = maximal_order(E)
-  bd = union(support(2*maximal_order(K)), support(discriminant(OE)))
+  bd = union!(support(2*maximal_order(K)), support(discriminant(OE)))
   @req !iszero(max_scale) "max_scale must be a non-zero fractional ideal"
   @req !iszero(min_scale) "min_scale must be a non-zero fractional ideal"
-  @req all(v -> 0 <= v <= rank, collect(values(signatures))) "Incompatible signatures and rank"
-  primes = union(bd, support(norm(min_scale)))
-  union!(primes, support(norm(max_scale)))
-  for p in support(norm(determinant))
-    if !(p in primes)
-      push!(primes, p)
-    end
-  end
-  unique!(primes)
-  sort!(primes, by = (x -> minimum(x)))
+  @req all(v -> 0 <= v <= rank, values(signatures)) "Incompatible signatures and rank"
+  union!(bd, support(norm(min_scale)))
+  union!(bd, support(norm(max_scale)))
+  union!(bd, support(norm(determinant)))
+  sort!(bd; by = (x -> minimum(x)))
   local_symbols = Vector{local_genus_herm_type(E)}[]
 
   mins = norm(min_scale)
   maxs = norm(max_scale)
   ds = norm(determinant)
-  for p in primes
+  for p in bd
     det_val = valuation(ds, p)
     minscale_p = valuation(mins, p)
     maxscale_p = valuation(maxs, p)
@@ -1815,7 +1810,7 @@ function hermitian_genera(E::Hecke.NfRel, rank::Int, signatures::Dict{<: InfPlc,
   end
 
   res = genus_herm_type(E)[]
-  it = cartesian_product_iterator(local_symbols, inplace = true)
+  it = cartesian_product_iterator(local_symbols)
   for gs in it
     c = copy(gs)
     b = _check_global_genus(c, signatures)
@@ -1862,9 +1857,9 @@ function rescale(G::HermGenus, a::Union{FieldElem, RationalUnion})
   E = base_field(G)
   K = base_field(E)
   I = K(a)*maximal_order(K)
-  pd = union(primes(G), support(I))
-  bd = union(support(2*maximal_order(K)), support(discriminant(maximal_order(E))))
-  LGS = [rescale(G[p], a) for p in pd]
+  pd = union!(support(I), primes(G))
+  bd = union!(support(2*maximal_order(K)), support(discriminant(maximal_order(E))))
+  LGS = local_genus_herm_type(E)[rescale(G[p], a) for p in pd]
   filter!(g -> (prime(g) in bd) || (scales(g) != Int[0]), LGS)
   r = rank(G)
   sig = copy(signatures(G))

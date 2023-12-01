@@ -94,6 +94,29 @@
         end
       end
     end
+
+    F = Hecke.Nemo._GF(3^3, cached = false)
+    x = polynomial_ring(F, "x", cached = false)[2]
+    K, gK = Hecke.Nemo._residue_field(x^2+1, "a")
+    Kt, t = K["t"]
+    L, gL = Hecke.Nemo._residue_field(t^5+t^4+t^2+1, "b")
+    B = absolute_basis(L)
+    for i = 1:length(B)
+      v = absolute_coordinates(B[i])
+      for j = 1:length(v)
+        if i == j
+          @test isone(v[j])
+        else
+          @test iszero(v[j])
+        end
+      end
+    end
+
+    for i in 1:100
+      z = rand(L)
+      @test dot(absolute_coordinates(z), absolute_basis(L)) == z
+    end
+
   end
 
   @testset "Polynomials" begin

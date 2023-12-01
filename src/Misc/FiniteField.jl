@@ -214,6 +214,44 @@ function find_morphism(k::fqPolyRepField, K::fqPolyRepField)
   return phi
 end
 
+function find_morphism(k::FqField, K::FqField)
+  if degree(k) > 1
+    phi = Nemo.find_morphism(k, K) #avoids embed - which stores the info
+  else
+    phi = MapFromFunc(k, K, x -> K(lift(ZZ, x)), y -> k(lift(ZZ, y)))
+  end
+  return phi
+end
+
+function find_morphism(k::FqField, K::fqPolyRepField)
+  # This is no fun
+  if absolute_degree(k) == 1
+    #@assert degree(K) == 1
+    pre = function(x)
+      @assert all(is_zero(coeff(x, i)) for i in 1:(degree(K) - 1))
+      return k(coeff(x, 0))
+    end
+    return MapFromFunc(k, K, x -> K(lift(ZZ, x)), pre)
+  end
+
+  # build K as FqField, then find isomorphism, then go back
+
+  f = modulus(K)
+  a = gen(K)
+  F = prime_field(k)
+  Ft, t = polynomial_ring(F, "t", cached = false)
+  fF = map_coefficients(x -> F(lift(x)), f, parent = Ft)
+  KK, polytoKK = Nemo._residue_field(fF)
+
+  KtoKK = x -> polytoKK(map_coefficients(x -> F(lift(x)), parent(f)(x), parent = Ft))
+
+  KKtoK = x -> K(map_coefficients(x -> coefficient_ring(parent(f))(lift(ZZ, x)), polytoKK\x, parent = parent(f)))
+
+  phi_k_to_KK = Nemo.embed_any(k, KK)
+
+  phi = MapFromFunc(k, K, x -> KKtoK(phi_k_to_KK(x)), x -> phi_k_to_KK\(KtoKK(x)))
+end
+
 
 mutable struct VeryBad
   entries::Ptr{Nothing}

@@ -4,7 +4,7 @@ add_assertion_scope(:AbExt)
 add_verbosity_scope(:MaxAbExt)
 
 
-export abelian_fields, abelian_normal_extensions, abelian_extensions
+export abelian_extensions, abelian_normal_extensions, abelian_extensions
 
 ###############################################################################
 #
@@ -12,7 +12,7 @@ export abelian_fields, abelian_normal_extensions, abelian_extensions
 #
 ###############################################################################
 
-function abelian_fields(O::Union{ZZRing, QQField},
+function abelian_extensions(O::Union{ZZRing, QQField},
                             gtype::Vector{Int}, discriminant_bound::ZZRingElem;
                             only_real::Bool = false,
                             tame::Bool = false)
@@ -20,13 +20,13 @@ function abelian_fields(O::Union{ZZRing, QQField},
   Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   K, _ = number_field(x - 1, "a", cached = false)
   OK = maximal_order(K)
-  l = abelian_fields(OK, gtype, discriminant_bound,
+  l = abelian_extensions(OK, gtype, discriminant_bound,
                          only_real = only_real,
                          tame = tame)
   return l
 end
 
-function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false)
+function abelian_extensions(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false)
   K = rationals_as_number_field()[1]
   O = maximal_order(K)
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -59,7 +59,7 @@ function abelian_fields(gtype::Vector{Int}, conds::Vector{Int}, absolute_discrim
   return fields
 end
 
-function abelian_fields(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
+function abelian_extensions(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
   K = nf(O)
   @assert degree(K)==1
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -125,7 +125,7 @@ function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, abso
   O = maximal_order(K)
   d = degree(K)
   if d == 1
-    return abelian_fields(O, gtype, absolute_discriminant_bound, only_real = only_real, tame = tame)
+    return abelian_extensions(O, gtype, absolute_discriminant_bound, only_real = only_real, tame = tame)
   end
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   n = prod(gtype)

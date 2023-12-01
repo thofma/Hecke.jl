@@ -592,7 +592,7 @@ function _solve_norm_equation_over_center_quaternion(M, x)
     end
   end
   #@show nrm
-  V = _short_vectors_gram(G, nrm)
+  V = _short_vectors_gram(Vector, G, nrm)
   for i in 1:length(V)
     if V[i][2] == nrm
       y = sum(V[i][1][j] * B[j] for j in 1:4)
@@ -725,7 +725,7 @@ function _lift_norm_one_unit_quaternion(x, F)
 
   #@show normred(elem_in_algebra(x))
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  V = _short_vectors_gram(G, ZZRingElem(1))
+  V = _short_vectors_gram(Vector, G, ZZRingElem(1))
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:4)
     @assert normred(y) == 1
@@ -1673,7 +1673,7 @@ function _GLn_generators_quadratic(OK, n)
   res = dense_matrix_type(K)[]
   for w in v[3]
     mat = matrix(K, 2, 2, [i(L(u)) for u in w])
-    @assert isunit(det(mat))
+    @assert is_unit(det(mat))
     push!(res, mat)
   end
   return res
@@ -2439,7 +2439,7 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
 
   for (B, mB) in dec
     MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
-    #@show ismaximal(MinC)
+    #@show is_maximal(MinC)
     #@show hnf(basis_matrix(MinC))
     IMinB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(b)) for b in absolute_basis(IM)])
     IMinB_basis = [mB(u) for u in absolute_basis(IMinB)]
@@ -2537,7 +2537,7 @@ function __isprincipal(O, I, side = :right, _alpha = nothing)
   indices_nonintegral = Vector{Int}[Int[] for i in 1:l]
   for j in 1:length(local_coeffs[end])
     for i in o:(o + l - 1)
-      if isintegral(local_coeffs[end][j][i])
+      if is_integral(local_coeffs[end][j][i])
         push!(indices_integral[i - o + 1], j)
       else
         push!(indices_nonintegral[i - o + 1], j)
@@ -2613,9 +2613,9 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
     end
     #@show vtemp
     #@assert vtemp == reduce(.+, (local_coeffs[j][idx[j]] for j in 1:length(dec) - 1))
-    if any(!isintegral, @view vtemp[1:bases_offsets_and_lengths[end][1] - 1])
+    if any(!is_integral, @view vtemp[1:bases_offsets_and_lengths[end][1] - 1])
       l += 1
-      j = findfirst([any(!isintegral, vtemp[bases_offsets_and_lengths[j][1]:bases_offsets_and_lengths[j + 1][1] - 1]) for j in 1:length(dec) - 1])
+      j = findfirst([any(!is_integral, vtemp[bases_offsets_and_lengths[j][1]:bases_offsets_and_lengths[j + 1][1] - 1]) for j in 1:length(dec) - 1])
       ll[j] += 1
       continue
     else
@@ -2623,7 +2623,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
     end
     o = bases_offsets_and_lengths[end][1]
     l = bases_offsets_and_lengths[end][2]
-    ids = reduce(intersect, [isintegral(vtemp[o - 1 + i]) ? indices_integral[i] : indices_nonintegral[i] for i in 1:l])
+    ids = reduce(intersect, [is_integral(vtemp[o - 1 + i]) ? indices_integral[i] : indices_nonintegral[i] for i in 1:l])
     _vtempcopy = deepcopy(vtemp)
     #@show length(ids)
     for j in ids
@@ -2631,7 +2631,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
       #  ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{QQFieldElem}, Ref{QQFieldElem}), vtemp[i], _vtempcopy[i])
       #end
       _vtemp = deepcopy(vtemp) .+ local_coeffs[end][j]
-      if all(isintegral, _vtemp)
+      if all(is_integral, _vtemp)
         @vprintln :PIP "found x = $((idx...,j))"
         return true, A(_vtemp * (H * special_basis_matrix))
       end
@@ -2653,18 +2653,18 @@ function _recursive_iterator!(x, lengths, d, elts::Vector, bases_offsets, indice
     # We do something clever for the indices
     o = bases_offsets[end][1]
     l = bases_offsets[end][2]
-    ids = copy(isintegral(vtemp[o]) ? indices_integral[1] : indices_nonintegral[1])
+    ids = copy(is_integral(vtemp[o]) ? indices_integral[1] : indices_nonintegral[1])
     for i in 2:l
-      intersect!(ids, isintegral(vtemp[o - 1 + i]) ? indices_integral[i] : indices_nonintegral[i])
+      intersect!(ids, is_integral(vtemp[o - 1 + i]) ? indices_integral[i] : indices_nonintegral[i])
     end
 
-    #ids2 = reduce(intersect!, (isintegral(vtemp[o - 1 + i]) ? indices_integral[i] : indices_nonintegral[i] for i in 1:l))
+    #ids2 = reduce(intersect!, (is_integral(vtemp[o - 1 + i]) ? indices_integral[i] : indices_nonintegral[i] for i in 1:l))
     #@assert ids == ids2
 
     for j in ids # 1:lengths[i]
       x[i] = j
       if _is_admissible(x, i, d, elts, bases_offsets, vtemp)
-        #@assert all(isintegral, reduce(.+, (elts[k][x[k]] for k in 1:length(elts))))
+        #@assert all(is_integral, reduce(.+, (elts[k][x[k]] for k in 1:length(elts))))
         return true
       end
       #if _is_admissible(x, i, d, elts, bases_offsets)
@@ -2716,7 +2716,7 @@ function _is_admissible(x, i, d, elts, bases_offsets, vtemp)
 
   vvtemp = @view vtemp[bases_offsets[i][1]:(bases_offsets[i][1] + bases_offsets[i][2] - 1)]
 
-  if any(!isintegral, vvtemp)
+  if any(!is_integral, vvtemp)
     return false
   else
     return true

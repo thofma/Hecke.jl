@@ -465,7 +465,7 @@ function residue_field(K::LocalField{S, UnramifiedLocalField}) where {S <: Field
    Fpt = polynomial_ring(ks, cached = false)[1]
    g = defining_polynomial(K)
    f = Fpt([ks(mks(coeff(g, i))) for i=0:degree(K)])
-   kk = Native.finite_field(f)[1]
+   kk, = Nemo._residue_field(f)
    bas = basis(K)
    u = gen(kk)
    function proj(a::Hecke.LocalFieldElem)
@@ -494,9 +494,10 @@ end
 
  function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
    R, mR = residue_field(L)
-   f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
+   Rt, t = polynomial_ring(R, "t", cached = false)
+   f = Rt(push!([rand(R) for i = 0:n-1], one(R)))
    while !is_irreducible(f)
-     f = polynomial(R, push!([rand(R) for i = 0:n-1], one(R)))
+     f = Rt(push!([rand(R) for i = 0:n-1], one(R)))
    end
    f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
    return unramified_extension(f_L)

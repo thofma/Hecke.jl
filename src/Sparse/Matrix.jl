@@ -725,6 +725,91 @@ end
 
 ################################################################################
 #
+#  Dot product
+#
+################################################################################
+
+@doc raw"""
+    dot(x::SRow{T}, A::SMat{T}, y::SRow{T}) where T -> T
+
+Return the generalized dot product `dot(x, A*y)`.
+"""
+function dot(x::SRow{T}, A::SMat{T}, y::SRow{T}) where T
+  v = zero(T)
+  px = 1
+  for i in 1:length(A.rows)
+    while px <= length(x.pos) && x.pos[px] < i
+      px += 1
+    end
+    if px > length(x.pos)
+      break
+    elseif x.pos[px] > i
+      continue
+    end
+
+    s = zero(T)
+    py = 1
+    for j in 1:length(A[i].pos)
+      while py <= length(y.pos) && y.pos[py] < A[i].pos[j]
+        py += 1
+      end
+      if py > length(y.pos)
+        break
+      elseif y.pos[py] > A[i].pos[j]
+        continue
+      end
+
+      s += A[i].values[j] * y.values[py]
+    end
+
+    v += x.values[px] * s
+  end
+
+  return v
+end
+
+@doc raw"""
+    dot(x::AbstractVector{T}, A::SMat{T}, y::AbstractVector{T}) where T -> T
+
+Return the generalized dot product `dot(x, A*y)`.
+"""
+function dot(x::AbstractVector{T}, A::SMat{T}, y::AbstractVector{T}) where T
+  @req length(x) == nrows(A) && ncols(A) <= length(y) "incompatible matrix dimensions"
+
+  v = zero(T)
+  for i in 1:length(A.rows)
+    s = T(0)
+    for j in 1:length(A[i].pos)
+      s += A[i].values[j] * y[A[i].pos[j]]
+    end
+    v += x[i] * s
+  end
+
+  return v
+end
+
+@doc raw"""
+    dot(x::MatrixElem{T}, A::SMat{T}, y::MatrixElem{T}) where T -> T
+
+Return the generalized dot product `dot(x, A*y)`.
+"""
+function dot(x::MatrixElem{T}, A::SMat{T}, y::MatrixElem{T}) where T
+  @req length(x) == nrows(A) && ncols(A) <= length(y) "incompatible matrix dimensions"
+
+  v = zero(T)
+  for i in 1:length(A.rows)
+    s = zero(T)
+    for j in 1:length(A[i].pos)
+      s += A[i].values[j] * y[A[i].pos[j]]
+    end
+    v += x[i] * s
+  end
+
+  return v
+end
+
+################################################################################
+#
 #  Submatrix
 #
 ################################################################################
@@ -1159,11 +1244,11 @@ end
 ################################################################################
 
 @doc raw"""
-    isupper_triangular(A::SMat)
+    is_upper_triangular(A::SMat)
 
 Returns true if and only if $A$ is upper (right) triangular.
 """
-function isupper_triangular(A::SMat)
+function is_upper_triangular(A::SMat)
   for i=2:A.r
     if iszero(A[i - 1])
       if iszero(A[i])
@@ -1484,13 +1569,12 @@ function kronecker_product(A::SMat{T}, B::SMat{T}) where {T}
       p = Int[]
       v = T[]
       if !iszero(rA)
-        o = (rA.pos[1]-1)*ncols(B)
         for (pp, vv) = rA
+          o = (pp-1)*ncols(B)
           for (qq, ww) = rB
-            push!(p, qq+o)
+            push!(p, o+qq)
             push!(v, vv*ww)
           end
-          o += ncols(B)
         end
       end
       push!(C, sparse_row(base_ring(A), p, v))

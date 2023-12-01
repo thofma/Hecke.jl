@@ -148,7 +148,7 @@ nrows(::SMat)
 ncols(::SMat)
 isone(::SMat)
 iszero(::SMat)
-isupper_triangular(::SMat)
+is_upper_triangular(::SMat)
 maximum(::SMat)
 minimum(::SMat)
 maximum(::typeof(abs), ::SMat{ZZRingElem})
@@ -209,6 +209,12 @@ Various products:
 *(::SMat{T}, ::AbstractMatrix{T})  where {T}
 *(::SMat{T}, ::MatElem{T}) where {T}
 *(::SRow{T}, ::SMat{T}) where {T}
+```
+
+```@docs
+dot(::SRow{T}, ::SMat{T}, ::SRow{T}) where T
+dot(::MatrixElem{T}, ::SMat{T}, ::MatrixElem{T}) where T
+dot(::AbstractVector{T}, ::SMat{T}, ::AbstractVector{T}) where T
 ```
 
 Other:

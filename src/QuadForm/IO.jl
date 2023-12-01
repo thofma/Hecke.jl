@@ -144,19 +144,19 @@ end
 function to_magma(io::IO, L::HermLat; target = "L")
   E = nf(base_ring(L))
   K = base_field(E)
-  println(io, "Qx<x> := polynomial_ring(Rationals());")
+  println(io, "Qx<x> := PolynomialRing(Rationals());")
   f = defining_polynomial(K)
   pol = replace(string(f), "//" => "/")
   pol = replace(pol, string(var(parent(f))) => "x")
   println(io, "f := ", pol, ";")
-  println(io, "K<a> := number_field(f : DoLinearExtension);")
-  println(io, "Kt<t> := polynomial_ring(K);")
+  println(io, "K<a> := NumberField(f : DoLinearExtension);")
+  println(io, "Kt<t> := PolynomialRing(K);")
   f = defining_polynomial(E)
   pol = replace(string(f), string(var(parent(f))) => "t")
   pol = replace(pol, string(var(K)) => "a")
   pol = replace(pol, "//" => "/")
   println(io, "g := ", pol, ";")
-  println(io, "E<b> := number_field(g : DoLinearExtension);")
+  println(io, "E<b> := NumberField(g : DoLinearExtension);")
   F = gram_matrix(ambient_space(L))
   Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
   println(io, "F := Matrix(E, ", nrows(F), ", ", ncols(F), ", ", Fst, ");")
@@ -179,18 +179,18 @@ function to_magma(io::IO, L::HermLat; target = "L")
       println(io, bas, ">];")
     end
   end
-  println(io, "M := Module(pseudo_matrix(C, M));")
+  println(io, "M := Module(PseudoMatrix(C, M));")
   println(io, "$target := HermitianLattice(M, F);")
 end
 
 function to_magma(io::IO, L::QuadLat; target = "L")
   K = nf(base_ring(L))
-  println(io, "Qx<x> := polynomial_ring(Rationals());")
+  println(io, "Qx<x> := PolynomialRing(Rationals());")
   f = absolute_minpoly(gen(K))
   pol = replace(string(f), "//" => "/")
   pol = replace(pol, string(var(parent(f))) => "x")
   println(io, "f := ", pol, ";")
-  println(io, "K<a> := number_field(f : DoLinearExtension);")
+  println(io, "K<a> := NumberField(f : DoLinearExtension);")
   F = gram_matrix(ambient_space(L))
   Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
   Fst = replace(Fst, string(var(K)) => "a")
@@ -214,7 +214,7 @@ function to_magma(io::IO, L::QuadLat; target = "L")
       println(io, bas, ">];")
     end
   end
-  println(io, "M := Module(pseudo_matrix(C, M));")
+  println(io, "M := Module(PseudoMatrix(C, M));")
   println(io, "$target := LatticeModule(M, F);")
 end
 

@@ -1127,6 +1127,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
         end
         bas = elem_type(K)[ elem_from_mat_row(K, numerator(B, copy = false), i, denominator(B, copy = false)) for i in 1:nrows(B) ]
         start = 1
+        old_length = length(bas)
         if check && K isa NumField
           @assert isone(bas[1])
         end

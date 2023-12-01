@@ -175,3 +175,7 @@ else
     return _fmpq_simplest_between(a, d, b, d)
   end
 end
+
+# Deprecated during 0.18.*
+
+@deprecate abelian_fields abelian_extensions

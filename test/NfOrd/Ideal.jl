@@ -36,6 +36,9 @@
     Ib = basis(I2)
     II = ideal(O2, Ib)
     @test I2 == II
+
+    @test is_zero(ideal(O1, 0))
+    @test is_zero(ideal(O1, ZZ(0)))
   end
 
   I = ideal(O1, -17)
@@ -189,6 +192,14 @@
   @testset "p-Radical" begin
     I = @inferred pradical(O1, 2)
     @test I == ideal(O1, FlintZZ[2 0 0; 0 1 0; 0 0 1])
+
+    # An order which does not contain the equation order
+    P, x = polynomial_ring(QQ)
+    f = x^5 + x^3 - x^2 - x - 1
+    K, a = number_field(f)
+    R = maximal_order(K)
+    OO = Order(K, basis(5*R))
+    pradical(OO, 2)
   end
 
   @testset "Prime Decomposition" begin

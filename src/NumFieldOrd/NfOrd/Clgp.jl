@@ -473,13 +473,13 @@ All elements will be returned in factored form.
 function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
-    UUU, mUUU = unit_group_fac_elem(OK)
-    return _unit_group_non_maximal(O, OK, mUUU)
+    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
+    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
   end
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
-    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}})
+    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}})::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
@@ -487,7 +487,7 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   end
   _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
   @assert b==1
-  return unit_group_fac_elem(UU)
+  return unit_group_fac_elem(UU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
 end
 
 @doc raw"""

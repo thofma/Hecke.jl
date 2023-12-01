@@ -151,7 +151,7 @@ function local_height(P::EllCrvPt{QQFieldElem}, p, prec::Int = 100)
     return _real_height(P, prec)
   end
 
-  @req p > 0 && isprime(p) "p must be 0 or a non-negative prime"
+  @req p > 0 && is_prime(p) "p must be 0 or a non-negative prime"
 
   E = parent(P)
   F, phi = minimal_model(E)
@@ -224,7 +224,7 @@ function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
   #  return _real_height(P, prec)
   #end
 
-  @req #=p > 0 &&=# isprime(pIdeal) "p must be 0 or a non-negative prime"
+  @req #=p > 0 &&=# is_prime(pIdeal) "p must be 0 or a non-negative prime"
 
   E = parent(P)
   K = base_field(E)

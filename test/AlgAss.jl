@@ -6,4 +6,5 @@
   include("AlgAss/Elem.jl")
   include("AlgAss/Ideal.jl")
   include("AlgAss/Ramification.jl")
+  include("AlgAss/AlgQuat.jl")
 end

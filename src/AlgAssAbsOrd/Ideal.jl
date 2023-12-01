@@ -1781,7 +1781,7 @@ Returns the prime ideal factorization of $I$ as a dictionary.
 function factor(I::AlgAssAbsOrdIdl)
   @assert is_commutative(algebra(I))
   O = order(I)
-  @hassert :AlgAssOrd ismaximal(O)
+  @hassert :AlgAssOrd is_maximal(O)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
   @hassert :AlgAssOrd _test_ideal_sidedness(I, O, :left)
@@ -2123,7 +2123,7 @@ function _lattice_with_local_conditions_contained(O, ps, Is)
   end
 
   for I in Is
-    @assert isunit(denominator(I, O))
+    @assert is_unit(denominator(I, O))
   end
 
   for i in 1:length(ps)

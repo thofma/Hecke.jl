@@ -15,7 +15,7 @@ is, $degree(E) == 2$ must hold.
 """
 function hermitian_space(E::NumField, n::Int; cached::Bool = true)
   G = identity_matrix(E, n)
-  return hermitian_space(E, G, cached = cached)
+  return hermitian_space(E, G; cached)
 end
 
 @doc raw"""
@@ -140,7 +140,8 @@ function inner_product(V::HermSpace, v::Vector, w::Vector)
   _inner_product(gram_matrix(V), v, w, involution(V))
 end
 
-inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W}= v*gram_matrix(V)*map_entries(involution(V),transpose(w))
+inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W} =
+                        v*gram_matrix(V)*map_entries(involution(V), transpose(w))
 
 ################################################################################
 #

@@ -204,11 +204,17 @@ function compose_and_squash(f::AbsAlgAssMor{R, U, T}, g::AbsAlgAssMor{S, R, T}) 
   end
 end
 
-function hom(A::R, B::S, M::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T}
+function hom(A::R, B::S, imgs::Vector) where {R <: AbsAlgAss, S <: AbsAlgAss}
+  @assert length(imgs) == dim(A)
+  bmat = basis_matrix(imgs)
+  return hom(A, B, bmat)
+end
+
+function hom(A::R, B::S, M::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T <: MatElem}
   return AbsAlgAssMor{R, S, T}(A, B, M)
 end
 
-function hom(A::R, B::S, M::T, N::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T}
+function hom(A::R, B::S, M::T, N::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T <: MatElem}
   return AbsAlgAssMor{R, S, T}(A, B, M, N)
 end
 

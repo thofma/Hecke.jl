@@ -10,25 +10,25 @@ function residue_field(Q::FlintQadicField)
   if z !== nothing
     return codomain(z), z
   end
-  Fp = Native.GF(Int(prime(Q)))
+  Fp = Nemo._GF(prime(Q))
   Fpt = polynomial_ring(Fp, cached = false)[1]
   g = defining_polynomial(Q) #no Conway if parameters are too large!
   f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
-  k = Native.finite_field(f, "o", cached = false)[1]
+  k, = Nemo._residue_field(f, "o")
   pro = function(x::qadic)
     v = valuation(x)
     v < 0 && error("elt non integral")
     v > 0 && return k(0)
-    z = k()
+    _z = Fpt()
     for i=0:degree(Q)
-      setcoeff!(z, i, UInt(lift(coeff(x, i))%prime(Q)))
+      setcoeff!(_z, i, Fp(lift(coeff(x, i))))
     end
-    return z
+    return k(_z)
   end
-  lif = function(x::fqPolyRepFieldElem)
+  lif = function(x::FqFieldElem)
     z = Q()
     for i=0:degree(Q)-1
-      setcoeff!(z, i, coeff(x, i))
+      setcoeff!(z, i, lift(ZZ, coeff(x, i)))
     end
     return z
   end
@@ -38,7 +38,7 @@ function residue_field(Q::FlintQadicField)
 end
 
 function residue_field(Q::FlintPadicField)
-  k = Native.GF(Int(prime(Q)))
+  k = Nemo._GF(prime(Q))
   pro = function(x::padic)
     v = valuation(x)
     v < 0 && error("elt non integral")
@@ -46,8 +46,8 @@ function residue_field(Q::FlintPadicField)
     z = k(lift(x))
     return z
   end
-  lif = function(x::fpFieldElem)
-    z = Q(lift(x))
+  lif = function(x::FqFieldElem)
+    z = Q(lift(ZZ, x))
     return z
   end
   return k, MapFromFunc(Q, k, pro, lif)

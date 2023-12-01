@@ -4,12 +4,6 @@ using Aqua
   Aqua.test_all(
     Hecke;
     ambiguities=false,      # TODO: fix ambiguities
-    unbound_args=true,
-    undefined_exports=true,
-    project_extras=true,
-    stale_deps=(ignore=[:GAP, :Polymake],),
-    deps_compat=(ignore=[:GAP, :Polymake],),
-    project_toml_formatting=VERSION >= v"1.9",
-    piracy=false            # TODO: fix piracy
+    piracies=false          # TODO: fix piracy
   )
 end

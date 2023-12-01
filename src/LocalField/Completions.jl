@@ -10,7 +10,7 @@ function image(f::CompletionMap, a::nf_elem)
   end
   Qx = parent(parent(a).pol)
   z = evaluate(Qx(a), f.prim_img)
-  if !isunit(z) 
+  if !is_unit(z) 
     v = valuation(a, f.P)
     a = a*uniformizer(f.P).elem_in_nf^-v
     z = evaluate(Qx(a), f.prim_img)
@@ -152,7 +152,8 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   Qq, gQq = QadicField(minimum(P), f, prec_padics, cached = false)
   Qqx, gQqx = polynomial_ring(Qq, "x")
   q, mq = residue_field(Qq)
-  F, mF = ResidueFieldSmall(OK, P)
+  #F, mF = ResidueFieldSmall(OK, P)
+  F, mF = residue_field(OK, P)
   mp = find_morphism(q, F)
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf
@@ -444,7 +445,7 @@ function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int 
   Qp = PadicField(p, precision)
   Zp = maximal_order(Qp)
   q, mq = residue_field(Qq)
-  F, mF = ResidueFieldSmall(OK, P)
+  F, mF = residue_field(OK, P)
   mp = find_morphism(q, F)
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf

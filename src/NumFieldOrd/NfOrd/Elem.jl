@@ -290,8 +290,7 @@ end
 
 function powermod(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
 
-  #if contains_equation_order(parent(a))#This doesn't work!
-  if is_defining_polynomial_nice(nf(parent(a)))
+  if is_defining_polynomial_nice(nf(parent(a))) && contains_equation_order(parent(a))
     return powermod_fast(a, i, p)
   else
     return powermod_gen(a, i, p)

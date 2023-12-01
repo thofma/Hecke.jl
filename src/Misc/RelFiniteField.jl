@@ -497,6 +497,15 @@ function absolute_basis(F::T) where T <: FinField
   return powers(gen(F), degree(F)-1)
 end
 
+function absolute_basis(F::FqField)
+  return powers(Nemo._gen(F), absolute_degree(F) - 1)
+end
+
+function absolute_coordinates(x::FqFieldElem)
+  F = prime_field(parent(x))
+  return FqFieldElem[F(Nemo._coeff(x, i)) for i in 0:Nemo._degree(parent(x))-1]
+end
+
 function absolute_coordinates(x::FinFieldElem)
   F = parent(x)
   Fp = prime_field(F)

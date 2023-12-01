@@ -207,6 +207,39 @@ using Hecke.SparseArrays
   E = @inferred D * R(3)
   @test E == sparse_matrix(R, [3 0 0; 0 0 3; 0 0 0])
 
+  # Dot product
+
+  D = sparse_matrix(ZZ, [4 -2; -2 2])
+  E = sparse_matrix(ZZ, [3 0 0; 0 3 0])
+
+  @test dot(sparse_row(ZZ, [1], [1]), D, sparse_row(ZZ, [1], [1])) == 4
+  @test dot(sparse_row(ZZ, [1, 2], [1, 1]), D, sparse_row(ZZ, [1, 2], [1, 2])) == 2
+  @test dot(sparse_row(ZZ, [1], [1]), D, sparse_row(ZZ, [2], [1])) == -2
+
+  @test dot(sparse_row(ZZ, [1, 4], [1, 2]), D, sparse_row(ZZ, [2], [1])) == -2
+  @test dot(sparse_row(ZZ, [1, 4], [1, 2]), E, sparse_row(ZZ, [2], [1])) == 0
+  @test dot(sparse_row(ZZ, [1, 2], [1, 2]), E, sparse_row(ZZ, [2], [1])) == 6
+
+  @test dot(ZZRingElem[1, 0], D, ZZRingElem[1, 0]) == 4
+  @test dot(ZZRingElem[1, 1], D, ZZRingElem[1, 2]) == 2
+  @test dot(ZZRingElem[1, 0], D, ZZRingElem[0, 1]) == -2
+  @test dot(ZZRingElem[1, 0], E, ZZRingElem[0, 1, 2]) == 0
+  @test dot(ZZRingElem[0, 1], E, ZZRingElem[0, 1, 2]) == 3
+
+  @test dot(ZZ[1 0], D, ZZ[1 0]) == 4
+  @test dot(ZZ[1; 1], D, ZZ[1 2]) == 2
+  @test dot(ZZ[1 0], D, ZZ[0; 1]) == -2
+  @test dot(ZZ[1 0], E, ZZ[0 1 2]) == 0
+  @test dot(ZZ[0 1], E, ZZ[0 1 2]) == 3
+
+  @test_throws ArgumentError dot(ZZRingElem[1], D, ZZRingElem[0, 1])
+  @test_throws ArgumentError dot(ZZRingElem[1, 0], D, ZZRingElem[0])
+  @test_throws ArgumentError dot(ZZRingElem[1, 0, 2], E, ZZRingElem[0, 1])
+
+  @test_throws ArgumentError dot(ZZ[1 0 0], D, ZZ[1 0])
+  @test_throws ArgumentError dot(ZZ[0 1 2], E, ZZ[0 1])
+  @test_throws ArgumentError dot(ZZ[1 0; 0 0], D, ZZ[1 0 0 0])
+
   # Submatrix
 
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
@@ -250,11 +283,11 @@ using Hecke.SparseArrays
   @test b == QQFieldElem(-10)
 
   D = sparse_matrix(FlintZZ, [0 2 0; 0 0 1; 0 0 0])
-  @test @inferred isupper_triangular(D)
+  @test @inferred is_upper_triangular(D)
   D = sparse_matrix(FlintZZ, [0 0 2; 0 0 1; 0 0 0])
-  @test !isupper_triangular(D)
+  @test !is_upper_triangular(D)
   D = sparse_matrix(FlintZZ, [0 0 0; 0 0 0; 0 0 0])
-  @test @inferred isupper_triangular(D)
+  @test @inferred is_upper_triangular(D)
 
   # Zero and identity matrix
 
@@ -341,4 +374,11 @@ end
 @testset "Hecke #1227" begin
   A = sparse_matrix(FlintZZ, [2 0; 0 0])
   @test kronecker_product(A, A) == sparse_matrix(FlintZZ, [4 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0])
+end
+
+@testset "Hecke #1261" begin
+  D1 = sparse_matrix(FlintZZ, [3 0 4 0; 0 3 0 4; 0 0 2 0; 0 0 0 2])
+  D2 = identity_matrix(SMat, FlintZZ, 2)
+  E = kronecker_product(D1, D2)
+  @test E == sparse_matrix(kronecker_product(matrix(D1), matrix(D2)))
 end

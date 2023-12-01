@@ -777,7 +777,7 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
     @vtime :PseudoHnf 4 I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
     @hassert :PseudoHnf 1 a * P.coeffs[i] == I
     @hassert :PseudoHnf is_integral(a * P.coeffs[i])
-    @hassert :PseudoHnf iscoprime(norm(I), norm(m))
+    @hassert :PseudoHnf is_coprime(norm(I), norm(m))
     n = norm(I, copy = false)
     qq = Om(invmod(n, minimum(m, copy = false)))
     @hassert :PseudoHnf isone(Om(n) * Om(qq))

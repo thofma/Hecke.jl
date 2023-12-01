@@ -274,8 +274,8 @@ function ecm(a::ZZRingElem, B1::Int, B2::Int, ncrv::Int, rnd=flint_rand_ctx)
 end
 
 #data from http://www.mersennewiki.org/index.php/Elliptic_Curve_Method
-B1 = [2, 11, 50, 250, 1000, 3000, 11000, 43000, 110000, 260000, 850000, 2900000];
-nC = [25, 90, 300, 700, 1800, 5100, 10600, 19300, 49000, 124000, 210000, 340000];
+const B1 = [2, 11, 50, 250, 1000, 3000, 11000, 43000, 110000, 260000, 850000, 2900000];
+const nC = [25, 90, 300, 700, 1800, 5100, 10600, 19300, 49000, 124000, 210000, 340000];
 
 function ecm(a::ZZRingElem, max_digits::Int=div(ndigits(a), 3), rnd=flint_rand_ctx)
   n = ndigits(a, 10)
@@ -532,7 +532,7 @@ function Base.iterate(D::Divisors{T}, i) where {T}
   if x === nothing
     return x
   end
-  return D.f(x[1]), x[2]
+  return D.f(x[1])::T, x[2]
 end
 
 function Base.show(io::IO, D::Divisors)
