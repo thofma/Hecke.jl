@@ -1205,8 +1205,6 @@ function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField},
   for (b, n) in e
     l = get!(D, b) do
       bb = mC(pi^(-valuation(b, P)) * b)
-      push!(Main.elts, bb)
-
       return log(bb)
     end
     res = res + n * l
