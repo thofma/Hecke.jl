@@ -1,5 +1,3 @@
-export maximal_integral_lattice, is_maximal_integral
-
 ################################################################################
 #
 #  String I/O
@@ -680,12 +678,13 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
 end
 
 function is_maximal_integral(L::HermLat, p)
+  @req order(p) == fixed_ring(L) "The ideal does not belong to the fixed ring of the lattice"
   valuation(norm(L), p) < 0 && return false, L
   return _maximal_integral_lattice(L, p, true)
 end
 
 function is_maximal_integral(L::HermLat)
-  !is_integral(norm(L)) && error("The lattice is not integral")
+  !is_integral(norm(L)) && return false, L
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -703,6 +702,8 @@ function is_maximal_integral(L::HermLat)
 end
 
 function is_maximal(L::HermLat, p)
+  @req order(p) == fixed_ring(L) "The ideal does not belong to the fixed ring of the lattice"
+  @req valuation(norm(L), p) >= 0 "The norm of the lattice is not locally integral"
   #iszero(L) && error("The lattice must be non-zero")
   v = valuation(norm(L), p)
   x = elem_in_nf(p_uniformizer(p))^(-v)
@@ -715,7 +716,7 @@ function is_maximal(L::HermLat, p)
 end
 
 function maximal_integral_lattice(L::HermLat)
-  !is_integral(norm(L)) && error("The lattice is not integral")
+  @req is_integral(norm(L)) "The norm of the lattice is not integral"
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -730,7 +731,8 @@ function maximal_integral_lattice(L::HermLat)
 end
 
 function maximal_integral_lattice(L::HermLat, p)
-  valuation(norm(L), p) < 0 && error("Lattice is not locally integral")
+  @req order(p) == fixed_ring(L) "The ideals does not belong to the fixed ring of the lattice"
+  @req valuation(norm(L), p) >= 0 "The norm of the lattice is not locally integral"
   _, L = _maximal_integral_lattice(L, p, false)
   return L
 end
