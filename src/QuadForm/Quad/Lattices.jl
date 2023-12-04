@@ -440,7 +440,7 @@ function guess_max_det(L::QuadLat, p)
 end
 
 function is_maximal_integral(L::QuadLat, p)
-  @req order(p) == base_ring(L) "Rings do not match"
+  @req order(p) == base_ring(L) "The ideal does not belong to the base ring of the lattice"
   #if iszero(L)
   #  return true, L
   #end
@@ -532,8 +532,8 @@ function is_maximal_integral(L::QuadLat)
 end
 
 function maximal_integral_lattice(L::QuadLat, p)
-  @req base_ring(L) == order(p) "Second argument must be an ideal of the base ring of L"
-  @req valuation(norm(L), p) >= 0 "The normal of the lattice must be locally integral"
+  @req base_ring(L) == order(p) "The ideal does not belong to the base ring of the lattice"
+  @req valuation(norm(L), p) >= 0 "The norm of the lattice is not locally integral"
 
   ok, LL = is_maximal_integral(L, p)
   while !ok
@@ -544,7 +544,8 @@ function maximal_integral_lattice(L::QuadLat, p)
 end
 
 function is_maximal(L::QuadLat, p)
-  @req order(p) == base_ring(L) "Asdsads"
+  @req order(p) == base_ring(L) "The ideal does not belong to the base ring of the lattice"
+  @req valuation(norm(L), p) >= 0 "The norm of the lattice is not locally integral"
   #if iszero(L)
   #  return true, L
   #end
@@ -576,7 +577,7 @@ function maximal_integral_lattice(V::QuadSpace)
 end
 
 function maximal_integral_lattice(L::QuadLat)
-  @req is_integral(norm(L)) "Lattice must be integral"
+  @req is_integral(norm(L)) "The norm of the lattice is not integral"
   for p in bad_primes(L; even = true)
     L = maximal_integral_lattice(L, p)
   end
