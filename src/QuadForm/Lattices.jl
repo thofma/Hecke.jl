@@ -1989,7 +1989,7 @@ end
     is_maximal_integral(L::AbstractLat, p::NfOrdIdl) -> Bool, AbstractLat
 
 Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
-`L`, return whether the completion of `L` at `p` has integral norm and has no
+`L`, return whether the completion of `L` at `p` has integral norm and that `L` has no
 proper overlattice satisfying this property.
 
 If the norm of `L` is not integral at `p`, the second output is `L` by default.

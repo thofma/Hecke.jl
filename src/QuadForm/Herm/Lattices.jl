@@ -733,7 +733,7 @@ function maximal_integral_lattice(L::HermLat)
 end
 
 function maximal_integral_lattice(L::HermLat, p)
-  @req order(p) == fixed_ring(L) "The ideals does not belong to the fixed ring of the lattice"
+  @req order(p) == fixed_ring(L) "The ideal does not belong to the fixed ring of the lattice"
   @req valuation(norm(L), p) >= 0 "The norm of the lattice is not locally integral"
   _, L = _maximal_integral_lattice(L, p, false)
   return L
