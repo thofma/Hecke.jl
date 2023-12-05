@@ -144,7 +144,6 @@ function Hecke.denominator(a::Generic.RationalFunctionFieldElem, S::HessQR)
 end
 
 Nemo.elem_type(::Type{HessQR}) = HessQRElem
-Nemo.parent_type(::HessQRElem) = HessQR
 Nemo.parent_type(::Type{HessQRElem}) = HessQR
 Nemo.is_domain_type(::Type{HessQRElem}) = true
 

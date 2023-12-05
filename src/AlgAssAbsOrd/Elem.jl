@@ -2,8 +2,6 @@ export elem_in_algebra
 
 parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
 
-parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
-
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
 Base.hash(x::AlgAssAbsOrdElem, h::UInt) = hash(elem_in_algebra(x, copy = false), h)

@@ -57,8 +57,6 @@ elem_type(::Type{EmbeddedField{S, E}}) where {S, E} = EmbeddedElem{elem_type(S)}
 
 parent_type(::Type{EmbeddedElem{T}}) where {T} = EmbeddedField{parent_type(T), embedding_type(parent_type(T))}
 
-parent_type(x::EmbeddedElem{T}) where {T} = parent_type(EmbeddedElem{T})
-
 data(x::EmbeddedElem) = x.element
 
 function embedded_field(K::SimpleNumField, i::NumFieldEmb)

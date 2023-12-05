@@ -154,7 +154,6 @@ end
 
 elem_type(::Type{RelFinField{T}}) where T = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
 
-parent_type(::RelFinFieldElem{S, T}) where {S, T} = S
 parent_type(::Type{RelFinFieldElem{S, T}}) where {S, T}  = S
 
 gen(F::RelFinField) = F(gen(parent(defining_polynomial(F))))
