@@ -37,7 +37,7 @@ export ==, +, basis, basis_matrix, basis_mat_inv, contains_equation_order,
        is_equation_order, is_index_divisor, lll, lll_basis, nf,
        minkowski_matrix, norm_change_const, Order, parent, different,
        signature, trace_matrix, codifferent, ramified_primes,
-       reduced_discriminant
+       reduced_discriminant, ideal_type
 
 ################################################################################
 #

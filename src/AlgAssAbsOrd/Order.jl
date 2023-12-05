@@ -1,4 +1,4 @@
-export algebra, integral_group_ring
+export algebra, ideal_type, integral_group_ring
 
 add_assertion_scope(:AlgAssOrd)
 add_verbosity_scope(:AlgAssOrd)
