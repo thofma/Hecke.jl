@@ -22,8 +22,6 @@ parent(O::NfRelOrd) = O.parent
 
 base_ring(O::NfRelOrd) = order(pseudo_basis(O, copy = false)[1][2])
 
-elem_type(::NfRelOrd{T, S, U}) where {T, S, U} = NfRelOrdElem{T, U}
-
 elem_type(::Type{NfRelOrd{T, S, U}}) where {T, S, U} = NfRelOrdElem{T, U}
 
 ideal_type(::NfRelOrd{T, S, U}) where {T, S, U} = NfRelOrdIdl{T, S, U}

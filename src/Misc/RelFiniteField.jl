@@ -152,8 +152,7 @@ function zero!(x::RelFinFieldElem)
   return x
 end
 
-elem_type(F::RelFinField{T}) where T = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
-elem_type(::Type{RelFinField{T}}) where T  = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
+elem_type(::Type{RelFinField{T}}) where T = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
 
 parent_type(::RelFinFieldElem{S, T}) where {S, T} = S
 parent_type(::Type{RelFinFieldElem{S, T}}) where {S, T}  = S

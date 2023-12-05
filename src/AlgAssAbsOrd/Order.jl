@@ -3,8 +3,6 @@ export algebra, integral_group_ring
 add_assertion_scope(:AlgAssOrd)
 add_verbosity_scope(:AlgAssOrd)
 
-elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
-
 elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
 
 ideal_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
