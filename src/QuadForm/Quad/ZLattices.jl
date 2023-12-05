@@ -4,7 +4,7 @@ export *,+, basis_matrix, ambient_space, base_ring, base_field, root_lattice,
        glue_map, overlattice, primitive_closure, is_primitive,
        lattice_in_same_ambient_space, maximal_even_lattice, is_maximal_even,
        leech_lattice, highest_root, coxeter_number, embed_in_unimodular, irreducible_components,
-       divisibility, coinvariant_lattice
+       divisibility, coinvariant_lattice, k3_lattice, mukai_lattice, hyperkaehler_lattice
 
 # scope & verbose scope: :Lattice
 @doc raw"""
@@ -2753,5 +2753,173 @@ function leech_lattice(niemeier_lattice::ZZLat)
   w = transpose(matrix(lift(gens(T)[1])))
 
   return leech_lattice, h*w, h
+end
+
+###############################################################################
+#
+#  Hyperkaehler lattices
+#
+###############################################################################
+
+@doc raw"""
+    k3_lattice()
+
+Return the integer lattice corresponding to the Beauville-Bogomolov-Fujiki
+form associated to a K3 surface.
+
+# Examples
+```jldoctest
+julia> L = k3_lattice();
+
+julia> is_unimodular(L)
+true
+
+julia> signature_tuple(L)
+(3, 0, 19)
+```
+"""
+function k3_lattice()
+  U = QQ[0 1; 1 0]
+  E8 = -_root_lattice_E(8)
+  return integer_lattice(; gram = diagonal_matrix(U, U, U, E8, E8))
+end
+
+@doc raw"""
+    mukai_lattice(S::Symbol = :K3; extended::Bool = false)
+
+Return the (extended) Mukai lattice.
+
+If `S == :K3`, it returns the (extended) Mukai lattice associated to
+hyperkaehler manifolds which are deformation equivalent to a moduli space
+of stable sheaves on a K3 surface.
+
+If `S == :Ab`, it returns the (extended) Mukai lattice associated to
+hyperkaehler manifolds which are deformation equivalent to a moduli space
+of stable sheaves on an abelian surface.
+
+# Examples
+```jldoctest
+julia> L = mukai_lattice();
+
+julia> genus(L)
+Genus symbol for integer lattices
+Signatures: (4, 0, 20)
+Local symbol:
+  Local genus symbol at 2: 1^24
+
+julia> L = mukai_lattice(; extended = true);
+
+julia> genus(L)
+Genus symbol for integer lattices
+Signatures: (5, 0, 21)
+Local symbol:
+  Local genus symbol at 2: 1^26
+
+julia> L = mukai_lattice(:Ab);
+
+julia> genus(L)
+Genus symbol for integer lattices
+Signatures: (4, 0, 4)
+Local symbol:
+  Local genus symbol at 2: 1^8
+
+julia> L = mukai_lattice(:Ab; extended = true);
+
+julia> genus(L)
+Genus symbol for integer lattices
+Signatures: (5, 0, 5)
+Local symbol:
+  Local genus symbol at 2: 1^10
+```
+"""
+function mukai_lattice(S::Symbol = :K3; extended::Bool = false)
+  @req S in [:K3, :Ab] "Wrong symbol"
+  U = QQ[0 1; 1 0]
+  if S == :Ab
+    extended && return integer_lattice(; gram = diagonal_matrix(U, U, U, U, U))
+    return integer_lattice(; gram = diagonal_matrix(U, U, U, U))
+  end
+
+  E8 = -_root_lattice_E(8)
+  !extended && return integer_lattice(; gram = diagonal_matrix(U, U, U, U, E8, E8))
+  return integer_lattice(; gram = diagonal_matrix(U, U, U, U, U, E8, E8))
+end
+
+@doc raw"""
+    hyperkaehler_lattice(S::Symbol; n::Int = 2)
+
+Return the integer lattice corresponding to the Beauville-Bogomolov-Fujiki
+form on a hyperkaehler manifold whose deformation type is determined by `S`
+and `n`.
+
+- If `S == :K3` or `S == :Kum`, then `n` must be an integer bigger than 2;
+- If `S == :OG6` or `S == :OG10`, the value of `n` has no effect.
+
+# Examples
+```jldoctest
+julia> L = hyperkaehler_lattice(:Kum; n = 3)
+Integer lattice of rank 7 and degree 7
+with gram matrix
+[0   1   0   0   0   0    0]
+[1   0   0   0   0   0    0]
+[0   0   0   1   0   0    0]
+[0   0   1   0   0   0    0]
+[0   0   0   0   0   1    0]
+[0   0   0   0   1   0    0]
+[0   0   0   0   0   0   -8]
+
+julia> L = hyperkaehler_lattice(:OG6)
+Integer lattice of rank 8 and degree 8
+with gram matrix
+[0   1   0   0   0   0    0    0]
+[1   0   0   0   0   0    0    0]
+[0   0   0   1   0   0    0    0]
+[0   0   1   0   0   0    0    0]
+[0   0   0   0   0   1    0    0]
+[0   0   0   0   1   0    0    0]
+[0   0   0   0   0   0   -2    0]
+[0   0   0   0   0   0    0   -2]
+
+julia> L = hyperkaehler_lattice(:OG10);
+
+julia> genus(L)
+Genus symbol for integer lattices
+Signatures: (3, 0, 21)
+Local symbols:
+  Local genus symbol at 2: 1^-24
+  Local genus symbol at 3: 1^-23 3^1
+
+julia> L = hyperkaehler_lattice(:K3; n = 3);
+
+julia> genus(L)
+Genus symbol for integer lattices
+Signatures: (3, 0, 20)
+Local symbol:
+  Local genus symbol at 2: 1^22 4^1_7
+```
+"""
+function hyperkaehler_lattice(S::Symbol; n::Int = 2)
+  @req S in [:K3, :Kum, :OG10, :OG6] "Wrong symbol for deformation type"
+
+  U = QQ[0 1; 1 0]
+  if S == :OG6
+    k = QQ[-2 0; 0 -2]
+    return integer_lattice(; gram = diagonal_matrix(U, U, U, k))
+  elseif S == :Kum
+    @req n >= 2 "n must be a positive integer bigger than 1"
+    k = QQ[-2-2*n; ]
+    return integer_lattice(; gram = diagonal_matrix(U, U, U, k))
+  end
+
+  E8 = -_root_lattice_E(8)
+  if S == :OG10
+    k = -_root_lattice_A(2)
+    return integer_lattice(; gram = diagonal_matrix(U, U, U, E8, E8, k))
+  else
+    @assert S == :K3
+    @req n >= 2 "n must be a positive integer bigger than 1"
+    k = QQ[2-2*n; ]
+    return integer_lattice(; gram = diagonal_matrix(U, U, U, E8, E8, k))
+  end
 end
 

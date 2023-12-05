@@ -742,3 +742,25 @@ end
   L = root_lattice(:D, 5)
   @test length(unique!([L,lattice_in_same_ambient_space(L, basis_matrix(L))])) == 1
 end
+
+@testset "Hyperkaehler lattices" begin
+  L = @inferred k3_lattice()
+  @test is_unimodular(L)
+
+  for S in [:K3, :Ab], extended in [true, false]
+    L = @inferred mukai_lattice(S; extended)
+    @test is_unimodular(L)
+  end
+
+  L = @inferred hyperkaehler_lattice(:K3; n = 3)
+  @test det(L) == 4
+
+  L = @inferred hyperkaehler_lattice(:Kum; n = 3)
+  @test det(L) == 8
+
+  L = @inferred hyperkaehler_lattice(:OG6)
+  @test det(L) == -4
+
+  L = @inferred hyperkaehler_lattice(:OG10)
+  @test det(L) == -3
+end

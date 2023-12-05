@@ -38,6 +38,9 @@ root_lattice(::Symbol, ::Int)
 hyperbolic_plane_lattice(n::Union{Int64, ZZRingElem})
 integer_lattice(S::Symbol, n::Union{Int64, ZZRingElem})
 leech_lattice
+k3_lattice
+mukai_lattice(::Symbol)
+hyperkaehler_lattice(::Symbol)
 ```
 
 ### From a genus
