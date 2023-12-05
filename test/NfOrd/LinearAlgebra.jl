@@ -179,7 +179,7 @@
   @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
 
   # issue 1112
-  K, a = CyclotomicRealSubfield(8, "a");
+  K, a = cyclotomic_real_subfield(8, "a");
   Kt, t = K["t"];
   E, b = number_field(t^2 - a * t + 1, "b");
   V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)));

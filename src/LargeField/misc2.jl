@@ -388,7 +388,7 @@ end
 #=
 
 Qx,x = polynomial_ring(FlintQQ, "a")
-K, a = CyclotomicRealSubfield(1024, "a");
+K, a = cyclotomic_real_subfield(1024, "a");
 @time fb_int = Hecke.int_fb_max_real(1024, 2^20);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
@@ -398,7 +398,7 @@ fb_int = FactorBase(ZZRingElem[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])])
 @time Hecke.basis_rels_5(b, 600, 10, 5, fb_int)
 
 Qx,x = polynomial_ring(FlintQQ, "a")
-K, a = CyclotomicRealSubfield(512, "a");
+K, a = cyclotomic_real_subfield(512, "a");
 @time fb_int = Hecke.int_fb_max_real(512, 2^18);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
