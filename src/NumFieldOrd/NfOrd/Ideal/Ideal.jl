@@ -268,23 +268,20 @@ checked whether $M$ defines an ideal (expensive). If `M_in_hnf` is set, then it 
 that $M$ is already in lower left HNF.
 """
 function ideal(O::NfAbsOrd, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false)
-  !M_in_hnf ? x = _hnf(M, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
-  #_trace_call(;print = true)
-  I = NfAbsOrdIdl(O, M)
+  x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
+  I = NfAbsOrdIdl(O, x)
   # The compiler stopped liking this recursion??
   # if check
   #   J = ideal(O, basis(I))
   #   @assert J == I
   # end
-
   return I
 end
 
 function _ideal(O::NfAbsOrd, M::ZZMatrix, M_in_hnf::Bool = false)
-  !M_in_hnf ? x = _hnf(M, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
+  x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
   #_trace_call(;print = true)
-  I = NfAbsOrdIdl(O, M)
-
+  I = NfAbsOrdIdl(O, x)
   return I
 end
 
