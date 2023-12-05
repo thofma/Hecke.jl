@@ -276,5 +276,11 @@
   Hecke.assure_2_normal(I)
   @test isdefined(I, :gen_two)
 
+  # Some issue with ideal(O, M)
+  K, a = quadratic_field(-1)
+  O = maximal_order(K)
+  @test basis_matrix(ideal(O, representation_matrix(O(a)))) == identity_matrix(ZZ, 2)
+  
   include("Ideal/Prime.jl")
+
 end
