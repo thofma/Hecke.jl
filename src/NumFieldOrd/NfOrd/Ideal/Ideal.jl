@@ -99,8 +99,6 @@ end
 
 elem_type(::Type{NfOrdIdlSet}) = NfOrdIdl
 
-elem_type(::NfOrdIdlSet) = NfOrdIdl
-
 parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
 
 ################################################################################

@@ -87,7 +87,6 @@ end
 
 parent(a::LocalFieldElem) = a.parent
 
-parent_type(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalField{S, T}
 parent_type(::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalField{S, T}
 
 ################################################################################

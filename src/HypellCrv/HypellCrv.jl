@@ -460,10 +460,6 @@ end
 #
 ################################################################################
 
-function elem_type(C::HypellCrv{T}) where T
-  return HypellCrvPt{T}
-end
-
 function elem_type(::Type{HypellCrv{T}}) where T
   return HypellCrvPt{T}
 end

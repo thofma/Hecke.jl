@@ -775,10 +775,6 @@ end
 #
 ################################################################################
 
-function elem_type(E::EllCrv{T}) where T
-  return EllCrvPt{T}
-end
-
 function elem_type(::Type{EllCrv{T}}) where T
   return EllCrvPt{T}
 end

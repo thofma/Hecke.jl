@@ -9,11 +9,6 @@ function elem_type(::Type{RelOrdQuoRing{T1, T2, T3}}) where { T1, T2, T3 }
   return RelOrdQuoRingElem{T1, T2, T3, S}
 end
 
-function elem_type(::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
-  S = elem_type(T1)
-  return RelOrdQuoRingElem{T1, T2, T3, S}
-end
-
 base_ring(Q::RelOrdQuoRing) = Q.base_ring
 
 ideal(Q::RelOrdQuoRing) = Q.ideal

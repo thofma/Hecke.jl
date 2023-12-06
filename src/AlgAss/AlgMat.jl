@@ -18,8 +18,6 @@ basis(A::AlgMat) = A.basis
 
 has_one(A::AlgMat) = true
 
-elem_type(A::AlgMat{T, S}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
-
 elem_type(::Type{AlgMat{T, S}}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
 
 order_type(::AlgMat{QQFieldElem, S}) where { S } = AlgAssAbsOrd{AlgMat{QQFieldElem, S}, elem_type(AlgMat{QQFieldElem, S})}

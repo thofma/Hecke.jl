@@ -1,4 +1,3 @@
-parent_type(::NfRelOrdElem{T, U}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
 parent_type(::Type{NfRelOrdElem{T, U}}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
 
 ################################################################################
