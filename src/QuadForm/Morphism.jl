@@ -584,28 +584,19 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
 
   small = S1 <: Int
 
-  if small
-    bitbound = Int == Int64 ? 64 : 32
-    abs_maxbits_vectors = Int == Int64 ? 30 : 15
-
-    G_nbits = 0
-    for G in C.G
-      G_nbits = max(G_nbits, maximum(nbits, G))
-    end
-    G_nbits += 1
-  end
-
-  C.scpcomb = Vector{SCPComb{S1, S2, S3}}(undef, dim(C))
+  C.scpcomb = Vector{SCPComb{S1, S3}}(undef, dim(C))
   for i in 1:C.dim
-    C.scpcomb[i] = SCPComb{S1, S2, S3}()
+    C.scpcomb[i] = SCPComb{S1, S3}()
   end
   vector_sums = vs_scalar_products(C, depth)
 
-  for i in 1:C.dim
-    if small
-      B_nbits = 0
-    end
+  if small
+    C.GZZ = [ matrix(ZZ, M) for M in C.G ]
+  else
+    C.GZZ = C.G
+  end
 
+  for i in 1:C.dim
     # Compute a basis of the lattice spanned by vector_sums
     if !small
       M = reduce(vcat, vector_sums[i])
@@ -630,48 +621,21 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
       k += 1
     end
 
-    if !small
-      B = sub(B, k:nrows(B), 1:ncols(B))
-      C.scpcomb[i].trans = sub(T, k:nrows(T), 1:ncols(T))
-      C.scpcomb[i].coef = sub(invT, 1:nrows(invT), k:ncols(invT))
-    else
-      kk = nrows(B) - k + 1
-      Bint = Matrix{Int}(undef, kk, ncols(B))
-      C.scpcomb[i].trans = Matrix{Int}(undef, kk, ncols(T))
-      C.scpcomb[i].coef = Matrix{Int}(undef, nrows(invT), kk)
-      @inbounds for r in 1:kk
-        rk1 = r + k - 1
-        for c in 1:ncols(T)
-          t = T[rk1, c]
-          it = invT[c, rk1]
-          # Check whether everything fits Int; we want to return false and
-          # not throw an error
-          if !fits(Int, t) || !fits(Int, it)
-            return false
-          end
-          C.scpcomb[i].trans[r, c] = S1(t)
-          C.scpcomb[i].coef[c, r] = S1(it)
-        end
-        for c in 1:ncols(B)
-          t = B[rk1, c]
-          if !fits(Int, t)
-            return false
-          end
-          B_nbits = max(B_nbits, nbits(t) + 1)
-          Bint[r, c] = S1(t)
-        end
-      end
-      B = Bint
-    end
+    # We leave these matrices "big" (i.e. of type ZZMatrix) even if the short
+    # vectors fit in Int
+    B = sub(B, k:nrows(B), 1:ncols(B))
+    C.scpcomb[i].trans = sub(T, k:nrows(T), 1:ncols(T))
+    C.scpcomb[i].coef = sub(invT, 1:nrows(invT), k:ncols(invT))
 
-    if small
-      nrows_nbits = nbits(size(C.G[1], 1))
-      B_nbits > abs_maxbits_vectors && return false
-      G_nbits + B_nbits + nrows_nbits + 1 > bitbound && return false
-    end
     # Compute the Gram matrices of the basis w.r.t. C.G[:]
     transpB = transpose(B)
-    C.scpcomb[i].F = [ B*G*transpB for G in C.G ]
+    C.scpcomb[i].F = [ B*G*transpB for G in C.GZZ ]
+
+    C.scpcomb[i].xvectmp = zero_matrix(FlintZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
+    C.scpcomb[i].xbasetmp = zero_matrix(FlintZZ, nrows(C.scpcomb[i].trans), C.dim)
+    C.scpcomb[i].multmp1 = zero_matrix(FlintZZ, nrows(C.scpcomb[i].trans), C.dim)
+    C.scpcomb[i].multmp2 = zero_matrix(FlintZZ, nrows(C.scpcomb[i].trans), nrows(C.scpcomb[i].trans))
+    C.scpcomb[i].multmp3 = zero_matrix(FlintZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
   end
   return true
 end
@@ -1239,15 +1203,19 @@ function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLat
   return found
 end
 
+# In case the short vectors don't fit in Int, we first compute with Int anyway
+# allowing overflows via D and only verify a positive result with ZZRingElem
+# via C.
 function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{ZZRingElem}, D::ZLatAutoCtx{Int})
   if _cand(candidates, I, x, D)
-    # _cand with Integers return true, so we have to verify the result with
+    # _cand with Integers returned true, so we have to verify the result with
     # ZZRingElem
     return _cand(candidates, I, x, C)
   end
   return false
 end
 
+# If the short vectors fit in Int, the last argument (D) is ignored.
 cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{Int}, D::ZLatAutoCtx) = _cand(candidates, I, x, C)
 
 function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
@@ -1270,7 +1238,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
     # the rows of xvec are the vector sums which are computed with respect to the
     # partial basis in x
     if T <: ZZMatrix
-      xvec = zero_matrix(FlintZZ, n, dim)
+      xvec = zero!(comb.xvectmp)
     else
       xvec = zeros(Int, n, dim)
     end
@@ -1391,7 +1359,6 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
         end
       else
         # scpvec is not found, hence x[1], ..., x[I - 1] is not a partial automorphism
-        #println("Did not find scpvec")
         return false
       end
     end
@@ -1425,19 +1392,30 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
   end
 
   if use_vector_sums
+    if T <: Matrix{Int}
+      # Convert to a ZZMatrix
+      @inbounds for i in 1:size(xvec, 1)
+        for j in 1:size(xvec, 2)
+          comb.xvectmp[i, j] = xvec[i, j]
+        end
+      end
+    end
     # compute the basis of the lattice generated by the vectors in xvec via the
     # transformation matrix comb.trans
-    xbase = comb.trans*xvec
+    mul!(comb.xbasetmp, comb.trans, comb.xvectmp)
 
     # check, whether the base xbase has the right scalar products
-    transpxbase = transpose(xbase)
+    transpxbase = transpose(comb.xbasetmp)
     for i in 1:length(C.G)
-      if xbase*C.G[i]*transpxbase != comb.F[i]
+      mul!(comb.multmp1, comb.xbasetmp, C.GZZ[i])
+      mul!(comb.multmp2, comb.multmp1, transpxbase)
+      if comb.multmp2 != comb.F[i]
         return false
       end
     end
 
-    if xvec != comb.coef*xbase
+    mul!(comb.multmp3, comb.coef, comb.xbasetmp)
+    if comb.xvectmp != comb.multmp3
       return false
     end
   end
@@ -2340,30 +2318,41 @@ function _make_small(C::ZLatAutoCtx{ZZRingElem})
   tmp = FlintZZ()
   D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
   D.G = [ _int_matrix_with_overflow(M, tmp) for M in C.G ]
+
+  if isdefined(C, :GZZ)
+    D.GZZ = C.GZZ
+  end
+
   D.dim = C.dim
   D.V = _make_small(C.V)
   D.v = Vector{Vector{Int}}(undef, length(C.v))
   for i in 1:length(C.v)
     D.v[i] = [ _int_vector_with_overflow(M, tmp) for M in C.v[i] ]
   end
-  D.per = C.per
-  D.fp = C.fp
-  D.fp_diagonal = C.fp_diagonal
-  D.std_basis = C.std_basis
+  D.per = copy(C.per)
+  D.fp = copy(C.fp)
+  D.fp_diagonal = copy(C.fp_diagonal)
+  D.std_basis = copy(C.std_basis)
 
   if isdefined(C, :scpcomb)
-    D.scpcomb = Vector{SCPComb{Int, Matrix{Int}, Vector{Int}}}(undef, length(C.scpcomb))
+    D.scpcomb = Vector{SCPComb{Int, Vector{Int}}}(undef, length(C.scpcomb))
     for i in 1:length(C.scpcomb)
-      D.scpcomb[i] = SCPComb{Int, Matrix{Int}, Vector{Int}}()
+      D.scpcomb[i] = SCPComb{Int, Vector{Int}}()
       D.scpcomb[i].scpcombs = _make_small(C.scpcomb[i].scpcombs)
-      D.scpcomb[i].trans = _int_matrix_with_overflow(C.scpcomb[i].trans, tmp)
-      D.scpcomb[i].coef = _int_matrix_with_overflow(C.scpcomb[i].coef, tmp)
-      D.scpcomb[i].F = [ _int_matrix_with_overflow(M, tmp) for M in C.scpcomb[i].F ]
+      D.scpcomb[i].trans = C.scpcomb[i].trans
+      D.scpcomb[i].coef = C.scpcomb[i].coef
+      D.scpcomb[i].F = C.scpcomb[i].F
+      D.scpcomb[i].xvectmp = C.scpcomb[i].xvectmp
+      D.scpcomb[i].xbasetmp = C.scpcomb[i].xbasetmp
+      D.scpcomb[i].multmp1 = C.scpcomb[i].multmp1
+      D.scpcomb[i].multmp2 = C.scpcomb[i].multmp2
+      D.scpcomb[i].multmp3 = C.scpcomb[i].multmp3
     end
   end
 
   D.depth = C.depth
-  D.is_symmetric = C.is_symmetric
+  D.is_symmetric = copy(C.is_symmetric)
   D.dot_product_tmp = Int[ 0 ]
+
   return D
 end

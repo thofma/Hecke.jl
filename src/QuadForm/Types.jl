@@ -478,17 +478,24 @@ mutable struct VectorList{S, T}
 end
 
 # scalar product combinations
-mutable struct SCPComb{S, T, V}
+mutable struct SCPComb{S, V}
   scpcombs::VectorList{V, S} # list of vectors s with <w, e_i> = s_i for w a short vector
-  trans::T # transformation matrix mapping the vector sums to a basis
-  coef::T # "inverse" of trans: maps the basis to the vector sums
-  F::Vector{T} # Gram matrices of the basis
+  trans::ZZMatrix # transformation matrix mapping the vector sums to a basis
+  coef::ZZMatrix # "inverse" of trans: maps the basis to the vector sums
+  F::Vector{ZZMatrix} # Gram matrices of the basis
 
-  SCPComb{S, T, V}() where {S, T, V} = new{S, T, V}()
+  xvectmp::ZZMatrix # length(scpcombs.vectors) x dim
+  xbasetmp::ZZMatrix # nrows(trans) x dim
+  multmp1::ZZMatrix # nrows(trans) x dim
+  multmp2::ZZMatrix # nrows(trans) x nrows(trans)
+  multmp3::ZZMatrix # length(scpcombs.vectors) x dim
+
+  SCPComb{S, V}() where {S, V} = new{S, V}()
 end
 
 mutable struct ZLatAutoCtx{S, T, V}
   G::Vector{T} # Gram matrices
+  GZZ::Vector{ZZMatrix} # Gram matrices (of type ZZMatrix)
   Gtr::Vector{T} # transposed Gram matrices
   dim::Int
   max::S
@@ -503,7 +510,7 @@ mutable struct ZLatAutoCtx{S, T, V}
                   # has same length as b_i for all forms
   fp_diagonal::Vector{Int} # diagonal of the fingerprint matrix
   std_basis::Vector{Int} # index of the the standard basis vectors in V.vectors
-  scpcomb::Vector{SCPComb{S, T, V}} # cache for the vector sum optimization
+  scpcomb::Vector{SCPComb{S, V}} # cache for the vector sum optimization
   depth::Int # depth of the vector sums (0 == no vector sums)
 
   orders::Vector{Int} # orbit length of b_i under <g[i], ..., g[end]>
