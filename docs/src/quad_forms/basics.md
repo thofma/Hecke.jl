@@ -21,7 +21,7 @@ following spaces for the rest of this section:
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 Q = quadratic_space(K, K[0 1; 1 0])
@@ -59,7 +59,7 @@ space $H$:
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 H = hermitian_space(E, 3);
@@ -96,7 +96,7 @@ Note that the `is_hermitian` function tests whether the space is non-quadratic.
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 Q = quadratic_space(K, K[0 1; 1 0]);
@@ -123,7 +123,7 @@ restrict_scalars(::AbstractSpace, ::QQField, ::FieldElem)
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 Q = quadratic_space(K, K[0 1; 1 0]);
@@ -160,7 +160,7 @@ of $O_K$ above $7$, one can get:
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Q = quadratic_space(K, K[0 1; 1 0]);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
@@ -196,7 +196,7 @@ embed respectively locally or globally into $Q$ or $H$:
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 Q = quadratic_space(K, K[0 1; 1 0]);
@@ -247,7 +247,7 @@ orthogonal_projection(::AbstractSpace, ::MatElem)
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 Q = quadratic_space(K, K[0 1; 1 0]);
 orthogonal_complement(Q, matrix(K, 1, 2, [1 0]))
@@ -268,7 +268,7 @@ is_isotropic(::AbstractSpace, p)
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 H = hermitian_space(E, 3);
@@ -295,7 +295,7 @@ is_locally_hyperbolic(::HermSpace, ::NfOrdIdl)
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(7);
+K, a = cyclotomic_real_subfield(7);
 Kt, t = K["t"];
 E, b = number_field(t^2-a*t+1, "b");
 H = hermitian_space(E, 3);

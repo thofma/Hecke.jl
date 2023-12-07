@@ -473,7 +473,7 @@ hermitian_genera(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelO
 
 ```@repl 2
 using Hecke # hide
-K, a = CyclotomicRealSubfield(8, "a");
+K, a = cyclotomic_real_subfield(8, "a");
 Kt, t = K["t"];
 E, b = number_field(t^2 - a * t + 1);
 p = prime_decomposition(maximal_order(K), 2)[1][1];

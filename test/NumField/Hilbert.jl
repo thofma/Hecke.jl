@@ -36,7 +36,7 @@
   @test quadratic_defect(QQ(1//9),ZZ(3)) == PosInf()
 
   # Test where Magma div(x, y) differs from julia div(x, y) (internally)
-  K, a = CyclotomicRealSubfield(8, "a") # x^2 - 2
+  K, a = cyclotomic_real_subfield(8, "a") # x^2 - 2
   z = 9278908160780559301//4*a+6561375391013480455//2
   w = K(-2)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
