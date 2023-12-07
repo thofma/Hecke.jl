@@ -254,10 +254,10 @@ end
 
 
 mutable struct VeryBad
-  entries::Ptr{Nothing}
+  entries::Ptr{UInt}
   r::Int
   c::Int
-  rows::Ptr{Nothing}
+  rows::Ptr{Ptr{UInt}}
   n::UInt
   ninv::UInt
   norm::UInt
@@ -268,23 +268,23 @@ mutable struct VeryBad
     r.ninv = ninv
     r.norm = norm
     r.r = 1
-    r.rr = [reinterpret(Ptr{Nothing}, 0)]
-    r.rows = Base.unsafe_convert(Ptr{Nothing}, r.rr)
+    r.rr = [reinterpret(Ptr{UInt}, 0)]
+    r.rows = pointer(r.rr)
     return r
   end
 
-  rr::Vector{Ptr{Nothing}}
+  rr::Vector{Ptr{UInt}}
 end
 
 function VeryBad!(V::VeryBad, a::fqPolyRepFieldElem)
   V.c = a.length
-  V.entries = a.coeffs
+  V.entries = reinterpret(Ptr{UInt}, a.coeffs)
   V.rr[1] = a.coeffs
 #  V.rows = Base.unsafe_convert(Ptr{Nothing}, [a.coeffs])
 end
 
 function clear!(V::VeryBad)
-  V.entries = reinterpret(Ptr{Nothing}, 0)
+  V.entries = reinterpret(Ptr{Ptr{UInt}}, 0)
 #  V.rows = reinterpret(Ptr{Nothing}, 0)
 end
 

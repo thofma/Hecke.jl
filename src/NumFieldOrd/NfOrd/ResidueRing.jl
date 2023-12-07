@@ -55,11 +55,6 @@ function elem_type(::Type{AbsOrdQuoRing{S, T}}) where {S, T}
   return AbsOrdQuoRingElem{S, T, U}
 end
 
-function elem_type(::AbsOrdQuoRing{S, T}) where {S, T}
-  U = elem_type(S)
-  return AbsOrdQuoRingElem{S, T, U}
-end
-
 base_ring(Q::AbsOrdQuoRing) = Q.base_ring
 
 ideal(Q::AbsOrdQuoRing) = Q.ideal

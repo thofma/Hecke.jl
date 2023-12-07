@@ -674,7 +674,7 @@ function _twists(V::ModAlgAss)
   A = outer_automorphisms(G)
   res = typeof(V)[]
   for a in A
-    push!(res, _twist(V, a))
+    push!(res, _twist(V, hom(a)))
   end
   return res
 end
@@ -683,7 +683,7 @@ function _twist(V::ModAlgAss, a::Map)
   A = algebra(V)
   @req A isa AlgGrp "Algebra must be a group algebra"
   G = group(A)
-  @req domain(a) == G == codomain(G) "Map must be an endomorphism of the group"
+  @req domain(a) == G == codomain(a) "Map must be an endomorphism of the group"
   B = basis(A)
   rep2 = QQMatrix[]
   for i in 1:length(B)
@@ -692,4 +692,22 @@ function _twist(V::ModAlgAss, a::Map)
     push!(rep2, action(V, A(a(g))))
   end
   W = Amodule(A, rep2)
+end
+
+function _change_group(V::ModAlgAss, a::Map; algebra = nothing)
+  A = Hecke.algebra(V)
+  @req A isa AlgGrp "Algebra must be a group algebra"
+  G = group(A)
+  @req G == codomain(a) "Map must be an endomorphism of the group"
+  @assert algebra !== nothing
+  H = domain(a)
+  QH = group_algebra(base_field(A), H)
+  B = basis(A)
+  rep2 = QQMatrix[]
+  for i in 1:length(B)
+    g = A.base_to_group[i]
+    push!(rep2, action(V, A(a(g))))
+  end
+  W = Amodule(QH, rep2)
+  return W
 end

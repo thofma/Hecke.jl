@@ -199,13 +199,9 @@ base_field_type(::Type{NfRel{T}}) where {T} = parent_type(T)
 
 elem_type(::Type{NfRelNS{T}}) where {T} = NfRelNSElem{T}
 
-elem_type(::NfRelNS{T}) where {T} = NfRelNSElem{T}
-
 parent_type(::Type{NfRelNSElem{T}}) where {T} = NfRelNS{T}
 
 elem_type(::Type{NfAbsNS}) = NfAbsNSElem
-
-elem_type(::NfAbsNS) = NfAbsNSElem
 
 parent_type(::Type{NfAbsNSElem}) = NfAbsNS
 

@@ -10,7 +10,7 @@ conductor, return a generating set for the cyclotomic units of $K$.
 # Examples
 
 ```jldoctest
-julia> K, a = CyclotomicRealSubfield(7);
+julia> K, a = cyclotomic_real_subfield(7);
 
 julia> cyclotomic_units_totally_real(K)
 3-element Vector{nf_elem}:
@@ -150,7 +150,7 @@ function cyclotomic_regulator(n::Int, prec::Int; maximal_totally_real::Bool = fa
   # If we only care about regulators, this is not a problem, as we
   # just have to scale appropriately.
   if is_prime(n)
-    K, = CyclotomicRealSubfield(n, cached = false)
+    K, = cyclotomic_real_subfield(n, cached = false)
     if degree(K) == 1
       return regulator(nf_elem[], prec)
     end
@@ -163,7 +163,7 @@ function cyclotomic_regulator(n::Int, prec::Int; maximal_totally_real::Bool = fa
     end
   else
     @assert is_prime_power(n)
-    K, = CyclotomicRealSubfield(n, cached = false)
+    K, = cyclotomic_real_subfield(n, cached = false)
     cyc = _cyclotomic_units_totally_real_prime_power_conductor(K, n, true)
     # cyc is in K(zeta_n)
     reg = regulator(cyc[2:end], prec)

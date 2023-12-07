@@ -517,6 +517,10 @@ end
 # "overgroup" M. If so, the second return value is M and the third and fourth
 # return values describe the map from G to M and H to M respectively.
 function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D}
+  if G === H
+    return true, G, L.make_id(G)::D, L.make_id(G)::D
+  end
+
   if !(G in keys(L.weak_vertices) && H in keys(L.weak_vertices))
     return false, G, L.zero, L.zero
   end

@@ -191,8 +191,12 @@ end
 #
 ################################################################################
 
-function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat)
+function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat; strategy = :default)
   E, f, O, I = _hom_space_as_ideal(L, M)
+  if strategy == :s1
+    fl = __isprincipal_s1(O, I, :right)
+    return fl, zero_map(L.V, M.V)
+  end
   fl, beta = __isprincipal(O, I, :right)
   if !fl 
     return false, zero_map(L.V, M.V)
@@ -204,7 +208,7 @@ function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M:
   end
 end
 
-function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat)
+function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat; strategy = :s1)
   # the hom_space function wants L and M sitting inside the same ambient space
   # there is some choice we can make
   # we try to choose the order, where we already computed the endomorphism
@@ -216,10 +220,12 @@ function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat)
       return false, zero_map(L.V, M.V)
     end
     MM = iso(M)
-    fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM)
+    fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM; strategy = strategy)
     if fl
       _iso = LtoMM * inv(iso)
-      @assert _iso(L) == M
+      if !is_zero(LtoMM.matrix)
+        @assert _iso(L) == M
+      end
       return true, _iso
     else
       return false, zero_map(L.V, M.V)
@@ -230,7 +236,7 @@ function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat)
       return false, zero_map(L.V, M.V)
     end
     LL = iso(L)
-    fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M)
+    fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M; strategy = strategy)
     if fl
       _iso = iso * LLtoM
       @assert _iso(L) == M
@@ -241,8 +247,8 @@ function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat)
   end
 end
 
-function is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
-  return is_isomorphic_with_isomorphism(L, M)[1]
+function is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat; strategy = :default)
+  return is_isomorphic_with_isomorphism(L, M; strategy = strategy)[1]
 end
 
 ################################################################################
@@ -313,15 +319,24 @@ end
 #
 ################################################################################
 
-function is_aut_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
+# Take a Z[G]-lattice L and Z[H]-lattice M with G isomorhic to H
+# Check if there is an isomorphism G -> H, such that
+# L and M are isomorphic
+# If G === H, this is the test for Aut(G)-isomorphism
+function is_aut_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat; strategy = :default)
+  G = group(algebra(L.base_ring))
+  H = group(algebra(M.base_ring))
+  if G !== H
+    M = _make_compatible(L, M)
+  end
+
   for T in _twists(M)
-    if is_isomorphic(L, T)
+    if is_isomorphic(L, T; strategy = strategy)
       return true
     end
   end
   return false
 end
-
 
 function _make_compatible(L::ModAlgAssLat, M::ModAlgAssLat)
   G = group(algebra(L.base_ring))

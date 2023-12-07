@@ -1142,14 +1142,13 @@ function _maximal_integral_lattice(L::ZZLat)
 end
 
 @doc raw"""
-    maximal_even_lattice(L::ZZLat, p) -> ZZLat
+    maximal_even_lattice(L::ZZLat, p::IntegerUnion) -> ZZLat
 
-Given an even lattice `L` and a prime number `p` return an overlattice of `M`
-which is maximal at `p` and agrees locally with `L` at all other places.
-
-Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb Z$ for all $x in L$.
+Given an integer lattice `L` with integral scale and a prime number `p` such that
+$L_p$ is even, return an overlattice `M` of `L` which is maximal even at `p` and
+which agrees locally with `L` at all other places.
 """
-function maximal_even_lattice(L::ZZLat, p)
+function maximal_even_lattice(L::ZZLat, p::IntegerUnion)
   while true
     ok, L = is_maximal_even(L, p)
     if ok
@@ -1161,10 +1160,7 @@ end
 @doc raw"""
     maximal_even_lattice(L::ZZLat) -> ZZLat
 
-Return a maximal even overlattice `M` of the even lattice `L`.
-
-Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb Z$ for all $x in L$.
-Note that the genus of `M` is uniquely determined by the genus of `L`.
+Given an even integer lattice `L`, return a maximal even overlattice `M` of `L`.
 """
 function maximal_even_lattice(L::ZZLat)
   @req iseven(L) "The lattice must be even"
@@ -1175,7 +1171,7 @@ function maximal_even_lattice(L::ZZLat)
 end
 
 function maximal_integral_lattice(L::ZZLat)
-  @req denominator(norm(L)) == 1 "The quadratic form is not integral"
+  @req denominator(norm(L)) == 1 "The norm of the lattice is not integral"
   L2 = rescale(L, 2)
   LL2 = maximal_even_lattice(L2)
   return rescale(LL2, QQ(1//2))
@@ -1183,21 +1179,23 @@ end
 
 
 @doc raw"""
-    is_maximal_even(L::ZZLat, p) -> Bool, ZZLat
+    is_maximal_even(L::ZZLat, p::IntegerUnion) -> Bool, ZZLat
 
-Return if the (`p`-locally) even lattice `L` is maximal at `p` and an even overlattice `M`
-of `L` with $[M:L]=p$ if `L` is not maximal and $1$ else.
+Given an integer lattice `L` with integral scale and a prime number `p`,
+return whether $L_p$ is even and has no proper overlattice satisfying this
+property.
 
-Recall that $L$ is called even if $\Phi(x,x) \in 2 \mathbb{Z}$ for all $x in L$.
+If $L_p$ is not even, the second output is `L` by default. Otherwise, either
+`L` is maximal at `p` and the second output is `L`, or the second output is
+an overlattice `M` of `L` such that $M_p$ is even and $[M:L] = p$.
 """
-
-function is_maximal_even(L::ZZLat, p)
+function is_maximal_even(L::ZZLat, p::IntegerUnion)
   @req denominator(scale(L)) == 1 "The bilinear form is not integral"
-  @req p != 2 || mod(ZZ(norm(L)),2) == 0 "The bilinear form is not even"
+  p != 2 || mod(ZZ(norm(L)), 2) == 0 || return false, L
 
   # o-maximal lattices are classified
   # see Kirschmer Lemma 3.5.3
-  if valuation(det(L), p)<= 1
+  if valuation(det(L), p) <= 1
     return true, L
   end
   G = change_base_ring(ZZ, gram_matrix(L))

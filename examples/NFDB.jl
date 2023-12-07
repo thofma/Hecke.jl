@@ -1175,9 +1175,10 @@ function _p_adic_regulator(K, p)
     end
     C, mC = completion(K, P, prec)
     Rmat = zero_matrix(C, r, r)
+    D = Dict{nf_elem, LocalFieldElem{qadic, EisensteinLocalField}}()
     for i in 1:r
       for j in 1:r
-        Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1]))) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
+        Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1])), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
       end
     end
     z = _det(Rmat)
@@ -1189,14 +1190,26 @@ function _p_adic_regulator(K, p)
   end
 end
 
-function _evaluate_log_of_fac_elem(mC, P, e)
+function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField}, D = Dict{nf_elem, LocalFieldElem{qadic, EisensteinLocalField}}())
   C = codomain(mC)
   K = base_ring(e)
   pi = K(uniformizer(P))
-  # at the moment log() works only for valuation == 0,
+  # We want to compute
+  # sum(n * log(mC(pi^(-valuation(b, P)) * b)) for (b, n) in e; init = zero(C))
+  # but we cache the result of the individual log(), since the elements we look
+  # at have large intersection for their bases.
+  #
+  # At the moment log() works only for valuation == 0,
   # but since we have a unit, we can just scale in every factor
-  l = sum(n * log(mC(pi^(-valuation(b, P)) * b)) for (b, n) in e; init = zero(C))
-  return l
+  res = zero(C)
+  for (b, n) in e
+    l = get!(D, b) do
+      bb = mC(pi^(-valuation(b, P)) * b)
+      return log(bb)
+    end
+    res = res + n * l
+  end
+  return res
 end
 
 function _padic_regulator_non_normal(K, p)

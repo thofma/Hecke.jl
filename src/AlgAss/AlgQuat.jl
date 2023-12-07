@@ -53,8 +53,6 @@ standard_form(A::AlgQuat) = A.std
 
 has_one(A::AlgQuat) = true
 
-elem_type(A::AlgQuat{T}) where {T} = AlgAssElem{T, AlgQuat{T}}
-
 elem_type(::Type{AlgQuat{T}}) where {T} = AlgAssElem{T, AlgQuat{T}}
 
 is_commutative(A::AlgQuat) = false

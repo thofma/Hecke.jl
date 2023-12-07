@@ -1993,8 +1993,6 @@ end
 
 elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
 
-elem_type(::NfRel{T}) where {T} = NfRelElem{T}
-
 parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
 
 

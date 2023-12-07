@@ -4,8 +4,6 @@ export trred
 
 parent_type(::Type{AlgAssRelOrdElem{S, T, U}}) where {S, T, U} = AlgAssRelOrd{S, T, U}
 
-parent_type(::AlgAssRelOrdElem{S, T, U}) where {S, T, U} = AlgAssRelOrd{S, T, U}
-
 @doc raw"""
     parent(x::AlgAssRelOrdElem) -> AlgAssRelOrd
 

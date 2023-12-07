@@ -55,11 +55,7 @@ parent(x::EmbeddedElem{T}) where {T} = x.parent::parent_type(x)
 
 elem_type(::Type{EmbeddedField{S, E}}) where {S, E} = EmbeddedElem{elem_type(S)}
 
-elem_type(K::EmbeddedField{S, E}) where {S, E} = elem_type(EmbeddedField{S, E})
-
 parent_type(::Type{EmbeddedElem{T}}) where {T} = EmbeddedField{parent_type(T), embedding_type(parent_type(T))}
-
-parent_type(x::EmbeddedElem{T}) where {T} = parent_type(EmbeddedElem{T})
 
 data(x::EmbeddedElem) = x.element
 

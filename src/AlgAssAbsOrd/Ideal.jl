@@ -1447,8 +1447,6 @@ FracIdealSet(O::AlgAssAbsOrd) = IdealSet(O)
 
 elem_type(::Type{AlgAssAbsOrdIdlSet{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
-elem_type(::AlgAssAbsOrdIdlSet{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
-
 parent_type(::Type{AlgAssAbsOrdIdl{S, T}}) where {S, T} = AlgAssAbsOrdIdlSet{S, T}
 
 function Base.one(S::AlgAssAbsOrdIdlSet)

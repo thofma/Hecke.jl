@@ -138,5 +138,9 @@
     Q2, mQ2 = quo(G, [G[1]], true, L)
     b, GG, MHHH, MHH = @inferred Hecke.can_map_into_overstructure(L, Q, Q2)
     @test !b
+
+    b, GG, _, _ = @inferred Hecke.can_map_into_overstructure(L, Q, Q)
+    @test b
+    @test GG === Q
   end
 end
