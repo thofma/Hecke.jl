@@ -442,7 +442,11 @@ function fixed_field1(K::AnticNumberField, auts::Vector{NfToNfMor})
 	end
 =#
   OK = maximal_order(K)
-  if isdefined(OK, :lllO)
+  # If degree(K) is large and the basis is not LLL reduced
+  # the linear algebra will be very slow.
+  # So lets compute an LLL basis once degree(K) is large.
+  # 50 is a heuristic cutoff.
+  if isdefined(OK, :lllO) || degree(K) >= 50
     OK = lll(OK)
   end
   M = zero_matrix(FlintZZ, degree(K), degree(K)*length(auts_new))
