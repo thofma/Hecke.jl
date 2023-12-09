@@ -1989,17 +1989,25 @@ end
     is_maximal_integral(L::AbstractLat, p::NfOrdIdl) -> Bool, AbstractLat
 
 Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
-`L`, return whether the completion of `L` at `p` is maximal integral. If it is
-not the case, the second returned value is a lattice in the ambient space of `L`
-whose completion at `p` is a minimal overlattice of $L_p$.
+`L`, return whether the completion of `L` at `p` has integral norm and that `L` has no
+proper overlattice satisfying this property.
+
+If the norm of `L` is not integral at `p`, the second output is `L` by default.
+Otherwise, either `L` is maximal at `p` and the second output is `L`, or the
+second output is a lattice `M` in the ambient space of `L` whose completion
+at `p` is a minimal overlattice of $L_p$ with integral norm.
 """
 is_maximal_integral(::AbstractLat, p)
 
 @doc raw"""
     is_maximal_integral(L::AbstractLat) -> Bool, AbstractLat
 
-Given a lattice `L`, return whether `L` is maximal integral. If it is not,
-the second returned value is a minimal overlattice of `L` with integral norm.
+Given a lattice `L`, return whether `L` has integral norm and has no proper
+overlattice satisfying this property.
+
+If the norm of `L` is not integral, the second output is `L` by default.
+Otherwise, either `L` is maximal and the second output is `L`, or the second
+output is a minimal overlattice `M` of `L` with integral norm.
 """
 is_maximal_integral(::AbstractLat)
 
@@ -2007,10 +2015,12 @@ is_maximal_integral(::AbstractLat)
     is_maximal(L::AbstractLat, p::NfOrdIdl) -> Bool, AbstractLat
 
 Given a lattice `L` and a prime ideal `p` in the fixed ring $\mathcal O_K$ of
-`L`, check whether the norm of $L_p$ is integral and return whether `L` is maximal
-at `p`. If it is locally integral but not locally maximal, the second returned value
-is a lattice in the same ambient space of `L` whose completion at `p` has integral norm
-and is a proper overlattice of $L_p$.
+`L` such that the norm of $L_p$ is integral, return whether `L` is maximal
+integral at `p`.
+
+If `L` is locally maximal at `p`, the second output is `L`, otherwise it is
+a lattice `M` in the same ambient space of `L` whose completion at `p` has
+integral norm and is a proper overlattice of $L_p$.
 """
 is_maximal(::AbstractLat, p)
 
@@ -2018,16 +2028,17 @@ is_maximal(::AbstractLat, p)
     maximal_integral_lattice(L::AbstractLat, p::NfOrdIdl) -> AbstractLat
 
 Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
-`L`, return a lattice `M` in the ambient space of `L` which is maximal integral
-at `p` and which agrees with `L` locally at all the places different from `p`.
+`L` such that the norm of $L_p$ is integral, return a lattice `M` in the
+ambient space of `L` which is maximal integral at `p` and which agrees
+with `L` locally at all the places different from `p`.
 """
 maximal_integral_lattice(::AbstractLat, p)
 
 @doc raw"""
     maximal_integral_lattice(L::AbstractLat) -> AbstractLat
 
-Given a lattice `L`, return a lattice `M` in the ambient space of `L` which
-is maximal integral and which contains `L`.
+Given a lattice `L` with integral norm, return a maximal integral overlattice
+`M` of `L`.
 """
 maximal_integral_lattice(::AbstractLat)
 

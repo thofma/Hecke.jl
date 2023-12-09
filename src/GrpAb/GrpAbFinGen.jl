@@ -48,8 +48,6 @@ import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 #
 ################################################################################
 
-elem_type(G::GrpAbFinGen) = GrpAbFinGenElem
-
 elem_type(::Type{GrpAbFinGen}) = GrpAbFinGenElem
 
 parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
@@ -882,7 +880,6 @@ function show(io::IO, P::TupleParent{T}) where {T}
 end
 
 elem_type(::Type{TupleParent{T}}) where {T} = T
-elem_type(::TupleParent{T}) where {T} = T
 
 parent(t::Tuple) = TupleParent(t)
 

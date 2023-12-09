@@ -460,8 +460,7 @@ end
 function roots(f::PolyRingElem{<: NumFieldElem})
   lf = factor(f)
   @assert degree(unit(lf)) == 0
-  scale = inv(coeff(unit(lf), 0))
-  return elem_type(base_ring(f))[-constant_coefficient(x)*scale for x = keys(lf.fac) if degree(x) == 1]
+  return elem_type(base_ring(f))[-constant_coefficient(x)*inv(leading_coefficient(x)) for x = keys(lf.fac) if degree(x) == 1]
 end
 
 ################################################################################

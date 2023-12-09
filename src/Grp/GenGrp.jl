@@ -181,8 +181,6 @@ end
 
 elem_type(::Type{GrpGen}) = GrpGenElem
 
-elem_type(::GrpGen) = GrpGenElem
-
 Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
 
 Base.hash(G::GrpGen, h::UInt) = UInt(0)

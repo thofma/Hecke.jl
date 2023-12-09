@@ -915,7 +915,7 @@ Number field with defining polynomial $ - 1
 ```
 """
 function cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
-  K, a = CyclotomicRealSubfield(n, Symbol("(z_$n + 1//z_$n)"), cached = cached)
+  K, a = cyclotomic_real_subfield(n, Symbol("(z_$n + 1//z_$n)"), cached = cached)
   Kt, t = polynomial_ring(K, "t", cached = false)
   E, b = number_field(t^2-a*t+1, "z_$n", cached = cached)
   set_attribute!(E, :cyclo, n)

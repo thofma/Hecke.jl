@@ -418,7 +418,7 @@ function n_positive_roots(f::ZZPolyRingElem; multiplicities::Bool = false)
   if !multiplicities
     ffp = derivative(ff)
     g = gcd(ff, ffp)
-    if isconstant(g)
+    if is_constant(g)
       return _n_positive_roots_sf(f)
     else
       return n_positive_roots(divexact(ff, g))::Int
@@ -446,7 +446,7 @@ function _n_positive_roots_sf(f::ZZPolyRingElem)
   # Here a = 0
   _, f = remove(f, gen(parent(f)))
 
-  if isconstant(f)
+  if is_constant(f)
     # f = x^n * a, so no positive root
     return 0
   end
@@ -465,7 +465,7 @@ function n_real_roots(f::ZZPolyRingElem)
   ff = Hecke.Globals.Qx(f)
   ffp = derivative(ff)
   g = gcd(ff, ffp)
-  if isconstant(g)
+  if is_constant(g)
     return _n_real_roots_sf(f)
   else
     return n_real_roots(divexact(ff, g))::Int

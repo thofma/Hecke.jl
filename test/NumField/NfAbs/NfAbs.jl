@@ -60,6 +60,15 @@ end
   @test simplify(number_field(h)[1], canonical = true)[1].pol == g
 end
 
+@testset "simplify-Fabian" begin
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  f = x^8 + 4*x^7 - 56*x^6 - 168*x^5 + 758*x^4 + 2412*x^3 - 1656*x^2 - 9508*x - 6828
+  g = x^8 - 4*x^7 - 30*x^6 + 44*x^5 + 298*x^4 + 108*x^3 - 614*x^2 - 680*x - 199
+  @test simplify(number_field(f)[1], canonical = true)[1].pol == g
+  @test simplify(number_field(g)[1], canonical = true)[1].pol == g
+end
+
+
 @testset "factor-van-Hoeij" begin
  Qx, x = polynomial_ring(FlintQQ, "x")
  f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37

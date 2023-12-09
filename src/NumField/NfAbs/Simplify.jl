@@ -393,11 +393,10 @@ function polredabs(K::AnticNumberField)
     end
   end
 
-  l = zeros(FlintZZ, n)
-  l[i] = 1
-
   scale = 1.0
-  enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = 1.01)
+  enum_ctx_start(E, i, eps = 1.01) #start at the 1st vector having
+                       # a 1 at position i, it's pointless to start earlier
+                       #as none of the elements can be primitive.
 
   a = gen(K)
   all_a = nf_elem[a]
@@ -410,7 +409,6 @@ function polredabs(K::AnticNumberField)
   while !found_pe
     while first || enum_ctx_next(E)
       first = false
-#      @show E.x
       M = E.x*E.t
       q = elem_from_mat_row(K, M, 1, E.t_den)
       bb = _block(q, rt, ap)
@@ -442,7 +440,7 @@ function polredabs(K::AnticNumberField)
       end
     end
     scale *= 2
-    enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = scale)
+    enum_ctx_start(E, i, eps = scale)
     first = true
     Ec = BigFloat(E.c//E.d)
   end

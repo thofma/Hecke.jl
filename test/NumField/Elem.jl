@@ -245,3 +245,16 @@ end
   @test !isone(g^8)
   @test !isone(g^3)
 end
+
+# Issue with scaling of roots found by M. Zach
+begin
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 + x + 1, cached = false)
+  Ks, s = polynomial_ring(K, "s")
+  L, = number_field(s^8 + 6s^4 + 1)
+  Ly, y = L["y"]
+  h = -1//4*y^8 - 3//2*y^4 - 1//4
+  r = roots(h)
+  @test length(r) == 8
+  @test all(iszero, h.(r))
+end
