@@ -1208,7 +1208,7 @@ end
 # of rows of f should be divisible by the absolute degree of the parent of b
 #
 # Here _mb is the asolute multiplication matrix of b and mb is a block diagonal
-# matrix consisting of an appropriate number of copies of _mb 
+# matrix consisting of an appropriate number of copies of _mb
 function _admissible_basis(f::QQMatrix, _mb::QQMatrix, mb::QQMatrix)
   # we look for a basis on which f acts blockwise
   # as multiplication by b along extension of scalars
@@ -1450,7 +1450,7 @@ end
 # per default, the are given with respect to the basis of the ambient space
 # if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
-function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false)
+function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false, depth::Int = 0)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -1478,13 +1478,13 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   # Create the automorphism context and compute generators as well as orders
 
   C = ZLatAutoCtx(ZgramL)
-  fl, Csmall = try_init_small(C)
+  fl, Csmall = try_init_small(C, depth = depth)
   if fl
     auto(Csmall)
     _gens, order = _get_generators(Csmall)
     gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
   else
-    init(C)
+    init(C, depth = depth)
     auto(C)
     gens, order = _get_generators(C)
   end
@@ -1569,9 +1569,9 @@ with respect to the (pseudo-)basis of `L`.
 """
 automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true)
 
-function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false)
+function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = 0)
 
-  assert_has_automorphisms(L)
+  assert_has_automorphisms(L, depth = depth)
 
   gens = L.automorphism_group_generators
 
@@ -1633,7 +1633,7 @@ end
 
 Return whether the lattices `L` and `M` are isometric.
 """
-is_isometric(L::AbstractLat, M::AbstractLat) = is_isometric_with_isometry(L, M; ambient_representation=false)[1]
+is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = 0) = is_isometric_with_isometry(L, M; ambient_representation=false, depth = depth)[1]
 
 
 @doc raw"""
@@ -1651,11 +1651,11 @@ to the (pseudo-)bases of `L` and `M`, that is, $T G_M T^t = G_L$ where $G_M$
 and $G_L$ are the Gram matrices of the (pseudo-)bases of `L` and `M`
 respectively.
 """
-is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true) = throw(NotImplemented())
+is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true, depth::Int = 0) = throw(NotImplemented())
 
 
 function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{<: NumField};
-                                            ambient_representation::Bool = true)
+                                            ambient_representation::Bool = true, depth::Int = 0)
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)
@@ -1690,12 +1690,12 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     ZgramMsmall[i] = TM * ZgramM[i] * TMtr
   end
 
-  fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall)
+  fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall, depth = depth)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(FlintZZ, _T)
   else
-    CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall)
+    CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall, depth = depth)
     b, T = isometry(CL, CM)
   end
 
