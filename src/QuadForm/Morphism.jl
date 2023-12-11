@@ -1268,7 +1268,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
     for k in 1:I - 1
       rowsI[i][k] = Ci.G[i][Ci.per[I], Ci.per[k]]
       minusRowsI[i][k] = -rowsI[i][k]
-      if Ci.is_symmetric[i]
+      if !Ci.is_symmetric[i]
         colsI[i][k] = Ci.G[i][Ci.per[k], Ci.per[I]]
         minusColsI[i][k] = -colsI[i][k]
       end
