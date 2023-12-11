@@ -524,7 +524,7 @@ function is_isometric(L::ZZLat, M::ZZLat)
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = 0)
   @req is_definite(L) && is_definite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)
@@ -578,12 +578,12 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   G1 = ZZMatrix[GLlll]
   G2 = ZZMatrix[GMlll]
 
-  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2)
+  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(FlintZZ, _T)
   else
-    CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll])
+    CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth)
     b, T = isometry(CL, CM)
   end
 

@@ -1029,7 +1029,6 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
   D = _make_small(C)
-  #println("Working with depth $(C.depth) and integer type $S")
   dim = Hecke.dim(C)
 
   candidates = Vector{Vector{Int}}(undef, dim)
@@ -1203,25 +1202,30 @@ function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLat
   return found
 end
 
+# For automorphisms (= isometries between the same lattice)
+function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx, D::ZLatAutoCtx)
+  return cand(candidates, I, x, C, C, D, D)
+end
+
 # In case the short vectors don't fit in Int, we first compute with Int anyway
-# allowing overflows via D and only verify a positive result with ZZRingElem
-# via C.
-function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{ZZRingElem}, D::ZLatAutoCtx{Int})
-  if _cand(candidates, I, x, D)
+# allowing overflows via Di/Do and only verify a positive result with ZZRingElem
+# via Ci/Co.
+function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{ZZRingElem}, Co::ZLatAutoCtx{ZZRingElem}, Di::ZLatAutoCtx{Int}, Do::ZLatAutoCtx{Int})
+  if _cand(candidates, I, x, Di, Do)
     # _cand with Integers returned true, so we have to verify the result with
     # ZZRingElem
-    return _cand(candidates, I, x, C)
+    return _cand(candidates, I, x, Ci, Co)
   end
   return false
 end
 
-# If the short vectors fit in Int, the last argument (D) is ignored.
-cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{Int}, D::ZLatAutoCtx) = _cand(candidates, I, x, C)
+# If the short vectors fit in Int, the last arguments (Di/Do) are ignored.
+cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{Int}, Co::ZLatAutoCtx{Int}, Di::ZLatAutoCtx, Do::ZLatAutoCtx) = _cand(candidates, I, x, Ci, Co)
 
-function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
-  dep = C.depth
+function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{S, T, U}, Co::ZLatAutoCtx{S, T, U}) where {S, T, U}
+  dep = Ci.depth
   use_vector_sums = (I > 1 && dep > 0)
-  dim = Hecke.dim(C)
+  dim = Hecke.dim(Ci)
   vec = Vector{S}(undef, dim)
   vec2 = Vector{S}(undef, dim)
   for i in 1:dim
@@ -1232,9 +1236,9 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
   tmp2 = zero(S)
   tmp3 = zero(S)
   if use_vector_sums
-    comb = C.scpcomb[I - 1]
+    comb = Ci.scpcomb[I - 1]
     n = length(comb.scpcombs.vectors)
-    scpvec = _zero_vector(S, length(C.G)*dep)
+    scpvec = _zero_vector(S, length(Ci.G)*dep)
     # the rows of xvec are the vector sums which are computed with respect to the
     # partial basis in x
     if T <: ZZMatrix
@@ -1244,56 +1248,54 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
     end
   end
   # candidates is the list for the candidates
-  for i in 1:C.fp_diagonal[I]
+  for i in 1:Ci.fp_diagonal[I]
     candidates[i] = 0
   end
 
-  # If S == ZZRingElem then getting entries of the matrices C.G is slow, so we
+  # If S == ZZRingElem then getting entries of the matrices Ci.G is slow, so we
   # store all the entries we need a lot in vectors.
-  rowsI = Vector{Vector{S}}(undef, length(C.G))
-  minusRowsI = Vector{Vector{S}}(undef, length(C.G))
-  colsI = Vector{Vector{S}}(undef, length(C.G))
-  minusColsI = Vector{Vector{S}}(undef, length(C.G))
-  diagI = Vector{S}(undef, length(C.G))
-  for i in 1:length(C.G)
+  rowsI = Vector{Vector{S}}(undef, length(Ci.G))
+  minusRowsI = Vector{Vector{S}}(undef, length(Ci.G))
+  colsI = Vector{Vector{S}}(undef, length(Ci.G))
+  minusColsI = Vector{Vector{S}}(undef, length(Ci.G))
+  diagI = Vector{S}(undef, length(Ci.G))
+  for i in 1:length(Ci.G)
     rowsI[i] = Vector{S}(undef, I - 1)
     minusRowsI[i] = Vector{S}(undef, I - 1)
     colsI[i] = Vector{S}(undef, I - 1)
     minusColsI[i] = Vector{S}(undef, I - 1)
-    diagI[i] = C.G[i][C.per[I], C.per[I]]
+    diagI[i] = Ci.G[i][Ci.per[I], Ci.per[I]]
     for k in 1:I - 1
-      rowsI[i][k] = C.G[i][C.per[I], C.per[k]]
+      rowsI[i][k] = Ci.G[i][Ci.per[I], Ci.per[k]]
       minusRowsI[i][k] = -rowsI[i][k]
-      if C.is_symmetric[i]
-        colsI[i][k] = C.G[i][C.per[k], C.per[I]]
+      if Ci.is_symmetric[i]
+        colsI[i][k] = Ci.G[i][Ci.per[k], Ci.per[I]]
         minusColsI[i][k] = -colsI[i][k]
       end
     end
   end
 
   nr = 0
-  @inbounds for j in 1:length(C.V)
-    Vvj = C.V[j]
+  @inbounds for j in 1:length(Co.V)
+    Vvj = Co.V[j]
     okp = true
     okm = true
-    for i in 1:length(C.G)
-      _issym = C.is_symmetric[i]
-      Cvi = C.v[i]
+    for i in 1:length(Co.G)
+      _issym = Ci.is_symmetric[i]
 
-    # vec is the vector of scalar products of V.v[j] with the first I base vectors
-    #   x[1]...x[I]
-
+      # vec is the vector of scalar products of V.v[j] with the first I base vectors
+      #   x[1]...x[I]
       for k in 1:(I - 1)
         xk = x[k]
         if xk > 0
-          vec[k] = _dot_product_with_entry!(vec[k], Vvj, C.v[i], xk, C.dot_product_tmp)
+          vec[k] = _dot_product_with_entry!(vec[k], Vvj, Co.v[i], xk, Co.dot_product_tmp)
           if !_issym
-            vec2[k] = _dot_product_with_entry!(vec2[k], C.V[xk], C.v[i], j, C.dot_product_tmp)
+            vec2[k] = _dot_product_with_entry!(vec2[k], Co.V[xk], Co.v[i], j, Co.dot_product_tmp)
           end
         else
-          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, C.v[i], -xk, C.dot_product_tmp)
+          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, Co.v[i], -xk, Co.dot_product_tmp)
           if !_issym
-            vec2[k] = -_dot_product_with_entry!(vec2[k], C.V[-xk], C.v[i], j, C.dot_product_tmp)
+            vec2[k] = -_dot_product_with_entry!(vec2[k], Co.V[-xk], Co.v[i], j, Co.dot_product_tmp)
           end
         end
       end
@@ -1305,10 +1307,10 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
         end
       end
 
-      if okp && C.V.lengths[j][i] != diagI[i]
+      if okp && Co.V.lengths[j][i] != diagI[i]
         okp = false
       end
-      # if okp == true then C.V[j] is a candidate for x[I] with respect to the form C.G[i]
+      # if okp == true then Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
 
       for k in 1:(I - 1)
         if vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k])
@@ -1317,10 +1319,10 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
         end
       end
 
-      if okm && C.V.lengths[j][i] != diagI[i]
+      if okm && Co.V.lengths[j][i] != diagI[i]
         okm = false
       end
-      # if okm == true then -C.V[j] is a candidate for x[I] with respect to the form C.G[i]
+      # if okm == true then -Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
 
       if use_vector_sums
         for k in I - 1:-1:max(1, I - dep) # basically I - 1 - dep + 1, ..., I - 1
@@ -1331,7 +1333,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
       # JS: I think this is wrong if we use vector sums.
       #     If the for loop breaks out here, scpvec is not filled correctly and
       #     then looking it up will fail and hence return false although just the
-      #     candidate C.V[j] is bad (but not necessarily the whole branch in the
+      #     candidate Co.V[j] is bad (but not necessarily the whole branch in the
       #     search tree).
       #if okp < i && okm < i
       #  break
@@ -1365,7 +1367,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
 
     if okp
       # V.v[j] is a candidate for x[I]
-      if nr < C.fp_diagonal[I]
+      if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = j
       else
@@ -1376,7 +1378,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
 
     if okm
       # -V.v[j] is a candidate for x[I]
-      if nr < C.fp_diagonal[I]
+      if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = -j
       else
@@ -1386,7 +1388,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
     end
   end
 
-  if nr < C.fp_diagonal[I]
+  if nr < Ci.fp_diagonal[I]
     # there are not enough candidates
     return false
   end
@@ -1406,8 +1408,8 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx{S
 
     # check, whether the base xbase has the right scalar products
     transpxbase = transpose(comb.xbasetmp)
-    for i in 1:length(C.G)
-      mul!(comb.multmp1, comb.xbasetmp, C.GZZ[i])
+    for i in 1:length(Ci.G)
+      mul!(comb.multmp1, comb.xbasetmp, Ci.GZZ[i])
       mul!(comb.multmp2, comb.multmp1, transpxbase)
       if comb.multmp2 != comb.F[i]
         return false
@@ -1706,12 +1708,13 @@ end
 
 # Isomorphism computation
 
-function _try_iso_setup_small(Gi, Go)
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
-  fl, Cismall = try_init_small(Ci, false)
+  # We only need to initialize the vector sums for the first lattice
+  fl, Cismall = try_init_small(Ci, false, depth = depth)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max))
+    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0)
     if fl2
       return true, Cismall, Cosmall
     end
@@ -1720,15 +1723,22 @@ function _try_iso_setup_small(Gi, Go)
   return false, Cismall, Cismall
 end
 
-function _iso_setup(Gi, Go)
+function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
-  init(Ci, true)
-  init(Co, false, Ci.max)
+  # We only need to initialize the vector sums for the first lattice
+  init(Ci, true, depth = depth)
+  init(Co, false, Ci.max, depth = 0)
   return Ci, Co
 end
 
 function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
+  # If S == ZZRingElem, we produce ZLatAutoCtx with integer entries allowing
+  # overflow. This is used in `cand`: Only if `cand` returns true for the
+  # Int-version, we run the computation for the ZZRingElem-version for
+  # verification.
+  Di = _make_small(Ci)
+  Do = _make_small(Co)
   d = dim(Co)
   C = Vector{Vector{Int}}(undef, d)
   # I could actually also test the minimum
@@ -1748,9 +1758,9 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
       k += 1
     end
   end
-  isocand(C[1], 1, x, Ci, Co)
+  cand(C[1], 1, x, Ci, Co, Di, Do)
 
-  found = iso(1, x, C, Ci, Co, H)
+  found = iso(1, x, C, Ci, Co, Di, Do, H)
   if found
     ISO = matgen(x, d, Ci.per, Co.V)
     for k in 1:length(Ci.G)
@@ -1762,7 +1772,7 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   end
 end
 
-function iso(step, x, C, Ci, Co, G)
+function iso(step::Int, x::Vector{Int}, C::Vector{Vector{Int}}, Ci::ZLatAutoCtx{S, T}, Co::ZLatAutoCtx{S, T}, Di::ZLatAutoCtx{Int}, Do::ZLatAutoCtx{Int}, G::Vector{T}) where {S, T}
   d = dim(Ci)
   found = false
   @vprintln :Lattice "Testing $(length(C[step])) many candidates"
@@ -1771,9 +1781,8 @@ function iso(step, x, C, Ci, Co, G)
     if step < d
       # choose the image of the base vector nr. step
       x[step] = C[step][1]
-        # check whether x[1]..x[step]
-      nbc = isocand(C[step + 1], step + 1, x, Ci, Co)
-      if nbc == Ci.fp_diagonal[step + 1]
+      # check whether x[1]..x[step]
+      if cand(C[step + 1], step + 1, x, Ci, Co, Di, Do)
         # go deeper in the recursion
         Maxfail = 0
         # determine the heuristic value of Maxfail for the break condition in isostab
@@ -1788,11 +1797,10 @@ function iso(step, x, C, Ci, Co, G)
           end
         end
         H = isostab(x[step], G, Co, Maxfail)
-        found = iso(step + 1, x, C, Ci, Co, H)
+        found = iso(step + 1, x, C, Ci, Co, Di, Do, H)
       end
-      if found
-        return found
-      end
+      found && break
+
       # This is horrible
       # this is remove orb from C[step], and then adding 0's at the end to make
       # it again as big as in the beginning. This can be done more efficiently.
@@ -1904,97 +1912,6 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
   end
   resize!(H, nH)
   return H
-end
-
-function isocand(CI, I, x, Ci::ZLatAutoCtx{S, T, U}, Co) where {S, T, U}
-  d = dim(Ci)
-  n = length(Ci.V)
-  @assert n == length(Co.V)
-  # Do something with bacher polynomials ...
-  vec = Vector{S}(undef, d)
-  vec2 = Vector{S}(undef, d)
-  for i in 1:Ci.fp_diagonal[I]
-    CI[i] = 0
-  end
-  nr = 0
-  fail = false
-  for j in 1:n
-    if fail
-      break
-    end
-    Vvj = Co.V[j]
-    okp = 0
-    okm = 0
-    # do something with scpvec
-    for i in 1:length(Co.G)
-      # GiI = Ci.G[i][Ci.per[I]] this is the Ci.per[I]-th row of Ci.G[i]
-      Fvi = Co.v[i]
-      # vec is the vector of scalar products of Co.v[j] with the first I base vectors
-      # x[1]...x[I-1]
-      for k in 1:(I - 1)
-        xk = x[k]
-        # TODO: Check for symmetry as in the cand function
-        # TODO: Use dot_product_with_row
-        if xk > 0
-          vec[k] = _dot_product(Vvj, Co.G[i], Co.V[xk])
-          vec2[k] = _dot_product(Co.V[xk], Co.G[i], Vvj)
-          #vec[k] = _dot_product(Vvj, Fvi, -xk)
-        else
-          vec[k] = -_dot_product(Vvj, Co.G[i], Co.V[-xk])
-          vec2[k] = -_dot_product(Co.V[-xk], Co.G[i], Vvj)
-          #vec[k] = -(Vvj * Co.G[i] * Co.V[-xk]')[1, 1]
-          #vec2[k] = -(Co.V[-xk] * Co.G[i] * Vvj')[1, 1]
-          #vec[k] = -_dot_product(Vvj, Fvi, -xk)
-        end
-      end
-      good = true
-      for k in 1:(I - 1)
-        if vec[k] != Ci.G[i][Ci.per[I], Ci.per[k]] || vec2[k] != Ci.G[i][Ci.per[k], Ci.per[I]]
-          good = false
-          break
-        end
-      end
-      if good && Co.V.lengths[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
-        okp += 1
-      end
-      good = true
-      for k in 1:(I - 1)
-        if vec[k] != -Ci.G[i][Ci.per[I], Ci.per[k]] || vec2[k] != -Ci.G[i][Ci.per[k], Ci.per[I]]
-
-          good = false
-          break
-        end
-      end
-      if good && Co.V.lengths[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
-        okm += 1
-      end
-      # do something with scpvec
-    end
-    # do something with scpvec and DEP
-    if okp == length(Ci.G)
-      if nr < Ci.fp_diagonal[I]
-        nr += 1
-        CI[nr] = j
-      else
-        fail = true
-      end
-    end
-    if okm == length(Ci.G)
-      if nr < Ci.fp_diagonal[I]
-        nr += 1
-        CI[nr] = -j
-      else
-        fail = true
-      end
-    end
-  end
-  if fail
-    nr = 0
-  end
-
-  #if nr == Ci.fp_diagonal[I] # DEP
-  # update the blabla
-  return nr
 end
 
 function assert_auto(C, order)
@@ -2245,9 +2162,6 @@ function _isless(x::ZZMatrix, y::ZZMatrix)
   return false
 end
 
-# should do this more C style
-max_nbits(v::ZZMatrix) = maximum([nbits(v[1, i]) for i in 1:ncols(v)])
-
 # Some tests that I need to add:
 #
 # G = matrix(FlintZZ, 8, 8, [4, -2, 0, 0, 0, 0, 0, 1, -2, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2])
@@ -2256,6 +2170,12 @@ max_nbits(v::ZZMatrix) = maximum([nbits(v[1, i]) for i in 1:ncols(v)])
 #
 # Hecke.fingerprint(C)
 # reduce(hcat, [C.fp[:, i] for i in 1:8][C.per]) == [240 240 2160 240 240 240 240 240; 0 56 126 126 126 126 126 126; 0 0 27 27 72 72 72 72; 0 0 0 10 40 16 40 40; 0 0 0 0 8 8 24 24; 0 0 0 0 0 4 6 12; 0 0 0 0 0 0 3 6; 0 0 0 0 0 0 0 2]
+
+################################################################################
+#
+#  Convert ZZRingElem to Int (with overflow)
+#
+################################################################################
 
 function _int_with_overflow(a::ZZRingElem)
   fits(Int, a) && return Int(a)
