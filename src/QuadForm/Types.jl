@@ -493,6 +493,23 @@ mutable struct SCPComb{S, V}
   SCPComb{S, V}() where {S, V} = new{S, V}()
 end
 
+# Bacher polynomials
+# In theory, this is a polynomial, but for the application we only need the
+# coefficients.
+# `coeffs` is assumed to be of length n := `maximal_degree - minimal_degree + 1` and
+# the corresponding polynomial is
+#     coeffs[n] * X^maximal_degree + coeffs[n - 1] * X^(maximal_degree - 1)
+#   + ... + coeffs[1] * X^minimal_degree \in ZZ[X]
+mutable struct BacherPoly{T}
+  coeffs::Vector{Int}
+  minimal_degree::Int
+  maximal_degree::Int
+  sum_coeffs::Int # = sum(coeffs)
+  S::T # the scalar product w.r.t. which the polynomial is constructed
+
+  BacherPoly{T}() where {T} = new{T}()
+end
+
 mutable struct ZLatAutoCtx{S, T, V}
   G::Vector{T} # Gram matrices
   GZZ::Vector{ZZMatrix} # Gram matrices (of type ZZMatrix)
@@ -510,8 +527,15 @@ mutable struct ZLatAutoCtx{S, T, V}
                   # has same length as b_i for all forms
   fp_diagonal::Vector{Int} # diagonal of the fingerprint matrix
   std_basis::Vector{Int} # index of the the standard basis vectors in V.vectors
+
+  # Vector sum stuff
   scpcomb::Vector{SCPComb{S, V}} # cache for the vector sum optimization
   depth::Int # depth of the vector sums (0 == no vector sums)
+
+  # Bacher polynomial stuff
+  bacher_polys::Vector{BacherPoly{S}}
+  bacher_depth::Int # For how many base vectors the Bacher polynomial should be
+                    # used. Between 0 (none at all) and `dim`
 
   orders::Vector{Int} # orbit length of b_i under <g[i], ..., g[end]>
   nsg::Vector{Int} # the first nsg[i] elements of g[i] lie in <g[1], ..., g[i-1]>

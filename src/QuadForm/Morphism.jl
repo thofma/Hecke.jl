@@ -141,7 +141,7 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = 0)
+function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = 0, bacher_depth::Int = 0)
   # Compute the necessary short vectors
 
   r = length(C.G)
@@ -280,13 +280,14 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   end
 
   init_vector_sums(C, depth)
+  init_bacher_polynomials(C, bacher_depth)
 
   return C
 end
 
 # The following functions tries to initialize a ZLatAutoCtx with entries in Int.
 # The return value is flag, Csmall
-function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = 0)
+function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = 0, bacher_depth::Int = 0)
   automorphism_mode = bound == ZZRingElem(-1)
 
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -479,9 +480,10 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
     end
   end
 
-  fl = init_vector_sums(Csmall, depth)
+  init_vector_sums(Csmall, depth)
+  init_bacher_polynomials(Csmall, bacher_depth)
 
-  return fl, Csmall
+  return true, Csmall
 end
 
 ################################################################################
@@ -580,7 +582,7 @@ end
 # Only relevant if S1 <: Int, that is, if things might overflow.
 function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2, S3}
   C.depth = depth
-  depth == 0 && return true
+  depth == 0 && return nothing
 
   small = S1 <: Int
 
@@ -637,8 +639,162 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
     C.scpcomb[i].multmp2 = zero_matrix(FlintZZ, nrows(C.scpcomb[i].trans), nrows(C.scpcomb[i].trans))
     C.scpcomb[i].multmp3 = zero_matrix(FlintZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
   end
+  return nothing
+end
+
+################################################################################
+#
+#  Bacher polynomials
+#
+################################################################################
+
+# Compute the Bacher polynomial for the standard basis vector I with respect to
+# the scalar product S
+function bacher_polynomial(C::ZLatAutoCtx{T}, I::Int, S::T) where T
+  p = BacherPoly{T}()
+  p.S = S
+
+  vI = C.V[C.std_basis[I]]
+  lI = C.V.lengths[C.std_basis[I]][1]
+
+  s = zero(T)
+  minusS = -S
+  vecS = Vector{Int}() # indices of vectors having scalar product S with vI
+  @inbounds for i in 1:length(C.V)
+    C.V.lengths[i][1] != lI && continue
+
+    s = _dot_product_with_entry!(s, vI, C.v[1], i, C.dot_product_tmp)
+    if s == S
+      push!(vecS, i)
+    elseif s == minusS
+      push!(vecS, -i)
+    end
+  end
+  p.sum_coeffs = length(vecS)
+
+  counts = zeros(Int, length(vecS))
+  pairs = Vector{Int}(undef, length(vecS))
+  @inbounds for i in 1:length(vecS)
+    npairs = 0
+    for j in vecS
+      s = sign(j)*_dot_product_with_entry!(s, C.V[vecS[i]], C.v[1], sign(j)*j, C.dot_product_tmp)
+      if s == S
+        npairs += 1
+        pairs[npairs] = j
+      end
+    end
+    # the first npairs entries of pairs are now the indices of the vectors having
+    # scalar product S with C.V.vectors[vecS[i]]
+
+    for j in 1:npairs
+      vJ = pairs[j]
+      for k in j + 1:npairs
+        vK = pairs[k]
+        s = sign(vK)*_dot_product_with_entry!(s, C.V[vJ], C.v[1], sign(vK)*vK, C.dot_product_tmp)
+        if s == S
+          counts[i] += 1
+        end
+      end
+    end
+  end
+
+  if isempty(counts)
+    p.minimal_degree = 0
+  else
+    p.minimal_degree = minimum(counts)
+  end
+  p.maximal_degree = maximum(counts, init = -1)
+  p.coeffs = zeros(Int, p.maximal_degree - p.minimal_degree + 1)
+  @inbounds for i in counts
+    p.coeffs[i - p.minimal_degree + 1] += 1
+  end
+
+  return p
+end
+
+function init_bacher_polynomials(C::ZLatAutoCtx{T}, depth::Int) where T
+  C.bacher_depth = depth
+  C.bacher_polys = Vector{BacherPoly{T}}(undef, depth)
+  for i in 1:depth
+    # We compute the Bacher polynomials w.r.t. the scalar product 1/2 the norm
+    # of the vector (for the first form)
+    S = div(C.V.lengths[C.std_basis[i]][1], 2)
+    p = bacher_polynomial(C, i, S)
+    C.bacher_polys[i] = p
+  end
+  return nothing
+end
+
+# Checks whether the short vector C.V[I] has Bacher polynomial p
+function has_bacher_polynomial(C::ZLatAutoCtx{T}, I::Int, p::BacherPoly{T}) where {T}
+  vI = C.V[I]
+  lI = C.V.lengths[abs(I)][1]
+
+  s = zero(T)
+  S = p.S
+  minusS = -S
+  vecS = Vector{Int}() # indices of vectors having scalar product S with vI
+  @inbounds for i in 1:length(C.V)
+    C.V.lengths[i][1] != lI && continue
+
+    s = _dot_product_with_entry!(s, vI, C.v[1], i, C.dot_product_tmp)
+    if s == S
+      push!(vecS, i)
+    elseif s == minusS
+      push!(vecS, -i)
+    end
+    if length(vecS) > p.sum_coeffs
+      return false
+    end
+  end
+  if length(vecS) != p.sum_coeffs
+    return false
+  end
+
+  coeffs = zeros(Int, length(p.coeffs))
+  pairs = Vector{Int}(undef, length(vecS))
+  @inbounds for i in 1:length(vecS)
+    npairs = 0
+    for j in vecS
+      s = sign(j)*_dot_product_with_entry!(s, C.V[vecS[i]], C.v[1], sign(j)*j, C.dot_product_tmp)
+      if s == S
+        npairs += 1
+        pairs[npairs] = j
+      end
+    end
+    # the first npairs entries of pairs are now the indices of the vectors having
+    # scalar product S with C.V.vectors[vecS[i]]
+
+    count = 0
+    for j in 1:npairs
+      vJ = pairs[j]
+      for k in j + 1:npairs
+        vK = pairs[k]
+        s = sign(vK)*_dot_product_with_entry!(s, C.V[vJ], C.v[1], sign(vK)*vK, C.dot_product_tmp)
+        if s == S
+          count += 1
+        end
+      end
+    end
+    if count < p.minimal_degree || count > p.maximal_degree
+      return false
+    end
+
+    c_minus_d_min = count - p.minimal_degree + 1
+    coeffs[c_minus_d_min] += 1
+    if coeffs[c_minus_d_min] > p.coeffs[c_minus_d_min]
+      return false
+    end
+  end
+
   return true
 end
+
+################################################################################
+#
+#  Short vectors
+#
+################################################################################
 
 function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max = ZZRingElem(-1))
   #V = enumerate_using_gram(G, R(max))
@@ -1252,6 +1408,13 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
     candidates[i] = 0
   end
 
+  # Check via Bacher polynomial
+  if I > 1 && Ci.bacher_depth >= I - 1
+    if !has_bacher_polynomial(Co, x[I - 1], Ci.bacher_polys[I - 1])
+      return false
+    end
+  end
+
   # If S == ZZRingElem then getting entries of the matrices Ci.G is slow, so we
   # store all the entries we need a lot in vectors.
   rowsI = Vector{Vector{S}}(undef, length(Ci.G))
@@ -1708,13 +1871,14 @@ end
 
 # Isomorphism computation
 
-function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0)
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
-  # We only need to initialize the vector sums for the first lattice
-  fl, Cismall = try_init_small(Ci, false, depth = depth)
+  # We only need to initialize the vector sums and Bacher polynomials for the
+  # first lattice
+  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0)
+    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0)
     if fl2
       return true, Cismall, Cosmall
     end
@@ -1723,12 +1887,13 @@ function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth:
   return false, Cismall, Cismall
 end
 
-function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0)
+function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
-  # We only need to initialize the vector sums for the first lattice
-  init(Ci, true, depth = depth)
-  init(Co, false, Ci.max, depth = 0)
+  # We only need to initialize the vector sums and Bacher polynomials for the
+  # first lattice
+  init(Ci, true, depth = depth, bacher_depth = bacher_depth)
+  init(Co, false, Ci.max, depth = 0, bacher_depth = 0)
   return Ci, Co
 end
 
@@ -2273,6 +2438,8 @@ function _make_small(C::ZLatAutoCtx{ZZRingElem})
   D.depth = C.depth
   D.is_symmetric = copy(C.is_symmetric)
   D.dot_product_tmp = Int[ 0 ]
+
+  D.bacher_depth = 0
 
   return D
 end
