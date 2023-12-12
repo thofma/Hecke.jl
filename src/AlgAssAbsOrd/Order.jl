@@ -413,6 +413,9 @@ rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Integer) = rand(rng, make(O, n))
 ################################################################################
 
 function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAssElem{QQFieldElem}}
+  if length(A) == 0
+    return M = FakeFmpqMat(zero_matrix(FlintZZ, 0, 0), ZZ(1))
+  end
   @assert length(A) > 0
   n = length(A)
   d = dim(parent(A[1]))
@@ -820,7 +823,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
 end
 
 function _denominator_of_mult_table(A::AbsAlgAss{QQFieldElem})
-  l = denominator(multiplication_table(A, copy = false)[1, 1, 1])
+  l = one(ZZ)
   for i = 1:dim(A)
     for j = 1:dim(A)
       for k = 1:dim(A)

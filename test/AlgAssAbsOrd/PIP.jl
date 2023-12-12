@@ -46,4 +46,13 @@
   R, = quo(OK, I)
   mats = Hecke._write_as_product_of_elementary_matrices(N, R)
   @test map_entries(R, reduce(*, mats)) == map_entries(R, N)
+
+  # zero algebra
+  A = zero_algebra(QQ)
+  M = maximal_order(A)
+  F = 1 * M
+  reps = Hecke.__unit_reps_simple(M, F)
+  @test length(reps) <= 1
+  reps = Hecke._unit_group_generators_maximal_simple(M)
+  @test length(reps) <= 1
 end

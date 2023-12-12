@@ -1504,6 +1504,9 @@ end
 
 function _unit_group_generators_maximal_simple(M)
   A = algebra(M)
+  if dim(A) == 0
+    return [zero(A)]
+  end
   ZA, ZAtoA = _as_algebra_over_center(A)
   if dim(ZA) == 1
     # this is a field
@@ -2216,6 +2219,9 @@ function __unit_reps_simple(M, F)
   B = algebra(M)
   @vprintln :PIP _describe(B)
   @vprintln :PIP "Computing generators of the maximal order"
+  if dim(B) == 0
+    return [zero(B)]
+  end
   UB = _unit_group_generators_maximal_simple(M)
   Q, MtoQ = quo(M, F)
   for u in UB

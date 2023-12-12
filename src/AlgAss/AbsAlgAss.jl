@@ -296,6 +296,13 @@ function _dec_com_given_idempotents(A::AbsAlgAss{T}, v::Vector) where {T}
 end
 
 function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
+  if dim(A) == 0
+    # The zero-dimensional algebra is the zero ring, which is semisimple, but not simple
+    # It has *no* simple components.
+    A.is_simple = -1
+    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
+  end
+
   if dim(A) == 1
     A.is_simple = 1
     B, mB = AlgAss(A)
@@ -1550,10 +1557,10 @@ function product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
   algs = [dec[i][1] for i in a]
   injs = [dec[i][2] for i in a]
   r = length(a)
-  B, injstoB = direct_product(algs)
+  B, injstoB = direct_product(base_ring(A), algs)
   imgs = elem_type(B)[]
   for b in basis(A)
-    push!(imgs, sum(injstoB[i](injs[i]\b) for i in 1:r))
+    push!(imgs, sum(injstoB[i](injs[i]\b) for i in eachindex(a); init = zero(B)))
   end
   p = hom(A, B, basis_matrix(imgs))
   _transport_refined_wedderburn_decomposition_forward(p)

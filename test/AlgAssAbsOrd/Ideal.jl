@@ -190,4 +190,11 @@
   J = typeof(I)(A, FakeFmpqMat(identity_matrix(QQ, 4)))
   @test J * J == typeof(I)(A, FakeFmpqMat(48 * identity_matrix(QQ, 4)))
 
+  # zero algebra
+
+  A = zero_algebra(QQ)
+  O = Order(A, elem_type(A)[])
+  I = 1 * O
+  @test Hecke.is_full_lattice(I)
+
 end

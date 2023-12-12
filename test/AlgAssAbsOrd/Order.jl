@@ -255,4 +255,15 @@
     OO = Hecke._order(B, [BtoA\A(matrix(K, [ d 0 0; 0 0 0; 0 0 0 ]))], extends = O)
     @test discriminant(OO) == ZZ(2304)^9
   end
+
+  # zero algebra
+  
+  A = zero_algebra(QQ)
+  B = basis_matrix(elem_type(A)[], FakeFmpqMat)
+  @test (nrows(B), ncols(B)) == (0, 0)
+  M = maximal_order(A)
+  @test is_maximal(M)
+  O = Order(A, [zero(A)])
+  @test is_maximal(O)
+
 end
