@@ -373,7 +373,7 @@ end
 # L.automorphism_group_generators
 # L.automorphism_group_order
 function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
-                                            try_small::Bool = true, depth::Int = 0,
+                                            try_small::Bool = true, depth::Int = -1,
                                             bacher_depth::Int = 0)
 
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -443,7 +443,7 @@ end
 # documented in ../Lattices.jl
 
 function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = true,
-                                                 depth::Int = 0, bacher_depth::Int = 0)
+                                                 depth::Int = -1, bacher_depth::Int = 0)
 
   @req rank(L) in [0, 2] || is_definite(L) "The lattice must be definite or of rank at most 2"
   assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
@@ -492,7 +492,7 @@ end
 
 # documented in ../Lattices.jl
 
-function is_isometric(L::ZZLat, M::ZZLat; depth::Int = 0, bacher_depth::Int = 0)
+function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
   if L == M
     return true
   end
@@ -526,7 +526,7 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = 0, bacher_depth::Int = 0)
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = 0, bacher_depth::Int = 0)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
   @req is_definite(L) && is_definite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)

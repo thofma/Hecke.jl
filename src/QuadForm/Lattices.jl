@@ -1450,7 +1450,7 @@ end
 # per default, the are given with respect to the basis of the ambient space
 # if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
-function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false, depth::Int = 0, bacher_depth::Int = 0)
+function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -1569,7 +1569,7 @@ with respect to the (pseudo-)basis of `L`.
 """
 automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true)
 
-function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = 0, bacher_depth::Int = 0)
+function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = -1, bacher_depth::Int = 0)
 
   assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
 
@@ -1633,7 +1633,7 @@ end
 
 Return whether the lattices `L` and `M` are isometric.
 """
-is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = 0, bacher_depth::Int = 0) = is_isometric_with_isometry(L, M; ambient_representation=false, depth = depth, bacher_depth = bacher_depth)[1]
+is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = is_isometric_with_isometry(L, M; ambient_representation=false, depth = depth, bacher_depth = bacher_depth)[1]
 
 
 @doc raw"""
@@ -1651,11 +1651,11 @@ to the (pseudo-)bases of `L` and `M`, that is, $T G_M T^t = G_L$ where $G_M$
 and $G_L$ are the Gram matrices of the (pseudo-)bases of `L` and `M`
 respectively.
 """
-is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true, depth::Int = 0, bacher_depth::Int = 0) = throw(NotImplemented())
+is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
 
 
 function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{<: NumField};
-                                            ambient_representation::Bool = true, depth::Int = 0, bacher_depth::Int = 0)
+                                            ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0)
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)

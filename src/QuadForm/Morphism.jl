@@ -141,7 +141,7 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = 0, bacher_depth::Int = 0)
+function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
   # Compute the necessary short vectors
 
   r = length(C.G)
@@ -287,7 +287,7 @@ end
 
 # The following functions tries to initialize a ZLatAutoCtx with entries in Int.
 # The return value is flag, Csmall
-function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = 0, bacher_depth::Int = 0)
+function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
   automorphism_mode = bound == ZZRingElem(-1)
 
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -581,22 +581,26 @@ end
 # Return `true` if the initialization was successful, `false` otherwise.
 # Only relevant if S1 <: Int, that is, if things might overflow.
 function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2, S3}
+  if depth == -1
+    depth = round(Int, C.dim/10)
+  end
   C.depth = depth
-  depth == 0 && return nothing
 
   small = S1 <: Int
-
-  C.scpcomb = Vector{SCPComb{S1, S3}}(undef, dim(C))
-  for i in 1:C.dim
-    C.scpcomb[i] = SCPComb{S1, S3}()
-  end
-  vector_sums = vs_scalar_products(C, depth)
 
   if small
     C.GZZ = [ matrix(ZZ, M) for M in C.G ]
   else
     C.GZZ = C.G
   end
+
+  depth == 0 && return nothing
+
+  C.scpcomb = Vector{SCPComb{S1, S3}}(undef, dim(C))
+  for i in 1:C.dim
+    C.scpcomb[i] = SCPComb{S1, S3}()
+  end
+  vector_sums = vs_scalar_products(C, depth)
 
   for i in 1:C.dim
     # Compute a basis of the lattice spanned by vector_sums
@@ -1571,8 +1575,8 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
 
     # check, whether the base xbase has the right scalar products
     transpxbase = transpose(comb.xbasetmp)
-    for i in 1:length(Ci.G)
-      mul!(comb.multmp1, comb.xbasetmp, Ci.GZZ[i])
+    for i in 1:length(Co.G)
+      mul!(comb.multmp1, comb.xbasetmp, Co.GZZ[i])
       mul!(comb.multmp2, comb.multmp1, transpxbase)
       if comb.multmp2 != comb.F[i]
         return false
@@ -1871,7 +1875,7 @@ end
 
 # Isomorphism computation
 
-function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0, bacher_depth::Int = 0)
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   # We only need to initialize the vector sums and Bacher polynomials for the
   # first lattice
@@ -1887,7 +1891,7 @@ function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth:
   return false, Cismall, Cismall
 end
 
-function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = 0, bacher_depth::Int = 0)
+function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
   # We only need to initialize the vector sums and Bacher polynomials for the
