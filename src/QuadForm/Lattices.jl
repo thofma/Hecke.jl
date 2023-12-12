@@ -1559,15 +1559,20 @@ end
 ################################################################################
 
 @doc raw"""
-    automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true)
+    automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true,
+                                                  depth::Int = -1, bacher_depth::Int = 0)
                                                           -> Vector{MatElem}
 
 Given a definite lattice `L`, return generators for the automorphism group of `L`.
 If `ambient_representation == true` (the default), the transformations are represented
 with respect to the ambient space of `L`. Otherwise, the transformations are represented
 with respect to the (pseudo-)basis of `L`.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
-automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true)
+automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0)
 
 function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = -1, bacher_depth::Int = 0)
 
@@ -1611,14 +1616,18 @@ end
 ################################################################################
 
 @doc raw"""
-    automorphism_group_order(L::AbstractLat) -> Int
+    automorphism_group_order(L::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) -> Int
 
 Given a definite lattice `L`, return the order of the automorphism group of `L`.
-"""
-automorphism_group_order(L::AbstractLat; redo::Bool = false)
 
-function automorphism_group_order(L::AbstractLat; redo::Bool = false)
-  assert_has_automorphisms(L; redo)
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
+"""
+automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+
+function automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+  assert_has_automorphisms(L; redo, depth = depth, bacher_depth = bacher_depth)
   return L.automorphism_group_order
 end
 
@@ -1629,15 +1638,20 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isometric(L::AbstractLat, M::AbstractLat) -> Bool
+    is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) -> Bool
 
 Return whether the lattices `L` and `M` are isometric.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
 is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = is_isometric_with_isometry(L, M; ambient_representation=false, depth = depth, bacher_depth = bacher_depth)[1]
 
 
 @doc raw"""
-    is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true)
+    is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true
+                                                               depth::Int = -1, bacher_depth::Int = 0)
                                                               -> (Bool, MatElem)
 
 Return whether the lattices `L` and `M` are isometric. If this is the case, the
@@ -1650,6 +1664,10 @@ matrices of the ambient spaces of `L` and `M` respectively. If
 to the (pseudo-)bases of `L` and `M`, that is, $T G_M T^t = G_L$ where $G_M$
 and $G_L$ are the Gram matrices of the (pseudo-)bases of `L` and `M`
 respectively.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
 is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
 

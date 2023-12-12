@@ -478,9 +478,9 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_order(L::ZZLat)
+function automorphism_group_order(L::ZZLat, depth::Int = -1, bacher_depth::Int = 0)
   @req is_definite(L) "The lattice must be definite"
-  assert_has_automorphisms(L)
+  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
   return L.automorphism_group_order
 end
 
