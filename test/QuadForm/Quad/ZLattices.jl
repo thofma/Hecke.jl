@@ -273,6 +273,14 @@ end
     @test automorphism_group_order(L) == lattice_automorphism_group_order(D, i)
   end
 
+  # Call the Bacher polynomials
+  L = integer_lattice(gram = gram_matrix(lattice(D, 100)))
+  Ge = automorphism_group_generators(L, ambient_representation = true, bacher_depth = 1)
+  test_automorphisms(L, Ge, true)
+  Ge = automorphism_group_generators(L, ambient_representation = false, bacher_depth = 1)
+  test_automorphisms(L, Ge, false)
+  @test automorphism_group_order(L) == lattice_automorphism_group_order(D, 100)
+
   # automorphisms for indefinite of rank 2
   U = hyperbolic_plane_lattice()
   G = @inferred automorphism_group_generators(U)
@@ -324,6 +332,16 @@ end
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
+
+  # Call the Bacher polynomials
+  L = integer_lattice(gram = gram_matrix(lattice(D, 100)))
+  n = rank(L)
+  X = change_base_ring(FlintQQ, _random_invertible_matrix(n, -3:3))
+  @assert abs(det(X)) == 1
+  L2 = integer_lattice(gram = X * gram_matrix(L) * transpose(X))
+  b, T = is_isometric_with_isometry(L, L2, ambient_representation = false, bacher_depth = 1)
+  @test b
+  @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
 
   #discriminant of a lattice
   L = integer_lattice(ZZ[1 0; 0 1], gram = matrix(QQ, 2,2, [2, 1, 1, 2]))
