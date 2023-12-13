@@ -996,6 +996,10 @@ equation_order(M::NfAbsOrd) = equation_order(nf(M))
 # Via extends one may supply an order which will then be extended by the elements
 # in elt.
 function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, extends = nothing) where {S <: Union{NumField{QQFieldElem}, AbsAlgAss{QQFieldElem}}, T}
+  if dim(K) == 0
+    return Order(K, FakeFmpqMat(zero_matrix(ZZ, 0, 0), ZZ(1)), cached = cached, check = false)::order_type(K)
+  end
+
   elt = unique(elt)
   n = dim(K)
   is_comm = is_commutative(K)

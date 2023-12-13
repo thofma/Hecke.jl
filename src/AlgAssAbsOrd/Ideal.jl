@@ -25,7 +25,7 @@ _algebra(a::AlgAssAbsOrdIdl) = algebra(a)
 
 # The basis matrix is (should be) in lowerleft HNF, so if the upper left corner
 # is not zero, then the matrix has full rank.
-is_full_lattice(a::AlgAssAbsOrdIdl) = !iszero(basis_matrix(a, copy = false)[1, 1])
+is_full_lattice(a::AlgAssAbsOrdIdl) = dim(algebra(a)) == 0 || !iszero(basis_matrix(a, copy = false)[1, 1])
 
 # Whether I is equal to order(I)
 function isone(I::AlgAssAbsOrdIdl)
