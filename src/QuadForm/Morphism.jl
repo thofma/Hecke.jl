@@ -584,6 +584,7 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
   if depth == -1
     depth = round(Int, C.dim/10)
   end
+  @assert depth >= 0 "`depth` must be non-negative"
   C.depth = depth
 
   small = S1 <: Int
@@ -717,6 +718,7 @@ function bacher_polynomial(C::ZLatAutoCtx{T}, I::Int, S::T) where T
 end
 
 function init_bacher_polynomials(C::ZLatAutoCtx{T}, depth::Int) where T
+  @assert depth >= 0 "`bacher_depth` must be non-negative"
   C.bacher_depth = depth
   C.bacher_polys = Vector{BacherPoly{T}}(undef, depth)
   for i in 1:depth
@@ -1371,7 +1373,7 @@ end
 # allowing overflows via Di/Do and only verify a positive result with ZZRingElem
 # via Ci/Co.
 function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{ZZRingElem}, Co::ZLatAutoCtx{ZZRingElem}, Di::ZLatAutoCtx{Int}, Do::ZLatAutoCtx{Int})
-  if _cand(candidates, I, x, Di, Do)
+  if _cand(candidates, I, x, Di, Do, true)
     # _cand with Integers returned true, so we have to verify the result with
     # ZZRingElem
     return _cand(candidates, I, x, Ci, Co)
@@ -1382,7 +1384,7 @@ end
 # If the short vectors fit in Int, the last arguments (Di/Do) are ignored.
 cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{Int}, Co::ZLatAutoCtx{Int}, Di::ZLatAutoCtx, Do::ZLatAutoCtx) = _cand(candidates, I, x, Ci, Co)
 
-function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{S, T, U}, Co::ZLatAutoCtx{S, T, U}) where {S, T, U}
+function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{S, T, U}, Co::ZLatAutoCtx{S, T, U}, overflows::Bool = false) where {S, T, U}
   dep = Ci.depth
   use_vector_sums = (I > 1 && dep > 0)
   dim = Hecke.dim(Ci)
@@ -1509,11 +1511,21 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
 
     if use_vector_sums
       sign = false
-      if !is_normalized(scpvec)
-        neg!(scpvec)
-        sign = true
+      # If we work with Int's allowing overflows we can't trust the sign anymore
+      if overflows
+        k = get(comb.scpcombs.lookup, scpvec, 0)
+        if k == 0
+          neg!(scpvec)
+          sign = true
+          k = get(comb.scpcombs.lookup, scpvec, 0)
+        end
+      else
+        if !is_normalized(scpvec)
+          neg!(scpvec)
+          sign = true
+        end
+        k = get(comb.scpcombs.lookup, scpvec, 0)
       end
-      k = get(comb.scpcombs.lookup, scpvec, 0)
       is0 = is_zero(scpvec)
       if k > 0
         if !is0
@@ -1933,7 +1945,7 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   if found
     ISO = matgen(x, d, Ci.per, Co.V)
     for k in 1:length(Ci.G)
-      ISO * Co.G[k] * ISO' == Ci.G[k]
+      ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
     end
     return true, ISO
   else
@@ -2418,10 +2430,13 @@ function _make_small(C::ZLatAutoCtx{ZZRingElem})
   for i in 1:length(C.v)
     D.v[i] = [ _int_vector_with_overflow(M, tmp) for M in C.v[i] ]
   end
-  D.per = copy(C.per)
-  D.fp = copy(C.fp)
-  D.fp_diagonal = copy(C.fp_diagonal)
-  D.std_basis = copy(C.std_basis)
+
+  if isdefined(C, :per)
+    D.per = copy(C.per)
+    D.fp = copy(C.fp)
+    D.fp_diagonal = copy(C.fp_diagonal)
+    D.std_basis = copy(C.std_basis)
+  end
 
   if isdefined(C, :scpcomb)
     D.scpcomb = Vector{SCPComb{Int, Vector{Int}}}(undef, length(C.scpcomb))
