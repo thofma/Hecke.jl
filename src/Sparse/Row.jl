@@ -40,7 +40,7 @@ end
 
 Constructs an empty row with base ring $R$.
 """
-function sparse_row(R::Ring)
+function sparse_row(R::NCRing)
   return SRow(R)
 end
 
@@ -51,7 +51,7 @@ const _sort = sort
 Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
 The elements $x_i$ must belong to the ring $R$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
+function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
   if sort
     A = _sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
@@ -64,7 +64,7 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
 where $J = (i_j, x_j)_j$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
+function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort
     A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
@@ -84,12 +84,12 @@ function swap!(A::SRow, B::SRow)
 end
 
 @doc raw"""
-    sparse_row(R::Ring, J::Vector{Int}, V::Vector{T}) -> SRow{T}
+    sparse_row(R::NCRing, J::Vector{Int}, V::Vector{T}) -> SRow{T}
 
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
 $J = (i_j)_j$ and $V = (x_j)_j$.
 """
-function sparse_row(R::Ring, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
+function sparse_row(R::NCRing, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
   if sort
     p = sortperm(pos)
     pos = pos[p]
@@ -266,7 +266,7 @@ end
 
 Create a new sparse row by coercing all elements into the ring $R$.
 """
-function change_base_ring(R::S, A::SRow{T}) where {T <: RingElem, S <: Ring}
+function change_base_ring(R::S, A::SRow{T}) where {T <: NCRingElem, S <: NCRing}
   z = sparse_row(R)
   for (i, v) in A
     nv = R(v)
@@ -293,7 +293,7 @@ end
 
 Given a sparse row $(a_i)_{i}$ and an index $j$ return $a_j$.
 """
-function Base.getindex(A::SRow{T}, i::Int) where {T <: RingElem}
+function Base.getindex(A::SRow{T}, i::Int) where {T <: NCRingElem}
   i < 1 && error("Index must be positive")
   p = findfirst(isequal(i), A.pos)
   if p === nothing

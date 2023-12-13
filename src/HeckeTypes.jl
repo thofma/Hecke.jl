@@ -315,13 +315,13 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
   values::S
   pos::Vector{Int}
 
-  function SRow(R::Ring)
+  function SRow(R::NCRing)
     @assert R != ZZ
     r = new{elem_type(R), Vector{elem_type(R)}}(R, Vector{elem_type(R)}(), Vector{Int}())
     return r
   end
 
-  function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector; check::Bool = true)
+  function SRow(R::NCRing, p::Vector{Int64}, S::AbstractVector; check::Bool = true)
     if check && any(iszero, S)
       p = copy(p)
       S = deepcopy(S)
@@ -339,7 +339,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, A::Vector{Tuple{Int, T}}) where T
+  function SRow(R::NCRing, A::Vector{Tuple{Int, T}}) where T
     r = SRow(R)
     for (i, v) = A
       if !iszero(v)
@@ -351,7 +351,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, A::Vector{Tuple{Int, Int}})
+  function SRow(R::NCRing, A::Vector{Tuple{Int, Int}})
     r = SRow(R)
     for (i, v) = A
       if !iszero(v)
@@ -371,7 +371,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
+  function SRow{T}(R::NCRing, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
     r = SRow(R)
     for i=1:length(pos)
