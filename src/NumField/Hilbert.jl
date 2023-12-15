@@ -276,7 +276,7 @@ function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T
   # The important point here is the following. Since v-1 is even, s^2*pi^(v-1)
   # is a local square and
   #
-  # (a*(1-s^2*b*pi^(v-1)), b)_p = (a, b)_p * (-s^2*b*pi^(v-1), s^2*b*pi^(v-1))_p
+  # (a*(1-s^2*b*pi^(v-1)), b)_p = (a, b)_p * (1-s^2*b*pi^(v-1), s^2*b*pi^(v-1))_p
   #                             = (a, b)_p
   #
   # and moreover
