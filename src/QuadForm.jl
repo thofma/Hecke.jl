@@ -51,7 +51,7 @@ include("QuadForm/MassQuad.jl")
 # Close vectors
 include("QuadForm/CloseVectors.jl")
 
-# indefinite LLL 
+# indefinite LLL
 include("QuadForm/indefiniteLLL.jl")
 
 # Functionality for IO with Hecke/Magma

@@ -373,7 +373,8 @@ end
 # L.automorphism_group_generators
 # L.automorphism_group_order
 function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
-                                            try_small::Bool = true)
+                                            try_small::Bool = true, depth::Int = -1,
+                                            bacher_depth::Int = 0)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -405,31 +406,22 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
+  # Make the Gram matrix small
   Glll, T = lll_gram_with_transform(res[1])
-  Ttr = transpose(T)
-  res_orig = copy(res)
   res[1] = Glll
 
-  bm = basis_matrix(L)
-
-  # Make the Gram matrix small
-
   C = ZLatAutoCtx(res)
+  fl = false
   if try_small
-    fl, Csmall = try_init_small(C)
+    fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
     if fl
-      auto(Csmall)
-      _gens, order = _get_generators(Csmall)
+      _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(FlintZZ, g) for g in _gens]
-    else
-      init(C)
-      auto(C)
-      gens, order = _get_generators(C)
     end
-  else
-    init(C)
-    auto(C)
-    gens, order = _get_generators(C)
+  end
+  if !try_small || !fl
+    init(C, depth = depth, bacher_depth = bacher_depth)
+    gens, order = auto(C)
   end
 
   # Now translate back
@@ -450,10 +442,11 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = true)
+function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = true,
+                                                 depth::Int = -1, bacher_depth::Int = 0)
 
   @req rank(L) in [0, 2] || is_definite(L) "The lattice must be definite or of rank at most 2"
-  assert_has_automorphisms(L)
+  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
 
   gens = L.automorphism_group_generators
   if !ambient_representation
@@ -485,9 +478,9 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_order(L::ZZLat)
+function automorphism_group_order(L::ZZLat, depth::Int = -1, bacher_depth::Int = 0)
   @req is_definite(L) "The lattice must be definite"
-  assert_has_automorphisms(L)
+  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
   return L.automorphism_group_order
 end
 
@@ -499,7 +492,7 @@ end
 
 # documented in ../Lattices.jl
 
-function is_isometric(L::ZZLat, M::ZZLat)
+function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
   if L == M
     return true
   end
@@ -528,12 +521,12 @@ function is_isometric(L::ZZLat, M::ZZLat)
   end
 
   if is_definite(L) && is_definite(M)
-    return is_isometric_with_isometry(L, M)[1]
+    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth)[1]
   end
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
   @req is_definite(L) && is_definite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)
@@ -587,12 +580,12 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   G1 = ZZMatrix[GLlll]
   G2 = ZZMatrix[GMlll]
 
-  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2)
+  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth, bacher_depth = bacher_depth)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(FlintZZ, _T)
   else
-    CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll])
+    CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)
   end
 
