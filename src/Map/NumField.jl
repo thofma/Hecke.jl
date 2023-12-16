@@ -140,7 +140,7 @@ end
 function hom(K::S, L::T, x...; inverse = nothing,
                                check::Bool = true,
                                compute_inverse = false) where {S <: Union{NumField, QQField},
-                                                               T <: NumField}
+                                                               T <: Ring}
   header = MapHeader(K, L)
 
   #if length(x) == 0
@@ -166,7 +166,7 @@ function hom(K::S, L::T, x...; inverse = nothing,
                        typeof(inverse_data)}(header, image_data, inverse_data)
 
   else
-    z = NumFieldMor{S, T, typeof(image_data), map_data_type(L, K)}()
+      z = NumFieldMor{S, T, typeof(image_data), map_data_type(L, K)}()
   end
 
   z.header = header
@@ -245,9 +245,9 @@ mutable struct MapDataFromAnticNumberField{T}
 end
 
 # Helper functions to create the type
-map_data_type(K::AnticNumberField, L::Union{NumField, QQField}) = map_data_type(AnticNumberField, typeof(L))
+map_data_type(K::AnticNumberField, L::Union{NumField, QQField, Ring}) = map_data_type(AnticNumberField, typeof(L))
 
-map_data_type(::Type{AnticNumberField}, T::Type{S}) where {S <: Union{NumField, QQField}} = MapDataFromAnticNumberField{elem_type(T)}
+map_data_type(::Type{AnticNumberField}, T::Type{S}) where {S <: Union{NumField, QQField, Ring}} = MapDataFromAnticNumberField{elem_type(T)}
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromAnticNumberField{T},
@@ -272,7 +272,7 @@ end
 #
 map_data(K::AnticNumberField, L, ::Bool) = MapDataFromAnticNumberField{elem_type(L)}(true)
 
-function map_data(K::AnticNumberField, L, x::NumFieldElem; check = true)
+function map_data(K::AnticNumberField, L, x::RingElement; check = true)
   if parent(x) === L
     xx = x
   else
@@ -322,7 +322,7 @@ function map_data_type(T::Type{<: NfRel}, L::Type{<:Any})
   MapDataFromNfRel{elem_type(L), map_data_type(base_field_type(T), L)}
 end
 
-map_data_type(K::NfRel, L::NumField) = map_data_type(typeof(K), typeof(L))
+map_data_type(K::NfRel, L::Ring) = map_data_type(typeof(K), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromNfRel{T, S}, v::MapDataFromNfRel{T, S}) where {T, S}
@@ -1029,6 +1029,16 @@ function Base.hash(f::MapDataFromNfRelNS, K, L, h::UInt)
 end
 
 Base.hash(f::NumFieldMor, h::UInt) = hash(f.image_data, domain(f), codomain(f), h)
+
+################################################################################
+#
+#  Catch all for morphisms into arbitrary rings
+#
+################################################################################
+
+map_data_type(::Type{<: Any}, x) = Nothing
+
+map_data_type(R, x) = map_data_type(typeof(R), typeof(x))
 
 ################################################################################
 #
