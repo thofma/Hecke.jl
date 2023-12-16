@@ -45,6 +45,9 @@
                      2448, 4320, 2982, 2402, 2364, 512, 256, 306 ]
 
   # Floating point bounds
+  L = integer_lattice(gram = QQ[1//2 0; 0 1//3])
+  v = short_vectors(L, 0.1, 0.6)
+  @test length(v) == 2
   L = integer_lattice(gram = QQ[-1//2 0; 0 -1//3])
   v = short_vectors(L, 0.1, 0.6)
   @test length(v) == 2
@@ -68,6 +71,12 @@
 
   gram = QQ[1 0 0 1; 0 1 0 0; 0 0 1 0; 1 0 0 13//10]
   delta = 9//10
+  L = integer_lattice(;gram = gram)
+  sv = @inferred short_vectors_iterator(L, delta, Int)
+  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
+  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+
   L = integer_lattice(;gram = -gram)
   sv = @inferred short_vectors_iterator(L, delta, Int)
   @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
