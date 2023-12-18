@@ -1703,6 +1703,9 @@ end
 
 function _as_finite_bilinear_module(T::TorQuadModule)
   n = modulus_bilinear_form(T)
+  if n == modulus_quadratic_form(T)
+    return T
+  end
   return torsion_quadratic_module(cover(T), relations(T); modulus = n, modulus_qf = n)
 end
 
@@ -1714,16 +1717,19 @@ end
 Return the genus of an integer lattice whose discriminant group has the bilinear
 form of `T`, the given `signature_pair` and the given `parity`.
 
-If no such genus exists, raise an error.
+The argument `parity` is one of the following: either `parity == 1` for genera
+of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
+set to be as the parity of the quadratic form on `T`
 
-By default the `parity` is taken as the parity of the quadratic form on `T`.
+If no such genus exists, raise an error.
 
 # Reference
 [Nik79](@cite) Corollary 1.9.4 and 1.16.3.
 """
 function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::RationalUnion = modulus_quadratic_form(T))
-  @req modulus_bilinear_form(T) == 1 "Modulus for the bilinear form should be 1"
-  @req modulus_quadratic_form(T) == 1 || modulus_quadratic_form(T) == 2 "Modulus for the quadratic form should be 2"
+  @req modulus_bilinear_form(T) == 1 "Modulus for the bilinear form must be 1"
+  @req modulus_quadratic_form(T) == 1 || modulus_quadratic_form(T) == 2 "Modulus for the quadratic form must be 1 or 2"
+  @req parity == 1 || parity == 2 "Parity must be 1 or 2"
   s_plus = signature_pair[1]
   s_minus = signature_pair[2]
   rank = s_plus + s_minus
@@ -1772,7 +1778,6 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::Ration
   # This genus has the right discriminant group
   # but it may be empty
   #
-  # in this case the blocks of scales 1, 2, 4 are under determined
   # make sure the first 3 symbols are of scales 1, 2, 4
   # i.e. their valuations are 0, 1, 2
 
@@ -1787,6 +1792,8 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::Ration
     sym2 = insert!(sym2, 3, Int[2, 0, 1, 0, 0])
   end
   if modulus_quadratic_form(T) == 1 || parity == 1
+    # in this case the blocks of scales 1, 2, 4 are under determined
+
     _o = mod(parity, 2)
     # the form is of parity `parity`
     block0 = [b for b in _blocks(sym2[1]) if b[4] == _o]
@@ -1861,7 +1868,9 @@ Return if there is an integral lattice whose discriminant form has the bilinear
 form of `T`, whose signatures match `signature_pair` and which is of parity
 `parity`.
 
-By deautl the `parity` is the parity of the quadratic form on `T`.
+The argument `parity` is one of the following: either `parity == 1` for genera
+of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
+set to be as the parity of the quadratic form on `T`
 """
 function is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::RationalUnion = modulus_quadratic_form(T))
   try
