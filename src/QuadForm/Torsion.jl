@@ -17,9 +17,10 @@ export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genu
 
 @doc raw"""
     torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
-                                                    snf::Bool = true,
-                                                    modulus::QQFieldElem = QQFieldElem(0),
-                                                    check::Bool = true) -> TorQuadModule
+                                                 snf::Bool = true,
+                                                 modulus::RationalUnion = QQFieldElem(0),
+                                                 modulus_qf::RationalUnion = QQFieldElem(0),
+                                                 check::Bool = true) -> TorQuadModule
 
 Given a Z-lattice $M$ and a sublattice $N$ of $M$, return the torsion quadratic
 module $M/N$.
@@ -29,12 +30,15 @@ generators of the abelian group $M/N$.
 
 If `snf` is `true`, the underlying abelian group will be in Smith normal form.
 Otherwise, the images of the basis of $M$ will be used as the generators.
+
+One can decide on the modulus for the associated finite bilinear and quadratic
+forms by setting `modulus` and `modulus_qf` respectively to the desired values.
 """
 function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vector{<:Vector}} = nothing,
-                                                    snf::Bool = true,
-                                                    modulus::QQFieldElem = QQFieldElem(0),
-                                                    modulus_qf::QQFieldElem = QQFieldElem(0),
-                                                    check::Bool = true)
+                                                      snf::Bool = true,
+                                                      modulus::RationalUnion = QQFieldElem(0),
+                                                      modulus_qf::RationalUnion = QQFieldElem(0),
+                                                      check::Bool = true)
   @req ambient_space(M) === ambient_space(N) """
       Lattices must have same ambient space
       """
@@ -44,7 +48,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   A = abelian_group(rels)
   n = dim(ambient_space(M))
   BM = basis_matrix(M)
-  if gens !== nothing && length(gens)>0
+  if gens !== nothing && length(gens) > 0
     gens_in_A = elem_type(A)[]
     for g in gens
       @req length(g) == n "Generator not an element of the ambient space"
@@ -70,7 +74,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   end
   # mS : S -> A
   # generators of S lifted along M -> M/N = A -> S
-  if gens !== nothing  && length(gens)>0
+  if gens !== nothing  && length(gens) > 0
     gens_lift = gens
   else
     gens_lift = Vector{QQFieldElem}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
@@ -78,14 +82,16 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * transpose(basis_matrix(N))
   if iszero(modulus)
-    modulus = reduce(gcd, num; init = zero(QQFieldElem))
+    _modulus = reduce(gcd, num; init = zero(QQFieldElem))
+  else
+    _modulus = QQ(modulus)
   end
   norm = reduce(gcd, diagonal(gram_matrix(N)); init = zero(QQFieldElem))
 
   if iszero(modulus_qf)
-    modulus_qf = gcd(norm, 2 * modulus)
+    _modulus_qf = gcd(norm, 2 * _modulus)
   else
-    modulus_qf = modulus_qf
+    _modulus_qf = QQ(modulus_qf)
   end
 
   T = TorQuadModule()
@@ -95,10 +101,10 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
   T.gens_lift_mat = matrix(FlintQQ, length(gens_lift), degree(M), reduce(vcat, gens_lift; init = QQFieldElem[]))
-  T.modulus = modulus
-  T.modulus_qf = modulus_qf
-  T.value_module = QmodnZ(modulus)
-  T.value_module_qf = QmodnZ(modulus_qf)
+  T.modulus = _modulus
+  T.modulus_qf = _modulus_qf
+  T.value_module = QmodnZ(_modulus)
+  T.value_module_qf = QmodnZ(_modulus_qf)
   T.is_normal = false
   return T
 end
@@ -1695,16 +1701,35 @@ function brown_invariant(T::TorQuadModule)
   return brown
 end
 
-@doc raw"""
-    genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}) -> ZZGenus
+function _as_finite_bilinear_module(T::TorQuadModule)
+  n = modulus_bilinear_form(T)
+  if n == modulus_quadratic_form(T)
+    return T
+  end
+  return torsion_quadratic_module(cover(T), relations(T); modulus = n, modulus_qf = n)
+end
 
-Return the genus of an integer lattice with discriminant group `T` and the
-given `signature_pair`. If no such genus exists, raise an error.
+@doc raw"""
+    genus(T::TorQuadModule, signature_pair::Tuple{Int, Int};
+                            parity::RationalUnion = modulus_quadratic_form(T))
+                                                                    -> ZZGenus
+
+Return the genus of an integer lattice whose discriminant group has the bilinear
+form of `T`, the given `signature_pair` and the given `parity`.
+
+The argument `parity` is one of the following: either `parity == 1` for genera
+of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
+set to be as the parity of the quadratic form on `T`
+
+If no such genus exists, raise an error.
 
 # Reference
 [Nik79](@cite) Corollary 1.9.4 and 1.16.3.
 """
-function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
+function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::RationalUnion = modulus_quadratic_form(T))
+  @req modulus_bilinear_form(T) == 1 "Modulus for the bilinear form must be 1"
+  @req modulus_quadratic_form(T) == 1 || modulus_quadratic_form(T) == 2 "Modulus for the quadratic form must be 1 or 2"
+  @req parity == 1 || parity == 2 "Parity must be 1 or 2"
   s_plus = signature_pair[1]
   s_minus = signature_pair[2]
   rank = s_plus + s_minus
@@ -1726,8 +1751,9 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
     D, _ = primary_part(T, p)
     if length(elementary_divisors(D)) != 0
       G_p = inv(gram_matrix_quadratic(D))
+      dp = denominator(G_p)^2
       # get rid of denominators without changing the local equivalence class
-      map_entries!(x -> x*denominator(G_p)^2, G_p, G_p)
+      map_entries!(x -> x*dp, G_p, G_p)
       G_pZZ = change_base_ring(ZZ, G_p)
       genus_p = genus(G_pZZ, p, valuation(elementary_divisors(D)[end], p))
     else
@@ -1751,6 +1777,10 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
   end
   # This genus has the right discriminant group
   # but it may be empty
+  #
+  # make sure the first 3 symbols are of scales 1, 2, 4
+  # i.e. their valuations are 0, 1, 2
+
   sym2 = local_symbols[1]._symbol
   if sym2[1][1] != 0
     sym2 = pushfirst!(sym2, Int[0, 0, 1, 0, 0])
@@ -1761,13 +1791,12 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
   if length(sym2) <= 2 || sym2[3][1] != 2
     sym2 = insert!(sym2, 3, Int[2, 0, 1, 0, 0])
   end
-  if modulus_quadratic_form(T) == 1
+  if modulus_quadratic_form(T) == 1 || parity == 1
     # in this case the blocks of scales 1, 2, 4 are under determined
-    # make sure the first 3 symbols are of scales 1, 2, 4
-    # i.e. their valuations are 0, 1, 2
 
-    # the form is odd
-    block0 = [b for b in _blocks(sym2[1]) if b[4] == 1]
+    _o = mod(parity, 2)
+    # the form is of parity `parity`
+    block0 = [b for b in _blocks(sym2[1]) if b[4] == _o]
 
     o = sym2[2][4]::Int
     # no restrictions on determinant and
@@ -1831,15 +1860,21 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
   error("this discriminant form and signature do not define a genus")
 end
 
-
 @doc raw"""
-    is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}) -> Bool
+    is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int};
+                               parity::RationalUnion = modulus_quadratic_form(T)) -> Bool
 
-Return if there is an integral lattice with this signature and discriminant form.
+Return if there is an integral lattice whose discriminant form has the bilinear
+form of `T`, whose signatures match `signature_pair` and which is of parity
+`parity`.
+
+The argument `parity` is one of the following: either `parity == 1` for genera
+of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
+set to be as the parity of the quadratic form on `T`
 """
-function is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
+function is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::RationalUnion = modulus_quadratic_form(T))
   try
-    genus(T,signature_pair)
+    genus(T, signature_pair; parity)
     return true
   catch
     return false
