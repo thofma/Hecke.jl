@@ -1531,12 +1531,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
         if !is0
           # the scalar products scpvec are found and we add the vector to the
           # corresponding vector sum
-          if sign
-            ww = -Vvj
-          else
-            ww = Vvj
-          end
-          xvec = add_to_row!(xvec, ww, k, tmp1, tmp2, tmp3)
+          xvec = add_to_row!(xvec, Vvj, k, sign, tmp1, tmp2, tmp3)
         end
       else
         # scpvec is not found, hence x[1], ..., x[I - 1] is not a partial automorphism
@@ -2301,22 +2296,30 @@ function _psolve(X, A, B, n, p)
   end
 end
 
-# Add the 1 x n matrix r to the ith row of the m x n matrix A.
-function add_to_row!(A::Matrix{Int}, r::Vector{Int}, i::Int, tmp1::Int = 0, tmp2::Int = 0, tmp3::Int = 0)
+# Add (or subtract if sign == true) the 1 x n matrix r to the ith row of the
+# m x n matrix A.
+function add_to_row!(A::Matrix{Int}, r::Vector{Int}, i::Int, sign::Bool = false, tmp1::Int = 0, tmp2::Int = 0, tmp3::Int = 0)
   @assert ncols(A) == length(r)
   @assert 1 <= i && i <= nrows(A)
   @inbounds for j in 1:ncols(A)
-    A[i, j] += r[j]
+    if sign
+      A[i, j] -= r[j]
+    else
+      A[i, j] += r[j]
+    end
   end
   return A
 end
 
-function add_to_row!(A::ZZMatrix, r::ZZMatrix, i::Int, tmp1::ZZRingElem = FlintZZ(), tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
+function add_to_row!(A::ZZMatrix, r::ZZMatrix, i::Int, sign::Bool = false, tmp1::ZZRingElem = FlintZZ(), tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
   @assert ncols(A) == length(r)
   @assert 1 <= i && i <= nrows(A)
   @inbounds for j in 1:ncols(A)
     getindex!(tmp1, A, i, j)
     getindex!(tmp2, r, 1, j)
+    if sign
+      neg!(tmp2)
+    end
     add!(tmp3, tmp1, tmp2)
     A[i, j] = tmp3
   end
