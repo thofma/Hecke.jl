@@ -836,7 +836,7 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
 
   # make a copy and enforce sparsity
   sym1 = [g for g in symbol(G1) if g[2] != 0]
-  sym2 = [g for g in symbol(G1) if g[2] != 0]
+  sym2 = [g for g in symbol(G2) if g[2] != 0]
   if length(sym1) == 0 || length(sym2) == 0
     return sym1 == sym2
   end
