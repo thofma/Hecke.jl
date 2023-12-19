@@ -833,8 +833,10 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-  sym1 = filter!(g -> g[2] != 0, symbol(G1))
-  sym2 = filter!(g -> g[2] != 0, symbol(G2))
+
+  # make a copy and enforce sparsity
+  sym1 = [g for g in symbol(G1) if g[2] != 0]
+  sym2 = [g for g in symbol(G1) if g[2] != 0]
   if length(sym1) == 0 || length(sym2) == 0
     return sym1 == sym2
   end
