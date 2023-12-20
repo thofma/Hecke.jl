@@ -22,7 +22,6 @@ import Hecke.Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_triu!, Abstra
 
 const cutoff = 1500
 
-#base case for the strassen
 function Nemo.mul!(C::AbstractArray, A::AbstractArray, B::AbstractArray, add::Bool = false)
   @assert size(C) == (2,2) && size(A) == (2,2) && size(B) == (2,2)
   C[1,1] = A[1,1] * B[1,1] + A[1,2] * B[2,1]
@@ -196,4 +195,4 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
   end
 end
 
-#see AbstractAlgebra.Strassen for an MatElem version
+end # module
