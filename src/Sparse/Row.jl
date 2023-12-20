@@ -428,11 +428,12 @@ For Rows, the standard multiplication is from the left.
 function scale_row!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
   if isone(b)
-    return
+    return a
   end
   for i=1:length(a.pos)
     a.values[i] = b*a.values[i]
   end
+  return a
 end
 
 @doc raw"""
@@ -443,11 +444,12 @@ Returns the (right) product of $a \times b$.
 function scale_row_right!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
   if isone(b)
-    return
+    return a
   end
   for i=1:length(a.pos)
     a.values[i] *= b
   end
+  return a
 end
 
 function scale_row_left!(a::SRow{T}, b::T) where T

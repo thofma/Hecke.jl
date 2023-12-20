@@ -173,4 +173,7 @@
   @test dot(A,B) != dot(B,A)
   @test dot(A,b) == dot(b,A) == E(0)
   @test A*e[1] != e[1]*A
+  @test scale_row!(A, e[1]) != scale_row_right!(b, e[1])
+  C = add_scaled_row(A,b,E(1))
+  @test A + C == A
 end
