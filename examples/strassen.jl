@@ -195,4 +195,4 @@ function mul_strassen!(C::AbstractArray, A::AbstractArray, B::AbstractArray)
   end
 end # module
 
-#see AbstractAlgebra.Strassen for an MatElem version
+end # module
