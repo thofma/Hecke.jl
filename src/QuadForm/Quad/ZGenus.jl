@@ -1097,7 +1097,7 @@ end
 @doc raw"""
     symbol(S::ZZLocalGenus) -> Vector{Vector{Int}}
 
-Return a the underlying lists of integers for the Jordan blocks of `S`.
+Return the underlying lists of integers for the Jordan blocks of `S`.
 """
 function symbol(S::ZZLocalGenus)
   return S._symbol
