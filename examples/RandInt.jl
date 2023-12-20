@@ -12,6 +12,8 @@ import Nemo
 
 import Base.*
 
+#uses rand(1:128)/128.0 as a uniform random real in (0,1) for comparisons
+
 *(a::BigFloat, b::QQFieldElem) = a*BigFloat(b)
 
 function Delta(N::ZZRingElem, e::Int, p::ZZRingElem)
