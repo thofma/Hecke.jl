@@ -343,7 +343,7 @@ Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
 @doc raw"""
     dot(A::SRow, B::SRow) -> RingElem
 
-Returns the dot product of $A$ and $B$.
+Returns the dot product of $A$ and $B$. Note the order matters in non-commutative case.
 """
 function dot(A::SRow{T}, B::SRow{T}) where T
   @assert length(A) != 0
@@ -357,7 +357,7 @@ function dot(A::SRow{T}, B::SRow{T}) where T
       return v
     end
     if B.pos[b] == A.pos[a]
-      v += B.values[b] * A.values[a]
+      v += A.values[a] * B.values[b] 
     end
   end
   return v
@@ -419,8 +419,28 @@ end
 #  Inplace scaling
 #
 ################################################################################
+@doc raw"""
+    scale_row!(a::SRow, b::NCRingElem) -> SRow
 
+Returns the (left) product of $b \times a$.
+For Rows, the standard multiplication is from the left. 
+"""
 function scale_row!(a::SRow{T}, b::T) where T
+  @assert !iszero(b)
+  if isone(b)
+    return
+  end
+  for i=1:length(a.pos)
+    a.values[i] = b*a.values[i]
+  end
+end
+
+@doc raw"""
+  scale_row_right!(a::SRow, b::NCRingElem) -> SRow
+
+Returns the (right) product of $a \times b$.
+"""
+function scale_row_right!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
   if isone(b)
     return
@@ -428,6 +448,10 @@ function scale_row!(a::SRow{T}, b::T) where T
   for i=1:length(a.pos)
     a.values[i] *= b
   end
+end
+
+function scale_row_left!(a::SRow{T}, b::T) where T
+  return scale_row!(a,b)
 end
 
 ################################################################################
@@ -515,6 +539,7 @@ function *(A::SRow, b)
   return A*base_ring(A)(b)
 end
 
+#left and right div not implimented
 function div(A::SRow{T}, b::T) where T
   B = sparse_row(base_ring(A))
   if iszero(b)
@@ -537,13 +562,18 @@ function div(A::SRow{T}, b::Integer) where T
   return div(A, base_ring(A)(b))
 end
 
+@doc raw"""
+  divexact(A::SRow, b::NCRingElem) -> SRow
+
+Returns the left divexact $A/b$
+"""
 function divexact(A::SRow{T}, b::T) where T
   B = sparse_row(base_ring(A))
   if iszero(b)
     return error("Division by zero")
   end
   for (p,v) = A
-    nv = divexact(v, b)
+    nv = divexact_left(v, b)
     @assert !iszero(nv)
     push!(B.pos, p)
     push!(B.values, nv)
@@ -555,7 +585,33 @@ function divexact(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
     return deepcopy(A)
   end
-  return divexact(A, base_ring(A)(b))
+  return divexact_left(A, base_ring(A)(b))
+end
+
+@doc raw"""
+  divexact_right(A::SRow, b::NCRingElem) -> SRow
+
+Returns the left divexact $A/b$
+"""
+function divexact_right(A::SRow{T}, b::T) where T
+  B = sparse_row(base_ring(A))
+  if iszero(b)
+    return error("Division by zero")
+  end
+  for (p,v) = A
+    nv = divexact_right(v, b)
+    @assert !iszero(nv)
+    push!(B.pos, p)
+    push!(B.values, nv)
+  end
+  return B
+end
+
+function divexact_right(A::SRow{T}, b::Integer) where T
+  if length(A.values) == 0
+    return deepcopy(A)
+  end
+  return divexact_right(A, base_ring(A)(b))
 end
 
 ################################################################################
@@ -582,11 +638,12 @@ end
 Returns the row $c A + B$.
 """
 add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
+add_left_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
 
 @doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Returns the row $c A + B$ by changing $B$ in place.
+Returns the left scaled row $c A$ to $B$ by changing $B$ in place.
 """
 function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   @assert a !== b
@@ -622,7 +679,49 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   return b
 end
 
-add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c) 
+
+add_right_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
+
+@doc raw"""
+    add_right_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
+
+Returns the right scaled row $c A$ to $B$ by changing $B$ in place.
+"""
+
+function add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
+  @assert a !== b
+  i = 1
+  j = 1
+  t = base_ring(a)()
+  while i <= length(a) && j <= length(b)
+    if a.pos[i] < b.pos[j]
+      insert!(b.pos, j, a.pos[i])
+      insert!(b.values, j, a.values[i]*c)
+      i += 1
+      j += 1
+    elseif a.pos[i] > b.pos[j]
+      j += 1
+    else
+      t = mul!(t, a.values[i], c)
+      b.values[j] = addeq!(b.values[j], t)
+
+      if iszero(b.values[j])
+        deleteat!(b.values, j)
+        deleteat!(b.pos, j)
+      else
+        j += 1
+      end
+      i += 1
+    end
+  end
+  while i <= length(a)
+    push!(b.pos, a.pos[i])
+    push!(b.values, a.values[i]*c)
+    i += 1
+  end
+  return b
+end
 
 ################################################################################
 #

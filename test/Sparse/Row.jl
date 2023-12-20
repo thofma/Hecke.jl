@@ -163,4 +163,14 @@
   @test dense_row(A, 3) == matrix(FlintZZ, 1, 3, [-5, 0, 2])
   @test dense_row(A, 6) == matrix(FlintZZ, 1, 6, [-5, 0, 2, -10, 1, 0])
   @test sparse_row(dense_row(A, 6)) == A
+
+  #SRow{NCRingElem}
+  #uses exterior algebras from Oscar, not available in Hecke
+  E,e = exterior_algebra(QQ,3)
+  A = sparse_row(E, [1,2,3], [e[1], e[2], e[3]])
+  b = sparse_row(E, [1,2,3], [e[1], e[2], e[3]])
+  B = sparse_row(E, [1,2,3], [e[2], e[3], e[1]])
+  @test dot(A,B) != dot(B,A)
+  @test dot(A,b) == dot(b,A) == E(0)
+  @test A*e[1] != e[1]*A
 end
