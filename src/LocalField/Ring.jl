@@ -61,7 +61,7 @@ end
 
 ==(a::QadicRingElem, b::QadicRingElem) = a.x == b.x
 
-function divexact(a::QadicRingElem, b::QadicRingElem)
+function divexact(a::QadicRingElem, b::QadicRingElem; check::Bool=true)
   @assert !iszero(b.x)
   iszero(a) && return a
   valuation(a.x) >= valuation(b.x) || error("division not exact")

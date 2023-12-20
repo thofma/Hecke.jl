@@ -1351,7 +1351,7 @@ end
 
 Returns an ideal $c$ such that $a = b \cdot c$.
 """
-function divexact_left(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where { S, T }
+function divexact_left(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}; check::Bool=true) where { S, T }
   @assert algebra(a) === algebra(b)
   M = _colon_raw(a, b, :left)
   c = ideal(algebra(a), M)
@@ -1371,7 +1371,7 @@ end
 
 Returns an ideal $c$ such that $a = c \cdot b$.
 """
-function divexact_right(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where { S, T }
+function divexact_right(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}; check::Bool=true) where { S, T }
   @assert algebra(a) === algebra(b)
   M = _colon_raw(a, b, :right)
   c = ideal(algebra(a), M)

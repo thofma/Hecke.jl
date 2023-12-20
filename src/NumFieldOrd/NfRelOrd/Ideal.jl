@@ -652,7 +652,7 @@ end
 #
 ################################################################################
 
-function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}; check::Bool=true) where {T, S}
   O = order(a)
   return fractional_ideal(O, basis_pmatrix(a, copy = false); M_in_hnf=true)*inv(b)
 end

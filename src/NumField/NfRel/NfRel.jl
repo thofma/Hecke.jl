@@ -376,8 +376,8 @@ function Base.:(-)(a::T, b::NfRelElem{T}) where {T <: NumFieldElem}
   return parent(b)(a - data(b))
 end
 
-function divexact(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
-  return parent(a)(divexact(data(a), b))
+function divexact(a::NfRelElem{T}, b::T; check::Bool=true) where {T <: NumFieldElem}
+  return parent(a)(divexact(data(a), b; check=check))
 end
 
 Base.:(//)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem} = divexact(a, b)
@@ -404,8 +404,8 @@ for F in [ZZRingElem, QQFieldElem, Int]
       return parent(b)(a - data(b))
     end
 
-    function divexact(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
-      return parent(a)(divexact(data(a), b))
+    function divexact(a::NfRelElem{T}, b::$F; check::Bool=true) where {T <: NumFieldElem}
+      return parent(a)(divexact(data(a), b; check=check))
     end
 
     Base.:(//)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem} = divexact(a, b)
