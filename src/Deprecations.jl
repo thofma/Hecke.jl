@@ -127,6 +127,14 @@
 
 @deprecate field_of_fractions(O::GenOrd) function_field(O::GenOrd)
 
+# Deprecated during 0.23.*
+
+@deprecate divexact_right(a::T, b::T, check::Bool) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } divexact(a, b, :right, check)
+@deprecate divexact_left(a::T, b::T, check::Bool) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } divexact(a, b, :left, check)
+@deprecate divexact(a::NumFieldOrdElem, b::Integer, check::Bool) divexact(a, b; check=check)
+@deprecate divexact(a::NumFieldOrdElem, b::ZZRingElem, check::Bool) divexact(a, b; check=check)
+@deprecate divexact(x::T, y::T, check::Bool) where T <: NumFieldOrdElem divexact(x, y; check=check)
+
 # Things that moved to Nemo
 
 # > 0.18.1

@@ -133,10 +133,10 @@
     c = @inferred divexact(O1(a1^2), O1(a1))
     @test c == O1(a1)
 
-    c = @inferred divexact(O1(a1^2), O1(a1), true)
+    c = @inferred divexact(O1(a1^2), O1(a1); check=true)
     @test c == O1(a1)
 
-    c = @inferred divexact(O1(a1^2), O1(a1), false)
+    c = @inferred divexact(O1(a1^2), O1(a1); check=false)
     @test c == O1(a1)
 
     @test_throws ErrorException divexact(O1(1), O1(2))
@@ -191,9 +191,9 @@
     @test c == O1(a1)
     c = @inferred divexact(b, ZZRingElem(2))
     @test c == O1(a1)
-    c = @inferred divexact(b, ZZRingElem(2), true)
+    c = @inferred divexact(b, ZZRingElem(2); check=true)
     @test c == O1(a1)
-    c = @inferred divexact(b, ZZRingElem(2), false)
+    c = @inferred divexact(b, ZZRingElem(2); check=false)
     @test c == O1(a1)
 
     @test_throws ErrorException divexact(b, O1(4*a1))

@@ -117,7 +117,7 @@ function -(x::T, y::T) where T <: NumFieldOrdElem
   return z
 end
 
-function divexact(x::T, y::T, check::Bool = true) where T <: NumFieldOrdElem
+function divexact(x::T, y::T; check::Bool = true) where T <: NumFieldOrdElem
   !check_parent(x, y) && error("Wrong parents")
   a = divexact(x.elem_in_nf, y.elem_in_nf)
   if check
@@ -174,7 +174,7 @@ for T in [Integer, ZZRingElem]
       return z
     end
 
-    function divexact(a::NumFieldOrdElem, b::$T, check::Bool = true)
+    function divexact(a::NumFieldOrdElem, b::$T; check::Bool = true)
       t = divexact(a.elem_in_nf, b)
       if check
         if !in(t, parent(a))
