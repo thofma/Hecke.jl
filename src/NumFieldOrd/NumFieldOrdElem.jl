@@ -176,10 +176,8 @@ for T in [Integer, ZZRingElem]
 
     function divexact(a::NumFieldOrdElem, b::$T; check::Bool = true)
       t = divexact(a.elem_in_nf, b)
-      if check
-        if !in(t, parent(a))
-          error("Quotient not an element of the order.")
-        end
+      if check && !(in(t, parent(a)))
+        throw(ArgumentError("Quotient not an element of the order."))
       end
       c  = parent(a)(t)
       return c
