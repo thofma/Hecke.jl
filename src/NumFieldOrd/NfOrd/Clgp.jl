@@ -213,10 +213,11 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = use_GRH())
 
   @vprintln :UnitGroup 1 "Computing tentative class and unit group ..."
 
+  GRH && push_GRH!()                   
   @v_do :UnitGroup 1 pushindent()
   c = class_group_ctx(O, bound = bound, method = method, large = large, redo = redo, use_aut = use_aut)
   @v_do :UnitGroup 1 popindent()
@@ -405,7 +406,7 @@ end
 @doc raw"""
     class_group(O::NfOrd; bound = -1,
                           redo = false,
-                          GRH = true)   -> GrpAbFinGen, Map
+                          GRH = use_GRH())   -> GrpAbFinGen, Map
 
 Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$. The
 inverse of the map is the projection onto the group of ideals modulo the group
@@ -422,8 +423,11 @@ Keyword arguments:
 """
 function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
-                     large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
+                     large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = use_GRH(), do_lll::Bool = true,
                      saturate_at_2::Bool = true)
+  GRH && push_GRH!() #record use of GRH ONLY if selected by preferences
+                     #if the prefrences (set_use_GRH) are false and the user
+                     #specifies true directly, no recording
   if do_lll
    OK = maximal_order(nf(O))
     @assert OK.is_maximal == 1
@@ -453,8 +457,9 @@ A set of fundamental units of $\mathcal O$ can be
 obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
-function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = use_GRH())
   if is_maximal(O)
+    GRH && push_GRH!() #record use of GRH ONLY if selected by preferences
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
     return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
@@ -470,7 +475,7 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 All elements will be returned in factored form.
 """
-function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
+function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = use_GRH(), redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
     UUU, mUUU = unit_group_fac_elem(OK)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
@@ -485,6 +490,7 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   if c === nothing
     O = lll(maximal_order(nf(O)))
   end
+  GRH && push_GRH!() #record use of GRH ONLY if selected by preferences
   _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
   @assert b==1
   return unit_group_fac_elem(UU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
@@ -495,11 +501,12 @@ end
 
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
-function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = use_GRH())
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
     O = lll(maximal_order(nf(O)))
   end
+  GRH && push_GRH!() #record use of GRH ONLY if selected by preferences
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b == 1
   unit_group_fac_elem(U)
