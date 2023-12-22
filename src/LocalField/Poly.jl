@@ -463,7 +463,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return (DD, UU, VV)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
 end
 
-function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyRingElem{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyRingElem{T}; check::Bool=true) where T <: Union{padic, qadic, LocalFieldElem}
    check_parent(f1, g1)
    iszero(g1) && throw(DivideError())
    if iszero(f1)

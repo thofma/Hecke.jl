@@ -163,9 +163,9 @@ function *(a::GeIdeal, b::GeIdeal)
   return GeIdeal(a.a * b.a)
 end
 
-function divexact(a::GeIdeal, b::GeIdeal)
+function divexact(a::GeIdeal, b::GeIdeal; check::Bool=true)
   make_compatible!(a, b)
-  return GeIdeal(divexact(a.a, b.a))
+  return GeIdeal(divexact(a.a, b.a; check=check))
 end
 
 Hecke.norm(a::GeIdeal) = norm(a.a)

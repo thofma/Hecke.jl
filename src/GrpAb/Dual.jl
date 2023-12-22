@@ -103,12 +103,12 @@ function *(a::Integer, b::QmodnZElem)
   return QmodnZElem(b.parent, a*b.elt)
 end
 
-function divexact(a::QmodnZElem, b::ZZRingElem)
+function divexact(a::QmodnZElem, b::ZZRingElem; check::Bool=true)
   iszero(b) && throw(DivideError())
   return QmodnZElem(a.parent, a.elt // b)
 end
 
-function divexact(a::QmodnZElem, b::Integer)
+function divexact(a::QmodnZElem, b::Integer; check::Bool=true)
   iszero(b) && throw(DivideError())
   return QmodnZElem(a.parent, a.elt // b)
 end
@@ -292,7 +292,7 @@ function H2_G_QmodZ_restriction(G::GrpAbFinGen, U::Vector{GrpAbFinGen})
     sigma should be unique if g, h run through the generattors
 
     Let chi in Dual(H)  and U < G a subgrooup
-    Dual(G) -> Dual(U) is the composition: U->G 
+    Dual(G) -> Dual(U) is the composition: U->G
   =#
   #function chi(sigma) #in H return the cocycle
   #  return (g, h) -> mD(sigma)(H([g[i]*h[j] - g[j]*h[i] for i=1:length(e) for j=i+1:length(e)]))

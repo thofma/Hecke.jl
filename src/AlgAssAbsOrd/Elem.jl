@@ -227,26 +227,26 @@ function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: U
 end
 
 @doc raw"""
-    divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true)
-    divexact_right(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem, check::Bool = true)
+    divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem; check::Bool = true)
+    divexact_right(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem; check::Bool = true)
       -> AlgAssRelOrdElem
 
 Returns an element $c \in O$ such that $a = c \cdot b$ where $O$ is the order
 containing $a$.
 If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
-divexact_right(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :right, check)
+divexact_right(a::T, b::T; check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :right, check)
 
 @doc raw"""
-    divexact_left(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true)
-    divexact_left(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem, check::Bool = true)
+    divexact_left(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem; check::Bool = true)
+    divexact_left(a::AlgAssRelOrdElem, b::AlgAssRelOrdElem; check::Bool = true)
       -> AlgAssRelOrdElem
 
 Returns an element $c \in O$ such that $a = b \cdot c$ where $O$ is the order
 containing $a$.
 If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
-divexact_left(a::T, b::T, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :left, check)
+divexact_left(a::T, b::T; check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } = divexact(a, b, :left, check)
 
 ################################################################################
 #
