@@ -244,7 +244,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{ZZRingElem}; algo::Symbol = :r
     v = ZZRingElem[x == -1 ? sign(a)<0 : valuation(a, x) for x = S]
     if check
       b = a*FacElem(QQ, QQFieldElem[x for x = S], [-x for x = v], parent = R)
-      is_power(b, p) || error("not in the codomain")
+      is_power(b, p)[1] || error("not in the codomain")
     end
     return G(v)
   end
@@ -270,27 +270,14 @@ Hecke.valuation(a::FacElem{QQFieldElem, QQField}, p::Integer) = reduce(+, [v*val
 
 function Hecke.is_power(a::FacElem{QQFieldElem, QQField}, p::Int)
   b = simplify(a)
-  for (k,v) = b
-    if v % p != 0
-      return false
-    end
-    if !is_power(k, p)[1]
-      return false
-    end
-  end
-  return true
-end
-
-function Hecke.is_power_with_root(a::FacElem{QQFieldElem, QQField}, p::Int)
-  b = simplify(a)
   K = QQFieldElem[]
   V = ZZRingElem[]
-  for (k,v) = p
+  for (k,v) = b
     if v % p == 0
       push!(K, k)
       push!(V, divexact(v, p))
     else
-      fl, r = is_power_with_root(k, p)
+      fl, r = is_power(k, p)
       fl || return false, a
       push!(K, r)
       push!(V, v)

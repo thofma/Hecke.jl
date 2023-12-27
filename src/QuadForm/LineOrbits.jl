@@ -310,7 +310,7 @@ function line_orbits(G::Vector{FqPolyRepMatrix})
     let GFp = GFp
       fp = map_coefficients(a -> GFp(a.data), f, parent = GFpx)
     end
-    FF, aa = FlintFiniteField(fp, "aa", cached = false)
+    FF, aa = Native.finite_field(fp, "aa", cached = false)
     GG = Vector{dense_matrix_type(FF)}(undef, length(G))
     for i in 1:length(G)
       GG[i] = map_entries(b -> sum(coeff(b, i) * aa^i for i in 0:(d-1)), G[i])::dense_matrix_type(FF)

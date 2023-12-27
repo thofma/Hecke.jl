@@ -171,9 +171,9 @@ end
 @testset "FqField" begin
 
   for p in [31, 11, 101]
-    _ = Hecke.Nemo._GF(ZZRingElem(p), 2, "a")
-    _ = Hecke.Nemo._GF(ZZRingElem(p), 2, 'a')
-    F = Hecke.Nemo._GF(ZZRingElem(p), 2, :a)
+    _ = GF(ZZRingElem(p), 2, "a")
+    _ = GF(ZZRingElem(p), 2, 'a')
+    F = GF(ZZRingElem(p), 2, :a)
     G, mG = unit_group(F)
     #Test generator
     g = mG(G[1])

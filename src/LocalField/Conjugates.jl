@@ -556,8 +556,8 @@ function completion(K::AnticNumberField, ca::qadic)
   while length(pa) < d
     push!(pa, pa[end]*pa[2])
   end
-  m = matrix(Nemo._GF(p), d, d, [lift(ZZ, coeff(pa[i], j-1)) for j=1:d for i=1:d])
-  o = matrix(Nemo._GF(p), d, 1, [lift(ZZ, coeff(gen(R), j-1)) for j=1:d])
+  m = matrix(GF(p), d, d, [lift(ZZ, coeff(pa[i], j-1)) for j=1:d for i=1:d])
+  o = matrix(GF(p), d, 1, [lift(ZZ, coeff(gen(R), j-1)) for j=1:d])
   s = solve(m, o)
   @hassert :qAdic 1 m*s == o
   a = K()
@@ -566,7 +566,7 @@ function completion(K::AnticNumberField, ca::qadic)
   end
   f = defining_polynomial(parent(ca), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
-  o = matrix(Nemo._GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
+  o = matrix(GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
   s = solve(m, o)
   b = K()
   for i=1:d

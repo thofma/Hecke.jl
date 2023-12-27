@@ -150,7 +150,7 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
   #First, we search for elements that are primitive using block systems
   Fp = Native.GF(p, cached = false)
   Fpx = polynomial_ring(Fp, cached = false)[1]
-  F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
+  F = Native.finite_field(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
   rt_base_field = roots(F, Zx(K.pol))
   tmp = Fpx()
@@ -274,7 +274,7 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   #First, we search for elements that are primitive using block systems
   Fp = Native.GF(p, cached = false)
   Fpx = polynomial_ring(Fp, cached = false)[1]
-  F = FlintFiniteField(p, abs_deg, "w", cached = false)[1]
+  F = Native.finite_field(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
   rt_base_field = roots(F, Zx(K.pol))
   rt = Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}()

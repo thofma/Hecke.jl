@@ -295,7 +295,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   end
 
   r = length(basis_elts)
-  Fp = Nemo._GF(p, cached = false)
+  Fp = GF(p, cached = false)
 
   if r == 0
     A = _zero_algebra(Fp)

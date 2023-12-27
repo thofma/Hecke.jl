@@ -234,7 +234,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
     end
     descent = true
     ord = degree(opt)
-    R = FlintFiniteField(opt, "a")[1]
+    R = Native.finite_field(opt, "a")[1]
     T = residue_ring(FlintZZ, p)
     J = CoerceMap(T, R)
   end

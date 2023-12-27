@@ -116,7 +116,7 @@ end
 function _tates_algorithm(E::EllCrv{QQFieldElem}, _p::IntegerUnion)
   p = ZZ(_p)
   F = GF(p, cached = false)
-  _invmod = x -> QQ(lift(inv(F(x))))
+  _invmod = x -> QQ(lift(ZZ, inv(F(x))))
   _uni = p
   return __tates_algorithm_generic(E, ZZ, x -> is_zero(x) ? inf : valuation(x, p), x -> smod(x, p), x -> F(x), x -> QQ(lift(x)), _invmod, p)
 end

@@ -95,7 +95,7 @@
       end
     end
 
-    F = Hecke.Nemo._GF(3^3, cached = false)
+    F = GF(3^3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
     K, gK = Hecke.Nemo._residue_field(x^2+1, "a")
     Kt, t = K["t"]
