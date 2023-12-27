@@ -321,7 +321,7 @@ end
 ################################################################################
 
 function sub(x::FakeFmpqMat, r::AbstractUnitRange{Int}, c::AbstractUnitRange{Int})
-  z = FakeFmpqMat(sub(x.num, r, c), x.den)
+  z = FakeFmpqMat(sub(x.num, r, c), deepcopy(x.den))
   return z
 end
 

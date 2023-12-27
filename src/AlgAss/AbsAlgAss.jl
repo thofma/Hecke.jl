@@ -1248,11 +1248,7 @@ function _radical_prime_field(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldEle
         MF = representation_matrix(a)
         for m = 1:nrows(MF)
           for n = 1:ncols(MF)
-            if T <: FqFieldElem
-              MZ[m, n] = lift(ZZ, MF[m, n])
-            else
-              MZ[m, n] = lift(MF[m, n])
-            end
+            MZ[m, n] = lift(ZZ, MF[m, n])
           end
         end
         t = tr(MZ^Int(pl))

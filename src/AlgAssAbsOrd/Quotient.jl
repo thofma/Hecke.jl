@@ -17,7 +17,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   S, U, V = snf_with_transform(numerator(M))
   adj_bas_mat = inv(V)
   adj_bas_all = [elem_from_mat_row(O, adj_bas_mat, i) for i in 1:degree(O)]
-  k = findfirst(iszero, diagonal(S))
+  k = something(findfirst(iszero, diagonal(S)), nrows(S) + 1)
   adjusted_basis = adj_bas_all[k:end]
   l = length(adjusted_basis)
   mt = Array{QQFieldElem, 3}(undef, l, l, l)

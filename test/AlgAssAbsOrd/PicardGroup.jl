@@ -40,7 +40,7 @@ end
   @test P.snf == ZZRingElem[ 2 ]
   @test test_disc_log_picard(P, mP, O)
   I = mP(P[1])
-  @test_throws ErrorException Hecke.principal_generator(I)
+  @test_throws ErrorException principal_generator(I)
   I2 = I^2
   a = Hecke.principal_generator(I2)
   @test I2 == ideal(O, a)

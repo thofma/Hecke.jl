@@ -508,7 +508,7 @@ function is_principal(A::NfOrdIdl)
     return false, one(O)
   end
   if !is_maximal(O)
-    return is_principal_non_maximal(A)
+    return _is_principal_non_maximal(A)
   end
   fl, a = is_principal_fac_elem(A)
   if fl
@@ -818,4 +818,14 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
     I1 = I.num
   end
   return I1, s*I.den
+end
+
+################################################################################
+#
+#  Wrapper
+#
+################################################################################
+
+function is_principal_with_data(I::Union{NfOrdIdl, NfOrdFracIdl})
+  return is_principal(I)
 end
