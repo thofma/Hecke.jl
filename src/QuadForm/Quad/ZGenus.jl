@@ -833,8 +833,10 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-  sym1 = filter!(g -> g[2] != 0, symbol(G1))
-  sym2 = filter!(g -> g[2] != 0, symbol(G2))
+
+  # make a copy and enforce sparsity
+  sym1 = [g for g in symbol(G1) if g[2] != 0]
+  sym2 = [g for g in symbol(G2) if g[2] != 0]
   if length(sym1) == 0 || length(sym2) == 0
     return sym1 == sym2
   end
@@ -891,16 +893,8 @@ function Base.:(==)(G1::ZZGenus, G2::ZZGenus)
   if signature_tuple(G1) != signature_tuple(G2)
     return false
   end
-  t = length(local_symbols(G1))
-  if t != length(local_symbols(G2))
-    return false
-  end
-  for i in 1:t
-    if local_symbols(G1)[i] != local_symbols(G2)[i]
-      return false
-    end
-  end
-  return true
+  bad_primes(G1) == bad_primes(G2) || return false
+  return local_symbols(G1) == local_symbols(G2)
 end
 
 function Base.hash(G::ZZGenus, u::UInt)
@@ -1103,10 +1097,10 @@ end
 @doc raw"""
     symbol(S::ZZLocalGenus) -> Vector{Vector{Int}}
 
-Return a copy of the underlying lists of integers for the Jordan blocks of `S`.
+Return the underlying lists of integers for the Jordan blocks of `S`.
 """
 function symbol(S::ZZLocalGenus)
-  return copy(S._symbol)
+  return S._symbol
 end
 
 @doc raw"""
@@ -1128,7 +1122,7 @@ end
 @doc raw"""
     symbol(S::ZZLocalGenus, scale::Int) -> Vector{Int}
 
-Return a copy of the underlying lists of integers
+Return the underlying lists of integers
 for the Jordan block of the given scale
 """
 function symbol(S::ZZLocalGenus, scale::Int)
@@ -1410,10 +1404,10 @@ rank(G::ZZGenus) = dim(G)
 @doc raw"""
     local_symbols(G::ZZGenus) -> Vector{ZZLocalGenus}
 
-Return a copy of the local symbols.
+Return the local symbols.
 """
 function local_symbols(G::ZZGenus)
-  return deepcopy(G._symbols)
+  return G._symbols
 end
 
 @doc raw"""
@@ -1425,7 +1419,7 @@ function local_symbol(G::ZZGenus, p)
   p = ZZ(p)
   for sym in local_symbols(G)
     if p == prime(sym)
-      return deepcopy(sym)
+      return sym
     end
   end
   @assert p != 2
