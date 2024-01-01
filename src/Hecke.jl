@@ -128,6 +128,7 @@ end
 global const maximal_order = MaximalOrder
 
 function __init__()
+  ccall(:jl_generating_output, Cint, ()) == 1 && return nothing
   # verify some base rings survived serialization/deserialization
   @assert base_ring(Hecke.Globals.Zx) === FlintZZ
   @assert base_ring(Hecke.Globals.Qx) === FlintQQ

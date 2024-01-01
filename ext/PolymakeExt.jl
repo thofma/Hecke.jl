@@ -2,6 +2,11 @@ module PolymakeExt
 
 using Hecke, Polymake
 
+function __init__()
+  ccall(:jl_generating_output, Cint, ()) == 1 && return nothing
+end
+
+
 import Hecke:
   solve_mixed,
   ncols,
