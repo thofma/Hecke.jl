@@ -22,8 +22,6 @@
 # -  R = localization(k(x), degree), F = FunctionField
 # -  R = Z[x], F = FunctionField/ QQ(t)
 
-export integral_closure, extension_field
-
 import AbstractAlgebra: expressify
 
 ################################################################################

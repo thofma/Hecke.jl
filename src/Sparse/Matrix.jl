@@ -1,5 +1,3 @@
-export SMatSpace, sparse_matrix, nnz, sparsity, density
-
 ################################################################################
 #
 #  Parent constructor

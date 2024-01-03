@@ -1,8 +1,3 @@
-export ambient_space, rank, gram_matrix, inner_product, involution, is_hermitian, is_quadratic, is_regular,
-       is_local_square, is_isometric, is_rationally_isometric, is_isotropic, is_isotropic_with_vector, quadratic_space,
-       hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
-       restrict_scalars, orthogonal_complement, orthogonal_projection, diagonal_with_transform
-
 ################################################################################
 #
 #  Maps

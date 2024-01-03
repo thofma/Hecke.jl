@@ -31,9 +31,6 @@
 #
 ################################################################################
 
-export @vprint, @vprintln, @hassert, @v_do, @req, add_verbosity_scope, get_verbosity_level,
-       set_verbosity_level, add_assertion_scope, get_assertion_level, set_assertion_level
-
 ################################################################################
 #
 #  Verbose

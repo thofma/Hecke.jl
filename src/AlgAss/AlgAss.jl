@@ -1,5 +1,3 @@
-export associative_algebra, is_split, multiplication_table, restrict_scalars, center, zero_algebra
-
 add_assertion_scope(:AlgAss)
 
 ################################################################################

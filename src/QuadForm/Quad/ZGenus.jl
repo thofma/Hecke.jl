@@ -1,10 +1,3 @@
-export genus, rank, det, dim, prime, symbol, representative, signature,
-       oddity, excess, level, integer_genera, scale, norm, mass,
-       quadratic_space, hasse_invariant, local_symbol, local_symbols,
-       representatives, is_elementary, is_primary, is_unimodular,
-       is_primary_with_prime, is_elementary_with_prime, automorphous_numbers,
-       is_automorphous, bad_primes, signature_pair, signature_tuple
-
 ###############################################################################
 #
 # Computation of genus symbols

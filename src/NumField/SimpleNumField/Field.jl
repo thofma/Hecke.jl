@@ -112,8 +112,6 @@ basis(::SimpleNumField)
 #
 ################################################################################
 
-export defining_polynomial
-
 @doc raw"""
     defining_polynomial(L::SimpleNumField) -> PolyRingElem
 
@@ -194,8 +192,6 @@ Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns `false` and a morphism mapping everything to $0$.
 """
 is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
-
-export is_isomorphic_with_map
 
 ################################################################################
 #

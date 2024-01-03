@@ -12,5 +12,3 @@ include("NormRelation/SUnits.jl")
 include("NormRelation/Clgp.jl")
 
 end # module
-
-export norm_relation

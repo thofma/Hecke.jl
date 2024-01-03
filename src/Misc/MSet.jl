@@ -1,9 +1,3 @@
-export MSet
-export multiplicities
-export multiplicity
-export multiset
-export subsets
-
 ###############################################################################
 #
 #  Multi-sets

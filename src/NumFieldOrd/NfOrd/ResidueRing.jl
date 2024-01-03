@@ -32,10 +32,6 @@
 #
 ################################################################################
 
-export NfOrdQuoRing, NfOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
-       gcd, inv, parent, show, divexact, isone, iszero, howell_form,
-       strong_echelon_form, triangularize, det, euclid, xxgcd, annihilator
-
 ################################################################################
 #
 #  Assertion

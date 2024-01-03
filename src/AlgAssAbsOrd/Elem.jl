@@ -1,5 +1,3 @@
-export elem_in_algebra
-
 parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
 
 @inline parent(x::AlgAssAbsOrdElem) = x.parent

@@ -1,7 +1,5 @@
 import Base.Vector
 
-export sparse_row, dot, scale_row!, add_scaled_row, permute_row, dense_row
-
 ################################################################################
 #
 #  Parent constructor

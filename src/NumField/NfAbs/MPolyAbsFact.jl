@@ -1520,7 +1520,6 @@ end
 end
 
 using .MPolyFact
-export factor_absolute, is_absolutely_irreducible
 
 #application (for free)
 

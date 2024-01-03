@@ -1,5 +1,3 @@
-export is_left_ideal, is_right_ideal
-
 @doc raw"""
     algebra(a::AbsAlgAssIdl) -> AbsAlgAss
 

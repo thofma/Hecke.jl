@@ -1,5 +1,3 @@
-export principal_generator, kernel_group
-
 ################################################################################
 #
 #  Map Types

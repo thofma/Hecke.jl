@@ -7,14 +7,6 @@
 #
 ###############################################################################
 
-export Isogeny
-
-export isogeny_from_kernel, isogeny_from_kernel_factored, degree, image,
-rational_maps, frobenius_map, isogeny_map_psi, isogeny_map_psi_squared, isogeny_map_phi,
-isogeny_map_omega, push_through_isogeny, dual_isogeny, identity_isogeny, multiplication_by_m_map,
-is_kernel_polynomial, is_cyclic_kernel_polynomial, dual_of_frobenius
-
-
 mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: RingElem
   header::MapHeader{EllCrv{T}, EllCrv{T}}
   domain::EllCrv{T}

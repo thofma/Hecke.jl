@@ -32,14 +32,6 @@
 #
 ################################################################################
 
-export abelian_group, free_abelian_group, is_snf, ngens, nrels, rels, snf, isfinite,
-       is_infinite, rank, order, exponent, is_trivial, is_isomorphic,
-       direct_product, is_torsion, torsion_subgroup, sub, quo, is_cyclic,
-       psylow_subgroup, is_subgroup, abelian_groups, flat, tensor_product,
-       dual, chain_complex, is_exact, free_resolution, obj, map,
-       primary_part, is_free, is_pure, is_neat, direct_sum, biproduct,
-       canonical_injection, canonical_injections, canonical_projection, canonical_projections
-
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
 
 ################################################################################
@@ -722,7 +714,6 @@ function _direct_product(t::Symbol, G::GrpAbFinGen...
 end
 
 ⊕(A::GrpAbFinGen...) = direct_sum(A..., task = :none)
-export ⊕
 
 #TODO: use matrices as above - or design special maps that are not tied
 #      to matrices but operate directly.
@@ -932,7 +923,6 @@ function tensor_product(G::GrpAbFinGen...; task::Symbol = :map)
 end
 
 ⊗(G::GrpAbFinGen...) = tensor_product(G..., task = :none)
-export ⊗
 
 @doc raw"""
     hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Vector{ <: Map{GrpAbFinGen, GrpAbFinGen}}) -> Map

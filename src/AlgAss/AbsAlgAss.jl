@@ -1,5 +1,3 @@
-export subalgebra, decompose, radical, is_central, is_simple, central_primitive_idempotents, is_semisimple, is_etale
-
 _base_ring(A::AbsAlgAss) = base_ring(A)
 
 ################################################################################

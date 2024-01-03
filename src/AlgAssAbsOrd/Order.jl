@@ -1,5 +1,3 @@
-export algebra, ideal_type, integral_group_ring
-
 add_assertion_scope(:AlgAssOrd)
 add_verbosity_scope(:AlgAssOrd)
 
@@ -432,7 +430,7 @@ function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbsAlgAssEl
       lcm!(deno, deno, t)
     end
   end
-  
+
   temp_den = ZZRingElem()
 
   #dens = [lcm([denominator(coefficients(A[i], copy = false)[j]) for j=1:d]) for i=1:n]

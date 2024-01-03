@@ -1,5 +1,3 @@
-export overorders, is_bass, is_gorenstein, poverorders
-
 ################################################################################
 #
 #  Defines minimal overorder

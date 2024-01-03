@@ -1,5 +1,3 @@
-export left_order, right_order, normred, locally_free_basis, is_locally_free
-
 @doc raw"""
     order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
 

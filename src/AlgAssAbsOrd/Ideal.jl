@@ -1,5 +1,3 @@
-export is_invertible, contract, swan_module, is_subset_locally, is_equal_locally, lattice_with_local_conditions, primary_decomposition
-
 @doc raw"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
 

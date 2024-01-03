@@ -1,6 +1,3 @@
-export rres, rresx
-
-
 ################################################################################
 #
 #  Computation of a generator of the ideal of the resultant

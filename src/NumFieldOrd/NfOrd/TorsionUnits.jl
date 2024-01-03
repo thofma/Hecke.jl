@@ -32,8 +32,6 @@
 #
 ################################################################################
 
-export torsion_unit_group, torsion_units, torsion_units_generator, torsion_units_order
-
 ################################################################################
 #
 #  Torsion unit test

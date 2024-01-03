@@ -1,13 +1,3 @@
-export AbstractLat
-export AbstractSpace
-export AbstractSpaceMor
-export AbstractSpaceRes
-export TorQuadModule
-export TorQuadModuleElem
-export TorQuadModuleMor
-export VecSpaceRes
-export ZZLat
-
 ################################################################################
 #
 #  Abstract types

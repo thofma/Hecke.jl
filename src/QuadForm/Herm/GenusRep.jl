@@ -1,6 +1,3 @@
-export representatives, genus_representatives
-
-
 # Genus representatives for quadratic lattices,
 #
 # With permission ported from Magma package of Markus Kirschmer:

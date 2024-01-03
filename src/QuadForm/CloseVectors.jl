@@ -1,5 +1,3 @@
-export close_vectors, close_vectors_iterator
-
 @doc raw"""
     close_vectors(L:ZZLat, v:Vector, [lb,], ub; check::Bool = false)
                                             -> Vector{Tuple{Vector{Int}}, QQFieldElem}
@@ -81,7 +79,7 @@ function _close_vectors(L::ZZLat, v::Vector{QQFieldElem}, lowerbound, upperbound
   # Construct new gram matrix with respect to B:
   # [ G1   | (-v*G1)'    ]
   # [-v*G1 |  v*G1*v'+ e ]
-  
+
   e = upperbound//3 + epsilon
   gram = zero_matrix(QQ, d + 1, d + 1)
   _copy_matrix_into_matrix(gram, 1, 1, G1)
@@ -150,7 +148,7 @@ function _close_vectors_iterator(L::ZZLat, v::Vector{QQFieldElem}, lowerbound, u
   # Construct new gram matrix with respect to B:
   # [ G1   | (-v*G1)'    ]
   # [-v*G1 |  v*G1*v'+ e ]
-  
+
   e = upperbound//3 + epsilon
   gram = zero_matrix(QQ, d + 1, d + 1)
   _copy_matrix_into_matrix(gram, 1, 1, G1)

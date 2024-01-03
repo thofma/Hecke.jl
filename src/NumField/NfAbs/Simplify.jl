@@ -1,5 +1,3 @@
-export simplify
-
 add_verbosity_scope(:Simplify)
 
 @doc raw"""

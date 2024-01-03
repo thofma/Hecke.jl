@@ -32,8 +32,6 @@
 #
 ################################################################################
 
-export quadratic_defect, hilbert_symbol
-
 function quadratic_defect(a::Union{Rational{<:Integer},IntegerUnion,QQFieldElem}, p::IntegerUnion)
   return quadratic_defect(QQFieldElem(a), ZZRingElem(p))
 end

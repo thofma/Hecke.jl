@@ -1,5 +1,3 @@
-export rational_reconstruction, farey_lift, berlekamp_massey
-
 ## given some r/s = a mod b and deg(r) = n, deg(s) <= m find r,s
 ## a and b better be polynomials in the same poly ring.
 ## seems to work for Q (Qx) and Fp experimentally

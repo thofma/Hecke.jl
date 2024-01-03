@@ -1,8 +1,3 @@
-export binary_quadratic_form, can_solve, discriminant,
-       fundamental_discriminant, is_discriminant, QuadBin,
-       is_fundamental_discriminant, prime_form, cycle,
-       is_indefinite, is_positive_definite, is_negative_definite, is_reduced
-
 import Nemo: can_solve
 
 ###############################################################################

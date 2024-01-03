@@ -1,5 +1,3 @@
-export atkin_modular_polynomial, classical_modular_polynomial
-
 const default_class_mod_pol_db = joinpath(artifact"ClassicalModularPolynomialsDB", "ClassicalModularPolynomialsDB", "data")
 
 const _classical_modular_polynomial_cache = Dict{Any, Any}()

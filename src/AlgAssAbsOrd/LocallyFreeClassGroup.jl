@@ -1,5 +1,3 @@
-export locally_free_class_group, locally_free_class_group_with_disc_log
-
 ################################################################################
 #
 #  Locally free class group

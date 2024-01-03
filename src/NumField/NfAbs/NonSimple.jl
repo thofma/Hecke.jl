@@ -32,10 +32,6 @@
 #
 ################################################################################
 
-export NfAbsNS, NfAbsNSElem
-
-export is_simple, simple_extension
-
 @inline base_ring(K::NfAbsNS) = FlintQQ
 
 @inline base_field(K::NfAbsNS) = FlintQQ

@@ -1,5 +1,3 @@
-export completion, qAdicConj
-
 #XXX: valuation(Q(0)) == 0 !!!!!
 function newton_lift(f::ZZPolyRingElem, r::qadic, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
   Q = parent(r)

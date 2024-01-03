@@ -1,5 +1,4 @@
 import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
-export crt_env, crt, crt_inv, modular_init, crt_signed
 
 mutable struct crt_env{T}
   pr::Vector{T}

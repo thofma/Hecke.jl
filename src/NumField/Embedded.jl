@@ -1,5 +1,3 @@
-export embedded_number_field, EmbeddedField, EmbeddedElem
-
 ################################################################################
 #
 #  Types

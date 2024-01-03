@@ -1,6 +1,3 @@
-export UnitGroup, solvemod, gen_mod_pk,
-       disc_log_bs_gs, disc_log_ph, disc_log_mod
-
 @doc raw"""
     is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
 

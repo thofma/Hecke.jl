@@ -30,8 +30,6 @@ function preimage_function(f::Map(HeckeMap))
   end
 end
 
-export Map
-
 mutable struct MapCache{D, C, De, Ce}
   lim::Int
 
@@ -233,5 +231,3 @@ function Base.inv(M::MapFromFunc)
      return MapFromFunc(codomain(M), domain(M), x->preimage(M, x))
   end
 end
-
-export MapFromFunc

@@ -1,5 +1,3 @@
-export conductor, is_conductor, norm_group, maximal_abelian_subfield, genus_field, content_ideal, subfields, is_normal, is_central, normal_closure
-
 ########################################################################################
 #
 #  Tools for conductor

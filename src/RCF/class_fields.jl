@@ -1,5 +1,3 @@
-export grunwald_wang
-
 function Base.show(io::IO, C::ClassField_pp{S, T}) where {S, T}
   println(IOContext(io, :compact => true), "Cyclic class field of degree $(degree(C)) defined modulo $(defining_modulus(C))")
   if isdefined(C, :a)

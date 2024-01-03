@@ -1,6 +1,3 @@
-export submodules, minimal_submodules, maximal_submodules, composition_series,
-       composition_factors_with_multiplicity, meataxe
-
 ################################################################################
 #
 #  Tools for MeatAxe

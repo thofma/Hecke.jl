@@ -1,5 +1,3 @@
-export ideal_class_monoid, is_locally_isomorphic, is_conjugate
-
 ###############################################################################
 #
 #  ICM / is_isomorphic_with_map

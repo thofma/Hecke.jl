@@ -312,4 +312,3 @@ export pselmer_group, pselmer_group_fac_elem
 end # SelmerModule
 
 using .SelmerModule
-export pselmer_group, pselmer_group_fac_elem

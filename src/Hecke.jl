@@ -109,9 +109,6 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
              valuation!
 
-export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, is_power, number_field, factor, @vtime, RationalUnion, conjugate, disc_log
-
 const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
 ###############################################################################
@@ -568,6 +565,7 @@ add_assertion_scope(:PID_Test)
 #
 ################################################################################
 
+include("exports.jl")
 include("HeckeTypes.jl")
 include("Sparse.jl")
 include("NumField/NfRel/Types.jl")
@@ -797,8 +795,6 @@ function percent_P()
   end
   print_history(REPL.LineEdit.mode(s).hist)
 end
-
-export percent_P
 
 #same (copied) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
 #difference: names(m, all = true) to also see non-exported variables, aka

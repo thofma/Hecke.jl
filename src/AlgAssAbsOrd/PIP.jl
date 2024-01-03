@@ -1,8 +1,6 @@
 add_verbosity_scope(:PIP)
 add_assertion_scope(:PIP)
 
-export is_free_with_basis
-
 ################################################################################
 #
 #  Is principal for maximal orders

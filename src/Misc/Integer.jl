@@ -415,9 +415,6 @@ function _factors_trial_division(n::ZZRingElem, np::Int=10^5)
 
 end
 
-
-export euler_phi_inv, Divisors, carmichael_lambda
-
 @doc raw"""
     Divisors{T}
 

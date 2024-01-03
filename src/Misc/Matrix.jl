@@ -1,6 +1,3 @@
-export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal, saturate,
-       has_finite_multiplicative_order, multiplicative_order
-
 import Nemo.matrix
 
 ################################################################################

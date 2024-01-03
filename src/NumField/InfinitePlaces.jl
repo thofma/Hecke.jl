@@ -7,19 +7,6 @@
 #
 ################################################################################
 
-export is_complex,
-       is_positive,
-       is_totally_positive,
-       signs,
-       sign,
-       real_places,
-       complex_places,
-       infinite_places,
-       infinite_place,
-       embedding,
-       embeddings,
-       absolute_value
-
 ################################################################################
 #
 #  Field access
@@ -126,7 +113,7 @@ end
 #  I/O
 #
 ################################################################################
- 
+
 function Base.show(io::IO, ::MIME"text/plain", p::InfPlc)
   print(io, "Infinite place of\n", number_field(p), "\ncorresponding to\n",
         _embedding(p))
@@ -286,7 +273,7 @@ restrict(p::Union{InfPlc, PosInf}, ::QQField) = inf
 #  Extension
 #
 ################################################################################
- 
+
 @doc raw"""
     extend(p::InfPlc, L::NumField) -> Vector{InfPlc}
 

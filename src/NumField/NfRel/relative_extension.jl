@@ -1,5 +1,3 @@
-export relative_simple_extension, is_primitive, is_primitive_over
-
 ################################################################################
 #
 #  Relative extension
