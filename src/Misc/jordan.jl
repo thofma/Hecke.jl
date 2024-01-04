@@ -1,6 +1,3 @@
-export spectrum, eigenspace, jordan_normal_form, rational_canonical_form,
-companion_matrix, common_eigenspaces, eigenspaces
-
 @doc raw"""
     spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
 

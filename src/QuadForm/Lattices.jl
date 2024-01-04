@@ -1,21 +1,3 @@
-export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
-       automorphism_group_generators, automorphism_group_order, bad_primes,
-       basis_matrix, basis_matrix_of_rational_span, can_scale_totally_positive,
-       coefficient_ideals, degree, diagonal, diagonal_of_rational_span,
-       discriminant, dual, fixed_field, fixed_ring, generators, gram_matrix_of_generators,
-       gram_matrix_of_rational_span, hasse_invariant, hermitian_lattice, intersect,
-       involution, is_definite, is_integral, is_isometric, is_local_norm, is_locally_isometric,
-       is_modular, is_negative_definite, is_positive_definite, is_rationally_isometric,
-       is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
-       local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
-       rank, rational_span, rescale, restrict_scalars, restrict_scalars_with_map, scale,
-       volume, witt_invariant, integer_lattice, trace_lattice_with_isometry,
-       trace_lattice_with_isometry_and_transfer_data, hermitian_structure,
-       hermitian_structure_with_transfer_data
-
-
-export HermLat, QuadLat
-
 # aliases for deprecation
 is_equivalent(U::AbstractLat, V::AbstractLat) = is_isometric(U, V)
 is_equivalent(U::AbstractLat, V::AbstractLat, p) = is_isometric(U, V, p)

@@ -37,10 +37,6 @@
 #
 ################################################################################
 
-export arf, ArfField
-
-export pos_inf, neg_inf, nan, isposinf, isneginf, isnan, is_normal, max, min
-
 ################################################################################
 #
 #  Types and memory management

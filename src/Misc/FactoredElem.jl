@@ -1,7 +1,3 @@
-export FacElem, FacElemMon, simplify, factor_coprime
-
-export transform
-
 ################################################################################
 #
 #  Insert in a dictionary

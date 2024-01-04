@@ -1,5 +1,3 @@
-export pseudo_basis, basis_pmatrix
-
 add_verbosity_scope(:NfRelOrd)
 
 ################################################################################

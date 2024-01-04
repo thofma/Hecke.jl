@@ -34,10 +34,6 @@
 #
 ################################################################################
 
-export tates_algorithm_global, tates_algorithm_local, tidy_model,
-       tamagawa_number, tamagawa_numbers, kodaira_symbol, kodaira_symbols,
-       reduction_type, modp_reduction, bad_primes, KodairaSymbol
-
 ################################################################################
 #
 #  Tates algorithm

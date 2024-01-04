@@ -32,11 +32,6 @@
 #
 ################################################################################
 
-export PrimeIdealsSet, prime_ideals_over, ramification_index,
-       prime_ideals_up_to, decomposition_group, inertia_subgroup,
-       ramification_group, is_ramified, is_tamely_ramified, is_weakly_ramified,
-       approximate
-
 @doc raw"""
     is_ramified(O::NfOrd, p::Int) -> Bool
 

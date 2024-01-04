@@ -33,9 +33,6 @@
 #
 ################################################################################
 
-export haspreimage, has_image, hom, kernel, cokernel, image, is_injective, is_surjective,
-       is_bijective, preinverse, postinverse
-
 ################################################################################
 #
 #  Check for existence of (pre)image

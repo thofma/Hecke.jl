@@ -1,5 +1,3 @@
-export complex_embeddings, real_embeddings, evaluation_function, complex_embedding
-
 @doc raw"""
     complex_embeddings(K::NumField; conjugates::Bool = true) -> Vector{NumFieldEmb}
 
@@ -269,7 +267,7 @@ function sign(x::NumFieldElem, e::NumFieldEmb)
     if is_positive(real(ex))
       return 1
     elseif is_negative(real(ex))
-      return -1 
+      return -1
     end
     p = 2 * p
   end

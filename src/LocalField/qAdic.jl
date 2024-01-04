@@ -1,8 +1,6 @@
 add_verbosity_scope(:qAdic)
 add_assertion_scope(:qAdic)
 
-export defining_polynomial
-
 @attributes FlintQadicField
 
 function residue_field(Q::FlintQadicField)

@@ -34,10 +34,6 @@
 #
 ################################################################################
 
-export hasse_interval, order, order_via_exhaustive_search, order_via_bsgs, order_via_legendre,
-       order_via_schoof, trace_of_frobenius, rand, elem_order_bsgs, is_supersingular,
-       is_ordinary, is_probable_supersingular, supersingular_polynomial
-
 ################################################################################
 #
 #  Random point

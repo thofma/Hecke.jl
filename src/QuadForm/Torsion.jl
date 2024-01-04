@@ -1,12 +1,3 @@
-export discriminant_group, torsion_quadratic_module, normal_form, genus, is_genus,
-       is_degenerate, cover, relations, orthogonal_submodule, brown_invariant,
-       modulus_bilinear_form, modulus_quadratic_form, is_isometric_with_isometry,
-       is_anti_isometric_with_anti_isometry, has_complement, radical_bilinear,
-       radical_quadratic, is_semi_regular, trivial_morphism, abelian_group_homomorphism,
-       value_module, value_module_quadratic_form, gram_matrix_bilinear,
-       gram_matrix_quadratic, quadratic_product, is_totally_isotropic, is_isometry,
-       is_anti_isometry, stable_submodules
-
 ################################################################################
 #
 #  Construction

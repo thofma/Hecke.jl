@@ -1,5 +1,3 @@
-export extend, NfToNfMor, automorphism_group
-
 struct NfMorSet{T}
   field::T
 end

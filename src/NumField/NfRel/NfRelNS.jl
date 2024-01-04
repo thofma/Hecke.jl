@@ -32,8 +32,6 @@
 #
 ################################################################################
 
-export NfRelNS, simple_extension
-
 #= trivial example
 Qx, x = polynomial_ring(FlintQQ)
 QQ = number_field(x-1)[1]
@@ -178,7 +176,7 @@ function number_field(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Boo
   end
   return K, gens(K)
 end
-  
+
 function number_field(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
   sym = Symbol(s)
   S = [Symbol("$s$i") for i=1:length(f)]

@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-export is_GLZ_conjugate
-
 # Given a square matrix A, determine the algebra C_A = {X | XA = AX }
 # and its semisimple reduction
 #

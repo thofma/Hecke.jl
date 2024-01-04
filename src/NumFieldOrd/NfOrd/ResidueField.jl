@@ -1,5 +1,3 @@
-export residue_field, relative_residue_field
-
 ################################################################################
 #
 #  Residue field construction for arbitrary prime ideals

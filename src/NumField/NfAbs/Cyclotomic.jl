@@ -1,4 +1,3 @@
-export cyclotomic_units_totally_real, cyclotomic_regulator
 # Some functionality for cyclotomic fields
 
 @doc raw"""

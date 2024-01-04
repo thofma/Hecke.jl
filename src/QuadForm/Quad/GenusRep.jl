@@ -6,8 +6,6 @@
 add_verbosity_scope(:GenRep)
 add_assertion_scope(:GenRep)
 
-export automorphism_group_generators, genus_representatives
-
 ################################################################################
 #
 #  SpinorGeneraCtx

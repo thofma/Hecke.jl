@@ -1,5 +1,3 @@
-export local_factor, local_mass
-
 ################################################################################
 #
 #  Local factor for dyadic primes

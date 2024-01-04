@@ -1,8 +1,4 @@
 import Nemo.sub!, Base.gcd
-export induce_rational_reconstruction, induce_crt, root, roots,
-       is_monic, radical_extension, is_radical_extension,
-       is_kummer_extension, cyclotomic_field, wildanger_field,
-       compositum
 
 add_verbosity_scope(:PolyFactor)
 add_assertion_scope(:PolyFactor)

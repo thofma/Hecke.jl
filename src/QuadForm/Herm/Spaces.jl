@@ -1,5 +1,3 @@
-export is_represented_by, is_locally_represented_by, is_locally_hyperbolic
-
 ################################################################################
 #
 #  Constructors

@@ -7,8 +7,6 @@
 #
 ###############################################################################
 
-export formal_w, formal_y, formal_x, formal_differential_form, formal_log, formal_isogeny, formal_inverse
-
 #Can probably be made more efficient using Newton iteration like Sage does.
 @doc raw"""
     formal_w(E::EllCrv, prec::Int) -> LaurentSeriesElem

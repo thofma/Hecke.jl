@@ -32,8 +32,6 @@
 #
 ################################################################################
 
-export is_unit, is_torsion_unit, is_independent, unit_group
-
 add_verbosity_scope(:UnitGroup)
 add_assertion_scope(:UnitGroup)
 

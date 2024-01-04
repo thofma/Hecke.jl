@@ -1,5 +1,3 @@
-export is_commutative, trred_matrix, any_order, pmaximal_overorder, phereditary_overorder, is_maximal, ideal_type
-
 elem_type(::Type{AlgAssRelOrd{S, T, U}}) where {S, T, U} = AlgAssRelOrdElem{S, T, U}
 
 ideal_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}

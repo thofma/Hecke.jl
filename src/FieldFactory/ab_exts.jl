@@ -3,9 +3,6 @@ add_assertion_scope(:AbExt)
 
 add_verbosity_scope(:MaxAbExt)
 
-
-export abelian_extensions, abelian_normal_extensions, abelian_extensions
-
 ###############################################################################
 #
 #  Abelian extensions

@@ -10,10 +10,6 @@
 #
 ###############################################################################
 
-export lll_gram_indef_isotropic
-export lll_gram_indef_ternary_hyperbolic
-export lll_gram_indef_with_transform
-
 ###############################################################################
 #
 #  Helpful functions

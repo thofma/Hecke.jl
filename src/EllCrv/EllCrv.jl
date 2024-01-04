@@ -34,13 +34,6 @@
 #
 ################################################################################
 
-export EllCrv, EllCrvPt
-
-export elliptic_curve, infinity, base_field, base_change, j_invariant,
-       elliptic_curve_from_j_invariant, is_finite, is_infinite, is_on_curve, +, *,
-       //, a_invars, b_invars, c_invars, equation, hyperelliptic_polynomials,
-       points_with_x_coordinate, division_points
-
 ################################################################################
 #
 #  Types

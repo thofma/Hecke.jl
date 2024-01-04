@@ -1,6 +1,3 @@
-
-export stable_subgroups
-
 add_verbosity_scope(:StabSub)
 add_assertion_scope(:StabSub)
 
