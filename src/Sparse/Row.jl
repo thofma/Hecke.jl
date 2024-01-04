@@ -437,7 +437,7 @@ function scale_row!(a::SRow{T}, b::T) where T
 end
 
 @doc raw"""
-  scale_row_right!(a::SRow, b::NCRingElem) -> SRow
+    scale_row_right!(a::SRow, b::NCRingElem) -> SRow
 
 Returns the (right) product of $a \times b$.
 """
