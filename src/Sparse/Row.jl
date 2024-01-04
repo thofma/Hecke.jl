@@ -593,7 +593,7 @@ end
 @doc raw"""
   divexact_right(A::SRow, b::NCRingElem) -> SRow
 
-Returns the left divexact $A/b$
+Returns the right divexact $A/b$
 """
 function divexact_right(A::SRow{T}, b::T) where T
   B = sparse_row(base_ring(A))
