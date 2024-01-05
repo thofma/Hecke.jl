@@ -1281,7 +1281,7 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fqPolyRepFieldElem, FqPol
   if T <: fqPolyRepFieldElem
     Fp = Native.GF(Int(p))
   elseif T === FqFieldElem
-    Fp = Nemo._GF(p)
+    Fp = GF(p)
   else
     Fp = Native.GF(p)
   end

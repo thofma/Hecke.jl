@@ -1265,20 +1265,6 @@ function unit_group_1_part(f::fqPolyRepPolyRingElem, k::Int)
   return gens, rels
 end
 
-#=
-function FlintFiniteField(f::fqPolyRepPolyRingElem, s::AbstractString = "o"; cached::Bool = true, check::Bool = true)
-  if check && !is_irreducible(f)
-    error("poly not irreducible")
-  end
-  k = base_ring(f)
-  p = characteristic(k)
-  K, o = FlintFiniteField(p, degree(k)*degree(f), s, cached = cached)
-  r = roots(K, f)[1]  # not working, embeddings are missing
-  fl || error("s.th. went wrong")
-  return K, r
-end
-=#
-
 function euler_phi(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
   lf = factor(f)
   q = size(base_ring(f))

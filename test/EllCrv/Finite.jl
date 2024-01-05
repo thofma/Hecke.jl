@@ -7,10 +7,10 @@
 @testset "Elliptic curves over finite fields" begin
 
   R1 = GF(23)
-  R2, a2 = FlintFiniteField(23, 1, "a")
-  R3, a3 = FlintFiniteField(ZZRingElem(23), 1, "a")
-  R4, a4 = FlintFiniteField(23, 2, "a")
-  R4_, a4_ = Hecke.Nemo._FiniteField(23, 2, "a")
+  R2, a2 = Native.finite_field(23, 1, "a")
+  R3, a3 = Native.finite_field(ZZRingElem(23), 1, "a")
+  R4, a4 = Native.finite_field(23, 2, "a")
+  R4_, a4_ = finite_field(23, 2, "a")
 
   E1 = EllipticCurve(R1, [2, 3])
   E2 = EllipticCurve(R2, [2, 3])

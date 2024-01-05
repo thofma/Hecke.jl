@@ -148,7 +148,7 @@ julia> F = GF(2);
 julia> f = MapFromFunc(QQ, F, x -> F(numerator(x)) * inv(F(denominator(x))))
 Map defined by a julia-function
   from rational field
-  to finite field of characteristic 2
+  to finite field of degree 1 over GF(2)
 
 julia> f(QQ(1//3))
 1
@@ -156,10 +156,10 @@ julia> f(QQ(1//3))
 julia> println(f)
 Map: QQ -> GF(2)
 
-julia> f = MapFromFunc(QQ, F, x -> F(numerator(x)) * inv(F(denominator(x))), y -> QQ(lift(y)),)
+julia> f = MapFromFunc(QQ, F, x -> F(numerator(x)) * inv(F(denominator(x))), y -> QQ(lift(ZZ, y)),)
 Map defined by a julia-function with inverse
   from rational field
-  to finite field of characteristic 2
+  to finite field of degree 1 over GF(2)
 
 julia> preimage(f, F(1))
 1
