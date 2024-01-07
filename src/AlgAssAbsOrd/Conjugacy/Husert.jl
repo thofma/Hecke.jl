@@ -220,7 +220,7 @@ function _issimilar_husert_generic(A, B)
 
   #@assert right_order(ide) == ideO
 
-  fl, y = _isprincipal(ide, ideO, :right)
+  fl, y = _is_principal_with_data_bhj(ide, ideO, side = :right)
 
   if fl
     dec = decompose(A)

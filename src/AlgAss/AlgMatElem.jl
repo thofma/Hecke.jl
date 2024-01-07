@@ -227,17 +227,17 @@ function (A::AlgMat)()
   return A(zero_matrix(coefficient_ring(A), n, n), check = false)
 end
 
-function (A::AlgMat{T, S})(M::S; check::Bool = true) where {T, S}
+function (A::AlgMat{T, S})(M::S; check::Bool = true, deepcopy::Bool = true) where {T, S}
   @assert base_ring(M) === coefficient_ring(A)
   if check
     b, c = _check_matrix_in_algebra(M, A)
     @req b "Matrix not an element of the matrix algebra"
-    z = AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
+    z = AlgMatElem{T, typeof(A), S}(A, deepcopy ? Base.deepcopy(M) : M)
     z.coeffs = c
     z.has_coeffs = true
     return z
   else
-    return AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
+    return AlgMatElem{T, typeof(A), S}(A, deepcopy ? Base.deepcopy(M) : M)
   end
 end
 
