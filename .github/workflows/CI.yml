@@ -24,16 +24,16 @@ jobs:
       matrix:
         julia-version:
           - '1.6'
-          - '1.9'
-          - '~1.10.0-0'
+          - '1.9'   # to be removed in the near future
+          - '1.10'
           - 'nightly'
         os:
           - ubuntu-latest
         include:
           # Add a few windows and macOS jobs (not too many, the number we can run in parallel is limited)
-          - julia-version: '1.9'
+          - julia-version: '1.10'
             os: macOS-latest
-          - julia-version: '1.9'
+          - julia-version: '1.10'
             os: windows-latest
 
     steps:
@@ -75,7 +75,7 @@ jobs:
           python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer
       - uses: julia-actions/setup-julia@v1
         with:
-          version: '1.9'
+          version: '1.10'
       - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1

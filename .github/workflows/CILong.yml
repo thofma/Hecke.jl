@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - 1.9
+          - '1.10'
         julia-arch:
           - x64
         os:
@@ -62,7 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - 1.9
+          - '1.10'
         julia-arch:
           - x64
         os:
