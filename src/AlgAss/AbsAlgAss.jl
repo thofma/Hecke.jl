@@ -1,5 +1,3 @@
-export subalgebra, decompose, radical, is_central, is_simple, central_primitive_idempotents, is_semisimple, is_etale
-
 _base_ring(A::AbsAlgAss) = base_ring(A)
 
 ################################################################################
@@ -1250,11 +1248,7 @@ function _radical_prime_field(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldEle
         MF = representation_matrix(a)
         for m = 1:nrows(MF)
           for n = 1:ncols(MF)
-            if T <: FqFieldElem
-              MZ[m, n] = lift(ZZ, MF[m, n])
-            else
-              MZ[m, n] = lift(MF[m, n])
-            end
+            MZ[m, n] = lift(ZZ, MF[m, n])
           end
         end
         t = tr(MZ^Int(pl))
@@ -1283,7 +1277,7 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fqPolyRepFieldElem, FqPol
   if T <: fqPolyRepFieldElem
     Fp = Native.GF(Int(p))
   elseif T === FqFieldElem
-    Fp = Nemo._GF(p)
+    Fp = GF(p)
   else
     Fp = Native.GF(p)
   end

@@ -1,5 +1,3 @@
-export principal_generator, kernel_group
-
 ################################################################################
 #
 #  Map Types
@@ -463,14 +461,14 @@ Given a principal ideal $a$ in an order $O$ in a commutative algebra over
 $\mathbb Q$, this function returns a principal generator of $a$.
 """
 function principal_generator(a::AlgAssAbsOrdIdl)
-  a, g = is_principal(a)
+  a, g = _is_principal_with_data_etale(a)
   if !a
     error("Ideal is not principal")
   end
   return g
 end
 
-function principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
+function _principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
   @assert is_maximal(order(a)) "Not implemented"
   a, g = is_principal_maximal_fac_elem(a)
   if !a
@@ -479,24 +477,24 @@ function principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
   return g
 end
 
-function is_principal(a::AlgAssAbsOrdIdl)
+function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl)
   if is_maximal(order(a))
-    return is_principal_maximal(a)
+    return _is_principal_maximal(a)
   end
-  return is_principal_non_maximal(a)
+  return _is_principal_non_maximal(a)
 end
 
 function is_principal_fac_elem(a::AlgAssAbsOrdIdl)
   @assert is_maximal(order(a)) "Not implemented"
-  return is_principal_maximal_fac_elem(a)
+  return _is_principal_maximal_fac_elem(a)
 end
 
-function is_principal_maximal(a::AlgAssAbsOrdIdl)
-  b, x = is_principal_maximal_fac_elem(a)
+function _is_principal_maximal(a::AlgAssAbsOrdIdl)
+  b, x = _is_principal_maximal_fac_elem(a)
   return b, order(a)(evaluate(x))
 end
 
-function is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
+function _is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)

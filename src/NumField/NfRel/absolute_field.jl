@@ -1,5 +1,3 @@
-export absolute_primitive_element, absolute_simple_field
-
 ################################################################################
 #
 #  Absolute primitive element
@@ -103,7 +101,7 @@ end
 function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool = false)
   abs = get_attribute(K, :abs_simple_field)
   MT = morphism_type(AnticNumberField, NfAbsNS)
-  if abs !== nothing 
+  if abs !== nothing
     if haskey(abs::Dict{Bool, Tuple{AnticNumberField, MT}}, simplify)
       return abs[simplify]::Tuple{AnticNumberField, MT}
     end
@@ -121,7 +119,7 @@ function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool
   MT = morphism_type(AnticNumberField, typeof(K))
 
   abs = get_attribute(K, :abs_simple_field)
-  if abs !== nothing 
+  if abs !== nothing
     if haskey(abs, simplify)
       return abs[simplify]::Tuple{AnticNumberField, MT}
     end
@@ -150,7 +148,7 @@ function absolute_simple_field(K::NfRel{nf_elem}; cached::Bool = false, simplify
   MT = morphism_type(AnticNumberField, typeof(K))
 
   abs = get_attribute(K, :abs_simple_field)
-  if abs !== nothing 
+  if abs !== nothing
     if haskey(abs, simplify)
       return abs[simplify]::Tuple{AnticNumberField, MT}
     end

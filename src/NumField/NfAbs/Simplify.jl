@@ -1,5 +1,3 @@
-export simplify
-
 add_verbosity_scope(:Simplify)
 
 @doc raw"""
@@ -215,7 +213,7 @@ function _sieve_primitive_elements(B::Vector{nf_elem})
 
   p, d = _find_prime(ZZPolyRingElem[f])
 
-  F = FlintFiniteField(p, d, "w", cached = false)[1]
+  F = Nemo.Native.finite_field(p, d, "w", cached = false)[1]
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
@@ -354,7 +352,7 @@ function polredabs(K::AnticNumberField)
   f = Zx(K.pol)
   p, d = _find_prime(ZZPolyRingElem[f])
 
-  F = FlintFiniteField(p, d, "w", cached = false)[1]
+  F = Native.finite_field(p, d, "w", cached = false)[1]
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)

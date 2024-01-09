@@ -1,5 +1,3 @@
-export Amodule
-
 add_assertion_scope(:ModLattice)
 
 @attributes mutable struct ModAlgAss{S, T, U}
@@ -254,6 +252,14 @@ function action_of_basis(V::ModAlgAss, i::Int)
   end
 end
 
+function action_of_gens(V::ModAlgAss{<: Any, <: Any, <: AlgGrp})
+  if !isdefined(V, :action_of_gens)
+    A = algebra(V)
+    V.action_of_gens = [action(V, g) for g in gens(A)]
+  end
+  return V.action_of_gens
+end
+
 function action_of_gens(V::ModAlgAss)
   return V.action_of_gens
 end
@@ -343,6 +349,15 @@ function consistent_action(V::T, W::T) where {T <: ModAlgAss}
   if !has_algebra(V)
     @assert length(V.action_of_gens) == length(W.action_of_gens)
     return (V.action_of_gens, W.action_of_gens)
+  end
+
+  # Now V has an algebra
+  @assert algebra(V) === algebra(W)
+
+  A = algebra(V)
+
+  if A isa AlgGrp
+    return (action_of_gens(V), action_of_gens(W))
   end
 
   if !isdefined(V, :action_of_gens) || !isdefined(W, :action_of_gens)
@@ -633,7 +648,10 @@ end
 #end
 
 function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
-  B = _basis_of_commutator_algebra(W.action_of_basis, V.action_of_basis)
+  B = _basis_of_hom(W, V)
+  if length(B) == 0
+    return false, hom(V, W, basis(W))
+  end
   l = length(B)
   for i in 1:50
     c = sum(c * b for (c, b) in zip(rand(-1:1, l), B))

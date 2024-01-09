@@ -2,9 +2,6 @@
 # maps and disc_log and such
 ################################################################################
 
-export is_principal, is_principal_fac_elem
-
-# TODO: Agree on a name for power_class vs power_reduce2
 @doc raw"""
     power_class(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl
 
@@ -511,7 +508,7 @@ function is_principal(A::NfOrdIdl)
     return false, one(O)
   end
   if !is_maximal(O)
-    return is_principal_non_maximal(A)
+    return _is_principal_non_maximal(A)
   end
   fl, a = is_principal_fac_elem(A)
   if fl
@@ -821,4 +818,14 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
     I1 = I.num
   end
   return I1, s*I.den
+end
+
+################################################################################
+#
+#  Wrapper
+#
+################################################################################
+
+function is_principal_with_data(I::Union{NfOrdIdl, NfOrdFracIdl})
+  return is_principal(I)
 end

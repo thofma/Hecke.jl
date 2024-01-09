@@ -1,7 +1,3 @@
-export image, preimage, has_preimage, is_injective,
-is_surjective, is_bijective, morphisms, find_small_group,
-inv, *, id_hom, domain, codomain, multiples
-
 ################################################################################
 #
 #  Morphism functionality

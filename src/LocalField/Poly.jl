@@ -170,8 +170,9 @@ function fun_factor(g::Generic.Poly{padic})
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fR = Rt([R(Hecke.lift(coeff(g, i))) for i = 0:degree(g)])
   u, g1 = Hecke.fun_factor(fR)
-  fun = x -> lift(x, K)
-  return map_coefficients(fun, u, parent = Kt), map_coefficients(fun, g1, parent = Kt)
+  liftu = Kt(elem_type(K)[lift(coeff(u, i), K) for i in 0:degree(u)])
+  liftg1 = Kt(elem_type(K)[lift(coeff(g1, i), K) for i in 0:degree(g1)])
+  return (liftu, liftg1)::Tuple{typeof(g), typeof(g)}
 end
 
 function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}

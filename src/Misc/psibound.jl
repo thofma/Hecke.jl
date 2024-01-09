@@ -1,5 +1,4 @@
 import Nemo.setcoeff!, Nemo.lift, Hecke.lift, Nemo.rem
-export psi_lower, psi_upper, show_psi
 
 #function setcoeff!(g::ZZModRelPowerSeriesRingElem, i::Int64, a::Nemo.Generic.ResidueRingElem{Nemo.ZZRingElem})
 #  setcoeff!(g, i, lift(a))

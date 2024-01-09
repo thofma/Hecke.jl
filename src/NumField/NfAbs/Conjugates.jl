@@ -1,6 +1,3 @@
-export is_totally_real, is_totally_complex, conjugates, conjugates_real,
-       conjugates_complex, conjugates_log, complex_conjugation
-
 ################################################################################
 #
 #  Totally real/complex predicates

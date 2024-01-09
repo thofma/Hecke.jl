@@ -1,5 +1,3 @@
-export reduced_charpoly
-
 ################################################################################
 #
 #  Parent
@@ -1042,7 +1040,6 @@ function normred_over_center(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
     _, ZtoB = center(B)
     n1 = _normred_over_center_simple(BtoA\a, ZtoB)
     t, n2 = haspreimage(ZtoA, BtoA(ZtoB(n1)))
-    @assert t
     n += n2
   end
   return n

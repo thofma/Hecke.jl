@@ -1,6 +1,3 @@
-export splitting_field, is_subfield, is_defining_polynomial_nice,
-       quadratic_field, is_linearly_disjoint, rationals_as_number_field
-
 ################################################################################
 #
 #  Order type

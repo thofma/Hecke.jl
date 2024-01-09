@@ -557,7 +557,7 @@ function NfOrdToFqFieldMor(O::NfOrd, P::NfOrdIdl)
   z.P = P
   a, g, b = get_residue_field_data(P)
   p = minimum(P)
-  R = Nemo._GF(p, cached = false)
+  R = GF(p, cached = false)
   Rx, x = polynomial_ring(R, "_\$", cached = false)
   F, = Nemo._residue_field(Rx(g), "_\$", check = false)
   d = degree(g)

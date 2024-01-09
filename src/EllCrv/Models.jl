@@ -34,9 +34,6 @@
 #
 ################################################################################
 
-export short_weierstrass_model, is_short_weierstrass_model, simplified_model,
-is_simplified_model, integral_model, is_integral_model
-
 ################################################################################
 #
 # Short Weierstrass model

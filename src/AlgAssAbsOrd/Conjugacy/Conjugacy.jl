@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-export is_GLZ_conjugate
-
 # Given a square matrix A, determine the algebra C_A = {X | XA = AX }
 # and its semisimple reduction
 #
@@ -394,7 +392,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
   OI = ideal_from_lattice_gens(AA, idealgens)
   @hassert :Conjugacy 1 OO == right_order(OI)
   @vprintln :Conjugacy 1 "Testing if ideal is principal..."
-  fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool,
+  fl, y = _is_principal_with_data_bhj(OI, OO, side = :right)::Tuple{Bool,
                                               AlgAssElem{QQFieldElem,AlgAss{QQFieldElem}}}
 
   if !fl

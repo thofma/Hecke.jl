@@ -1,5 +1,3 @@
-export GenOrdFracIdl
-
 fractional_ideal(h::GenOrdIdl) = GenOrdFracIdl(h)
 
 function fractional_ideal(O::GenOrd, M::MatElem)
@@ -84,7 +82,7 @@ end
 
 Returns the basis over the maximal Order of $I$.
 """
-function basis(a::GenOrdFracIdl) 
+function basis(a::GenOrdFracIdl)
   B = basis_matrix(a)
   d = degree(order(a))
   O = order(a)
@@ -318,10 +316,10 @@ Base.://(I::GenOrdFracIdl, J::GenOrdFracIdl) = colon(I, J)
 function Hecke.factor(A::GenOrdFracIdl)
   O = A.order
   N = numerator(norm(A)) * denominator(norm(A))
-  
+
   A_num = numerator(A)
   A_den = ideal(O, denominator(A))
-  
+
   factors = factor(N)
   primes = Dict{GenOrdIdl,Int}()
   for (f,e) in factors

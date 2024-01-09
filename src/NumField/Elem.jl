@@ -1,6 +1,3 @@
-export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
-       absolute_minpoly
-
 ################################################################################
 #
 #

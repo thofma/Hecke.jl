@@ -4,9 +4,6 @@
 #       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors,
 #       Hecke.rank, Hecke.det
 
-export det_mc, id, is_upper_triangular, norm2, hadamard_bound2,
-       hnf, hnf!, echelon_with_transform
-
 add_verbosity_scope(:HNF)
 
 add_assertion_scope(:HNF)

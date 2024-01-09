@@ -131,7 +131,7 @@ mutable struct NormCtx_gen <: NormCtx
     while true
       p = next_prime(p)
       push!(NC.lp, p)
-      k = GF(p, cached = false)
+      k = Native.GF(p, cached = false)
       kx, x = polynomial_ring(k, cached = false)
       b = zero_matrix(k, degree(O), degree(O))
       for i=1:degree(O)

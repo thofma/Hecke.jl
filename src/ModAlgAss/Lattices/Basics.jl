@@ -6,11 +6,15 @@
 
 # Test whether the Z-module with basis matrix B is O-invariant.
 function _defines_lattice(V::ModAlgAss{QQField}, O, B)
-  Binv = inv(B)
   for g in basis(O)
     T = action(V, elem_in_algebra(g))
-    BB = B * T * Binv
-    if !isone(abs(denominator(BB)))
+    #BB = B * T * Binv
+    # BB * B = B * T
+    BT = B * T
+    d1 = denominator(BT)
+    d2 = denominator(B)
+    d = lcm(d1, d2)
+    if !can_solve(change_base_ring(ZZ, d*B), change_base_ring(ZZ, (d * BT)), side = :left)
       return false
     end
   end
@@ -70,9 +74,13 @@ function _lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::QQMatrix; check::Bo
 
   if !is_hnf
     BB = QQMatrix(hnf!(FakeFmpqMat(B), :upperright))
-    # must strip zero rows if this is not a basis matrix
   else
     BB = B
+  end
+  # strip zero rows if this is not a basis matrix
+  r = findfirst(i -> is_zero_row(BB, i), 1:nrows(BB))
+  if r !== nothing
+    BB = BB[1:(r - 1), :]
   end
   return ModAlgAssLat{typeof(O), typeof(V), typeof(BB)}(O, V, BB)
 end
@@ -262,27 +270,29 @@ function lattice(O::AlgAssAbsOrd, v::Vector{<:Vector})
   A = algebra(O)
   V = Amodule(A, map(x -> elem_in_algebra.(x), v))
   L = lattice(V, O, identity_matrix(ZZ, dim(V)))
-  # I want to try to compute Wedderburn decomposition of the endomorphism algebra
-  idm = central_primitive_idempotents(A)
-  ids = [i for i in 1:length(idm) if !is_zero(action(V, idm[i]))]
-  C, p = product_of_components_with_projection(A, ids)
-  W = regular_module(A, p)
-  fl, WtoV = is_isomorphic_with_isomorphism(W, V) 
-  VtoW = inv(WtoV)
-  @assert fl
-  EV, EVmap = endomorphism_algebra(V)
-  EW, EWmap = endomorphism_algebra(W)
-  imgs = elem_type(EV)[]
-  for b in basis(EW)
-    push!(imgs, preimage(EVmap, VtoW * EWmap(b) * WtoV))
-  end
-  h = hom(EW, EV, basis_matrix(imgs))
-  for b in basis(EW)
-    for bb in basis(EW)
-      @assert h(b * bb) == h(b) * h(bb)
+  if rank(L) <= dim(A)
+    # I want to try to compute Wedderburn decomposition of the endomorphism algebra
+    idm = central_primitive_idempotents(A)
+    ids = [i for i in 1:length(idm) if !is_zero(action(V, idm[i]))]
+    C, p = product_of_components_with_projection(A, ids)
+    W = regular_module(A, p)
+    fl, WtoV = is_isomorphic_with_isomorphism(W, V)
+    VtoW = inv(WtoV)
+    @assert fl
+    EV, EVmap = endomorphism_algebra(V)
+    EW, EWmap = endomorphism_algebra(W)
+    imgs = elem_type(EV)[]
+    for b in basis(EW)
+      push!(imgs, preimage(EVmap, VtoW * EWmap(b) * WtoV))
     end
+    h = hom(EW, EV, basis_matrix(imgs))
+    for b in basis(EW)
+      for bb in basis(EW)
+        @assert h(b * bb) == h(b) * h(bb)
+      end
+    end
+    _transport_refined_wedderburn_decomposition_forward(h)
   end
-  _transport_refined_wedderburn_decomposition_forward(h)
   return L
 end
 
@@ -332,4 +342,20 @@ function change_base_ring(f#=::AbsAlgAssMor=#, O::AlgAssAbsOrd, L::ModAlgAssLat)
   BA = basis(A)
   W = Amodule(A, [action(V, f(g)) for g in basis(A)])
   return lattice(W, O, basis_matrix(L))
+end
+
+################################################################################
+#
+#  Subset
+#
+################################################################################
+
+function is_subset(L::ModAlgAssLat, M::ModAlgAssLat)
+  # TODO: improve for full rank lattices
+  BL = basis_matrix(L)
+  BM = basis_matrix(M)
+  dL = denominator(BL)
+  dM = denominator(BM)
+  d = lcm(dL, dM)
+  return can_solve(map_entries(ZZ, d * BM), map_entries(ZZ, d * BL), side = :left)
 end

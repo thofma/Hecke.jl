@@ -97,8 +97,6 @@
 #  where x is such that hom(L, K, x...) works.
 #
 
-export restrict
-
 ################################################################################
 #
 #   The NumFieldMor type

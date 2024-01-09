@@ -32,9 +32,6 @@
 #
 ################################################################################
 
-export absolute_representation_matrix
-export cyclotomic_field_as_cm_extension
-
 add_assertion_scope(:NfRel)
 
 ################################################################################

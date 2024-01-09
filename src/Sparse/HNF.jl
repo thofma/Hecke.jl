@@ -1,5 +1,3 @@
-export reduce_full, find_row_starting_with, hnf_extend!, hnf_kannan_bachem
-
 ################################################################################
 #
 #  Reduction of sparse rows modulo sparse upper triangular matrices

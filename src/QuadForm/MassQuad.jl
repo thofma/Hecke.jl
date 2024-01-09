@@ -1,5 +1,3 @@
-export mass
-
 ################################################################################
 #
 #  Local factor of a maximal lattice in K*L following Shimura and Gan-Hanke-Yu.

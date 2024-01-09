@@ -1,5 +1,3 @@
-export short_vectors, short_vectors_iterator, shortest_vectors, kissing_number
-
 @doc raw"""
     short_vectors(L::ZZLat, [lb = 0], ub, [elem_type = ZZRingElem]; check::Bool = true)
                                        -> Vector{Tuple{Vector{elem_type}, QQFieldElem}}

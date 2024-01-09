@@ -33,8 +33,6 @@
 #
 ################################################################################
 
-export minimal_subgroups, psubgroups, index_p_subgroups, subgroups
-
 ################################################################################
 #
 #  Enumeration of subgroups of index p

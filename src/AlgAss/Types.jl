@@ -1,5 +1,3 @@
-export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem, AlgMat, AlgMatElem
-
 abstract type AbsAlgAss{T} <: NCRing end
 
 abstract type AbsAlgAssElem{T} <: NCRingElem end

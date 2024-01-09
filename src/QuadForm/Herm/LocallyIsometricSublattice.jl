@@ -1,5 +1,3 @@
-export locally_isometric_sublattice
-
 ################################################################################
 #
 #  Find a given lattice locally

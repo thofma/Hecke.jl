@@ -6,7 +6,7 @@
 @doc raw"""
     automorphism_group(C::ClassField)
 
-The group of automorphisms fixing the base field, returned as an abstract 
+The group of automorphisms fixing the base field, returned as an abstract
 abelian group and a map from the group into the automorphisms.
 This map admits a pointwise pre-image.
 """
@@ -32,14 +32,14 @@ function automorphism_group(C::ClassField)
   f = MapFromFunc(A, G,
                   x->prod(z[i]^x[i] for i=1:length(z)),
                   y->A([findfirst(isequal(y(gen(K, i))), zz[i])-1 for i=1:length(z)]))
-  set_attribute!(C, :RelAuto => f)                
-  return A, f                      
+  set_attribute!(C, :RelAuto => f)
+  return A, f
 end
 
 @doc raw"""
     frobenius_easy(p::NfOrdIdl, C::ClassField)
- 
-For a prime ideal $p$ that is unramified in $C$ and is coprime to the 
+
+For a prime ideal $p$ that is unramified in $C$ and is coprime to the
 equation order discriminant of the base field, compute the Frobnius as
 an element of the abstract abelian group.
 
@@ -100,15 +100,13 @@ function frobenius_map(C::ClassField)
   end
 
   g = find_gens(pseudo_inv(mrc), PrimesSet(ZZRingElem(1000), ZZRingElem(-1)), minimum(c)*discriminant(equation_order(base_field(C))))
- 
+
   h = hom([frobenius_easy(p, C) for p = g[1]], g[2])
   fr = pseudo_inv(mrc)*pseudo_inv(h)*f
   set_attribute!(C, :ArtinMap => fr)
   return fr
 end
 artin_map(C::ClassField) = frobenius_map(C)
-
-export artin_map, frobenius_map
 
 #=
 pointless: real -> complex: ramified, thus illegal
@@ -651,7 +649,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
   #  - max. ab. extension of QQ in A is in base_ring(A)
   #  - iff base_ring(A)(zeta_n) and A are disjoint
   # hopefully this can be tested via
-  # maximal_abelian_subfield(A, QQ) \cap cyclotomic_field(ClassField, n) 
+  # maximal_abelian_subfield(A, QQ) \cap cyclotomic_field(ClassField, n)
   # is trivial.
   #critical example:
   #=
@@ -835,7 +833,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
     sort!(ng, lt = (a,b) -> a[1] < b[1])
 
 
-    KK = kummer_extension(Int[x[3] for x = ng], 
+    KK = kummer_extension(Int[x[3] for x = ng],
                           FacElem{nf_elem, AnticNumberField}[x[2] for x = ng])
     K, gK = number_field(KK)
     #I need the inclusions of the single extensions Cp[i].K in the new K

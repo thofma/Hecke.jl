@@ -32,17 +32,6 @@
 #
 ################################################################################
 
-export show, ideal
-
-export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
-       prime_ideals_up_to, factor, divexact, is_ramified, anti_uniformizer,
-       uniformizer, is_coprime, conductor, colon, equation_order
-
-export NfOrdIdl
-
-export deepcopy, parent, order, basis, basis_matrix, basis_mat_inv, minimum, norm,
-       ==, in, +, *, intersect, lcm, idempotents, mod, pradical
-
 add_assertion_scope(:Rres)
 
 ################################################################################
@@ -1973,7 +1962,7 @@ function _datum_for_reduction_non_maximal(Q::AbsOrdQuoRing)
     AQJ, AQJtoQJ, QJtoAQJ = abelian_group(QJ)
     AQQ, AQQtoQQ, QQtoAQQ = abelian_group(QQ)
     h = hom(AQJ, AQQ, [QQtoAQQ(mQQ(base_ring(QQ)(_elem_in_algebra(mQJ\AQJtoQJ(g))))) for g in gens(AQJ)])
-    return function(x) 
+    return function(x)
       if x isa FacElem
         y = _mod_fac_elem_maximal(x, QQ)
       else

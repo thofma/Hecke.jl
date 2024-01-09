@@ -1,6 +1,3 @@
-export local_field, inertia_degree, absolute_inertia_degree, absolute_ramification_index,
-        eisenstein_extension, unramified_extension
-
 ################################################################################
 #
 #  Show function

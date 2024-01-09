@@ -1,7 +1,5 @@
 add_verbosity_scope(:Automorphisms)
 
-export absolute_automorphism_list, absolute_automorphism_group
-
 ################################################################################
 #
 #  Automorphisms

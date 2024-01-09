@@ -851,7 +851,7 @@ function _find_quaternion_algebra(b, P, I)
     end
   end
 
-  F = Nemo.GF(2)
+  F = Nemo.Native.GF(2)
 
   target = matrix(F, 1, length(__P) + length(I), vcat(fill(1, n), fill(0, length(__P) - n), fill(1, m), fill(0, length(I) - m)))
   if iszero(target)

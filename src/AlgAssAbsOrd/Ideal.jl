@@ -1,5 +1,3 @@
-export is_invertible, contract, swan_module, is_subset_locally, is_equal_locally, lattice_with_local_conditions, primary_decomposition
-
 @doc raw"""
     order(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
 
@@ -82,7 +80,8 @@ function ideal(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat; M_in_hnf::Bool=false)
       M = hnf(M, :lowerleft)
     end
   end
-  return AlgAssAbsOrdIdl{typeof(A), elem_type(A)}(A, M)
+  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
+  return AlgAssAbsOrdIdl{typeof(A), elem_type(A)}(A, sub(M, k:nrows(M), 1:ncols(M)))
 end
 
 @doc raw"""
@@ -209,10 +208,11 @@ function ideal_from_lattice_gens(A::AbsAlgAss{QQFieldElem}, v::Vector{ <: AbsAlg
     elem_to_mat_row!(M, i, v[i])
   end
   M = hnf(FakeFmpqMat(M), :lowerleft)
-  if length(v) >= dim(A)
-    M = sub(M, (nrows(M) - dim(A) + 1):nrows(M), 1:dim(A))
-  end
-
+  i = something(findfirst(k -> !is_zero_row(M, k), 1:nrows(M)), nrows(M) + 1)
+  #if length(v) >= dim(A)
+  #  M = sub(M, (nrows(M) - dim(A) + 1):nrows(M), 1:dim(A))
+  #end
+  M = sub(M, i:nrows(M), 1:ncols(M))
   return ideal(A, M; M_in_hnf=true)
 end
 
@@ -255,7 +255,7 @@ end
 
 function iszero(a::AlgAssAbsOrdIdl)
   if a.iszero == 0
-    if is_zero_row(basis_matrix(a, copy = false).num, dim(algebra(a)))
+    if is_zero(basis_matrix(a, copy = false))
       a.iszero = 1
     else
       a.iszero = 2
@@ -327,8 +327,8 @@ function assure_has_basis(a::AlgAssAbsOrdIdl)
 
   M = basis_matrix(a, copy = false)
   A = algebra(a)
-  b = Vector{elem_type(A)}(undef, dim(A))
-  for i = 1:dim(A)
+  b = Vector{elem_type(A)}(undef, nrows(M))
+  for i = 1:nrows(M)
     b[i] = elem_from_mat_row(A, M.num, i, M.den)
   end
   a.basis = b
@@ -453,11 +453,13 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 
   d = dim(algebra(a))
   M = vcat(basis_matrix(a, copy = false), basis_matrix(b, copy = false))
-  if all(i -> !iszero(M[i, i]), 1:d)
-    M = sub(hnf(M, :lowerleft, triangular_top = true), (d + 1):2*d, 1:d)
+  if nrows(M) >= ncols(M) && is_lower_triangular(M)
+    M = hnf(M, :lowerleft, triangular_top = true)
   else
-    M = sub(hnf(M, :lowerleft), (d + 1):2*d, 1:d)
+    M = hnf(M, :lowerleft)
   end
+  k = findfirst(i -> !is_zero_row(M, i), 1:nrows(M))
+  M = sub(M, k:nrows(M), 1:ncols(M))
   c = ideal(algebra(a), M; M_in_hnf=true)
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
@@ -957,6 +959,38 @@ Returns the reduced norm of $a$ considered as an (possibly fractional) ideal
 of `order(a)`.
 """
 normred(a::AlgAssAbsOrdIdl; copy::Bool = true) = normred(a, order(a), copy = copy)
+
+function normred_over_center(a::AlgAssAbsOrdIdl, ZtoA::AbsAlgAssMor)
+  A = algebra(order(a))
+  Adec = decompose(A)
+  Z = domain(ZtoA)
+  n = ideal_from_lattice_gens(Z, elem_type(Z)[])
+  for (B, BtoA) in Adec
+    _, ZtoB = center(B)
+    # Compute the project AtoB(a)
+    aa = ideal_from_lattice_gens(B, [preimage(BtoA, c) for c in basis(a)])
+    n1 = _normred_over_center_simple(aa, ZtoB)
+    #n1 = _normred_over_center_simple(BtoA\a, ZtoB)
+    #@show QQMatrix(basis_matrix(ZtoB(n1)))
+    #@show det(QQMatrix(basis_matrix(_as_ideal_of_smaller_algebra(ZtoA, BtoA(ZtoB(n1))))))
+    n2 = _as_ideal_of_smaller_algebra(ZtoA, BtoA(ZtoB(n1)))
+    n += n2
+  end
+  return n
+end
+
+function _normred_over_center_simple(a::AlgAssAbsOrdIdl, ZtoA::AbsAlgAssMor)
+  A = algebra(a)
+  Z = domain(ZtoA)
+  fields = as_number_fields(Z)
+  @assert length(fields) == 1
+  K, ZtoK = fields[1]
+  B, BtoA = _as_algebra_over_center(A)
+  @assert base_ring(B) === K
+  aa = ideal_from_lattice_gens(B, [preimage(BtoA, c) for c in basis(a)])
+  n = normred(aa, left_order(aa))
+  return ideal_from_lattice_gens(Z, [preimage(ZtoK, c) for c in basis(n)])
+end
 
 ################################################################################
 #
@@ -1497,14 +1531,20 @@ Returns $a \cap O$.
 It is assumed that the order of $a$ contains $O$.
 """
 function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
+  AA = algebra(O)
   # Assumes O \subseteq order(A)
-
-  d = degree(O)
-  M1 = hcat(basis_matrix(A, copy = false), basis_matrix(A, copy = false))
-  M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, d, d), ZZRingElem(1)), basis_matrix(O, copy = false))
-  M = vcat(M1, M2)
-  H = sub(hnf(M, :lowerleft), 1:d, 1:d)
-  return ideal(algebra(A), O, H; side=:nothing, M_in_hnf=true)
+  BM = QQMatrix(basis_matrix(A))
+  BN = QQMatrix(basis_matrix(O))
+  dM = denominator(BM)
+  dN = denominator(BN)
+  d = lcm(dM, dN)
+  BMint = change_base_ring(ZZ, d * BM)
+  BNint = change_base_ring(ZZ, d * BN)
+  H = vcat(BMint, BNint)
+  k, K = left_kernel(H)
+  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  N = FakeFmpqMat(BI)
+  return ideal(algebra(O), O, N; side = :nothing)
 end
 
 intersect(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = contract(A, O)
@@ -1529,20 +1569,41 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl)
   @assert dim(A) <= dim(B)
   @assert algebra(I) === B
   OA = maximal_order(A)
-  # Transport OA to B
-  M = zero_matrix(FlintQQ, dim(B), dim(B))
+  BM = zero_matrix(QQ, dim(A), dim(B))
   for i = 1:dim(A)
     t = m(basis_alg(OA, copy = false)[i])
-    elem_to_mat_row!(M, i, t)
+    elem_to_mat_row!(BM, i, t)
   end
-  # Compute the intersection of M and I
-  M = FakeFmpqMat(M)
-  M1 = hcat(M, M)
-  M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, dim(B), dim(B)), ZZRingElem(1)), basis_matrix(I, copy = false))
-  N = sub(hnf(vcat(M1, M2), :lowerleft), 1:dim(B), 1:dim(B))
-  # Map the basis to A
-  basis_in_A = Vector{elem_type(A)}(undef, dim(B))
-  for i = 1:dim(B)
+  BN = QQMatrix(basis_matrix(I))
+  dM = denominator(BM)
+  dN = denominator(BN)
+  d = lcm(dM, dN)
+  BMint = change_base_ring(ZZ, d * BM)
+  BNint = change_base_ring(ZZ, d * BN)
+  H = vcat(BMint, BNint)
+  k, K = left_kernel(H)
+  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  N = FakeFmpqMat(BI)
+  #@show BI
+
+  #OA = maximal_order(A)
+  ## Transport OA to B
+  #M = zero_matrix(FlintQQ, dim(B), dim(B))
+  #for i = 1:dim(A)
+  #  t = m(basis_alg(OA, copy = false)[i])
+  #  elem_to_mat_row!(M, i, t)
+  #end
+  ## Compute the intersection of M and I
+  #M = FakeFmpqMat(M)
+  #M1 = hcat(M, M)
+  #IB = basis_matrix(I, copy = false)
+  #M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, nrows(IB), dim(B)), ZZRingElem(1)), IB)
+  #H = hnf(vcat(M1, M2), :lowerleft)
+  #k = findfirst(i-> !is_zero_row(H, i), 1:nrows(H))
+  #N = sub(H, k:nrows(H), 1:dim(B))
+  ## Map the basis to A
+  basis_in_A = Vector{elem_type(A)}(undef, nrows(N))
+  for i = 1:nrows(N)
     t = elem_from_mat_row(B, N.num, i, N.den)
     b, s = haspreimage(m, t)
     @assert b
@@ -2261,7 +2322,6 @@ function primary_decomposition(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd = left_order(
       push!(res, (I + P^(ee), P))
     end
   end
-
   @hassert :AlgAssOrd 1 prod(x[1] for x in res; init = 1 * O) == I
   @hassert :AlgAssOrd  all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*O, res), res)
 

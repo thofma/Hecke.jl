@@ -1,5 +1,3 @@
-export picard_group
-
 ################################################################################
 #
 #  High level functions
@@ -337,8 +335,8 @@ end
 #
 ################################################################################
 
-function is_principal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
-  # Main idea stolen from a Magma implementation by Stefano Marseglia.
+function _is_principal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
+  # Main inspiriation from a Magma implementation by Stefano Marseglia.
   # We use the exact sequence
   # 1 --> O^\times -(1)-> O_K^\times -(2)-> (O_K/F)^\times/(O/F)^\times
   #      -(3)-> Pic(O) -(4)-> Pic(O_K) --> 1

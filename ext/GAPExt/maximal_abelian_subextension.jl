@@ -58,7 +58,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   while iszero(mod(d1, p)) || iszero(mod(d2, p))
     p = next_prime(p)
   end
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   mp_pol = Rx(image_primitive_element(emb_sub))

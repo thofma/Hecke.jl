@@ -1,5 +1,3 @@
-export sunit_group_fac_elem, sunit_group, sunit_mod_units_group_fac_elem
-
 function show(io::IO, mC::MapSUnitModUnitGrpFacElem)
   @show_name(io, mC)
   io = IOContext(io, :compact => true)

@@ -34,9 +34,6 @@
 #
 ################################################################################
 
-export minimal_model, has_global_minimal_model, semi_global_minimal_model, minimal_discriminant,
-       global_minimality_class, tidy_model, integral_model
-
 ################################################################################
 #
 #  Algorithm of Laska-Kraus-Connel

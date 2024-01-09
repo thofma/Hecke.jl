@@ -1,5 +1,3 @@
-export ideal_class_monoid, is_locally_isomorphic, is_conjugate
-
 ###############################################################################
 #
 #  ICM / is_isomorphic_with_map
@@ -64,7 +62,7 @@ function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfO
   JS = extend(J, S)
   IJ = colon(IS, JS)
   IJ.order = S
-  t, a = is_principal(numerator(IJ, copy = false))
+  t, a = is_principal_with_data(numerator(IJ, copy = false))
   if !t
     return false, zero(A)
   end

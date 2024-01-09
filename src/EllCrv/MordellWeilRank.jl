@@ -7,8 +7,6 @@
 #
 ###############################################################################
 
-export  quartic_local_solubility, R_soluble, Qp_soluble, quartic_rational_point_search, rank_2_torsion
-
 ###############################################################################
 #
 #  Quartic local solubility

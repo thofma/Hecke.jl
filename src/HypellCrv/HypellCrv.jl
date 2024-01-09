@@ -6,10 +6,6 @@
 #
 ################################################################################
 
-export HypellCrv, HypellCrvPt
-
-export HyperellipticCurve, genus, points_at_infinity, base_field, base_change, is_finite, is_infinite, is_on_curve, equation, homogeneous_equation, hyperelliptic_polynomials, points_with_x
-
 ################################################################################
 #
 #  Types
