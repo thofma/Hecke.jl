@@ -1713,6 +1713,12 @@ julia> L = integer_lattice(; gram = QQ[1 0 0  0;
                                        0 9 3  3;
                                        0 3 2  1;
                                        0 3 1 11])
+Integer lattice of rank 4 and degree 4
+with gram matrix
+[1   0   0    0]
+[0   9   3    3]
+[0   3   2    1]
+[0   3   1   11]
 
 julia> root_lattice_recognition(L)
 ([(:A, 1), (:I, 1)], ZZLat[Integer lattice of rank 1 and degree 4, Integer lattice of rank 1 and degree 4])
