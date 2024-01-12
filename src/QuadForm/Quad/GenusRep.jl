@@ -936,7 +936,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
     adjust_gens = eltype(G)[solve(B, B*g; side = :left) for g in G]
     @hassert :GenRep 1 all(let form = form; g -> g * form * transpose(g) == form; end, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
-    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
+    filter!(!is_diagonal, adjust_gens_mod_p)
     @hassert :GenRep 1 all(let form = form; g -> g * pform * transpose(g) == pform; end, adjust_gens_mod_p)
     q = order(k)
     if length(adjust_gens_mod_p) > 0
