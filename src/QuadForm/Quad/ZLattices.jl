@@ -1728,7 +1728,7 @@ julia> root_lattice_recognition(L)
 function root_lattice_recognition(L::ZZLat)
   irr = irreducible_components(root_sublattice(L))
   rlr = Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr]
-  sp = sortperm(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] <= b[2])
+  sp = sortperm(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] < b[2])
   return rlr[sp], irr[sp]
 end
 
