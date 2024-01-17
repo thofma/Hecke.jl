@@ -669,8 +669,8 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
 
 Return the root lattice of type `R` given by `:A`, `:D` or `:E` with parameter `n`.
 
-Allow also the type `:I` with parameter `n = 1` for the odd unimodular lattice
-of rank 1.
+The type `:I` with parameter `n = 1` is also allowed and denotes the odd
+unimodular lattice of rank 1.
 """
 function root_lattice(R::Symbol, n::Int)
   if R === :A
@@ -1670,8 +1670,9 @@ end
 
 Return the ADE type of the root sublattice of `L`.
 
-Allow the type `(:I, 1)` corresponding to the odd unimodular root lattice of
-rank 1.
+The root sublattice is the lattice spanned by the vectors of squared length
+$1$ and $2$.  The odd lattice of rank 1 and determinant $1$ is denoted by
+`(:I, 1)`.
 
 Input:
 
@@ -1726,7 +1727,9 @@ julia> root_lattice_recognition(L)
 """
 function root_lattice_recognition(L::ZZLat)
   irr = irreducible_components(root_sublattice(L))
-  return Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr], irr
+  rlr = Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr]
+  sp = sortperm(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] <= b[2])
+  return rlr[sp], irr[sp]
 end
 
 @doc raw"""
@@ -1868,7 +1871,7 @@ Return the ADE type of the root sublattice of `L`
 as well as the corresponding irreducible root sublattices
 with basis given by a fundamental root system.
 
-Allow the type `(:I, 1)` corresponding to the odd unimodular
+The type `(:I, 1)` corresponds to the odd unimodular
 root lattice of rank 1.
 
 Input:

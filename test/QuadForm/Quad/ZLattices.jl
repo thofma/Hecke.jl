@@ -207,7 +207,7 @@ end
   L = biproduct(root_lattice(:A,2),root_lattice(:D,4))[1]
   R = root_lattice_recognition(L)
   @test length(R[1]) == 2
-  @test (:D,4) in R[1] && (:A,2) in R[1]
+  @test R[1] == Tuple{Symbol, Int}[(:A, 2), (:D, 4)]
   R = root_lattice_recognition_fundamental(L)
   @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
 
