@@ -1156,7 +1156,7 @@ end
 #
 ################################################################################
 
-function _p_adic_regulator(K, p)
+function _p_adic_regulator(K, p, fast::Bool = false)
   if !is_normal(K)
     return _padic_regulator_non_normal(K, p)
   end
@@ -1173,9 +1173,18 @@ function _p_adic_regulator(K, p)
     if prec > 2^15
       error("Precision >= 2^15, something is wrong")
     end
-    C, mC = completion(K, P, prec)
+    local C, mC
+    if fast
+      try
+        C, mC = completion_easy(K, P)
+      catch
+        C, mC = completion(K, P)
+      end
+    else
+      C, mC = completion(K, P)
+    end
     Rmat = zero_matrix(C, r, r)
-    D = Dict{nf_elem, LocalFieldElem{qadic, EisensteinLocalField}}()
+    D = Dict{nf_elem, elem_type(C)}()
     for i in 1:r
       for j in 1:r
         Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1])), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]

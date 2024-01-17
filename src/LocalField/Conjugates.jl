@@ -372,7 +372,7 @@ function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: U
   @assert is_totally_real(k)
   c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
   m = matrix(c)
-  m = hcat(m, matrix(base_ring(m), nrows(m), 1, [one(base_ring(m)) for i=1:nrows(m)]))
+  m = vcat(m, matrix(base_ring(m), 1, ncols(m), [one(base_ring(m)) for i=1:ncols(m)]))
   return det(m)//degree(k)
 end
 
