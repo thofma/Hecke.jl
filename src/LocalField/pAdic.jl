@@ -1,4 +1,4 @@
-function _lift(a::padic)
+function _lift(a::PadicFieldElem)
   R = parent(a)
   v = valuation(a)
   if v >= 0
@@ -25,7 +25,7 @@ function my_log_one_minus_inner(x::ZZRingElem, pr::Int, v::Int, p)
   return -x*my_eval(map(i->QQFieldElem(1, i), 1:N), QQFieldElem(x))
 end
 
-function my_log_one_minus(x::padic)
+function my_log_one_minus(x::PadicFieldElem)
   v = valuation(x)
   lg = parent(x)(0)
   le = 1
@@ -60,7 +60,7 @@ function my_log_one_minus_inner(x::Generic.ResidueRingElem{QQPolyRingElem}, pr::
   return -x*my_eval(map(i->R(QQFieldElem(1, i)), 1:N), x)
 end
 
-function my_log_one_minus(x::qadic)
+function my_log_one_minus(x::QadicFieldElem)
   v = valuation(x)
   lg = parent(x)(0)
   le = 1

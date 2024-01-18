@@ -1199,7 +1199,7 @@ function _p_adic_regulator(K, p, fast::Bool = false)
   end
 end
 
-function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField}, D = Dict{nf_elem, LocalFieldElem{qadic, EisensteinLocalField}}())
+function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField}, D = Dict{nf_elem, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}())
   C = codomain(mC)
   K = base_ring(e)
   pi = K(uniformizer(P))

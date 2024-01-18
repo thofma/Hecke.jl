@@ -19,7 +19,7 @@ function Nemo.integral(f::RelPowerSeriesRingElem{T}) where T
   return g
 end
 
-function *(f::PolyRingElem{<:SeriesElem{qadic}}, g::PolyRingElem{<:SeriesElem{qadic}})
+function *(f::PolyRingElem{<:SeriesElem{QadicFieldElem}}, g::PolyRingElem{<:SeriesElem{QadicFieldElem}})
   if degree(f) > 2 &&  degree(g) > 2
     fg = mymul_ks(f, g)
 #    @hassert :AbsFact 2 fg == Nemo.mul_classical(f, g)
@@ -35,7 +35,7 @@ function *(f::PolyRingElem{<:SeriesElem{qadic}}, g::PolyRingElem{<:SeriesElem{qa
 end
 
 #=
-function *(f::RelPowerSeriesRingElem{qadic}, g::RelPowerSeriesRingElem{qadic})
+function *(f::RelPowerSeriesRingElem{QadicFieldElem}, g::RelPowerSeriesRingElem{QadicFieldElem})
   return mymul_ks(f, g)
   if pol_length(f) > 2 &&  pol_length(g) > 2
     fg = mymul_ks(f, g)
@@ -53,7 +53,7 @@ end
 =#
 
 
-@inline function coeffraw(q::qadic, i::Int)
+@inline function coeffraw(q::QadicFieldElem, i::Int)
   @assert i < length(q)
   return reinterpret(Ptr{ZZRingElem}, q.coeffs)+i*sizeof(Ptr{Int})
 end
@@ -64,12 +64,12 @@ end
 end
 
 #=
-function mul!(C::Generic.RelSeries{qadic}, f::Generic.RelSeries{qadic}, g::Generic.RelSeries{qadic})
+function mul!(C::Generic.RelSeries{QadicFieldElem}, f::Generic.RelSeries{QadicFieldElem}, g::Generic.RelSeries{QadicFieldElem})
   return f*g
 end
 =#
 
-function mymul_ks(f::SeriesElem{qadic}, g::SeriesElem{qadic})
+function mymul_ks(f::SeriesElem{QadicFieldElem}, g::SeriesElem{QadicFieldElem})
   rf = precision(f)
   rg = precision(g)
   S = parent(f)
@@ -118,7 +118,7 @@ function mymul_ks(f::SeriesElem{qadic}, g::SeriesElem{qadic})
 #  @show density(F), density(G), mp
   FG = mullow(F, G, min(rf, rg)*(2*h-1))
 
-  c = qadic[]
+  c = QadicFieldElem[]
   for j=0:min(rf,rg)-1
     H = Hecke.Globals.Zx()
     for x = 0:2*h-2
@@ -138,7 +138,7 @@ function mymul_ks(f::SeriesElem{qadic}, g::SeriesElem{qadic})
 end
 
 
-function mymul_ks(f::PolyRingElem{<:SeriesElem{qadic}}, g::PolyRingElem{<:SeriesElem{qadic}})
+function mymul_ks(f::PolyRingElem{<:SeriesElem{QadicFieldElem}}, g::PolyRingElem{<:SeriesElem{QadicFieldElem}})
   nf = degree(f)
   ng = degree(g)
   rf = minimum(precision, coefficients(f))
@@ -199,7 +199,7 @@ function mymul_ks(f::PolyRingElem{<:SeriesElem{qadic}}, g::PolyRingElem{<:Series
   fg = parent(f)()
 
   for i=0:degree(f)+degree(g)
-    c = qadic[]
+    c = QadicFieldElem[]
     for j=0:min(rf,rg)-1
       H = Hecke.Globals.Zx()
       for x = 0:2*h-2
@@ -239,7 +239,7 @@ function rational_reconstruction(a::SeriesElem; parent::PolyRing = polynomial_ri
   return rational_reconstruction(b, t^precision(a))
 end
 
-function rational_reconstruction(a::padic)
+function rational_reconstruction(a::PadicFieldElem)
   return rational_reconstruction(Hecke.lift(a), prime(parent(a), precision(a)))
 end
 
