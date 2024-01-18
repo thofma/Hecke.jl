@@ -1541,7 +1541,7 @@ julia> H, j = sylow_subgroup(A, 2);
 julia> H
 GrpAb: (Z/2)^3
 
-julia> index(A, H)
+julia> divexact(order(A), order(H))
 45
 ```
 """
