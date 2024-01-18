@@ -50,9 +50,9 @@
 
     @testset "psylow" begin
         G,AtoG,GtoA = Hecke.generic_group([1, -1, im, -im], *)
-        @test order(psylow_subgroup(G,2)[1]) == 4
-        @test order(psylow_subgroup(G,3)[1]) == 1
-        @test_throws ErrorException psylow_subgroup(G,10)
+        @test order(sylow_subgroup(G,2)[1]) == 4
+        @test order(sylow_subgroup(G,3)[1]) == 1
+        @test_throws ErrorException sylow_subgroup(G,10)
     end
 
     @testset "GrpGenToGrpAb" begin

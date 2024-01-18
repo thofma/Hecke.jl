@@ -613,7 +613,7 @@ function _psubgroups(G::GrpAbFinGen, p::IntegerUnion; subtype = [-1],
                                                               order = -1,
                                                               index = -1,
                                                               fun = sub)
-  P, mP = psylow_subgroup(G, p, false)
+  P, mP = sylow_subgroup(G, p, false)
 
   if quotype != [-1]
     return ( fun(G, map(mP, z))

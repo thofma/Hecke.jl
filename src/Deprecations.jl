@@ -143,3 +143,7 @@ simplest_inside(x::arb) = simplest_rational_inside(x)
 # Deprecated during 0.18.*
 
 @deprecate abelian_fields abelian_extensions
+
+# Deprecated during 0.24.*
+
+@deprecate psylow_subgroup sylow_subgroup
