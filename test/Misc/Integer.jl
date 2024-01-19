@@ -1,14 +1,18 @@
 @testset "Integers" begin
     
-#Line 7
-@test is_commuatative(ZZ)==true
-#Lines 26-35
-@test modord(2,3) == 2
-#Lines 15-24 
-@test modord(ZZ(2),ZZ(3)) == ZZ(2)
-#Lines 760-762
-@test sort(euler_phi_inv(ZZ(4))) == [ZZ(5), ZZ(8), ZZ(10), ZZ(12)]
-#Lines 172-179
 
+    @test is_commuatative(ZZ)==true
 
+    @test modord(2,3) == 2
+
+    @test modord(ZZ(2),ZZ(3)) == ZZ(2)
+
+    @test sort(euler_phi_inv(ZZ(4))) == [ZZ(5), ZZ(8), ZZ(10), ZZ(12)]
+
+    @test is_prime_power(ZZ(8)) == true
+
+    @test euler_phi(ZZ(5)) == ZZ(4)
+
+    @test carmichael_lambda(ZZ(8)) == ZZ(2)
+   
 end
