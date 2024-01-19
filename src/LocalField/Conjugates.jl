@@ -163,7 +163,7 @@ end
 #  flat = true/ false: return (Re, Im) or the complex number
 #TODO: not sure how this would work in the ramified, not-normal case.
 @doc raw"""
-    conjugates(a::nf_elem, C::qAdicConj, n::Int = 11; flat::Bool = false, all:Bool = true) -> []
+    conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
 
 Returns an array of the $q$-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
