@@ -1167,7 +1167,7 @@ function _p_adic_regulator(K, p, fast::Bool = false)
   @req order(A) == degree(K) "Field must be normal"
   @req is_totally_real(K) "Field must be totally real"
   r = rank(U)
-  prec = 64
+  prec = degree(K) + 10
   _det = Hecke.AbstractAlgebra.det_df
   while true
     if prec > 2^15
@@ -1176,12 +1176,12 @@ function _p_adic_regulator(K, p, fast::Bool = false)
     local C, mC
     if fast
       try
-        C, mC = completion_easy(K, P)
+        C, mC = completion_easy(K, P, prec)
       catch
-        C, mC = completion(K, P)
+        C, mC = completion(K, P, prec)
       end
     else
-      C, mC = completion(K, P)
+      C, mC = completion(K, P, prec)
     end
     Rmat = zero_matrix(C, r, r)
     D = Dict{nf_elem, elem_type(C)}()
@@ -1195,6 +1195,9 @@ function _p_adic_regulator(K, p, fast::Bool = false)
       return valuation(z)
     else
       prec = 2*prec
+    end
+    if prec > 4048
+      error("Something wrong")
     end
   end
 end
