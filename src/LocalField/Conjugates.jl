@@ -163,7 +163,7 @@ end
 #  flat = true/ false: return (Re, Im) or the complex number
 #TODO: not sure how this would work in the ramified, not-normal case.
 @doc raw"""
-    conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, all:Bool = true) -> []
+    conjugates(a::nf_elem, C::qAdicConj, n::Int = 11; flat::Bool = false, all:Bool = true) -> []
 
 Returns an array of the $q$-adic conjugates of $a$: Let $p Z_K = \prod P_i$ for the maximal order
 $Z_K$ of the parent of $a$. Then $K \otimes Q_p = \prod K_{P_i}$. For each of the $P_i$
@@ -506,17 +506,17 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift.  Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 """
-function completion_easy(K::AnticNumberField, P::NfOrdIdl)
+function completion_easy(K::AnticNumberField, P::NfOrdIdl, precision::Int = 10)
   #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))
   g = conjugates(P.gen_two.elem_in_nf, C)
 #  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
-  return completion(K, p, i[1])
+  return completion(K, p, i, precision)
 end
 
-completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, ZZRingElem(p), i)
+completion(K::AnticNumberField, p::Integer, i::Int, precision::Int = 64) = completion(K, ZZRingElem(p), i, precision)
 
 @doc raw"""
     completion(K::AnticNumberField, p::ZZRingElem, i::Int) -> FlintQadicField, Map
@@ -524,11 +524,11 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, ZZRingElem(p
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
 `conjugates`.
 """
-function completion(K::AnticNumberField, p::ZZRingElem, i::Int)
+function completion(K::AnticNumberField, p::ZZRingElem, i::Int, n = 64)
   C = qAdicConj(K, Int(p))
   @assert 0<i<= degree(K)
 
-  ca = conjugates(gen(K), C, all = true, flat = false)[i]
+  ca = conjugates(gen(K), C, n, all = true, flat = false)[i]
   return completion(K, ca)
 end
 
