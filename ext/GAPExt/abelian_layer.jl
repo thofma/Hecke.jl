@@ -217,7 +217,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
     inf_plc = real_places(K)
   end
   expo = lcm(gtype)
-  if length(l_conductors) == 1 && isone(l_conductors[1][1]) && isempty(l_conductors[1][2]) && !divisible(order(Cl)* (2^length(inf_plc)), ZZRingElem(n))
+  if length(l_conductors) == 1 && isone(l_conductors[1][1]) && isempty(l_conductors[1][2]) && !is_divisible_by(order(Cl)* (2^length(inf_plc)), ZZRingElem(n))
     @vprintln :Fields 1 ""
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
@@ -379,7 +379,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
   OK = maximal_order(K)
-  if divisible(torsion_units_order(K), exponent(class_fields[it[1]]))
+  if is_divisible_by(torsion_units_order(K), exponent(class_fields[it[1]]))
     use_brauer = false
   end
 
@@ -683,8 +683,8 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     end
     #Now, the norm group of K over L
     @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr, prod(ab_invariants_mod))
-    @hassert :Fields 1 divisible(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
-    if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
+    @hassert :Fields 1 is_divisible_by(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
+    if !is_divisible_by(order(ngL), degree(C)) || !is_divisible_by(exponent(C), n)
       push!(to_be_done, indclf)
       continue
     end

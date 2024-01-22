@@ -354,7 +354,7 @@ function normal_basis(K::AnticNumberField)
   d = discriminant(O)
   p = 1
   for q in PrimesSet(degree(K), -1)
-    if divisible(d, q)
+    if is_divisible_by(d, q)
       continue
     end
     #Now, I check if p is totally split
@@ -432,7 +432,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     cnt += 1
     fs = factor_shape(fp)
     gs = factor_shape(gp)
-    if !divisible(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
+    if !is_divisible_by(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
       return false
     end
     p = next_prime(p)
@@ -521,7 +521,7 @@ function is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField)
   dg = denominator(g)
   while cnt < max(20, 2*degree(K))
     p = next_prime(p)
-    if divisible(df, p) || divisible(dg, p)
+    if is_divisible_by(df, p) || is_divisible_by(dg, p)
       continue
     end
     F = GF(p, cached = false)

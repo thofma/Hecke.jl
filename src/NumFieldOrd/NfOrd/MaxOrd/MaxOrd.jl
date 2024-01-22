@@ -110,7 +110,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
   for i in 1:length(primes1)
     p = primes1[i]
     @vprintln :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    if !divisible(ind, p) || is_regular_at(f, p)
+    if !is_divisible_by(ind, p) || is_regular_at(f, p)
       O1 = pmaximal_overorder(EO, p)
       if valuation(discriminant(O1), p) != valuation(discriminant(OO), p)
         OO = sum_as_Z_modules(OO, O1, M)

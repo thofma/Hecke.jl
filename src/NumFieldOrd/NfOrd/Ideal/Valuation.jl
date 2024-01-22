@@ -150,7 +150,7 @@ function val_fun_generic_small(p::NfOrdIdl)
         v += 1
         if !iszero(no)
           nn = divexact(nn, norm(p))
-          if !divisible(nn, norm(p))
+          if !is_divisible_by(nn, norm(p))
             break
           end
         end
@@ -190,7 +190,7 @@ function val_func_generic(p::NfOrdIdl)
         v += 1
         if !iszero(no)
           nn = divexact(nn, norm(p))
-          if !divisible(nn, norm(p))
+          if !is_divisible_by(nn, norm(p))
             break
           end
           x = mod(x, p_mod)
@@ -473,7 +473,7 @@ Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfAbsOrdIdl, p::NfAbsOrdIdl)
-  if has_minimum(A) && has_minimum(p) && !divisible(minimum(A, copy = false), minimum(p, copy = false))
+  if has_minimum(A) && has_minimum(p) && !is_divisible_by(minimum(A, copy = false), minimum(p, copy = false))
     return 0
   end
   if has_princ_gen_special(A)

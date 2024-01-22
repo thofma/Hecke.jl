@@ -212,7 +212,7 @@ function reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
   K = base_field(E)
   d = degree(K)
   q = order(K)
-  @req divisible(q - 1, n) "K needs to contain the nth roots of unity."
+  @req is_divisible_by(q - 1, n) "K needs to contain the nth roots of unity."
   @req n*P == infinity(E) "P must be of order n."
 
   e = div(q - 1, n)

@@ -87,8 +87,8 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   end
   #Now, the norm group of K over L
   @vtime :ClassField 3 ngL, mngL = Hecke.norm_group(mL, mr)
-  @hassert :ClassField 1 divisible(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
-  if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
+  @hassert :ClassField 1 is_divisible_by(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
+  if !is_divisible_by(order(ngL), degree(C)) || !is_divisible_by(exponent(C), n)
     return false, C
   end
   #Finally, the norm group of C over L

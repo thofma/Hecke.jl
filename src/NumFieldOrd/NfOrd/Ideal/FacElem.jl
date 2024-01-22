@@ -239,7 +239,7 @@ function factor_over_coprime_base(x::FacElem{NfOrdIdl, NfOrdIdlSet}, coprime_bas
       if iszero(e)
         continue
       end
-      if divisible(norm(b, copy = false), P)
+      if is_divisible_by(norm(b, copy = false), P)
         v += valuation(b, p)*e
       end
     end

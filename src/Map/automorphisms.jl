@@ -419,7 +419,7 @@ function _automorphisms_abelian(K::AnticNumberField)
   dp = denominator(K.pol)
   while length(auts) != degree(K)
     p = next_prime(p)
-    if divisible(dp, p)
+    if is_divisible_by(dp, p)
       continue
     end
     F = GF(p, cached = false)
@@ -590,7 +590,7 @@ function _automorphisms_center(K::AnticNumberField)
   while length(auts) < ord && cnt < threshold
     cnt += 1
     p = next_prime(p)
-    if divisible(dp, p)
+    if is_divisible_by(dp, p)
       continue
     end
     F = GF(p, cached = false)
@@ -628,7 +628,7 @@ function is_abelian2(K::AnticNumberField)
   coeffs_bound = 2*_coefficients_bound(K)
   while length(auts) != degree(K)
     p = next_prime(p)
-    if divisible(dp, p)
+    if is_divisible_by(dp, p)
       continue
     end
     F = GF(p, cached = false)

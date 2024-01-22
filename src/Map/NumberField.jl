@@ -130,7 +130,7 @@ function is_normal_easy(K::AnticNumberField)
     end
     ind += 1
     dt = prime_decomposition_type(E, p)
-    if !divisible(degree(K), length(dt))
+    if !is_divisible_by(degree(K), length(dt))
       set_attribute!(K, :is_normal => false)
       return false
     end

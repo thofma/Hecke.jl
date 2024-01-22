@@ -180,7 +180,7 @@ function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codo
   if degree(k) == 1
     return prime_decomposition(ZK, minimum(p))
   end
-  if !divisible(index(ZK), minimum(p))
+  if !is_divisible_by(index(ZK), minimum(p))
     return prime_decomposition_nonindex(f, p, ZK)
   end
   # TODO: Implement for nonindex divisors seriously,

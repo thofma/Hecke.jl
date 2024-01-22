@@ -645,7 +645,7 @@ function check_obstruction_prime(F::FieldsTower, cocycles::Vector{cocycle_ctx}, 
   K = F.field
   OK = maximal_order(K)
   T, mT = torsion_unit_group(OK)
-  if divisible(order(T), ZZRingElem(p))
+  if is_divisible_by(order(T), ZZRingElem(p))
     return _obstruction_prime_no_extend(F, cocycles, p)
   end
   lp = ramified_primes(F)
@@ -893,7 +893,7 @@ function check_obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, n::
   K = F.field
   OK = maximal_order(K)
   T, mT = torsion_unit_group(OK)
-  if divisible(order(T), n)
+  if is_divisible_by(order(T), n)
     return _obstruction_pp_no_extend(F, cocycles, n)
   end
   =#
@@ -1260,7 +1260,7 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
     return true
   end
   f = gcd(length(G), degree(P))
-  if divisible(norm(P)-1, e)
+  if is_divisible_by(norm(P)-1, e)
     c = divexact(norm(P)-1, e)
     if f == 1 && iszero(mod(c, n))
       return true

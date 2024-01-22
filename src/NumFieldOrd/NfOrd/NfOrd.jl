@@ -527,7 +527,7 @@ function in(a::nf_elem, O::NfOrd)
       return true
     end
     exp_index = basis_matrix(O, copy = false).den
-    if !divisible(exp_index, d)
+    if !is_divisible_by(exp_index, d)
       return false
     end
     M = basis_mat_inv(O, copy = false)

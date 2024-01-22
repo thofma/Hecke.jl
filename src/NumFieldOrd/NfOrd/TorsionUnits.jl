@@ -354,7 +354,7 @@ function _torsion_group_order_divisor(K::AnticNumberField)
     else
       stable = 0
     end
-    if !divisible(ZZRingElem(degree(K)), euler_phi(m_new))
+    if !is_divisible_by(ZZRingElem(degree(K)), euler_phi(m_new))
       stable = 0
     end
 
@@ -416,7 +416,7 @@ function _torsion_group_order_divisor(K::NumField)
     else
       stable = 0
     end
-    if !divisible(ZZRingElem(absolute_degree(K)), euler_phi(m_new))
+    if !is_divisible_by(ZZRingElem(absolute_degree(K)), euler_phi(m_new))
       stable = 0
     end
 
