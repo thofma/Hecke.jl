@@ -246,13 +246,11 @@ norms(G::HermLocalGenus) = begin @assert is_dyadic(G) && is_ramified(G); G.norm_
 @doc raw"""
     norm(g::HermLocalGenus) -> NfOrdFracIdl
 
-Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
-$\mathfrak p$ of $\mathcal O_K$, return the norm of the Jordan block of minimum
-$\mathfrak P$-valuation, where $\mathfrak{P}$ is a prime ideal of $\mathcal O_E$
-lying over $\mathfrak p$.
+Return the norm of `g`, i.e. the norm of any of its representatives.  
 
-Note that if $\mathfrak P$ does not divide 2 or if it is not ramified, then the norm
-is actually equal to the scale of the Jordan block of minimum $\mathfrak P$-valuation.
+Given a local genus symbol `g` of hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, it norm is computed as the norm of the Jordan block of minimum
+$\mathfrak p$-valuation.
 """
 function norm(G::HermLocalGenus)
   p = prime(G)
