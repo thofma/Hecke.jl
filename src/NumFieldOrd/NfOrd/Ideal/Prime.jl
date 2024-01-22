@@ -230,7 +230,7 @@ function prime_decomposition(O::NfAbsOrd{<:NumField{QQFieldElem}, <:Any}, p::Int
     return prime_decomposition(O, ZZRingElem(p), degree_limit, lower_limit, cached = cached)
   end
 
-  if (nf(O) isa NfAbsNS || nf(O) isa AnticNumberField) && !divisible(numerator(discriminant(nf(O))), p)
+  if (nf(O) isa NfAbsNS || nf(O) isa AnticNumberField) && !is_divisible_by(numerator(discriminant(nf(O))), p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
@@ -268,7 +268,7 @@ function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degr
         return lp
       end
     else
-      @assert O.is_maximal == 1 || p in O.primesofmaximality || !divisible(discriminant(O), p)
+      @assert O.is_maximal == 1 || p in O.primesofmaximality || !is_divisible_by(discriminant(O), p)
       lp = prime_dec_nonindex(O, p, degree_limit, lower_limit)
       if cached && degree_limit == degree(O) && lower_limit == 0
         O.index_div[ZZRingElem(p)] = lp
@@ -531,7 +531,7 @@ function prime_ideals_up_to(O::NfOrd, B::Int;
     if p > B
       return r
     end
-    if !index_divisors && divisible(index(O), p)
+    if !index_divisors && is_divisible_by(index(O), p)
       continue
     end
     if !complete
@@ -774,7 +774,7 @@ function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
       for (P, v) in lp
         found = false
         for i = 1:length(pf)
-          if divisible(_get_integer_in_ideal(pf[i]), p) && divisible(norm(pf[i], copy = false), p) && divides(pf[i], P)
+          if is_divisible_by(_get_integer_in_ideal(pf[i]), p) && is_divisible_by(norm(pf[i], copy = false), p) && divides(pf[i], P)
             found = true
             break
           end

@@ -58,7 +58,7 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
   end
   q, mq = quo(T, sR, false)
   for (i,P) in enumerate(S)
-    if divisible(l,P.minimum)
+    if is_divisible_by(l,P.minimum)
       continue
     end
     if haskey(mR.prime_ideal_preimage_cache, P)
@@ -221,7 +221,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
   #
   L = Dict{NfOrdIdl, Int}()
   for (p, vp) in mR.fact_mod
-    if !divisible(E, minimum(p, copy = false))
+    if !is_divisible_by(E, minimum(p, copy = false))
       if !is_coprime(E, norm(p)-1)
         L[p] = 1
       end
@@ -370,7 +370,7 @@ function is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{<: InfPl
     if !haskey(mR.fact_mod, p) || vp>mR.fact_mod[p]
       return false
     end
-    if !divisible(E,minimum(p))
+    if !is_divisible_by(E,minimum(p))
       if gcd(E, norm(p)-1)==1
         return false
       elseif vp>1
@@ -706,7 +706,7 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
     end
     p = next_prime(p)
     @vprintln :ClassField 3 "Using prime $(p)"
-    if divisible(N1, p) || divisible(denom, p)
+    if is_divisible_by(N1, p) || is_divisible_by(denom, p)
       continue
     end
     if divides(indexO, ZZRingElem(p))[1]
@@ -896,7 +896,7 @@ function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapC
         continue
       end
       f = order(z)*divexact(degree(lP[1][1]), degree(P))
-      if divisible(f, expo)
+      if is_divisible_by(f, expo)
         stable += 1
         continue
       end
@@ -1472,7 +1472,7 @@ function is_normal_difficult(C::ClassField)
   mp = pseudo_inv(C.quotientmap) * C.rayclassgroupmap
   while p < bound
     p = next_prime(p)
-    if divisible(discriminant(O), p)
+    if is_divisible_by(discriminant(O), p)
       continue
     end
     lp = prime_decomposition(O, p)

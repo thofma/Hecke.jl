@@ -172,7 +172,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::ZZRingElem; unramified_outside
   K = nf(O)
   wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
   ram_primes = ramified_primes(O)
-  filter!(x -> !divisible(ZZRingElem(n),x), ram_primes)
+  filter!(x -> !is_divisible_by(ZZRingElem(n),x), ram_primes)
   sort!(ram_primes)
   coprime_to = vcat(ram_primes, wild_ram)
   m = minimum(wild_ram)

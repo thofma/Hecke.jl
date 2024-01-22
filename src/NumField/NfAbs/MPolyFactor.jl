@@ -215,7 +215,7 @@ function hlift_have_lcs_crt(
 
     local pA, pAuf, plcs, palphas
 
-    if divisible(nf_lcc, p)
+    if is_divisible_by(nf_lcc, p)
         continue
     end
 

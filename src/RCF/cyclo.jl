@@ -340,7 +340,7 @@ function _isprobably_primitive(x::NfAbsOrdElem)
   M, d1 = representation_matrix_q(x.elem_in_nf)
   p = next_prime(1000)
   for i = 1:3
-    while divisible(d, p)[1] || divisible(d1, p)
+    while is_divisible_by(d, p)[1] || is_divisible_by(d1, p)
       p = next_prime(p)
     end
     R = GF(p, cached = false)

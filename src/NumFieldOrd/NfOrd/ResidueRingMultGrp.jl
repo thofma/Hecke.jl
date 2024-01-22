@@ -848,10 +848,10 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
   y1 = Dict{NfOrdIdl, Int}()
   y2 = Dict{NfOrdIdl, Int}()
   for (q, e) in fac
-    if divisible(norm(q) - 1, p)
+    if is_divisible_by(norm(q) - 1, p)
       y1[q] = Int(1)
     else
-      if divisible(norm(q), p) && e >= 2
+      if is_divisible_by(norm(q), p) && e >= 2
         y2[q] = Int(e)
       end
     end

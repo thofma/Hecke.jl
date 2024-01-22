@@ -335,7 +335,7 @@ function rres_sircana_pp(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: Re
     end
     if degree(g) < 1
 
-      if divisible(lift(coeff(f, degree(f))), p)
+      if is_divisible_by(lift(coeff(f, degree(f))), p)
         #need the constant coeff * the annihilator of the others...
         a = coeff(f, 1)
         for i = 2:degree(f)
@@ -363,7 +363,7 @@ function rres_sircana_pp(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: Re
       return res
     end
 
-    if divisible(lift(coeff(g, degree(g))), p)
+    if is_divisible_by(lift(coeff(g, degree(g))), p)
       #one of the coefficient will now be invertible (at least after the splitting)
       g = fun_factor(g)[2]
     end
@@ -1490,7 +1490,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem,
       end
       cp = coprime_base(_to_base)
       for p in cp
-        if isone(p) || !divisible(ZZRingElem(m), p)
+        if isone(p) || !is_divisible_by(ZZRingElem(m), p)
           continue
         end
         R = residue_ring(FlintZZ, Int(p), cached = false)

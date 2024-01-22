@@ -431,7 +431,7 @@ the function returns false and some meaningless data.
 """
 function is_subfield(K::KummerExt, L::KummerExt)
   @assert base_field(K) == base_field(L)
-  @assert divisible(exponent(L), exponent(K))
+  @assert is_divisible_by(exponent(L), exponent(K))
   #First, find prime number that might be ramified.
   norms = Vector{ZZRingElem}(undef, length(K.gen)+length(L.gen)+1)
   for i = 1:length(K.gen)
@@ -469,7 +469,7 @@ Computes the quotient of $N$ and $[K(\zeta_M, \sqrt[N](x))\colon K(\zeta_M)]$,
 where $K$ is the field containing $x$ and $N$ divides $M$.
 """
 function kummer_failure(x::nf_elem, M::Int, N::Int)
-  @assert divisible(M, N)
+  @assert is_divisible_by(M, N)
   K = parent(x)
   CE = cyclotomic_extension(K, M)
   el = CE.mp[2](x)
@@ -487,7 +487,7 @@ function kummer_failure(x::nf_elem, M::Int, N::Int)
     end
     deg *= Int(p)^e
   end
-  @assert divisible(N, deg)
+  @assert is_divisible_by(N, deg)
   return divexact(N, deg)
 end
 
