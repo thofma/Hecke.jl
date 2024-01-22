@@ -277,7 +277,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     end
     B = filter!(collect(1:bound)) do b
       for d in exclude_denom
-        if divisible(b,d)
+        if is_divisible_by(b,d)
           return false
         end
       end

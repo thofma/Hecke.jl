@@ -1928,7 +1928,7 @@ function has_quotient(G::GrpAbFinGen, invariants::Vector{Int})
     return false
   end
   for i = 0:length(arr_snfH)-1
-    if !divisible(arr_snfG1[end-i], arr_snfH[end-i])
+    if !is_divisible_by(arr_snfG1[end-i], arr_snfH[end-i])
       return false
     end
   end

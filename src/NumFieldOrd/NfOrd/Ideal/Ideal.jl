@@ -823,7 +823,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
   end
   if isdefined(x, :basis_matrix) && has_2_elem(y)
-    if !divisible(y.gen_one, minimum(x, copy = false))
+    if !is_divisible_by(y.gen_one, minimum(x, copy = false))
       return false
     end
     if !(y.gen_two in x)
@@ -832,7 +832,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return norm(x) == norm(y)
   end
   if isdefined(y, :basis_matrix) && has_2_elem(y)
-    if !divisible(x.gen_one, minimum(y, copy = false))
+    if !is_divisible_by(x.gen_one, minimum(y, copy = false))
       return false
     end
     if !(x.gen_two in y)

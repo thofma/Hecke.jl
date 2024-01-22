@@ -730,7 +730,7 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
   @assert !isone(g)
   primes = Tuple{ZZRingElem, nf_elem}[]
   for (p, v) in lp
-    if !divisible(g, minimum(p, copy = false))
+    if !is_divisible_by(g, minimum(p, copy = false))
       continue
     end
     vp = valuation(a, p)

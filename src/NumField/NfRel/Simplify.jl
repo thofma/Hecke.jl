@@ -95,7 +95,7 @@ function _find_prime(L::NfRel{nf_elem})
   den = lcm(ZZRingElem[denominator(coeff(f, i)) for i = 0:degree(f)])
   while i < n_attempts+1
     p = next_prime(p)
-    if is_index_divisor(OK, p) || divisible(absolute_discriminant(OL), p) || divisible(den, p)
+    if is_index_divisor(OK, p) || is_divisible_by(absolute_discriminant(OL), p) || is_divisible_by(den, p)
       continue
     end
     lp = prime_decomposition(OK, p)
@@ -190,7 +190,7 @@ function _find_prime(L::NfRelNS{nf_elem})
   polsR = Vector{FqPolyRingElem}(undef, length(pols))
   while i < n_attempts+1
     p = next_prime(p)
-    if is_index_divisor(OK, p) || divisible(dL, p)
+    if is_index_divisor(OK, p) || is_divisible_by(dL, p)
       continue
     end
     lp = prime_decomposition(OK, p)

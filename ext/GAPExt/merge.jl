@@ -556,7 +556,7 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   expo = lcm(vcat([degree(x) for x in maximal_abelian_subextension(list1[1])], [degree(x) for x in maximal_abelian_subextension(list2[1])]))
   modulo = 1
   for p in ramified_primes
-    if !divisible(expo, p)
+    if !is_divisible_by(expo, p)
       modulo *= p
     else
       bound_disc = valuation_bound_discriminant(ppio(expo, p)[1], p)
