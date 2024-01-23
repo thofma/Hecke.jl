@@ -1203,8 +1203,7 @@ function primsplit(f::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerU
 end
 
 function quo(R::fqPolyRepPolyRing, f::fqPolyRepPolyRingElem)
-  Q = residue_ring(R, f)
-  mQ = MapFromFunc(R, Q, x -> Q(x), y -> lift(y))
+  Q, mQ = residue_ring(R, f)
   return Q, mQ
 end
 
