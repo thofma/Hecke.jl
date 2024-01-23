@@ -1391,7 +1391,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
     for x = Base.Iterators.product(fac...)
       k = lcm([degree(t[1]) for t = x])
       Fq = Native.finite_field(p, k, "y", cached = false)[1]
-      Fq2 = residue_ring(Rx, lift(Zx, minpoly(gen(Fq))))
+      Fq2 = residue_ring(Rx, lift(Zx, minpoly(gen(Fq))))[1]
       rt = Vector{Vector{elem_type(Fq)}}()
       RT = []
       d = 1

@@ -967,7 +967,7 @@ function _rcf_descent(CF::ClassField_pp)
         end
         polcoeffs[n+1] = one(F)
         pol = Ft(polcoeffs)
-        Ap = residue_ring(Ft, pol, cached = false)
+        Ap = residue_ring(Ft, pol, cached = false)[1]
         xpecoeffs = Vector{elem_type(F)}(undef, n)
         for i = 0:n-1
           xpecoeffs[i+1] = image(mFp, coeff(pe, i))
