@@ -1167,7 +1167,7 @@ function _p_adic_regulator(K, p, fast::Bool = false)
   @req order(A) == degree(K) "Field must be normal"
   @req is_totally_real(K) "Field must be totally real"
   r = rank(U)
-  prec = 64
+  prec = degree(K) + 10
   _det = Hecke.AbstractAlgebra.det_df
   while true
     if prec > 2^15
@@ -1176,19 +1176,38 @@ function _p_adic_regulator(K, p, fast::Bool = false)
     local C, mC
     if fast
       try
-        C, mC = completion_easy(K, P)
-      catch
-        C, mC = completion(K, P)
+        C, mC = completion_easy(K, P, prec)
+      catch e
+        if !(e isa ErrorException && e.msg == "cannot deal with difficult primes yet")
+          rethrow()
+        end
+        C, mC = completion(K, P, prec)
       end
     else
-      C, mC = completion(K, P)
+      C, mC = completion(K, P, prec)
     end
     Rmat = zero_matrix(C, r, r)
     D = Dict{nf_elem, elem_type(C)}()
+    good = true
     for i in 1:r
       for j in 1:r
-        Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1])), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
+        try
+          Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1])), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
+        catch e
+          if !(e isa ErrorException && e.msg == "precision too low")
+            rethrow()
+          end
+          good = false
+          break
+        end
       end
+      if !good
+        break
+      end
+    end
+    if !good
+      prec = 2*prec
+      continue
     end
     z = _det(Rmat)
     if !is_zero(z)
@@ -1196,10 +1215,13 @@ function _p_adic_regulator(K, p, fast::Bool = false)
     else
       prec = 2*prec
     end
+    if prec > 2^15
+      error("Something wrong")
+    end
   end
 end
 
-function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField}, D = Dict{nf_elem, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}())
+function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField}, D = Dict{nf_elem, elem_type(codomain(mC))}())
   C = codomain(mC)
   K = base_ring(e)
   pi = K(uniformizer(P))
@@ -1214,7 +1236,14 @@ function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField},
   for (b, n) in e
     l = get!(D, b) do
       bb = mC(pi^(-valuation(b, P)) * b)
-      return log(bb)
+      if is_zero(bb)
+        error("precision too low")
+      end
+      if bb isa qadic
+        return _log(bb)
+      else
+        return log(bb)
+      end
     end
     res = res + n * l
   end
@@ -1230,7 +1259,7 @@ function _padic_regulator_non_normal(K, p)
   # first identify the distinct p-adic completions of K
   A, mA = automorphism_group(N)
   d = degree(N)
-  prec = 32 
+  prec = 32
   auts = Int[]
   while true
     empty!(auts)

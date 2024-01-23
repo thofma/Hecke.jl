@@ -668,6 +668,9 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
     root_lattice(R::Symbol, n::Int) -> ZZLat
 
 Return the root lattice of type `R` given by `:A`, `:D` or `:E` with parameter `n`.
+
+The type `:I` with parameter `n = 1` is also allowed and denotes the odd
+unimodular lattice of rank 1.
 """
 function root_lattice(R::Symbol, n::Int)
   if R === :A
@@ -676,15 +679,18 @@ function root_lattice(R::Symbol, n::Int)
     return integer_lattice(; gram = _root_lattice_E(n))
   elseif R === :D
     return integer_lattice(; gram = _root_lattice_D(n))
+  elseif R === :I
+    @req n == 1 "Parameter ($n) for odd root lattice (type $R) must be 1"
+    return integer_lattice(; gram = QQ[1;])
   else
-    error("Type (:$R) must be :A, :D or :E")
+    error("Type (:$R) must be :A, :D, :E or :I")
   end
 end
 
 @doc raw"""
     root_lattice(R::Vector{Tuple{Symbol,Int}}) -> ZZLat
 
-Return the root lattice of type `R`.
+Return the root lattice of type `R` (see [`root_lattice`](@ref)).
 
 #Example
 ```jldoctest
@@ -703,7 +709,7 @@ function root_lattice(R::Vector{Tuple{Symbol,Int}})
 end
 
 function _root_lattice_A(n::Int)
-  n < 0 && error("Parameter ($n) for root lattice of type :A must be positive")
+  @req n > 0 "Parameter ($n) for root lattice of type :A must be positive"
   z = zero_matrix(QQ, n, n)
   for i in 1:n
     z[i, i] = 2
@@ -718,7 +724,7 @@ function _root_lattice_A(n::Int)
 end
 
 function _root_lattice_D(n::Int)
-  n < 2 && error("Parameter ($n) for root lattices of type :D must be greater or equal to 2")
+  @req n >= 2 "Parameter ($n) for root lattices of type :D must be greater or equal to 2"
   if n == 2
     G = matrix(QQ, [2 0 ;0 2])
   elseif n == 3
@@ -737,7 +743,7 @@ function _root_lattice_D(n::Int)
 end
 
 function _root_lattice_E(n::Int)
-  n in [6,7,8] || error("Parameter ($n) for lattice of type :E must be 6, 7 or 8")
+  @req n in [6,7,8] "Parameter ($n) for lattice of type :E must be 6, 7 or 8"
   if n == 6
     G = [2 -1 0 0 0 0;
         -1 2 -1 0 0 0;
@@ -1664,6 +1670,10 @@ end
 
 Return the ADE type of the root sublattice of `L`.
 
+The root sublattice is the lattice spanned by the vectors of squared length
+$1$ and $2$.  The odd lattice of rank 1 and determinant $1$ is denoted by
+`(:I, 1)`.
+
 Input:
 
 `L` -- a definite and integral $\mathbb{Z}$-lattice.
@@ -1699,11 +1709,27 @@ with gram matrix
 
 julia> R = root_lattice_recognition(L)
 ([(:A, 1), (:D, 6)], ZZLat[Integer lattice of rank 1 and degree 8, Integer lattice of rank 6 and degree 8])
+
+julia> L = integer_lattice(; gram = QQ[1 0 0  0;
+                                       0 9 3  3;
+                                       0 3 2  1;
+                                       0 3 1 11])
+Integer lattice of rank 4 and degree 4
+with gram matrix
+[1   0   0    0]
+[0   9   3    3]
+[0   3   2    1]
+[0   3   1   11]
+
+julia> root_lattice_recognition(L)
+([(:A, 1), (:I, 1)], ZZLat[Integer lattice of rank 1 and degree 4, Integer lattice of rank 1 and degree 4])
 ```
 """
 function root_lattice_recognition(L::ZZLat)
   irr = irreducible_components(root_sublattice(L))
-  return Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr], irr
+  rlr = Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr]
+  sp = sortperm(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] < b[2])
+  return rlr[sp], irr[sp]
 end
 
 @doc raw"""
@@ -1845,6 +1871,9 @@ Return the ADE type of the root sublattice of `L`
 as well as the corresponding irreducible root sublattices
 with basis given by a fundamental root system.
 
+The type `(:I, 1)` corresponds to the odd unimodular
+root lattice of rank 1.
+
 Input:
 
 `L` -- a definite and integral $\mathbb Z$-lattice.
@@ -1892,7 +1921,7 @@ julia> gram_matrix(R[1])
 """
 function root_lattice_recognition_fundamental(L::ZZLat)
   V = ambient_space(L)
-  ADE,components = root_lattice_recognition(L)
+  ADE, components = root_lattice_recognition(L)
   components_new = ZZLat[]
   basis = zero_matrix(QQ, 0, degree(L))
   for i in 1:length(ADE)
@@ -1925,6 +1954,9 @@ julia> Hecke.ADE_type(gram_matrix(root_lattice(:A,3)))
 function ADE_type(G::MatrixElem)
   r = rank(G)
   d = abs(det(G))
+  if r == 1 && d == 1
+    return (:I, 1)
+  end
   if r == 8 && d==1
     return (:E, 8)
   end
@@ -1946,7 +1978,7 @@ end
 function _ADE_type_with_isometry_irreducible(L)
   ADE = ADE_type(gram_matrix(L))
   R = root_lattice(ADE...)
-  e = sign(gram_matrix(L)[1,1])
+  e = sign(gram_matrix(L)[1, 1])
   if e == -1
     R = rescale(R, -1)
   end
