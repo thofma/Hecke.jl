@@ -23,7 +23,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   g = lift(Zx, gR)
   k = flog(ZZRingElem(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
-  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
   uP = UInt(P)
@@ -56,7 +56,7 @@ function val_func_no_index(p::NfOrdIdl)
   g = gcd(g, f)
   g = lift(Zx, g)
   g = hensel_lift(Zx(K.pol), g, P, 10)
-  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
   c = ZZRingElem()

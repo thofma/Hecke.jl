@@ -443,9 +443,9 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
 
   @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
 
-  R = residue_ring(FlintZZ, nn, cached = false)
+  R = residue_ring(FlintZZ, nn, cached = false)[1]
   li = _lift2(map_entries(u -> R(FlintZZ(u)), matrix(xwrtR)))
-  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, residue_ring(FlintZZ, nn))
+  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, residue_ring(FlintZZ, nn)[1])
 
   return (inv(c) * B(change_base_ring(FlintQQ, li)) * c)
 end

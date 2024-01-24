@@ -299,7 +299,7 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   modu = ZZRingElem(p)^25
   for j = (pr[i-1]+25):25:pr[i]
     pp = ZZRingElem(p)^j
-    Q = residue_ring(FlintZZ, pp, cached=false)
+    Q = residue_ring(FlintZZ, pp, cached=false)[1]
     Qt, t = polynomial_ring(Q, "t", cached=false)
     pgg = Qt(gg)
     M = _get_basis(pp, n, pgg, Qt)
@@ -319,7 +319,7 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   if !iszero(mod(pr[i]-pr[i-1], 25))
     modu = ZZRingElem(p)^mod(pr[i]-pr[i-1], 25)
     pp = ZZRingElem(p)^pr[i]
-    Q = residue_ring(FlintZZ, pp, cached=false)
+    Q = residue_ring(FlintZZ, pp, cached=false)[1]
     Qt, t = polynomial_ring(Q, "t", cached=false)
     pgg = Qt(gg)
     M = _get_basis(pp, n, pgg, Qt)
@@ -500,7 +500,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   for i=2:length(pr)
     @vprintln :Saturate 1 "Step number $i"
     pp = ZZRingElem(p)^pr[i]
-    Q = residue_ring(FlintZZ, pp, cached=false)
+    Q = residue_ring(FlintZZ, pp, cached=false)[1]
     Qt, t = polynomial_ring(Q, "t", cached=false)
 
     #possibly this should be done with max precision and then adjusted down
@@ -524,7 +524,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       dold = d
       pr_intermediate = pr[i-1] + div(pr[i] - pr[i-1], 2)
       ppint = ZZRingElem(p)^pr_intermediate
-      Qint = residue_ring(FlintZZ, ppint, cached = false)
+      Qint = residue_ring(FlintZZ, ppint, cached = false)[1]
       Qintt = polynomial_ring(Qint, "t", cached = false)[1]
       pggQint = Qintt(gg)
       Mint = _get_basis(ppint, n, pggQint, Qintt)

@@ -31,7 +31,7 @@ function _automorphisms(K::AnticNumberField; is_abelian::Bool = false)
   if Nemo.is_cyclo_type(K)
     f = get_attribute(K, :cyclo)::Int
     a = gen(K)
-    A, mA = unit_group(residue_ring(FlintZZ, f, cached = false))
+    A, mA = unit_group(residue_ring(FlintZZ, f, cached = false)[1])
     auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
     return auts
   end
@@ -96,7 +96,7 @@ end
 function _auts_cyclo(K::AnticNumberField)
   f = get_attribute(K, :cyclo)::Int
   a = gen(K)
-  A, mA = unit_group(residue_ring(FlintZZ, f, cached = false))
+  A, mA = unit_group(residue_ring(FlintZZ, f, cached = false)[1])
   auts = NfToNfMor[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
   return auts
 end
@@ -200,7 +200,7 @@ end
 function _automorphism_group_cyclo(K)
   f = get_attribute(K, :cyclo)::Int
   a = gen(K)
-  A, mA = unit_group(residue_ring(FlintZZ, f))
+  A, mA = unit_group(residue_ring(FlintZZ, f)[1])
   G, AtoG, GtoA = generic_group(collect(A), +)
   aut = NfToNfMor[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
   set_automorphisms(K, aut)
@@ -456,7 +456,7 @@ function lift_root(K::AnticNumberField, b, bound::Int)
   #Now, the lifting
   r_old = one(K)
   modu = ZZRingElem(p)^2
-  R = residue_ring(FlintZZ, modu, cached = false)
+  R = residue_ring(FlintZZ, modu, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   fR = map_coefficients(R, Zx(K.pol), parent = Rx)
   Rb_0 = Rx(b_0)
@@ -473,7 +473,7 @@ function lift_root(K::AnticNumberField, b, bound::Int)
   while i < bound && r != r_old && !check_root(K, test, r)
     i += 1
     modu = modu^2
-    R = residue_ring(FlintZZ, modu, cached = false)
+    R = residue_ring(FlintZZ, modu, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     fR = Rx(K.pol)
     Rb_0 = Rx(b_0)
@@ -506,7 +506,7 @@ end
 function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = NfToNfMor[]; bound::Int = 100)
 
   Zx = FlintZZ["x"][1]
-  F = residue_ring(FlintZZ, p, cached = false)
+  F = residue_ring(FlintZZ, p, cached = false)[1]
   Fx, gFx = polynomial_ring(F, "x", cached = false)
   fF = map_coefficients(F, Zx(K.pol), parent = Fx)
   b = powermod(gFx, p, fF)

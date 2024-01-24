@@ -1065,7 +1065,7 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
 end
 
 function Nemo.residue_ring(a::HessQR, b::HessQRElem)
-  F = residue_ring(FlintZZ, b.c)
+  F, _ = residue_ring(FlintZZ, b.c)
   return F, MapFromFunc(a, F, x->F(x.c), y->a(lift(y)))
 end
 

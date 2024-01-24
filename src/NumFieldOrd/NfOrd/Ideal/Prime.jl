@@ -649,7 +649,7 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
     K = nf(order(A))
     Qx = parent(K.pol)
     if !fits(Int, minimum(B))
-      R = residue_ring(FlintZZ, minimum(B), cached = false)
+      R = residue_ring(FlintZZ, minimum(B), cached = false)[1]
       Rx = polynomial_ring(R, "t", cached = false)[1]
       f1 = Rx(Qx(A.gen_two.elem_in_nf))
       f2 = Rx(Qx(B.gen_two.elem_in_nf))
@@ -659,7 +659,7 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
         res = iszero(mod(f1, f2))
       end
     else
-      R1 = residue_ring(FlintZZ, Int(minimum(B)), cached = false)
+      R1 = residue_ring(FlintZZ, Int(minimum(B)), cached = false)[1]
       R1x = polynomial_ring(R1, "t", cached = false)[1]
       f11 = R1x(Qx(A.gen_two.elem_in_nf))
       f21 = R1x(Qx(B.gen_two.elem_in_nf))
@@ -1366,7 +1366,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
   end
 
   Fpx = polynomial_ring(Native.GF(p, cached = false), cached = false)[1]
-  R = residue_ring(FlintZZ, p^2, cached = false)
+  R = residue_ring(FlintZZ, p^2, cached = false)[1]
   Rx = polynomial_ring(R, cached = false)[1]
   Zx = polynomial_ring(FlintZZ, cached = false)[1]
 
@@ -1647,12 +1647,12 @@ function decomposition_group(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[],
   end
   if is_index_divisor(OK, minimum(P, copy = false))
     q = 2
-    R = residue_ring(FlintZZ, q, cached = false)
+    R = residue_ring(FlintZZ, q, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     fmod = Rx(K.pol)
     while iszero(discriminant(fmod))
       q = next_prime(q)
-      R = residue_ring(FlintZZ, q, cached = false)
+      R = residue_ring(FlintZZ, q, cached = false)[1]
       Rx = polynomial_ring(R, "x", cached = false)[1]
       fmod = Rx(K.pol)
     end
@@ -1693,7 +1693,7 @@ end
 function decomposition_group_easy(G, P)
   O = order(P)
   K = nf(O)
-  R = residue_ring(FlintZZ, Int(minimum(P, copy = false)), cached = false)
+  R = residue_ring(FlintZZ, Int(minimum(P, copy = false)), cached = false)[1]
   Rt, t = polynomial_ring(R, "t", cached = false)
   fmod = Rt(K.pol)
   pols = zzModPolyRingElem[Rt(image_primitive_element(x)) for x in G]
@@ -1757,12 +1757,12 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NfToNfMor} = NfToNfMor[])
   igF = K(mF\gF)
   inertia_grp = NfToNfMor[]
   q = 2
-  R = residue_ring(FlintZZ, q, cached = false)
+  R = residue_ring(FlintZZ, q, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = residue_ring(FlintZZ, q, cached = false)
+    R = residue_ring(FlintZZ, q, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     fmod = Rx(K.pol)
   end
@@ -1799,7 +1799,7 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
   OK = order(P)
   K = nf(OK)
   p = minimum(P, copy = false)
-  R = residue_ring(FlintZZ, Int(p), cached = false)
+  R = residue_ring(FlintZZ, Int(p), cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   gF = gen(F)

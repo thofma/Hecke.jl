@@ -99,7 +99,7 @@ function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResE
   for p = cp
     lg = p^valuation(m, p)
     push!(pg, lg)
-    R1 = residue_ring(FlintZZ, S(lg), cached = false)
+    R1 = residue_ring(FlintZZ, S(lg), cached = false)[1]
     R1t = polynomial_ring(R1, cached = false)[1]
     #g is bad in R1, so factor it
     gR1 = R1t(T[R1(lift(coeff(g, i))) for i = 0:degree(g)])
@@ -199,7 +199,7 @@ function resultant_ideal_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: R
       s = gcd(lift(res), pn)
       if !isone(s)
         new_pn = divexact(pn, s)
-        R1 = residue_ring(FlintZZ, S(new_pn), cached = false)
+        R1 = residue_ring(FlintZZ, S(new_pn), cached = false)[1]
         R1t = polynomial_ring(R1, "y", cached = false)[1]
         f2 = R1t(T[R1(lift(coeff(f, i))) for i = 0:degree(f)])
         g2 = R1t(T[R1(lift(coeff(g, i))) for i = 0:degree(g)])
@@ -456,7 +456,7 @@ function rres_sircana(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: ResEl
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
-        R1 = residue_ring(FlintZZ, S(lg), cached=false)
+        R1 = residue_ring(FlintZZ, S(lg), cached=false)[1]
         R1t = polynomial_ring(R1, cached=false)[1]
         #g is bad in R1, so factor it
         gR1 = R1t(lift(Zx, g))
@@ -620,7 +620,7 @@ function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResEl
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
-        R1 = residue_ring(FlintZZ, S(lg), cached=false)
+        R1 = residue_ring(FlintZZ, S(lg), cached=false)[1]
         R1t = polynomial_ring(R1, cached=false)[1]
         #g is bad in R1, so factor it
         gR1 = R1t(lift(Zx, g))
@@ -962,7 +962,7 @@ function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Re
     push!(pg, lg)
 
     if lg != m
-      R1 = residue_ring(FlintZZ, S(lg), cached=false)
+      R1 = residue_ring(FlintZZ, S(lg), cached=false)[1]
       R1t = polynomial_ring(R1, cached=false)[1]
       #g is bad in R1, so factor it
       gR1 = R1t(lift(Zx, g))
@@ -1064,7 +1064,7 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
   f2 = lift(Zy, f)
   mod = ZZRingElem(gcd(smod, ZZRingElem(modulus(Rx)))) #We have the equality modulo mod
   mod = gcd(mod*mod, ZZRingElem(modulus(Rx)))
-  R1 = residue_ring(FlintZZ, mod, cached = false)
+  R1 = residue_ring(FlintZZ, mod, cached = false)[1]
   R1x, x = polynomial_ring(R1, "x", cached = false)
   s = R1x(lift(inv(coeff(u0, 0))))
   t = zero(R1x)
@@ -1082,7 +1082,7 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
     if mod > modRx
       mod = modRx
     end
-    R1 = residue_ring(FlintZZ, mod, cached = false)
+    R1 = residue_ring(FlintZZ, mod, cached = false)[1]
     R1x, x = polynomial_ring(R1, "x", cached = false)
     u = R1x(lift(Zy, u))
     g = R1x(lift(Zy, g))
@@ -1492,7 +1492,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem,
         if isone(p) || !is_divisible_by(ZZRingElem(m), p)
           continue
         end
-        R = residue_ring(FlintZZ, Int(p), cached = false)
+        R = residue_ring(FlintZZ, Int(p), cached = false)[1]
         Rx = polynomial_ring(R, "x", cached = false)[1]
         f1 = Rx(lift(Zx, c*f))
         g1 = Rx(lift(Zx, c1*g))

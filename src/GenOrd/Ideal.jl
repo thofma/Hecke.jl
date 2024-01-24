@@ -928,7 +928,7 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   den = lcm(collect(map(denominator, A)))
   kx = base_ring(order(y))
   num = map_entries(kx,A*den)
-  R = residue_ring(kx, den, cached = false)
+  R = residue_ring(kx, den, cached = false)[1]
   M = map_entries(R, num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x))
   #mul!(v, v, M) This didn't work

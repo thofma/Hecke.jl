@@ -1,5 +1,5 @@
 @testset "Power modulo" begin
-    R = residue_ring(ZZ,7)
+    R = residue_ring(ZZ,7)[1]
     Rx,x = R["x"]
     f = rand(Rx, 1:10)
     g = x^4+x+1

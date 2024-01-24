@@ -305,7 +305,7 @@ end
 function _radical_by_poly(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = residue_ring(FlintZZ, q, cached=false)
+  R = residue_ring(FlintZZ, q, cached=false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   f = Rx(K.pol)
   f1 = derivative(f)
@@ -344,7 +344,7 @@ end
 function _radical_by_trace(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = residue_ring(FlintZZ, q, cached=false)
+  R = residue_ring(FlintZZ, q, cached=false)[1]
   k, B = kernel(trace_matrix(O), R)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:k
@@ -1022,7 +1022,7 @@ function prefactorization(f::ZZPolyRingElem, d::ZZRingElem, f1::ZZPolyRingElem =
       continue
     end
 
-    R = residue_ring(FlintZZ, d1, cached = false)
+    R = residue_ring(FlintZZ, d1, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(f)
     ff1 = Rx(f1)

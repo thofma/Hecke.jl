@@ -1148,12 +1148,12 @@ function _find_theta(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToF
   gF = gen(F)
   igF = K(mF\gF)
   q = 2
-  R = residue_ring(FlintZZ, q, cached = false)
+  R = residue_ring(FlintZZ, q, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = residue_ring(FlintZZ, q, cached = false)
+    R = residue_ring(FlintZZ, q, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -1183,12 +1183,12 @@ function _find_frob(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToFq
   K = domain(G[1])
   O = maximal_order(K)
   q1 = 2
-  R = residue_ring(FlintZZ, q1, cached = false)
+  R = residue_ring(FlintZZ, q1, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q1 = next_prime(q1)
-    R = residue_ring(FlintZZ, q1, cached = false)
+    R = residue_ring(FlintZZ, q1, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end

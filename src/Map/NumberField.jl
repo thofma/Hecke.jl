@@ -358,7 +358,7 @@ end
 function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
   OK = order(P)
   K = nf(OK)
-  R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
+  R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)[1]
   Rx = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rx(K.pol)
   prim_img = Rx(image_primitive_element(f))
@@ -443,12 +443,12 @@ function is_involution(f::NfToNfMor)
     return false
   end
   p = 2
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = residue_ring(FlintZZ, p, cached = false)
+    R = residue_ring(FlintZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -470,12 +470,12 @@ function _order(f::NfToNfMor)
     return 1
   end
   p = 2
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = residue_ring(FlintZZ, p, cached = false)
+    R = residue_ring(FlintZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end

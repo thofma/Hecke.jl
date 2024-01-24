@@ -689,7 +689,7 @@ end
 #       3 if only odd solutions
 function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
-  R = residue_ring(ZZ, 16)
+  R = residue_ring(ZZ, 16)[1]
   # a contains n+1 elements : a0, ...., an
   n = length(coefficients) - 1
 

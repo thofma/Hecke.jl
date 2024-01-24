@@ -1301,7 +1301,7 @@ end
 
 function invmod(M::ZZMatrix, d::ZZRingElem)
   if fits(Int, d)
-    RR = residue_ring(FlintZZ, Int(d), cached = false)
+    RR = residue_ring(FlintZZ, Int(d), cached = false)[1]
     MRR = map_entries(RR, M)
     SR = zero_matrix(RR, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(SR, 1, 1, MRR)
@@ -1314,7 +1314,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
   else
-    R = residue_ring(FlintZZ, d, cached = false)
+    R = residue_ring(FlintZZ, d, cached = false)[1]
     MR = map_entries(R, M)
     S = zero_matrix(R, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(S, 1, 1, MR)

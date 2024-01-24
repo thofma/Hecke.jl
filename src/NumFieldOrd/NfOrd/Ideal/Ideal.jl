@@ -814,7 +814,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
     OK = order(x)
     if contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
-      R = residue_ring(FlintZZ, px, cached = false)
+      R = residue_ring(FlintZZ, px, cached = false)[1]
       Rx = polynomial_ring(R, "x", cached = false)[1]
       f1 = Rx(elem_in_nf(x.gen_two))
       f2 = Rx(elem_in_nf(y.gen_two))
@@ -868,7 +868,7 @@ function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
 end
 
 function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
-  R = residue_ring(FlintZZ, basis_mat_inv(y, copy = false).den, cached = false)
+  R = residue_ring(FlintZZ, basis_mat_inv(y, copy = false).den, cached = false)[1]
   M = map_entries(R, basis_mat_inv(y, copy = false).num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x, copy = false))
   mul!(v, v, M)
@@ -1005,14 +1005,14 @@ function _minmod_easy(a::ZZRingElem, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
-    S = residue_ring(FlintZZ, Int(a), cached = false)
+    S = residue_ring(FlintZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
     m = data(rres(B, F))
     return gcd(a, m)
   else
-    S1 = residue_ring(FlintZZ, a, cached = false)
+    S1 = residue_ring(FlintZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
@@ -1025,14 +1025,14 @@ function _minmod_easy_pp(a::ZZRingElem, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
-    S = residue_ring(FlintZZ, Int(a), cached = false)
+    S = residue_ring(FlintZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
     m = lift(rres_sircana_pp(B, F))
     return gcd(a, m)
   else
-    S1 = residue_ring(FlintZZ, a, cached = false)
+    S1 = residue_ring(FlintZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
@@ -1081,7 +1081,7 @@ function _minmod_comp_pp(a::ZZRingElem, b::NfOrdElem)
   d, _ = ppio(d, acom)
   mod = acom*d*e
   if fits(Int, mod)
-    S1 = residue_ring(FlintZZ, Int(mod), cached = false)
+    S1 = residue_ring(FlintZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
     F1 = St1(k.pol)
@@ -1096,7 +1096,7 @@ function _minmod_comp_pp(a::ZZRingElem, b::NfOrdElem)
     d = denominator(bi, Zk)
     return min_uncom*gcd(d, acom)
   else
-    S = residue_ring(FlintZZ, mod, cached = false)
+    S = residue_ring(FlintZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -1129,7 +1129,7 @@ function _minmod_comp(a::ZZRingElem, b::NfOrdElem)
   d, _ = ppio(d, acom)
   mod = acom*d*e
   if fits(Int, mod)
-    S1 = residue_ring(FlintZZ, Int(mod), cached = false)
+    S1 = residue_ring(FlintZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
     F1 = St1(k.pol)
@@ -1144,7 +1144,7 @@ function _minmod_comp(a::ZZRingElem, b::NfOrdElem)
     d = denominator(bi, Zk)
     return min_uncom*gcd(d, acom)
   else
-    S = residue_ring(FlintZZ, mod, cached = false)
+    S = residue_ring(FlintZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -1194,7 +1194,7 @@ function __invmod(a::ZZRingElem, b::NfOrdElem)
    e, _ = ppio(basis_matrix(Zk, copy = false).den, a)
   mod_r = a^2*d*e
   if fits(Int, mod_r)
-    S1 = residue_ring(FlintZZ, Int(mod_r), cached=false)
+    S1 = residue_ring(FlintZZ, Int(mod_r), cached=false)[1]
     S1t = polynomial_ring(S1, cached=false)[1]
     B1 = S1t(d*b.elem_in_nf)
     F1 = S1t(k.pol)
@@ -1210,7 +1210,7 @@ function __invmod(a::ZZRingElem, b::NfOrdElem)
     bi1 = k(U1)//m1*d # at this point, bi*d*b = m mod a*d*idx
     return bi1
   else
-    S = residue_ring(FlintZZ, mod_r, cached=false)
+    S = residue_ring(FlintZZ, mod_r, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -1290,7 +1290,7 @@ function _normmod_comp(a::ZZRingElem, b::NfOrdElem)
   com, uncom = ppio(d, a)
   mod = a*com^degree(k)
   if fits(Int, mod)
-    R = residue_ring(FlintZZ, Int(mod), cached=false)
+    R = residue_ring(FlintZZ, Int(mod), cached=false)[1]
     Rt = polynomial_ring(R, cached=false)[1]
     B1 = Rt(d*b.elem_in_nf)
     F1 = Rt(k.pol)
@@ -1298,7 +1298,7 @@ function _normmod_comp(a::ZZRingElem, b::NfOrdElem)
     m3 = gcd(modulus(R), lift(m2))
     return divexact(m3, com^degree(parent(b)))
   else
-    S = residue_ring(FlintZZ, mod, cached=false)
+    S = residue_ring(FlintZZ, mod, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -2354,14 +2354,14 @@ function is_coprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
     K = nf(order(I))
     if gcd(m, index(order(I))) == 1
       if fits(Int, m)
-        RI = residue_ring(FlintZZ, Int(m), cached = false)
+        RI = residue_ring(FlintZZ, Int(m), cached = false)[1]
         RIx = polynomial_ring(RI, "x", cached = false)[1]
         fI1 = RIx(I.gen_two.elem_in_nf)
         fI2 = RIx(J.gen_two.elem_in_nf)
         fI3 = RIx(K.pol)
         fl = _coprimality_test(fI1, fI2, fI3)
       else
-        R = residue_ring(FlintZZ, m, cached = false)
+        R = residue_ring(FlintZZ, m, cached = false)[1]
         Rx = polynomial_ring(R, "x", cached = false)[1]
         f1 = Rx(I.gen_two.elem_in_nf)
         f2 = Rx(J.gen_two.elem_in_nf)

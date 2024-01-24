@@ -131,7 +131,7 @@
 
   # Lifting
 
-  S = residue_ring(FlintZZ, 5)
+  S = residue_ring(FlintZZ, 5)[1]
   A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
   B = @inferred lift(A)
   @test sparse_row(R, [1, 2, 3, 5], [1, 1, 2, 3]) == B
@@ -142,7 +142,7 @@
   b = @inferred norm2(A)
   @test b == ZZRingElem(25 + 4 + 16 + 100)
 
-  S = residue_ring(FlintZZ, 5)
+  S = residue_ring(FlintZZ, 5)[1]
   A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
   b = @inferred norm2(A)
   @test b == R(0)

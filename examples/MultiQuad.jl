@@ -222,7 +222,7 @@ function _nullspace(A::zzModMatrix)
     if valuation(p, i) > 1
       continue
     end
-    b = matrix(residue_ring(FlintZZ, Int(i)), A_orig)
+    b = matrix(residue_ring(FlintZZ, Int(i))[1], A_orig)
     b = nullspace(b)
     b = rref(b[1]')
     c = matrix(base_ring(b[2]), A)'
@@ -261,7 +261,7 @@ function mod_p(R, Q::NfOrdIdl, p::Int)
     end
   end
 #  =#
-  return matrix(residue_ring(FlintZZ, p), 1, length(R), [dlog(dl, mF(x)^e, pp) % p for x = R])
+  return matrix(residue_ring(FlintZZ, p)[1], 1, length(R), [dlog(dl, mF(x)^e, pp) % p for x = R])
 end
 
 Hecke.lift(A::ZZMatrix) = A
@@ -283,7 +283,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   else
     #println("NOT doint zeta")
   end
-  T = residue_ring(FlintZZ, p)
+  T = residue_ring(FlintZZ, p)[1]
   A = identity_matrix(T, length(R))
   i = 1
   for (up, k) = factor(p).fac
@@ -296,7 +296,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
     AA = identity_matrix(FlintZZ, ncols(A))
     for pp = all_p
       #println("doin' $pp")
-      AA = matrix(residue_ring(FlintZZ, Int(pp)), lift(AA))
+      AA = matrix(residue_ring(FlintZZ, Int(pp))[1], lift(AA))
       Ap = matrix(base_ring(AA), A)
       i = 1
       S = Hecke.PrimesSet(Hecke.p_start, -1, Int(pp), 1)
