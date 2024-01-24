@@ -442,7 +442,7 @@ function gens(T::TorQuadModule)
   end
 end
 
-ngens(T::TorQuadModule) = length(T.gens_lift)
+number_of_generators(T::TorQuadModule) = length(T.gens_lift)
 
 function gen(T::TorQuadModule, i::Int)
   if isdefined(T, :gens)

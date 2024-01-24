@@ -670,7 +670,7 @@ function representation_matrix(a::NfRelNSElem)
   return M
 end
 
-@inline ngens(K::NfRelNS) = length(K.pol)
+@inline number_of_generators(K::NfRelNS) = length(K.pol)
 
 function primitive_element(K::NfRelNS)
   g = gens(K)

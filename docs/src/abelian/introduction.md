@@ -53,7 +53,7 @@ abelian_groups(8)
 ### Invariants
 ```@docs
 is_snf(A::GrpAbFinGen)
-ngens(A::GrpAbFinGen)
+number_of_generators(A::GrpAbFinGen)
 nrels(G::GrpAbFinGen)
 rels(A::GrpAbFinGen)
 is_finite(A::GrpAbFinGen)

@@ -288,11 +288,11 @@ normal form.
 is_snf(A::GrpAbFinGen) = A.is_snf
 
 @doc raw"""
-    ngens(G::GrpAbFinGen) -> Int
+    number_of_generators(G::GrpAbFinGen) -> Int
 
 Return the number of generators of $G$ in the current representation.
 """
-function ngens(A::GrpAbFinGen)
+function number_of_generators(A::GrpAbFinGen)
   if is_snf(A)
     return length(A.snf)
   else
