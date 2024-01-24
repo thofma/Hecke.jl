@@ -301,11 +301,11 @@ function number_of_generators(A::GrpAbFinGen)
 end
 
 @doc raw"""
-    nrels(G::GrpAbFinGen) -> Int
+    number_of_relations(G::GrpAbFinGen) -> Int
 
 Return the number of relations of $G$ in the current representation.
 """
-function nrels(A::GrpAbFinGen)
+function number_of_relations(A::GrpAbFinGen)
   if is_snf(A)
     return length(A.snf)
   else
