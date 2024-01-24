@@ -127,7 +127,7 @@ end
 
 # Th. 4.14
 @doc raw"""
-    order_via_legendre(E::EllCrv{Generic.ResidueRingElem{ZZRingElem}) -> ZZRingElem
+    order_via_legendre(E::EllCrv{EuclideanRingResidueRingElem{ZZRingElem}) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is

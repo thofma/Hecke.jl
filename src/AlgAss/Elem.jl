@@ -461,7 +461,7 @@ dot(a::AbsAlgAssElem{T}, b::ZZRingElem) where {T <: RingElem} = a*b
 
 dot(b::ZZRingElem, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
 
-function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResidueFieldElem{S} where S <: Union{Int, ZZRingElem}
+function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: EuclideanRingResidueFieldElem{S} where S <: Union{Int, ZZRingElem}
   @assert length(c) == length(V)
   A = parent(V[1])
   res = zero(A)

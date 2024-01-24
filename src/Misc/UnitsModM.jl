@@ -1,10 +1,10 @@
 @doc raw"""
-    is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
+    is_primitive_root(x::EuclideanRingResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
 
 Given $x$ in $Z/MZ$, the factorisation of $M$ (in `fM`), decide if $x$ is primitive.
 Intrinsically, only makes sense if the units of $Z/MZ$ are cyclic.
 """
-function is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
+function is_primitive_root(x::EuclideanRingResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -94,7 +94,7 @@ end
 
 #TO BE FIXED. If mod is non-zero, it is wrong.
 @doc raw"""
-    UnitGroup(R::Generic.ResidueRing{ZZRingElem}) -> GrpAbFinGen, Map
+    UnitGroup(R::EuclideanRingResidueRing{ZZRingElem}) -> GrpAbFinGen, Map
 
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """

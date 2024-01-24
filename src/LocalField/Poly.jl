@@ -66,11 +66,11 @@ end
 ################################################################################
 
 @doc raw"""
-    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Generic.ResidueRingElem{ZZRingElem}, fpFieldElem} -> padic
+    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, EuclideanRingResidueRingElem{ZZRingElem}, fpFieldElem} -> padic
 
 Computes a lift of the element from the residue ring.
 """
-function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZModRingElem, Generic.ResidueRingElem{ZZRingElem}, fpFieldElem}
+function lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, Nemo.ZZModRingElem, EuclideanRingResidueRingElem{ZZRingElem}, fpFieldElem}
   n = modulus(parent(a))
   p = prime(K)
   v, fl = remove(n, p)

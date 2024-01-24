@@ -1,6 +1,6 @@
 import Nemo.setcoeff!, Nemo.lift, Hecke.lift, Nemo.rem
 
-#function setcoeff!(g::ZZModRelPowerSeriesRingElem, i::Int64, a::Nemo.Generic.ResidueRingElem{Nemo.ZZRingElem})
+#function setcoeff!(g::ZZModRelPowerSeriesRingElem, i::Int64, a::Nemo.EuclideanRingResidueRingElem{Nemo.ZZRingElem})
 #  setcoeff!(g, i, lift(a))
 #end
 
