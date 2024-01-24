@@ -165,15 +165,15 @@
   @test sparse_row(dense_row(A, 6)) == A
 
   #SRow{NCRingElem}
-  #uses exterior algebras from Oscar, not available in Hecke
-  E,e = exterior_algebra(QQ,3)
-  A = sparse_row(E, [1,2,3], [e[1], e[2], e[3]])
-  b = sparse_row(E, [1,2,3], [e[1], e[2], e[3]])
-  B = sparse_row(E, [1,2,3], [e[2], e[3], e[1]])
+  R = MatrixAlgebra(QQ,2)
+  a = R([1 2; 3 4])
+  b = R([3 4; 5 6])
+  i = R([1 0; 0 1])
+  A = sparse_row(R,[1],[a])
+  B = sparse_row(R,[1],[b])
   @test dot(A,B) != dot(B,A)
-  @test dot(A,b) == dot(b,A) == E(0)
-  @test A*e[1] != e[1]*A
-  @test scale_row!(A, e[1]) != scale_row_right!(b, e[1])
-  C = add_scaled_row(A,b,E(1))
-  @test A + C == A
+  @test A*i == A == i*A
+  @test scale_row!(A,b) != scale_row_right!(A,b)
+  C = add_scaled_row(A,B,i)
+  @test C == A+B
 end
