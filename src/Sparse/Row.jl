@@ -645,7 +645,7 @@ add_left_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a,
 @doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Returns the left scaled row $c A$ to $B$ by changing $B$ in place.
+Adds the left scaled row $c A$ to $B$ by changing $B$ in place. Returns the new $B$.
 """
 function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   @assert a !== b
