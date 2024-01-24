@@ -25,11 +25,11 @@ is_simple(::AnticNumberField) = true
 ################################################################################
 
 @doc raw"""
-    number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
+    number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
 
  The number field $K$ isomorphic to the ring $S$ and the map from $K\to S$.
 """
-function number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
+function number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
   mp = MapFromFunc(K, S, y -> S(Qx(y)), x -> K(lift(x)))

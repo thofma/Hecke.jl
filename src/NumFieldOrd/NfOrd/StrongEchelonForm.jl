@@ -343,7 +343,7 @@ function map_into_integer_quotient(Q::NfOrdQuoRing)
   return R, f, g
 end
 
-function can_make_small(Q::Generic.ResidueRing{ZZRingElem})
+function can_make_small(Q::EuclideanRingResidueRing{ZZRingElem})
   if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
     return true
   else
@@ -359,10 +359,10 @@ function can_make_small(Q::Nemo.ZZModRing)
   end
 end
 
-function make_small(Q::Generic.ResidueRing{ZZRingElem})
+function make_small(Q::EuclideanRingResidueRing{ZZRingElem})
   R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
   f = (x -> R(x.data)::zzModRingElem)
-  g = (x -> Q(x.data)::Generic.ResidueRingElem{ZZRingElem})
+  g = (x -> Q(x.data)::EuclideanRingResidueRingElem{ZZRingElem})
   return R, f, g
 end
 

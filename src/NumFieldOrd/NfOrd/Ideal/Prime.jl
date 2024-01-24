@@ -398,11 +398,11 @@ function prime_dec_nonindex(O::NfOrd, p::IntegerUnion, degree_limit::Int = 0, lo
   return result
 end
 
-function _lift(T::Vector{Generic.ResidueRingElem{ZZRingElem}})
+function _lift(T::Vector{EuclideanRingResidueRingElem{ZZRingElem}})
   return ZZRingElem[ z.data for z in T ]
 end
 
-function _lift(T::Vector{Generic.ResidueFieldElem{ZZRingElem}})
+function _lift(T::Vector{EuclideanRingResidueFieldElem{ZZRingElem}})
   return ZZRingElem[ z.data for z in T ]
 end
 
