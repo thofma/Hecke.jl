@@ -2226,9 +2226,9 @@ mutable struct qAdicRootCtx
   f::ZZPolyRingElem
   p::Int
   n::Int
-  Q::Vector{FlintQadicField}
+  Q::Vector{QadicField}
   H::Hecke.HenselCtx
-  R::Vector{qadic}
+  R::Vector{QadicFieldElem}
   is_splitting::Bool
   function qAdicRootCtx(f::ZZPolyRingElem, p::Int; splitting_field::Bool = false)
     r = new()

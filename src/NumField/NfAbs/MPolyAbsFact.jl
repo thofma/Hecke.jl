@@ -76,7 +76,7 @@ mutable struct HenselCtxFqRelSeries{T}
     return r
   end
 
-  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyRingElem{<:SeriesElem{qadic}}}, lc::Vector{<:PolyRingElem{<:SeriesElem{qadic}}}, n::Int, s::Int = 0)
+  function HenselCtxFqRelSeries(f::ZZMPolyRingElem, lf::Vector{<:PolyRingElem{<:SeriesElem{QadicFieldElem}}}, lc::Vector{<:PolyRingElem{<:SeriesElem{QadicFieldElem}}}, n::Int, s::Int = 0)
     @assert ngens(parent(f)) == 2
     r = new{elem_type(base_ring(lf[1]))}()
     r.f = f
@@ -133,7 +133,7 @@ mutable struct HenselCtxFqRelSeries{T}
   end
 end
 
-function Hecke.precision(H::HenselCtxFqRelSeries{<:Generic.RelSeries{qadic}})
+function Hecke.precision(H::HenselCtxFqRelSeries{<:Generic.RelSeries{QadicFieldElem}})
   return precision(coeff(coeff(H.lf[1], 0), 0)), precision(coeff(H.lf[1], 0))
 end
 
@@ -229,12 +229,12 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   end
 end
 
-function _set_precision(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
+function _set_precision(f::PolyRingElem{<:SeriesElem{QadicFieldElem}}, n::Int)
   g = deepcopy(f)
   return _set_precision!(g, n)
 end
 
-function _set_precision!(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
+function _set_precision!(f::PolyRingElem{<:SeriesElem{QadicFieldElem}}, n::Int)
   for i=0:length(f)
     c = coeff(f, i)
     for j=0:pol_length(c)
@@ -244,7 +244,7 @@ function _set_precision!(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
   return f
 end
 # TODO: bad names...
-function _shift_coeff_left(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
+function _shift_coeff_left(f::PolyRingElem{<:SeriesElem{QadicFieldElem}}, n::Int)
   g = parent(f)()
   for i = 0:length(f)
     setcoeff!(g, i, map_coefficients(x -> shift_left(x, n), coeff(f, i), parent = base_ring(f)))
@@ -252,7 +252,7 @@ function _shift_coeff_left(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
   return g
 end
 
-function check_qadic(a::qadic)
+function check_qadic(a::QadicFieldElem)
   v = a.val
   a.val = 0
   f = Hecke.lift(Hecke.Globals.Zx, a)
@@ -261,7 +261,7 @@ function check_qadic(a::qadic)
   @assert all(x->abs(x) < p, coefficients(f))
 end
 
-function _shift_coeff_right(f::PolyRingElem{<:SeriesElem{qadic}}, n::Int)
+function _shift_coeff_right(f::PolyRingElem{<:SeriesElem{QadicFieldElem}}, n::Int)
   g = parent(f)()
   for i = 0:length(f)
     @assert all(y -> valuation(polcoeff(coeff(f, i), y)) >= n, 0:pol_length(coeff(f, i)))
@@ -318,7 +318,7 @@ function Base.rem(g::PolyRingElem, P::Preinv)
   return r
 end
 
-function check_data(f::PolyRingElem{<:SeriesElem{qadic}})
+function check_data(f::PolyRingElem{<:SeriesElem{QadicFieldElem}})
   for c = coefficients(f)
     for i=1:pol_length(c)
       check_qadic(polcoeff(c, i))
@@ -326,7 +326,7 @@ function check_data(f::PolyRingElem{<:SeriesElem{qadic}})
   end
 end
 
-function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{qadic}})
+function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{QadicFieldElem}})
   St = parent(C.lf[1])
   S = base_ring(C.lf[1])
   Q = base_ring(S)
@@ -1232,7 +1232,7 @@ end
 =#
 function lift_prime_power(
     a::QQMPolyRingElem,
-    fac::Vector{Generic.MPoly{qadic}},
+    fac::Vector{Generic.MPoly{QadicFieldElem}},
     alphas::Vector,
     kstart::Int,
     kstop::Int)

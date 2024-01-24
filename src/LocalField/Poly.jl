@@ -7,7 +7,7 @@ add_assertion_scope(:padic_poly)
 ################################################################################
 
 
-function setprecision_fixed_precision(f::Generic.Poly{qadic}, N::Int)
+function setprecision_fixed_precision(f::Generic.Poly{QadicFieldElem}, N::Int)
   f = setprecision(f, N)
   return f
 end
@@ -41,7 +41,7 @@ end
 #otherwise the precision is lost:
 #an empty poly is "filled" with 0 in precision of the ring
 #a zero (in a) might have a different precision....
-function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{padic, qadic, Hecke.LocalFieldElem}}
+function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{PadicFieldElem, QadicFieldElem, Hecke.LocalFieldElem}}
    fit!(c, n + 1)
    c.coeffs[n + 1] = a
    c.length = max(length(c), n + 1)
@@ -54,7 +54,7 @@ end
 #  E = eisenstein_extension(cyclotomic(3, gen(Hecke.Globals.Zx))(t+1))[1]
 #  Es, s = E["s"]
 #  roots(s^9-1) #at precision 100, drops from 3 to 1 sec..
-function Nemo.use_karamul(a::PolyRingElem{T}, b::PolyRingElem{T}) where T <: Union{padic, qadic, Hecke.LocalFieldElem}
+function Nemo.use_karamul(a::PolyRingElem{T}, b::PolyRingElem{T}) where T <: Union{PadicFieldElem, QadicFieldElem, Hecke.LocalFieldElem}
 
    return length(a) > 50 && length(b) > 50
 end
@@ -66,7 +66,7 @@ end
 ################################################################################
 
 @doc raw"""
-    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, EuclideanRingResidueRingElem{ZZRingElem}, fpFieldElem} -> padic
+    lift(a::T, K::PadicField) where T <: Union{Nemo.zzModRingElem, EuclideanRingResidueRingElem{ZZRingElem}, fpFieldElem} -> PadicFieldElem
 
 Computes a lift of the element from the residue ring.
 """
@@ -90,7 +90,7 @@ end
 
 
 @doc raw"""
-    lift(f::T, Kt) where T <: Union{zzModPolyRingElem, ZZModPolyRingElem, fpPolyRingElem} -> Generic.Poly{padic}
+    lift(f::T, Kt) where T <: Union{zzModPolyRingElem, ZZModPolyRingElem, fpPolyRingElem} -> Generic.Poly{PadicFieldElem}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
 """
@@ -99,7 +99,7 @@ function lift(f::T, Kt::PolyRing) where T <: FinFieldElem
 end
 
 @doc raw"""
-    lift(x::fqPolyRepFieldElem, Q::QadicField) -> qadic
+    lift(x::fqPolyRepFieldElem, Q::QadicField) -> QadicFieldElem
 
 Computes a lift of the element from the residue ring.
 """
@@ -112,20 +112,20 @@ function lift(x::fqPolyRepFieldElem, Q::QadicField)
 end
 
 @doc raw"""
-    lift(x::fqPolyRepPolyRingElem, Kt) -> Generic.Poly{qadic}
+    lift(x::fqPolyRepPolyRingElem, Kt) -> Generic.Poly{QadicFieldElem}
 
 Computes a lift of the polynomial lifting every coefficient of the residue ring.
 """
 function lift(x::fqPolyRepPolyRingElem, Kt)
   K = base_ring(Kt)
-  coeffs = Vector{qadic}(undef, degree(x)+1)
+  coeffs = Vector{QadicFieldElem}(undef, degree(x)+1)
   for i = 1:degree(x)+1
     coeffs[i] = lift(coeff(x, i-1), K)
   end
   return Kt(coeffs)
 end
 
-function _content(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function _content(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   K = base_ring(f)
   @assert !iszero(f)
   c = coeff(f, 0)
@@ -161,7 +161,7 @@ end
 #
 ################################################################################
 
-function fun_factor(g::Generic.Poly{padic})
+function fun_factor(g::Generic.Poly{PadicFieldElem})
   K = base_ring(g)
   Kt = parent(g)
   v = precision(g)
@@ -175,7 +175,7 @@ function fun_factor(g::Generic.Poly{padic})
   return (liftu, liftg1)::Tuple{typeof(g), typeof(g)}
 end
 
-function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
+function fun_factor(f::Generic.Poly{S}) where S <: Union{QadicFieldElem, LocalFieldElem}
   K = base_ring(f)
   Kt = parent(f)
   v = precision(f)
@@ -234,7 +234,7 @@ end
 ################################################################################
 
 
-function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function Nemo.precision(g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem}
   N = precision(coeff(g, 0))
   for i = 1:degree(g)
     N = min(N, precision(coeff(g, i)))
@@ -243,7 +243,7 @@ function Nemo.precision(g::Generic.Poly{T}) where T <: Union{padic, qadic}
 end
 
 
-function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   if degree(f) < degree(g)
     f, g = g, f
   end
@@ -293,12 +293,12 @@ end
 #
 ################################################################################
 
-function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
+function invmod(u::Generic.Poly{PadicFieldElem}, f::Generic.Poly{PadicFieldElem})
   if !iszero(valuation(leading_coefficient(f)))
     error("Not yet implemented")
   end
   if !iszero(valuation(coeff(u, 0))) || !all(x -> x > 0, Int[valuation(coeff(u, i)) for i = 1:degree(u)])
-    s = gcdx(u, f)[2]::Generic.Poly{padic}
+    s = gcdx(u, f)[2]::Generic.Poly{PadicFieldElem}
     return s
   end
   K = base_ring(f)
@@ -334,7 +334,7 @@ function invmod(u::Generic.Poly{padic}, f::Generic.Poly{padic})
   end
 end
 
-function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
+function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   @assert !iszero(f)
   if !iszero(valuation(leading_coefficient(M1)))
     error("Not yet implemented")
@@ -379,7 +379,7 @@ end
 ################################################################################
 
 #TODO: The implementation is recursive. Change it to an iterative implementation.
-function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   if degree(f) < degree(g)
     r1, r2, r3 = gcdx(g, f)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
     return (r1, r3, r2)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
@@ -464,7 +464,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return (DD, UU, VV)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
 end
 
-function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyRingElem{T}; check::Bool=true) where T <: Union{padic, qadic, LocalFieldElem}
+function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyRingElem{T}; check::Bool=true) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
    check_parent(f1, g1)
    iszero(g1) && throw(DivideError())
    if iszero(f1)
@@ -517,7 +517,7 @@ end
 reduced_resultant(f::T, g::T) where T <: PolyRingElem = rres(f, g)
 reduced_discriminant(f::PolyRingElem) = rres(f, derivative(f))
 
-function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
+function rres(f::Generic.Poly{PadicFieldElem}, g::Generic.Poly{PadicFieldElem})
   Kt = parent(f)
   K = base_ring(Kt)
   p = prime(K)
@@ -537,7 +537,7 @@ function rres(f::Generic.Poly{padic}, g::Generic.Poly{padic})
 end
 
 
-function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   Nemo.check_parent(f, g)
   #First, we need to make the polynomials integral
   Rt = parent(f)
@@ -564,12 +564,12 @@ end
 function check_data(f::Generic.Poly{<:LocalFieldElem})
   map(check_data, coefficients(f))
 end
-function check_data(f::Generic.Poly{padic})
+function check_data(f::Generic.Poly{PadicFieldElem})
 end
-function check_data(f::Generic.Poly{qadic})
+function check_data(f::Generic.Poly{QadicFieldElem})
 end
 
-function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   Rt = parent(f)
   R = base_ring(Rt)
   res = one(R)
@@ -625,7 +625,7 @@ function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{pad
   return res*res1*res2
 end
 
-function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
+function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   Nemo.check_parent(f, g)
   @assert is_monic(f) || is_monic(g) "One of the two polynomials must be monic!"
   #First, we need to make the polynomials integral
@@ -648,7 +648,7 @@ function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{qadic, Lo
   return res * _rres(f, g)
 end
 
-function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   Rt = parent(f)
   R = base_ring(Rt)
   res = one(R)
@@ -712,9 +712,9 @@ function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, q
   return res*res1
 end
 
-base_field(Q::FlintQadicField) = base_ring(defining_polynomial(Q))
+base_field(Q::QadicField) = base_ring(defining_polynomial(Q))
 
-function norm(f::PolyRingElem{T}) where T <: Union{qadic, LocalFieldElem}
+function norm(f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   Kx = parent(f)
   K = base_ring(f)
   f, i = deflate(f)
@@ -725,11 +725,11 @@ function norm(f::PolyRingElem{T}) where T <: Union{qadic, LocalFieldElem}
 end
 
 @doc raw"""
-    characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic} -> Generic.Poly{T}
+    characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem} -> Generic.Poly{T}
 
 Computes $\mathrm{ResidueRingElem}_x(f(x), t- g(x))$.
 """
-function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   Kt = parent(f)
   Ktx, x = polynomial_ring(Kt, "x")
   fcoeffs = typeof(f)[Kt(coeff(f, i)) for i = 0:degree(f)]
@@ -740,7 +740,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
 end
 
 #=
-function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qadic}
+function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem}
   K = base_ring(f)
   Kt = parent(f)
   p = prime(K)
@@ -801,12 +801,12 @@ end
 #
 ################################################################################
 @doc raw"""
-    Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Generic.Poly{T}}
+    Hensel_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem} -> Dict{Generic.Poly{T}, Generic.Poly{T}}
 
 Computes a factorization of $f$ such that every factor has a unique irreducible factor over the residue field.
 The output is a dictionary whose keys are lifts of the irreducible factors over the residue field and values the corresponding factors of $f$.
 """
-function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   cf = _content(f)
   f = divexact(f, cf)
   Kt = parent(f)
@@ -853,12 +853,12 @@ mutable struct HenselCtxdr{S}
   p::S #always the uniformizer
   n::Int
 
-  function HenselCtxdr{qadic}(f::Generic.Poly{qadic}, lfp::Vector{Generic.Poly{qadic}}, la::Vector{Generic.Poly{qadic}}, p::qadic, n::Int)
+  function HenselCtxdr{QadicFieldElem}(f::Generic.Poly{QadicFieldElem}, lfp::Vector{Generic.Poly{QadicFieldElem}}, la::Vector{Generic.Poly{QadicFieldElem}}, p::QadicFieldElem, n::Int)
     @assert p == uniformizer(parent(p))
     return new(f, lfp, la, p, n)
   end
 
-  function HenselCtxdr{T}(f::S, lfp::Vector{S}) where {S <: PolyRingElem{T}} where T <: Union{padic, qadic, LocalFieldElem}
+  function HenselCtxdr{T}(f::S, lfp::Vector{S}) where {S <: PolyRingElem{T}} where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
     # @assert sum(map(degree, lfp)) == degree(f)
 #    if sum(map(degree, lfp)) < degree(f)
 #      push!(lfp, one(parent(lfp[1])))
@@ -992,12 +992,12 @@ end
 ################################################################################
 
 @doc raw"""
-    slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic} -> Dict{Generic.Poly{T}, Int}
+    slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem} -> Dict{Generic.Poly{T}, Int}
 
 Computes a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.
 The output is a dictionary whose keys are the factors of $f$ and the corresponding value is the multiplicity.
 """
-function slope_factorization(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
 
   K = base_ring(f)
   Kt = parent(f)
@@ -1073,7 +1073,7 @@ end
 #
 ################################################################################
 
-function newton_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function newton_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   s = characteristic_polynomial(f, mu)
   N = newton_polygon(s, gen(parent(s)))
   pols = typeof(f)[]
@@ -1088,7 +1088,7 @@ function newton_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{p
   return false, pols
 end
 
-function hensel_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function hensel_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   s = characteristic_polynomial(f, mu)
   lf = Hensel_factorization(s)
   if length(lf) == 1
@@ -1102,7 +1102,7 @@ function hensel_test(mu::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{p
   return false, pols
 end
 
-function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   K = base_ring(phi)
   e = absolute_ramification_index(K)
   s = characteristic_polynomial(f, mu)
@@ -1115,7 +1115,7 @@ function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Un
   return E, F
 end
 
-function _factor(f::Generic.Poly{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function _factor(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   Kx = parent(f)
   K = base_ring(Kx)
   phi = gen(Kx)
