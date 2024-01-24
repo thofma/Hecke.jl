@@ -306,8 +306,6 @@ export dual_isogeny
 export dual_of_frobenius
 export echelon_with_transform
 export ei
-export eigenspace
-export eigenspaces
 export eisenstein_extension
 export elem_in_algebra
 export elem_in_nf
@@ -881,7 +879,6 @@ export sparse_trafo_partial_dense
 export sparse_trafo_scale
 export sparse_trafo_swap
 export sparsity
-export spectrum
 export splitting_field
 export sqrt
 export stabilizer
