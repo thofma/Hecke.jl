@@ -19,7 +19,7 @@ function image(f::CompletionMap, a::nf_elem)
   return z
 end
 
-function preimage(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, LocalFieldElem{qadic, EisensteinLocalField}}, a::LocalFieldElem{qadic, EisensteinLocalField})
+function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalField}, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}, a::LocalFieldElem{QadicFieldElem, EisensteinLocalField})
   Kp = codomain(f)
   @assert Kp === parent(a)
   Qq = base_field(Kp)
@@ -43,12 +43,12 @@ function preimage(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, Loca
   return evaluate(r, f.inv_img[2])
 end
 
-function preimage(f::CompletionMap{LocalField{padic, EisensteinLocalField}, LocalFieldElem{padic, EisensteinLocalField}}, a::LocalFieldElem{padic, EisensteinLocalField})
+function preimage(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, a::LocalFieldElem{PadicFieldElem, EisensteinLocalField})
   @assert codomain(f) === parent(a)
   return evaluate(map_coefficients(lift, a.data), f.inv_img[2])
 end
 
-function preimage(f::CompletionMap{FlintQadicField, qadic}, a::qadic)
+function preimage(f::CompletionMap{QadicField, QadicFieldElem}, a::QadicFieldElem)
   Kp = codomain(f)
   @assert Kp == parent(a)
   Qpx = parent(defining_polynomial(Kp))
@@ -170,7 +170,7 @@ function completion(K::AnticNumberField, P::NfOrdIdl, precision::Int = 64)
   pol_gen = Qqx(coeffs_eisenstein)
   Kp, gKp = eisenstein_extension(pol_gen, "a", cached = false)
   Kp.def_poly = x->setprecision(pol_gen, x)
-  img_prim_elem = Vector{qadic}(undef, e)
+  img_prim_elem = Vector{QadicFieldElem}(undef, e)
   for i = 1:e
     coeff = Qq()
     for j = 0:f-1
@@ -241,7 +241,7 @@ else
   fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
   @assert fl
 end 
-  coeffs_eisenstein = Vector{qadic}(undef, e+1)
+  coeffs_eisenstein = Vector{QadicFieldElem}(undef, e+1)
   gQq = gen(Qq)
   for i = 1:e
     coeff = zero(Qq)
@@ -259,7 +259,7 @@ end
 
 
 
-function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField}, LocalFieldElem{qadic, EisensteinLocalField}}, new_prec::Int)
+function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalField}, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}, new_prec::Int)
   P = prime(f)
   OK = order(P)
   new_prec += valuation(denominator(basis_matrix(OK, copy = false)), P)
@@ -296,7 +296,7 @@ function setprecision!(f::CompletionMap{LocalField{qadic, EisensteinLocalField},
 
     pol_gen = Qqx(coeffs_eisenstein)
     Kp.def_poly_cache[new_prec] = pol_gen
-    img_prim_elem = Vector{qadic}(undef, e)
+    img_prim_elem = Vector{QadicFieldElem}(undef, e)
     for i = 1:e
       coeff = Qq()
       for j = 0:_f-1
@@ -351,14 +351,14 @@ function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision
   bZp = map_entries(Zp, bK.num)
   fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
   @assert fl
-  coeffs_eisenstein = Vector{padic}(undef, e+1)
+  coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
   for i = 1:e
     coeffs_eisenstein[i] = -xZp[1, i].x
   end
   coeffs_eisenstein[e+1] = one(Qp)
   pol_gen = Qpx(coeffs_eisenstein)
   Kp, gKp = eisenstein_extension(pol_gen, "a")
-  img_prim_elem = Vector{padic}(undef, e)
+  img_prim_elem = Vector{PadicFieldElem}(undef, e)
   for i = 1:e
     img_prim_elem[i] = xZp[2, i].x
   end
@@ -372,7 +372,7 @@ function totally_ramified_completion(K::AnticNumberField, P::NfOrdIdl, precision
 end
 
 
-function setprecision!(f::CompletionMap{LocalField{padic, EisensteinLocalField}, LocalFieldElem{padic, EisensteinLocalField}}, new_prec::Int)
+function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, new_prec::Int)
   if new_prec < f.precision
     K = domain(f)
     setprecision!(K, new_prec)
@@ -400,7 +400,7 @@ function setprecision!(f::CompletionMap{LocalField{padic, EisensteinLocalField},
     bQp = map_entries(Zp, bK)
     fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
     @assert fl
-    coeffs_eisenstein = Vector{padic}(undef, e+1)
+    coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
     for i = 1:e
       coeffs_eisenstein[i] = -xZp[1, i].x
     end
@@ -409,7 +409,7 @@ function setprecision!(f::CompletionMap{LocalField{padic, EisensteinLocalField},
     Kp.def_poly_cache[new_prec] = pol_gen
     Kp.precision = new_prec
     #Should I update the traces too?
-    img_prim_elem = Vector{padic}(undef, e)
+    img_prim_elem = Vector{PadicFieldElem}(undef, e)
     for i = 1:e
       img_prim_elem[i] = xZp[2, i].x
     end
@@ -483,7 +483,7 @@ function unramified_completion(K::AnticNumberField, P::NfOrdIdl, precision::Int 
   return Qq, completion_map
 end
 
-function setprecision!(f::CompletionMap{FlintQadicField, qadic}, new_prec::Int)
+function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::Int)
   Kp = codomain(f)
   setprecision!(Kp, new_prec)
   if new_prec < f.precision

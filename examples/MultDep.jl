@@ -346,7 +346,7 @@ function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{Z
   return B > sum(x*x for x = b)
 end
 
-function lift_reco(::QQField, a::padic; reco::Bool = false)
+function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
   if reco
     u, v, N = getUnit(a)
     R = parent(a)

@@ -220,12 +220,12 @@ end
 ###############################################################################
 
 @doc raw"""
-    newton_polygon(f::PolyRingElem{T}, phi::PolyRingElem{T}) where T <: Union{padic, qadic}
+    newton_polygon(f::PolyRingElem{T}, phi::PolyRingElem{T}) where T <: Union{PadicFieldElem, QadicFieldElem}
 
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
 where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
-function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{qadic, padic, LocalFieldElem}
+function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{QadicFieldElem, PadicFieldElem, LocalFieldElem}
   dev = phi_development(f, phi)
   a = Tuple{Int, Int}[]
   for i = 0:length(dev) -1
@@ -281,7 +281,7 @@ function valuation(f::Generic.Poly{nf_elem}, p::NfOrdIdl)
   return minimum(l)
 end
 
-function _valuation(f::Generic.Poly{T}) where T <: Union{qadic, padic}
+function _valuation(f::Generic.Poly{T}) where T <: Union{QadicFieldElem, PadicFieldElem}
   return minimum([valuation(coeff(f, i)) for i = 0:degree(f)])
 end
 

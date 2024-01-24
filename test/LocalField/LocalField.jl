@@ -149,7 +149,7 @@
   end
 
   @testset "Maps" begin
-    # FlintQadicField -> FlintQadicField
+    # QadicField -> QadicField
     Qq, a = QadicField(2, 3, 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(Qq)))
 
@@ -187,7 +187,7 @@
       @test g(f(z)) == z
     end
 
-    # FlintQadicField -> LocalField
+    # QadicField -> LocalField
     Qqt, t = Qq["t"]
     L, b = eisenstein_extension(t^3 + 2, "b")
     f = @inferred hom(Qq, L, L(gen(Qq)))
@@ -199,7 +199,7 @@
     @test fl
     @test f(z) == L(-2)
 
-    # LocalField -> FlintQadicField
+    # LocalField -> QadicField
     Qp = PadicField(2, 100)
     Qpx, x = polynomial_ring(Qp)
     K, a = Hecke.unramified_extension(x^2+x+1)

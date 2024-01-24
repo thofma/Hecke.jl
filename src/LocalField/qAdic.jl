@@ -1,9 +1,9 @@
 add_verbosity_scope(:qAdic)
 add_assertion_scope(:qAdic)
 
-@attributes FlintQadicField
+@attributes QadicField
 
-function residue_field(Q::FlintQadicField)
+function residue_field(Q::QadicField)
   z = get_attribute(Q, :ResidueFieldMap)
   if z !== nothing
     return codomain(z), z
@@ -13,7 +13,7 @@ function residue_field(Q::FlintQadicField)
   g = defining_polynomial(Q) #no Conway if parameters are too large!
   f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
   k, = Nemo._residue_field(f, "o")
-  pro = function(x::qadic)
+  pro = function(x::QadicFieldElem)
     v = valuation(x)
     v < 0 && error("elt non integral")
     v > 0 && return k(0)
@@ -35,9 +35,9 @@ function residue_field(Q::FlintQadicField)
   return k, mk
 end
 
-function residue_field(Q::FlintPadicField)
+function residue_field(Q::PadicField)
   k = GF(prime(Q))
-  pro = function(x::padic)
+  pro = function(x::PadicFieldElem)
     v = valuation(x)
     v < 0 && error("elt non integral")
     v > 0 && return k(0)
@@ -51,15 +51,15 @@ function residue_field(Q::FlintPadicField)
   return k, MapFromFunc(Q, k, pro, lif)
 end
 
-coefficient_field(Q::FlintQadicField) = coefficient_ring(Q)
+coefficient_field(Q::QadicField) = coefficient_ring(Q)
 
-function getUnit(a::padic)
+function getUnit(a::PadicFieldElem)
   u = ZZRingElem()
   ccall((:fmpz_set, libflint), Cvoid, (Ref{ZZRingElem}, Ref{Int}), u, a.u)
   return u, a.v, a.N
 end
 
-function lift_reco(::QQField, a::padic; reco::Bool = false)
+function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
   if reco
     u, v, N = getUnit(a)
     R = parent(a)
@@ -78,11 +78,11 @@ function lift_reco(::QQField, a::padic; reco::Bool = false)
 end
 
 
-uniformizer(Q::FlintQadicField) = Q(prime(Q))
+uniformizer(Q::QadicField) = Q(prime(Q))
 
-uniformizer(Q::FlintPadicField) = Q(prime(Q))
+uniformizer(Q::PadicField) = Q(prime(Q))
 
-function defining_polynomial(Q::FlintQadicField, P::Ring = coefficient_ring(Q))
+function defining_polynomial(Q::QadicField, P::Ring = coefficient_ring(Q))
   Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
   for i=0:Q.len-1

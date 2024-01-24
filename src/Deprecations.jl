@@ -28,9 +28,9 @@
 
 @deprecate automorphisms(x::NumField) automorphism_list(x)
 
-@deprecate automorphisms(x::Union{FlintPadicField, FlintQadicField, LocalField}) automorphism_list(x)
+@deprecate automorphisms(x::Union{PadicField, QadicField, LocalField}) automorphism_list(x)
 
-@deprecate automorphisms(x::LocalField, y::Union{FlintPadicField, FlintQadicField, LocalField}) automorphism_list(x, y)
+@deprecate automorphisms(x::LocalField, y::Union{PadicField, QadicField, LocalField}) automorphism_list(x, y)
 
 # Deprecated during 0.18.*
 
@@ -107,7 +107,7 @@
 
 @deprecate roots(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...) roots(R, f, abs_tol, initial_prec...)
 
-@deprecate roots(f::ZZPolyRingElem, Q::FlintQadicField; max_roots::Int = degree(f)) roots(Q, f; max_roots = max_roots)
+@deprecate roots(f::ZZPolyRingElem, Q::QadicField; max_roots::Int = degree(f)) roots(Q, f; max_roots = max_roots)
 
 @deprecate roots(f::ZZPolyRingElem, Q::QQField; max_roots::Int = degree(f)) roots(Q, f; max_roots = max_roots)
 
