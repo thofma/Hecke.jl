@@ -472,7 +472,7 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Vector{GrpAbFinGenMap})
   q=mq.header.codomain
   S,mS=snf(q)
   n=Int(S.snf[end])
-  R=residue_field(FlintZZ, n, cached=false)
+  R=residue_field(FlintZZ, n, cached=false)[1]
   quo_action=Vector{zzModMatrix}(undef, length(act))
   for s=1:length(act)
     quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
