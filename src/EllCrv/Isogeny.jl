@@ -154,7 +154,7 @@ function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRi
   end
 
   # Quotient ring R[x]/(f)
-  S = residue_ring(parent(f), f)
+  S = residue_ring(parent(f), f)[1]
   xbar = S(gen(parent(f)))
 
   # Test if the p-division polynomial is a multiple of f by computing it in the quotient:
@@ -170,7 +170,7 @@ function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRi
 
   # For each a in a set of generators of (Z/pZ)^*/{1, -1}  we check that the
   # multiplication-by-a map permutes the roots of f.
-  Zp = residue_ring(ZZ, p)
+  Zp = residue_ring(ZZ, p)[1]
   U, mU = unit_group(Zp)
   Q, UtoQ = quo(U, [mU\(Zp(-1))])
   for g in gens(Q)
@@ -436,9 +436,9 @@ function dual_of_frobenius(E)
   #Otherwise it will be a separable isogeny and it suffices to find f and g such that
   #y^p = = f(x) +y*g(x)
   if supsing
-    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^(p^2)))
+    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)[1](y^(p^2)))
   else
-    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
+    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)[1](y^p))
   end
 
   omega1 = divexact(coefficients(omega)[1], coefficients(yp)[1])

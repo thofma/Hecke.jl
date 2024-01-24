@@ -63,7 +63,7 @@ function _cyclotomic_units_totally_real_prime_conductor(K, p)
 
   @assert is_prime(p)
 
-  U, mU = unit_group(residue_ring(ZZ, p, cached = false))
+  U, mU = unit_group(residue_ring(ZZ, p, cached = false)[1])
   @assert ngens(U) == 1
   g = Int(lift(mU(U[1])))
 

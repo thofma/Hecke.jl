@@ -579,7 +579,7 @@ Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 function modular_init(K::AnticNumberField, p::ZZRingElem; deg_limit::Int=0, max_split::Int = 0)
   @hassert :NfOrd 1 is_prime(p)
   me = modular_env()
-  me.Fpx = polynomial_ring(residue_ring(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
+  me.Fpx = polynomial_ring(residue_ring(FlintZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
   lp = factor(fp)
   if Set(values(lp.fac)) != Set([1])

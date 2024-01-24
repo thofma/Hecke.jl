@@ -144,12 +144,12 @@ function is_norm_divisible(a::nf_elem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)[1]
     R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = residue_ring(FlintZZ, m, cached = false)
+  R = residue_ring(FlintZZ, m, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
@@ -170,12 +170,12 @@ function is_norm_divisible_pp(a::nf_elem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)[1]
     R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal_pp(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = residue_ring(FlintZZ, m, cached = false)
+  R = residue_ring(FlintZZ, m, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)

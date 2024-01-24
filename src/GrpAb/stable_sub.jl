@@ -85,7 +85,7 @@ function action(V::GrpAbFinGen, act::Vector{T}) where T<: Map{GrpAbFinGen, GrpAb
 
   expon = Int(exponent(V))
   @hassert :StabSub 1 length(factor(order(V)).fac)==1
-  RR = residue_ring(FlintZZ, expon, cached=false)
+  RR = residue_ring(FlintZZ, expon, cached=false)[1]
   act_mat = Vector{zzModMatrix}(undef, length(act))
   for z = 1:length(act)
     A = zero_matrix(RR, ngens(V), ngens(V))
@@ -929,7 +929,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
       push!(list, it)
     else
 
-      RR = residue_ring(FlintZZ, Int(p)^x1, cached=false)
+      RR = residue_ring(FlintZZ, Int(p)^x1, cached=false)[1]
       act_mat1 = Vector{zzModMatrix}(undef, length(act))
       for z=1:length(act)
         imgs = GrpAbFinGenElem[]

@@ -970,7 +970,7 @@ end
 
 function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
 
-  R=residue_ring(FlintZZ, modulus, cached=false)
+  R=residue_ring(FlintZZ, modulus, cached=false)[1]
   U, mU = unit_group_mod(R, n_quo)
   U.exponent = n_quo
   if inf_plc

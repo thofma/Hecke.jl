@@ -134,7 +134,7 @@ function dedekind_test_composite(O::NfOrd, p::ZZRingElem)
   @assert is_equation_order(O)
 
   Zy = polynomial_ring(FlintZZ, "y")[1]
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached=false)[1]
 
   f = Zy(nf(O).pol)

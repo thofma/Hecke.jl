@@ -808,14 +808,12 @@ function radical(a::T) where {T<:Integer}
 end
 
 function quo(::ZZRing, a::ZZRingElem)
-  R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(FlintZZ, R, x -> R(x), y->lift(y))
+  R, f = residue_ring(FlintZZ, a)
   return R, f
 end
 
 function quo(::ZZRing, a::Integer)
-  R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(FlintZZ, R, x -> R(x), y->lift(y))
+  R, f = residue_ring(FlintZZ, a)
   return R, f
 end
 

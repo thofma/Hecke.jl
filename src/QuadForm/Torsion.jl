@@ -1567,7 +1567,7 @@ function normal_form(T::TorQuadModule; partial=false)
     q_p1 = inv(q_p)
     prec = 2*valuation(exponent(T), p) + 5
     D, U = padic_normal_form(q_p1, p; prec, partial)
-    R = residue_ring(ZZ, ZZ(p)^prec)
+    R = residue_ring(ZZ, ZZ(p)^prec)[1]
     UR = map_entries(x->R(ZZ(x)), U)
     UR = transpose(inv(UR))
 
@@ -1680,7 +1680,7 @@ julia> brown_invariant(T)
 function brown_invariant(T::TorQuadModule)
   @req modulus_quadratic_form(T) == 2 "the torsion quadratic form must have values in Q/2Z"
   @req !is_degenerate(T) "the torsion quadratic form must be non-degenerate"
-  brown = residue_ring(ZZ, 8)(0)
+  brown = residue_ring(ZZ, 8)[1](0)
   for p in prime_divisors(exponent(T))
     q = normal_form(primary_part(T, p)[1])[1]
     q = gram_matrix_quadratic(q)

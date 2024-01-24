@@ -997,7 +997,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::ZZRing
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)
+  R=residue_ring(FlintZZ, m, cached=false)[1]
 
   for (p,v) in lp
     if v==1
@@ -1086,7 +1086,7 @@ function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)
+  R=residue_ring(FlintZZ, m, cached=false)[1]
 
   for (p,v) in lp
     if v==1
@@ -1241,7 +1241,7 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   O=order(m)
   K=nf(O)
 
-  R=residue_ring(FlintZZ, mm, cached=false)
+  R=residue_ring(FlintZZ, mm, cached=false)[1]
   for (p,v) in lp.fac
     if isodd(p)
       if v==1

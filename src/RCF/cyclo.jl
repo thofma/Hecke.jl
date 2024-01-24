@@ -497,7 +497,7 @@ function automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_gen
     push!(gnew, na)
   end
   #Now add the automorphisms of the relative extension
-  R = residue_ring(FlintZZ, C.n, cached = false)
+  R = residue_ring(FlintZZ, C.n, cached = false)[1]
   U, mU = unit_group(R)
   if is_cyclic(U)
     k = degree(C.Kr)
