@@ -319,7 +319,7 @@ Return an elliptic curve with the given $j$-invariant.
 
 ```jldoctest
 julia> K = GF(3)
-Finite field of degree 1 over GF(3)
+Prime field of characteristic 3
 
 julia> elliptic_curve_from_j_invariant(K(2))
 Elliptic curve with equation
