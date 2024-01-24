@@ -1,6 +1,6 @@
 import Base.Vector
 
-export sparse_row, dot, scale_row!, add_scaled_row, permute_row, dense_row
+export sparse_row, dot, scale_row!, add_scaled_row, permute_row, dense_row, scale_row_right!, add_right_scaled_row
 
 ################################################################################
 #
@@ -645,7 +645,7 @@ add_left_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a,
 @doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Adds the left scaled row $c A$ to $B$ by changing $B$ in place. Returns the new $B$.
+Adds the left scaled row $c A$ to $B$.
 """
 function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   @assert a !== b
