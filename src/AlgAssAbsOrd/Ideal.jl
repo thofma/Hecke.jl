@@ -1466,7 +1466,7 @@ numerator(a::AlgAssAbsOrdIdl; copy::Bool = true) = numerator(a, order(a), copy =
 ################################################################################
 
 function show(io::IO, a::AlgAssAbsOrdIdlSet)
-  print(io, "Set of ideals of $(order(a))\n")
+  print(io, "Set of ideals of $(order(a))")
 end
 
 order(a::AlgAssAbsOrdIdlSet) = a.order

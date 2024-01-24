@@ -14,7 +14,7 @@ nf(u::UnitGrpCtx) = nf(order(u))
 ################################################################################
 
 function show(io::IO, U::UnitGrpCtx)
-  print(io, "Unit group context of\n$(order(U))\n")
+  print(io, "Unit group context of\n$(order(U))")
 end
 
 ################################################################################

@@ -537,7 +537,6 @@ function Base.show(io::IO, D::Divisors)
   if isdefined(D, :U)
     print(io, " times $(D.U)")
   end
-  print(io, "\n")
 end
 
 @doc raw"""
