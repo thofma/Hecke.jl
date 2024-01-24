@@ -586,11 +586,6 @@ function (R::PolyRing{T})(a::Generic.RationalFunctionFieldElem{T}) where {T}
   return R(numerator(a))
 end
 
-function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
-  K, _ = number_field(p)
-  return K, MapFromFunc(R, K, x->K(x), y->R(y))
-end
-
 function (F::Generic.FunctionField{T})(p::PolyRingElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
