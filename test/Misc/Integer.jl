@@ -1,7 +1,6 @@
 @testset "Integers" begin
     
-
-    @test is_commuatative(ZZ)==true
+    @test is_commuatative(ZZ) == true
 
     @test modord(2,3) == 2
 
@@ -15,4 +14,8 @@
 
     @test carmichael_lambda(ZZ(8)) == ZZ(2)
    
+    
+    
+    
+    
 end
