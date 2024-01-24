@@ -437,7 +437,7 @@ function scale_row!(a::SRow{T}, b::T) where T
 end
 
 @doc raw"""
-  scale_row_right!(a::SRow, b::NCRingElem) -> SRow
+    scale_row_right!(a::SRow, b::NCRingElem) -> SRow
 
 Returns the (right) product of $a \times b$.
 """
@@ -593,7 +593,7 @@ end
 @doc raw"""
   divexact_right(A::SRow, b::NCRingElem) -> SRow
 
-Returns the left divexact $A/b$
+Returns the right divexact $A/b$
 """
 function divexact_right(A::SRow{T}, b::T) where T
   B = sparse_row(base_ring(A))
