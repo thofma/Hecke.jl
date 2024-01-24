@@ -483,7 +483,7 @@ function discriminant(K::NfAbsNS)
   Qx = FlintQQ["x"][1]
   d = QQFieldElem(1)
   for i = 1:length(K.pol)
-    d *= discriminant(Qx(K.pol[i]))^(div(degree(K), total_degree(K.pol[i])))
+    d *= discriminant(to_univariate(Qx,K.pol[i]))^(div(degree(K), total_degree(K.pol[i])))
   end
   return d
 end

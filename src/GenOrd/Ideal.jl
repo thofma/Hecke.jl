@@ -747,8 +747,6 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
 
   r = length(basis_elts)
   FQ, phi = residue_field(O.R,p)
-  phi_inv = inv(phi)
-
 
   if r == 0
     A = _zero_algebra(FQ)
@@ -813,7 +811,7 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   let BO = BO, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
       ca = coefficients(a)
-      return sum(phi_inv(ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
+      return sum(preimage(phi, ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
     end
   end
 
