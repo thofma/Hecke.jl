@@ -1,9 +1,5 @@
 # Everything related to transformation on sparse matrices
 
-export sparse_trafo_scale, sparse_trafo_swap, sparse_trafo_add_scaled,
-       sparse_trafo_para_add_scaled, sparse_trafo_partial_dense,
-       sparse_trafo_move_row
-
 ################################################################################
 #
 #  Constructors

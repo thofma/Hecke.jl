@@ -1,5 +1,3 @@
-export residue_field, relative_residue_field
-
 ################################################################################
 #
 #  Residue field construction for arbitrary prime ideals
@@ -71,7 +69,7 @@ end
 ################################################################################
 
 function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g::QQPolyRingElem, p)
-  R = Nemo._GF(p, cached = false)
+  R = GF(p, cached = false)
 
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)

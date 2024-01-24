@@ -1,8 +1,3 @@
-
-export conjugates_init, is_squarefree, conjugates, angle, cos,
-       sin, abs, abs2, sqrt
-
-
 function conjugates_init(f_in::Union{ZZPolyRingElem, QQPolyRingElem})
   local f::ZZPolyRingElem
   if typeof(f_in) == QQPolyRingElem

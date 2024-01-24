@@ -1,5 +1,3 @@
-export kummer_failure
-
 function Base.show(io::IO, K::KummerExt)
   if isdefined(K.AutG, :snf)
     print(io, "KummerExt with structure $(K.AutG.snf)")

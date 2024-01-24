@@ -1,5 +1,3 @@
-export component, non_simple_extension
-
 ################################################################################
 #
 #  Constructor
@@ -70,8 +68,6 @@ basis(::NonSimpleNumField)
 #  Defining polynomials
 #
 ################################################################################
-
-export defining_polynomials
 
 @doc raw"""
     defining_polynomials(L::NonSimpleNumField) -> Vector{PolyRingElem}

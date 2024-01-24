@@ -21,11 +21,6 @@ import Base.push!, Base.max, Nemo.nbits, Base.Array, Base.Matrix,
        Base.hcat,
        Base.vcat, Base.max, Base.min
 
-export vcat!, show, sub, SMat, SRow,
-       ZZMatrix, copy, push!, mul!, to_hecke, sparse,
-       valence_mc, swap_rows!, elementary_divisors,
-       rand_row, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
-
 include("Sparse/Matrix.jl")
 include("Sparse/Row.jl")
 include("Sparse/ZZRow.jl")

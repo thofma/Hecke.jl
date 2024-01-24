@@ -6,8 +6,6 @@
 
 using Pkg.Artifacts
 
-#export number_of_small_groups, small_groups_limit
-export small_group
 #CF: as of now, nothing works here and the exports cause errors in Oscar
 
 mutable struct SmallGroupDB

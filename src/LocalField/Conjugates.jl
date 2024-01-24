@@ -1,5 +1,3 @@
-export completion, qAdicConj
-
 #XXX: valuation(Q(0)) == 0 !!!!!
 function newton_lift(f::ZZPolyRingElem, r::qadic, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
   Q = parent(r)
@@ -374,7 +372,7 @@ function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: U
   @assert is_totally_real(k)
   c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
   m = matrix(c)
-  m = hcat(m, matrix(base_ring(m), nrows(m), 1, [one(base_ring(m)) for i=1:nrows(m)]))
+  m = vcat(m, matrix(base_ring(m), 1, ncols(m), [one(base_ring(m)) for i=1:ncols(m)]))
   return det(m)//degree(k)
 end
 
@@ -508,17 +506,17 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift.  Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 """
-function completion_easy(K::AnticNumberField, P::NfOrdIdl)
+function completion_easy(K::AnticNumberField, P::NfOrdIdl, precision::Int = 10)
   #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))
   g = conjugates(P.gen_two.elem_in_nf, C)
 #  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
-  return completion(K, p, i[1])
+  return completion(K, p, i, precision)
 end
 
-completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, ZZRingElem(p), i)
+completion(K::AnticNumberField, p::Integer, i::Int, precision::Int = 64) = completion(K, ZZRingElem(p), i, precision)
 
 @doc raw"""
     completion(K::AnticNumberField, p::ZZRingElem, i::Int) -> FlintQadicField, Map
@@ -526,11 +524,11 @@ completion(K::AnticNumberField, p::Integer, i::Int) = completion(K, ZZRingElem(p
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
 `conjugates`.
 """
-function completion(K::AnticNumberField, p::ZZRingElem, i::Int)
+function completion(K::AnticNumberField, p::ZZRingElem, i::Int, n = 64)
   C = qAdicConj(K, Int(p))
   @assert 0<i<= degree(K)
 
-  ca = conjugates(gen(K), C, all = true, flat = false)[i]
+  ca = conjugates(gen(K), C, n, all = true, flat = false)[i]
   return completion(K, ca)
 end
 
@@ -558,8 +556,8 @@ function completion(K::AnticNumberField, ca::qadic)
   while length(pa) < d
     push!(pa, pa[end]*pa[2])
   end
-  m = matrix(Nemo._GF(p), d, d, [lift(ZZ, coeff(pa[i], j-1)) for j=1:d for i=1:d])
-  o = matrix(Nemo._GF(p), d, 1, [lift(ZZ, coeff(gen(R), j-1)) for j=1:d])
+  m = matrix(GF(p), d, d, [lift(ZZ, coeff(pa[i], j-1)) for j=1:d for i=1:d])
+  o = matrix(GF(p), d, 1, [lift(ZZ, coeff(gen(R), j-1)) for j=1:d])
   s = solve(m, o)
   @hassert :qAdic 1 m*s == o
   a = K()
@@ -568,7 +566,7 @@ function completion(K::AnticNumberField, ca::qadic)
   end
   f = defining_polynomial(parent(ca), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
-  o = matrix(Nemo._GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
+  o = matrix(GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
   s = solve(m, o)
   b = K()
   for i=1:d

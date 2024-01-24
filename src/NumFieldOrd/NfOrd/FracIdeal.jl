@@ -33,8 +33,6 @@
 #
 ################################################################################
 
-export fractional_ideal
-
 ################################################################################
 #
 #  Consistency
@@ -171,17 +169,6 @@ function fractional_ideal(O::NfAbsOrd{S, T}, v::Vector{T}) where {S, T}
 end
 
 *(R::NfAbsOrd, x::QQFieldElem) = fractional_ideal(R, nf(R)(x))
-
-################################################################################
-#
-#  String I/O
-#
-################################################################################
-
-export basis_matrix, norm, inv, ==, *, integral_split
-
-export parent, order, basis_matrix, basis_mat_inv, basis, norm,
-       ring_of_multipliers, ==
 
 ################################################################################
 #

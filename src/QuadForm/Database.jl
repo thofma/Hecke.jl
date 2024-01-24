@@ -4,9 +4,6 @@
 #
 ################################################################################
 
-export number_of_lattices, lattice_name, lattice,
-       lattice_automorphism_group_order, lattice_database
-
 struct LatDB
   path::String
   max_rank::Int

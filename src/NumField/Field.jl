@@ -1,5 +1,3 @@
-export absolute_degree, absolute_discriminant, automorphism_list
-
 ################################################################################
 #
 #  Base field
@@ -23,8 +21,6 @@ _base_ring(::QQField) = FlintQQ
 #  Predicates
 #
 ################################################################################
-
-export is_absolute
 
 @doc doc"""
     is_absolute(L::NumField) -> Bool
@@ -227,8 +223,6 @@ function is_cached(L::NfRel)
 end
 
 is_cached(L::NonSimpleNumField) = false
-
-export set_var!, set_vars!
 
 #the Symbol is part of the key for caching, hence it should be be changed
 @doc doc"""

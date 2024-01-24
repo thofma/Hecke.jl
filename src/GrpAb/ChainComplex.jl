@@ -1,6 +1,3 @@
-export chain_complex, is_exact, free_resolution, zero_map, ComplexOfMorphisms,
-       cochain_complex, shift, is_chain_complex, is_cochain_complex
-
 ######################################################################
 #
 # Lift of homomorphisms
@@ -53,12 +50,12 @@ end
 ```
 
 There are logically 2 types of complexes
- - chain 
+ - chain
  - cochain
 (stored in `typ` (`type` cannot be used as it is a keyword)
 
 The type determines, jointly with `seed` the homological, external,
-numbering of the maps and object. `seed` always stores the logically 
+numbering of the maps and object. `seed` always stores the logically
 minimal object index (in the sense of homological degree)
 
 # Chain Complex
@@ -104,7 +101,7 @@ at the end, the last object is the codomain of the last map...
 """
 @attributes mutable struct ComplexOfMorphisms{T}
   maps      ::Vector{<:Map}
-  seed      ::Int  
+  seed      ::Int
   typ       ::Symbol # :chain or :cochain
   exact     ::Vector{Bool}
   complete  ::Bool
@@ -354,7 +351,7 @@ function pres_show(io::IO, C::ComplexOfMorphisms)
 
   R = Nemo.base_ring(C[first(rng)])
   R_name = get_name(R, "$R")
- 
+
   for i=reverse(rng)
     M = C[i]
     if i == -1 #the object that is presented
@@ -376,7 +373,7 @@ function pres_show(io::IO, C::ComplexOfMorphisms)
 
   pos = 0
   pos_mod = Int[]
-  
+
   for i=1:length(name_mod)
     print(io, name_mod[i])
     push!(pos_mod, pos)
@@ -387,7 +384,7 @@ function pres_show(io::IO, C::ComplexOfMorphisms)
     end
   end
 #  print(io, "\n")
-#  len = 0 
+#  len = 0
 #  for i=1:length(name_mod)
 #    if i>1
 #      print(io, " "^(pos_mod[i] - pos_mod[i-1]-len +1))
@@ -417,7 +414,7 @@ function free_show(io::IO, C::ComplexOfMorphisms)
   if R_name === nothing
     R_name = "$R"
   end
- 
+
   for i=reverse(rng)
     M = C[i]
     if get_attribute(M, :name) !== nothing
@@ -438,7 +435,7 @@ function free_show(io::IO, C::ComplexOfMorphisms)
 
   pos = 0
   pos_mod = Int[]
-  
+
   for i=1:length(name_mod)
     print(io, name_mod[i])
     push!(pos_mod, pos)

@@ -170,8 +170,9 @@ function fun_factor(g::Generic.Poly{padic})
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fR = Rt([R(Hecke.lift(coeff(g, i))) for i = 0:degree(g)])
   u, g1 = Hecke.fun_factor(fR)
-  fun = x -> lift(x, K)
-  return map_coefficients(fun, u, parent = Kt), map_coefficients(fun, g1, parent = Kt)
+  liftu = Kt(elem_type(K)[lift(coeff(u, i), K) for i in 0:degree(u)])
+  liftg1 = Kt(elem_type(K)[lift(coeff(g1, i), K) for i in 0:degree(g1)])
+  return (liftu, liftg1)::Tuple{typeof(g), typeof(g)}
 end
 
 function fun_factor(f::Generic.Poly{S}) where S <: Union{qadic, LocalFieldElem}
@@ -463,7 +464,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{padic, qa
   return (DD, UU, VV)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
 end
 
-function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyRingElem{T}) where T <: Union{padic, qadic, LocalFieldElem}
+function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyRingElem{T}; check::Bool=true) where T <: Union{padic, qadic, LocalFieldElem}
    check_parent(f1, g1)
    iszero(g1) && throw(DivideError())
    if iszero(f1)

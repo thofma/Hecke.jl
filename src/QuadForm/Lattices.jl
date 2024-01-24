@@ -1,21 +1,3 @@
-export *, +, absolute_basis, absolute_basis_matrix, ambient_space,
-       automorphism_group_generators, automorphism_group_order, bad_primes,
-       basis_matrix, basis_matrix_of_rational_span, can_scale_totally_positive,
-       coefficient_ideals, degree, diagonal, diagonal_of_rational_span,
-       discriminant, dual, fixed_field, fixed_ring, generators, gram_matrix_of_generators,
-       gram_matrix_of_rational_span, hasse_invariant, hermitian_lattice, intersect,
-       involution, is_definite, is_integral, is_isometric, is_local_norm, is_locally_isometric,
-       is_modular, is_negative_definite, is_positive_definite, is_rationally_isometric,
-       is_sublattice, is_sublattice_with_relations, jordan_decomposition, lattice,
-       local_basis_matrix, norm, normic_defect, pseudo_matrix, quadratic_lattice,
-       rank, rational_span, rescale, restrict_scalars, restrict_scalars_with_map, scale,
-       volume, witt_invariant, integer_lattice, trace_lattice_with_isometry,
-       trace_lattice_with_isometry_and_transfer_data, hermitian_structure,
-       hermitian_structure_with_transfer_data
-
-
-export HermLat, QuadLat
-
 # aliases for deprecation
 is_equivalent(U::AbstractLat, V::AbstractLat) = is_isometric(U, V)
 is_equivalent(U::AbstractLat, V::AbstractLat, p) = is_isometric(U, V, p)
@@ -1208,7 +1190,7 @@ end
 # of rows of f should be divisible by the absolute degree of the parent of b
 #
 # Here _mb is the asolute multiplication matrix of b and mb is a block diagonal
-# matrix consisting of an appropriate number of copies of _mb 
+# matrix consisting of an appropriate number of copies of _mb
 function _admissible_basis(f::QQMatrix, _mb::QQMatrix, mb::QQMatrix)
   # we look for a basis on which f acts blockwise
   # as multiplication by b along extension of scalars
@@ -1450,7 +1432,7 @@ end
 # per default, the are given with respect to the basis of the ambient space
 # if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
-function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false)
+function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -1478,13 +1460,13 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   # Create the automorphism context and compute generators as well as orders
 
   C = ZLatAutoCtx(ZgramL)
-  fl, Csmall = try_init_small(C)
+  fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
   if fl
     auto(Csmall)
     _gens, order = _get_generators(Csmall)
     gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
   else
-    init(C)
+    init(C, depth = depth, bacher_depth = bacher_depth)
     auto(C)
     gens, order = _get_generators(C)
   end
@@ -1559,19 +1541,24 @@ end
 ################################################################################
 
 @doc raw"""
-    automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true)
+    automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true,
+                                                  depth::Int = -1, bacher_depth::Int = 0)
                                                           -> Vector{MatElem}
 
 Given a definite lattice `L`, return generators for the automorphism group of `L`.
 If `ambient_representation == true` (the default), the transformations are represented
 with respect to the ambient space of `L`. Otherwise, the transformations are represented
 with respect to the (pseudo-)basis of `L`.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
-automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true)
+automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0)
 
-function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false)
+function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = -1, bacher_depth::Int = 0)
 
-  assert_has_automorphisms(L)
+  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
 
   gens = L.automorphism_group_generators
 
@@ -1611,14 +1598,18 @@ end
 ################################################################################
 
 @doc raw"""
-    automorphism_group_order(L::AbstractLat) -> Int
+    automorphism_group_order(L::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) -> Int
 
 Given a definite lattice `L`, return the order of the automorphism group of `L`.
-"""
-automorphism_group_order(L::AbstractLat; redo::Bool = false)
 
-function automorphism_group_order(L::AbstractLat; redo::Bool = false)
-  assert_has_automorphisms(L; redo)
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
+"""
+automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+
+function automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+  assert_has_automorphisms(L; redo, depth = depth, bacher_depth = bacher_depth)
   return L.automorphism_group_order
 end
 
@@ -1629,15 +1620,20 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isometric(L::AbstractLat, M::AbstractLat) -> Bool
+    is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) -> Bool
 
 Return whether the lattices `L` and `M` are isometric.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
-is_isometric(L::AbstractLat, M::AbstractLat) = is_isometric_with_isometry(L, M; ambient_representation=false)[1]
+is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = is_isometric_with_isometry(L, M; ambient_representation=false, depth = depth, bacher_depth = bacher_depth)[1]
 
 
 @doc raw"""
-    is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true)
+    is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true
+                                                               depth::Int = -1, bacher_depth::Int = 0)
                                                               -> (Bool, MatElem)
 
 Return whether the lattices `L` and `M` are isometric. If this is the case, the
@@ -1650,12 +1646,16 @@ matrices of the ambient spaces of `L` and `M` respectively. If
 to the (pseudo-)bases of `L` and `M`, that is, $T G_M T^t = G_L$ where $G_M$
 and $G_L$ are the Gram matrices of the (pseudo-)bases of `L` and `M`
 respectively.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may improve
+performance. If set to `-1` (default), the used value of `depth` is chosen
+heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
-is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true) = throw(NotImplemented())
+is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
 
 
 function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{<: NumField};
-                                            ambient_representation::Bool = true)
+                                            ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0)
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)
@@ -1690,12 +1690,12 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     ZgramMsmall[i] = TM * ZgramM[i] * TMtr
   end
 
-  fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall)
+  fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(FlintZZ, _T)
   else
-    CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall)
+    CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)
   end
 

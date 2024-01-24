@@ -1,5 +1,3 @@
-export abs_upper_bound
-
 function _arb_get_fmpq(x::arb)
   mid = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), x)
   e = ZZRingElem()

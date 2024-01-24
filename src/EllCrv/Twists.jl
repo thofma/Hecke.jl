@@ -7,9 +7,6 @@
 #
 ###############################################################################
 
-
-export quadratic_twist, quadratic_twists, is_twist, twists
-
 @doc raw"""
     quadratic_twist(E::EllCrv{T}}, d::T) -> EllCrv{T}
 

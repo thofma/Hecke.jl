@@ -1,5 +1,3 @@
-export left_order, right_order, normred, locally_free_basis, is_locally_free
-
 @doc raw"""
     order(a::AlgAssRelOrdIdl) -> AlgAssRelOrd
 
@@ -1562,7 +1560,7 @@ end
 
 Returns an ideal $c$ such that $a = b \cdot c$.
 """
-function divexact_left(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where { S, T, U }
+function divexact_left(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}; check::Bool=true) where { S, T, U }
   @assert algebra(a) === algebra(b)
   PM = _colon_raw(a, b, :left)
   c = ideal(algebra(a), PM)
@@ -1582,7 +1580,7 @@ end
 
 Returns an ideal $c$ such that $a = c \cdot b$.
 """
-function divexact_right(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where { S, T, U }
+function divexact_right(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}; check::Bool=true) where { S, T, U }
   @assert algebra(a) === algebra(b)
   PM = _colon_raw(a, b, :right)
   c = ideal(algebra(a), PM)

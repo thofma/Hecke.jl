@@ -132,6 +132,12 @@ end
 
     test_alg_morphism_char_p(B, A, BtoA)
 
+    # zero algebra
+
+    A = associative_algebra(QQ, Array{QQFieldElem}(undef, 0, 0, 0))
+    @test dim(A) == 0
+    A = associative_algebra(QQ, Array{QQFieldElem}(undef, 0, 0, 0), QQFieldElem[])
+    @test dim(A) == 0
   end
 
   # n = dim(A)^2 = dim(B)^2
@@ -226,4 +232,6 @@ end
     @test is_split(A, Ps[2])
   end
 
+  A = zero_algebra(QQ)
+  @test_throws ArgumentError direct_product(typeof(A)[])
 end

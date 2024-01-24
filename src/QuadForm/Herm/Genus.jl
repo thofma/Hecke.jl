@@ -1,8 +1,3 @@
-export genus, representative, rank, det, uniformizer, det_representative,
-       gram_matrix, hermitian_genera, hermitian_local_genera, rank,
-       is_inert, scales, ranks, dets, is_split, is_ramified, is_dyadic,
-       norms, primes, signatures
-
 ################################################################################
 #
 #  Local genus symbol
@@ -102,7 +97,12 @@ $\mathfrak p$ of $\mathcal O_K$, return the scale of the Jordan block of minimum
 $\mathfrak P$-valuation, where $\mathfrak{P}$ is a prime ideal of $\mathcal O_E$
 lying over $\mathfrak p$.
 """
-scale(g::HermLocalGenus) = prime(g)^(scale(g, i))
+function scale(g::HermLocalGenus)
+  E = base_field(g)
+  OE = maximal_order(E)
+  P = prime_decomposition(OE, prime(g))[1][1]
+  return fractional_ideal(OE, P)^(scale(g, 1))
+end
 
 @doc raw"""
     scales(g::HermLocalGenus) -> Vector{Int}
@@ -242,6 +242,25 @@ prime ideal $\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuations
 norms of the Jordan blocks of `g`.
 """
 norms(G::HermLocalGenus) = begin @assert is_dyadic(G) && is_ramified(G); G.norm_val end
+
+@doc raw"""
+    norm(g::HermLocalGenus) -> NfOrdFracIdl
+
+Return the norm of `g`, i.e. the norm of any of its representatives.  
+
+Given a local genus symbol `g` of hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, it norm is computed as the norm of the Jordan block of minimum
+$\mathfrak p$-valuation.
+"""
+function norm(G::HermLocalGenus)
+  p = prime(G)
+  OK = order(p)
+  if !is_dyadic(G) || !is_ramified(G)
+    return fractional_ideal(OK, p)^scale(G, 1)
+  else
+    return fractional_ideal(p)^minimum(norms(G))
+  end
+end
 
 @doc raw"""
     is_ramified(g::HermLocalGenus) -> Bool
@@ -1259,16 +1278,34 @@ Return the rank of any hermitian lattice with global genus symbol `G`.
 """
 rank(G::HermGenus) = G.rank
 
-# if G is defined over E/K, this returns the fractional ideal of K
-# obtained by multiplying p_i^s_i where the p_i's are the prime ideals
-# of the local symbols of G, and s_i's represent their respective
-# minimal scale valuation.
 function _scale(G::HermGenus)
   I = maximal_order(base_field(base_field(G)))
   for p in primes(G)
     s = minimum(scales(G[p]))
     I *= fractional_ideal(p)^s
   end
+  return I
+end
+
+@doc raw"""
+    scale(G::HermGenus) -> NfOrdFracIdl
+
+Return the scale ideal of any hermitian lattice with global genus symbol `G`.
+"""
+function scale(G::HermGenus)
+  OE = maximal_order(base_field(G))
+  I = prod(scale(g) for g in G.LGS; init = fractional_ideal(OE, [elem_in_nf(OE(1))]))
+  return I
+end
+
+@doc raw"""
+    norm(G::HermGenus) -> NfOrdFracIdl
+
+Return the norm ideal of any hermitian lattice with global genus symbol `G`.
+"""
+function norm(G::HermGenus)
+  OK = base_ring(maximal_order(base_field(G)))
+  I = prod(norm(g) for g in G.LGS; init = fractional_ideal(OK, [elem_in_nf(OK(1))]))
   return I
 end
 

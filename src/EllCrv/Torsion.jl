@@ -34,10 +34,6 @@
 #
 ################################################################################
 
-export is_torsion_point, torsion_points, torsion_structure, torsion_bound, pr_torsion_basis,
-       division_polynomial, division_polynomial_univariate, torsion_points_division_poly, order,
-       torsion_points_lutz_nagell
-
 ################################################################################
 #
 #  Order of a point

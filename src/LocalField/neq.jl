@@ -1,5 +1,3 @@
-#export: degree_relative, random_elem, one_root, norm_equation
-
 degree(L::Hecke.LocalField, K::Union{FlintQadicField, Hecke.LocalField}) = divexact(absolute_degree(L), absolute_degree(K))
 
 function degree(L::FinField, k::FinField)

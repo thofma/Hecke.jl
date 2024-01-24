@@ -864,51 +864,51 @@ end
 #
 ################################################################################
 
-divexact(A::NfAbsOrdIdl, b::Integer) = divexact(A, ZZRingElem(b))
+divexact(A::NfAbsOrdIdl, b::Integer; check::Bool=true) = divexact(A, ZZRingElem(b); check=check)
 
 #TODO: write a divexact! to change the ideal?
 #  difficult due to Julia's inability to unset entries...
 
-function divexact(A::NfAbsOrdIdl, b::ZZRingElem)
+function divexact(A::NfAbsOrdIdl, b::ZZRingElem; check::Bool=true)
   if iszero(A)
     return A
   end
   zk = order(A)
   b = abs(b)
   if has_2_elem(A)
-    B = ideal(zk, divexact(A.gen_one, b), divexact(A.gen_two, b))
+    B = ideal(zk, divexact(A.gen_one, b; check=check), divexact(A.gen_two, b; check=check))
     if isdefined(A, :gens_normal)
       B.gens_normal = A.gens_normal
     end
     B.gens_weakly_normal = A.gens_weakly_normal
     if has_basis_matrix(A)
-      B.basis_matrix = divexact(A.basis_matrix, b)
+      B.basis_matrix = divexact(A.basis_matrix, b; check=check)
     end
     if false && has_basis_mat_inv(A)
       error("not defined at all")
       B.basis_mat_inv = b*A.basis_mat_inv
     end
   else
-    B = ideal(zk, divexact(A.basis_matrix, b))
+    B = ideal(zk, divexact(A.basis_matrix, b; check=check))
     if false && has_basis_mat_inv(A)
       error("not defined at all")
       B.basis_mat_inv = b*A.basis_mat_inv
     end
   end
   if has_minimum(A)
-    B.minimum = divexact(A.minimum, b)
+    B.minimum = divexact(A.minimum, b; check=check)
   end
   if has_norm(A)
-    B.norm = divexact(A.norm, b^degree(zk))
+    B.norm = divexact(A.norm, b^degree(zk); check=check)
   end
   if has_princ_gen(A)
-    B.princ_gen = divexact(A.princ_gen, b)
+    B.princ_gen = divexact(A.princ_gen, b; check=check)
   end
   #TODO princ_gen_special missing
   return B
 end
 
-function divexact(A::NfOrdIdl, B::NfOrdIdl)
+function divexact(A::NfOrdIdl, B::NfOrdIdl; check::Bool=true)
   check_parent(A, B)
   # It is assumed that B divides A, that is, A \subseteq B
   t_prod = 0.0

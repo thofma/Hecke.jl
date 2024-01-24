@@ -1,13 +1,3 @@
-export AbstractLat
-export AbstractSpace
-export AbstractSpaceMor
-export AbstractSpaceRes
-export TorQuadModule
-export TorQuadModuleElem
-export TorQuadModuleMor
-export VecSpaceRes
-export ZZLat
-
 ################################################################################
 #
 #  Abstract types
@@ -465,48 +455,89 @@ end
 #
 ###############################################################################
 
-mutable struct SCPComb
-  rank::Int
-  trans::ZZMatrix
-  coef::ZZMatrix
-  F::Vector{ZZMatrix}
-
-  SCPComb() = new()
-end
-
 mutable struct VectorList{S, T}
-  vectors::Vector{S}
-  lengths::Vector{Vector{T}}
-  lookup::Dict{S, Int}
-  issorted::Bool
-  use_dict::Bool
+  vectors::Vector{S} # list of (short) vectors
+  lengths::Vector{Vector{T}} # lengths[i] contains the lengths of vectors[i] wrt to several forms
+  lookup::Dict{S, Int} # v => i iff vectors[i] == v
+  issorted::Bool # whether the vectors are sorted
+  use_dict::Bool # whether lookup is used
 
   function VectorList{S, T}() where {S, T}
     return new{S, T}()
   end
 end
 
+# scalar product combinations
+mutable struct SCPComb{S, V}
+  scpcombs::VectorList{V, S} # list of vectors s with <w, e_i> = s_i for w a short vector
+  trans::ZZMatrix # transformation matrix mapping the vector sums to a basis
+  coef::ZZMatrix # "inverse" of trans: maps the basis to the vector sums
+  F::Vector{ZZMatrix} # Gram matrices of the basis
+
+  xvectmp::ZZMatrix # length(scpcombs.vectors) x dim
+  xbasetmp::ZZMatrix # nrows(trans) x dim
+  multmp1::ZZMatrix # nrows(trans) x dim
+  multmp2::ZZMatrix # nrows(trans) x nrows(trans)
+  multmp3::ZZMatrix # length(scpcombs.vectors) x dim
+
+  SCPComb{S, V}() where {S, V} = new{S, V}()
+end
+
+# Bacher polynomials
+# In theory, this is a polynomial, but for the application we only need the
+# coefficients.
+# `coeffs` is assumed to be of length n := `maximal_degree - minimal_degree + 1` and
+# the corresponding polynomial is
+#     coeffs[n] * X^maximal_degree + coeffs[n - 1] * X^(maximal_degree - 1)
+#   + ... + coeffs[1] * X^minimal_degree \in ZZ[X]
+mutable struct BacherPoly{T}
+  coeffs::Vector{Int}
+  minimal_degree::Int
+  maximal_degree::Int
+  sum_coeffs::Int # = sum(coeffs)
+  S::T # the scalar product w.r.t. which the polynomial is constructed
+
+  BacherPoly{T}() where {T} = new{T}()
+end
+
 mutable struct ZLatAutoCtx{S, T, V}
-  G::Vector{T}
-  Gtr::Vector{T}
+  G::Vector{T} # Gram matrices
+  GZZ::Vector{ZZMatrix} # Gram matrices (of type ZZMatrix)
+  Gtr::Vector{T} # transposed Gram matrices
   dim::Int
   max::S
-  V::VectorList{V, S}
-  v::Vector{T}
-  per::Vector{Int}
-  fp::Matrix{Int}
-  fp_diagonal::Vector{Int}
-  std_basis::Vector{Int}
-  scpcomb::SCPComb
+  V::VectorList{V, S} # list of (short) vectors
+  v::Vector{Vector{V}} # list of list of vectors (n x 1 matrices),
+                       # v[i][j][k] is the dot product of V[j] with
+                       # the k-th row of G[i]
+                       # v[i][j] is the (matrix) product G[i]*V[j]
+  per::Vector{Int} # permutation of the basis vectors such that in every step
+                   # the number of possible continuations is minimal
+  fp::Matrix{Int} # the "fingerprint": fp[1, i] = number vectors v such that v
+                  # has same length as b_i for all forms
+  fp_diagonal::Vector{Int} # diagonal of the fingerprint matrix
+  std_basis::Vector{Int} # index of the the standard basis vectors in V.vectors
 
-  orders::Vector{Int}
-  ng::Vector{Int}
-  nsg::Vector{Int}
-  g::Vector{Vector{T}}
+  # Vector sum stuff
+  scpcomb::Vector{SCPComb{S, V}} # cache for the vector sum optimization
+  depth::Int # depth of the vector sums (0 == no vector sums)
+
+  # Bacher polynomial stuff
+  bacher_polys::Vector{BacherPoly{S}}
+  bacher_depth::Int # For how many base vectors the Bacher polynomial should be
+                    # used. Between 0 (none at all) and `dim`
+
+  orders::Vector{Int} # orbit length of b_i under <g[i], ..., g[end]>
+  nsg::Vector{Int} # the first nsg[i] elements of g[i] lie in <g[1], ..., g[i-1]>
+  g::Vector{Vector{T}} # generators for (subgroups of) the iterative stabilizers:
+                       # <g[1], ..., g[i]> is the point-wise stabilizer of the
+                       # basis vectors b_1, ..., b_{i - 1} in the full automorphism
+                       # group
   prime::S
 
-  is_symmetric::BitArray{1}
-  operate_tmp::V
+  is_symmetric::BitArray{1} # whether G[i] is symmetric
+  operate_tmp::V # temp storage for orbit computation
+  dot_product_tmp::V # temp storage for dot product computation
 
   function ZLatAutoCtx(G::Vector{ZZMatrix})
     z = new{ZZRingElem, ZZMatrix, ZZMatrix}()
@@ -515,6 +546,7 @@ mutable struct ZLatAutoCtx{S, T, V}
     z.dim = nrows(G[1])
     z.is_symmetric = falses(length(G))
     z.operate_tmp = zero_matrix(FlintZZ, 1, ncols(G[1]))
+    z.dot_product_tmp = zero_matrix(FlintZZ, 1, 1)
 
     for i in 1:length(z.G)
       z.is_symmetric[i] = is_symmetric(z.G[i])

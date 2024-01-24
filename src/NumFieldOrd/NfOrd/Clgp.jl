@@ -64,9 +64,6 @@
 #
 ################################################################################
 
-export class_group, FactorBase, is_smooth, factor, lll_basis,
-       unit_group_fac_elem, unit_group, regulator
-
 add_verbosity_scope(:ClassGroup)
 add_verbosity_scope(:ClassGroup_time)
 add_verbosity_scope(:ClassGroup_gc)

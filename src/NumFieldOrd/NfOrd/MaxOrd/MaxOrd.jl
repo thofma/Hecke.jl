@@ -1,6 +1,3 @@
-
-export maximal_order, poverorder, MaximalOrder, ring_of_integers
-
 ###############################################################################
 #
 #  Maximal Order interface

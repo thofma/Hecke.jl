@@ -207,4 +207,24 @@
   Qx, x = QQ["x"]
   @test is_etale(AlgAss(x))
   @test !is_etale(AlgAss(x^2))
+
+  # zero algebra
+
+  K, = quadratic_field(-1)
+  for k in (K, QQ)
+    A = zero_algebra(k)
+    @test !is_simple(A)
+    @test length(decompose(A)) == 0
+    @test is_semisimple(A)
+    B, m = direct_product(k, typeof(A)[]; task = :sum)
+    @test is_zero(B) && dim(B) == 0
+    @test length(m) == 0
+  end
+
+  # product of components
+
+  A = group_algebra(QQ, small_group(2, 1))
+  C, p = Hecke.product_of_components_with_projection(A, Int[])
+  @test is_zero(C) && dim(C) == 0
+  @test domain(p) === A && codomain(p) === C && is_one(p(one(A)))
 end

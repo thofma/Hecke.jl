@@ -1,5 +1,3 @@
-export reduced_charpoly
-
 ################################################################################
 #
 #  Parent
@@ -413,7 +411,7 @@ function is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
 end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left)
+function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left; check::Bool=true)
   t, c = is_divisible(a, b, action)
   if !t
     error("Division not possible")
@@ -426,14 +424,14 @@ end
 
 Returns an element $c$ such that $a = c \cdot b$.
 """
-divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :right)
+divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem; check::Bool=true) = divexact(a, b, :right; check=check)
 
 @doc raw"""
     divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
 
 Returns an element $c$ such that $a = b \cdot c$.
 """
-divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :left)
+divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem; check::Bool=true) = divexact(a, b, :left; check=check)
 
 ################################################################################
 #
@@ -1042,7 +1040,6 @@ function normred_over_center(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
     _, ZtoB = center(B)
     n1 = _normred_over_center_simple(BtoA\a, ZtoB)
     t, n2 = haspreimage(ZtoA, BtoA(ZtoB(n1)))
-    @assert t
     n += n2
   end
   return n

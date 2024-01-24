@@ -1,10 +1,9 @@
-export CyclotomicExt, cyclotomic_extension
-
 ################################################################################
 #
 #  Type definition
 #
 ################################################################################
+
 mutable struct CyclotomicExt
   k::AnticNumberField
   n::Int

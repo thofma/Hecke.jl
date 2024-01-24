@@ -107,8 +107,10 @@
     @test_throws ArgumentError is_equal_locally(I, II, 2)
 
     K = rand(M, -1:1) * O
-    while iszero(det(basis_matrix(K)))
+    MK = basis_matrix(K)
+    while !is_square(MK) || is_zero(det(MK))
       K = rand(M, -1:1) * O
+      MK = basis_matrix(K)
     end
     X = lattice_with_local_conditions(O, [2, 3, 13], [I, J, K])
     @test is_equal_locally(X, I, 2)
@@ -189,5 +191,12 @@
 
   J = typeof(I)(A, FakeFmpqMat(identity_matrix(QQ, 4)))
   @test J * J == typeof(I)(A, FakeFmpqMat(48 * identity_matrix(QQ, 4)))
+
+  # zero algebra
+
+  A = zero_algebra(QQ)
+  O = Order(A, elem_type(A)[])
+  I = 1 * O
+  @test Hecke.is_full_lattice(I)
 
 end

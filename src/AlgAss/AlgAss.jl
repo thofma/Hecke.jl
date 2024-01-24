@@ -1,5 +1,3 @@
-export associative_algebra, is_split, multiplication_table, restrict_scalars, center
-
 add_assertion_scope(:AlgAss)
 
 ################################################################################
@@ -55,7 +53,6 @@ If the function returns $M$ and the basis of $A$ is $e_1,\dots, e_n$ then
 it holds $e_i \cdot e_j = \sum_k M[i, j, k] \cdot e_k$.
 """
 function multiplication_table(A::AlgAss; copy::Bool = true)
-  @assert !iszero(A)
   if copy
     return deepcopy(A.mult_table)
   else
@@ -129,12 +126,18 @@ function find_one(A::AlgAss)
   return true, one
 end
 
-function _zero_algebra(R::Ring)
+raw"""
+    zero_algebra(R::Ring) -> AlgAss
+
+Return the zero ring as an associative $R$-algebra.
+"""
+function zero_algebra(R::Ring)
   A = AlgAss{elem_type(R)}(R)
   A.iszero = true
   A.is_commutative = 1
   A.has_one = true
   A.one = elem_type(R)[]
+  A.mult_table = Array{elem_type(R), 3}(undef, 0, 0, 0)
   return A
 end
 
@@ -148,9 +151,11 @@ raw"""
 associative_algebra(R::Ring, mult_table::Array{<:Any, 3}; check::Bool = true) = AlgAss(R, mult_table; check)
 associative_algebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where T = AlgAss(R, mult_table, one; check)
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = get_assertion_level(:AlgAss)>0) where {T}
+function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = get_assertion_level(:AlgAss) > 0) where {T}
+  @req all(isequal(size(mult_table, 1)), size(mult_table)) "Multiplication must have dimensions have same length"
+
   if size(mult_table, 1) == 0
-    return _zero_algebra(R)
+    return zero_algebra(R)
   end
   A = AlgAss{T}(R, mult_table, one)
   if check
@@ -160,9 +165,10 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = 
   return A
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = get_assertion_level(:AlgAss)>0) where {T}
+function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = get_assertion_level(:AlgAss) > 0) where {T}
+  @req all(isequal(size(mult_table, 1)), size(mult_table)) "Multiplication must have dimensions have same length"
   if size(mult_table, 1) == 0
-    return _zero_algebra(R)
+    return zero_algebra(R)
   end
   A = AlgAss{T}(R)
   A.mult_table = mult_table
@@ -289,7 +295,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   end
 
   r = length(basis_elts)
-  Fp = Nemo._GF(p, cached = false)
+  Fp = GF(p, cached = false)
 
   if r == 0
     A = _zero_algebra(Fp)
@@ -1404,7 +1410,17 @@ Returns the algebra $A = A_1 \times \cdots \times A_k$. `task` can be
 ":sum", ":prod", ":both" or ":none" and determines which canonical maps
 are computed as well: ":sum" for the injections, ":prod" for the projections.
 """
-function direct_product(algebras::Vector{ <: AlgAss{T} }; task::Symbol = :sum) where T
+function direct_product(algebras::Vector{<: AlgAss{T}}; task::Symbol = :sum) where T
+  @req !isempty(algebras) "Must be at least one algebra for direct product (or specifiy the field)"
+  return direct_product(algebras..., task = task)
+end
+
+function direct_product(K, algebras::Vector{<: AlgAss{T}}; task::Symbol = :sum) where T
+  if length(algebras) == 0
+    mt = zeros(K, 0, 0, 0)
+    A = AlgAss(K, mt; check = false)
+    return A, morphism_type(eltype(algebras), typeof(A))[]
+  end
   return direct_product(algebras..., task = task)
 end
 

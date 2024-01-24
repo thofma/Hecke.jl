@@ -1,5 +1,3 @@
-export group_algebra, galois_module, group
-
 ################################################################################
 #
 #  Basic field access

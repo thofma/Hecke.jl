@@ -394,11 +394,11 @@ end
 #
 ################################################################################
 
-divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = a*inv(b)
+divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}; check::Bool=true) where {T, S} = a*inv(b)
 
-divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*inv(b)
+divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}; check::Bool=true) where {T, S} = a*inv(b)
 
-function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}; check::Bool=true) where {T, S}
   O = order(a)
   return fractional_ideal(O, basis_pmatrix(a, copy = false); M_in_hnf=true)*inv(b)
 end

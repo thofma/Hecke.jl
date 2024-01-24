@@ -1,5 +1,3 @@
-export ClassField
-
 abstract type AbelianExt end
 
 struct ExtendAutoError <: Exception end

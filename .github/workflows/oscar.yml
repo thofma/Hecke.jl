@@ -25,7 +25,7 @@ jobs:
     - name: "Set up Julia"
       uses: julia-actions/setup-julia@v1
       with:
-        version: '~1.9.0-0'
+        version: '1.10'
     - name: OscarDevTools - CI
       if: github.repository == 'oscar-system/OscarDevTools.jl'
       run: |

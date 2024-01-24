@@ -1,4 +1,3 @@
-export pseudo_matrix, pseudo_hnf, pseudo_matrix, pseudo_hnf_with_transform, coefficient_ideals, matrix
 import Base.vcat, Base.hcat
 
 add_verbosity_scope(:PseudoHnf)

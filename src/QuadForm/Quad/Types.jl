@@ -1,9 +1,3 @@
-export QuadGenus
-export QuadLat
-export QuadLocalGenus
-export ZZGenus
-export ZZLocalGenus
-
 ###############################################################################
 #
 #  Integer genera

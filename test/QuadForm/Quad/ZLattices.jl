@@ -207,7 +207,7 @@ end
   L = biproduct(root_lattice(:A,2),root_lattice(:D,4))[1]
   R = root_lattice_recognition(L)
   @test length(R[1]) == 2
-  @test (:D,4) in R[1] && (:A,2) in R[1]
+  @test R[1] == Tuple{Symbol, Int}[(:A, 2), (:D, 4)]
   R = root_lattice_recognition_fundamental(L)
   @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
 
@@ -225,6 +225,14 @@ end
   rsLp = rescale(rsL,-1)
   @test length(Hecke._irreducible_components_short_vectors(rsLp, 2))==4
   @test length(Hecke._irreducible_components_short_vectors(rsLp, 4))==4
+
+  B = matrix(FlintQQ, 4, 4 ,[1, 0, 0, 0, 0, 3, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1]);
+  G = matrix(FlintQQ, 4, 4 ,[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 10]);
+  L = integer_lattice(B, gram = G);
+
+  ADE, _ = root_lattice_recognition(L)
+  @test length(ADE) == 2
+  @test all(R -> R[2] == 1, ADE)
 
   # isometry testing
   C1 = root_lattice(:A, 2)
@@ -269,6 +277,22 @@ end
     Ge = automorphism_group_generators(L, ambient_representation = true)
     test_automorphisms(L, Ge, true)
     Ge = automorphism_group_generators(L, ambient_representation = false)
+    test_automorphisms(L, Ge, false)
+    @test automorphism_group_order(L) == lattice_automorphism_group_order(D, i)
+  end
+
+  # Force using ZZRingElem's
+  L = lattice(D, 75)
+  Hecke.assert_has_automorphisms(L, try_small = false)
+  test_automorphisms(L, L.automorphism_group_generators, true)
+  @test L.automorphism_group_order == lattice_automorphism_group_order(D, 75)
+
+  # Call the Bacher polynomials
+  for i in [ 1, 101, 113 ] # triggering different checks in the Bacher polynomials
+    L = integer_lattice(gram = gram_matrix(lattice(D, i)))
+    Ge = automorphism_group_generators(L, ambient_representation = true, bacher_depth = 1)
+    test_automorphisms(L, Ge, true)
+    Ge = automorphism_group_generators(L, ambient_representation = false, bacher_depth = 1)
     test_automorphisms(L, Ge, false)
     @test automorphism_group_order(L) == lattice_automorphism_group_order(D, i)
   end
@@ -321,6 +345,18 @@ end
     @assert abs(det(X)) == 1
     L2 = integer_lattice(gram = X * gram_matrix(L) * transpose(X))
     b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
+    @test b
+    @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
+  end
+
+  # Call the Bacher polynomials
+  for i in [ 1, 101, 113 ] # triggering different checks in the Bacher polynomials
+    L = integer_lattice(gram = gram_matrix(lattice(D, i)))
+    n = rank(L)
+    X = change_base_ring(FlintQQ, _random_invertible_matrix(n, -3:3))
+    @assert abs(det(X)) == 1
+    L2 = integer_lattice(gram = X * gram_matrix(L) * transpose(X))
+    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false, bacher_depth = 1)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
@@ -447,8 +483,8 @@ end
   @test ok
   @test p == multiplicative_order(f)
 
-  @test_throws ErrorException root_lattice(:F,3)
-  @test_throws ErrorException root_lattice(:D,1)
+  @test_throws ErrorException root_lattice(:F, 3)
+  @test_throws ArgumentError root_lattice(:D, 1)
 
   L = root_lattice(:A, 2)
   @test signature_tuple(L) == (2,0,0)
@@ -709,6 +745,7 @@ let
   G = matrix(FlintQQ, 6, 6 ,[876708188094148315826780735392810, 798141405233250328867679564294410, -352823337641433300965521329447720, 326768950610851461363580717982402, -690595881941554449465975342845028, 433433545243019702766746394677218, 798141405233250328867679564294410, 867615301468758683549323652197099, -301315621373858240463110267500961, 316796431934778296047626373086339, -725765288914917260527454069649226, 505082964151083450666500945258490, -352823337641433300965521329447720, -301315621373858240463110267500961, 809946152369211852531731702980788, -343784636213856787915462553587466, 84764902049682607076640678540130, -613908853150167850995565570653796, 326768950610851461363580717982402, 316796431934778296047626373086339, -343784636213856787915462553587466, 219957919673551825679009958633894, -226934633316066727073394927118195, 298257387132139131540277459301842, -690595881941554449465975342845028, -725765288914917260527454069649226, 84764902049682607076640678540130, -226934633316066727073394927118195, 671443408734467545153681225010914, -277626128761200144008657217470664, 433433545243019702766746394677218, 505082964151083450666500945258490, -613908853150167850995565570653796, 298257387132139131540277459301842, -277626128761200144008657217470664, 640432299215298238271419741190578])
   L = integer_lattice(B, gram = G)
   @test automorphism_group_order(L) == 2
+  @test is_isometric_with_isometry(L, L)[1]
   G = [ ZZ[15 0 2 0; 0 30 0 4; 2 0 32 0; 0 4 0 64],
         ZZ[0 15 0 2; 15 0 2 0; 0 2 0 32; 2 0 32 0]];
   C = Hecke.ZLatAutoCtx(G)

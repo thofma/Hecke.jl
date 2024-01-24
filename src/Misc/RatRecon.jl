@@ -1,5 +1,3 @@
-export rational_reconstruction, farey_lift, berlekamp_massey
-
 ## given some r/s = a mod b and deg(r) = n, deg(s) <= m find r,s
 ## a and b better be polynomials in the same poly ring.
 ## seems to work for Q (Qx) and Fp experimentally
@@ -299,7 +297,7 @@ function _modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, M::In
    l1 = fpPolyRingElem[]; l2 = fpPolyRingElem[];l3 = ZZRingElem[]
    L = listprimes([f,g], p, M)
    for j in 1:length(L)
-     Rp, t = polynomial_ring(GF(Int(L[j]), cached=false), cached=false)
+     Rp, t = polynomial_ring(Native.GF(Int(L[j]), cached=false), cached=false)
      gp = Rp(g)
      fp = Rp(f)
      fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, -1, ErrorTolerant = ErrorTolerant)
@@ -426,13 +424,13 @@ function _modpResults(f, p::ZZRingElem, M::Int)
    Np = listprimes([f], p, M)
    Zx, Y = polynomial_ring(FlintZZ, "Y", cached=false)
    for j in 1:length(Np)
-     RNp = GF(Int(Np[j]), cached=false)
+     RNp = Native.GF(Int(Np[j]), cached=false)
      Rp, t = polynomial_ring(RNp, "t", cached=false)
      fp = Rp(f)
      if degree(fp) != degree(f)
        continue #bad prime...
      end
-     L1 = Nemo.fpFieldElem[]
+     L1 = fpFieldElem[]
      for i in 0:degree(fp)
         push!(L1, coeff(fp, i))
      end

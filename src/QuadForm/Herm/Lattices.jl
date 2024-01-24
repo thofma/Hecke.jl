@@ -1,5 +1,3 @@
-export maximal_integral_lattice, is_maximal_integral
-
 ################################################################################
 #
 #  String I/O

@@ -88,14 +88,14 @@ end
 ###############################################################################
 
 function *(x::T, y::T) where T <: NumFieldOrdElem
-  !check_parent(x, y) && error("Wrong parents")
+  @req check_parent(x, y) "Wrong parents"
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
 end
 
 function +(x::T, y::T) where T <: NumFieldOrdElem
-  !check_parent(x, y) && error("Wrong parents")
+  @req check_parent(x, y) "Wrong parents"
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   if x.has_coord && y.has_coord
@@ -107,7 +107,7 @@ function +(x::T, y::T) where T <: NumFieldOrdElem
 end
 
 function -(x::T, y::T) where T <: NumFieldOrdElem
-  !check_parent(x, y) && error("Wrong parents")
+  @req check_parent(x, y) "Wrong parents"
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
   if x.has_coord && y.has_coord
@@ -117,13 +117,11 @@ function -(x::T, y::T) where T <: NumFieldOrdElem
   return z
 end
 
-function divexact(x::T, y::T, check::Bool = true) where T <: NumFieldOrdElem
-  !check_parent(x, y) && error("Wrong parents")
+function divexact(x::T, y::T; check::Bool = true) where T <: NumFieldOrdElem
+  @req check_parent(x, y) "Wrong parents"
   a = divexact(x.elem_in_nf, y.elem_in_nf)
-  if check
-    if !in(a, parent(x))
-      error("Quotient not an element of the order")
-    end
+  if check && !(in(a, parent(x)))
+    throw(ArgumentError("Quotient not an element of the order."))
   end
   z = parent(x)()
   z.elem_in_nf = a
@@ -174,12 +172,10 @@ for T in [Integer, ZZRingElem]
       return z
     end
 
-    function divexact(a::NumFieldOrdElem, b::$T, check::Bool = true)
+    function divexact(a::NumFieldOrdElem, b::$T; check::Bool = true)
       t = divexact(a.elem_in_nf, b)
-      if check
-        if !in(t, parent(a))
-          error("Quotient not an element of the order.")
-        end
+      if check && !(in(t, parent(a)))
+        throw(ArgumentError("Quotient not an element of the order."))
       end
       c  = parent(a)(t)
       return c

@@ -1,5 +1,3 @@
-export opposite_algebra
-
 mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   header::MapHeader{R, S}
 

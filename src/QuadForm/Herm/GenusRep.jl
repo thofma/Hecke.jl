@@ -1,6 +1,3 @@
-export representatives, genus_representatives
-
-
 # Genus representatives for quadratic lattices,
 #
 # With permission ported from Magma package of Markus Kirschmer:
@@ -504,7 +501,7 @@ function genus_generators(L::HermLat)
       l = length(PP)
       VD = Int[ valuation(D, P) for P in PP ]
       K, k = kernel(nnorm)
-      F = Nemo._GF(2, cached = false)
+      F = GF(2, cached = false)
       V = VectorSpace(F, length(PP))
       S = elem_type(V)[]
       for u in gens(K)

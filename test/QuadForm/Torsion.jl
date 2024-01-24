@@ -181,6 +181,24 @@
   T1 = discriminant_group(L1)
   @test genus(T1, (6,0)) == genus(L1)
 
+  B = matrix(FlintQQ, 8, 8 ,[2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3//2, 1//2, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1//2, 0, 1//2, 0, 0, 2//3, 1//6]);
+  G = matrix(FlintQQ, 8, 8 ,[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, 0, 0, 0, 0, -42]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test genus(T, signature_tuple(L)[[1,3]]) == genus(L)
+  T2 = Hecke._as_finite_bilinear_module(T)
+  @test genus(T2, signature_tuple(L)[[1,3]]; parity = 2) == genus(L)
+
+  B = matrix(FlintQQ, 7, 7 ,[2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1//2, 1//2, 1//2, 0, 1//2, 0, 0, 1//2, 1, 1//2, 3//2, 0, 1//2, 0, 1//2, 1, 1//2, 1, 0, 0, 1//2]);
+  G = matrix(FlintQQ, 7, 7 ,[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, -10]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test genus(T, signature_tuple(L)[[1,3]]) == genus(L)
+  T2 = Hecke._as_finite_bilinear_module(T)
+  @test genus(T2, signature_tuple(L)[[1,3]]; parity = 2) == genus(L)
+
   #test for is_genus
   L = integer_lattice(gram=diagonal_matrix(ZZRingElem[1,2,3,4]))
   D = discriminant_group(L)
@@ -195,6 +213,20 @@
   D = discriminant_group(G)
   @test is_genus(D, (2,0)) == false
   @test is_genus(D, (3,0)) == true
+
+  B = matrix(FlintQQ, 7, 7 ,[2, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1//2, 13//2, 1//2, 1//2, 1, 0, 0, 3//2, 3, 0, 1//2, 1//2, 1//2, 0, 1, 5//2, 1//2, 0, 0, 0, 1//2]);
+  G = matrix(FlintQQ, 7, 7 ,[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, -38]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test is_genus(T, signature_tuple(L)[[1,3]]; parity = 1)
+
+  B = matrix(FlintQQ, 6, 6 ,[2, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 1, 6, 1, 0, 0, 0, 0, 5, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1//2, 9, 1//2, 0, 0, 1//2]);
+  G = matrix(FlintQQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test is_genus(T, signature_tuple(L)[[1,3]]; parity = 1)
 
   N, i = normal_form(D)
   @test N === normal_form(N)[1]

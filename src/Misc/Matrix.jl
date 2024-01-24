@@ -1,6 +1,3 @@
-export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal, saturate,
-       has_finite_multiplicative_order, multiplicative_order
-
 import Nemo.matrix
 
 ################################################################################
@@ -1484,4 +1481,21 @@ function _det_triangular(M::MatElem)
     mul!(d, d, M[i, i])
   end
   return d
+end
+
+function remove_row(M, r)
+  N = zero_matrix(base_ring(M), nrows(M) - 1, ncols(M))
+  n = nrows(M)
+  m = ncols(M)
+  l = 1
+  for i in 1:n
+    if i == r
+      continue
+    end
+    for j in 1:m
+      N[l, j] = M[i, j]
+    end
+    l += 1
+  end
+  return N
 end

@@ -105,7 +105,7 @@ const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
 
   function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
-    z.elem_in_algebra = dot(O.basis_alg, arr)
+    z.elem_in_algebra = degree(O) == 0 ? zero(algebra(O)) : dot(O.basis_alg, arr)
     z.coordinates = arr
     z.parent = O
     z.has_coord = true
@@ -190,32 +190,36 @@ end
     r = AlgAssAbsOrdIdl{S, T}(A)
     r.basis_matrix = M
     n = nrows(M)
-    if is_lower_triangular(M)
-      i = 0
-      while i < n && is_zero_row(M, i + 1)
-        i += 1
-      end
-      r.full_rank = (i == 0) ? 1 : -1
-      r.rank = n - i
-      if r.full_rank == 1
-        r.eldiv_mul = reduce(lcm, diagonal(numerator(M, copy = false)), init = one(ZZ))
+    if is_square(M)
+      if is_lower_triangular(M)
+        i = 0
+        while i < n && is_zero_row(M, i + 1)
+          i += 1
+        end
+        r.full_rank = (i == 0) ? 1 : -1
+        r.rank = n - i
+        if r.full_rank == 1
+          r.eldiv_mul = reduce(*, diagonal(numerator(M, copy = false)), init = one(ZZ))
+        else
+          r.eldiv_mul = zero(ZZ)
+        end
+      elseif is_upper_triangular(M)
+        i = n + 1
+        while i > 0 && is_zero_row(M, i - 1)
+          i -= 1
+        end
+        r.rank = i - 1
+        r.full_rank = (i == n + 1) ? 1 : -1
+        if r.full_rank == 1
+          r.eldiv_mul = reduce(*, diagonal(numerator(M, copy = false)), init = one(ZZ))
+        else
+          r.eldiv_mul = zero(ZZ)
+        end
       else
-        r.eldiv_mul = zero(ZZ)
-      end
-    elseif is_upper_triangular(M)
-      i = n + 1
-      while i > 0 && is_zero_row(M, i - 1)
-        i -= 1
-      end
-      r.rank = i - 1
-      r.full_rank = (i == n + 1) ? 1 : -1
-      if r.full_rank == 1
-        r.eldiv_mul = reduce(lcm, diagonal(numerator(M, copy = false)), init = one(ZZ))
-      else
-        r.eldiv_mul = zero(ZZ)
+        error("basis matrix not triangular matrix")
       end
     else
-      error("basis matrix not triangular matrix")
+      r.full_rank = 0
     end
 
     return r

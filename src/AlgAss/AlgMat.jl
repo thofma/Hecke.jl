@@ -1,5 +1,3 @@
-export matrix_algebra
-
 ################################################################################
 #
 #  Basic field access
@@ -57,6 +55,14 @@ function is_commutative(A::AlgMat)
     return A.is_commutative == 1
   end
   dcr = dim_of_coefficient_ring(A)
+  if degree(A) == 1
+    if is_commutative(base_ring(A))
+      A.is_commutative = 1
+      return true
+    end
+    A.is_commutative = 2
+    return false
+  end
   if dim(A) == degree(A)^2*dcr
     A.is_commutative = 2
     return false

@@ -1,5 +1,3 @@
-export PrimesSet
-
 ################################################################################
 #
 #  Primes iterator
@@ -22,7 +20,7 @@ mutable struct n_primes_struct
     n_primes_init!(r)
     finalizer(r) do r
       ccall((:n_primes_clear, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, ), r)
-    end  
+    end
     return r
   end
 

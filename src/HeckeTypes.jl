@@ -4,9 +4,6 @@
 #
 ################################################################################
 
-export NonSimpleNumField
-
-export NonSimpleNumFieldElem
 """
     NonSimpleNumField{T}
 
@@ -33,8 +30,6 @@ abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
 #
 ################################################################################
 
-export NumFieldOrd, NumFieldOrdElem
-
 """
     NumFieldOrd
 
@@ -51,7 +46,6 @@ abstract type NumFieldOrdElem <: RingElem end
 #
 ################################################################################
 
-export NumFieldOrdIdl, NumFieldOrdFracIdl
 """
     NumFieldOrdIdl
 
@@ -494,8 +488,6 @@ end
 #
 ################################################################################
 
-export FakeFmpqMat, FakeFmpqMatSpace
-
 struct FakeFmpqMatSpace
   rows::Int
   cols::Int
@@ -647,8 +639,6 @@ end
 #
 ################################################################################
 
-export NfAbsOrdSet
-
 mutable struct NfAbsOrdSet{T}
   nf::T
 
@@ -664,8 +654,6 @@ NfAbsOrdSet(a::T, cached::Bool = false) where {T} = NfAbsOrdSet{T}(a, cached)
 const NfAbsOrdSetID = IdDict()
 
 const NfOrdSet = NfAbsOrdSet
-
-export NfOrd, NfAbsOrd
 
 @attributes mutable struct NfAbsOrd{S, T} <: NumFieldOrd
   nf::S
@@ -782,10 +770,6 @@ const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, NfAbsOrd}()
 #
 ################################################################################
 
-export NfOrdElem
-
-export NfAbsOrdElem
-
 mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
   elem_in_nf::T
   coordinates::Vector{ZZRingElem}
@@ -887,10 +871,6 @@ const NfOrdElem = NfAbsOrdElem{AnticNumberField, nf_elem}
 #  NfOrdIdlSet/NfOrdIdl
 #
 ################################################################################
-
-export NfOrdIdl
-
-export NfAbsOrdIdl
 
 struct NfAbsOrdIdlSet{S, T}
   order::NfAbsOrd{S, T}
@@ -1942,8 +1922,6 @@ end
 #
 ################################################################################
 
-export Plc, InfPlc
-
 abstract type Plc end
 
 # The field is not necessary, but we want to parametrize by it
@@ -2003,8 +1981,6 @@ parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
 ################################################################################
 
 abstract type GModule end
-
-export ZpnGModule
 
 mutable struct ZpnGModule <: GModule
   R::Nemo.zzModRing

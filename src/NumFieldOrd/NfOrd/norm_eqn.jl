@@ -1,5 +1,3 @@
-export is_norm, norm_equation
-
 #TODO: verbose printing
 
 function norm_1_generators(A::Vector{NfOrdIdl})

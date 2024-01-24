@@ -146,7 +146,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
       continue
     end
 
-    Rp = Nemo.GF(p, cached=false)
+    Rp = Nemo.Native.GF(p, cached=false)
     Rpt, t = polynomial_ring(Rp, "t", cached=false)
     gp = Rpt(K.pol)
     if degree(gp) < degree(K) || iszero(discriminant(gp))
@@ -676,7 +676,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
 
   K = base_ring(f)
   k = max(k, 2)
-  Rp = GF(p, cached=false)
+  Rp = Nemo.Native.GF(p, cached=false)
   Rpt, t = polynomial_ring(Rp, "t", cached=false)
   gp = Rpt(K.pol)
   lp = factor(gp).fac
