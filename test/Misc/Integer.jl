@@ -1,6 +1,6 @@
 @testset "Integers" begin
     
-    @test is_commuatative(ZZ) == true
+    @test is_commutative(ZZ) == true
 
     @test modord(2,3) == 2
 
