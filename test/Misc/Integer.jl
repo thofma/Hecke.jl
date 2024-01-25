@@ -1,4 +1,5 @@
 @testset "Integers" begin
+
     
     @test is_commutative(ZZ) == true
 
@@ -14,8 +15,12 @@
 
     @test carmichael_lambda(ZZ(8)) == ZZ(2)
    
+    @test sort(evaluate.(Hecke.euler_phi_inv_fac_elem(ZZ(4)))) == ZZ.([5, 8 ,10 ,12])   
     
-    
-    
-    
+    @test carmichael_lambda(ZZ(1*2^3)) == ZZ(2) 
+
+    @test carmichael_lambda(8) == 2 
+
+
+
 end
