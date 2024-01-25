@@ -1327,7 +1327,7 @@ end
 function _fac_and_lift(f::QQMPolyRingElem, p, degree_limit, lower_limit)
   Zx, x = polynomial_ring(FlintZZ, cached = false)
   Zmodpx = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)[1]
-  fmodp = Zmodpx(f)
+  fmodp = Zmodpx(to_univariate(Globals.Qx, f))
   fac = factor(fmodp)
   lifted_fac = Vector{Tuple{ZZPolyRingElem, Int}}()
   for (k, v) in fac
@@ -1414,7 +1414,7 @@ function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::IntegerUnion, d
           end
           push!(rt, a)
         end
-        push!(RT, [_lift_p2(Fq2, Zx(all_f[ti]), i) for i = rt[end]])
+        push!(RT, [_lift_p2(Fq2, Zx(to_univariate(Globals.Qx, all_f[ti])), i) for i = rt[end]])
       end
       append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
       append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT), inplace = true])
