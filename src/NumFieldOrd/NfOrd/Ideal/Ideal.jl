@@ -120,7 +120,6 @@ end
 function show(io::IO, a::NfAbsOrdIdlSet)
   print(io, "Set of ideals of ")
   show(Base.IOContext(io, :compact => true), order(a))
-  print(io, "\n")
 end
 
 function show(io::IO, a::NfAbsOrdIdl)

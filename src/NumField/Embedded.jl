@@ -287,3 +287,25 @@ end
 function is_rational(x::EmbeddedElem)
   return is_rational(data(x))
 end
+
+################################################################################
+#
+#  Factorization and roots
+#
+################################################################################
+
+function roots(f::PolyRingElem{<:EmbeddedElem})
+  E = base_ring(parent(f))
+  K = number_field(E)
+  return E.(roots(map_coefficients(data, f, cached = false)))
+end
+
+function factor(f::PolyRingElem{<:EmbeddedElem})
+  Ex = parent(f)
+  E = base_ring(parent(f))
+  K = number_field(E)
+  fa = factor(map_coefficients(data, f, cached = false))
+  return Fac(Ex(E(constant_coefficient(unit(fa)))),
+             Dict{typeof(f), Int}(
+               (map_coefficients(E, g, parent = Ex), e) for (g, e) in fa))
+end

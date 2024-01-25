@@ -138,6 +138,7 @@ dets(::HermLocalGenus)
 discriminant(::HermLocalGenus, ::Int)
 discriminant(::HermLocalGenus)
 norm(::HermLocalGenus, ::Int)
+norm(::HermLocalGenus)
 norms(::HermLocalGenus)
 ```
 
@@ -336,6 +337,8 @@ signatures(::HermGenus)
 rank(::HermGenus)
 is_integral(::HermGenus)
 local_symbols(::HermGenus)
+scale(::HermGenus)
+norm(::HermGenus)
 ```
 
 #### Examples

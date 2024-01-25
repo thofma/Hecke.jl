@@ -90,5 +90,19 @@ test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
   @test @inferred is_rational(a^0)
   @test !is_rational(a)
   @test (@inferred QQ(2*a^0)) == 2 * one(QQ)
+
+  # roots and factor
+  begin
+    Qx, x = QQ["x"]
+    K, _a = number_field(x^2 - 2, "a")
+    i = Hecke.real_embedding(K, 1.41)
+    E, a = Hecke.embedded_field(K, i)
+    Et, t = E["t"]
+    @test issetequal(roots(t^2 - 2), [a, -a])
+    fa = factor(t^2 - 2)
+    @test unit(fa) * prod(g^e for (g, e) in fa) == t^2 - 2
+    fa = factor(t^2 - a)
+    @test unit(fa) * prod(g^e for (g, e) in fa) == t^2 - a
+  end
 end
 

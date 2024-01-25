@@ -1040,7 +1040,7 @@ function trace_assure(K::NfAbsNS)
     return
   end
   Qx, x = polynomial_ring(FlintQQ, cached = false)
-  K.traces = Vector{QQFieldElem}[total_degree(f) == 1 ? QQFieldElem[] : polynomial_to_power_sums(Qx(f), total_degree(f)-1) for f = K.pol]
+  K.traces = Vector{QQFieldElem}[total_degree(f) == 1 ? QQFieldElem[] : polynomial_to_power_sums(to_univariate(Qx, f), total_degree(f)-1) for f = K.pol]
 end
 
 #= Idea

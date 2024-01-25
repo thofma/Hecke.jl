@@ -10,16 +10,16 @@ add_assertion_scope(:HNF)
 
 
 function show(io::IO, M::ModuleCtxNmod)
-  print(io, "Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))\n")
+  print(io, "Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))")
 end
 
 function show(io::IO, M::ModuleCtx_fmpz)
-  print(io, "Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))\n")
+  print(io, "Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))")
   if isdefined(M, :basis_idx)
-    print(io, "current index: $(M.basis_idx)\n")
+    print(io, "\ncurrent index: $(M.basis_idx)")
   end
   if isdefined(M, :essential_elementary_divisors)
-    print(io, "current structure: $(M.essential_elementary_divisors)\n")
+    print(io, "\ncurrent structure: $(M.essential_elementary_divisors)")
   end
 end
 

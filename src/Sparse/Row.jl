@@ -131,7 +131,7 @@ end
 ################################################################################
 
 function show(io::IO, A::SRow{T}) where T
-  print(io, "Sparse row with positions $(A.pos) and values $(A.values)\n")
+  print(io, "Sparse row with positions $(A.pos) and values $(A.values)")
 end
 
 ################################################################################

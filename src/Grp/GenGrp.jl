@@ -352,7 +352,7 @@ function Base.show(io::IO, G::GrpGen)
 end
 
 function Base.show(io::IO, g::GrpGenElem)
-  print(io, "($(g.i))\n")
+  print(io, "($(g.i))")
 end
 
 ################################################################################

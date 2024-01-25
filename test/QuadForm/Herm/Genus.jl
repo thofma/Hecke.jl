@@ -391,11 +391,16 @@
   @test sprint(show, "text/plain", G, context = :compact => true) isa String
   @test sprint(show, G) isa String
   @test sprint(show, G, context = :compact => true) isa String
+  @test scale(G) == scale(L)
+  @test norm(G) == norm(L)
+
   g = @inferred genus(HermLat, E1, q, [(0, 2, 1)])
   M = representative(g)
   G2 = genus(M)
   @test genus(representative(direct_sum(G, G2))) == direct_sum(G, G2)
   @test genus(representative(direct_sum(G2, G))) == direct_sum(G2, G)
+  @test scale(G2) == scale(M)
+  @test norm(G2) == norm(M)
 
   rlp = real_places(K)
   sig = Dict(rlp[1] => 2, rlp[2] => 2)
