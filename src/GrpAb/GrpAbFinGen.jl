@@ -288,11 +288,11 @@ normal form.
 is_snf(A::GrpAbFinGen) = A.is_snf
 
 @doc raw"""
-    ngens(G::GrpAbFinGen) -> Int
+    number_of_generators(G::GrpAbFinGen) -> Int
 
 Return the number of generators of $G$ in the current representation.
 """
-function ngens(A::GrpAbFinGen)
+function number_of_generators(A::GrpAbFinGen)
   if is_snf(A)
     return length(A.snf)
   else
@@ -301,11 +301,11 @@ function ngens(A::GrpAbFinGen)
 end
 
 @doc raw"""
-    nrels(G::GrpAbFinGen) -> Int
+    number_of_relations(G::GrpAbFinGen) -> Int
 
 Return the number of relations of $G$ in the current representation.
 """
-function nrels(A::GrpAbFinGen)
+function number_of_relations(A::GrpAbFinGen)
   if is_snf(A)
     return length(A.snf)
   else
@@ -1525,12 +1525,28 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::IntegerUnion)
 end
 
 @doc raw"""
-    psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion) -> GrpAbFinGen, GrpAbFinGenMap
+    sylow_subgroup(G::GrpAbFinGen, p::IntegerUnion) -> GrpAbFinGen, GrpAbFinGenMap
 
-Return the $p$-Sylow subgroup of `G`.
+Return the Sylow $p-$subgroup of the finitely generated abelian group `G`, for a
+prime `p`. This is the subgroup of `p`-power order in `G` whose index in `G` is
+coprime to `p`.
+
+# Examples
+```jldoctest
+julia> A = abelian_group(ZZRingElem[2, 6, 30])
+GrpAb: Z/2 x Z/6 x Z/30
+
+julia> H, j = sylow_subgroup(A, 2);
+
+julia> H
+GrpAb: (Z/2)^3
+
+julia> divexact(order(A), order(H))
+45
+```
 """
-function psylow_subgroup(G::GrpAbFinGen, p::IntegerUnion,
-                         to_lattice::Bool = true)
+function sylow_subgroup(G::GrpAbFinGen, p::IntegerUnion,
+                        to_lattice::Bool = true)
   @req is_prime(p) "Number ($p) must be prime"
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)

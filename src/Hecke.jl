@@ -198,6 +198,21 @@ using .Globals
 
 ################################################################################
 #
+#  Aliases
+#
+################################################################################
+
+# to make the alias of a function introduced in Hecke already available,
+# one needs to create a function stub, export it, and then do the alias
+function number_of_lattices end
+function number_of_relations end
+export number_of_lattices
+export number_of_relations
+@alias nlattices number_of_lattices
+@alias nrels number_of_relations
+
+################################################################################
+#
 #  AbstractAlgebra/Nemo shenanigans
 #
 ################################################################################

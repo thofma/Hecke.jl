@@ -112,7 +112,7 @@ export SRow
 export StepRange
 export TorQuadModule
 export TorQuadModuleElem
-export TorQuadModuleMor
+export TorQuadModuleMap
 export UnitGroup
 export VecSpaceRes
 export ZZGenus
@@ -763,7 +763,6 @@ export pseudo_matrix
 export psi_lower
 export psi_upper
 export psubgroups
-export psylow_subgroup
 export push!
 export push_through_isogeny
 export qAdicConj
@@ -898,6 +897,7 @@ export supersingular_polynomial
 export support
 export swan_module
 export swap_rows!
+export sylow_subgroup
 export symbol
 export t2
 export tamagawa_number

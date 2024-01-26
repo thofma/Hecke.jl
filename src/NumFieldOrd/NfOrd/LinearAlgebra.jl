@@ -345,12 +345,12 @@ end
 
 pseudo_matrix(c::Vector{NfOrdIdl}) = pseudo_matrix(map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c))
 
-function nrows(m::PMat)
-  return nrows(m.matrix)
+function number_of_rows(m::PMat)
+  return number_of_rows(m.matrix)
 end
 
-function ncols(m::PMat)
-  return ncols(m.matrix)
+function number_of_columns(m::PMat)
+  return number_of_columns(m.matrix)
 end
 
 
@@ -1440,12 +1440,12 @@ function pseudo_matrix2(m::Generic.Mat{NfOrdElem}, r::Vector{NfOrdFracIdl}, c::V
    return PMat(mm, rr, cc)
 end
 
-function nrows(m::PMat2)
-   return nrows(m.matrix)
+function number_of_rows(m::PMat2)
+   return number_of_rows(m.matrix)
 end
 
-function ncols(m::PMat2)
-   return ncols(m.matrix)
+function number_of_columns(m::PMat2)
+   return number_of_columns(m.matrix)
 end
 
 function pseudo_snf_kb(P::PMat2)

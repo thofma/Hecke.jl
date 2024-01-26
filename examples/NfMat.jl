@@ -167,8 +167,8 @@ function Base.checkbounds(M::NfMatElem, i::Int, j::Int)
   Base.checkbounds(Bool, M, i, j) || throw(BoundsError(M, (i,j)))
 end
 
-Hecke.nrows(M::NfMatElem) = M.nrows
-Hecke.ncols(M::NfMatElem) = M.ncols
+Hecke.number_of_rows(M::NfMatElem) = M.nrows
+Hecke.number_of_columns(M::NfMatElem) = M.ncols
 Hecke.base_ring(M::NfMatElem) = M.base_ring
 
 @inline rows(M::NfMatElem) = M.rows
@@ -964,8 +964,8 @@ function fmpz_poly_mat_clear(M::fmpz_poly_mat)
 end
 
 Hecke.base_ring(::fmpz_poly_mat) = Hecke.Globals.Zx
-Hecke.nrows(M::fmpz_poly_mat) = M.r
-Hecke.ncols(M::fmpz_poly_mat) = M.c
+Hecke.number_of_rows(M::fmpz_poly_mat) = M.r
+Hecke.number_of_columns(M::fmpz_poly_mat) = M.c
 
 function Base.getindex(M::fmpz_poly_mat, i::Int, j::Int)
   f = Hecke.Globals.Zx()

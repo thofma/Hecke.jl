@@ -2123,7 +2123,7 @@ end
 
 @doc raw"""
     glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
-                           -> Tuple{TorQuadModuleMor, TorQuadModuleMor, TorQuadModuleMor}
+                           -> Tuple{TorQuadModuleMap, TorQuadModuleMap, TorQuadModuleMap}
 
 Given three integral $\mathbb Z$-lattices `L`, `S` and `R`, with `S` and `R`
 primitive sublattices of `L` and such that the sum of the ranks of `S` and `R`
@@ -2207,7 +2207,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
 end
 
 @doc raw"""
-    overlattice(glue_map::TorQuadModuleMor) -> ZZLat
+    overlattice(glue_map::TorQuadModuleMap) -> ZZLat
 
 Given the glue map of a primitive extension of $\mathbb Z$-lattices
 $S+R \subseteq L$, return `L`.
@@ -2248,7 +2248,7 @@ julia> overlattice(glue) == M
 true
 ```
 """
-function overlattice(glue_map::TorQuadModuleMor)
+function overlattice(glue_map::TorQuadModuleMap)
   S = relations(domain(glue_map))
   R = relations(codomain(glue_map))
   glue = [lift(g) + lift(glue_map(g)) for g in gens(domain(glue_map))]

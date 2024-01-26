@@ -134,5 +134,5 @@ biproduct(x::Vector{TorQuadModule})
 ### Submodules
 ```@docs
 submodules(::TorQuadModule)
-stable_submodules(::TorQuadModule, ::Vector{TorQuadModuleMor})
+stable_submodules(::TorQuadModule, ::Vector{TorQuadModuleMap})
 ```

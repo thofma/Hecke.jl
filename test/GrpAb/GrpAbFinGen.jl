@@ -307,11 +307,11 @@
 
   @testset "p-Sylow subgroup" begin
     G = abelian_group([1, 3, 9, 5, 15, 20, 7])
-    P, mP = psylow_subgroup(G, 3)
+    P, mP = sylow_subgroup(G, 3)
     @test order(P) == 3^valuation(order(G), 3)
-    P, mP = psylow_subgroup(G, 5)
+    P, mP = sylow_subgroup(G, 5)
     @test order(P) == 5^valuation(order(G), 5)
-    P, mP = psylow_subgroup(G, 11)
+    P, mP = sylow_subgroup(G, 11)
     @test order(P) == 11^valuation(order(G), 11)
   end
 

@@ -495,8 +495,8 @@ mutable struct RRSMat
   end
 end
 
-Hecke.nrows(A::RRSMat) = A.nrows
-Hecke.ncols(A::RRSMat) = A.ncols
+Hecke.number_of_rows(A::RRSMat) = A.nrows
+Hecke.number_of_columns(A::RRSMat) = A.ncols
 
 Hecke.parent(M::RRSMat) = M.parent
 import Base:+, *, inv
