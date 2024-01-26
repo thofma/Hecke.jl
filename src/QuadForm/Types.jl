@@ -296,7 +296,7 @@ end
 ### Maps
 
 @doc raw"""
-    TorQuadModuleMor
+    TorQuadModuleMap
 
 Type for abelian group homomorphisms between torsion quadratic modules. It
 consists of a header which keeps track of the domain and the codomain of type
@@ -357,7 +357,7 @@ Map
   with structure of GrpAb: (Z/3)^2 x Z/12
 ```
 
-Note that an object of type `TorQuadModuleMor` needs not to be a morphism
+Note that an object of type `TorQuadModuleMap` needs not to be a morphism
 of torsion quadratic modules, i.e. it does not have to preserve the
 respective bilinear or quadratic forms of its domain and codomain. Though,
 it must be a homomorphism between the underlying finite abelian groups.
@@ -400,16 +400,16 @@ julia> is_bijective(f)
 true
 ```
 
-Hecke provides several constructors for objects of type `TorQuadModuleMor`, see
+Hecke provides several constructors for objects of type `TorQuadModuleMap`, see
 for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
 [`hom(::TorQuadModule, ::TorQuadModule, ::Vector{TorQuadModuleElem})`](@ref),
 [`identity_map(::TorQuadModule)`](@ref) or [`trivial_morphism(::TorQuadModule)`](@ref).
 """
-mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}
+mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMap}
   header::MapHeader{TorQuadModule, TorQuadModule}
   map_ab::GrpAbFinGenMap
 
-  function TorQuadModuleMor(T::TorQuadModule, S::TorQuadModule, m::GrpAbFinGenMap)
+  function TorQuadModuleMap(T::TorQuadModule, S::TorQuadModule, m::GrpAbFinGenMap)
     z = new()
     z.header = MapHeader(T, S)
     z.map_ab = m

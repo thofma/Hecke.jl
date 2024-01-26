@@ -205,7 +205,7 @@ include(joinpath(pathof(Nemo), "..", "Aliases.jl"))
 
 @alias TorQuadMod TorQuadModule
 @alias TorQuadModElem TorQuadModuleElem
-@alias TorQuadModMor TorQuadModuleMor
+@alias TorQuadModMor TorQuadModuleMap
 
 @alias ZGenus ZZGenus
 @alias ZLat ZZLat

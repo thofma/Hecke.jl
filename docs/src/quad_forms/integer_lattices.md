@@ -157,7 +157,7 @@ See [`discriminant_group(L::ZZLat)`](@ref).
 ### Overlattices
 ```@docs
 glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
-overlattice(glue_map::TorQuadModuleMor)
+overlattice(glue_map::TorQuadModuleMap)
 local_modification(M::ZZLat, L::ZZLat, p)
 maximal_integral_lattice(L::ZZLat)
 ```
