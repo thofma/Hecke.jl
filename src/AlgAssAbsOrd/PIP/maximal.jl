@@ -142,7 +142,7 @@ function _reps_for_totally_positive(c::nf_elem, K::AnticNumberField)
   if is_totally_positive(c)
     el = one(K)
   else
-    fl, q = haspreimage(h, tar)
+    fl, q = has_preimage_with_preimage(h, tar)
     if !fl
       return false, zero(K), nf_elem[]
     end

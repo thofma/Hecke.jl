@@ -135,6 +135,14 @@
 @deprecate divexact(a::NumFieldOrdElem, b::ZZRingElem, check::Bool) divexact(a, b; check=check)
 @deprecate divexact(x::T, y::T, check::Bool) where T <: NumFieldOrdElem divexact(x, y; check=check)
 
+# Deprecated during 0.24.*
+
+@deprecate has_image has_image_with_image
+
+@depreacte haspreimage has_preimage_with_preimage
+
+@depreacte has_preimage has_preimage_with_preimage
+
 # Things that moved to Nemo
 
 # > 0.18.1

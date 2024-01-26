@@ -100,7 +100,7 @@ end
 
 function preimage(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
   if !isdefined(f, :imap)
-    fl, r = haspreimage(f, a)
+    fl, r = has_preimage_with_preimage(f, a)
     fl || error("element is not in the image")
     return r
   end

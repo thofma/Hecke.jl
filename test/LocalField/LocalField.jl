@@ -166,7 +166,7 @@
     for i in 1:10
       z = mk\(rand(k))
       @test z == f\(f(z))
-      fl, w = @inferred haspreimage(f, z)
+      fl, w = @inferred has_preimage_with_preimage(f, z)
       @test fl
       @test f(w) == z
     end
@@ -195,7 +195,7 @@
     @test f(a) == L(gen(Qq))
     @test_throws ErrorException hom(Qq, L, b)
     @test f\(L(gen(Qq))) == gen(Qq)
-    fl, z = @inferred haspreimage(f, b^3)
+    fl, z = @inferred has_preimage_with_preimage(f, b^3)
     @test fl
     @test f(z) == L(-2)
 

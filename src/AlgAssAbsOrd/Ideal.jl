@@ -1605,7 +1605,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl)
   basis_in_A = Vector{elem_type(A)}(undef, nrows(N))
   for i = 1:nrows(N)
     t = elem_from_mat_row(B, N.num, i, N.den)
-    b, s = haspreimage(m, t)
+    b, s = has_preimage_with_preimage(m, t)
     @assert b
     basis_in_A[i] = s
   end
@@ -1637,7 +1637,7 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
   basis_in_A = Vector{elem_type(A)}(undef, dim(B))
   for i = 1:dim(B)
     t = elem_from_mat_row(OB, N, i)
-    b, s = haspreimage(m, elem_in_algebra(t, copy = false))
+    b, s = has_preimage_with_preimage(m, elem_in_algebra(t, copy = false))
     @assert b
     basis_in_A[i] = s
   end

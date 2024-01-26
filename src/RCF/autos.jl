@@ -988,7 +988,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{nf_elem, AnticNumberField}, 
   checkAuto = get_assertion_level(:ClassField) > 0
   mp = hom(gens(G), imgs, check = checkAuto)
   b = H(imgs_rhs)
-  fl, coord = haspreimage(mp, b)
+  fl, coord = has_preimage_with_preimage(mp, b)
   if !fl
     return false, coord, el
   end
@@ -1135,7 +1135,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
     q, mq = quo(T_grp, divexact(C.o, Int(t_corr_b)))
     @assert domain(mq) == T_grp
     _, ms = sub(q, [mq(x) for x = t_gen])
-    fl, lf = haspreimage(ms, mq(t_tau_g))
+    fl, lf = has_preimage_with_preimage(ms, mq(t_tau_g))
     @assert fl
     mu = prod(all_emb[j][1]^lf[j] for j=1:length(D)) * inv(b)
     fl, rt = is_power(mu, divexact(C.o, Int(t_corr_b)))

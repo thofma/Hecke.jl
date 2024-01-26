@@ -114,7 +114,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         # Check whether this group brings anything new
         skip = true
         for g in gens(UK)
-          b = haspreimage(GtoUk, N(g))[1]
+          b = has_preimage_with_preimage(GtoUk, N(g))[1]
           if !b
             skip = false
             break
@@ -143,7 +143,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
       u = get!(solutions_mod_units, s) do
         return mUk\divexact(NC.a, Ok(normred(s)))
       end
-      b, v = haspreimage(GtoUk, u)
+      b, v = has_preimage_with_preimage(GtoUk, u)
       if !b
         continue
       end
@@ -274,7 +274,7 @@ function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, Kto
 
     g = GtoQ\sinQ
     h = hom(UK, G, [ GtoQ\(OKtoQ(mUK(UK[i]))) for i = 1:ngens(UK) ])
-    b, u = haspreimage(h, g)
+    b, u = has_preimage_with_preimage(h, g)
     if b
       Q, toQ = quo(UK, kernel(h)[1])
       u = toQ\(toQ(u)) # Reduce the coefficient size (hopefully)

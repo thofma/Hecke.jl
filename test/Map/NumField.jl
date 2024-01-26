@@ -13,7 +13,7 @@
   for i in 1:10
     z = rand(K, -2:2)
     @test z == f\(f(z))
-    fl, w = @inferred haspreimage(f, z)
+    fl, w = @inferred has_preimage_with_preimage(f, z)
     @test fl
     @test f(w) == z
   end
@@ -47,7 +47,7 @@
   @test domain(l) === k
   @test codomain(l) === K
 
-  fl, z = @inferred haspreimage(f, a)
+  fl, z = @inferred has_preimage_with_preimage(f, a)
   @test !fl
 
   for i in 1:10
@@ -67,7 +67,7 @@
   @test f(a) == -b
   @test_throws ErrorException hom(K, L, b + 1)
   @test f\(-b) == a
-  fl, z = @inferred haspreimage(f, -b)
+  fl, z = @inferred has_preimage_with_preimage(f, -b)
   @test fl
 
   f = @inferred hom(K, L, -b, inverse = (one(K), -a))
@@ -96,7 +96,7 @@
 
   h = hom(QQQ, K, one(K))
 
-  fl, _ = @inferred haspreimage(h, gen(K))
+  fl, _ = @inferred has_preimage_with_preimage(h, gen(K))
   @test !fl
 
   l = @inferred h * f
@@ -336,9 +336,9 @@
     @test f == g
     @test_throws ErrorException hom(QQ, K, K(2))
     @test K(2) == @inferred (f(QQ(2)))
-    fl, c = @inferred haspreimage(f, K(2))
+    fl, c = @inferred has_preimage_with_preimage(f, K(2))
     @test fl && c == QQ(2)
-    fl, c = @inferred haspreimage(f, a)
+    fl, c = @inferred has_preimage_with_preimage(f, a)
     @test !fl
 
     h = hom(K, K)

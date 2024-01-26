@@ -406,7 +406,7 @@ function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, pri
 
     g = GtoQ\sinQ
     h = hom(UK, G, [ GtoQ\(OKtoQ(mUK(UK[i]))) for i = 1:ngens(UK) ])
-    b, u = haspreimage(h, g)
+    b, u = has_preimage_with_preimage(h, g)
     if b
       Q, toQ = quo(UK, kernel(h)[1])
       u = toQ\(toQ(u)) # Reduce the coefficient size (hopefully)

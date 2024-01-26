@@ -1823,7 +1823,7 @@ function _possible_determinants(K, local_symbols, signatures)
     @assert fl
     # I need to change u such that sign(u, sigma) = (-1)^signatures[sigma]
     v = _log(elem_in_nf(u)) + tar
-    fl, y = haspreimage(mS, v)
+    fl, y = has_preimage_with_preimage(mS, v)
     if fl
       z = elem_in_nf(u) * prod(elem_type(K)[ evaluate(mU(gensU[i]))^y.coeff[i] for i in 1:length(gensU)])
       @assert z * OK == J

@@ -776,7 +776,7 @@ function _assert_has_preimage_data(f::NumFieldMor)
   return nothing
 end
 
-function haspreimage(f::NumFieldMor, g::NumFieldElem)
+function has_preimage_with_preimage(f::NumFieldMor, g::NumFieldElem)
   if isdefined(f, :inverse_data)
     return true, image(f.inverse_data, domain(f), g)
   end
@@ -796,7 +796,7 @@ function haspreimage(f::NumFieldMor, g::NumFieldElem)
 end
 
 function preimage(f::NumFieldMor, g::NumFieldElem)
-  fl, y = haspreimage(f, g)
+  fl, y = has_preimage_with_preimage(f, g)
   @assert fl
   return y
 end
@@ -833,7 +833,7 @@ end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::AnticNumberField)
   g = LL(gen(L))
-  fl, prim_preimg = haspreimage(f, LL(g))
+  fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl
   return MapDataFromAnticNumberField{typeof(prim_preimg)}(prim_preimg)
 end
@@ -846,7 +846,7 @@ end
 function _compute_inverse_data(f#= image data =#, K, LL, L::NfAbsNS)
   preimg_gens = elem_type(K)[]
   for g in gens(L)
-    fl, preimg = haspreimage(f, LL(g))
+    fl, preimg = has_preimage_with_preimage(f, LL(g))
     @assert fl
     push!(preimg_gens, preimg)
   end
@@ -860,7 +860,7 @@ end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::NfRel)
   g = gen(L)
-  fl, preimg = haspreimage(f, LL(g))
+  fl, preimg = has_preimage_with_preimage(f, LL(g))
   inverse_data_base_field = _compute_inverse_data(f, K, LL, base_field(L))
   return MapDataFromNfRel{typeof(preimg), typeof(inverse_data_base_field)}(preimg, inverse_data_base_field)
 end
@@ -874,7 +874,7 @@ end
 function _compute_inverse_data(f, K, LL, L::NfRelNS)
   preimg_gens = elem_type(K)[]
   for g in gens(L)
-    fl, preimg = haspreimage(f, LL(g))
+    fl, preimg = has_preimage_with_preimage(f, LL(g))
     push!(preimg_gens, preimg)
   end
   inverse_data_base_field = _compute_inverse_data(f, K, LL, base_field(L))

@@ -113,7 +113,7 @@ end
   @test UA.snf == ZZRingElem[ 2, 0 ]
   G, GtoUK = sub(UK, [ mUK\OK(K(coefficients(elem_in_algebra(mUA(UA[i]), copy = false), copy = false))) for i = 1:ngens(UA) ])
   for i = 1:ngens(UK)
-    @test haspreimage(GtoUK, UK[i])[1]
+    @test has_preimage_with_preimage(GtoUK, UK[i])[1]
   end
 
   A = AlgAss(x * (x^2 - 113000))

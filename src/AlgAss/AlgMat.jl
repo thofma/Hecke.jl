@@ -619,7 +619,7 @@ function center(A::AlgMat{T, S}) where {T, S}
   A.center = C, mD
 
   if isdefined(A, :decomposition)
-    idems = elem_type(C)[haspreimage(mC, StoA(one(SS)))[2] for (SS, StoA) in A.decomposition]
+    idems = elem_type(C)[has_preimage_with_preimage(mC, StoA(one(SS)))[2] for (SS, StoA) in A.decomposition]
     set_attribute!(C, :central_idempotents, idems)
   end
 

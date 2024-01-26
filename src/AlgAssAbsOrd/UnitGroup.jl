@@ -214,7 +214,7 @@ function unit_group_positive(O::AlgAssAbsOrd, rlpl)
   log = function(uu)
     @assert parent(uu) === O
     kk = mU\uu
-    fl, k = haspreimage(StoU, kk)
+    fl, k = has_preimage_with_preimage(StoU, kk)
     if !fl
       error("Element not positive at described places")
     end

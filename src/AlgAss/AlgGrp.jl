@@ -205,7 +205,7 @@ function center(A::AlgGrp{T}) where {T}
   A.center = C, mD
 
   if isdefined(A, :decomposition)
-    idems = elem_type(C)[haspreimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
+    idems = elem_type(C)[has_preimage_with_preimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
     set_attribute!(C, :central_idempotents, idems)
   end
 

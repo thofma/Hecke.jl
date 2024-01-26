@@ -123,7 +123,7 @@ function _cyclotomic_units_totally_real_prime_power_conductor(K, q, in_cyclotomi
     if in_cyclotomic_field
       push!(res, xia)
     else
-      fl, c = haspreimage(m, xia)
+      fl, c = has_preimage_with_preimage(m, xia)
       @assert fl
       push!(res, c)
     end

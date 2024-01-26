@@ -869,7 +869,7 @@ function kernel_group(O::AlgAssAbsOrd)
   let mP = mP, DtoP = DtoP, StoD = StoD
     function disc_log(x::AlgAssAbsOrdIdl)
       p = mP\x
-      b, g = haspreimage(DtoP, p)
+      b, g = has_preimage_with_preimage(DtoP, p)
       @assert b "Ideal not an element of the kernel group"
       return StoD\g
     end

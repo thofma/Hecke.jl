@@ -48,7 +48,7 @@ function is_norm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   end
   No = hom(U, u, elem_type(u)[preimage(mu, norm(mkK, mU(g))) for g = gens(U)])
   aa = preimage(mu, FacElem(a))::GrpAbFinGenElem
-  fl, so = haspreimage(No, aa)
+  fl, so = has_preimage_with_preimage(No, aa)
   fl || return fl, FacElem(one(K))
   return true, FacElem(K, Dict{elem_type(K), ZZRingElem}([image(KasToKa * mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
 end
