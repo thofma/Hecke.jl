@@ -101,7 +101,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
   new_prime = false
   for (P, v) in fac
     # I check that the action of the P-Sylow has no fixed points.
-    PS, mPS = psylow_subgroup(G, P, false)
+    PS, mPS = sylow_subgroup(G, P, false)
     s, ms = snf(PS)
     act_sub = induce_action_on_subgroup(ms*mPS, res_act)
     if !is_fixed_point_free(act_sub)

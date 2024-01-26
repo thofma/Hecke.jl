@@ -888,7 +888,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
   list = Base.Generator[]
   for p in keys(lf.fac)
     x1 = valuation(c, p)
-    G, mG = psylow_subgroup(R, p, false)
+    G, mG = sylow_subgroup(R, p, false)
     S, mS = snf(G)
     comp = mS*mG
 
