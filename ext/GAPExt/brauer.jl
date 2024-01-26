@@ -645,7 +645,7 @@ function check_obstruction_prime(F::FieldsTower, cocycles::Vector{cocycle_ctx}, 
   K = F.field
   OK = maximal_order(K)
   T, mT = torsion_unit_group(OK)
-  if divisible(order(T), ZZRingElem(p))
+  if is_divisible_by(order(T), ZZRingElem(p))
     return _obstruction_prime_no_extend(F, cocycles, p)
   end
   lp = ramified_primes(F)
@@ -893,7 +893,7 @@ function check_obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, n::
   K = F.field
   OK = maximal_order(K)
   T, mT = torsion_unit_group(OK)
-  if divisible(order(T), n)
+  if is_divisible_by(order(T), n)
     return _obstruction_pp_no_extend(F, cocycles, n)
   end
   =#
@@ -1148,12 +1148,12 @@ function _find_theta(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToF
   gF = gen(F)
   igF = K(mF\gF)
   q = 2
-  R = residue_ring(FlintZZ, q, cached = false)
+  R = residue_ring(FlintZZ, q, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = residue_ring(FlintZZ, q, cached = false)
+    R = residue_ring(FlintZZ, q, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -1183,12 +1183,12 @@ function _find_frob(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToFq
   K = domain(G[1])
   O = maximal_order(K)
   q1 = 2
-  R = residue_ring(FlintZZ, q1, cached = false)
+  R = residue_ring(FlintZZ, q1, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q1 = next_prime(q1)
-    R = residue_ring(FlintZZ, q1, cached = false)
+    R = residue_ring(FlintZZ, q1, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -1260,7 +1260,7 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
     return true
   end
   f = gcd(length(G), degree(P))
-  if divisible(norm(P)-1, e)
+  if is_divisible_by(norm(P)-1, e)
     c = divexact(norm(P)-1, e)
     if f == 1 && iszero(mod(c, n))
       return true

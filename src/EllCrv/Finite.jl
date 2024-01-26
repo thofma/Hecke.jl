@@ -127,7 +127,7 @@ end
 
 # Th. 4.14
 @doc raw"""
-    order_via_legendre(E::EllCrv{Generic.ResidueRingElem{ZZRingElem}) -> ZZRingElem
+    order_via_legendre(E::EllCrv{EuclideanRingResidueRingElem{ZZRingElem}) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
@@ -489,7 +489,7 @@ function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
   t = 0
   for i = 1:L
     n_i = div(product, S[i])
-    B = residue_ring(FlintZZ, S[i], cached = false)
+    B = residue_ring(FlintZZ, S[i], cached = false)[1]
     M_i = inv(B(n_i))
     M_i = M_i.data
     t = t + (M_i * n_i * t_mod_l[i])
@@ -578,7 +578,7 @@ function t_mod_prime(l, E)
   if iseven(l)
     fl = 2*fl
   end
-  U = residue_ring(S, fl)
+  U = residue_ring(S, fl)[1]
 
   PsiPoly = [] # list of psi-polynomials
   for i = -1:(l + 1)

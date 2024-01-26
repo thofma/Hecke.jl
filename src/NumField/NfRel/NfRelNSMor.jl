@@ -93,10 +93,10 @@ function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
   dK = absolute_degree(L)
   d1 = numerator(discriminant(L, FlintQQ))
   p = 2
-  while divisible(d1, p)
+  while is_divisible_by(d1, p)
     p = next_prime(p)
   end
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rm, gRm = polynomial_ring(R, ngens(L)+1, cached = false)
   fmod = Vector{zzModMPolyRingElem}(undef, ngens(L)+1)
   RQm, gRQm = polynomial_ring(FlintQQ, ngens(L)+1, cached = false)

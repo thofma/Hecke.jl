@@ -809,7 +809,7 @@ function kummer_generator(K::NfRel{nf_elem})
   n = degree(K)
   k = base_field(K)
   tuo, gen_tu = _torsion_units_gen(k)
-  if !divisible(tuo, n)
+  if !is_divisible_by(tuo, n)
     error("Not a Kummer extension!")
   end
   zeta = gen_tu^divexact(tuo, n)

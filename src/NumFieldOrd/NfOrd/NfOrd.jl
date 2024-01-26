@@ -527,7 +527,7 @@ function in(a::nf_elem, O::NfOrd)
       return true
     end
     exp_index = basis_matrix(O, copy = false).den
-    if !divisible(exp_index, d)
+    if !is_divisible_by(exp_index, d)
       return false
     end
     M = basis_mat_inv(O, copy = false)
@@ -536,10 +536,10 @@ function in(a::nf_elem, O::NfOrd)
     elem_to_mat_row!(t.num, 1, t.den, a)
     d = mul!(d, d, d2)
     if fits(Int, d)
-      R = residue_ring(FlintZZ, Int(d), cached = false)
+      R = residue_ring(FlintZZ, Int(d), cached = false)[1]
       return _check_containment(R, M.num, t.num)
     else
-      R1 = residue_ring(FlintZZ, d, cached = false)
+      R1 = residue_ring(FlintZZ, d, cached = false)[1]
       return _check_containment(R1, M.num, t.num)
     end
   end
@@ -1321,7 +1321,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
     end
     Ml = basis_matrix(l, FakeFmpqMat)
     dd = Ml.den*xinv.den
-    R = residue_ring(FlintZZ, dd, cached = false)
+    R = residue_ring(FlintZZ, dd, cached = false)[1]
     #if !isone((Ml * xinv).den)
     if !iszero(map_entries(R, Ml.num)*map_entries(R, xinv.num))
       return false, x, Vector{elem_type(K)}()

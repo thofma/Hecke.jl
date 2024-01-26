@@ -317,7 +317,7 @@ end
 ################################################################################
 
 # Morphism between an algebra A and a finite field Fq.
-# base_ring(A) can be a fpField, a Generic.ResidueField{ZZRingElem} or a Fq(Nmod)FiniteField, Fq can be a
+# base_ring(A) can be a fpField, a EuclideanRingResidueField{ZZRingElem} or a Fq(Nmod)FiniteField, Fq can be a
 # Fq(Nmod)FiniteField.
 # MatType is the type of matrices over base_ring(A), PolyRingType the type of a
 # polynomial ring over base_ring(A)
@@ -333,9 +333,9 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
   # First case: base_ring(A) == F_p
   function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType) where {
            S, T, MatType, PolyRingType
-           #S <: AbsAlgAss{S1} where { S1 <: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem} } },
+           #S <: AbsAlgAss{S1} where { S1 <: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem} } },
            #T <: Union{ fqPolyRepField, FqPolyRepField },
-           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}} },
+           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{EuclideanRingResidueFieldElem{ZZRingElem}} },
            #PolyRingType <: Union{ fpPolyRing, FpPolyRing }
     }
 
@@ -420,7 +420,7 @@ function AbsAlgAssToFqMor(A::AbsAlgAss{fqPolyRepFieldElem}, Fq::fqPolyRepField, 
   return AbsAlgAssToFqMor{typeof(A), fqPolyRepField, fqPolyRepMatrix, fqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
-#function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResidueFieldElem{ZZRingElem}}, Fq::FqPolyRepField, M::Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}}, N::Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}}, R::FpPolyRing)
+#function AbsAlgAssToFqMor(A::AbsAlgAss{EuclideanRingResidueFieldElem{ZZRingElem}}, Fq::FqPolyRepField, M::Generic.MatSpaceElem{EuclideanRingResidueFieldElem{ZZRingElem}}, N::Generic.MatSpaceElem{EuclideanRingResidueFieldElem{ZZRingElem}}, R::FpPolyRing)
 function AbsAlgAssToFqMor(A, Fq::FqPolyRepField, M, N, R::FpPolyRing)
   return AbsAlgAssToFqMor{typeof(A), FqPolyRepField, typeof(M), FpPolyRing}(A, Fq, M, N, R)
 end

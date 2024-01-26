@@ -25,11 +25,11 @@ is_simple(::AnticNumberField) = true
 ################################################################################
 
 @doc raw"""
-    number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
+    number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
 
  The number field $K$ isomorphic to the ring $S$ and the map from $K\to S$.
 """
-function number_field(S::Generic.ResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
+function number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
   mp = MapFromFunc(K, S, y -> S(Qx(y)), x -> K(lift(x)))
@@ -354,7 +354,7 @@ function normal_basis(K::AnticNumberField)
   d = discriminant(O)
   p = 1
   for q in PrimesSet(degree(K), -1)
-    if divisible(d, q)
+    if is_divisible_by(d, q)
       continue
     end
     #Now, I check if p is totally split
@@ -432,7 +432,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
     cnt += 1
     fs = factor_shape(fp)
     gs = factor_shape(gp)
-    if !divisible(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
+    if !is_divisible_by(lcm(collect(keys(gs))), lcm(collect(keys(fs))))
       return false
     end
     p = next_prime(p)
@@ -521,7 +521,7 @@ function is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField)
   dg = denominator(g)
   while cnt < max(20, 2*degree(K))
     p = next_prime(p)
-    if divisible(df, p) || divisible(dg, p)
+    if is_divisible_by(df, p) || is_divisible_by(dg, p)
       continue
     end
     F = GF(p, cached = false)

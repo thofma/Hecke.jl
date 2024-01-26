@@ -341,7 +341,7 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
 end
 
 function Nemo.residue_ring(a::HessQR, b::HessQRElem)
-  F = residue_ring(FlintZZ, b.c)
+  F = residue_ring(FlintZZ, b.c)[1]
   Fx, x = polynomial_ring(F, cached = false)
   Q = fraction_field(Fx, cached = false)
   return Q, MapFromFunc(

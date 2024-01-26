@@ -247,7 +247,7 @@ function rel_auto_intersect(A::ClassField_pp)
   Mk = _expand(M, pseudo_inv(C.mp[1]))
   # One of the automorphisms must generate the group, so I check the order.
   for j = 1:ngens(G)
-    if !divisible(G.snf[j], ZZRingElem(degree(A)))
+    if !is_divisible_by(G.snf[j], ZZRingElem(degree(A)))
       continue
     end
     #Construct the automorphism

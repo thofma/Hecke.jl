@@ -129,7 +129,7 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepFiel
   n = order(F)-1
   k = ZZRingElem(1)
   if n_quo != -1
-    if !divisible(n, n_quo)
+    if !is_divisible_by(n, n_quo)
       return F(1)
     end
     n, k = ppio(n, ZZRingElem(n_quo))

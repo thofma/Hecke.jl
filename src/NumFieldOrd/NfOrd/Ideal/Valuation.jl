@@ -23,7 +23,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   g = lift(Zx, gR)
   k = flog(ZZRingElem(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
-  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
   uP = UInt(P)
@@ -56,7 +56,7 @@ function val_func_no_index(p::NfOrdIdl)
   g = gcd(g, f)
   g = lift(Zx, g)
   g = hensel_lift(Zx(K.pol), g, P, 10)
-  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
   c = ZZRingElem()
@@ -150,7 +150,7 @@ function val_fun_generic_small(p::NfOrdIdl)
         v += 1
         if !iszero(no)
           nn = divexact(nn, norm(p))
-          if !divisible(nn, norm(p))
+          if !is_divisible_by(nn, norm(p))
             break
           end
         end
@@ -190,7 +190,7 @@ function val_func_generic(p::NfOrdIdl)
         v += 1
         if !iszero(no)
           nn = divexact(nn, norm(p))
-          if !divisible(nn, norm(p))
+          if !is_divisible_by(nn, norm(p))
             break
           end
           x = mod(x, p_mod)
@@ -473,7 +473,7 @@ Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfAbsOrdIdl, p::NfAbsOrdIdl)
-  if has_minimum(A) && has_minimum(p) && !divisible(minimum(A, copy = false), minimum(p, copy = false))
+  if has_minimum(A) && has_minimum(p) && !is_divisible_by(minimum(A, copy = false), minimum(p, copy = false))
     return 0
   end
   if has_princ_gen_special(A)

@@ -29,7 +29,7 @@ end
 #
 ################################################################################
 
-function _generator_valuation(K::LocalField{S, T}) where {S <: Union{padic, qadic}, T <: LocalFieldParameter}
+function _generator_valuation(K::LocalField{S, T}) where {S <: Union{PadicFieldElem, QadicFieldElem}, T <: LocalFieldParameter}
   f = defining_polynomial(K)
 #  @show K, f
   return QQFieldElem(valuation(coeff(f, 0)), degree(f))
@@ -112,21 +112,21 @@ function coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalF
   return res
 end
 
-coordinates(a::padic) = padic[a]
+coordinates(a::PadicFieldElem) = PadicFieldElem[a]
 
-function coordinates(a::qadic)
-  res = Vector{padic}(undef, degree(parent(a)))
+function coordinates(a::QadicFieldElem)
+  res = Vector{PadicFieldElem}(undef, degree(parent(a)))
   for i = 0:length(res)-1
     res[i+1] = coeff(a, i)
   end
   return res
 end
 
-absolute_coordinates(a::Union{padic, qadic}) = coordinates(a)
+absolute_coordinates(a::Union{PadicFieldElem, QadicFieldElem}) = coordinates(a)
 
 function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   K = parent(a)
-  v = Vector{padic}(undef, absolute_degree(K))
+  v = Vector{PadicFieldElem}(undef, absolute_degree(K))
   va = coordinates(a)
   ind = 1
   for i = 1:length(va)
@@ -139,11 +139,11 @@ function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T 
   return v
 end
 
-function inv_absolute_coordinates(K::FlintPadicField, C::Vector{padic}; start::Int = 0)
+function inv_absolute_coordinates(K::PadicField, C::Vector{PadicFieldElem}; start::Int = 0)
   return C[start+1]
 end
 
-function inv_absolute_coordinates(K::FlintQadicField, C::Vector{padic}; start::Int = 0)
+function inv_absolute_coordinates(K::QadicField, C::Vector{PadicFieldElem}; start::Int = 0)
   a = K()
   pr = minimum(precision, C[start+1:start+degree(K)])
   setprecision!(a, pr)
@@ -153,7 +153,7 @@ function inv_absolute_coordinates(K::FlintQadicField, C::Vector{padic}; start::I
   return a
 end
 
-function inv_absolute_coordinates(K::LocalField, C::Vector{padic}; start::Int = 0)
+function inv_absolute_coordinates(K::LocalField, C::Vector{PadicFieldElem}; start::Int = 0)
   a = K()
   k = base_field(K)
   deg_k = absolute_degree(k)
@@ -264,7 +264,7 @@ function (K::LocalField{S, T})(a::Union{ZZRingElem, QQFieldElem}) where {S <: Fi
   return setprecision!(el, precision(K))
 end
 
-function (K::LocalField{S, T})(a::U) where {U <: Union{padic, qadic}, S <: FieldElem, T <: LocalFieldParameter}
+function (K::LocalField{S, T})(a::U) where {U <: Union{PadicFieldElem, QadicFieldElem}, S <: FieldElem, T <: LocalFieldParameter}
   return K(parent(defining_polynomial(K))(a))
 end
 
@@ -423,11 +423,11 @@ function absolute_norm(a::LocalFieldElem)
   return absolute_norm(norm(a))
 end
 
-function absolute_norm(a::padic)
+function absolute_norm(a::PadicFieldElem)
   return a
 end
 
-function absolute_norm(a::qadic)
+function absolute_norm(a::QadicFieldElem)
   return norm(a)
 end
 
@@ -442,7 +442,7 @@ function norm(a::LocalFieldElem, F::LocalField)
   error("wrong target in norm")
 end
 
-function norm(a::LocalFieldElem, F::FlintPadicField)
+function norm(a::LocalFieldElem, F::PadicField)
   return absolute_norm(a)
 end
 
@@ -468,11 +468,11 @@ function absolute_tr(a::LocalFieldElem)
   return absolute_tr(tr(a))
 end
 
-function absolute_tr(a::padic)
+function absolute_tr(a::PadicFieldElem)
   return a
 end
 
-function absolute_tr(a::qadic)
+function absolute_tr(a::QadicFieldElem)
   return tr(a)
 end
 
@@ -487,11 +487,11 @@ function tr(a::LocalFieldElem, F::LocalField)
   return a::elem_type(F)
 end
 
-function tr(a::LocalFieldElem, F::FlintPadicField)
+function tr(a::LocalFieldElem, F::PadicField)
   return absolute_tr(a)
 end
 
-function tr(a::LocalFieldElem{qadic}, F::FlintQadicField)
+function tr(a::LocalFieldElem{QadicFieldElem}, F::QadicField)
   return tr(a)
 end
 ################################################################################
@@ -500,7 +500,7 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, Kx::PolyRing = polynomial_ring(parent(a), "t", cached = false)[1]) where T <: Union{LocalFieldElem, qadic}
+function minpoly(a::T, Kx::PolyRing = polynomial_ring(parent(a), "t", cached = false)[1]) where T <: Union{LocalFieldElem, QadicFieldElem}
   return squarefree_part(norm(gen(Kx)-a))
 end
 
@@ -509,19 +509,19 @@ function absolute_minpoly(a::LocalFieldElem)
   return _absolute_minpoly(f)
 end
 
-function _absolute_minpoly(p::Generic.Poly{T}) where T <: Union{qadic, LocalFieldElem}
+function _absolute_minpoly(p::Generic.Poly{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   return _absolute_minpoly(squarefree_part(norm(p)))
 end
 
-function _absolute_minpoly(p::Generic.Poly{padic})
+function _absolute_minpoly(p::Generic.Poly{PadicFieldElem})
   return squarefree_part(p)
 end
 
-function absolute_minpoly(a::padic, parent = polynomial_ring(parent(a), "x"))
+function absolute_minpoly(a::PadicFieldElem, parent = polynomial_ring(parent(a), "x"))
   return gen(parent)-a
 end
 
-function absolute_minpoly(a::qadic)
+function absolute_minpoly(a::QadicFieldElem)
   return minpoly(a)
 end
 
@@ -570,7 +570,7 @@ function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <
   return res
 end
 
-function Base.:(//)(a::LocalFieldElem{S, T}, b::Union{padic, qadic}) where {S <: FieldElem, T <: LocalFieldParameter}
+function Base.:(//)(a::LocalFieldElem{S, T}, b::Union{PadicFieldElem, QadicFieldElem}) where {S <: FieldElem, T <: LocalFieldParameter}
   ib = inv(b)
   return a*ib
 end
@@ -922,13 +922,13 @@ AbstractAlgebra.promote_rule(::Type{S}, ::Type{QQFieldElem}) where S <: LocalFie
 
 AbstractAlgebra.promote_rule(::Type{S}, ::Type{T}) where {S <: LocalFieldElem, T <: Integer} = S
 
-AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{PadicFieldElem}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{qadic}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{QadicFieldElem}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
-#AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+#AbstractAlgebra.promote_rule(::Type{PadicFieldElem}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 #
-#AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
+#AbstractAlgebra.promote_rule(::Type{QadicFieldElem}, ::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
 
 function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{T, S}}, ::Type{U}) where {S, T, U <: LocalFieldElem}
   # We have to also capture the promote_rule(::T, ::T) case here
@@ -942,32 +942,32 @@ function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{T, S}}, ::Type{U}) w
 end
 
 #=
-function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{padic}) where {S <: LocalFieldElem,  T <: LocalFieldParameter}
-  if S === AbstractAlgebra.promote_rule(S, padic)
+function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{PadicFieldElem}) where {S <: LocalFieldElem,  T <: LocalFieldParameter}
+  if S === AbstractAlgebra.promote_rule(S, PadicFieldElem)
     return LocalFieldElem{S, T}
   else
     return Union{}
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{qadic}) where {S <: LocalFieldElem, T <: LocalFieldParameter}
-  if S === AbstractAlgebra.promote_rule(S, qadic)
+function AbstractAlgebra.promote_rule(::Type{LocalFieldElem{S, T}}, ::Type{QadicFieldElem}) where {S <: LocalFieldElem, T <: LocalFieldParameter}
+  if S === AbstractAlgebra.promote_rule(S, QadicFieldElem)
     return LocalFieldElem{S, T}
   else
     return Union{}
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{padic}, ::Type{LocalFieldElem{S, T}}) where {S <: LocalFieldElem,  T <: LocalFieldParameter}
-  if S === AbstractAlgebra.promote_rule(S, padic)
+function AbstractAlgebra.promote_rule(::Type{PadicFieldElem}, ::Type{LocalFieldElem{S, T}}) where {S <: LocalFieldElem,  T <: LocalFieldParameter}
+  if S === AbstractAlgebra.promote_rule(S, PadicFieldElem)
     return LocalFieldElem{S, T}
   else
     return Union{}
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{qadic}, ::Type{LocalFieldElem{S, T}}) where {S <: LocalFieldElem, T <: LocalFieldParameter}
-  if S === AbstractAlgebra.promote_rule(S, qadic)
+function AbstractAlgebra.promote_rule(::Type{QadicFieldElem}, ::Type{LocalFieldElem{S, T}}) where {S <: LocalFieldElem, T <: LocalFieldParameter}
+  if S === AbstractAlgebra.promote_rule(S, QadicFieldElem)
     return LocalFieldElem{S, T}
   else
     return Union{}

@@ -331,7 +331,7 @@ end
 function map_into_integer_quotient(Q::NfOrdQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
-  R = residue_ring(FlintZZ, m, cached = false)
+  R = residue_ring(FlintZZ, m, cached = false)[1]
   local f
   let R = R, Q = Q
     function f(x::NfOrdQuoRingElem)
@@ -343,7 +343,7 @@ function map_into_integer_quotient(Q::NfOrdQuoRing)
   return R, f, g
 end
 
-function can_make_small(Q::Generic.ResidueRing{ZZRingElem})
+function can_make_small(Q::EuclideanRingResidueRing{ZZRingElem})
   if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
     return true
   else
@@ -359,15 +359,15 @@ function can_make_small(Q::Nemo.ZZModRing)
   end
 end
 
-function make_small(Q::Generic.ResidueRing{ZZRingElem})
-  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
+function make_small(Q::EuclideanRingResidueRing{ZZRingElem})
+  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)[1]
   f = (x -> R(x.data)::zzModRingElem)
-  g = (x -> Q(x.data)::Generic.ResidueRingElem{ZZRingElem})
+  g = (x -> Q(x.data)::EuclideanRingResidueRingElem{ZZRingElem})
   return R, f, g
 end
 
 function make_small(Q::Nemo.ZZModRing)
-  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
+  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)[1]
   f = (x -> R(data(x))::zzModRingElem)
   g = (x -> Q(x.data)::Nemo.ZZModRingElem)
   return R, f, g

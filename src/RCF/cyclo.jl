@@ -340,7 +340,7 @@ function _isprobably_primitive(x::NfAbsOrdElem)
   M, d1 = representation_matrix_q(x.elem_in_nf)
   p = next_prime(1000)
   for i = 1:3
-    while divisible(d, p)[1] || divisible(d1, p)
+    while is_divisible_by(d, p)[1] || is_divisible_by(d1, p)
       p = next_prime(p)
     end
     R = GF(p, cached = false)
@@ -497,7 +497,7 @@ function automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_gen
     push!(gnew, na)
   end
   #Now add the automorphisms of the relative extension
-  R = residue_ring(FlintZZ, C.n, cached = false)
+  R = residue_ring(FlintZZ, C.n, cached = false)[1]
   U, mU = unit_group(R)
   if is_cyclic(U)
     k = degree(C.Kr)

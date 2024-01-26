@@ -747,8 +747,6 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
 
   r = length(basis_elts)
   FQ, phi = residue_field(O.R,p)
-  phi_inv = inv(phi)
-
 
   if r == 0
     A = _zero_algebra(FQ)
@@ -813,7 +811,7 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   let BO = BO, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
       ca = coefficients(a)
-      return sum(phi_inv(ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
+      return sum(preimage(phi, ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
     end
   end
 
@@ -928,7 +926,7 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   den = lcm(collect(map(denominator, A)))
   kx = base_ring(order(y))
   num = map_entries(kx,A*den)
-  R = residue_ring(kx, den, cached = false)
+  R = residue_ring(kx, den, cached = false)[1]
   M = map_entries(R, num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x))
   #mul!(v, v, M) This didn't work
@@ -1023,15 +1021,15 @@ end
 ################################################################################
 
 
-function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
+function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
   return characteristic(function_field(base_ring(R)))
 end
 
-function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
+function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
   return 0
 end
 
-function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
+function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
   return characteristic(function_field(base_ring(R)))
 end
 

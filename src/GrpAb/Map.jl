@@ -421,13 +421,13 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   C = codomain(g)
   if isdefined(C, :exponent)
     if fits(Int, C.exponent)
-      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)
+      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)[1]
       fRR = map_entries(RR, f.map)
       gRR = map_entries(RR, g.map)
       MRR = fRR*gRR
       M = lift(MRR)
     else
-      R = residue_ring(FlintZZ, C.exponent, cached = false)
+      R = residue_ring(FlintZZ, C.exponent, cached = false)[1]
       fR = map_entries(R, f.map)
       gR = map_entries(R, g.map)
       MR = fR*gR
@@ -508,12 +508,12 @@ function Base.:^(f::GrpAbFinGenMap, n::Integer)
   C = codomain(f)
   if isdefined(C, :exponent)
     if fits(Int, C.exponent)
-      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)
+      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)[1]
       fRR = map_entries(RR, f.map)
       MRR = fRR^n
       M = lift(MRR)
     else
-      R = residue_ring(FlintZZ, C.exponent, cached = false)
+      R = residue_ring(FlintZZ, C.exponent, cached = false)[1]
       fR = map_entries(R, f.map)
       MR = fR^n
       M = map_entries(lift, MR)

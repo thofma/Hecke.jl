@@ -92,7 +92,7 @@ INPUT:
   `\ZZ/2\ZZ` && has determinant not divisible by `8`.
 """
 function _trace_diag_mod_8(A::ZZMatrix)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   A8 = change_base_ring(R, A)
   tr = R(0)
   while nrows(A8) > 0
@@ -148,7 +148,7 @@ function _p_adic_symbol(A::ZZMatrix, p::ZZRingElem, val::Int)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = residue_ring(ZZ, p^(val + 3))
+  R = residue_ring(ZZ, p^(val + 3))[1]
   u = R(d)^-1
 
   UZZ = change_base_ring(ZZ, U * d *lift(u))
@@ -201,7 +201,7 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   k2, B_2 = left_kernel(A_2)
   rref!(B_2)
   B_2 = B_2[1:k2,1:end]
-  R_8 = residue_ring(ZZ, 8)
+  R_8 = residue_ring(ZZ, 8)[1]
   # deal with the matrix being non-degenerate mod 2.
   if k2 == 0
     d0 = mod(det(A), 8)
@@ -237,7 +237,7 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = residue_ring(ZZ,ZZ(2)^(val + 3))
+  R = residue_ring(ZZ,ZZ(2)^(val + 3))[1]
   u = lift(R(d)^-1)
   UZZ = change_base_ring(ZZ,U * d * u)
   X = C * A
@@ -725,7 +725,7 @@ function _isglobal_genus(G::ZZGenus)
   end
   D = ZZ(det(G))
   r, s = signature_pair(G)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   oddi = R(r - s)
   for loc in local_symbols(G)
     p = prime(loc)
@@ -1206,7 +1206,7 @@ p is congruent 1 mod 4.
 [CS99](@cite) pp 370-371.
 """
 function excess(S::ZZLocalGenus)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   p = prime(S)
   if p == 2
     return dim(S) - oddity(S)
@@ -1234,7 +1234,7 @@ end
 Return the $p$-signature of this $p$-adic form.
 """
 function signature(S::ZZLocalGenus)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   if prime(S) == 2
     return oddity(S)
   else
@@ -1249,7 +1249,7 @@ Return the oddity of this even form.
 The oddity is also called the $2$-signature
 """
 function oddity(S::ZZLocalGenus)
-  R = residue_ring(FlintZZ, 8)
+  R = residue_ring(FlintZZ, 8)[1]
   p = prime(S)
   @req p == 2 "The oddity is only defined for p=2"
   k = 0

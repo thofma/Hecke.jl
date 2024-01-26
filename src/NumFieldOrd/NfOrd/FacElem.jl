@@ -412,7 +412,7 @@ function factor_coprime(I::NfOrdIdlSet, a::FacElem{nf_elem, AnticNumberField}; r
       if iszero(e)
         continue
       end
-      if divisible(norm(b, copy = false), P)
+      if is_divisible_by(norm(b, copy = false), P)
         v += valuation(b, p)*e
       end
     end

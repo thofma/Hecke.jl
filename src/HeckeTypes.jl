@@ -1390,14 +1390,14 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
 
   function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}})
-    Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
+    Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false)[1], "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
   function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}})
-    Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false), "x", cached=false)[1]
+    Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false)[1], "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
@@ -1517,7 +1517,7 @@ mutable struct ModuleCtxNmod
 
   function ModuleCtxNmod(p::Int, dim::Int)
     M = new()
-    M.R = residue_ring(FlintZZ, p, cached=false)
+    M.R = residue_ring(FlintZZ, p, cached=false)[1]
     M.basis = sparse_matrix(M.R)
     M.basis.c = dim
     M.gens = sparse_matrix(M.R)
@@ -1547,7 +1547,7 @@ mutable struct ModuleCtx_fmpz
     M.bas_gens.c = dim
     M.rel_gens = sparse_matrix(FlintZZ)
     M.rel_gens.c = dim
-    R = residue_ring(FlintZZ, p, cached=false)
+    R = residue_ring(FlintZZ, p, cached=false)[1]
     M.rel_reps_p = sparse_matrix(R)
     M.new = false
     M.Mp = ModuleCtxNmod(R, dim)
@@ -2226,9 +2226,9 @@ mutable struct qAdicRootCtx
   f::ZZPolyRingElem
   p::Int
   n::Int
-  Q::Vector{FlintQadicField}
+  Q::Vector{QadicField}
   H::Hecke.HenselCtx
-  R::Vector{qadic}
+  R::Vector{QadicFieldElem}
   is_splitting::Bool
   function qAdicRootCtx(f::ZZPolyRingElem, p::Int; splitting_field::Bool = false)
     r = new()

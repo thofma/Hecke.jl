@@ -1,5 +1,5 @@
 #XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::ZZPolyRingElem, r::qadic, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
   Q = parent(r)
   n = prec
   i = n
@@ -67,14 +67,14 @@ function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = pare
 end
 
 @doc raw"""
-    roots(Q::FlintQadicField, f::ZZPolyRingElem; max_roots::Int = degree(f)) -> Vector{qadic}
+    roots(Q::QadicField, f::ZZPolyRingElem; max_roots::Int = degree(f)) -> Vector{QadicFieldElem}
 
 The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
 """
-function roots(Q::FlintQadicField, f::ZZPolyRingElem; max_roots::Int = degree(f))
+function roots(Q::QadicField, f::ZZPolyRingElem; max_roots::Int = degree(f))
   k, mk = residue_field(Q)
   rt = roots(k, f)
-  RT = qadic[]
+  RT = QadicFieldElem[]
   for r = rt
     push!(RT, newton_lift(f, preimage(mk, r)))
     if length(RT) >= max_roots
@@ -91,7 +91,7 @@ function roots(C::qAdicRootCtx, n::Int = 10)
     return [setprecision(x, n) for x = C.R]
   end
   lf = factor_mod_pk(Array, C.H, n)
-  rt = qadic[]
+  rt = QadicFieldElem[]
   for Q = C.Q
     Q.prec_max = n
     for x = lf
@@ -101,7 +101,7 @@ function roots(C::qAdicRootCtx, n::Int = 10)
     end
   end
   if isdefined(C, :R)
-    st = qadic[]
+    st = QadicFieldElem[]
     for r = C.R
       p = findfirst(x -> degree(parent(r)) == degree(parent(x)) && iszero(x-r), rt)
       push!(st, rt[p])
@@ -182,8 +182,8 @@ function conjugates(a::nf_elem, C::qAdicConj, n::Int = 10; flat::Bool = false, a
   end
 end
 
-function expand(a::Vector{qadic}; all::Bool, flat::Bool, degs::Vector{Int}= Int[])
-  re = qadic[]
+function expand(a::Vector{QadicFieldElem}; all::Bool, flat::Bool, degs::Vector{Int}= Int[])
+  re = QadicFieldElem[]
   if all
     for ix = 1:length(a)
       x = a[ix]
@@ -206,7 +206,7 @@ function expand(a::Vector{qadic}; all::Bool, flat::Bool, degs::Vector{Int}= Int[
     re = a
   end
   if flat
-    r = padic[]
+    r = PadicFieldElem[]
     for x = re
       for i=1:degree(parent(x))
         push!(r, coeff(x, i-1))
@@ -225,15 +225,15 @@ function _conjugates(a::nf_elem, C::qAdicConj, n::Int, op::Function)
   Zx = polynomial_ring(FlintZZ, cached = false)[1]
   d = denominator(a)
   f = Zx(d*a)
-  res = qadic[]
+  res = QadicFieldElem[]
   for x = R
-    a = op(inv(parent(x)(d))*f(x))::qadic
+    a = op(inv(parent(x)(d))*f(x))::QadicFieldElem
     push!(res, a)
   end
   return res
 end
 
-function _log(a::qadic)
+function _log(a::QadicFieldElem)
   q = prime(parent(a))^degree(parent(a))
   if iseven(q) # an error in flint
     return log((a^(q-1))^2)//2//(q-1)
@@ -268,7 +268,7 @@ end
 
 function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::Int = 10; all::Bool = false, flat::Bool = true)
   first = true
-  local res::Vector{qadic}
+  local res::Vector{QadicFieldElem}
   for (k, v) = a.fac
     try
       y = conjugates_log(k, C, n, flat = false, all = false)
@@ -306,10 +306,10 @@ function conjugates_log(a::FacElem{nf_elem, AnticNumberField}, C::qAdicConj, n::
 end
 
 
-function special_gram(m::Vector{Vector{qadic}})
-  g = Vector{padic}[]
+function special_gram(m::Vector{Vector{QadicFieldElem}})
+  g = Vector{PadicFieldElem}[]
   for i = m
-    r = padic[]
+    r = PadicFieldElem[]
     for j = m
       k = 1
       S = 0
@@ -329,7 +329,7 @@ function special_gram(m::Vector{Vector{qadic}})
   return g
 end
 
-function special_gram(m::Vector{Vector{padic}})
+function special_gram(m::Vector{Vector{PadicFieldElem}})
   n = transpose(matrix(m))
   n = transpose(n)*n
   return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
@@ -360,9 +360,9 @@ function regulator(R::NfAbsOrd{AnticNumberField, nf_elem}, C::qAdicConj, n::Int 
 end
 
 @doc raw"""
-    regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}} -> qadic
-    regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10) -> qadic
-    regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10) -> qadic
+    regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}} -> QadicFieldElem
+    regulator_iwasawa(K::AnticNumberField, C::qAdicConj, n::Int = 10) -> QadicFieldElem
+    regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10) -> QadicFieldElem
 
 For a totally real field $K$, the regulator as defined by Iwasawa: the determinant of the
 matrix containing the logarithms of the conjugates, supplemented by a column containing all $1$.
@@ -497,7 +497,7 @@ end
 
 @doc raw"""
     completion_easy(K::AnticNumberField, P::NfOrdIdl)
-                                               -> FlintQadicField, CompletionMap
+                                               -> QadicField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at the
 unramified prime ideal $P$.
@@ -519,7 +519,7 @@ end
 completion(K::AnticNumberField, p::Integer, i::Int, precision::Int = 64) = completion(K, ZZRingElem(p), i, precision)
 
 @doc raw"""
-    completion(K::AnticNumberField, p::ZZRingElem, i::Int) -> FlintQadicField, Map
+    completion(K::AnticNumberField, p::ZZRingElem, i::Int) -> QadicField, Map
 
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
 `conjugates`.
@@ -532,7 +532,7 @@ function completion(K::AnticNumberField, p::ZZRingElem, i::Int, n = 64)
   return completion(K, ca)
 end
 
-function completion(K::AnticNumberField, ca::qadic)
+function completion(K::AnticNumberField, ca::QadicFieldElem)
   p = prime(parent(ca))
   C = qAdicConj(K, Int(p))
   r = roots(C.C, precision(ca))
@@ -585,7 +585,7 @@ function completion(K::AnticNumberField, ca::qadic)
 
   c = lift_root(f, a, b, p, 10)
   pc = ZZRingElem(10)
-  function lif(x::qadic)
+  function lif(x::QadicFieldElem)
     if iszero(x)
       return K(0)
     end

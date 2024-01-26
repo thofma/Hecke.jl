@@ -472,7 +472,7 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Vector{GrpAbFinGenMap})
   q=mq.header.codomain
   S,mS=snf(q)
   n=Int(S.snf[end])
-  R=residue_field(FlintZZ, n, cached=false)
+  R=residue_field(FlintZZ, n, cached=false)[1]
   quo_action=Vector{zzModMatrix}(undef, length(act))
   for s=1:length(act)
     quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
@@ -997,7 +997,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::ZZRing
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)
+  R=residue_ring(FlintZZ, m, cached=false)[1]
 
   for (p,v) in lp
     if v==1
@@ -1086,7 +1086,7 @@ function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)
+  R=residue_ring(FlintZZ, m, cached=false)[1]
 
   for (p,v) in lp
     if v==1
@@ -1241,7 +1241,7 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   O=order(m)
   K=nf(O)
 
-  R=residue_ring(FlintZZ, mm, cached=false)
+  R=residue_ring(FlintZZ, mm, cached=false)[1]
   for (p,v) in lp.fac
     if isodd(p)
       if v==1

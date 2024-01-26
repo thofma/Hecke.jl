@@ -110,7 +110,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
   for i in 1:length(primes1)
     p = primes1[i]
     @vprintln :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    if !divisible(ind, p) || is_regular_at(f, p)
+    if !is_divisible_by(ind, p) || is_regular_at(f, p)
       O1 = pmaximal_overorder(EO, p)
       if valuation(discriminant(O1), p) != valuation(discriminant(OO), p)
         OO = sum_as_Z_modules(OO, O1, M)
@@ -305,7 +305,7 @@ end
 function _radical_by_poly(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = residue_ring(FlintZZ, q, cached=false)
+  R = residue_ring(FlintZZ, q, cached=false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   f = Rx(K.pol)
   f1 = derivative(f)
@@ -344,7 +344,7 @@ end
 function _radical_by_trace(O::NfOrd, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = residue_ring(FlintZZ, q, cached=false)
+  R = residue_ring(FlintZZ, q, cached=false)[1]
   k, B = kernel(trace_matrix(O), R)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:k
@@ -1022,7 +1022,7 @@ function prefactorization(f::ZZPolyRingElem, d::ZZRingElem, f1::ZZPolyRingElem =
       continue
     end
 
-    R = residue_ring(FlintZZ, d1, cached = false)
+    R = residue_ring(FlintZZ, d1, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(f)
     ff1 = Rx(f1)

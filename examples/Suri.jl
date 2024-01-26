@@ -529,7 +529,7 @@ function extend(A::RRSMat, P::Int)
   k =
   for p = keys(A.data)
     ce = parent(A).p_data[p]
-    fp[p] = [zero_matrix(residue_ring(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
+    fp[p] = [zero_matrix(residue_ring(ZZ, p)[1], nrows(A), ncols(A)) for i = 1:degree(k)]
     nu = Hecke.modular_lift(A.data[p], ce)
     for i=1:nrows(A)
       for j=1:ncols(A)

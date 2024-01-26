@@ -89,11 +89,6 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
-  K, _ = number_field(p)
-  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
-end
-
 function Hecke.residue_field(R::PolyRing{T}, p::PolyRingElem{T}) where {T <: NumFieldElem}
   @assert parent(p) === R
   K, _ = number_field(p)

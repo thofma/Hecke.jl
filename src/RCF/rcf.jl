@@ -342,7 +342,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::ZZRingElem)
   end
 
   if degree(C.Kr) != 1
-    RR = residue_ring(FlintZZ, degree(A))
+    RR = residue_ring(FlintZZ, degree(A))[1]
     U, mU = unit_group(RR)
     if degree(C.Kr) < order(U)  # there was a common subfield, we
                               # have to pass to a subgroup
@@ -641,7 +641,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   #                            = z^(sum a[i] n[i]) x
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
-  R = residue_ring(FlintZZ, C.n, cached=false)
+  R = residue_ring(FlintZZ, C.n, cached=false)[1]
   M = change_base_ring(R, mk.map)
   i, l = right_kernel(M)
   @assert i > 0
@@ -759,7 +759,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     2 for n=2^k, k>2
 =#
   e = degree(CF)
-  g, mg = unit_group(residue_ring(FlintZZ, e, cached=false))
+  g, mg = unit_group(residue_ring(FlintZZ, e, cached=false)[1])
   @assert is_snf(g)
   @assert (e%8 == 0 && ngens(g)==2) || ngens(g) <= 1
 
@@ -967,7 +967,7 @@ function _rcf_descent(CF::ClassField_pp)
         end
         polcoeffs[n+1] = one(F)
         pol = Ft(polcoeffs)
-        Ap = residue_ring(Ft, pol, cached = false)
+        Ap = residue_ring(Ft, pol, cached = false)[1]
         xpecoeffs = Vector{elem_type(F)}(undef, n)
         for i = 0:n-1
           xpecoeffs[i+1] = image(mFp, coeff(pe, i))

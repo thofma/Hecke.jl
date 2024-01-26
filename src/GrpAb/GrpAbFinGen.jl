@@ -1928,7 +1928,7 @@ function has_quotient(G::GrpAbFinGen, invariants::Vector{Int})
     return false
   end
   for i = 0:length(arr_snfH)-1
-    if !divisible(arr_snfG1[end-i], arr_snfH[end-i])
+    if !is_divisible_by(arr_snfG1[end-i], arr_snfH[end-i])
       return false
     end
   end
@@ -2104,7 +2104,7 @@ function has_complement(m::GrpAbFinGenMap, to_lattice::Bool = true)
     coeffs = zero_matrix(FlintZZ, 1, ngens(s))
     for j = 1:ngens(s)
       if !iszero(el1[j])
-        R = residue_ring(FlintZZ, s.snf[j], cached = false)
+        R = residue_ring(FlintZZ, s.snf[j], cached = false)[1]
         r1 = R(el1[j])
         r2 = R(SH.snf[i])
         fl1, r = divides(r1, r2)

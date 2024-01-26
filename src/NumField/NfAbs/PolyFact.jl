@@ -1,20 +1,20 @@
 abstract type Hensel end
 
 mutable struct HenselCtxQadic <: Hensel
-  f::PolyRingElem{qadic}
-  lf::Vector{PolyRingElem{qadic}}
-  la::Vector{PolyRingElem{qadic}}
-  p::qadic
+  f::PolyRingElem{QadicFieldElem}
+  lf::Vector{PolyRingElem{QadicFieldElem}}
+  la::Vector{PolyRingElem{QadicFieldElem}}
+  p::QadicFieldElem
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
-  #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyRingElem{qadic}, lfp::Vector{FqPolyRingElem})
+  #TODO: use flint if QadicFieldElem = PadicFieldElem!!
+  function HenselCtxQadic(f::PolyRingElem{QadicFieldElem}, lfp::Vector{FqPolyRingElem})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     K, mK = residue_field(Q)
     i = 1
-    la = Vector{PolyRingElem{qadic}}()
+    la = Vector{PolyRingElem{QadicFieldElem}}()
     n = length(lfp)
     while i < length(lfp)
       f1 = lfp[i]
@@ -29,7 +29,7 @@ mutable struct HenselCtxQadic <: Hensel
     return new(f, map(x->setprecision(map_coefficients(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
-  function HenselCtxQadic(f::PolyRingElem{qadic})
+  function HenselCtxQadic(f::PolyRingElem{QadicFieldElem})
     Q = base_ring(f)
     K, mK = residue_field(Q)
     fp = map_coefficients(mK, f, cached = false)
@@ -113,8 +113,8 @@ end
 # tighter implementation
 mutable struct HenselCtxPadic <: Hensel
   X::HenselCtx
-  f::PolyRingElem{padic}
-  function HenselCtxPadic(f::PolyRingElem{padic})
+  f::PolyRingElem{PadicFieldElem}
+  function HenselCtxPadic(f::PolyRingElem{PadicFieldElem})
     r = new()
     r.f = f
     Zx = polynomial_ring(FlintZZ, cached = false)[1]
@@ -475,7 +475,7 @@ mutable struct vanHoeijCtx
   Ml::ZZMatrix
   pMr::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}
   pM::Tuple{ZZMatrix, ZZRingElem}
-  C::Union{FlintQadicField, FlintPadicField}
+  C::Union{QadicField, PadicField}
   P::NfOrdIdl
   function vanHoeijCtx()
     return new()

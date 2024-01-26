@@ -85,7 +85,7 @@ function action(V::GrpAbFinGen, act::Vector{T}) where T<: Map{GrpAbFinGen, GrpAb
 
   expon = Int(exponent(V))
   @hassert :StabSub 1 length(factor(order(V)).fac)==1
-  RR = residue_ring(FlintZZ, expon, cached=false)
+  RR = residue_ring(FlintZZ, expon, cached=false)[1]
   act_mat = Vector{zzModMatrix}(undef, length(act))
   for z = 1:length(act)
     A = zero_matrix(RR, ngens(V), ngens(V))
@@ -383,7 +383,7 @@ function _mult_by_p(M::ZpnGModule)
   s = valuation(ZZRingElem(M.R.n),p)
   j = 1
   for i = 2:s
-    while !divisible(V.snf[j], p^i)
+    while !is_divisible_by(V.snf[j], p^i)
       j += 1
     end
     GNew = _change_ring(G, F, j)
@@ -795,7 +795,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Vector{Int})
     return (zzModMatrix[])
   end
   for i = 1:length(typequo)
-    if !divisible(S.V.snf[ngens(S.V)+1-i],ZZRingElem((M.p)^typequo[length(typequo)+1-i]))
+    if !is_divisible_by(S.V.snf[ngens(S.V)+1-i],ZZRingElem((M.p)^typequo[length(typequo)+1-i]))
       return (zzModMatrix[])
     end
   end
@@ -929,7 +929,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
       push!(list, it)
     else
 
-      RR = residue_ring(FlintZZ, Int(p)^x1, cached=false)
+      RR = residue_ring(FlintZZ, Int(p)^x1, cached=false)[1]
       act_mat1 = Vector{zzModMatrix}(undef, length(act))
       for z=1:length(act)
         imgs = GrpAbFinGenElem[]

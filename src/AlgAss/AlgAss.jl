@@ -1161,7 +1161,7 @@ end
 
 # See W. Eberly "Computations for Algebras and Group Representations" p. 126.
 # TODO: fix the type
-function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     error("Dimension of algebra is 1")
   end
@@ -1189,7 +1189,7 @@ function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFiel
   end
 end
 
-#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
 function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   fac = factor(mina)
   if length(fac) == 1
@@ -1261,7 +1261,7 @@ function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
   end
 end
 
-#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
 # TODO: fix the type
 function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
   B = AlgAss(mina)
@@ -1272,7 +1272,7 @@ function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mi
 end
 
 # TODO: fix the type
-function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     return [ one(A) ]
   end
@@ -1313,7 +1313,7 @@ end
 # This computes a "matrix type" basis for A.
 # See W. Eberly "Computations for Algebras and Group Representations" p. 121.
 # TODO: fix the type
-function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
+function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
@@ -1376,7 +1376,7 @@ end
 
 # Assumes that A is central and isomorphic to a matrix algebra of base_ring(A)
 # TODO: fix the type
-function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
+function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
 
   idempotents = _primitive_idempotents(A)
   @assert length(idempotents)^2 == dim(A)
