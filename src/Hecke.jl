@@ -841,6 +841,29 @@ function print_cache(sym::Vector{Any})
   end
 end
 
+use_GRH::Bool = false
+function set_use_GRH(x::Bool)
+  global use_GRH
+  old = use_GRH
+  use_GRH = x
+  return old
+end
+function use_GRH()
+  global use_GRH
+  return use_GRH
+end
+GRH_stack = Set{Vector{Base.StackTraces.StackFrame}}()
+function clear_GRH_usage()
+  global GRH_stack
+  empty!(GRH_stack)
+end
+function push_GRH!()
+  global use_GRH
+  global GRH_stack
+  use_GRH && push!(GRH_stack, stacktrace())
+  nothing
+end
+
 function print_cache()
   print_cache(find_cache(Nemo))
   print_cache(find_cache(Nemo.Generic))
