@@ -135,6 +135,10 @@
 @deprecate divexact(a::NumFieldOrdElem, b::ZZRingElem, check::Bool) divexact(a, b; check=check)
 @deprecate divexact(x::T, y::T, check::Bool) where T <: NumFieldOrdElem divexact(x, y; check=check)
 
+# Deprecated during 0.24.*
+
+@deprecate TorQuadModuleMor TorQuadModuleMap
+
 # Things that moved to Nemo
 
 # > 0.18.1

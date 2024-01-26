@@ -112,7 +112,7 @@ export SRow
 export StepRange
 export TorQuadModule
 export TorQuadModuleElem
-export TorQuadModuleMor
+export TorQuadModuleMap
 export UnitGroup
 export VecSpaceRes
 export ZZGenus
