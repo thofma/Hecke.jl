@@ -13,7 +13,8 @@
 function neighbour(L::ZZLat, v::ZZMatrix, p::ZZRingElem)
   M = gram_matrix(L)*v
   r, K = left_kernel(matrix(GF(p), rank(L), 1, collect(M)))
-  LL = lattice_in_same_ambient_space(L, lift(view(K, 1:r, :))*basis_matrix(L)) + lattice_in_same_ambient_space(L, 1//p*(transpose(v)*basis_matrix(L))) + p*L
+  _B = matrix(QQ, r, ncols(K), ZZRingElem[lift(ZZ, k) for k in view(K, 1:r, :)])
+  LL = lattice_in_same_ambient_space(L, _B*basis_matrix(L)) + lattice_in_same_ambient_space(L, 1//p*(transpose(v)*basis_matrix(L))) + p*L
   return LL
 end
 
@@ -38,14 +39,17 @@ function make_admissible!(w::ZZMatrix, form::ZZMatrix, p::ZZRingElem, K::FinFiel
   return nothing
 end
 
-###############################################################################
+################################################################################
 #
 #  Algorithms
 #
-###############################################################################
+################################################################################
 
 #TODO: implement an algorithm selection after the benchmarking
 function _choose_algorithm(G::ZZGenus)
+  if rank(G) > 9
+    return :random
+  end
   return :orbit
 end
 
@@ -84,7 +88,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
     vain[] > stop_after && break
     w = ZZRingElem[lift(ZZ, k) for k in x]
     a = Tp(abelian_group(Tp)(w))
-    if iszero(quadratic_product(a))
+    if !iszero(quadratic_product(a))
       vain[] += 1
       continue
     end
@@ -93,6 +97,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
       continue
     end
 
+    w = matrix(ZZ, length(w), 1, w)
     make_admissible!(w, form, p, K)
     LL = lll(neighbour(L, w, p))
 
@@ -155,9 +160,9 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Union{No
 
   for i in 1:maxlines
     vain[] > stop_after && break
-    w = ZZRingElem[lift(QQ, k) for k in rand(P)]
+    w = ZZRingElem[lift(ZZ, k) for k in rand(P)]
     a = Tp(abelian_group(Tp)(w))
-    if iszero(quadratic_product(a))
+    if !iszero(quadratic_product(a))
       vain[] += 1
       continue
     end
@@ -166,6 +171,7 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Union{No
       continue
     end
 
+    w = matrix(ZZ, length(w), 1, w)
     make_admissible!(w, form, p, K)
     LL = lll(neighbour(L, w, p))
     @hassert :GenRep 3 is_locally_isometric(LL, L, p)
@@ -226,7 +232,6 @@ end
 function default_func(L::ZZLat)
   m = minimum(L)
   genus = root_lattice_recognition(L)
-  sort!(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] <= b[2])
   kn = kissing_number(L)::Int
   igo = automorphism_group_order(L)::ZZRingElem
   return (m, rlr, kn, igo)
@@ -270,7 +275,7 @@ function enumerate_definite_genus(
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
   @req all(LL -> genus(LL) == genus(known[1]), known) "Known lattices must be in the same genus"
-  @req algorithm == :orbit || algorithm == :rand "Only random and orbit algorithms are currently implemented"
+  @req algorithm == :orbit || algorithm == :random "Only :random and :orbit algorithms are currently implemented"
 
   res = copy(known)
   !distinct && _unique_iso_class!(res)
@@ -305,7 +310,7 @@ function enumerate_definite_genus(
   if use_mass
     _mass = mass(L)
     if isnothing(_missing_mass)
-      found = sum(1//automorphism_group_order(M) for M in res)
+      found = sum(1//automorphism_group_order(M) for M in res; init = QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
     else
       @hassert :GenRep 3 _missing_mass <= _mass
@@ -325,22 +330,21 @@ function enumerate_definite_genus(
     tbv[i] = false
     if algorithm == :orbit
       N = _neighbours_definite_orbit(res[i], p; callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after)
-    elseif algorithm == :rand
+    elseif algorithm == :random
       N = _neighbours_definite_rand(res[i], p; rand_neigh, callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after)
     end
     
     if !is_empty(N)
-      vain[] = 0
       for M in N
         push!(tbv, true)
         push!(res, M)
       end
       use_mass && is_zero(missing_mass[]) && break
       if use_mass
-        @v_do :ZZLatWithIsom 1 perc = Float64(missing_mass[]//_mass) * 100
-        @vprintln :ZZLatWithIsom 1 "Lattices: $(length(res)), Target mass: $(_mass). missing: $(missing_mass[]) ($(perc)%)"
+        @v_do :GenRep 1 perc = Float64(missing_mass[]//_mass) * 100
+        @vprintln :GenRep 1 "Lattices: $(length(res)), Target mass: $(_mass). missing: $(missing_mass[]) ($(perc)%)"
       else
-        @vprintln :ZZLatWithIsom 1 "Lattices: $(length(res))"
+        @vprintln :GenRep 1 "Lattices: $(length(res))"
       end
     elseif vain[] > stop_after
       break
@@ -370,7 +374,7 @@ function enumerate_definite_genus(
   for M in spinor_genera
     vain = Ref{Int}(0)
     if use_mass
-      _missing_mass = mass(M)/length(spinor_genera)
+      _missing_mass = mass(M)//length(spinor_genera)
       s = automorphism_group_order(M)
       sub!(_missing_mass, _missing_mass, 1//s)
       if is_zero(_missing_mass)
@@ -471,4 +475,3 @@ function save_partial_lattice(L::ZZLat, f::String)
   close(_f)
   return nothing
 end
-
