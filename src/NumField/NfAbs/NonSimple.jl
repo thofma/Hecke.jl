@@ -40,7 +40,7 @@
 
 @inline degrees(K::NfAbsNS) = K.degrees
 
-@inline ngens(K::NfAbsNS) = length(K.pol)
+@inline number_of_generators(K::NfAbsNS) = length(K.pol)
 
 function is_maximal_order_known(K::NfAbsNS)
   return has_attribute(K, :maximal_order)

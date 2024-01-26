@@ -364,6 +364,6 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
   end
 end
 
-Hecke.nrows(A::Matrix{T}) where {T} = size(A)[1]
-Hecke.ncols(A::Matrix{T}) where {T} = size(A)[2]
+Hecke.number_of_rows(A::Matrix{T}) where {T} = size(A)[1]
+Hecke.number_of_columns(A::Matrix{T}) where {T} = size(A)[2]
 
