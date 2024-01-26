@@ -24,7 +24,6 @@ include(joinpath(pathof(Nemo), "..", "Aliases.jl"))
 
 @alias hasalgebra has_algebra
 @alias hasembedding has_embedding
-@alias hasimage has_image
 @alias hasmatrix_action has_matrix_action
 @alias hasroot has_root
 

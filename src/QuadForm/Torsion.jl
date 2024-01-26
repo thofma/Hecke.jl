@@ -785,7 +785,7 @@ function image(f::TorQuadModuleMap, a::TorQuadModuleElem)
 end
 
 @doc raw"""
-    has_preimage_with_preimage(f::TorQuadModuleMor, b::TorQuadModuleElem)
+    has_preimage_with_preimage(f::TorQuadModuleMap, b::TorQuadModuleElem)
                                       -> Bool, TorQuadModuleElem
 
 Given an abelian group homomorphism $f\colon T \to S$ between two
@@ -794,7 +794,7 @@ whether `b` is in the image of `T`. If it is the case, the function
 also returns a preimage of `b` by `f`. Otherwise, it returns the
 identity element in `T`.
 """
-function has_preimage_with_preimage(f::TorQuadModuleMor, b::TorQuadModuleElem)
+function has_preimage_with_preimage(f::TorQuadModuleMap, b::TorQuadModuleElem)
   @req parent(b) === codomain(f) "b must be an element of the codomain of f"
   ok, a = has_preimage_with_preimage(f.map_ab, data(b))
   return ok, domain(f)(a)
