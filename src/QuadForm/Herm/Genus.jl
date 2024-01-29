@@ -255,8 +255,12 @@ $\mathfrak p$-valuation.
 function norm(G::HermLocalGenus)
   p = prime(G)
   OK = order(p)
-  if !is_dyadic(G) || !is_ramified(G)
+  if !is_ramified(G)
     return fractional_ideal(OK, p)^scale(G, 1)
+  elseif !is_dyadic(G)
+    # If the prime ideal ramifies, then p = P^2, so we need to divide the scale
+    # valuation by 2 to obtain the correct norm valuation
+    return fractional_ideal(OK, p)^(div(scale(G, 1), 2))
   else
     return fractional_ideal(p)^minimum(norms(G))
   end

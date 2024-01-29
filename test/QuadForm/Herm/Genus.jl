@@ -420,6 +420,19 @@
   L2 = @inferred representative(genus(LM))
   @test is_isometric_with_isometry(LM, L2)[1]
 
+  # Fix norm in non-dyadic ramified case
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  f = x^10 - 10*x^8 + 35*x^6 + x^5 - 50*x^4 - 5*x^3 + 25*x^2 + 5*x - 1
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  g = t^2 - a*t + 1
+  E, b = number_field(g, "b", cached = false)
+  D = matrix(E, 1, 1, [1])
+  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [5]), map(E, [a + 3]), map(E, [a^2 + 1]), map(E, [a^3 + 2]), map(E, [a^4 + 4]), map(E, [a^5 + 3]), map(E, [a^6 + 1]), map(E, [a^7 + 2]), map(E, [a^8 + 4]), map(E, [a^9 + 3]), map(E, [b + 4]), map(E, [a*b + 4*a]), map(E, [a^2*b + 4*a^2]), map(E, [a^3*b + 4*a^3]), map(E, [a^4*b + 4*a^4]), map(E, [a^5*b + 4*a^5]), map(E, [a^6*b + 4*a^6]), map(E, [a^7*b + 4*a^7]), map(E, [a^8*b + 4*a^8]), map(E, [a^9*b + 4*a^9])]
+  L = hermitian_lattice(E, gens, gram = D)
+
+  @test norm(L) == norm(genus(L))
+
   ##############################################################################
   #
   #  Local genera hermitian
