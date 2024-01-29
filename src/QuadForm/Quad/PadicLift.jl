@@ -21,10 +21,10 @@ Assumes that $G$ is a block diagonal matrix.
 """
 function _last_block_index(G::Union{zzModMatrix, ZZModMatrix}, p)
   n = nrows(G)
-  val = _min_val(G[n,:], p)
+  val = _min_val(G[n:n,:], p)
   val_current = val
   for k in 1:n-1
-    val_current = _min_val(G[n-k,:], p)
+    val_current = _min_val(G[(n-k):(n-k),:], p)
     if val != val_current
       return n-k+1, val, val_current
     end
