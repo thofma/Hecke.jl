@@ -1550,12 +1550,12 @@ coprime to `p`.
 # Examples
 ```jldoctest
 julia> A = abelian_group(ZZRingElem[2, 6, 30])
-GrpAb: Z/2 x Z/6 x Z/30
+Z/2 x Z/6 x Z/30
 
 julia> H, j = sylow_subgroup(A, 2);
 
 julia> H
-GrpAb: (Z/2)^3
+(Z/2)^3
 
 julia> divexact(order(A), order(H))
 45

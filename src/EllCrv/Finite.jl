@@ -1177,7 +1177,7 @@ julia> E = elliptic_curve(GF(101, 2), [1, 2]);
 julia> A, _ = abelian_group(E);
 
 julia> A
-GrpAb: Z/2 x Z/5200
+Z/2 x Z/5200
 ```
 """
 function abelian_group(E::EllCrv{U}) where {U <: FinFieldElem}
