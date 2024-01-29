@@ -177,7 +177,7 @@ end
 
 function show(io::IO, ::MIME"text/plain", A::GrpAbFinGen)
   @show_name(io, A)
-  @show_special(io, A)
+  @show_special(io, MIME"text/plain"(), A)
 
   if is_snf(A)
     show_snf(io, MIME"text/plain"(), A)
@@ -186,33 +186,81 @@ function show(io::IO, ::MIME"text/plain", A::GrpAbFinGen)
   end
 end
 
-function show_hom(io::IO, G)#::GrpAbFinGen)
+function show_hom(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :hom)
   D === nothing && error("only for hom")
-  print(io, "hom of ")
-  print(IOContext(io, :compact => true), D)
+  io = pretty(io)
+  if get(io, :supercompact, false)
+    print(io, LowercaseOff(), "Hom of abelian groups")
+  else
+    print(io, LowercaseOff(), "Hom(")
+    print(IOContext(io, :supercompact => true), D[1])
+    print(io, ", ")
+    print(IOContext(io, :supercompact => true), D[2])
+    print(io, ")")
+  end
 end
 
-function show_direct_product(io::IO, G)#::GrpAbFinGen)
+show_hom(io::IO, ::MIME"text/plain", G::GrpAbFinGen) = show_hom(io, G)
+
+function show_direct_product(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct products")
-  print(io, "direct product of ")
-  show(IOContext(io, :compact => true), D)
+  if get(io, :supercompact, false)
+    print(io, "Direct product of abelian groups")
+  else
+    print(io, "Direct product of ", ItemQuantity(length(D), "abelian group"))
+  end
 end
 
-function show_direct_sum(io::IO, G)#::GrpAbFinGen)
+function show_direct_product(io::IO, ::MIME"text/plain", G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("only for direct products")
+  io = pretty(io)
+  print(io, "Direct product of")
+  for G in D
+    print(io, "\n", Indent(), G, Dedent())
+  end
+end
+
+function show_direct_sum(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct sums")
-  print(io, "direct sum of ")
-  show(IOContext(io, :compact => true), D)
+  if get(io, :supercompact, false)
+    print(io, "Direct sum of abelian groups")
+  else
+    print(io, "Direct sum of ", ItemQuantity(length(D), "abelian group"))
+  end
 end
 
+function show_direct_sum(io::IO, ::MIME"text/plain", G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("only for direct sums")
+  io = pretty(io)
+  print(io, "Direct sum of")
+  for G in D
+    print(io, "\n", Indent(), G, Dedent())
+  end
+end
 
-function show_tensor_product(io::IO, G)#::GrpAbFinGen)
+function show_tensor_product(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :tensor_product)
   D === nothing && error("only for tensor products")
-  print(io, "tensor product of ")
-  show(IOContext(io, :compact => true), D)
+  if get(io, :supercompact, false)
+    print(io, "Tensor product of abelian groups")
+  else
+    print(io, "Tensor product of ", ItemQuantity(length(D), "abelian group"))
+  end
+end
+
+function show_tensor_product(io::IO, ::MIME"text/plain", G)#::GrpAbFinGen)
+  D = get_attribute(G, :tensor_product)
+  D === nothing && error("only for tensor products")
+  io = pretty(io)
+  print(io, "Tensor product of")
+  for G in D
+    print(io, "\n", Indent(), G, Dedent())
+  end
 end
 
 function show_gen(io::IO, ::MIME"text/plain", A::GrpAbFinGen)
