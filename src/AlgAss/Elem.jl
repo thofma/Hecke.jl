@@ -152,7 +152,7 @@ end
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
 
-  CalciumFieldElem = coefficients(a, copy = false)
+  ca = coefficients(a, copy = false)
   cb = coefficients(b, copy = false)
 
   A = parent(a)
@@ -162,7 +162,7 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   mt = multiplication_table(A, copy = false)
 
   for i = 1:n
-    cai = CalciumFieldElem[i]
+    cai = ca[i]
     if iszero(cai)
       continue
     end
@@ -312,7 +312,7 @@ function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) whe
   end
 
   mA = multiplication_table(A, copy = false)
-  CalciumFieldElem = coefficients(a, copy = false)
+  ca = coefficients(a, copy = false)
   cb = coefficients(b, copy = false)
 
   for i in 1:d
@@ -320,9 +320,9 @@ function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) whe
       k = mA[i, j]
       _v = v[k]
       if _ismutabletype(T)
-        _v = addmul!(_v, CalciumFieldElem[i], cb[j])
+        _v = addmul!(_v, ca[i], cb[j])
       else
-        v[k] = addmul!(_v, CalciumFieldElem[i], cb[j])
+        v[k] = addmul!(_v, ca[i], cb[j])
       end
     end
   end
@@ -796,12 +796,12 @@ end
 ################################################################################
 
 function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
-  CalciumFieldElem = coefficients(a, copy = false)
+  ca = coefficients(a, copy = false)
   for c = 1:ncols(M)
     if M isa QQMatrix
-      M[i, c] = CalciumFieldElem[c]
+      M[i, c] = ca[c]
     else
-      M[i, c] = deepcopy(CalciumFieldElem[c])
+      M[i, c] = deepcopy(ca[c])
     end
   end
   return nothing

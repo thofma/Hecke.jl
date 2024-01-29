@@ -528,30 +528,30 @@ function completion(K::AbsSimpleNumField, p::ZZRingElem, i::Int, n = 64)
   C = qAdicConj(K, Int(p))
   @assert 0<i<= degree(K)
 
-  CalciumFieldElem = conjugates(gen(K), C, n, all = true, flat = false)[i]
-  return completion(K, CalciumFieldElem)
+  ca = conjugates(gen(K), C, n, all = true, flat = false)[i]
+  return completion(K, ca)
 end
 
-function completion(K::AbsSimpleNumField, CalciumFieldElem::QadicFieldElem)
-  p = prime(parent(CalciumFieldElem))
+function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
+  p = prime(parent(ca))
   C = qAdicConj(K, Int(p))
-  r = roots(C.C, precision(CalciumFieldElem))
-  i = findfirst(x->parent(r[x]) == parent(CalciumFieldElem) && r[x] == CalciumFieldElem, 1:length(r))
+  r = roots(C.C, precision(ca))
+  i = findfirst(x->parent(r[x]) == parent(ca) && r[x] == ca, 1:length(r))
   Zx = polynomial_ring(FlintZZ, cached = false)[1]
   function inj(a::AbsSimpleNumFieldElem)
     d = denominator(a)
-    pr = precision(parent(CalciumFieldElem))
-    if pr > precision(CalciumFieldElem)
-      ri = roots(C.C, precision(parent(CalciumFieldElem)))[i]
+    pr = precision(parent(ca))
+    if pr > precision(ca)
+      ri = roots(C.C, precision(parent(ca)))[i]
     else
-      ri = CalciumFieldElem
+      ri = ca
     end
-    return inv(parent(CalciumFieldElem)(d))*(Zx(a*d)(ri))
+    return inv(parent(ca)(d))*(Zx(a*d)(ri))
   end
   # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
   # need o = sum o_i a^i
-  R, mR = residue_field(parent(CalciumFieldElem))
-  pa = [one(R), mR(CalciumFieldElem)]
+  R, mR = residue_field(parent(ca))
+  pa = [one(R), mR(ca)]
   d = degree(R)
   while length(pa) < d
     push!(pa, pa[end]*pa[2])
@@ -564,7 +564,7 @@ function completion(K::AbsSimpleNumField, CalciumFieldElem::QadicFieldElem)
   for i=1:d
     _num_setcoeff!(a, i-1, lift(ZZ, s[i, 1]))
   end
-  f = defining_polynomial(parent(CalciumFieldElem), FlintZZ)
+  f = defining_polynomial(parent(ca), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
   o = matrix(GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
   s = solve(m, o)
@@ -576,7 +576,7 @@ function completion(K::AbsSimpleNumField, CalciumFieldElem::QadicFieldElem)
   #TODO: don't use f, use the factors i the HenselCtx
   #seems to be slower...
 #  lf = factor_mod_pk(Array, C.C.H, Int(C.C.H.N))
-#  jj = findfirst(x->iszero(x[1](CalciumFieldElem)), lf)
+#  jj = findfirst(x->iszero(x[1](ca)), lf)
 #  Kjj = number_field(lf[jj][1], check = false, cached = false)[1]
 #  ajj = Kjj(parent(Kjj.pol)(a))
 #  bjj = Kjj(parent(Kjj.pol)(b))
@@ -615,5 +615,5 @@ function completion(K::AbsSimpleNumField, CalciumFieldElem::QadicFieldElem)
     end
     return r#*K(p)^valuation(x)
   end
-  return parent(CalciumFieldElem), MapFromFunc(K, parent(CalciumFieldElem), inj, lif)
+  return parent(ca), MapFromFunc(K, parent(ca), inj, lif)
 end

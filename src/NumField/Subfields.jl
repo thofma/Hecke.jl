@@ -100,14 +100,14 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
 
   k = base_field(K)
 
-  # Notation: cs the coefficients in a linear combination of the as, CalciumFieldElem the dot
+  # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
   cs = ZZRingElem[zero(ZZ) for n in 1:d]
   cs[1] = one(ZZ)
   while true
-    CalciumFieldElem = sum(c*a for (c,a) in zip(cs,as))
-    if degree(minpoly(CalciumFieldElem)) == d
-      return CalciumFieldElem
+    ca = sum(c*a for (c,a) in zip(cs,as))
+    if degree(minpoly(ca)) == d
+      return ca
     end
 
     # increment the components of cs
@@ -169,7 +169,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   end
 
   @vprintln :Subfields 1 "Trying combinations of elements in the basis"
-  # Notation: cs the coefficients in a linear combination of the as, CalciumFieldElem the dot
+  # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
   cs = ZZRingElem[rand(FlintZZ, -2:2) for n in 1:dsubfield]
   k = 0
@@ -179,16 +179,16 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   I = t2(a)
   while true
     s += 1
-    CalciumFieldElem = sum(c*a for (c,a) in zip(cs,as))
-    b = _block(CalciumFieldElem, rt, ap)
+    ca = sum(c*a for (c,a) in zip(cs,as))
+    b = _block(ca, rt, ap)
     if length(b) == dsubfield
-      t2n = t2(CalciumFieldElem)
+      t2n = t2(ca)
       if first
-        a = CalciumFieldElem
+        a = ca
         I = t2n
         first = false
       elseif t2n < I
-        a = CalciumFieldElem
+        a = ca
         I = t2n
       end
       k += 1

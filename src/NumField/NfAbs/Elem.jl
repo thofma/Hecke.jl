@@ -221,12 +221,12 @@ end
 
 function induce_inner_crt(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem = ZZRingElem(0))
   c = parent(a)()
-  CalciumFieldElem = ZZRingElem()
+  ca = ZZRingElem()
   cb = ZZRingElem()
   for i=0:degree(parent(a))-1
-    Nemo.num_coeff!(CalciumFieldElem, a, i)
+    Nemo.num_coeff!(ca, a, i)
     Nemo.num_coeff!(cb, b, i)
-    Hecke._num_setcoeff!(c, i, inner_crt(CalciumFieldElem, cb, pi, pq, pq2))
+    Hecke._num_setcoeff!(c, i, inner_crt(ca, cb, pi, pq, pq2))
   end
   return c
 end

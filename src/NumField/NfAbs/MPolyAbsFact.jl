@@ -1135,19 +1135,19 @@ function absolute_bivariate_factorisation(f::QQMPolyRingElem)
   if degree(f, 2) < d
     @vprintln :AbsFact 1 "swapping variables to have smaller degree"
     f = evaluate(f, [y, x])
-    a, CalciumFieldElem = absolute_bivariate_factorisation(f)
+    a, ca = absolute_bivariate_factorisation(f)
     S = parent(a)
     X, Y = gens(S)
-    return evaluate(a, [Y, X]), evaluate(CalciumFieldElem, [Y, X])
+    return evaluate(a, [Y, X]), evaluate(ca, [Y, X])
   end
 
   if degree(f, 2) == d && !isone(leading_coefficient(f, 1)) && isone(leading_coefficient(f, 2))
     @vprintln :AbsFact 1 "swapping variables to be monic"
     f = evaluate(f, [y, x])
-    a, CalciumFieldElem = absolute_bivariate_factorisation(f)
+    a, ca = absolute_bivariate_factorisation(f)
     S = parent(a)
     X, Y = gens(S)
-    return evaluate(a, [Y, X]), evaluate(CalciumFieldElem, [Y, X])
+    return evaluate(a, [Y, X]), evaluate(ca, [Y, X])
   end
 
   Qt, t = polynomial_ring(QQ, cached = false)

@@ -2377,7 +2377,7 @@ The error depends on the approximation error of `T`, i.e. $T G T^t - G$.
 
 # Arguments
 - `G::QQMatrix`: a diagonal matrix
-- `T::QQMatrix`: an isometry up to some PadicFieldElem precision
+- `T::QQMatrix`: an isometry up to some padic precision
 - `p`: a prime number
 """
 function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)

@@ -238,9 +238,9 @@ function Base.:(==)(a::LocalFieldElem{S, EisensteinLocalField}, b::LocalFieldEle
   e = ramification_index(parent(a))
   p = min(precision(a), precision(b))
   for i = 0:max(degree(a.data), degree(b.data))
-    CalciumFieldElem = coeff(a, i)
+    ca = coeff(a, i)
     cb = coeff(b, i)
-    if CalciumFieldElem != cb && valuation(CalciumFieldElem-cb) * e + i < p
+    if ca != cb && valuation(ca-cb) * e + i < p
       return false
     end
   end

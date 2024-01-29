@@ -359,9 +359,9 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   let BO = BO, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
       z = zero(O)::eltype(BO)
-      CalciumFieldElem = coefficients(a, copy = false)
+      ca = coefficients(a, copy = false)
       for i in 1:r
-        l = lift(ZZ, CalciumFieldElem[i])
+        l = lift(ZZ, ca[i])
         addmul!(z, l, BO[basis_elts[i]])
       end
       return z

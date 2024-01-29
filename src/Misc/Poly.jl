@@ -661,7 +661,7 @@ end
     space <M^i b | i> = everything, at least mod p, so in general.
     Now f(M)b = 0 implies f(M) = 0.
 
-    if f is known to be integral, then one can use ArbFieldElem to compute the
+    if f is known to be integral, then one can use arb to compute the
       complex version and use this to derive bounds...
 
     There are also bounds on the coefficients which are sometimes tight

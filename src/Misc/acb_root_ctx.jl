@@ -1,6 +1,6 @@
 ################################################################################
 #
-#             acb_root_ctx.jl: handling roots using ArbFieldElem
+#             acb_root_ctx.jl: handling roots using arb
 #
 # This file is part of hecke.
 #

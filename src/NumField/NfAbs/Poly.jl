@@ -283,26 +283,26 @@ function gcdx_modular(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{Ab
     bb = Hecke.modular_lift(bp, me)
     if d == 1
       g = gc
-      CalciumFieldElem = aa
+      ca = aa
       cb = bb
       d = ZZRingElem(p)
     else
       if degree(gc) < degree(g)
         g = gc
-        CalciumFieldElem = aa
+        ca = aa
         cb = bb
         d = ZZRingElem(p)
       elseif degree(gc) > degree(g)
         continue
       else
         g, dd = induce_crt(g, d, gc, ZZRingElem(p))
-        CalciumFieldElem, dd = induce_crt(CalciumFieldElem, d, aa, ZZRingElem(p))
+        ca, dd = induce_crt(ca, d, aa, ZZRingElem(p))
         cb, d = induce_crt(cb, d, bb, ZZRingElem(p))
       end
     end
     fl, ccb = Hecke.induce_rational_reconstruction(cb, d)
     if fl
-      fl, cca = Hecke.induce_rational_reconstruction(CalciumFieldElem, d)
+      fl, cca = Hecke.induce_rational_reconstruction(ca, d)
     end
     if fl
       fl, gg = Hecke.induce_rational_reconstruction(g, d)
