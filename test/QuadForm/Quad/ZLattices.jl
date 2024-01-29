@@ -201,7 +201,7 @@ end
   R = @inferred root_sublattice(L)
   @test 0 == rank(R)
   L = root_lattice(:A,2)
-  R = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  R = lattice(ambient_space(L),basis_matrix(L)[1:1,:])
   @test rank(root_sublattice(R))==1
 
   L = biproduct(root_lattice(:A,2),root_lattice(:D,4))[1]
@@ -762,7 +762,7 @@ end
   @test genus(L) == genus(E8)
 
   B = basis_matrix(dual(E8))
-  L = @inferred quadratic_lattice(QQ, [B[i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
+  L = @inferred quadratic_lattice(QQ, [B[i:i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
   @test genus(L) == genus(E8)
 end
 

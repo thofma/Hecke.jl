@@ -762,7 +762,7 @@ function van_hoeij(f::PolyRingElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       M = sub(M, 1:l, 1:ncols(M))
       d = Dict{ZZMatrix, Vector{Int}}()
       for l=1:r
-        k = M[:, l]
+        k = M[:, l:l]
         if haskey(d, k)
           push!(d[k], l)
         else

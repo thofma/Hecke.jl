@@ -53,7 +53,7 @@ function _locally_isometric_sublattice_inert(M, L, p, P, absolute_map)
   B, G, S = jordan_decomposition(M, p)
   @assert all(s in [0, 1] for s in S)
   if S[1] == 0
-    BB = mtype[ B[1][i, :] for i in 1:nrows(B[1])]
+    BB = mtype[ B[1][i:i, :] for i in 1:nrows(B[1])]
     m = div(length(BB) - r0, 2)
     k, h = residue_field(base_ring(OE), p)
     hext = extend(h, base_field(E))
@@ -146,8 +146,8 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
 
   B, G, S = jordan_decomposition(M, p)
   @assert all(s in [-1, 0] for s in S)
-  B0 = S[end] == 0 ? mtype[ B[end][i, :] for i in 1:nrows(B[end]) ] : mtype[]
-  B1 = S[1] == -1 ? mtype[ B[1][i, :] for i in 1:nrows(B[1]) ] : mtype[]
+  B0 = S[end] == 0 ? mtype[ B[end][i:i, :] for i in 1:nrows(B[end]) ] : mtype[]
+  B1 = S[1] == -1 ? mtype[ B[1][i:i, :] for i in 1:nrows(B[1]) ] : mtype[]
   r0 = scale(c, 1) == 0 ? rank(c, 1) : 0
   for i in 1:div(r0 - length(B0), 2)
     push!(B0, B1[2*i - 1])
@@ -178,7 +178,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
       r = rank(c, r)
       i = findfirst(j -> j == 1, S)
       @assert i !== nothing
-      Y1 = mtype[ B[i][j,:] for j in 1:r]
+      Y1 = mtype[ B[i][j:j,:] for j in 1:r]
     else
       Y1 = mtype[]
     end
@@ -186,7 +186,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
     _Y0 = mtype[]
     if _r !== nothing
       r = rank(c, _r)
-      B = mtype[ B[1][j, :] for j in 1:nrows(B[1]) ]
+      B = mtype[ B[1][j:j, :] for j in 1:nrows(B[1]) ]
       n = length(B)
       _G = G[1]
       local NN::Vector{Int}

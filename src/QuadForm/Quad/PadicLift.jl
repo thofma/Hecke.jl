@@ -144,7 +144,7 @@ function _solve_X_get_A_and_c(Y::fpMatrix, b, g)
   l = length(equations[1])
   equations = elem_type(k)[i for i in Iterators.flatten(equations)]
   A = matrix(k,r,l, equations)
-  c = A[:, l]
+  c = A[:, l:l]
   A = A[:, 1:end-1]
   return A, c
 end
