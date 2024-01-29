@@ -16,7 +16,7 @@ function to_non_normal(l::Vector{FieldsTower}, G::GAP.GapObj, deg::Int)
     error("Representation not possible")
   end
   rep = GAP.Globals.Representative(lC[ind])
-  ffields = Vector{AnticNumberField}(undef, length(l))
+  ffields = Vector{AbsSimpleNumField}(undef, length(l))
   for i = 1:length(ffields)
     ffields[i] = fixed_field(l[i], rep)
   end

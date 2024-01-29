@@ -567,11 +567,11 @@ end
 ###############################################################################
 
 mutable struct ZetaFunction
-  K::AnticNumberField
+  K::AbsSimpleNumField
   coeffs::Vector{ZZRingElem}
   dec_types
 
-  function ZetaFunction(K::AnticNumberField)
+  function ZetaFunction(K::AbsSimpleNumField)
     z = new()
     z.K = K
     z.coeffs = ZZRingElem[]

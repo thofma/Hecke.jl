@@ -40,7 +40,7 @@ function mod_lll(a::NfAbsOrdElem, I::NfAbsOrdIdl)
   return a - Hecke.parent(a)(collect(d*S))
 end
 
-function mod_lll(a::nf_elem, I::Hecke.NfAbsOrdFracIdl)
+function mod_lll(a::AbsSimpleNumFieldElem, I::Hecke.NfAbsOrdFracIdl)
   O = order(I)
   d = lcm(denominator(a, O), denominator(I))
   return divexact(Hecke.parent(a)(mod_lll(O(d*a), simplify(I*d).num)), d)
@@ -65,7 +65,7 @@ function _reduce(a::Hecke.PMat, T)
   end
 end
 
-function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.MatSpaceElem{nf_elem})
+function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, gamma::Generic.MatSpaceElem{AbsSimpleNumFieldElem})
 
   @assert iszero(hcat(M.matrix', b)*gamma)
   zk = base_ring(M)
@@ -129,7 +129,7 @@ function Hecke.dual(P::Hecke.PMat)
   return pseudo_matrix(inv(P.matrix)', map(inv, coefficient_ideals(P)))
 end
 
-function Hecke.invmod(A::Generic.MatSpaceElem{nf_elem}, X::ZZRingElem)
+function Hecke.invmod(A::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, X::ZZRingElem)
   k = base_ring(A)
   zk = maximal_order(k)
   q, mq = quo(zk, X*zk)
@@ -157,7 +157,7 @@ function my_mod_sym!(A::ZZMatrix, X::ZZRingElem, ::Any)
   mod_sym!(A, X)
 end
 
-function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
+function valuation(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}, X::ZZRingElem)
   v = 0
   first = true
   for x = coordinates(a)
@@ -173,13 +173,13 @@ function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
   return v
 end
 
-function mod_sym(A::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
+function mod_sym(A::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}, X::ZZRingElem)
   c = coordinates(A)
   d = map(x->Hecke.mod_sym(x, X), c)
   return parent(A)(d)
 end
 
-function my_mod_sym!(A::Generic.MatSpaceElem{nf_elem}, X::ZZRingElem)
+function my_mod_sym!(A::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, X::ZZRingElem)
   k = base_ring(A)
   zk = maximal_order(k)
   for i=1:nrows(A)
@@ -415,10 +415,10 @@ module RRSMatNf
 using Hecke
 
 mutable struct RRSMatSpace
-  k::AnticNumberField
+  k::AbsSimpleNumField
   p_data::Dict{Int, Any}
 
-  function RRSMatSpace(k::AnticNumberField)
+  function RRSMatSpace(k::AbsSimpleNumField)
     r = new()
     r.k = k
     r.p_data = Dict{Int, Any}()
@@ -469,7 +469,7 @@ mutable struct RRSMat
   ncols::Int
   data::Dict{Int, Any}
 
-  function RRSMat(R::RRSMatSpace, a::MatElem{nf_elem}, np::Int)
+  function RRSMat(R::RRSMatSpace, a::MatElem{AbsSimpleNumFieldElem}, np::Int)
     r = new()
     r.parent = R
     r.nrows = nrows(a)

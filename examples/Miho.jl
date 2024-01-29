@@ -1,5 +1,5 @@
 
-function Hecke.trace_matrix(b::Vector{nf_elem})
+function Hecke.trace_matrix(b::Vector{AbsSimpleNumFieldElem})
   m = zero_matrix(QQ, length(b), length(b))
   for i=1:length(b)
     m[i,i] = trace(b[i]*b[i])
@@ -22,7 +22,7 @@ where the a_i are given explicitly as Gauss-sums from large cyclotomic fields
 This implements the Acciaro-Fieker approach, bypassing the Gauss sums
 IN particular for n = 1 and tame fields, it will find a normal generator.
 """
-function INB(K::AnticNumberField)
+function INB(K::AbsSimpleNumField)
   G, mG = automorphism_group(PermGroup, K)
   @assert is_cyclic(G)
   @assert Hecke.is_prime_power(degree(K))
@@ -53,7 +53,7 @@ function INB(K::AnticNumberField)
   d = elementary_divisors(t[1])[end]
   trafo = matrix(hcat([coordinates(x) for x= nb]...))*(1//d)
 
-  phi = function(x::nf_elem)
+  phi = function(x::AbsSimpleNumFieldElem)
     c = matrix(coordinates(x))
     s = solve(trafo, c)
     return sum(s[i,1]*z^(i-1) for i=1:p)
@@ -65,7 +65,7 @@ function INB(K::AnticNumberField)
 
   local tr
   if is_prime(p)
-    all_u = nf_elem[]
+    all_u = AbsSimpleNumFieldElem[]
     get_u = x->x
     for i = 1:divexact(p-1, 2)
       push!(all_u, (1-z^i)/(1-z))

@@ -76,7 +76,7 @@ order(F::NfFactorBase) = ring(F)
 #
 ################################################################################
 
-function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
+function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::AbsSimpleNumFieldElem;
                  error = true, n = abs(norm(a))) where T
   fl, res = _factor(FB, a, error=error, n=n)
   if fl
@@ -85,7 +85,7 @@ function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
   return fl
 end
 
-function _factor!(FB::NfFactorBase, a::nf_elem,
+function _factor!(FB::NfFactorBase, a::AbsSimpleNumFieldElem,
                     error::Bool = true, n::QQFieldElem = abs(norm(a)), integral::Bool = true)
   T = ZZRingElem
   O = order(FB.ideals[1])
@@ -134,7 +134,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   end
 end
 
-function factor(FB::NfFactorBase, a::nf_elem)
+function factor(FB::NfFactorBase, a::AbsSimpleNumFieldElem)
   return _factor!(FB, a, true, abs(norm(a)), false)[2]
 end
 

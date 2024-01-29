@@ -62,10 +62,10 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
         zdt = z.d_t_threaded[Threads.threadid()]
       end
 
-      ca = coefficients(a, copy = false)
-      __set!(zct, ca)
+      CalciumFieldElem = coefficients(a, copy = false)
+      __set!(zct, CalciumFieldElem)
       #for i in 1:dim(A)
-      #  z.c_t[1, i] = ca[i]
+      #  z.c_t[1, i] = CalciumFieldElem[i]
       #end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
       if T === QQMatrix
@@ -105,17 +105,17 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   end
 end
 
-function __set!(c_t, ca)
-  for i in 1:length(ca)
-    c_t[1, i] = ca[i]
+function __set!(c_t, CalciumFieldElem)
+  for i in 1:length(CalciumFieldElem)
+    c_t[1, i] = CalciumFieldElem[i]
   end
 end
 
-function __set!(c_t::QQMatrix, ca)
+function __set!(c_t::QQMatrix, CalciumFieldElem)
   GC.@preserve c_t begin
-    for i in 1:length(ca)
+    for i in 1:length(CalciumFieldElem)
       t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), c_t, 0, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, ca[i])
+      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, CalciumFieldElem[i])
     end
   end
 end

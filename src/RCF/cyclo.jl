@@ -5,10 +5,10 @@
 ################################################################################
 
 mutable struct CyclotomicExt
-  k::AnticNumberField
+  k::AbsSimpleNumField
   n::Int
-  Kr::Hecke.NfRel{nf_elem}
-  Ka::AnticNumberField
+  Kr::Hecke.NfRel{AbsSimpleNumFieldElem}
+  Ka::AbsSimpleNumField
   mp::Tuple{NfToNfRel, NfToNfMor}
 
   kummer_exts::Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}
@@ -59,13 +59,13 @@ function simplify!(C::CyclotomicExt)
 end
 
 @doc raw"""
-    cyclotomic_extension(k::AnticNumberField, n::Int) -> CyclotomicExt
+    cyclotomic_extension(k::AbsSimpleNumField, n::Int) -> CyclotomicExt
 
 Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
 both as an absolute extension, as a relative extension (of $k$) and the maps
 between them.
 """
-function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified::Bool = true)
+function cyclotomic_extension(k::AbsSimpleNumField, n::Int; cached::Bool = true, compute_maximal_order::Bool = true, compute_LLL_basis::Bool = true, simplified::Bool = true)
   if cached
     Ac = get_attribute!(() -> CyclotomicExt[], k, :cyclotomic_ext)::Vector{CyclotomicExt}
     for i = Ac
@@ -114,7 +114,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
     if !isone(gcd(degree(fk), degree(k))) && !is_totally_real(k)
       rt = _roots_hensel(fk, max_roots = 1, is_normal = true)
     else
-      rt = nf_elem[]
+      rt = AbsSimpleNumFieldElem[]
     end
     if length(rt) == 1
       #The polynomial splits completely!
@@ -136,7 +136,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       if compute_maximal_order && !simplified
         Zk = maximal_order(k)
         b_k = basis(Zk, k)
-        B_k = Vector{nf_elem}(undef, degree(Ka))
+        B_k = Vector{AbsSimpleNumFieldElem}(undef, degree(Ka))
         for i = 1:length(b_k)
           B_k[i] = small2abs(b_k[i])
         end
@@ -195,7 +195,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int; cached::Bool = true, 
       # for all p dividing the gcd()
       Zk = maximal_order(k)
       b_k = basis(Zk, k)
-      B_k = Vector{nf_elem}(undef, degree(Ka))
+      B_k = Vector{AbsSimpleNumFieldElem}(undef, degree(Ka))
       for i = 1:length(b_k)
         B_k[i] = small2abs(b_k[i])
       end
@@ -279,11 +279,11 @@ function cyclotomic_extension(::Type{ClassField}, zk::NfOrd, n::Int; cached::Boo
 end
 
 @doc raw"""
-    cyclotomic_extension(ClassField, k::AnticNumberField, n::Int) -> ClassField
+    cyclotomic_extension(ClassField, k::AbsSimpleNumField, n::Int) -> ClassField
 
 Computes $k(\zeta_n)$, as a class field, as an extension of the same base field.
 """
-function cyclotomic_extension(::Type{ClassField}, k::AnticNumberField, n::Int; cached::Bool = true)
+function cyclotomic_extension(::Type{ClassField}, k::AbsSimpleNumField, n::Int; cached::Bool = true)
   return cyclotomic_extension(ClassField, maximal_order(k), n)
 end
 
@@ -306,7 +306,7 @@ function fixed_field(A::ClassField, s::Map{GrpAbFinGen, GrpAbFinGen})
 end
 
 
-function compositum(k::AnticNumberField, A::ClassField)
+function compositum(k::AbsSimpleNumField, A::ClassField)
   c, mk, mA = compositum(k, base_field(A))
   return extend_base_field(A, mA)
 end
@@ -352,7 +352,7 @@ function _isprobably_primitive(x::NfAbsOrdElem)
   return false
 end
 
-function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::Bool = true)
+function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::Bool = true)
 
   L, zeta = cyclotomic_field(n, cached = false)
   automorphism_list(L)
@@ -427,7 +427,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   end
   abs2ns = hom(Ka, S, elem_in_nf(a), inverse = emb)
 
-  BKa = Vector{nf_elem}(undef, degree(Ka))
+  BKa = Vector{AbsSimpleNumFieldElem}(undef, degree(Ka))
   for i = 1:length(BKa)
     BKa[i] = abs2ns\(BOS[i])
   end
@@ -439,7 +439,7 @@ function _cyclotomic_extension_non_simple(k::AnticNumberField, n::Int; cached::B
   set_attribute!(Ka, :maximal_order => OKa)
   img_gen_k = abs2ns\(S[1])
   img_gen_Kr = abs2ns\(S[2])
-  img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{nf_elem}[Kr(gen(k)), gKr])
+  img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{AbsSimpleNumFieldElem}[Kr(gen(k)), gKr])
 
   small2abs = hom(k, Ka, img_gen_k)
   abs2rel = hom(Ka, Kr, img_gen_Ka, inverse = (img_gen_k, img_gen_Kr))

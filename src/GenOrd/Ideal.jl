@@ -810,8 +810,8 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
 
   let BO = BO, basis_elts = basis_elts, r = r
     function _preimage(a::AlgAssElem)
-      ca = coefficients(a)
-      return sum(preimage(phi, ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
+      CalciumFieldElem = coefficients(a)
+      return sum(preimage(phi, CalciumFieldElem[i]) * BO[basis_elts[i]] for i in 1:length(CalciumFieldElem))
     end
   end
 

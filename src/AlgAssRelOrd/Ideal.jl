@@ -190,7 +190,7 @@ end
 
 Returns the ideal $a \cdot O$ where $a$ is an ideal of `base_ring(O)`.
 """
-function ideal(O::AlgAssRelOrd{nf_elem, NfOrdFracIdl}, a::NfAbsOrdIdl)
+function ideal(O::AlgAssRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl}, a::NfAbsOrdIdl)
   @assert order(a) === base_ring(O)
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
   return ideal(O, aa)

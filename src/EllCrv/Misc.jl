@@ -115,7 +115,7 @@ function quadroots(a, b, c, _res::Union{Function, MapFromFunc})
   end
 end
 
-function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
+function quadroots(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = residue_field(R, pIdeal)
   P, x = polynomial_ring(F, "x", cached = false)
@@ -175,7 +175,7 @@ function nrootscubic(b, c, d, p)
   end
 end
 
-function nrootscubic(b::nf_elem, c::nf_elem, d::nf_elem, pIdeal:: NfOrdIdl)
+function nrootscubic(b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, d::AbsSimpleNumFieldElem, pIdeal:: NfOrdIdl)
   R = order(pIdeal)
   F, phi = residue_field(R, pIdeal)
   P, x = polynomial_ring(F, "x", cached = false)
@@ -241,7 +241,7 @@ function normal_basis(K::T, L::T) where T<:FinField
 end
 
 
-function mod(a::nf_elem, I::NfOrdIdl)
+function mod(a::AbsSimpleNumFieldElem, I::NfOrdIdl)
   R = order(I)
   k, phi = residue_field(R, I)
   a_num = phi(R(numerator(a)))
@@ -261,7 +261,7 @@ function Base.invmod(a::NfOrdElem, I::NfOrdIdl)
   return preimage(phi, inv(phi(R(a))))
 end
 
-function Base.invmod(a::nf_elem, I::NfOrdIdl)
+function Base.invmod(a::AbsSimpleNumFieldElem, I::NfOrdIdl)
   R = order(I)
   k, phi = residue_field(R, I)
   a_num = phi(R(numerator(a)))
@@ -282,7 +282,7 @@ function pth_root_mod(a::NfOrdElem, pIdeal::NfOrdIdl)
   return preimage(phi, pth_root(phi(R(a))))
 end
 
-function pth_root_mod(a::nf_elem, pIdeal::NfOrdIdl)
+function pth_root_mod(a::AbsSimpleNumFieldElem, pIdeal::NfOrdIdl)
   R = order(pIdeal)
   p = pIdeal.gen_one
   k, phi = residue_field(R, pIdeal)

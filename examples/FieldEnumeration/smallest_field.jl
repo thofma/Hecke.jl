@@ -8,7 +8,7 @@ include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration.jl"))
 #
 ###############################################################################
 
-function _write_fields(list::Vector{Tuple{AnticNumberField, ZZRingElem}}, filename::String)
+function _write_fields(list::Vector{Tuple{AbsSimpleNumField, ZZRingElem}}, filename::String)
   f=open(filename, "a")
   for L in list
     x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])

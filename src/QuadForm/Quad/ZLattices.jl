@@ -1052,7 +1052,7 @@ function _to_number_field_lattice(L::ZZLat, K, V)
 end
 
 function _to_number_field_lattice(L::ZZLat;
-                                  K::AnticNumberField = rationals_as_number_field()[1],
+                                  K::AbsSimpleNumField = rationals_as_number_field()[1],
                                   V::QuadSpace = quadratic_space(K, gram_matrix(ambient_space(L))))
   return _to_number_field_lattice(L, K, V)
 end
@@ -2377,7 +2377,7 @@ The error depends on the approximation error of `T`, i.e. $T G T^t - G$.
 
 # Arguments
 - `G::QQMatrix`: a diagonal matrix
-- `T::QQMatrix`: an isometry up to some padic precision
+- `T::QQMatrix`: an isometry up to some PadicFieldElem precision
 - `p`: a prime number
 """
 function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)

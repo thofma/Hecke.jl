@@ -214,7 +214,7 @@ function is_prime_nice(O::NfOrd, p::Int)
   return true
 end
 
-function is_prime_nice(K::AnticNumberField, p::Int)
+function is_prime_nice(K::AbsSimpleNumField, p::Int)
   d = lcm(map(denominator, coefficients(K.pol)))
   if d % p == 0
     return false
@@ -231,13 +231,13 @@ function is_prime_nice(K::AnticNumberField, p::Int)
 end
 
 @doc raw"""
-    factor_new(f::PolyRingElem{nf_elem}) -> Vector{PolyRingElem{nf_elem}}
+    factor_new(f::PolyRingElem{AbsSimpleNumFieldElem}) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 Direct factorisation over a number field, using either Zassenhaus' approach
 with the potentially exponential recombination or a van Hoeij like approach using LLL.
 The decision is based on the number of local factors.
 """
-function factor_new(f::PolyRingElem{nf_elem})
+function factor_new(f::PolyRingElem{AbsSimpleNumFieldElem})
   k = base_ring(f)
   local zk::NfOrd
   if is_maximal_order_known(k)
@@ -322,7 +322,7 @@ function degree_set(fa::Dict{Int, Int})
 end
 
 @doc raw"""
-    zassenhaus(f::PolyRingElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyRingElem{nf_elem}}
+    zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
@@ -330,7 +330,7 @@ is computed. In the last step, all combinations of the local factors are tried t
 correct factorisation.
 $f$ needs to be square-free and square-free modulo $P$ as well.
 """
-function zassenhaus(f::PolyRingElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
+function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
   @vprintln :PolyFactor 1 "Using (relative) Zassenhaus"
 
   K = base_ring(parent(f))
@@ -423,7 +423,7 @@ end
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
 #Only the coefficients 0:up_to and from:degree(f)-1 are computed
-function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
+function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::AbsSimpleNumFieldElem)
   lf = factor(H)
   a = preimage(mC, zero(codomain(mC)))
   k = parent(a)
@@ -444,7 +444,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
 
   for i=0:up_to
     for j=1:length(lf)
-      c = sc * preimage(mC, coeff(lf[j], i)) # should be an nf_elem
+      c = sc * preimage(mC, coeff(lf[j], i)) # should be an AbsSimpleNumFieldElem
       elem_to_mat_row!(NN, 1, d, c)
       mul!(NN, NN, Mi) #base_change, Mi should be the inv-lll-basis-mat wrt field
       @assert isone(d)
@@ -457,7 +457,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
   lf = [divhigh(mulhigh(derivative(x), H.f, from), x, from) for x = lf]
   for i=from:N-1
     for j=1:length(lf)
-      c = sc * preimage(mC, coeff(lf[j], i)) # should be an nf_elem
+      c = sc * preimage(mC, coeff(lf[j], i)) # should be an AbsSimpleNumFieldElem
       elem_to_mat_row!(NN, 1, d, c)
       mul!(NN, NN, Mi) #base_change, Mi should be the inv-lll-basis-mat wrt field
       @assert isone(d)
@@ -499,10 +499,10 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   vH.pM = (F.num, F.den)
 end
 
-function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::LLLContext = LLLContext(0.99, 0.51))
    z = deepcopy(x)
    d = Int(ccall((:fmpz_lll_wrapper_with_removal_knapsack, libflint), Cint,
-    (Ref{ZZMatrix}, Ptr{nothing}, Ref{ZZRingElem}, Ref{lll_ctx}), z, C_NULL, b, ctx))
+    (Ref{ZZMatrix}, Ptr{nothing}, Ref{ZZRingElem}, Ref{LLLContext}), z, C_NULL, b, ctx))
    return d, z
 end
 
@@ -515,8 +515,8 @@ function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingEle
     dd = tdivpow2(d, sc)
     MM = [M BB; zero_matrix(FlintZZ, ncols(B), ncols(M)) dd*identity_matrix(FlintZZ, ncols(B))]
     @show maximum(nbits, MM)
-    @time MM, T = lll_with_transform(MM, lll_ctx(0.75, 0.51))
-    @time l, _ = lll_with_removal(MM, bnd, lll_ctx(0.75, 0.51))
+    @time MM, T = lll_with_transform(MM, LLLContext(0.75, 0.51))
+    @time l, _ = lll_with_removal(MM, bnd, LLLContext(0.75, 0.51))
     @show l
     M = T[1:nrows(M), 1:nrows(M)]*M
     B = T[1:nrows(M), 1:nrows(M)]*B
@@ -530,7 +530,7 @@ end
 
 
 @doc raw"""
-    van_hoeij(f::PolyRingElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyRingElem{nf_elem}}
+    van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
 $P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
@@ -538,7 +538,7 @@ to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
-function van_hoeij(f::PolyRingElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
+function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; prec_scale = 1)
   @vprintln :PolyFactor 1 "Using (relative) van Hoeij"
   @vprintln :PolyFactor 2 "with p = $P"
   @assert all(x->denominator(x) == 1, coefficients(f))
@@ -868,7 +868,7 @@ end
 # fixed "most" of it...
 #Update: f, K large enough, this wins. Need bounds...
 
-function norm_mod(f::PolyRingElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
+function norm_mod(f::PolyRingElem{AbsSimpleNumFieldElem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   K = base_ring(f)
   k = Native.GF(p)
   s = 0
@@ -903,7 +903,7 @@ function norm_mod(f::PolyRingElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   return lift(Zx, pol)
 end
 
-function norm_mod(f::PolyRingElem{nf_elem}, Zx::ZZPolyRing = Globals.Zx)
+function norm_mod(f::PolyRingElem{AbsSimpleNumFieldElem}, Zx::ZZPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.
   # equivalently: the norm is integral...
   p = p_start

@@ -45,10 +45,10 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D)
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D)
 ```
 
@@ -62,7 +62,7 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
 Hecke.to_hecke(Lherm)
 ```
@@ -100,10 +100,10 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
 ambient_space(Lherm)
 rational_span(Lquad)
@@ -132,10 +132,10 @@ the prime ideal $p = 7*\mathcal O_K$.
 using Hecke # hide
 K, a = rationals_as_number_field();
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
 Lquad2 = quadratic_lattice(K, gens, gram = D)
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1]
@@ -190,7 +190,7 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
 rank(Lherm), degree(Lherm)
 discriminant(Lherm)
@@ -242,10 +242,10 @@ orthogonal_submodule(::AbstractLat, ::AbstractLat)
 using Hecke # hide
 K, a = rationals_as_number_field();
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
 Lquad2 = quadratic_lattice(K, gens, gram = D);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
@@ -296,7 +296,7 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
 norm(Lherm)
 scale(Lherm)
@@ -331,7 +331,7 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
 OK = maximal_order(K);
 is_integral(Lherm)
@@ -357,7 +357,7 @@ is_isotropic(::AbstractLat, p)
 using Hecke # hide
 K, a = rationals_as_number_field();
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
@@ -397,7 +397,7 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
 is_definite(Lquad)
 automorphism_group_order(Lquad)
@@ -420,10 +420,10 @@ is_locally_isometric(::AbstractLat, ::AbstractLat, p::NfOrdIdl)
 using Hecke # hide
 K, a = rationals_as_number_field();
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1]), map(K, [2, 0, 0])];
 Lquad = quadratic_lattice(K, gens, gram = D);
 D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
-gens = Vector{nf_elem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
+gens = Vector{AbsSimpleNumFieldElem}[map(K, [-35, 25, 0]), map(K, [30, 40, -20]), map(K, [5, 10, -5])];
 Lquad2 = quadratic_lattice(K, gens, gram = D);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];
@@ -453,7 +453,7 @@ Kt, t = K["t"];
 g = t^2 + 7;
 E, b = number_field(g, "b");
 D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 Lherm = hermitian_lattice(E, gens, gram = D);
 OK = maximal_order(K);
 p = prime_decomposition(OK, 7)[1][1];

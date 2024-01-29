@@ -51,9 +51,9 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
 
   # Find the infinite places we need for the ray class group of FinZ
   @vprintln :LocallyFreeClassGroup "Find the splitting infinite places"
-  inf_plc = Vector{Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}(undef, length(fields_and_maps))
+  inf_plc = Vector{Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}(undef, length(fields_and_maps))
   for i = 1:length(fields_and_maps)
-    inf_plc[i] = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
+    inf_plc[i] = Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}()
   end
   for i = 1:length(Adec)
     B, BtoA = Adec[i]
@@ -376,7 +376,7 @@ end
 
 # Assumes v_p(a) = 0.
 # Constructs n, d integral with n/d = a and v_p(n) = v_p(d) = 0.
-function coprime_num_and_den(a::nf_elem, p::NfAbsOrdIdl)
+function coprime_num_and_den(a::AbsSimpleNumFieldElem, p::NfAbsOrdIdl)
   K = parent(a)
   OK = maximal_order(K)
   facA = factor(a*OK)
@@ -421,7 +421,7 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
 
     # Some precomputations
     #nf_idl_type = ideal_type(order_type(fields_and_maps[1][1]))
-    nf_idl_type = ideal_type(order_type(AnticNumberField))
+    nf_idl_type = ideal_type(order_type(AbsSimpleNumField))
     FinKs = Vector{nf_idl_type}(undef, length(fields_and_maps))
     for i = 1:length(fields_and_maps)
       K, ZtoK = fields_and_maps[i]
@@ -469,7 +469,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   RtoC = m.RtoC
   mR =  m.mR
   FinZ = m.FinZ
-  fields_and_maps = m.fields_and_maps::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}}
+  fields_and_maps = m.fields_and_maps::Vector{Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
   ZtoA = m.ZtoA::morphism_type(AlgAss{QQFieldElem}, typeof(A))
   _T = _ext_type(elem_type(base_ring(A)))
   nf_idl_type = ideal_type(order_type(_T))

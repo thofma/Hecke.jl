@@ -148,7 +148,7 @@
     J = numerator(I)
     @assert J isa Hecke.NfOrdIdl
 
-    for (T, E) in (I => nf_elem, J => Hecke.NfOrdElem)
+    for (T, E) in (I => AbsSimpleNumFieldElem, J => Hecke.NfOrdElem)
       m = make(T, 3)
       @test all(x -> x isa E,
                 (rand(T, 3), rand(rng, T, 3), rand(m), rand(rng, m)))
@@ -174,7 +174,7 @@
   Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
+  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
   pm = pseudo_hnf(pseudo_matrix(matrix(gens)), :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
 

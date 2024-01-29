@@ -281,9 +281,9 @@ function spinor_norm(L, p)
     # Generators of the (principal) norm ideals of the Jordan components: since
     # p is odd, the norms (and the scales) are just the dimensions of the
     # Jordan components
-     normgens = nf_elem[g[1,1] for g in G]
+     normgens = AbsSimpleNumFieldElem[g[1,1] for g in G]
 
-     twonormgens = nf_elem[]
+     twonormgens = AbsSimpleNumFieldElem[]
 
      for i in 1:length(normgens)
        for j in 1:length(normgens)
@@ -375,7 +375,7 @@ function good_bong(L, p)
   @req is_dyadic(p) "Prime must be dyadic"
   G, JJ = maximal_norm_splitting(L, p)
   K = nf(base_ring(L))
-  bong = nf_elem[]
+  bong = AbsSimpleNumFieldElem[]
   for i in 1:length(G)
     GG = G[i]
     if nrows(GG) == 2
@@ -681,8 +681,8 @@ end
 # parameter atinfinity can be a list of tuples <v, +1 or -1>, where v is an
 # element of real_places(nf(base_ring(L))). All places, finite or infinite, which
 # are unspecified are interpreted as 1.}
-function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}[]) where {T}
-  #local s::nf_elem
+function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}, Int}[]) where {T}
+  #local s::AbsSimpleNumFieldElem
   R = order(base_ring(codomain(mRCG)))
   F = nf(R)
   IP = defining_modulus(mRCG)[2]
@@ -915,7 +915,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   @req e == 0 || valuation(norm(L), p) >= e "The lattice must be even"
   B = local_basis_matrix(L, p, type = :submodule)
   n = nrows(B)
-  if F isa AnticNumberField
+  if F isa AbsSimpleNumField
     @assert nbits(minimum(p)) < 60
     k, h = ResidueFieldSmall(R, p)
   else
@@ -1418,7 +1418,7 @@ function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
   end
 end
 
-function preimage(f::LocMultGrpModSquMap, y::nf_elem)
+function preimage(f::LocMultGrpModSquMap, y::AbsSimpleNumFieldElem)
   @assert parent(y) == f.codomain
   if !f.is_dyadic
     v = valuation(y, f.p)
@@ -1929,7 +1929,7 @@ function absolute_norm(A::NfAbsOrdFracIdl)
   return norm(A)
 end
 
-function *(a::NfAbsOrdFracIdl{AnticNumberField,nf_elem}, b::AlgAssRelOrdIdl{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem},AlgAss{nf_elem}})
+function *(a::NfAbsOrdFracIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.NfAbsOrdFracIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},AlgAss{AbsSimpleNumFieldElem}})
   pm = basis_pmatrix(b)
   pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
   return ideal(algebra(order(b)), pmnew)

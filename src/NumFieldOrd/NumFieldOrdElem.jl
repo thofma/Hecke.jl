@@ -407,10 +407,10 @@ Returns whether $x$ and $y$ are equal.
 ################################################################################
 
 @doc raw"""
-    minkowski_map(a::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
+    minkowski_map(a::NumFieldOrdElem, abs_tol::Int) -> Vector{ArbFieldElem}
 
 Returns the image of $a$ under the Minkowski embedding.
-Every entry of the array returned is of type `arb` with radius less then
+Every entry of the array returned is of type `ArbFieldElem` with radius less then
 `2^-abs_tol`.
 """
 function minkowski_map(a::NumFieldOrdElem, abs_tol::Int = 32)
@@ -426,9 +426,9 @@ end
 ################################################################################
 
 @doc raw"""
-    conjugates_arb(x::NumFieldOrdElem, abs_tol::Int) -> Vector{acb}
+    conjugates_arb(x::NumFieldOrdElem, abs_tol::Int) -> Vector{AcbFieldElem}
 
-Compute the conjugates of $x$ as elements of type `acb`.
+Compute the conjugates of $x$ as elements of type `AcbFieldElem`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
@@ -443,12 +443,12 @@ function conjugates_arb(x::NumFieldOrdElem, abs_tol::Int = 32)
 end
 
 @doc raw"""
-    conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
+    conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int) -> Vector{ArbFieldElem}
 
 Returns the elements
 $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
 \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
-2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
+2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `ArbFieldElem` radius
 less then `2^-abs_tol`.
 """
 function conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int = 32)
@@ -462,7 +462,7 @@ end
 ################################################################################
 
 @doc raw"""
-    t2(x::NumFieldOrdElem, abs_tol::Int = 32) -> arb
+    t2(x::NumFieldOrdElem, abs_tol::Int = 32) -> ArbFieldElem
 
 Return the $T_2$-norm of $x$. The radius of the result will be less than
 `2^-abs_tol`.

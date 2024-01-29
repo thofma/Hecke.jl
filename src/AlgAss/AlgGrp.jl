@@ -254,7 +254,7 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
   end
   if isdefined(A, :maps_to_numberfields)
     NF = A.maps_to_numberfields::Vector{Tuple{_ext_type(T),_abs_alg_ass_to_nf_abs_mor_type(A)}}
-    fields_and_maps = Tuple{AnticNumberField,_abs_alg_ass_to_nf_abs_mor_type(B)}[]
+    fields_and_maps = Tuple{AbsSimpleNumField,_abs_alg_ass_to_nf_abs_mor_type(B)}[]
     for (K, AtoK) in NF
       BtoK = AbsAlgAssToNfAbsMor(B, K, AtoK.mat, AtoK.imat)
       push!(fields_and_maps, (K, BtoK))
@@ -387,7 +387,7 @@ end
 # Assumes that Gal(K/k) == group(A), where k = base_field(K) and that group(A) is
 # abelian.
 # Returns a k-linear map from K to A and one from A to K
-function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgGrp)
+function _find_isomorphism(K::Union{ AbsSimpleNumField, NfRel{AbsSimpleNumFieldElem} }, A::AlgGrp)
   G = group(A)
   aut = automorphism_list(K)
 
@@ -447,7 +447,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
 
   local KtoA
   let K = K, invM = invM, A = A
-    function KtoA(x::Union{ nf_elem, NfRelElem })
+    function KtoA(x::Union{ AbsSimpleNumFieldElem, NfRelElem })
       t = zero_matrix(base_field(K), 1, degree(K))
       for i = 1:degree(K)
         t[1, i] = coeff(x, i - 1)
@@ -469,9 +469,9 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
   return KtoA, AtoK
 end
 
-mutable struct NfToAlgGrpMor{S, T, U} <: Map{AnticNumberField, AlgGrp{S, T, U}, HeckeMap, AbsAlgAssMor}
-  K::AnticNumberField
-  mG::GrpGenToNfMorSet{NfToNfMor, AnticNumberField}
+mutable struct NfToAlgGrpMor{S, T, U} <: Map{AbsSimpleNumField, AlgGrp{S, T, U}, HeckeMap, AbsAlgAssMor}
+  K::AbsSimpleNumField
+  mG::GrpGenToNfMorSet{NfToNfMor, AbsSimpleNumField}
   A::AlgGrp{S, T, U}
   M::QQMatrix
   Minv::QQMatrix
@@ -498,13 +498,13 @@ end
 
 automorphism_map(f::NfToAlgGrpMor) = f.mG
 
-#function galois_module(K::AnticNumberField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#function galois_module(K::AbsSimpleNumField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
 #  G = domain(aut)
 #  A = FlintQQ[G]
 #  return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
 #end
 #
-#function _galois_module(K::AnticNumberField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#function _galois_module(K::AbsSimpleNumField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
 #  G = domain(aut)
 #  alpha = normal_basis_generator
 #
@@ -534,7 +534,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 #  return A, z
 #end
 #
-#function galois_module(K::AnticNumberField, A::AlgGrp; normal_basis_generator = normal_basis(K))
+#function galois_module(K::AbsSimpleNumField, A::AlgGrp; normal_basis_generator = normal_basis(K))
 #  G = group(A)
 #  Au, mAu = automorphism_group(K)
 #  fl, f = is_isomorphic_with_map(G, Au)
@@ -552,7 +552,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 #
 #codomain(f::NfToAlgGrpMor) = f.A
 #
-#function image(f::NfToAlgGrpMor, x::nf_elem)
+#function image(f::NfToAlgGrpMor, x::AbsSimpleNumFieldElem)
 #  K = domain(f)
 #  @assert parent(x) === K
 #  A = codomain(f)
@@ -575,7 +575,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 #
 ## Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
 ## to Q[G] and one from Q[G] to K
-#function _galois_module(K::AnticNumberField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#function _galois_module(K::AbsSimpleNumField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
 #  G = domain(to_automorphisms)
 #  A = FlintQQ[G]
 #  alpha = normal_basis_generator
@@ -596,7 +596,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 #
 #  invM = inv(M)
 #
-#  function KtoA(x::nf_elem)
+#  function KtoA(x::AbsSimpleNumFieldElem)
 #    t = zero_matrix(base_field(K), 1, degree(K))
 #    for i = 1:degree(K)
 #      t[1, i] = coeff(x, i - 1)
@@ -702,7 +702,7 @@ end
 
 # Write M_n(K) as M_n(Q) if [K : Q] = 1
 # We use the "restricted scalar map" to model M_n(Q) -> M_n(K)
-function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
+function _as_full_matrix_algebra_over_Q(A::AlgMat{AbsSimpleNumFieldElem})
   K = base_ring(A)
   @assert is_absolute(K) && degree(K) == 1
   B = matrix_algebra(FlintQQ, degree(A))
@@ -793,8 +793,8 @@ function _compute_matrix_algebras_from_reps(A, res)
     end
     field, _ = number_field(Qx(data.fields[j]), "a", cached = false)
     d = data.dims[j]
-    mats = dense_matrix_type(nf_elem)[ matrix(field, d, d, map(field, data.mod[j][k])) for k in 1:length(data.mod[j])]
-    D = Tuple{GrpGenElem, dense_matrix_type(nf_elem)}[(H[H.gens[i]], mats[i]) for i in 1:length(H.gens)]
+    mats = dense_matrix_type(AbsSimpleNumFieldElem)[ matrix(field, d, d, map(field, data.mod[j][k])) for k in 1:length(data.mod[j])]
+    D = Tuple{GrpGenElem, dense_matrix_type(AbsSimpleNumFieldElem)}[(H[H.gens[i]], mats[i]) for i in 1:length(H.gens)]
     op = (x, y) -> (x[1] * y[1], x[2] * y[2])
     id = (Hecke.id(H), identity_matrix(field, d))
     cl = closure(D, op, id)
@@ -970,7 +970,7 @@ function _evaluate_rep(el, d, rep, f)
   return z
 end
 
-elem_type(::Type{NfMorSet{AnticNumberField}}) = NfToNfMor
+elem_type(::Type{NfMorSet{AbsSimpleNumField}}) = NfToNfMor
 
 ################################################################################
 #
@@ -1004,7 +1004,7 @@ end
 #
 ################################################################################
 
-function is_free_s4_fabi(K::AnticNumberField)
+function is_free_s4_fabi(K::AbsSimpleNumField)
   if is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return true
@@ -1041,7 +1041,7 @@ function is_free_s4_fabi(K::AnticNumberField)
   return false
 end
 
-function is_free_a4_fabi(K::AnticNumberField)
+function is_free_a4_fabi(K::AbsSimpleNumField)
   if is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return true
@@ -1059,7 +1059,7 @@ function is_free_a4_fabi(K::AnticNumberField)
   return false
 end
 
-function is_free_a5_fabi(K::AnticNumberField)
+function is_free_a5_fabi(K::AbsSimpleNumField)
   if !is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return false
@@ -1078,7 +1078,7 @@ function is_free_a5_fabi(K::AnticNumberField)
   return true
 end
 
-function is_almost_maximally_ramified(K::AnticNumberField, p::ZZRingElem)
+function is_almost_maximally_ramified(K::AbsSimpleNumField, p::ZZRingElem)
   P = prime_decomposition(maximal_order(K), p)[1][1]
   G, mG = automorphism_group(K)
   D, mD = decomposition_group(K, P, mG) # this is the local Galois group

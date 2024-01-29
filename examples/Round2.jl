@@ -16,8 +16,8 @@ Support for generic maximal orders over any PID
    - is_domain_type
 
 Seems to work for
--  R = ZZ, F = AnticNumberField
--  R = Loc{ZZRingElem}, F = AnticNumberField
+-  R = ZZ, F = AbsSimpleNumField
+-  R = LocalizedEuclideanRing{ZZRingElem}, F = AbsSimpleNumField
 
 -  R = k[x], F = FunctionField (for k = QQ, F_q)
 -  R = localization(k(x), degree), F = FunctionField
@@ -511,7 +511,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 end
 
-function integral_closure(S::Loc{ZZRingElem}, F::AnticNumberField)
+function integral_closure(S::LocalizedEuclideanRing{ZZRingElem}, F::AbsSimpleNumField)
   return _integral_closure(S, F)
 end
 
@@ -579,7 +579,7 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-Hecke.base_ring(::AnticNumberField) = FlintQQ
+Hecke.base_ring(::AbsSimpleNumField) = FlintQQ
 
 function (R::PolyRing{T})(a::Generic.RationalFunctionFieldElem{T}) where {T}
   @assert isone(denominator(a))
@@ -624,10 +624,10 @@ Hecke.integral_split(a::QQFieldElem, ::ZZRing) = (numerator(a), denominator(a))
 
 #######################################################################
 #
-# support for Loc{ZZRingElem}
+# support for LocalizedEuclideanRing{ZZRingElem}
 #
 #######################################################################
-function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
+function Hecke.integral_split(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem})
   d = denominator(a)
   p = R.prime
   q,w = Hecke.ppio(d, p)
@@ -637,11 +637,11 @@ function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
     return R(numerator(a)//w), R(q)
   end
 end
-Hecke.denominator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[2]
-Hecke.numerator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[1]
-(::QQField)(a::LocElem{ZZRingElem}) = data(a)
+Hecke.denominator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[2]
+Hecke.numerator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[1]
+(::QQField)(a::LocalizedEuclideanRingElem{ZZRingElem}) = data(a)
 
-function Hecke.factor(a::LocElem{ZZRingElem})
+function Hecke.factor(a::LocalizedEuclideanRingElem{ZZRingElem})
   c = canonical_unit(a)
   b = a*inv(c)
   L = parent(a)
@@ -650,14 +650,14 @@ function Hecke.factor(a::LocElem{ZZRingElem})
   return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
+function Hecke.residue_field(R::LocalizedEuclideanRing{ZZRingElem}, p::LocalizedEuclideanRingElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(y)))
 end
 
-Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
+Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
 
 #######################################################################
 #

@@ -51,7 +51,7 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   A = algebra(M)
   ZA, _ = _as_algebra_over_center(A)
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    local B::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     B, AtoB = A.isomorphic_full_matrix_algebra
     #@show B
     OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
@@ -128,7 +128,7 @@ end
 
 # check if there is a unit u such that c * u is totally positive
 # and return representatives for totally positive units modulo squares
-function _reps_for_totally_positive(c::nf_elem, K::AnticNumberField)
+function _reps_for_totally_positive(c::AbsSimpleNumFieldElem, K::AbsSimpleNumField)
   # TODO: just use the sign_map
   OK = maximal_order(K)
   U, mU = unit_group(OK)
@@ -144,12 +144,12 @@ function _reps_for_totally_positive(c::nf_elem, K::AnticNumberField)
   else
     fl, q = haspreimage(h, tar)
     if !fl
-      return false, zero(K), nf_elem[]
+      return false, zero(K), AbsSimpleNumFieldElem[]
     end
     el = mU(mQ\q)
   end
   K, mK = kernel(h)
-  res = nf_elem[]
+  res = AbsSimpleNumFieldElem[]
   for k in K
     push!(res, elem_in_nf(mU(mQ\mK(k))))
   end

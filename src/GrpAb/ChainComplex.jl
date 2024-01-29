@@ -709,7 +709,7 @@ function snake_lemma(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::Vect
   ka, mka = kernel(A[1])
   kb, mkb = kernel(A[2])
   kc, mkc = kernel(A[3])
-  ca, mca = cokernel(A[1])
+  CalciumFieldElem, mca = cokernel(A[1])
   cb, mcb = cokernel(A[2])
   cc, mcc = cokernel(A[3])
 

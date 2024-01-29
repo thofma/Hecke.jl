@@ -37,7 +37,7 @@ end
 #
 ################################################################################
 
-function _get_poly_from_elem(a::NfRelNSElem{nf_elem}, Qxy)
+function _get_poly_from_elem(a::NfRelNSElem{AbsSimpleNumFieldElem}, Qxy)
   K = base_field(parent(a))
   Qx = parent(K.pol)
   p = change_base_ring(a.data, x -> evaluate(Qx(x), gen(Qxy, nvars(Qxy))))
@@ -46,7 +46,7 @@ function _get_poly_from_elem(a::NfRelNSElem{nf_elem}, Qxy)
   return res
 end
 
-function multivariate_from_tower(f::Generic.MPoly{nf_elem}, Qxy)
+function multivariate_from_tower(f::Generic.MPoly{AbsSimpleNumFieldElem}, Qxy)
   M = MPolyBuildCtx(Qxy)
   K = base_ring(f)
   Qx = parent(K.pol)
@@ -249,17 +249,17 @@ function Base.:(*)(f::Hecke.NfToNfRel, g::Hecke.NfRelToNfRelNSMor_nf_elem)
   return hom(domain(f), codomain(g), g(f(gen(domain(f)))))
 end
 #
-#function hom(K::AnticNumberField, L::NfRelNS{nf_elem}, img_gen::NfRelNSElem{nf_elem})
+#function hom(K::AbsSimpleNumField, L::NfRelNS{AbsSimpleNumFieldElem}, img_gen::NfRelNSElem{AbsSimpleNumFieldElem})
 #  return Hecke.NfToNfRelNSMor(K, L, img_gen)
 #end
 #
-#function image(f::Hecke.NfToNfRelNSMor, a::nf_elem)
+#function image(f::Hecke.NfToNfRelNSMor, a::AbsSimpleNumFieldElem)
 #  K = parent(a)
 #  Qx = parent(K.pol)
 #  return evaluate(Qx(a), f.img_gen)
 #end
 #
-#function preimage(phi::Hecke.NfToNfRelNSMor, a::NfRelNSElem{nf_elem})
+#function preimage(phi::Hecke.NfToNfRelNSMor, a::NfRelNSElem{AbsSimpleNumFieldElem})
 #  @assert isdefined(phi, :preimg_base_field) && isdefined(phi, :preimgs)
 #  f = data(a)
 #  K = codomain(phi)

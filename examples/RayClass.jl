@@ -271,7 +271,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
   @assert is_snf(U)
   @vprintln :RayFacElem 1 "Collecting elements to be evaluated; first, units"
   evals = Hecke.NfOrdQuoRingElem[]
-  tobeeval = FacElem{nf_elem, AnticNumberField}[]
+  tobeeval = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   if gcd(U.snf[1],p)!=1
     if U.snf[1]==2
       push!(evals,Q(-1))

@@ -49,7 +49,7 @@ end
 Returns whether the integer $p$ is tamely ramified in $\mathcal O$.
 It is assumed that $p$ is prime.
 """
-function is_tamely_ramified(K::AnticNumberField, p::Union{Int, ZZRingElem})
+function is_tamely_ramified(K::AbsSimpleNumField, p::Union{Int, ZZRingElem})
   lp = prime_decomposition(maximal_order(K), p)
   for (_, q) in lp
     if gcd(q, p) != 1
@@ -60,11 +60,11 @@ function is_tamely_ramified(K::AnticNumberField, p::Union{Int, ZZRingElem})
 end
 
 @doc raw"""
-    is_tamely_ramified(K::AnticNumberField) -> Bool
+    is_tamely_ramified(K::AbsSimpleNumField) -> Bool
 
 Returns whether the number field $K$ is tamely ramified.
 """
-function is_tamely_ramified(K::AnticNumberField)
+function is_tamely_ramified(K::AbsSimpleNumField)
   p = ZZRingElem(2)
   while p <= degree(K)
     if !is_tamely_ramified(K, p)
@@ -76,13 +76,13 @@ function is_tamely_ramified(K::AnticNumberField)
 end
 
 @doc raw"""
-    is_weakly_ramified(K::AnticNumberField, P::NfOrdIdl) -> Bool
+    is_weakly_ramified(K::AbsSimpleNumField, P::NfOrdIdl) -> Bool
 
 Given a prime ideal $P$ of a number field $K$, return whether $P$
 is weakly ramified, that is, whether the second ramification group
 is trivial.
 """
-function is_weakly_ramified(K::AnticNumberField, P::NfOrdIdl)
+function is_weakly_ramified(K::AbsSimpleNumField, P::NfOrdIdl)
   return length(ramification_group(P, 2)) == 1
 end
 
@@ -115,13 +115,13 @@ end
 ################################################################################
 
 @doc raw"""
-    lift(K::AnticNumberField, f::zzModPolyRingElem) -> nf_elem
+    lift(K::AbsSimpleNumField, f::zzModPolyRingElem) -> AbsSimpleNumFieldElem
 
 Given a polynomial $f$ over a finite field, lift it to an element of the
 number field $K$. The lift is given by the element represented by the
 canonical lift of $f$ to a polynomial over the integers.
 """
-function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
+function lift(K::AbsSimpleNumField, f::T) where {T <: Zmodn_poly}
   if degree(f)>=degree(K)
     f = mod(f, parent(f)(K.pol))
   end
@@ -133,7 +133,7 @@ function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
   return r
 end
 
-function lift(K::AnticNumberField, f::FpPolyRingElem)
+function lift(K::AbsSimpleNumField, f::FpPolyRingElem)
   if degree(f)>=degree(K)
     f = mod(f, parent(f)(K.pol))
   end
@@ -230,7 +230,7 @@ function prime_decomposition(O::NfAbsOrd{<:NumField{QQFieldElem}, <:Any}, p::Int
     return prime_decomposition(O, ZZRingElem(p), degree_limit, lower_limit, cached = cached)
   end
 
-  if (nf(O) isa NfAbsNS || nf(O) isa AnticNumberField) && !is_divisible_by(numerator(discriminant(nf(O))), p)
+  if (nf(O) isa NfAbsNS || nf(O) isa AbsSimpleNumField) && !is_divisible_by(numerator(discriminant(nf(O))), p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
@@ -1580,7 +1580,7 @@ end
 
 # Return b in K with a \equiv b mod I and b_v >= 0 for v in pos_places
 # Cohen, Advanced Topics in Computational Number Theory, Algorithm 4.2.20
-function approximate(a::nf_elem, I::NfAbsOrdIdl, pos_places::Vector{<: InfPlc})
+function approximate(a::AbsSimpleNumFieldElem, I::NfAbsOrdIdl, pos_places::Vector{<: InfPlc})
   F2 = GF(2)
   v = matrix(F2, length(pos_places), 1, [ is_positive(a, p) ? F2(0) : F2(1) for p in pos_places ])
   if all(iszero, v[:, 1])
@@ -1712,14 +1712,14 @@ function decomposition_group_easy(G, P)
 end
 
 @doc raw"""
-    decomposition_group(K::AnticNumberField, P::NfOrdIdl, m::Map)
+    decomposition_group(K::AbsSimpleNumField, P::NfOrdIdl, m::Map)
                                                   -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the decomposition group of $P$ as a subgroup of
 the domain of `m`.
 """
-function decomposition_group(K::AnticNumberField, P::NfOrdIdl, mG::Map)
+function decomposition_group(K::AbsSimpleNumField, P::NfOrdIdl, mG::Map)
   iner = decomposition_group(P)
   return sub(domain(mG), [mG\a for a in iner])
 end
@@ -1819,13 +1819,13 @@ function inertia_subgroup_easy(F, mF, G::Vector{NfToNfMor})
 end
 
 @doc raw"""
-    inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+    inertia_subgroup(K::AbsSimpleNumField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the inertia subgroup of $P$ as a subgroup of
 the domain of `m`.
 """
-function inertia_subgroup(K::AnticNumberField, P::NfOrdIdl, mG::Map)
+function inertia_subgroup(K::AbsSimpleNumField, P::NfOrdIdl, mG::Map)
   iner = inertia_subgroup(P)
   return sub(domain(mG), [mG\a for a in iner])
 end
@@ -1854,13 +1854,13 @@ function ramification_group(P::NfOrdIdl, i::Int)
 end
 
 @doc raw"""
-    ramification_group(K::AnticNumberField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+    ramification_group(K::AbsSimpleNumField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the ramification group of $P$ as a subgroup of
 the domain of `m`.
 """
-function ramification_group(K::AnticNumberField, P::NfOrdIdl, i::Int, mG::Map)
+function ramification_group(K::AbsSimpleNumField, P::NfOrdIdl, i::Int, mG::Map)
   iner = ramification_group(P, i)
   return sub(domain(mG), [mG\a for a in iner])
 end

@@ -65,7 +65,7 @@ dimension_of_center(A::AlgQuat) = 1
 
 (A::AlgQuat{T})(a::IntegerUnion) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
-(A::AlgQuat{nf_elem})(a::nf_elem) = A(map(base_ring(A), [a, 0, 0, 0]))
+(A::AlgQuat{AbsSimpleNumFieldElem})(a::AbsSimpleNumFieldElem) = A(map(base_ring(A), [a, 0, 0, 0]))
 
 (A::AlgQuat{T})(a::QQFieldElem) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
@@ -226,7 +226,7 @@ end
 #
 ################################################################################
 
-function _reduce_standard_form(a::nf_elem, b::nf_elem)
+function _reduce_standard_form(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem)
   K = parent(a)
   if is_rational(a) && is_rational(b)
     n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))

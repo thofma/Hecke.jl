@@ -233,7 +233,7 @@ mutable struct QuadGenus{S, T, U}
   primes::Vector{T}
   LGS::Vector{QuadLocalGenus{S, T, U}}
   rank::Int
-  signatures::Dict{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}
+  signatures::Dict{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}, Int}
   d::U
   space
 
@@ -303,8 +303,8 @@ end
 mutable struct SpinorGeneraCtx
   mR::MapRayClassGrp # ray class group map
   mQ::GrpAbFinGenMap # quotient
-  rayprimes::Vector{NfAbsOrdIdl{AnticNumberField, nf_elem}}
-  criticalprimes::Vector{NfAbsOrdIdl{AnticNumberField, nf_elem}}
+  rayprimes::Vector{NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  criticalprimes::Vector{NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
   function SpinorGeneraCtx()
     return new()
@@ -322,19 +322,19 @@ end
 # TODO: Cache this in the dyadic case (on the lattice or the field)
 mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, LocMultGrpModSquMap}
   domain::GrpAbFinGen
-  codomain::AnticNumberField
+  codomain::AbsSimpleNumField
   is_dyadic::Bool
-  p::NfAbsOrdIdl{AnticNumberField, nf_elem}
-  e::nf_elem
-  pi::nf_elem
-  piinv::nf_elem
+  p::NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  e::AbsSimpleNumFieldElem
+  pi::AbsSimpleNumFieldElem
+  piinv::AbsSimpleNumFieldElem
   hext::NfToFinFldMor{FqField}
-  h::AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
-  g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}
+  h::AbsOrdQuoMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
+  g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
   i::GrpAbFinGenMap
   mS::GrpAbFinGenMap
 
-  function LocMultGrpModSquMap(K::AnticNumberField, p::NfAbsOrdIdl{AnticNumberField, nf_elem})
+  function LocMultGrpModSquMap(K::AbsSimpleNumField, p::NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem})
     R = order(p)
     @assert nf(R) === K
     @assert is_absolute(K)

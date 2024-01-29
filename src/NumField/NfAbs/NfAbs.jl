@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-order_type(::AnticNumberField) = NfAbsOrd{AnticNumberField, nf_elem}
+order_type(::AbsSimpleNumField) = NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
-order_type(::Type{AnticNumberField}) = NfAbsOrd{AnticNumberField, nf_elem}
+order_type(::Type{AbsSimpleNumField}) = NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
@@ -14,9 +14,9 @@ order_type(::Type{AnticNumberField}) = NfAbsOrd{AnticNumberField, nf_elem}
 #
 ################################################################################
 
-is_simple(::Type{AnticNumberField}) = true
+is_simple(::Type{AbsSimpleNumField}) = true
 
-is_simple(::AnticNumberField) = true
+is_simple(::AbsSimpleNumField) = true
 
 ################################################################################
 #
@@ -25,7 +25,7 @@ is_simple(::AnticNumberField) = true
 ################################################################################
 
 @doc raw"""
-    number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AnticNumberField, Map
+    number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true) -> AbsSimpleNumField, Map
 
  The number field $K$ isomorphic to the ring $S$ and the map from $K\to S$.
 """
@@ -62,7 +62,7 @@ end
 
 # TODO: Some sort of reference?
 @doc doc"""
-    wildanger_field(n::Int, B::ZZRingElem) -> AnticNumberField, nf_elem
+    wildanger_field(n::Int, B::ZZRingElem) -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
 These fields tend to have non-trivial class groups.
@@ -88,7 +88,7 @@ function wildanger_field(n::Int, B::Integer, s::String = "_\$"; cached::Bool = t
 end
 
 @doc raw"""
-    quadratic_field(d::IntegerUnion) -> AnticNumberField, nf_elem
+    quadratic_field(d::IntegerUnion) -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the field with defining polynomial $x^2 - d$.
 
@@ -116,7 +116,7 @@ function quadratic_field(d::ZZRingElem; cached::Bool = true, check::Bool = true)
   return q, a
 end
 
-function show_quad(io::IO, q::AnticNumberField)
+function show_quad(io::IO, q::AbsSimpleNumField)
   d = trailing_coefficient(q.pol)
   if d < 0
     print(io, "Real quadratic field defined by ", q.pol)
@@ -130,7 +130,7 @@ function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
 end
 
 @doc doc"""
-    rationals_as_number_field() -> AnticNumberField, nf_elem
+    rationals_as_number_field() -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the rational numbers as the number field defined by $x - 1$.
 
@@ -153,11 +153,11 @@ end
 ################################################################################
 
 @doc raw"""
-    is_defining_polynomial_nice(K::AnticNumberField)
+    is_defining_polynomial_nice(K::AbsSimpleNumField)
 
 Tests if the defining polynomial of $K$ is integral and monic.
 """
-function is_defining_polynomial_nice(K::AnticNumberField)
+function is_defining_polynomial_nice(K::AbsSimpleNumField)
   return Bool(K.flag & UInt(1))
 end
 
@@ -182,13 +182,13 @@ end
 ################################################################################
 
 @doc raw"""
-    class_group(K::AnticNumberField) -> GrpAbFinGen, Map
+    class_group(K::AbsSimpleNumField) -> GrpAbFinGen, Map
 
 Shortcut for `class_group(maximal_order(K))`: returns the class
 group as an abelian group and a map from this group to the set
 of ideals of the maximal order.
 """
-function class_group(K::AnticNumberField)
+function class_group(K::AbsSimpleNumField)
   return class_group(maximal_order(K))
 end
 
@@ -199,11 +199,11 @@ end
 ################################################################################
 
 @doc raw"""
-    class_number(K::AnticNumberField) -> ZZRingElem
+    class_number(K::AbsSimpleNumField) -> ZZRingElem
 
 Returns the class number of $K$.
 """
-function class_number(K::AnticNumberField)
+function class_number(K::AbsSimpleNumField)
   return order(class_group(maximal_order(K))[1])
 end
 
@@ -214,11 +214,11 @@ end
 ################################################################################
 
 @doc raw"""
-    relative_class_number(K::AnticNumberField) -> ZZRingElem
+    relative_class_number(K::AbsSimpleNumField) -> ZZRingElem
 
 Returns the relative class number of $K$. The field must be a CM-field.
 """
-function relative_class_number(K::AnticNumberField)
+function relative_class_number(K::AbsSimpleNumField)
   if degree(K) == 2
     @req is_totally_complex(K) "Field must be a CM-field"
     return class_number(K)
@@ -241,7 +241,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_torsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
+    is_torsion_unit(x::AbsSimpleNumFieldElem, checkisunit::Bool = false) -> Bool
 
 Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 that $x^n = 1$.
@@ -249,7 +249,7 @@ that $x^n = 1$.
 If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 maximal order of the number field $x$ is lying in.
 """
-function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
+function is_torsion_unit(x::AbsSimpleNumFieldElem, checkisunit::Bool = false)
   if checkisunit
     _isunit(x) ? nothing : return false
   end
@@ -290,7 +290,7 @@ function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
 end
 
 @doc raw"""
-    torsion_unit_order(x::nf_elem, n::Int)
+    torsion_unit_order(x::AbsSimpleNumFieldElem, n::Int)
 
 Given a torsion unit $x$ together with a multiple $n$ of its order, compute
 the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
@@ -298,7 +298,7 @@ that $x^k = 1$.
 
 It is not checked whether $x$ is a torsion unit.
 """
-function torsion_unit_order(x::nf_elem, n::Int)
+function torsion_unit_order(x::AbsSimpleNumFieldElem, n::Int)
   ord = 1
   fac = factor(n)
   for (p, v) in fac
@@ -326,7 +326,7 @@ end
 #
 #################################################################################################
 
-function normal_basis(K::AnticNumberField)
+function normal_basis(K::AbsSimpleNumField)
   # First try basis elements of LLL basis
   # or rather not
   # n = degree(K)
@@ -391,7 +391,7 @@ end
 #
 ################################################################################
 
-function _issubfield(K::AnticNumberField, L::AnticNumberField)
+function _issubfield(K::AbsSimpleNumField, L::AbsSimpleNumField)
   f = K.pol
   R = roots(L, f, max_roots = 1)
   if isempty(R)
@@ -402,7 +402,7 @@ function _issubfield(K::AnticNumberField, L::AnticNumberField)
   end
 end
 
-function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
+function _issubfield_first_checks(K::AbsSimpleNumField, L::AbsSimpleNumField)
   f = K.pol
   g = L.pol
   if mod(degree(g), degree(f)) != 0
@@ -440,7 +440,7 @@ function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
   return true
 end
 
-function is_subfield(K::AnticNumberField, L::AnticNumberField)
+function is_subfield(K::AbsSimpleNumField, L::AbsSimpleNumField)
   fl = _issubfield_first_checks(K, L)
   if !fl
     return false, hom(K, L, zero(L), check = false)
@@ -449,7 +449,7 @@ function is_subfield(K::AnticNumberField, L::AnticNumberField)
   return b, hom(K, L, prim_img, check = false)
 end
 
-function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
+function _issubfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField)
   f = K.pol
   f1 = change_base_ring(L, f)
   r = roots(f1, max_roots = 1, is_normal = true)
@@ -462,14 +462,14 @@ function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
 end
 
 @doc raw"""
-      is_subfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+      is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NfToNfMor
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
 
 This function assumes that $K$ is normal.
 """
-function is_subfield_normal(K::AnticNumberField, L::AnticNumberField)
+function is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField)
   fl = _issubfield_first_checks(K, L)
   if !fl
     return false, hom(K, L, zero(L), check = false)
@@ -486,12 +486,12 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+    is_isomorphic_with_map(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NfToNfMor
 
 Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
 """
-function is_isomorphic_with_map(K::AnticNumberField, L::AnticNumberField)
+function is_isomorphic_with_map(K::AbsSimpleNumField, L::AbsSimpleNumField)
   f = K.pol
   g = L.pol
   if degree(f) != degree(g)
@@ -556,12 +556,12 @@ end
 ################################################################################
 
 @doc raw"""
-    compositum(K::AnticNumberField, L::AnticNumberField) -> AnticNumberField, Map, Map
+    compositum(K::AbsSimpleNumField, L::AbsSimpleNumField) -> AbsSimpleNumField, Map, Map
 
 Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 2 fields together with the embedding of $K \to C$ and $L \to C$.
 """
-function compositum(K::AnticNumberField, L::AnticNumberField)
+function compositum(K::AbsSimpleNumField, L::AbsSimpleNumField)
   lf = factor(L, K.pol)
   d = degree(first(lf.fac)[1])
   if any(x->degree(x) != d, keys(lf.fac))
@@ -583,16 +583,16 @@ end
 ################################################################################
 
 # This function can be improved by directly accessing the numerator
-# of the QQPolyRingElem representing the nf_elem
+# of the QQPolyRingElem representing the AbsSimpleNumFieldElem
 @doc raw"""
-    write(io::IO, A::Vector{nf_elem}) -> Nothing
+    write(io::IO, A::Vector{AbsSimpleNumFieldElem}) -> Nothing
 
 Writes the elements of `A` to `io`. The first line are the coefficients of
 the defining polynomial of the ambient number field. The following lines
 contain the coefficients of the elements of `A` with respect to the power
 basis of the ambient number field.
 """
-function write(io::IO, A::Vector{nf_elem})
+function write(io::IO, A::Vector{AbsSimpleNumFieldElem})
   if length(A) == 0
     return
   else
@@ -631,7 +631,7 @@ function write(io::IO, A::Vector{nf_elem})
 end
 
 @doc raw"""
-    write(file::String, A::Vector{nf_elem}, flag::ASCIString = "w") -> Nothing
+    write(file::String, A::Vector{AbsSimpleNumFieldElem}, flag::ASCIString = "w") -> Nothing
 
 Writes the elements of `A` to the file `file`. The first line are the coefficients of
 the defining polynomial of the ambient number field. The following lines
@@ -641,7 +641,7 @@ basis of the ambient number field.
 Unless otherwise specified by the parameter `flag`, the content of `file` will be
 overwritten.
 """
-function write(file::String, A::Vector{nf_elem}, flag::String = "w")
+function write(file::String, A::Vector{AbsSimpleNumFieldElem}, flag::String = "w")
   f = open(file, flag)
   write(f, A)
   close(f)
@@ -649,10 +649,10 @@ end
 
 # This function has a bad memory footprint
 @doc raw"""
-    read(io::IO, K::AnticNumberField, ::Type{nf_elem}) -> Vector{nf_elem}
+    read(io::IO, K::AbsSimpleNumField, ::Type{AbsSimpleNumFieldElem}) -> Vector{AbsSimpleNumFieldElem}
 
 Given a file with content adhering the format of the `write` procedure,
-this function returns the corresponding object of type `Vector{nf_elem}` such that
+this function returns the corresponding object of type `Vector{AbsSimpleNumFieldElem}` such that
 all elements have parent $K$.
 
 **Example**
@@ -660,12 +660,12 @@ all elements have parent $K$.
     julia> Qx, x = FlintQQ["x"]
     julia> K, a = number_field(x^3 + 2, "a")
     julia> write("interesting_elements", [1, a, a^2])
-    julia> A = read("interesting_elements", K, Hecke.nf_elem)
+    julia> A = read("interesting_elements", K, Hecke.AbsSimpleNumFieldElem)
 """
-function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
+function read(io::IO, K::AbsSimpleNumField, ::Type{Hecke.AbsSimpleNumFieldElem})
   Qx = parent(K.pol)
 
-  A = Vector{nf_elem}()
+  A = Vector{AbsSimpleNumFieldElem}()
 
   i = 1
 
@@ -689,10 +689,10 @@ function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
 end
 
 @doc raw"""
-    read(file::String, K::AnticNumberField, ::Type{nf_elem}) -> Vector{nf_elem}
+    read(file::String, K::AbsSimpleNumField, ::Type{AbsSimpleNumFieldElem}) -> Vector{AbsSimpleNumFieldElem}
 
 Given a file with content adhering the format of the `write` procedure,
-this function returns the corresponding object of type `Vector{nf_elem}` such that
+this function returns the corresponding object of type `Vector{AbsSimpleNumFieldElem}` such that
 all elements have parent $K$.
 
 **Example**
@@ -700,19 +700,19 @@ all elements have parent $K$.
     julia> Qx, x = FlintQQ["x"]
     julia> K, a = number_field(x^3 + 2, "a")
     julia> write("interesting_elements", [1, a, a^2])
-    julia> A = read("interesting_elements", K, Hecke.nf_elem)
+    julia> A = read("interesting_elements", K, Hecke.AbsSimpleNumFieldElem)
 """
-function read(file::String, K::AnticNumberField, ::Type{Hecke.nf_elem})
+function read(file::String, K::AbsSimpleNumField, ::Type{Hecke.AbsSimpleNumFieldElem})
   f = open(file, "r")
-  A = read(f, K, Hecke.nf_elem)
+  A = read(f, K, Hecke.AbsSimpleNumFieldElem)
   close(f)
   return A
 end
 
 #TODO: get a more intelligent implementation!!!
 @doc raw"""
-    splitting_field(f::ZZPolyRingElem) -> AnticNumberField
-    splitting_field(f::QQPolyRingElem) -> AnticNumberField
+    splitting_field(f::ZZPolyRingElem) -> AbsSimpleNumField
+    splitting_field(f::QQPolyRingElem) -> AbsSimpleNumField
 
 Computes the splitting field of $f$ as an absolute field.
 """
@@ -771,13 +771,13 @@ end
 gcd_into!(a::QQPolyRingElem, b::QQPolyRingElem, c::QQPolyRingElem) = gcd(b, c)
 
 @doc raw"""
-    splitting_field(f::PolyRingElem{nf_elem}) -> AnticNumberField
+    splitting_field(f::PolyRingElem{AbsSimpleNumFieldElem}) -> AbsSimpleNumField
 
 Computes the splitting field of $f$ as an absolute field.
 """
-splitting_field(f::PolyRingElem{nf_elem}; do_roots::Bool = false) = splitting_field([f], do_roots = do_roots)
+splitting_field(f::PolyRingElem{AbsSimpleNumFieldElem}; do_roots::Bool = false) = splitting_field([f], do_roots = do_roots)
 
-function splitting_field(fl::Vector{<:PolyRingElem{nf_elem}}; do_roots::Bool = false, coprime::Bool = false)
+function splitting_field(fl::Vector{<:PolyRingElem{AbsSimpleNumFieldElem}}; do_roots::Bool = false, coprime::Bool = false)
   if !coprime
     fl = coprime_base(fl)
   end
@@ -866,11 +866,11 @@ end
 
 
 @doc raw"""
-    normal_closure(K::AnticNumberField) -> AnticNumberField, NfToNfMor
+    normal_closure(K::AbsSimpleNumField) -> AbsSimpleNumField, NfToNfMor
 
 The normal closure of $K$ together with the embedding map.
 """
-function normal_closure(K::AnticNumberField)
+function normal_closure(K::AbsSimpleNumField)
   s = splitting_field(K.pol)
   r = roots(s, K.pol)[1]
   return s, hom(K, s, r, check = false)
@@ -882,7 +882,7 @@ end
 #
 ################################################################################
 
-function is_linearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
+function is_linearly_disjoint(K1::AbsSimpleNumField, K2::AbsSimpleNumField)
   if gcd(degree(K1), degree(K2)) == 1
     return true
   end
@@ -1178,7 +1178,7 @@ function embedding(k::NumField, K::NumField)
   end
 end
 
-function force_coerce_cyclo(a::AnticNumberField, b::nf_elem, throw_error::Type{Val{T}} = Val{true}) where {T}
+function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, throw_error::Type{Val{T}} = Val{true}) where {T}
   if iszero(b)
     return a(0)
   end

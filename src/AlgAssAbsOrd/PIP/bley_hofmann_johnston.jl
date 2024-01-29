@@ -161,7 +161,7 @@ end
 function _solve_norm_equation_over_center_simple(M, x)
   A = algebra(M)
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    local B::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = absolute_basis(M)
@@ -296,7 +296,7 @@ function _lift_norm_one_unit_simple(x, F)
     return one(A)
   end
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    local B::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = basis(M)

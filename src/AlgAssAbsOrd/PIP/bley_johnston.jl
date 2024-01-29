@@ -48,9 +48,9 @@ function __unit_reps_simple(M, F)
 
   if isdefined(B, :isomorphic_full_matrix_algebra)
     # It is faster to compute products in M_n(F) than in an associative algebra
-    local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
-    local BtoC::Hecke.AbsAlgAssMorGen{AlgAss{QQFieldElem}, AlgMat{nf_elem, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}}, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}, QQMatrix}
-    #local BtoC::morphism_type(typeof(B), AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}})
+    local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+    local BtoC::Hecke.AbsAlgAssMorGen{AlgAss{QQFieldElem}, AlgMat{AbsSimpleNumFieldElem, AbstractAlgebra.Generic.MatSpaceElem{AbsSimpleNumFieldElem}}, AbstractAlgebra.Generic.MatSpaceElem{AbsSimpleNumFieldElem}, QQMatrix}
+    #local BtoC::morphism_type(typeof(B), AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}})
     C, BtoC = B.isomorphic_full_matrix_algebra
     UBinC = elem_type(C)[BtoC(u)::elem_type(C) for u in UB]
     ___units = collect(zip(UBinC, UB_reduced))
@@ -231,7 +231,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
     push!(bases, IMinB_basis)
     #@show UB
     #if isdefined(B, :isomorphic_full_matrix_algebra)
-    #  local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    #  local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     #  C, BtoC = B.isomorphic_full_matrix_algebra
     #  MinC = _get_order_from_gens(C, elem_type(C)[BtoC(elem_in_algebra(b)) for b in absolute_basis(MinB)])
     #  @show MinC

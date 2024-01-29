@@ -916,7 +916,7 @@ function negative_intervals(N::NegativityCertificate)
   return l, N.intervals, r
 end
 
-function _get_interval(x::arb)
+function _get_interval(x::ArbFieldElem)
   a = ZZRingElem()
   b = ZZRingElem()
   e = ZZRingElem()
@@ -927,7 +927,7 @@ function _get_interval(x::arb)
     return y//1, y//1
   end
 
-  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arb}), a, b, e, x)
+  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ArbFieldElem}), a, b, e, x)
   ee = Int(e)
   @assert ee <= 0
   d = one(ZZRingElem) << -ee

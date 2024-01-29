@@ -25,7 +25,7 @@ function defines_minimal_overorder(B::Vector, l::Vector)
   return fl, M
 end
 
-function defines_minimal_overorder(B::Vector{nf_elem}, l::Vector{nf_elem})
+function defines_minimal_overorder(B::Vector{AbsSimpleNumFieldElem}, l::Vector{AbsSimpleNumFieldElem})
   M = basis_matrix(B, FakeFmpqMat)
   hnf!(M)
   x = M.den * l[1]^2

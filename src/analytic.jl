@@ -201,7 +201,7 @@ function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
 end
 
-# They are already in Nemo/arb ?!?!
+# They are already in Nemo/ArbFieldElem ?!?!
 #const ei = exponential_integral
 #const li = logarithmic_integral
 

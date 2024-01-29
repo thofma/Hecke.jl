@@ -146,16 +146,16 @@ end
   Tested for cyclic groups - unfortunately only.
   I still need to generate other input
 =#
-#function orbit_in_FB(op::Vector{Tuple{Map, Generic.Perm}}, a::nf_elem, s::SRow)
-function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
+#function orbit_in_FB(op::Vector{Tuple{Map, Generic.Perm}}, a::AbsSimpleNumFieldElem, s::SRow)
+function orbit_in_FB(op::Array, a::AbsSimpleNumFieldElem, s::SRow)
   function op_smat(n::SRow, p::Generic.Perm)
     r = [(p[i], v) for (i,v) = n]
     sort!(r, lt = (a,b)->a[1]<b[1])
     return typeof(n)(r)
   end
 
-  Ss = Dict{nf_elem, typeof(s)}()
-#  Ss = Dict{typeof(s), nf_elem}()
+  Ss = Dict{AbsSimpleNumFieldElem, typeof(s)}()
+#  Ss = Dict{typeof(s), AbsSimpleNumFieldElem}()
   Ss[a] = s
   # start with the cyclic group be op[1]
   n = s

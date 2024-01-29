@@ -796,7 +796,7 @@ end
 #
 ################################################################################
 
-function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
+function action_on_roots(G::Vector{NfToNfMor}, zeta::AbsSimpleNumFieldElem, pv::Int)
   act_on_roots = Vector{Int}(undef, length(G))
   p = 11
   K = domain(G[1])
@@ -1106,7 +1106,7 @@ function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int
   return true
 end
 
-function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, Rx::fpPolyRing)
+function is_split_at_infinity(K::AbsSimpleNumField, G::Vector{NfToNfMor}, Coc::Function, Rx::fpPolyRing)
   fl, aut = _find_complex_conjugation(K, G)
   if !fl
     return true

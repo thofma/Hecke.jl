@@ -121,7 +121,7 @@ end
     K, a = number_field(f, "a")
 
     Ky, y = K["y"]
-    g = Vector{Generic.Poly{nf_elem}}()
+    g = Vector{Generic.Poly{AbsSimpleNumFieldElem}}()
     h = monic_randpoly(Ky, 2, 2, 10)
     while !is_irreducible(h)
       h = monic_randpoly(Ky, 2, 2, 10)

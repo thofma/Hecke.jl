@@ -1,5 +1,5 @@
 @testset "Map/NumField.jl" begin
-  # AnticNumberField -> AnticNumberField
+  # AbsSimpleNumField -> AbsSimpleNumField
   Qx, x = FlintQQ["x"]
   K, a = number_field(x^2 - 2, "a")
   s = involution(K)
@@ -55,7 +55,7 @@
     @test h(f(z)) == l(z)
   end
 
-  # AnticNumberField -> NfRel{nf_elem}
+  # AbsSimpleNumField -> NfRel{AbsSimpleNumFieldElem}
 
   QQQ, q = number_field(x - 1, "q")
   QQQt, t = QQQ["t"]
@@ -106,7 +106,7 @@
     @test l(z) == f(h(z))
   end
 
-  # NfRel{nf_elem} -> AnticNumberField
+  # NfRel{AbsSimpleNumFieldElem} -> AbsSimpleNumField
 
   K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
@@ -152,7 +152,7 @@
   @test_throws ErrorException hom(L, M, h, one(M))
   @test f(L(a)) == 1//576*z^7 - 7//144*z^5 - 7//72*z^3 + 5//3*z
 
-  # NfRel{nf_elem} -> NfRel{nf_elem}
+  # NfRel{AbsSimpleNumFieldElem} -> NfRel{AbsSimpleNumFieldElem}
 
   K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]

@@ -43,8 +43,8 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Cor. 4.5
 @doc raw"""
-    is_isomorphic_with_map(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
-    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
+    is_isomorphic_with_map(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, AbsSimpleNumFieldElem
     is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
@@ -71,8 +71,8 @@ function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfO
 end
 
 @doc raw"""
-    is_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
-    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
+    is_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, AbsSimpleNumFieldElem
     is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
@@ -300,7 +300,7 @@ function is_conjugate(M::ZZMatrix, N::ZZMatrix)
   end
 
   fac = factor(f)
-  fields = Vector{AnticNumberField}()
+  fields = Vector{AbsSimpleNumField}()
   for (g, e) in fac
     e != 1 ? error("The characteristic polynomial must be square-free") : nothing
     push!(fields, number_field(g)[1])
@@ -310,7 +310,7 @@ function is_conjugate(M::ZZMatrix, N::ZZMatrix)
     return _isconjugate(equation_order(fields[1]), M, N)
   end
 
-  A, AtoK = direct_product(fields)::Tuple{AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}}
+  A, AtoK = direct_product(fields)::Tuple{AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
   O = _equation_order(A)
   return _isconjugate(O, M, N)
 end

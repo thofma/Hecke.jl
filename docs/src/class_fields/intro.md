@@ -29,10 +29,10 @@ get $C()$ is the class group, if $m_\infty$ contains all real places, we obtain
 the narrow class group, or strict class group.
 
 ```@docs
-ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
-class_group(K::Nemo.AnticNumberField)
+ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AbsSimpleNumField,Nemo.AbsSimpleNumFieldElem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
+class_group(K::Nemo.AbsSimpleNumField)
 norm_group(f::Nemo.PolyRingElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
-norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
+norm_group(K::NfRel{AbsSimpleNumFieldElem}, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
 ```
 
 
@@ -52,7 +52,7 @@ ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp})
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.GrpAbFinGenMap)
 ray_class_field(I::Hecke.NfAbsOrdIdl; n_quo, p_part)
 ray_class_field(I::Hecke.NfAbsOrdIdl, ::Vector{InfPlc}; n_quo, p_part)
-hilbert_class_field(k::AnticNumberField)
+hilbert_class_field(k::AbsSimpleNumField)
 ring_class_field(::NfAbsOrd)
 ```
 
@@ -92,10 +92,10 @@ isone(discriminant(ZK))
 ```
 
 ```@docs
-ray_class_field(K::NfRel{nf_elem})
-genus_field(A::ClassField, k::AnticNumberField)
-maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
-maximal_abelian_subfield(K::NfRel{nf_elem})
+ray_class_field(K::NfRel{AbsSimpleNumFieldElem})
+genus_field(A::ClassField, k::AbsSimpleNumField)
+maximal_abelian_subfield(A::ClassField, k::AbsSimpleNumField)
+maximal_abelian_subfield(K::NfRel{AbsSimpleNumFieldElem})
 ```
 
 ## Invariants

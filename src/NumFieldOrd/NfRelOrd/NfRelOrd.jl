@@ -277,7 +277,7 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}})
+function assure_has_discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -301,7 +301,7 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf
   return nothing
 end
 
-function assure_has_discriminant(O::NfRelOrd{nf_elem, NfOrdFracIdl, NfRelNSElem{nf_elem}})
+function assure_has_discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelNSElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -348,7 +348,7 @@ function assure_has_discriminant(O::NfRelOrd{T, S, U}) where {T, S, U}
   return nothing
 end
 
-function discriminant(O::NfRelOrd{nf_elem, S}) where S
+function discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, S}) where S
   assure_has_discriminant(O)
   return deepcopy(O.disc_abs)
 end
@@ -467,12 +467,12 @@ end
 #
 ################################################################################
 
-function Order(L::NfRel{nf_elem}, M::Generic.Mat{nf_elem})
-  return NfRelOrd{nf_elem, NfOrdFracIdl, NfRelElem{nf_elem}}(L, deepcopy(M))
+function Order(L::NfRel{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
+  return NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
-function Order(L::NfRelNS{nf_elem}, M::Generic.Mat{nf_elem})
-  return NfRelOrd{nf_elem, NfOrdFracIdl, NfRelNSElem{nf_elem}}(L, deepcopy(M))
+function Order(L::NfRelNS{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
+  return NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelNSElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
 
@@ -545,7 +545,7 @@ function any_order(K::NfRelNS)
   return Order(K, basis_matrix(b))
 end
 
-function EquationOrder(L::NfRel{nf_elem})
+function EquationOrder(L::NfRel{AbsSimpleNumFieldElem})
   a = gen(L)
   @req is_integral(a) "Generator of must be integral"
   M = identity_matrix(base_field(L), degree(L))
@@ -589,7 +589,7 @@ function maximal_order_via_simple(m::NumFieldMor{<:NfRel, <:NfRelNS})
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_relative(K::AnticNumberField, m::NfToNfRel)
+function maximal_order_via_relative(K::AbsSimpleNumField, m::NfToNfRel)
   return get_attribute!(K, :maximal_order) do
     L = codomain(m)
     OL = maximal_order(L)
@@ -672,7 +672,7 @@ end
 #
 ################################################################################
 
-function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fqPolyRepPolyRingElem)
+function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{AbsSimpleNumFieldElem}, m::InverseMap, f::fqPolyRepPolyRingElem)
   @assert codomain(m) == base_ring(R)
   @assert domain(m) == base_ring(parent(f))
 
@@ -683,7 +683,7 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMa
   return g
 end
 
-function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f) where {T <: Union{nf_elem, NfRelElem}}
+function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f) where {T <: Union{AbsSimpleNumFieldElem, NfRelElem}}
   return map_coefficients(m, f, parent = R)
 end
 
@@ -766,7 +766,7 @@ function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   end
 end
 
-function poverorder(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S, T}
+function poverorder(O::NfRelOrd{S, T, NfRelElem{AbsSimpleNumFieldElem}}, p::NfOrdIdl) where {S, T}
   if is_equation_order(O)
     return overorder_polygons(O, p)
   end
@@ -900,7 +900,7 @@ function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
   return NfRelOrd{T, S, U}(nf(a), PM)
 end
 
-function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: Union{NfRelElem{nf_elem}, NfRelNSElem{nf_elem}}}
+function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: Union{NfRelElem{AbsSimpleNumFieldElem}, NfRelNSElem{AbsSimpleNumFieldElem}}}
   # checks
   @assert nf(a) == nf(b)
   K = base_field(nf(a))
@@ -920,7 +920,7 @@ function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: Union{N
   return NfRelOrd{T, S, U}(nf(a), M)
 end
 
-function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: NfRelElem{nf_elem}}
+function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: NfRelElem{AbsSimpleNumFieldElem}}
   if !isdefined(a, :index) || !isdefined(b, :index)
     return a+b
   end
@@ -1090,7 +1090,7 @@ end
 function _get_gens(M::PMat)
   mat = M.matrix
   ids = M.coeffs
-  gens = Vector{NfRelElem{nf_elem}}()
+  gens = Vector{NfRelElem{AbsSimpleNumFieldElem}}()
   for i = 1:nrows(M)
     el = elem_from_mat_row(K, B.matrix, i)
     if isone(ids[i].num)
@@ -1105,7 +1105,7 @@ end
 
 function _get_gens(O::NfRelOrd)
   B = pseudo_basis(O)
-  gens = Vector{NfRelElem{nf_elem}}()
+  gens = Vector{NfRelElem{AbsSimpleNumFieldElem}}()
   for i = 1:length(B)
     el = B[i][1]
     I = B[i][2]
@@ -1153,7 +1153,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
         break
       end
       bas = _get_gens(O)
-      els_to_add = Vector{NfRelElem{nf_elem}}()
+      els_to_add = Vector{NfRelElem{AbsSimpleNumFieldElem}}()
       for x in bas
         el = e*x
         if el in O
@@ -1333,7 +1333,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
   return OO
 end
 
-function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{nf_elem}}, p::NfOrdIdl) where {S, T}
+function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{AbsSimpleNumFieldElem}}, p::NfOrdIdl) where {S, T}
   @assert is_equation_order(O)
   K = nf(O)
   f = K.pol

@@ -277,7 +277,7 @@ sunit_group_fac_elem(S::Vector{ZZIdl}) = sunit_group_fac_elem([gen(i) for i in S
 #
 ################################################################################
 
-# Let's not turn this into an arb for now
+# Let's not turn this into an ArbFieldElem for now
 # If this causes trouble, we need to change it to ArbField(p, cached = false)(x)
 evaluate(x::QQFieldElem, ::PosInf, p::Int) = x
 

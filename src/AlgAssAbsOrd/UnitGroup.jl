@@ -57,7 +57,7 @@ end
 function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}[unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
+  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}[unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
   G = unit_groups[1][1]
   for i = 2:length(unit_groups)
     G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen

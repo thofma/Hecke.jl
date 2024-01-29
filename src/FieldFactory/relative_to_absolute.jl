@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
+function _relative_to_absoluteQQ(L::NfRelNS{AbsSimpleNumFieldElem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
   K, gK = number_field(NfAbsNS, L)
   Ks, mKs = simplified_simple_extension(K, is_abelian = true, cached = false)
   #Now, I have to translate the automorphisms.
@@ -28,7 +28,7 @@ function _relative_to_absoluteQQ(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRe
   return Ks, autsKs
 end
 
-function _relative_to_absolute(L::NfRelNS{nf_elem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
+function _relative_to_absolute(L::NfRelNS{AbsSimpleNumFieldElem}, auts::Vector{NfRelNSToNfRelNSMor_nf_elem})
   Ks, mKs = simplified_absolute_field(L)
   Hecke._assure_has_inverse_data(mKs)
   #Now, I have to translate the automorphisms.

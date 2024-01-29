@@ -3,7 +3,7 @@ mutable struct NumFieldEmbNfAbsNS <: NumFieldEmb{NfAbsNS}
   index::Vector{Int}
   absolute_index::Int
   isreal::Bool
-  roots::Vector{acb}
+  roots::Vector{AcbFieldElem}
   conjugate::Int
 end
 
@@ -44,13 +44,13 @@ function _complex_embeddings(K::NfAbsNS)
   j = 1
 
   for v in c[2]
-    res[j] = NumFieldEmbNfAbsNS(K, v, j, true, acb[c[1][i].roots[v[i]] for i in 1:l], j)
+    res[j] = NumFieldEmbNfAbsNS(K, v, j, true, AcbFieldElem[c[1][i].roots[v[i]] for i in 1:l], j)
     j += 1
   end
 
   for v in c[3]
-    res[j] = NumFieldEmbNfAbsNS(K, v, j, false, acb[c[1][i].roots[v[i]] for i in 1:l], j + s)
-    res[j + s] = NumFieldEmbNfAbsNS(K, v, j + s, false, acb[conj(c[1][i].roots[v[i]]) for i in 1:l], j)
+    res[j] = NumFieldEmbNfAbsNS(K, v, j, false, AcbFieldElem[c[1][i].roots[v[i]] for i in 1:l], j + s)
+    res[j + s] = NumFieldEmbNfAbsNS(K, v, j + s, false, AcbFieldElem[conj(c[1][i].roots[v[i]]) for i in 1:l], j)
     j += 1
   end
 
@@ -103,10 +103,10 @@ function (f::NumFieldEmbNfAbsNS)(a::NfAbsNSElem, prec::Int = 32)
   while true
     conjs, ind_real, ind_complex = conjugate_data_arb_roots(K, wprec)
     if i <= r
-      res = _evaluate(pol_a, acb[conjs[j].roots[ind_real[i][j]] for j = 1:ngens(K)])
+      res = _evaluate(pol_a, AcbFieldElem[conjs[j].roots[ind_real[i][j]] for j = 1:ngens(K)])
     else
       i = i - r
-      ev = acb[conjs[j].roots[ind_complex[i][j]] for j = 1:ngens(K)]
+      ev = AcbFieldElem[conjs[j].roots[ind_complex[i][j]] for j = 1:ngens(K)]
       res = _evaluate(pol_a, ev)
     end
     if !isfinite(res) || !radiuslttwopower(res, -prec)
@@ -192,7 +192,7 @@ end
 
 function _find_nearest_complex_embedding(K::NfAbsNS, x)
   r = complex_embeddings(K)
-  t = Vector{arb}[]
+  t = Vector{ArbFieldElem}[]
   for e in r
     embedded_gens = map(e, gens(K))
     gen_diffs = map(abs, embedded_gens - x)
@@ -233,6 +233,6 @@ function _find_nearest_complex_embedding(K::NfAbsNS, x)
   return r[i]
 end
 
-function complex_embedding(K::NfAbsNS, c::Vector{<: Union{Number, acb}})
+function complex_embedding(K::NfAbsNS, c::Vector{<: Union{Number, AcbFieldElem}})
   _find_nearest_complex_embedding(K, c)
 end
