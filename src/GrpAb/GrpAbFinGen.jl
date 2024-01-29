@@ -175,6 +175,17 @@ function show(io::IO, A::GrpAbFinGen)
   end
 end
 
+function show(io::IO, ::MIME"text/plain", A::GrpAbFinGen)
+  @show_name(io, A)
+  @show_special(io, A)
+
+  if is_snf(A)
+    show_snf(io, MIME"text/plain"(), A)
+  else
+    show_gen(io, MIME"text/plain"(), A)
+  end
+end
+
 function show_hom(io::IO, G)#::GrpAbFinGen)
   D = get_attribute(G, :hom)
   D === nothing && error("only for hom")
@@ -204,22 +215,27 @@ function show_tensor_product(io::IO, G)#::GrpAbFinGen)
   show(IOContext(io, :compact => true), D)
 end
 
-function show_gen(io::IO, A::GrpAbFinGen)
-  print(io, "(General) abelian group with relation matrix\n$(A.rels)")
+function show_gen(io::IO, ::MIME"text/plain", A::GrpAbFinGen)
+  io = pretty(io)
+  println(io, "Finitely generated abelian group")
   if isdefined(A, :snf_map)
-    print(io, "\nwith structure of ", domain(A.snf_map))
+    println(io, Indent(), "isomorphic to ", domain(A.snf_map), Dedent())
+  end
+  println(io, Indent(), "with ", ItemQuantity(ncols(rels(A)), "generator"), " and ", ItemQuantity(nrows(rels(A)), "relation"), " and relation matrix")
+  show(io, MIME"text/plain"(), rels(A))
+  print(io, Dedent())
+end
+
+function show_gen(io::IO, A::GrpAbFinGen)
+  if get(io, :supercompact, false)
+    print(io, "Finitely generated abelian group")
+  else
+    print(io, "Finitely generated abelian group with ", ItemQuantity(ncols(rels(A)), "generator"), " and ", ItemQuantity(nrows(rels(A)), "relation"))
   end
 end
 
-function show_snf(io::IO, A::GrpAbFinGen)
-  io = pretty(io)
-  if get(io, :compact, false)
-    print(io, "Abelian group with structure: ")
-  else
-    print(io, LowercaseOff(), "GrpAb: ")
-  end
-  show_snf_structure(io, A)
-end
+show_snf(io::IO, ::MIME"text/plain", A::GrpAbFinGen) = show_snf_structure(io, A)
+show_snf(io::IO, A::GrpAbFinGen) = show_snf_structure(io, A)
 
 function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
   @assert is_snf(A)
