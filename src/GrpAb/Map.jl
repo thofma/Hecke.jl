@@ -568,7 +568,11 @@ end
 elem_type(::Type{MapParent}) = Map
 
 function show(io::IO, MP::MapParent)
-  print(io, "Set of all $(MP.typ) from $(MP.dom) to $(MP.codom)")
+  io = pretty(io)
+  print(io, "Set of all $(MP.typ) from ")
+  print(IOContext(io, :supercompact => true), Lowercase(), MP.dom)
+  print(io, " to ")
+  print(IOContext(io, :supercompact => true), Lowercase(), MP.codom)
 end
 
 parent(f::GrpAbFinGenMap) = MapParent(domain(f), codomain(f), "homomorphisms")
