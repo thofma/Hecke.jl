@@ -120,7 +120,7 @@ function _p_adic_symbol(A::ZZMatrix, p::ZZRingElem, val::Int)
     return _two_adic_symbol(A, val)
   end
   if nrows(A)>0
-    m0 = minimum(valuation(c, p) for c in A if c!=0)
+    m0 = minimum(valuation(A[c], p) for c in eachindex(A) if A[c] !=0)
   else
     m0 = 0
   end
@@ -194,7 +194,7 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   if n == 0
     return Vector{Int}[Int[0, 0, 1, 0, 0]]
   end
-  m0 = minimum(valuation(c,2) for c in A if c!=0)
+  m0 = minimum(valuation(A[c], 2) for c in eachindex(A) if A[c] != 0)
   q = ZZ(2)^m0
   A = divexact(A, q)
   A_2 = change_base_ring(Native.GF(2), A)

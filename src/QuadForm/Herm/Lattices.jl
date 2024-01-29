@@ -535,7 +535,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     @assert S[end] != 0
     if minimal
       max = 1
-      M = pseudo_matrix(B[lS][1, :], fractional_ideal_type(R)[invP])
+      M = pseudo_matrix(B[lS][1:1, :], fractional_ideal_type(R)[invP])
     else
       max = S[end]
       coeff_ideals = fractional_ideal_type(R)[]
@@ -559,7 +559,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(B[lS][1, :], [invP^(div(S[end], 2))])
+        M = pseudo_matrix(B[lS][1:1, :], [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]
@@ -601,7 +601,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
       while valuation(G[k][1, 1] + G[k][2, 2] * elem_in_nf(norm(r)), P) < 2
         r = h\rand(kk)
       end
-      M = pseudo_matrix(B[k][1, :] + elem_in_nf(r) * B[k][2, :], [invP])
+      M = pseudo_matrix(B[k][1:1, :] + elem_in_nf(r) * B[k][2:2, :], [invP])
       _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
       LLL = invP * pseudo_matrix(L)
       _new_pmat = _intersect_modules_with_map(_new_pmat, LLL, absolute_map)
@@ -618,7 +618,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(B[lS][1, :], [invP^(div(S[end], 2))])
+        M = pseudo_matrix(B[lS][1:1, :], [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]

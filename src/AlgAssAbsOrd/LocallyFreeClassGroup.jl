@@ -458,7 +458,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::ModAlgAssLat)
     error("Ambient module of lattice must be free of rank one")
   end
   Ibmat = basis_matrix(I)
-  II = ideal_from_lattice_gens(A, O, [AregToA(VToAreg(V(_eltseq(Ibmat[i, :])))) for i in 1:nrows(Ibmat)])
+  II = ideal_from_lattice_gens(A, O, [AregToA(VToAreg(V(_eltseq(Ibmat[i:i, :])))) for i in 1:nrows(Ibmat)])
   return m(II)
 end
 

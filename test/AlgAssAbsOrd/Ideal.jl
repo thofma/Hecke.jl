@@ -117,10 +117,12 @@
     @test is_equal_locally(X, J, 3)
     @test is_equal_locally(X, K, 13)
     T = basis_matrix(X) * basis_mat_inv(O)
-    for a in QQMatrix(T)
+    for c in eachindex(QQMatrix(T))
+      a = QQMatrix(T)[c]
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
-    for a in QQMatrix(inv(T))
+    for c in eachindex(QQMatrix(inv(T)))
+      a = QQMatrix(inv(T))[c]
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
 

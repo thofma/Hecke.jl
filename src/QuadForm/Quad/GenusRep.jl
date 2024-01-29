@@ -1100,7 +1100,7 @@ function _scales_and_norms(G, p, uni)
   aL = elem_type(K)[]
   uL = Int[]
   wL = Int[]
-  sL = Int[ minimum(Union{Int, PosInf}[iszero(x) ? inf : valuation(x, p) for x in g]) for g in G ]
+  sL = Int[ minimum(Union{Int, PosInf}[iszero(g[x]) ? inf : valuation(g[x], p) for x in eachindex(g)]) for g in G ]
   for i in 1:length(G)
     # similar, but not equal to, the code for obtaining a genus symbol
     # (for the genus symbol, we consider a scaling L^(s(L_i)) in O'Meara's notation)

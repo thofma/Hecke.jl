@@ -145,7 +145,7 @@ function __standard_involution(A)
     elem_to_mat_row!(M, i, g(BB[i]))
   end
 
-  return hom(A, A, M, inv(M))
+  return hom(A, A, M, inv(M); check = false)
 end
 
 # John Voight, "Quaternion algebra companion", Algorithm 4.6.1
@@ -435,7 +435,7 @@ function ___standard_involution(A)
     end
   end
   invol = N
-  return hom(A, A, invol, inv(invol))
+  return hom(A, A, invol, inv(invol); check = false)
 end
 
 global _debug = []
@@ -521,5 +521,5 @@ end
 function AlgAss(A::AlgQuat)
   K = base_ring(A)
   B = AlgAss(K, A.mult_table)
-  return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
+  return B, hom(B, A, identity_matrix(K, 4), identity_matrix(K, 4))
 end

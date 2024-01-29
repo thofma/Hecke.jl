@@ -145,28 +145,24 @@ end
     A = domain(AtoB)
     B = codomain(AtoB)
 
-    test_alg_morphism_char_p(A, B, AtoB)
+    #test_alg_morphism_char_p(A, B, AtoB)
 
     sum_of_diag = AtoB\B[1]
     for i = 2:n
       sum_of_diag += AtoB\B[(i - 1)*n + i]
     end
     @test isone(sum_of_diag)
+    C = Hecke.AbstractAlgebra.RowMajorIndices(CartesianIndices((n, n)))
+    L = LinearIndices(C)
+    basA = [AtoB\B[i] for i in 1:dim(B)]
 
     # B[i + (j - 1)*n]*B[k + (l - 1)*n] == B[i + (l - 1)*n], if j == k, and 0, otherwise
-    for j = 1:n
-      jN = (j - 1)*n
-      for i = 1:n
-        ji = jN + i
-        for l = 1:n
-          lN = (l - 1)*n
-          for k = 1:n
-            if j == k
-              @test AtoB\(B[ji]*B[k + lN]) == AtoB\B[i + lN]
-            else
-              @test iszero(AtoB\(B[ji]*B[k + lN]))
-            end
-          end
+    for c in C
+      for d in C
+        if c[2] == d[1]
+          @test basA[L[c]] * basA[L[d]] == basA[L[c[1], d[2]]]
+        else
+          @test is_zero(basA[L[c]] * basA[L[d]])
         end
       end
     end

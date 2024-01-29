@@ -7,7 +7,7 @@ end
 
 
 function _min_val(M, p)
-  L = Union{PosInf, Int}[_val(a, p) for a in M]
+  L = Union{PosInf, Int}[_val(M[a], p) for a in eachindex(M)]
   return minimum(L)
 end
 
@@ -114,7 +114,7 @@ end
 
 function _solve_X_get_A_and_c(Y::fpMatrix, b, g)
   k = base_ring(Y)
-  Y = transpose(matrix(k, nrows(Y), ncols(Y), [k(lift(a)) for a in Y]))
+  Y = transpose(map_entries(a -> k(lift(a)), Y))
 
   @req is_symmetric(Y) "Y must be symmetric"
   @req ncols(Y) == nrows(Y) "Y must be a square matrix"
@@ -144,7 +144,7 @@ function _solve_X_get_A_and_c(Y::fpMatrix, b, g)
   l = length(equations[1])
   equations = elem_type(k)[i for i in Iterators.flatten(equations)]
   A = matrix(k,r,l, equations)
-  c = A[:, l]
+  c = A[:, l:l]
   A = A[:, 1:end-1]
   return A, c
 end

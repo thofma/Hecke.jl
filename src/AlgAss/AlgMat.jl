@@ -93,13 +93,14 @@ function assure_has_basis_matrix(A::AlgMat)
   end
 
   d2 = degree(A)^2
+  C = CartesianIndices(matrix(A[1]))
+  L = LinearIndices(C)
   if coefficient_ring(A) == base_ring(A)
     M = zero_matrix(base_ring(A), dim(A), d2)
     for i = 1:dim(A)
       N = matrix(A[i])
-      @assert length(N) == d2
-      for (j, n) in enumerate(N)
-        M[i, j] = n
+      for c in C
+        M[i, L[c]] = N[c]
       end
     end
     A.basis_matrix = M
@@ -108,10 +109,13 @@ function assure_has_basis_matrix(A::AlgMat)
     M = zero_matrix(base_ring(A), dim(A), d2*dcr)
     for i = 1:dim(A)
       N = matrix(A[i])
-      for (j, n) in enumerate(N)
+      C = CartesianIndices(N)
+      L = LinearIndices(C)
+      for c in C
+        j = L[c]
         jj = (j - 1)*dcr
         for k = 1:dcr
-          M[i, jj + k] = coefficients(n, copy = false)[k]
+          M[i, jj + k] = coefficients(N[c], copy = false)[k]
         end
       end
     end
@@ -176,8 +180,8 @@ function assure_has_multiplication_table(A::AlgMat{T, S}) where { T, S }
   K = base_ring(A)
 
   if is_canonical(A) # this is M_n(K)
-    cartesiantolinear = LinearIndices((de, de))
-    lineartocartesian = CartesianIndices((de, de))
+    lineartocartesian = AbstractAlgebra.RowMajorIndices(CartesianIndices((de, de)))
+    cartesiantolinear = LinearIndices(lineartocartesian)
     for i in 1:d
       itup = lineartocartesian[i]
       for j in 1:d
@@ -262,7 +266,7 @@ function matrix_algebra(R::Ring, n::Int)
     ni = n*(i - 1)
     for j = 1:n
       M = zero_matrix(R, n, n)
-      M[j, i] = one(R)
+      M[i, j] = one(R)
       B[ni + j] = A(M, check = false)
     end
   end
@@ -293,7 +297,7 @@ function matrix_algebra(R::Ring, S::NCRing, n::Int)
       ni = n2k + n*(i - 1)
       for j = 1:n
         M = zero_matrix(S, n, n)
-        M[j, i] = S[k]
+        M[i, j] = S[k]
         B[ni + j] = A(M, check = false)
       end
     end
@@ -339,7 +343,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   cur_rank = 0
   for i = 1:length(span)
     cur_rank == d2 ? break : nothing
-    new_elt = _add_row_to_rref!(M, reshape(collect(span[i]), :), pivot_rows, cur_rank + 1)
+    new_elt = _add_row_to_rref!(M, reshape(permutedims(collect(span[i]), (2, 1)), :), pivot_rows, cur_rank + 1)
     if new_elt
       push!(new_elements, i)
       cur_rank += 1
@@ -357,7 +361,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
       s = b*span[r]
       for l = 1:n
         t = span[l]*s
-        new_elt = _add_row_to_rref!(M, reshape(collect(t), :), pivot_rows, cur_rank + 1)
+        new_elt = _add_row_to_rref!(M, reshape(permutedims(collect(t), (2, 1)), :), pivot_rows, cur_rank + 1)
         if !new_elt
           continue
         end
@@ -378,7 +382,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
     for j = 1:d
       jd = (j - 1)*d
       for k = 1:d
-        N[k, j] = basis_matrix(A, copy = false)[i, jd + k]
+        N[j, k] = basis_matrix(A, copy = false)[i, jd + k]
       end
     end
     bas[i] = A(N)
@@ -430,7 +434,12 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bo
   for i = 1:length(span)
     cur_rank == max_dim ? break : nothing
     @assert length(span[i]) == d2
-    for (j, s) in enumerate(span[i])
+    C = CartesianIndices(span[i])
+    L = LinearIndices(C)
+    for c in C
+    #for (j, s) in enumerate(span[i])
+      s = span[i][c]
+      j = L[c]
       jj = (j - 1)*dcr
       for k = 1:dcr
         v[jj + k] = coefficients(s, copy = false)[k]
@@ -455,7 +464,11 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bo
       for l = 1:n
         t = span[l]*s
         @assert length(t) == d2
-        for (j, s) in enumerate(t)
+        C = CartesianIndices(t)
+        L = LinearIndices(C)
+        for c in C
+          s = t[c]
+          j = L[c]
           jj = (j - 1)*dcr
           for k = 1:dcr
             v[jj + k] = coefficients(s, copy = false)[k]
@@ -540,11 +553,12 @@ function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
   # Note: Unless `isbasis=true` was given in the constructor, basis(A) is already in rref, and U == I.
 
   if coefficient_ring(A) == base_ring(A)
-    ind = CartesianIndices(axes(M))
-    t = [M[I] for I in ind[pivots]] # = M[ind[pivots]] if it were supported
+    ind = CartesianIndices(M)
+    L = LinearIndices(ind)
+    t = [M[I] for I in [ind[i] for i in pivots]] # = M[ind[pivots]] if it were supported
   else
     ind = CartesianIndices((dim_of_coefficient_ring(A), axes(M)...))
-    t = [coefficients(M[I[2], I[3]]; copy=false)[I[1]] for I in ind[pivots]]
+    t = [coefficients(M[I[3], I[2]]; copy=false)[I[1]] for I in ind[pivots]]
   end
   return t*U
 end
@@ -560,11 +574,13 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
   d2 = degree(A)^2
   #B = basis_matrix(A, copy = false)
   if coefficient_ring(A) == base_ring(A)
+    C = CartesianIndices(M)
+    L = LinearIndices(C)
     #tt = zero_matrix(base_ring(A), 1, d2)
     t = Vector{elem_type(base_ring(A))}(undef, d2)
     @assert length(M) == d2
-    for (i, m) in enumerate(M)
-      t[i] = m
+    for c in C
+      t[L[c]] = M[c]
       #tt[1, i] = m
     end
   else
@@ -572,10 +588,13 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
     #tt = zero_matrix(base_ring(A), 1, d2*dcr)
     t = Vector{elem_type(base_ring(A))}(undef, d2 * dcr)
     @assert length(M) == d2
-    for (i, m) in enumerate(M)
+    C = CartesianIndices(M)
+    L = LinearIndices(C)
+    for c in C
+      i = L[c]
       ii = (i - 1)*dcr
       for j = 1:dcr
-        t[ii + j] = coefficients(m, copy = false)[j]
+        t[ii + j] = coefficients(M[c], copy = false)[j]
         #tt[1, ii + j] = coefficients(m, copy = false)[j]
       end
     end

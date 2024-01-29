@@ -480,7 +480,7 @@ function is_maximal_integral(L::QuadLat, p)
     @assert ok
     _v = matrix(k, 1, length(__v), __v)
     e = map_entries(x -> hext\x, _v * V)
-    sp = only(e * G * transpose(e))
+    sp = (e * G * transpose(e))[1, 1]
     valv = iszero(sp) ? inf : valuation(sp, p)
     @assert valv >= 2
     v = e
@@ -492,7 +492,7 @@ function is_maximal_integral(L::QuadLat, p)
       xV = matrix(k, 1, length(x), x) * V
       e = elem_type(K)[ hext\(xV[1, i]) for i in 1:ncols(xV) ]
       v = matrix(K, 1, length(e), e)
-      _z = only(v * G * transpose(v))
+      _z = (v * G * transpose(v))[1, 1]
       # Test if valv >= val2 + 2
       if iszero(_z)
         break

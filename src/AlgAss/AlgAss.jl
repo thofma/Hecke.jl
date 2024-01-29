@@ -1317,9 +1317,10 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: U
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
-  new_basis = Vector{elem_type(A)}(undef, k^2) # saved column major: new_basis[i + (j - 1)*k] = e_ij
+  new_basis = Matrix{elem_type(A)}(undef, k, k)
+  #new_basis = Vector{elem_type(A)}(undef, k^2) # saved column major: new_basis[i + (j - 1)*k] = e_ij
   for i = 1:k
-    new_basis[i + (i - 1)*k] = idempotents[i]
+    new_basis[i, i] = idempotents[i]
   end
 
   a = idempotents[1]
@@ -1343,7 +1344,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: U
     xx = eAe(left_kernel_basis(M)[1])
     x = m1(m2(xx))
 
-    new_basis[1 + (i - 1)*k] = x # this is e_1i
+    new_basis[1, i] = x # this is e_1i
 
     # We compute an element y of eAe which fulfils
     # aa*y == 0, bb*y == y, y*aa == y, y*bb == 0, y*xx == bb, xx*y == aa.
@@ -1361,14 +1362,24 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: U
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 
-    new_basis[i] = y # this is e_i1
+    new_basis[i, 1] = y # this is e_i1
   end
 
   for j = 2:k
-    jk = (j - 1)*k
-    e1j = new_basis[1 + jk]
+    #jk = (j - 1)*k
+    e1j = new_basis[1, j]
     for i = 2:k
-      new_basis[i + jk] = new_basis[i]*e1j # this is e_ij
+      #new_basis[i + jk] = new_basis[i]*e1j # this is e_ij
+      new_basis[i, j] = new_basis[i, 1]*e1j # this is e_ij
+    end
+  end
+  for c in CartesianIndices((k, k))
+    for d in CartesianIndices((k, k))
+      if c[2] == d[1]
+        @assert new_basis[c] * new_basis[d] == new_basis[c[1], d[2]]
+      else
+        @assert new_basis[c] * new_basis[d] == zero(A)
+      end
     end
   end
   return new_basis
@@ -1388,8 +1399,9 @@ function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{fpFieldElem, Eu
 
   # matrix_basis is another basis for A. We build the matrix for the basis change.
   M = zero_matrix(Fq, dim(A), dim(A))
-  for i = 1:dim(A)
-    elem_to_mat_row!(M, i, matrix_basis[i])
+  C = AbstractAlgebra.RowMajorIndices(CartesianIndices(matrix_basis))
+  for (i, c) in enumerate(C)
+    elem_to_mat_row!(M, i, matrix_basis[c])
   end
   return B, hom(A, B, inv(M), M)
 end
@@ -1564,6 +1576,6 @@ function opposite_algebra(A::AlgAss)
   o = one(A).coeffs
 
   B = AlgAss(K, z, o)
-  return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d))
+  return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d); check = false)
 end
 

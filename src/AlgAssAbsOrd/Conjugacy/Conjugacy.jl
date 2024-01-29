@@ -549,7 +549,7 @@ function _basis_of_commutator_algebra(As::Vector{T}, Bs::Vector{T}) where T <: M
       M[v[2], v[1]] = K[l, k]
     end
     for i in 1:length(As)
-      M * As[i] == Bs[i] * M
+      @assert M * As[i] == Bs[i] * M
     end
     push!(res, M)
   end
@@ -593,7 +593,7 @@ function _basis_of_integral_commutator_algebra(As::Vector{QQMatrix},
         M[v[2], v[1]] = KK[l, k]
     end
     for i in 1:length(As)
-      M * As[i] == Bs[i] * M
+      @assert M * As[i] == Bs[i] * M
     end
     push!(res, M)
   end

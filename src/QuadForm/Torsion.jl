@@ -73,7 +73,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * transpose(basis_matrix(N))
   if iszero(modulus)
-    _modulus = reduce(gcd, num; init = zero(QQFieldElem))
+    _modulus = reduce(gcd, (num[c] for c in eachindex(num)); init = zero(QQFieldElem))
   else
     _modulus = QQ(modulus)
   end

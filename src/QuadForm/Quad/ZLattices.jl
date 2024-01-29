@@ -84,7 +84,7 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
   V = quadratic_space(QQ, gram)
   B = zero_matrix(QQ, length(gens), length(gens[1]))
   for i in 1:length(gens)
-    B[i,:] = gens[i]
+    B[i:i,:] = gens[i]
   end
   return lattice(V, B; isbasis = false)
 end
@@ -1204,10 +1204,10 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
     end
     _v = matrix(k, 1, length(__v), __v)
     v = lift(_v)
-    sp = only(v * H * transpose(v))
+    sp = (v * H * transpose(v))[1, 1]
     valv = iszero(sp) ? inf : valuation(sp, p)
     v = v * VZ
-    sp = only(v * G * transpose(v))
+    sp = (v * G * transpose(v))[1, 1]
     valv = iszero(sp) ? inf : valuation(sp, p)
     @assert valv >= 2
     v = QQ(1, p) * change_base_ring(QQ,v)
@@ -1795,7 +1795,7 @@ function _irreducible_components_gram(L::ZZLat)
   L = lll(L)
   V = ambient_space(L)
   B = basis_matrix(L)
-  B = [B[i,:] for i in 1:nrows(B)]
+  B = [B[i:i,:] for i in 1:nrows(B)]
   C = QQMatrix[]
   components = ZZLat[]
   while length(B) > 0
@@ -2361,7 +2361,7 @@ function reflection(gram::MatElem, v::MatElem)
   c = base_ring(gram)(2) * ((v * gram * transpose(v)))[1,1]^(-1)
   ref = zero_matrix(base_ring(gram), n, n)
   for k in 1:n
-    ref[k,:] = E[k,:] - c*(E[k,:] * gram * transpose(v))*v
+    ref[k:k,:] = E[k:k,:] - c*(E[k:k,:] * gram * transpose(v))*v
   end
   return ref
 end
@@ -2396,21 +2396,21 @@ function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)
   Trem = deepcopy(T)
   k = 1
   while k <= l
-    g = Trem[k,:]
-    bm = g - E[k,:]
+    g = Trem[k:k,:]
+    bm = g - E[k:k,:]
     qm = bm * G * transpose(bm)
     if valuation(qm, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bm)
       push!(reflection_vectors, bm)
       Trem = Trem * tau1
     else
-      bp = g + E[k,:]
+      bp = g + E[k:k,:]
       qp = bp * G * transpose(bp)
       @assert valuation(qp, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bp)
-      tau2 = reflection(G, E[k,:])
+      tau2 = reflection(G, E[k:k,:])
       push!(reflection_vectors,bp)
-      push!(reflection_vectors,E[k,:])
+      push!(reflection_vectors,E[k:k,:])
       Trem = Trem * tau1 * tau2
     end
     k += 1
@@ -2550,10 +2550,10 @@ function _norm_generator(gram_normal, p)
   E = identity_matrix(QQ, n)
   q = gram_normal[i,i]
   if q!=0 && valuation(q, p) <= 1
-    return E[i,:]
+    return E[i:i,:]
   end
   @assert p==2
-  return E[i,:] + E[i-1,:]
+  return E[i:i,:] + E[i-1:i-1,:]
 end
 
 ################################################################################

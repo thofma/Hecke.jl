@@ -1139,8 +1139,13 @@ function _islocally_free_left(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int,
       return false, O()
     end
 
-    for i = 1:length(basiseIJoverZ)
-      a += mod(toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[i]))))*basiseIJoverZ[i], pI)
+    # We need the basis elements corresponding to
+    # e_{11}, e_{21}, e_{31},
+    # but the basis of C is ordered such that e_{11}, e_{12}, e_{13},...
+    # So we have to pick the right basis elements of C with some little
+    # index shifting
+    for i in 1:length(basiseIJoverZ)
+      a += mod(toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[degree(C) * (i - 1) + 1]))))*basiseIJoverZ[i], pI)
     end
   end
 
@@ -2230,12 +2235,14 @@ function _primes_of_local_inequality_by_matrices(I, J)
   Tinv = inv(T)
   primesT = ZZRingElem[]
   primesTinv = ZZRingElem[]
-  for a in T
+  for c in eachindex(T)
+    a = T[c]
     if !iszero(a)
       append!(primesT, support(denominator(a)))
     end
   end
-  for a in Tinv
+  for c in eachindex(Tinv)
+    a = Tinv[c]
     if !iszero(a)
       append!(primesTinv, support(denominator(a)))
     end
@@ -2253,7 +2260,9 @@ end
 function is_subset_locally(L::T, M::T, p::IntegerUnion) where {T <: AlgAssAbsOrdIdl}
   @req algebra(L) === algebra(M) "Lattices must live in same algebra"
   t = basis_matrix(L) * basis_mat_inv(M)
-  for m in QQMatrix(t)
+  tmat = QQMatrix(t)
+  for c in eachindex(tmat)
+    m = tmat[c]
     if !iszero(m) && valuation(m, p) < 0
       return false
     end

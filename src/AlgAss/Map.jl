@@ -14,7 +14,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     return z
   end
 
-  function AbsAlgAssMor{R, S, T}(A::R, B::S, M::T) where {R, S, T}
+  function AbsAlgAssMor{R, S, T}(A::R, B::S, M::T; check::Bool = true) where {R, S, T}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
@@ -22,7 +22,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:Threads.nthreads()]
     z.mat = M
 
-    function image(a)
+    image = function(a)
       if Threads.nthreads() == 1
         zt = z.c_t
       else
@@ -40,11 +40,20 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
       return B(s)
     end
 
+    if check
+      for a in basis(A)
+        for b in basis(A)
+          @assert image(a * b) == image(a)*image(b)
+          @assert image(a + b) == image(a) + image(b)
+        end
+      end
+    end
+
     z.header = MapHeader(A, B, image)
     return z
   end
 
-  function AbsAlgAssMor{R, S, T}(A::R, B::S, M::T, N::T) where {R, S, T}
+  function AbsAlgAssMor{R, S, T}(A::R, B::S, M::T, N::T; check::Bool = true) where {R, S, T}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
@@ -53,7 +62,8 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z.mat = M
     z.imat = N
 
-    function image(a)
+    image = function(a)
+      @assert parent(a) === A
       if Threads.nthreads() == 1
         zct = z.c_t
         zdt = z.d_t
@@ -80,7 +90,8 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
       return B(s, copy = false)
     end
 
-    function preimage(a)
+    preimage = function(a)
+      @assert parent(a) === B
       if Threads.nthreads() == 1
         zct = z.c_t
         zdt = z.d_t
@@ -98,6 +109,24 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
         s[i] = zct[1, i]
       end
       return A(s, copy = false)
+    end
+    
+    if check
+      for a in basis(A)
+        for b in basis(A)
+          @assert image(a * b) == image(a) * image(b)
+          @assert image(a + b) == image(a) + image(b)
+        end
+
+        #@assert preimage(image(a)) == a
+      end
+
+      #for a in basis(B)
+      #  for b in basis(B)
+      #    @assert preimage(a * b) == preimage(a) * preimage(b)
+      #    @assert preimage(a + b) == preimage(a) + preimage(b)
+      #  end
+      #end
     end
 
     z.header = MapHeader(A, B, image, preimage)
@@ -208,12 +237,16 @@ function hom(A::R, B::S, imgs::Vector) where {R <: AbsAlgAss, S <: AbsAlgAss}
   return hom(A, B, bmat)
 end
 
-function hom(A::R, B::S, M::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T <: MatElem}
-  return AbsAlgAssMor{R, S, T}(A, B, M)
+function hom(A::R, B::S, M::T; check::Bool = true) where {R <: AbsAlgAss, S <: AbsAlgAss, T <: MatElem}
+  return AbsAlgAssMor{R, S, T}(A, B, M; check = check)
 end
 
-function hom(A::R, B::S, M::T, N::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T <: MatElem}
-  return AbsAlgAssMor{R, S, T}(A, B, M, N)
+function hom(A::R, B::S, M::T, N::T; check::Bool = true) where {R <: AbsAlgAss, S <: AbsAlgAss, T <: MatElem}
+  @assert nrows(M) == dim(A)
+  @assert ncols(M) == dim(B)
+  @assert nrows(N) == dim(B)
+  @assert ncols(N) == dim(A)
+  return AbsAlgAssMor{R, S, T}(A, B, M, N; check = check)
 end
 
 #function hom(A::AlgAss{R}, B::AlgAss{S}, M::T) where {R <: AlgAss, S <: AlgAss, T}

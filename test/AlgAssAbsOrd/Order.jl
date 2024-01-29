@@ -112,7 +112,7 @@
 
   @testset "Maximal Order" begin
     A = AlgAss(x^2 + 10x + 7)
-    AA = deepcopy(A) # avoid caching
+    AA = AlgAss(x^2 + 10x + 7)
     O1 = maximal_order(A)
     O2 = Hecke.maximal_order_via_decomposition(AA)
     @test discriminant(O1) == discriminant(O2)

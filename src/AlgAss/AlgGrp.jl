@@ -205,7 +205,7 @@ function center(A::AlgGrp{T}) where {T}
   A.center = C, mD
 
   if isdefined(A, :decomposition)
-    idems = elem_type(C)[haspreimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
+    idems = elem_type(C)[haspreimage(mC, mB\(StoA(one(S))))[2] for (S, StoA) in A.decomposition]
     set_attribute!(C, :central_idempotents, idems)
   end
 
@@ -995,7 +995,7 @@ function opposite_algebra(A::AlgGrp{S}) where S
     i = A.group_to_base[g]
     elem_to_mat_row!(z, i, A(inv(g)))
   end
-  return A, hom(A, A, z, z)
+  return A, hom(A, A, z, z; check = false)
 end
 
 ################################################################################
