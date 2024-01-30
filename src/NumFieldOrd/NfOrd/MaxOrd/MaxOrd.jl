@@ -76,12 +76,12 @@ end
 #
 ################################################################################
 @doc raw"""
-    pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem}) -> NfOrd
+    pmaximal_overorder_at(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, primes::Vector{ZZRingElem}) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Given a set of prime numbers, this function returns an overorder of $O$ which
 is maximal at those primes.
 """
-function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
+function pmaximal_overorder_at(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, primes::Vector{ZZRingElem})
 
   primes1 = setdiff(primes, O.primesofmaximality)
   if isempty(primes1)
@@ -92,7 +92,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
   if !is_defining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
     for i in 1:length(primes)
       p = primes[i]
-      @vprintln :NfOrd 1 "Computing p-maximal overorder for $p ..."
+      @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Computing p-maximal overorder for $p ..."
       OO += pmaximal_overorder(OO, p)
       if !(p in OO.primesofmaximality)
         push!(OO.primesofmaximality, p)
@@ -109,7 +109,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
   f = Zx(K.pol)
   for i in 1:length(primes1)
     p = primes1[i]
-    @vprintln :NfOrd 1 "Computing p-maximal overorder for $p ..."
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Computing p-maximal overorder for $p ..."
     if !is_divisible_by(ind, p) || is_regular_at(f, p)
       O1 = pmaximal_overorder(EO, p)
       if valuation(discriminant(O1), p) != valuation(discriminant(OO), p)
@@ -125,7 +125,7 @@ function pmaximal_overorder_at(O::NfOrd, primes::Vector{ZZRingElem})
     if !(p in OO.primesofmaximality)
       push!(OO.primesofmaximality, p)
     end
-    @vprintln :NfOrd 1 "done"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "done"
   end
   @assert isdefined(OO, :disc)
   return OO
@@ -138,7 +138,7 @@ end
 ################################################################################
 
 #  Buchmann-Lenstra for simple absolute number fields.
-function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function new_maximal_order(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
 
   K = nf(O)
   if degree(K) == 1
@@ -160,10 +160,10 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRing
     ds = discriminant(O)
     #First, factorization of the discriminant given by the snf of the trace matrix
     M = trace_matrix(O)
-    @vtime :NfOrd 1 l = divisors(M, ds)
+    @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 l = divisors(M, ds)
   end
 
-  @vprintln :NfOrd 1 "Computing some factors of the discriminant"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Computing some factors of the discriminant"
 
 
   #No, factors of the discriminant appearing in the
@@ -177,10 +177,10 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRing
     push!(l, disc)
   end
   l = coprime_base(l)
-  @vprintln :NfOrd 1 "Factors of the discriminant: $l\n "
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Factors of the discriminant: $l\n "
   l1 = ZZRingElem[]
   OO = O
-  @vprintln :NfOrd 1 "Trial division of the discriminant\n "
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Trial division of the discriminant\n "
   auxmat = zero_matrix(FlintZZ, 2*degree(K), degree(K))
   first = true
   for d in l
@@ -196,14 +196,14 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRing
       rem = divexact(rem, p^v)
     end
     pps = collect(keys(fac))
-    @vprintln :NfOrd 1 "Computing the maximal order at $(pps)\n "
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Computing the maximal order at $(pps)\n "
     O1 = pmaximal_overorder_at(O, pps)
     if discriminant(O1) != discriminant(O)
       if first
         OO = O1
         first = false
       else
-        @vtime :NfOrd 3 OO = sum_as_Z_modules(OO, O1, auxmat)
+        @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 OO = sum_as_Z_modules(OO, O1, auxmat)
       end
     end
     rem = abs(rem)
@@ -240,7 +240,7 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRing
   end
   O1, Q = _TameOverorderBL(OO, ll1)
   if !isempty(Q) && discriminant(O1) != disc
-    @vprintln :NfOrd 1 "I have to factor $Q\n "
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "I have to factor $Q\n "
     for el in Q
       d = factor(el).fac
       O2 = pmaximal_overorder_at(O, collect(keys(d)))
@@ -252,14 +252,14 @@ function new_maximal_order(O::NfOrd; index_divisors::Vector{ZZRingElem} = ZZRing
 
 end
 
-function _TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem})
+function _TameOverorderBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Vector{ZZRingElem})
 
   K = nf(O)
   OO = O
   M = coprime_base(lp)
   Q = ZZRingElem[]
   while !isempty(M)
-    @vprintln :NfOrd 1 "List of factors: $M"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "List of factors: $M"
     q = pop!(M)
     if is_coprime(q, discriminant(OO))
       continue
@@ -302,7 +302,7 @@ function _TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem})
   return OO, Q
 end
 
-function _radical_by_poly(O::NfOrd, q::ZZRingElem)
+function _radical_by_poly(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
   R = residue_ring(FlintZZ, q, cached=false)[1]
@@ -337,11 +337,11 @@ function _radical_by_poly(O::NfOrd, q::ZZRingElem)
   end
   I1 = ideal(O, q, gen2)
   I1.basis_matrix = M1
-  I1.gens = NfOrdElem[O(q), gen2]
+  I1.gens = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[O(q), gen2]
   return ZZRingElem(1), I1
 end
 
-function _radical_by_trace(O::NfOrd, q::ZZRingElem)
+function _radical_by_trace(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
   R = residue_ring(FlintZZ, q, cached=false)[1]
@@ -372,9 +372,9 @@ function _radical_by_trace(O::NfOrd, q::ZZRingElem)
   return ZZRingElem(1), I
 end
 
-function _qradical(O::NfOrd, q::ZZRingElem)
+function _qradical(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
   K = nf(O)
-  @vprintln :NfOrd 1 "\nradical computation"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "\nradical computation"
   if is_defining_polynomial_nice(K) && isone(gcd(index(O), q))
     return _radical_by_poly(O, q)
   else
@@ -382,7 +382,7 @@ function _qradical(O::NfOrd, q::ZZRingElem)
   end
 end
 
-function _cycleBL(O::NfOrd, q::ZZRingElem)
+function _cycleBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
 
   q1, I = _qradical(O, q)
   if !isone(q1)
@@ -392,9 +392,9 @@ function _cycleBL(O::NfOrd, q::ZZRingElem)
   elseif I == ideal(O, q)
     return O, ZZRingElem(1)
   end
-  @vprintln :NfOrd 1 "ring of multipliers"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "ring of multipliers"
   O1 = ring_of_multipliers(I)
-  @vprintln :NfOrd 1 "ring of multipliers computed"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "ring of multipliers computed"
   while discriminant(O1) != discriminant(O)
     if isone(gcd(discriminant(O1), q))
       return O1, ZZRingElem(1)
@@ -406,10 +406,10 @@ function _cycleBL(O::NfOrd, q::ZZRingElem)
     elseif isdefined(I, :princ_gens) && q == I.princ_gens
       return O, ZZRingElem(1)
     end
-    @vprintln :NfOrd 1 "ring of multipliers"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "ring of multipliers"
     O1 = ring_of_multipliers(I)
   end
-  @vprintln :NfOrd 1 "The ring of multipliers was the ring itself"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "The ring of multipliers was the ring itself"
   # (I:I)=OO. Now, we want to prove tameness (or get a factor of q)
   # We have to test that (OO:a)/B is a free Z/qZ module.
   #TODO: Check, I am doing something stupid here
@@ -420,20 +420,20 @@ function _cycleBL(O::NfOrd, q::ZZRingElem)
   for i = 1:length(G1)
     q1 = gcd(q, G1[i])
     if q1 != q && !isone(q1)
-      @vprintln :NfOrd 1 "Found the factor $q1"
+      @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Found the factor $q1"
       return O, q1
     end
   end
-  @vprintln :NfOrd 1 "(OO:I)/OO is free"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "(OO:I)/OO is free"
   res = _cycleBL2(O, q, I)
   return res
 
 end
 
-function _cycleBL2(O::NfOrd, q::ZZRingElem, I::NfOrdIdl)
+function _cycleBL2(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
   h = 2
-  ideals = Vector{NfOrdIdl}(undef, 3)
+  ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, 3)
   ideals[1] = I
   ideals[2] = I*I
   ideals[3] = ideals[2] * I
@@ -471,7 +471,7 @@ end
 
 
 
-function TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem}=ZZRingElem[])
+function TameOverorderBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Vector{ZZRingElem}=ZZRingElem[])
 
   # First, we hope that we can get a factorization of the discriminant by computing
   # the structure of the group OO^*/OO
@@ -485,7 +485,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem}=ZZRingElem[])
       l[i]=b
     end
     if is_prime(l[i])
-      @vprintln :NfOrd 1 "pmaximal order at $(l[i])"
+      @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "pmaximal order at $(l[i])"
       OO1=pmaximal_overorder(O, l[i])
       if valuation(discriminant(OO1), l[i])<valuation(discriminant(OO), l[i])
         OO+=OO1
@@ -502,7 +502,7 @@ function TameOverorderBL(O::NfOrd, lp::Vector{ZZRingElem}=ZZRingElem[])
   M=coprime_base(l)
   Q=ZZRingElem[]
   while !isempty(M)
-    @vprint :NfOrd 1 M
+    @vprint :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 M
     q = M[1]
     if is_prime(q)
       OO1=pmaximal_overorder(O, q)
@@ -538,17 +538,17 @@ end
 ################################################################################
 
 function _poverorder(O::AbsNumFieldOrder, p::ZZRingElem)
-  @vtime :NfOrd 3 I = pradical1(O, p)
+  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 I = pradical1(O, p)
   if isdefined(I, :princ_gen) && I.princ_gen == p
     return O
   end
-  @vtime :NfOrd 3 R = ring_of_multipliers(I)
+  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 R = ring_of_multipliers(I)
   return R
 end
 
 @doc raw"""
-    poverorder(O::NfOrd, p::ZZRingElem) -> NfOrd
-    poverorder(O::NfOrd, p::Integer) -> NfOrd
+    poverorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    poverorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 This function tries to find an order that is locally larger than $\mathcal O$
 at the prime $p$: If $p$ divides the index $[ \mathcal O_K : \mathcal O]$,
@@ -579,14 +579,14 @@ end
 ################################################################################
 
 @doc raw"""
-    pmaximal_overorder(O::NfOrd, p::ZZRingElem) -> NfOrd
-    pmaximal_overorder(O::NfOrd, p::Integer) -> NfOrd
+    pmaximal_overorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    pmaximal_overorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
 the index $[ \mathcal O_K : R]$ is not divisible by $p$.
 """
 function pmaximal_overorder(O::AbsNumFieldOrder, p::ZZRingElem)
-  @vprintln :NfOrd 1 "computing p-maximal overorder for $p ..."
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "computing p-maximal overorder for $p ..."
   if p in O.primesofmaximality
     return O
   end
@@ -595,7 +595,7 @@ function pmaximal_overorder(O::AbsNumFieldOrder, p::ZZRingElem)
     push!(O.primesofmaximality, p)
     return O
   end
-  @vprintln :NfOrd 1 "extending the order at $p for the first time ..."
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "extending the order at $p for the first time ..."
   i = 1
   OO = poverorder(O, p)
   dd = discriminant(OO)
@@ -604,7 +604,7 @@ function pmaximal_overorder(O::AbsNumFieldOrder, p::ZZRingElem)
       break
     end
     i += 1
-    @vprintln :NfOrd 1 "extending the order at $p for the $(i)th time ..."
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "extending the order at $p for the $(i)th time ..."
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
@@ -676,7 +676,7 @@ function ring_of_multipliers(a::AbsNumFieldOrderIdeal)
   transpose!(mhnf, mhnf)
   b = FakeFmpqMat(pseudo_inv(mhnf))
   mul!(b, b, basis_matrix(O, copy = false))
-  @hassert :NfOrd 1 defines_order(nf(O), b)[1]
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 defines_order(nf(O), b)[1]
   O1 = AbsNumFieldOrder(nf(O), b)
   if isdefined(O, :disc)
     O1.disc = divexact(O.disc, s^2)
@@ -719,7 +719,7 @@ function factor_shape_refined(x::PolyRingElem)
   return res
 end
 
-function new_pradical_frobenius1(O::NfOrd, p::Int)
+function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
   R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -741,7 +741,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
   M1 = representation_matrix_mod(gen2, ZZRingElem(p))
   hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   powers = Dict{Int, Vector{ZZRingElem}}()
-  gens = NfOrdElem[O(p), gen2]
+  gens = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[O(p), gen2]
   B = basis(O, copy = false)
   it = 0
   while true
@@ -798,7 +798,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
       return I
     end
     #First, find the generators
-    new_gens = Vector{NfOrdElem}()
+    new_gens = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     for i = 1:length(X)
       coords = zeros(FlintZZ, d)
       for j=1:nr
@@ -835,7 +835,7 @@ function new_pradical_frobenius1(O::NfOrd, p::Int)
   end
 end
 
-function pradical_frobenius1(O::NfOrd, p::Int)
+function pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
   R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -924,7 +924,7 @@ function pradical_frobenius1(O::NfOrd, p::Int)
   return I
 end
 
-function pradical_trace1(O::NfOrd, p::IntegerUnion)
+function pradical_trace1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::IntegerUnion)
   if isone(gcd(discriminant(O), p))
     return ideal(O, p)
   end
@@ -950,7 +950,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
     return ideal(O, p)
   end
 
-  gens = NfOrdElem[O(p), gen2]
+  gens = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[O(p), gen2]
   for i = 1:k
     coords = Vector{ZZRingElem}(undef, d)
     for j = 1:d
@@ -998,7 +998,7 @@ function pradical1(O::AbsNumFieldOrder, p::IntegerUnion)
     return pradical_trace1(O, p)
   else
     res1 = new_pradical_frobenius1(O, Int(p))
-    @hassert :NfOrd 1 !is_simple(nf(O)) || res1 == pradical_frobenius1(O, p)
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 !is_simple(nf(O)) || res1 == pradical_frobenius1(O, p)
     return res1
   end
 end

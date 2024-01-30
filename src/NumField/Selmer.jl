@@ -19,7 +19,7 @@ function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
 end
 
 @doc raw"""
-    pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+    pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
 
 Let $K$ be the number field of the prime ideals in $S$. Then the $p$-Selmer group is a subgroup of
 $K^*$ modulo $p$-th powers of elements such that all valuations outside $S$ are divisible by $p$.
@@ -55,7 +55,7 @@ true
 
 ```
 """
-function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
   @assert all(x->order(x) == order(S[1]), S)
   @assert is_prime(p) #maybe not necessary
 
@@ -67,7 +67,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
   s, ms = sub(C, map(pseudo_inv(mC), S))
   P = PrimesSet(100, -1)
   pr, pos = iterate(P)
-  D = NfOrdIdl[]
+  D = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   while gcd(index(C, s), p) != 1
     lp = prime_decomposition(ZK, pr)
     for (pi, ei) = lp
@@ -123,7 +123,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
     end
   end
 
-  disc_log_data = Dict{NfOrdIdl, Tuple{Map, Vector{Int}}}()
+  disc_log_data = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Tuple{Map, Vector{Int}}}()
   function toSel(x::AbsSimpleNumFieldElem; check::Bool = check)
     return toSel(FacElem([x], [1], check = check))
   end
@@ -196,12 +196,12 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
 end
 
 @doc raw"""
-    pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+    pselmer_group(p::Int, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
 
 Similar to the `pselmer_group_fac_elem`, the difference is that the elements here are evaluated,
 ie. returned explicitly wrt the basis of the number field.
 """
-function pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+function pselmer_group(p::Int, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
   return G, MapFromFunc(G, number_field(order(S[1])), x->evaluate(mp(x)), y->preimage(mp, FacElem([y], ZZRingElem[1])))
 end

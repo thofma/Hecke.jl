@@ -1,6 +1,6 @@
 ################################################################################
 #
-#    NfOrd/NfOrdFracIdl.jl : Fractional ideals of generic
+#    AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}.jl : Fractional ideals of generic
 #                               orders in number fields
 #
 # This file is part of hecke.
@@ -39,7 +39,7 @@
 #
 ################################################################################
 
-function is_consistent(x::NfOrdFracIdl)
+function is_consistent(x::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return is_consistent(numerator(x))
 end
 
@@ -59,7 +59,7 @@ end
 #
 #################################################################################
 
-function FractionalIdealSet(O::NfOrd)
+function FractionalIdealSet(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return NfAbsOrdFracIdlSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O)
 end
 
@@ -692,7 +692,7 @@ function integral_split(A::AbsNumFieldOrderFractionalIdeal)
   @assert isone(d.den)
   n = simplify(A*d)
   @assert isone(n.den)
-  @hassert :NfOrd 1 A == (numerator(n)//numerator(d))
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 A == (numerator(n)//numerator(d))
   return numerator(n), numerator(d)
 end
 
@@ -772,8 +772,8 @@ end
 #
 ################################################################################
 
-#TODO: Use the inclusion element/NfOrdIdl
-function in(x::AbsSimpleNumFieldElem, y::NfOrdFracIdl)
+#TODO: Use the inclusion element/AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+function in(x::AbsSimpleNumFieldElem, y::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   B = inv(basis_matrix(y))
   O = order(y)
   M = zero_matrix(FlintZZ, 1, degree(O))
@@ -785,12 +785,12 @@ function in(x::AbsSimpleNumFieldElem, y::NfOrdFracIdl)
   return v.den == 1
 end
 
-function in(x::T, y::NfOrdFracIdl) where T <: IntegerUnion
+function in(x::T, y::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where T <: IntegerUnion
   O = order(y)
   return in(O(x), y)
 end
 
-function in(x::AbsNumFieldOrderElem, y::NfOrdFracIdl)
+function in(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return in(elem_in_nf(x), y)
 end
 
@@ -825,14 +825,14 @@ end
 #
 ################################################################################
 
-function one(A::NfOrdFracIdlSet)
+function one(A::AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return ideal(order(A), 1)//1
 end
 
-function copy(A::NfOrdFracIdl)
+function copy(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return deepcopy(A)
 end
 
-function ^(A::NfOrdFracIdl, d::ZZRingElem)
+function ^(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, d::ZZRingElem)
   return A^Int(d)
 end

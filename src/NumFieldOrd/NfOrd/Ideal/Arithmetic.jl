@@ -1,6 +1,6 @@
 ################################################################################
 #
-# NfOrd/Ideal/Arithmetic.jl : Arithmetic for ideals in orders of absolute
+# AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Ideal/Arithmetic.jl : Arithmetic for ideals in orders of absolute
 #                             number fields
 #
 # This file is part of Hecke.
@@ -80,7 +80,7 @@ function sum_princ_gen_special(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdea
     M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), genx, :lowerleft)
     res = ideal(OK, M1; check=false, M_in_hnf=true)
   end
-  @hassert :NfOrd 1 res == sum_via_basis_matrix(x, y)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 res == sum_via_basis_matrix(x, y)
   return res
 end
 
@@ -114,7 +114,7 @@ function sum_princ_gen(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
     res.minimum = H[1, 1]
   end
   res.norm = prod_diagonal(H)
-  @hassert :NfOrd 1 res == sum_via_basis_matrix(x, y)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 res == sum_via_basis_matrix(x, y)
   return res
 end
 
@@ -186,11 +186,11 @@ end
 ################################################################################
 
 @doc raw"""
-    intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
+    intersect(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Returns $x \cap y$.
 """
-function intersect(x::NfOrdIdl, y::NfOrdIdl)
+function intersect(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   check_parent(x, y)
   g = gcd(minimum(x), minimum(y))
   if isone(g)
@@ -204,7 +204,7 @@ function intersect(x::NfOrdIdl, y::NfOrdIdl)
   return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_matrix(x, copy = false), g, :lowerleft); check=false, M_in_hnf=true)
 end
 
-lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
+lcm(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = intersect(x, y)
 
 ################################################################################
 #
@@ -214,15 +214,15 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 
 function *(x::S, y::S) where S <: AbsNumFieldOrderIdeal
   check_parent(x, y)
-  @hassert :NfOrd 1 is_consistent(x)
-  @hassert :NfOrd 1 is_consistent(y)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(x)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(y)
   OK = order(x)
   if is_maximal_known_and_maximal(OK)
     z = mul_maximal(x, y)
   else
     z = mul_gen(x, y)
   end
-  @hassert :NfOrd 1 is_consistent(z)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(z)
   return z
 end
 
@@ -283,8 +283,8 @@ end
 # using the 2-normal representation
 function prod_via_2_elem_normal(a::S, b::S) where S <: AbsNumFieldOrderIdeal
   check_parent(a, b)
-  @hassert :NfOrd 1 has_2_elem_normal(a)
-  @hassert :NfOrd 1 has_2_elem_normal(b)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem_normal(a)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem_normal(b)
   O = order(a)
   a1 = a.gen_one
   if has_minimum(a)
@@ -344,8 +344,8 @@ end
 # using the 2-weak-normal representation
 function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
   check_parent(a, b)
-  @hassert :NfOrd 1 has_2_elem(a)
-  @hassert :NfOrd 1 has_2_elem(b)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem(a)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem(b)
 
   O = order(a)
   K = nf(O)
@@ -387,8 +387,8 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
     r = -Int(div(mod_c, 2)):Int(div(mod_c, 2))
   end
 
-  @vprintln :NfOrd 1 "a: $a \nb: $b"
-  @vprintln :NfOrd 1 "using basis: $bas"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "a: $a \nb: $b"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using basis: $bas"
 
   gen = O()
   gen2 = O()
@@ -424,7 +424,7 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
     end
   end
 
-  @vprintln :NfOrd 1 "prod_via_2_elem: used $cnt tries"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "prod_via_2_elem: used $cnt tries"
 
   c = ideal(O, first_gen_new, gen)
 
@@ -465,7 +465,7 @@ function mul_maximal(x::S, y::S) where S <: AbsNumFieldOrderIdeal
   if has_2_elem(x) && has_2_elem(y)
     return prod_via_2_elem_weakly(x, y)
   end
-  # Fall back to the generic algorithm _mul(::NfOrdIdl, ::NfOrdIdl)
+  # Fall back to the generic algorithm _mul(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   # Could also use invoke
   return mul_gen(x, y)
 end
@@ -476,7 +476,7 @@ end
 #
 ################################################################################
 
-# Falls back to generic case +(::NfOrd, ::NfOrd)
+# Falls back to generic case +(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
 #for ideals in the maximal order, the gcd is well defined...
 
 function gcd(A::S, B::S) where S <: AbsNumFieldOrderIdeal
@@ -490,7 +490,7 @@ end
 
 #TODO: write a ppio version that allows for p-powers as well
 @doc raw"""
-    gcd(A::NfOrdIdl, p::ZZRingElem) -> NfOrdIdl
+    gcd(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 The gcd or sum (A + pO).
 """
@@ -521,7 +521,7 @@ end
 ################################################################################
 
 function Base.:(^)(A::AbsNumFieldOrderIdeal, e::Int)
-  @hassert :NfOrd 1 is_consistent(A)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
   OK = order(A)
   if e == 0
     return ideal(OK, 1)
@@ -594,7 +594,7 @@ Base.literal_pow(::typeof(^), A::AbsNumFieldOrderIdeal, ::Val{p}) where {p} = A^
 ################################################################################
 
 # multiplication by ZZRingElem, using two normal presentation
-function prod_by_int_2_elem_normal(A::NfOrdIdl, a::ZZRingElem)
+function prod_by_int_2_elem_normal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::ZZRingElem)
   @assert has_2_elem(A) && has_2_elem_normal(A)
 
   # <a,a> is a a-normal presentation
@@ -613,7 +613,7 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::ZZRingElem)
     a2 = A.gen_two*f + A.gen_one^2 # now (a1, a2) should be m-normal for a
   end
 
-  B = NfOrdIdl(A.gen_one*a, a2*a)
+  B = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(A.gen_one*a, a2*a)
   if has_princ_gen_special(A)
     B.princ_gen_special = (2, 0, (A.princ_gen_special[2] + A.princ_gen_special[3])*a)
   end
@@ -636,10 +636,10 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::ZZRingElem)
   return B
 end
 
-function prod_by_int_2_elem(A::NfOrdIdl, a::ZZRingElem)
+function prod_by_int_2_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::ZZRingElem)
   @assert has_2_elem(A)
 
-  B = NfOrdIdl(A.gen_one*a, A.gen_two*a)
+  B = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(A.gen_one*a, A.gen_two*a)
   if has_princ_gen(A)
     B.is_principal = 1
     B.princ_gen = A.princ_gen*a
@@ -661,7 +661,7 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::ZZRingElem)
   return B
 end
 
-function *(x::NfOrdIdl, y::ZZRingElem)
+function *(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
   if is_maximal_known_and_maximal(order(x))
     return mul_maximal(x, y)
   else
@@ -669,7 +669,7 @@ function *(x::NfOrdIdl, y::ZZRingElem)
   end
 end
 
-function mul_maximal(x::NfOrdIdl, y::ZZRingElem)
+function mul_maximal(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
   if iszero(y)
     z = ideal(order(x), 0)
     z.iszero = 1
@@ -688,24 +688,24 @@ function mul_maximal(x::NfOrdIdl, y::ZZRingElem)
     end
   end
 
-  @hassert :NfOrd 1 has_basis_matrix(x)
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_basis_matrix(x)
   return ideal(order(x), basis_matrix(x, copy = false)*y)
 end
 
-*(x::ZZRingElem, y::NfOrdIdl) = y * x
+*(x::ZZRingElem, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = y * x
 
-*(x::NfOrdIdl, y::Integer) = x * ZZRingElem(y)
+*(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::Integer) = x * ZZRingElem(y)
 
-*(x::Integer, y::NfOrdIdl) = y * x
+*(x::Integer, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = y * x
 
-function *(x::NfOrdElem, y::NfOrdIdl)
+function *(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   return ideal(parent(x), x) * y
 end
 
-*(x::NfOrdIdl, y::NfOrdElem) = y * x
+*(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}) = y * x
 
-function mul_gen(x::NfOrdIdl, y::ZZRingElem)
+function mul_gen(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
   if y == 0
     z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1
@@ -735,7 +735,7 @@ end
 ################################################################################
 
 @doc raw"""
-    idempotents(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdElem, NfOrdElem
+    idempotents(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
 `1 = e + f`.
@@ -752,8 +752,8 @@ function idempotents(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
     g, ux, vx = gcdx(x.gen_one, y.gen_one)
     if isone(g)
       z = O(ux*x.gen_one)
-      @hassert :NfOrd 2 z in x
-      @hassert :NfOrd 2 (1 - z) in y
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 z in x
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 (1 - z) in y
       return z, 1 - z
     end
   end
@@ -764,8 +764,8 @@ function idempotents(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   g, ux, vy = gcdx(mx, my)
   if isone(g)
     z = O(ux*mx)
-    @hassert :NfOrd 2 z in x
-    @hassert :NfOrd 2 (1 - z) in y
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 z in x
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 (1 - z) in y
     return z, 1 - z
   end
   return _idempotents_via_matrices(x, y)
@@ -817,8 +817,8 @@ function _idempotents_via_matrices(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrder
     add!(z, z, aux)
   end
 
-  @hassert :NfOrd 2 -z in x
-  @hassert :NfOrd 2 1 + z in y
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 -z in x
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 1 + z in y
 
   ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
 
@@ -832,17 +832,17 @@ end
 ################################################################################
 
 @doc raw"""
-    crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
+    crt(r1::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, i1::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, r2::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, i2::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Find $x$ such that $x \equiv r_1 \bmod i_1$ and $x \equiv r_2 \bmod i_2$
 using `idempotents`.
 """
-function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
+function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)
   return r1*v + r2*u
 end
 
-function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{NfOrdElem, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
+function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
   if length(a) == 1
     return a[1]
   end
@@ -908,7 +908,7 @@ function divexact(A::AbsNumFieldOrderIdeal, b::ZZRingElem; check::Bool=true)
   return B
 end
 
-function divexact(A::NfOrdIdl, B::NfOrdIdl; check::Bool=true)
+function divexact(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; check::Bool=true)
   check_parent(A, B)
   # It is assumed that B divides A, that is, A \subseteq B
   t_prod = 0.0
@@ -1005,6 +1005,6 @@ function contract(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   return res
 end
 
-intersect(O::NfOrd, A::NfOrdIdl) = contract(A, O)
+intersect(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = contract(A, O)
 
-intersect(A::NfOrdIdl, O::NfOrd) = contract(A, O)
+intersect(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) = contract(A, O)

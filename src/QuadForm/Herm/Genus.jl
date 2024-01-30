@@ -90,7 +90,7 @@ over $\mathfrak p$.
 scale(G::HermLocalGenus, i::Int) = G.data[i][1]
 
 @doc raw"""
-    scale(g::HermLocalGenus) -> NfOrdFracIdl
+    scale(g::HermLocalGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime
 $\mathfrak p$ of $\mathcal O_K$, return the scale of the Jordan block of minimum
@@ -244,7 +244,7 @@ norms of the Jordan blocks of `g`.
 norms(G::HermLocalGenus) = begin @assert is_dyadic(G) && is_ramified(G); G.norm_val end
 
 @doc raw"""
-    norm(g::HermLocalGenus) -> NfOrdFracIdl
+    norm(g::HermLocalGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the norm of `g`, i.e. the norm of any of its representatives.  
 
@@ -313,7 +313,7 @@ Given a local genus symbol `g` for hermitian lattices over $E/K$, return `E`.
 base_field(G::HermLocalGenus) = G.E
 
 @doc raw"""
-    prime(g::HermLocalGenus) -> NfOrdIdl
+    prime(g::HermLocalGenus) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
 $\mathfrak p$ of $\mathcal O_K$, return $\mathfrak p$.
@@ -599,7 +599,7 @@ end
 ################################################################################
 
 @doc raw"""
-    genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det,
+    genus(HermLat, E::NumField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, data::Vector; type::Symbol = :det,
 		                                           check::Bool = true)
                                                                  -> HermLocalGenus
 
@@ -875,7 +875,7 @@ end
 # TODO: better documentation
 
 @doc raw"""
-    genus(L::HermLat, p::NfOrdIdl) -> HermLocalGenus
+    genus(L::HermLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> HermLocalGenus
 
 Return the local genus symbol `g` for hermitian lattices over $E/K$ of the completion
 of the hermitian lattice `L` at the prime ideal `p` of $\mathcal O_K$.
@@ -1251,7 +1251,7 @@ Given a global genus symbol `G` for hermitian lattices over $E/K$, return `E`.
 base_field(G::HermGenus) = G.E
 
 @doc raw"""
-    primes(G::HermGenus) -> Vector{NfOrdIdl}
+    primes(G::HermGenus) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Given a global genus symbol `G` for hermitian lattices over $E/K$, return
 the list of prime ideals of $\mathcal O_K$ at which `G` has a local genus symbol.
@@ -1288,7 +1288,7 @@ function _scale(G::HermGenus)
 end
 
 @doc raw"""
-    scale(G::HermGenus) -> NfOrdFracIdl
+    scale(G::HermGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the scale ideal of any hermitian lattice with global genus symbol `G`.
 """
@@ -1299,7 +1299,7 @@ function scale(G::HermGenus)
 end
 
 @doc raw"""
-    norm(G::HermGenus) -> NfOrdFracIdl
+    norm(G::HermGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the norm ideal of any hermitian lattice with global genus symbol `G`.
 """
@@ -1541,7 +1541,7 @@ end
 #
 ################################################################################
 
-function Base.getindex(G::HermGenus, P::NfOrdIdl)
+function Base.getindex(G::HermGenus, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @req is_prime(P) "Ideal must be prime"
   E = base_field(G)
   i = findfirst(isequal(P), G.primes)
@@ -1658,7 +1658,7 @@ end
 ################################################################################
 
 @doc raw"""
-    hermitian_local_genera(E::NumField, p::NfOrdIdl, rank::Int,
+    hermitian_local_genera(E::NumField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, rank::Int,
                            det_val::Int, min_scale::Int, max_scale::Int)
                                                       -> Vector{HermLocalGenus}
 

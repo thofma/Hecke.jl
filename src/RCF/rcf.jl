@@ -196,10 +196,10 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
   @vprintln :ClassField 2 "Maximal order of cyclotomic extension"
   ZK = maximal_order(K)
   if isdefined(ZK, :lllO)
-    ZK = ZK.lllO::NfOrd
+    ZK = ZK.lllO::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
   end
 
-  lP = Hecke.NfOrdIdl[]
+  lP = Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
   for p = keys(lf.fac)
     #I remove the primes that can't be in the conductor
@@ -241,7 +241,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
   R = codomain(mR)
   sR = GrpAbFinGenElem[]
 #  lp = elem_type(domain(mR))[]
-  lp = NfOrdIdl[]
+  lp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
   q, mq = quo(R, sR, false)
   s, ms = snf(q)
@@ -489,7 +489,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
   c, mq = quo(c, e, false)
   mc = compose(pseudo_inv(mq), mc)
 
-  lP = Hecke.NfOrdIdl[]
+  lP = Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
   for p = keys(lf.fac)
      #I remove the primes that can't be in the conductor
@@ -510,7 +510,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
   mc = compose(pseudo_inv(mq), mc)
 
   #@vtime :ClassField 3
-  lP = vcat(lP, find_gens(pseudo_inv(mc), PrimesSet(100, -1))[1])::Vector{NfOrdIdl}
+  lP = vcat(lP, find_gens(pseudo_inv(mc), PrimesSet(100, -1))[1])::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   @vprintln :ClassField 2 "using $lP of length $(length(lP)) for S-units"
   if isempty(lP)
     U, mU = unit_group_fac_elem(ZK)
@@ -952,7 +952,7 @@ function _rcf_descent(CF::ClassField_pp)
 
     local canFrob
     let CE = CE, ZK = ZK, n = n, pe = pe, Auto = Auto
-      function canFrob(p::NfOrdIdl)
+      function canFrob(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
         lP = prime_decomposition(CE.mp[2], p)
         P = lP[1][1]
         F, mF = ResidueFieldSmall(ZK, P)

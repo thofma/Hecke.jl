@@ -1072,7 +1072,7 @@ function CrossedProductAlgebra(K::AbsSimpleNumField, G::Vector{T}, cocval::Matri
 
 end
 
-function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{AbsSimpleNumFieldElem}) where T
+function CrossedProductAlgebra(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, G::Vector{T}, cocval::Matrix{AbsSimpleNumFieldElem}) where T
 
   n=degree(O)
   m=length(G)

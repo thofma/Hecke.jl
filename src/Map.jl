@@ -1,6 +1,6 @@
 include("Map/Map.jl")
 include("Map/ResidueRingPoly.jl")
-include("Map/NfOrd.jl")
+include("Map/AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}.jl")
 include("Map/NumField.jl")
 include("Map/NumberField.jl")
 include("Map/GrpAb.jl")

@@ -577,9 +577,9 @@ end
   vals = Int[2, 2, 2, 2, 0, 2];
   sig = Dict(S[i] => vals[i] for i in 1:6);
   OK = maximal_order(K);
-  ps = NfOrdIdl[ideal(OK, v) for v in Vector{NfOrdElem}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
+  ps = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, v) for v in Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
   datas = [[(0, 2, 1)], [(-11, 2, 1)]];
-  lgs = Hecke.HermLocalGenus{typeof(E), NfOrdIdl}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
+  lgs = Hecke.HermLocalGenus{typeof(E), AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
   G = Hecke.HermGenus(E, 2, lgs, sig)
   h = Hecke._hermitian_form_with_invariants(E, 2, Hecke._non_norm_primes(local_symbols(G)), sig)
   L = lattice(hermitian_space(E, h))

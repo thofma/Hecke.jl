@@ -185,13 +185,13 @@ end
 #
 ################################################################################
 @doc raw"""
-    residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
+    residue_field(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool = true) -> Field, Map
 
 Returns the residue field of the prime ideal $P$ together with the
 projection map. If ```check``` is true, the ideal is checked for
 being prime.
 """
-function residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true)
+function residue_field(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool = true)
   if check
     !is_prime(P) && error("Ideal must be prime")
   end
@@ -205,7 +205,7 @@ function residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true)
   end
 end
 
-function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
+function ResidueFieldSmall(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   if !is_maximal_known(O) || !is_maximal(O) || !is_defining_polynomial_nice(nf(O))
@@ -218,7 +218,7 @@ function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
   end
 end
 
-function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
+function ResidueFieldDegree1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert degree(P) == 1
   if !is_maximal_known(O) || !is_maximal(O)
     return _residue_field_generic(O, P, Val{false}, Val{true})
@@ -231,7 +231,7 @@ function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
 end
 
 
-function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
+function ResidueFieldSmallDegree1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   @assert degree(P) == 1

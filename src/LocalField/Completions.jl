@@ -67,7 +67,7 @@ end
 #
 ################################################################################
 
-function _lift(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, P::NfOrdIdl)
+function _lift(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   i = prec
   chain = [i]
 
@@ -94,7 +94,7 @@ function _lift(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, P::NfOrdI
   return bi
 end
 
-function _increase_precision(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, new_prec::Int, P::NfOrdIdl)
+function _increase_precision(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, new_prec::Int, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   i = new_prec
   chain = [new_prec]
   while i > prec
@@ -121,7 +121,7 @@ end
 ################################################################################
 
 @doc raw"""
-    completion(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int)
+    completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int)
                                                     -> LocalField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at $P$,
@@ -133,7 +133,7 @@ data: $K$ will have $\deg P$ many embeddings.
 
 The map is guaranteed to yield a relative precision of at least `preciscion`. 
 """
-function completion(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int = 64)
+function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64)
   #to guarantee a rel_prec we need to account for the index (or the
   #elementary divisor of the trace mat): the map
   #is for the field (equation order), the precision is measured in the
@@ -317,14 +317,14 @@ end
 ################################################################################
 
 @doc raw"""
-    totally_ramified_completion(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int) -> LocalField, CompletionMap
+    totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int) -> LocalField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at a totally ramified prime ideal $P$,
 presented as a Eisenstein extension of $Q_p$.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
 """
-function totally_ramified_completion(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int = 64)
+function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64)
   @assert precision > 0
   OK = order(P)
   @assert is_prime(P)
@@ -427,14 +427,14 @@ end
 ################################################################################
 
 @doc raw"""
-    unramified_completion(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int) -> QadicField, CompletionMap
+    unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int) -> QadicField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at an unramified prime ideal $P$, presented
 as a QadicField.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
 """
-function unramified_completion(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int = 64)
+function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64)
   OK = order(P)
   @assert is_prime(P)
   @assert nf(OK) == K

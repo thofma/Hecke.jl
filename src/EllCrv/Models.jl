@@ -288,12 +288,12 @@ function is_integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsS
 end
 
 @doc raw"""
-    is_local_integral_model(E::EllipticCurve{AbsSimpleNumFieldElem}, P::NfOrdIdl) -> Bool
+    is_local_integral_model(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Given an elliptic curve $E$ over a number field $K$ and a prime ideal, return
 true if $E$ is a local integral model of $E$.
 """
-function is_local_integral_model(E::EllipticCurve{AbsSimpleNumFieldElem}, P::NfOrdIdl)
+function is_local_integral_model(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return all(Bool[a==0 ||valuation(a, P)>=0 for a in a_invars(E)])
 end
 

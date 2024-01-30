@@ -226,7 +226,7 @@ function ideal(O::RelNumFieldOrder{T, S, U}, x::U, y::U, a::S, b::S; check::Bool
   return RelNumFieldOrderIdeal{T, S, U}(O, PM)
 end
 
-function ideal(O::RelNumFieldOrder{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl; check::Bool = true) where {T, S}
+function ideal(O::RelNumFieldOrder{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; check::Bool = true) where {T, S}
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
   bb = fractional_ideal(order(b), b, ZZRingElem(1))
   return ideal(O, x, y, aa, bb; check)
@@ -262,13 +262,13 @@ function ideal(O::RelNumFieldOrder{T, S, U}, x::RelNumFieldOrderElem{T, U}) wher
   return RelNumFieldOrderIdeal{T, S, U}(O, PM)
 end
 
-function ideal(O::RelNumFieldOrder, x::Union{ Int, ZZRingElem, NfOrdElem})
+function ideal(O::RelNumFieldOrder, x::Union{ Int, ZZRingElem, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   return ideal(O, O(x))
 end
 
-*(O::RelNumFieldOrder, x::T) where { T <: Union{ Int, ZZRingElem, NfOrdElem, RelNumFieldOrderElem } } = ideal(O, x)
+*(O::RelNumFieldOrder, x::T) where { T <: Union{ Int, ZZRingElem, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem } } = ideal(O, x)
 
-*(x::T, O::RelNumFieldOrder) where { T <: Union{ Int, ZZRingElem, NfOrdElem, RelNumFieldOrderElem } } = ideal(O, x)
+*(x::T, O::RelNumFieldOrder) where { T <: Union{ Int, ZZRingElem, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem } } = ideal(O, x)
 
 @doc raw"""
     ideal(O::RelNumFieldOrder{T, S}, a::S; check::Bool = true) -> RelNumFieldOrderIdeal{T, S}
@@ -294,7 +294,7 @@ function ideal(O::RelNumFieldOrder{T, S, U}, a::S; check::Bool = true) where {T,
   return RelNumFieldOrderIdeal{T, S, U}(O, PM)
 end
 
-function ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, NfOrdFracIdl}, a::NfOrdIdl; check::Bool = true)
+function ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; check::Bool = true)
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
   return ideal(O, aa; check)
 end
@@ -306,13 +306,13 @@ function ideal(O::RelNumFieldOrder, a::RelNumFieldOrderIdeal; check::Bool = true
   return ideal(O, aa; check)
 end
 
-*(O::RelNumFieldOrder{T, S, U}, a::S) where {T, S <: Union{NfOrdFracIdl, RelNumFieldOrderFractionalIdeal}, U} = fractional_ideal(O, a)
+*(O::RelNumFieldOrder{T, S, U}, a::S) where {T, S <: Union{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderFractionalIdeal}, U} = fractional_ideal(O, a)
 
-*(a::S, O::RelNumFieldOrder{T, S}) where {T, S <: Union{NfOrdFracIdl, RelNumFieldOrderFractionalIdeal}} = fractional_ideal(O, a)
+*(a::S, O::RelNumFieldOrder{T, S}) where {T, S <: Union{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderFractionalIdeal}} = fractional_ideal(O, a)
 
-*(O::RelNumFieldOrder, a::Union{NfOrdIdl, RelNumFieldOrderIdeal}) = ideal(O, a)
+*(O::RelNumFieldOrder, a::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) = ideal(O, a)
 
-*(a::Union{NfOrdIdl, RelNumFieldOrderIdeal}, O::RelNumFieldOrder) = ideal(O, a)
+*(a::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}, O::RelNumFieldOrder) = ideal(O, a)
 
 function fractional_ideal(O::RelNumFieldOrder{T, S, U}, a::S) where {T, S, U}
   d = degree(O)
@@ -476,7 +476,7 @@ function assure_has_norm(a::RelNumFieldOrderIdeal{T, S}) where {T, S}
 end
 
 @doc raw"""
-    norm(a::RelNumFieldOrderIdeal) -> NfOrdIdl
+    norm(a::RelNumFieldOrderIdeal) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Returns the norm of $a$.
 """
@@ -797,14 +797,14 @@ end
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 @doc raw"""
-      pradical(O::RelNumFieldOrder, P::NfOrdIdl) -> RelNumFieldOrderIdeal
+      pradical(O::RelNumFieldOrder, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> RelNumFieldOrderIdeal
 
 Given a prime ideal $P$, this function returns the $P$-radical
 $\sqrt{P\mathcal O}$ of $\mathcal O$, which is
 just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 \in P\mathcal O \}$. It is not checked that $P$ is prime.
 """
-function pradical(O::RelNumFieldOrder, P::Union{NfOrdIdl, RelNumFieldOrderIdeal})
+function pradical(O::RelNumFieldOrder, P::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal})
   d = degree(O)
   L = nf(O)
   K = base_field(L)
@@ -885,7 +885,7 @@ function pradical(O::RelNumFieldOrder, P::Union{NfOrdIdl, RelNumFieldOrderIdeal}
   return ideal(O, PM; check=false, M_in_hnf=true)
 end
 
-function pradical(O::RelNumFieldOrder{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}
+function pradical(O::RelNumFieldOrder{S, T, U}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {S, T, U <: Union{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}
   d = degree(O)
   L = nf(O)
   K = base_field(L)
@@ -893,7 +893,7 @@ function pradical(O::RelNumFieldOrder{S, T, U}, P::NfOrdIdl) where {S, T, U <: U
   pb = pseudo_basis(O, copy = false)
   @vprintln :RelNumFieldOrder 4 "Computing a pseudo basis of O with integral ideals"
   basis_mat_int = zero_matrix(K, d, d)
-  pbint = Vector{Tuple{elem_type(L), NfOrdIdl}}()
+  pbint = Vector{Tuple{elem_type(L), AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
   for i = 1:d
     t = divexact(pb[i][1], denominator(pb[i][2]))
     push!(pbint, (t, numerator(pb[i][2])))
@@ -1025,7 +1025,7 @@ end
 #
 ################################################################################
 
-function relative_ideal(a::NfOrdIdl, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
+function relative_ideal(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   L = codomain(m)
   Labs = domain(m)
   @assert nf(order(a)) == Labs
@@ -1049,12 +1049,12 @@ end
 #
 ################################################################################
 
-function is_index_divisor(O::RelNumFieldOrder{S, T, U}, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}) where {S, T, U <: RelSimpleNumFieldElem}
+function is_index_divisor(O::RelNumFieldOrder{S, T, U}, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) where {S, T, U <: RelSimpleNumFieldElem}
   f = nf(O).pol
   return valuation(discriminant(f), p) != valuation(discriminant(O), p)
 end
 
-function is_index_divisor(O::RelNumFieldOrder{S, T, U}, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}) where {S, T, U <: RelNonSimpleNumFieldElem}
+function is_index_divisor(O::RelNumFieldOrder{S, T, U}, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) where {S, T, U <: RelNonSimpleNumFieldElem}
   I = discriminant(O)
   J = discriminant(EquationOrder(nf(O)))
   return valuation(I, p) != valuation(J, p)
@@ -1079,7 +1079,7 @@ function prime_decomposition(O::RelNumFieldOrder, p::T) where T <: IntegerUnion
 end
 
 
-function prime_decomposition(O::RelNumFieldOrder, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
+function prime_decomposition(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
   if !is_simple(nf(O)) || is_index_divisor(O, p)
     ls = prime_dec_index(O, p)
   else
@@ -1095,7 +1095,7 @@ function prime_decomposition(O::RelNumFieldOrder, p::Union{NfOrdIdl, RelNumField
   return ls
 end
 
-function prime_dec_nonindex(O::RelNumFieldOrder, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}; compute_uniformizer::Bool = true)
+function prime_dec_nonindex(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}; compute_uniformizer::Bool = true)
   L = nf(O)
   OK = order(p)
   @assert OK == O.basis_pmatrix.coeffs[1].order
@@ -1144,7 +1144,7 @@ function prime_dec_nonindex(O::RelNumFieldOrder, p::Union{NfOrdIdl, RelNumFieldO
   return result
 end
 
-function prime_dec_index(O::RelNumFieldOrder, p::Union{NfOrdIdl, RelNumFieldOrderIdeal})
+function prime_dec_index(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal})
   if haskey(O.index_div, p)
     return O.index_div[p]::Vector{Tuple{ideal_type(O), Int}}
   end
@@ -1398,7 +1398,7 @@ end
 ################################################################################
 
 @doc raw"""
-      minimum(A::RelNumFieldOrderIdeal) -> NfOrdIdl
+      minimum(A::RelNumFieldOrderIdeal) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
       minimum(A::RelNumFieldOrderIdeal) -> RelNumFieldOrderIdeal
 
 Returns the ideal $A \cap O$ where $O$ is the maximal order of the coefficient
@@ -1667,7 +1667,7 @@ end
 #
 ################################################################################
 
-# See also approximate_nonnegative and approximate_simple in NfOrd/Ideal/Prime.jl
+# See also approximate_nonnegative and approximate_simple in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Ideal/Prime.jl
 
 # Returns x in K such that v_p(x) = v[i] for p = primes[i] and v_p(x) \geq 0 for all other primes p.
 # Algorithm 1.7.8 in Hoppe: Normal forms over Dedekind domains

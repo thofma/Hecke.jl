@@ -7,7 +7,7 @@ function _add_relations_from_subfield(mL::NumFieldHom{AbsSimpleNumField, AbsSimp
   set_attribute!(OK, :UnitGrpCtx => U)
   set_attribute!(OK, :ClassGrpCtx => c)
 
-  lp = Set{NfOrdIdl}()
+  lp = Set{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   for p in c.FB.ideals
     push!(lp, intersect_prime(mL, p))
   end
@@ -20,7 +20,7 @@ function _add_relations_from_subfield(mL::NumFieldHom{AbsSimpleNumField, AbsSimp
   @vprintln :ClassGroup 1 "Embedding S-units of totally real subfield"
   for i = 1:ngens(S)
     @vprintln :ClassGroup 1 "Embedding S-units $i/$(ngens(S))"
-    sup = Dict{NfOrdIdl, ZZRingElem}((mS.idl[i], v) for (i, v) in mS.valuations[i])
+    sup = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((mS.idl[i], v) for (i, v) in mS.valuations[i])
     u = compact_presentation(mS(S[i]), 2, decom = sup)
     if iszero(mS.valuations[i])
       if is_torsion_unit(u)[1]
@@ -90,7 +90,7 @@ function val_from_subfield(FB, mk, s)
   return z
 end
 
-function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
+function class_group_cm(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
   K = nf(OK)
   O = lll(OK)
   fl, conj = is_cm_field(nf(O))
@@ -100,7 +100,7 @@ function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = In
   return class_group(c, OK)
 end
 
-function create_ctx(OK::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
+function create_ctx(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
   if !redo
     c = get_attribute(OK, :ClassGrpCtx)
     if c !== nothing

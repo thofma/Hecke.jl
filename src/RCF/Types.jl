@@ -8,8 +8,8 @@ mutable struct KummerExt <: AbelianExt
   gen::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
 
   AutG::GrpAbFinGen
-  frob_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
-  frob_gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
+  frob_cache::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}
+  frob_gens::Tuple{Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{GrpAbFinGenElem}}
   gen_mod_nth_power::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
   eval_mod_nth::Vector{AbsSimpleNumFieldElem}
 
@@ -36,10 +36,10 @@ mutable struct ClassField_pp{S, T}
   quotientmap::T
   a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}#Generator of the Kummer Extension
 
-  sup::Vector{NfOrdIdl} # the support of a - if known
+  sup::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} # the support of a - if known
   sup_known::Bool
 
-  factored_conductor::Dict{NfOrdIdl, Int}
+  factored_conductor::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
 
   K::RelSimpleNumField{AbsSimpleNumFieldElem} # the target with the roots of unity
   A::RelSimpleNumField{AbsSimpleNumFieldElem} # the target
@@ -64,9 +64,9 @@ end
   rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
   quotientmap::T#GrpAbFinGenMap
 
-  factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::Tuple{NfOrdIdl, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
-  relative_discriminant::Dict{NfOrdIdl, Int}
+  factored_conductor::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
+  conductor::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
+  relative_discriminant::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
   absolute_discriminant::Dict{ZZRingElem,Int}
   cyc::Vector{ClassField_pp{S, T}}
   A::RelNonSimpleNumField{AbsSimpleNumFieldElem}
@@ -86,8 +86,8 @@ mutable struct RCFCharacter{S, T}
   C::ClassField{S, T}
   x::GrpAbFinGenElem
   mGhat::Map
-  factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::NfOrdIdl
+  factored_conductor::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
+  conductor::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   conductor_inf_plc::Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::GrpAbFinGenMap

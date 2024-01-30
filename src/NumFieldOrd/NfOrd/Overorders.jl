@@ -141,7 +141,7 @@ function preimage(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x) where {S1, S2,
   return domain(f)(sub(t, 1:1, (1 + f.offset):ncols(t)).num)
 end
 
-function quo(M::NfOrd, O::NfOrd)
+function quo(M::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   f = GrpAbFinGenToNfOrdQuoNfOrd(M, O)
   return domain(f), f
 end
@@ -201,7 +201,7 @@ function poverorders(O, p::ZZRingElem)
 end
 
 @doc raw"""
-    overorders(O::NfOrd, type = :all) -> Vector{Ord}
+    overorders(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, type = :all) -> Vector{Ord}
 
 Returns all overorders of `O`. If `type` is `:bass` or `:gorenstein`, then
 only Bass and Gorenstein orders respectively are returned.
@@ -1023,7 +1023,7 @@ function is_bass(O, P)
   return div(ext_dim, resfield_dim) <= 2
 end
 
-function is_bass(O::NfOrd, p::ZZRingElem)
+function is_bass(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem)
   M = maximal_order(O)
   p_critical_primes = Set{ideal_type(O)}()
   lp = prime_decomposition(M, p)
@@ -1042,11 +1042,11 @@ function is_bass(O::NfOrd, p::ZZRingElem)
 end
 
 @doc doc"""
-    is_bass(O::NfOrd) -> Bool
+    is_bass(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the order `\mathcal{O}` is Bass.
 """
-function is_bass(O::NfOrd)
+function is_bass(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   f = minimum(conductor(O))
   M = maximal_order(nf(O))
   for (p, ) in factor(f)
@@ -1078,11 +1078,11 @@ end
 ################################################################################
 
 @doc doc"""
-    is_gorenstein(O::NfOrd) -> Bool
+    is_gorenstein(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the order `\mathcal{O}` is Gorenstein.
 """
-function is_gorenstein(O::NfOrd)
+function is_gorenstein(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   codiff = codifferent(O)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)
   return isone(norm(R))
@@ -1119,7 +1119,7 @@ function is_gorenstein(O, P)
 end
 
 # This is very slow!
-function intersect(x::NfOrd, y::NfOrd)
+function intersect(x::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   d = degree(x)
   g = lcm(denominator(basis_matrix(x)), denominator(basis_matrix(y)))
   H = vcat(divexact(g * basis_matrix(x).num, basis_matrix(x).den), divexact(g * basis_matrix(y).num, basis_matrix(y).den))
@@ -1141,7 +1141,7 @@ end
 #
 ################################################################################
 
-function ideals_with_norm(O::NfOrd, p::ZZRingElem, n::Int)
+function ideals_with_norm(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem, n::Int)
   pn = p^n
   pInt = Int(p)
   K = nf(O)
@@ -1186,7 +1186,7 @@ function ideals_with_norm(O::NfOrd, p::ZZRingElem, n::Int)
   return ideals
 end
 
-function index(R::NfOrd, S::NfOrd)
+function index(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, S::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   r = gen_index(R)
   s = gen_index(S)
   i = r^-1 * s
@@ -1194,7 +1194,7 @@ function index(R::NfOrd, S::NfOrd)
   return FlintZZ(i)
 end
 
-function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::ZZRingElem)
+function poverorders_goursat(O1::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, O2::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem)
   l1 = poverorders(O1, p)
   l2 = poverorders(O2, p)
   data_from_l2 = Dict{Vector{Int}, Vector{Tuple{typeof(O1), ideal_type(O1)}}}()
@@ -1226,7 +1226,7 @@ function abelian_group(Q::AbsOrdQuoRing)
   return S, f, g
 end
 
-function is_isomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
+function is_isomorphic(Q1::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Q2::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   Q1_A, Q1_mA, Q1_mA_inv = abelian_group(Q1)
   Q2_A, Q2_mA, Q2_mA_inv = abelian_group(Q2)
 

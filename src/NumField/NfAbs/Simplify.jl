@@ -51,7 +51,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
       for i = 1:degree(L1)
         BOL1[i] = mp\(B[i])
       end
-      OL1 = NfOrd(BOL1, false)
+      OL1 = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(BOL1, false)
       OL1.is_maximal = 1
       set_attribute!(L1, :maximal_order => OL1)
       @vprintln :Simplify 3 "Trying to simplify $(L1.pol)"
@@ -78,7 +78,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
     for i = 1:degree(L)
       BOL[i] = m\(B[i])
     end
-    OL = NfOrd(BOL, false)
+    OL = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(BOL, false)
     if isdefined(ZK, :disc)
       OL.disc = ZK.disc
       if is_defining_polynomial_nice(L)

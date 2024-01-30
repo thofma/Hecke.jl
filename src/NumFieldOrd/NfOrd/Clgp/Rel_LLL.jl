@@ -71,13 +71,13 @@ function norm(a::ZZMatrix, NC::NormCtx_simple, div::ZZRingElem = ZZRingElem(1))
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
-                O::NfOrd; prec::Int = 200, val::Int = 0,
+                O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
   return class_group_small_lll_elements_relation_start(clg, ideal(O, parent(basis_matrix(O).num)(1)), prec = prec)
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
-                A::NfOrdIdl; prec::Int = 200, val::Int = 0,
+                A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
   O = order(A)
   n = degree(O)

@@ -7,7 +7,7 @@
 # Stefano Marseglia "Computing the ideal class monoid of an order"
 @doc raw"""
     ideal_class_monoid(R::AbsNumFieldOrder)
-      -> Vector{FacElem{NfOrdFracIdl, NfOrdFracIdlSet}}
+      -> Vector{FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
     ideal_class_monoid(R::AlgAssAbsOrd)
       -> Vector{FacElem{AlgAssAbsOrdIdl, AlgAssAbsOrdIdlSet}}
 
@@ -35,7 +35,7 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra, this function returns `true` if $I_p$ and $J_p$ are isomorphic for
 all primes $p$ of $R$ and `false` otherwise.
 """
-function is_locally_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, NfOrdFracIdl, AlgAssAbsOrdIdl } }
+function is_locally_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AlgAssAbsOrdIdl } }
   IJ = colon(I, J)
   JI = colon(J, I)
   return one(_algebra(order(I))) in IJ*JI
@@ -51,7 +51,7 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` and an element $a \in A$ such that
 $I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
-function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AlgAssAbsOrdIdl}}
   A = _algebra(order(I))
   if !is_locally_isomorphic(I, J)
     return false, zero(A)
@@ -79,11 +79,11 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` if an element $a \in A$ exists such that
 $I = aJ$ and `false` otherwise.
 """
-function is_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+function is_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AlgAssAbsOrdIdl}}
   return is_isomorphic_with_map(I, J)[1]
 end
 
-function ring_of_multipliers(I::NfOrdFracIdl)
+function ring_of_multipliers(I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return ring_of_multipliers(numerator(I, copy = false))
 end
 
@@ -238,7 +238,7 @@ function ideal_to_matrix(I::AlgAssAbsOrdIdl)
   return M.num
 end
 
-function ideal_to_matrix(I::Union{ AbsNumFieldOrderIdeal, NfOrdFracIdl })
+function ideal_to_matrix(I::Union{ AbsNumFieldOrderIdeal, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} })
   O = order(I)
   K = nf(O)
   a = gen(K)

@@ -347,7 +347,7 @@ can_scale_totally_positive(Lherm)
 
 ```@docs
 local_basis_matrix(L::AbstractLat, p; type::Symbol = :any)
-jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
+jordan_decomposition(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 is_isotropic(::AbstractLat, p)
 ```
 
@@ -411,7 +411,7 @@ automorphism_group_generators(Lquad)
 ```@docs
 is_isometric(::AbstractLat, ::AbstractLat)
 is_isometric_with_isometry(::AbstractLat, ::AbstractLat)
-is_locally_isometric(::AbstractLat, ::AbstractLat, p::NfOrdIdl)
+is_locally_isometric(::AbstractLat, ::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
 ### Examples

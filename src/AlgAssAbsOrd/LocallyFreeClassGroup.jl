@@ -402,8 +402,8 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
   RtoC::GrpAbFinGenMap # Map from the ray class group of the centre to the class group
   mR::MapRayClassGroupAlg
   FinZ::AlgAssAbsOrdIdl # Conductor of the order in the maximal order contracted to the centre
-  FinKs::Vector{NfOrdIdl}
-  primes_in_fields::Vector{Vector{Tuple{NfOrdIdl, ZZRingElem, NfOrdIdl}}}
+  FinKs::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  primes_in_fields::Vector{Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}}
   fields_and_maps
   ZtoA
 

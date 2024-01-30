@@ -108,7 +108,7 @@ function pseudo_basis(L::AbstractLat)
 end
 
 @doc raw"""
-    coefficient_ideals(L::AbstractLat) -> Vector{NfOrdIdl}
+    coefficient_ideals(L::AbstractLat) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Return the coefficient ideals of a pseudo-basis of the lattice `L`.
 """
@@ -286,7 +286,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
     St = pseudo_matrix(L)
     d = ncols(St)
     for i in 1:nrows(St)
-      if base_ring(L) isa NfOrd
+      if base_ring(L) isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
         I = numerator(coefficient_ideals(St)[i])
         den = denominator(coefficient_ideals(St)[i])
         _assure_weakly_normal_presentation(I)
@@ -317,7 +317,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
 
     I = numerator(coefficient_ideals(St)[d])
     den = denominator(coefficient_ideals(St)[d])
-    if minimal && base_ring(L) isa NfOrd
+    if minimal && base_ring(L) isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
       b, a = is_principal(I)
       if b
         push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
@@ -325,7 +325,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
       return v
     end
 
-    if base_ring(L) isa NfOrd
+    if base_ring(L) isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
       _assure_weakly_normal_presentation(I)
       push!(v, T[K(I.gen_one)//den * matrix(St)[n, j] for j in 1:d])
       push!(v, T[K(I.gen_two)//den * matrix(St)[n, j] for j in 1:d])
@@ -443,7 +443,7 @@ end
 ################################################################################
 
 @doc raw"""
-    discriminant(L::AbstractLat) -> NfOrdFracIdl
+    discriminant(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the discriminant of the lattice `L`, that is, the generalized index ideal
 $[L^\# : L]$.
@@ -463,7 +463,7 @@ end
 ################################################################################
 
 @doc raw"""
-    hasse_invariant(L::AbstractLat, p::Union{InfPlc, NfOrdIdl}) -> Int
+    hasse_invariant(L::AbstractLat, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Return the Hasse invariant of the rational span of the lattice `L` at the place `p`.
 The lattice must be quadratic.
@@ -471,7 +471,7 @@ The lattice must be quadratic.
 hasse_invariant(L::AbstractLat, p)
 
 @doc raw"""
-    witt_invariant(L::AbstractLat, p::Union{InfPlc, NfOrdIdl}) -> Int
+    witt_invariant(L::AbstractLat, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Return the Witt invariant of the rational span of the lattice `L` at the place `p`.
 The lattice must be quadratic.
@@ -737,7 +737,7 @@ norm(::AbstractLat)
 ################################################################################
 
 @doc raw"""
-    scale(L::AbstractLat) -> NfOrdFracIdl
+    scale(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the scale of the lattice `L`.
 """
@@ -794,7 +794,7 @@ dual(::AbstractLat)
 ################################################################################
 
 @doc raw"""
-    volume(L::AbstractLat) -> NfOrdFracIdl
+    volume(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the volume of the lattice `L`.
 """
@@ -809,7 +809,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_modular(L::AbstractLat) -> Bool, NfOrdFracIdl
+    is_modular(L::AbstractLat) -> Bool, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return whether the lattice `L` is modular. In this case, the second returned value
 is a fractional ideal $\mathfrak a$ of the base algebra of `L` such that
@@ -861,7 +861,7 @@ end
 ################################################################################
 
 @doc raw"""
-    local_basis_matrix(L::AbstractLat, p::NfOrdIdl; type = :any) -> MatElem
+    local_basis_matrix(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; type = :any) -> MatElem
 
 Given a prime ideal `p` and a lattice `L`, return a basis matrix of a lattice
 `M` such that $M_{p} = L_{p}$. Note that if `p` is an ideal in the base ring of
@@ -911,7 +911,7 @@ end
 ################################################################################
 
 @doc raw"""
-    jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
+    jordan_decomposition(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
                                 -> Vector{MatElem}, Vector{MatElem}, Vector{Int}
 
 Return a Jordan decomposition of the completion of the lattice `L` at a prime
@@ -922,7 +922,7 @@ the same length $r$. The completions of the row spans of the matrices $M_i$
 yield a Jordan decomposition of $L_{p}$ into modular sublattices
 $L_i$ with Gram matrices $G_i$ and scale of $p$-adic valuation $s_i$.
 """
-jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
+jordan_decomposition(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 ################################################################################
 #
@@ -931,12 +931,12 @@ jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
 ################################################################################
 
 @doc raw"""
-    is_locally_isometric(L::AbstractLat, M::AbstractLat, p::NfOrdIdl) -> Bool
+    is_locally_isometric(L::AbstractLat, M::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the completions of the lattices `L` and `M` at the prime ideal
 `p` are isometric.
 """
-is_locally_isometric(::AbstractLat, ::AbstractLat, ::NfOrdIdl)
+is_locally_isometric(::AbstractLat, ::AbstractLat, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 ################################################################################
 #
@@ -945,7 +945,7 @@ is_locally_isometric(::AbstractLat, ::AbstractLat, ::NfOrdIdl)
 ################################################################################
 
 @doc raw"""
-    is_isotropic(L::AbstractLat, p::Union{NfOrdIdl, InfPlc}) -> Bool
+    is_isotropic(L::AbstractLat, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, InfPlc}) -> Bool
 
 Return whether the completion of the lattice `L` at the place `p` is
 isotropic.
@@ -1986,7 +1986,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_maximal_integral(L::AbstractLat, p::NfOrdIdl) -> Bool, AbstractLat
+    is_maximal_integral(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbstractLat
 
 Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
 `L`, return whether the completion of `L` at `p` has integral norm and that `L` has no
@@ -2012,7 +2012,7 @@ output is a minimal overlattice `M` of `L` with integral norm.
 is_maximal_integral(::AbstractLat)
 
 @doc raw"""
-    is_maximal(L::AbstractLat, p::NfOrdIdl) -> Bool, AbstractLat
+    is_maximal(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbstractLat
 
 Given a lattice `L` and a prime ideal `p` in the fixed ring $\mathcal O_K$ of
 `L` such that the norm of $L_p$ is integral, return whether `L` is maximal
@@ -2025,7 +2025,7 @@ integral norm and is a proper overlattice of $L_p$.
 is_maximal(::AbstractLat, p)
 
 @doc raw"""
-    maximal_integral_lattice(L::AbstractLat, p::NfOrdIdl) -> AbstractLat
+    maximal_integral_lattice(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbstractLat
 
 Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
 `L` such that the norm of $L_p$ is integral, return a lattice `M` in the

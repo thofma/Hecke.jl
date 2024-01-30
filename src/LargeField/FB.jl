@@ -29,12 +29,12 @@ function orbits(v::Vector{Perm{Int}})
 end
 
 @doc raw"""
-    induce_action(primes::Vector{NfOrdIdl}, A::Map) -> Perm{Int}
+    induce_action(primes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::Map) -> Perm{Int}
 
 Given a set of prime ideals invariant under the action of $A$, this function
 returns the corresponding permutation induced by $A$.
 """
-function induce_action(primes::Vector{NfOrdIdl}, A::Map)
+function induce_action(primes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::Map)
   K = domain(A)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
@@ -49,7 +49,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
   primes_underneath = Set{ZZRingElem}([minimum(x, copy = false) for x in primes])
   for p in primes_underneath
     indices = [i for i in 1:length(primes) if minimum(primes[i], copy = false) == p]
-    lp = NfOrdIdl[primes[i] for i in indices]
+    lp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[primes[i] for i in indices]
     prm_p = _induce_action_p(lp, A)
     for (i, j) in prm_p
       push!(prm, (indices[i], indices[j]))
@@ -60,7 +60,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
 end
 
 #As above, but assumes that the prime ideals are lying over the same prime number p.
-function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
+function _induce_action_p(lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::Map)
   O = order(lp[1])
   K = nf(O)
   prm = Tuple{Int, Int}[]
@@ -131,7 +131,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
 
   for p in FB.fb_int.base
     FP = FB.fb[p]
-    lp = NfOrdIdl[x[2] for x = FP.lp]
+    lp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[x[2] for x = FP.lp]
     prm_p = _induce_action_p(lp, A)
     for (a, b) in prm_p
       push!(prm, (FP.lp[a][1], FP.lp[b][1]))

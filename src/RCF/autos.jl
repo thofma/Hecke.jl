@@ -37,7 +37,7 @@ function automorphism_group(C::ClassField)
 end
 
 @doc raw"""
-    frobenius_easy(p::NfOrdIdl, C::ClassField)
+    frobenius_easy(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::ClassField)
 
 For a prime ideal $p$ that is unramified in $C$ and is coprime to the
 equation order discriminant of the base field, compute the Frobnius as
@@ -46,7 +46,7 @@ an element of the abstract abelian group.
 Mainly used to establish the isomorphism between the norm group of the
 automorphism group.
 """
-function frobenius_easy(p::NfOrdIdl, C::ClassField)
+function frobenius_easy(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::ClassField)
   @assert order(p) == base_ring(C)
   A, mA = automorphism_group(C)
   F, mF = residue_field(order(p), p)
@@ -399,7 +399,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   end
   for i = 1:length(res)
     res[i] = hom(L, L, autos[i], all_imgs[i], check = checkAuto)
-    #@hassert :NfOrd 1 is_consistent(res[i])
+    #@hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(res[i])
   end
   return res
 
@@ -491,7 +491,7 @@ function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{AbsSimpleNumF
   s, ms = snf(Q)
   Sp = Hecke.PrimesSet(1000, -1)
   cp = lcm(discriminant(O), coprime_to)
-  frob_gens = NfOrdIdl[]
+  frob_gens = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   nP = 0
   for q in Sp
     nP += 1
@@ -883,7 +883,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumFiel
       images_K[i] = s
     end
     autos_extended[w] = hom(K, K, Autos_abs[w], images_K, check = checkAuto)
-    #@hassert :NfOrd 1 is_consistent(autos_extended[w])
+    #@hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(autos_extended[w])
   end
   res = restriction(K, Cp, autos_extended, incs)
   return res
@@ -959,7 +959,7 @@ function restriction(K::RelNonSimpleNumField{AbsSimpleNumFieldElem}, Cp::Vector{
 end
 
 #comutes an ord_el-th root of el in KK. el in base_field(KK)
-function _find_embedding(KK::KummerExt, el::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, ord_el::Int, frob_gens::Vector{NfOrdIdl})
+function _find_embedding(KK::KummerExt, el::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, ord_el::Int, frob_gens::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert base_ring(el) == base_field(KK)
   #Compute the action of the Frobenius on the generators and on tau(a)
   imgs_rhs = Vector{Int}(undef, length(frob_gens))

@@ -99,7 +99,7 @@ end
 
 Base.IteratorSize(::Sqfr) = Base.SizeUnknown()
 Base.HasEltype(::Sqfr{T}) where T = T
-Base.eltype(::Type{PrimeIdealsSet}) = NfOrdIdl
+Base.eltype(::Type{PrimeIdealsSet}) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 function Base.intersect(A::GrpAbFinGen, B::GrpAbFinGen...)
   for b = B
@@ -395,7 +395,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
   end
   @show nB
 
-  small_id = NfOrdIdl[]
+  small_id = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
   Q = PrimeIdealsSet(zk, iroot(nB+1, 2), nB, coprimeto = 3)
   Q = Iterators.filter(fil, Q)

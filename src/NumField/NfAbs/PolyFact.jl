@@ -205,7 +205,7 @@ function reco(a::AbsNumFieldOrderElem, M, pM)
   return parent(a)(m)
 end
 
-function is_prime_nice(O::NfOrd, p::Int)
+function is_prime_nice(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
   f = is_prime_nice(nf(O), p)
   f || return f
   if discriminant(O) %p == 0
@@ -239,11 +239,11 @@ The decision is based on the number of local factors.
 """
 function factor_new(f::PolyRingElem{AbsSimpleNumFieldElem})
   k = base_ring(f)
-  local zk::NfOrd
+  local zk::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
   if is_maximal_order_known(k)
     zk = maximal_order(k)
     if isdefined(zk, :lllO)
-      zk = zk.lllO::NfOrd
+      zk = zk.lllO::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
     end
   else
     zk = any_order(k)
@@ -266,7 +266,7 @@ function factor_new(f::PolyRingElem{AbsSimpleNumFieldElem})
     if length(P) == 0
       continue
     end
-    F, mF1 = ResidueFieldSmallDegree1(zk::NfOrd, P[1][1])
+    F, mF1 = ResidueFieldSmallDegree1(zk::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P[1][1])
     mF = extend(mF1, k)
     fp = map_coefficients(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))
@@ -322,7 +322,7 @@ function degree_set(fa::Dict{Int, Int})
 end
 
 @doc raw"""
-    zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
+    zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
@@ -330,7 +330,7 @@ is computed. In the last step, all combinations of the local factors are tried t
 correct factorisation.
 $f$ needs to be square-free and square-free modulo $P$ as well.
 """
-function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
+function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
   @vprintln :PolyFactor 1 "Using (relative) Zassenhaus"
 
   K = base_ring(parent(f))
@@ -476,7 +476,7 @@ mutable struct vanHoeijCtx
   pMr::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}
   pM::Tuple{ZZMatrix, ZZRingElem}
   C::Union{QadicField, PadicField}
-  P::NfOrdIdl
+  P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   function vanHoeijCtx()
     return new()
   end
@@ -530,7 +530,7 @@ end
 
 
 @doc raw"""
-    van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
+    van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec_scale = 20) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
 $P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
@@ -538,7 +538,7 @@ to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
-function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NfOrdIdl; prec_scale = 1)
+function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec_scale = 1)
   @vprintln :PolyFactor 1 "Using (relative) van Hoeij"
   @vprintln :PolyFactor 2 "with p = $P"
   @assert all(x->denominator(x) == 1, coefficients(f))

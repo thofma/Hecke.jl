@@ -457,10 +457,10 @@ mutable struct Divisors{T}
     end
     return r
   end
-  function Divisors(a::NfOrdIdl; units::Bool=false, power::Int=1)
-    r = new{NfOrdIdl}()
+  function Divisors(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; units::Bool=false, power::Int=1)
+    r = new{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     r.n = a
-    r.lf = MSet{NfOrdIdl}()
+    r.lf = MSet{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     for (p, k) = factor(a)
       k = div(k, power)
       if k > 0
@@ -471,10 +471,10 @@ mutable struct Divisors{T}
     r.s = subsets(r.lf)
     return r
   end
-  function Divisors(a::FacElem{NfOrdIdl}; units::Bool=false, power::Int=1)
-    r = new{NfOrdIdl}()
+  function Divisors(a::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; units::Bool=false, power::Int=1)
+    r = new{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     r.n = evaluate(a)
-    r.lf = MSet{NfOrdIdl}()
+    r.lf = MSet{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     for (p, k) = factor(a)
       k = div(k, power)
       if k > 0

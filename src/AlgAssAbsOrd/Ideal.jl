@@ -1790,7 +1790,7 @@ function _as_ideal_of_algebra(I::AbsNumFieldOrderIdeal, i::Int, O::AlgAssAbsOrd,
   return ideal_from_lattice_gens(algebra(O), O, b, :twosided)
 end
 
-function _as_ideal_of_algebra(I::FacElem{NfOrdIdl, NfOrdIdlSet}, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AbstractAssociativeAlgebraElem }
+function _as_ideal_of_algebra(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AbstractAssociativeAlgebraElem }
   if isempty(I)
     return FacElemMon(IdealSet(O))()
   end

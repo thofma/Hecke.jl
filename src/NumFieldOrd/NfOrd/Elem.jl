@@ -1,6 +1,6 @@
 ################################################################################
 #
-#          NfOrd/Elem.jl : Elements of orders of number fields
+#          AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Elem.jl : Elements of orders of number fields
 #
 # This file is part of hecke.
 #
@@ -198,7 +198,7 @@ Returns the coefficient vector of $a$ with respect to the basis of the order.
 """
 function coordinates(a::AbsNumFieldOrderElem; copy::Bool = true)
   assure_has_coord(a)
-  @hassert :NfOrd 2 a == dot(a.coordinates, basis(parent(a), copy = false))
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 a == dot(a.coordinates, basis(parent(a), copy = false))
   if copy
     return deepcopy(a.coordinates)
   else
@@ -251,12 +251,12 @@ end
 #
 ################################################################################
 
-function //(x::AbsSimpleNumFieldElem, y::NfOrdElem)
+function //(x::AbsSimpleNumFieldElem, y::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
   check_parent(x, y.elem_in_nf)
   return x//y.elem_in_nf
 end
 
-function //(y::NfOrdElem, x::AbsSimpleNumFieldElem)
+function //(y::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, x::AbsSimpleNumFieldElem)
   check_parent(x, y.elem_in_nf)
   return y.elem_in_nf//x
 end
@@ -388,7 +388,7 @@ function powermod_fast(a::AbsNumFieldOrderElem{AbsNonSimpleNumField, AbsNonSimpl
   return mod(parent(a)(b*e), p)
 end
 
-function powermod(a::NfOrdElem, i::ZZRingElem, I::NfOrdIdl)
+function powermod(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, i::ZZRingElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if i == 0
     return one(parent(a))
   end
@@ -542,39 +542,39 @@ function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder, R::AbstractUnitRang
 end
 
 @doc raw"""
-    rand(O::NfOrd, R::AbstractUnitRange{Integer}) -> AbsNumFieldOrderElem
+    rand(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, R::AbstractUnitRange{Integer}) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in `R` and returns
 the corresponding element of the order.
 """
-function rand(O::NfOrd, R::AbstractUnitRange{T}) where T <: Integer
+function rand(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, R::AbstractUnitRange{T}) where T <: Integer
   z = O()
   rand!(z, O, R)
   return z
 end
 
-function rand!(z::AbsNumFieldOrderElem, O::NfOrd, n::IntegerUnion)
+function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::IntegerUnion)
   return rand!(z, O, -n:n)
 end
 
 @doc raw"""
-    rand(O::NfOrd, n::IntegerUnion) -> AbsNumFieldOrderElem
+    rand(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::IntegerUnion) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in
 $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the
 order $\mathcal O$.
 """
-function rand(O::NfOrd, n::Integer)
+function rand(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Integer)
   return rand(O, -n:n)
 end
 
-function rand(O::NfOrd, n::ZZRingElem)
+function rand(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::ZZRingElem)
   z = O()
   rand!(z, O, BigInt(n))
   return z
 end
 
-function rand!(z::AbsNumFieldOrderElem, O::NfOrd, n::ZZRingElem)
+function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::ZZRingElem)
   return rand!(z, O, BigInt(n))
 end
 
@@ -595,7 +595,7 @@ end
 ################################################################################
 
 @doc raw"""
-    factor(a::NfOrdElem) -> Fac{NfOrdElem}
+    factor(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Fac{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Computes a factorization of $a$ into irreducible elements. The return value
 is a factorization `fac`, which satisfies `a = unit(fac) * prod(p^e for (p, e)
@@ -605,11 +605,11 @@ The function requires that $a$ is non-zero and that all prime ideals containing
 $a$ are principal, which is for example satisfied if class group of the order
 of $a$ is trivial.
 """
-function factor(a::NfOrdElem)
+function factor(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
   iszero(a) && error("Element must be non-zero")
   OK = parent(a)
   I = a * OK
-  D = Dict{NfOrdElem, Int}()
+  D = Dict{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   u = a
   for (p, e) in factor(I)
     b, c = is_principal(p)

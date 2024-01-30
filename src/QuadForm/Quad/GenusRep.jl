@@ -2193,7 +2193,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   # So if proper = true, we don't have to do anything
   # and if proper = false, we have to sieve using is_equivalent
   for c in C
-    I::NfOrdFracIdl = _exp(c)
+    I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = _exp(c)
     J = numerator(I)
     f = _ideal_to_form(J, d)
     if proper || all(h -> !is_equivalent(h, f, proper = false), res)

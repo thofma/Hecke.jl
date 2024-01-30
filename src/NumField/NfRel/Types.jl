@@ -24,7 +24,7 @@ end
   basis_pmatrix::PMat{T, S}
   pseudo_basis::Vector{Tuple{U, S}}
 
-  disc_abs::NfOrdIdl # used if T == AbsSimpleNumFieldElem
+  disc_abs::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} # used if T == AbsSimpleNumFieldElem
   disc_rel#::RelNumFieldOrderIdeal{T} # used otherwise; is a forward declaration
   parent::NfRelOrdSet{T}
 
@@ -36,7 +36,7 @@ end
 
   trace_mat::Generic.MatSpaceElem{T}
 
-  index::NfOrdIdl #Only if the base field is AbsSimpleNumField
+  index::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} #Only if the base field is AbsSimpleNumField
 
   inv_coeff_ideals::Vector{S}
   index_div

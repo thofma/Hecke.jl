@@ -496,7 +496,7 @@ function lift_root(f::ZZPolyRingElem, a::AbsSimpleNumFieldElem, o::AbsSimpleNumF
 end
 
 @doc raw"""
-    completion_easy(K::AbsSimpleNumField, P::NfOrdIdl)
+    completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
                                                -> QadicField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at the
@@ -506,7 +506,7 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift.  Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 """
-function completion_easy(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int = 10)
+function completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 10)
   #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))

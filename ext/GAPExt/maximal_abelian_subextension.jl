@@ -127,7 +127,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
 
 end
 
-function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::ZZRingElem)
+function _bound_exp_conductor_wild(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, q::Int, bound::ZZRingElem)
   d = degree(O)
   lp = prime_decomposition_type(O, q)
   f_times_r = divexact(d, lp[1][2])
@@ -138,7 +138,7 @@ function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::ZZRingElem)
   return div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
 end
 
-function minimumd(D::Dict{NfOrdIdl, Int}, deg_ext::Int)
+function minimumd(D::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, deg_ext::Int)
   primes_done = Int[]
   res = 1
   for (P, e) in D
@@ -178,7 +178,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFieldHom{Ab
   deg = expected_order
   #First, a suitable modulus for A over k
   #I take the discriminant K/k times the norm of the conductor A/K
-  fm0 = Dict{NfOrdIdl, Int}()
+  fm0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (P, e) in mR1.fact_mod
     p = intersect_prime(mp, P)
     if !haskey(fm0, p)
@@ -206,7 +206,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFieldHom{Ab
     end
   end
   #Now, I extend this modulus to K
-  fM0 = Dict{NfOrdIdl, Int}()
+  fM0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (p, v) in fm0
     lp = prime_decomposition(mp, p)
     if is_coprime(minimum(p, copy = false), expo*deg)
@@ -273,7 +273,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFieldHom{Ab
     @vtime :MaxAbExt 1  r, mr = Hecke.ray_class_groupQQ(zk, Int(wrp), rel_plc, ctx.n)
   end
   @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
-  listn = NfOrdIdl[norm(mp, x) for x in lP]
+  listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mp, x) for x in lP]
   # Create the map between R and r by taking norms
   preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
   for i = 1:length(preimgs)

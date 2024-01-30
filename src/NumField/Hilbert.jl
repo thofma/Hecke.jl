@@ -131,7 +131,7 @@ function quadratic_defect(a::NumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNu
 end
 
 @doc doc"""
-    quadratic_defect(a::NfOrdElem, p) -> Union{Inf, PosInf}
+    quadratic_defect(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, p) -> Union{Inf, PosInf}
 
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
 can either be prime object or an infinite place of the parent of $a$.
@@ -169,7 +169,7 @@ end
 #             ALGEBRAS AND QUADRATIC FORMS", In Quadratic and higher degree
 #             forms, volume 31 of Dev. Math., pages 255-298, 2012.
 @doc raw"""
-    hilbert_symbol(a::NumFieldElem, b::NumFieldElem, p::NfOrdIdl) -> Int
+    hilbert_symbol(a::NumFieldElem, b::NumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """

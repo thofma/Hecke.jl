@@ -526,9 +526,9 @@ constructs $O/I$ as an algebra over the finite field $R/p$, where $R$ is the
 order of $p$, together with the projection map $O \to O/I$.
 It is assumed that `R == base_ring(O)` and that $p$ is prime.
 """
-quo(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd{T, S} }, I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}) where {T, S} = StructureConstantAlgebra(O, I, p)
+quo(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd{T, S} }, I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) where {T, S} = StructureConstantAlgebra(O, I, p)
 
-function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd{T, S} }, I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S}
+function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd{T, S} }, I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S}
 
   K = _algebra(O)
 
@@ -679,9 +679,9 @@ It is assumed that `order(I) === order(J)` and in particular both should be
 defined. Further, it should hold `R == base_ring(order(I))` and $p$ should be
 prime.
 """
-quo(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S} = StructureConstantAlgebra(I, J, p, mF)
+quo(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S} = StructureConstantAlgebra(I, J, p, mF)
 
-function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S}
+function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S}
   @assert _algebra(I) === _algebra(J)
   @assert order(I) === order(J)
 

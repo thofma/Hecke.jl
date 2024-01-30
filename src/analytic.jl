@@ -281,12 +281,12 @@ function psi_guess(x::Number, B::Int, e::AbstractUnitRange)
 end
 
 
-function class_group_expected(O::NfOrd, B::Integer, samples::Int = 100)
+function class_group_expected(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Integer, samples::Int = 100)
   d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end
 
-function class_group_expected(O::NfOrd, B::ZZRingElem, samples::Int = 100)
+function class_group_expected(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::ZZRingElem, samples::Int = 100)
   d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end

@@ -29,11 +29,11 @@ AbsNumFieldOrder
 ## Basic properties
 
 ```@docs
-parent(::NfOrdElem)
-elem_in_nf(::NfOrdElem)
-coordinates(::NfOrdElem)
-discriminant(::Vector{NfOrdElem})
-==(::NfOrdElem, ::NfOrdElem)
+parent(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+elem_in_nf(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+coordinates(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+discriminant(::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+==(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
 ## Arithmetic
@@ -53,19 +53,19 @@ All the usual arithmetic operatinos are defined:
 
 ```@docs
 representation_matrix(::AbsNumFieldOrderElem)
-representation_matrix(::NfOrdElem, ::AbsSimpleNumField)
+representation_matrix(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsSimpleNumField)
 tr(::NumFieldOrderElem)
 norm(::NumFieldOrderElem)
 absolute_norm(::AbsNumFieldOrderElem)
 absolute_tr(::AbsNumFieldOrderElem)
-rand(::NfOrd, ::Int)
-minkowski_map(::NfOrdElem, ::Int)
-conjugates_arb(::NfOrdElem, ::Int)
-conjugates_arb_log(::NfOrdElem, ::Int)
-t2(::NfOrdElem, ::Int)
-minpoly(::NfOrdElem)
-charpoly(::NfOrdElem)
-factor(::NfOrdElem)
+rand(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+minkowski_map(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+conjugates_arb(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+conjugates_arb_log(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+t2(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+minpoly(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+charpoly(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+factor(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
 denominator(a::NumFieldElem, O::RelNumFieldOrder)
 discriminant(::Vector{AbsNumFieldOrderElem})
 ```

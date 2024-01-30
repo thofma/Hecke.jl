@@ -113,7 +113,7 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
   local disc_log
   let fields_and_maps = fields_and_maps, class_groups = class_groups, StoP = StoP, P = P
     function disc_log(x::AlgAssAbsOrdIdl)
-      ideals = Vector{NfOrdIdl}()
+      ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
       for i = 1:length(fields_and_maps)
         push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
       end
@@ -524,7 +524,7 @@ function _is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   return true, FacElem(bases, exps)
 end
 
-# for is_principal_non_maximal see NfOrd/PicardGroup.jl
+# for is_principal_non_maximal see AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/PicardGroup.jl
 
 ################################################################################
 #
@@ -580,7 +580,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
   local disc_log
   let fields_and_maps = fields_and_maps, C = C, StoC = StoC
     function disc_log(x::AlgAssAbsOrdIdl)
-      ideals = Vector{NfOrdIdl}()
+      ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
       for i = 1:length(fields_and_maps)
         push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
       end
@@ -596,9 +596,9 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
 
 
     function disc_log(x::FacElem)
-      ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
+      ideals = Vector{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
       for i = 1:length(fields_and_maps)
-        base = Vector{NfOrdIdl}()
+        base = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
         exp = Vector{ZZRingElem}()
         for (I, e) in x
           push!(base, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
@@ -712,7 +712,7 @@ function disc_log_generalized_ray_class_grp(I::FacElem{S, T}, mR::MapRayClassGro
 
   groups = mR.groups_in_number_fields
 
-  ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
+  ideals = Vector{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
 
   for i = 1:length(fields_and_maps)
     push!(ideals, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
@@ -753,7 +753,7 @@ function disc_log_generalized_ray_class_grp(I::S, mR::MapRayClassGroupAlg) where
 
   groups = mR.groups_in_number_fields
 
-  ideals = Vector{NfOrdIdl}()
+  ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
 
   for i = 1:length(fields_and_maps)
     push!(ideals, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
@@ -886,7 +886,7 @@ end
 #
 ################################################################################
 
-# Mostly taken from NfOrd/LinearAlgebra.jl
+# Mostly taken from AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/LinearAlgebra.jl
 function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   O = order(b)
   @assert isone(denominator(b, O))

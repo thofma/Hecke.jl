@@ -267,9 +267,9 @@ function _evaluate_mod(f::QQPolyRingElem, a::AbsSimpleNumFieldElem, d::ZZRingEle
   return s
 end
 
-(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})(x::NfOrdIdl) = induce_image(f, x)
+(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = induce_image(f, x)
 
-function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::NfOrdIdl; target = false)
+function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; target = false)
   K = domain(f)
   if K != codomain(f)
     if target == false
@@ -337,7 +337,7 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::N
   end
   if !has_2_elem(I)
     #I need to translate the basis matrix
-    bb = Vector{NfOrdElem}(undef, degree(K))
+    bb = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, degree(K))
     B = basis(x, copy = false)
     for i = 1:length(bb)
       bb[i] = OK(f(K(B[i])))
@@ -355,7 +355,7 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::N
   return I
 end
 
-function induce_image_easy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::NfOrdIdl)
+function induce_image_easy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   OK = order(P)
   K = nf(OK)
   R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)[1]
@@ -576,7 +576,7 @@ end
 #
 ################################################################################
 
-function frobenius_automorphism(P::NfOrdIdl)
+function frobenius_automorphism(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert is_prime(P)
   OK = order(P)
   K = nf(OK)

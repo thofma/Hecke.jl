@@ -276,7 +276,7 @@ function valuation(f::ZZPolyRingElem, p::Union{ZZRingElem, Int})
   return minimum(l)
 end
 
-function valuation(f::Generic.Poly{AbsSimpleNumFieldElem}, p::NfOrdIdl)
+function valuation(f::Generic.Poly{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   l = Int[Int(valuation(coeff(f, i), p)) for i = 0:degree(f) if !iszero(coeff(f, i))]
   return minimum(l)
 end
@@ -389,7 +389,7 @@ end
 #
 ###############################################################################
 
-function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
+function gens_overorder_polygons(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem)
   K = nf(O)
   f = K.pol
   Qx = parent(f)
@@ -452,7 +452,7 @@ function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
 end
 
 
-function polygons_overorder(O::NfOrd, p::ZZRingElem)
+function polygons_overorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
   Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
@@ -489,7 +489,7 @@ function polygons_overorder(O::NfOrd, p::ZZRingElem)
     #@show "Dedekind"
     U = divexact(fmodp, U)
 
-    @hassert :NfOrd 1 rem(O.disc, p^2) == 0
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 rem(O.disc, p^2) == 0
     alpha = nf(O)(parent(f)(lift(Zy, U)))
 
     # build the new basis matrix
@@ -499,7 +499,7 @@ function polygons_overorder(O::NfOrd, p::ZZRingElem)
     @assert isone(d)
     hnf_modular_eldiv!(Malpha, p, :lowerleft)
     b = FakeFmpqMat(Malpha, p)
-    @hassert :NfOrd 1 defines_order(nf(O), b)[1]
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 defines_order(nf(O), b)[1]
     OO = AbsNumFieldOrder(nf(O), b)
     OO.is_equation_order = false
     OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
@@ -515,7 +515,7 @@ function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::QQFieldElem = 
 
   n = degree(K)
   closed = false
-  Oattempt = NfOrd(elt)
+  Oattempt = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(elt)
 
   # Since 1 is in elt, prods will contain all elements
   first = true
@@ -562,7 +562,7 @@ function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::QQFieldElem = 
   end
 
   # Make an explicit check
-  @hassert :NfOrd 1 defines_order(K, elt)[1]
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 defines_order(K, elt)[1]
   res = Order(K, elt, check = false, isbasis = true, cached = false)
   res.gen_index = inv(dold)
   res.index = numerator(res.gen_index)
@@ -580,9 +580,9 @@ function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::M
 
   O = order(Ip1)
   n = degree(O)
-  @vprintln :NfOrd 1 "Splitting the algebra"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Splitting the algebra"
   AA = _dec_com_finite(A)
-  @vprintln :NfOrd 1 "Done"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Done"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
   list_bases = Vector{Vector{Vector{ZZRingElem}}}(undef, length(AA))
@@ -653,9 +653,9 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
 
       P = ideals[j][1]
       f = P.splitting_type[2]
-      #@vprintln :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))"
+      #@vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))"
       P.gen_one = ZZRingElem(p)
-      @vtime :NfOrd 3 find_random_second_gen(P)
+      @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 find_random_second_gen(P)
       u = P.gen_two
       modulo = norm(P)*p
       x = zero(parent(u))
@@ -677,8 +677,8 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
         x = u
       end
 
-      @hassert :NfOrd 1 !iszero(x)
-      @hassert :NfOrd 2 O*O(p) + O*x == P
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 !iszero(x)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 O*O(p) + O*x == P
       P.gen_two = x
       P.gens_normal = ZZRingElem(p)
       if !iszero(mod(discriminant(O), p)) || valuation(norm(I), p) == length(ideals)
@@ -693,10 +693,10 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
           e += 1
           mul!(xyz, xyz, anti_uni)
         end
-        @hassert :NfOrd 3 e == Int(valuation(nf(O)(p), P))
+        @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 e == Int(valuation(nf(O)(p), P))
       end
       P.splitting_type = e, f
-      @hassert :NfOrd 3 is_consistent(P)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 is_consistent(P)
       ideals[j] = (P, e)
     end
   elseif length(ideals) > 1
@@ -705,7 +705,7 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
       P = ideals[j][1]
       f = P.splitting_type[2]
 
-      #@vprintln :NfOrd 1 "Searching for 2-element presentation"
+      #@vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Searching for 2-element presentation"
       # The following does not work if there is only one prime ideal
       # This is roughly Algorithm 6.4 of Belabas' "Topics in computational algebraic
       # number theory".
@@ -714,8 +714,8 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
       B, BtoA = AA[j]
       v1 = AtoO(BtoA(one(B)))
       u1 = 1 - v1
-      @hassert :NfOrd 1 isone(u1+v1)
-      @hassert :NfOrd 1 containment_by_matrices(u1, P)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 isone(u1+v1)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 containment_by_matrices(u1, P)
       u = O()
       v = O()
       add!(u, u2, v2)
@@ -725,12 +725,12 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
       mul!(v, v1, v2)
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
-      @hassert :NfOrd 1 isone(u + v)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 isone(u + v)
       if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O))
         u = O(mod(u.elem_in_nf, p))
       end
 
-      @hassert :NfOrd 1 containment_by_matrices(u, P)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 containment_by_matrices(u, P)
       modulo = norm(P)*p
       if iszero(mod(norm(u), modulo))
         if !iszero(mod(norm(u+p), modulo))
@@ -747,8 +747,8 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
           end
         end
       end
-      @hassert :NfOrd 1 !iszero(u)
-      @hassert :NfOrd 2 O*O(p) + O*u == P
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 !iszero(u)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 O*O(p) + O*u == P
       P.gen_one = ZZRingElem(p)
       P.gen_two = u
       P.gens_normal = ZZRingElem(p)
@@ -763,9 +763,9 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
           e += 1
           mul!(xyz, xyz, anti_uni)
         end
-        @hassert :NfOrd 3 e == Int(valuation(nf(O)(p), P))
+        @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 e == Int(valuation(nf(O)(p), P))
       end
-      @hassert :NfOrd 3 is_consistent(P)
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 is_consistent(P)
       P.splitting_type = e, f
       ideals[j] = (P, e)
     end
@@ -792,8 +792,8 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
         end
       end
     end
-    @hassert :NfOrd 1 !iszero(x)
-    @hassert :NfOrd 2 O*O(p) + O*x == P
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 !iszero(x)
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 O*O(p) + O*x == P
     P.gen_one = ZZRingElem(p)
     P.gen_two = x
     P.gens_normal = ZZRingElem(p)
@@ -804,7 +804,7 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
       e = Int(divexact(valuation(norm(I), p), f))
     end
     P.splitting_type = e, f
-    @hassert :NfOrd 3 is_consistent(P)
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 is_consistent(P)
     ideals[1] = (P, e)
   else
     P = ideals[1][1]
@@ -813,8 +813,8 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
     #I need one element of valuation 1.
     P2 = P*P
     x = find_elem_of_valuation_1(P, P2)
-    @hassert :NfOrd 1 !iszero(x)
-    @hassert :NfOrd 2 O*O(p) + O*x == P
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 !iszero(x)
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 O*O(p) + O*x == P
     P.gen_one = ZZRingElem(p)
     P.gen_two = x
     P.gens_normal = p
@@ -825,7 +825,7 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
       e = Int(divexact(valuation(norm(I), p), f))
     end
     P.splitting_type = e, f
-    @hassert :NfOrd 3 is_consistent(P)
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 is_consistent(P)
     ideals[1] = (P, e)
   end
   return ideals
@@ -902,19 +902,19 @@ function find_elem_of_valuation_1(P::AbsNumFieldOrderIdeal{S, T}, P2::AbsNumFiel
   return el
 end
 
-function decomposition_type_polygon(O::NfOrd, p::Union{ZZRingElem, Int})
+function decomposition_type_polygon(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Union{ZZRingElem, Int})
   K = nf(O)
   Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = Zx(K.pol)
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = change_base_ring(R, f, parent = Rx)
-  @vprintln :NfOrd 1 "Factoring the polynomial"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Factoring the polynomial"
   fac = factor(f1) #TODO: We don't need the factorization directly, but only the factorization of the non-squarefree part
   res = Tuple{Int, Int}[]
-  l = Tuple{NfOrdIdl, NfOrdIdl}[]
+  l = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[]
   for (g, m) in fac
-    @vprintln :NfOrd 1 "Doing $((g,m))"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Doing $((g,m))"
     if m==1
       push!(res, (degree(g), 1))
       continue
@@ -979,7 +979,7 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_decomposition_polygons(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Union{ZZRingElem, Int}, degree_limit::Int = 0, lower_limit::Int = 0)
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -989,15 +989,15 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degre
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
-  @vprintln :NfOrd 1 "Factoring the polynomial"
-  @vtime :NfOrd 1 fac = factor(f1)
-  res = Tuple{NfOrdIdl, Int}[]
-  l = Tuple{NfOrdIdl, NfOrdIdl}[]
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Factoring the polynomial"
+  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 fac = factor(f1)
+  res = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[]
+  l = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[]
   for (g, m) in fac
     if degree(g) > degree_limit
       continue
     end
-    @vprintln :NfOrd 1 "Doing $((g, m))"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Doing $((g, m))"
     phi = lift(Zx, g)
     if isone(m)
       ei = m
@@ -1034,9 +1034,9 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degre
     push!(l, (i1, i2))
   end
   if !isempty(l)
-    @vtime :NfOrd 3 Ip = pradical1(O, p)
+    @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 Ip = pradical1(O, p)
     for (I, Q) in l
-      @vtime :NfOrd 3 lp = _decomposition(O, I, Ip, Q, p)
+      @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 lp = _decomposition(O, I, Ip, Q, p)
       for (P, e) in lp
         if degree(P) > degree_limit || degree(P) < lower_limit
           continue

@@ -1,9 +1,9 @@
-mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGrp}
-  header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
+mutable struct MapClassGrp <: Map{GrpAbFinGen, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, HeckeMap, MapClassGrp}
+  header::MapHeader{GrpAbFinGen, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
   quo::Int
-  princ_gens::Vector{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}
-  small_gens::Vector{NfOrdIdl}
+  princ_gens::Vector{Tuple{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}
+  small_gens::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   function MapClassGrp()
     mp = new()
     mp.quo = -1
@@ -13,7 +13,7 @@ end
 
 
 mutable struct SmallLLLRelationsCtx{T}
-  A::NfOrdIdl
+  A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   b::Vector{T}
   bd::Int
   cnt::Int
@@ -42,7 +42,7 @@ mutable struct NormCtx_split <: NormCtx
   mp::Vector{fpMatrix} # temp. variable
   np::Vector{fpMatrix} # temp. variable
   #= used in 
-    NumFieldOrder/NfOrd/Clgp/Rel_LLL.jl
+    NumFieldOrder/AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Clgp/Rel_LLL.jl
     a coordinate vector of an order element is mapped mod p into mp
     multiplied by lC into np
   =#
@@ -169,7 +169,7 @@ end
 
 mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitModUnitGrpFacElem}
   header::MapHeader{GrpAbFinGen, FacElemMon{AbsSimpleNumField}}
-  idl::Vector{NfOrdIdl}
+  idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   valuations::Vector{SRow{ZZRingElem}}
 
   function MapSUnitModUnitGrpFacElem()
@@ -179,7 +179,7 @@ end
 
 mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitGrpFacElem}
   header::MapHeader{GrpAbFinGen, FacElemMon{AbsSimpleNumField}}
-  idl::Vector{NfOrdIdl}
+  idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   valuations::Vector{SRow{ZZRingElem}}
   isquotientmap::Int
 
@@ -192,7 +192,7 @@ end
 
 mutable struct MapSUnitGrp <: Map{GrpAbFinGen, AbsSimpleNumField, HeckeMap, MapSUnitGrp}
   header::MapHeader{GrpAbFinGen, AbsSimpleNumField}
-  idl::Vector{NfOrdIdl}
+  idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
   function MapSUnitGrp()
     return new()

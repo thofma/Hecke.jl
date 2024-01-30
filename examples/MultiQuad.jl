@@ -236,7 +236,7 @@ function _nullspace(A::zzModMatrix)
   return ncols(A), A
 end
 
-function mod_p(R, Q::NfOrdIdl, p::Int)
+function mod_p(R, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
   F, mF = Hecke.ResidueFieldSmall(order(Q), Q)
   mF = Hecke.extend_easy(mF, nf(order(Q)))
   @assert size(F) % p == 1

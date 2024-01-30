@@ -1,6 +1,6 @@
 ################################################################################
 #
-#       NfOrd/Ideal.jl : Ideals in orders of absolute number fields
+#       AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Ideal.jl : Ideals in orders of absolute number fields
 #
 # This file is part of Hecke.
 #

@@ -1254,7 +1254,7 @@ end
 
 
 
-function issplit_at_P(O::NfOrd, G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Coc::Function, P::NfOrdIdl, n::Int, Rx::fpPolyRing)
+function issplit_at_P(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Coc::Function, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, Rx::fpPolyRing)
   e = gcd(length(G), ramification_index(P))
   if e == 1
     return true

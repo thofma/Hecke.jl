@@ -181,7 +181,7 @@ function _construct_grp(IdH::GAP.GapObj, uncom::Int)
   return IdCheck
 end
 
-function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::ZZRingElem)
+function max_ramified_prime(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, gtype::Vector{Int}, bound::ZZRingElem)
   n = prod(gtype)
   fac = factor(n)
   m = Int(minimum(keys(fac.fac)))
@@ -636,7 +636,7 @@ function translate_extensions(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumFie
     #I take the intersection of the modulus of C with L
     mR = C.rayclassgroupmap
     fM0 = copy(mR.fact_mod)
-    fm0 = Dict{NfOrdIdl, Int}()
+    fm0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
     for (p, v) in fM0
       p1 = Hecke.intersect_prime(mL, p)
       if !haskey(fm0, p1)
@@ -710,7 +710,7 @@ function translate_extensions(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumFie
       ctxK.class_group_map.small_gens = find_gens(pseudo_inv(ctxK.class_group_map), PrimesSet(101, -1))[1]
     end
     @vtime :Fields 3 lP, gS = Hecke.find_gens(mRM, coprime_to = minimum(defining_modulus(mR)[1]))
-    listn = NfOrdIdl[norm(mL, x) for x in lP]
+    listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mL, x) for x in lP]
     # Create the map between R and r by taking norms
     preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
     for i = 1:length(preimgs)

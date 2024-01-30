@@ -56,7 +56,7 @@ function abelian_extensions(gtype::Vector{Int}, conds::Vector{Int}, absolute_dis
   return fields
 end
 
-function abelian_extensions(O::NfOrd, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
+function abelian_extensions(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
   K = nf(O)
   @assert degree(K)==1
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -346,7 +346,7 @@ end
 
 
 
-function _isstable(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, d::Dict{NfOrdIdl, Int})
+function _isstable(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, d::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int})
   if isempty(d)
     return true
   end
@@ -356,7 +356,7 @@ function _isstable(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField
   primes = Set{ZZRingElem}(minimum(x, copy = false) for x in keys(d))
   for p in primes
     lP = prime_decomposition(OK, p)
-    prime_ideals = NfOrdIdl[x[1] for x in lP]
+    prime_ideals = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[x[1] for x in lP]
     perms = [induce_action(prime_ideals, f) for f in auts]
     orbs = orbits(perms)
     for i = 1:length(orbs)
@@ -390,15 +390,15 @@ function _image(cache, auts, I, i)
   return img
 end
 
-function _sieve_conjugates(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, conds::Vector{Dict{NfOrdIdl, Int}})
+function _sieve_conjugates(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, conds::Vector{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}})
   if isone(length(auts))
     return conds
   end
-  closure = Set{Dict{NfOrdIdl, Int}}()
-  reps = Vector{Dict{NfOrdIdl, Int}}()
-  cache = Vector{Dict{NfOrdIdl, NfOrdIdl}}(undef, length(auts))
+  closure = Set{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}()
+  reps = Vector{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}()
+  cache = Vector{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}(undef, length(auts))
   for i = 1:length(cache)
-    cache[i] = Dict{NfOrdIdl, NfOrdIdl}()
+    cache[i] = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   end
   for j = 1:length(conds)
     if conds[j] in closure
@@ -412,8 +412,8 @@ function _sieve_conjugates(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimple
   return reps
 end
 
-function _induce_image(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, i::Int, cond::Dict{NfOrdIdl, Int}, cache::Vector{Dict{NfOrdIdl, NfOrdIdl}})
-  res = Dict{NfOrdIdl, Int}()
+function _induce_image(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, i::Int, cond::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, cache::Vector{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+  res = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (k, v) in cond
     res[_image(cache, auts, k, i)] = v
   end
@@ -985,7 +985,7 @@ end
 
 #same function but for ray class groups over QQ
 
-function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::ZZRingElem)
+function discriminant_conductorQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::ClassField, m::Int, bound::ZZRingElem)
 
   n = degree(C)
   discr=ZZRingElem(1)
@@ -1074,7 +1074,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::ZZRing
   return true
 end
 
-function discriminantQQ(O::NfOrd, C::ClassField, m::Int)
+function discriminantQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::ClassField, m::Int)
 
   discr=ZZRingElem(1)
   n = degree(C)

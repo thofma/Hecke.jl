@@ -107,7 +107,7 @@ discriminant(C::Hecke.ClassField)
 conductor(C::Hecke.ClassField)
 defining_modulus(C::ClassField)
 is_cyclic(C::ClassField)
-is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc})
+is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{InfPlc})
 is_normal(C::ClassField)
 is_central(C::ClassField)
 ```

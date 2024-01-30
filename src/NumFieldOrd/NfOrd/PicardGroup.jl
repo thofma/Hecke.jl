@@ -5,23 +5,23 @@
 ################################################################################
 
 @doc raw"""
-    picard_group(O::NfOrd) -> GrpAbFinGen, MapClassGrp
+    picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> GrpAbFinGen, MapClassGrp
 
 Returns the Picard group of $O$ and a map from the group in the set of
 (invertible) ideals of $O$.
 """
-function picard_group(O::NfOrd)
+function picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   mP = get_attribute!(O, :picard_group) do
     OK = maximal_order(nf(O)) # We need it later anyway
     if O == OK
       return class_group_as_picard(OK)[2]
     end
     return _picard_group(O)[2]
-  end::MapPicardGrp{GrpAbFinGen, NfOrdIdlSet}
+  end::MapPicardGrp{GrpAbFinGen, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   return domain(mP), mP
 end
 
-function unit_group_non_maximal(O::NfOrd)
+function unit_group_non_maximal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   mU = get_attribute!(O, :unit_group_non_maximal) do
     if is_maximal(O)
       return _unit_group_maximal(O)[2]
@@ -29,7 +29,7 @@ function unit_group_non_maximal(O::NfOrd)
     OK = maximal_order(O)
     UU, mUU = unit_group(OK)
     return _unit_group_non_maximal(O, OK, mUU)[2]
-  end::MapUnitGrp{NfOrd}
+  end::MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   return domain(mU), mU
 end
 
@@ -39,9 +39,9 @@ end
 #
 ################################################################################
 
-function class_group_as_picard(OK::NfOrd)
+function class_group_as_picard(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   C, mC = class_group(OK)
-  mp = MapPicardGrp{GrpAbFinGen, NfOrdIdlSet}()
+  mp = MapPicardGrp{GrpAbFinGen, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   mp.header = MapHeader(C, IdealSet(OK), mC.header.image, mC.header.preimage)
   return C, mp
 end
@@ -58,9 +58,9 @@ function OO_mod_F_mod_O_mod_F(O::AbsNumFieldOrder)
   QF, OKtoQF = quo(OK, FOK)
 
   fac = factor(QF)
-  D = Dict{NfOrdIdl, Vector{Int}}() # keys are ideals p of O, values the indices of the ideals q in OK such that contract(q, O) == p.
+  D = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{Int}}() # keys are ideals p of O, values the indices of the ideals q in OK such that contract(q, O) == p.
   i = 1
-  factors_of_FOK = Vector{NfOrdIdl}(undef, length(fac)) # ideals of OK
+  factors_of_FOK = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, length(fac)) # ideals of OK
   for (q, e) in fac
     p = contract(q, O)
     p.is_prime = q.is_prime
@@ -75,7 +75,7 @@ function OO_mod_F_mod_O_mod_F(O::AbsNumFieldOrder)
   for p in keys(D)
     # Find m such that p^m*O_p \subseteq F*O_p
     m = 0
-    prime_ideals_over_p = Vector{Tuple{NfOrdIdl, Int}}() # ideals of OK
+    prime_ideals_over_p = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}() # ideals of OK
     pOK = extend(p, OK)
     fac2 = factor(pOK)
     for (q, e) in fac2
@@ -196,7 +196,7 @@ function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, G
   return S, StoO
 end
 
-function _picard_group(O::NfOrd)
+function _picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   # We use the exact sequence
   # OK^\times \to \bigoplus_p OK_p^\times/O_p^\times \to Pic(O) \to Pic(OK) \to 1
   # and Algorithm 4.1.9 in Cohen: Advanced topics in computational number theory
@@ -214,8 +214,8 @@ function _picard_group(O::NfOrd)
   FOK = extend(F, OK)
 
   # Collect the generators (they have to be coprime to F)
-  gens_of_Cl = Vector{NfOrdIdl}()
-  generators = Vector{NfOrdIdl}()
+  gens_of_Cl = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
+  generators = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   Z = Vector{elem_type(G)}()
   for (I, g) in CltoOK.princ_gens
     II, _ = _coprime_integral_ideal_class(I, FOK)
@@ -289,7 +289,7 @@ function _picard_group(O::NfOrd)
 
   local disc_log_picard_group
   let P = P, F = F, O = O, OK = OK, CltoOK = CltoOK, gens_of_Cl = gens_of_Cl, OKtoQ = OKtoQ, GtoQ = GtoQ, StoP = StoP
-    function disc_log_picard_group(x1::NfOrdIdl)
+    function disc_log_picard_group(x1::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
       @assert order(x1) == O
       # x is only an element of the picard group if it is invertible.
       if !is_invertible(x1)[1]
@@ -313,7 +313,7 @@ function _picard_group(O::NfOrd)
       a2 = OKtoQ(OK(zOK.den))
       b1, a = is_divisible(a1, a2)
       @assert b1
-      @hassert :NfOrd 1 is_divisible(OKtoQ(OK(1)), a)[1]
+      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_divisible(OKtoQ(OK(1)), a)[1]
       h = GtoQ\a
       p = GrpAbFinGenElem(P, hcat(c.coeff, h.coeff))
       b, s = has_preimage_with_preimage(StoP, p)

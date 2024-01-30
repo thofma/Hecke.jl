@@ -434,7 +434,7 @@ end
 
 function ring_of_multipliers(O::Order, I::MatElem)
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @vprintln :NfOrd 2 "ring of multipliers of ideal with basis matrix $I"
+  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 "ring of multipliers of ideal with basis matrix $I"
   II, d = pseudo_inv(I)
   @assert II*I == d
 #  return II, d, [representation_matrix(O(vec(collect(I[i, :])))) for i=1:nrows(I)]
@@ -448,7 +448,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
   end
   H = mm
 
-  @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
+  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 Hi, d = pseudo_inv(H)
 
   O = Order(O, Hi', d)
   return O
@@ -492,13 +492,13 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprintln :NfOrd 1 "using trace-radical for $p"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprintln :NfOrd 1 "non-perfect case for radical for $p"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprintln :NfOrd 1 "using radical-by-power for $p"
+    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   while true #TODO: check the discriminant to maybe skip the last iteration

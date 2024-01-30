@@ -42,7 +42,7 @@
 
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc raw"""
-    tates_algorithm_local(E::EllipticCurve{AbsSimpleNumFieldElem}, p:: NfOrdIdl)
+    tates_algorithm_local(E::EllipticCurve{AbsSimpleNumFieldElem}, p:: AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
     -> EllipticCurve{AbsSimpleNumFieldElem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a minimal
@@ -57,7 +57,7 @@ end
 # internal version
 # extend this for global fields
 
-function _tates_algorithm(E::EllipticCurve{AbsSimpleNumFieldElem}, P::NfOrdIdl)
+function _tates_algorithm(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   OK = order(P)
   F, _mF = residue_field(OK, P)
   mF = extend(_mF, nf(OK))
@@ -967,16 +967,16 @@ function kodaira_symbols(E::EllipticCurve{QQFieldElem})
 end
 
 @doc raw"""
-    tamagawa number(E::EllipticCurve{QQFieldElem}, p::NfOrdIdl) -> ZZRingElem
+    tamagawa number(E::EllipticCurve{QQFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
 """
-function tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem},p::NfOrdIdl)
+function tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem},p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return tates_algorithm_local(E,p)[4]
 end
 
 @doc raw"""
-    tamagawa numbers(E::EllipticCurve{QQFieldElem}) -> Vector{(NfOrdIdl, ZZRingElem)}
+    tamagawa numbers(E::EllipticCurve{QQFieldElem}) -> Vector{(AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the bad
 prime ideals $p$ of $E$.
@@ -987,19 +987,19 @@ function tamagawa_numbers(E::EllipticCurve{AbsSimpleNumFieldElem})
 end
 
 @doc raw"""
-    kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::NfOrdIdl)
+    kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
       -> String
 
 Return the reduction type of E at the prime ideal p using
 a Kodaira symbol.
 """
-function kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem},p::NfOrdIdl)
+function kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem},p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return tates_algorithm_local(E,p)[2]
 end
 
 @doc raw"""
-    kodaira_symbols(E::EllipticCurve{AbsSimpleNumFieldElem}, p::NfOrdIdl)
-      -> Vector{(NfOrdIdl, String)}
+    kodaira_symbols(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+      -> Vector{(AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, String)}
 
 Return the reduction types of E at all bad primes as a sequence of
 Kodaira symbols.
@@ -1035,13 +1035,13 @@ function reduction_type(E::EllipticCurve{QQFieldElem}, p)
 end
 
 @doc raw"""
-    reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::NfOrdIdl) -> String
+    reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> String
 
 Return the reduction type of E at the prime ideal p.
 It can either be good, additive, split multiplicative or
 nonsplit mutiplicative.
 """
-function reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::NfOrdIdl)
+function reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
 
   if Kp=="I0"
@@ -1082,7 +1082,7 @@ function conductor(E::EllipticCurve{QQFieldElem})
 end
 
 @doc raw"""
-    conductor(E::EllipticCurve{AbsSimpleNumFieldElem}) -> NfOrdIdl
+    conductor(E::EllipticCurve{AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return conductor of $E$ over a number field as an ideal.
 """
@@ -1110,7 +1110,7 @@ function bad_primes(E::EllipticCurve{QQFieldElem})
 end
 
 @doc raw"""
-    bad_primes(E::EllipticCurve{QQFieldElem}) -> Vector{NfOrdIdl}
+    bad_primes(E::EllipticCurve{QQFieldElem}) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Return a list of prime ideals that divide the discriminant of $E$.
 """
@@ -1129,11 +1129,11 @@ end
 
 #Magma also returns reduction map
 @doc raw"""
-    modp_reduction(E::EllipticCurve{AbsSimpleNumFieldElem}, p::NfOrdIdl) -> EllipticCurve
+    modp_reduction(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> EllipticCurve
 
 Return the reduction of $E$ modulo the prime ideal p if p has good reduction
 """
-function modp_reduction(E::EllipticCurve{AbsSimpleNumFieldElem}, p::NfOrdIdl)
+function modp_reduction(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if !is_prime(p)
     throw(DomainError(p,"p is not a prime ideal"))
   end

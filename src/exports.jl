@@ -79,11 +79,6 @@ export AbsNumFieldOrder
 export AbsNumFieldOrderElem
 export AbsNumFieldOrderIdeal
 export AbsNumFieldOrderSet
-export NfOrd
-export NfOrdElem
-export NfOrdIdl
-export NfOrdQuoRing
-export NfOrdQuoRingElem
 export RelNonSimpleNumField
 export NumFieldAut
 export NumFieldHom

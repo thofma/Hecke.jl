@@ -65,7 +65,7 @@ There are two ways of creating a local genus symbol for hermitian lattices:
     determinant class `:det` or discriminant class `:disc`);
 
 ```julia
-   genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det,
+   genus(HermLat, E::NumField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, data::Vector; type::Symbol = :det,
                                                           check::Bool = false)
                                                              -> HermLocalGenus
 ```
@@ -73,7 +73,7 @@ There are two ways of creating a local genus symbol for hermitian lattices:
     lattice $L$ over $E/K$ at a prime ideal $\mathfrak p$ of $\mathcal O_K$.
 
 ```julia
-   genus(L::HermLat, p::NfOrdIdl) -> HermLocalGenus
+   genus(L::HermLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> HermLocalGenus
 ```
 
 #### Examples

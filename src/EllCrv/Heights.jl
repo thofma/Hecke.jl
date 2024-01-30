@@ -210,7 +210,7 @@ function local_height(P::EllipticCurvePoint{QQFieldElem}, p, prec::Int = 100)
   end
 end
 
-function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::NfOrdIdl, prec::Int = 100)
+function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int = 100)
 
   if !is_finite(P)
     return zero(ArbField(prec, cached = false))

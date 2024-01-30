@@ -42,10 +42,10 @@ function conductor(chi::RCFCharacter)
   return chi.conductor
 end
 
-(chi::RCFCharacter)(I::NfOrdIdl, prec::Int) = image(chi, I, prec)
+(chi::RCFCharacter)(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) = image(chi, I, prec)
 (chi::RCFCharacter)(I::GrpAbFinGenElem, prec::Int) = image(chi, I, prec)
 
-function image(chi::RCFCharacter{MapClassGrp, T}, I::NfOrdIdl, prec::Int) where T
+function image(chi::RCFCharacter{MapClassGrp, T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) where T
   CC = AcbField(prec)
   x = chi.x
   mGhat = chi.mGhat
@@ -60,7 +60,7 @@ function image(chi::RCFCharacter{MapClassGrp, T}, I::NfOrdIdl, prec::Int) where 
   return cispi(2*CC(img))
 end
 
-function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) where T
+function image(chi::RCFCharacter{MapRayClassGrp, T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) where T
   CC = AcbField(prec)
   x = chi.x
   mGhat = chi.mGhat
@@ -74,7 +74,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
     C = chi.C
     mR = C.rayclassgroupmap
     if !isdefined(mR, :prime_ideal_preimage_cache)
-      mR.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+      mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}()
     end
     if haskey(mR.prime_ideal_preimage_cache, I)
       pim = mR.prime_ideal_preimage_cache[I]
@@ -97,7 +97,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
   mp = chi.mp_cond
   mQ = chi.C.quotientmap
   if !isdefined(mR, :prime_ideal_preimage_cache)
-    mR.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+    mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}()
   end
   if haskey(mR.prime_ideal_preimage_cache, I)
     el = mR.prime_ideal_preimage_cache[I]
@@ -514,7 +514,7 @@ end
 
 function compute_values_f_quadratic(chars::Vector, target_prec::Int)
   prec = min(10, div(degree(chars[1].C), 2))*target_prec
-  res = Dict{NfOrdIdl, Vector{Tuple{ArbFieldElem, ArbFieldElem}}}()
+  res = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{Tuple{ArbFieldElem, ArbFieldElem}}}()
   for x in chars
     c = conductor(x)
     if haskey(res, c)
@@ -589,13 +589,13 @@ function compute_coeffs_L_function(chi::T, n::Int, prec::Int) where T <: RCFChar
   return coeffs_old
 end
 
-function ideals_up_to(OK::NfOrd, n::Int, coprime_to::NfOrdIdl = ideal(OK, 1))
+function ideals_up_to(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, coprime_to::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = ideal(OK, 1))
 
   lp = prime_ideals_up_to(OK, n)
   filter!(x -> is_coprime(x, coprime_to), lp)
-  lI = NfOrdIdl[ideal(OK, 1)]
+  lI = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, 1)]
   for i = 1:length(lp)
-    lnew = NfOrdIdl[]
+    lnew = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
     P = lp[i]
     nP = Int(norm(P, copy = false))
     @assert nP <= n
@@ -678,7 +678,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   @hassert :ClassField 1 is_coprime(h, c)
   Qc, mQc = quo(OK, c)
   G, mG = multiplicative_group(Qc)
-  reps = NfOrdElem[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
+  reps = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
   for (j, x) in enumerate(G)
     @hassert :ClassField 1 x == mG\Qc(reps[j])
     @hassert :ClassField 1 is_totally_positive(reps[j])
@@ -702,7 +702,7 @@ end
 #
 ################################################################################
 
-function _lambda_and_artin_quadratic(chi::RCFCharacter, target_prec::Int, vf::Dict{NfOrdIdl, Vector{Tuple{ArbFieldElem, ArbFieldElem}}})
+function _lambda_and_artin_quadratic(chi::RCFCharacter, target_prec::Int, vf::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{Tuple{ArbFieldElem, ArbFieldElem}}})
   prec = min(10, div(degree(chi.C), 2))*target_prec
   Wchi = artin_root_number(chi, prec)
   CC = AcbField(prec)

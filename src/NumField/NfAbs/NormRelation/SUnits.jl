@@ -12,7 +12,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
     @vprintln :NormRelation 1 "Computing class group of $k... "
     class_group(zk)
     @vprintln :NormRelation 1 "done"
-    lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
+    lpk = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     @vprintln :NormRelation 1 "Now computing the S-unit group for lp of length $(length(lpk))"
     @assert length(lpk) > 0
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
@@ -68,7 +68,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
     print("Computing class group of $k... ")
     @time class_group(zk, redo = true, use_aut = true)
     println("done")
-    lpk = NfOrdIdl[ P[1] for p in cp for P = prime_decomposition(zk, p)]
+    lpk = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ P[1] for p in cp for P = prime_decomposition(zk, p)]
     println("Now computing the S-unit group for lp of length $(length(lpk))")
     @assert length(lpk) > 0
     @time Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
@@ -186,7 +186,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
     @vprintln :NormRelation 1 "Computing lll basis of maximal order ..."
     zk = maximal_order(k)
     zk = lll(zk)
-    lpk = NfOrdIdl[]
+    lpk = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
     for p in cp
       append!(lpk, prime_ideals_over(zk, p))
     end
@@ -207,10 +207,10 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         end
         if compact != 0
           @vprintln :NormRelation 3 "  Compact presentation ..."
-          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{NfOrdIdl, Int}())
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}())
         elseif saturate_units
           @vprintln :NormRelation 3 "  Compact presentation ..."
-          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{NfOrdIdl, Int}())
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}())
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
@@ -246,7 +246,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
         end
         =#
         if compact != 0
-          sup = Dict{NfOrdIdl, Int}((lpk[w], t) for (w, t) in mS.valuations[l])
+          sup = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}((lpk[w], t) for (w, t) in mS.valuations[l])
           @vprintln :NormRelation 3 "  Compact presentation ..."
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = sup)
         end
@@ -381,7 +381,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AbsSimpleNumField, S, n::Int, i
   return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
-function _sunit_group_fac_elem_via_brauer(K::AbsSimpleNumField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
+function _sunit_group_fac_elem_via_brauer(K::AbsSimpleNumField, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, invariant::Bool = false, compact::Int = 0)
   @vprintln :NormRelation 1 "Setting up the norm relation context ..."
   fl, N = norm_relation(K, 0, small_degree = false)
   @assert fl
@@ -404,7 +404,7 @@ function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K)
   return c, UZK
 end
 
-function _find_perm(v::Vector{NfOrdIdl}, w::Vector{NfOrdIdl})
+function _find_perm(v::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, w::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   p = Dict{Int, Int}()
   for i = 1:length(v)
     pi = findfirst(isequal(v[i]), w)
@@ -414,7 +414,7 @@ function _find_perm(v::Vector{NfOrdIdl}, w::Vector{NfOrdIdl})
   return p
 end
 
-function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdIdl}, n::Int, invariant::Bool = false, compact::Int = 0; saturate_units::Bool = false)
+function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, n::Int, invariant::Bool = false, compact::Int = 0; saturate_units::Bool = false)
   O = order(S[1])
   K = N.K
   if invariant
@@ -422,7 +422,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
     _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact, saturate_units = saturate_units)
   else
     cp = sort!(collect(Set(minimum(x) for x = S)))
-    Sclosed = NfOrdIdl[]
+    Sclosed = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
     # If K is non-normal and N does not use the full automorphism group, we
     # might be enlarging S too much.
     for p in cp

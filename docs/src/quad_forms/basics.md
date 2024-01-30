@@ -288,7 +288,7 @@ over $E/K$ such that there exists a basis $e_1, e_2$ of $H$ such that
 $\Psi(e_1, e_1) = \Psi(e_2, e_2) = 0$ and $\Psi(e_1, e_2) = 1$.
 
 ```@docs
-is_locally_hyperbolic(::HermSpace, ::NfOrdIdl)
+is_locally_hyperbolic(::HermSpace, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
 ### Example

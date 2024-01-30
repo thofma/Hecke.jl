@@ -41,7 +41,7 @@ function translate_extension(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
   F = factor(ideal(OK, d))
   mR = C.rayclassgroupmap
   fM0 = copy(factored_modulus(C))
-  fm0 = Dict{NfOrdIdl, Int}()
+  fm0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (p, v) in fM0
     p1 = Hecke.intersect_prime(mL, p)
     if !haskey(fm0, p1)
@@ -110,7 +110,7 @@ function translate_extension(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
   end
   @vtime :ClassField 3 RM, mRM = ray_class_group(OK, fM0, inf_plc2, n_quo = n)
   @vtime :ClassField 3 lP, gS = Hecke.find_gens(mRM, coprime_to = minimum(defining_modulus(mR)[1]))
-  listn = NfOrdIdl[norm(mL, x) for x in lP]
+  listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mL, x) for x in lP]
   # Create the map between R and r by taking norms
   preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
   for i = 1:length(preimgs)

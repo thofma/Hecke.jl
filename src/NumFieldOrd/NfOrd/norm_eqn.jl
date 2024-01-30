@@ -1,6 +1,6 @@
 #TODO: verbose printing
 
-function norm_1_generators(A::Vector{NfOrdIdl})
+function norm_1_generators(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert all(is_prime, A)
   @assert all(x->x.gen_one == A[1].gen_one, A)
 

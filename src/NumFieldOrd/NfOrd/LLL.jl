@@ -7,7 +7,7 @@ add_assertion_scope(:LLL)
 #
 ################################################################################
 
-function _lll_gram(A::NfOrdIdl)
+function _lll_gram(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   K = nf(order(A))
   @assert is_totally_real(K)
   g = trace_matrix(A)
@@ -17,7 +17,7 @@ function _lll_gram(A::NfOrdIdl)
   return FakeFmpqMat(l, ZZRingElem(1)), t::ZZMatrix
 end
 
-function _lll_quad(A::NfOrdIdl)
+function _lll_quad(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   K = nf(order(A))
   @assert degree(K) == 2 && discriminant(order(A)) < 0
   b = basis(A)
@@ -30,7 +30,7 @@ function _lll_quad(A::NfOrdIdl)
   return FakeFmpqMat(l, ZZRingElem(1)), t::ZZMatrix
 end
 
-function _lll_CM(A::NfOrdIdl)
+function _lll_CM(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   OK = order(A)
   @vprintln :LLL 3 "Reduction"
   M = _minkowski_matrix_CM(OK)
@@ -47,7 +47,7 @@ end
 #
 ################################################################################
 
-function lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
 
   K = nf(order(A))
 
@@ -89,7 +89,7 @@ function lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 end
 
 
-function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   K = nf(order(A))
   n = degree(order(A))
   prec = max(prec, 4*n)
@@ -720,7 +720,7 @@ end
 
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
-function lll_basis(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(A, copy = false)*basis_matrix(order(A), copy = false)
   K = nf(order(A))
@@ -730,7 +730,7 @@ function lll_basis(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::
   return q
 end
 
-function lll_basis(A::NfOrdFracIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   L, T = lll(A.num, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(order(A))
@@ -747,14 +747,14 @@ end
 #
 ################################################################################
 
-function short_elem(A::NfOrdFracIdl,
+function short_elem(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
                 v::ZZMatrix=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
 
-function short_elem(A::NfOrdIdl,
+function short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
                 v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
   t = lll(A, v, prec = prec)[2]
@@ -771,7 +771,7 @@ end
 #
 ################################################################################
 
-function reduce_ideal(A::NfOrdIdl)
+function reduce_ideal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   B = inv(A)
   b = short_elem(B)
   C = b*A
@@ -780,11 +780,11 @@ function reduce_ideal(A::NfOrdIdl)
   return C.num, b
 end
 
-function reduce_product(A::NfOrdIdl, B::NfOrdIdl)
+function reduce_product(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   I = inv(A)
   J = inv(B)
   @vtime :LLL 3 bIJ = _lll_product_basis(I.num, J.num)
-  pp = NfOrdIdl(order(A), bIJ)
+  pp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(order(A), bIJ)
   @vtime :LLL 3 b = divexact(short_elem(pp), I.den * J.den)
   AB = A*B
   C = b*AB
@@ -794,7 +794,7 @@ function reduce_product(A::NfOrdIdl, B::NfOrdIdl)
 end
 
 
-function reduce_ideal(A::NfOrdFracIdl)
+function reduce_ideal(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   B = inv(A)
   b = short_elem(B.num)
   C = divexact(b, B.den)*A
@@ -805,11 +805,11 @@ end
 
 
 @doc raw"""
-    reduce_ideal(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{AbsSimpleNumFieldElem}
+    reduce_ideal(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FacElem{AbsSimpleNumFieldElem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
-function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function reduce_ideal(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert !isempty(I.fac)
   O = order(first(keys(I.fac)))
   K = nf(O)
@@ -844,12 +844,12 @@ end
 
 # The bound should be sqrt(disc) (something from LLL)
 @doc raw"""
-    power_reduce(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl, FacElem{AbsSimpleNumFieldElem}
+    power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FacElem{AbsSimpleNumFieldElem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
 $B$ has small norm.
 """
-function power_reduce(A::NfOrdIdl, e::ZZRingElem)
+function power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem)
   O = order(A)
   K= nf(O)
   if norm(A, copy = false) > abs(discriminant(O))
@@ -900,7 +900,7 @@ function power_reduce(A::NfOrdIdl, e::ZZRingElem)
 end
 
 
-function new_power_reduce(A::NfOrdIdl, e::ZZRingElem)
+function new_power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem)
   O = order(A)
   if iszero(e)
     return ideal(O, 1)
@@ -925,7 +925,7 @@ function new_power_reduce(A::NfOrdIdl, e::ZZRingElem)
   return res[1], al
 end
 
-function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRingElem)
+function _new_power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem, Ainv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, d::ZZRingElem)
   #Ainv//d is the inverse of A
   #We want to reduce A^e
   O = order(A)
@@ -973,7 +973,7 @@ function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRing
   else
     C2 = C^2
     basis_IJ = _lll_product_basis(Cinv, Cinv)
-    IJ = NfOrdIdl(O, basis_IJ)
+    IJ = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O, basis_IJ)
     newb = lll(IJ)[2]
     mul!(newb, newb, basis_matrix(IJ, copy = false))
     IJ.basis_matrix = newb
@@ -997,7 +997,7 @@ function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRing
     else
       A = C2*A
       basis_IJ = _lll_product_basis(C2inv, Ainv)
-      IJ = NfOrdIdl(O, basis_IJ)
+      IJ = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O, basis_IJ)
       newb = lll(IJ)[2]
       mul!(newb, newb, basis_matrix(IJ, copy = false))
       IJ.basis_matrix = newb
@@ -1012,7 +1012,7 @@ function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRing
   return A, al, Ainv, d
 end
 
-function short_elem_product(A::NfOrdIdl, B::NfOrdIdl)
+function short_elem_product(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return lll_basis_product(A, B)[1]
 end
 
@@ -1028,7 +1028,7 @@ end
 # Then we compute the lll of the matrix of the coordinates. This way we get a
 # better basis to start the computation of LLL
 #We compute the hnf to have a guaranteed bound on the entries
-function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
+function _lll_product_basis(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   A = lll(I)[2]
   mul!(A, A, basis_matrix(I, copy = false))
   IJ = I*J
@@ -1045,10 +1045,10 @@ end
 
 
 
-function lll_basis_product(I::NfOrdIdl, J::NfOrdIdl)
+function lll_basis_product(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
   basis_IJ = _lll_product_basis(I, J)
-  IJ = NfOrdIdl(order(I), basis_IJ)
+  IJ = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(order(I), basis_IJ)
   res = lll_basis(IJ)
   return res
 end

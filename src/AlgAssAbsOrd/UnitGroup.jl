@@ -104,7 +104,7 @@ end
 function _unit_group_maximal(O::AlgAssAbsOrd)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{NfOrd}}[ unit_group(maximal_order(field)) for (field, map) in fields_and_maps ]
+  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}}}[ unit_group(maximal_order(field)) for (field, map) in fields_and_maps ]
   G = unit_groups[1][1]
   for i = 2:length(unit_groups)
     G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
@@ -175,7 +175,7 @@ function OO_mod_F_mod_O_mod_F(O::AlgAssAbsOrd)
   StoQ1 = GrpAbFinGenToAbsOrdQuoRingMultMap(S, Q1, [ H1toQ1(toH\(StoH(S[i]))) for i = 1:ngens(S) ], _disc_log)
   return S, StoQ1, toQ1
 end
-# for _unit_group_non_maximal see NfOrd/PicardGroup.jl
+# for _unit_group_non_maximal see AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/PicardGroup.jl
 
 # Given an order O in an étale algebra, determine the
 # O^+ = {x \in O | x_v > 0 for v in rlpl}

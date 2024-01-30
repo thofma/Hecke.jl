@@ -17,7 +17,7 @@ mutable struct OrdLoc{T<:AbsSimpleNumFieldElem} <: Hecke.Ring
    end
 end
 
-function ppio(a::NfOrdIdl, b::NfOrdIdl)
+function ppio(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
    c = gcd(a, b)
    n = divexact(a, c)
    g = gcd(c, n)
@@ -280,7 +280,7 @@ end
 @doc raw"""
      div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
 """
-function _make_legal(a::AbsSimpleNumFieldElem, S::NfOrdIdl)
+function _make_legal(a::AbsSimpleNumFieldElem, S::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   d = denominator(a, order(S))
   n = order(S)(d*a)
   b, _ = ppio(d*order(S), S)

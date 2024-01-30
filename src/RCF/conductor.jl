@@ -47,7 +47,7 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
   T = domain(mT)
   m = Hecke._modulus(mR)
   l = minimum(m)
-  lp = NfOrdIdl[]
+  lp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   sR = GrpAbFinGenElem[]
 
   if isdefined(mR, :prime_ideal_cache)
@@ -92,7 +92,7 @@ end
 #  This functions constructs generators for 1+p^u/1+p^u+1
 #
 
-function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, powers::Vector{Tuple{NfOrdIdl, NfOrdIdl}}, a::Union{Int, ZZRingElem}, n::Int)
+function _1pluspk_1pluspk1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pk::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, powers::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, a::Union{Int, ZZRingElem}, n::Int)
 
   L = nf(O)
   b = basis(pk, copy = false)
@@ -100,7 +100,7 @@ function _1pluspk_1pluspk1(O::NfOrd, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, po
   G = abelian_group(N.num)
   S, mS = snf(G)
   #Generators
-  gens = Vector{NfOrdElem}(undef, ngens(S))
+  gens = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, ngens(S))
   for i=1:ngens(S)
     gens[i] = one(O)
     for j = 1:ngens(G)
@@ -189,7 +189,7 @@ end
 #######################################################################################
 
 @doc raw"""
-    conductor(C::ClassField) -> NfOrdIdl, Vector{InfPlc}
+    conductor(C::ClassField) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc}
 
 Return the conductor of the abelian extension corresponding to $C$.
 """
@@ -219,7 +219,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
   #
-  L = Dict{NfOrdIdl, Int}()
+  L = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (p, vp) in mR.fact_mod
     if !is_divisible_by(E, minimum(p, copy = false))
       if !is_coprime(E, norm(p)-1)
@@ -318,13 +318,13 @@ end
 ###############################################################################
 
 @doc raw"""
-    is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[]; check) -> NfOrdIdl, Vector{InfPlc}
+    is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{InfPlc}=InfPlc[]; check) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc}
 
 Checks if (m, inf_plc) is the conductor of the abelian extension corresponding to $C$. If `check` is `false`, it assumes that the
 given modulus is a multiple of the conductor.
 This is usually faster than computing the conductor.
 """
-function is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{<: InfPlc} = InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[]; check::Bool=true)
+function is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{<: InfPlc} = InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[]; check::Bool=true)
   if isdefined(C, :conductor)
     real_cond = C.conductor
     return real_cond[1] == m && Set(real_cond[2]) == Set(inf_plc)
@@ -460,7 +460,7 @@ function discriminant(C::ClassField, ::QQField)
 end
 
 @doc raw"""
-    discriminant(C::ClassField) -> NfOrdIdl
+    discriminant(C::ClassField) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Using the conductor-discriminant formula, compute the (relative) discriminant of $C$.
 This does not use the defining equations.
@@ -487,14 +487,14 @@ function discriminant(C::ClassField)
   end
 
 
-  @assert typeof(m) == NfOrdIdl
+  @assert typeof(m) == AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
   mR = C.rayclassgroupmap
   mS = C.quotientmap
   mp = pseudo_inv(mS) * mR
   R = domain(mp)
   n = order(R)
-  relative_disc = Dict{NfOrdIdl,Int}()
+  relative_disc = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}()
   lp = factor(m)
 
   if is_prime(n)
@@ -1008,7 +1008,7 @@ function factored_modulus(A::ClassField{MapRayClassGrp, T}) where T
 end
 
 function factored_modulus(A::ClassField{MapClassGrp, T}) where T
-  return Dict{NfOrdIdl, Int}()
+  return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
 end
 
 function factored_modulus(A::ClassField_pp{MapRayClassGrp, T}) where T
@@ -1016,7 +1016,7 @@ function factored_modulus(A::ClassField_pp{MapRayClassGrp, T}) where T
 end
 
 function factored_modulus(A::ClassField_pp{MapClassGrp, T}) where T
-  return Dict{NfOrdIdl, Int}()
+  return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
 end
 
 function maximal_abelian_subfield(A::ClassField, mp::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
@@ -1040,7 +1040,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NumFieldHom{AbsSimpleNumFie
   mR1 = A.rayclassgroupmap
   mC = pseudo_inv(A.quotientmap)*mR1
   #First, I construct a suitable modulus for A/k
-  f_m0 = Dict{NfOrdIdl, Int}()
+  f_m0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   fact_mod = factored_modulus(A)
   for (P, e) in fact_mod
     p = intersect_prime(mp, P)
@@ -1072,7 +1072,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NumFieldHom{AbsSimpleNumFie
   end
 
   #Now, I extend this modulus to K
-  f_M0 = Dict{NfOrdIdl, Int}()
+  f_M0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (p, v) in f_m0
     lp = prime_decomposition(mp, p, ZK)
     if is_coprime(minimum(p, copy = false), expo*deg)
@@ -1089,7 +1089,7 @@ function maximal_abelian_subfield(A::ClassField, mp::NumFieldHom{AbsSimpleNumFie
   R, mR = Hecke.ray_class_group(ZK, f_M0, real_places(K), n_quo = expo * deg)
   r, mr = Hecke.ray_class_group(zk, f_m0, real_places(k), n_quo = expo * deg)
   lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
-  listn = NfOrdIdl[norm(mp, x, order = zk) for x in lP]
+  listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mp, x, order = zk) for x in lP]
   # Create the map between R and r by taking norms
   proj = hom(gS, GrpAbFinGenElem[mr\x for x in listn])
   #compute the norm group of A in R
@@ -1153,7 +1153,7 @@ end
 
 #TODO: add version with a 2nd field....
 #  using:
-#      prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
+#      prime_decomposition(f::Map, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} = maximal_order(codomain(f)))
 #      PrimeIdealsSet
 @doc raw"""
     maximal_central_subfield(A::ClassField) -> ClassField
@@ -1530,7 +1530,7 @@ end
 
 
 @doc raw"""
-    lorenz_module(k::AbsSimpleNumField, n::Int) -> NfOrdIdl
+    lorenz_module(k::AbsSimpleNumField, n::Int) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Finds an ideal $A$ s.th. for all positive units $e = 1 \bmod A$ we have that
 $e$ is an $n$-th power. Uses Lorenz, number theory, 9.3.1.
@@ -1553,12 +1553,12 @@ end
 
 #TODO: is this the right interface???
 @doc raw"""
-    (::AbsNumFieldOrderIdealSet)(m::Map, I::NfOrdIdl) -> NfOrdIdl
+    (::AbsNumFieldOrderIdealSet)(m::Map, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Given an embedding $m:k\to K$ of number fields and an ideal $I$ in $k$,
 find the ideal above $I$ in $K$.
 """
-function (I::AbsNumFieldOrderIdealSet{Nemo.AbsSimpleNumField,Nemo.AbsSimpleNumFieldElem})(mp::Map, i::NfOrdIdl)
+function (I::AbsNumFieldOrderIdealSet{Nemo.AbsSimpleNumField,Nemo.AbsSimpleNumFieldElem})(mp::Map, i::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   assure_2_normal(i)
   return ideal(order(I), i.gen_one, order(I)(mp(i.gen_two.elem_in_nf)))
 end
@@ -1620,13 +1620,13 @@ end
 
 Base.intersect(R::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal) = intersect(I, R)
 
-function Base.intersect(I::NfOrdFracIdl, R::AbsNumFieldOrder)
+function Base.intersect(I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, R::AbsNumFieldOrder)
   @assert is_maximal(R)
   n, d = integral_split(I)
   return intersect(n, R)
 end
 
-Base.intersect(R::AbsNumFieldOrder, I::NfOrdFracIdl) = intersect(I, R)
+Base.intersect(R::AbsNumFieldOrder, I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = intersect(I, R)
 
 @doc raw"""
     content_ideal(f::PolyRingElem{AbsSimpleNumFieldElem}, R::AbsNumFieldOrder) -> AbsNumFieldOrderIdeal
@@ -1669,7 +1669,7 @@ function lorenz_module_pp(k::AbsSimpleNumField, p::Int, l::Int; containing=false
 
   fc = false
   if containing != false
-    @assert typeof(containing) == NfOrdIdl
+    @assert typeof(containing) == AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
     fc = factor(containing)
     s = union(s, collect(keys(fc)))
     fc = factor(parent(S[1])(C.mp[2], containing))

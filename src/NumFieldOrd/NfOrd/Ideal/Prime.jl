@@ -1,6 +1,6 @@
 ################################################################################
 #
-#   NfOrd/Ideal/Prime.jl : Prime ideals in orders of absolute number fields
+#   AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Ideal/Prime.jl : Prime ideals in orders of absolute number fields
 #
 # This file is part of Hecke.
 #
@@ -33,7 +33,7 @@
 ################################################################################
 
 @doc raw"""
-    is_ramified(O::NfOrd, p::Int) -> Bool
+    is_ramified(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int) -> Bool
 
 Returns whether the integer $p$ is ramified in $\mathcal O$.
 It is assumed that $p$ is prime.
@@ -44,7 +44,7 @@ function is_ramified(O::AbsNumFieldOrder, p::Union{Int, ZZRingElem})
 end
 
 @doc raw"""
-    is_tamely_ramified(O::NfOrd, p::Union{Int, ZZRingElem}) -> Bool
+    is_tamely_ramified(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Union{Int, ZZRingElem}) -> Bool
 
 Returns whether the integer $p$ is tamely ramified in $\mathcal O$.
 It is assumed that $p$ is prime.
@@ -76,18 +76,18 @@ function is_tamely_ramified(K::AbsSimpleNumField)
 end
 
 @doc raw"""
-    is_weakly_ramified(K::AbsSimpleNumField, P::NfOrdIdl) -> Bool
+    is_weakly_ramified(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Given a prime ideal $P$ of a number field $K$, return whether $P$
 is weakly ramified, that is, whether the second ramification group
 is trivial.
 """
-function is_weakly_ramified(K::AbsSimpleNumField, P::NfOrdIdl)
+function is_weakly_ramified(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return length(ramification_group(P, 2)) == 1
 end
 
 @doc raw"""
-    degree(P::NfOrdIdl) -> Int
+    degree(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Int
 
 The inertia degree of the prime-ideal $P$.
 """
@@ -99,7 +99,7 @@ end
 inertia_degree(A::AbsNumFieldOrderIdeal) = degree(A)
 
 @doc raw"""
-    ramification_index(P::NfOrdIdl) -> Int
+    ramification_index(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Int
 
 The ramification index of the prime-ideal $P$.
 """
@@ -148,7 +148,7 @@ end
 
 ##TODO: make ZZRingElem-safe!!!!
 #return <p, lift(O, fi> in 2-element normal presentation given the data
-function ideal_from_poly(O::NfOrd, p::Int, fi::Zmodn_poly, ei::Int)
+function ideal_from_poly(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int, fi::Zmodn_poly, ei::Int)
   b = lift(nf(O), fi)
   idl = ideal(O, ZZRingElem(p), O(b, false))
   idl.is_prime = 1
@@ -177,7 +177,7 @@ function ideal_from_poly(O::NfOrd, p::Int, fi::Zmodn_poly, ei::Int)
   return idl
 end
 
-function ideal_from_poly(O::NfOrd, p::ZZRingElem, fi::FpPolyRingElem, ei::Int)
+function ideal_from_poly(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem, fi::FpPolyRingElem, ei::Int)
   b = lift(nf(O), fi)
   idl = ideal(O, p, O(b, false))
   idl.is_prime = 1
@@ -210,7 +210,7 @@ end
     prime_decomposition(O::AbsNumFieldOrder,
                         p::Integer,
                         degree_limit::Int = 0,
-                        lower_limit::Int = 0) -> Vector{Tuple{NfOrdIdl, Int}}
+                        lower_limit::Int = 0) -> Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
 
 Returns an array of tuples $(\mathfrak p_i,e_i)$ such that $p \mathcal O$ is the product of
 the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
@@ -237,7 +237,7 @@ function prime_decomposition(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, <:Any}
   end
 end
 
-function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
+function prime_decomposition(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::IntegerUnion, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = false)
   if typeof(p) != Int && fits(Int, p)
     return prime_decomposition(O, Int(p), degree_limit, lower_limit, cached = cached)
   end
@@ -248,8 +248,8 @@ function prime_decomposition(O::NfOrd, p::IntegerUnion, degree_limit::Int = degr
   if is_defining_polynomial_nice(nf(O))
     if cached || is_index_divisor(O, p)
       if haskey(O.index_div, ZZRingElem(p))
-        lp = O.index_div[ZZRingElem(p)]::Vector{Tuple{NfOrdIdl, Int}}
-        z = Tuple{NfOrdIdl, Int}[]
+        lp = O.index_div[ZZRingElem(p)]::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
+        z = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[]
         for (Q, e) in lp
           if degree_limit == 0 || degree(Q) <= degree_limit
             push!(z, (Q, e))
@@ -345,7 +345,7 @@ function _fac_and_lift_deg1(f::ZZPolyRingElem, p)
 end
 
 
-function prime_dec_nonindex(O::NfOrd, p::IntegerUnion, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_dec_nonindex(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::IntegerUnion, degree_limit::Int = 0, lower_limit::Int = 0)
 
   K = nf(O)
   f = K.pol
@@ -485,12 +485,12 @@ function _prime_decomposition_type(fmodp)
 end
 
 @doc raw"""
-    prime_decomposition_type(O::NfOrd, p::Integer) -> Vector{Tuple{Int, Int}}
+    prime_decomposition_type(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) -> Vector{Tuple{Int, Int}}
 
 Returns an array of tuples whose length is the number of primes lying over $p$ and the $i$-th tuple
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
-function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
+function prime_decomposition_type(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::T) where T <: IntegerUnion
   if !is_defining_polynomial_nice(nf(O))
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end
@@ -510,9 +510,9 @@ function prime_decomposition_type(O::NfOrd, p::T) where T <: IntegerUnion
 end
 
 @doc raw"""
-    prime_ideals_up_to(O::NfOrd,
+    prime_ideals_up_to(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},
                        B::Int;
-                       degree_limit::Int = 0, index_divisors::Bool = true) -> Vector{NfOrdIdl}
+                       degree_limit::Int = 0, index_divisors::Bool = true) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Computes the prime ideals $\mathcal O$ with norm up to $B$.
 
@@ -520,12 +520,12 @@ If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
 If 'index_divisors' is set to false, only primes not dividing the index of the order will be computed.
 """
-function prime_ideals_up_to(O::NfOrd, B::Int;
+function prime_ideals_up_to(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int;
                             complete::Bool = false,
                             degree_limit::Int = 0, index_divisors::Bool = true)
 
   p = 1
-  r = NfOrdIdl[]
+  r = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   while p < B
     p = next_prime(p)
     if p > B
@@ -552,20 +552,20 @@ function prime_ideals_up_to(O::NfOrd, B::Int;
 end
 
 @doc raw"""
-    prime_ideals_over(O::NfOrd,
+    prime_ideals_over(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},
                        lp::AbstractVector{Int};
-                       degree_limit::Int = 0) -> Vector{NfOrdIdl}
+                       degree_limit::Int = 0) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
 
 If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 with $\deg(\mathfrak p) > k$ will be discarded.
 """
-function prime_ideals_over(O::NfOrd,
+function prime_ideals_over(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},
                            lp::AbstractArray{T};
                            degree_limit::Int = 0) where T <: IntegerUnion
   p = 1
-  r = NfOrdIdl[]
+  r = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for p in lp
     @vprint :ClassGroup 2 "decomposing $p ... (deg_lim $deg_lim)"
     li = prime_decomposition(O, p, degree_limit)
@@ -578,7 +578,7 @@ end
 
 
 @doc raw"""
-    prime_ideals_up_to(O::NfOrd,
+    prime_ideals_up_to(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},
                        B::Int;
                        complete::Bool = false,
                        degree_limit::Int = 0,
@@ -593,11 +593,11 @@ with $\deg(\mathfrak p) > k$ will be discarded.
 The function $F$ must be a function on prime numbers not dividing `bad` such that
 $F(p) = \deg(\mathfrak p)$ for all prime ideals $\mathfrak p$ lying above $p$.
 """
-function prime_ideals_up_to(O::NfOrd, B::Int, F::Function, bad::ZZRingElem = discriminant(O);
+function prime_ideals_up_to(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int, F::Function, bad::ZZRingElem = discriminant(O);
                             complete::Bool = false,
                             degree_limit::Int = 0)
   p = 1
-  r = NfOrdIdl[]
+  r = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   while p < B
     p = next_prime(p)
     if p > B
@@ -637,11 +637,11 @@ end
 
 #TODO: do sth. useful here!!!
 @doc raw"""
-    divides(A::NfOrdIdl, B::NfOrdIdl)
+    divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 Checks if $B$ divides $A$.
 """
-function divides(A::NfOrdIdl, B::NfOrdIdl)
+function divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert order(A) === order(B)
   minimum(A, copy = false) % minimum(B, copy = false) == 0 || return false
   if B.is_prime == 1 && has_2_elem(A) && !is_index_divisor(order(A), minimum(B, copy = false))
@@ -682,13 +682,13 @@ function divides(A::NfOrdIdl, B::NfOrdIdl)
   return (valuation(A, B) > 0)::Bool
 end
 
-function coprime_base(A::Vector{NfOrdIdl}, p::ZZRingElem)
+function coprime_base(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::ZZRingElem)
   #consider A^2 B and A B: if we do gcd with the minimum, we get twice AB
   #so the coprime base is AB
   #however using the p-part of the norm, the coprime basis becomes A, B...
   if iseven(p)
     lp = prime_decomposition(order(A[1]), 2)
-    Ap = NfOrdIdl[x[1] for x = lp if any(y-> divides(y, x[1]), A)]
+    Ap = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[x[1] for x = lp if any(y-> divides(y, x[1]), A)]
     a = remove(p, 2)[2]
     if !isone(a)
       Bp = coprime_base(A, a)
@@ -697,7 +697,7 @@ function coprime_base(A::Vector{NfOrdIdl}, p::ZZRingElem)
       return Ap
     end
   else
-    Ap = NfOrdIdl[]
+    Ap = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
     for x in A
       if minimum(x) % p == 0
         push!(Ap, gcd(x, p^valuation(norm(x), p)))
@@ -708,7 +708,7 @@ function coprime_base(A::Vector{NfOrdIdl}, p::ZZRingElem)
 end
 
 
-function _get_integer_in_ideal(I::NfOrdIdl)
+function _get_integer_in_ideal(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if has_minimum(I)
     return minimum(I)
   end
@@ -722,16 +722,16 @@ function _get_integer_in_ideal(I::NfOrdIdl)
 end
 
 @doc raw"""
-    coprime_base(A::Vector{NfOrdIdl}) -> Vector{NfOrdIdl}
-    coprime_base(A::Vector{NfOrdElem}) -> Vector{NfOrdIdl}
+    coprime_base(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+    coprime_base(A::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 A coprime base for the (principal) ideals in $A$, i.e. the returned array
 generated multiplicatively the same ideals as the input and are pairwise
 coprime.
 """
-function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
+function coprime_base(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; refine::Bool = false)
   if isempty(A)
-    return NfOrdIdl[]
+    return AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   end
   OK = order(A[1])
   if refine
@@ -760,10 +760,10 @@ function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
     a1 = collect(a2)
   end
   if isempty(a1)
-    return NfOrdIdl[]
+    return AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   end
   a = coprime_base(a1)
-  C = Vector{NfOrdIdl}()
+  C = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   for p = a
     if isone(p)
       continue
@@ -791,12 +791,12 @@ function coprime_base(A::Vector{NfOrdIdl}; refine::Bool = false)
   return C
 end
 
-function coprime_base(A::Vector{NfOrdElem})
+function coprime_base(A::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   O = parent(A[1])
-  return coprime_base(NfOrdIdl[ideal(O, x) for x = A])
+  return coprime_base(AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(O, x) for x = A])
 end
 
-function integral_split(A::NfOrdIdl)
+function integral_split(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return A, ideal(Order(A), ZZRingElem(1))
 end
 
@@ -808,7 +808,7 @@ end
 
 #TODO: factoring type??? (with unit)
 @doc raw"""
-    factor(A::NfOrdIdl) -> Dict{NfOrdIdl, Int}
+    factor(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
 
 Computes the prime ideal factorization $A$ as a dictionary, the keys being
 the prime ideal divisors:
@@ -862,11 +862,11 @@ function factor_dict(A::AbsNumFieldOrderIdeal)
   return lF
 end
 
-function factor_easy(I::NfOrdIdl)
+function factor_easy(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   OK = order(I)
   _assure_weakly_normal_presentation(I)
   factors = _prefactorization(I)
-  ideals = Dict{NfOrdIdl, Int}()
+  ideals = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for q in factors
     pp, r = Hecke._factors_trial_division(q)
     for p in pp
@@ -886,9 +886,9 @@ function factor_easy(I::NfOrdIdl)
       ideals[J] = 1
     end
   end
-  @hassert :NfOrd 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
-  @hassert :NfOrd 1 all(!iszero, values(ideals))
-  @hassert :NfOrd 1 is_pairwise_coprime(collect(keys(ideals)))
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 all(!iszero, values(ideals))
+  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_pairwise_coprime(collect(keys(ideals)))
   return ideals
 end
 
@@ -897,7 +897,7 @@ function is_squarefree(A::AbsNumFieldOrderIdeal)
   return all(isone, values(l))
 end
 
-function _prefactorization(I::NfOrdIdl)
+function _prefactorization(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert has_2_elem(I)
   if !is_defining_polynomial_nice(nf(I))
     return __prefactorization(I)
@@ -949,7 +949,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_prime_known(A::NfOrdIdl) -> Bool
+    is_prime_known(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Returns whether $A$ knows if it is prime.
 """
@@ -958,7 +958,7 @@ function is_prime_known(A::AbsNumFieldOrderIdeal)
 end
 
 @doc raw"""
-    is_prime(A::NfOrdIdl) -> Bool
+    is_prime(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Returns whether $A$ is a prime ideal.
 """
@@ -1024,22 +1024,22 @@ end
 ################################################################################
 
 mutable struct PrimeIdealsSet
-  order::NfOrd
+  order::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
   from::ZZRingElem
   to::ZZRingElem
   primes::PrimesSet{ZZRingElem}
   currentprime::ZZRingElem
   currentindex::Int
-  decomposition::Vector{Tuple{NfOrdIdl, Int}}
+  decomposition::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
   proof::Bool
   indexdivisors::Bool
   ramified::Bool
   iscoprimeto::Bool
-  coprimeto::NfOrdIdl
+  coprimeto::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   degreebound::Int
   unbound::Bool
 
-  function PrimeIdealsSet(O::NfOrd)
+  function PrimeIdealsSet(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
     z = new()
     z.order = O
     z.proof = false
@@ -1053,7 +1053,7 @@ mutable struct PrimeIdealsSet
 end
 
 @doc raw"""
-    PrimeIdealsSet(O::NfOrd, f, t; proof = false,
+    PrimeIdealsSet(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, f, t; proof = false,
                                    indexdivisors = true,
                                    ramified = true,
                                    degreebound = degree(O),
@@ -1071,7 +1071,7 @@ If $t=-1$, then the upper bound is infinite.
 If `coprimeto` is supplied, it must be either an integer, an element of $\mathcal O$,
 or a non-zero ideal of $\mathcal O$.
 """
-function PrimeIdealsSet(O::NfOrd, from::T, to::S;
+function PrimeIdealsSet(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, from::T, to::S;
                        proof::Bool = false,
                        indexdivisors::Bool = true,
                        ramified::Bool = true,
@@ -1093,9 +1093,9 @@ function PrimeIdealsSet(O::NfOrd, from::T, to::S;
   z.ramified = ramified
   z.degreebound = degreebound
   if !(coprimeto isa Bool)
-    if coprimeto isa NfOrdIdl
+    if coprimeto isa AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
       z.coprimeto = coprimeto
-    elseif coprimeto isa Union{Integer, ZZRingElem, NfOrdElem}
+    elseif coprimeto isa Union{Integer, ZZRingElem, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
       z.coprimeto = ideal(O, coprimeto)
     else
       error("Coprime argument of wrong type ($(typeof(coprimeto)))")
@@ -1223,7 +1223,7 @@ end
 #  return !S.unbound && pstate > S.to
 #end
 
-Base.eltype(::PrimeIdealsSet) = NfOrdIdl
+Base.eltype(::PrimeIdealsSet) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
 
@@ -1238,7 +1238,7 @@ Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
 ################################################################################
 
 #TODO: move to Arithmetic?
-function radical(A::NfOrdIdl)
+function radical(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   a = minimum(A)
   lp = factor(a).fac
   R = 1*order(A)
@@ -1252,15 +1252,15 @@ end
 # primary -> radical is prime, so this is necessary
 # in orders: prime -> maximal (or 0)
 # in general: radical is maximal -> primary
-function is_primary(A::NfOrdIdl)
+function is_primary(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return is_prime(radical(A))
 end
-is_maximal(A::NfOrdIdl) = (!iszero(A)) && is_prime(A)
+is_maximal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = (!iszero(A)) && is_prime(A)
 
-function primary_decomposition(A::NfOrdIdl)
+function primary_decomposition(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   a = minimum(A)
   lp = factor(a).fac
-  P = Tuple{NfOrdIdl, NfOrdIdl}[]
+  P = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[]
   for p = keys(lp)
     pp = prime_ideals_over(order(A), p)
     for x = pp
@@ -1284,7 +1284,7 @@ prime_ideals_over(O::AbsNumFieldOrder, p::Integer) = prime_ideals_over(O, ZZRing
 function prime_ideals_over(O::AbsNumFieldOrder, p::ZZRingElem)
   if is_maximal_known_and_maximal(O)
     lp = prime_decomposition(O, p)
-    return NfOrdIdl[x[1] for x in lp]
+    return AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[x[1] for x in lp]
   end
   M = maximal_order(O)
   lp = prime_decomposition(M, p)
@@ -1301,7 +1301,7 @@ end
 
 #P is a prime ideal in a order contained in O
 #Computes the set of prime ideals lying over P
-function prime_ideals_over(O::NfOrd, P::NfOrdIdl)
+function prime_ideals_over(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert is_prime(P)
   O1 = order(P)
   if O1 == O
@@ -1627,14 +1627,14 @@ end
 ################################################################################
 
 @doc raw"""
-    decomposition_group(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
+    decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
 
 Given a prime ideal $P$ in a normal number field $G$, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
 """
 
-function decomposition_group(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[],
+function decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[],
                              orderG::Int = degree(P)*ramification_index(P))
   @assert is_prime(P)
   OK = order(P)
@@ -1712,14 +1712,14 @@ function decomposition_group_easy(G, P)
 end
 
 @doc raw"""
-    decomposition_group(K::AbsSimpleNumField, P::NfOrdIdl, m::Map)
+    decomposition_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::Map)
                                                   -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the decomposition group of $P$ as a subgroup of
 the domain of `m`.
 """
-function decomposition_group(K::AbsSimpleNumField, P::NfOrdIdl, mG::Map)
+function decomposition_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, mG::Map)
   iner = decomposition_group(P)
   return sub(domain(mG), [mG\a for a in iner])
 end
@@ -1731,14 +1731,14 @@ end
 ################################################################################
 
 @doc raw"""
-    inertia_subgroup(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
+    inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
 
 Given a prime ideal $P$ in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
 """
 
-function inertia_subgroup(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[])
+function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[])
   @assert is_prime(P)
   O = order(P)
   K = nf(O)
@@ -1819,13 +1819,13 @@ function inertia_subgroup_easy(F, mF, G::Vector{NumFieldHom{AbsSimpleNumField, A
 end
 
 @doc raw"""
-    inertia_subgroup(K::AbsSimpleNumField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+    inertia_subgroup(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::Map) -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the inertia subgroup of $P$ as a subgroup of
 the domain of `m`.
 """
-function inertia_subgroup(K::AbsSimpleNumField, P::NfOrdIdl, mG::Map)
+function inertia_subgroup(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, mG::Map)
   iner = inertia_subgroup(P)
   return sub(domain(mG), [mG\a for a in iner])
 end
@@ -1836,7 +1836,7 @@ end
 #
 ################################################################################
 
-function ramification_group(P::NfOrdIdl, i::Int)
+function ramification_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, i::Int)
   if i == 0
     return inertia_subgroup(P)
   end
@@ -1854,13 +1854,13 @@ function ramification_group(P::NfOrdIdl, i::Int)
 end
 
 @doc raw"""
-    ramification_group(K::AbsSimpleNumField, P::NfOrdIdl, m::Map) -> Grp, GrpToGrp
+    ramification_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::Map) -> Grp, GrpToGrp
 
 Given a prime ideal $P$ of a number field $K$ and a map `m` return from
 `automorphism_group(K)`, return the ramification group of $P$ as a subgroup of
 the domain of `m`.
 """
-function ramification_group(K::AbsSimpleNumField, P::NfOrdIdl, i::Int, mG::Map)
+function ramification_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, i::Int, mG::Map)
   iner = ramification_group(P, i)
   return sub(domain(mG), [mG\a for a in iner])
 end

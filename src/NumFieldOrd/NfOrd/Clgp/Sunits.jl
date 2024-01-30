@@ -12,13 +12,13 @@ end
 #  saturate T|-d??
 
 @doc raw"""
-    sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$ modulo the units of the field.
 The map will return elements in factored form.
 """
-function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
+function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   #deal with trivial case somehow!!!
   @assert length(I) > 0
   O = order(I[1])
@@ -174,13 +174,13 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
 end
 
 @doc raw"""
-    sunit_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 The map will return elements in factored form.
 """
-function sunit_group_fac_elem(I::Vector{NfOrdIdl})
+function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   O = order(I[1])
   S, mS = sunit_mod_units_group_fac_elem(I)
   U, mU = unit_group_fac_elem(O)
@@ -234,12 +234,12 @@ function show(io::IO, mC::MapSUnitGrp)
 end
 
 @doc raw"""
-    sunit_group(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 """
-function sunit_group(I::Vector{NfOrdIdl})
+function sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   O = order(I[1])
   G, mG = sunit_group_fac_elem(I)
 

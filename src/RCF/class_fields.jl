@@ -40,11 +40,11 @@ function defining_modulus(CF::ClassField_pp)
 end
 
 function _modulus(mq::MapRayClassGrp)
-  return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
+  return mq.defining_modulus::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
 end
 
 function _modulus(mq::MapClassGrp)
-  return (ideal(order(codomain(mq)), 1), InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[])::Tuple{NfOrdIdl, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
+  return (ideal(order(codomain(mq)), 1), InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[])::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
 end
 
 ###############################################################################
@@ -366,7 +366,7 @@ function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Uni
 end
 
 @doc raw"""
-    decomposition_group(C::ClassField, p::[InfPlc | NfOrdIdl]) -> GrpAbFinGen
+    decomposition_group(C::ClassField, p::[InfPlc | AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}]) -> GrpAbFinGen
 
 Compute the decomposition group of any infinite place or prime ideal of the
 base field (ring) as a subgroup of the norm group.
@@ -384,7 +384,7 @@ function decomposition_group(C::ClassField, p::InfPlc)
   return C.quotientmap(preimage(CC.quotientmap, kernel(h)[1])[1])[1]
 end
 
-function decomposition_group(C::ClassField, p::NfOrdIdl)
+function decomposition_group(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert is_prime(p)
   @assert order(p) == base_ring(C)
   R, mR = norm_group(C)
@@ -410,12 +410,12 @@ function decomposition_group(C::ClassField, p::NfOrdIdl)
 end
 
 @doc raw"""
-    inertia_subgroup(C::ClassField, p::NfOrdIdl) -> GrpAbFinGen
+    inertia_subgroup(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> GrpAbFinGen
 
 Compute the inertia subgroup of any prime ideal of the
 base ring as a subgroup of the norm group.
 """
-function inertia_subgroup(C::ClassField, p::NfOrdIdl)
+function inertia_subgroup(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   #same as above, just the element p is missing...
   @assert is_prime(p)
   @assert order(p) == base_ring(C)
@@ -438,22 +438,22 @@ function inertia_subgroup(C::ClassField, p::NfOrdIdl)
 end
 
 @doc raw"""
-    decomposition_field(C::ClassField, p::[InfPlc | NfOrdIdl]) -> ClassField
+    decomposition_field(C::ClassField, p::[InfPlc | AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}]) -> ClassField
 
 Compute the decomposition field, ie. the field fixed by the decomposition group
 as a class field.
 """
-function decomposition_field(C::ClassField, p::NfOrdIdl)
+function decomposition_field(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return fixed_field(C, decomposition_group(C, p))
 end
 
 @doc raw"""
-    inertia_field(C::ClassField, p::NfOrdIdl) -> ClassField
+    inertia_field(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ClassField
 
 Compute the inertia field, ie. the field fixed by the decomposition group
 as a class field.
 """
-function inertia_field(C::ClassField, p::NfOrdIdl)
+function inertia_field(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return fixed_field(C, inertia_subgroup(C, p))
 end
 

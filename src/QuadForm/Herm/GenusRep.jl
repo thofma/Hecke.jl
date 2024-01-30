@@ -29,7 +29,7 @@ function _all_row_span(M)
 end
 
 @doc raw"""
-    smallest_neighbour_prime(L::HermLat) -> Bool, RelNumFieldOrderIdeal, Vector{NfOrdIdl}
+    smallest_neighbour_prime(L::HermLat) -> Bool, RelNumFieldOrderIdeal, Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Given a hermitian lattice `L`, return `def, P0, bad` such that:
 

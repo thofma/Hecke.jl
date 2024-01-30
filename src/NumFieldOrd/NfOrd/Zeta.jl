@@ -83,7 +83,7 @@ _max_power_in(a::Int, b::Int) = _max_power_in(ZZRingElem(a), b)
 ################################################################################
 
 # bounding the error
-function _approx_error_bf(O::NfOrd, Tc = BigFloat)
+function _approx_error_bf(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, Tc = BigFloat)
   return _approx_error_bf(discriminant(O), degree(O), Tc)
 end
 
@@ -183,7 +183,7 @@ end
   end
 
 # Computing the g_K(X) term of Belabas-Friedmann
-function _term_bf(O::NfOrd, B::Int, R::ArbField)
+function _term_bf(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int, R::ArbField)
 
   xx0 = B
 
@@ -272,7 +272,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
 end
 
 # Approximate the residue
-function _residue_approx_bf(O::NfOrd, error::Float64)
+function _residue_approx_bf(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, error::Float64)
   F = _approx_error_bf(O, BigFloat)
 
   # magic constant
@@ -335,13 +335,13 @@ end
 ################################################################################
 
 @doc raw"""
-    zeta_log_residue(O::NfOrd, error::Float64) -> ArbFieldElem
+    zeta_log_residue(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, error::Float64) -> ArbFieldElem
 
 Computes the residue of the zeta function of $\mathcal O$ at $1$.
 The output will be an element of type `ArbFieldElem` with radius less then
 `error`.
 """
-function zeta_log_residue(O::NfOrd, abs_error::Float64)
+function zeta_log_residue(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, abs_error::Float64)
   degree(O) == 1 && error("Number field must be of degree > 1")
   return _residue_approx_bf(O, abs_error)
 end

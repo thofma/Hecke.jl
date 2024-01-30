@@ -183,7 +183,7 @@ function _find_prime(L::RelNonSimpleNumField{AbsSimpleNumFieldElem})
   dL = numerator(discriminant(L, FlintQQ))
 
   n_attempts = min(degree(L), 10)
-  candidates = Vector{Tuple{NfOrdIdl, Int}}(undef, n_attempts)
+  candidates = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}(undef, n_attempts)
   i = 1
   pols = L.pol
   threshold = max(absolute_degree(L)^2, 2)

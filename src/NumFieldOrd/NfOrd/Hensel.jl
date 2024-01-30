@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfOrd/Hensel.jl : Hensel lifting for simple absolute number fields
+#  AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Hensel.jl : Hensel lifting for simple absolute number fields
 #
 # This file is part of Hecke.
 #
@@ -750,7 +750,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AbsSimpleNumField, bnd::Vector{Arb
   return ss
 end
 
-function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{ArbFieldElem})
+function _lifting_expo(p::Int, deg_p::Int, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, bnd::Vector{ArbFieldElem})
   # return _lifting_expo_using_logbound(p, deg_p, O, ArbFieldElem[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
@@ -786,7 +786,7 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{ArbFieldElem})
 end
 
 #identical to has_root - which one do we want?
-function is_power(a::NfOrdElem, n::Int)
+function is_power(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int)
   fl, r = is_power(nf(parent(a))(a), n, is_integral = true)
   return fl, parent(a)(r)
 end

@@ -95,7 +95,7 @@ end
 
 Returns the ideal $d*a$ where $d$ is the denominator of $a$.
 """
-function numerator(a::RelNumFieldOrderFractionalIdeal; copy::Bool = true) # copy for compatibility with NfOrdFracIdl (it only does something if isone(denominator(a)) here)
+function numerator(a::RelNumFieldOrderFractionalIdeal; copy::Bool = true) # copy for compatibility with AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} (it only does something if isone(denominator(a)) here)
   d = denominator(a)
   if isone(d)
     return ideal_type(order(a))(order(a), basis_pmatrix(a, copy = copy))
@@ -449,13 +449,13 @@ simplify(a::RelNumFieldOrderFractionalIdeal) = a
 #
 ################################################################################
 
-function mod(x::S, y::T) where {S <: Union{AbsSimpleNumFieldElem, NumFieldElem}, T <: Union{NfOrdFracIdl, RelNumFieldOrderFractionalIdeal}}
+function mod(x::S, y::T) where {S <: Union{AbsSimpleNumFieldElem, NumFieldElem}, T <: Union{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderFractionalIdeal}}
   K = parent(x)
   O = order(y)
   d = K(lcm(denominator(x, O), denominator(y)))
   dx = d*x
   dy = d*y
-  if T == NfOrdFracIdl
+  if T == AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
     dy = simplify(dy)
     dynum = numerator(dy)
   else

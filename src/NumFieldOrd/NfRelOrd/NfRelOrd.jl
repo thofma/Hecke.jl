@@ -277,7 +277,7 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, NfOrdFracIdl, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}})
+function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -301,7 +301,7 @@ function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, NfOr
   return nothing
 end
 
-function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, NfOrdFracIdl, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}})
+function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -468,11 +468,11 @@ end
 ################################################################################
 
 function Order(L::RelSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
-  return RelNumFieldOrder{AbsSimpleNumFieldElem, NfOrdFracIdl, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
+  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
 function Order(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
-  return RelNumFieldOrder{AbsSimpleNumFieldElem, NfOrdFracIdl, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
+  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
 
@@ -747,7 +747,7 @@ dedekind_poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumF
 
 #=
 @doc raw"""
-      poverorder(O::RelNumFieldOrder, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}) -> RelNumFieldOrder
+      poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) -> RelNumFieldOrder
 
 This function tries to find an order that is locally larger than $\mathcal O$
 at the prime $p$.
@@ -766,7 +766,7 @@ function poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumF
   end
 end
 
-function poverorder(O::RelNumFieldOrder{S, T, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, p::NfOrdIdl) where {S, T}
+function poverorder(O::RelNumFieldOrder{S, T, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {S, T}
   if is_equation_order(O)
     return overorder_polygons(O, p)
   end
@@ -784,7 +784,7 @@ end
 ################################################################################
 #=
 @doc raw"""
-      pmaximal_overorder(O::RelNumFieldOrder, p::Union{NfOrdIdl, RelNumFieldOrderIdeal}) -> RelNumFieldOrder
+      pmaximal_overorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) -> RelNumFieldOrder
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$.
 """
@@ -948,7 +948,7 @@ end
 #
 ################################################################################
 
-function relative_order(O::NfOrd, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
+function relative_order(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   L = codomain(m)
   Labs = domain(m)
   @assert nf(O) == Labs
@@ -992,7 +992,7 @@ end
 ################################################################################
 
 @doc raw"""
-    denominator(a::NumFieldElem, O::NfOrd) -> ZZRingElem
+    denominator(a::NumFieldElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
@@ -1185,7 +1185,7 @@ end
 ################################################################################
 
 
-function dedekind_test_composite(O::RelNumFieldOrder{U1, V, Z}, P::Union{RelNumFieldOrderIdeal, NfOrdIdl}) where {U1, V, Z <: RelSimpleNumFieldElem}
+function dedekind_test_composite(O::RelNumFieldOrder{U1, V, Z}, P::Union{RelNumFieldOrderIdeal, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) where {U1, V, Z <: RelSimpleNumFieldElem}
   !is_equation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
@@ -1333,7 +1333,7 @@ function maximal_order(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimple
   return OO
 end
 
-function overorder_polygons(O::RelNumFieldOrder{S, T, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, p::NfOrdIdl) where {S, T}
+function overorder_polygons(O::RelNumFieldOrder{S, T, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {S, T}
   @assert is_equation_order(O)
   K = nf(O)
   f = K.pol

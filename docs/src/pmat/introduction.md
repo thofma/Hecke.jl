@@ -45,8 +45,8 @@ into one in pseudo-hnf while maintaining the module.
 In general to create a `PMat` one has to specify a matrix and a vector of ideals:
 
 ```@docs
-pseudo_matrix(m::AbstractAlgebra.MatElem{AbsSimpleNumFieldElem}, c::Vector{NfOrdIdl})
-pseudo_matrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
+pseudo_matrix(m::AbstractAlgebra.MatElem{AbsSimpleNumFieldElem}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+pseudo_matrix(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldElem})
 ```
 (Those functions are also available as `pseudo_matrix`)
@@ -56,8 +56,8 @@ pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldElem})
 coefficient_ideals(M::PMat)
 matrix(M::PMat)
 base_ring(M::PMat)
-pseudo_hnf(P::PMat{AbsSimpleNumFieldElem, NfOrdFracIdl})
-pseudo_hnf_with_transform(P::PMat{AbsSimpleNumFieldElem, NfOrdFracIdl})
+pseudo_hnf(P::PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+pseudo_hnf_with_transform(P::PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 ```
 
 ## Examples

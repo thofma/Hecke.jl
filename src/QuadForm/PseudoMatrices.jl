@@ -160,11 +160,11 @@ end
 
 _module_scale_ideal(a::PMat, b::AbsNumFieldOrderIdeal) = _module_scale_ideal(b, a)
 
-function _module_scale_ideal(a::NfOrdFracIdl, b::PMat)
+function _module_scale_ideal(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::PMat)
   return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
-_module_scale_ideal(a::PMat, b::NfOrdFracIdl) = _module_scale_ideal(b, a)
+_module_scale_ideal(a::PMat, b::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::RelNumFieldOrderIdeal, b::PMat)
   return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
@@ -180,7 +180,7 @@ _module_scale_ideal(a::PMat, b::RelNumFieldOrderFractionalIdeal) = _module_scale
 
 *(a::AbsNumFieldOrderIdeal, b::PMat) = _module_scale_ideal(a, b)
 
-*(a::NfOrdFracIdl, b::PMat) = _module_scale_ideal(a, b)
+*(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::PMat) = _module_scale_ideal(a, b)
 
 *(a::RelNumFieldOrderIdeal, b::PMat) = _module_scale_ideal(a, b)
 
@@ -194,7 +194,7 @@ _module_scale_ideal(a::PMat, b::RelNumFieldOrderFractionalIdeal) = _module_scale
 
 # Given a pseudo matrix over K with row span M and p a prime ideal of K, find a
 # basis matrix of M \otimes OK_p.
-function _local_basis_matrix(a::PMat, p::NfOrdIdl)
+function _local_basis_matrix(a::PMat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert base_ring(a) == order(p)
   uni = uniformizer(p)
   z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
@@ -298,7 +298,7 @@ function _local_basis_submodule_matrix(a::PMat, p)
   return z
 end
 
-function _local_basis_supermodule_matrix(a::PMat, p::NfOrdIdl)
+function _local_basis_supermodule_matrix(a::PMat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   throw(NotImplemented())
 end
 

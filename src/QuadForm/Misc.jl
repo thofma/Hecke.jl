@@ -278,7 +278,7 @@ function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleN
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldHom}
+function image(S::T, A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {T <: Hecke.NumFieldHom}
   return S(numerator(A))//denominator(A)
 end
 
@@ -625,12 +625,12 @@ function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, p::ZZRingElem)
   return hilbert_symbol(a, bQ, p) == 1
 end
 
-function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, P::NfOrdIdl)
+function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   p = minimum(P)
   return is_local_norm(K, a, p)
 end
 
-function is_local_norm(K::AbsSimpleNumField, a::RingElement, P::NfOrdIdl)
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return is_local_norm(K, FlintQQ(a), P)
 end
 
@@ -858,7 +858,7 @@ function _find_quaternion_algebra(b, P, I)
     return one(K)
   end
 
-  #__P = convert(Vector{NfOrdIdl}, collect(keys(_P)))
+  #__P = convert(Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, collect(keys(_P)))
 
   found = false
   U, h = unit_group(R)

@@ -23,7 +23,7 @@ end
 #
 ################################################################################
 
-function _unit_group_init(O::NfOrd)
+function _unit_group_init(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   u = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   return u
 end

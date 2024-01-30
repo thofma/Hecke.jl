@@ -473,13 +473,13 @@ function _infinite_uniformizers(K::AbsSimpleNumField)
   D = Dict{embedding_type(K), AbsSimpleNumFieldElem}()
   for i = 1:length(p)
     D[p[i]] = r[i]
-    @hassert :NfOrd 1 sign(r[i], p[i]) == -1
-    #@hassert :NfOrd 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
+    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 sign(r[i], p[i]) == -1
+    #@hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
   end
   return D
 end
 
-function sign_map(O::NfOrd, p::Vector, lying_in::NfOrdIdl = 1 * O)
+function sign_map(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Vector, lying_in::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = 1 * O)
   K = nf(O)
 
   if isempty(p)

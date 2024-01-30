@@ -416,7 +416,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
+    is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Bool
 
 Return whether the spaces `L` and `M` are isometric over the completion at `p`.
 """
@@ -540,7 +540,7 @@ Return if the space `V` is isotropic and an isotropic vector.
 is_isotropic_with_vector(::AbstractSpace)
 
 @doc raw"""
-    is_isotropic(V::AbstractSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
+    is_isotropic(V::AbstractSpace, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, InfPlc}) -> Bool
 
 Given a space `V` and a place `p` in the fixed field `K` of `V`, return
 whether the completion of `V` at `p` is isotropic.
@@ -783,7 +783,7 @@ biproduct(x::Vararg{AbstractSpace}) = biproduct(collect(x))
 ################################################################################
 
 @doc raw"""
-    is_locally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbstractSpace -> Bool
+    is_locally_represented_by(U::T, V::T, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where T <: AbstractSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
 the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is

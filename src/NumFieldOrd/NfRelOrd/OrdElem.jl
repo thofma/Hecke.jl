@@ -64,7 +64,7 @@ function (O::RelNumFieldOrder)(a::Vector{T}, check::Bool = true) where T
   return s
 end
 
-(O::RelNumFieldOrder)(a::NfOrdElem, check::Bool = true) = O(nf(O)(a.elem_in_nf), check)
+(O::RelNumFieldOrder)(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool = true) = O(nf(O)(a.elem_in_nf), check)
 
 (O::RelNumFieldOrder)(a::IntegerUnion) = O(nf(O)(a))
 

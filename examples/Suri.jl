@@ -97,7 +97,7 @@ function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, g
   return e
 end
 
-function Hecke.denominator(P::Hecke.PMat, M::NfOrd)
+function Hecke.denominator(P::Hecke.PMat, M::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   l = ZZRingElem(1)
   p = matrix(P)
   for i=1:nrows(P)

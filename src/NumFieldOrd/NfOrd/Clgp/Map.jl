@@ -3,11 +3,11 @@
 ################################################################################
 
 @doc raw"""
-    power_class(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl
+    power_class(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Computes a (small) ideal in the same class as $A^e$.
 """
-function power_class(A::NfOrdIdl, e::ZZRingElem)
+function power_class(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem)
   if iszero(e)
     O = order(A)
     return ideal(O, 1)
@@ -37,11 +37,11 @@ function power_class(A::NfOrdIdl, e::ZZRingElem)
 end
 
 @doc raw"""
-    power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem}) -> NfOrdIdl
+    power_product_class(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, e::Vector{ZZRingElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
-function power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem})
+function power_product_class(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, e::Vector{ZZRingElem})
   i = 1
   while i <= length(e) && e[i] == 0
     i += 1
@@ -103,12 +103,12 @@ function class_group_disc_log(r::SRow{ZZRingElem}, c::ClassGrpCtx)
 end
 
 @doc raw"""
-    class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> AbsSimpleNumFieldElem, SRow{ZZRingElem}
+    class_group_ideal_relation(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, c::ClassGrpCtx) -> AbsSimpleNumFieldElem, SRow{ZZRingElem}
 
 Finds a number field element $\alpha$ such that $\alpha I$ factors over
 the factor base in $c$.
 """
-function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
+function class_group_ideal_relation(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, c::ClassGrpCtx)
   #easy case: I factors over the FB...
   # should be done for a factor base, not the class group ctx.
   # the ctx is needed for the small_elements business
@@ -211,7 +211,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
 end
 
-function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
+function class_group_disc_log(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, c::ClassGrpCtx)
   q, w = class_group_ideal_relation(I, c)
 #  J = simplify(q*I)
 #  H = prod([v<0?inv(c.FB.ideals[p])^Int(-v):c.FB.ideals[p]^Int(v) for (p,v) = w])
@@ -222,7 +222,7 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   return class_group_disc_log(w, c)
 end
 
-function change_base_ring(mC::MapClassGrp, O::NfOrd)
+function change_base_ring(mC::MapClassGrp, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   L = order(codomain(mC))
   mD = MapClassGrp()
   mD.header = MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), y -> mC.header.preimage(codomain(mC)(y)))
@@ -235,7 +235,7 @@ function show(io::IO, mC::MapClassGrp)
   show(IOContext(io, :compact => true), codomain(mC))
 end
 
-function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
+function class_group(c::ClassGrpCtx, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} = order(c); redo::Bool = false)
   if !redo
     if isdefined(c, :cl_map)
       mC = c.cl_map::MapClassGrp
@@ -251,7 +251,7 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
 
   local disclog
   let c = c, C = C
-    function disclog(x::NfOrdIdl)
+    function disclog(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
       if x.is_principal == 1
         return id(C)
       end
@@ -308,13 +308,13 @@ end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc raw"""
-    is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{AbsSimpleNumFieldElem, number_field}
+    is_principal_fac_elem(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Bool, FacElem{AbsSimpleNumFieldElem, number_field}
 
 Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
-function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function is_principal_fac_elem(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   J, a = reduce_ideal(I)
   @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   fl, x = is_principal_fac_elem(J)
@@ -324,11 +324,11 @@ function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 @doc raw"""
-    principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{AbsSimpleNumFieldElem, number_field}
+    principal_generator_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FacElem{AbsSimpleNumFieldElem, number_field}
 
 For a principal ideal $A$, find a generator in factored form.
 """
-function principal_generator_fac_elem(A::NfOrdIdl)
+function principal_generator_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   fl, e = is_principal_fac_elem(A)
   if !fl
     error("Ideal is not principal")
@@ -342,7 +342,7 @@ end
 
 For a principal ideal $I$ in factored form, find a generator in factored form.
 """
-function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function principal_generator_fac_elem(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   if isempty(I.fac)
     return FacElem(one(nf(order(base_ring(I)))))
   end
@@ -355,11 +355,11 @@ function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 @doc raw"""
-    principal_generator(A::NfOrdIdl) -> NfOrdElem
+    principal_generator(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 For a principal ideal $A$, find a generator.
 """
-function principal_generator(A::NfOrdIdl)
+function principal_generator(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   O = order(A)
   if is_maximal(O)
     fl, e = is_principal_fac_elem(A)
@@ -377,17 +377,17 @@ function principal_generator(A::NfOrdIdl)
 end
 
 @doc raw"""
-    is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{AbsSimpleNumFieldElem, number_field}
+    is_principal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, FacElem{AbsSimpleNumFieldElem, number_field}
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
-function is_principal_fac_elem(A::NfOrdIdl)
-  return _isprincipal_fac_elem(A::NfOrdIdl, Val{false})
+function is_principal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  return _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Val{false})
 end
 
-function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) where {U}
+function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, support::Type{Val{U}} = Val{false}) where {U}
   # If support === Val{true}, also compute the support of the factored element.
   # (This is not the same as the support of the ideal A!)
   if A.is_principal == 1
@@ -396,7 +396,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
         return true, A.princ_gen_fac_elem
       else
         #a = A.princ_gen_fac_elem
-        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
       end
     else
       if isdefined(A, :princ_gen)
@@ -406,7 +406,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
       if support === Val{false}
         return true, a
       else
-        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
       end
     end
   end
@@ -416,7 +416,7 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
     if support === Val{false}
       return false, FacElem(one(nf(O)))
     else
-      return false, FacElem(one(nf(O))), Dict{NfOrdIdl, ZZRingElem}()
+      return false, FacElem(one(nf(O))), Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
     end
   end
   c = get_attribute(O, :ClassGrpCtx)
@@ -493,13 +493,13 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 end
 
 @doc raw"""
-    is_principal(A::NfOrdIdl) -> Bool, NfOrdElem
-    is_principal(A::NfOrdFracIdl) -> Bool, NfOrdElem
+    is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    is_principal(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 """
-function is_principal(A::NfOrdIdl)
+function is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if A.is_principal == 1 && isdefined(A, :princ_gen)
     return true, A.princ_gen
   end
@@ -522,7 +522,7 @@ function is_principal(A::NfOrdIdl)
   return fl, ev
 end
 
-function is_principal(A::NfOrdFracIdl)
+function is_principal(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   O = order(A)
   if !is_maximal(O)
     fl, a = is_principal_non_maximal(numerator(A, copy = false))
@@ -657,24 +657,24 @@ end
 ################################################################################
 
 @doc raw"""
-    find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m)) -> MapClassGrp
+    find_coprime_representatives(mC::MapClassGrp, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} = factor(m)) -> MapClassGrp
 
 Returns a class group map such that the representatives for every classes are coprime to $m$.
 $lp$ is the factorization of $m$.
 """
-function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
+function find_coprime_representatives(mC::MapClassGrp, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} = factor(m))
   C = domain(mC)
   O = order(m)
   K = nf(O)
 
-  ideals = NfOrdIdl[first(keys(mC.princ_gens[i][1].fac)) for i = 1:ngens(C)]
+  ideals = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[first(keys(mC.princ_gens[i][1].fac)) for i = 1:ngens(C)]
 
   L, el = find_coprime_representatives(ideals, m, lp)
 
   local exp
   let L = L, C = C
     function exp(a::GrpAbFinGenElem)
-      e = Dict{NfOrdIdl,ZZRingElem}()
+      e = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},ZZRingElem}()
       for i = 1:ngens(C)
         if !iszero(a[i])
           e[L[i]] = a[i]
@@ -691,16 +691,16 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
 
 end
 @doc raw"""
-    find_coprime_representatives(ideals::Vector{nfOrdIdl}, m::NfOrdIdl) -> Vector{NfOrdIdl}, Vector{AbsSimpleNumFieldElem}
+    find_coprime_representatives(ideals::Vector{nfOrdIdl}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{AbsSimpleNumFieldElem}
 
 Returns a vector v of ideals and elements el coprime to m such that ideals[i] = el[i]*v[i].
 """
-function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
+function find_coprime_representatives(ideals::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} = factor(m))
 
   OK = order(m)
   K = nf(OK)
 
-  L = Vector{NfOrdIdl}(undef, length(ideals))
+  L = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, length(ideals))
   el = Vector{AbsSimpleNumFieldElem}(undef, length(ideals))
   ppp = 1.0
   for (p, v) in lp
@@ -725,7 +725,7 @@ function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp:
 
 end
 
-function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int})
+function coprime_deterministic(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int})
   g, ng = ppio(minimum(a, copy = false), minimum(m, copy = false))
   @assert !isone(g)
   primes = Tuple{ZZRingElem, AbsSimpleNumFieldElem}[]
@@ -779,7 +779,7 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
   return I.num, res*I.den
 end
 
-function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
+function probabilistic_coprime(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   O = order(a)
   K = nf(O)
   J = inv(a)
@@ -826,6 +826,6 @@ end
 #
 ################################################################################
 
-function is_principal_with_data(I::Union{NfOrdIdl, NfOrdFracIdl})
+function is_principal_with_data(I::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   return is_principal(I)
 end

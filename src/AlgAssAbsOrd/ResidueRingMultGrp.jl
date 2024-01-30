@@ -56,7 +56,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
   a = ideal(Q)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap{NfOrd, NfOrdIdl, NfOrdElem}}}()
+  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     ai = _as_ideal_of_number_field(a, AtoK)
@@ -258,7 +258,7 @@ end
 #
 ################################################################################
 
-# Much of this is taken from the implementation in NfOrd/ResidueRingMultGrp.jl
+# Much of this is taken from the implementation in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/ResidueRingMultGrp.jl
 
 # Computes (1 + p)/(1 + q) where q is a p-primary ideal (in a non-maximal order)
 function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)

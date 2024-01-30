@@ -191,7 +191,7 @@ function is_isometric(L::HermSpace, M::HermSpace, p::ZZRingElem)
   return _isisometric(L, M, p)
 end
 
-function is_isometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+function is_isometric(L::HermSpace, M::HermSpace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return _isisometric(L, M, p)
 end
 
@@ -292,7 +292,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_locally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
+    is_locally_hyperbolic(V::Hermspace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the completion of the hermitian space `V` over $E/K$ at the prime
 ideal `p` of $\mathcal O_K$ is hyperbolic.

@@ -48,13 +48,13 @@
 
 @deprecate ideal(O::RelNumFieldOrder{T, S, U}, M::PMat{T, S}, check::Bool, M_in_hnf::Bool = false) where {T, S, U} ideal(O, M; check, M_in_hnf)
 
-@deprecate ideal(O::RelNumFieldOrder{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool) where {T, S} ideal(O, x, y, a, b; check)
+@deprecate ideal(O::RelNumFieldOrder{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool) where {T, S} ideal(O, x, y, a, b; check)
 
 @deprecate ideal(O::RelNumFieldOrder{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::RelNumFieldOrderIdeal, b::RelNumFieldOrderIdeal, check::Bool) where {T, S} ideal(O, x, y, a, b; check)
 
 @deprecate ideal(O::RelNumFieldOrder{T, S}, M::Generic.Mat{T}, check::Bool) where {T, S} ideal(O, M; check)
 
-@deprecate ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool) ideal(O, a; check)
+@deprecate ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool) ideal(O, a; check)
 
 @deprecate ideal(O::RelNumFieldOrder, a::RelNumFieldOrderIdeal, check::Bool) ideal(O, a; check)
 
@@ -78,9 +78,9 @@
 
 @deprecate factor(f::ZZPolyRingElem, K::AbsSimpleNumField) factor(K, f)
 
-@deprecate factor(a::AbsSimpleNumFieldElem, I::NfOrdIdlSet) factor(I, a)
+@deprecate factor(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}) factor(I, a)
 
-@deprecate factor(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::NfOrdIdlSet) factor(I, a)
+@deprecate factor(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}) factor(I, a)
 
 @deprecate factor(a::Generic.RationalFunctionFieldElem{T}, R::S) where {T, S<:PolyRing{T}} factor(R, a)
 
@@ -96,7 +96,7 @@
 
 @deprecate factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...) factor(R, f, abs_tol, initial_prec...)
 
-@deprecate factor_coprime(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::NfOrdIdlSet; refine::Bool = false) factor_coprime(I, a, refine = refine)
+@deprecate factor_coprime(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}; refine::Bool = false) factor_coprime(I, a, refine = refine)
 
 @deprecate roots(f::QQPolyRingElem, K::AbsSimpleNumField; kw...) roots(K, f; kw...)
 @deprecate roots(f::ZZPolyRingElem, K::AbsSimpleNumField; kw...) roots(K, f; kw...)

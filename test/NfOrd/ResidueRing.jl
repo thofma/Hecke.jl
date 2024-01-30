@@ -12,7 +12,7 @@ end
   K,  a = number_field(x,"a");
   O = maximal_order(K)
   m0 = O(9)*O
-  Q = NfOrdQuoRing(O, m0)
+  Q = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(O, m0)
 
   for f in (rand(Q), rand(rng, Q))
     @test f isa elem_type(Q)

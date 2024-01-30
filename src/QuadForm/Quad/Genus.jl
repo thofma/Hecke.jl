@@ -945,7 +945,7 @@ function Base.:(==)(G1::QuadLocalGenus, G2::QuadLocalGenus)
   return true
 end
 
-function is_locally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function is_locally_isometric(L::QuadLat, M::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   fl = genus(L, p) == genus(M, p)
   #@assert fl == is_locally_isometric_kirschmer(L, M, p)
   return fl
@@ -1189,7 +1189,7 @@ end
 
 # TODO: I have to redo this
 
-function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
+function _genus_symbol_kirschmer(L::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; uniformizer = zero(order(p)))
   O = order(p)
   nf(O) != base_field(L) && error("Prime ideal must be an ideal of the base field of the lattice")
   # If you pull from cache, you might have to adjust the symbol according
