@@ -175,51 +175,115 @@ function show(io::IO, A::GrpAbFinGen)
   end
 end
 
-function show_hom(io::IO, G)#::GrpAbFinGen)
+function show(io::IO, ::MIME"text/plain", A::GrpAbFinGen)
+  @show_name(io, A)
+  @show_special(io, MIME"text/plain"(), A)
+
+  if is_snf(A)
+    show_snf(io, MIME"text/plain"(), A)
+  else
+    show_gen(io, MIME"text/plain"(), A)
+  end
+end
+
+function show_hom(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :hom)
   D === nothing && error("only for hom")
-  print(io, "hom of ")
-  print(IOContext(io, :compact => true), D)
+  io = pretty(io)
+  if get(io, :supercompact, false)
+    print(io, LowercaseOff(), "Hom of abelian groups")
+  else
+    print(io, LowercaseOff(), "Hom(")
+    print(IOContext(io, :supercompact => true), D[1])
+    print(io, ", ")
+    print(IOContext(io, :supercompact => true), D[2])
+    print(io, ")")
+  end
 end
 
-function show_direct_product(io::IO, G)#::GrpAbFinGen)
+show_hom(io::IO, ::MIME"text/plain", G::GrpAbFinGen) = show_hom(io, G)
+
+function show_direct_product(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct products")
-  print(io, "direct product of ")
-  show(IOContext(io, :compact => true), D)
+  if get(io, :supercompact, false)
+    print(io, "Direct product of abelian groups")
+  else
+    print(io, "Direct product of ", ItemQuantity(length(D), "abelian group"))
+  end
 end
 
-function show_direct_sum(io::IO, G)#::GrpAbFinGen)
+function show_direct_product(io::IO, ::MIME"text/plain", G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("only for direct products")
+  io = pretty(io)
+  print(io, "Direct product of")
+  for G in D
+    print(io, "\n", Indent(), G, Dedent())
+  end
+end
+
+function show_direct_sum(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct sums")
-  print(io, "direct sum of ")
-  show(IOContext(io, :compact => true), D)
+  if get(io, :supercompact, false)
+    print(io, "Direct sum of abelian groups")
+  else
+    print(io, "Direct sum of ", ItemQuantity(length(D), "abelian group"))
+  end
 end
 
+function show_direct_sum(io::IO, ::MIME"text/plain", G::GrpAbFinGen)
+  D = get_attribute(G, :direct_product)
+  D === nothing && error("only for direct sums")
+  io = pretty(io)
+  print(io, "Direct sum of")
+  for G in D
+    print(io, "\n", Indent(), G, Dedent())
+  end
+end
 
-function show_tensor_product(io::IO, G)#::GrpAbFinGen)
+function show_tensor_product(io::IO, G::GrpAbFinGen)
   D = get_attribute(G, :tensor_product)
   D === nothing && error("only for tensor products")
-  print(io, "tensor product of ")
-  show(IOContext(io, :compact => true), D)
+  if get(io, :supercompact, false)
+    print(io, "Tensor product of abelian groups")
+  else
+    print(io, "Tensor product of ", ItemQuantity(length(D), "abelian group"))
+  end
+end
+
+function show_tensor_product(io::IO, ::MIME"text/plain", G)#::GrpAbFinGen)
+  D = get_attribute(G, :tensor_product)
+  D === nothing && error("only for tensor products")
+  io = pretty(io)
+  print(io, "Tensor product of")
+  for G in D
+    print(io, "\n", Indent(), G, Dedent())
+  end
+end
+
+function show_gen(io::IO, ::MIME"text/plain", A::GrpAbFinGen)
+  io = pretty(io)
+  println(io, "Finitely generated abelian group")
+  if isdefined(A, :snf_map)
+    println(io, Indent(), "isomorphic to ", domain(A.snf_map), Dedent())
+  end
+  println(io, Indent(), "with ", ItemQuantity(ncols(rels(A)), "generator"), " and ", ItemQuantity(nrows(rels(A)), "relation"), " and relation matrix")
+  show(io, MIME"text/plain"(), rels(A))
+  print(io, Dedent())
 end
 
 function show_gen(io::IO, A::GrpAbFinGen)
-  print(io, "(General) abelian group with relation matrix\n$(A.rels)")
-  if isdefined(A, :snf_map)
-    print(io, "\nwith structure of ", domain(A.snf_map))
+  if get(io, :supercompact, false)
+    print(io, "Finitely generated abelian group")
+  else
+    print(io, "Finitely generated abelian group with ", ItemQuantity(ncols(rels(A)), "generator"), " and ", ItemQuantity(nrows(rels(A)), "relation"))
   end
 end
 
-function show_snf(io::IO, A::GrpAbFinGen)
-  io = pretty(io)
-  if get(io, :compact, false)
-    print(io, "Abelian group with structure: ")
-  else
-    print(io, LowercaseOff(), "GrpAb: ")
-  end
-  show_snf_structure(io, A)
-end
+show_snf(io::IO, ::MIME"text/plain", A::GrpAbFinGen) = show_snf_structure(io, A)
+show_snf(io::IO, A::GrpAbFinGen) = show_snf_structure(io, A)
 
 function show_snf_structure(io::IO, A::GrpAbFinGen, mul = "x")
   @assert is_snf(A)
@@ -1534,12 +1598,12 @@ coprime to `p`.
 # Examples
 ```jldoctest
 julia> A = abelian_group(ZZRingElem[2, 6, 30])
-GrpAb: Z/2 x Z/6 x Z/30
+Z/2 x Z/6 x Z/30
 
 julia> H, j = sylow_subgroup(A, 2);
 
 julia> H
-GrpAb: (Z/2)^3
+(Z/2)^3
 
 julia> divexact(order(A), order(H))
 45

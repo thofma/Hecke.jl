@@ -315,7 +315,7 @@ julia> R = rescale(root_lattice(:D,4),2);
 julia> T = discriminant_group(R);
 
 julia> A = abelian_group(T)
-GrpAb: (Z/2)^2 x (Z/4)^2
+(Z/2)^2 x (Z/4)^2
 
 julia> a = rand(A);
 
@@ -498,7 +498,7 @@ julia> R = rescale(root_lattice(:D,4),2);
 julia> D = discriminant_group(R);
 
 julia> A = abelian_group(D)
-GrpAb: (Z/2)^2 x (Z/4)^2
+(Z/2)^2 x (Z/4)^2
 
 julia> d = D[1]
 Element
