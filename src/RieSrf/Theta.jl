@@ -213,7 +213,7 @@ function siegel_reduction(tau::acb_mat)
 
     short = 1
     for i in (1 : g)
-      if norm(Tt[:, short]) > norm(Tt[:, i])
+      if norm(Tt[:, short:short]) > norm(Tt[:, i:i])
         short = i
       end
     end

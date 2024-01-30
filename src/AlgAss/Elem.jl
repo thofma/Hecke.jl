@@ -279,9 +279,11 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, ZZRingEle
     return d
   end
 
+  ccoeffs = coefficients(c, copy = false)
+
   bfmpq = QQFieldElem(b, 1)
   for i = 1:dim(parent(a))
-    c.coeffs[i] = mul!(coefficients(c, copy = false)[i], coefficients(a, copy = false)[i], bfmpq)
+    ccoeffs[i] = mul!(ccoeffs[i], coefficients(a, copy = false)[i], bfmpq)
   end
 
   if c isa AlgMatElem
