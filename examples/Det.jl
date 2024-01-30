@@ -1,5 +1,5 @@
 #=
-    Copyright (C) 2023, Claus Fieker, John Abbott
+    Copyright (C) 2023-24, Claus Fieker, John Abbott
 =#
 
 module Det
@@ -25,14 +25,55 @@ function rand_mat(n::Int, U::AbstractArray=1:10)
   return C
 end
 
-#applies n unimodular transformations (add scaled row/col)
-function perturb!(A, n::Int = 100, c::AbstractRange = -10:10)
+function rand_hnf(n::Int, U::AbstractArray=1:10)
+  C = zero_matrix(ZZ, n, n)
   for i=1:n
+    d = rand(U)
+    C[i,i] = d
+    for j=1:i-1
+      if iszero(d)
+        C[j,i] = rand(U)
+      else
+        C[j,i] = rand(0:d-1)
+      end
+    end
+  end
+  return C
+end
+
+function graeffe(f::PolyElem)
+#  f = f*f(-gen(parent(f)))
+#  return parent(f)([coeff(f, 2*i) for i=0:div(degree(f), 2)])
+   f_e = parent(f)([coeff(f, 2*i) for i=0:div(degree(f), 2)])
+   f_o = parent(f)([coeff(f, 2*i+1) for i=0:div(degree(f), 2)])
+   return (-1)^degree(f)*(f_e^2-shift_left(f_o^2, 1))
+end
+
+
+#applies n unimodular transformations (add scaled row/col)
+function perturb!(A, n::Int = 100, c::AbstractRange = -10:10; side::Symbol = :both)
+  local rnd::Function
+  if side == :left
+    rnd = function()
+      true
+    end
+  elseif side == :right
+    rnd = function()
+      false
+    end
+  elseif side == :both
+    rnd = function()
+      rand(0:1) == 1
+    end
+  else
+    error("side has to be :right, :left or :both")
+  end
+  for i=1:n 
     x = rand(c)
     while iszero(x)
       x = rand(c)
     end
-    if rand(0:1) == 1
+    if rnd() 
       k = rand(1:nrows(A))
       l = rand(1:nrows(A))
       while l == k
@@ -260,14 +301,14 @@ function change_rns!(RE::Vector{Matrix{Float64}}, p::Vector{Int}, q::Vector{Int}
           # possibly: do an induce_crt_env where one can push data in
     x = matrix(ZZ, map(x->ZZ(Int(x)), B[1]))
     P = ZZ(q[1])
-    y = _map_entries(GF(3, cached = false), size(B[1], 1), size(B[1], 2))
+    y = _map_entries(Native.GF(3, cached = false), size(B[1], 1), size(B[1], 2))
     for i=2:length(B)
       y.view_parent[1] .= map(Base.rint_llvm, reshape(B[i], :))
       change_prime(y, UInt(q[i]))
       induce_crt!(x::ZZMatrix, P::ZZRingElem, y::fpMatrix, 1; signed = true)
     end
     for i=1:length(p)
-      map_entries!(y, GF(p[i], cached = false), x)
+      map_entries!(y, Native.GF(p[i], cached = false), x)
       if length(RE) < i
         push!(RE, reshape(map(Float64, y.view_parent[1]), size(B[1])))
       else
@@ -359,7 +400,7 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   Xp = Int[]
   @time while nbits(m) < e
     p = next_prime(p);
-    ZZmodP = GF(p, cached = false);
+    ZZmodP = Native.GF(p, cached = false);
     MatModP = map_entries(ZZmodP, A)
     B00 = inv_strassen(MatModP)
     push!(Xp, p)
@@ -376,7 +417,7 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   while nbits(Y) < Int(1+ceil(log2(n)+EntrySize))
     p = next_prime(p)
     push!(Yp, p)
-    k = GF(p, cached = false)
+    k = Native.GF(p, cached = false)
     push!(Ap, map(Float64, lift(map_entries(k, A))).entries)
     push!(m_inv, inv(k(m)))
     Nemo.mul!(Y, Y, p)
@@ -467,7 +508,7 @@ function UniCertZ_CRT(A::ZZMatrix)
   m = ZZ(1); p = 2^29;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
   @time while (nbits(m) < e)
     p = next_prime(p);
-    ZZmodP = GF(p, cached = false);
+    ZZmodP = Native.GF(p, cached = false);
     MatModP = map_entries(ZZmodP, A)
     B00 = inv_strassen(MatModP)
     induce_crt!(B0,m, B00,p, signed = true);  #  also updates:  m = m*p;
@@ -587,7 +628,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     end
     @show :solving
     @time TS, d = dixon_solve(D, b)
-    @assert D*TS == d*b
+    @assert A*TS == d*b
     for i=1:length(T)
       TS = T[i]*TS
     end
@@ -621,6 +662,9 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     push!(T, T1)
     @show :solve
     @time AT = Strassen.AbstractAlgebra._solve_triu(T1, AT)
+    @assert _AT*T1 == AT
+    @show maximum(nbits, _AT), maximum(nbits, T1), maximum(nbits, AT)
+    AT = _AT
 #    @show nbits(prod_p), nbits(d1)
 #    @show nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)))
     if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
@@ -785,7 +829,7 @@ function dixon_init(A::ZZMatrix, B::ZZMatrix)
   _N = ZZ()
   _D = ZZ()
   ccall((:fmpz_mat_solve_bound, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZMatrix}, Ref{ZZMatrix}), _N, _D, A, B)
-  Ainv = zero_matrix(GF(2, cached = false), n, n)
+  Ainv = zero_matrix(Native.GF(2, cached = false), n, n)
   p = ccall((:fmpz_mat_find_good_prime_and_invert, Nemo.libflint), UInt, (Ref{fpMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}), Ainv, A, _D)
   @assert p != 0
   D.p = p
@@ -892,7 +936,7 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
     sub!(d, d, D.Ay)
     divexact!(d, d, ZZ(D.p))
   end
-  fl, num, den = ratrec(D.x, ppow)
+  fl, num, den = induce_rational_reconstruction(D.x, ppow)
 
   @assert fl
 #  @time @assert D.A*num == den*B
