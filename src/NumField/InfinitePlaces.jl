@@ -310,12 +310,12 @@ end
 #In this way, (f\circ g)(P)= f(g(P)), otherwise it would fail.
 
 @doc raw"""
-    induce_image(m::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc) -> InfPlc
+    induce_image(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc) -> InfPlc
 
 Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
 this is unique.
 """
-function induce_image(m::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc)
+function induce_image(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc)
   return infinite_place(first(extend(_embedding(P), m)))
 end
 

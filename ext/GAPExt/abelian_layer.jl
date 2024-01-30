@@ -50,7 +50,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
       E.gen_index = QQFieldElem(1)
       E.disc = discriminant(E)
       set_attribute!(x[1], :maximal_order => E)
-      auts = Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, 2)
+      auts = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, 2)
       auts[1] = hom(x[1], x[1], gen(x[1]), check = false)
       auts[2] = x[2][1]
       Hecke.set_automorphisms(x[1], auts)
@@ -81,7 +81,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
     K, auts = _relative_to_absoluteQQ(x[1], x[2])
     if length(gtype) == 1
       #If the group is cyclic, I prefer to have a generator!
-      new_auts = Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, 1)
+      new_auts = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, 1)
       new_auts[1] = auts[1]
       for j = 2:length(auts)
         new_auts[1] *= auts[j]
@@ -288,7 +288,7 @@ end
 #
 ################################################################################
 
-function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, grp_to_be_checked::Dict{Int, GAP.GapObj}, target_group::GAP.GapObj)
+function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, grp_to_be_checked::Dict{Int, GAP.GapObj}, target_group::GAP.GapObj)
 
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
@@ -373,7 +373,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
 
 end
 
-function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, grp_to_be_checked::GAP.GapObj, right_grp)
+function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, grp_to_be_checked::GAP.GapObj, right_grp)
 
   use_brauer = true
   it = findall(right_grp)
@@ -404,7 +404,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   return right_grp
 end
 
-function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}) where S where T
+function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) where S where T
   if length(resul) == 1
     return resul[1].A, resul[1].AbsAutGrpA
   end
@@ -455,7 +455,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{Num
 
 end
 
-function set_up_cycl_ext(K::AbsSimpleNumField, n::Int, autK::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function set_up_cycl_ext(K::AbsSimpleNumField, n::Int, autK::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   fac = factor(n)
   for (p, v) in fac
     e = Int(p)^v
@@ -606,7 +606,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
 end
 
 
-function translate_extensions(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, class_fields, new_class_fields, ctxK, it, ab_invariants::Vector{Int})
+function translate_extensions(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, class_fields, new_class_fields, ctxK, it, ab_invariants::Vector{Int})
 
   to_be_done = Int[]
   L = domain(mL)
@@ -760,7 +760,7 @@ function create_sub(ss, iso, PermGAP, auts, K)
     el = lS1[j]
     inds[j] = findfirst(x -> x == el, PermGAP)
   end
-  mL = Hecke.fixed_field(K, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[auts[i] for i in inds])[2]
+  mL = Hecke.fixed_field(K, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[auts[i] for i in inds])[2]
   return mL
 end
 
@@ -794,7 +794,7 @@ function translate_class_field_down(subfields, class_fields, it, ab_invariants)
   new_class_fields = similar(class_fields)
   #Now, I translate the fields over the subfields.
   to_be_done = Int[i for i in it]
-  created_subfields = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[]
+  created_subfields = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
   K = base_field(class_fields[to_be_done[1]])
   OK = maximal_order(K)
   ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[to_be_done[1]]))
@@ -823,7 +823,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       mL = subfields[indsubf]
     end
     L = domain(mL)
-    D = Dict{Int, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}()
+    D = Dict{Int, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}()
     for j = 1:length(new_class_fields[i].cyc)
       d = degree(new_class_fields[i].cyc[j])
       if !haskey(D, d)

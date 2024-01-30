@@ -135,7 +135,7 @@ function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool =
 end
 
 function _get_autos_from_ctx(ctx::ClassGrpCtx)
-  return ctx.aut_grp::Vector{Tuple{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, Perm{Int}}}
+  return ctx.aut_grp::Vector{Tuple{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Perm{Int}}}
 end
 
 ################################################################################

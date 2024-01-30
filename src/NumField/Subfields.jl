@@ -258,7 +258,7 @@ end
 @doc raw"""
     fixed_field(K::SimpleNumField,
                 sigma::Map;
-                simplify::Bool = true) -> number_field, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+                simplify::Bool = true) -> number_field, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Given a number field $K$ and an automorphism $\sigma$ of $K$, this function
 returns the fixed field of $\sigma$ as a pair $(L, i)$ consisting of a number
@@ -267,12 +267,12 @@ field $L$ and an embedding of $L$ into $K$.
 By default, the function tries to find a small defining polynomial of $L$. This
 can be disabled by setting `simplify = false`.
 """
-function fixed_field(K::SimpleNumField, sigma::T; simplify::Bool = true) where {T <: NumFielHom}
+function fixed_field(K::SimpleNumField, sigma::T; simplify::Bool = true) where {T <: NumFieldHom}
   return fixed_field(K, T[sigma], simplify = simplify)
 end
 
 #@doc raw"""
-#    fixed_field(K::SimpleNumField, A::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}) -> number_field, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+#    fixed_field(K::SimpleNumField, A::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> number_field, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 #
 #Given a number field $K$ and a set $A$ of automorphisms of $K$, this function
 #returns the fixed field of $A$ as a pair $(L, i)$ consisting of a number field
@@ -281,7 +281,7 @@ end
 #By default, the function tries to find a small defining polynomial of $L$. This
 #can be disabled by setting `simplify = false`.
 #"""
-function fixed_field(K::AbsSimpleNumField, A::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}; simplify::Bool = true)
+function fixed_field(K::AbsSimpleNumField, A::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}; simplify::Bool = true)
 
   autos = small_generating_set(A)
   if length(autos) == 0
@@ -356,7 +356,7 @@ function fixed_field(K::AbsSimpleNumField, A::Vector{NumFielHom{AbsSimpleNumFiel
 end
 
 
-function fixed_field(K::RelSimpleNumField, A::Vector{T}; simplify::Bool = true) where {T <: NumFielHom}
+function fixed_field(K::RelSimpleNumField, A::Vector{T}; simplify::Bool = true) where {T <: NumFieldHom}
   autos = A
 
     # Everything is fixed by nothing :)
@@ -406,7 +406,7 @@ function fixed_field(K::RelSimpleNumField, A::Vector{T}; simplify::Bool = true) 
 end
 
 
-function fixed_field1(K::AbsSimpleNumField, auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function fixed_field1(K::AbsSimpleNumField, auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 
 	auts_new = small_generating_set(auts)
   orderG = _order(auts)
@@ -485,7 +485,7 @@ end
 #
 ################################################################################
 
-function fixed_field(K::AbsSimpleNumField, auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, ::Type{RelSimpleNumField{AbsSimpleNumFieldElem}}; simplify_subfield::Bool = true)
+function fixed_field(K::AbsSimpleNumField, auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, ::Type{RelSimpleNumField{AbsSimpleNumFieldElem}}; simplify_subfield::Bool = true)
   F, mF = fixed_field(K, auts)
   if simplify_subfield
     F, mF1 = simplify(F, cached = false)

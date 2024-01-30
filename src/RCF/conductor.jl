@@ -792,7 +792,7 @@ function defining_modulus(mC::MapClassGrp)
   return I, lp
 end
 
-function norm_group(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Union{MapRayClassGrp, MapClassGrp}, expected_index::Int = 1)
+function norm_group(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Union{MapRayClassGrp, MapClassGrp}, expected_index::Int = 1)
 
   K = domain(mL)
   L = codomain(mL)
@@ -845,7 +845,7 @@ function norm_group(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Un
   return sub(R, els, !false)
 end
 
-function norm_group(KK::KummerExt, mp::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Union{MapRayClassGrp, MapClassGrp})
+function norm_group(KK::KummerExt, mp::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Union{MapRayClassGrp, MapClassGrp})
   k = domain(mp)
   K = codomain(mp)
   ZK = maximal_order(K)
@@ -1019,7 +1019,7 @@ function factored_modulus(A::ClassField_pp{MapClassGrp, T}) where T
   return Dict{NfOrdIdl, Int}()
 end
 
-function maximal_abelian_subfield(A::ClassField, mp::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function maximal_abelian_subfield(A::ClassField, mp::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   k = domain(mp)
   K = codomain(mp)
   @assert base_field(A) == K
@@ -1356,7 +1356,7 @@ function rewrite_with_conductor(C::ClassField)
   return C
 end
 
-function induce_action(C::ClassField, Aut::Vector{Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[])
+function induce_action(C::ClassField, Aut::Vector{Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[])
   return induce_action(C.rayclassgroupmap, Aut, C.quotientmap)
 end
 
@@ -1376,7 +1376,7 @@ function is_normal(C::ClassField)
   end
 end
 
-function is_normal(C::ClassField, mk::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function is_normal(C::ClassField, mk::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = base_field(C)
   @assert codomain(mk) == K
   g = mk(gen(domain(mk)))
@@ -1385,7 +1385,7 @@ function is_normal(C::ClassField, mk::NumFielHom{AbsSimpleNumField, AbsSimpleNum
 end
 
 
-function is_normal_easy(C::ClassField, aut::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = automorphism_list(base_field(C)))
+function is_normal_easy(C::ClassField, aut::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = automorphism_list(base_field(C)))
   c, inf = conductor(C)
   if any(x-> c != induce_image(x, c), aut)
     return false

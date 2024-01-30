@@ -121,7 +121,7 @@ function evaluate(a::AbsNonSimpleNumFieldElem, P::NumFieldEmbNfAbsNS, prec::Int)
   return P(a, prec)
 end
 
-function restrict(e::NumFieldEmb, f::NumFielHom{<: AbsNonSimpleNumField, <: Any, <: Any})
+function restrict(e::NumFieldEmb, f::NumFieldHom{<: AbsNonSimpleNumField, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)

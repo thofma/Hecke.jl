@@ -1236,7 +1236,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   return lp, sR
 end
 
-function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, mp::GrpAbFinGenMap = id_hom(domain(mR)))
+function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, mp::GrpAbFinGenMap = id_hom(domain(mR)))
   R = domain(mR)
   G = Vector{GrpAbFinGenMap}(undef, length(Aut))
   if isempty(Aut)

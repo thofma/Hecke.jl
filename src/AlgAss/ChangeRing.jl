@@ -38,14 +38,14 @@ end
 #end
 
 @doc raw"""
-    restrict_scalars(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}, KtoL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+    restrict_scalars(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}, KtoL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
       -> StructureConstantAlgebra, Map
 
 Given an algebra $A$ over a number field $L$ and an inclusion map `KtoL` from
 a number field $K$ to $L$, this function returns the restriction $B$ of $A$
 to $K$ and the morphism $B \to A$.
 """
-function restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, KtoL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, KtoL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   return _restrict_scalars(A, KtoL)
 end
 

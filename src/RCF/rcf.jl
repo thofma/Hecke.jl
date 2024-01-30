@@ -847,7 +847,7 @@ function auts_in_snf!(CF::ClassField_pp)
   return nothing
 end
 
-function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, r::Int = -1)
+function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, r::Int = -1)
   @hassert :ClassField 1 is_kummer_extension(K)
   #@assert is_kummer_extension(K)
   k = base_field(K)

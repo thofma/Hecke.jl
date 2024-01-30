@@ -471,7 +471,7 @@ end
 
 mutable struct NfToAlgGrpMor{S, T, U} <: Map{AbsSimpleNumField, GroupAlgebra{S, T, U}, HeckeMap, AbsAlgAssMor}
   K::AbsSimpleNumField
-  mG::GrpGenToNfMorSet{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, AbsSimpleNumField}
+  mG::GrpGenToNfMorSet{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, AbsSimpleNumField}
   A::GroupAlgebra{S, T, U}
   M::QQMatrix
   Minv::QQMatrix
@@ -539,7 +539,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 #  Au, mAu = automorphism_group(K)
 #  fl, f = is_isomorphic_with_map(G, Au)
 #  @assert fl
-#  aut = Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, order(G))
+#  aut = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, order(G))
 #  for g in G
 #    aut[g[]] = mAu(f(g))
 #  end
@@ -970,7 +970,7 @@ function _evaluate_rep(el, d, rep, f)
   return z
 end
 
-elem_type(::Type{NfMorSet{AbsSimpleNumField}}) = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+elem_type(::Type{NfMorSet{AbsSimpleNumField}}) = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 ################################################################################
 #

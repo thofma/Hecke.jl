@@ -10,29 +10,29 @@ function show(io::IO, S::NfMorSet{T}) where {T}
   print(io, "Set of automorphisms of ", S.field)
 end
 
-parent(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}) = NfMorSet(domain(f))
+parent(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) = NfMorSet(domain(f))
 
-function parent(f::NumFielHom)
+function parent(f::NumFieldHom)
   @assert domain(f) == codomain(f)
   return NfMorSet(domain(f))
 end
 
-function image(f::NumFielHom, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
+function image(f::NumFieldHom, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
   D = Dict{elem_type(codomain(f)), ZZRingElem}(f(b) => e for (b, e) in a)
   return FacElem(D)
 end
 
 ################################################################################
 #
-#  Some basic properties of NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+#  Some basic properties of NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 #
 ################################################################################
 
-is_injective(m::NumFielHom) = true
+is_injective(m::NumFieldHom) = true
 
-is_surjective(m::NumFielHom) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
+is_surjective(m::NumFieldHom) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
 
-is_bijective(m::NumFielHom) = is_surjective(m)
+is_bijective(m::NumFieldHom) = is_surjective(m)
 
 ################################################################################
 #
@@ -58,7 +58,7 @@ function GrpGenToNfMorSet(G::GrpGen, K::NumField)
   return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFielHom
+function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFieldHom
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
 
@@ -83,7 +83,7 @@ function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
   error("something wrong")
 end
 
-Base.copy(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}) = f
+Base.copy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) = f
 
 ################################################################################
 #
@@ -153,7 +153,7 @@ is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 #
 ################################################################################
 @doc raw"""
-    is_cm_field(K::AbsSimpleNumField) -> Bool, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+    is_cm_field(K::AbsSimpleNumField) -> Bool, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
@@ -188,7 +188,7 @@ function is_cm_field_known(K::NumField)
   return c !== nothing
 end
 
-function _find_complex_conj(auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _find_complex_conj(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   K = domain(auts[1])
   for x in auts
     if !is_involution(x)
@@ -267,9 +267,9 @@ function _evaluate_mod(f::QQPolyRingElem, a::AbsSimpleNumFieldElem, d::ZZRingEle
   return s
 end
 
-(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})(x::NfOrdIdl) = induce_image(f, x)
+(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})(x::NfOrdIdl) = induce_image(f, x)
 
-function induce_image(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, x::NfOrdIdl; target = false)
+function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::NfOrdIdl; target = false)
   K = domain(f)
   if K != codomain(f)
     if target == false
@@ -355,7 +355,7 @@ function induce_image(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, x::Nf
   return I
 end
 
-function induce_image_easy(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, P::NfOrdIdl)
+function induce_image_easy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::NfOrdIdl)
   OK = order(P)
   K = nf(OK)
   R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)[1]
@@ -432,11 +432,11 @@ end
 #
 ################################################################################
 @doc raw"""
-    is_involution(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}) -> Bool
+    is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) -> Bool
 
 Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false otherwise.
 """
-function is_involution(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(f)
   @assert K == codomain(f)
   if image_primitive_element(f) == gen(K)
@@ -459,11 +459,11 @@ function is_involution(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
 end
 
 #@doc raw"""
-#    _order(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}) -> Int
+#    _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) -> Int
 #
 #If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
 #"""
-function _order(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(f)
   @req K === codomain(f) "The morphism must be an automorphism"
   if image_primitive_element(f) == gen(K)
@@ -490,7 +490,7 @@ function _order(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
 end
 
 
-function small_generating_set(G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function small_generating_set(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 
   if length(G) == 1
     return G
@@ -517,12 +517,12 @@ function small_generating_set(G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleN
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
     if length(closure(fpPolyRingElem[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
-      return NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[trygen]
+      return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[trygen]
     end
   end
 
   for i in 1:secondtry
-    gens = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
+    gens = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -530,7 +530,7 @@ function small_generating_set(G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleN
   end
 
   for i in 1:thirdtry
-    gens = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
+    gens = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -548,7 +548,7 @@ function small_generating_set(G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleN
       error("Something wrong with generator search")
     end
     j = j + 1
-    gens = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
+    gens = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -556,7 +556,7 @@ function small_generating_set(G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleN
   end
 end
 
-function _order(G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _order(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   K = domain(G[1])
 	p = 2
   R = Native.GF(p, cached = false)

@@ -29,7 +29,7 @@ function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool 
 end
 
 
-function translate_extension(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, C::ClassField_pp)
+function translate_extension(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, C::ClassField_pp)
   L = domain(mL)
   OL = maximal_order(L)
   K = codomain(mL)
@@ -147,7 +147,7 @@ function translate_extension(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField
 end
 
 
-function translate_up(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, C::ClassField_pp, C1::ClassField_pp)
+function translate_up(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, C::ClassField_pp, C1::ClassField_pp)
   K = base_field(C)
   Ky = polynomial_ring(K, "y", cached = false)[1]
   L = domain(mL)

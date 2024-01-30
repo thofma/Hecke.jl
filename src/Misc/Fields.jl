@@ -80,11 +80,11 @@ mutable struct FldToVecMor{R, S, T, U, V}
   B::V
   isone::Bool
 
-  function FldToVecMor(L, f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+  function FldToVecMor(L, f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
     return FldToVecMor(f)
   end
 
-  function FldToVecMor(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+  function FldToVecMor(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
     K = domain(f)
     L = codomain(f)
     B, M = _field_as_vector_space(f)

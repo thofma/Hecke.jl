@@ -1,4 +1,4 @@
-function _add_relations_from_subfield(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}; use_aut = true, redo = false, bound::Int = -1)
+function _add_relations_from_subfield(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}; use_aut = true, redo = false, bound::Int = -1)
   L = codomain(mL)
   K = domain(mL)
   OK = lll(maximal_order(L))

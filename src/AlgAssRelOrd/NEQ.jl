@@ -232,7 +232,7 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: AbsNu
 end
 
 # Finds any a \in O \cap L such that v_p(nr(a)) = vals[i] for p = primes[i].
-function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, KtoL::NfToNfRel, ktoK::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int}, cache::Vector{Any})
+function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, KtoL::NfToNfRel, ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int}, cache::Vector{Any})
   A = algebra(O)
   sols = __neq_sunit(ktoK, primes_in_k, vals)
   if isempty(sols)
@@ -310,7 +310,7 @@ end
 # Let S be the set of primes lying over primes_in_k.
 # This finds a set of representatives of the S-units of K modulo units of O_K,
 # whose norm has the valuations vals at the primes primes_in_k.
-function __neq_sunit(ktoK::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int})
+function __neq_sunit(ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int})
   K = codomain(ktoK)
   OK = maximal_order(K)
   primes_in_K = Vector{ideal_type(OK)}()

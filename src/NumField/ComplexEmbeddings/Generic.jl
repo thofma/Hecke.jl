@@ -134,7 +134,7 @@ Complex embedding corresponding to -1.73
 restrict(f::NumFieldEmb, K::NumField)
 
 @doc raw"""
-    restrict(f::NumFieldEmb, g::NumFielHom)
+    restrict(f::NumFieldEmb, g::NumFieldHom)
 
 Given an embedding $f$ of a number field $L$ and a morphism $g \colon K \to L$,
 return the embedding $g \circ f$ of $K$.
@@ -156,7 +156,7 @@ Complex embedding corresponding to 0.62
     over rational field
 ```
 """
-restrict(f::NumFieldEmb, K::NumFielHom)
+restrict(f::NumFieldEmb, K::NumFieldHom)
 
 ################################################################################
 #
@@ -165,7 +165,7 @@ restrict(f::NumFieldEmb, K::NumFielHom)
 ################################################################################
 
 @doc raw"""
-    extend(e::NumFieldEmb, f::NumFielHom)
+    extend(e::NumFieldEmb, f::NumFieldHom)
 
 Given an embedding $e$ of $k$ and a morphism $f \colon k \to K$, determine
 all embedings of $K$ which restrict to $e$ along $f$.
@@ -185,7 +185,7 @@ julia> extend(e, ktoK)
  Complex embedding corresponding to -0.81 - 0.59 * i of cyclotomic field of order 5
 ```
 """
-function extend(e::NumFieldEmb, f::NumFielHom)
+function extend(e::NumFieldEmb, f::NumFieldHom)
   @req number_field(e) === domain(f) "Number field of embedding must be domain"
   emb = complex_embeddings(codomain(f))
   res = eltype(emb)[ E for E in emb if f * E == e ]
@@ -194,11 +194,11 @@ function extend(e::NumFieldEmb, f::NumFielHom)
   return res
 end
 
-function Base.:(*)(f::NumFielHom, e::NumFieldEmb)
+function Base.:(*)(f::NumFieldHom, e::NumFieldEmb)
   return restrict(e, f)
 end
 
-function compose(f::NumFielHom, e::NumFieldEmb)
+function compose(f::NumFieldHom, e::NumFieldEmb)
   return f * e
 end
 

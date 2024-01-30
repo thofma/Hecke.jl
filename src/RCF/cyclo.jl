@@ -9,7 +9,7 @@ mutable struct CyclotomicExt
   n::Int
   Kr::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   Ka::AbsSimpleNumField
-  mp::Tuple{NfToNfRel, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
+  mp::Tuple{NfToNfRel, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
 
   kummer_exts::Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}
                       #I save the kummer extensions used in the class field construction
@@ -478,18 +478,18 @@ end
 #
 ################################################################################
 @doc raw"""
-    automorphism_list(C::CyclotomicExt; gens::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
+    automorphism_list(C::CyclotomicExt; gens::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
 
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_simple_field(C).
 It assumes that the base field is normal. `gens` must be a set of generators for the automorphism group of the base field of $C$.
 """
-function automorphism_list(C::CyclotomicExt; gens::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = small_generating_set(automorphism_list(base_field(C))), copy::Bool = true)
+function automorphism_list(C::CyclotomicExt; gens::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = small_generating_set(automorphism_list(base_field(C))), copy::Bool = true)
 
   if degree(absolute_simple_field(C)) == degree(base_field(C)) || is_automorphisms_known(C.Ka)
     return automorphism_list(C.Ka, copy = copy)
   end
   genK = C.mp[1](gen(C.Ka))
-  gnew = Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[]
+  gnew = Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
   #First extend the old generators
   for g in gens
     ng = Hecke.extend_to_cyclotomic(C, g)

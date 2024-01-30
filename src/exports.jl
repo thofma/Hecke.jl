@@ -85,7 +85,7 @@ export NfOrdIdl
 export NfOrdQuoRing
 export NfOrdQuoRingElem
 export RelNonSimpleNumField
-export NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+export NumFieldHom
 export NonSimpleNumField
 export NonSimpleNumFieldElem
 export NumFieldOrder

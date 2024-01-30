@@ -346,7 +346,7 @@ end
 
 
 
-function _isstable(auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, d::Dict{NfOrdIdl, Int})
+function _isstable(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, d::Dict{NfOrdIdl, Int})
   if isempty(d)
     return true
   end
@@ -390,7 +390,7 @@ function _image(cache, auts, I, i)
   return img
 end
 
-function _sieve_conjugates(auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, conds::Vector{Dict{NfOrdIdl, Int}})
+function _sieve_conjugates(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, conds::Vector{Dict{NfOrdIdl, Int}})
   if isone(length(auts))
     return conds
   end
@@ -412,7 +412,7 @@ function _sieve_conjugates(auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleN
   return reps
 end
 
-function _induce_image(auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, i::Int, cond::Dict{NfOrdIdl, Int}, cache::Vector{Dict{NfOrdIdl, NfOrdIdl}})
+function _induce_image(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, i::Int, cond::Dict{NfOrdIdl, Int}, cache::Vector{Dict{NfOrdIdl, NfOrdIdl}})
   res = Dict{NfOrdIdl, Int}()
   for (k, v) in cond
     res[_image(cache, auts, k, i)] = v
@@ -543,7 +543,7 @@ function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vect
       end
     end
   end
-  fields_list = Vector{Tuple{AbsSimpleNumField, Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}}}(undef, length(final_list))
+  fields_list = Vector{Tuple{AbsSimpleNumField, Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}}(undef, length(final_list))
   for i = 1:length(final_list)
     if mod(final_list[i],4) != 1
       cp = Vector{ZZRingElem}(undef, 3)
@@ -551,8 +551,8 @@ function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vect
       cp[2] = 0
       cp[3] = 1
       L, gL = number_field(Qx(cp), cached=false, check = false)
-      auts = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[hom(L, L, -gL, check = false)]
-      emb = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K, L, one(L), check = false)]
+      auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[hom(L, L, -gL, check = false)]
+      emb = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K, L, one(L), check = false)]
       fields_list[i] = (L, auts, emb)
     else
       cp = Vector{ZZRingElem}(undef, 3)
@@ -560,8 +560,8 @@ function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vect
       cp[2] = -1
       cp[3] = 1
       L, gL = number_field(Qx(cp), cached=false, check = false)
-      auts = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[hom(L, L, 1-gL, check = false)]
-      emb = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K, L, one(L), check = false)]
+      auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[hom(L, L, 1-gL, check = false)]
+      emb = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K, L, one(L), check = false)]
       fields_list[i] = (L, auts, emb)
     end
   end
@@ -659,7 +659,7 @@ function __get_term(a::QQMPolyRingElem, exps::Vector{UInt})
 end
 
 function _C22_with_max_ord(l)
-  list = Vector{Tuple{AbsSimpleNumField, Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}}}()
+  list = Vector{Tuple{AbsSimpleNumField, Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}}()
   Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   K = number_field(x-1, cached = false)[1]
   @vprintln :AbExt 1 "Constructing the C2xC2 extension: $(length(l))"
@@ -696,7 +696,7 @@ function _C22_with_max_ord(l)
       maximal_order(S)
     end
     auts = small_generating_set(automorphism_list(S, is_abelian = true, copy = false))
-    push!(list, (S, auts, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K, S, S(1), check = false)]))
+    push!(list, (S, auts, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K, S, S(1), check = false)]))
   end
   return list
 end
@@ -829,13 +829,13 @@ end
 
 
 
-function _from_relative_to_abs(L::RelNonSimpleNumField{T}, auts::Vector{<: NumFielHom{RelNonSimpleNumField{T}, RelNonSimpleNumField{T}}}) where T
+function _from_relative_to_abs(L::RelNonSimpleNumField{T}, auts::Vector{<: NumFieldHom{RelNonSimpleNumField{T}, RelNonSimpleNumField{T}}}) where T
 
   @vtime :AbExt 2 Ks, mKs = simplified_absolute_field(L, cached = false)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   #Now, the automorphisms.
-  autos=Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(auts))
+  autos=Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(auts))
   el = mKs(gen(Ks))
   for i = 1:length(auts)
     y = mKs\(auts[i](el))

@@ -584,7 +584,7 @@ function maximal_order_via_simple(L::RelNonSimpleNumField)
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_simple(m::NumFielHom{<:RelSimpleNumField, <:RelNonSimpleNumField})
+function maximal_order_via_simple(m::NumFieldHom{<:RelSimpleNumField, <:RelNonSimpleNumField})
   Os = maximal_order(domain(m))
   return non_simple_order(Os, m)
 end
@@ -970,7 +970,7 @@ end
 #
 ################################################################################
 
-function non_simple_order(O::RelNumFieldOrder, m::NumFielHom{<:RelSimpleNumField, <:RelNonSimpleNumField})
+function non_simple_order(O::RelNumFieldOrder, m::NumFieldHom{<:RelSimpleNumField, <:RelNonSimpleNumField})
   L = domain(m)
   L_ns = codomain(m)
   @assert nf(O) == L

@@ -1627,14 +1627,14 @@ end
 ################################################################################
 
 @doc raw"""
-    decomposition_group(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
+    decomposition_group(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
 
 Given a prime ideal $P$ in a normal number field $G$, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
 """
 
-function decomposition_group(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[],
+function decomposition_group(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[],
                              orderG::Int = degree(P)*ramification_index(P))
   @assert is_prime(P)
   OK = order(P)
@@ -1660,7 +1660,7 @@ function decomposition_group(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField
     for i = 1:length(G)
       D[Rx(image_primitive_element(G[i]))] = i
     end
-    dec_group = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[]
+    dec_group = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
     local ppp
     let fmod = fmod
       function ppp(a::zzModPolyRingElem, b::zzModPolyRingElem)
@@ -1677,7 +1677,7 @@ function decomposition_group(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField
         #I take the closure of dec_group modularly
         elems = zzModPolyRingElem[Rx(image_primitive_element(el)) for el in dec_group]
         new_elems = closure(elems, ppp, gen(Rx))
-        dec_group = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[G[D[x]] for x in new_elems]
+        dec_group = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[G[D[x]] for x in new_elems]
       end
       if length(dec_group) == orderG
         break
@@ -1731,20 +1731,20 @@ end
 ################################################################################
 
 @doc raw"""
-    inertia_subgroup(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
+    inertia_subgroup(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
 
 Given a prime ideal $P$ in a normal number field, it returns a vector of the automorphisms $\sigma_1, \dots, \sigma_s$
 such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on the residue field.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
 """
 
-function inertia_subgroup(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[])
+function inertia_subgroup(P::NfOrdIdl; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[])
   @assert is_prime(P)
   O = order(P)
   K = nf(O)
   orderG = ramification_index(P)
   if isone(orderG)
-    return NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[id_hom(K)]
+    return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[id_hom(K)]
   end
   F, mF = residue_field(O, P)
   if isempty(G)
@@ -1755,7 +1755,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField, A
   end
   gF = gen(F)
   igF = K(mF\gF)
-  inertia_grp = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[]
+  inertia_grp = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
   q = 2
   R = residue_ring(FlintZZ, q, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
@@ -1785,7 +1785,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField, A
       push!(inertia_grp, g)
       elems = zzModPolyRingElem[Rx(image_primitive_element(el)) for el in inertia_grp]
       new_elems = closure(elems, ppp, gen(Rx))
-      inertia_grp = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[G[D[x]] for x in new_elems]
+      inertia_grp = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[G[D[x]] for x in new_elems]
       if length(inertia_grp) == orderG
         break
       end
@@ -1794,7 +1794,7 @@ function inertia_subgroup(P::NfOrdIdl; G::Vector{NumFielHom{AbsSimpleNumField, A
   return inertia_grp
 end
 
-function inertia_subgroup_easy(F, mF, G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function inertia_subgroup_easy(F, mF, G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   P = mF.P
   OK = order(P)
   K = nf(OK)
@@ -1842,7 +1842,7 @@ function ramification_group(P::NfOrdIdl, i::Int)
   end
   A = inertia_subgroup(P)
   pi = uniformizer(P)
-  res = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[]
+  res = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
   a = elem_in_nf(pi)
   for f in A
     b = f(a)

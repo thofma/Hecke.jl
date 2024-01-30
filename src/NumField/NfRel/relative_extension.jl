@@ -32,7 +32,7 @@ function relative_simple_extension(K::AbsSimpleNumField, k::AbsSimpleNumField)
   return relative_simple_extension(mp)
 end
 
-function relative_simple_extension(m::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function relative_simple_extension(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   k = domain(m)
   K = codomain(m)
   lf = factor(k, K.pol)

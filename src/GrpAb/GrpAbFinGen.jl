@@ -1702,7 +1702,7 @@ function find_isomorphism(G, op, A::GrpAb)
   return GtoA, AtoG
 end
 
-function find_isomorphism_with_abelian_group(G::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function find_isomorphism_with_abelian_group(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 	id = id_hom(domain(G[1]))
 	S = small_generating_set(G)
   p = 2
@@ -1717,7 +1717,7 @@ function find_isomorphism_with_abelian_group(G::Vector{NumFielHom{AbsSimpleNumFi
   list = fpPolyRingElem[Rx(x.prim_img) for x in S]
   push!(list, gen(Rx))
   n = length(G)
-  elem_to_index = Dict{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, Int}()
+  elem_to_index = Dict{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Int}()
   words = Dict{fpPolyRingElem, Array{Int}}()
   rels = Vector{Vector{Int}}()
 

@@ -216,7 +216,4 @@ include(joinpath(pathof(Nemo), "..", "Aliases.jl"))
 @alias real_field real_number_field
 
 # Deprecated during 0.19.*
-@alias EmbeddedNumField EmbeddedNumField
-@alias EmbeddedNumFieldElem EmbeddedNumFieldElem
-@alias EllipticCurve elliptic_curve
 @alias points_with_x points_with_x_coordinate

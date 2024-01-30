@@ -27,7 +27,7 @@ is_real(::QQEmb) = true
 
 restrict(::NumFieldEmb, ::QQField) = QQEmb()
 
-restrict(e::NumFieldEmb, f::NumFielHom{QQField}) = QQEmb()
+restrict(e::NumFieldEmb, f::NumFieldHom{QQField}) = QQEmb()
 
 _embedding(::PosInf) = QQEmb()
 

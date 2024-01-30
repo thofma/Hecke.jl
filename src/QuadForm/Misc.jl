@@ -278,7 +278,7 @@ function preimage(f::NfToNfRel, I::RelNumFieldOrderIdeal)
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFielHom}
+function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldHom}
   return S(numerator(A))//denominator(A)
 end
 
@@ -477,7 +477,7 @@ end
 #
 ################################################################################
 
-function image(f::NumFielHom, I::RelNumFieldOrderIdeal{T, S}) where {T, S}
+function image(f::NumFieldHom, I::RelNumFieldOrderIdeal{T, S}) where {T, S}
   #f has to be an automorphism!!!!
   O = order(I)
   @assert is_maximal(O) # Otherwise the order might change
@@ -533,7 +533,7 @@ function image(f::NumFielHom, I::RelNumFieldOrderIdeal{T, S}) where {T, S}
   return J
 end
 
-function image(f::NumFielHom, I::RelNumFieldOrderFractionalIdeal{T, S}; order = order(I)) where {T, S}
+function image(f::NumFieldHom, I::RelNumFieldOrderFractionalIdeal{T, S}; order = order(I)) where {T, S}
   #S has to be an automorphism!!!!
   O = order
   @assert is_maximal(O) # Otherwise the order might change

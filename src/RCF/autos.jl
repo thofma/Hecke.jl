@@ -71,7 +71,7 @@ function frobenius_easy(p::NfOrdIdl, C::ClassField)
   return A(res)
 end
 
-elem_type(::Type{Hecke.NfMorSet{RelNonSimpleNumField{AbsSimpleNumFieldElem}}}) = Hecke.NumFielHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}
+elem_type(::Type{Hecke.NfMorSet{RelNonSimpleNumField{AbsSimpleNumFieldElem}}}) = Hecke.NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}
 
 @doc raw"""
     frobenius_map(C::ClassField)
@@ -170,7 +170,7 @@ function absolute_automorphism_group(C::ClassField, check::Bool = false)
   return absolute_automorphism_group(C, autK_gen)
 end
 
-function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   L = number_field(C)
   @vprint :ClassField 1 "Computing rel_auto "
   @vtime :ClassField 1 aut_L_rel = rel_auto(C)::Vector{NfRelNSToNfRelNSMor_nf_elem}
@@ -325,13 +325,13 @@ end
 ###############################################################################
 
 @doc raw"""
-    extend_to_cyclotomic(C::CyclotomicExt, tau::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}) -> NfRelToNfRelMor
+    extend_to_cyclotomic(C::CyclotomicExt, tau::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) -> NfRelToNfRelMor
 
 Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,
   computes an extension of $\tau$ to $C$.
 
 """
-function extend_to_cyclotomic(C::CyclotomicExt, tau::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function extend_to_cyclotomic(C::CyclotomicExt, tau::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(tau)
   @assert K == base_field(C.Kr)
   gKr = gen(C.Kr)
@@ -412,7 +412,7 @@ end
 ################################################################################
 
 #Find a prime ideal P such that the Frobenius generates the Galois group of the extension.
-function find_frob(A::ClassField_pp, K::KummerExt, emb::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function find_frob(A::ClassField_pp, K::KummerExt, emb::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
 
   m = defining_modulus(A)[1]
   d = A.o
@@ -537,7 +537,7 @@ function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{AbsSimpleNumF
 end
 
 #extension of automorphisms in the case of extensions of exponent 2
-function extend_aut2(A::ClassField, autos::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function extend_aut2(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   Cp = [x for x in A.cyc if degree(x) % 2 == 0]
   autos_extended = Vector{Vector{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
@@ -584,7 +584,7 @@ function extend_aut2(A::ClassField, autos::Vector{NumFielHom{AbsSimpleNumField, 
 end
 
 #inefficient, not called, but useful accaisonly...
-function extend_generic(A::ClassField, autos::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
+function extend_generic(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   A, gA = number_field([c.A.pol for c in Cp], check = false)
   rts = Vector{Vector{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
@@ -628,7 +628,7 @@ end
 
 Base.Int64(a::QQFieldElem) = Int(ZZ(a)) #move elsewhere?
 
-function extend_aut_pp(A::ClassField, autos::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
+function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   if !all(x -> isdefined(x, :a), Cp)
     return extend_generic(A, autos, p)
@@ -695,14 +695,14 @@ function extend_aut_pp(A::ClassField, autos::Vector{NumFielHom{AbsSimpleNumField
   # by all the cyclic components.
   # I extend the automorphisms to C
 
-  Autos_abs = Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(autos))
+  Autos_abs = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(autos))
   for i = 1:length(autos)
     aut = extend_to_cyclotomic(C, autos[i])
     Autos_abs[i] = hom(KC, KC, C.mp[1]\(aut(C.mp[1](gen(KC)))), check = false)
   end
 
   #I compute the embeddings of the small cyclotomic extensions into the others
-  abs_emb = Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(Cp))
+  abs_emb = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(Cp))
   for i = 1:length(Cp)
     dCp = degree(Cp[i])
     if dCp == d

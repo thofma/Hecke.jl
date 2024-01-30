@@ -490,7 +490,7 @@ end
 Given a totally complex normal number field, this function returns an
 automorphism which is the restriction of complex conjugation at one embedding.
 """
-function complex_conjugation(K::AbsSimpleNumField; auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[])
+function complex_conjugation(K::AbsSimpleNumField; auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[])
   if !isempty(auts)
     A = auts
   else
@@ -538,7 +538,7 @@ function complex_conjugation(K::AbsSimpleNumField; auts::Vector{NumFielHom{AbsSi
 end
 
 
-function _find_complex_conjugation(K::AbsSimpleNumField, A::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _find_complex_conjugation(K::AbsSimpleNumField, A::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   a = gen(K)
   #First, quick and dirty. If only one automorphism works, then we return it
   p = 32
@@ -579,7 +579,7 @@ function _find_complex_conjugation(K::AbsSimpleNumField, A::Vector{NumFielHom{Ab
   return false, A[1]
 end
 
-function is_complex_conjugation(f::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
+function is_complex_conjugation(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(f)
   @assert K == codomain(f)
   !is_totally_complex(K) && error("Number field must be totally complex")

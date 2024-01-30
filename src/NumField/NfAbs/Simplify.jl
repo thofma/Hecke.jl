@@ -1,7 +1,7 @@
 add_verbosity_scope(:Simplify)
 
 @doc raw"""
-    simplify(K::AbsSimpleNumField; canonical::Bool = false) -> AbsSimpleNumField, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+    simplify(K::AbsSimpleNumField; canonical::Bool = false) -> AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Tries to find an isomorphic field $L$ given by a "simpler" defining polynomial.
 By default, "simple" is defined to be of smaller index, testing is done only

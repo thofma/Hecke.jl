@@ -462,7 +462,7 @@ function _issubfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField)
 end
 
 @doc raw"""
-      is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+      is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
@@ -486,7 +486,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isomorphic_with_map(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+    is_isomorphic_with_map(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
@@ -866,7 +866,7 @@ end
 
 
 @doc raw"""
-    normal_closure(K::AbsSimpleNumField) -> AbsSimpleNumField, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
+    normal_closure(K::AbsSimpleNumField) -> AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 The normal closure of $K$ together with the embedding map.
 """

@@ -464,7 +464,7 @@ function is_abelian(::NumField) end
 ################################################################################
 
 @doc doc"""
-    automorphism_list(L::NumField) -> Vector{NumFielHom}
+    automorphism_list(L::NumField) -> Vector{NumFieldHom}
 
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.
 """

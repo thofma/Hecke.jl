@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  The NumFielHom type
+#  The NumFieldHom type
 #
 ################################################################################
 
@@ -409,7 +409,7 @@ function inv(f::LocalFieldMor{S, T}) where {S, T}
   _assure_has_inverse_data(f)
   pr = f.inverse_data
   hd = MapHeader(codomain(f), domain(f))
-  g = NumFielHom{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
+  g = NumFieldHom{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
   return g
 end
 
