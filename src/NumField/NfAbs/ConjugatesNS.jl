@@ -1,4 +1,4 @@
-function conjugates_data_roots(K::NfAbsNS)
+function conjugates_data_roots(K::AbsNonSimpleNumField)
   cache = get_attribute(K, :conjugates_data_roots)
   if cache !== nothing
     return cache
@@ -9,7 +9,7 @@ function conjugates_data_roots(K::NfAbsNS)
   return ctxs
 end
 
-function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
+function conjugate_data_arb_roots(K::AbsNonSimpleNumField, p::Int; copy = true)
   cache = get_attribute(K, :conjugates_data)
   if cache !== nothing
     if haskey(cache, p)
@@ -118,7 +118,7 @@ function _is_complex_conj(v::Vector, w::Vector, pos::Vector, roots::Vector)
 end
 
 
-function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
+function conjugates_arb(a::AbsNonSimpleNumFieldElem, p::Int, work_tol::Int = p)
   K = parent(a)
   conjs, ind_real, ind_complex = conjugate_data_arb_roots(K, work_tol)
   res = Vector{AcbFieldElem}(undef, degree(K))
@@ -177,7 +177,7 @@ function _evaluate(f::QQMPolyRingElem, vals::Vector{AcbFieldElem})
   return r[1]
 end
 
-function signature(K::NfAbsNS)
+function signature(K::AbsNonSimpleNumField)
   if K.signature[1] != -1
     return K.signature
   end

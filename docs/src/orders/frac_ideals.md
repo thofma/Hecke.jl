@@ -32,8 +32,8 @@ All the normal operations are provided as well.
 ```@docs
 inv(::NfOrdFracIdl)
 integral_split(::NfOrdFracIdl)
-numerator(::NfRelOrdFracIdl)
-denominator(::NfRelOrdFracIdl)
+numerator(::RelNumFieldOrderFractionalIdeal)
+denominator(::RelNumFieldOrderFractionalIdeal)
 ```
 
 ## Miscaellenous

@@ -42,10 +42,10 @@ function compute_residue_field_data!(P)
   p = minimum(P)
   if fits(Int, p)
     smallp = Int(p)
-    A, m = AlgAss(order(P), P, smallp)
+    A, m = StructureConstantAlgebra(order(P), P, smallp)
     compute_residue_field_data!(P, m)
   else
-    AA, mm = AlgAss(order(P), P, p)
+    AA, mm = StructureConstantAlgebra(order(P), P, p)
     compute_residue_field_data!(P, mm)
   end
   return nothing
@@ -246,7 +246,7 @@ function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
 end
 
 @doc raw"""
-    relative_residue_field(O::NfRelOrd, P::NfRelOrdIdl) -> RelFinField, Map
+    relative_residue_field(O::RelNumFieldOrder, P::RelNumFieldOrderIdeal) -> RelFinField, Map
 
 Given a maximal order `O` in a relative number field $E/K$ and a prime ideal
 `P` of `O`, return the residue field $O/P$ seen as an extension of the (relative)
@@ -255,7 +255,7 @@ residue field of a maximal order in `K` at $minimum(P)$.
 Note that if `K` is a relative number field, the latter will also be seen as a
 relative residue field.
 """
-function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) where {S, T, U}
+function relative_residue_field(O::RelNumFieldOrder{S, T, U}, P::RelNumFieldOrderIdeal{S, T, U}) where {S, T, U}
   @req is_maximal(O) "O must be maximal"
   @req order(P) === O "P must be an ideal of O"
   E = nf(O)
@@ -264,7 +264,7 @@ function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) w
   projK = get_attribute(p, :rel_residue_field_map)
   if projK === nothing
     OK = maximal_order(K)
-    if !(K isa Hecke.NfRel)
+    if !(K isa Hecke.RelSimpleNumField)
       _, projK = residue_field(OK, p)
       set_attribute!(p, :rel_residue_field_map, projK)
     else

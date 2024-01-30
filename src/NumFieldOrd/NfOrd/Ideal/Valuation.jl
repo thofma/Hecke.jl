@@ -359,7 +359,7 @@ function assure_valuation_function(p::NfOrdIdl)
 end
 
 
-function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl, n::QQFieldElem = QQFieldElem(0))
+function valuation(a::AbsNonSimpleNumFieldElem, p::AbsNumFieldOrderIdeal, n::QQFieldElem = QQFieldElem(0))
   return valuation_naive(a, p)
 end
 
@@ -416,7 +416,7 @@ valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-function valuation(a::ZZRingElem, p::NfAbsOrdIdl)
+function valuation(a::ZZRingElem, p::AbsNumFieldOrderIdeal)
   if p.splitting_type[1] == 0
     return valuation_naive(order(p)(a), p)
   end
@@ -428,10 +428,10 @@ end
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-valuation(a::Integer, p::NfAbsOrdIdl) = valuation(ZZRingElem(a), p)
+valuation(a::Integer, p::AbsNumFieldOrderIdeal) = valuation(ZZRingElem(a), p)
 
 #TODO: some more intelligence here...
-function valuation_naive(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
+function valuation_naive(A::AbsNumFieldOrderIdeal, B::AbsNumFieldOrderIdeal)
   @assert !isone(B)
   Bi = inv(B)
   i = 0
@@ -446,7 +446,7 @@ end
 #TODO: some more intelligence here...
 #      in non-maximal orders, interesting ideals cannot be inverted
 #      maybe this needs to be checked...
-function valuation_naive(x::NfAbsOrdElem, B::NfAbsOrdIdl)
+function valuation_naive(x::AbsNumFieldOrderElem, B::AbsNumFieldOrderIdeal)
   @assert !isone(B)
   i = 0
   C = B
@@ -457,7 +457,7 @@ function valuation_naive(x::NfAbsOrdElem, B::NfAbsOrdIdl)
   return i
 end
 
-function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{AbsSimpleNumFieldElem, NfAbsNSElem}
+function valuation_naive(x::T, B::AbsNumFieldOrderIdeal) where T <: Union{AbsSimpleNumFieldElem, AbsNonSimpleNumFieldElem}
   @assert !isone(B)
   i = 0
   C = B
@@ -472,7 +472,7 @@ end
 Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
 """
-function valuation(A::NfAbsOrdIdl, p::NfAbsOrdIdl)
+function valuation(A::AbsNumFieldOrderIdeal, p::AbsNumFieldOrderIdeal)
   if has_minimum(A) && has_minimum(p) && !is_divisible_by(minimum(A, copy = false), minimum(p, copy = false))
     return 0
   end

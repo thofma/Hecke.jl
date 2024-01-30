@@ -119,8 +119,8 @@ function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
   pnumv = minimum(p, copy = false)^v # to speed up the exponentiation in the GrpAbFinGenToNfAbsOrdMaps
   G1, G1toO = _multgrp_mod_p(p, pnumv)
   Q, OtoQ = quo(order(p), pv)
-  tame_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
-  wild_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
+  tame_part = Dict{AbsNumFieldOrderIdeal, GrpAbFinGenToNfAbsOrdMap}()
+  wild_part = Dict{AbsNumFieldOrderIdeal, GrpAbFinGenToNfAbsOrdMap}()
   if v == 1
     G1toO.disc_log = G1[1]
     tame_part[p] = G1toO
@@ -1172,7 +1172,7 @@ end
 
 # For an element x of elements[i] this computes an element y with
 # x \equiv y mod ideals[i] and x \equiv 1 mod ideals[j] for all j not equal i.
-function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}) where { S <: Union{ NfAbsOrdElem, AlgAssAbsOrdElem }, T <: Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl } }
+function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}) where { S <: Union{ AbsNumFieldOrderElem, AlgAssAbsOrdElem }, T <: Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
   @assert !isempty(ideals)
   @assert length(elements) == length(ideals)
 
@@ -1196,7 +1196,7 @@ function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}) where { S 
 end
 
 # Build the products \prod_{j\neq i} ideals[j] for all i
-function _compute_products_for_make_coprime(ideals::Vector{T}) where { T <: Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl } }
+function _compute_products_for_make_coprime(ideals::Vector{T}) where { T <: Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
   n = length(ideals)
   @assert n >= 2
 

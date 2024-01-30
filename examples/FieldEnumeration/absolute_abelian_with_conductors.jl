@@ -136,7 +136,7 @@ function main()
 
   #=
   #The non simple absolute extension and the absolute value of its discriminant
-  fields = Vector{Tuple{NfAbsNS, ZZRingElem}}()
+  fields = Vector{Tuple{AbsNonSimpleNumField, ZZRingElem}}()
   for i = 1:length(class_fields)
     println("Computing class field $(i) /$(length(class_fields))")
     C = class_fields[i]

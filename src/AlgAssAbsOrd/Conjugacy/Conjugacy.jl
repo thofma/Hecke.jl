@@ -365,9 +365,9 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     z = zero(AA)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
-      BB, mB = dec[i]::Tuple{AlgAss{QQFieldElem},
-                             AbsAlgAssMor{AlgAss{QQFieldElem},AlgAss{QQFieldElem},QQMatrix}}
-      local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+      BB, mB = dec[i]::Tuple{StructureConstantAlgebra{QQFieldElem},
+                             AbsAlgAssMor{StructureConstantAlgebra{QQFieldElem},StructureConstantAlgebra{QQFieldElem},QQMatrix}}
+      local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = BB.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
     end
@@ -379,9 +379,9 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     z = zero(AA)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
-      BB, mB = dec[i]::Tuple{AlgAss{QQFieldElem},
-                             AbsAlgAssMor{AlgAss{QQFieldElem},AlgAss{QQFieldElem},QQMatrix}}
-      local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+      BB, mB = dec[i]::Tuple{StructureConstantAlgebra{QQFieldElem},
+                             AbsAlgAssMor{StructureConstantAlgebra{QQFieldElem},StructureConstantAlgebra{QQFieldElem},QQMatrix}}
+      local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = BB.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
     end
@@ -393,7 +393,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
   @hassert :Conjugacy 1 OO == right_order(OI)
   @vprintln :Conjugacy 1 "Testing if ideal is principal..."
   fl, y = _is_principal_with_data_bhj(OI, OO, side = :right)::Tuple{Bool,
-                                              AlgAssElem{QQFieldElem,AlgAss{QQFieldElem}}}
+                                              AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}
 
   if !fl
     return false, zero_matrix(FlintZZ, 0, 0)
@@ -671,7 +671,7 @@ end
 #      dec = decompose(AA)
 #      B, mB = dec[1]
 #      A.isomorphic_full_matrix_algebra = A, inv(mB)
-#      fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AlgAssElem{QQFieldElem,typeof(AA)}}
+#      fl, y = _isprincipal(OI, OO, :right)::Tuple{Bool, AssociativeAlgebraElem{QQFieldElem,typeof(AA)}}
 #      yy = elem_in_algebra(y)
 #    elseif is_commutative(AA)
 #      @info "Algebra is commutative"

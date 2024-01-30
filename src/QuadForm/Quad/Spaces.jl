@@ -772,7 +772,7 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
   end
   # readjust the invariants
   local _d::AbsSimpleNumFieldElem
-  local _f::Dict{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Int64}
+  local _f::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Int64}
   _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
   PP = append!(support(K(2)*det, OK), finite)::Vector{ideal_type(OK)}

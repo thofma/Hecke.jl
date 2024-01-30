@@ -29,7 +29,7 @@ function _all_row_span(M)
 end
 
 @doc raw"""
-    smallest_neighbour_prime(L::HermLat) -> Bool, NfRelOrdIdl, Vector{NfOrdIdl}
+    smallest_neighbour_prime(L::HermLat) -> Bool, RelNumFieldOrderIdeal, Vector{NfOrdIdl}
 
 Given a hermitian lattice `L`, return `def, P0, bad` such that:
 
@@ -317,7 +317,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
 end
 
 @doc raw"""
-    neighbours(L::HermLat, P::NfRelOrdIdl, max = inf) -> Vector{HermLat}
+    neighbours(L::HermLat, P::RelNumFieldOrderIdeal, max = inf) -> Vector{HermLat}
 
 Return the immediate `P`-neighbours of `L`. At most `max` neighbours are returned.
 
@@ -336,7 +336,7 @@ function neighbours(L::HermLat, P, max = inf)
 end
 
 @doc raw"""
-    iterated_neighbours(L:HermLat, P::NfRelOrdIdl; use_auto = false, max = inf,
+    iterated_neighbours(L:HermLat, P::RelNumFieldOrderIdeal; use_auto = false, max = inf,
 				                   callback = eqcallback,
 						   missing_mass = Ref{QQFieldElem}(zero(QQFieldElem)))
                                                                             -> Vector{HermLat}
@@ -401,7 +401,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
 end
 
 @doc raw"""
-    neighbours_with_ppower(L::HermLat, P::NfRelOrdIdl, e::Integer)
+    neighbours_with_ppower(L::HermLat, P::RelNumFieldOrderIdeal, e::Integer)
                                                                       -> Vector{HermLat}
 
 Return a sequence of `P`-neighbours of length `e`, $L=L_1, L_2, \dots, L_e$ such that
@@ -428,8 +428,8 @@ end
 ################################################################################
 
 @doc raw"""
-    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, ZZRingElem}}, Bool,
-                                    NfRelOrdIdl
+    genus_generators(L::HermLat) -> Vector{Tuple{RelNumFieldOrderIdeal, ZZRingElem}}, Bool,
+                                    RelNumFieldOrderIdeal
 
 Given a hermitian lattice `L`, return `gens, def, P0` such that:
 

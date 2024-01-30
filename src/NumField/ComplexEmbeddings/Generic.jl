@@ -134,7 +134,7 @@ Complex embedding corresponding to -1.73
 restrict(f::NumFieldEmb, K::NumField)
 
 @doc raw"""
-    restrict(f::NumFieldEmb, g::NumFieldMor)
+    restrict(f::NumFieldEmb, g::NumFielHom)
 
 Given an embedding $f$ of a number field $L$ and a morphism $g \colon K \to L$,
 return the embedding $g \circ f$ of $K$.
@@ -156,7 +156,7 @@ Complex embedding corresponding to 0.62
     over rational field
 ```
 """
-restrict(f::NumFieldEmb, K::NumFieldMor)
+restrict(f::NumFieldEmb, K::NumFielHom)
 
 ################################################################################
 #
@@ -165,7 +165,7 @@ restrict(f::NumFieldEmb, K::NumFieldMor)
 ################################################################################
 
 @doc raw"""
-    extend(e::NumFieldEmb, f::NumFieldMor)
+    extend(e::NumFieldEmb, f::NumFielHom)
 
 Given an embedding $e$ of $k$ and a morphism $f \colon k \to K$, determine
 all embedings of $K$ which restrict to $e$ along $f$.
@@ -185,7 +185,7 @@ julia> extend(e, ktoK)
  Complex embedding corresponding to -0.81 - 0.59 * i of cyclotomic field of order 5
 ```
 """
-function extend(e::NumFieldEmb, f::NumFieldMor)
+function extend(e::NumFieldEmb, f::NumFielHom)
   @req number_field(e) === domain(f) "Number field of embedding must be domain"
   emb = complex_embeddings(codomain(f))
   res = eltype(emb)[ E for E in emb if f * E == e ]
@@ -194,11 +194,11 @@ function extend(e::NumFieldEmb, f::NumFieldMor)
   return res
 end
 
-function Base.:(*)(f::NumFieldMor, e::NumFieldEmb)
+function Base.:(*)(f::NumFielHom, e::NumFieldEmb)
   return restrict(e, f)
 end
 
-function compose(f::NumFieldMor, e::NumFieldEmb)
+function compose(f::NumFielHom, e::NumFieldEmb)
   return f * e
 end
 
@@ -210,7 +210,7 @@ end
 
 # Extension to order elements
 
-(f::NumFieldEmb)(x::NumFieldOrdElem, prec::Int = 32) = f(elem_in_nf(x), prec)
+(f::NumFieldEmb)(x::NumFieldOrderElem, prec::Int = 32) = f(elem_in_nf(x), prec)
 
 @doc raw"""
     evaluation_function(e::NumFieldEmb, prec::Int) -> Function
@@ -273,7 +273,7 @@ function sign(x::NumFieldElem, e::NumFieldEmb)
   end
 end
 
-sign(x::NumFieldOrdElem, e::NumFieldEmb) = sign(elem_in_nf(x), e)
+sign(x::NumFieldOrderElem, e::NumFieldEmb) = sign(elem_in_nf(x), e)
 
 function sign(x::FacElem{<:NumFieldElem}, e::NumFieldEmb)
   @req _base_ring(x) === number_field(e) "Parents must match"
@@ -306,7 +306,7 @@ Dict{Hecke.NumFieldEmbNfAbs, Int64} with 2 entries:
   Complex embedding corresponding to 1.73 of real quadratic field defined… => 1
 ```
 """
-function signs(a::Union{NumFieldElem, FacElem, NumFieldOrdElem},
+function signs(a::Union{NumFieldElem, FacElem, NumFieldOrderElem},
                p::Vector{<: NumFieldEmb} = real_embeddings(_base_ring(a)))
   return Dict(q => sign(a, q) for q in p)
 end
@@ -369,9 +369,9 @@ function is_totally_positive(a::Union{NumFieldElem, FacElem})
   return is_positive(a, real_embeddings(K))
 end
 
-is_positive(a::NumFieldOrdElem, e...) = is_positive(elem_in_nf(a), e...)
+is_positive(a::NumFieldOrderElem, e...) = is_positive(elem_in_nf(a), e...)
 
-is_totally_positive(a::NumFieldOrdElem, e...) =
+is_totally_positive(a::NumFieldOrderElem, e...) =
     is_totally_positive(elem_in_nf(a), e...)
 
 ################################################################################
@@ -423,7 +423,7 @@ function is_negative(a::Union{NumFieldElem, FacElem}, l::Vector{<: NumFieldEmb})
   return all(x -> is_negative(a, x), l)
 end
 
-is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
+is_negative(a::NumFieldOrderElem, e...) = is_negative(elem_in_nf(a), e...)
 
 ################################################################################
 #
@@ -436,7 +436,7 @@ is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
 (::typeof(log))(f::ComposedFunction{typeof(abs), <: NumFieldEmb}) =
     ComposedFunction(log, f)
 
-function (f::ComposedFunction{typeof(log), ComposedFunction{typeof(abs), T}})(x::Union{NumFieldElem, NumFieldOrdElem, FacElem}, prec::Int = 64) where {T}
+function (f::ComposedFunction{typeof(log), ComposedFunction{typeof(abs), T}})(x::Union{NumFieldElem, NumFieldOrderElem, FacElem}, prec::Int = 64) where {T}
   return _log_evaluate_fac_elem(f.inner.inner, x, prec)
 end
 
@@ -464,7 +464,7 @@ function (e::NumFieldEmb{T})(x::FacElem{S, T}, prec::Int = 64) where {S, T}
   return z
 end
 
-function __log_evaluate_fac_elem(e, x::NumFieldOrdElem, prec)
+function __log_evaluate_fac_elem(e, x::NumFieldOrderElem, prec)
   return __log_evaluate_fac_elem(e, elem_in_nf(x, copy = false), prec)
 end
 

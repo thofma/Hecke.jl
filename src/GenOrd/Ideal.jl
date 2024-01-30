@@ -717,7 +717,7 @@ function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p:
   #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
-  A, OtoA = AlgAss(O, Ip1, p)
+  A, OtoA = StructureConstantAlgebra(O, Ip1, p)
   AtoO = pseudo_inv(OtoA)
   ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   for j in 1:length(ideals)
@@ -730,7 +730,7 @@ function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p:
   return ideals
 end
 
-function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
+function Hecke.StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem)
   @assert order(I) === O
 
   n = degree(O)
@@ -762,7 +762,7 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
     local _preimage_zero
 
     let O = O
-      function _preimage_zero(a::AlgAssElem)
+      function _preimage_zero(a::AssociativeAlgebraElem)
         return O()
       end
     end
@@ -789,9 +789,9 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   if isone(BO[1])
     one = zeros(FQ, r)
     one[1] = FQ(1)
-    A = AlgAss(FQ, mult_table, one)
+    A = StructureConstantAlgebra(FQ, mult_table, one)
   else
-    A = AlgAss(FQ, mult_table)
+    A = StructureConstantAlgebra(FQ, mult_table)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -809,7 +809,7 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   local _preimage
 
   let BO = BO, basis_elts = basis_elts, r = r
-    function _preimage(a::AlgAssElem)
+    function _preimage(a::AssociativeAlgebraElem)
       ca = coefficients(a)
       return sum(preimage(phi, ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
     end
@@ -940,7 +940,7 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::RingElem) where {T}
+function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1, p::RingElem) where {T}
 
   O = order(Ip1)
   n = degree(O)
@@ -999,17 +999,17 @@ end
 #
 ################################################################################
 
-mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, AlgAss{T}, Hecke.HeckeMap, GenOrdToAlgAssMor}
+mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, Hecke.HeckeMap, GenOrdToAlgAssMor}
   header::Hecke.MapHeader
 
-  function GenOrdToAlgAssMor{S, T}(O::S, A::AlgAss{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
+  function GenOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
     z.header = Hecke.MapHeader(O, A, _image, _preimage)
     return z
   end
 end
 
-function GenOrdToAlgAssMor(O::GenOrd, A::AlgAss{T}, _image, _preimage) where {T}
+function GenOrdToAlgAssMor(O::GenOrd, A::StructureConstantAlgebra{T}, _image, _preimage) where {T}
   return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
 

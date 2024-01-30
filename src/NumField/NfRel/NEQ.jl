@@ -1,5 +1,5 @@
 
-function is_norm_fac_elem(K::NfRel{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
+function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
   Ka, mKa, mkK = collapse_top_layer(K)
   Kas, KasToKa = simplify(Ka)
   Ka = Kas
@@ -53,12 +53,12 @@ function is_norm_fac_elem(K::NfRel{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldE
   return true, FacElem(K, Dict{elem_type(K), ZZRingElem}([image(KasToKa * mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
 end
 
-function is_norm(K::NfRel{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
+function is_norm(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
   fl, s = is_norm_fac_elem(K, a)
   return fl, evaluate(s)
 end
 
-function norm_equation(K::NfRel{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
+function norm_equation(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
   fl, s = is_norm(K, a)
   fl || error("no solution")
   return s

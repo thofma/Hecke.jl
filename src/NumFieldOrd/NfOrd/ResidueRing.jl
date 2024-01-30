@@ -181,7 +181,7 @@ end
 The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
-function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
+function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl})
   @assert order(I) === O
   if O isa AlgAssAbsOrd
     @hassert :NfOrdQuoRing 1 _test_ideal_sidedness(I, O, :left)
@@ -193,7 +193,7 @@ function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOr
   return Q, f
 end
 
-function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, ::Type{GrpAbFinGen})
+function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}, ::Type{GrpAbFinGen})
   f = GrpAbFinGenToNfOrdQuoNfOrd(O, I)
   return domain(f), f
 end
@@ -204,7 +204,7 @@ end
 
 The quotient ring $O$ modulo $I$ as a new ring.
 """
-Nemo.residue_ring(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
+Nemo.residue_ring(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
 
 @doc raw"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem

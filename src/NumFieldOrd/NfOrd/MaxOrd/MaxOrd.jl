@@ -4,12 +4,12 @@
 #
 ###############################################################################
 @doc raw"""
-    MaximalOrder(O::NfAbsOrd; index_divisors::Vector{ZZRingElem}, discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> NfAbsOrd
+    MaximalOrder(O::AbsNumFieldOrder; index_divisors::Vector{ZZRingElem}, discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> AbsNumFieldOrder
 
 Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
 the discriminant of the maximal order or a set of integers dividing the index of $O$ in the maximal order.
 """
-function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[]) where {S, T}
+function MaximalOrder(O::AbsNumFieldOrder{S, T}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[]) where {S, T}
   K = nf(O)
   return get_attribute!(K, :maximal_order) do
     M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
@@ -21,11 +21,11 @@ function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{ZZRingElem} = ZZ
       end
     end
     return M
-  end::NfAbsOrd{S, T}
+  end::AbsNumFieldOrder{S, T}
 end
 
 @doc raw"""
-    MaximalOrder(K::NumField{QQFieldElem}; discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> NfAbsOrd
+    MaximalOrder(K::NumField{QQFieldElem}; discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> AbsNumFieldOrder
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
 or the discriminant of the maximal order.
@@ -50,11 +50,11 @@ function MaximalOrder(K::AbsSimpleNumField; discriminant::ZZRingElem = ZZRingEle
       end
     end
     return O
-  end::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  end::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 end
 
 @doc raw"""
-    ring_of_integers(K::AbsSimpleNumField) -> NfAbsOrd
+    ring_of_integers(K::AbsSimpleNumField) -> AbsNumFieldOrder
 
 Returns the ring of integers of $K$.
 
@@ -537,7 +537,7 @@ end
 #
 ################################################################################
 
-function _poverorder(O::NfAbsOrd, p::ZZRingElem)
+function _poverorder(O::AbsNumFieldOrder, p::ZZRingElem)
   @vtime :NfOrd 3 I = pradical1(O, p)
   if isdefined(I, :princ_gen) && I.princ_gen == p
     return O
@@ -556,7 +556,7 @@ this function will return an order $R$ such that
 $v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])$. Otherwise
 $\mathcal O$ is returned.
 """
-function poverorder(O::NfAbsOrd, p::ZZRingElem)
+function poverorder(O::AbsNumFieldOrder, p::ZZRingElem)
   if p in O.primesofmaximality
     return O
   end
@@ -568,7 +568,7 @@ function poverorder(O::NfAbsOrd, p::ZZRingElem)
   end
 end
 
-function poverorder(O::NfAbsOrd, p::Integer)
+function poverorder(O::AbsNumFieldOrder, p::Integer)
   return poverorder(O, ZZRingElem(p))
 end
 
@@ -585,7 +585,7 @@ end
 This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
 the index $[ \mathcal O_K : R]$ is not divisible by $p$.
 """
-function pmaximal_overorder(O::NfAbsOrd, p::ZZRingElem)
+function pmaximal_overorder(O::AbsNumFieldOrder, p::ZZRingElem)
   @vprintln :NfOrd 1 "computing p-maximal overorder for $p ..."
   if p in O.primesofmaximality
     return O
@@ -613,7 +613,7 @@ function pmaximal_overorder(O::NfAbsOrd, p::ZZRingElem)
   return OO
 end
 
-function pmaximal_overorder(O::NfAbsOrd, p::Integer)
+function pmaximal_overorder(O::AbsNumFieldOrder, p::Integer)
   return pmaximal_overorder(O, ZZRingElem(p))
 end
 
@@ -623,12 +623,12 @@ end
 #
 ################################################################################
 @doc raw"""
-    ring_of_multipliers(I::NfAbsOrdIdl) -> NfAbsOrd
+    ring_of_multipliers(I::AbsNumFieldOrderIdeal) -> AbsNumFieldOrder
 
 Computes the order $(I : I)$, which is the set of all $x \in K$
 with $xI \subseteq I$.
 """
-function ring_of_multipliers(a::NfAbsOrdIdl)
+function ring_of_multipliers(a::AbsNumFieldOrderIdeal)
   O = order(a)
   n = degree(O)
   bmatinv = basis_mat_inv(a, copy = false)
@@ -677,7 +677,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   b = FakeFmpqMat(pseudo_inv(mhnf))
   mul!(b, b, basis_matrix(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-  O1 = NfAbsOrd(nf(O), b)
+  O1 = AbsNumFieldOrder(nf(O), b)
   if isdefined(O, :disc)
     O1.disc = divexact(O.disc, s^2)
   end
@@ -918,7 +918,7 @@ function pradical_frobenius1(O::NfOrd, p::Int)
   end
   hnf_modular_eldiv!(m1, ZZRingElem(p), :lowerleft)
   m1 = view(m1, length(gens) - 1:nrows(m1), 1:d)
-  I = NfAbsOrdIdl(O, m1)
+  I = AbsNumFieldOrderIdeal(O, m1)
   I.minimum = p
   I.gens = gens
   return I
@@ -983,7 +983,7 @@ function pradical_trace1(O::NfOrd, p::IntegerUnion)
 end
 
 
-function pradical1(O::NfAbsOrd, p::IntegerUnion)
+function pradical1(O::AbsNumFieldOrder, p::IntegerUnion)
   if p isa ZZRingElem && fits(Int, p)
     return pradical1(O, Int(p))
   end

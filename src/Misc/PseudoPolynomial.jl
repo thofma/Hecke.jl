@@ -277,11 +277,11 @@ function lcm(a::NfOrdFracIdl, b::NfOrdFracIdl)
 end
 
 
-function divides(a::NfAbsOrdElem, b::NfAbsOrdElem)
+function divides(a::AbsNumFieldOrderElem, b::AbsNumFieldOrderElem)
   c = divexact(elem_in_nf(a), elem_in_nf(b))
   x, y = _check_elem_in_order(c, parent(a))
   if x
-    return true, NfAbsOrdElem(parent(a), c, y)
+    return true, AbsNumFieldOrderElem(parent(a), c, y)
   else
     return false, a
   end

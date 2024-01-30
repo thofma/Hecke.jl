@@ -90,7 +90,7 @@ domain(f::EndAlgMap) = f.domain
 
 codomain(f::EndAlgMap) = f.codomain
 
-function image(f::EndAlgMap, a::AbsAlgAssElem)
+function image(f::EndAlgMap, a::AbstractAssociativeAlgebraElem)
   @req parent(a) === domain(f) "Element must be in the domain of the map"
   return ModAlgHom(f.V, f.V, matrix(a))
 end

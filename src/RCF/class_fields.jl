@@ -293,12 +293,12 @@ end
 
 
 @doc raw"""
-    is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
+    is_local_norm(r::ClassField, a::AbsNumFieldOrderElem, p::AbsNumFieldOrderIdeal) -> Bool
 
 Tests if $a$ is a local norm at $p$ in the extension implicitly given by $r$.
 Currently the conductor cannot have infinite places.
 """
-function is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
+function is_local_norm(r::ClassField, a::AbsNumFieldOrderElem, p::AbsNumFieldOrderIdeal)
   m0, minf = conductor(r)
   if length(minf) > 0
     error("not implemented yet")
@@ -323,11 +323,11 @@ end
 ################################################################################
 
 @doc raw"""
-    is_local_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
+    is_local_norm(r::ClassField, a::AbsNumFieldOrderElem) -> Bool
 
 Tests if $a$ is a local norm at all finite places in the extension implicitly given by $r$.
 """
-function is_local_norm(r::ClassField, a::NfAbsOrdElem)
+function is_local_norm(r::ClassField, a::AbsNumFieldOrderElem)
   K = base_field(r)
   m0, minf = conductor(r)
   if !isempty(minf) && !is_positive(a, _embedding.(minf))
@@ -338,13 +338,13 @@ function is_local_norm(r::ClassField, a::NfAbsOrdElem)
 end
 
 @doc raw"""
-    prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
+    prime_decomposition_type(C::ClassField, p::AbsNumFieldOrderIdeal) -> (Int, Int, Int)
 
 For a prime $p$ in the base ring of $r$, determine the splitting type of $p$
 in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
 """
-function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassField, ClassField_pp}
+function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Union{ClassField, ClassField_pp}
   @hassert :ClassField 1 is_prime(p)
   mR = C.rayclassgroupmap
   m0 = defining_modulus(C)[1]
@@ -538,22 +538,22 @@ function hilbert_class_field(k::AbsSimpleNumField)
 end
 
 @doc raw"""
-    ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
+    ray_class_field(I::AbsNumFieldOrderIdeal; n_quo = 0) -> ClassField
 
 The ray class field modulo $I$. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl; n_quo = -1)
+function ray_class_field(I::AbsNumFieldOrderIdeal; n_quo = -1)
   return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
 end
 
 @doc raw"""
-    ray_class_field(I::NfAbsOrdIdl, inf::Vector{InfPlc}; n_quo = 0) -> ClassField
+    ray_class_field(I::AbsNumFieldOrderIdeal, inf::Vector{InfPlc}; n_quo = 0) -> ClassField
 
 The ray class field modulo $I$ and the infinite places given. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl, inf::Vector{<: InfPlc}; n_quo = -1)
+function ray_class_field(I::AbsNumFieldOrderIdeal, inf::Vector{<: InfPlc}; n_quo = -1)
   return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
 end
 
@@ -561,8 +561,8 @@ end
 prime_decomposition(::ZZRing, p::Int) = [[p*ZZ, 1]]
 
 """
-    grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int})
-    grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, Int})
+    grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int})
+    grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int}, di::Dict{<:NumFieldEmb, Int})
 
 For a collection of places given via ideals as keys of `dp` and embeddings
 given as keys of `di` find a cyclic extension where the completions at
@@ -594,7 +594,7 @@ julia> prime_decomposition_type(maximal_order(K), 3)
 
 ```
 """
-function grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, Int} = Dict{NumFieldEmb, Int}())
+function grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int}, di::Dict{<:NumFieldEmb, Int} = Dict{NumFieldEmb, Int}())
   lp = collect(keys(dp))
   li = collect(keys(di))
   if length(li) == 0
@@ -629,7 +629,7 @@ end
 function _grunwald_wang(d::Dict{<:Any, Int})
   lp = collect(keys(d))
   li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
+  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
   @assert length(lp) + length(li) == length(d)
 
   if length(li) == 0
@@ -664,7 +664,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
 
   lp = collect(keys(d))
   li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
+  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
 
   if length(li) == 0
     if length(lp) == 0

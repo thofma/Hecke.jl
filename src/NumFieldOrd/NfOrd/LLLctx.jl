@@ -186,10 +186,10 @@ function lll_basis(L::NfLat{T}) where T
   return basis(L)
 end
 
-_abs_disc(O::NfRelOrd) = absolute_discriminant(O)
-_abs_disc(I::NfRelOrdIdl) = absolute_discriminant(order(I))*absolute_norm(I)
+_abs_disc(O::RelNumFieldOrder) = absolute_discriminant(O)
+_abs_disc(I::RelNumFieldOrderIdeal) = absolute_discriminant(order(I))*absolute_norm(I)
 
-function _get_nice_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
+function _get_nice_basis(OL::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFieldOrder}
   L = nf(OL)
   B = pseudo_basis(OL, copy = false)
   ideals = Dict{typeof(B[1][2]), Vector{elem_type(base_field(L))}}()
@@ -211,7 +211,7 @@ function _get_nice_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
   return abs_bas
 end
 
-function lll_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
+function lll_basis(OL::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFieldOrder}
   L = nf(OL)
   B = _get_nice_basis(OL)
   is_exact = false

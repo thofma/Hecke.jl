@@ -15,15 +15,15 @@ representation is that as a field element.
 ## Creation
 
 Elements are constructed either as linear combinations of basis elements
-or via explicit coercion. Elements will be of type `NfAbsOrdElem`,
+or via explicit coercion. Elements will be of type `AbsNumFieldOrderElem`,
 the type if actually parametrized by the type of the surrounding field and
 the type of the field elements. E.g. the type of any element in any
 order of an absolute simple field will be
-`NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}`
+`AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}`
 
 
 ```@docs
-NfAbsOrd
+AbsNumFieldOrder
 ```
 
 ## Basic properties
@@ -41,23 +41,23 @@ discriminant(::Vector{NfOrdElem})
 All the usual arithmetic operatinos are defined:
 
 - `-(::NUmFieldOrdElem)`
-- `+(::NumFieldOrdElem, ::NumFieldOrdElem)`
-- `-(::NumFieldOrdElem, ::NumFieldOrdElem)`
-- `*(::NumFieldOrdElem, ::NumFieldOrdElem)`
-- `^(::NumFieldOrdElem, ::Int)`
-- `mod(::NfAbsOrdElem, ::Int)`
-- `mod_sym(::NumFieldOrdElem, ::ZZRingElem)`
-- `powermod(::NfAbsOrdElem, ::ZZRingElem, ::Int)`
+- `+(::NumFieldOrderElem, ::NumFieldOrderElem)`
+- `-(::NumFieldOrderElem, ::NumFieldOrderElem)`
+- `*(::NumFieldOrderElem, ::NumFieldOrderElem)`
+- `^(::NumFieldOrderElem, ::Int)`
+- `mod(::AbsNumFieldOrderElem, ::Int)`
+- `mod_sym(::NumFieldOrderElem, ::ZZRingElem)`
+- `powermod(::AbsNumFieldOrderElem, ::ZZRingElem, ::Int)`
 
 ## Miscellaneous
 
 ```@docs
-representation_matrix(::NfAbsOrdElem)
+representation_matrix(::AbsNumFieldOrderElem)
 representation_matrix(::NfOrdElem, ::AbsSimpleNumField)
-tr(::NumFieldOrdElem)
-norm(::NumFieldOrdElem)
-absolute_norm(::NfAbsOrdElem)
-absolute_tr(::NfAbsOrdElem)
+tr(::NumFieldOrderElem)
+norm(::NumFieldOrderElem)
+absolute_norm(::AbsNumFieldOrderElem)
+absolute_tr(::AbsNumFieldOrderElem)
 rand(::NfOrd, ::Int)
 minkowski_map(::NfOrdElem, ::Int)
 conjugates_arb(::NfOrdElem, ::Int)
@@ -66,7 +66,7 @@ t2(::NfOrdElem, ::Int)
 minpoly(::NfOrdElem)
 charpoly(::NfOrdElem)
 factor(::NfOrdElem)
-denominator(a::NumFieldElem, O::NfRelOrd)
-discriminant(::Vector{NfAbsOrdElem})
+denominator(a::NumFieldElem, O::RelNumFieldOrder)
+discriminant(::Vector{AbsNumFieldOrderElem})
 ```
 

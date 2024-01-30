@@ -7,9 +7,9 @@
 mutable struct CyclotomicExt
   k::AbsSimpleNumField
   n::Int
-  Kr::Hecke.NfRel{AbsSimpleNumFieldElem}
+  Kr::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   Ka::AbsSimpleNumField
-  mp::Tuple{NfToNfRel, NfToNfMor}
+  mp::Tuple{NfToNfRel, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
 
   kummer_exts::Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}
                       #I save the kummer extensions used in the class field construction
@@ -333,7 +333,7 @@ function extend_base_field(A::ClassField, mA::Map; order=maximal_order(codomain(
   return fixed_field(R, kernel(h)[1])
 end
 
-function _isprobably_primitive(x::NfAbsOrdElem)
+function _isprobably_primitive(x::AbsNumFieldOrderElem)
   S = parent(x)
   OS = maximal_order(S)
   d = discriminant(OS)
@@ -366,7 +366,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   BK = map(mK, basis(lOK, k))
   BL = map(mL, basis(lOL, L))
   BOS = product_basis(BK, BL)
-  OS = NfAbsOrd(BOS)
+  OS = AbsNumFieldOrder(BOS)
   OS.is_maximal = 1
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
   set_attribute!(S, :maximal_order => OS)
@@ -439,7 +439,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   set_attribute!(Ka, :maximal_order => OKa)
   img_gen_k = abs2ns\(S[1])
   img_gen_Kr = abs2ns\(S[2])
-  img_gen_Ka = evaluate(elem_in_nf(a).data, NfRelElem{AbsSimpleNumFieldElem}[Kr(gen(k)), gKr])
+  img_gen_Ka = evaluate(elem_in_nf(a).data, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}[Kr(gen(k)), gKr])
 
   small2abs = hom(k, Ka, img_gen_k)
   abs2rel = hom(Ka, Kr, img_gen_Ka, inverse = (img_gen_k, img_gen_Kr))
@@ -478,18 +478,18 @@ end
 #
 ################################################################################
 @doc raw"""
-    automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+    automorphism_list(C::CyclotomicExt; gens::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}) -> Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
 
 Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of `absolute_simple_field(C).
 It assumes that the base field is normal. `gens` must be a set of generators for the automorphism group of the base field of $C$.
 """
-function automorphism_list(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphism_list(base_field(C))), copy::Bool = true)
+function automorphism_list(C::CyclotomicExt; gens::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = small_generating_set(automorphism_list(base_field(C))), copy::Bool = true)
 
   if degree(absolute_simple_field(C)) == degree(base_field(C)) || is_automorphisms_known(C.Ka)
     return automorphism_list(C.Ka, copy = copy)
   end
   genK = C.mp[1](gen(C.Ka))
-  gnew = Hecke.NfToNfMor[]
+  gnew = Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[]
   #First extend the old generators
   for g in gens
     ng = Hecke.extend_to_cyclotomic(C, g)

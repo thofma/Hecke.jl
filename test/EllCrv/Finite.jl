@@ -27,7 +27,7 @@
     @inferred rand(E4_)
     @inferred rand(E5)
 
-    T = EllCrvPt{elem_type(R1)}
+    T = EllipticCurvePoint{elem_type(R1)}
     @test rand(rng, E1) isa T
     @test rand(rng, E1, 3) isa Vector{T}
 

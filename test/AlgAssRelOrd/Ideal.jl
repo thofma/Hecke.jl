@@ -56,7 +56,7 @@
     M[1,2,2] = one(K)
     M[2,1,2] = one(K)
     M[2,2,1] = K(-12)
-    E = Hecke.AlgAss(K,M)
+    E = Hecke.StructureConstantAlgebra(K,M)
     OE = maximal_order(E)
     @test is_prime(numerator(norm(@inferred Hecke.maximal_integral_ideal(OE, 3*o, :left))))
   end

@@ -438,7 +438,7 @@ end
 function _unit_group_maximal(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
-  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
+  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
 end
 
 
@@ -454,7 +454,7 @@ function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bo
   if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
-    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
+    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
   end
 end
 

@@ -199,7 +199,7 @@ function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem}, O)
   return a - O(m)
 end
 
-function reco(a::NfAbsOrdElem, M, pM)
+function reco(a::AbsNumFieldOrderElem, M, pM)
   m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
   m = m - map(x -> round(ZZRingElem, x, pM[2]), m*pM[1])*M
   return parent(a)(m)

@@ -184,7 +184,7 @@ function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
   end
 end
 
-function Hecke.crt(A::Vector{<:NfAbsOrdElem}, I::Vector{<:NfAbsOrdIdl})
+function Hecke.crt(A::Vector{<:AbsNumFieldOrderElem}, I::Vector{<:AbsNumFieldOrderIdeal})
   while length(I) > 1
     II = typeof(I[1])[]
     AA = typeof(A[1])[]
@@ -377,7 +377,7 @@ function Hecke.degree(R::QadicFieldElem) #TODO XXXX
   return R.length
 end
 
-function Hecke.ideal(R::NfAbsOrd, f::MapFromFunc{AbsSimpleNumField,QadicField})
+function Hecke.ideal(R::AbsNumFieldOrder, f::MapFromFunc{AbsSimpleNumField,QadicField})
   K = nf(R)
   Cq = codomain(f)
   if degree(Cq) == degree(K)

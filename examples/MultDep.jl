@@ -43,7 +43,7 @@ function units(h::SMat, t, b::Vector{AbsSimpleNumFieldElem})
   return u
 end
 
-function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
+function unit_group_mod_torsion_fac_elem(O::AbsNumFieldOrder, u::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   U = Hecke._unit_group_init(O)
   s = signature(O)
   r = s[1] + s[2] - 1
@@ -84,7 +84,7 @@ function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Vector{FacElem{AbsSimpl
   return U
 end
 
-function *(O1::NfAbsOrd, O2::NfAbsOrd)
+function *(O1::AbsNumFieldOrder, O2::AbsNumFieldOrder)
   k = nf(O1)
   @assert k === nf(O2)
   b1 = basis(O1, k)
@@ -107,8 +107,8 @@ function *(O1::NfAbsOrd, O2::NfAbsOrd)
 end
 
 mutable struct GeIdeal
-  a::NfAbsOrdIdl
-  function GeIdeal(a::NfAbsOrdIdl)
+  a::AbsNumFieldOrderIdeal
+  function GeIdeal(a::AbsNumFieldOrderIdeal)
     o =order(a)
     if o.is_maximal == 1
       return new(a)
@@ -180,8 +180,8 @@ function coprime_base(A::Vector{AbsSimpleNumFieldElem})
   return coprime_base(c)
 end
 
-function coprime_base(A::Vector{AbsSimpleNumFieldElem}, O::NfAbsOrd)
-  c = Vector{NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
+function coprime_base(A::Vector{AbsSimpleNumFieldElem}, O::AbsNumFieldOrder)
+  c = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   for a = A
     n,d = integral_split(a*O)
     isone(n) || push!(c, n)

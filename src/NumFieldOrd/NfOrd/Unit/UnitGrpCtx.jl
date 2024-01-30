@@ -318,12 +318,12 @@ full_unit_rank(u::UnitGrpCtx) = unit_group_rank(u.order)
 
 function automorphism_list(u::UnitGrpCtx)
   if isdefined(u, :auts)
-    return u.auts::Vector{NfToNfMor}
+    return u.auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
   else
     auts = automorphism_list(nf(order(u)))
     u.auts = auts
     u.cache = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}[ Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}() for i in 1:length(u.auts) ]
-    return u.auts::Vector{NfToNfMor}
+    return u.auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}
   end
 end
 

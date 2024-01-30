@@ -33,7 +33,7 @@
 #
 ################################################################################
 
-function check_parent(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function check_parent(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
    if order(x) !== order(y)
      error("Ideals do not have the same order.")
    end
@@ -46,7 +46,7 @@ end
 ################################################################################
 
 #x has a princ gen special
-function sum_princ_gen_special(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function sum_princ_gen_special(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   OK = order(x)
   genx = x.princ_gen_special[2]+x.princ_gen_special[3]
   if has_2_elem(y)
@@ -84,7 +84,7 @@ function sum_princ_gen_special(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   return res
 end
 
-function sum_via_basis_matrix(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function sum_via_basis_matrix(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   OK = order(x)
   d = degree(OK)
   g = gcd(minimum(x, copy = false), minimum(y, copy = false))
@@ -100,7 +100,7 @@ function sum_via_basis_matrix(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 end
 
 #x is a principal ideal
-function sum_princ_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function sum_princ_gen(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   OK = order(x)
   d = degree(OK)
   g = gcd(minimum(y, copy = false), minimum(x, copy = false))
@@ -118,7 +118,7 @@ function sum_princ_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   return res
 end
 
-function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function +(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   check_parent(x, y)
   OK = order(x)
 
@@ -212,7 +212,7 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 #
 ################################################################################
 
-function *(x::S, y::S) where S <: NfAbsOrdIdl
+function *(x::S, y::S) where S <: AbsNumFieldOrderIdeal
   check_parent(x, y)
   @hassert :NfOrd 1 is_consistent(x)
   @hassert :NfOrd 1 is_consistent(y)
@@ -226,7 +226,7 @@ function *(x::S, y::S) where S <: NfAbsOrdIdl
   return z
 end
 
-function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
+function mul_gen(x::S, y::S) where S <: AbsNumFieldOrderIdeal
   check_parent(x, y)
   if iszero(x) || iszero(y)
     I1 = ideal(order(x), 0)
@@ -281,7 +281,7 @@ function mul_gen(x::S, y::S) where S <: NfAbsOrdIdl
 end
 
 # using the 2-normal representation
-function prod_via_2_elem_normal(a::S, b::S) where S <: NfAbsOrdIdl
+function prod_via_2_elem_normal(a::S, b::S) where S <: AbsNumFieldOrderIdeal
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem_normal(a)
   @hassert :NfOrd 1 has_2_elem_normal(b)
@@ -342,7 +342,7 @@ function prod_via_2_elem_normal(a::S, b::S) where S <: NfAbsOrdIdl
 end
 
 # using the 2-weak-normal representation
-function prod_via_2_elem_weakly(a::S, b::S) where S <: NfAbsOrdIdl
+function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
   check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem(a)
   @hassert :NfOrd 1 has_2_elem(b)
@@ -441,7 +441,7 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: NfAbsOrdIdl
 end
 
 # dispatching
-function mul_maximal(x::S, y::S) where S <: NfAbsOrdIdl
+function mul_maximal(x::S, y::S) where S <: AbsNumFieldOrderIdeal
   check_parent(x, y)
   if iszero(x) || iszero(y)
     z = ideal(order(x), 0)
@@ -479,12 +479,12 @@ end
 # Falls back to generic case +(::NfOrd, ::NfOrd)
 #for ideals in the maximal order, the gcd is well defined...
 
-function gcd(A::S, B::S) where S <: NfAbsOrdIdl
+function gcd(A::S, B::S) where S <: AbsNumFieldOrderIdeal
   check_parent(A, B)
   return A+B
 end
 
-function gcd_into!(A::NfAbsOrdIdl, B::NfAbsOrdIdl, C::NfAbsOrdIdl)
+function gcd_into!(A::AbsNumFieldOrderIdeal, B::AbsNumFieldOrderIdeal, C::AbsNumFieldOrderIdeal)
   return C+B
 end
 
@@ -494,7 +494,7 @@ end
 
 The gcd or sum (A + pO).
 """
-function gcd(A::NfAbsOrdIdl, p::ZZRingElem)
+function gcd(A::AbsNumFieldOrderIdeal, p::ZZRingElem)
   if isdefined(A, :minimum)
     if gcd(minimum(A, copy = false), p) == 1
       return ideal(order(A), ZZRingElem(1))
@@ -520,7 +520,7 @@ end
 #
 ################################################################################
 
-function Base.:(^)(A::NfAbsOrdIdl, e::Int)
+function Base.:(^)(A::AbsNumFieldOrderIdeal, e::Int)
   @hassert :NfOrd 1 is_consistent(A)
   OK = order(A)
   if e == 0
@@ -535,7 +535,7 @@ function Base.:(^)(A::NfAbsOrdIdl, e::Int)
   end
 end
 
-function pow_2_elem(A::NfAbsOrdIdl, e::Int)
+function pow_2_elem(A::AbsNumFieldOrderIdeal, e::Int)
   OK = order(A)
   if A.is_principal == 1 && isdefined(A, :princ_gen)
     gen = (A.princ_gen::elem_type(OK))^e
@@ -585,7 +585,7 @@ function pow_2_elem(A::NfAbsOrdIdl, e::Int)
 end
 
 # To stop the wrong julia behavior for I^2 and I^-2
-Base.literal_pow(::typeof(^), A::NfAbsOrdIdl, ::Val{p}) where {p} = A^p
+Base.literal_pow(::typeof(^), A::AbsNumFieldOrderIdeal, ::Val{p}) where {p} = A^p
 
 ################################################################################
 #
@@ -742,7 +742,7 @@ Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
 
 If the ideals are not coprime, an error is raised.
 """
-function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function idempotents(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   check_parent(x, y)
   O = order(x)
   d = degree(O)
@@ -771,7 +771,7 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   return _idempotents_via_matrices(x, y)
 end
 
-function _idempotents_via_matrices(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function _idempotents_via_matrices(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
 
   O = order(x)
   d = degree(O)
@@ -837,12 +837,12 @@ end
 Find $x$ such that $x \equiv r_1 \bmod i_1$ and $x \equiv r_2 \bmod i_2$
 using `idempotents`.
 """
-function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }
+function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)
   return r1*v + r2*u
 end
 
-function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{NfOrdElem, NfRelOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, NfRelOrdIdl, AlgAssAbsOrdIdl} }
+function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{NfOrdElem, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
   if length(a) == 1
     return a[1]
   end
@@ -864,12 +864,12 @@ end
 #
 ################################################################################
 
-divexact(A::NfAbsOrdIdl, b::Integer; check::Bool=true) = divexact(A, ZZRingElem(b); check=check)
+divexact(A::AbsNumFieldOrderIdeal, b::Integer; check::Bool=true) = divexact(A, ZZRingElem(b); check=check)
 
 #TODO: write a divexact! to change the ideal?
 #  difficult due to Julia's inability to unset entries...
 
-function divexact(A::NfAbsOrdIdl, b::ZZRingElem; check::Bool=true)
+function divexact(A::AbsNumFieldOrderIdeal, b::ZZRingElem; check::Bool=true)
   if iszero(A)
     return A
   end
@@ -945,7 +945,7 @@ end
 #
 ################################################################################
 
-function extend(A::NfAbsOrdIdl, O::NfAbsOrd)
+function extend(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   if order(A) === O
     return A
   end
@@ -974,10 +974,10 @@ function extend(A::NfAbsOrdIdl, O::NfAbsOrd)
   return ideal(O, M; check=false, M_in_hnf=true)
 end
 
-*(A::NfAbsOrdIdl, O::NfAbsOrd) = extend(A, O)
-*(O::NfAbsOrd, A::NfAbsOrdIdl) = extend(A, O)
+*(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder) = extend(A, O)
+*(O::AbsNumFieldOrder, A::AbsNumFieldOrderIdeal) = extend(A, O)
 
-function contract(A::NfAbsOrdIdl, O::NfAbsOrd)
+function contract(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   if order(A) === O
     return A
   end

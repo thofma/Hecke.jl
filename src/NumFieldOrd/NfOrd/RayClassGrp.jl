@@ -650,8 +650,8 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{<:InfPlc} = Vector{InfPlc{
 
   if n_quo != -1
     powers = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
-    quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
-    groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
+    quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
+    groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
     for (pp, vv) in lp
       dtame = Dict{NfOrdIdl, Int}()
       dwild = Dict{NfOrdIdl, Int}()
@@ -680,8 +680,8 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Vector{<:InfPlc} = Vector{InfPlc{
     end
   else
     powers = Tuple{NfOrdIdl, NfOrdIdl}[(p, p^v) for (p, v) in lp]
-    quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[quo(O, q) for (p, q) in powers]
-    groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[_multgrp(x[1], true) for x in quo_rings]
+    quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[quo(O, q) for (p, q) in powers]
+    groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[_multgrp(x[1], true) for x in quo_rings]
   end
   if isempty(groups_and_maps)
     nG = 0
@@ -1236,7 +1236,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   return lp, sR
 end
 
-function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{Hecke.NfToNfMor}, mp::GrpAbFinGenMap = id_hom(domain(mR)))
+function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, mp::GrpAbFinGenMap = id_hom(domain(mR)))
   R = domain(mR)
   G = Vector{GrpAbFinGenMap}(undef, length(Aut))
   if isempty(Aut)
@@ -1377,7 +1377,7 @@ function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, Nf
   lp = factor(m)
   powers = Tuple{NfOrdIdl, NfOrdIdl}[(x, x^v) for (x, v) in lp]
   quo_rings = Tuple{NfOrdQuoRing, NfOrdQuoMap}[quo(O, q) for (x, q) in powers]
-  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[multiplicative_group(Q[1]) for Q in quo_rings]
+  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[multiplicative_group(Q[1]) for Q in quo_rings]
   invariants = Vector{ZZRingElem}()
   for x in groups_and_maps
     append!(invariants, x[1].snf)

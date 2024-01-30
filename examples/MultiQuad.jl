@@ -117,7 +117,7 @@ function multi_quad(d::Vector{ZZRingElem}, B::Int)
     else
       S, mS = Hecke.unit_group_fac_elem(zk)
     end
-    h = Hecke.NfToNfMor(k, K, bb[i])
+    h = Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}(k, K, bb[i])
     @assert bb[i]^2 == all_d[i]
 
     for i=2:ngens(S) # don't need torsion here - it's the "same" everywhere

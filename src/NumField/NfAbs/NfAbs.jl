@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-order_type(::AbsSimpleNumField) = NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
+order_type(::AbsSimpleNumField) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
-order_type(::Type{AbsSimpleNumField}) = NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
+order_type(::Type{AbsSimpleNumField}) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
@@ -161,7 +161,7 @@ function is_defining_polynomial_nice(K::AbsSimpleNumField)
   return Bool(K.flag & UInt(1))
 end
 
-function is_defining_polynomial_nice(K::NfAbsNS)
+function is_defining_polynomial_nice(K::AbsNonSimpleNumField)
   pols = K.pol
   for i = 1:length(pols)
     d = denominator(pols[i])
@@ -462,7 +462,7 @@ function _issubfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField)
 end
 
 @doc raw"""
-      is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NfToNfMor
+      is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
@@ -486,7 +486,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isomorphic_with_map(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NfToNfMor
+    is_isomorphic_with_map(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Return `true` and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
 Otherwise the function returns "false" and a morphism mapping everything to 0.
@@ -866,7 +866,7 @@ end
 
 
 @doc raw"""
-    normal_closure(K::AbsSimpleNumField) -> AbsSimpleNumField, NfToNfMor
+    normal_closure(K::AbsSimpleNumField) -> AbsSimpleNumField, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}
 
 The normal closure of $K$ together with the embedding map.
 """

@@ -254,7 +254,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
 end
 
 
-function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
+function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}})
   #I am assuming that auts contains all the automorphisms of K
   K = domain(auts[1])
   p = 11
@@ -269,13 +269,13 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   end
   S = small_generating_set(auts)
 
-  Dpols = Dict{fpPolyRingElem, NfToNfMor}()
+  Dpols = Dict{fpPolyRingElem, NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}()
   for i = 1:length(auts)
     Dpols[Rx(image_primitive_element(auts[i]))] = auts[i]
   end
   Gperm = SymmetricGroup(length(ctx.FB.ideals))
 
-  elements = Vector{Tuple{NfToNfMor, Generic.Perm{Int}}}(undef, length(auts))
+  elements = Vector{Tuple{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, Generic.Perm{Int}}}(undef, length(auts))
   elements[1] = (id_hom(K), one(Gperm))
   if length(auts) == 1
     return elements

@@ -86,12 +86,12 @@ function _lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::QQMatrix; check::Bo
 end
 
 @doc raw"""
-    natural_lattice(O::AlgAssAbsOrd{<:AlgMat}) -> ModAlgAssLat
+    natural_lattice(O::AlgAssAbsOrd{<:MatAlgebra}) -> ModAlgAssLat
 
 Given a $\mathbf{Z}$-order $O$ of a rational matrix algebra contained in
 $\mathrm{M}_n(\mathbf{Z})$, return $\mathbf{Z}^n$ as an $O$-lattice.
 """
-function natural_lattice(O::AlgAssAbsOrd{<:AlgMat{QQFieldElem, QQMatrix}})
+function natural_lattice(O::AlgAssAbsOrd{<:MatAlgebra{QQFieldElem, QQMatrix}})
   A = algebra(O)
   if all(x -> isone(denominator(matrix(elem_in_algebra(x)))),
          basis(O, copy = false))
@@ -317,7 +317,7 @@ end
 function _twists(L::ModAlgAssLat)
   V = L.V
   A = algebra(V)
-  @req A isa AlgGrp "Algebra of the order must be group algebra"
+  @req A isa GroupAlgebra "Algebra of the order must be group algebra"
   Ts = _twists(V)
   # the twists of V are the "same" vector space, so we can just push L to the
   # twists

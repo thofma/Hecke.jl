@@ -137,7 +137,7 @@ function Hecke.valuation(a::FacElem{ZZRingElem, ZZRing}, p::ZZRingElem)
   return sum(k*valuation(b, p) for (b, k) = a.fac)
 end
 
-function norm_equation2_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
+function norm_equation2_fac_elem(R::AbsNumFieldOrder, k::ZZRingElem; abs::Bool = false)
   @assert Hecke.is_maximal(R)
   lp = factor(k*R)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
@@ -164,7 +164,7 @@ function norm_equation2_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
 end
 
 
-function norm_equation_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
+function norm_equation_fac_elem(R::AbsNumFieldOrder, k::ZZRingElem; abs::Bool = false)
   @assert Hecke.is_maximal(R)
   lp = factor(k)
   S = []
@@ -197,17 +197,17 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
   return sol
 end
 
-norm_equation_fac_elem(R::NfAbsOrd, k::Integer; abs::Bool = false) =
+norm_equation_fac_elem(R::AbsNumFieldOrder, k::Integer; abs::Bool = false) =
                             norm_equation_fac_elem(R, ZZRingElem(k), abs = abs)
 
-function norm_equation(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
+function norm_equation(R::AbsNumFieldOrder, k::ZZRingElem; abs::Bool = false)
   s = norm_equation_fac_elem(R, k, abs = abs)
   return [R(evaluate(x)) for x = s]
 end
 
-norm_equation(R::NfAbsOrd, k::Integer; abs::Bool = false) = norm_equation(R, ZZRingElem(k), abs = abs)
+norm_equation(R::AbsNumFieldOrder, k::Integer; abs::Bool = false) = norm_equation(R, ZZRingElem(k), abs = abs)
 
-function norm_equation_fac_elem(R::Hecke.NfRelOrd{AbsSimpleNumFieldElem,Hecke.NfOrdFracIdl}, a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
+function norm_equation_fac_elem(R::Hecke.RelNumFieldOrder{AbsSimpleNumFieldElem,Hecke.NfOrdFracIdl}, a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
 
   @assert Hecke.is_maximal(R)
   Ka, mKa, mkK = collapse_top_layer(nf(R))
@@ -249,7 +249,7 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{AbsSimpleNumFieldElem,Hecke.Nf
   return sol
 end
 
-function Hecke.is_irreducible(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
+function Hecke.is_irreducible(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
   if iszero(a)
     return false
   end
@@ -286,11 +286,11 @@ function Hecke.is_irreducible(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFiel
 end
 
 @doc raw"""
-    irreducibles(S::Vector{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}}) -> Vector{NfAbsOrdElem}
+    irreducibles(S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}}) -> Vector{AbsNumFieldOrderElem}
 
 Computes all irreducibles whose support is contained in $S$.
 """
-function irreducibles(S::Vector{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}})
+function irreducibles(S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}})
   if length(S) == 0
     return []
   end
@@ -317,11 +317,11 @@ function irreducibles(S::Vector{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldE
 end
 
 @doc raw"""
-    factorisations(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}) -> Vector{Fac{OrdElem}}
+    factorisations(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}) -> Vector{Fac{OrdElem}}
 
 Computes all factorisations of $a$ into irreducibles.
 """
-function factorisations(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
+function factorisations(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
   O = parent(a)
   S = collect(keys(factor(a*O)))
   if length(S) == 0
@@ -331,7 +331,7 @@ function factorisations(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}
   A = matrix([ZZRingElem[valuation(x, y) for y = S] for x = irr])
   b = matrix([ZZRingElem[valuation(a, y) for y = S]])
   sol = solve_non_negative(A, b)
-  res = Fac{NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}[]
+  res = Fac{AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}[]
   for j=1:nrows(sol)
     x = Dict{typeof(a), Int}()
     y = a

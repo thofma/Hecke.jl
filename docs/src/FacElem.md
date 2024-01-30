@@ -30,7 +30,7 @@ parent.
 Important special cases are
  * ```FacElem{ZZRingElem, ZZRing}```, factored integers
  * ```FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}```, factored algerbaic numbers
- * ```FacElem{NfAbsOrdIdl, NfAbsOrdIdlSet}```, factored ideals
+ * ```FacElem{AbsNumFieldOrderIdeal, AbsNumFieldOrderIdealSet}```, factored ideals
 
 It should be noted that an object of type ```FacElem{ZZRingElem, ZZRing}``
 will, in general, not represent an integer as the exponents can be
@@ -92,10 +92,10 @@ compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::In
 ```
 
 ```@docs
-valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
-valuation(::FacElem{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.NfAbsOrdIdlSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
+valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
+valuation(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
 evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::NfOrdFracIdl)
-reduce_ideal(::FacElem{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.NfAbsOrdIdlSet{AbsSimpleNumField,AbsSimpleNumFieldElem}})
+reduce_ideal(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}})
 modular_proj(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::Hecke.modular_env)
 ```
 

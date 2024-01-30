@@ -170,7 +170,7 @@ end
 #
 ################################################################################
 
-function restrict(e::NumFieldEmb, f::NumFieldMor{AbsSimpleNumField, <: Any, <: Any})
+function restrict(e::NumFieldEmb, f::NumFielHom{AbsSimpleNumField, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)

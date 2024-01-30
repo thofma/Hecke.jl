@@ -156,7 +156,7 @@ codomain(f::FiniteFieldMultGrpMap) = f.codomain
   codomain::S
   generator::T
 
-  function AbToNfOrdMultGrp(O::NfAbsOrd, order::Int, generator::NfAbsOrdElem)
+  function AbToNfOrdMultGrp(O::AbsNumFieldOrder, order::Int, generator::AbsNumFieldOrderElem)
     G = abelian_group([order])
     z = new{typeof(O), typeof(generator)}()
     z.domain = G
@@ -164,7 +164,7 @@ codomain(f::FiniteFieldMultGrpMap) = f.codomain
     z.generator = generator
     return z
   end
-  function AbToNfOrdMultGrp(O::NfRelOrd, order::Int, generator::NfRelOrdElem)
+  function AbToNfOrdMultGrp(O::RelNumFieldOrder, order::Int, generator::RelNumFieldOrderElem)
     G = abelian_group([order])
     z = new{typeof(O), typeof(generator)}()
     z.domain = G
@@ -286,7 +286,7 @@ function GrpAbFinGenToAbsOrdMap(G::GrpAbFinGen, O::S, generators::Vector{T}, dis
   return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
 end
 
-function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{ZZRingElem}, disc_log::Function, modulus...) where {S <: NumFieldOrd, T}
+function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{ZZRingElem}, disc_log::Function, modulus...) where {S <: NumFieldOrder, T}
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, snf_structure, disc_log, modulus...)
 end
 

@@ -1802,9 +1802,9 @@ end
 @doc raw"""
     hermitian_genera(E::NumField, rank::Int,
                                   signatures::Dict{InfPlc, Int},
-                                  determinant::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl};
-                                  min_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? inv(1*order(determinant)) : determinant,
-                                  max_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? determinant : inv(1*order(determinant)))
+                                  determinant::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal};
+                                  min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? inv(1*order(determinant)) : determinant,
+                                  max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? determinant : inv(1*order(determinant)))
                                                                                                                  -> Vector{HermGenus}
 
 Return all global genus symbols for hermitian lattices over the algebra`E` with rank
@@ -1813,10 +1813,10 @@ class equal to `determinant`.
 
 If `max_scale == nothing`, it is set to be equal to `determinant`.
 """
-function hermitian_genera(E::Hecke.NfRel, rank::Int, signatures::Dict{<: InfPlc, Int},
-                          determinant::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl};
-                          min_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? 1*order(determinant) : determinant,
-                          max_scale::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl} = is_integral(determinant) ? determinant : 1*order(determinant))
+function hermitian_genera(E::Hecke.RelSimpleNumField, rank::Int, signatures::Dict{<: InfPlc, Int},
+                          determinant::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal};
+                          min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? 1*order(determinant) : determinant,
+                          max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? determinant : 1*order(determinant))
   @req rank >= 0 "Rank must be a non-negative integer"
   K = base_field(E)
   OE = maximal_order(E)

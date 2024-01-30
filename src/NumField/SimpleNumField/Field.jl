@@ -120,7 +120,7 @@ returns $f$.
 """
 defining_polynomial(::SimpleNumField)
 
-defining_polynomial(K::NfRel) = K.pol
+defining_polynomial(K::RelSimpleNumField) = K.pol
 
 ################################################################################
 #
@@ -158,7 +158,7 @@ function absolute_discriminant(K::AbsSimpleNumField)
   return discriminant(K)
 end
 
-function absolute_discriminant(K::NfRel)
+function absolute_discriminant(K::RelSimpleNumField)
   d = norm(discriminant(K)) * absolute_discriminant(base_field(K))^degree(K)
   return d
 end

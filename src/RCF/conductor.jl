@@ -568,7 +568,7 @@ end
 #
 ##############################################################################
 
-function is_abelian(K::NfRel)
+function is_abelian(K::RelSimpleNumField)
   k = base_field(K)
   Ok = maximal_order(k)
   d = ideal(Ok, Ok(discriminant(K.pol)))
@@ -578,7 +578,7 @@ function is_abelian(K::NfRel)
   return deg == degree(K)
 end
 
-function is_abelian(K::NfRelNS)
+function is_abelian(K::RelNonSimpleNumField)
   k = base_field(K)
   kx, _ = polynomial_ring(k, "x", cached = false)
   Ok = maximal_order(k)
@@ -632,17 +632,17 @@ end
 ################################################################################
 
 @doc raw"""
-    norm_group(K::NfRel{AbsSimpleNumFieldElem}, mR::Hecke.MapRayClassGrp) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
+    norm_group(K::RelSimpleNumField{AbsSimpleNumFieldElem}, mR::Hecke.MapRayClassGrp) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
 
-    norm_group(K::NfRelNS{AbsSimpleNumFieldElem}, mR::Hecke.MapRayClassGrp) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
+    norm_group(K::RelNonSimpleNumField{AbsSimpleNumFieldElem}, mR::Hecke.MapRayClassGrp) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
 
 Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension.
 """
-function norm_group(K::NfRel{AbsSimpleNumFieldElem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
+function norm_group(K::RelSimpleNumField{AbsSimpleNumFieldElem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
   return norm_group(K.pol, mR, is_abelian, of_closure = of_closure)
 end
-function norm_group(K::NfRelNS{AbsSimpleNumFieldElem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
+function norm_group(K::RelNonSimpleNumField{AbsSimpleNumFieldElem}, mR::T, is_abelian::Bool = true; of_closure::Bool = false) where T <: Union{MapClassGrp, MapRayClassGrp}
   base_field(K) == nf(order(codomain(mR))) || error("field has to be over the same field as the ray class group")
   kx, = polynomial_ring(base_field(K), "x", cached = false)
   return norm_group([to_univariate(kx, x) for x = K.pol], mR, is_abelian, of_closure = of_closure)
@@ -792,7 +792,7 @@ function defining_modulus(mC::MapClassGrp)
   return I, lp
 end
 
-function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expected_index::Int = 1)
+function norm_group(mL::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Union{MapRayClassGrp, MapClassGrp}, expected_index::Int = 1)
 
   K = domain(mL)
   L = codomain(mL)
@@ -845,7 +845,7 @@ function norm_group(mL::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp}, expec
   return sub(R, els, !false)
 end
 
-function norm_group(KK::KummerExt, mp::NfToNfMor, mR::Union{MapRayClassGrp, MapClassGrp})
+function norm_group(KK::KummerExt, mp::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Union{MapRayClassGrp, MapClassGrp})
   k = domain(mp)
   K = codomain(mp)
   ZK = maximal_order(K)
@@ -962,13 +962,13 @@ function norm_group_map(R::ClassField, r::ClassField, map = false)
 end
 
 @doc raw"""
-    maximal_abelian_subfield(K::NfRel{AbsSimpleNumFieldElem}; of_closure::Bool = false) -> ClassField
+    maximal_abelian_subfield(K::RelSimpleNumField{AbsSimpleNumFieldElem}; of_closure::Bool = false) -> ClassField
 
 Using a probabilistic algorithm for the norm group computation, determine the maximal
 abelian subfield in $K$ over its base field. If `of_closure` is set to true, then
 the algorithm is applied to the normal closure of $K$ (without computing it).
 """
-function maximal_abelian_subfield(K::NfRel{AbsSimpleNumFieldElem}; of_closure::Bool = false)
+function maximal_abelian_subfield(K::RelSimpleNumField{AbsSimpleNumFieldElem}; of_closure::Bool = false)
   zk = maximal_order(base_field(K))
   if has_attribute(K, :maximal_order)
     ZK = get_attribute(K, :maximal_order)
@@ -1019,7 +1019,7 @@ function factored_modulus(A::ClassField_pp{MapClassGrp, T}) where T
   return Dict{NfOrdIdl, Int}()
 end
 
-function maximal_abelian_subfield(A::ClassField, mp::NfToNfMor)
+function maximal_abelian_subfield(A::ClassField, mp::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
   k = domain(mp)
   K = codomain(mp)
   @assert base_field(A) == K
@@ -1102,13 +1102,13 @@ end
 
 
 @doc raw"""
-    ray_class_field(K::NfRel{AbsSimpleNumFieldElem}) -> ClassField
+    ray_class_field(K::RelSimpleNumField{AbsSimpleNumFieldElem}) -> ClassField
     ray_class_field(K::AbsSimpleNumField) -> ClassField
 
 For a (relative) abelian extension, compute an abstract representation
 as a class field.
 """
-function ray_class_field(K::NfRel{AbsSimpleNumFieldElem})
+function ray_class_field(K::RelSimpleNumField{AbsSimpleNumFieldElem})
   C = maximal_abelian_subfield(K)
   @assert degree(C) <= degree(K)
   if degree(C) != degree(K)
@@ -1356,7 +1356,7 @@ function rewrite_with_conductor(C::ClassField)
   return C
 end
 
-function induce_action(C::ClassField, Aut::Vector{Hecke.NfToNfMor} = Hecke.NfToNfMor[])
+function induce_action(C::ClassField, Aut::Vector{Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[])
   return induce_action(C.rayclassgroupmap, Aut, C.quotientmap)
 end
 
@@ -1376,7 +1376,7 @@ function is_normal(C::ClassField)
   end
 end
 
-function is_normal(C::ClassField, mk::NfToNfMor)
+function is_normal(C::ClassField, mk::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
   K = base_field(C)
   @assert codomain(mk) == K
   g = mk(gen(domain(mk)))
@@ -1385,7 +1385,7 @@ function is_normal(C::ClassField, mk::NfToNfMor)
 end
 
 
-function is_normal_easy(C::ClassField, aut::Vector{NfToNfMor} = automorphism_list(base_field(C)))
+function is_normal_easy(C::ClassField, aut::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}} = automorphism_list(base_field(C)))
   c, inf = conductor(C)
   if any(x-> c != induce_image(x, c), aut)
     return false
@@ -1519,7 +1519,7 @@ function is_central(C::ClassField)
 end
 
 #TODO: remove and replace by reduce(lcm, ..., init?)
-function lcm(A::AbstractArray{<:NfAbsOrdIdl})
+function lcm(A::AbstractArray{<:AbsNumFieldOrderIdeal})
   a = first(A)
   a = ideal(order(a), 1)
   for b = A
@@ -1553,12 +1553,12 @@ end
 
 #TODO: is this the right interface???
 @doc raw"""
-    (::NfAbsOrdIdlSet)(m::Map, I::NfOrdIdl) -> NfOrdIdl
+    (::AbsNumFieldOrderIdealSet)(m::Map, I::NfOrdIdl) -> NfOrdIdl
 
 Given an embedding $m:k\to K$ of number fields and an ideal $I$ in $k$,
 find the ideal above $I$ in $K$.
 """
-function (I::NfAbsOrdIdlSet{Nemo.AbsSimpleNumField,Nemo.AbsSimpleNumFieldElem})(mp::Map, i::NfOrdIdl)
+function (I::AbsNumFieldOrderIdealSet{Nemo.AbsSimpleNumField,Nemo.AbsSimpleNumFieldElem})(mp::Map, i::NfOrdIdl)
   assure_2_normal(i)
   return ideal(order(I), i.gen_one, order(I)(mp(i.gen_two.elem_in_nf)))
 end
@@ -1608,7 +1608,7 @@ function norm(m::T, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) where 
 end
 
 #TODO: change order!!! this only works for maximal orders
-function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
+function Base.intersect(I::AbsNumFieldOrderIdeal, R::AbsNumFieldOrder)
   @assert is_maximal(R)
   if number_field(R) == number_field(order(I))
     return I
@@ -1618,33 +1618,33 @@ function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
   return minimum(m, I)
 end
 
-Base.intersect(R::NfAbsOrd, I::NfAbsOrdIdl) = intersect(I, R)
+Base.intersect(R::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal) = intersect(I, R)
 
-function Base.intersect(I::NfOrdFracIdl, R::NfAbsOrd)
+function Base.intersect(I::NfOrdFracIdl, R::AbsNumFieldOrder)
   @assert is_maximal(R)
   n, d = integral_split(I)
   return intersect(n, R)
 end
 
-Base.intersect(R::NfAbsOrd, I::NfOrdFracIdl) = intersect(I, R)
+Base.intersect(R::AbsNumFieldOrder, I::NfOrdFracIdl) = intersect(I, R)
 
 @doc raw"""
-    content_ideal(f::PolyRingElem{AbsSimpleNumFieldElem}, R::NfAbsOrd) -> NfAbsOrdIdl
+    content_ideal(f::PolyRingElem{AbsSimpleNumFieldElem}, R::AbsNumFieldOrder) -> AbsNumFieldOrderIdeal
 
 The fractional $R$-ideal generated by the coefficients of $f$.
 """
-function content_ideal(f::PolyRingElem{AbsSimpleNumFieldElem}, R::NfAbsOrd)
+function content_ideal(f::PolyRingElem{AbsSimpleNumFieldElem}, R::AbsNumFieldOrder)
   @assert number_field(R) == base_ring(f)
   i = sum(coeff(f, i)*R for i=0:degree(f) if !iszero(coeff(f, i)))
   return i
 end
 
 @doc raw"""
-    content_ideal(f::PolyRingElem{NfAbsOrdElem}) -> NfAbsOrdIdl
+    content_ideal(f::PolyRingElem{AbsNumFieldOrderElem}) -> AbsNumFieldOrderIdeal
 
 The ideal generated by the coefficients of $f$.
 """
-function content_ideal(f::PolyRingElem{NfAbsOrdElem})
+function content_ideal(f::PolyRingElem{AbsNumFieldOrderElem})
   R = base_ring(f)
   return sum(coeff(f, i)*R for i=0:degree(f) if !iszero(coeff(f, i)))
 end

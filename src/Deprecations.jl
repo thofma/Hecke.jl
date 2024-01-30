@@ -36,39 +36,39 @@
 
 @deprecate orthogonal_sum(x::T, y::T) where T <: Union{AbstractSpace, ZZGenus, ZZLocalGenus, HermGenus, HermLocalGenus, QuadGenus, QuadLocalGenus, JorDec, LocalQuadSpaceCls, QuadSpaceCls} direct_sum(x, y)
 
-@deprecate ideal(A::AbsAlgAss{S}, M::PMat{S, T}, M_in_hnf::Bool) where { S <: NumFieldElem, T } ideal(A, M; M_in_hnf)
+@deprecate ideal(A::AbstractAssociativeAlgebra{S}, M::PMat{S, T}, M_in_hnf::Bool) where { S <: NumFieldElem, T } ideal(A, M; M_in_hnf)
 
-@deprecate ideal(A::AbsAlgAss{QQFieldElem}, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol, M_in_hnf::Bool = false) ideal(A, O, M; side, M_in_hnf)
+@deprecate ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, O::AlgAssAbsOrd, M::FakeFmpqMat, side::Symbol, M_in_hnf::Bool = false) ideal(A, O, M; side, M_in_hnf)
 
-@deprecate ideal(A::AbsAlgAss, M::MatElem, side::Symbol, M_in_rref::Bool = false) ideal(A, M; side, M_in_rref)
+@deprecate ideal(A::AbstractAssociativeAlgebra, M::MatElem, side::Symbol, M_in_rref::Bool = false) ideal(A, M; side, M_in_rref)
 
-@deprecate ideal(A::AbsAlgAss{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::Symbol, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U } ideal(A, O, M; side, M_in_hnf)
+@deprecate ideal(A::AbstractAssociativeAlgebra{S}, O::AlgAssRelOrd{S, T, U}, M::PMat{S, T}, side::Symbol, M_in_hnf::Bool = false) where { S <: NumFieldElem, T, U } ideal(A, O, M; side, M_in_hnf)
 
-@deprecate ideal(A::AbsAlgAss{QQFieldElem}, M::FakeFmpqMat, M_in_hnf::Bool) ideal(A, M; M_in_hnf)
+@deprecate ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, M::FakeFmpqMat, M_in_hnf::Bool) ideal(A, M; M_in_hnf)
 
-@deprecate ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, check::Bool, M_in_hnf::Bool = false) where {T, S, U} ideal(O, M; check, M_in_hnf)
+@deprecate ideal(O::RelNumFieldOrder{T, S, U}, M::PMat{T, S}, check::Bool, M_in_hnf::Bool = false) where {T, S, U} ideal(O, M; check, M_in_hnf)
 
-@deprecate ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool) where {T, S} ideal(O, x, y, a, b; check)
+@deprecate ideal(O::RelNumFieldOrder{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool) where {T, S} ideal(O, x, y, a, b; check)
 
-@deprecate ideal(O::NfRelOrd{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool) where {T, S} ideal(O, x, y, a, b; check)
+@deprecate ideal(O::RelNumFieldOrder{T, S}, x::NumFieldElem{T}, y::NumFieldElem{T}, a::RelNumFieldOrderIdeal, b::RelNumFieldOrderIdeal, check::Bool) where {T, S} ideal(O, x, y, a, b; check)
 
-@deprecate ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool) where {T, S} ideal(O, M; check)
+@deprecate ideal(O::RelNumFieldOrder{T, S}, M::Generic.Mat{T}, check::Bool) where {T, S} ideal(O, M; check)
 
-@deprecate ideal(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool) ideal(O, a; check)
+@deprecate ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool) ideal(O, a; check)
 
-@deprecate ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool) ideal(O, a; check)
+@deprecate ideal(O::RelNumFieldOrder, a::RelNumFieldOrderIdeal, check::Bool) ideal(O, a; check)
 
-@deprecate ideal(O::NfRelOrd{T, S, U}, a::S, check::Bool) where {T, S, U} ideal(O, a; check)
+@deprecate ideal(O::RelNumFieldOrder{T, S, U}, a::S, check::Bool) where {T, S, U} ideal(O, a; check)
 
-@deprecate ideal(O::NfRelOrd{T, S, U}, x::U, y::U, a::S, b::S, check::Bool) where {T, S, U} ideal(O, x, y, a, b; check)
+@deprecate ideal(O::RelNumFieldOrder{T, S, U}, x::U, y::U, a::S, b::S, check::Bool) where {T, S, U} ideal(O, x, y, a, b; check)
 
-@deprecate ideal(O::NfAbsOrd, M::ZZMatrix, check::Bool, M_in_hnf::Bool = false) ideal(O, M; check, M_in_hnf)
+@deprecate ideal(O::AbsNumFieldOrder, M::ZZMatrix, check::Bool, M_in_hnf::Bool = false) ideal(O, M; check, M_in_hnf)
 
-@deprecate fractional_ideal(O::NfAbsOrd, M::FakeFmpqMat, M_in_hnf::Bool) fractional_ideal(O, M; M_in_hnf)
+@deprecate fractional_ideal(O::AbsNumFieldOrder, M::FakeFmpqMat, M_in_hnf::Bool) fractional_ideal(O, M; M_in_hnf)
 
-@deprecate fractional_ideal(O::NfAbsOrd, M::ZZMatrix, b::ZZRingElem, M_in_hnf::Bool) fractional_ideal(O, M, b; M_in_hnf)
+@deprecate fractional_ideal(O::AbsNumFieldOrder, M::ZZMatrix, b::ZZRingElem, M_in_hnf::Bool) fractional_ideal(O, M, b; M_in_hnf)
 
-@deprecate fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool) where {T, S, U} fractional_ideal(O, M; M_in_hnf)
+@deprecate fractional_ideal(O::RelNumFieldOrder{T, S, U}, M::PMat{T, S}, M_in_hnf::Bool) where {T, S, U} fractional_ideal(O, M; M_in_hnf)
 
 @deprecate PseudoMatrix pseudo_matrix
 
@@ -131,9 +131,9 @@
 
 @deprecate divexact_right(a::T, b::T, check::Bool) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } divexact(a, b, :right, check)
 @deprecate divexact_left(a::T, b::T, check::Bool) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } } divexact(a, b, :left, check)
-@deprecate divexact(a::NumFieldOrdElem, b::Integer, check::Bool) divexact(a, b; check=check)
-@deprecate divexact(a::NumFieldOrdElem, b::ZZRingElem, check::Bool) divexact(a, b; check=check)
-@deprecate divexact(x::T, y::T, check::Bool) where T <: NumFieldOrdElem divexact(x, y; check=check)
+@deprecate divexact(a::NumFieldOrderElem, b::Integer, check::Bool) divexact(a, b; check=check)
+@deprecate divexact(a::NumFieldOrderElem, b::ZZRingElem, check::Bool) divexact(a, b; check=check)
+@deprecate divexact(x::T, y::T, check::Bool) where T <: NumFieldOrderElem divexact(x, y; check=check)
 
 # Deprecated during 0.24.*
 

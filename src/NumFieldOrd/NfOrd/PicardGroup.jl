@@ -51,7 +51,7 @@ end
 # This group is isomorphic to (OK/F)^\times/(O/F)^\times.
 # Algorithm 8.1 in Klueners, Pauli: Computing residue class rings and Picard
 # groups of orders
-function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
+function OO_mod_F_mod_O_mod_F(O::AbsNumFieldOrder)
   OK = maximal_order(nf(O))
   F = conductor(O, OK)
   FOK = extend(F, OK)
@@ -130,12 +130,12 @@ function OO_mod_F_mod_O_mod_F(O::NfAbsOrd)
   return S, StoQ, OKtoQF
 end
 
-function _unit_group_non_maximal(O::Union{NfAbsOrd, AlgAssAbsOrd}, OK, GtoOK::MapUnitGrp{T}) where {T}
+function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, GtoOK::MapUnitGrp{T}) where {T}
   # OK = maximal_order
   # _, GtoK = unit_group[_fac_elem](OK)
   G = domain(GtoOK)
 
-  if isdefined(O, :picard_group) && isdefined(O.picard_group, :OO_mod_F_mod_O_mod_F) # only for NfAbsOrd
+  if isdefined(O, :picard_group) && isdefined(O.picard_group, :OO_mod_F_mod_O_mod_F) # only for AbsNumFieldOrder
     HtoQ = O.picard_group.OO_mod_F_mod_O_mod_F
     H = domain(HtoQ)
     OKtoQ = AbsOrdQuoMap(codomain(HtoQ))
@@ -173,7 +173,7 @@ function _unit_group_non_maximal(O::Union{NfAbsOrd, AlgAssAbsOrd}, OK, GtoOK::Ma
     end
   end
 
-  function _preimage(x::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
+  function _preimage(x::Union{ AbsNumFieldOrderElem, AlgAssAbsOrdElem })
     @assert parent(x) === O
     y = OK(_elem_in_algebra(x))
     g = GtoOK\y
@@ -335,7 +335,7 @@ end
 #
 ################################################################################
 
-function _is_principal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
+function _is_principal_non_maximal(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl })
   # Main inspiriation from a Magma implementation by Stefano Marseglia.
   # We use the exact sequence
   # 1 --> O^\times -(1)-> O_K^\times -(2)-> (O_K/F)^\times/(O/F)^\times

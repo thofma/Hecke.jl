@@ -40,11 +40,11 @@ mutable struct NumFieldEmbNfRel{S, T} <: NumFieldEmb{T}
   conjugate::Int        # Absolute index of the conjugate embedding.
 end
 
-function embedding_type(::Type{NfRel{T}}) where {T}
-  return NumFieldEmbNfRel{embedding_type(parent_type(T)), NfRel{T}}
+function embedding_type(::Type{RelSimpleNumField{T}}) where {T}
+  return NumFieldEmbNfRel{embedding_type(parent_type(T)), RelSimpleNumField{T}}
 end
 
-embedding_type(K::NfRel{T}) where {T} = embedding_type(NfRel{T})
+embedding_type(K::RelSimpleNumField{T}) where {T} = embedding_type(RelSimpleNumField{T})
 
 _absolute_index(f::NumFieldEmbNfRel) = f.absolute_index
 
@@ -79,7 +79,7 @@ end
 #
 ################################################################################
 
-function complex_embeddings(L::NfRel{T}; conjugates::Bool = true) where {T}
+function complex_embeddings(L::RelSimpleNumField{T}; conjugates::Bool = true) where {T}
   S = embedding_type(parent_type(T))
   _res = get_attribute(L, :complex_embeddings)
   if _res !== nothing
@@ -97,7 +97,7 @@ function complex_embeddings(L::NfRel{T}; conjugates::Bool = true) where {T}
 end
 
 # It is easier to construct all complex_embeddings at one
-function _complex_embeddings(L::NfRel{T}) where {T}
+function _complex_embeddings(L::RelSimpleNumField{T}) where {T}
   K = base_field(L)
   data = _conjugates_data(L, 32)
   r, s = signature(L)
@@ -174,7 +174,7 @@ end
 #
 ################################################################################
 
-function (f::NumFieldEmbNfRel)(a::NfRelElem, prec::Int = 32)
+function (f::NumFieldEmbNfRel)(a::RelSimpleNumFieldElem, prec::Int = 32)
   @req number_field(f) === parent(a) "Parent mismatch"
   r, s = signature(parent(a))
   if _absolute_index(f) > r + s
@@ -218,7 +218,7 @@ function (f::NumFieldEmbNfRel)(a::NfRelElem, prec::Int = 32)
   end
 end
 
-evaluate(x::NfRelElem, f::NumFieldEmbNfRel, p::Int) = f(x, p)
+evaluate(x::RelSimpleNumFieldElem, f::NumFieldEmbNfRel, p::Int) = f(x, p)
 
 ################################################################################
 #
@@ -238,7 +238,7 @@ function restrict(f::NumFieldEmbNfRel, K::NumField)
   end
 end
 
-function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfRel, <: Any, <: Any})
+function restrict(e::NumFieldEmb, f::NumFielHom{<: RelSimpleNumField, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)
@@ -259,7 +259,7 @@ end
 #
 ################################################################################
 
-function complex_embedding(K::NfRel, e::NumFieldEmb, r::AcbFieldElem)
+function complex_embedding(K::RelSimpleNumField, e::NumFieldEmb, r::AcbFieldElem)
   @req number_field(e) === base_field(K) "Embedding must be embedding of base field"
   embs = complex_embeddings(K)
   cnt = 0

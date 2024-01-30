@@ -1,6 +1,6 @@
 @testset "Locally free class group of group algebras" begin
   G = small_group(8, 4)
-  A = AlgGrp(FlintQQ, G)
+  A = GroupAlgebra(FlintQQ, G)
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[ 2 ]
@@ -17,24 +17,24 @@
     end
   end
 
-  A = AlgAss(A)[1]
+  A = StructureConstantAlgebra(A)[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[ 2 ]
 
   G = small_group(10, 2)
-  A = AlgGrp(FlintQQ, G)
+  A = GroupAlgebra(FlintQQ, G)
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
 
-  A = AlgAss(A)[1]
+  A = StructureConstantAlgebra(A)[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
 
   G = small_group(12, 3)
-  A = AlgAss(AlgGrp(FlintQQ, G))[1]
+  A = StructureConstantAlgebra(GroupAlgebra(FlintQQ, G))[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
@@ -44,7 +44,7 @@ end
   Qx, x = FlintQQ["x"]
   f = x^2 + 47
   K, a = number_field(f, "a")
-  A = AlgAss(matrix_ring(K, 2))
+  A = StructureConstantAlgebra(matrix_ring(K, 2))
   A, _ = Hecke.restrict_scalars(A, FlintQQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
@@ -52,7 +52,7 @@ end
 
   f = x^2 + 26
   K, a = number_field(f, "a")
-  A = AlgAss(matrix_ring(K, 2))
+  A = StructureConstantAlgebra(matrix_ring(K, 2))
   A, _ = Hecke.restrict_scalars(A, FlintQQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
@@ -73,8 +73,8 @@ end
   @test S.snf == ZZRingElem[ 2, 2 ]
   @test iszero(mS(I))
 
-  # Check whether one can also call it with AlgAss
-  B, BtoA = AlgAss(A)
+  # Check whether one can also call it with StructureConstantAlgebra
+  B, BtoA = StructureConstantAlgebra(A)
   Areg = Hecke.regular_module(A)
   AregToA = x -> A(coordinates(x))
   fl, VToAreg = Hecke.is_isomorphic_with_isomorphism(V, Areg)

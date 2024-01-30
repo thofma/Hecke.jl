@@ -485,15 +485,15 @@ witt_invariant(L::AbstractLat, p)
 ################################################################################
 
 @doc raw"""
-    is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::Union{InfPlc, NfAbsOrdIdl})
+    is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::Union{InfPlc, AbsNumFieldOrderIdeal})
                                                                          -> Bool
 
 Return whether the rational spans of the lattices `L` and `M` are isometric over
 the completion at the place `p`.
 """
-is_rationally_isometric(::AbstractLat, ::AbstractLat, ::NfAbsOrdIdl)
+is_rationally_isometric(::AbstractLat, ::AbstractLat, ::AbsNumFieldOrderIdeal)
 
-function is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::NfAbsOrdIdl)
+function is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::AbsNumFieldOrderIdeal)
   return is_isometric(rational_span(L), rational_span(M), p)
 end
 
@@ -640,26 +640,26 @@ function Base.:(*)(L::QuadLat, a)
 end
 
 @doc raw"""
-    *(a::NumFieldOrdIdl, L::AbstractLat) -> AbstractLat
+    *(a::NumFieldOrderIdeal, L::AbstractLat) -> AbstractLat
 
 Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
-Base.:(*)(::NumFieldOrdIdl, ::AbstractLat)
+Base.:(*)(::NumFieldOrderIdeal, ::AbstractLat)
 
-function Base.:(*)(a::Union{NfRelOrdIdl, NfAbsOrdIdl}, L::AbstractLat)
+function Base.:(*)(a::Union{RelNumFieldOrderIdeal, AbsNumFieldOrderIdeal}, L::AbstractLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
   return lattice_in_same_ambient_space(L, m)
 end
 
 @doc raw"""
-    *(a::NumFieldOrdFracIdl, L::AbstractLat) -> AbstractLat
+    *(a::NumFieldOrderFractionalIdeal, L::AbstractLat) -> AbstractLat
 
 Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
-Base.:(*)(::NumFieldOrdFracIdl, ::AbstractLat)
+Base.:(*)(::NumFieldOrderFractionalIdeal, ::AbstractLat)
 
-function Base.:(*)(a::Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}, L::AbstractLat)
+function Base.:(*)(a::Union{RelNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdeal}, L::AbstractLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
   return lattice_in_same_ambient_space(L, m)
@@ -723,7 +723,7 @@ end
 ################################################################################
 
 @doc raw"""
-    norm(L::AbstractLat) -> NfAbsOrdFracIdl
+    norm(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal
 
 Return the norm of the lattice `L`. This is a fractional ideal of the fixed field
 of `L`.
@@ -1237,7 +1237,7 @@ span of `L` is irreducible.
 function hermitian_structure(L::ZZLat, f::QQMatrix; check::Bool = true,
                                                     ambient_representation::Bool = true,
                                                     res::Union{Nothing, AbstractSpaceRes} = nothing,
-                                                    E::Union{Nothing, NfRel} = nothing)
+                                                    E::Union{Nothing, RelSimpleNumField} = nothing)
 
   return hermitian_structure_with_transfer_data(L, f; check, ambient_representation, res, E)[1]
 end
@@ -1266,7 +1266,7 @@ span of `L` is irreducible.
 function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::Bool = true,
                                                                         ambient_representation::Bool = true,
                                                                         res::Union{Nothing, AbstractSpaceRes} = nothing,
-                                                                        E::Union{Nothing, NfRel} = nothing)
+                                                                        E::Union{Nothing, RelSimpleNumField} = nothing)
 
   # Since the minimal polynomial of f might not be irreducible, but the one
   # of its restriction to _L is, we are only concerned about _L inside

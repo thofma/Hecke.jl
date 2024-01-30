@@ -40,7 +40,7 @@ end
   @test isone(mQ(b))
   @test isone(mQ(O(5)))
 
-  A = AlgAss(x * (x^2 - 113000))
+  A = StructureConstantAlgebra(x * (x^2 - 113000))
   O = Order(A, basis(A), cached = false)
   I = 2 * O
   Q, mQ = quo(O, I)

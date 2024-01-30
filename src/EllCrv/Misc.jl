@@ -1,6 +1,6 @@
 #################################################################################
 #
-#             EllCrv/Misc.jl : Misc functions
+#             EllipticCurve/Misc.jl : Misc functions
 #
 # This file is part of Hecke.
 #

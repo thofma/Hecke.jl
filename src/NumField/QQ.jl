@@ -3,7 +3,7 @@
 
 Type for ideals in ZZ. Parametrized by a generator in ZZ.
 """
-struct ZZIdl <: NumFieldOrdIdl
+struct ZZIdl <: NumFieldOrderIdeal
   gen::ZZRingElem
 
   function ZZIdl(x::ZZRingElem)
@@ -20,7 +20,7 @@ end
 
 Type for fractional ideals in ZZ or QQ, parametrized by a generator in QQ.
 """
-struct ZZFracIdl <: NumFieldOrdFracIdl
+struct ZZFracIdl <: NumFieldOrderFractionalIdeal
   gen::QQFieldElem
 
   function ZZFracIdl(x::QQFieldElem)

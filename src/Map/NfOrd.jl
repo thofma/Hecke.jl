@@ -1295,17 +1295,17 @@ end
 #
 ################################################################################
 
-mutable struct AbsOrdToAlgAssMor{S, T} <: Map{S, AlgAss{T}, HeckeMap, AbsOrdToAlgAssMor}
+mutable struct AbsOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, HeckeMap, AbsOrdToAlgAssMor}
   header::MapHeader
 
-  function AbsOrdToAlgAssMor{S, T}(O::S, A::AlgAss{T}, _image::Function, _preimage::Function) where {S <: Union{ NfAbsOrd, AlgAssAbsOrd }, T}
+  function AbsOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: Union{ AbsNumFieldOrder, AlgAssAbsOrd }, T}
     z = new{S, T}()
     z.header = MapHeader(O, A, _image, _preimage)
     return z
   end
 end
 
-function AbsOrdToAlgAssMor(O::Union{ NfAbsOrd, AlgAssAbsOrd }, A::AlgAss{T}, _image, _preimage) where {T}
+function AbsOrdToAlgAssMor(O::Union{ AbsNumFieldOrder, AlgAssAbsOrd }, A::StructureConstantAlgebra{T}, _image, _preimage) where {T}
   return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
 

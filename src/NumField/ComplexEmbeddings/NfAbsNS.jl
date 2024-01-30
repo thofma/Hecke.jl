@@ -1,5 +1,5 @@
-mutable struct NumFieldEmbNfAbsNS <: NumFieldEmb{NfAbsNS}
-  field::NfAbsNS
+mutable struct NumFieldEmbNfAbsNS <: NumFieldEmb{AbsNonSimpleNumField}
+  field::AbsNonSimpleNumField
   index::Vector{Int}
   absolute_index::Int
   isreal::Bool
@@ -11,9 +11,9 @@ _absolute_index(P::NumFieldEmbNfAbsNS) = P.absolute_index
 
 number_field(P::NumFieldEmbNfAbsNS) = P.field
 
-embedding_type(::Type{NfAbsNS}) = NumFieldEmbNfAbsNS
+embedding_type(::Type{AbsNonSimpleNumField}) = NumFieldEmbNfAbsNS
 
-embedding_type(::NfAbsNS) = NumFieldEmbNfAbsNS
+embedding_type(::AbsNonSimpleNumField) = NumFieldEmbNfAbsNS
 
 isreal(P::NumFieldEmbNfAbsNS) = P.isreal
 
@@ -21,7 +21,7 @@ is_imaginary(P::NumFieldEmbNfAbsNS) = !P.isreal
 
 conj(P::NumFieldEmbNfAbsNS) = complex_embeddings(number_field(P))[P.conjugate]
 
-function complex_embeddings(K::NfAbsNS; conjugates::Bool = true)
+function complex_embeddings(K::AbsNonSimpleNumField; conjugates::Bool = true)
   emb = get_attribute!(K, :complex_embeddings) do
     _complex_embeddings(K)
   end::Vector{NumFieldEmbNfAbsNS}
@@ -33,7 +33,7 @@ function complex_embeddings(K::NfAbsNS; conjugates::Bool = true)
   end
 end
 
-function _complex_embeddings(K::NfAbsNS)
+function _complex_embeddings(K::AbsNonSimpleNumField)
   c = conjugate_data_arb_roots(K, 32, copy = false)
 
   r, s = signature(K)
@@ -91,7 +91,7 @@ function Base.show(io::IO, f::NumFieldEmbNfAbsNS)
   end
 end
 
-function (f::NumFieldEmbNfAbsNS)(a::NfAbsNSElem, prec::Int = 32)
+function (f::NumFieldEmbNfAbsNS)(a::AbsNonSimpleNumFieldElem, prec::Int = 32)
   K = parent(a)
   wprec = prec
   pol_a = data(a)
@@ -117,11 +117,11 @@ function (f::NumFieldEmbNfAbsNS)(a::NfAbsNSElem, prec::Int = 32)
   end
 end
 
-function evaluate(a::NfAbsNSElem, P::NumFieldEmbNfAbsNS, prec::Int)
+function evaluate(a::AbsNonSimpleNumFieldElem, P::NumFieldEmbNfAbsNS, prec::Int)
   return P(a, prec)
 end
 
-function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfAbsNS, <: Any, <: Any})
+function restrict(e::NumFieldEmb, f::NumFielHom{<: AbsNonSimpleNumField, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)
@@ -137,7 +137,7 @@ end
 #
 ################################################################################
 
-function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Float64}})
+function _find_nearest_real_embedding(K::AbsNonSimpleNumField, x::Vector{<:Union{BigFloat, Float64}})
   r = real_embeddings(K)
   l = length(K.pol)
   @assert length(x) == l
@@ -148,11 +148,11 @@ function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Union{BigFloat, Fl
   return r[i]
 end
 
-function real_embedding(K::NfAbsNS, x::Vector)
+function real_embedding(K::AbsNonSimpleNumField, x::Vector)
   return _find_nearest_real_embedding(K, x)
 end
 
-function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
+function _find_nearest_real_embedding(K::AbsNonSimpleNumField, x::Vector{<:Tuple})
   r = real_embeddings(K)
   p = 32
   gK = gens(K)
@@ -186,11 +186,11 @@ function _find_nearest_real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
   return r[i]
 end
 
-function real_embedding(K::NfAbsNS, x::Vector{<:Tuple})
+function real_embedding(K::AbsNonSimpleNumField, x::Vector{<:Tuple})
   return _find_nearest_real_embedding(K, x)
 end
 
-function _find_nearest_complex_embedding(K::NfAbsNS, x)
+function _find_nearest_complex_embedding(K::AbsNonSimpleNumField, x)
   r = complex_embeddings(K)
   t = Vector{ArbFieldElem}[]
   for e in r
@@ -233,6 +233,6 @@ function _find_nearest_complex_embedding(K::NfAbsNS, x)
   return r[i]
 end
 
-function complex_embedding(K::NfAbsNS, c::Vector{<: Union{Number, AcbFieldElem}})
+function complex_embedding(K::AbsNonSimpleNumField, c::Vector{<: Union{Number, AcbFieldElem}})
   _find_nearest_complex_embedding(K, c)
 end

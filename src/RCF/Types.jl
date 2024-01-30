@@ -41,11 +41,11 @@ mutable struct ClassField_pp{S, T}
 
   factored_conductor::Dict{NfOrdIdl, Int}
 
-  K::NfRel{AbsSimpleNumFieldElem} # the target with the roots of unity
-  A::NfRel{AbsSimpleNumFieldElem} # the target
+  K::RelSimpleNumField{AbsSimpleNumFieldElem} # the target with the roots of unity
+  A::RelSimpleNumField{AbsSimpleNumFieldElem} # the target
   o::Int # the degree of K - note, in general this is a divisor of the degree of A
   defect::Int # div(degree(A), degree(K)) = div(degree(A), o)
-  pe::NfRelElem{AbsSimpleNumFieldElem} #The image of the generator of A in K
+  pe::RelSimpleNumFieldElem{AbsSimpleNumFieldElem} #The image of the generator of A in K
   AutG::Vector{NfRelToNfRelMor_nf_elem_nf_elem}
   AutR::ZZMatrix
   bigK::KummerExt
@@ -69,7 +69,7 @@ end
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{ZZRingElem,Int}
   cyc::Vector{ClassField_pp{S, T}}
-  A::NfRelNS{AbsSimpleNumFieldElem}
+  A::RelNonSimpleNumField{AbsSimpleNumFieldElem}
   AbsAutGrpA::Vector{NfRelNSToNfRelNSMor_nf_elem} #The generators for the absolute automorphism
                                                      #group of A
   degree::Int # The degree of the relative extension we are searching for.

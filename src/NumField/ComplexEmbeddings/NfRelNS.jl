@@ -17,11 +17,11 @@ mutable struct NumFieldEmbNfNS{S, U} <: NumFieldEmb{S}
   end
 end
 
-function embedding_type(::Type{NfRelNS{T}}) where {T}
-  return NumFieldEmbNfNS{NfRelNS{T}, embedding_type(parent_type(T))}
+function embedding_type(::Type{RelNonSimpleNumField{T}}) where {T}
+  return NumFieldEmbNfNS{RelNonSimpleNumField{T}, embedding_type(parent_type(T))}
 end
 
-embedding_type(L::NfRelNS{T}) where {T} = embedding_type(NfRelNS{T})
+embedding_type(L::RelNonSimpleNumField{T}) where {T} = embedding_type(RelNonSimpleNumField{T})
 
 isreal(P::NumFieldEmbNfNS) = P.isreal
 
@@ -62,7 +62,7 @@ function Base.show(io::IO, f::NumFieldEmbNfNS)
   print(io, "]")
 end
 
-function complex_embeddings(L::NfRelNS{T}; conjugates::Bool = true) where {T}
+function complex_embeddings(L::RelNonSimpleNumField{T}; conjugates::Bool = true) where {T}
   res = get_attribute!(L, :complex_embeddings) do
     return _complex_embeddings(L)
   end::Vector{embedding_type(L)}
@@ -74,7 +74,7 @@ function complex_embeddings(L::NfRelNS{T}; conjugates::Bool = true) where {T}
   end
 end
 
-function _complex_embeddings(L::NfRelNS{T}) where {T}
+function _complex_embeddings(L::RelNonSimpleNumField{T}) where {T}
   r, s = signature(L)
   K = base_field(L)
   S = embedding_type(L)
@@ -91,7 +91,7 @@ function _complex_embeddings(L::NfRelNS{T}) where {T}
   return res
 end
 
-function (g::NumFieldEmbNfNS)(a::NfRelNSElem, prec::Int = 32)
+function (g::NumFieldEmbNfNS)(a::RelNonSimpleNumFieldElem, prec::Int = 32)
   # This is very slow.
   @req number_field(g) === parent(a) "Parent mismatch"
   f = data(a)
@@ -133,7 +133,7 @@ function (g::NumFieldEmbNfNS)(a::NfRelNSElem, prec::Int = 32)
   end
 end
 
-evaluate(a::NfRelNSElem, g::NumFieldEmbNfNS, prec::Int = 32) = g(a, prec)
+evaluate(a::RelNonSimpleNumFieldElem, g::NumFieldEmbNfNS, prec::Int = 32) = g(a, prec)
 
 ################################################################################
 #
@@ -141,7 +141,7 @@ evaluate(a::NfRelNSElem, g::NumFieldEmbNfNS, prec::Int = 32) = g(a, prec)
 #
 ################################################################################
 
-function _conjugates_data_new(L::NfRelNS{T}, p::Int) where T
+function _conjugates_data_new(L::RelNonSimpleNumField{T}, p::Int) where T
   cd = get_attribute(L, :conjugates_data_new)
   if cd === nothing
     D = Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}}()
@@ -160,7 +160,7 @@ function _conjugates_data_new(L::NfRelNS{T}, p::Int) where T
   return res::Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}
 end
 
-function __conjugates_data_new(L::NfRelNS{T}, p::Int) where T
+function __conjugates_data_new(L::RelNonSimpleNumField{T}, p::Int) where T
   data = [_conjugates_data(component(L, j)[1], p) for j = 1:ngens(L)]
   plcs = complex_embeddings(base_field(L), conjugates = false)
   r, s = signature(L)
@@ -214,7 +214,7 @@ end
 #
 ################################################################################
 
-function restrict(e::NumFieldEmb, f::NumFieldMor{<: NfRelNS, <: Any, <: Any})
+function restrict(e::NumFieldEmb, f::NumFielHom{<: RelNonSimpleNumField, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)
@@ -235,7 +235,7 @@ end
 #
 ################################################################################
 
-function complex_embedding(K::NfRelNS, e::NumFieldEmb, r::Vector{AcbFieldElem})
+function complex_embedding(K::RelNonSimpleNumField, e::NumFieldEmb, r::Vector{AcbFieldElem})
   @req number_field(e) === base_field(K) "Embedding must be embedding of base field"
   embs = complex_embeddings(K)
   cnt = 0

@@ -134,7 +134,7 @@ Return the fixed field of the space `V`.
 fixed_field(::AbstractSpace)
 
 @doc raw"""
-    involution(V::AbstractSpace) -> NumFieldMor
+    involution(V::AbstractSpace) -> NumFielHom
 
 Return the involution of the space `V`.
 """

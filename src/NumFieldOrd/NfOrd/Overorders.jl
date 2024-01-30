@@ -59,7 +59,7 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
   bottom_snf_basis::Vector{S}
   top_basis_mat_inv::FakeFmpqMat
 
-  function GrpAbFinGenToNfOrdQuoNfOrd(M::T1, N::T2) where { T1 <: Union{ NfAbsOrd, AlgAssAbsOrd }, T2 <: Union{ NfAbsOrd, AlgAssAbsOrd, NfAbsOrdIdl, AlgAssAbsOrdIdl } }
+  function GrpAbFinGenToNfOrdQuoNfOrd(M::T1, N::T2) where { T1 <: Union{ AbsNumFieldOrder, AlgAssAbsOrd }, T2 <: Union{ AbsNumFieldOrder, AlgAssAbsOrd, AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
     TT = elem_type(_algebra(M))
     z = new{T1, T2, TT, elem_type(T1)}()
     d = degree(M)

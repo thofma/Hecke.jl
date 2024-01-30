@@ -188,7 +188,7 @@ end
 #
 ################################################################################
 
-function witt_invariant(L::QuadLat, p::Union{NfAbsOrdIdl, InfPlc})
+function witt_invariant(L::QuadLat, p::Union{AbsNumFieldOrderIdeal, InfPlc})
   return witt_invariant(rational_span(L), p)
 end
 

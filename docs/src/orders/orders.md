@@ -50,11 +50,11 @@ nf(::NfOrd)
 basis(::NfOrd)
 lll_basis(::NfOrd)
 basis(::NfOrd, ::AbsSimpleNumField)
-pseudo_basis(::NfRelOrd)
-basis_pmatrix(::NfRelOrd)
-basis_nf(::NfRelOrd)
-inv_coeff_ideals(::NfRelOrd)
-basis_matrix(::NfAbsOrd)
+pseudo_basis(::RelNumFieldOrder)
+basis_pmatrix(::RelNumFieldOrder)
+basis_nf(::RelNumFieldOrder)
+inv_coeff_ideals(::RelNumFieldOrder)
+basis_matrix(::AbsNumFieldOrder)
 basis_mat_inv(::NfOrd)
 gen_index(::NfOrd)
 is_index_divisor(::NfOrd, ::ZZRingElem)
@@ -62,13 +62,13 @@ minkowski_matrix(::NfOrd, ::Int)
 in(::AbsSimpleNumFieldElem, ::NfOrd)
 norm_change_const(::NfOrd)
 trace_matrix(::NfOrd)
-+(::NfAbsOrd, ::NfAbsOrd)
++(::AbsNumFieldOrder, ::AbsNumFieldOrder)
 poverorder(::NfOrd, ::ZZRingElem)
 poverorders(::NfOrd, ::ZZRingElem)
 pmaximal_overorder(::NfOrd, ::ZZRingElem)
-pradical(::NfAbsOrd, ::Union{Integer, ZZRingElem})
-pradical(::NfRelOrd, ::Union{Hecke.NfRelOrdIdl, NfOrdIdl})
-ring_of_multipliers(::NfAbsOrdIdl)
+pradical(::AbsNumFieldOrder, ::Union{Integer, ZZRingElem})
+pradical(::RelNumFieldOrder, ::Union{Hecke.RelNumFieldOrderIdeal, NfOrdIdl})
+ring_of_multipliers(::AbsNumFieldOrderIdeal)
 
 ```
 
@@ -76,7 +76,7 @@ ring_of_multipliers(::NfAbsOrdIdl)
 
 ```@docs
 discriminant(::NfOrd)
-discriminant(::NfAbsOrd)
+discriminant(::AbsNumFieldOrder)
 reduced_discriminant(::NfOrd)
 degree(::NfOrd)
 index(::NfOrd)
@@ -124,7 +124,7 @@ is_independent
 ## Predicates
 
 ```@docs
-Hecke.is_contained(::NfAbsOrd, ::NfAbsOrd)
-is_maximal(::NfAbsOrd)
+Hecke.is_contained(::AbsNumFieldOrder, ::AbsNumFieldOrder)
+is_maximal(::AbsNumFieldOrder)
 ```
 

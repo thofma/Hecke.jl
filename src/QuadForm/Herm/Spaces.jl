@@ -265,7 +265,7 @@ end
 #
 ################################################################################
 
-function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
+function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrderIdeal
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
   else

@@ -16,13 +16,13 @@ element in the ideal.
 
 For efficiency, we will choose the 1st generator to be an integer.
 
-Ideals here are of type `NfAbsOrdIdl`, which is, similar to the elements
+Ideals here are of type `AbsNumFieldOrderIdeal`, which is, similar to the elements
 above, also indexed by the type of the field and their elements:
-`NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}` for ideals in
+`AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}` for ideals in
 simple absolute fields.
 
 Different to elements, the `parent`of an ideal is the set of all ideals
-in the ring, of type `NfAbsOrdIdlSet`.
+in the ring, of type `AbsNumFieldOrderIdealSet`.
 
 ## Creation
 
@@ -31,9 +31,9 @@ ideal(::NfOrd, ::ZZRingElem)
 ideal(::NfOrd, ::ZZMatrix)
 ideal(::NfOrd, ::NfOrdElem)
 ideal(::NfOrd, ::ZZRingElem, ::NfOrdElem)
-ideal(::NfAbsOrd, ::ZZRingElem, ::NfAbsOrdElem)
-ideal(::NfAbsOrd, ::ZZRingElem)
-ideal(::NfAbsOrd, ::NfAbsOrdElem)
+ideal(::AbsNumFieldOrder, ::ZZRingElem, ::AbsNumFieldOrderElem)
+ideal(::AbsNumFieldOrder, ::ZZRingElem)
+ideal(::AbsNumFieldOrder, ::AbsNumFieldOrderElem)
 
 *(::NfOrd, ::NfOrdElem)
 factor(::NfOrdIdl)
@@ -53,9 +53,9 @@ All the usual operations are supported:
 ```@docs
 intersect(::NfOrdIdl, ::NfOrdIdl)
 colon(::NfOrdIdl, ::NfOrdIdl)
-in(::NfOrdElem, ::NfAbsOrdIdl)
-is_power(::NfAbsOrdIdl, ::Int)
-is_power(::NfAbsOrdIdl)
+in(::NfOrdElem, ::AbsNumFieldOrderIdeal)
+is_power(::AbsNumFieldOrderIdeal, ::Int)
+is_power(::AbsNumFieldOrderIdeal)
 is_invertible(::NfOrdIdl)
 isone(::NfOrdIdl)
 ```
@@ -71,7 +71,7 @@ or ring class group in general.
 class_group(::NfOrd)
 narrow_class_group(::NfOrd)
 picard_group(::NfOrd)
-ring_class_group(::NfAbsOrd)
+ring_class_group(::AbsNumFieldOrder)
 ```
 
 ```@repl 2
@@ -95,11 +95,11 @@ more efficient.
 
 ```@docs
 is_principal(::NfOrdIdl)
-is_principal_fac_elem(::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
+is_principal_fac_elem(::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
 power_class(::NfOrdIdl,::ZZRingElem)
 power_product_class(::Vector{NfOrdIdl}, ::Vector{ZZRingElem})
-power_reduce(::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},::ZZRingElem)
-class_group_ideal_relation(::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}, ::Hecke.ClassGrpCtx)
+power_reduce(::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},::ZZRingElem)
+class_group_ideal_relation(::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, ::Hecke.ClassGrpCtx)
 factor_base_bound_grh(::NfOrd)
 factor_base_bound_bach(::NfOrd)
 prime_ideals_up_to
@@ -143,14 +143,14 @@ factor(numerator(ans))
 ## Miscaellenous
 
 ```@docs
-order(::NfAbsOrdIdl)
-order(::NfAbsOrdFracIdl)
-order(::NfRelOrdIdl)
-order(::NfRelOrdFracIdl)
-nf(::NfAbsOrdIdl)
+order(::AbsNumFieldOrderIdeal)
+order(::AbsNumFieldOrderFractionalIdeal)
+order(::RelNumFieldOrderIdeal)
+order(::RelNumFieldOrderFractionalIdeal)
+nf(::AbsNumFieldOrderIdeal)
 basis(::NfOrdIdl)
 Hecke.lll_basis(::NfOrdIdl)
-basis_matrix(::NfAbsOrdIdl)
+basis_matrix(::AbsNumFieldOrderIdeal)
 basis_mat_inv(::NfOrdIdl)
 Hecke.assure_has_basis_mat_inv(::NfOrdIdl)
 Hecke.has_basis(::NfOrdIdl)
@@ -162,8 +162,8 @@ Hecke.has_princ_gen_special(::NfOrdIdl)
 Hecke.principal_generator(::NfOrdIdl)
 Hecke.principal_generator_fac_elem(::NfOrdIdl)
 minimum(::NfOrdIdl)
-minimum(::NfRelOrdIdl)
-minimum(::NfAbsOrdIdl)
+minimum(::RelNumFieldOrderIdeal)
+minimum(::AbsNumFieldOrderIdeal)
 has_minimum(::NfOrdIdl)
 norm(::NfOrdIdl)
 Hecke.has_norm(::NfOrdIdl)
@@ -179,16 +179,16 @@ valuation(::NfOrdIdl, ::NfOrdIdl)
 valuation(::Integer, ::NfOrdIdl)
 valuation(::ZZRingElem, ::NfOrdIdl)
 valuation(::NfOrdFracIdl, ::NfOrdIdl)
-idempotents(::NfAbsOrdIdl, ::NfAbsOrdIdl)
+idempotents(::AbsNumFieldOrderIdeal, ::AbsNumFieldOrderIdeal)
 ```
 
 ## Quotient Rings
 
 ```@docs
-quo(::Union{NfAbsOrd, AlgAssAbsOrd}, ::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
+quo(::Union{AbsNumFieldOrder, AlgAssAbsOrd}, ::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl})
 residue_ring(::NfOrd, ::NfOrdIdl)
 residue_field(::NfOrd, ::NfOrdIdl, ::Bool)
-mod(::NfOrdElem, ::NfAbsOrdIdl)
+mod(::NfOrdElem, ::AbsNumFieldOrderIdeal)
 crt(::NfOrdElem, ::NfOrdIdl, ::NfOrdElem, ::NfOrdIdl)
 euler_phi(::NfOrdIdl)
 Hecke.multiplicative_group(::NfOrdQuoRing)

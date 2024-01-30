@@ -191,11 +191,11 @@ end
 ###############################################################################
 
 @doc raw"""
-    lll(M::NfAbsOrd) -> NfAbsOrd
+    lll(M::AbsNumFieldOrder) -> AbsNumFieldOrder
 
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
-function lll(M::NfAbsOrd; prec::Int = 100)
+function lll(M::AbsNumFieldOrder; prec::Int = 100)
 
   if isdefined(M, :lllO)
     return M.lllO::typeof(M)
@@ -228,12 +228,12 @@ end
 
 
 #for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
-function _lll_gram(M::NfAbsOrd)
+function _lll_gram(M::AbsNumFieldOrder)
   K = nf(M)
   @assert is_totally_real(K)
   g = trace_matrix(M)
   w = lll_gram_with_transform(g)[2]
-  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -247,7 +247,7 @@ function _lll_gram(M::NfAbsOrd)
   return On
 end
 
-function _minkowski_matrix_CM(M::NfAbsOrd)
+function _minkowski_matrix_CM(M::AbsNumFieldOrder)
   if isdefined(M,  :minkowski_gram_CMfields)
     return M.minkowski_gram_CMfields
   end
@@ -324,13 +324,13 @@ function trace_matrix(b::Vector{T}) where T <: NumFieldElem
 end
 
 
-function _lll_CM(M::NfAbsOrd)
+function _lll_CM(M::AbsNumFieldOrder)
   K = nf(M)
   g = _minkowski_matrix_CM(M)
   @vprintln :LLL 1 "Now LLL"
   @hassert :LLL 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
-  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -345,7 +345,7 @@ function _lll_CM(M::NfAbsOrd)
 end
 
 
-function _lll_quad(M::NfAbsOrd)
+function _lll_quad(M::AbsNumFieldOrder)
   K = nf(M)
   b = basis(M)
   a1 = 2*numerator(norm(b[1]))
@@ -354,7 +354,7 @@ function _lll_quad(M::NfAbsOrd)
   g = matrix(FlintZZ, 2, 2, ZZRingElem[a1, a12, a12, a2])
   @hassert :ClassGroup 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
-  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -368,7 +368,7 @@ function _lll_quad(M::NfAbsOrd)
   return On
 end
 
-function _lll(M::NfAbsOrd, prec::Int)
+function _lll(M::AbsNumFieldOrder, prec::Int)
 
   K = nf(M)
   n = degree(K)
@@ -388,13 +388,13 @@ function _lll(M::NfAbsOrd, prec::Int)
   return M1
 end
 
-function _ordering_by_T2(M::NfAbsOrd, prec::Int = 32)
+function _ordering_by_T2(M::AbsNumFieldOrder, prec::Int = 32)
 
   K = nf(M)
   B = basis(M, K)
   ints = ZZRingElem[lower_bound(t2(x, prec), ZZRingElem) for x in B]
   p = sortperm(ints)
-  On = NfAbsOrd(B[p])
+  On = AbsNumFieldOrder(B[p])
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -489,7 +489,7 @@ function _has_trivial_intersection(v::Vector{Vector{Int}}, V::Vector{Vector{Int}
   return true
 end
 
-function lll_precomputation(M::NfAbsOrd, prec::Int, nblocks::Int = 4)
+function lll_precomputation(M::AbsNumFieldOrder, prec::Int, nblocks::Int = 4)
   n = degree(M)
   K = nf(M)
   dimension_blocks = div(n, nblocks)
@@ -512,7 +512,7 @@ function lll_precomputation(M::NfAbsOrd, prec::Int, nblocks::Int = 4)
     end
     if block == length(to_do)+1
       blocks_selection = Vector{Int}[]
-      On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
+      On = AbsNumFieldOrder(K, g*basis_matrix(M, copy = false))
       On.is_maximal = M.is_maximal
       if isdefined(M, :index)
       On.index = M.index
@@ -541,7 +541,7 @@ end
 
 
 
-function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
+function _lll_sublattice(M::AbsNumFieldOrder, u::Vector{Int}; prec = 100)
   K = nf(M)
   n = degree(M)
   l = length(u)
@@ -597,7 +597,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
 end
 
 
-function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, prec; steps::Int = -1)
+function _lll_with_parameters(M::AbsNumFieldOrder, parameters::Tuple{Float64, Float64}, prec; steps::Int = -1)
 
   K = nf(M)
   n = degree(M)
@@ -658,7 +658,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
         break
       end
     end
-    On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
+    On = AbsNumFieldOrder(K, g*basis_matrix(M, copy = false))
     On.is_maximal = M.is_maximal
     if isdefined(M, :index)
       On.index = M.index
@@ -684,7 +684,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     end
     @vprintln :LLL 3 "Still in the loop"
   end
-  On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, g*basis_matrix(M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -706,17 +706,17 @@ end
 ################################################################################
 
 @doc raw"""
-    lll_basis(M::NumFieldOrd) -> Vector{NumFieldElem}
+    lll_basis(M::NumFieldOrder) -> Vector{NumFieldElem}
 
 A basis for $M$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
-function lll_basis(M::NfAbsOrd)
+function lll_basis(M::AbsNumFieldOrder)
   M1 = lll(M)
   return basis(M1, nf(M1))
 end
 
 @doc raw"""
-    lll_basis(I::NumFieldOrdIdl) -> Vector{NumFieldElem}
+    lll_basis(I::NumFieldOrderIdeal) -> Vector{NumFieldElem}
 
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
 """

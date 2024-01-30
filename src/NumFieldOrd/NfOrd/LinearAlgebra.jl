@@ -274,7 +274,7 @@ function pseudo_matrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   return PMat{T, S}(m ,c)
 end
 
-function pseudo_matrix(O::NumFieldOrd, m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
+function pseudo_matrix(O::NumFieldOrder, m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
   z = PMat{T, S}(m ,c)
@@ -329,7 +329,7 @@ function pseudo_matrix(m::MatElem{S}) where S <: NumFieldElem
   return pseudo_matrix(OL, m, fractional_ideal_type(OL)[ fractional_ideal(OL, ideal(OL, 1)) for i = 1:nrows(m) ])
 end
 
-function pseudo_matrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: NfRelOrdIdl}
+function pseudo_matrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: RelNumFieldOrderIdeal}
   @assert nrows(m) == length(c)
   cc = [ fractional_ideal(order(c[i]), basis_pmatrix(c[i]); M_in_hnf=true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
@@ -563,7 +563,7 @@ function pseudo_hnf_full_rank_with_modulus(P::PMat, m::NfOrdIdl, shape::Symbol =
   return pseudo_hnf_full_rank_with_modulus!(PP, m, shape)
 end
 
-pseudo_hnf_full_rank_with_modulus(P::PMat, m::NfRelOrdIdl, shape::Symbol = :upperright) = pseudo_hnf_kb(P, shape)
+pseudo_hnf_full_rank_with_modulus(P::PMat, m::RelNumFieldOrderIdeal, shape::Symbol = :upperright) = pseudo_hnf_kb(P, shape)
 
 function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
@@ -763,7 +763,7 @@ end
 
 #this is Algorithm 4 of FH2014
 # we assume that span(P) \subseteq O^r
-function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
+function _matrix_for_reduced_span(P::PMat, m::AbsNumFieldOrderIdeal)
   O = order(m)
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
@@ -788,7 +788,7 @@ function _matrix_for_reduced_span(P::PMat, m::NfAbsOrdIdl)
   return z
 end
 
-function _matrix_for_reduced_span(P::PMat, m::NfRelOrdIdl)
+function _matrix_for_reduced_span(P::PMat, m::RelNumFieldOrderIdeal)
   O = order(m)
   Om, OtoOm = quo(O, m)
   z = zero_matrix(Om, nrows(P), ncols(P))
@@ -1849,7 +1849,7 @@ end
 
 # Returns x in K with xa integral and coprime to m
 
-function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
+function integral_and_coprime_to(a::NfOrdFracIdl, m::AbsNumFieldOrderIdeal)
   O = order(m)
   b = inv(a)
   B = absolute_basis(b)
@@ -1867,7 +1867,7 @@ function integral_and_coprime_to(a::NfOrdFracIdl, m::NfAbsOrdIdl)
   end
 end
 
-function integral_and_coprime_to(a::Union{ NfOrdFracIdl, NfRelOrdFracIdl }, m::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+function integral_and_coprime_to(a::Union{ NfOrdFracIdl, RelNumFieldOrderFractionalIdeal }, m::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
   O = order(m)
 
   facm = factor(m)

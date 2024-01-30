@@ -174,7 +174,7 @@
   Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
-  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
   pm = pseudo_hnf(pseudo_matrix(matrix(gens)), :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
 

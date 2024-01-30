@@ -81,8 +81,8 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   lp = merge(max, y1, y2)
 
   powers = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
-  quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
-  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
+  quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
+  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
   for (PP, ee) in lp
     if isone(ee)
       dtame = Dict{NfOrdIdl, Int}(PP => 1)

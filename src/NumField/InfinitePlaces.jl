@@ -290,7 +290,7 @@ julia> L, b = number_field(polynomial(K, [-2, 0, 0, 1]), "b");
 julia> p = infinite_places(K)[1];
 
 julia> extend(p, L)
-2-element Vector{InfPlc{Hecke.NfRel{AbsSimpleNumFieldElem}, Hecke.NumFieldEmbNfRel{Hecke.NumFieldEmbNfAbs, Hecke.NfRel{AbsSimpleNumFieldElem}}}}:
+2-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, Hecke.NumFieldEmbNfRel{Hecke.NumFieldEmbNfAbs, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
  Infinite place corresponding to (Complex embedding corresponding to root 1.26 of relative number field)
  Infinite place corresponding to (Complex embedding corresponding to root -0.63 + 1.09 * i of relative number field)
 ```
@@ -310,12 +310,12 @@ end
 #In this way, (f\circ g)(P)= f(g(P)), otherwise it would fail.
 
 @doc raw"""
-    induce_image(m::NfToNfMor, P::InfPlc) -> InfPlc
+    induce_image(m::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc) -> InfPlc
 
 Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
 this is unique.
 """
-function induce_image(m::NfToNfMor, P::InfPlc)
+function induce_image(m::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc)
   return infinite_place(first(extend(_embedding(P), m)))
 end
 
@@ -358,11 +358,11 @@ end
 #
 ################################################################################
 
-function sign(x::Union{NumFieldElem, FacElem, NumFieldOrdElem}, p::InfPlc)
+function sign(x::Union{NumFieldElem, FacElem, NumFieldOrderElem}, p::InfPlc)
   return sign(x, _embedding(p))
 end
 
-function signs(x::Union{NumFieldElem, FacElem, NumFieldOrdElem}, ps::Vector{<: InfPlc})
+function signs(x::Union{NumFieldElem, FacElem, NumFieldOrderElem}, ps::Vector{<: InfPlc})
   return Dict(p => sign(x, p) for p in ps)
 end
 

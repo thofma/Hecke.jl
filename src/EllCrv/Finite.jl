@@ -1,6 +1,6 @@
 ################################################################################
 #
-#          EllCrv/Finite.jl : Elliptic curves over finite fields
+#          EllipticCurve/Finite.jl : Elliptic curves over finite fields
 #
 # This file is part of Hecke.
 #
@@ -40,14 +40,14 @@
 #
 ################################################################################
 
-Random.gentype(::Type{EllCrv{T}}) where {T} = EllCrvPt{T}
+Random.gentype(::Type{EllipticCurve{T}}) where {T} = EllipticCurvePoint{T}
 
 @doc raw"""
-    rand(E::EllCrv) -> EllCrvPt
+    rand(E::EllipticCurve) -> EllipticCurvePoint
 
 Return a random point on the elliptic curve $E$ defined over a finite field.
 """
-function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllCrv})
+function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllipticCurve})
   # Algorithm 6 of Miller, "The Weil Pairing, and Its Efficient Calculation"
   E = Esp[]
   R = base_field(E)
@@ -100,12 +100,12 @@ end
 ################################################################################
 
 @doc raw"""
-    order_via_exhaustive_search(E::EllCrv{FinFieldElem) -> ZZRingElem
+    order_via_exhaustive_search(E::EllipticCurve{FinFieldElem) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using exhaustive search.
 """
-function order_via_exhaustive_search(E::EllCrv{T}) where T<:FinFieldElem
+function order_via_exhaustive_search(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   order = FlintZZ(1)
   a1, a2, a3, a4, a6 = a_invars(E)
@@ -127,13 +127,13 @@ end
 
 # Th. 4.14
 @doc raw"""
-    order_via_legendre(E::EllCrv{EuclideanRingResidueRingElem{ZZRingElem}) -> ZZRingElem
+    order_via_legendre(E::EllipticCurve{EuclideanRingResidueRingElem{ZZRingElem}) -> ZZRingElem
 
 Calculate the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
-function order_via_legendre(E::EllCrv{T}) where T<:FinFieldElem
+function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
 
 
   R = base_field(E)
@@ -172,7 +172,7 @@ end
 ################################################################################
 
 @doc raw"""
-    hasse_interval(E::EllCrv) -> (ZZRingElem, ZZRingElem)
+    hasse_interval(E::EllipticCurve) -> (ZZRingElem, ZZRingElem)
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, return an array
 `[l, b]` of integers, such that $l \leq \#E(\mathbf F) \leq b$ using
@@ -187,7 +187,7 @@ julia> hasse_interval(E)
 (0, 8)
 ```
 """
-function hasse_interval(E::EllCrv{<: FinFieldElem})
+function hasse_interval(E::EllipticCurve{<: FinFieldElem})
   R = base_field(E)
   characteristic(R) == 0 && error("Base field must be finite")
   q = order(R)
@@ -201,12 +201,12 @@ end
 
 # section 4.3.4
 @doc raw"""
-    elem_order_bsgs(P::EllCrvPt) -> ZZRingElem
+    elem_order_bsgs(P::EllipticCurvePoint) -> ZZRingElem
 
 Calculate the order of a point $P$ on an elliptic curve given over a finite
 field using BSGS.
 """
-function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
+function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
   R = base_field(P.parent)
   p = characteristic(R)
   p == 0 && error("Base field must be finite")
@@ -292,7 +292,7 @@ function elem_order_bsgs(P::EllCrvPt{T}) where T<:FinFieldElem
 end
 
 @doc raw"""
-    order(P::EllCrvPt, [fac::Fac{ZZRingElem}]) -> ZZRingElem
+    order(P::EllipticCurvePoint, [fac::Fac{ZZRingElem}]) -> ZZRingElem
 
 Given a point $P$ on an elliptic curve $E$ over a finite field, return the order
 of this point.
@@ -317,15 +317,15 @@ julia> order(P, fac)
 100
 ```
 """
-function order(P::EllCrvPt{T}) where T<:FinFieldElem
+function order(P::EllipticCurvePoint{T}) where T<:FinFieldElem
   return elem_order_bsgs(P)
 end
 
-function order(P::EllCrvPt{T}, fac::Fac{ZZRingElem}) where T<:FinFieldElem
+function order(P::EllipticCurvePoint{T}, fac::Fac{ZZRingElem}) where T<:FinFieldElem
   return _order_elem_via_fac(P, fac)
 end
 
-function _order_elem_via_fac(P::EllCrvPt{<:FinFieldElem}, fn = _order_factored(parent(P)))
+function _order_elem_via_fac(P::EllipticCurvePoint{<:FinFieldElem}, fn = _order_factored(parent(P)))
   E = parent(P)
   n = order(E)
   o = one(ZZ)
@@ -352,14 +352,14 @@ end
 ################################################################################
 
 @doc raw"""
-    order_via_bsgs(E::EllCrv) -> Vector{ZZRingElem}
+    order_via_bsgs(E::EllipticCurve) -> Vector{ZZRingElem}
 
 Calculate candidates for the number of points on an elliptic curve $E$ given
 over a finite field $\mathbf F_q$, using the baby step giant step method. If
 $q$ prime, $q > 229$, then the order is determined uniquely by this algorithm.
 It is assumed that the characteristic is not 2.
 """
-function order_via_bsgs(E::EllCrv{T}) where T<:FinFieldElem
+function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   p == 0 && error("Base field must be finite")
@@ -451,13 +451,13 @@ end
 ################################################################################
 
 @doc raw"""
-    order_via_schoof(E::EllCrv) -> ZZRingElem
+    order_via_schoof(E::EllipticCurve) -> ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$,
 this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
 The characteristic must not be $2$ or $3$.
 """
-function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
+function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   q = order(R)
   p = characteristic(R)
@@ -504,7 +504,7 @@ function order_via_schoof(E::EllCrv{T}) where T<:FinFieldElem
 end
 
 
-function fn_from_schoof(E::EllCrv, n::Int, x)
+function fn_from_schoof(E::EllipticCurve, n::Int, x)
 
   poly = division_polynomial_univariate(E, n, x)[2]
     if iseven(n)
@@ -516,7 +516,7 @@ function fn_from_schoof(E::EllCrv, n::Int, x)
 end
 
 
-function fn_from_schoof2(E::EllCrv, n::Int, x)
+function fn_from_schoof2(E::EllipticCurve, n::Int, x)
 
   R = base_field(E)
   S, y = polynomial_ring(parent(x),"y")
@@ -560,7 +560,7 @@ function prime_set(M, char)
   return S
 end
 
-# t_mod_prime(l::Nemo.ZZRingElem, E::EllCrv) -> Nemo.ZZRingElem
+# t_mod_prime(l::Nemo.ZZRingElem, E::EllipticCurve) -> Nemo.ZZRingElem
 # determines the value of t modulo some prime l (used in Schoof's algorithm)
 function t_mod_prime(l, E)
   R = base_field(E)
@@ -750,7 +750,7 @@ end
 # Division polynomials in general for an elliptic curve over an arbitrary field
 
 # standard division polynomial Psi (as needed in Schoof's algorithm)
-function psi_poly_field(E::EllCrv, n::Int, x, y)
+function psi_poly_field(E::EllipticCurve, n::Int, x, y)
 
     R = base_field(E)
     A = E.a_invars[4]
@@ -817,7 +817,7 @@ end
 ################################################################################
 
 @doc raw"""
-    order(E::EllCrv{<: FinFieldElem}) -> ZZRingElem
+    order(E::EllipticCurve{<: FinFieldElem}) -> ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
 $\#E(\mathbf F)$.
@@ -831,7 +831,7 @@ julia> order(E)
 100
 ```
 """
-@attr ZZRingElem function order(E::EllCrv{T}) where T<:FinFieldElem
+@attr ZZRingElem function order(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
@@ -852,14 +852,14 @@ end
 
 # don't use @attr, because I need that the attribute has this
 # name
-function _order_factored(E::EllCrv{<:FinFieldElem})
+function _order_factored(E::EllipticCurve{<:FinFieldElem})
   return get_attribute!(E, :order_factored) do
     return factor(order(E))
   end::Fac{ZZRingElem}
 end
 
 @doc raw"""
-    trace_of_frobenius(E::EllCrv{FinFieldElem}) -> Int
+    trace_of_frobenius(E::EllipticCurve{FinFieldElem}) -> Int
 
 Return the trace of the Frobenius endomorphism on the elliptic curve $E$
 over $\mathbf{F}_q$. This is equal to $q + 1 - n$ where n is the
@@ -874,12 +874,12 @@ julia> trace_of_frobenius(E) == 101 + 1 - order(E)
 true
 ```
 """
-function trace_of_frobenius(E::EllCrv{T}) where T<:FinFieldElem
+function trace_of_frobenius(E::EllipticCurve{T}) where T<:FinFieldElem
   return order(base_field(E))+1 - order(E)
 end
 
 @doc raw"""
-    trace_of_frobenius(E::EllCrv{<: FinFieldElem}, r::Int) -> ZZRingElem
+    trace_of_frobenius(E::EllipticCurve{<: FinFieldElem}, r::Int) -> ZZRingElem
 
 Return the trace of the $r$-th power of the Frobenius endomorphism on
 the elliptic curve $E$.
@@ -891,7 +891,7 @@ julia> trace_of_frobenius(E, 2)
 18802
 ```
 """
-function trace_of_frobenius(E::EllCrv{T}, n::Int) where T<:FinFieldElem
+function trace_of_frobenius(E::EllipticCurve{T}, n::Int) where T<:FinFieldElem
   K = base_field(E)
   q = order(K)
   a = q +1 - order(E)
@@ -915,10 +915,10 @@ end
 
 #Following Identifying supersingular elliptic curves - Andrew V. Sutherland
 @doc raw"""
-    is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+    is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
 Return true when the elliptic curve is supersingular. The result is proven to be correct.
 """
-function is_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   K = base_field(E)
 
   p = characteristic(K)
@@ -993,22 +993,22 @@ function _embed_into_p2(j, L)
 end
 
 @doc raw"""
-    is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
+    is_ordinary(E::EllipticCurve{T}) where T <: FinFieldElem
 Return true when the elliptic curve is ordinary, i.e. not supersingular.
 """
-function is_ordinary(E::EllCrv{T}) where T <: FinFieldElem
+function is_ordinary(E::EllipticCurve{T}) where T <: FinFieldElem
   return !is_supersingular(E)
 end
 
 #Following Identifying supersingular elliptic curves - Andrew V. Sutherland
 @doc raw"""
-    is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+    is_probable_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
 Uses a probabilistic algorithm to test whether E is supersingular or not.
 If the function returns false, the curve is proven to be ordinary.
 If the function returns true, there is a high chance the curve is supersingular,
 but the result hasn't been proven.
 """
-function is_probable_supersingular(E::EllCrv{T}) where T <: FinFieldElem
+function is_probable_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   j = j_invariant(E)
   K = base_field(E)
   p = characteristic(K)
@@ -1091,7 +1091,7 @@ end
 # DOI: 10.1007/s00145-004-0315-8
 #
 #
-@attr Tuple{Vector{ZZRingElem}, Vector{EllCrvPt{T}}} function _grp_struct_with_gens(E::EllCrv{T}) where {T <: FinFieldElem}
+@attr Tuple{Vector{ZZRingElem}, Vector{EllipticCurvePoint{T}}} function _grp_struct_with_gens(E::EllipticCurve{T}) where {T <: FinFieldElem}
   N = order(E)
   K = base_field(E)
   # TODO:
@@ -1134,7 +1134,7 @@ end
 end
 
 @doc raw"""
-    gens(E::EllCrv{<:FinFieldElem}) -> Vector{EllCrvPt}
+    gens(E::EllipticCurve{<:FinFieldElem}) -> Vector{EllipticCurvePoint}
 
 Return a list of generators of the group of rational points on $E$.
 
@@ -1144,7 +1144,7 @@ Return a list of generators of the group of rational points on $E$.
 julia> E = elliptic_curve(GF(101, 2), [1, 2]);
 
 julia> gens(E)
-2-element Vector{EllCrvPt{FqFieldElem}}:
+2-element Vector{EllipticCurvePoint{FqFieldElem}}:
  Point  (16*o + 42 : 88*o + 97 : 1)  of Elliptic curve with equation
 y^2 = x^3 + x + 2
  Point  (88*o + 23 : 94*o + 22 : 1)  of Elliptic curve with equation
@@ -1153,17 +1153,17 @@ y^2 = x^3 + x + 2
 julia> E = elliptic_curve(GF(101), [1, 2]);
 
 julia> gens(E)
-1-element Vector{EllCrvPt{FqFieldElem}}:
+1-element Vector{EllipticCurvePoint{FqFieldElem}}:
  Point  (85 : 58 : 1)  of Elliptic curve with equation
 y^2 = x^3 + x + 2
 ```
 """
-function gens(E::EllCrv{T}) where {T <: FinFieldElem}
+function gens(E::EllipticCurve{T}) where {T <: FinFieldElem}
   return _grp_struct_with_gens(E)[2]
 end
 
 @doc raw"""
-    abelian_group(E::EllCrv{<:FinFieldElem}) -> GrpAbFinGen, Map
+    abelian_group(E::EllipticCurve{<:FinFieldElem}) -> GrpAbFinGen, Map
 
 Return an abelian group $A$ isomorphic to the group of rational points of $E$
 and a map $E \to A$.
@@ -1180,7 +1180,7 @@ julia> A
 Z/2 x Z/5200
 ```
 """
-function abelian_group(E::EllCrv{U}) where {U <: FinFieldElem}
+function abelian_group(E::EllipticCurve{U}) where {U <: FinFieldElem}
   _invdiv, _gens = _grp_struct_with_gens(E)
   if length(_gens) == 0
     strct = ZZRingElem[]
@@ -1223,7 +1223,7 @@ end
 # Just piggy back on the generic one
 
 @doc raw"""
-    disc_log(P::EllCrvPt, Q::EllCrvPt, [n::IntegerUnion]) -> ZZRingElem
+    disc_log(P::EllipticCurvePoint, Q::EllipticCurvePoint, [n::IntegerUnion]) -> ZZRingElem
 
 Return the discrete logarithm $m$ of $Q$ with respect to the base $P$, that is,
 $mP = Q$.
@@ -1246,14 +1246,14 @@ julia> disc_log(P, Q)
 13
 ```
 """
-function disc_log(P::EllCrvPt, Q::EllCrvPt)
+function disc_log(P::EllipticCurvePoint, Q::EllipticCurvePoint)
   @req parent(P) === parent(Q) "Points must lie on the same elliptic curve"
   n = _order_elem_via_fac(P)
   return disc_log(P, Q, n)
 end
 
 # n must be a multiple of the order of P
-function disc_log(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::IntegerUnion) where {T <: FinFieldElem}
+function disc_log(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}, n::IntegerUnion) where {T <: FinFieldElem}
   @req parent(P) === parent(Q) "Points must lie on the same elliptic curve"
   return disc_log_ph(P, Q, n, 1, (x, y) -> x + y, x -> -x, (x, n) -> n*x)
 end

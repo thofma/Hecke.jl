@@ -21,7 +21,7 @@ function ideals_with_norm(i::ZZRingElem, M::NfOrd)
   return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = cartesian_product_iterator([1:length(lp[i]) for i=1:length(lp)], inplace = true)]
 end
 
-function orbit_reps(I::Vector{NfOrdIdl}, s::Hecke.NfToNfMor)
+function orbit_reps(I::Vector{NfOrdIdl}, s::Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField})
   O = Set([I[1], Hecke.induce_image(I[1], s)])
   R = [I[1]]
   for i=I
@@ -38,9 +38,9 @@ end
 #Note: this is not optimised, but hopefully correct.
 #if you need more, analyse Hasse...
 
-function induce_action(phi::Hecke.NfToNfMor, mR::T) where T <: Map{GrpAbFinGen,
+function induce_action(phi::Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, mR::T) where T <: Map{GrpAbFinGen,
 Hecke.FacElemMon{Hecke.NfOrdIdlSet}}
-#function induce_action(phi::Hecke.NfToNfMor, mR::Hecke.MapRayClassGrpFacElem{Hecke.GrpAbFinGen})
+#function induce_action(phi::Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Hecke.MapRayClassGrpFacElem{Hecke.GrpAbFinGen})
   lp, x = Hecke.find_gens(
         Hecke.MapFromFunc(base_ring(codomain(mR)),
                           domain(mR),
@@ -184,7 +184,7 @@ end
 function Gunter_Qi(r::Range, pref="Qi.new")
   Qt, t = FlintQQ["t"]
   k, a = number_field(t^2+1, "k.1")
-  s = Hecke.NfToNfMor(k, k, -a)
+  s = Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}(k, k, -a)
   M = maximal_order(k)
   kx, x = k["kx.1"]
   f = open("/tmp/$pref", "a")

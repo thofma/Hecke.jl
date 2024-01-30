@@ -8,12 +8,12 @@
     @test_throws ErrorException EllipticCurve([0, 0, 0, 0, 0])
 
     E = @inferred EllipticCurve([1, 2], check = false)
-    @test typeof(E) == EllCrv{QQFieldElem}
+    @test typeof(E) == EllipticCurve{QQFieldElem}
     @test a_invars(E) == (0, 0, 0, 1, 2)
     @test coefficients(E) == (0, 0, 0, 1, 2)
 
     E = @inferred EllipticCurve([1, 2, 3, 4, 5])
-    @test typeof(E) == EllCrv{QQFieldElem}
+    @test typeof(E) == EllipticCurve{QQFieldElem}
     @test a_invars(E) == (1, 2, 3, 4, 5)
 
     # this is Cremona: 11a2, lmfdb: 11.a1
@@ -37,16 +37,16 @@
     @test f1 == f2 && g1 == g2
 
     E = @inferred EllipticCurve(f1)
-    @test E isa EllCrv{QQFieldElem}
+    @test E isa EllipticCurve{QQFieldElem}
     E = @inferred EllipticCurve(f1, check = false)
-    @test E isa EllCrv{QQFieldElem}
+    @test E isa EllipticCurve{QQFieldElem}
 
     E = EllipticCurve(f1, 1)
     f2, g2 = hyperelliptic_polynomials(E)
     @test f1 == f2 && 1 == g2
 
     E = EllipticCurve(x^3 + 1, zero(Qx))
-    @test E isa EllCrv{QQFieldElem}
+    @test E isa EllipticCurve{QQFieldElem}
 
     @test_throws ArgumentError EllipticCurve(x^10-21, x^3+5)
     @test_throws ArgumentError EllipticCurve(x^3+3, x^3+5)
@@ -56,15 +56,15 @@
     OK = maximal_order(K)
 
     E31_1_a1 = @inferred EllipticCurve([K(1), a + 1, a, a, K(0)])
-    @test typeof(E31_1_a1) == EllCrv{AbsSimpleNumFieldElem}
+    @test typeof(E31_1_a1) == EllipticCurve{AbsSimpleNumFieldElem}
 
     # lmfdb: 116.1-a1
     E116_1_a1 = @inferred EllipticCurve([K(1), K(-1), a, -a, K(0)] )
-    @test typeof(E31_1_a1) == EllCrv{AbsSimpleNumFieldElem}
+    @test typeof(E31_1_a1) == EllipticCurve{AbsSimpleNumFieldElem}
 
     # short example
     Eshort = @inferred EllipticCurve([4, 0])
-    @test typeof(Eshort) == EllCrv{QQFieldElem}
+    @test typeof(Eshort) == EllipticCurve{QQFieldElem}
     @test a_invars(Eshort) == (0, 0, 0, 4, 0)
   end
 
@@ -122,19 +122,19 @@
 
   @testset "Point construction" begin
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
-    @test typeof(P) == EllCrvPt{QQFieldElem}
+    @test typeof(P) == EllipticCurvePoint{QQFieldElem}
     @test parent(P) == E43_a1
     @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
 
     P = @inferred E43_a1([-1, 0], check = false)
-    @test typeof(P) == EllCrvPt{QQFieldElem}
+    @test typeof(P) == EllipticCurvePoint{QQFieldElem}
     @test parent(P) == E43_a1
     @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
 
     P = @inferred E43_a1([ZZRingElem(-1), ZZRingElem(0)])
-    @test typeof(P) == EllCrvPt{QQFieldElem}
+    @test typeof(P) == EllipticCurvePoint{QQFieldElem}
     @test parent(P) == E43_a1
     @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
@@ -151,7 +151,7 @@
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
 
     P = @inferred E116_1_a1([K(0), -K(a)])
-    @test typeof(P) == EllCrvPt{AbsSimpleNumFieldElem}
+    @test typeof(P) == EllipticCurvePoint{AbsSimpleNumFieldElem}
     @test parent(P) == E116_1_a1
     @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)
@@ -164,7 +164,7 @@
 
     P = @inferred Eshort([2, 4], check = false)
     @test @inferred is_finite(P)
-    @test typeof(P) == EllCrvPt{QQFieldElem}
+    @test typeof(P) == EllipticCurvePoint{QQFieldElem}
     @test parent(P) == Eshort
 
     E = EllipticCurve(GF(7,2),[1,2,3,4,5])

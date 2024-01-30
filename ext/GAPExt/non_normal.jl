@@ -26,7 +26,7 @@ end
 function fixed_field(x::FieldsTower, H::GAP.GapObj)
   gH = GAP.Globals.SmallGeneratingSet(H)
 
-  auts = NfToNfMor[]
+  auts = NumFielHom{AbsSimpleNumField, AbsSimpleNumField}[]
   found = 0
   D = x.isomorphism
   autsx = automorphism_list(number_field(x))

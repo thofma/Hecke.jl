@@ -117,7 +117,7 @@ end
 
 Given an order $O$, compute the torsion units of $O$.
 """
-function torsion_units(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
+function torsion_units(O::T) where T <: Union{AbsNumFieldOrder, RelNumFieldOrder}
   g, ord = torsion_units_gen_order(O)
   return powers(g, ord-1)
 end
@@ -127,7 +127,7 @@ end
 
 Given an order $O$, compute a generator of the torsion units of $O$.
 """
-function torsion_units_generator(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
+function torsion_units_generator(O::T) where T <: Union{AbsNumFieldOrder, RelNumFieldOrder}
   return torsion_units_gen_order(O)[1]
 end
 
@@ -136,7 +136,7 @@ end
 
 Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
 """
-function torsion_units_gen_order(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
+function torsion_units_gen_order(O::T) where T <: Union{AbsNumFieldOrder, RelNumFieldOrder}
   ord, g = _torsion_units_gen(nf(O))
   if is_maximal_known_and_maximal(O)
     return O(g), ord
@@ -170,7 +170,7 @@ end
 Given an order $\mathcal O$, returns the torsion units as an abelian group $G$
 together with a map $G \to \mathcal O^\times$.
 """
-function torsion_unit_group(O::T) where T <: Union{NfAbsOrd, NfRelOrd}
+function torsion_unit_group(O::T) where T <: Union{AbsNumFieldOrder, RelNumFieldOrder}
   g, ord = torsion_units_gen_order(O)
   f = AbToNfOrdMultGrp(O, ord, O(g))
   return domain(f), f

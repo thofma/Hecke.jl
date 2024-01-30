@@ -60,14 +60,14 @@ function find_points(coefficients::Vector{ZZRingElem}, bound::IntegerUnion, N = 
 end
 
 @doc raw"""
-    find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion) -> ArbField
+    find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion) -> ArbField
 
 Given an elliptic curve E over QQ with integral coefficients and
 a bound, return a list of points (x: y: 1) on the curve
 where writing x = a//b with gcd(a, b) = 1 the points are bounded by
 max(|a|, |b|) <= bound.
 """
-function find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
+function find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   @req is_integral_model(E) "Elliptic Curve needs to be integral"
   a1, a2, a3, a4, a6 = a_invars(E)
   transform = false

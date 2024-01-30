@@ -442,7 +442,7 @@ function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
     end
     O1 = _order_for_polygon_overorder(K, elt, inv(QQFieldElem(p^vdisc)))
   else
-    O1 = NfAbsOrd(K, B)
+    O1 = AbsNumFieldOrder(K, B)
     O1.disc = divexact(O.disc, p^(2*vdisc))
     O1.index = p^vdisc
     push!(O1.primesofmaximality, p)
@@ -500,7 +500,7 @@ function polygons_overorder(O::NfOrd, p::ZZRingElem)
     hnf_modular_eldiv!(Malpha, p, :lowerleft)
     b = FakeFmpqMat(Malpha, p)
     @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-    OO = NfAbsOrd(nf(O), b)
+    OO = AbsNumFieldOrder(nf(O), b)
     OO.is_equation_order = false
     OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
     OO.index = p^(degree(O)-degree(U))
@@ -576,7 +576,7 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{ZZRingElem, Int}) where {T}
+function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{ZZRingElem, Int}) where {T}
 
   O = order(Ip1)
   n = degree(O)
@@ -626,12 +626,12 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{
   return ideals, AA
 end
 
-function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOrdIdl, p::Union{Int, ZZRingElem})
+function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNumFieldOrderIdeal, T::AbsNumFieldOrderIdeal, p::Union{Int, ZZRingElem})
   #I is an ideal lying over p
   #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
-  A, OtoA = AlgAss(O, Ip1, p)
+  A, OtoA = StructureConstantAlgebra(O, Ip1, p)
 
   if dim(A) == 1
     Ip1.norm = ZZRingElem(p)
@@ -832,7 +832,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
 end
 
 
-function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
+function find_random_second_gen(A::AbsNumFieldOrderIdeal{S, T}) where {S, T}
   O = order(A)
   K = nf(O)
   Amin2 = minimum(A, copy = false)^2
@@ -890,7 +890,7 @@ function find_random_second_gen(A::NfAbsOrdIdl{S, T}) where {S, T}
   return nothing
 end
 
-function find_elem_of_valuation_1(P::NfAbsOrdIdl{S, T}, P2::NfAbsOrdIdl{S, T}) where {S, T}
+function find_elem_of_valuation_1(P::AbsNumFieldOrderIdeal{S, T}, P2::AbsNumFieldOrderIdeal{S, T}) where {S, T}
   B = basis(P, copy = false)
   el = B[1]
   for i = 2:length(B)
@@ -1003,7 +1003,7 @@ function prime_decomposition_polygons(O::NfOrd, p::Union{ZZRingElem, Int}, degre
       ei = m
       t = parent(f)(phi)
       b = K(t)
-      J = NfAbsOrdIdl(O)
+      J = AbsNumFieldOrderIdeal(O)
       J.gen_one = ZZRingElem(p)
       J.gen_two = O(b, false)
       J.is_prime = 1

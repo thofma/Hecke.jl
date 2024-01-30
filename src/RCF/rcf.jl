@@ -9,7 +9,7 @@ add_assertion_scope(:ClassField)
 ###############################################################################
 
 @doc raw"""
-    number_field(CF::ClassField) -> NfRelNS{AbsSimpleNumFieldElem}
+    number_field(CF::ClassField) -> RelNonSimpleNumField{AbsSimpleNumFieldElem}
 
 Given a (formal) abelian extension, compute the class field by finding defining
 polynomials for all prime power cyclic subfields.
@@ -691,12 +691,12 @@ function _find_prim_elem(CF::ClassField_pp, AutA)
   AutA_gen = CF.AutG
   A = domain(AutA_gen[1])
   pe = gen(A)
-  Auto = Dict{GrpAbFinGenElem, NfRelElem{AbsSimpleNumFieldElem}}(find_orbit(AutA_gen, AutA, pe))
+  Auto = Dict{GrpAbFinGenElem, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(find_orbit(AutA_gen, AutA, pe))
   if degree(CF) != degree(A)
     #In this case, gen(A) might not be primitive...
     while length(Auto) != length(unique(values(Auto)))
       pe += gen(base_field(A))
-      Auto = Dict{GrpAbFinGenElem, NfRelElem{AbsSimpleNumFieldElem}}(find_orbit(AutA_gen, AutA, pe))
+      Auto = Dict{GrpAbFinGenElem, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(find_orbit(AutA_gen, AutA, pe))
     end
   end
   @vprintln :ClassField 2 "have action on the primitive element!!!"
@@ -708,7 +708,7 @@ function find_orbit(auts, AutG, x)
   S = gens(AutG)
   t = ngens(AutG)
   order = 1
-  elements = Tuple{GrpAbFinGenElem, NfRelElem{AbsSimpleNumFieldElem}}[(id(AutG), x)]
+  elements = Tuple{GrpAbFinGenElem, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[(id(AutG), x)]
   g = S[1]
 
   while !iszero(g)
@@ -847,7 +847,7 @@ function auts_in_snf!(CF::ClassField_pp)
   return nothing
 end
 
-function _extend_auto(K::Hecke.NfRel{AbsSimpleNumFieldElem}, h::Hecke.NfToNfMor, r::Int = -1)
+function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, r::Int = -1)
   @hassert :ClassField 1 is_kummer_extension(K)
   #@assert is_kummer_extension(K)
   k = base_field(K)
@@ -938,7 +938,7 @@ function _rcf_descent(CF::ClassField_pp)
     gss = NfRelToNfRelMor_nf_elem_nf_elem[AutA_gen[1]^e]
     @vprintln :ClassField 2 "computing orbit of primitive element"
     pe = gen(A)
-    os = NfRelElem{AbsSimpleNumFieldElem}[x[2] for x in find_orbit(gss, ss, pe)]
+    os = RelSimpleNumFieldElem{AbsSimpleNumFieldElem}[x[2] for x in find_orbit(gss, ss, pe)]
   else
     @vprintln :ClassField 2 "Computing automorphisms of the extension and orbit of primitive element"
     pe, Auto = _find_prim_elem(CF, AutA)
@@ -1007,7 +1007,7 @@ function _rcf_descent(CF::ClassField_pp)
     s, ms = kernel(h, false)
     @vprintln :ClassField 2 "... done, have subgroup!"
     @vprintln :ClassField 2 "computing orbit of primitive element"
-    os = NfRelElem{AbsSimpleNumFieldElem}[Auto[ms(j)] for j in s]
+    os = RelSimpleNumFieldElem{AbsSimpleNumFieldElem}[Auto[ms(j)] for j in s]
   end
 
   q, mq = quo(AutA, ms.map, false)
@@ -1030,7 +1030,7 @@ function _rcf_descent(CF::ClassField_pp)
   inc_map = CE.mp[1]
   let inc_map = inc_map, AutA = AutA, e = e
 
-    function charpoly(a::NfRelElem{AbsSimpleNumFieldElem})
+    function charpoly(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem})
       tr_in_K = Vector{AbsSimpleNumFieldElem}(undef, e)
       tr_err = divexact(order(AutA), e)
       el = one(parent(a))
@@ -1058,7 +1058,7 @@ function _rcf_descent(CF::ClassField_pp)
   @vprintln :ClassField 2 "... done"
 
   if !is_squarefree(f2)
-    os1 = NfRelElem{AbsSimpleNumFieldElem}[elem for elem in os]
+    os1 = RelSimpleNumFieldElem{AbsSimpleNumFieldElem}[elem for elem in os]
     while !is_squarefree(f2)
       @vprintln :ClassField 2 "trying relative trace of powers"
       for i = 1:length(os)
@@ -1105,21 +1105,21 @@ end
 ###############################################################################
 
 @doc raw"""
-    ring_class_group(O::NfAbsOrd)
+    ring_class_group(O::AbsNumFieldOrder)
 
 The ring class group (Picard group) of $O$.
 """
-ring_class_group(O::NfAbsOrd) = picard_group(O)
+ring_class_group(O::AbsNumFieldOrder) = picard_group(O)
 
 
 @doc raw"""
-    ring_class_field(O::NfAbsOrd) -> ClassField
+    ring_class_field(O::AbsNumFieldOrder) -> ClassField
 
 The ring class field of $O$, i.e. the maximal abelian extension ramified
 only at primes dividing the conductor with the automorphism group
 isomorphic to the Picard group.
 """
-function ring_class_field(O::NfAbsOrd)
+function ring_class_field(O::AbsNumFieldOrder)
   M = maximal_order(O)
   f = extend(conductor(O), M)
   R, mR = ray_class_group(f)

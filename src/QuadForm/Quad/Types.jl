@@ -303,8 +303,8 @@ end
 mutable struct SpinorGeneraCtx
   mR::MapRayClassGrp # ray class group map
   mQ::GrpAbFinGenMap # quotient
-  rayprimes::Vector{NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}}
-  criticalprimes::Vector{NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  rayprimes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  criticalprimes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
   function SpinorGeneraCtx()
     return new()
@@ -324,17 +324,17 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
   domain::GrpAbFinGen
   codomain::AbsSimpleNumField
   is_dyadic::Bool
-  p::NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   e::AbsSimpleNumFieldElem
   pi::AbsSimpleNumFieldElem
   piinv::AbsSimpleNumFieldElem
   hext::NfToFinFldMor{FqField}
-  h::AbsOrdQuoMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
-  g::GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
+  h::AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
+  g::GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
   i::GrpAbFinGenMap
   mS::GrpAbFinGenMap
 
-  function LocMultGrpModSquMap(K::AbsSimpleNumField, p::NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  function LocMultGrpModSquMap(K::AbsSimpleNumField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
     R = order(p)
     @assert nf(R) === K
     @assert is_absolute(K)

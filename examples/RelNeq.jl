@@ -5,10 +5,10 @@ using Hecke
 struct RelNeq
   k::AbsSimpleNumField
   K::AbsSimpleNumField
-  Kk::Hecke.NfRel{AbsSimpleNumFieldElem}
+  Kk::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   m_k_K::Map
   m_Kk_K::Map
-  function RelNeq(k::AbsSimpleNumField, Kk::Hecke.NfRel{AbsSimpleNumFieldElem})
+  function RelNeq(k::AbsSimpleNumField, Kk::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem})
     k = base_ring(Kk)
     K, m_K_Kk = absolute_simple_field(Kk)
     m1 = inv(m_K_Kk)
@@ -239,7 +239,7 @@ function Base.show(io::IO, N::Norm1Group)
   println(io, "currently, using $(length(N.gens)) generators")
 end
 
-function is_principal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
+function is_principal_fac_elem(A::FacElem{<:AbsNumFieldOrderIdeal})
   a,b = Hecke.reduce_ideal(A)
   # a*b == A
   fl, c = is_principal_fac_elem(a)
@@ -377,7 +377,7 @@ function n1group(A::RelNeq, B::Int)
   ZK = maximal_order(K)
   N = Norm1Group(A)
 
-  function single_prime(P::NfAbsOrdIdl)
+  function single_prime(P::AbsNumFieldOrderIdeal)
     p = minimum(P)
     if numerator(discriminant(K)) % p == 0 ||
        numerator(discriminant(k)) % p == 0

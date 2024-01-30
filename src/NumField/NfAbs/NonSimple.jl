@@ -32,17 +32,17 @@
 #
 ################################################################################
 
-@inline base_ring(K::NfAbsNS) = FlintQQ
+@inline base_ring(K::AbsNonSimpleNumField) = FlintQQ
 
-@inline base_field(K::NfAbsNS) = FlintQQ
+@inline base_field(K::AbsNonSimpleNumField) = FlintQQ
 
-@inline degree(K::NfAbsNS) = K.degree
+@inline degree(K::AbsNonSimpleNumField) = K.degree
 
-@inline degrees(K::NfAbsNS) = K.degrees
+@inline degrees(K::AbsNonSimpleNumField) = K.degrees
 
-@inline number_of_generators(K::NfAbsNS) = length(K.pol)
+@inline number_of_generators(K::AbsNonSimpleNumField) = length(K.pol)
 
-function is_maximal_order_known(K::NfAbsNS)
+function is_maximal_order_known(K::AbsNonSimpleNumField)
   return has_attribute(K, :maximal_order)
 end
 
@@ -52,15 +52,15 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfAbsNSElem, dict::IdDict)
+function Base.deepcopy_internal(a::AbsNonSimpleNumFieldElem, dict::IdDict)
   # TODO: Fix this once deepcopy is fixed for QQMPolyRingElem
-  # z = NfAbsNSElem(Base.deepcopy_internal(data(a), dict))
-  z = NfAbsNSElem(parent(a), Base.deepcopy(data(a)))
+  # z = AbsNonSimpleNumFieldElem(Base.deepcopy_internal(data(a), dict))
+  z = AbsNonSimpleNumFieldElem(parent(a), Base.deepcopy(data(a)))
   return z
 end
 
 #julia's a^i needs copy
-function Base.copy(a::NfAbsNSElem)
+function Base.copy(a::AbsNonSimpleNumFieldElem)
   return parent(a)(a.data)
 end
 
@@ -70,32 +70,32 @@ end
 #
 ################################################################################
 
-order_type(::NfAbsNS) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
+order_type(::AbsNonSimpleNumField) = AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}
 
-order_type(::Type{NfAbsNS}) = NfAbsOrd{NfAbsNS, NfAbsNSElem}
+order_type(::Type{AbsNonSimpleNumField}) = AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}
 
-function iszero(a::NfAbsNSElem)
+function iszero(a::AbsNonSimpleNumFieldElem)
   reduce!(a)
   return iszero(data(a))
 end
 
-function isone(a::NfAbsNSElem)
+function isone(a::AbsNonSimpleNumFieldElem)
   reduce!(a)
   return isone(data(a))
 end
 
-Nemo.zero(K::NfAbsNS) = K(Nemo.zero(parent(K.pol[1])))
+Nemo.zero(K::AbsNonSimpleNumField) = K(Nemo.zero(parent(K.pol[1])))
 
-Nemo.one(K::NfAbsNS) = K(Nemo.one(parent(K.pol[1])))
+Nemo.one(K::AbsNonSimpleNumField) = K(Nemo.one(parent(K.pol[1])))
 
-Nemo.one(a::NfAbsNSElem) = one(a.parent)
+Nemo.one(a::AbsNonSimpleNumFieldElem) = one(a.parent)
 
-function Nemo.zero!(a::NfAbsNSElem)
+function Nemo.zero!(a::AbsNonSimpleNumFieldElem)
   a.data = zero(a.data)
   return a
 end
 
-function Nemo.one!(a::NfAbsNSElem)
+function Nemo.one!(a::AbsNonSimpleNumFieldElem)
   a.data = one(a.data)
   return a
 end
@@ -106,9 +106,9 @@ end
 #
 ################################################################################
 
-RandomExtensions.maketype(K::NfAbsNS, r) = elem_type(K)
+RandomExtensions.maketype(K::AbsNonSimpleNumField, r) = elem_type(K)
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<:AbstractUnitRange}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem,AbsNonSimpleNumField,<:AbstractUnitRange}})
   K, r = sp[][1:end]
   # TODO: This is super slow
   b = basis(K, copy = false)
@@ -119,8 +119,8 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{NfAbsNSElem,NfAbsNS,<
   return z
 end
 
-rand(K::NfAbsNS, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
-rand(rng::AbstractRNG, K::NfAbsNS, r::AbstractUnitRange) = rand(rng, make(K, r))
+rand(K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
+rand(rng::AbstractRNG, K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(rng, make(K, r))
 
 ################################################################################
 #
@@ -128,7 +128,7 @@ rand(rng::AbstractRNG, K::NfAbsNS, r::AbstractUnitRange) = rand(rng, make(K, r))
 #
 ################################################################################
 
-function basis_matrix(A::Array{NfAbsNSElem})
+function basis_matrix(A::Array{AbsNonSimpleNumFieldElem})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -140,7 +140,7 @@ function basis_matrix(A::Array{NfAbsNSElem})
   return MM
 end
 
-function basis_matrix(A::Vector{NfAbsNSElem}, ::Type{FakeFmpqMat})
+function basis_matrix(A::Vector{AbsNonSimpleNumFieldElem}, ::Type{FakeFmpqMat})
   return FakeFmpqMat(basis_matrix(A))
 end
 
@@ -150,24 +150,24 @@ end
 #
 ################################################################################
 
-@inline Nemo.data(a::NfAbsNSElem) = a.data
+@inline Nemo.data(a::AbsNonSimpleNumFieldElem) = a.data
 
-@inline Nemo.parent(a::NfAbsNSElem) = a.parent::NfAbsNS
+@inline Nemo.parent(a::AbsNonSimpleNumFieldElem) = a.parent::AbsNonSimpleNumField
 
-is_simple(a::NfAbsNS) = false
+is_simple(a::AbsNonSimpleNumField) = false
 
-is_simple(::Type{NfAbsNS}) = false
+is_simple(::Type{AbsNonSimpleNumField}) = false
 
-function basis(K::NfAbsNS; copy::Bool = true)
+function basis(K::AbsNonSimpleNumField; copy::Bool = true)
   if isdefined(K, :basis)
     if copy
-      return deepcopy(K.basis)::Vector{NfAbsNSElem}
+      return deepcopy(K.basis)::Vector{AbsNonSimpleNumFieldElem}
     else
-      return K.basis::Vector{NfAbsNSElem}
+      return K.basis::Vector{AbsNonSimpleNumFieldElem}
     end
   end
   Rx = parent(K.pol[1])
-  b = Vector{NfAbsNSElem}(undef, degree(K))
+  b = Vector{AbsNonSimpleNumFieldElem}(undef, degree(K))
   ind = 1
   d = degrees(K)
   it = cartesian_product_iterator([0:d[i]-1 for i = 1:length(d)], inplace = true)
@@ -179,15 +179,15 @@ function basis(K::NfAbsNS; copy::Bool = true)
   end
   K.basis = b
   if copy
-    return deepcopy(b)::Vector{NfAbsNSElem}
+    return deepcopy(b)::Vector{AbsNonSimpleNumFieldElem}
   else
-    return b::Vector{NfAbsNSElem}
+    return b::Vector{AbsNonSimpleNumFieldElem}
   end
 end
 
 # Given an exponent vector b, the following function returns the index of
 # the basis element corresponding to b.
-function monomial_to_index(K::NfAbsNS, b::Vector{T}) where {T}
+function monomial_to_index(K::AbsNonSimpleNumField, b::Vector{T}) where {T}
   n = ngens(K)
   idx = b[n]
   d = degrees(K)
@@ -204,7 +204,7 @@ end
 #
 ################################################################################
 
-function reduce!(a::NfAbsNSElem)
+function reduce!(a::AbsNonSimpleNumFieldElem)
   q, a.data = divrem(a.data, parent(a).pol)
   return a
 end
@@ -215,7 +215,7 @@ end
 #
 ################################################################################
 
-denominator(a::NfAbsNSElem) = denominator(a.data)
+denominator(a::AbsNonSimpleNumFieldElem) = denominator(a.data)
 
 ################################################################################
 #
@@ -223,7 +223,7 @@ denominator(a::NfAbsNSElem) = denominator(a.data)
 #
 ################################################################################
 
-function Base.show(io::IO, ::MIME"text/plain", a::NfAbsNS)
+function Base.show(io::IO, ::MIME"text/plain", a::AbsNonSimpleNumField)
   @show_name(io, a)
   @show_special(io, a)
   io = pretty(io)
@@ -234,7 +234,7 @@ function Base.show(io::IO, ::MIME"text/plain", a::NfAbsNS)
   print(io, Dedent())
 end
 
-function Base.show(io::IO, a::NfAbsNS)
+function Base.show(io::IO, a::AbsNonSimpleNumField)
   @show_name(io, a)
   @show_special(io, a)
   if get(io, :supercompact, false)
@@ -246,11 +246,11 @@ function Base.show(io::IO, a::NfAbsNS)
   end
 end
 
-function Base.show(io::IO, a::NfAbsNSElem)
+function Base.show(io::IO, a::AbsNonSimpleNumFieldElem)
   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
-function AbstractAlgebra.expressify(x::NfAbsNSElem; context = nothing)
+function AbstractAlgebra.expressify(x::AbsNonSimpleNumFieldElem; context = nothing)
   return AbstractAlgebra.expressify(data(x), symbols(parent(x)), context = context)
 end
 
@@ -260,8 +260,8 @@ end
 #
 ################################################################################
 
-function Base.:(-)(a::NfAbsNSElem)
-  return NfAbsNSElem(parent(a), -data(a))
+function Base.:(-)(a::AbsNonSimpleNumFieldElem)
+  return AbsNonSimpleNumFieldElem(parent(a), -data(a))
 end
 
 ################################################################################
@@ -270,31 +270,31 @@ end
 #
 ################################################################################
 
-function Base.:(+)(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(+, a, b)::NfAbsNSElem
-  return NfAbsNSElem(parent(a), data(a) + data(b))
+function Base.:(+)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
+  parent(a) == parent(b) || force_op(+, a, b)::AbsNonSimpleNumFieldElem
+  return AbsNonSimpleNumFieldElem(parent(a), data(a) + data(b))
 end
 
-function Base.:(-)(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(-, a, b)::NfAbsNSElem
-  return NfAbsNSElem(parent(a), data(a) - data(b))
+function Base.:(-)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
+  parent(a) == parent(b) || force_op(-, a, b)::AbsNonSimpleNumFieldElem
+  return AbsNonSimpleNumFieldElem(parent(a), data(a) - data(b))
 end
 
-function Base.:(*)(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(*, a, b)::NfAbsNSElem
+function Base.:(*)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
+  parent(a) == parent(b) || force_op(*, a, b)::AbsNonSimpleNumFieldElem
   return parent(a)(data(a) * data(b))
 end
 
-function Base.:(//)(a::NfAbsNSElem, b::NfAbsNSElem)
+function Base.:(//)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
   return div(a, b)
 end
 
-function Base.div(a::NfAbsNSElem, b::NfAbsNSElem)
-  parent(a) == parent(b) || force_op(div, a, b)::NfAbsNSElem
+function Base.div(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
+  parent(a) == parent(b) || force_op(div, a, b)::AbsNonSimpleNumFieldElem
   return a * inv(b)
 end
 
-Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem; check::Bool = false) = div(a, b)
+Nemo.divexact(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem; check::Bool = false) = div(a, b)
 
 ################################################################################
 #
@@ -302,7 +302,7 @@ Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem; check::Bool = false) = div(a, b)
 #
 ################################################################################
 
-function Base.:(^)(a::NfAbsNSElem, b::Integer)
+function Base.:(^)(a::AbsNonSimpleNumFieldElem, b::Integer)
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -317,7 +317,7 @@ function Base.:(^)(a::NfAbsNSElem, b::Integer)
   end
 end
 
-function Base.:(^)(a::NfAbsNSElem, b::ZZRingElem)
+function Base.:(^)(a::AbsNonSimpleNumFieldElem, b::ZZRingElem)
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -338,7 +338,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(a::NfAbsNSElem, b::NfAbsNSElem)
+function Base.:(==)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
   parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
@@ -349,40 +349,40 @@ end
 #
 ################################################################################
 
-function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::NfAbsNSElem)
+function Nemo.mul!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
   mul!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
 end
 
-function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::NfAbsNSElem)
+function Nemo.add!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
   add!(c.data, a.data, b.data)
   return c
 end
 
-function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::ZZRingElem)
+function Nemo.add!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::ZZRingElem)
   add!(c.data, a.data, parent(c.data)(b))
   return c
 end
 
-function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::Integer)
+function Nemo.add!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::Integer)
   add!(c.data, a.data, parent(c.data)(b))
   return c
 end
 
-function Nemo.addeq!(b::NfAbsNSElem, a::NfAbsNSElem)
+function Nemo.addeq!(b::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem)
   addeq!(b.data, a.data)
   b = reduce!(b)
   return b
 end
 
 
-function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::ZZRingElem)
+function Nemo.mul!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::ZZRingElem)
   mul!(c.data, a.data, b)
   return c
 end
 
-function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::Integer)
+function Nemo.mul!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::Integer)
   mul!(c.data, a.data, parent(c.data)(b))
   return c
 end
@@ -393,7 +393,7 @@ end
 #
 ################################################################################
 
-function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::NfAbsNSElem)
+function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   # TODO: This is super bad
   # Proper implementation needs access to the content of the underlying
@@ -422,7 +422,7 @@ function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::NfAbsNSElem)
   return nothing
 end
 
-function elem_to_mat_row!(M::QQMatrix, i::Int, a::NfAbsNSElem)
+function elem_to_mat_row!(M::QQMatrix, i::Int, a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   for j in 1:ncols(M)
     M[i, j] = zero(FlintQQ)
@@ -436,7 +436,7 @@ function elem_to_mat_row!(M::QQMatrix, i::Int, a::NfAbsNSElem)
   return M
 end
 
-function elem_from_mat_row(K::NfAbsNS, M::QQMatrix, i::Int)
+function elem_from_mat_row(K::AbsNonSimpleNumField, M::QQMatrix, i::Int)
   a = K()
   b = basis(K, copy = false)
   for c = 1:ncols(M)
@@ -445,7 +445,7 @@ function elem_from_mat_row(K::NfAbsNS, M::QQMatrix, i::Int)
   return a
 end
 
-function elem_from_mat_row(K::NfAbsNS, M::ZZMatrix, i::Int, d::ZZRingElem)
+function elem_from_mat_row(K::AbsNonSimpleNumField, M::ZZMatrix, i::Int, d::ZZRingElem)
   b = basis(K, copy = false)
   Qxy = parent(b[1].data)
   a = Qxy()
@@ -458,7 +458,7 @@ function elem_from_mat_row(K::NfAbsNS, M::ZZMatrix, i::Int, d::ZZRingElem)
   return divexact(K(a), d)
 end
 
-function SRow(a::NfAbsNSElem)
+function SRow(a::AbsNonSimpleNumFieldElem)
   sr = SRow(FlintQQ)
   adata = data(a)
   for i=1:length(adata)
@@ -479,7 +479,7 @@ end
 #
 ################################################################################
 
-function discriminant(K::NfAbsNS)
+function discriminant(K::AbsNonSimpleNumField)
   Qx = FlintQQ["x"][1]
   d = QQFieldElem(1)
   for i = 1:length(K.pol)
@@ -495,7 +495,7 @@ end
 #
 ################################################################################
 
-function minpoly_dense(a::NfAbsNSElem)
+function minpoly_dense(a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   n = degree(K)
   M = zero_matrix(FlintQQ, degree(K)+1, degree(K))
@@ -523,7 +523,7 @@ function minpoly_dense(a::NfAbsNSElem)
   end
 end
 
-function minpoly_sparse(a::NfAbsNSElem)
+function minpoly_sparse(a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   n = degree(K)
   M = sparse_matrix(FlintQQ)
@@ -559,15 +559,15 @@ function minpoly_sparse(a::NfAbsNSElem)
   end
 end
 
-function minpoly(a::NfAbsNSElem)
+function minpoly(a::AbsNonSimpleNumFieldElem)
   return minpoly_via_trace(a)::QQPolyRingElem
 end
 
-function minpoly(Qx::QQPolyRing, a::NfAbsNSElem)
+function minpoly(Qx::QQPolyRing, a::AbsNonSimpleNumFieldElem)
   return Qx(minpoly(a))
 end
 
-function minpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
+function minpoly(Rx::ZZPolyRing, a::AbsNonSimpleNumFieldElem)
   f = minpoly(a)
   if !isone(denominator(f))
     error("element is not integral")
@@ -575,11 +575,11 @@ function minpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
   return Rx(denominator(f)*f)
 end
 
-function minpoly(a::NfAbsNSElem, R::ZZRing)
+function minpoly(a::AbsNonSimpleNumFieldElem, R::ZZRing)
   return minpoly(polynomial_ring(R, cached = false)[1], a)
 end
 
-function minpoly(a::NfAbsNSElem, ::QQField)
+function minpoly(a::AbsNonSimpleNumFieldElem, ::QQField)
   return minpoly(a)
 end
 
@@ -589,16 +589,16 @@ end
 #
 ################################################################################
 
-function charpoly(a::NfAbsNSElem)
+function charpoly(a::AbsNonSimpleNumFieldElem)
   f = minpoly(a)
   return f^div(degree(parent(a)), degree(f))
 end
 
-function charpoly(Rx::QQPolyRing, a::NfAbsNSElem)
+function charpoly(Rx::QQPolyRing, a::AbsNonSimpleNumFieldElem)
   return Qx(charpoly(a))
 end
 
-function charpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
+function charpoly(Rx::ZZPolyRing, a::AbsNonSimpleNumFieldElem)
   f = charpoly(a)
   if !isone(denominator(f))
     error("element is not integral")
@@ -606,11 +606,11 @@ function charpoly(Rx::ZZPolyRing, a::NfAbsNSElem)
   return Rx(denominator(f)*f)
 end
 
-function charpoly(a::NfAbsNSElem, R::ZZRing)
+function charpoly(a::AbsNonSimpleNumFieldElem, R::ZZRing)
   return charpoly(polynomial_ring(R, cached = false)[1], a)
 end
 
-function charpoly(a::NfAbsNSElem, ::QQField)
+function charpoly(a::AbsNonSimpleNumFieldElem, ::QQField)
   return charpoly(a)
 end
 
@@ -620,7 +620,7 @@ end
 #
 ################################################################################
 
-function inv(a::NfAbsNSElem)
+function inv(a::AbsNonSimpleNumFieldElem)
   if iszero(a)
     error("division by zero")
   end
@@ -638,7 +638,7 @@ end
 #
 ################################################################################
 
-function norm(a::NfAbsNSElem)
+function norm(a::AbsNonSimpleNumFieldElem)
   f = minpoly(a)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
@@ -649,7 +649,7 @@ end
 #
 ################################################################################
 
-function representation_matrix(a::NfAbsNSElem)
+function representation_matrix(a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   b = basis(K, copy = false)
   M = zero_matrix(FlintQQ, degree(K), degree(K))
@@ -659,7 +659,7 @@ function representation_matrix(a::NfAbsNSElem)
   return M
 end
 
-function representation_matrix_q(a::NfAbsNSElem)
+function representation_matrix_q(a::AbsNonSimpleNumFieldElem)
   M = representation_matrix(a)
   return _fmpq_mat_to_fmpz_mat_den(M)
 end
@@ -672,7 +672,7 @@ end
 
 
 
-function mod(a::NfAbsNSElem, p::ZZRingElem)
+function mod(a::AbsNonSimpleNumFieldElem, p::ZZRingElem)
   b = copy(a)
   mod!(b, p)
   return b
@@ -680,7 +680,7 @@ end
 
 # TODO: Dan says that it is better to use a BuilderCtx if the result has
 # denominator 1
-function mod!(b::NfAbsNSElem, p::ZZRingElem)
+function mod!(b::AbsNonSimpleNumFieldElem, p::ZZRingElem)
   for i=1:length(b.data)
     el = coeff(b.data, i)
     dnew, cp = ppio(denominator(el), p)
@@ -805,7 +805,7 @@ end
 #
 ################################################################################
 
-function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplified::Bool = false)
+function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check = true, simplified::Bool = false)
   if simplified
     return simplified_simple_extension(K, cached = cached)
   end
@@ -898,7 +898,7 @@ end
 ################################################################################
 
 @doc raw"""
-    number_field(f::Vector{QQPolyRingElem}, s::String="_\$") -> NfAbsNS
+    number_field(f::Vector{QQPolyRingElem}, s::String="_\$") -> AbsNonSimpleNumField
 
 Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 we construct
@@ -925,7 +925,7 @@ function number_field(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool
   n = length(S)
   s = var(parent(f[1]))
   Qx, x = polynomial_ring(FlintQQ, ["$s$i" for i=1:n], cached = false)
-  K = NfAbsNS(f, QQMPolyRingElem[f[i](x[i]) for i=1:n], S, cached)
+  K = AbsNonSimpleNumField(f, QQMPolyRingElem[f[i](x[i]) for i=1:n], S, cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   if check
@@ -951,29 +951,29 @@ function number_field(f::Vector{ZZPolyRingElem}, S::Vector{Symbol}; cached::Bool
   return number_field(QQPolyRingElem[Qx(x) for x = f], S, cached = cached, check = check)
 end
 
-function gens(K::NfAbsNS)
-  l = Vector{NfAbsNSElem}(undef, ngens(K))
+function gens(K::AbsNonSimpleNumField)
+  l = Vector{AbsNonSimpleNumFieldElem}(undef, ngens(K))
   degs = degrees(K)
   gQxy = gens(parent(K.pol[1]))
   for i = 1:length(gQxy)
     if isone(degs[i])
       l[i] = K(gQxy[i])
     else
-      l[i] = NfAbsNSElem(K, gQxy[i])
+      l[i] = AbsNonSimpleNumFieldElem(K, gQxy[i])
     end
   end
   return l
 end
 
 
-function vars(E::NfAbsNS)
+function vars(E::AbsNonSimpleNumField)
   return E.S
 end
-function symbols(E::NfAbsNS)
+function symbols(E::AbsNonSimpleNumField)
   return vars(E)
 end
 
-function Base.names(E::NfAbsNS)
+function Base.names(E::AbsNonSimpleNumField)
   v = vars(E)
   res = Vector{String}(undef, length(v))
   for i = 1:length(res)
@@ -982,38 +982,38 @@ function Base.names(E::NfAbsNS)
   return res
 end
 
-function (K::NfAbsNS)(a::QQMPolyRingElem, red::Bool = true)
+function (K::AbsNonSimpleNumField)(a::QQMPolyRingElem, red::Bool = true)
   if red
     q, a = divrem(a, K.pol)
   end
-  z = NfAbsNSElem(K, a)
+  z = AbsNonSimpleNumFieldElem(K, a)
   return z
 end
 
-function (K::NfAbsNS)(a::Vector{QQFieldElem})
+function (K::AbsNonSimpleNumField)(a::Vector{QQFieldElem})
   return dot(a, basis(K))
 end
 
-(K::NfAbsNS)(a::Integer) = K(parent(K.pol[1])(a))
+(K::AbsNonSimpleNumField)(a::Integer) = K(parent(K.pol[1])(a))
 
-(K::NfAbsNS)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
+(K::AbsNonSimpleNumField)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
 
-(K::NfAbsNS)(a::ZZRingElem) = K(parent(K.pol[1])(a))
+(K::AbsNonSimpleNumField)(a::ZZRingElem) = K(parent(K.pol[1])(a))
 
-(K::NfAbsNS)(a::QQFieldElem) = K(parent(K.pol[1])(a))
+(K::AbsNonSimpleNumField)(a::QQFieldElem) = K(parent(K.pol[1])(a))
 
-(K::NfAbsNS)() = zero(K)
+(K::AbsNonSimpleNumField)() = zero(K)
 
-(K::NfAbsNS)(a::NumFieldElem) = force_coerce(K, a)
+(K::AbsNonSimpleNumField)(a::NumFieldElem) = force_coerce(K, a)
 
-function (K::NfAbsNS)(a::NfAbsNSElem)
+function (K::AbsNonSimpleNumField)(a::AbsNonSimpleNumFieldElem)
   if parent(a) === K
     return deepcopy(a)
   end
   error("not compatible")
 end
 
-function show_sparse_cyclo(io::IO, a::NfAbsNS)
+function show_sparse_cyclo(io::IO, a::AbsNonSimpleNumField)
   print(io, "Sparse cyclotomic field of order $(get_attribute(a, :cyclo))")
 end
 
@@ -1035,7 +1035,7 @@ function cyclotomic_field(::Type{NonSimpleNumField}, n::Int, s::String="z"; cach
   return C, g
 end
 
-function trace_assure(K::NfAbsNS)
+function trace_assure(K::AbsNonSimpleNumField)
   if isdefined(K, :traces)
     return
   end
@@ -1055,7 +1055,7 @@ end
   and tr assembles....
 =#
 
-function tr(a::NfAbsNSElem)
+function tr(a::AbsNonSimpleNumFieldElem)
   k = parent(a)
   if iszero(a)
     return QQFieldElem()
@@ -1081,7 +1081,7 @@ end
 #TODO:
 #  test f mod p first
 #  if all polys are monic, the test if traces have non-trivial gcd
-function minpoly_via_trace(a::NfAbsNSElem)
+function minpoly_via_trace(a::AbsNonSimpleNumFieldElem)
   k = parent(a)
   d = degree(k)
   b = a
@@ -1105,11 +1105,11 @@ function minpoly_via_trace(a::NfAbsNSElem)
   error("cannot happen")
 end
 
-function is_norm_divisible(a::NfAbsNSElem, n::ZZRingElem)
+function is_norm_divisible(a::AbsNonSimpleNumFieldElem, n::ZZRingElem)
   return iszero(mod(norm(a), n))
 end
 
-function valuation(a::NfAbsOrdElem, p::NfAbsOrdIdl)
+function valuation(a::AbsNumFieldOrderElem, p::AbsNumFieldOrderIdeal)
   i = 1
   q = p
   while true
@@ -1122,12 +1122,12 @@ function valuation(a::NfAbsOrdElem, p::NfAbsOrdIdl)
 end
 
 #TODO: find a better algo.
-function degree(a::NfAbsNSElem)
+function degree(a::AbsNonSimpleNumFieldElem)
   return degree(minpoly(a))
 end
 
 #TODO: Improve the algorithm
-function primitive_element(K::NfAbsNS)
+function primitive_element(K::AbsNonSimpleNumField)
   g = gens(K)
   pe = g[1]
   d = total_degree(K.pol[1])
@@ -1145,11 +1145,11 @@ function primitive_element(K::NfAbsNS)
 end
 
 @doc raw"""
-    factor(f::PolyRingElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
+    factor(f::PolyRingElem{AbsNonSimpleNumFieldElem}) -> Fac{Generic.Poly{AbsNonSimpleNumFieldElem}}
 
 The factorisation of $f$ (using Trager's method).
 """
-function factor(f::PolyRingElem{NfAbsNSElem})
+function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(f)
 
@@ -1195,7 +1195,7 @@ function factor(f::PolyRingElem{NfAbsNSElem})
   end
   @vtime :PolyFactor 2 fac = factor(N)
 
-  res = Dict{PolyRingElem{NfAbsNSElem}, Int64}()
+  res = Dict{PolyRingElem{AbsNonSimpleNumFieldElem}, Int64}()
 
   for i in keys(fac.fac)
     t = change_base_ring(K, i, parent = Kx)
@@ -1221,7 +1221,7 @@ end
 #
 ################################################################################
 
-function Base.hash(a::NfAbsNSElem, h::UInt)
+function Base.hash(a::AbsNonSimpleNumFieldElem, h::UInt)
   return Base.hash(a.data, h)
 end
 
@@ -1231,11 +1231,11 @@ end
 #
 ################################################################################
 
-function (K::QQField)(a::NfAbsNSElem)
+function (K::QQField)(a::AbsNonSimpleNumFieldElem)
   @req is_constant(data(a)) "Element must be rational"
   return constant_coefficient(data(a))
 end
 
-function is_rational(a::NfAbsNSElem)
+function is_rational(a::AbsNonSimpleNumFieldElem)
   return is_constant(data(a))
 end

@@ -1806,7 +1806,7 @@ function _fractional_ideal_from_base_ring_generators(OE, v)
   return fractional_ideal(OE, basis_matrix(v) * basis_mat_inv(OE))
 end
 
-function _intersect(I::NfRelOrdFracIdl, J::NfRelOrdFracIdl)
+function _intersect(I::RelNumFieldOrderFractionalIdeal, J::RelNumFieldOrderFractionalIdeal)
   pm = _intersect_modules(basis_pmatrix(I), basis_pmatrix(J))
   return fractional_ideal(order(I), pm)
 end
@@ -1925,11 +1925,11 @@ function absolute_norm(A::Hecke.AlgAssAbsOrdIdl)
   return norm(A)
 end
 
-function absolute_norm(A::NfAbsOrdFracIdl)
+function absolute_norm(A::AbsNumFieldOrderFractionalIdeal)
   return norm(A)
 end
 
-function *(a::NfAbsOrdFracIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.NfAbsOrdFracIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},AlgAss{AbsSimpleNumFieldElem}})
+function *(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},StructureConstantAlgebra{AbsSimpleNumFieldElem}})
   pm = basis_pmatrix(b)
   pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
   return ideal(algebra(order(b)), pmnew)
@@ -2042,7 +2042,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
     end
   end
 
-  A = AlgAss(K, mult_tb)
+  A = StructureConstantAlgebra(K, mult_tb)
   B = basis(A)
   sigma(a) = A([a.coeffs[2], a.coeffs[1]])
   inv2 = inv(A(2))
@@ -2223,7 +2223,7 @@ function _form_to_ideal(f::QuadBin{ZZRingElem}, O, a)
 end
 
 # This is from Kani
-function _ideal_to_form(I::NfAbsOrdIdl, delta)
+function _ideal_to_form(I::AbsNumFieldOrderIdeal, delta)
   # first make primitive
   M = _hnf(basis_matrix(I), :lowerleft)
   g = reduce(gcd, [M[1, 1], M[1, 2], M[2, 2]])

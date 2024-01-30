@@ -655,7 +655,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
       return StoR\(mR\x)
     end
 
-    function disc_log(x::NfAbsOrdIdl)
+    function disc_log(x::AbsNumFieldOrderIdeal)
       return StoR\(mR\x)
     end
   end

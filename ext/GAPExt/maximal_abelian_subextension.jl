@@ -38,7 +38,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   return check_abelian_extensions(class_fields, autos, F.subfields[i])
 end
 
-function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Vector{NfToNfMor}, emb_sub::NfToNfMor)#, deg_mas::Set{Int})
+function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Vector{NumFielHom{AbsSimpleNumField, AbsSimpleNumField}}, emb_sub::NumFielHom{AbsSimpleNumField, AbsSimpleNumField})#, deg_mas::Set{Int})
   @vprintln :MaxAbExt 3 "Starting checking abelian extension"
   K = base_field(class_fields[1][1])
   d = degree(K)
@@ -92,7 +92,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
 end
 
 
-function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
+function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
   #I consider the action on every P-sylow and see if it is trivial
   G = codomain(C.quotientmap)
   expG = Int(exponent(G))
@@ -161,7 +161,7 @@ function minimumd(D::Dict{NfOrdIdl, Int}, deg_ext::Int)
   return res
 end
 
-function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx::Hecke.ctx_rayclassgrp, exp_extension::Int)
+function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFielHom{AbsSimpleNumField, AbsSimpleNumField}, ctx::Hecke.ctx_rayclassgrp, exp_extension::Int)
   K = base_field(A)
   k = domain(mp)
   ZK = maximal_order(K)

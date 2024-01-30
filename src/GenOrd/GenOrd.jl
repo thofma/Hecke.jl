@@ -914,7 +914,7 @@ function different(O::GenOrd)
 end
 
 @doc raw"""
-    codifferent(R::NfAbsOrd) -> NfOrdIdl
+    codifferent(R::AbsNumFieldOrder) -> NfOrdIdl
 
 The codifferent ideal of $R$, i.e. the trace-dual of $R$.
 """

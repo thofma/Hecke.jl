@@ -78,7 +78,7 @@ as a base field of (a base field) of $K$ or $\iota$ is provided:
 
 ```@docs
 restrict(::NumFieldEmb, ::NumField)
-restrict(::NumFieldEmb, ::NumFieldMor)
+restrict(::NumFieldEmb, ::NumFielHom)
 ```
 
 ## Extension
@@ -87,7 +87,7 @@ Given a complex embedding $f \colon k \to \mathbf{C}$ and a morphism $\iota \col
 all extensions can be computed as follows:
 
 ```@docs
-extend(::NumFieldEmb, ::NumFieldMor)
+extend(::NumFieldEmb, ::NumFielHom)
 ```
 
 ## [Positivity & Signs](@id positivity_and_signs)

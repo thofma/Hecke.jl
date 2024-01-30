@@ -1,15 +1,15 @@
-abstract type AbsAlgAss{T} <: NCRing end
+abstract type AbstractAssociativeAlgebra{T} <: NCRing end
 
-abstract type AbsAlgAssElem{T} <: NCRingElem end
+abstract type AbstractAssociativeAlgebraElem{T} <: NCRingElem end
 
 ################################################################################
 #
-#  AlgAss / AlgAssElem
+#  StructureConstantAlgebra / AssociativeAlgebraElem
 #
 ################################################################################
 
 # Associative algebras defined by structure constants (multiplication table)
-@attributes mutable struct AlgAss{T} <: AbsAlgAss{T}
+@attributes mutable struct StructureConstantAlgebra{T} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   one::Vector{T}
@@ -18,20 +18,20 @@ abstract type AbsAlgAssElem{T} <: NCRingElem end
   is_commutative::Int       # 0: don't know
                            # 1: known to be commutative
                            # 2: known to be not commutative
-  basis#::Vector{AlgAssElem{T, AlgAss{T}}
-  gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
+  basis#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
+  gens#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} # "Small" number of algebra generators
   trace_basis_elem::Vector{T}
   is_simple::Int
   issemisimple::Int
 
-  decomposition#::Vector{Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})}
-  center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
+  decomposition#::Vector{Tuple{StructureConstantAlgebra{T}, mor(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})}
+  center#Tuple{StructureConstantAlgebra{T}, mor(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})
   maps_to_numberfields
   maximal_order
-  isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})
+  isomorphic_full_matrix_algebra#Tuple{MatAlgebra{T}, mor(StructureConstantAlgebra{T}, MatAlgebra{T})
 
   # Constructor with default values
-  function AlgAss{T}(R::Ring) where {T}
+  function StructureConstantAlgebra{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
     A.is_commutative = 0
@@ -40,8 +40,8 @@ abstract type AbsAlgAssElem{T} <: NCRingElem end
     return A
   end
 
-  function AlgAss{T}(R::Ring, mult_table::Array{T, 3}, one::Vector{T}) where {T}
-    A = AlgAss{T}(R)
+  function StructureConstantAlgebra{T}(R::Ring, mult_table::Array{T, 3}, one::Vector{T}) where {T}
+    A = StructureConstantAlgebra{T}(R)
     A.mult_table = mult_table
     A.one = one
     A.has_one = true
@@ -49,27 +49,27 @@ abstract type AbsAlgAssElem{T} <: NCRingElem end
     return A
   end
 
-  function AlgAss{T}(R::Ring, mult_table::Array{T, 3}) where {T}
-    A = AlgAss{T}(R)
+  function StructureConstantAlgebra{T}(R::Ring, mult_table::Array{T, 3}) where {T}
+    A = StructureConstantAlgebra{T}(R)
     A.mult_table = mult_table
     A.iszero = (size(mult_table, 1) == 0)
     return A
   end
 end
 
-@attributes mutable struct AlgQuat{T} <: AbsAlgAss{T}
+@attributes mutable struct QuaternionAlgebra{T} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   mult_table::Array{T, 3}
   one::Vector{T}
   zero::Vector{T}
   std::Tuple{T, T}
-  basis#::Vector{AlgAssElem{T, AlgAss{T}}
+  basis#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
   is_simple::Int                           # Always 1
   trace_basis_elem::Vector{T}
   maximal_order
   std_inv# standard involution
 
-  function AlgQuat{T}() where {T}
+  function QuaternionAlgebra{T}() where {T}
     z = new{T}()
     z.is_simple = 1
     return z
@@ -77,11 +77,11 @@ end
 
 end
 
-mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
+mutable struct AssociativeAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   parent::S
   coeffs::Vector{T}
 
-  function AlgAssElem{T, S}(A::S) where {T, S}
+  function AssociativeAlgebraElem{T, S}(A::S) where {T, S}
     z = new{T, S}()
     z.parent = A
     z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
@@ -91,8 +91,8 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
     return z
   end
 
-  function AlgAssElem{T, S}(A::AlgAss{T}) where {T, S}
-    z = new{T, AlgAss{T}}()
+  function AssociativeAlgebraElem{T, S}(A::StructureConstantAlgebra{T}) where {T, S}
+    z = new{T, StructureConstantAlgebra{T}}()
     z.parent = A
     z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
@@ -101,8 +101,8 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
     return z
   end
 
-  function AlgAssElem{T, S}(A::AlgQuat{T}) where {T, S}
-    z = new{T, AlgQuat{T}}()
+  function AssociativeAlgebraElem{T, S}(A::QuaternionAlgebra{T}) where {T, S}
+    z = new{T, QuaternionAlgebra{T}}()
     z.parent = A
     z.coeffs = Vector{T}(undef, 4)
     for i = 1:4
@@ -112,7 +112,7 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   end
 
   # This does not make a copy of coeffs
-  function AlgAssElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
+  function AssociativeAlgebraElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
     z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs
@@ -122,19 +122,19 @@ end
 
 ################################################################################
 #
-#  AlgGrp / AlgGrpElem
+#  GroupAlgebra / GroupAlgebraElem
 #
 ################################################################################
 
 # Group rings
-@attributes mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
+@attributes mutable struct GroupAlgebra{T, S, R} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   group::S
   group_to_base::Dict{R, Int}
   base_to_group::Vector{R}
   one::Vector{T}
-  basis#::Vector{AlgAssElem{T, AlgAss{T}}
-  gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
+  basis#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
+  gens#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} # "Small" number of algebra generators
   mult_table::Matrix{Int} # b_i * b_j = b_(mult_table[i, j])
   is_commutative::Int
   trace_basis_elem::Vector{T}
@@ -146,13 +146,13 @@ end
   maps_to_numberfields
   maximal_order
 
-  function AlgGrp(K::Ring, G::GrpAbFinGen, cached::Bool = true)
-    A = AlgGrp(K, G, op = +, cached = cached)
+  function GroupAlgebra(K::Ring, G::GrpAbFinGen, cached::Bool = true)
+    A = GroupAlgebra(K, G, op = +, cached = cached)
     A.is_commutative = true
     return A
   end
 
-  function AlgGrp(K::Ring, G; op = *, cached = true)
+  function GroupAlgebra(K::Ring, G; op = *, cached = true)
     return get_cached!(AlgGrpDict, (K, G, op), cached) do
       A = new{elem_type(K), typeof(G), elem_type(G)}()
       A.is_commutative = 0
@@ -195,17 +195,17 @@ end
       @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
 
       return A
-    end::AlgGrp{elem_type(K), typeof(G), elem_type(G)}
+    end::GroupAlgebra{elem_type(K), typeof(G), elem_type(G)}
   end
 end
 
 const AlgGrpDict = IdDict()
 
-mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
+mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   parent::S
   coeffs::Vector{T}
 
-  function AlgGrpElem{T, S}(A::S) where {T, S}
+  function GroupAlgebraElem{T, S}(A::S) where {T, S}
     z = new{T, S}()
     z.parent = A
     z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
@@ -215,12 +215,12 @@ mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
     return z
   end
 
-  function AlgGrpElem{T, S}(A::S, g::U) where {T, S, U}
+  function GroupAlgebraElem{T, S}(A::S, g::U) where {T, S, U}
     return A[A.group_to_base[g]]
   end
 
   # This does not make a copy of coeffs
-  function AlgGrpElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
+  function GroupAlgebraElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
     z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs
@@ -270,12 +270,12 @@ end
 
 ################################################################################
 #
-#  AlgMat / AlgMatElem
+#  MatAlgebra / MatAlgebraElem
 #
 ################################################################################
 
 # T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
-@attributes mutable struct AlgMat{T, S} <: AbsAlgAss{T}
+@attributes mutable struct MatAlgebra{T, S} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   coefficient_ring::NCRing
   one::S
@@ -292,14 +292,14 @@ end
   maximal_order
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
-  center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
+  center#Tuple{StructureConstantAlgebra{T}, mor(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})
   trace_basis_elem::Vector{T}
   gens
 
   maps_to_numberfields
-  isomorphic_full_matrix_algebra#Tuple{AlgMat{T}, mor(AlgAss{T}, AlgMat{T})
+  isomorphic_full_matrix_algebra#Tuple{MatAlgebra{T}, mor(StructureConstantAlgebra{T}, MatAlgebra{T})
 
-  function AlgMat{T, S}(R::Ring) where {T, S}
+  function MatAlgebra{T, S}(R::Ring) where {T, S}
     A = new{T, S}()
     A.base_ring = R
     A.coefficient_ring = R
@@ -310,7 +310,7 @@ end
     return A
   end
 
-  function AlgMat{T, S}(R1::Ring, R2::NCRing) where {T, S}
+  function MatAlgebra{T, S}(R1::Ring, R2::NCRing) where {T, S}
     A = new{T, S}()
     A.base_ring = R1
     A.coefficient_ring = R2
@@ -322,13 +322,13 @@ end
   end
 end
 
-mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
+mutable struct MatAlgebraElem{T, S, Mat} <: AbstractAssociativeAlgebraElem{T}
   parent::S
   matrix::Mat # over the coefficient ring of the parent
   coeffs::Vector{T} # over the base ring of the parent
   has_coeffs::Bool
 
-  function AlgMatElem{T, S, Mat}(A::S) where {T, S, Mat}
+  function MatAlgebraElem{T, S, Mat}(A::S) where {T, S, Mat}
     z = new{T, S, Mat}()
     z.parent = A
     z.matrix = zero_matrix(base_ring(A), degree(A), degree(A))
@@ -336,7 +336,7 @@ mutable struct AlgMatElem{T, S, Mat} <: AbsAlgAssElem{T}
     return z
   end
 
-  function AlgMatElem{T, S, Mat}(A::S, M::Mat) where {T, S, Mat}
+  function MatAlgebraElem{T, S, Mat}(A::S, M::Mat) where {T, S, Mat}
     z = new{T, S, Mat}()
     z.parent = A
     z.matrix = M

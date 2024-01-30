@@ -1,4 +1,4 @@
-function NormCtx(O::NfAbsOrd, nb::Int, normal::Bool = false)
+function NormCtx(O::AbsNumFieldOrder, nb::Int, normal::Bool = false)
   if normal
     return NormCtx_split(O, nb)
   else

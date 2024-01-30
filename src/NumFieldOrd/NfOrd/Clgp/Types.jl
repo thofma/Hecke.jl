@@ -34,7 +34,7 @@ mutable struct SmallLLLRelationsCtx{T}
 end
 
 mutable struct NormCtx_split <: NormCtx
-  O::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
   lp::Vector{Int}  #the primes
   lR::Vector{fpField} #the local (finite field) splitting field
   nb::Int #bound on the number of bits the norm is allowed to have
@@ -42,12 +42,12 @@ mutable struct NormCtx_split <: NormCtx
   mp::Vector{fpMatrix} # temp. variable
   np::Vector{fpMatrix} # temp. variable
   #= used in 
-    NumFieldOrd/NfOrd/Clgp/Rel_LLL.jl
+    NumFieldOrder/NfOrd/Clgp/Rel_LLL.jl
     a coordinate vector of an order element is mapped mod p into mp
     multiplied by lC into np
   =#
   e::crt_env
-  function NormCtx_split(O::NfAbsOrd, nb::Int)
+  function NormCtx_split(O::AbsNumFieldOrder, nb::Int)
     p = p_start
     NC = new()
     NC.O = O
@@ -90,9 +90,9 @@ end
 
 mutable struct NormCtx_simple <: NormCtx
   nb::Int
-  O::NfAbsOrd
+  O::AbsNumFieldOrder
 
-  function NormCtx_simple(O::NfAbsOrd, nb::Int)
+  function NormCtx_simple(O::AbsNumFieldOrder, nb::Int)
     NC = new()
     NC.nb = nb
     NC.O = O
@@ -102,7 +102,7 @@ end
  
 mutable struct NormCtx_gen <: NormCtx
   nb::Int
-  O::NfAbsOrd
+  O::AbsNumFieldOrder
   lp::Vector{Int} #the primes
   basis::Vector{fpMatrix} # for each prime, the order basis (coefficients)
                           # as polynomial
@@ -113,7 +113,7 @@ mutable struct NormCtx_gen <: NormCtx
   gp::Vector{fpPolyRingElem}
 
   e::crt_env
-  function NormCtx_gen(O::NfAbsOrd, nb::Int)
+  function NormCtx_gen(O::AbsNumFieldOrder, nb::Int)
     NC = new()
     NC.nb = nb
     NC.O = O

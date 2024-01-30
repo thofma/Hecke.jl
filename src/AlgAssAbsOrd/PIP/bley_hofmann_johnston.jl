@@ -90,7 +90,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U::GrpAbFinGen, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{AlgAss{QQFieldElem},AlgAssElem{QQFieldElem,AlgAss{QQFieldElem}}}} = unit_group(OZ)
+  U::GrpAbFinGen, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem},AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}} = unit_group(OZ)
   @vprintln :PIP 1 "Solving principal ideal problem over maximal order..."
 
   #@show Q
@@ -161,7 +161,7 @@ end
 function _solve_norm_equation_over_center_simple(M, x)
   A = algebra(M)
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+    local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = absolute_basis(M)
@@ -296,7 +296,7 @@ function _lift_norm_one_unit_simple(x, F)
     return one(A)
   end
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+    local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = basis(M)
@@ -691,7 +691,7 @@ function _my_direct_product(algebras)
     push!(maps, BtoA)
     push!(pre_maps, AtoB)
   end
-  A = AlgAss(K, mt)
+  A = StructureConstantAlgebra(K, mt)
   A.decomposition = [ (algebras[i], hom(algebras[i], A, maps[i], pre_maps[i])) for i in 1:length(algebras) ]
   return A
 end

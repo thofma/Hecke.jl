@@ -42,7 +42,7 @@ function FacElem(x::ClassGrpCtx, y::Vector{ZZRingElem})
 end
 
 # Get the trivial factored element from an ordinary element
-function FacElem(x::T) where {T <: Union{NumFieldElem, QQFieldElem, AbsAlgAssElem}}
+function FacElem(x::T) where {T <: Union{NumFieldElem, QQFieldElem, AbstractAssociativeAlgebraElem}}
   z = FacElem{T, parent_type(T)}()
   z.fac[x] = ZZRingElem(1)
   z.parent = FacElemMon(parent(x)::parent_type(T))::FacElemMon{parent_type(T)}
@@ -133,7 +133,7 @@ end
 
 _base_ring(x::NumFieldElem) = parent(x)
 
-_base_ring(x::NumFieldOrdElem) = nf(parent(x))
+_base_ring(x::NumFieldOrderElem) = nf(parent(x))
 
 _base_ring(x::FacElem) = base_ring(x)
 

@@ -13,7 +13,7 @@
     # f = x^2 + 1
     # g = x^3 + 3x^2 + 5x - 5
     f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
-    A = AlgAss(f2g3)
+    A = StructureConstantAlgebra(f2g3)
     J = radical(A)
     Q, AtoQ = quo(A, J)
 
