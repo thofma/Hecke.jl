@@ -161,7 +161,7 @@ function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: A
    end
 end
 
-function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem})
+function permutation_group(G::Vector{Hecke.NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   permutations = permutation_group1(G)
   return _perm_to_gap_grp(permutations)
 end

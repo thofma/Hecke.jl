@@ -1025,7 +1025,7 @@ end
 #
 ################################################################################
 
-function relative_ideal(a::NfOrdIdl, m::NfToNfRel)
+function relative_ideal(a::NfOrdIdl, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   L = codomain(m)
   Labs = domain(m)
   @assert nf(order(a)) == Labs

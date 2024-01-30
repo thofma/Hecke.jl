@@ -9,7 +9,7 @@ mutable struct CyclotomicExt
   n::Int
   Kr::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   Ka::AbsSimpleNumField
-  mp::Tuple{NfToNfRel, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
+  mp::Tuple{NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
 
   kummer_exts::Dict{Set{ZZRingElem}, Tuple{Vector{NfOrdIdl}, KummerExt}}
                       #I save the kummer extensions used in the class field construction

@@ -146,7 +146,7 @@ end
 
 function _maximal_order_of_components(L::AbsNonSimpleNumField)
   Qx, x = polynomial_ring(FlintQQ, "x")
-  fields = Vector{Tuple{AbsSimpleNumField, NfAbsToNfAbsNS}}(undef, length(L.pol))
+  fields = Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsNonSimpleNumField}}}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fields[i] = component(L, i)
   end

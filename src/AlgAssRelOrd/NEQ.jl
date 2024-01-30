@@ -232,7 +232,7 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: AbsNu
 end
 
 # Finds any a \in O \cap L such that v_p(nr(a)) = vals[i] for p = primes[i].
-function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, KtoL::NfToNfRel, ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int}, cache::Vector{Any})
+function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, KtoL::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int}, cache::Vector{Any})
   A = algebra(O)
   sols = __neq_sunit(ktoK, primes_in_k, vals)
   if isempty(sols)

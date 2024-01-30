@@ -573,7 +573,7 @@ function maximal_order_via_absolute(L::RelSimpleNumField)
   return relative_order(Oabs, LabsToL)
 end
 
-function maximal_order_via_absolute(m::NfToNfRel)
+function maximal_order_via_absolute(m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   Oabs = maximal_order(domain(m))
   return relative_order(Oabs, m)
 end
@@ -589,7 +589,7 @@ function maximal_order_via_simple(m::NumFieldHom{<:RelSimpleNumField, <:RelNonSi
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_relative(K::AbsSimpleNumField, m::NfToNfRel)
+function maximal_order_via_relative(K::AbsSimpleNumField, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   return get_attribute!(K, :maximal_order) do
     L = codomain(m)
     OL = maximal_order(L)
@@ -948,7 +948,7 @@ end
 #
 ################################################################################
 
-function relative_order(O::NfOrd, m::NfToNfRel)
+function relative_order(O::NfOrd, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   L = codomain(m)
   Labs = domain(m)
   @assert nf(O) == Labs

@@ -87,7 +87,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
   UktoOk::MapUnitGrp
   GtoUk::Vector{GrpAbFinGenMap}
   GtoUk_surjective::BitVector
-  fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}
+  fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}}
 
   function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, T, U, M, T2 <: AbsNumFieldOrderElem, T3}
     primes = collect(keys(factor(a*parent(a))))
@@ -123,13 +123,13 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     z.solutions_mod_units = Vector{Dict{FacElem{U, S}, GrpAbFinGenElem}}(undef, length(orders))
     z.GtoUk = Vector{GrpAbFinGenMap}(undef, length(orders))
     z.GtoUk_surjective = falses(length(orders))
-    z.fields_in_product = Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}(undef, length(orders))
+    z.fields_in_product = Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}}(undef, length(orders))
     for i = 1:length(orders)
       z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
       z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
       z.solutions_mod_units[i] = Dict{FacElem{U, S}, GrpAbFinGenElem}()
       z.GtoUk[i] = hom([ GrpAbFinGen(ZZRingElem[])() ], [ Uk() ])
-      z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}()
+      z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}()
     end
 
     return z

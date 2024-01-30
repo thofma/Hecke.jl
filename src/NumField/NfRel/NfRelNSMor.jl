@@ -71,7 +71,7 @@ function (Rxy::zzModMPolyRing)(f::QQMPolyRingElem)
   return res
 end
 
-function _get_polys_from_auto(f::NfRelNSToNfRelNSMor_nf_elem, Qxy)
+function _get_polys_from_auto(f::NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}, Qxy)
   res = Vector{elem_type(Qxy)}(undef, nvars(Qxy))
   if isdefined(f.image_data.base_field_map_data, :prim_image)
     # ap is a constant, but there is no easy way to coerce to the base field
@@ -87,7 +87,7 @@ function _get_polys_from_auto(f::NfRelNSToNfRelNSMor_nf_elem, Qxy)
   return res
 end
 
-function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
+function permutation_group1(G::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   L = domain(G[1])
   K = base_field(L)
   dK = absolute_degree(L)
@@ -244,7 +244,7 @@ function _compose_mod(a, vars, vals, powers, modu)
 end
 
 
-function Base.:(*)(f::Hecke.NfToNfRel, g::Hecke.NfRelToNfRelNSMor_nf_elem)
+function Base.:(*)(f::Hecke.NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, g::Hecke.NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}})
   @assert codomain(f) === domain(g)
   return hom(domain(f), codomain(g), g(f(gen(domain(f)))))
 end

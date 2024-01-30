@@ -255,25 +255,25 @@ end
 ################################################################################
 
 # This can be done more efficiently
-function image(f::NfToNfRel, I::AbsNumFieldOrderIdeal, OK)
+function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal, OK)
   return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in basis(I)), init = 0 * OK)
 end
 
-function image(f::NfToNfRel, I::AbsNumFieldOrderIdeal)
+function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal)
   OK = maximal_order(codomain(f))
   return image(f, I, OK)
 end
 
-function image(f::NfRelToNfRelMor_nf_elem_nf_elem, I::RelNumFieldOrderIdeal)
+function image(f::NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal)
   OK = order(I)
   return reduce(+, (OK(f(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
-function preimage(f::NfToNfRel, I::RelNumFieldOrderIdeal, OK)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal, OK)
   return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
-function preimage(f::NfToNfRel, I::RelNumFieldOrderIdeal)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal)
   OK = maximal_order(domain(f))
   return preimage(f, I, OK)
 end
@@ -282,13 +282,13 @@ function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldHom}
   return S(numerator(A))//denominator(A)
 end
 
-function preimage(f::NfToNfRel, I::RelNumFieldOrderFractionalIdeal, OK)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderFractionalIdeal, OK)
   E = codomain(f)
   den = (f\E(denominator(I)))*OK
   return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(numerator(I))), init = 0 * OK)//den
 end
 
-function preimage(f::NfToNfRel, I::RelNumFieldOrderFractionalIdeal)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderFractionalIdeal)
   OK = maximal_order(domain(f))
   return preimage(f, I, OK)
 end

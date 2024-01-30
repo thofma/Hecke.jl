@@ -691,22 +691,6 @@ morphism_type(::Type{S}, ::Type{T}) where {S <: NumField, T <: NumField} = NumFi
 
 const NumFieldAut{T} = NumFieldHom{T, T}
 
-#const NumFieldHom{AbsSimpleNumField, AbsSimpleNumField} = morphism_type(AbsSimpleNumField, AbsSimpleNumField)
-
-#const NumFieldAut{AbsNonSimpleNumField} = morphism_type(AbsNonSimpleNumField, AbsNonSimpleNumField)
-
-const NfAbsToNfAbsNS = morphism_type(AbsSimpleNumField, AbsNonSimpleNumField)
-
-const NfToNfRel = morphism_type(AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem})
-
-const NfRelToNfRelMor_nf_elem_nf_elem = morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem})
-
-const NfRelToNf = morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, AbsSimpleNumField)
-
-const NfRelNSToNfRelNSMor_nf_elem = morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})
-
-const NfRelToNfRelNSMor_nf_elem = morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})
-
 ################################################################################
 #
 #  Images of primitive elements/generators
