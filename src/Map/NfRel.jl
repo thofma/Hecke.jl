@@ -107,7 +107,7 @@ function NfRelToAbsAlgAssMor(K::S, A::T, M::Mat) where { S <: NfRel, T <: AbsAlg
   return NfRelToAbsAlgAssMor{S, T, Mat}(K, A, M)
 end
 
-function haspreimage(m::NfRelToAbsAlgAssMor, a::AbsAlgAssElem)
+function has_preimage_with_preimage(m::NfRelToAbsAlgAssMor, a::AbsAlgAssElem)
   A = parent(a)
   t = matrix(base_ring(A), 1, dim(A), coefficients(a))
   b, p = can_solve_with_solution(m.mat, t, side = :left)

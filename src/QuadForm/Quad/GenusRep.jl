@@ -890,7 +890,7 @@ function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
     for P in lp
       g = _map_idele_into_class_group(C.mR, [(P, uniformizer(P))])
       h = C.mQ(g)
-      if !haspreimage(mS, h)[1]
+      if !has_preimage_with_preimage(mS, h)[1]
         push!(gens, P)
         push!(tmp_gens, h)
         S, mS = sub(codomain(C.mQ), tmp_gens)

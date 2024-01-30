@@ -360,7 +360,7 @@ function _assert_has_preimage_data(f::LocalFieldMor)
   return nothing
 end
 
-function haspreimage(f::LocalFieldMor, g::Union{QadicFieldElem, LocalFieldElem})
+function has_preimage_with_preimage(f::LocalFieldMor, g::Union{QadicFieldElem, LocalFieldElem})
   if isdefined(f, :inverse_data)
     return true, image(f.inverse_data, domain(f), g)
   end
@@ -384,7 +384,7 @@ function haspreimage(f::LocalFieldMor, g::Union{QadicFieldElem, LocalFieldElem})
 end
 
 function preimage(f::LocalFieldMor, g::Union{QadicFieldElem, LocalFieldElem})
-  fl, y = haspreimage(f, g)
+  fl, y = has_preimage_with_preimage(f, g)
   @assert fl
   return y
 end
@@ -423,7 +423,7 @@ end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::LocalField)
   g = LL(gen(L))
-  fl, prim_preimg = haspreimage(f, LL(g))
+  fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl
   return MapDataFromLocalField{typeof(prim_preimg)}(prim_preimg)
 end
@@ -431,7 +431,7 @@ end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::QadicField)
   g = LL(gen(L))
-  fl, prim_preimg = haspreimage(f, LL(g))
+  fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl
   return MapDataFromQadicField{typeof(prim_preimg)}(prim_preimg)
 end

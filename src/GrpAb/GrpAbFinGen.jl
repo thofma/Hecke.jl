@@ -1440,7 +1440,7 @@ function is_subgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatt
   end
   hH = hom(H, GH, mH)
   els = [GrpAbFinGenElem(GH, mG[j:j, :]) for j = 1:nrows(mG)]
-  fl, imgs = haspreimage(hH, els)
+  fl, imgs = has_preimage_with_preimage(hH, els)
   if !fl
     return false, hH
   else
@@ -2112,7 +2112,7 @@ function has_complement(m::GrpAbFinGenMap, to_lattice::Bool = true)
     #If I can't find this, the complement does not exists, otherwise we push in the list
     #of generators igSH-s
     S1, mS1 = sub(s, SH.snf[i], false)
-    fl, el = haspreimage(mS1*m1, test_el)
+    fl, el = has_preimage_with_preimage(mS1*m1, test_el)
     if !fl
       return false, sub(G, GrpAbFinGenElem[], false)[2]
     end
@@ -2194,7 +2194,7 @@ function is_diagonalisable(mH::GrpAbFinGenMap)
   if order(int) != order(sH)
     return false, gens(G)
   end
-  mp = sub(domain(mk), GrpAbFinGenElem[haspreimage(mk, mint(x))[2] for x in gens(int)])[2]
+  mp = sub(domain(mk), GrpAbFinGenElem[has_preimage_with_preimage(mk, mint(x))[2] for x in gens(int)])[2]
   fl, new_gens = is_diagonalisable(mp)
   if !fl
     return false, gens(G)

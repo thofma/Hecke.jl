@@ -67,7 +67,7 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
       f = mR\P
       mR.prime_ideal_preimage_cache[P] = f
     end
-    bool, pre = haspreimage(mT, f)
+    bool, pre = has_preimage_with_preimage(mT, f)
     if !bool
       continue
     end

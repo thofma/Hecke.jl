@@ -1491,12 +1491,12 @@ function _isisotropic_with_vector(F::MatrixElem)
         _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
 
         ss = V(_v)
-        fl, _ = haspreimage(mS, ss)
+        fl, _ = has_preimage_with_preimage(mS, ss)
         if !fl
           push!(signsV, ss)
           push!(basis, x)
           S, mS = sub(V, signsV, false)
-          if haspreimage(mS, target)[1]
+          if has_preimage_with_preimage(mS, target)[1]
             found = true
             break
           end
@@ -1526,7 +1526,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
           _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
           _s = V(_v)
-          if haspreimage(mS, _s + target)[1]
+          if has_preimage_with_preimage(mS, _s + target)[1]
             push!(basis, x)
             push!(signsV, _s)
             found = true

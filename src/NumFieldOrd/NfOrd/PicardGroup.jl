@@ -177,9 +177,9 @@ function _unit_group_non_maximal(O::Union{NfAbsOrd, AlgAssAbsOrd}, OK, GtoOK::Ma
     @assert parent(x) === O
     y = OK(_elem_in_algebra(x))
     g = GtoOK\y
-    b, k = haspreimage(KtoG, g)
+    b, k = has_preimage_with_preimage(KtoG, g)
     @assert b
-    b, s = haspreimage(StoK, k)
+    b, s = has_preimage_with_preimage(StoK, k)
     @assert b
     return s
   end
@@ -316,7 +316,7 @@ function _picard_group(O::NfOrd)
       @hassert :NfOrd 1 is_divisible(OKtoQ(OK(1)), a)[1]
       h = GtoQ\a
       p = GrpAbFinGenElem(P, hcat(c.coeff, h.coeff))
-      b, s = haspreimage(StoP, p)
+      b, s = has_preimage_with_preimage(StoP, p)
       @assert b
       return s
     end
@@ -389,7 +389,7 @@ function _is_principal_non_maximal(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl })
   OKtoQ = AbsOrdQuoMap(OK, Q)
   U, mU = unit_group(OK)
   h = hom(U, G, [ GtoQ\(OKtoQ(mU(U[i]))) for i = 1:ngens(U) ])
-  b, u = haspreimage(h, GtoQ\(OKtoQ(OK(x))))
+  b, u = has_preimage_with_preimage(h, GtoQ\(OKtoQ(OK(x))))
   if !b
     return false, O()
   end

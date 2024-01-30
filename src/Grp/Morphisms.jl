@@ -25,15 +25,15 @@ function preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
 end
 
 @doc raw"""
-    has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> (b::Bool, h::GrpGenElem)
+    has_preimage_with_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem) -> (b::Bool, h::GrpGenElem)
 
 Returns whether $g$ has a preimage under $f$. If so, the second return value is an
 element $h$ with $f(h) = g$.
 """
-function has_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
+function has_preimage_with_preimage(f::GrpGenToGrpGenMor, g::GrpGenElem)
   h = findfirst(x -> f(x) == g, collect(f.domain))
    if h === nothing
-     return false
+     return false, id(domain(f))
    end
    return (true, f.domain[h])
 end

@@ -1420,7 +1420,7 @@ function has_principal_generator_1_mod_m(I::Union{NfOrdIdl, FacElem{NfOrdIdl, Nf
   end
   els_G = GrpAbFinGenElem[G(x) for x in coeffs]
   S, mS = sub(G, els_G[1:end-1])
-  fl1, coord = haspreimage(mS, els_G[end])
+  fl1, coord = has_preimage_with_preimage(mS, els_G[end])
   if !fl1
     return false, gen
   end

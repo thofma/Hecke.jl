@@ -99,7 +99,7 @@ function narrow_picard_group(O::NfOrd)
     _elC = C([_el.coeff[1, ngens(Q) + i] for i in 1:ngens(C)])
     JJ = mC(_elC)
     _ell = _el - BStoB(disclog(fractional_ideal(JJ)))
-    fl, b = haspreimage(Q_to_B, _ell)
+    fl, b = has_preimage_with_preimage(Q_to_B, _ell)
     @assert fl
     J = Q_to_elem(b) * mC(_elC)
     return J

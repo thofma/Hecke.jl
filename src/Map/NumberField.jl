@@ -415,7 +415,7 @@ function NfAbsToAbsAlgAssMor(K::AbsSimpleNumField, A::S, M::QQMatrix) where { S 
   return NfAbsToAbsAlgAssMor{S}(K, A, M)
 end
 
-function haspreimage(m::NfAbsToAbsAlgAssMor, a::AbsAlgAssElem)
+function has_preimage_with_preimage(m::NfAbsToAbsAlgAssMor, a::AbsAlgAssElem)
   A = parent(a)
   t = matrix(FlintQQ, 1, dim(A), coefficients(a))
   b, p = can_solve_with_solution(m.mat, t, side = :left)

@@ -18,7 +18,7 @@ Given $\phi: G\to F$ and $\psi:H \to F$ s.th. $\Im(\phi) \subseteq \Im(\psi)$
 return the map $G\to H$ to make the diagram commute.
 """
 function lift(phi::Map, psi::Map)
-  x = [haspreimage(psi, image(phi, g)) for g = gens(domain(phi))]
+  x = [has_preimage_with_preimage(psi, image(phi, g)) for g = gens(domain(phi))]
   @assert all(t -> t[1], x)
   return hom(domain(phi), domain(psi), [t[2] for t = x])
 end

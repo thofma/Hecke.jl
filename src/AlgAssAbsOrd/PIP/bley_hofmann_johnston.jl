@@ -106,7 +106,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
 
   # This is O_C^* in Q/K1
   S, mS = sub(QbyK1, elem_type(QbyK1)[ mQbyK1(mQuni\(mQ(mU(U[i])::elem_type(OZ)))) for i in 1:ngens(U)])
-  fl, u = haspreimage(mS, mQbyK1(ttt))
+  fl, u = has_preimage_with_preimage(mS, mQbyK1(ttt))
   if !fl
     return false, zero(A)
   end
@@ -117,7 +117,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
   _u = prod([ mU(U[i])^u.coeff[1, i] for i in 1:length(u.coeff)])
   UU = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(_u::elem_type(OZ))))
 
-  fll, uu = haspreimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
+  fll, uu = has_preimage_with_preimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
 
   @assert fll
 

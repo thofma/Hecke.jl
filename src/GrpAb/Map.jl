@@ -40,12 +40,13 @@
 ################################################################################
 
 @doc raw"""
-    haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem) -> Bool, GrpAbFinGenElem
+    has_preimage_with_preimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
+                                                       -> Bool, GrpAbFinGenElem
 
 Returns whether $a$ is in the image of $M$. If so, the second return value is
 an element $b$ with $M(b) = a$.
 """
-function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
+function has_preimage_with_preimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :imap)
     return true, preimage(M, a)
   end
@@ -60,7 +61,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 end
 
-function haspreimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
+function has_preimage_with_preimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
   if isdefined(M, :imap)
     return true, map(x->preimage(M, x), a)
   end
@@ -106,7 +107,7 @@ end
 # h = pseudo_inv(mS)
 # Now h is a partial function on G with domain of definition the image of mS.
 # Then has_image(h, x) would check if x is in the image of mS.
-function has_image(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
+function has_image_with_image(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :map)
     return true, image(M, a)
   end
@@ -252,7 +253,7 @@ function inv(f::GrpAbFinGenMap)
     error("The map is not invertible")
   end
   gB = gens(codomain(f))
-  fl, imgs = haspreimage(f, gB)
+  fl, imgs = has_preimage_with_preimage(f, gB)
   if !fl
     error("The map is not invertible")
   end
@@ -633,7 +634,7 @@ function _prepostinverse(f::GrpAbFinGenMap)
   # in the surjective case, we find the preimage and
   # if it does not exist, we find any element of the domain,
   # which is also fine
-  return [haspreimage(f, g)[2] for g in gens(codomain(f))]
+  return [has_preimage_with_preimage(f, g)[2] for g in gens(codomain(f))]
 end
 
 # Given surjective f, find g such that fg = id

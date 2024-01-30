@@ -52,7 +52,7 @@ function is_stable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGe
   for s in gens(S)
     x=mS(s)
     for g in act
-      if !haspreimage(mS,g(x))[1]
+      if !has_preimage_with_preimage(mS,g(x))[1]
         return false
       end
     end
@@ -68,7 +68,7 @@ function is_submodule(M::ZpnGModule, S::zzModMatrix)
   for x in gens(s)
     el=ms(x)
     for g in M.G
-      if !haspreimage(ms,el*g)[1]
+      if !has_preimage_with_preimage(ms,el*g)[1]
         return false
       end
     end
@@ -197,7 +197,7 @@ function sub(M::ZpnGModule, S::zzModMatrix)
     A=zero_matrix(M.R, ngens(sg), ngens(sg))
     for i=1:ngens(sg)
       x=msg(sg[i])*M.G[k]
-      x=haspreimage(msg, x)[2].coeff
+      x=has_preimage_with_preimage(msg, x)[2].coeff
       for j=1:ngens(sg)
         A[i,j]=x[1,j]
       end
@@ -902,7 +902,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
       for w = 1:ngens(S)
         el = mG(mS(S[w]))
         for z = 1:length(act)
-          elz=mS\(haspreimage(mG, act[z](el))[2])
+          elz=mS\(has_preimage_with_preimage(mG, act[z](el))[2])
           for l = 1:ngens(S)
             act_mat[z][w,l] = elz[l]
           end
@@ -935,7 +935,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
         imgs = GrpAbFinGenElem[]
 	      for w = 1:ngens(S)
 	        el = act[z](comp(S[w]))
-	        fl, el1 = haspreimage(mG, el)
+	        fl, el1 = has_preimage_with_preimage(mG, el)
 	        @assert fl
           push!(imgs, mS\(el1))
 	      end

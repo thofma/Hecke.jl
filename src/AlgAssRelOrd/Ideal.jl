@@ -1783,7 +1783,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssRelOrdIdl)
   gen = elem_type(A)[]
   for i = 1:nrows(J)
     t = elem_from_mat_row(B, J.matrix, i)
-    b, s = haspreimage(m, t)
+    b, s = has_preimage_with_preimage(m, t)
     @assert b
     for el in absolute_basis(J.coeffs[i]) # replace with generators
       push!(gen, A(el) * s)

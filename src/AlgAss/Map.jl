@@ -224,7 +224,7 @@ end
 #  return AlgAssMor{R, S, T}(A, B, M, N)
 #end
 
-function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
+function has_preimage_with_preimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
   if isdefined(m, :imat)
     return true, preimage(m, a)
   end
@@ -241,7 +241,7 @@ end
 
 #function preimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
 #  @assert parent(a) === codomain(m)
-#  fl, b = haspreimage(m, a)
+#  fl, b = has_preimage_with_preimage(m, a)
 #  !fl && error("Element has no preimage")
 #  return b
 #end

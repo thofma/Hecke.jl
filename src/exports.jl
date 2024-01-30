@@ -388,9 +388,8 @@ export hadamard_bound2
 export has_complement
 export has_finite_multiplicative_order
 export has_global_minimal_model
-export has_image
-export has_preimage
-export haspreimage
+export has_image_with_image
+export has_preimage_with_preimage
 export hasse_interval
 export hasse_invariant
 export hcat

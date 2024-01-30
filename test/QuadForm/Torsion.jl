@@ -43,7 +43,7 @@
   f = hom(q1,q1, ZZ[2 0; 0 1])
   @test sprint(show, f) isa String
 
-  ok, c = @inferred has_preimage(f ,b)
+  ok, c = @inferred has_preimage_with_preimage(f ,b)
   @test ok
   @test b == c
   @test_throws ArgumentError preimage(f,a)

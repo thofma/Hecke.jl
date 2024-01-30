@@ -84,7 +84,7 @@ function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=
       P1 =  norm_1_generators(prime_ideals_over(L, [p]))
       for x = P1
         y = sum([e*preimage(mC, k) for (k, e) = x.fac]) # move to log function(?)
-        if !haspreimage(msC, y)[1]
+        if !has_preimage_with_preimage(msC, y)[1]
           change = true
           push!(g, y)
           push!(S, p)
@@ -124,7 +124,7 @@ function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=
   s, ms = sub(u, h)
   mp = GrpAbFinGenMap(U, u, reduce(vcat, [x.coeff for x=h]))
 
-  fl, p = haspreimage(mp, preimage(mu, a))
+  fl, p = has_preimage_with_preimage(mp, preimage(mu, a))
   if fl
     return true, mU(p)
   else

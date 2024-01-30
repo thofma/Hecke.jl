@@ -1968,7 +1968,7 @@ function _datum_for_reduction_non_maximal(Q::AbsOrdQuoRing)
         y = _mod_fac_elem_maximal(M(_elem_in_algebra(x)), QQ)
       end
       @assert is_injective(h)
-      fl, yy = haspreimage(h, QQtoAQQ(y))
+      fl, yy = has_preimage_with_preimage(h, QQtoAQQ(y))
       @assert fl
       res = Q(mQJ\(AQJtoQJ(yy)))
       return res

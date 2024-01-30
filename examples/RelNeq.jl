@@ -278,7 +278,7 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
   c, mc = N.C
   u, mu = N.U
   r = mc\numerator(I)
-  fl, s = haspreimage(N.sC[2], r)
+  fl, s = has_preimage_with_preimage(N.sC[2], r)
   if fl # found new relation
     J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
     J = I*inv(J)
@@ -287,7 +287,7 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
     ng = norm(A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = mu\ng
-    fl, _ = haspreimage(N.sU[2], r)
+    fl, _ = has_preimage_with_preimage(N.sU[2], r)
     if fl
       return false # nothing new
     end
@@ -329,7 +329,7 @@ function Hecke.evaluate(N::Norm1Group)
     ng = norm(N.A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = N.U[2]\ng
-    fl, x = haspreimage(N.sU[2], r)
+    fl, x = has_preimage_with_preimage(N.sU[2], r)
     for j=1:ngens(s2)
       R[ngens(s2) + i, j] = -x[j]
     end
@@ -349,7 +349,7 @@ function Hecke.evaluate(N::Norm1Group)
   function log(I::Hecke.NfOrdFracIdl)
     @assert isone(norm(N.A.m_k_K, I))
     r = N.C[2]\numerator(I)
-    fl, s = haspreimage(N.sC[2], r)
+    fl, s = has_preimage_with_preimage(N.sC[2], r)
     @assert fl
     J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
     J = I*inv(J)
@@ -358,7 +358,7 @@ function Hecke.evaluate(N::Norm1Group)
     ng = norm(N.A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = N.U[2]\ng
-    fl, r = haspreimage(N.sU[2], r)
+    fl, r = has_preimage_with_preimage(N.sU[2], r)
     @assert fl
     return A(hcat((ms2\r).coeff, (ms1\s).coeff))
   end
