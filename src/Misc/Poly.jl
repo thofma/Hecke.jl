@@ -720,6 +720,16 @@ function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]))
 end
 
+function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
+  rt = roots(AcbField(precision(R)), f, abs_tol, initial_prec...)
+  return real.(filter(isreal, rt))
+end
+
+function roots(x::RealPoly)
+  rt = roots(map_coefficients(ComplexField(), x), isolate_real=true)
+  return real.(filter(isreal, rt))
+end
+
 function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   g = squarefree_part(f)
   all_rts = _roots(g, prec)
@@ -741,6 +751,18 @@ function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::
   return Fac(Rt(g.unit), d)
 end
 
+function factor(R::ComplexField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
+  g = factor(f)
+  Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  d = Dict{typeof(t), Int}()
+  for (k,v) = g.fac
+    for r = roots(R, k)
+      d[t-r] = v
+    end
+  end
+  return Fac(Rt(g.unit), d)
+end
+
 function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   r = elem_type(R)[]
@@ -753,11 +775,16 @@ function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return r
 end
 
-function factor(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
+function factor(R::Union{RealField, ArbField}, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
   g = factor(f)
-  d = Dict{ArbPolyRingElem, Int}()
   Rx, x = polynomial_ring(R, String(var(parent(f))), cached = false)
-  C = AcbField(precision(R))
+  d = Dict{typeof(x), Int}()
+  if isa(R, RealField)
+    C = ComplexField()
+  else
+    C = AcbField(precision(R))
+  end
+
   for (k,v) = g.fac
     s, t = signature(k)
     r = roots(C, k)
