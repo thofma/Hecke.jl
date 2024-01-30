@@ -35,9 +35,9 @@ function residue_field(Q::QadicField)
   return k, mk
 end
 
-function residue_field(Q::FlintPadicField)
+function residue_field(Q::PadicField)
   k = finite_field(prime(Q), 1, :o, cached = false, check = false)[1]
-  pro = function(x::padic)
+  pro = function(x::PadicFieldElem)
     v = valuation(x)
     v < 0 && error("elt non integral")
     v > 0 && return k(0)
