@@ -1455,7 +1455,7 @@ function orthogonal_submodule(T::TorQuadModule, S::TorQuadModule)
   # We have to make sure we get a submodule
   ortho = intersect(lattice(V, B), lattice(V, orthogonal))
   Borth = basis_matrix(ortho)
-  gens_orth = [T(vec(collect(Borth[i,:]))) for i in 1:nrows(Borth)]
+  gens_orth = [T(vec(collect(Borth[i:i,:]))) for i in 1:nrows(Borth)]
   filter!(!iszero, gens_orth)
   return sub(T, gens_orth)
 end
