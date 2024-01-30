@@ -131,20 +131,7 @@ end
 function show(io::IO, a::GrpAbFinGenElem)
   @show_special_elem(io, a)
 
-  if get(io, :compact, false)
-    print(io, a.coeff)
-  else
-    set_name!(parent(a))
-    s = get_attribute(parent(a), :name)
-
-    if s === nothing
-      print(io, "Element of\n")
-      print(io, parent(a))
-      print(io, "\nwith components ", a.coeff)
-    else
-      print(io, "Element of ", s, " with components ", a.coeff)
-    end
-  end
+  print(io, "Abelian group element [", join(a.coeff, ", "), "]")
 end
 
 ################################################################################

@@ -242,7 +242,7 @@ julia> R = rescale(root_lattice(:D,4),2);
 julia> D = discriminant_group(R);
 
 julia> A = abelian_group(D)
-GrpAb: (Z/2)^2 x (Z/4)^2
+(Z/2)^2 x (Z/4)^2
 
 julia> d = D[1]
 Element
@@ -351,10 +351,8 @@ Gram matrix quadratic form:
 
 julia> abelian_group_homomorphism(f)
 Map
-  from GrpAb: (Z/3)^2 x Z/12
-  to (General) abelian group with relation matrix
-  [4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
-  with structure of GrpAb: (Z/3)^2 x Z/12
+  from (Z/3)^2 x Z/12
+  to finitely generated abelian group with 4 generators and 4 relations
 ```
 
 Note that an object of type `TorQuadModuleMap` needs not to be a morphism
