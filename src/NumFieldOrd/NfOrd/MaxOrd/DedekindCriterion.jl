@@ -86,10 +86,10 @@ function dedekind_test(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldE
       return true, O
     end
 
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 rem(fmodp, U) == zero(Kx)
+    @hassert :AbsNumFieldOrder 1 rem(fmodp, U) == zero(Kx)
     U = divexact(fmodp, U)
 
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 rem(O.disc, p^2) == 0
+    @hassert :AbsNumFieldOrder 1 rem(O.disc, p^2) == 0
 
     alpha = nf(O)(parent(f)(lift(Zy,U)))
 
@@ -100,7 +100,7 @@ function dedekind_test(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldE
     @assert isone(d)
     n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
     b = FakeFmpqMat(n, p)
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 defines_order(nf(O), b)[1]
+    @hassert :AbsNumFieldOrder 1 defines_order(nf(O), b)[1]
     OO = Order(nf(O), b, check = false)
 
     OO.is_equation_order = false
@@ -182,13 +182,13 @@ function dedekind_test_composite(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
   hnf_modular_eldiv!(Malpha, p, :lowerleft)
   b = FakeFmpqMat(Malpha, p)
 
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 defines_order(nf(O), b)[1]
+  @hassert :AbsNumFieldOrder 1 defines_order(nf(O), b)[1]
   OO = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(nf(O), b)
   temp = divexact(b.den^degree(O), prod_diagonal(b.num))
   fl, qq = divides(discriminant(O), temp^2)
   @assert fl
   OO.disc = qq
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 discriminant(basis(OO)) == OO.disc
+  @hassert :AbsNumFieldOrder 1 discriminant(basis(OO)) == OO.disc
   OO.index = temp
 
   return ZZRingElem(1), OO

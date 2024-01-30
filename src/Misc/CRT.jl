@@ -577,7 +577,7 @@ the residue class fields of the associated prime ideals above $p$.
 Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
 function modular_init(K::AbsSimpleNumField, p::ZZRingElem; deg_limit::Int=0, max_split::Int = 0)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_prime(p)
+  @hassert :AbsNumFieldOrder 1 is_prime(p)
   me = modular_env()
   me.Fpx = polynomial_ring(residue_ring(FlintZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
   fp = me.Fpx(K.pol)

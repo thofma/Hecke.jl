@@ -692,7 +692,7 @@ function integral_split(A::AbsNumFieldOrderFractionalIdeal)
   @assert isone(d.den)
   n = simplify(A*d)
   @assert isone(n.den)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 A == (numerator(n)//numerator(d))
+  @hassert :AbsNumFieldOrder 1 A == (numerator(n)//numerator(d))
   return numerator(n), numerator(d)
 end
 

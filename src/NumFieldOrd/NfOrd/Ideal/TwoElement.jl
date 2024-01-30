@@ -116,7 +116,7 @@ function _assure_weakly_normal_presentation(A::AbsNumFieldOrderIdeal)
     if !isdefined(A, :norm)
       A.norm = abs(_normmod(A.gen_one^degree(order(A)), order(A)(b)))
     end
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 gcd(A.gen_one^degree(order(A)),
+    @hassert :AbsNumFieldOrder 1 gcd(A.gen_one^degree(order(A)),
                     FlintZZ(norm(A.gen_two))) == A.norm
 
     if A.gen_one == 1
@@ -328,7 +328,7 @@ end
 
 function assure_2_normal(A::AbsNumFieldOrderIdeal)
   if has_2_elem(A) && has_2_elem_normal(A)
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+    @hassert :AbsNumFieldOrder 1 is_consistent(A)
     return nothing
   end
   O = order(A)
@@ -371,7 +371,7 @@ function assure_2_normal(A::AbsNumFieldOrderIdeal)
       cnt += 1
       if cnt > 100 && is_2_normal_difficult(A)
         assure_2_normal_difficult(A)
-        @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+        @hassert :AbsNumFieldOrder 1 is_consistent(A)
         return nothing
       end
       if cnt > 1000
@@ -392,7 +392,7 @@ function assure_2_normal(A::AbsNumFieldOrderIdeal)
 
       if gcd(m, div(mg, g)) == 1
         if gcd(m^n, _normmod(m^n, gen)) != norm(A)
-          @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal"
+          @vprintln :AbsNumFieldOrder 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal"
           cnt += 10
           continue
         end
@@ -414,16 +414,16 @@ function assure_2_normal(A::AbsNumFieldOrderIdeal)
           A.gen_two = I.gen_two
           A.gen_one = I.gen_one
           A.gens_normal = I.gens_normal
-          @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+          @hassert :AbsNumFieldOrder 1 is_consistent(A)
           return nothing
         end
       end
     end
-    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 "used $cnt attempts"
+    @vprintln :AbsNumFieldOrder 2 "used $cnt attempts"
     A.gen_one = m
     A.gen_two = gen
     A.gens_normal = m
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+    @hassert :AbsNumFieldOrder 1 is_consistent(A)
     return nothing
   end
 
@@ -440,7 +440,7 @@ function assure_2_normal(A::AbsNumFieldOrderIdeal)
     cnt += 1
     if cnt > 100 && is_2_normal_difficult(A)
       assure_2_normal_difficult(A)
-      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+      @hassert :AbsNumFieldOrder 1 is_consistent(A)
       return
     end
     if cnt > 1000
@@ -456,18 +456,18 @@ function assure_2_normal(A::AbsNumFieldOrderIdeal)
     mg = _minmod(m^2, gen)
     if gcd(m, div(mg, gcd(mg, m))) == 1
       if gcd(m^n, _normmod(m^n, gen)) != norm(A)
-        @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal"
+        @vprintln :AbsNumFieldOrder 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal"
         cnt += 10
         continue
       end
       break
     end
   end
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 "used $cnt attempts"
+  @vprintln :AbsNumFieldOrder 2 "used $cnt attempts"
   A.gen_one = m
   A.gen_two = gen
   A.gens_normal = m
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+  @hassert :AbsNumFieldOrder 1 is_consistent(A)
   return nothing
 end
 

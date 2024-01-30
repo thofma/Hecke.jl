@@ -399,7 +399,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   end
   for i = 1:length(res)
     res[i] = hom(L, L, autos[i], all_imgs[i], check = checkAuto)
-    #@hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(res[i])
+    #@hassert :AbsNumFieldOrder 1 is_consistent(res[i])
   end
   return res
 
@@ -883,7 +883,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumFiel
       images_K[i] = s
     end
     autos_extended[w] = hom(K, K, Autos_abs[w], images_K, check = checkAuto)
-    #@hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(autos_extended[w])
+    #@hassert :AbsNumFieldOrder 1 is_consistent(autos_extended[w])
   end
   res = restriction(K, Cp, autos_extended, incs)
   return res

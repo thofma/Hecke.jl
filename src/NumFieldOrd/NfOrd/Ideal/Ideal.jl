@@ -473,7 +473,7 @@ function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
     return nothing
   end
 
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem(A)
+  @hassert :AbsNumFieldOrder 1 has_2_elem(A)
 
   m = abs(A.gen_one)
   if has_minimum(A)
@@ -943,11 +943,11 @@ function inv_maximal(A::AbsNumFieldOrderIdeal)
     _, d = ppio(denominator(alpha, O), m)
     Ai = AbsNumFieldOrderIdeal(order(A))
     dn = denominator(d*alpha, O)
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 ppio(dn, m)[1] == dn
+    @hassert :AbsNumFieldOrder 1 ppio(dn, m)[1] == dn
     Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(order(A))//norm(A)
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 denominator(temp) == 1
+    @hassert :AbsNumFieldOrder 1 denominator(temp) == 1
     Ai.norm = numerator(temp)
     Ai.gens_normal = A.gens_normal
     AAi = fractional_ideal(O, Ai, dn)
@@ -1062,7 +1062,7 @@ function _minmod(a::ZZRingElem, b::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSi
     return min
   end
   mul!(min, min, _minmod_comp(ar, b))
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 min == gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
+  @hassert :AbsNumFieldOrder 1 min == gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   return min
 end
 
@@ -1269,11 +1269,11 @@ function _normmod(a::ZZRingElem, b::AbsNumFieldOrderElem{AbsSimpleNumField, AbsS
     push!(resp, _normmod_comp(ar, b))
   end
   if isone(length(mods))
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 gcd(norm(b), a) == resp[1]
+    @hassert :AbsNumFieldOrder 1 gcd(norm(b), a) == resp[1]
     return resp[1]
   else
     res = gcd(crt(resp, mods), a)
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 gcd(norm(b), a) == res
+    @hassert :AbsNumFieldOrder 1 gcd(norm(b), a) == res
     return res
   end
 
@@ -1319,10 +1319,10 @@ function simplify(A::AbsNumFieldOrderIdeal)
     A.minimum = ZZRingElem(1)
     A.norm = ZZRingElem(1)
     A.gens_normal = ZZRingElem(2)
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+    @hassert :AbsNumFieldOrder 1 is_consistent(A)
     return A
   end
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+  @hassert :AbsNumFieldOrder 1 is_consistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
@@ -1357,10 +1357,10 @@ function simplify(A::AbsNumFieldOrderIdeal)
       A.gens_normal = A.gen_one
     end
 
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+    @hassert :AbsNumFieldOrder 1 is_consistent(A)
     return A
   end
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+  @hassert :AbsNumFieldOrder 1 is_consistent(A)
   return A
 end
 
@@ -1682,7 +1682,7 @@ function mod!(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem},
     add!(x.elem_in_nf, x.elem_in_nf, t)
   end
 
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 x.elem_in_nf == dot(a, O.basis_nf)
+  @hassert :AbsNumFieldOrder 2 x.elem_in_nf == dot(a, O.basis_nf)
 
   return x
 end
@@ -2368,7 +2368,7 @@ function is_coprime(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal)
         f3 = Rx(K.pol)
         fl = _coprimality_test(f1, f2, f3)
       end
-      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 fl == isone(I+J)
+      @hassert :AbsNumFieldOrder 1 fl == isone(I+J)
       return fl
     end
   end

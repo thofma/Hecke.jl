@@ -198,7 +198,7 @@ Returns the coefficient vector of $a$ with respect to the basis of the order.
 """
 function coordinates(a::AbsNumFieldOrderElem; copy::Bool = true)
   assure_has_coord(a)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 a == dot(a.coordinates, basis(parent(a), copy = false))
+  @hassert :AbsNumFieldOrder 2 a == dot(a.coordinates, basis(parent(a), copy = false))
   if copy
     return deepcopy(a.coordinates)
   else

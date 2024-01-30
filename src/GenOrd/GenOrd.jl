@@ -476,7 +476,7 @@ end
 
 function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = false) where {T}
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 "ring of multipliers module $p (is_prime: $is_prime) of ideal with basis matrix $I"
+  @vprintln :AbsNumFieldOrder 2 "ring of multipliers module $p (is_prime: $is_prime) of ideal with basis matrix $I"
   II, d = pseudo_inv(I)
   @assert II*I == d
 
@@ -524,7 +524,7 @@ end
 
 function ring_of_multipliers(O::GenOrd, I::MatElem)
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 "ring of multipliers of ideal with basis matrix $I"
+  @vprintln :AbsNumFieldOrder 2 "ring of multipliers of ideal with basis matrix $I"
   II, d = pseudo_inv(I)
   @assert II*I == d
 
@@ -584,7 +584,7 @@ end
 ################################################################################
 
 function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false)
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "computing a $p-maximal orderorder"
+  @vprintln :AbsNumFieldOrder 1 "computing a $p-maximal orderorder"
 
   t = residue_field(parent(p), p)
 
@@ -596,13 +596,13 @@ function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using trace-radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "non-perfect case for radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using radical-by-power for $p"
+    @vprintln :AbsNumFieldOrder 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   while true #TODO: check the discriminant to maybe skip the last iteration
@@ -698,10 +698,10 @@ end
 ################################################################################
 
 function Hecke.maximal_order(O::GenOrd)
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "starting maximal order..."
+  @vprintln :AbsNumFieldOrder 1 "starting maximal order..."
   S = base_ring(O)
   d = discriminant(O)
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 "factoring the discriminant..."
+  @vprintln :AbsNumFieldOrder 2 "factoring the discriminant..."
   @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 ld = factor(d)
   local Op
   first = true

@@ -88,10 +88,10 @@ function triangularize!(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSim
         for k in col:m
           t_arith += @elapsed A[i, k] = A[i, k] - q*A[row, k]
         end
-        @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 A[i, col] == zero(base_ring(A))
+        @hassert :AbsOrdQuoRing 1 A[i, col] == zero(base_ring(A))
       else
         t_xxgcd += @elapsed g,s,t,u,v = xxgcd(A[row, col], A[i, col])
-        @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 isone(s*v - t*u)
+        @hassert :AbsOrdQuoRing 1 isone(s*v - t*u)
 
         for k in col:m
           t_arith += @elapsed t1 = s*A[row, k] + t*A[i, k]
@@ -182,7 +182,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumField
           for k in i:m
             T[1, k] = T[1, k] - q*A[i, k]
           end
-          @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 T[1, i] == zero(base_ring(A))
+          @hassert :AbsOrdQuoRing 1 T[1, i] == zero(base_ring(A))
         else
           g, s, t, u, v = xxgcd(A[i, i], T[1, i])
           for k in i:m
@@ -255,7 +255,7 @@ function det(M::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField
   end
   return z*d
   q, r = divrem(z, d)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 iszero(r)
+  @hassert :AbsOrdQuoRing 1 iszero(r)
   return divexact(z, d)
 end
 

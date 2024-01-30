@@ -865,7 +865,7 @@ function any_order(K::AbsSimpleNumField)
         M[i, j] = numerator(coeff(g, d - (i - j)))
       end
     end
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 defines_order(K, FakeFmpqMat(M))[1]
+    @hassert :AbsNumFieldOrder 1 defines_order(K, FakeFmpqMat(M))[1]
     z = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(K, FakeFmpqMat(M))
     z.is_equation_order = false
     return z
@@ -1255,8 +1255,8 @@ function sum_as_Z_modules(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * degree(
 end
 
 function sum_as_Z_modules_fast(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 contains_equation_order(O1)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 contains_equation_order(O2)
+  @hassert :AbsNumFieldOrder 1 contains_equation_order(O1)
+  @hassert :AbsNumFieldOrder 1 contains_equation_order(O2)
   K = _algebra(O1)
   R1 = basis_matrix(O1, copy = false)
   S1 = basis_matrix(O2, copy = false)
@@ -1270,15 +1270,15 @@ function sum_as_Z_modules_fast(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * de
   mul!(z2, S1.num, r1)
   hnf_modular_eldiv!(z, lcm(R1.den, S1.den), :lowerleft)
   M = FakeFmpqMat(view(z, (nrows(z)-ncols(z)+1):nrows(z), 1:ncols(z)), lcm(R1.den, S1.den))
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 defines_order(K, M)[1]
+  @hassert :AbsNumFieldOrder 1 defines_order(K, M)[1]
   OK = Order(K, M, check = false)::typeof(O1)
   if OK isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
     OK.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
   end
   OK.index = divexact(denominator(M)^d, prod(ZZRingElem[M.num[i, i] for i in 1:d]))
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 numerator(gen_index(OK)) == OK.index
+  @hassert :AbsNumFieldOrder 1 numerator(gen_index(OK)) == OK.index
   OK.disc = divexact(discriminant(O1) * index(O1)^2, OK.index^2)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 det(trace_matrix(OK)) == OK.disc
+  @hassert :AbsNumFieldOrder 1 det(trace_matrix(OK)) == OK.disc
   return OK
 end
 

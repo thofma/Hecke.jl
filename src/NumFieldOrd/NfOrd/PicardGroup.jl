@@ -313,7 +313,7 @@ function _picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldE
       a2 = OKtoQ(OK(zOK.den))
       b1, a = is_divisible(a1, a2)
       @assert b1
-      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_divisible(OKtoQ(OK(1)), a)[1]
+      @hassert :AbsNumFieldOrder 1 is_divisible(OKtoQ(OK(1)), a)[1]
       h = GtoQ\a
       p = GrpAbFinGenElem(P, hcat(c.coeff, h.coeff))
       b, s = has_preimage_with_preimage(StoP, p)

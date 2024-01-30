@@ -158,7 +158,7 @@ function intersect_nonindex(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, 
   for (s, e) in gp
     if iszero(s(hp) % Gp)
       p = ideal_from_poly(Zk, Int(minimum(P)), s, e)
-      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(p)
+      @hassert :AbsNumFieldOrder 1 is_consistent(p)
       return p
     end
   end

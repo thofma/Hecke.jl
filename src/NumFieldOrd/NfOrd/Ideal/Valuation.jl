@@ -167,7 +167,7 @@ function val_fun_generic_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
 end
 
 function val_func_generic(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_prime(p)
+  @hassert :AbsNumFieldOrder 1 is_prime(p)
   P = p.gen_one
   K = nf(order(p))
   O = order(p)
@@ -373,7 +373,7 @@ function valuation(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleN
   if !is_defining_polynomial_nice(parent(a)) || order(p).is_maximal != 1
     return valuation_naive(a, p)::Int
   end
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 0 !iszero(a)
+  @hassert :AbsNumFieldOrder 0 !iszero(a)
   assure_valuation_function(p)
   if p.is_prime != 1
     return Int(p.valuation(a, no))::Int

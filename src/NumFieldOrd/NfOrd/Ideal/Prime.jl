@@ -886,9 +886,9 @@ function factor_easy(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
       ideals[J] = 1
     end
   end
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 all(!iszero, values(ideals))
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_pairwise_coprime(collect(keys(ideals)))
+  @hassert :AbsNumFieldOrder 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
+  @hassert :AbsNumFieldOrder 1 all(!iszero, values(ideals))
+  @hassert :AbsNumFieldOrder 1 is_pairwise_coprime(collect(keys(ideals)))
   return ideals
 end
 

@@ -80,7 +80,7 @@ function sum_princ_gen_special(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdea
     M1 = _hnf_modular_eldiv(basis_matrix(y, copy = false), genx, :lowerleft)
     res = ideal(OK, M1; check=false, M_in_hnf=true)
   end
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 res == sum_via_basis_matrix(x, y)
+  @hassert :AbsNumFieldOrder 1 res == sum_via_basis_matrix(x, y)
   return res
 end
 
@@ -114,7 +114,7 @@ function sum_princ_gen(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
     res.minimum = H[1, 1]
   end
   res.norm = prod_diagonal(H)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 res == sum_via_basis_matrix(x, y)
+  @hassert :AbsNumFieldOrder 1 res == sum_via_basis_matrix(x, y)
   return res
 end
 
@@ -214,15 +214,15 @@ lcm(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNu
 
 function *(x::S, y::S) where S <: AbsNumFieldOrderIdeal
   check_parent(x, y)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(x)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(y)
+  @hassert :AbsNumFieldOrder 1 is_consistent(x)
+  @hassert :AbsNumFieldOrder 1 is_consistent(y)
   OK = order(x)
   if is_maximal_known_and_maximal(OK)
     z = mul_maximal(x, y)
   else
     z = mul_gen(x, y)
   end
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(z)
+  @hassert :AbsNumFieldOrder 1 is_consistent(z)
   return z
 end
 
@@ -283,8 +283,8 @@ end
 # using the 2-normal representation
 function prod_via_2_elem_normal(a::S, b::S) where S <: AbsNumFieldOrderIdeal
   check_parent(a, b)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem_normal(a)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem_normal(b)
+  @hassert :AbsNumFieldOrder 1 has_2_elem_normal(a)
+  @hassert :AbsNumFieldOrder 1 has_2_elem_normal(b)
   O = order(a)
   a1 = a.gen_one
   if has_minimum(a)
@@ -344,8 +344,8 @@ end
 # using the 2-weak-normal representation
 function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
   check_parent(a, b)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem(a)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem(b)
+  @hassert :AbsNumFieldOrder 1 has_2_elem(a)
+  @hassert :AbsNumFieldOrder 1 has_2_elem(b)
 
   O = order(a)
   K = nf(O)
@@ -387,8 +387,8 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
     r = -Int(div(mod_c, 2)):Int(div(mod_c, 2))
   end
 
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "a: $a \nb: $b"
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using basis: $bas"
+  @vprintln :AbsNumFieldOrder 1 "a: $a \nb: $b"
+  @vprintln :AbsNumFieldOrder 1 "using basis: $bas"
 
   gen = O()
   gen2 = O()
@@ -424,7 +424,7 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
     end
   end
 
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "prod_via_2_elem: used $cnt tries"
+  @vprintln :AbsNumFieldOrder 1 "prod_via_2_elem: used $cnt tries"
 
   c = ideal(O, first_gen_new, gen)
 
@@ -521,7 +521,7 @@ end
 ################################################################################
 
 function Base.:(^)(A::AbsNumFieldOrderIdeal, e::Int)
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 is_consistent(A)
+  @hassert :AbsNumFieldOrder 1 is_consistent(A)
   OK = order(A)
   if e == 0
     return ideal(OK, 1)
@@ -688,7 +688,7 @@ function mul_maximal(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
     end
   end
 
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_basis_matrix(x)
+  @hassert :AbsNumFieldOrder 1 has_basis_matrix(x)
   return ideal(order(x), basis_matrix(x, copy = false)*y)
 end
 
@@ -752,8 +752,8 @@ function idempotents(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
     g, ux, vx = gcdx(x.gen_one, y.gen_one)
     if isone(g)
       z = O(ux*x.gen_one)
-      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 z in x
-      @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 (1 - z) in y
+      @hassert :AbsNumFieldOrder 2 z in x
+      @hassert :AbsNumFieldOrder 2 (1 - z) in y
       return z, 1 - z
     end
   end
@@ -764,8 +764,8 @@ function idempotents(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   g, ux, vy = gcdx(mx, my)
   if isone(g)
     z = O(ux*mx)
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 z in x
-    @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 (1 - z) in y
+    @hassert :AbsNumFieldOrder 2 z in x
+    @hassert :AbsNumFieldOrder 2 (1 - z) in y
     return z, 1 - z
   end
   return _idempotents_via_matrices(x, y)
@@ -817,8 +817,8 @@ function _idempotents_via_matrices(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrder
     add!(z, z, aux)
   end
 
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 -z in x
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 1 + z in y
+  @hassert :AbsNumFieldOrder 2 -z in x
+  @hassert :AbsNumFieldOrder 2 1 + z in y
 
   ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
 

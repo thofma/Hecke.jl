@@ -176,7 +176,7 @@ function assure_has_basis_matrix(A::GenOrdIdl)
     return nothing
   end
 
-  @hassert :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 has_2_elem(A)
+  @hassert :AbsNumFieldOrder 1 has_2_elem(A)
 
   V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
   d = ncols(V)
@@ -700,13 +700,13 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using trace-radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "non-perfect case for radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "using radical-by-power for $p"
+    @vprintln :AbsNumFieldOrder 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   return GenOrdIdl(O,rad(O,p))
@@ -945,9 +945,9 @@ function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::M
   O = order(Ip1)
   n = degree(O)
   R = O.R
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Splitting the algebra"
+  @vprintln :AbsNumFieldOrder 1 "Splitting the algebra"
   AA = Hecke.decompose(A)
-  @vprintln :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 "Done"
+  @vprintln :AbsNumFieldOrder 1 "Done"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
   list_bases = Vector{Vector{Vector{elem_type(R)}}}(undef, length(AA))

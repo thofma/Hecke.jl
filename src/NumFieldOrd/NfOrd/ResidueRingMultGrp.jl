@@ -114,7 +114,7 @@ $pv = p^v$, the function returns the group $(\mathcal O/p^v)^\times$ and a map
 from this group to $O/p^v$.
 """
 function _multgrp_mod_pv(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; method=nothing)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   @assert v >= 1
   pnumv = minimum(p, copy = false)^v # to speed up the exponentiation in the GrpAbFinGenToNfAbsOrdMaps
   G1, G1toO = _multgrp_mod_p(p, pnumv)
@@ -169,7 +169,7 @@ end
 
 # Compute (O_K/p)*
 function _multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pnumv::ZZRingElem = ZZRingElem(0))
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   O = order(p)
   n = norm(p) - 1
   gen = _primitive_element_mod_p(p)
@@ -207,7 +207,7 @@ function _multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
 end
 
 function _primitive_element_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   O = order(p)
   Q, Q_map = quo(O,p)
   n = norm(p) - 1
@@ -234,7 +234,7 @@ end
 
 # Compute (1+p)/(1+p^v)
 function _1_plus_p_mod_1_plus_pv(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pnumv::ZZRingElem = ZZRingElem(0); method=nothing)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   @assert v >= 1
 
   if method == :quadratic
@@ -416,7 +416,7 @@ end
 # the structure of (1+p^a)/(1+p^b) as an abelian group.
 function _1_plus_pa_mod_1_plus_pb_structure(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},a,b)
   b > a >= 1 || return false, nothing
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   O = order(p)
   pnum = minimum(p)
   e = ramification_index(p)
@@ -435,7 +435,7 @@ end
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v), where 2*u >= v >= u >= 1
 function _quadratic_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, u::Int, v::Int; pu::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}=p^u, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}=p^v)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   @assert 2*u >= v >= u >= 1
   g, M, dlog = _pu_mod_pv(pu,pv)
   map!(x -> x + 1, g, g)
@@ -460,7 +460,7 @@ end
 # logarithms for (1+p^u)/(1+p^v), where p is a prime ideal over pnum
 # and pnum*u >= v >= u >= 1
 function _artin_hasse_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, u::Int, v::Int; pu::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}=p^u, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}=p^v)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
   @assert ZZRingElem(v) <= pnum*ZZRingElem(u)
@@ -596,12 +596,12 @@ function p_adic_exp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimp
     val_p_fac_i += val_p_i
     val_p_xi += val_p_x
     val_p_xi - val_p_fac_i >= v && continue
-    @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 val_p_xi - val_p_fac_i>=0
-    @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 val_p_xi< val_p_maximum
-    @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 val_p_fac_i< val_p_maximum
+    @hassert :AbsOrdQuoRing 1 val_p_xi - val_p_fac_i>=0
+    @hassert :AbsOrdQuoRing 1 val_p_xi< val_p_maximum
+    @hassert :AbsOrdQuoRing 1 val_p_fac_i< val_p_maximum
     i_prod = prod((i_old+1):i)
     deltax = inc*x1^(i-i_old)
-    @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 !iszero(deltax)
+    @hassert :AbsOrdQuoRing 1 !iszero(deltax)
     if isone(gcd(i_prod, pnum))
       inc = _divexact(deltax, ZZRingElem(i_prod))
     else
@@ -794,7 +794,7 @@ end
 #################################################################################
 
 function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prime::Int)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   O = order(p)
   Q, mQ = residue_field(O,p)
 
@@ -935,7 +935,7 @@ end
 
 
 function _n_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 2 is_prime(p)
+  @hassert :AbsOrdQuoRing 2 is_prime(p)
   O = order(p)
   Q, mQ = residue_field(O, p)
 
