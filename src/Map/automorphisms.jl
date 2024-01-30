@@ -13,7 +13,7 @@ function _automorphisms(K::AbsNonSimpleNumField; is_abelian::Bool = false)
   for i = 1:length(pols)
     rt[i] = roots(K, pols[i])
   end
-  auts = Vector{NfAbsNSToNfAbsNS}(undef, prod(length(x) for x in rt))
+  auts = Vector{NumFieldAut{AbsNonSimpleNumField}}(undef, prod(length(x) for x in rt))
   ind = 1
   I = cartesian_product_iterator([1:length(x) for x in rt], inplace = true)
   for i in I
@@ -122,7 +122,7 @@ function _generator_automorphisms(K::AbsSimpleNumField)
 end
 
 automorphism_type(::AbsSimpleNumField) = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
-automorphism_type(::AbsNonSimpleNumField) = NfAbsNSToNfAbsNS
+automorphism_type(::AbsNonSimpleNumField) = NumFieldAut{AbsNonSimpleNumField}
 
 function automorphism_list(K::NumField{QQFieldElem}; copy::Bool = true, is_abelian::Bool = false)
   T = automorphism_type(K)
@@ -160,7 +160,7 @@ function get_automorphisms(K::AbsSimpleNumField)
 end
 
 function get_automorphisms(K::AbsNonSimpleNumField)
-  return get_attribute(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
+  return get_attribute(K, :automorphisms)::Vector{NumFieldAut{AbsNonSimpleNumField}}
 end
 
 function set_automorphisms(K::Union{AbsSimpleNumField,AbsNonSimpleNumField}, auts::Vector)

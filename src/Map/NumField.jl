@@ -693,7 +693,7 @@ const NumFieldAut{T} = NumFieldHom{T, T}
 
 #const NumFieldHom{AbsSimpleNumField, AbsSimpleNumField} = morphism_type(AbsSimpleNumField, AbsSimpleNumField)
 
-const NfAbsNSToNfAbsNS = morphism_type(AbsNonSimpleNumField, AbsNonSimpleNumField)
+#const NumFieldAut{AbsNonSimpleNumField} = morphism_type(AbsNonSimpleNumField, AbsNonSimpleNumField)
 
 const NfAbsToNfAbsNS = morphism_type(AbsSimpleNumField, AbsNonSimpleNumField)
 
