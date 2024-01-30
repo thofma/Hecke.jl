@@ -33,16 +33,16 @@ mutable struct LocalFieldElem{S, T} <: NonArchLocalFieldElem
   precision::Int
 end
 
-mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, CompletionMap{S, T}}
-  header::MapHeader{AnticNumberField, S}
+mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, CompletionMap{S, T}}
+  header::MapHeader{AbsSimpleNumField, S}
   P::NfOrdIdl
   prim_img::T
-  inv_img::Tuple{nf_elem, nf_elem}
+  inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}
   precision::Int
 
-  function CompletionMap(K::AnticNumberField, L::LocalField{QadicFieldElem, EisensteinLocalField},
+  function CompletionMap(K::AbsSimpleNumField, L::LocalField{QadicFieldElem, EisensteinLocalField},
                           img::LocalFieldElem{QadicFieldElem, EisensteinLocalField},
-                          inv_img::Tuple{nf_elem, nf_elem}, precision::Int)
+                          inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}, precision::Int)
     z = new{LocalField{QadicFieldElem, EisensteinLocalField}, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}()
     z.header = MapHeader(K, L)
     z.prim_img = img
@@ -51,9 +51,9 @@ mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, Complet
     return z
   end
 
-  function CompletionMap(K::AnticNumberField, L::LocalField{PadicFieldElem, EisensteinLocalField},
+  function CompletionMap(K::AbsSimpleNumField, L::LocalField{PadicFieldElem, EisensteinLocalField},
                           img::LocalFieldElem{PadicFieldElem, EisensteinLocalField},
-                          inv_img::nf_elem, precision::Int)
+                          inv_img::AbsSimpleNumFieldElem, precision::Int)
     z = new{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}()
     z.header = MapHeader(K, L)
     z.prim_img = img
@@ -62,9 +62,9 @@ mutable struct CompletionMap{S, T} <: Map{AnticNumberField, S, HeckeMap, Complet
     return z
   end
 
-  function CompletionMap(K::AnticNumberField, L::QadicField,
+  function CompletionMap(K::AbsSimpleNumField, L::QadicField,
                           img::QadicFieldElem,
-                          inv_img::nf_elem, precision::Int)
+                          inv_img::AbsSimpleNumFieldElem, precision::Int)
     z = new{QadicField, QadicFieldElem}()
     z.header = MapHeader(K, L)
     z.prim_img = img

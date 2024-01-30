@@ -29,7 +29,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   uP = UInt(P)
   local vfunc
   let h = h, g = g, P = P, uP = uP
-    function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function vfunc(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       Nemo.nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
@@ -62,7 +62,7 @@ function val_func_no_index(p::NfOrdIdl)
   c = ZZRingElem()
   local vfunc
   let h = h, g = g, P = P
-    function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function vfunc(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       Nemo.nf_elem_to_fmpz_mod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
@@ -99,7 +99,7 @@ function val_func_index(p::NfOrdIdl)
 
   local val
   let P = P, O = O, M = M, p = p
-    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function val(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       v = 0
       d, x_mat = integral_split(x, O)
       Nemo.mul!(x_mat, x_mat, M)
@@ -131,7 +131,7 @@ function val_fun_generic_small(p::NfOrdIdl)
   e = anti_uniformizer(p)
   local val
   let e = e, P = P, p = p, O = O
-    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function val(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       nn = ZZRingElem(0)
       v = 0
       p_mod = ZZRingElem(0)
@@ -174,7 +174,7 @@ function val_func_generic(p::NfOrdIdl)
   e = anti_uniformizer(p)
   local val
   let e = e, P = P, p = p, O = O
-    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function val(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       nn = ZZRingElem(0)
       v = 0
       p_mod = ZZRingElem(0)
@@ -203,7 +203,7 @@ function val_func_generic(p::NfOrdIdl)
   return val
 end
 
-function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
+function valuation_with_anti_uni(a::AbsSimpleNumFieldElem, anti_uni::AbsSimpleNumFieldElem, I::NfOrdIdl)
   O = order(I)
   b = a*anti_uni
   if !(b in O)
@@ -248,7 +248,7 @@ function assure_valuation_function(p::NfOrdIdl)
     anti_uni = anti_uniformizer(p)
     local val2
     let O = O, p = p, anti_uni = anti_uni, K = K
-      function val2(s::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      function val2(s::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
         d = denominator(s, O)
         x = d*s
         if gcd(d, minimum(p, copy = false)) == 1
@@ -265,7 +265,7 @@ function assure_valuation_function(p::NfOrdIdl)
   if degree(O) < 40 && p.splitting_type[1]*p.splitting_type[2] == degree(O)
     local val3
     let P = P, p = p
-      function val3(s::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      function val3(s::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
         return divexact(valuation(iszero(no) ? norm(s) : no, P)[1], p.splitting_type[2])::Int
       end
     end
@@ -276,7 +276,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f2 = val_func_generic(p)
       local val1
       let f1 = f1, f2 = f2
-        function val1(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val1(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f1(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -292,7 +292,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f9 = val_func_generic(p)
       local val1
       let f8 = f8, f9 = f9
-        function val_large_non_index(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val_large_non_index(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f8(x, no)
           if v > 10  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -310,7 +310,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f5 = val_func_generic(p)
       local val5
       let f3 = f3, f5 = f5
-        function val5(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val5(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f3(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -325,7 +325,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f4 = val_func_index(p)
       local val4
       let f3 = f3, f4 = f4
-        function val4(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val4(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f3(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -342,7 +342,7 @@ function assure_valuation_function(p::NfOrdIdl)
     f7 = val_fun_generic_small(p)
     local val_gen
     let f7 = f7, f6 = f6
-      function val_gen(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      function val_gen(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
         vv = f7(x, no)
         if vv == 100
           return f6(x, no)
@@ -363,7 +363,7 @@ function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl, n::QQFieldElem = QQFieldElem(
   return valuation_naive(a, p)
 end
 
-function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
+function valuation(a::AbsSimpleNumFieldElem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
   if is_zero(a)
     error("element is zero")
   end
@@ -399,7 +399,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
 end
 
 @doc raw"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldElem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
 
@@ -409,7 +409,7 @@ such that $a$ is contained in $\mathfrak p^i$.
 valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 
 @doc raw"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldElem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
     valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
 
@@ -457,7 +457,7 @@ function valuation_naive(x::NfAbsOrdElem, B::NfAbsOrdIdl)
   return i
 end
 
-function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNSElem}
+function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{AbsSimpleNumFieldElem, NfAbsNSElem}
   @assert !isone(B)
   i = 0
   C = B

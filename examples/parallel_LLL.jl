@@ -8,7 +8,7 @@ function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
     A = deepcopy(O.minkowski_matrix[1])
   else
-    T = Vector{Vector{arb}}(undef, degree(O))
+    T = Vector{Vector{ArbFieldElem}}(undef, degree(O))
     B = O.basis_nf
     @Threads.threads for i in 1:degree(O)
       T[i] = minkowski_map(B[i], abs_tol)

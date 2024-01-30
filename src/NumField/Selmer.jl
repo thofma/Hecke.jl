@@ -124,10 +124,10 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
   end
 
   disc_log_data = Dict{NfOrdIdl, Tuple{Map, Vector{Int}}}()
-  function toSel(x::nf_elem; check::Bool = check)
+  function toSel(x::AbsSimpleNumFieldElem; check::Bool = check)
     return toSel(FacElem([x], [1], check = check))
   end
-  function toSel(x::FacElem{nf_elem, AnticNumberField}; check::Bool = check)
+  function toSel(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}; check::Bool = check)
     if check
       A = ideal(ZK, x)
       for P = S

@@ -923,7 +923,7 @@ end
 # of A with respect to conjugation, that is, any maximal order of A is conjugated
 # to one of them and no two returned orders are conjugated.
 # Only works for algebras fulfilling the Eichler condition.
-representatives_of_maximal_orders(A::AlgAss{nf_elem}) = representatives_of_maximal_orders(maximal_order(A))
+representatives_of_maximal_orders(A::AlgAss{AbsSimpleNumFieldElem}) = representatives_of_maximal_orders(maximal_order(A))
 
 function representatives_of_maximal_orders(O::AlgAssRelOrd)
   A = algebra(O)

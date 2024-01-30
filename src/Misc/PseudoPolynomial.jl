@@ -44,7 +44,7 @@ function can_reduce(f::PseudoPoly{S, T}, G::Vector{PseudoPoly{S, T}}) where {S, 
   if isone(denominator(b))
     c = sum(leading_coefficient(G[i]) for i in I)//coefficient_ideal(f)
     l = _contains(leading_coefficient(polynomial(f)), [leading_coefficient(G[i])//coefficient_ideal(f) for i in I])
-    l = nf_elem[ l[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
+    l = AbsSimpleNumFieldElem[ l[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
     g = deepcopy(polynomial(f))
     @assert leading_coefficient(polynomial(f)) == sum(l[i] * leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I))
     for i in 1:length(I)
@@ -75,7 +75,7 @@ function reduce(f::PseudoPoly{S, T}, G::Vector{PseudoPoly{S, T}}) where {S, T}
   end
 end
 
-function _contains(a::nf_elem, I)
+function _contains(a::AbsSimpleNumFieldElem, I)
   @assert a in sum(I)
   OK = maximal_order(parent(a))
   dena = denominator(a, OK)
@@ -85,7 +85,7 @@ function _contains(a::nf_elem, I)
   M = reduce(vcat, [numerator(basis_matrix(d * id)) for id in I ])
   b, w = cansolve(M', v')
   @assert b
-  res = nf_elem[]
+  res = AbsSimpleNumFieldElem[]
   for i in 1:length(I)
     B = basis(I[i])
     push!(res, sum(w[(i - 1) * degree(OK) + k, 1] * B[k] for k in 1:degree(OK)))
@@ -187,7 +187,7 @@ function gb(G::Vector{S}, mmod) where {S}
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
     Nfinv = mmod * inv(C)::NfOrdFracIdl
-    newcoeffs = nf_elem[]
+    newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
       c = r.poly.coeffs[i]
@@ -222,7 +222,7 @@ function gb(G::Vector{S}, mmod) where {S}
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
     Nfinv = mmod * inv(C)::NfOrdFracIdl
-    newcoeffs = nf_elem[]
+    newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
       c = r.poly.coeffs[i]

@@ -98,7 +98,7 @@ end
 
 
 @doc doc"""
-    abelian_normal_extension(K::AnticNumberField, gtype::Vector{Int},
+    abelian_normal_extension(K::AbsSimpleNumField, gtype::Vector{Int},
                              bound::ZZRingElem;
                              only_real = false,
                              only_complex = false,
@@ -116,7 +116,7 @@ $L$ is bounded by `bound`.
 Note that fields are returned as class fields of $L$, which can be transformed
 into number fields by calling `number_field`.
 """
-function abelian_normal_extensions(K::AnticNumberField, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false, absolute_galois_group::Tuple{Int, Int} = (0, 0))
+function abelian_normal_extensions(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false, absolute_galois_group::Tuple{Int, Int} = (0, 0))
 
   @assert !(only_real && only_complex)
   O = maximal_order(K)
@@ -198,10 +198,10 @@ end
 #
 ################################################################################
 
-function abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
+function abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
                             absolute_discriminant_bound::ZZRingElem;
                             absolutely_distinct::Bool = false,
-                            ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc{AnticNumberField, NumFieldEmbNfAbs}[]),
+                            ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[]),
                             only_tame::Bool = false,
                             signatures::Vector{Tuple{Int, Int}} = Tuple{Int, Int}[])
 
@@ -248,7 +248,7 @@ function abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
   end
 end
 
-function _abelian_extensions(K::AnticNumberField, gtype::Vector{Int},
+function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
                             absolute_discriminant_bound::ZZRingElem;
                             absolutely_distinct::Bool = false,
                             ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc[]),
@@ -543,7 +543,7 @@ function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vect
       end
     end
   end
-  fields_list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}(undef, length(final_list))
+  fields_list = Vector{Tuple{AbsSimpleNumField, Vector{NfToNfMor}, Vector{NfToNfMor}}}(undef, length(final_list))
   for i = 1:length(final_list)
     if mod(final_list[i],4) != 1
       cp = Vector{ZZRingElem}(undef, 3)
@@ -659,7 +659,7 @@ function __get_term(a::QQMPolyRingElem, exps::Vector{UInt})
 end
 
 function _C22_with_max_ord(l)
-  list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}()
+  list = Vector{Tuple{AbsSimpleNumField, Vector{NfToNfMor}, Vector{NfToNfMor}}}()
   Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
   K = number_field(x-1, cached = false)[1]
   @vprintln :AbExt 1 "Constructing the C2xC2 extension: $(length(l))"
@@ -676,7 +676,7 @@ function _C22_with_max_ord(l)
     d2 = discriminant(p2)
     cf = gcd(d1, d2)
     if isone(cf)
-      B = Vector{nf_elem}(undef, 4)
+      B = Vector{AbsSimpleNumFieldElem}(undef, 4)
       B[1] = S(1)
       B[2] = mS\(g[1])
       B[3] = mS\(g[2])

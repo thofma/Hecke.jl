@@ -29,7 +29,7 @@
     for b in Hecke.squarefree_up_to(100)[2:end]
       K, a = number_field(x^2-b, check = false, cached = false)
       O = maximal_order(K);
-      cocval = Matrix{nf_elem}(undef, 2, 2)
+      cocval = Matrix{AbsSimpleNumFieldElem}(undef, 2, 2)
       G = NfToNfMor[hom(K,K,a),hom(K,K,-a)]
       cocval[1,1] = K(1)
       cocval[1,2] = K(1)
@@ -68,7 +68,7 @@
     Autos[3] = hom(K, K, a^3 - 4*a)
     Autos[4] = hom(K, K, -a^3 + 4*a)
     MatCoc = [0 0 0 0; 0 1 0 1; 0 1 1 0; 0 0 1 1]
-    Coc = Matrix{nf_elem}(undef, 4, 4)
+    Coc = Matrix{AbsSimpleNumFieldElem}(undef, 4, 4)
     for i = 1:4
       for j = 1:4
         Coc[i, j] = K(-1)^MatCoc[i, j]

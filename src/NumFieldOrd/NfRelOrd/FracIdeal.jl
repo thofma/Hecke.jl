@@ -278,7 +278,7 @@ function norm(a::NfRelOrdFracIdl{S, U, V}, copy::Type{Val{T}} = Val{true}) where
   end
 end
 
-function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
+function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AbsSimpleNumField, NfRelNS })
   n = norm(a)
   while nf(order(n)) != k
     n = norm(n)
@@ -313,7 +313,7 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   end
   d = degree(order(a))
   H = vcat(basis_pmatrix(a), basis_pmatrix(b))
-  if T != nf_elem
+  if T != AbsSimpleNumFieldElem
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
     return fractional_ideal(order(a), H; M_in_hnf=true)
   end
@@ -363,14 +363,14 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
   for i = 1:d
     for j = 1:d
       mul!(t, pba[i][1], pbb[j][1])
-      T == nf_elem ? t = t*den : nothing
+      T == AbsSimpleNumFieldElem ? t = t*den : nothing
       elem_to_mat_row!(M, (i - 1)*d + j, t)
       C[(i - 1)*d + j] = pba[i][2]*pbb[j][2]
     end
   end
   PM = pseudo_matrix(M, C)
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
-  if T != nf_elem
+  if T != AbsSimpleNumFieldElem
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
     return fractional_ideal(order(a), H; M_in_hnf=true)
   end
@@ -449,7 +449,7 @@ simplify(a::NfRelOrdFracIdl) = a
 #
 ################################################################################
 
-function mod(x::S, y::T) where {S <: Union{nf_elem, NumFieldElem}, T <: Union{NfOrdFracIdl, NfRelOrdFracIdl}}
+function mod(x::S, y::T) where {S <: Union{AbsSimpleNumFieldElem, NumFieldElem}, T <: Union{NfOrdFracIdl, NfRelOrdFracIdl}}
   K = parent(x)
   O = order(y)
   d = K(lcm(denominator(x, O), denominator(y)))

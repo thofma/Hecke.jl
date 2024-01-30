@@ -107,7 +107,7 @@ function Hecke.primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B:
   @req !(only_real && only_non_real) "Either \"only_real\" or \"only_non_real\" must be set"
   sid, invfac = _frobenius_groups[id]
   R = ArbField(64, cached = false)
-  res = AnticNumberField[]
+  res = AbsSimpleNumField[]
   maxB = ZZRingElem(1)
   reldeg = prod(invfac)
   k = 1

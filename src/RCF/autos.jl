@@ -71,7 +71,7 @@ function frobenius_easy(p::NfOrdIdl, C::ClassField)
   return A(res)
 end
 
-elem_type(::Type{Hecke.NfMorSet{NfRelNS{nf_elem}}}) = Hecke.NumFieldMor{NfRelNS{nf_elem}, NfRelNS{nf_elem}}
+elem_type(::Type{Hecke.NfMorSet{NfRelNS{AbsSimpleNumFieldElem}}}) = Hecke.NumFieldMor{NfRelNS{AbsSimpleNumFieldElem}, NfRelNS{AbsSimpleNumFieldElem}}
 
 @doc raw"""
     frobenius_map(C::ClassField)
@@ -296,7 +296,7 @@ end
 
 function rel_auto(A::ClassField)
   number_field(A)
-  aut = Vector{morphism_type(NfRel{nf_elem})}(undef, length(A.cyc))
+  aut = Vector{morphism_type(NfRel{AbsSimpleNumFieldElem})}(undef, length(A.cyc))
   for i = 1:length(aut)
     aut[i] = rel_auto(A.cyc[i])
   end
@@ -304,7 +304,7 @@ function rel_auto(A::ClassField)
   g = gens(K)
   Aut = Vector{morphism_type(K)}(undef, length(aut))
   for i = 1:length(aut)
-    imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(aut))
+    imgs = Vector{NfRelNSElem{AbsSimpleNumFieldElem}}(undef, length(aut))
     for j = 1:length(imgs)
       if j == i
         imgs[j] = image_primitive_element(aut[i]).data(g[j])
@@ -367,10 +367,10 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   checkAuto = get_assertion_level(:ClassField) > 0
 
   # I call number field because to extend the automorphism I need the defining polynomials
-  all_imgs = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
+  all_imgs = Vector{Vector{NfRelNSElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   #Initialize the array
   for i=1:length(autos)
-    all_imgs[i] = Vector{NfRelNSElem{nf_elem}}(undef, length(A.cyc))#[L() for i=1:length(A.cyc)]
+    all_imgs[i] = Vector{NfRelNSElem{AbsSimpleNumFieldElem}}(undef, length(A.cyc))#[L() for i=1:length(A.cyc)]
   end
   lG = gens(L)
   #P-Sylow subgroups are invariant, I can reduce to the prime power case.
@@ -390,7 +390,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
     end
     #I need to embed Ap in L
     Ap = parent(imgs[1][1])
-    emb = hom(Ap, L, NfRelNSElem{nf_elem}[lG[indices[i]] for i = 1:length(indices)], check = checkAuto)
+    emb = hom(Ap, L, NfRelNSElem{AbsSimpleNumFieldElem}[lG[indices[i]] for i = 1:length(indices)], check = checkAuto)
     for j = 1:length(autos)
       for i = 1:length(imgs[j])
         all_imgs[j][indices[i]] = emb(imgs[j][i])
@@ -483,7 +483,7 @@ function find_frob(A::ClassField_pp)
 end
 
 #Finds prime such that the Frobenius automorphisms generate the automorphism group of the kummer extension
-function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{nf_elem, AnticNumberField}}}, coprime_to::ZZRingElem, idx::Int = 1)
+function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}, coprime_to::ZZRingElem, idx::Int = 1)
   K = base_field(KK)
   O = maximal_order(K)
   els = GrpAbFinGenElem[]
@@ -539,20 +539,20 @@ end
 #extension of automorphisms in the case of extensions of exponent 2
 function extend_aut2(A::ClassField, autos::Vector{NfToNfMor})
   Cp = [x for x in A.cyc if degree(x) % 2 == 0]
-  autos_extended = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
+  autos_extended = Vector{Vector{NfRelNSElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
   if length(Cp) == 1
     for i = 1:length(autos)
       fl, el = is_power(autos[i](Cp[1].a)*inv(Cp[1].a), 2)
       @assert fl
-      autos_extended[i] = NfRelNSElem{nf_elem}[AA(evaluate(el))*gAA[1]]
+      autos_extended[i] = NfRelNSElem{AbsSimpleNumFieldElem}[AA(evaluate(el))*gAA[1]]
     end
     return autos_extended
   end
   KK = kummer_extension([2 for i = 1:length(Cp)], [x.a for x in Cp])
-  act_on_gens = Vector{Vector{FacElem{nf_elem, AnticNumberField}}}(undef, length(KK.gen))
+  act_on_gens = Vector{Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(KK.gen))
   for i = 1:length(KK.gen)
-    act_on_gen_i = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(autos))
+    act_on_gen_i = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, length(autos))
     for j = 1:length(autos)
       act_on_gen_i[j] = FacElem(Dict(autos[j](ke) => v for (ke, v) in KK.gen[i]))
     end
@@ -561,7 +561,7 @@ function extend_aut2(A::ClassField, autos::Vector{NfToNfMor})
   frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
-    images_KK = Vector{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}}(undef, length(Cp))
+    images_KK = Vector{Tuple{GrpAbFinGenElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(Cp))
     for i = 1:length(Cp)
       fl, coord, rt = _find_embedding(KK, act_on_gens[i][w], 2, frob_gens)
       @assert fl
@@ -569,7 +569,7 @@ function extend_aut2(A::ClassField, autos::Vector{NfToNfMor})
     end
 
     #Now, I can define the automorphism on AA
-    images_K = Vector{NfRelNSElem{nf_elem}}(undef, length(images_KK))
+    images_K = Vector{NfRelNSElem{AbsSimpleNumFieldElem}}(undef, length(images_KK))
     for i = 1:length(images_K)
       s = AA(evaluate(images_KK[i][2]))
       for j = 1:length(Cp)
@@ -587,9 +587,9 @@ end
 function extend_generic(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   A, gA = number_field([c.A.pol for c in Cp], check = false)
-  rts = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
+  rts = Vector{Vector{NfRelNSElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   for i = 1:length(autos)
-    imgs = Vector{NfRelNSElem{nf_elem}}(undef, length(Cp))
+    imgs = Vector{NfRelNSElem{AbsSimpleNumFieldElem}}(undef, length(Cp))
     for j = 1:length(gA)
       pol = map_coefficients(autos[i], Cp[j].A.pol)
       imgs[j] = roots(A, pol)[1]
@@ -717,13 +717,13 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
 
   #Now, I can compute the corresponding Kummer extension over the big cyclotomic field.
   exps = Vector{Int}(undef, length(Cp))
-  gens = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(Cp))
+  gens = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, length(Cp))
   for i = 1:length(Cp)
     if degree(Cp[i]) == d
       gens[i] = Cp[i].a
       exps[i] = Cp[i].o
     else
-      D = Dict{nf_elem, ZZRingElem}()
+      D = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
       for (ke,v) in Cp[i].a
         D[abs_emb[i](ke)] = v
       end
@@ -745,11 +745,11 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
 
   # I want extend the automorphisms to KK
   # First, I find a set of primes such that their Frobenius generates the Galois group of KK
-  act_on_gens = Vector{Vector{FacElem{nf_elem, AnticNumberField}}}(undef, length(KK.gen))
+  act_on_gens = Vector{Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(KK.gen))
   for i = 1:length(KK.gen)
-    act_on_gen_i = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(autos))
+    act_on_gen_i = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, length(autos))
     for j = 1:length(autos)
-      D1 = Dict{nf_elem, ZZRingElem}()
+      D1 = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
       for (ke, v) in KK.gen[i]
         D1[Autos_abs[j](ke)] = v
       end
@@ -834,7 +834,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
 
 
     KK = kummer_extension(Int[x[3] for x = ng],
-                          FacElem{nf_elem, AnticNumberField}[x[2] for x = ng])
+                          FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[x[2] for x = ng])
     K, gK = number_field(KK)
     #I need the inclusions of the single extensions Cp[i].K in the new K
     incs = Vector{NfRelToNfRelNSMor_nf_elem}(undef, length(Cp))
@@ -848,11 +848,11 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
       incs[i] = hom(Cp[i].K, K, abs_emb[i], gK[i]^numerator(ng[i][4][i])*prod(gK[l]^(divexact(exps[l], denominator(ng[i][4][l]))*numerator(-ng[i][4][l])) for l=1:length(exps) if l != i), check = checkAuto)
     end
 
-    act_on_gens = Vector{Vector{FacElem{nf_elem, AnticNumberField}}}(undef, length(KK.gen))
+    act_on_gens = Vector{Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(KK.gen))
     for i = 1:length(KK.gen)
-      act_on_gen_i = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(autos))
+      act_on_gen_i = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, length(autos))
       for j = 1:length(autos)
-        D1 = Dict{nf_elem, ZZRingElem}()
+        D1 = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
         for (ke, v) in KK.gen[i]
           D1[Autos_abs[j](ke)] = v
         end
@@ -866,7 +866,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
   autos_extended = Vector{morphism_type(K, K)}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
-    images_KK = Vector{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}}(undef, length(KK.gen))
+    images_KK = Vector{Tuple{GrpAbFinGenElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(KK.gen))
     for i = 1:length(KK.gen)
       fl, coord_img_emb, rt_img_emb = _find_embedding(KK, act_on_gens[i][w], Int(order(KK.AutG[i])), frob_gens)
       @assert fl
@@ -874,7 +874,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NfToNfMor}, p::ZZRingElem)
     end
 
     #Now, I can define the automorphism on K
-    images_K = Vector{NfRelNSElem{nf_elem}}(undef, length(images_KK))
+    images_K = Vector{NfRelNSElem{AbsSimpleNumFieldElem}}(undef, length(images_KK))
     for i = 1:length(images_K)
       s = K(evaluate(images_KK[i][2]))
       for j = 1:length(images_K)
@@ -898,13 +898,13 @@ end
 
 #This function restricts the automorphisms in autos to the number field generated by the class fields in Cp
 # incs are the inclusions of the class fields in K
-function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos::Vector{NfRelNSToNfRelNSMor_nf_elem}, incs::Vector{NfRelToNfRelNSMor_nf_elem}) where {S, T}
+function restriction(K::NfRelNS{AbsSimpleNumFieldElem}, Cp::Vector{ClassField_pp{S, T}}, autos::Vector{NfRelNSToNfRelNSMor_nf_elem}, incs::Vector{NfRelToNfRelNSMor_nf_elem}) where {S, T}
 
   C = cyclotomic_extension(base_field(Cp[1]), maximum(degree(x) for x in Cp))
   #First, I compute the images in K of the generators of the class fields
   # and their images under the automorphisms
   gK = gens(K)
-  all_pe = Vector{Tuple{NfRelNSElem{nf_elem}, Vector{NfRelNSElem{nf_elem}}}}(undef, length(Cp))
+  all_pe = Vector{Tuple{NfRelNSElem{AbsSimpleNumFieldElem}, Vector{NfRelNSElem{AbsSimpleNumFieldElem}}}}(undef, length(Cp))
   for j = 1:length(Cp)
     pe = incs[j](Cp[j].pe)
     tau_pe = Vector{typeof(pe)}(undef, length(autos))
@@ -942,9 +942,9 @@ function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos
 
   b_AA = basis(AA)
   Mk = _expand(M, pseudo_inv(C.mp[1]))
-  all_im = Vector{Vector{NfRelNSElem{nf_elem}}}(undef, length(autos))
+  all_im = Vector{Vector{NfRelNSElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   for i = 1:length(autos)
-    all_imCp = Vector{NfRelNSElem{nf_elem}}(undef, length(Cp))
+    all_imCp = Vector{NfRelNSElem{AbsSimpleNumFieldElem}}(undef, length(Cp))
     for jj=1:length(Cp)
       N = SRow(all_pe[jj][2][i])
       Nk = _expand(N, pseudo_inv(C.mp[1]))
@@ -959,7 +959,7 @@ function restriction(K::NfRelNS{nf_elem}, Cp::Vector{ClassField_pp{S, T}}, autos
 end
 
 #comutes an ord_el-th root of el in KK. el in base_field(KK)
-function _find_embedding(KK::KummerExt, el::FacElem{nf_elem, AnticNumberField}, ord_el::Int, frob_gens::Vector{NfOrdIdl})
+function _find_embedding(KK::KummerExt, el::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, ord_el::Int, frob_gens::Vector{NfOrdIdl})
   @assert base_ring(el) == base_field(KK)
   #Compute the action of the Frobenius on the generators and on tau(a)
   imgs_rhs = Vector{Int}(undef, length(frob_gens))
@@ -1195,7 +1195,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
 
       #=
 
-    im = NfRelNSElem{nf_elem}[]
+    im = NfRelNSElem{AbsSimpleNumFieldElem}[]
     i = 1
     j = 1
     while j<=length(A.cyc)
@@ -1225,7 +1225,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
 end
 
 #M is over K, mp: K -> K/k, expand M into a matrix over k
-function _expand(M::Generic.Mat{nf_elem}, mp::Map)
+function _expand(M::Generic.Mat{AbsSimpleNumFieldElem}, mp::Map)
   Kr = domain(mp)
   Ka = codomain(mp)
   k = base_field(Kr)
@@ -1242,7 +1242,7 @@ function _expand(M::Generic.Mat{nf_elem}, mp::Map)
   return N
 end
 
-function _expand(M::SRow{nf_elem}, mp::Map)
+function _expand(M::SRow{AbsSimpleNumFieldElem}, mp::Map)
   Kr = domain(mp)
   k = base_field(Kr)
   d = degree(Kr)
@@ -1260,7 +1260,7 @@ function _expand(M::SRow{nf_elem}, mp::Map)
   return sr
 end
 
-function _expand(M::SMat{nf_elem}, mp::Map)
+function _expand(M::SMat{AbsSimpleNumFieldElem}, mp::Map)
   Kr = domain(mp)
   k = base_field(Kr)
   N = sparse_matrix(k)

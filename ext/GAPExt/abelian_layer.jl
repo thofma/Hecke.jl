@@ -135,7 +135,7 @@ function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::
       end
     end
   end
-  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(class_fields))
+  fields = Vector{Tuple{Hecke.NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(class_fields))
   for i = 1:length(class_fields)
     @vprintln :Fields 1 "\e[1FComputing class field $(i) /$(length(class_fields))"
     C = class_fields[i]
@@ -195,7 +195,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
   K = F.field
   O = maximal_order(K)
   n = prod(gtype)
-  inf_plc = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
+  inf_plc = Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}()
   if abs(discriminant(O))^n > absbound
     return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
   end
@@ -292,7 +292,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
 
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-    return Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[]
+    return Tuple{Hecke.NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[]
   end
   K = base_ring(class_fields[1])
   divisors_of_n = collect(keys(grp_to_be_checked))
@@ -341,10 +341,10 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
   end
   it = findall(right_grp)
   if isempty(it)
-    return Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
+    return Vector{Tuple{NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
   end
   if length(divisors_of_n) == 1 || is_coprime(degree(class_fields[it[1]]), degree(K))
-    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
+    fields = Vector{Tuple{NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
     ind = 1
     for i in it
       res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
@@ -356,7 +356,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
     end
   else
     #I need to check the isomorphism class of the Galois group
-    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
+    fields = Vector{Tuple{NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
     for i in it
       res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
       for j = 1:length(divisors_of_n)
@@ -383,7 +383,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
     use_brauer = false
   end
 
-  fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[]
+  fields = Tuple{Hecke.NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
 
   if !use_brauer
@@ -416,7 +416,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
   end
   L, gL = number_field(pols, cached = false, check = false)
   autL = Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}()
-  imgs_auts_base_field = Vector{Vector{Hecke.NfRelNSElem{nf_elem}}}(undef, length(autos))
+  imgs_auts_base_field = Vector{Vector{Hecke.NfRelNSElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   for i = 1:length(autos)
     imgs_auts_base_field[i] = gens(L)
   end
@@ -455,7 +455,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
 
 end
 
-function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Vector{NfToNfMor})
+function set_up_cycl_ext(K::AbsSimpleNumField, n::Int, autK::Vector{NfToNfMor})
   fac = factor(n)
   for (p, v) in fac
     e = Int(p)^v
@@ -556,7 +556,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   end
   it = findall(right_grp)
   if isempty(it)
-    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
+    return Vector{Tuple{Hecke.NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
   end
   use_brauer = true
   if !is_normal_subfield || !iszero(mod(order(torsion_unit_group(base_ring(new_class_fields[it[1]]))[1]), exponent(new_class_fields[it[1]])))
@@ -595,7 +595,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     end
   end
   it = findall(right_grp)
-  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
+  fields = Vector{Tuple{Hecke.NfRelNS{AbsSimpleNumFieldElem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
   ind = 1
   for i in it
     C = class_fields[i]
@@ -764,7 +764,7 @@ function create_sub(ss, iso, PermGAP, auts, K)
   return mL
 end
 
-function compute_subfields(K::AnticNumberField, E, H, S)
+function compute_subfields(K::AbsSimpleNumField, E, H, S)
 
   proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(E, H)
   Hn = GAP.Globals.ImagesSource(proj)
@@ -852,12 +852,12 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       Cpp.rayclassgroupmap = C.rayclassgroupmap
       Cpp.degree = d
       #Then, the fac elem corresponding to the generator of the Kummer Extension
-      Cpp.a = FacElem(Dict{nf_elem, ZZRingElem}(D[d](x) => v for (x, v) in Ccyc.a))
+      Cpp.a = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}(D[d](x) => v for (x, v) in Ccyc.a))
       #Now, the Kummer extension
       Lzeta = codomain(D[d])
       Lt = polynomial_ring(Lzeta, "t", cached = false)[1]
       d1 = degree(Ccyc.K)
-      coeffs = Vector{nf_elem}(undef, d1 + 1)
+      coeffs = Vector{AbsSimpleNumFieldElem}(undef, d1 + 1)
       coeffs[1] = D[d](coeff(Ccyc.K.pol, 0))
       for s = 2:length(coeffs)-1
         coeffs[s] = zero(Lzeta)

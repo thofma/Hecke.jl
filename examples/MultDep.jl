@@ -3,7 +3,7 @@ module MultDep
 using Hecke
 import Base.*
 
-function multiplicative_group_mod_units_fac_elem(A::Vector{nf_elem}; use_max_ord::Bool = false)
+function multiplicative_group_mod_units_fac_elem(A::Vector{AbsSimpleNumFieldElem}; use_max_ord::Bool = false)
   k = parent(A[1])
   @assert all(i->parent(i) === k, A)
   if use_max_ord
@@ -30,8 +30,8 @@ function multiplicative_group_mod_units_fac_elem(A::Vector{nf_elem}; use_max_ord
   return h, t, cp
 end
 
-function units(h::SMat, t, b::Vector{nf_elem})
-  u = FacElem{nf_elem, AnticNumberField}[]
+function units(h::SMat, t, b::Vector{AbsSimpleNumFieldElem})
+  u = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   for i=nrows(h)+1:length(b)
     k = [ZZRingElem(0) for i=b]
     k[i] = 1
@@ -43,7 +43,7 @@ function units(h::SMat, t, b::Vector{nf_elem})
   return u
 end
 
-function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Vector{FacElem{nf_elem, AnticNumberField}})
+function unit_group_mod_torsion_fac_elem(O::NfAbsOrd, u::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   U = Hecke._unit_group_init(O)
   s = signature(O)
   r = s[1] + s[2] - 1
@@ -99,7 +99,7 @@ function *(O1::NfAbsOrd, O2::NfAbsOrd)
     Hecke.elem_to_mat_row!(M, i, z, a)
   end
   h = hnf(M)
-  b = nf_elem[]
+  b = AbsSimpleNumFieldElem[]
   for i=1:n
     push!(b, Hecke.elem_from_mat_row(k, h, i, d))
   end
@@ -121,7 +121,7 @@ mutable struct GeIdeal
       return new(extend(a, o))
     end
   end
-  function GeIdeal(a::nf_elem)
+  function GeIdeal(a::AbsSimpleNumFieldElem)
     o = Hecke.any_order(parent(a))
     d = denominator(a, o)
     return new(o(a*d)*o), new(o(d)*o)
@@ -170,7 +170,7 @@ end
 
 Hecke.norm(a::GeIdeal) = norm(a.a)
 
-function coprime_base(A::Vector{nf_elem})
+function coprime_base(A::Vector{AbsSimpleNumFieldElem})
   c = Vector{GeIdeal}()
   for a = A
     n,d = GeIdeal(a)
@@ -180,8 +180,8 @@ function coprime_base(A::Vector{nf_elem})
   return coprime_base(c)
 end
 
-function coprime_base(A::Vector{nf_elem}, O::NfAbsOrd)
-  c = Vector{NfAbsOrdIdl{AnticNumberField, nf_elem}}()
+function coprime_base(A::Vector{AbsSimpleNumFieldElem}, O::NfAbsOrd)
+  c = Vector{NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   for a = A
     n,d = integral_split(a*O)
     isone(n) || push!(c, n)
@@ -191,12 +191,12 @@ function coprime_base(A::Vector{nf_elem}, O::NfAbsOrd)
 end
 
 
-function valuation(a::nf_elem, p::GeIdeal)
+function valuation(a::AbsSimpleNumFieldElem, p::GeIdeal)
   return valuation(a, p.a)
 end
 
 
-function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
+function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
   m = maximum(degree, keys(factor(GF(p), K.pol).fac))
@@ -205,7 +205,7 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
     m = maximum(degree, keys(factor(GF(p), K.pol).fac))
   end
          #experimentally, the runtime is dominated by log
-  u = FacElem{nf_elem, AnticNumberField}[]
+  u = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   prec = 10
 
   r1, r2 = signature(K)
@@ -318,10 +318,10 @@ function mult_syzygies_units(A::Vector{FacElem{nf_elem, AnticNumberField}})
   else
     U = lll(U')
   end
-  return Hecke._transform(vcat(u, FacElem{nf_elem,AnticNumberField}[FacElem(k(1)) for i=length(u)+1:r], [x[1] for x = uu]), U')
+  return Hecke._transform(vcat(u, FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}[FacElem(k(1)) for i=length(u)+1:r], [x[1] for x = uu]), U')
 end
 
-function verify_gamma(a::Vector{FacElem{nf_elem, AnticNumberField}}, g::Vector{ZZRingElem}, v::ZZRingElem)
+function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, g::Vector{ZZRingElem}, v::ZZRingElem)
   #knowing that sum g[i] log(a[i]) == 0 mod v, prove that prod a[i]^g[i] is
   #torsion
   #= I claim N(1-a) > v^n for n the field degree:

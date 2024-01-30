@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc raw"""
-    nf(x::NumFieldOrdIdl) -> AnticNumberField
+    nf(x::NumFieldOrdIdl) -> AbsSimpleNumField
 
 Returns the number field, of which $x$ is an integral ideal.
 """

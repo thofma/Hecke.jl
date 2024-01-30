@@ -79,7 +79,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
           # We better evaluate s here: Some factors may not be integral which can
           # become a problem since the multiplication in A is non-commutative.
           # Also, multiplications and computing inverses in K are cheap.
-          add_partial_solutions!(NC, order_num, Set(p), [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s::FacElem{nf_elem, AnticNumberField})))) for s in sols ])
+          add_partial_solutions!(NC, order_num, Set(p), [ NC.fac_elem_mon(LtoA(KtoL(evaluate(s::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})))) for s in sols ])
         else
           push!(remaining_primes, p)
         end
@@ -89,12 +89,12 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         # Now the primes together, for which have not found a solution yet
         sols = __neq_sunit(ktoK, eltype(primes)[ primes[i] for i in remaining_primes ], Int[ vals2[i] for i in remaining_primes ])
         if !isempty(sols)
-          add_partial_solutions!(NC, order_num, remaining_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(ss::FacElem{nf_elem, AnticNumberField})))) for ss in sols ])
+          add_partial_solutions!(NC, order_num, remaining_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(ss::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})))) for ss in sols ])
         elseif length(remaining_primes) < length(good_primes)
           # If this also failed, we test all primes together
           sols = __neq_sunit(ktoK, [ primes[i] for i in good_primes ], [ vals2[i] for i in good_primes ])
           if !isempty(sols)
-            add_partial_solutions!(NC, order_num, good_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(ss::FacElem{nf_elem, AnticNumberField})))) for ss in sols ])
+            add_partial_solutions!(NC, order_num, good_primes, [ NC.fac_elem_mon(LtoA(KtoL(evaluate(ss::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})))) for ss in sols ])
           end
         end
       end
@@ -408,7 +408,7 @@ end
 ################################################################################
 
 # Let K = base_ring(A). Then this returns the field K(x) and a map to A.
-function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ QQFieldElem, nf_elem, NfRelElem } }
+function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ QQFieldElem, AbsSimpleNumFieldElem, NfRelElem } }
   return _as_subfield(A, x, minpoly(x))
 end
 
@@ -424,7 +424,7 @@ function _as_subfield(A::AbsAlgAss{QQFieldElem}, x::AbsAlgAssElem{QQFieldElem}, 
   return K, NfAbsToAbsAlgAssMor(K, A, M)
 end
 
-function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}, f::PolyRingElem{T}) where { T <: Union{ nf_elem, NfRelElem } }
+function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}, f::PolyRingElem{T}) where { T <: Union{ AbsSimpleNumFieldElem, NfRelElem } }
   s = one(A)
   M = zero_matrix(base_ring(A), degree(f), dim(A))
   elem_to_mat_row!(M, 1, s)

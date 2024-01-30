@@ -107,7 +107,7 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ve
   end
 
   y = 2*summ - (R(d)*(const_pi(R)^2//R(2)) + r*4*const_catalan(R))//logcurval
-  return y::arb
+  return y::ArbFieldElem
 end
 
 function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.0)

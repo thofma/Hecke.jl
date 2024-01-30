@@ -56,11 +56,11 @@
     OK = maximal_order(K)
 
     E31_1_a1 = @inferred EllipticCurve([K(1), a + 1, a, a, K(0)])
-    @test typeof(E31_1_a1) == EllCrv{nf_elem}
+    @test typeof(E31_1_a1) == EllCrv{AbsSimpleNumFieldElem}
 
     # lmfdb: 116.1-a1
     E116_1_a1 = @inferred EllipticCurve([K(1), K(-1), a, -a, K(0)] )
-    @test typeof(E31_1_a1) == EllCrv{nf_elem}
+    @test typeof(E31_1_a1) == EllCrv{AbsSimpleNumFieldElem}
 
     # short example
     Eshort = @inferred EllipticCurve([4, 0])
@@ -151,7 +151,7 @@
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
 
     P = @inferred E116_1_a1([K(0), -K(a)])
-    @test typeof(P) == EllCrvPt{nf_elem}
+    @test typeof(P) == EllCrvPt{AbsSimpleNumFieldElem}
     @test parent(P) == E116_1_a1
     @test @inferred is_finite(P)
     @test @inferred !is_infinite(P)

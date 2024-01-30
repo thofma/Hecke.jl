@@ -296,7 +296,7 @@ const _euler_phi_inverse_maximum =
 
 # One should/could also try to be closer to Algorithm 1
 # in Molin, "On the calculation of roots of unity in a number field"
-function _torsion_group_order_divisor(K::AnticNumberField)
+function _torsion_group_order_divisor(K::AbsSimpleNumField)
 
   if degree(K) <= 250
     upper_bound = _euler_phi_inverse_maximum[degree(K)]
@@ -429,7 +429,7 @@ function _torsion_group_order_divisor(K::NumField)
 end
 
 
-function _torsion_units_gen(K::AnticNumberField)
+function _torsion_units_gen(K::AbsSimpleNumField)
  return get_attribute!(K, :torsion_units) do
   r1, r2 = signature(K)
   if r1 > 0
@@ -460,7 +460,7 @@ function _torsion_units_gen(K::AnticNumberField)
     end
   end
   return ord, gen
- end::Tuple{Int, nf_elem}
+ end::Tuple{Int, AbsSimpleNumFieldElem}
 end
 
 function _torsion_units_gen(K::NumField)

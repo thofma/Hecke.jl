@@ -234,7 +234,7 @@ function AlgAss(f::PolyRingElem)
   return A
 end
 
-function AlgAss(K::AnticNumberField)
+function AlgAss(K::AbsSimpleNumField)
   A = AlgAss(K.pol)
   m = AbsAlgAssToNfAbsMor(A, K, identity_matrix(FlintQQ, dim(A)), identity_matrix(FlintQQ, dim(A)))
   A.maps_to_numberfields = [ (K, m) ]
@@ -824,7 +824,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   return A, OtoA
 end
 
-function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
+function AlgAss(A::Generic.MatRing{T}) where { T <: FieldElem }
   n = A.n
   K = base_ring(A)
   n2 = n^2
@@ -1490,21 +1490,21 @@ end
 Returns the algebra $A = K_1 \times \cdots \times K_k$ and the projection
 maps $A ->> K_i$.
 """
-function direct_product(fields::Vector{AnticNumberField})
+function direct_product(fields::Vector{AbsSimpleNumField})
   return direct_product(fields...)
 end
 
-function direct_product(_field::AnticNumberField, _fields::AnticNumberField...)
+function direct_product(_field::AbsSimpleNumField, _fields::AbsSimpleNumField...)
   fields = (_field, _fields...)
-  algebras = Tuple{AlgAss{QQFieldElem}, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}[ AlgAss(K) for K in fields ]
+  algebras = Tuple{AlgAss{QQFieldElem}, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AbsSimpleNumField, QQMatrix}}[ AlgAss(K) for K in fields ]
   A, proj, inj = direct_product([ B for (B, m) in algebras ], task = :both)
   A.decomposition = [ (algebras[i][1], inj[i]) for i = 1:length(algebras) ]
-  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}(undef, length(fields))
+  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AbsSimpleNumField, QQMatrix}}(undef, length(fields))
   for i = 1:length(fields)
     # Assumes, that the map algebras[i] -> K is given by the identity matrix
     maps_to_fields[i] = AbsAlgAssToNfAbsMor(A, fields[i], proj[i].mat, proj[i].imat)
   end
-  A.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
+  A.maps_to_numberfields = Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AbsSimpleNumField, QQMatrix}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
   return A, maps_to_fields
 end
 

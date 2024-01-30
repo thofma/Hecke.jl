@@ -17,11 +17,11 @@ mutable struct CommutatorAlgebra
   invariant_factors::Vector{Vector{QQPolyRingElem}}
   invariant_factors_factored::Vector{Vector{QQPolyRingElem}}
   invariant_factors_grouped::Vector{Tuple{QQPolyRingElem,
-                                          AnticNumberField,
+                                          AbsSimpleNumField,
                                           Vector{Tuple{Int, Int, Int}}}}
   invariant_factors_grouped_grouped::Vector{Vector{Tuple{Int, Vector{Tuple{Int, Int}}}}}
   irreducible_factors::Vector{Tuple{QQPolyRingElem,
-                                    AnticNumberField,
+                                    AbsSimpleNumField,
                                     Vector{Tuple{Int, Int}}}}
 
   function CommutatorAlgebra(A)
@@ -67,7 +67,7 @@ function _compute_decomposition!(C::CommutatorAlgebra)
   invariant_factors_factored = Vector{Vector{QQPolyRingElem}}()
 
   invariant_factors_grouped = Vector{Tuple{QQPolyRingElem,
-                                           AnticNumberField,
+                                           AbsSimpleNumField,
                                            Vector{Tuple{Int, Int, Int}}}}()
 
   invariant_factors_grouped_grouped = Vector{Tuple{Int,
@@ -231,7 +231,7 @@ end
 
 function _decomposition_type(C::CommutatorAlgebra)
   l = length(C.invariant_factors_grouped)
-  fields = AnticNumberField[]
+  fields = AbsSimpleNumField[]
   degs = Int[]
   for i in 1:l
     for (e, inds) in C.invariant_factors_grouped_grouped[i]
@@ -264,7 +264,7 @@ function _induce_action(C::CommutatorAlgebra, M)
 end
 
 function _induce_action_mod(C::CommutatorAlgebra, N)
-  res = dense_matrix_type(nf_elem)[]
+  res = dense_matrix_type(AbsSimpleNumFieldElem)[]
   ac = _induce_action(C, N)
   for i in 1:length(C.invariant_factors_grouped)
     z = ac[i]
@@ -367,7 +367,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     for i in 1:length(dec)
       BB, mB = dec[i]::Tuple{AlgAss{QQFieldElem},
                              AbsAlgAssMor{AlgAss{QQFieldElem},AlgAss{QQFieldElem},QQMatrix}}
-      local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+      local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = BB.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
     end
@@ -381,7 +381,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     for i in 1:length(dec)
       BB, mB = dec[i]::Tuple{AlgAss{QQFieldElem},
                              AbsAlgAssMor{AlgAss{QQFieldElem},AlgAss{QQFieldElem},QQMatrix}}
-      local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+      local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = BB.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(BB))
     end

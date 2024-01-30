@@ -26,7 +26,7 @@ function relative_ext_in_tower(K::NumField, k::NumField)
   return L, mL
 end
 
-function relative_simple_extension(K::AnticNumberField, k::AnticNumberField)
+function relative_simple_extension(K::AbsSimpleNumField, k::AbsSimpleNumField)
   fl, mp = is_subfield(k, K)
   @assert fl
   return relative_simple_extension(mp)

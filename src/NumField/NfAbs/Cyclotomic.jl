@@ -12,7 +12,7 @@ conductor, return a generating set for the cyclotomic units of $K$.
 julia> K, a = cyclotomic_real_subfield(7);
 
 julia> cyclotomic_units_totally_real(K)
-3-element Vector{nf_elem}:
+3-element Vector{AbsSimpleNumFieldElem}:
  -1
  (z_7 + 1/z_7)^2 - 1
  -(z_7 + 1/z_7)^2 - (z_7 + 1/z_7) + 2
@@ -151,7 +151,7 @@ function cyclotomic_regulator(n::Int, prec::Int; maximal_totally_real::Bool = fa
   if is_prime(n)
     K, = cyclotomic_real_subfield(n, cached = false)
     if degree(K) == 1
-      return regulator(nf_elem[], prec)
+      return regulator(AbsSimpleNumFieldElem[], prec)
     end
     cyc = cyclotomic_units_totally_real(K)
     reg = regulator(cyc[2:end], prec)

@@ -10,7 +10,7 @@
 # ----------
 #
 # If f : K -> * is a map from a number field K, then f is completely determined by
-#   - f(gen(K)), if K is an AnticNumberField
+#   - f(gen(K)), if K is an AbsSimpleNumField
 #   - f(gen(K)), f|_base_field(K), if K is an NfRel
 #   - f(gens(K)), if K is an NfAbsNS
 #   - f(gens(K)), f|_base_field(K), if K is an NfRelNS
@@ -38,10 +38,10 @@
 # The application of a morphism is delegated the MapData* types. They implement
 # an image function, e.g., with signature
 #
-#     image(MapDataFromAnticNumberField{NfRel{nf_elem}}, L, x::nf_elem),
+#     image(MapDataFromAnticNumberField{NfRel{AbsSimpleNumFieldElem}}, L, x::AbsSimpleNumFieldElem),
 #
-# which gets called when f : K -> L is a map from AnticNumberField to
-# NfRel{nf_elem}. (More precisely, f(a) = image(f.image_data, codomain(f), a))
+# which gets called when f : K -> L is a map from AbsSimpleNumField to
+# NfRel{AbsSimpleNumFieldElem}. (More precisely, f(a) = image(f.image_data, codomain(f), a))
 #
 # Note that we do not store L inside explicitly inside MapData* and this
 # becomes a problem if f.isid is true. Thus we need to pass L to the function.
@@ -52,7 +52,7 @@
 # To allow creation of morphism between arbitrary types, we have to be a bit
 # careful when it comes to morphism of relative fields.
 #
-# Assume L/K is an NfRel{nf_elem} and f : L -> L is a morphism, mapping K to K.
+# Assume L/K is an NfRel{AbsSimpleNumFieldElem} and f : L -> L is a morphism, mapping K to K.
 # Before, we were basically storing implicitly f(gen(L)) as well as g : K ->
 # K. Instead we are storing f(gen(L)) as well as f(L(gen(K)). This new system
 # is much more flexible and does not require awkward special cases, which do
@@ -67,7 +67,7 @@
 # This follows now a very easy rule. Let L be any number field. Constructing
 # a homorphism K -> L can be constructed as follows:
 #
-# If K is an AnticNumberField:
+# If K is an AbsSimpleNumField:
 #   hom(K, L, ::elem_type(L))
 # If K is an NfAbsNS:
 #   hom(K, L, ::Vector{elem_type(L)}
@@ -76,7 +76,7 @@
 #     - a homomorphism base_field(K) -> L
 #     - data defining a homomorphism base_field(K) -> L
 #       (e.g., to support
-#        hom(::NfRel{nf_elem}, AnticNumberField, nf_elem, nf_elem))
+#        hom(::NfRel{AbsSimpleNumFieldElem}, AbsSimpleNumField, AbsSimpleNumFieldElem, AbsSimpleNumFieldElem))
 #     - a homorphism base_field(K) -> base_field(L)
 #   hom(K, L, ::elem_type(L))
 #     - this assumes that the base_field of K embeds naturally into L
@@ -85,7 +85,7 @@
 #     - a homomorphism base_field(K) -> L
 #     - data defining a homomorphism base_field(K) -> L
 #       (e.g., to support
-#        hom(::NfRelNS{nf_elem}, AnticNumberField, nf_elem, Vector{nf_elem}))
+#        hom(::NfRelNS{AbsSimpleNumFieldElem}, AbsSimpleNumField, AbsSimpleNumFieldElem, Vector{AbsSimpleNumFieldElem}))
 #     - a homorphism base_field(K) -> base_field(L)
 #   hom(K, L, ::Vector{elem_type(L)})
 #     - this assumes that the base_field of K embeds naturally into L
@@ -183,7 +183,7 @@ end
 #
 ################################################################################
 
-base_field_type(::AnticNumberField) = QQField
+base_field_type(::AbsSimpleNumField) = QQField
 
 base_field_type(::NfAbsNS) = QQField
 
@@ -224,7 +224,7 @@ end
 #
 ################################################################################
 
-# From AnticNumberField into something
+# From AbsSimpleNumField into something
 mutable struct MapDataFromAnticNumberField{T}
   prim_image::T
   isid::Bool
@@ -243,9 +243,9 @@ mutable struct MapDataFromAnticNumberField{T}
 end
 
 # Helper functions to create the type
-map_data_type(K::AnticNumberField, L::Union{NumField, QQField, Ring}) = map_data_type(AnticNumberField, typeof(L))
+map_data_type(K::AbsSimpleNumField, L::Union{NumField, QQField, Ring}) = map_data_type(AbsSimpleNumField, typeof(L))
 
-map_data_type(::Type{AnticNumberField}, T::Type{S}) where {S <: Union{NumField, QQField, Ring}} = MapDataFromAnticNumberField{elem_type(T)}
+map_data_type(::Type{AbsSimpleNumField}, T::Type{S}) where {S <: Union{NumField, QQField, Ring}} = MapDataFromAnticNumberField{elem_type(T)}
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromAnticNumberField{T},
@@ -260,7 +260,7 @@ function _isequal(K, L, u::MapDataFromAnticNumberField{T},
 end
 
 # Image function
-function image(f::MapDataFromAnticNumberField, L, y::nf_elem)
+function image(f::MapDataFromAnticNumberField, L, y::AbsSimpleNumFieldElem)
   f.isid && return L(y)
   z = parent(defining_polynomial(parent(y)))(y)
   return evaluate(z, f.prim_image)
@@ -268,9 +268,9 @@ end
 
 # Functions to create and validate the data
 #
-map_data(K::AnticNumberField, L, ::Bool) = MapDataFromAnticNumberField{elem_type(L)}(true)
+map_data(K::AbsSimpleNumField, L, ::Bool) = MapDataFromAnticNumberField{elem_type(L)}(true)
 
-function map_data(K::AnticNumberField, L, x::RingElement; check = true)
+function map_data(K::AbsSimpleNumField, L, x::RingElement; check = true)
   if parent(x) === L
     xx = x
   else
@@ -285,7 +285,7 @@ function map_data(K::AnticNumberField, L, x::RingElement; check = true)
   return MapDataFromAnticNumberField{elem_type(L)}(xx)
 end
 
-function map_data(K::AnticNumberField, L, g::NumFieldMor; check = true)
+function map_data(K::AbsSimpleNumField, L, g::NumFieldMor; check = true)
   if check
     K !== domain(g) && error("Data does not define a morphism")
   end
@@ -689,21 +689,21 @@ morphism_type(::Type{S}, ::Type{T}) where {S <: NumField, T <: NumField} = NumFi
 #
 ################################################################################
 
-const NfToNfMor = morphism_type(AnticNumberField, AnticNumberField)
+const NfToNfMor = morphism_type(AbsSimpleNumField, AbsSimpleNumField)
 
 const NfAbsNSToNfAbsNS = morphism_type(NfAbsNS, NfAbsNS)
 
-const NfAbsToNfAbsNS = morphism_type(AnticNumberField, NfAbsNS)
+const NfAbsToNfAbsNS = morphism_type(AbsSimpleNumField, NfAbsNS)
 
-const NfToNfRel = morphism_type(AnticNumberField, NfRel{nf_elem})
+const NfToNfRel = morphism_type(AbsSimpleNumField, NfRel{AbsSimpleNumFieldElem})
 
-const NfRelToNfRelMor_nf_elem_nf_elem = morphism_type(NfRel{nf_elem}, NfRel{nf_elem})
+const NfRelToNfRelMor_nf_elem_nf_elem = morphism_type(NfRel{AbsSimpleNumFieldElem}, NfRel{AbsSimpleNumFieldElem})
 
-const NfRelToNf = morphism_type(NfRel{nf_elem}, AnticNumberField)
+const NfRelToNf = morphism_type(NfRel{AbsSimpleNumFieldElem}, AbsSimpleNumField)
 
-const NfRelNSToNfRelNSMor_nf_elem = morphism_type(NfRelNS{nf_elem}, NfRelNS{nf_elem})
+const NfRelNSToNfRelNSMor_nf_elem = morphism_type(NfRelNS{AbsSimpleNumFieldElem}, NfRelNS{AbsSimpleNumFieldElem})
 
-const NfRelToNfRelNSMor_nf_elem = morphism_type(NfRel{nf_elem}, NfRelNS{nf_elem})
+const NfRelToNfRelNSMor_nf_elem = morphism_type(NfRel{AbsSimpleNumFieldElem}, NfRelNS{AbsSimpleNumFieldElem})
 
 ################################################################################
 #
@@ -711,7 +711,7 @@ const NfRelToNfRelNSMor_nf_elem = morphism_type(NfRel{nf_elem}, NfRelNS{nf_elem}
 #
 ################################################################################
 
-function image_primitive_element(f::NumFieldMor{AnticNumberField})
+function image_primitive_element(f::NumFieldMor{AbsSimpleNumField})
   if f.image_data.isid
     return codomain(f)(gen(domain(f)))
   end
@@ -826,12 +826,12 @@ function inv(f::NumFieldMor{S, T}) where {S, T}
   return g
 end
 
-# into AnticNumberField
-function _compute_inverse_data(f#= image data =#, K, L::AnticNumberField)
+# into AbsSimpleNumField
+function _compute_inverse_data(f#= image data =#, K, L::AbsSimpleNumField)
   return _compute_inverse_data(f#= image data =#, K, L, L)
 end
 
-function _compute_inverse_data(f#= image data =#, K, LL, L::AnticNumberField)
+function _compute_inverse_data(f#= image data =#, K, LL, L::AbsSimpleNumField)
   g = LL(gen(L))
   fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl

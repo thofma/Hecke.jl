@@ -41,11 +41,11 @@
 ################################################################################
 
 @doc raw"""
-    order(P::EllCrvPt{nf_elem}) -> ZZRingElem
+    order(P::EllCrvPt{AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Returns the order of the point $P$ or $0$ if the order is infinite.
 """
-function order(P::EllCrvPt{T}) where T<:Union{nf_elem, QQFieldElem}
+function order(P::EllCrvPt{T}) where T<:Union{AbsSimpleNumFieldElem, QQFieldElem}
   if T==QQFieldElem
     N = 12
   else
@@ -75,7 +75,7 @@ end
 
 Returns whether the point $P$ is a torsion point.
 """
-function is_torsion_point(P::EllCrvPt{T}) where T <: Union{nf_elem,QQFieldElem}
+function is_torsion_point(P::EllCrvPt{T}) where T <: Union{AbsSimpleNumFieldElem,QQFieldElem}
   o = order(P)
   return o != 0
 end
@@ -342,14 +342,14 @@ end
 ################################################################################
 
 @doc raw"""
-    torsion_bound(E::EllCrv{nf_elem}, n::Int) -> ZZRingElem
+    torsion_bound(E::EllCrv{AbsSimpleNumFieldElem}, n::Int) -> ZZRingElem
 
 
 Bound the order of the torsion subgroup of $E by considering
 the order of the reduction of $E$ modulo $n$ distinct primes
 with good reduction
 """
-function torsion_bound(E::EllCrv{nf_elem}, n::Int)
+function torsion_bound(E::EllCrv{AbsSimpleNumFieldElem}, n::Int)
   K = base_field(E)
   R = ring_of_integers(K)
   badp = bad_primes(E)
@@ -381,12 +381,12 @@ end
 
 #Adapted from Sage: ell_generic.py
 @doc raw"""
-    pr_torsion_basis(E::EllCrv{nf_elem}, p::ZZRingElem, r = Int) -> Vector{EllCrvPt}
+    pr_torsion_basis(E::EllCrv{AbsSimpleNumFieldElem}, p::ZZRingElem, r = Int) -> Vector{EllCrvPt}
 
 Compute a basis for the p-power torsion subgroup. When r is given the algorithm stops searching after
 having found a basis that spans p^r points.
 """
-function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf_elem, QQFieldElem}
+function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{AbsSimpleNumFieldElem, QQFieldElem}
 
   if !is_prime(p)
     error("p should be a prime number")
@@ -513,8 +513,8 @@ end
 #Returns [m, n] with m >n. This is inconsistent with the way torsion_structure
 #returns elements for EllCrv over QQ.
 @doc raw"""
-    torsion_structure(E::EllCrv{nf_elem}) -> (A::Vector{ZZRingElem},
-                                           B::Vector{EllCrvPt{nf_elem}}
+    torsion_structure(E::EllCrv{AbsSimpleNumFieldElem}) -> (A::Vector{ZZRingElem},
+                                           B::Vector{EllCrvPt{AbsSimpleNumFieldElem}}
 
 Compute the structure of the rational torsion group of an elliptic curve $E$.
 Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
@@ -523,7 +523,7 @@ $\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
 And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
 `B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
 """
-function torsion_structure(E::EllCrv{nf_elem})
+function torsion_structure(E::EllCrv{AbsSimpleNumFieldElem})
 
   T1 = T2 = infinity(E)
   k1 = k2 = ZZRingElem(1)

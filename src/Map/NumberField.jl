@@ -92,11 +92,11 @@ Base.copy(f::NfToNfMor) = f
 ################################################################################
 
 @doc raw"""
-     is_normal(K::AnticNumberField) -> Bool
+     is_normal(K::AbsSimpleNumField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
 """
-function is_normal(K::AnticNumberField)
+function is_normal(K::AbsSimpleNumField)
   #Before computing the automorphisms, I split a few primes and check if the
   #splitting behaviour is fine
   c = get_attribute(K, :is_normal)
@@ -116,7 +116,7 @@ function is_normal(K::AnticNumberField)
   end
 end
 
-function is_normal_easy(K::AnticNumberField)
+function is_normal_easy(K::AbsSimpleNumField)
   E = any_order(K)
   p = 1000
   ind = 0
@@ -153,7 +153,7 @@ is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 #
 ################################################################################
 @doc raw"""
-    is_cm_field(K::AnticNumberField) -> Bool, NfToNfMor
+    is_cm_field(K::AbsSimpleNumField) -> Bool, NfToNfMor
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
@@ -202,7 +202,7 @@ function _find_complex_conj(auts::Vector{NfToNfMor})
   return false, id_hom(K)
 end
 
-function is_cm_field_easy(K::AnticNumberField)
+function is_cm_field_easy(K::AbsSimpleNumField)
   E = any_order(K)
   if is_maximal_order_known(K)
     E = maximal_order(K)
@@ -211,12 +211,12 @@ function is_cm_field_easy(K::AnticNumberField)
   g = zero_matrix(FlintZZ, n, n)
   B = basis(E, nf(E))
   prec = 32
-  imgs = Vector{Vector{arb}}(undef, n)
+  imgs = Vector{Vector{ArbFieldElem}}(undef, n)
   for i = 1:n
     imgs[i] = minkowski_map(B[i], prec)
   end
   i = 1
-  t = arb()
+  t = ArbFieldElem()
   while i <= n
     j = i
     while j <= n
@@ -249,7 +249,7 @@ end
 #
 ################################################################################
 
-function _evaluate_mod(f::QQPolyRingElem, a::nf_elem, d::ZZRingElem)
+function _evaluate_mod(f::QQPolyRingElem, a::AbsSimpleNumFieldElem, d::ZZRingElem)
   #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
   if iszero(f)
@@ -388,17 +388,17 @@ end
 ################################################################################
 
 # Embedding of a number field into an algebra over Q.
-mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAbsToAbsAlgAssMor}
-  header::MapHeader{AnticNumberField, S}
+mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, HeckeMap, NfAbsToAbsAlgAssMor}
+  header::MapHeader{AbsSimpleNumField, S}
   mat::QQMatrix
   t::QQMatrix
 
-  function NfAbsToAbsAlgAssMor{S}(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
+  function NfAbsToAbsAlgAssMor{S}(K::AbsSimpleNumField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
     z = new{S}()
     z.mat = M
     z.t = zero_matrix(FlintQQ, 1, degree(K))
 
-    function _image(x::nf_elem)
+    function _image(x::AbsSimpleNumFieldElem)
       for i = 1:degree(K)
         z.t[1, i] = coeff(x, i - 1)
       end
@@ -406,12 +406,12 @@ mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAb
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{AnticNumberField, S}(K, A, _image)
+    z.header = MapHeader{AbsSimpleNumField, S}(K, A, _image)
     return z
   end
 end
 
-function NfAbsToAbsAlgAssMor(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
+function NfAbsToAbsAlgAssMor(K::AbsSimpleNumField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
   return NfAbsToAbsAlgAssMor{S}(K, A, M)
 end
 

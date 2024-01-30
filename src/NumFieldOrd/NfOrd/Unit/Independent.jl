@@ -38,7 +38,7 @@ function _isindependent(x::Vector{T}, p::Int = 32) where T
   rr = r1 + r2
   r = rr - 1 # unit rank
 
-  conlog = Vector{Vector{arb}}(undef, length(x))
+  conlog = Vector{Vector{ArbFieldElem}}(undef, length(x))
 
   # This can be made more memory friendly
   while true

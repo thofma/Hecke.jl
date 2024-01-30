@@ -257,13 +257,13 @@ end
 
 @doc raw"""
     integral_model(E::EllCrv{T}) -> (F::EllCrv{T}, EllCrvIso, EllCrvIso)
-      where T<:Union{QQFieldElem, nf_elem}
+      where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
 Given an elliptic curve $E$ over QQ or a number field $K$, returns an
 isomorphic curve $F$ with model over $\mathcal{O}_K$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
-function integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
+function integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
   mu = lcm(a1, a2, a3, a4, a6)
@@ -271,12 +271,12 @@ function integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
 end
 
 @doc raw"""
-    is_integral_model(E::EllCrv{T}) -> Bool where T<:Union{QQFieldElem, nf_elem}
+    is_integral_model(E::EllCrv{T}) -> Bool where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
 Given an elliptic curve $E$ over QQ or a number field $K$, return
 true if $E$ is an integral model of $E$.
 """
-function is_integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
+function is_integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
   mu = lcm(a1, a2, a3, a4, a6)
@@ -288,12 +288,12 @@ function is_integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
 end
 
 @doc raw"""
-    is_local_integral_model(E::EllCrv{nf_elem}, P::NfOrdIdl) -> Bool
+    is_local_integral_model(E::EllCrv{AbsSimpleNumFieldElem}, P::NfOrdIdl) -> Bool
 
 Given an elliptic curve $E$ over a number field $K$ and a prime ideal, return
 true if $E$ is a local integral model of $E$.
 """
-function is_local_integral_model(E::EllCrv{nf_elem}, P::NfOrdIdl)
+function is_local_integral_model(E::EllCrv{AbsSimpleNumFieldElem}, P::NfOrdIdl)
   return all(Bool[a==0 ||valuation(a, P)>=0 for a in a_invars(E)])
 end
 

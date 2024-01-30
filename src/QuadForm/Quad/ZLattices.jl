@@ -1052,7 +1052,7 @@ function _to_number_field_lattice(L::ZZLat, K, V)
 end
 
 function _to_number_field_lattice(L::ZZLat;
-                                  K::AnticNumberField = rationals_as_number_field()[1],
+                                  K::AbsSimpleNumField = rationals_as_number_field()[1],
                                   V::QuadSpace = quadratic_space(K, gram_matrix(ambient_space(L))))
   return _to_number_field_lattice(L, K, V)
 end

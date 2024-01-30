@@ -125,7 +125,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
 end
 
 # Finds at least n units in the order F.maximal_orders[order_num]
-function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{nf_elem}, T, U, M }
+function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{AbsSimpleNumFieldElem}, T, U, M }
   O = F.maximal_orders[order_num]
   units = Vector{elem_type(O)}()
   while length(units) < n

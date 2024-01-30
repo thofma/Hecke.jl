@@ -38,7 +38,7 @@ function is_kummer_extension(K::SimpleNumField)
   return true
 end
 
-function is_kummer_extension(K::AnticNumberField)
+function is_kummer_extension(K::AbsSimpleNumField)
   if degree(K) != 2
     return false
   end
@@ -99,7 +99,7 @@ julia> Qx, x = QQ["x"];
 julia> K, a = number_field(x^2 - 2, "a");
 
 julia> basis(K)
-2-element Vector{nf_elem}:
+2-element Vector{AbsSimpleNumFieldElem}:
  1
  a
 ```
@@ -154,7 +154,7 @@ degree of $L$.
 """
 absolute_discriminant(::SimpleNumField)
 
-function absolute_discriminant(K::AnticNumberField)
+function absolute_discriminant(K::AbsSimpleNumField)
   return discriminant(K)
 end
 

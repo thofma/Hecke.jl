@@ -276,7 +276,7 @@ function valuation(f::ZZPolyRingElem, p::Union{ZZRingElem, Int})
   return minimum(l)
 end
 
-function valuation(f::Generic.Poly{nf_elem}, p::NfOrdIdl)
+function valuation(f::Generic.Poly{AbsSimpleNumFieldElem}, p::NfOrdIdl)
   l = Int[Int(valuation(coeff(f, i), p)) for i = 0:degree(f) if !iszero(coeff(f, i))]
   return minimum(l)
 end
@@ -436,7 +436,7 @@ function gens_overorder_polygons(O::NfOrd, p::ZZRingElem)
   hnf_modular_eldiv!(B.num, B.den, :lowerleft)
   B = FakeFmpqMat(view(B.num, nrows(B)-degree(K)+1:nrows(B), 1:degree(K)), B.den)
   if !regular
-    elt = Vector{nf_elem}(undef, nrows(B))
+    elt = Vector{AbsSimpleNumFieldElem}(undef, nrows(B))
     for i in 1:nrows(B)
       elt[i] = elem_from_mat_row(K, B.num, i, B.den)
     end

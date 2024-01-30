@@ -20,7 +20,7 @@ fractional_ideal(::NfOrd, ::ZZMatrix, ::ZZRingElem)
 fractional_ideal(::NfOrd, ::FakeFmpqMat)
 fractional_ideal(::NfOrd, ::NfOrdIdl)
 fractional_ideal(::NfOrd, ::NfOrdIdl, ::ZZRingElem)
-fractional_ideal(::NfOrd, ::nf_elem)
+fractional_ideal(::NfOrd, ::AbsSimpleNumFieldElem)
 fractional_ideal(::NfOrd, ::NfOrdElem)
 inv(::NfOrdIdl)
 ```

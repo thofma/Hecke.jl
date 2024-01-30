@@ -183,7 +183,7 @@ function number_field(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool 
   return number_field(f, S, cached = cached, check = check)
 end
 
-function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
+function number_field(::Type{NfAbsNS}, L::NfRelNS{AbsSimpleNumFieldElem})
   @assert degree(base_field(L)) == 1
   K = base_field(L)
   Kx, _ = polynomial_ring(K, "x", cached = false)
@@ -355,7 +355,7 @@ function Nemo.add!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) wher
   return c
 end
 
-function Base.hash(a::NfRelNSElem{nf_elem}, b::UInt)
+function Base.hash(a::NfRelNSElem{AbsSimpleNumFieldElem}, b::UInt)
   return hash(a.data, b)
 end
 

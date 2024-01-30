@@ -3,15 +3,15 @@ abstract type AbelianExt end
 struct ExtendAutoError <: Exception end
 
 mutable struct KummerExt <: AbelianExt
-  zeta::nf_elem
+  zeta::AbsSimpleNumFieldElem
   n::Int
-  gen::Vector{FacElem{nf_elem, AnticNumberField}}
+  gen::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
 
   AutG::GrpAbFinGen
   frob_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
   frob_gens::Tuple{Vector{NfOrdIdl}, Vector{GrpAbFinGenElem}}
-  gen_mod_nth_power::Vector{FacElem{nf_elem, AnticNumberField}}
-  eval_mod_nth::Vector{nf_elem}
+  gen_mod_nth_power::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
+  eval_mod_nth::Vector{AbsSimpleNumFieldElem}
 
   function KummerExt()
     return new()
@@ -34,18 +34,18 @@ end
 mutable struct ClassField_pp{S, T}
   rayclassgroupmap::S
   quotientmap::T
-  a::FacElem{nf_elem, AnticNumberField}#Generator of the Kummer Extension
+  a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}#Generator of the Kummer Extension
 
   sup::Vector{NfOrdIdl} # the support of a - if known
   sup_known::Bool
 
   factored_conductor::Dict{NfOrdIdl, Int}
 
-  K::NfRel{nf_elem} # the target with the roots of unity
-  A::NfRel{nf_elem} # the target
+  K::NfRel{AbsSimpleNumFieldElem} # the target with the roots of unity
+  A::NfRel{AbsSimpleNumFieldElem} # the target
   o::Int # the degree of K - note, in general this is a divisor of the degree of A
   defect::Int # div(degree(A), degree(K)) = div(degree(A), o)
-  pe::NfRelElem{nf_elem} #The image of the generator of A in K
+  pe::NfRelElem{AbsSimpleNumFieldElem} #The image of the generator of A in K
   AutG::Vector{NfRelToNfRelMor_nf_elem_nf_elem}
   AutR::ZZMatrix
   bigK::KummerExt
@@ -65,11 +65,11 @@ end
   quotientmap::T#GrpAbFinGenMap
 
   factored_conductor::Dict{NfOrdIdl, Int}
-  conductor::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
+  conductor::Tuple{NfOrdIdl, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{ZZRingElem,Int}
   cyc::Vector{ClassField_pp{S, T}}
-  A::NfRelNS{nf_elem}
+  A::NfRelNS{AbsSimpleNumFieldElem}
   AbsAutGrpA::Vector{NfRelNSToNfRelNSMor_nf_elem} #The generators for the absolute automorphism
                                                      #group of A
   degree::Int # The degree of the relative extension we are searching for.
@@ -88,7 +88,7 @@ mutable struct RCFCharacter{S, T}
   mGhat::Map
   factored_conductor::Dict{NfOrdIdl, Int}
   conductor::NfOrdIdl
-  conductor_inf_plc::Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}
+  conductor_inf_plc::Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::GrpAbFinGenMap
   charcond::Map #Character directly on the rcf given by the conductor

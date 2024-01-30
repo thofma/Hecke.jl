@@ -208,7 +208,7 @@ function Base.getindex(L::NonSimpleNumField{T}, i::Int) where {T}
   return gen(L, i)
 end
 
-function is_cached(L::AnticNumberField)
+function is_cached(L::AbsSimpleNumField)
   if haskey(Nemo.AnticNumberFieldID, (parent(L.pol), L.pol, L.S))
     return Nemo.AnticNumberFieldID[parent(L.pol), L.pol, L.S] === L
   end
@@ -288,7 +288,7 @@ end
 
 is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
 
-function is_cyclotomic_type(L::Union{AnticNumberField, NfRel})
+function is_cyclotomic_type(L::Union{AbsSimpleNumField, NfRel})
   f = get_attribute(L, :cyclo)::Union{Nothing,Int}
   if f === nothing
     return false, ZZRingElem(1)
@@ -298,7 +298,7 @@ end
 
 is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
 is_quadratic_type(K::NfRel) = false, ZZRingElem(1)
-function is_quadratic_type(L::AnticNumberField)
+function is_quadratic_type(L::AbsSimpleNumField)
   f = get_attribute(L, :show)
   if f === Hecke.show_quad
     return true, numerator(-coeff(L.pol, 0))
@@ -484,7 +484,7 @@ function _appears_as_base_field(K::NumField, L::NumField)
   end
 end
 
-function _appears_as_base_field(K::NumField, ::AnticNumberField)
+function _appears_as_base_field(K::NumField, ::AbsSimpleNumField)
   return false
 end
 

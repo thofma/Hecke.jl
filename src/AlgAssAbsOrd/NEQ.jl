@@ -25,7 +25,7 @@ mutable struct FieldOracle{S, T, U, M}
     z.algebra = A
     z.maximal_orders = orders
 
-    if A isa AbsAlgAss{nf_elem}
+    if A isa AbsAlgAss{AbsSimpleNumFieldElem}
       # basis_pmatrices of orders are not required to be in HNF, so we compute them here
       z.hnf_basis_pmats = Vector{typeof(basis_pmatrix(orders[1], copy = false))}(undef, length(orders))
       for i = 1:length(orders)
@@ -58,7 +58,7 @@ mutable struct FieldOracle{S, T, U, M}
   end
 end
 
-function FieldOracle(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd})
+function FieldOracle(A::AbsAlgAss{AbsSimpleNumFieldElem}, orders::Vector{<: AlgAssRelOrd})
   return FieldOracle{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor}(A, orders)
 end
 
@@ -83,13 +83,13 @@ mutable struct NormCache{S, T, U, M, T2, T3}
   # Only used if S <: AbsAlgAss{QQFieldElem}
   norm_minus_one::Vector{U}
 
-  # These fields are only set if S <: AbsAlgAss{nf_elem}
+  # These fields are only set if S <: AbsAlgAss{AbsSimpleNumFieldElem}
   UktoOk::MapUnitGrp
   GtoUk::Vector{GrpAbFinGenMap}
   GtoUk_surjective::BitVector
   fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbsAlgAss{nf_elem}, T, U, M, T2 <: NfAbsOrdElem, T3}
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbsAlgAss{AbsSimpleNumFieldElem}, T, U, M, T2 <: NfAbsOrdElem, T3}
     primes = collect(keys(factor(a*parent(a))))
     vals = [ valuation(a, p) for p in primes ]
     z = NormCache{S, T, U, M, T2, T3}(A, orders, parent(a), primes, vals)
@@ -105,7 +105,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     return z
   end
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, Ok::NfAbsOrd, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbsAlgAss{nf_elem}, T, U, M, T2, T3 }
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, Ok::NfAbsOrd, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbsAlgAss{AbsSimpleNumFieldElem}, T, U, M, T2, T3 }
     z = new{S, T, U, M, T2, T3}()
     z.algebra = A
     z.maximal_orders = orders
@@ -160,11 +160,11 @@ mutable struct NormCache{S, T, U, M, T2, T3}
   end
 end
 
-function NormCache(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
+function NormCache(A::AbsAlgAss{AbsSimpleNumFieldElem}, orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor, typeof(a), ideal_type(parent(a))}(A, orders, a)
 end
 
-function NormCache(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd}, Ok::NfAbsOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int})
+function NormCache(A::AbsAlgAss{AbsSimpleNumFieldElem}, orders::Vector{<: AlgAssRelOrd}, Ok::NfAbsOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int})
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor, elem_type(Ok), ideal_type(Ok)}(A, orders, Ok, primes, valuations)
 end
 
@@ -442,7 +442,7 @@ end
 # Let S be the set of primes lying over primes.
 # This finds a set of representatives of the S-units of K modulo units of O_K,
 # whose norm has the valuations vals at the primes primes.
-function __neq_sunit(K::AnticNumberField, primes::Vector{ZZRingElem}, vals::Vector{Int})
+function __neq_sunit(K::AbsSimpleNumField, primes::Vector{ZZRingElem}, vals::Vector{Int})
   OK = maximal_order(K)
   primes_in_K = prime_ideals_over(OK, primes)
   class_group(K)

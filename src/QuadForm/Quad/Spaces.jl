@@ -607,10 +607,10 @@ end
 
 #{Computes a quadratic form of dimension Dim and determinant Det that has Hasse invariants -1 at the primes in Finite.
 # The number of negative entries of the i-th real signature is given in Negative[i]}
-function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{<:InfPlc, Int})
+function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, finite::Vector, negative::Dict{<:InfPlc, Int})
   @hassert :Lattice 1 dim >= 1
   @hassert :Lattice 1 !iszero(det)
-  K::AnticNumberField = parent(det)
+  K::AbsSimpleNumField = parent(det)
   inf_plcs = real_places(K)
   @hassert :Lattice 1 length(inf_plcs) == length(negative)
   # All real places must be present
@@ -621,7 +621,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
   if dim == 1
     @hassert :Lattice 1 isempty(finite) # Impossible Hasse invariants
-    return matrix(K, 1, 1, nf_elem[det])
+    return matrix(K, 1, 1, AbsSimpleNumFieldElem[det])
   end
 
   local OK::order_type(K)
@@ -665,8 +665,8 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   k = max(0, dim - maximum(valneg))
   D = elem_type(K)[one(K) for i in 1:k]
   dim = dim - k
-  local D2::Vector{nf_elem}
-  local D::Vector{nf_elem}
+  local D2::Vector{AbsSimpleNumFieldElem}
+  local D::Vector{AbsSimpleNumFieldElem}
   if dim >= 4
     D0, dim, det, finite, negative = _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
     append!(D, D0)
@@ -718,7 +718,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
 
 #  // The binary case
-  a = _find_quaternion_algebra(-det::nf_elem, finite::Vector{NfOrdIdl}, InfPlc[p for (p, n) in negative if n == 2])
+  a = _find_quaternion_algebra(-det::AbsSimpleNumFieldElem, finite::Vector{NfOrdIdl}, InfPlc[p for (p, n) in negative if n == 2])
   push!(D, a)
   push!(D, det * a)
   M = diagonal_matrix(D)
@@ -756,7 +756,7 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
       end
     end
 
-    x = _weak_approximation(V, _signs)::nf_elem
+    x = _weak_approximation(V, _signs)::AbsSimpleNumFieldElem
     s = signs(x)
     #@hassert :Lattice 1 all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
     let negative = negative, dim = dim
@@ -771,8 +771,8 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
     end
   end
   # readjust the invariants
-  local _d::nf_elem
-  local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
+  local _d::AbsSimpleNumFieldElem
+  local _f::Dict{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Int64}
   _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
   PP = append!(support(K(2)*det, OK), finite)::Vector{ideal_type(OK)}
@@ -979,7 +979,7 @@ function _solve_conic_affine(A, B, a)
 
   K = parent(A)
 
-  if K isa AnticNumberField
+  if K isa AbsSimpleNumField
     if degree(K) == 1
       fl, _u1, _w1 = _solve_conic_affine(coeff(A, 0), coeff(B, 0), coeff(a, 0))
       return fl, K(_u1), K(_w1)
@@ -1010,7 +1010,7 @@ function _solve_conic_affine(A, B, a)
       return false, zero(K), zero(K)
     end
 
-    if L isa AnticNumberField
+    if L isa AbsSimpleNumField
       n = evaluate(_n)
     else
       n = _n
@@ -1057,7 +1057,7 @@ function _solve_conic_affine(A, B, a, t)
 
     @hassert :Lattice 1 fl
 
-    if L isa AnticNumberField
+    if L isa AbsSimpleNumField
       n = evaluate(_n)
     else
       n = _n

@@ -12,12 +12,12 @@ function norm_1_generators(A::Vector{NfOrdIdl})
 end
 
 @doc raw"""
-    norm_equation(K::AnticNumerField, a) -> nf_elem
+    norm_equation(K::AnticNumerField, a) -> AbsSimpleNumFieldElem
 
 For $a$ an integer or rational, try to find $T \in K$ s.th.
 $N(T) = a$. Raises an error if unsuccessful.
 """
-function norm_equation(K::AnticNumberField, a)
+function norm_equation(K::AbsSimpleNumField, a)
   fl, s = is_norm(K, a)
   if fl
     return evaluate(s)
@@ -26,25 +26,25 @@ function norm_equation(K::AnticNumberField, a)
 end
 
 @doc raw"""
-    is_norm(K::AnticNumberField, a) -> Bool, nf_elem
+    is_norm(K::AbsSimpleNumField, a) -> Bool, AbsSimpleNumFieldElem
 
 For $a$ an integer or rational, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
 The element will be returned in factored form.
 """
-function is_norm(K::AnticNumberField, a::Integer)
+function is_norm(K::AbsSimpleNumField, a::Integer)
   return is_norm(K, ZZRingElem(a))
 end
-function is_norm(K::AnticNumberField, a::QQFieldElem)
+function is_norm(K::AbsSimpleNumField, a::QQFieldElem)
   fl, s = is_norm(K, numerator(a)*denominator(a)^(degree(K)-1))
   return fl, s * FacElem(Dict(K(denominator(a)) => ZZRingElem(-1)))
 end
-function is_norm(K::AnticNumberField, a::Rational)
+function is_norm(K::AbsSimpleNumField, a::Rational)
   return is_norm(K, QQFieldElem(a))
 end
 
 @doc raw"""
-    is_norm(K::AnticNumberField, a::ZZRingElem; extra::Vector{ZZRingElem}) -> Bool, nf_elem
+    is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}) -> Bool, AbsSimpleNumFieldElem
 
 For a ZZRingElem $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
@@ -52,7 +52,7 @@ In \testtt{extra} one can pass in additional prime numbers that
 are allowed to occur in the solution. This will then be supplemented.
 The element will be returned in factored form.
 """
-function is_norm(K::AnticNumberField, a::ZZRingElem; extra::Vector{ZZRingElem}=ZZRingElem[])
+function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=ZZRingElem[])
   L = lll(maximal_order(K))
   C, mC = narrow_class_group(L)
 #  println("narrow group is : $C")

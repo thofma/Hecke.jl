@@ -1,5 +1,5 @@
 
-function is_norm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
+function is_norm_fac_elem(K::NfRel{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
   Ka, mKa, mkK = collapse_top_layer(K)
   Kas, KasToKa = simplify(Ka)
   Ka = Kas
@@ -24,7 +24,7 @@ function is_norm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
     mq = mq*mmq
   end
 
-  s = Set(ideal_type(order_type(AnticNumberField))[minimum(mkK, I) for I = S])
+  s = Set(ideal_type(order_type(AbsSimpleNumField))[minimum(mkK, I) for I = S])
   #make S relative Galois closed:
   PS = IdealSet(ZKa)
   S = reduce(vcat, Vector{ideal_type(ZKa)}[collect(keys(factor(PS(mkK, p)))) for p = s], init = Vector{ideal_type(ZKa)}())
@@ -53,12 +53,12 @@ function is_norm_fac_elem(K::NfRel{nf_elem}, a::nf_elem)
   return true, FacElem(K, Dict{elem_type(K), ZZRingElem}([image(KasToKa * mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
 end
 
-function is_norm(K::NfRel{nf_elem}, a::nf_elem)
+function is_norm(K::NfRel{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
   fl, s = is_norm_fac_elem(K, a)
   return fl, evaluate(s)
 end
 
-function norm_equation(K::NfRel{nf_elem}, a::nf_elem)
+function norm_equation(K::NfRel{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
   fl, s = is_norm(K, a)
   fl || error("no solution")
   return s

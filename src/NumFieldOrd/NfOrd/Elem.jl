@@ -251,12 +251,12 @@ end
 #
 ################################################################################
 
-function //(x::nf_elem, y::NfOrdElem)
+function //(x::AbsSimpleNumFieldElem, y::NfOrdElem)
   check_parent(x, y.elem_in_nf)
   return x//y.elem_in_nf
 end
 
-function //(y::NfOrdElem, x::nf_elem)
+function //(y::NfOrdElem, x::AbsSimpleNumFieldElem)
   check_parent(x, y.elem_in_nf)
   return y.elem_in_nf//x
 end
@@ -444,7 +444,7 @@ function representation_matrix(a::NfAbsOrdElem)
 end
 
 @doc raw"""
-    representation_matrix(a::NfAbsOrdElem, K::AnticNumberField) -> FakeFmpqMat
+    representation_matrix(a::NfAbsOrdElem, K::AbsSimpleNumField) -> FakeFmpqMat
 
 Returns the representation matrix of the element $a$ considered as an element
 of the ambient number field $K$. It is assumed that $K$ is the ambient number
@@ -584,7 +584,7 @@ end
 #
 ################################################################################
 
-(K::AnticNumberField)(x::NfAbsOrdElem{AnticNumberField, nf_elem}) = elem_in_nf(x)
+(K::AbsSimpleNumField)(x::NfAbsOrdElem{AbsSimpleNumField, AbsSimpleNumFieldElem}) = elem_in_nf(x)
 
 (K::NfAbsNS)(x::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}) = elem_in_nf(x)
 

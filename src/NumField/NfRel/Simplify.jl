@@ -56,7 +56,7 @@ function _sieve_primitive_elements(B::Vector{T}) where T <: NumFieldElem
 end
 
 
-function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Dict{FqPolyRepFieldElem, Vector{FqPolyRepFieldElem}}, Fx, tmp::FpPolyRingElem)
+function _is_primitive_via_block(a::NfRelElem{AbsSimpleNumFieldElem}, rt::Dict{FqPolyRepFieldElem, Vector{FqPolyRepFieldElem}}, Fx, tmp::FpPolyRingElem)
   if iszero(a)
     return false
   end
@@ -81,7 +81,7 @@ function _is_primitive_via_block(a::NfRelElem{nf_elem}, rt::Dict{FqPolyRepFieldE
   return true
 end
 
-function _find_prime(L::NfRel{nf_elem})
+function _find_prime(L::NfRel{AbsSimpleNumFieldElem})
   p = 2^10
   K = base_field(L)
   OK = maximal_order(K)
@@ -138,7 +138,7 @@ function _find_prime(L::NfRel{nf_elem})
 end
 
 
-function _setup_block_system(Lrel::NfRel{nf_elem})
+function _setup_block_system(Lrel::NfRel{AbsSimpleNumFieldElem})
   K = base_field(Lrel)
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
@@ -175,7 +175,7 @@ function _setup_block_system(Lrel::NfRel{nf_elem})
 end
 
 
-function _find_prime(L::NfRelNS{nf_elem})
+function _find_prime(L::NfRelNS{AbsSimpleNumFieldElem})
   p = 2^10
   K = base_field(L)
   OK = maximal_order(K)
@@ -261,7 +261,7 @@ function _find_prime(L::NfRelNS{nf_elem})
 end
 
 
-function _setup_block_system(Lrel::NfRelNS{nf_elem})
+function _setup_block_system(Lrel::NfRelNS{AbsSimpleNumFieldElem})
   K = base_field(Lrel)
   OK = maximal_order(K)
   Zx = ZZ["x"][1]
@@ -317,7 +317,7 @@ function _setup_block_system(Lrel::NfRelNS{nf_elem})
   return rt1, Rxy, tmp
 end
 
-function _sieve_primitive_elements(B::Vector{T}; parameter::Int = div(absolute_degree(parent(B[1])), 2)) where T <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}
+function _sieve_primitive_elements(B::Vector{T}; parameter::Int = div(absolute_degree(parent(B[1])), 2)) where T <: Union{NfRelNSElem{AbsSimpleNumFieldElem}, NfRelElem{AbsSimpleNumFieldElem}}
   Lrel = parent(B[1])
   #First, we choose the candidates
   ape = absolute_primitive_element(Lrel)
@@ -344,7 +344,7 @@ function _sieve_primitive_elements(B::Vector{T}; parameter::Int = div(absolute_d
   return Bnew[indices]
 end
 
-function _is_primitive_via_block(a::NfRelNSElem{nf_elem}, rt::Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}, Rxy, tmp)
+function _is_primitive_via_block(a::NfRelNSElem{AbsSimpleNumFieldElem}, rt::Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}, Rxy, tmp)
   if length(vars(a.data)) < ngens(parent(a))
     return false
   end
@@ -393,7 +393,7 @@ function simplified_absolute_field(L::NfRelNS; cached = false)
   a = _find_short_primitive_element(L)
   f = absolute_minpoly(a)
   @assert degree(f) == absolute_degree(L)
-  local K::AnticNumberField
+  local K::AbsSimpleNumField
   K = number_field(f, check = false, cached = cached)[1]
   mp = hom(K, L, a)
   return K, mp

@@ -2,7 +2,7 @@ mutable struct MapClassGrp <: Map{GrpAbFinGen, NfOrdIdlSet, HeckeMap, MapClassGr
   header::MapHeader{GrpAbFinGen, NfOrdIdlSet}
 
   quo::Int
-  princ_gens::Vector{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}}}
+  princ_gens::Vector{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}
   small_gens::Vector{NfOrdIdl}
   function MapClassGrp()
     mp = new()
@@ -34,7 +34,7 @@ mutable struct SmallLLLRelationsCtx{T}
 end
 
 mutable struct NormCtx_split <: NormCtx
-  O::NfAbsOrd{AnticNumberField, nf_elem}
+  O::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
   lp::Vector{Int}  #the primes
   lR::Vector{fpField} #the local (finite field) splitting field
   nb::Int #bound on the number of bits the norm is allowed to have
@@ -167,8 +167,8 @@ mutable struct MapUnitGrp{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGrp}
 end
 
 
-mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
-  header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
+mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitModUnitGrpFacElem}
+  header::MapHeader{GrpAbFinGen, FacElemMon{AbsSimpleNumField}}
   idl::Vector{NfOrdIdl}
   valuations::Vector{SRow{ZZRingElem}}
 
@@ -177,8 +177,8 @@ mutable struct MapSUnitModUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNum
   end
 end
 
-mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
-  header::MapHeader{GrpAbFinGen, FacElemMon{AnticNumberField}}
+mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitGrpFacElem}
+  header::MapHeader{GrpAbFinGen, FacElemMon{AbsSimpleNumField}}
   idl::Vector{NfOrdIdl}
   valuations::Vector{SRow{ZZRingElem}}
   isquotientmap::Int
@@ -190,8 +190,8 @@ mutable struct MapSUnitGrpFacElem <: Map{GrpAbFinGen, FacElemMon{AnticNumberFiel
   end
 end
 
-mutable struct MapSUnitGrp <: Map{GrpAbFinGen, AnticNumberField, HeckeMap, MapSUnitGrp}
-  header::MapHeader{GrpAbFinGen, AnticNumberField}
+mutable struct MapSUnitGrp <: Map{GrpAbFinGen, AbsSimpleNumField, HeckeMap, MapSUnitGrp}
+  header::MapHeader{GrpAbFinGen, AbsSimpleNumField}
   idl::Vector{NfOrdIdl}
 
   function MapSUnitGrp()

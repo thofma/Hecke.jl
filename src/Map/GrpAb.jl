@@ -202,7 +202,7 @@ function (f::AbToNfMultGrp)(a::GrpAbFinGenElem)
   return f.generator^a[1]
 end
 
-function preimage(f::AbToNfMultGrp, b::nf_elem)
+function preimage(f::AbToNfMultGrp, b::AbsSimpleNumFieldElem)
   i = 0
   while i < order(f.domain) && f.generator^i != b
     i += 1

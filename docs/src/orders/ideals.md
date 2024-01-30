@@ -18,7 +18,7 @@ For efficiency, we will choose the 1st generator to be an integer.
 
 Ideals here are of type `NfAbsOrdIdl`, which is, similar to the elements
 above, also indexed by the type of the field and their elements:
-`NfAbsOrdIdl{AnticNumberField,nf_elem}` for ideals in
+`NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}` for ideals in
 simple absolute fields.
 
 Different to elements, the `parent`of an ideal is the set of all ideals
@@ -37,7 +37,7 @@ ideal(::NfAbsOrd, ::NfAbsOrdElem)
 
 *(::NfOrd, ::NfOrdElem)
 factor(::NfOrdIdl)
-factor(::NfOrdIdlSet, ::nf_elem)
+factor(::NfOrdIdlSet, ::AbsSimpleNumFieldElem)
 coprime_base(::Vector{NfOrdIdl})
 ```
 
@@ -95,11 +95,11 @@ more efficient.
 
 ```@docs
 is_principal(::NfOrdIdl)
-is_principal_fac_elem(::NfAbsOrdIdl{AnticNumberField,nf_elem})
+is_principal_fac_elem(::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
 power_class(::NfOrdIdl,::ZZRingElem)
 power_product_class(::Vector{NfOrdIdl}, ::Vector{ZZRingElem})
-power_reduce(::NfAbsOrdIdl{AnticNumberField,nf_elem},::ZZRingElem)
-class_group_ideal_relation(::NfAbsOrdIdl{AnticNumberField,nf_elem}, ::Hecke.ClassGrpCtx)
+power_reduce(::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},::ZZRingElem)
+class_group_ideal_relation(::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}, ::Hecke.ClassGrpCtx)
 factor_base_bound_grh(::NfOrd)
 factor_base_bound_bach(::NfOrd)
 prime_ideals_up_to
@@ -173,7 +173,7 @@ Hecke.is_prime_known(::NfOrdIdl)
 is_ramified(::NfOrd, ::Union{Int, ZZRingElem})
 ramification_index(::NfOrdIdl)
 degree(::NfOrdIdl)
-valuation(::nf_elem, ::NfOrdIdl)
+valuation(::AbsSimpleNumFieldElem, ::NfOrdIdl)
 valuation(::NfOrdElem, ::NfOrdIdl)
 valuation(::NfOrdIdl, ::NfOrdIdl)
 valuation(::Integer, ::NfOrdIdl)

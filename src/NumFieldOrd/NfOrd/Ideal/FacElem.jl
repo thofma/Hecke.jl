@@ -71,10 +71,10 @@ function valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
 end
 
 @doc raw"""
-     ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField)
+     ideal(O::NfOrd, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField)
 The factored fractional ideal $a*O$.
 """
-function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
+function ideal(O::NfOrd, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
   de = Dict{NfOrdFracIdl, ZZRingElem}()
   for (e, k) = a.fac
     if !iszero(k)

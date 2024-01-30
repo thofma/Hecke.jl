@@ -166,12 +166,12 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   g = mrel(CEL.mp[1](gen(CEL.Ka)))
   mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
   #Then, the fac elem corresponding to the generator of the Kummer Extension
-  C.a = FacElem(Dict{nf_elem, ZZRingElem}(mp(x) => v for (x, v) in C1.a))
+  C.a = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}(mp(x) => v for (x, v) in C1.a))
   #Now, the Kummer extension
   Lzeta = codomain(mp)
   Lt = polynomial_ring(Lzeta, "t", cached = false)[1]
   d1 = degree(C1.K)
-  coeffs = Vector{nf_elem}(undef, d1 + 1)
+  coeffs = Vector{AbsSimpleNumFieldElem}(undef, d1 + 1)
   coeffs[1] = mp(coeff(C1.K.pol, 0))
   for s = 2:length(coeffs)-1
     coeffs[s] = zero(Lzeta)

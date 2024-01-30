@@ -24,8 +24,8 @@
 #   Number field over Rational Field with defining polynomial x^2-x+1
 
 mutable struct NormRelation{T}
-  K::AnticNumberField
-  subfields::Vector{Tuple{AnticNumberField, NfToNfMor}}
+  K::AbsSimpleNumField
+  subfields::Vector{Tuple{AbsSimpleNumField, NfToNfMor}}
   denominator::Int
   coefficients::Vector{Vector{Tuple{NfToNfMor, Int}}}
   ispure::Bool
@@ -33,10 +33,10 @@ mutable struct NormRelation{T}
   is_abelian::Bool
   isgeneric::Bool
   coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
-  embed_cache::Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}
-  mor_cache::Dict{NfToNfMor, Dict{nf_elem, nf_elem}}
+  embed_cache::Dict{Tuple{Int, Int}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
+  mor_cache::Dict{NfToNfMor, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   induced::Dict{NfToNfMor, Perm{Int}}
-  embed_cache_triv::Vector{Dict{nf_elem, nf_elem}}
+  embed_cache_triv::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   nonredundant::Vector{Int}
   isoptimal::Int
   is_normal::BitArray{1} # if i-th subfield is normal
@@ -47,8 +47,8 @@ mutable struct NormRelation{T}
     z.is_abelian = false
     z.isgeneric = false
     z.denominator = 0
-    z.embed_cache = Dict{Tuple{Int, Int}, Dict{nf_elem, nf_elem}}()
-    z.mor_cache = Dict{NfToNfMor, Dict{nf_elem, nf_elem}}()
+    z.embed_cache = Dict{Tuple{Int, Int}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
+    z.mor_cache = Dict{NfToNfMor, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
     z.induced = Dict{NfToNfMor, Perm{Int}}()
     z.isoptimal = -1
     return z
@@ -68,7 +68,7 @@ function Base.show(io::IO, N::NormRelation)
   end
 end
 
-function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true, pure::Bool = true, index::ZZRingElem = zero(ZZRingElem))
+function _norm_relation_setup_abelian(K::AbsSimpleNumField; small_degree::Bool = true, pure::Bool = true, index::ZZRingElem = zero(ZZRingElem))
   G = automorphism_list(K)
   A, GtoA, AtoG = Hecke.find_isomorphism_with_abelian_group(G);
   if iszero(index)
@@ -83,7 +83,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
 
   z = NormRelation{Int}()
   z.K = K
-  z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = false
 
@@ -118,7 +118,7 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   return z
 end
 
-function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = true,  pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
+function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = true,  pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
   @vprintln :NormRelation 1 "Computing automorphisms"
   A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
@@ -154,14 +154,14 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = pure
-  z.embed_cache_triv = Vector{Dict{nf_elem, nf_elem}}(undef, n)
+  z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
   z.nonredundant = Int[i for i = 1:n]
 
   for i in 1:n
-    z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
+    z.embed_cache_triv[i] = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
   end
 
   @vprintln :NormRelation 1 "Computing subfields"
@@ -181,7 +181,7 @@ function _norm_relation_for_sunits(K::AnticNumberField; small_degree::Bool = tru
   return z
 end
 
-function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true, pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
+function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool = true, pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
   @vprintln :NormRelation 1 "Computing automorphisms"
   A = automorphism_list(K)
   G, AtoG, GtoA = generic_group(A, *)
@@ -219,14 +219,14 @@ function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = 
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = pure
-  z.embed_cache_triv = Vector{Dict{nf_elem, nf_elem}}(undef, n)
+  z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
   z.nonredundant = collect(keys(nonredundant))
 
   for i in 1:n
-    z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
+    z.embed_cache_triv[i] = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
   end
 
   @vprintln :NormRelation 1 "Computing subfields"
@@ -273,7 +273,7 @@ norm(N::NormRelation, i::Int, a) = norm(N.embeddings[i], a)
 
 ispure(N::NormRelation) = N.ispure
 
-function check_relation(N::NormRelation, a::nf_elem)
+function check_relation(N::NormRelation, a::AbsSimpleNumFieldElem)
   @assert !iszero(a)
   if false#ispure(N)
     z = one(field(N))
@@ -291,7 +291,7 @@ function check_relation(N::NormRelation, a::nf_elem)
   end
 end
 
-function _apply_auto(N::NormRelation, auto::NfToNfMor, x::nf_elem)
+function _apply_auto(N::NormRelation, auto::NfToNfMor, x::AbsSimpleNumFieldElem)
   if haskey(N.mor_cache, auto)
     d = N.mor_cache[auto]
     if haskey(d, x)
@@ -302,7 +302,7 @@ function _apply_auto(N::NormRelation, auto::NfToNfMor, x::nf_elem)
       return y
     end
   else
-    d = Dict{nf_elem, nf_elem}()
+    d = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
     y = auto(x)
     d[x] = y
     N.mor_cache[auto] = d
@@ -310,7 +310,7 @@ function _apply_auto(N::NormRelation, auto::NfToNfMor, x::nf_elem)
   end
 end
 
-function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, i::Int, j::Int)
+function (N::NormRelation)(x::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, i::Int, j::Int)
   @assert (1 <= j) && (j <= length(N.coefficients_gen[i]))
   if haskey(N.embed_cache, (i, j)) && haskey(N.embed_cache[i, j], x)
     return N.embed_cache[i, j][x]
@@ -325,7 +325,7 @@ function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
   return z
 end
 
-function (N::NormRelation)(x::Vector{<:Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}, i::Int)
+function (N::NormRelation)(x::Vector{<:Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}, i::Int)
   @assert length(x) == length(N.coefficients_gen[i])
   z = one(N.K)
   for j in 1:length(N.coefficients_gen[i])
@@ -536,11 +536,11 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
   return z
 end
 
-one(T::FacElemMon{AnticNumberField}) = T()
+one(T::FacElemMon{AbsSimpleNumField}) = T()
 
 function Hecke.simplify(c::Hecke.ClassGrpCtx)
   d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+  U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
@@ -568,7 +568,7 @@ end
 
 function units(c::Hecke.ClassGrpCtx)
   d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+  U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
@@ -597,7 +597,7 @@ function zeta_log_residue(O::NfOrd, N::NormRelation, abs_error::Float64)
   @show index(N)
   target_prec = Int(floor(log(abs_error)))
   @show target_prec
-  residues = arb[]
+  residues = ArbFieldElem[]
   for i in 1:length(N)
     v = N.coefficients_gen[i]
     @assert length(v) == 1
@@ -622,7 +622,7 @@ end
 function hR_from_subfields(N, abs_prec::Int = 64)
   @assert ispure(N)
   rel = _lift_to_normalized_brauer_relation(N)
-  vals = arb[]
+  vals = ArbFieldElem[]
   for i in 1:length(N)
     zk = lll(maximal_order(subfield(N, i)[1]))
     c, _ = class_group(zk)
@@ -1070,7 +1070,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
   return true, den, solutions
 end
 
-function has_coprime_norm_relation(K::AnticNumberField, m::ZZRingElem)
+function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
   G, mG = automorphism_group(K)
   b, den, ls = _smallest_scalar_norm_relation_coprime(G, m)
 
@@ -1102,14 +1102,14 @@ function has_coprime_norm_relation(K::AnticNumberField, m::ZZRingElem)
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
   z.denominator = den
   z.ispure = true
-  z.embed_cache_triv = Vector{Dict{nf_elem, nf_elem}}(undef, n)
+  z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
   z.nonredundant = collect(keys(nonredundant))
 
   for i in 1:n
-    z.embed_cache_triv[i] = Dict{nf_elem, nf_elem}()
+    z.embed_cache_triv[i] = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
   end
 
   for i in 1:n

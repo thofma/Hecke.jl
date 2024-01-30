@@ -60,7 +60,7 @@ end
 #################################################################################
 
 function FractionalIdealSet(O::NfOrd)
-  return NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}(O)
+  return NfAbsOrdFracIdlSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O)
 end
 
 ################################################################################
@@ -126,7 +126,7 @@ fractional_ideal(x::NfAbsOrdIdl) = fractional_ideal(order(x), x, ZZRingElem(1))
 fractional_ideal(O::NfAbsOrd, x::NfAbsOrdIdl, y::Integer) = fractional_ideal(O, x, ZZRingElem(y))
 
 @doc raw"""
-    fractional_ideal(O::NfAbsOrd, a::nf_elem) -> NfAbsOrdFracIdl
+    fractional_ideal(O::NfAbsOrd, a::AbsSimpleNumFieldElem) -> NfAbsOrdFracIdl
 
 Creates the principal fractional ideal $(a)$ of $\mathcal O$.
 """
@@ -237,7 +237,7 @@ end
 ################################################################################
 
 @doc raw"""
-    basis(I::NfAbsOrdFracIdl) -> Vector{nf_elem}
+    basis(I::NfAbsOrdFracIdl) -> Vector{AbsSimpleNumFieldElem}
 
 Returns the $\mathbf Z$-basis of $I$.
 """
@@ -773,7 +773,7 @@ end
 ################################################################################
 
 #TODO: Use the inclusion element/NfOrdIdl
-function in(x::nf_elem, y::NfOrdFracIdl)
+function in(x::AbsSimpleNumFieldElem, y::NfOrdFracIdl)
   B = inv(basis_matrix(y))
   O = order(y)
   M = zero_matrix(FlintZZ, 1, degree(O))

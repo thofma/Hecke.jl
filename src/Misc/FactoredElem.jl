@@ -456,7 +456,7 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
   return A
 end
 
-function _ev(d::Dict{nf_elem, ZZRingElem}, oe::nf_elem)
+function _ev(d::Dict{AbsSimpleNumFieldElem, ZZRingElem}, oe::AbsSimpleNumFieldElem)
   z = deepcopy(oe)
   if length(d)==0
     return z

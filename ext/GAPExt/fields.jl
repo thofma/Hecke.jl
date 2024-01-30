@@ -26,7 +26,7 @@ end
 
 
 mutable struct FieldsTower
-  field::AnticNumberField
+  field::AbsSimpleNumField
   generators_of_automorphisms::Vector{NfToNfMor}
   subfields::Vector{NfToNfMor}
   ramified_primes::Vector{ZZRingElem}
@@ -37,7 +37,7 @@ mutable struct FieldsTower
   admissible_cocycles::Vector{cocycle_ctx}
   projections_for_conductors::Vector{GAP.GapObj}
 
-  function FieldsTower(K::AnticNumberField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
+  function FieldsTower(K::AbsSimpleNumField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
     z = new()
     z.field = K
     z.generators_of_automorphisms = auts
@@ -71,7 +71,7 @@ end
 #
 ################################################################################
 
-function Hecke.field_context(K::AnticNumberField)
+function Hecke.field_context(K::AbsSimpleNumField)
   layers = Vector{NfToNfMor}[]
   autsK = automorphism_list(K, copy = false)
   lll(maximal_order(K))
@@ -122,7 +122,7 @@ function assure_automorphisms(T::FieldsTower)
   assure_automorphisms(T.field, T.generators_of_automorphisms)
 end
 
-function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
+function assure_automorphisms(K::AbsSimpleNumField, gens::Vector{NfToNfMor})
   if !is_automorphisms_known(K)
     auts = closure(gens, degree(K))
     set_automorphisms(K, auts)

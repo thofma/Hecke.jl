@@ -213,9 +213,9 @@ end
 #
 ################################################################################
 
-function is_lll_reduced(x::ZZMatrix, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function is_lll_reduced(x::ZZMatrix, ctx::LLLContext = LLLContext(0.99, 0.51))
   b = ccall((:fmpz_lll_is_reduced_d, libflint), Cint,
-            (Ref{ZZMatrix}, Ref{lll_ctx}), x, ctx)
+            (Ref{ZZMatrix}, Ref{LLLContext}), x, ctx)
   return Bool(b)
 end
 
@@ -473,16 +473,16 @@ function round_scale!(b::ZZMatrix, a::Matrix{BigFloat}, l::Int, R=_RealRings[Thr
   return b
 end
 
-function round_scale!(b::ZZMatrix, a::arb_mat, l::Int)
+function round_scale!(b::ZZMatrix, a::ArbMatrix, l::Int)
   s = size(a)
 
   R = base_ring(a)
   r = R()
   for i = 1:s[1]
       for j = 1:s[2]
-          v = ccall((:arb_mat_entry_ptr, libarb), Ptr{arb},
-              (Ref{arb_mat}, Int, Int), a, i - 1, j - 1)
-          ccall((:arb_mul_2exp_si, libarb), Nothing, (Ref{arb}, Ptr{arb}, Int), r, v, l)
+          v = ccall((:arb_mat_entry_ptr, libarb), Ptr{ArbFieldElem},
+              (Ref{ArbMatrix}, Int, Int), a, i - 1, j - 1)
+          ccall((:arb_mul_2exp_si, libarb), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
           b[i, j] = round(ZZRingElem, r)
       end
   end

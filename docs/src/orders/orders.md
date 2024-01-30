@@ -24,14 +24,14 @@ and can also be interpreted as a normalization of any other order.
 ## Creation and basic properties
 
 ```@docs
-Order(::AnticNumberField, ::Vector{nf_elem})
-Order(::AnticNumberField, ::FakeFmpqMat)
+Order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
+Order(::AbsSimpleNumField, ::FakeFmpqMat)
 Order(::NfOrdFracIdl)
-EquationOrder(::AnticNumberField)
-MaximalOrder(::AnticNumberField)
+EquationOrder(::AbsSimpleNumField)
+MaximalOrder(::AbsSimpleNumField)
 MaximalOrder(::NfOrd)
 lll(::NfOrd)
-any_order(K::AnticNumberField)
+any_order(K::AbsSimpleNumField)
 ```
 
 ### Example
@@ -49,7 +49,7 @@ signature(::NfOrd)
 nf(::NfOrd)
 basis(::NfOrd)
 lll_basis(::NfOrd)
-basis(::NfOrd, ::AnticNumberField)
+basis(::NfOrd, ::AbsSimpleNumField)
 pseudo_basis(::NfRelOrd)
 basis_pmatrix(::NfRelOrd)
 basis_nf(::NfRelOrd)
@@ -59,7 +59,7 @@ basis_mat_inv(::NfOrd)
 gen_index(::NfOrd)
 is_index_divisor(::NfOrd, ::ZZRingElem)
 minkowski_matrix(::NfOrd, ::Int)
-in(::nf_elem, ::NfOrd)
+in(::AbsSimpleNumFieldElem, ::NfOrd)
 norm_change_const(::NfOrd)
 trace_matrix(::NfOrd)
 +(::NfAbsOrd, ::NfAbsOrd)

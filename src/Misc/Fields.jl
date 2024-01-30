@@ -5,7 +5,7 @@ function _field_as_vector_space(K::NumField, Q::QQField)
   return BLoverK, m
 end
 
-function _field_as_vector_space(K::NfRel{nf_elem}, Q::AnticNumberField)
+function _field_as_vector_space(K::NfRel{AbsSimpleNumFieldElem}, Q::AbsSimpleNumField)
   BLoverK = basis(K)
   d = degree(K)
   m = identity_matrix(Q, d)
@@ -124,7 +124,7 @@ function image(f::FldToVecMor{T, QQField}, a::NumFieldElem) where {T <: NumField
   return elem_type(K)[v[1, i] for i in 1:ncols(v)]
 end
 
-function image(f::FldToVecMor{AnticNumberField, AnticNumberField}, a::nf_elem)
+function image(f::FldToVecMor{AbsSimpleNumField, AbsSimpleNumField}, a::AbsSimpleNumFieldElem)
   @assert parent(a) == f.L
   L = parent(a)
   d = absolute_degree(L)
@@ -139,7 +139,7 @@ function image(f::FldToVecMor{AnticNumberField, AnticNumberField}, a::nf_elem)
   return elem_type(K)[v[1, i] for i in 1:ncols(v)]
 end
 
-function image(f::FldToVecMor{NfRel{nf_elem}, AnticNumberField}, a::NfRelElem{nf_elem})
+function image(f::FldToVecMor{NfRel{AbsSimpleNumFieldElem}, AbsSimpleNumField}, a::NfRelElem{AbsSimpleNumFieldElem})
   @assert parent(a) == f.L
   L = parent(a)
   d = degree(L)

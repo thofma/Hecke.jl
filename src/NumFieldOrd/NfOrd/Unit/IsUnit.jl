@@ -15,7 +15,7 @@ end
 
 _isunit(x::NfOrdElem) = is_unit(x)
 
-function _isunit(x::T) where T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
+function _isunit(x::T) where T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
   return abs(norm(x)) == 1
 end
 

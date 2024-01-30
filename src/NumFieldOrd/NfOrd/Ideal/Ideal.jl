@@ -875,7 +875,7 @@ function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   return iszero(v)
 end
 
-function in(x::nf_elem, y::NfAbsOrdIdl)
+function in(x::AbsSimpleNumFieldElem, y::NfAbsOrdIdl)
   parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
   return in(order(y)(x),y)
 end
@@ -1673,7 +1673,7 @@ function mod!(x::NfOrdElem, c::Union{ZZMatrix, Matrix{ZZRingElem}}, preinv::Vect
       submul!(a[j], q, c[i, j])
     end
   end
-  # We need to adjust the underlying nf_elem
+  # We need to adjust the underlying AbsSimpleNumFieldElem
   t = nf(O)()
   B = O.basis_nf
   zero!(x.elem_in_nf)
@@ -2436,12 +2436,12 @@ end
 #http://people.math.gatech.edu/~ecroot/shparlinski_final.pdf
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
 @doc raw"""
-    euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf_elem})
+    euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 The inverse of the ideal totient function: all ideals $A$ s.th. the unit group of the
 residue ring has the required size. Here, the ideals are returned in factorised form.
 """
-function euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf_elem})
+function euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem})
   lp = []
   for d = Divisors(n)
     k, p = is_power(d+1)
@@ -2498,7 +2498,7 @@ function euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf
 end
 
 @doc raw"""
-    euler_phi_inv(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf_elem}) -> Vector{NfOrdIdl}
+    euler_phi_inv(n::ZZRingElem, zk::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Vector{NfOrdIdl}
 
 The inverse of the ideal totient function: all ideals $A$ s.th. the unit group of the
 residue ring has the required size.

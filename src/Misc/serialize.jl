@@ -41,12 +41,12 @@
 #  return Rx(L)
 #end
 #
-#function serialize(s::AbstractSerializer, t::AnticNumberField)
-#  Serialization.serialize_type(s, AnticNumberField)
+#function serialize(s::AbstractSerializer, t::AbsSimpleNumField)
+#  Serialization.serialize_type(s, AbsSimpleNumField)
 #  return serialize(s, t.pol)
 #end
 #
-#function deserialize(s::AbstractSerializer, ::Type{AnticNumberField})
+#function deserialize(s::AbstractSerializer, ::Type{AbsSimpleNumField})
 #  return number_field(deserialize(s), cached=false)[1]
 #end
 #

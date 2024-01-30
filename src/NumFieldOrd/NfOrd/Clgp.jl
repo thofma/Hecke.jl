@@ -219,7 +219,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
-    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
+    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
     @assert U.finished
     @vprintln :UnitGroup 1 "... done (retrieved)."
     if c.GRH && !GRH
@@ -237,7 +237,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
 
   @vprintln :UnitGroup 1 "Tentative class number is now $(c.h)"
 
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
 
   need_more = true
 
@@ -364,7 +364,7 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
     end
   end
 
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   need_more = true
   while true
     r = _unit_group_find_units(U, c)
@@ -438,7 +438,7 @@ end
 function _unit_group_maximal(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
-  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
 end
 
 
@@ -454,7 +454,7 @@ function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bo
   if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
-    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
   end
 end
 
@@ -470,13 +470,13 @@ All elements will be returned in factored form.
 function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
-    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
-    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
+    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
-    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}})::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
+    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
@@ -484,7 +484,7 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   end
   _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
   @assert b==1
-  return unit_group_fac_elem(UU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
+  return unit_group_fac_elem(UU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
 end
 
 @doc raw"""
@@ -504,11 +504,11 @@ function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Boo
 end
 
 @doc raw"""
-    regulator(K::AnticNumberField)
+    regulator(K::AbsSimpleNumField)
 
 Computes the regulator of $K$, i.e. the discriminant of the unit lattice
 for the maximal order of $K$.
 """
-function regulator(K::AnticNumberField)
+function regulator(K::AbsSimpleNumField)
   return regulator(maximal_order(K))
 end

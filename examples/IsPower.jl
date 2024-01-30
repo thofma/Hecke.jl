@@ -13,7 +13,7 @@ function Hecke.roots_upper_bound(f::QQPolyRingElem)
   return max(QQFieldElem(1), maximum([abs(coeff(f, i)//a) for i=0:degree(f)]))
 end
 
-function ispower_mod_p(a::nf_elem, i::Int)
+function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
 
   p = 2^10
   K = parent(a)
@@ -377,7 +377,7 @@ function Hecke.degree(R::QadicFieldElem) #TODO XXXX
   return R.length
 end
 
-function Hecke.ideal(R::NfAbsOrd, f::MapFromFunc{AnticNumberField,QadicField})
+function Hecke.ideal(R::NfAbsOrd, f::MapFromFunc{AbsSimpleNumField,QadicField})
   K = nf(R)
   Cq = codomain(f)
   if degree(Cq) == degree(K)
