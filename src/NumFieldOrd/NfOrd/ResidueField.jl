@@ -69,7 +69,7 @@ end
 ################################################################################
 
 function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g::QQPolyRingElem, p)
-  R = GF(p, cached = false)
+  R = finite_field(p, 1, :o, cached = false, check = false)[1]
 
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
@@ -79,12 +79,12 @@ function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g:
 
   h = gcd(gmodp, fmodp)
 
-  return Nemo._residue_field(h)[1], h
+  return Nemo._residue_field(h, check = false)[1], h
 end
 
 # It is assumed that p is not an index divisor
 function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, degree_one::Type{Val{S}} = Val{false}) where S
-  R = Native.GF(p, cached = false)
+  R = Native.GF(p, cached = false, check = false)
 
   Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
@@ -94,17 +94,17 @@ function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRing
 
   h = gcd(gmodp,fmodp)
 
-	if degree_one === Val{true}
+  if degree_one === Val{true}
     return R, h
-	else
-  	if isa(p, Int)
-    	F3 = fqPolyRepField(h, :$, false)
+  else
+    if isa(p, Int)
+      F3 = fqPolyRepField(h, :$, false)
       return F3, h
-  	elseif isa(p, ZZRingElem)
-    	F4 = FqPolyRepField(h, :$, false)
+    elseif isa(p, ZZRingElem)
+      F4 = FqPolyRepField(h, :$, false)
       return F4, h
-  	end
-	end
+    end
+  end
 end
 
 function _residue_field_nonindex_divisor_fq_default(O, P)
