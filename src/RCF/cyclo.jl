@@ -288,18 +288,18 @@ function cyclotomic_extension(::Type{ClassField}, k::AbsSimpleNumField, n::Int; 
 end
 
 @doc raw"""
-    fixed_field(A::ClassField, U::GrpAbFinGen)
+    fixed_field(A::ClassField, U::FinGenAbGroup)
 
 For a subgroup $U$ of the norm group of $A$, return the class field fixed
 by $U$, ie. norm group the quotient by $U$.
 """
-function fixed_field(A::ClassField, s::GrpAbFinGen)
+function fixed_field(A::ClassField, s::FinGenAbGroup)
   mq = A.quotientmap
   q, mmq = quo(codomain(mq), s)
   return ray_class_field(A.rayclassgroupmap, mq*mmq)
 end
 
-function fixed_field(A::ClassField, s::Map{GrpAbFinGen, GrpAbFinGen})
+function fixed_field(A::ClassField, s::Map{FinGenAbGroup, FinGenAbGroup})
   mq = A.quotientmap
   q, mmq = quo(codomain(mq), s)
   return ray_class_field(A.rayclassgroupmap, mq*mmq)

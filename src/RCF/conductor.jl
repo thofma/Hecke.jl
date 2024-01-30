@@ -27,7 +27,7 @@ function _norm_group_gens_small(C::ClassField)
       M[i,j]=elem[1,j]
     end
   end
-  S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
+  S1=Hecke.FinGenAbGroupHom(domain(mS),codomain(mS),M)
   T,mT=Hecke.kernel(S1)
 
   Sgens=find_gens_sub(mR,mT)
@@ -40,7 +40,7 @@ end
 #  Find small primes generating a subgroup of the ray class group
 #
 
-function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
+function find_gens_sub(mR::MapRayClassGrp, mT::FinGenAbGroupHom)
 
   O = order(codomain(mR))
   R = domain(mR)
@@ -48,7 +48,7 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
   m = Hecke._modulus(mR)
   l = minimum(m)
   lp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
-  sR = GrpAbFinGenElem[]
+  sR = FinGenAbGroupElem[]
 
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
@@ -172,7 +172,7 @@ function signature(C::ClassField)
   return r, s
 end
 
-function signature(C::ClassField{MapClassGrp, GrpAbFinGenMap})
+function signature(C::ClassField{MapClassGrp, FinGenAbGroupHom})
   K = base_field(C)
   rK, sK = signature(K)
   r = degree(C)*rK
@@ -259,7 +259,7 @@ function conductor(C::T) where T <:Union{ClassField, ClassField_pp}
     else
       k1 = v-1
       k2 = v
-      gens = GrpAbFinGenElem[]
+      gens = FinGenAbGroupElem[]
       Q = abelian_group(Int[])
       while k1 >= 1
         multg = _1pluspk_1pluspk1(O, p, p^k1, p^k2, powers, minimum(cond), expo)
@@ -351,13 +351,13 @@ function is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNum
         M[i, j] = elem[1,j]
       end
     end
-    S1=Hecke.GrpAbFinGenMap(domain(mS1), codomain(mS1), M)
+    S1=Hecke.FinGenAbGroupHom(domain(mS1), codomain(mS1), M)
     T,mT = Hecke.kernel(S1)
 
     Sgens = find_gens_sub(mR, mT)
 
     r,mr = ray_class_group(m, inf_plc, n_quo = expo)
-    quot = GrpAbFinGenElem[mr\s for s in Sgens]
+    quot = FinGenAbGroupElem[mr\s for s in Sgens]
     s,ms = quo(r, quot, false)
     if order(s) != E
       return false
@@ -420,7 +420,7 @@ function is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNum
       end
     else
       multg = _1pluspk_1pluspk1(O, P, P^(v-1), P^v, powers, cond.gen_one, expo)
-      gens = Vector{GrpAbFinGenElem}(undef, length(multg))
+      gens = Vector{FinGenAbGroupElem}(undef, length(multg))
       for i = 1:length(multg)
         gens[i] = preimage(mp, ideal(O, multg[i]))
       end
@@ -528,14 +528,14 @@ function discriminant(C::ClassField)
     if isone(v)
       tmg = mG.tame[p]
       el = mS(tmg.disc_log)
-      Q, mQ = quo(R, GrpAbFinGenElem[el], false)
+      Q, mQ = quo(R, FinGenAbGroupElem[el], false)
       relative_disc[p] = n - order(Q)
       continue
     end
     s = v
     ap = v*degree(C)
     @hassert :AbExt 1 s>=2
-    els = GrpAbFinGenElem[]
+    els = FinGenAbGroupElem[]
     for k = 2:v
       s = s-1
       pk = p^s
@@ -681,14 +681,14 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
   n = lcm(Int[degree(x) for x = l_pols])
   if of_closure
     #we cannot work in the quotient, it "could" be lcm(factorial(degree(x)) for x = f)
-    Q, mQ = quo(R, GrpAbFinGenElem[])
+    Q, mQ = quo(R, FinGenAbGroupElem[])
   else
     Q, mQ = quo(R, n, false)
   end
 
   p = maximum(degree(x)+1 for x = l_pols)
 
-  listprimes = GrpAbFinGenElem[]
+  listprimes = FinGenAbGroupElem[]
 
   # Adding small primes until it stabilizes
   B = prod(Int[degree(x) for x in l_pols])
@@ -805,7 +805,7 @@ function norm_group(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::U
 
   N = minimum(defining_modulus(mR)[1])
 
-  els = GrpAbFinGenElem[]
+  els = FinGenAbGroupElem[]
 
   #  Adding small primes until it stabilizes
   n = divexact(degree(L), degree(K))
@@ -855,7 +855,7 @@ function norm_group(KK::KummerExt, mp::NumFieldHom{AbsSimpleNumField, AbsSimpleN
 
 
   n = degree(KK)
-  els = GrpAbFinGenElem[]
+  els = FinGenAbGroupElem[]
   stable = 0
   max_stable = 15*n*degree(k)
   R = domain(mR)
@@ -884,7 +884,7 @@ function norm_group(KK::KummerExt, mp::NumFieldHom{AbsSimpleNumField, AbsSimpleN
         continue
       end
       lP = prime_decomposition(mp, P)
-      local z::GrpAbFinGenElem
+      local z::FinGenAbGroupElem
       try
         z = _canonical_frobenius_with_cache(lP[1][1], KK, first, D)
         @hassert :ClassField 1 z == canonical_frobenius(lP[1][1], KK)
@@ -943,16 +943,16 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
 
   if degree(ZZRingElem, R) == 1
     @assert all(x->degree(x) == 1, r)
-    return [hom(domain(fR), domain(x.quotientmap), GrpAbFinGenElem[]) for x = r]
+    return [hom(domain(fR), domain(x.quotientmap), FinGenAbGroupElem[]) for x = r]
   end
 
   lp, sR = find_gens(MapFromFunc(IdealSet(base_ring(R)), domain(fR), x->preimage(fR, x)),
                              PrimesSet(100, -1), minimum(mR))
 
   if map == false
-    h = [hom(sR, GrpAbFinGenElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
+    h = [hom(sR, FinGenAbGroupElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
   else
-    h = [hom(sR, GrpAbFinGenElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
+    h = [hom(sR, FinGenAbGroupElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
   end
   return h
 end
@@ -1091,9 +1091,9 @@ function maximal_abelian_subfield(A::ClassField, mp::NumFieldHom{AbsSimpleNumFie
   lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
   listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mp, x, order = zk) for x in lP]
   # Create the map between R and r by taking norms
-  proj = hom(gS, GrpAbFinGenElem[mr\x for x in listn])
+  proj = hom(gS, FinGenAbGroupElem[mr\x for x in listn])
   #compute the norm group of A in R
-  proj1 = hom(gS, GrpAbFinGenElem[mC\x for x in lP])
+  proj1 = hom(gS, FinGenAbGroupElem[mC\x for x in lP])
   S, mS = kernel(proj1)
   mS1 = compose(mS, proj)
   G, mG = Hecke.cokernel(mS1)
@@ -1138,7 +1138,7 @@ function genus_field(A::ClassField, k::AbsSimpleNumField)
   fl, mp = is_subfield(k, K)
   @assert fl
   h = norm_group_map(A, B, x -> norm(mp, x))
-  return ray_class_field(A.rayclassgroupmap, GrpAbFinGenMap(A.quotientmap * quo(domain(h), kernel(h)[1])[2]))
+  return ray_class_field(A.rayclassgroupmap, FinGenAbGroupHom(A.quotientmap * quo(domain(h), kernel(h)[1])[2]))
 end
 
 @doc raw"""
@@ -1301,9 +1301,9 @@ function subfields(C::ClassField; degree::Int = -1)
   mQ = C.quotientmap
 
   if degree > 0
-    return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), index = degree, fun = (x,y) -> quo(x, y, false)[2])]
+    return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = subgroups(codomain(mQ), index = degree, fun = (x,y) -> quo(x, y, false)[2])]
   else
-    return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), fun = (x,y) -> quo(x, y, false)[2])]
+    return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = subgroups(codomain(mQ), fun = (x,y) -> quo(x, y, false)[2])]
   end
 end
 
@@ -1351,8 +1351,8 @@ function rewrite_with_conductor(C::ClassField)
   E = ray_class_field(C.rayclassgroupmap)
   D = ray_class_field(c, inf, n_quo = Int(exponent(codomain(C.quotientmap))))
   h = norm_group_map(E, D)
-  q, mq = quo(codomain(h), h(GrpAbFinGenMap(E.quotientmap)(kernel(GrpAbFinGenMap(C.quotientmap), true)[1])[1])[1])
-  C = ray_class_field(D.rayclassgroupmap, GrpAbFinGenMap(D.quotientmap*mq))
+  q, mq = quo(codomain(h), h(FinGenAbGroupHom(E.quotientmap)(kernel(FinGenAbGroupHom(C.quotientmap), true)[1])[1])[1])
+  C = ray_class_field(D.rayclassgroupmap, FinGenAbGroupHom(D.quotientmap*mq))
   return C
 end
 
@@ -1398,7 +1398,7 @@ function is_normal_easy(C::ClassField, aut::Vector{NumFieldHom{AbsSimpleNumField
   mR = C.rayclassgroupmap
   new_aut = small_generating_set(aut)
   act = induce_action(mR, new_aut)
-  mk = kernel(GrpAbFinGenMap(C.quotientmap), true)[2]
+  mk = kernel(FinGenAbGroupHom(C.quotientmap), true)[2]
   #normal iff kernel is invariant
   return is_stable(act, mk)
 end
@@ -1511,7 +1511,7 @@ function is_central(C::ClassField)
   C = rewrite_with_conductor(C)
   mR = C.rayclassgroupmap
   act = induce_action(mR, aut)
-  k = kernel(GrpAbFinGenMap(C.quotientmap), true)
+  k = kernel(FinGenAbGroupHom(C.quotientmap), true)
   #central iff action is trivial on the kernel
   g = [k[2](k[1][i]) for i = 1:ngens(k[1])]
 

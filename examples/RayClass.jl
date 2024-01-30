@@ -13,7 +13,7 @@ end
 # Modify the map of the class group so that the chosen representatives are coprime to m
 #
 
-function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _coprime_ideal(C::FinGenAbGroup, mC::Map, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
   O=parent(m).order
   K=nf(O)
@@ -38,7 +38,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::AbsNumFieldOrderIdeal{AbsSim
     end
   end
 
-  function exp(a::GrpAbFinGenElem)
+  function exp(a::FinGenAbGroupElem)
     I=ideal(O,1)
     for i=1:ngens(C)
       if Int(a.coeff[1,i])!= 0
@@ -161,7 +161,7 @@ function ray_class_group_std(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
 #
 
 
-  function expo(a::GrpAbFinGenElem)
+  function expo(a::FinGenAbGroupElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
     if isempty(primes)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
@@ -364,7 +364,7 @@ function ray_class_group_p_part(p::Integer, m::AbsNumFieldOrderIdeal{AbsSimpleNu
 # Exp map
 #
 
-  function expon(a::GrpAbFinGenElem)
+  function expon(a::FinGenAbGroupElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
     if p!=2 || isempty(pr)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])

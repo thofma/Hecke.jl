@@ -208,10 +208,10 @@ mutable struct Norm1Group
   gens::Vector{Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   rels
   A::RelNeq
-  gC::Vector{Tuple{Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}}
-  sC::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
-  gU::Vector{Tuple{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, GrpAbFinGenElem}}
-  sU::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
+  gC::Vector{Tuple{Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}}
+  sC::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
+  gU::Vector{Tuple{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, FinGenAbGroupElem}}
+  sU::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
   C::Any
   U::Any
 
@@ -336,7 +336,7 @@ function Hecke.evaluate(N::Norm1Group)
   end
   A = abelian_group(R)
   ZK = maximal_order(N.A.K)
-  function exp(a::GrpAbFinGenElem)
+  function exp(a::FinGenAbGroupElem)
     a1 = sub(a.coeff, 1:1, 1:ngens(s2))
     a2 = sub(a.coeff, 1:1, ngens(s2)+(1:ngens(s1)))
     b1 = ms2(s2(a1))

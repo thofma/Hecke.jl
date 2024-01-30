@@ -1761,16 +1761,16 @@ abstract type GrpAb <: AbstractAlgebra.AdditiveGroup end
 
 abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
-@attributes mutable struct GrpAbFinGen <: GrpAb
+@attributes mutable struct FinGenAbGroup <: GrpAb
   rels::ZZMatrix
   hnf::ZZMatrix
   is_snf::Bool
   snf::Vector{ZZRingElem}
-  snf_map::Map{GrpAbFinGen, GrpAbFinGen}
+  snf_map::Map{FinGenAbGroup, FinGenAbGroup}
   exponent::ZZRingElem
   isfinalized::Bool
 
-  function GrpAbFinGen(R::ZZMatrix, is_hnf::Bool = false)
+  function FinGenAbGroup(R::ZZMatrix, is_hnf::Bool = false)
     r = new()
     r.is_snf = false
     r.rels = R
@@ -1781,7 +1781,7 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
     return r
   end
 
-  function GrpAbFinGen(R::Vector{ZZRingElem}, is_snf::Bool = true)
+  function FinGenAbGroup(R::Vector{ZZRingElem}, is_snf::Bool = true)
     r = new()
     r.is_snf = is_snf
     r.snf = R
@@ -1789,7 +1789,7 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
     return r
   end
 
-  function GrpAbFinGen(R::Vector{T}, is_snf::Bool = true) where T <: Integer
+  function FinGenAbGroup(R::Vector{T}, is_snf::Bool = true) where T <: Integer
     r = new()
     r.is_snf = is_snf
     r.snf = map(ZZRingElem, R)
@@ -1799,11 +1799,11 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
 end
 
-mutable struct GrpAbFinGenElem <: GrpAbElem
-  parent::GrpAbFinGen
+mutable struct FinGenAbGroupElem <: GrpAbElem
+  parent::FinGenAbGroup
   coeff::ZZMatrix
 
-  GrpAbFinGenElem() = new()
+  FinGenAbGroupElem() = new()
 end
 
 ################################################################################
@@ -1966,11 +1966,11 @@ abstract type GModule end
 
 mutable struct ZpnGModule <: GModule
   R::Nemo.zzModRing
-  V::GrpAbFinGen
+  V::FinGenAbGroup
   G::Vector{zzModMatrix}
   p::Int
 
-  function ZpnGModule(V::GrpAbFinGen,G::Vector{zzModMatrix})
+  function ZpnGModule(V::FinGenAbGroup,G::Vector{zzModMatrix})
     @assert ngens(V)==ncols(G[1]) && ngens(V)==nrows(G[1])
     z=new()
     z.G=G
@@ -2021,7 +2021,7 @@ mutable struct RelLattice{T <: Any, D <: Any}
     z.graph = Graph{UInt, D}()
     z.weak_vertices_rev = Dict{UInt, WeakRef}()
     z.to_delete = Vector{UInt}()
-    z.block_gc = Dict{GrpAbFinGen, Nothing}()
+    z.block_gc = Dict{FinGenAbGroup, Nothing}()
     return z
   end
 end
@@ -2030,11 +2030,11 @@ function GrpAbLatticeCreate()
   r = GrpAbLattice()
   r.zero = ZZMatrix(0,0)
   r.mult = *
-  r.make_id = G::GrpAbFinGen -> identity_matrix(FlintZZ, ngens(G))
+  r.make_id = G::FinGenAbGroup -> identity_matrix(FlintZZ, ngens(G))
   return r
 end
 
-const GrpAbLattice = RelLattice{GrpAbFinGen, ZZMatrix}
+const GrpAbLattice = RelLattice{FinGenAbGroup, ZZMatrix}
 const GroupLattice = GrpAbLatticeCreate()
 
 ###############################################################################

@@ -486,7 +486,7 @@ end
 function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}, coprime_to::ZZRingElem, idx::Int = 1)
   K = base_field(KK)
   O = maximal_order(K)
-  els = GrpAbFinGenElem[]
+  els = FinGenAbGroupElem[]
   Q, mQ = quo(KK.AutG, els, false)
   s, ms = snf(Q)
   Sp = Hecke.PrimesSet(1000, -1)
@@ -561,7 +561,7 @@ function extend_aut2(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField,
   frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
-    images_KK = Vector{Tuple{GrpAbFinGenElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(Cp))
+    images_KK = Vector{Tuple{FinGenAbGroupElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(Cp))
     for i = 1:length(Cp)
       fl, coord, rt = _find_embedding(KK, act_on_gens[i][w], 2, frob_gens)
       @assert fl
@@ -866,7 +866,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumFiel
   autos_extended = Vector{morphism_type(K, K)}(undef, length(autos))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
-    images_KK = Vector{Tuple{GrpAbFinGenElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(KK.gen))
+    images_KK = Vector{Tuple{FinGenAbGroupElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(KK.gen))
     for i = 1:length(KK.gen)
       fl, coord_img_emb, rt_img_emb = _find_embedding(KK, act_on_gens[i][w], Int(order(KK.AutG[i])), frob_gens)
       @assert fl
@@ -963,7 +963,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{AbsSimpleNumFieldElem, AbsSi
   @assert base_ring(el) == base_field(KK)
   #Compute the action of the Frobenius on the generators and on tau(a)
   imgs_rhs = Vector{Int}(undef, length(frob_gens))
-  imgs_lhs = Vector{GrpAbFinGenElem}(undef, length(frob_gens))
+  imgs_lhs = Vector{FinGenAbGroupElem}(undef, length(frob_gens))
   i = 0
   for P in frob_gens
     i += 1
@@ -975,7 +975,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{AbsSimpleNumFieldElem, AbsSi
   G = KK.AutG
   #In H, I need a copy for every relation I have
   H = abelian_group(ZZRingElem[KK.n for i = 1:length(imgs_rhs)])
-  imgs = Vector{GrpAbFinGenElem}(undef, ngens(G))
+  imgs = Vector{FinGenAbGroupElem}(undef, ngens(G))
   for i = 1:length(KK.gen)
     m = Vector{Int}(undef, length(imgs_lhs))
     d = divexact(KK.n, order(G[i]))

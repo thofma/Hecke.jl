@@ -57,16 +57,16 @@ end
 function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}[unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
+  unit_groups = Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}[unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
   G = unit_groups[1][1]
   for i = 2:length(unit_groups)
-    G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
+    G = direct_product(G, unit_groups[i][1], task = :none)::FinGenAbGroup
   end
   S, StoG = snf(G)
 
   local disc_exp
   let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       g = StoG(x)
       v = FacElem(one(A))
       offset = 1
@@ -104,16 +104,16 @@ end
 function _unit_group_maximal(O::AlgAssAbsOrd)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}}}[ unit_group(maximal_order(field)) for (field, map) in fields_and_maps ]
+  unit_groups = Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}}}[ unit_group(maximal_order(field)) for (field, map) in fields_and_maps ]
   G = unit_groups[1][1]
   for i = 2:length(unit_groups)
-    G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
+    G = direct_product(G, unit_groups[i][1], task = :none)::FinGenAbGroup
   end
   S, StoG = snf(G)
 
   local disc_exp
   let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       g = StoG(x)
       v = zero(O)
       offset = 1

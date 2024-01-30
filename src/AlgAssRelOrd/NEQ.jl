@@ -124,7 +124,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         if !skip
           push!(fields_in_product, (LtoA, KtoL))
 
-          G, pi = direct_product(G, UK, task = :prod)::Tuple{GrpAbFinGen, Tuple{GrpAbFinGenMap, GrpAbFinGenMap}}
+          G, pi = direct_product(G, UK, task = :prod)::Tuple{FinGenAbGroup, Tuple{FinGenAbGroupHom, FinGenAbGroupHom}}
           GtoUk = hom(gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
           if is_surjective(GtoUk)
             NC.GtoUk_surjective[order_num] = true
@@ -350,7 +350,7 @@ function __neq_sunit(ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, pr
   return elem_type(codomain(mSK))[ mSK(SK(sols[i, :])) for i in 1:nrows(sols) ]
 end
 
-function __neq_lift_unit(NC::NormCache, order_num::Int, g::GrpAbFinGenElem)
+function __neq_lift_unit(NC::NormCache, order_num::Int, g::FinGenAbGroupElem)
   if isone(g)
     return one(NC.algebra)
   end

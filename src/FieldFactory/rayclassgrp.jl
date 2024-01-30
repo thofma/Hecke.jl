@@ -67,7 +67,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   if isempty(y1) && isempty(y2) && isempty(inf_plc)
     local exp_c
     let mC = mC
-      function exp_c(a::GrpAbFinGenElem)
+      function exp_c(a::FinGenAbGroupElem)
         return FacElem(Dict(mC(a) => 1))
       end
     end
@@ -82,7 +82,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
 
   powers = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
   quo_rings = Tuple{AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Hecke.AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
-  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
+  groups_and_maps = Tuple{FinGenAbGroup, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
   for (PP, ee) in lp
     if isone(ee)
       dtame = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(PP => 1)
@@ -212,13 +212,13 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
 
   if !isempty(p)
     for j = 1:nU
-      aa = lH(tobeeval[j])::GrpAbFinGenElem
+      aa = lH(tobeeval[j])::FinGenAbGroupElem
       for s = 1:ngens(H)
         R[j+nG+ngens(C)+ngens(H), ngens(C)+ind-1+s] = aa[s]
       end
     end
     for j = 1:ngens(C)
-      aa = lH(tobeeval[j+nU])::GrpAbFinGenElem
+      aa = lH(tobeeval[j+nU])::FinGenAbGroupElem
       for s = 1:ngens(H)
         R[j, ngens(C)+ind-1+s] = -aa[s]
       end
@@ -287,11 +287,11 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
           coeffs[1, ii-1+s+ngens(C)] = b[1, s]
         end
       end
-      return GrpAbFinGenElem(X, coeffs)
+      return FinGenAbGroupElem(X, coeffs)
     end
   end
 
-  Dgens = Tuple{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}[]
+  Dgens = Tuple{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}[]
   ind = 1
   #We need generators of the full multiplicative group
   #In particular, we need the idempotents...
@@ -394,17 +394,17 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
       for i = 1:length(to_be_c)
         dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
       end
-      new_mprim.disc_log = GrpAbFinGenElem(X, dis)
+      new_mprim.disc_log = FinGenAbGroupElem(X, dis)
       mG.tame[prim] = new_mprim
     end
     ind += ngens(domain(mG))
   end
 
-  disc_log_inf = Dict{eltype(p), GrpAbFinGenElem}()
+  disc_log_inf = Dict{eltype(p), FinGenAbGroupElem}()
   for i = 1:length(p)
     eldi = zero_matrix(FlintZZ, 1, ngens(X))
     eldi[1, ngens(X) - length(inf_plc) + i] = 1
-    disc_log_inf[p[i]] = GrpAbFinGenElem(X, eldi)
+    disc_log_inf[p[i]] = FinGenAbGroupElem(X, eldi)
   end
 
   mp = MapRayClassGrp()
@@ -447,7 +447,7 @@ function log_infinite_primes(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNum
           ar[1, i] = 1
         end
       end
-      return GrpAbFinGenElem(S, ar)
+      return FinGenAbGroupElem(S, ar)
     end
   end
   return S, log

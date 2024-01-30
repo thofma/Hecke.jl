@@ -302,7 +302,7 @@ end
 # To keep track of ray class groups
 mutable struct SpinorGeneraCtx
   mR::MapRayClassGrp # ray class group map
-  mQ::GrpAbFinGenMap # quotient
+  mQ::FinGenAbGroupHom # quotient
   rayprimes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   criticalprimes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
@@ -320,8 +320,8 @@ end
 # Move this to a proper place
 #
 # TODO: Cache this in the dyadic case (on the lattice or the field)
-mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, LocMultGrpModSquMap}
-  domain::GrpAbFinGen
+mutable struct LocMultGrpModSquMap <: Map{FinGenAbGroup, FinGenAbGroup, HeckeMap, LocMultGrpModSquMap}
+  domain::FinGenAbGroup
   codomain::AbsSimpleNumField
   is_dyadic::Bool
   p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
@@ -331,8 +331,8 @@ mutable struct LocMultGrpModSquMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, Lo
   hext::NfToFinFldMor{FqField}
   h::AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
   g::GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
-  i::GrpAbFinGenMap
-  mS::GrpAbFinGenMap
+  i::FinGenAbGroupHom
+  mS::FinGenAbGroupHom
 
   function LocMultGrpModSquMap(K::AbsSimpleNumField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
     R = order(p)

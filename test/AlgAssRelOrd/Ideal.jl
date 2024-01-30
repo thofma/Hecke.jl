@@ -2,7 +2,7 @@
   Qx, x = FlintQQ["x"]
   f = x^2 - 10x - 8
   K, a = number_field(f, "a")
-  KG = group_algebra(K, GrpAbFinGen([ 2 ]))
+  KG = group_algebra(K, FinGenAbGroup([ 2 ]))
 
   @testset "Arithmetic" begin
     O = any_order(KG)

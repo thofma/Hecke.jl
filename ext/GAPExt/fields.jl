@@ -317,7 +317,7 @@ end
 #
 ###############################################################################
 
-function _split_extension(G::Vector{Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, mats::Vector{Hecke.GrpAbFinGenMap})
+function _split_extension(G::Vector{Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, mats::Vector{Hecke.FinGenAbGroupHom})
 
   gtype = map(Int, domain(mats[1]).snf)
   G1 = permutation_group(G)
@@ -350,7 +350,7 @@ end
 #
 ###############################################################################
 
-function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, res_act::Vector{GrpAbFinGenMap})
+function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, res_act::Vector{FinGenAbGroupHom})
 
   GS = domain(res_act[1])
   @assert is_snf(GS)
@@ -383,7 +383,7 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NumFieldHo
   #Now, I have to check if the split extension is isomorphic to IdH
   Qn, mQn = quo(GS, uncom, false)
   S1, mS1 = snf(Qn)
-  new_res_act = Vector{GrpAbFinGenMap}(undef, length(res_act))
+  new_res_act = Vector{FinGenAbGroupHom}(undef, length(res_act))
   for i = 1:length(res_act)
     Mat = mS1.map*mQn.imap*res_act[i].map*mQn.map*mS1.imap
     Hecke.reduce_mod_snf!(Mat, S1.snf)

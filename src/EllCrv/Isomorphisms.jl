@@ -639,17 +639,17 @@ end
 
 parent(f::EllCrvIso{T}) where {T} = EllCrvIsoSet{EllipticCurve{T}}(domain(f))
 
-mutable struct EllCrvAutMap{S, T} <: Map{GrpGen, EllCrvIsoSet{T}, HeckeMap, EllCrvAutMap}
-  G::GrpGen
+mutable struct EllCrvAutMap{S, T} <: Map{MultTableGroup, EllCrvIsoSet{T}, HeckeMap, EllCrvAutMap}
+  G::MultTableGroup
   auts::Vector{T}
-  header::MapHeader{GrpGen, EllCrvIsoSet{S}}
+  header::MapHeader{MultTableGroup, EllCrvIsoSet{S}}
 
-  function EllCrvAutMap(E::S, G::GrpGen, auts::Vector{T}) where {S, T}
+  function EllCrvAutMap(E::S, G::MultTableGroup, auts::Vector{T}) where {S, T}
     return new{S, T}(G, auts, MapHeader(G, EllCrvIsoSet{S}(E)))
   end
 end
 
-function image(f::EllCrvAutMap, g::GrpGenElem)
+function image(f::EllCrvAutMap, g::MultTableGroupElem)
   return f.auts[g[]]
 end
 

@@ -315,10 +315,10 @@ function _infinite_uniformizers(K::AbsSimpleNumField)
   p = real_embeddings(K) #Important: I assume these are ordered as the roots of the defining polynomial!
   S = abelian_group(Int[2 for i = 1:length(p)])
 
-  s = Vector{GrpAbFinGenElem}(undef, length(p))
+  s = Vector{FinGenAbGroupElem}(undef, length(p))
   g = Vector{AbsSimpleNumFieldElem}(undef, length(p))
   ind = 1
-  q, mq = quo(S, GrpAbFinGenElem[], false)
+  q, mq = quo(S, FinGenAbGroupElem[], false)
   b = 10
   cnt = 0
   pr = 16
@@ -486,7 +486,7 @@ function sign_map(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},
     S = abelian_group(Int[])
     local exp1
     let S = S, lying_in = lying_in, O = O
-      function exp1(A::GrpAbFinGenElem)
+      function exp1(A::FinGenAbGroupElem)
         return O(minimum(lying_in))
       end
     end
@@ -506,7 +506,7 @@ function sign_map(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},
 
   local exp
   let S = S, D = D, p = p, O = O, lying_in = lying_in, K = K
-    function exp(A::GrpAbFinGenElem)
+    function exp(A::FinGenAbGroupElem)
       s = one(K)
       if iszero(A)
         return minimum(lying_in)*O(s)

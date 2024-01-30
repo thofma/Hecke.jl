@@ -554,10 +554,10 @@ end
 #
 ################################################################################
 
-function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, QadicField}
+function GrpGenToNfMorSet(G::MultTableGroup, K::T) where T <: Union{LocalField, QadicField}
   return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, QadicField}}
+function GrpGenToNfMorSet(G::MultTableGroup, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, QadicField}}
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end

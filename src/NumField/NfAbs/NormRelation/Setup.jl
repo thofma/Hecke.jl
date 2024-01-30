@@ -639,7 +639,7 @@ end
 ################################################################################
 
 # TODO: Make this great again
-function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenToGrpGenMor}};
+function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTableGroup, MultTableGroupHom}};
                                      primitive::Bool = false,
                                      greedy::Bool = false,
                                      large_index::Bool = false,
@@ -693,7 +693,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     end
 
     if !b
-      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
     end
 
     @assert b
@@ -709,12 +709,12 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
       den = lcm!(den, den, denominator(v[1, i]))
     end
 
-    vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+    vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
     for i in 1:length(vvv)
-      vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
+      vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
     end
 
-    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+    solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
 
     for i in 1:length(subgroups_needed)
       push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
@@ -752,7 +752,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   subgroups_needed = Int[]
 
   if any(isempty, nonannihilating)
-    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
   end
 
   subgroups_needed = Int[]
@@ -801,8 +801,8 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   # Instead of working with the Q-basis (g N_H h)_(H, g in G, h in H), we take
   # (g N_H h)_(H, g in G/H, h in G\N_G(H))
 
-  left_cosets_for_sub = Vector{GrpGenElem}[]
-  right_cosets_for_normalizer = Vector{GrpGenElem}[]
+  left_cosets_for_sub = Vector{MultTableGroupElem}[]
+  right_cosets_for_normalizer = Vector{MultTableGroupElem}[]
 
   for i in 1:length(subgroups_needed)
     lc = Hecke.left_cosets(G, H[subgroups_needed[i]][2])
@@ -880,11 +880,11 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     den = lcm(den, denominator(v[1, i]))
   end
 
-  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+  solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
 
-  vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
   for i in 1:length(vvv)
-    vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
+    vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
   end
 
   for cc in 1:ncols(v)
@@ -985,7 +985,7 @@ end
 #
 ################################################################################
 
-function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
+function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem)
 
   primes = ZZRingElem[ p for (p, _) in factor(m)]
 
@@ -1020,7 +1020,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
   fl, v = can_solve_with_solution(M, onee, side = :left)
 
   if !fl
-    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+    solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
     return false, ZZRingElem(0), solutions
   end
 
@@ -1047,12 +1047,12 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
 
   @assert is_coprime(den, m)
 
-  vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
   for i in 1:length(vvv)
-    vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
+    vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
   end
 
-  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+  solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
 
   for i in 1:length(subgroups_needed)
     push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))

@@ -82,10 +82,10 @@ function gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=ZZRingElem(0))
   end
 end
 
-mutable struct MapUnitGroupModM{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGroupModM}
- header::Hecke.MapHeader{GrpAbFinGen, T}
+mutable struct MapUnitGroupModM{T} <: Map{FinGenAbGroup, T, HeckeMap, MapUnitGroupModM}
+ header::Hecke.MapHeader{FinGenAbGroup, T}
 
-  function MapUnitGroupModM{T}(G::GrpAbFinGen, R::T, dexp::Function, dlog::Function) where {T}
+  function MapUnitGroupModM{T}(G::FinGenAbGroup, R::T, dexp::Function, dlog::Function) where {T}
     r = new{T}()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
@@ -94,7 +94,7 @@ end
 
 #TO BE FIXED. If mod is non-zero, it is wrong.
 @doc raw"""
-    UnitGroup(R::EuclideanRingResidueRing{ZZRingElem}) -> GrpAbFinGen, Map
+    UnitGroup(R::EuclideanRingResidueRing{ZZRingElem}) -> FinGenAbGroup, Map
 
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """
@@ -156,7 +156,7 @@ function UnitGroup(R::Nemo.ZZModRing, mod::ZZRingElem=ZZRingElem(0))
   end
 
   G = abelian_group(r)
-  function dexp(x::GrpAbFinGenElem)
+  function dexp(x::FinGenAbGroupElem)
    return prod(Nemo.ZZModRingElem[R(g[i])^x[i] for i=1:ngens(G)])
   end
   function dlog(x::Nemo.ZZModRingElem)
@@ -224,7 +224,7 @@ function UnitGroup(R::Nemo.zzModRing, mod::ZZRingElem=ZZRingElem(0))
   end
 
   G = abelian_group(r)
-  function dexp(x::GrpAbFinGenElem)
+  function dexp(x::FinGenAbGroupElem)
     return prod([R(g[i])^x[i] for i=1:ngens(G)])
   end
   function dlog(x::zzModRingElem)
@@ -462,7 +462,7 @@ function unit_group_mod(R::Nemo.zzModRing, n::Int)
 
   local expon
   let G = G, R = R
-    function expon(a::GrpAbFinGenElem)
+    function expon(a::FinGenAbGroupElem)
       res = one(R)
       for i=1:ngens(G)
         if !iszero(a[i])

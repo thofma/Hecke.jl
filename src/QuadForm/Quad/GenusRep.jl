@@ -19,7 +19,7 @@ function SpinorGeneraCtx(L::QuadLat)
   RCG, mRCG, Gens = _compute_ray_class_group(L)
 
   # 1) Map the generators into the class group to create the factor group.
-  subgroupgens = GrpAbFinGenElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
+  subgroupgens = FinGenAbGroupElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
 
   for g in gens(RCG)
     push!(subgroupgens, 2*g)
@@ -1394,7 +1394,7 @@ function show(io::IO, f::LocMultGrpModSquMap)
   end
 end
 
-function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
+function image(f::LocMultGrpModSquMap, x::FinGenAbGroupElem)
   @assert parent(x) == f.domain
   K = f.codomain
   if !f.is_dyadic

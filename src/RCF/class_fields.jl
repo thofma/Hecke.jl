@@ -166,7 +166,7 @@ function compositum(a::ClassField, b::ClassField)
   h = norm_group_map(C, [a,b])
   _, mU = intersect(kernel(h[1], false)[2], kernel(h[2], false)[2], false)
   q, mq = quo(codomain(C.quotientmap), mU, false)
-  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
+  return ray_class_field(mr, FinGenAbGroupHom(C.quotientmap * mq))
 end
 
 @doc raw"""
@@ -198,7 +198,7 @@ function Base.intersect(a::ClassField, b::ClassField)
   h = norm_group_map(C, [a,b])
   U = kernel(h[1])[1] + kernel(h[2])[1]
   q, mq = quo(codomain(C.quotientmap), U)
-  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
+  return ray_class_field(mr, FinGenAbGroupHom(C.quotientmap * mq))
 end
 
 ###############################################################################
@@ -358,7 +358,7 @@ function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Uni
   r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
   lp, sR = find_gens(mR, coprime_to = minimum(m0))
   h = hom(sR, [preimage(mr, p) for p = lp])
-  k, mk = kernel(GrpAbFinGenMap(C.quotientmap), false)
+  k, mk = kernel(FinGenAbGroupHom(C.quotientmap), false)
   q, mq = cokernel(mk*h, false)
   f = Int(order(mq(preimage(mr, p))))
   e = Int(divexact(degree(C), Int(order(q))))
@@ -366,7 +366,7 @@ function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Uni
 end
 
 @doc raw"""
-    decomposition_group(C::ClassField, p::[InfPlc | AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}]) -> GrpAbFinGen
+    decomposition_group(C::ClassField, p::[InfPlc | AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}]) -> FinGenAbGroup
 
 Compute the decomposition group of any infinite place or prime ideal of the
 base field (ring) as a subgroup of the norm group.
@@ -410,7 +410,7 @@ function decomposition_group(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNu
 end
 
 @doc raw"""
-    inertia_subgroup(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> GrpAbFinGen
+    inertia_subgroup(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup
 
 Compute the inertia subgroup of any prime ideal of the
 base ring as a subgroup of the norm group.
@@ -477,8 +477,8 @@ function knot(C::ClassField)
   if norm(c) == 1 && length(ci) == 0 #unramifed
     return snf(H2_G_QmodZ(G))[1]
   end
-  U = vcat(GrpAbFinGen[decomposition_group(C, p) for p = keys(factor(c))],
-           GrpAbFinGen[decomposition_group(C, i) for i = ci])
+  U = vcat(FinGenAbGroup[decomposition_group(C, p) for p = keys(factor(c))],
+           FinGenAbGroup[decomposition_group(C, i) for i = ci])
   phi = H2_G_QmodZ_restriction(G, U)
   k = kernel(phi[1])[1]
   for i=2:length(phi)
@@ -509,7 +509,7 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
 end
 
 @doc raw"""
-    ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap) -> ClassField
+    ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::FinGenAbGroupHom) -> ClassField
 
 For $m$ a map computed by either {ray_class_group} or {class_group} and
 $q$ a canonical projection (quotient map) as returned by {quo} for q
@@ -523,7 +523,7 @@ function ray_class_field(m::S, quomap::T) where {S <: Union{MapClassGrp, MapRayC
   CF.rayclassgroupmap = m
   D = codomain(quomap)
   S1, mS1 = snf(D)
-  iS1 = inv(mS1)#GrpAbFinGenMap(D, S1, mS1.imap, mS1.map)
+  iS1 = inv(mS1)#FinGenAbGroupHom(D, S1, mS1.imap, mS1.map)
   CF.quotientmap = Hecke.compose(quomap, iS1)
   return CF
 end
@@ -725,7 +725,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
   #  time the index of this group in the full (ramified) one
   while true
     R, mR = ray_class_group(con, li, n_quo = deg)
-    val = GrpAbFinGenElem[preimage(mR, p) for p = lp]
+    val = FinGenAbGroupElem[preimage(mR, p) for p = lp]
 
     if length(lp) > 0 && any(x->order(val[x]) % d[lp[x]] != 0, 1:length(lp))
 #      @show "too small"
@@ -743,7 +743,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
       fl, s = has_complement(s, R)
       @assert fl
       c, mc = quo(R, s)
-      c, _mc = quo(c, GrpAbFinGenElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
+      c, _mc = quo(c, FinGenAbGroupElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
       mc = mc * _mc
       if all(i->order(mc(val[i])) == d[lp[i]], 1:length(lp))
 #        @show :cyc, snf(c)[1]

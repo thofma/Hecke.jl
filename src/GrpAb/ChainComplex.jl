@@ -24,14 +24,14 @@ function lift(phi::Map, psi::Map)
 end
 
 @doc raw"""
-    zero_map(G::GrpAbFinGen) -> Map
+    zero_map(G::FinGenAbGroup) -> Map
 Create the map $G \to \{0\}$.
 """
-function zero_map(G::GrpAbFinGen)
+function zero_map(G::FinGenAbGroup)
   return zero_map(G, zero_obj(G))
 end
 
-function zero_map(G::GrpAbFinGen, H::GrpAbFinGen)
+function zero_map(G::FinGenAbGroup, H::FinGenAbGroup)
   return hom(G, H, [H[0] for i=1:ngens(G)])
 end
 
@@ -156,7 +156,7 @@ end
 is_chain_complex(C::ComplexOfMorphisms) = C.typ == :chain
 is_cochain_complex(C::ComplexOfMorphisms) = C.typ == :cochain
 
-function zero_obj(::GrpAbFinGen)
+function zero_obj(::FinGenAbGroup)
   A = abelian_group([1])
   set_name!(A, "Zero")
   return A
@@ -323,7 +323,7 @@ Base.getindex(C::ComplexOfMorphisms, i::Int) = obj(C, i)
 obj_type(C::ComplexOfMorphisms{T}) where {T} = T
 map_type(C::ComplexOfMorphisms) = valtype(C.maps)
 
-Hecke.base_ring(::GrpAbFinGen) = ZZ
+Hecke.base_ring(::FinGenAbGroup) = ZZ
 
 function get_name(M, na::String)
   name = get_attribute(M, :name)
@@ -505,29 +505,29 @@ function show(io::IO, C::ComplexOfMorphisms)
 end
 
 @doc raw"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
+    chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...) -> ComplexOfMorphisms{FinGenAbGroup}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the chain complex.
 """
-function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
+function chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0)
   return ComplexOfMorphisms(collect(A), seed = seed, typ = :chain)
 end
 
-function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
+function chain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0)
   return ComplexOfMorphisms(A, seed = seed, typ = :chain)
 end
-function cochain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
+function cochain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0)
   return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain)
 end
 
 @doc raw"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
+    chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...) -> ComplexOfMorphisms{FinGenAbGroup}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the cochain complex.
 The logical indexing and the printing for chain and cochain complexes differs.
 See `Hecke.ComplexOfMorphisms` for details.
 """
-function cochain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
+function cochain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0)
   return ComplexOfMorphisms(A, seed = seed, typ = :cochain)
 end
 
@@ -575,16 +575,16 @@ function is_exact(C::ComplexOfMorphisms)
 end
 
 @doc raw"""
-    free_resolution(G::GrpAbFinGen) -> ComplexOfMorphisms{GrpAbFinGen}
+    free_resolution(G::FinGenAbGroup) -> ComplexOfMorphisms{FinGenAbGroup}
 A free resolution for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
-function free_resolution(G::GrpAbFinGen)
+function free_resolution(G::FinGenAbGroup)
   A = free_abelian_group(ngens(G))
   R = rels(G)
   B = free_abelian_group(nrows(R))
   h_A_G = hom(A, G, gens(G))
-  h_B_A = hom(B, A, [GrpAbFinGenElem(A, R[i, :]) for i=1:ngens(B)])
+  h_B_A = hom(B, A, [FinGenAbGroupElem(A, R[i, :]) for i=1:ngens(B)])
   Z = zero_obj(G)
   C = chain_complex(hom(Z, B, [B[0]]), h_B_A)
   set_attribute!(C, :show => free_show, :free_res => G)
@@ -687,7 +687,7 @@ function hom(G::T, C::ComplexOfMorphisms{T}) where {T}
 end
 
 @doc raw"""
-    homology(C::ComplexOfMorphisms{GrpAbFinGen}) -> Vector{GrpAbFinGen}
+    homology(C::ComplexOfMorphisms{FinGenAbGroup}) -> Vector{FinGenAbGroup}
 Given a complex $A_i: G_i \to G_{i+1}$,
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """

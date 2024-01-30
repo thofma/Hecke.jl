@@ -19,8 +19,8 @@ function kummer_extension(n::Int, gen::Vector{FacElem{AbsSimpleNumFieldElem, Abs
   K.zeta = zeta^div(o, n)
   K.n = n
   K.gen = gen
-  K.AutG = GrpAbFinGen(ZZRingElem[n for i=gen])
-  K.frob_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}()
+  K.AutG = FinGenAbGroup(ZZRingElem[n for i=gen])
+  K.frob_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
   return K
 end
 
@@ -35,7 +35,7 @@ function kummer_extension(exps::Vector{Int}, gens::Vector{FacElem{AbsSimpleNumFi
   K.n = n
   K.gen = gens
   K.AutG = abelian_group(exps)
-  K.frob_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}()
+  K.frob_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
   return K
 end
 
@@ -125,7 +125,7 @@ function assure_gens_mod_nth_powers(K::KummerExt)
 end
 
 @doc raw"""
-    canonical_frobenius(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::KummerExt) -> GrpAbFinGenElem
+    canonical_frobenius(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::KummerExt) -> FinGenAbGroupElem
 
 Computes the element of the automorphism group of $K$ corresponding to the
 Frobenius automorphism induced by the prime ideal $p$ of the base field of $K$.
@@ -298,11 +298,11 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
   k = base_field(K)
   ZK = maximal_order(k)
   R = K.AutG
-  sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
+  sR = Vector{FinGenAbGroupElem}(undef, length(K.gen))
   lp = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, length(K.gen))
 
   indZK = index(ZK)
-  q, mq = quo(R, GrpAbFinGenElem[], false)
+  q, mq = quo(R, FinGenAbGroupElem[], false)
   s, ms = snf(q)
   ind = 1
   threshold = max(div(degree(k), 5), 5)

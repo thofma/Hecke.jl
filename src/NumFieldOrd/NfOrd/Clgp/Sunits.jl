@@ -119,7 +119,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
 
   local exp
   let U = U
-    function exp(a::GrpAbFinGenElem)
+    function exp(a::FinGenAbGroupElem)
       b = U[1]^a.coeff[1, 1]
       for i = 2:length(U)
         if iszero(a.coeff[1, i])
@@ -199,9 +199,9 @@ function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
 
   local exp
   let mU = mU, mS = mS, U = U, G = G
-    function exp(a::GrpAbFinGenElem)
-      return image(mU, GrpAbFinGenElem(U, sub(a.coeff, 1:1, 1:length(U.snf))))*
-             image(mS, GrpAbFinGenElem(S, sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
+    function exp(a::FinGenAbGroupElem)
+      return image(mU, FinGenAbGroupElem(U, sub(a.coeff, 1:1, 1:length(U.snf))))*
+             image(mS, FinGenAbGroupElem(S, sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
     end
   end
 
@@ -212,7 +212,7 @@ function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
       a2 = a*inv(image(mS, a1))
       #     @assert is_unit(O(evaluate(a2)))
       a3 = preimage(mU, a2)
-      return GrpAbFinGenElem(G, hcat(a3.coeff, a1.coeff))
+      return FinGenAbGroupElem(G, hcat(a3.coeff, a1.coeff))
     end
 
     function log(a::AbsSimpleNumFieldElem)
@@ -248,7 +248,7 @@ function sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpl
 
   local exp
   let mG = mG
-    function exp(a::GrpAbFinGenElem)
+    function exp(a::FinGenAbGroupElem)
       return evaluate(image(mG, a))
     end
   end

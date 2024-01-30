@@ -568,7 +568,7 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
   Kt = polynomial_ring(K, "t", cached = false)[1]
-  norm_groups = Vector{GrpAbFinGenMap}(undef, length(v))
+  norm_groups = Vector{FinGenAbGroupHom}(undef, length(v))
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
     lfieldsL = maximal_abelian_subextension(list2[v[i][2]])

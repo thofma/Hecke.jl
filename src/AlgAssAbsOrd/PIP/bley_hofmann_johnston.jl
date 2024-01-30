@@ -90,7 +90,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U::GrpAbFinGen, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem},AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}} = unit_group(OZ)
+  U::FinGenAbGroup, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem},AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}} = unit_group(OZ)
   @vprintln :PIP 1 "Solving principal ideal problem over maximal order..."
 
   #@show Q
@@ -98,7 +98,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
 
   #@show parent(normbeta) == domain(mQ)
   ttt = mQuni\(mQ(normbeta))
-  imgofK1 = GrpAbFinGenElem[ mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(b), ZtoA)))) for b in k1]
+  imgofK1 = FinGenAbGroupElem[ mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(b), ZtoA)))) for b in k1]
   imgofK1assub, m_imgofK1assub = sub(Quni, imgofK1)
   QbyK1, mQbyK1 = quo(Quni, imgofK1)
 

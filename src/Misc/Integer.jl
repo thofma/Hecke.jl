@@ -104,8 +104,8 @@ end
 #
 ################################################################################
 
-mutable struct MapSUnitGrpZFacElem <: Map{GrpAbFinGen,FacElemMon{QQField},HeckeMap,MapSUnitGrpZFacElem}
-  header::MapHeader{GrpAbFinGen,FacElemMon{QQField}}
+mutable struct MapSUnitGrpZFacElem <: Map{FinGenAbGroup,FacElemMon{QQField},HeckeMap,MapSUnitGrpZFacElem}
+  header::MapHeader{FinGenAbGroup,FacElemMon{QQField}}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZFacElem()
@@ -117,8 +117,8 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-mutable struct MapSUnitGrpZ <: Map{GrpAbFinGen,QQField,HeckeMap,MapSUnitGrpZ}
-  header::MapHeader{GrpAbFinGen,QQField}
+mutable struct MapSUnitGrpZ <: Map{FinGenAbGroup,QQField,HeckeMap,MapSUnitGrpZ}
+  header::MapHeader{FinGenAbGroup,QQField}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZ()
@@ -131,8 +131,8 @@ function show(io::IO, mC::MapSUnitGrpZ)
 end
 
 @doc raw"""
-    sunit_group_fac_elem(S::Vector{ZZRingElem}) -> GrpAbFinGen, Map
-    sunit_group_fac_elem(S::Vector{Integer}) -> GrpAbFinGen, Map
+    sunit_group_fac_elem(S::Vector{ZZRingElem}) -> FinGenAbGroup, Map
+    sunit_group_fac_elem(S::Vector{Integer}) -> FinGenAbGroup, Map
 
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
@@ -153,7 +153,7 @@ function sunit_group_fac_elem(S::Vector{ZZRingElem})
 
   Sq = QQFieldElem[x for x = S]
 
-  function dexp(a::GrpAbFinGenElem)
+  function dexp(a::FinGenAbGroupElem)
     return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(S)])
   end
 
@@ -182,12 +182,12 @@ function preimage(f::MapSUnitGrpZFacElem, a::QQFieldElem)
 end
 
 function preimage(f::MapSUnitGrpZFacElem, a::FacElem)
-  return sum(GrpAbFinGenElem[e * preimage(f, k) for (k, e) = a.fac])
+  return sum(FinGenAbGroupElem[e * preimage(f, k) for (k, e) = a.fac])
 end
 
 @doc raw"""
-    sunit_group(S::Vector{ZZRingElem}) -> GrpAbFinGen, Map
-    sunit_group(S::Vector{Integer}) -> GrpAbFinGen, Map
+    sunit_group(S::Vector{ZZRingElem}) -> FinGenAbGroup, Map
+    sunit_group(S::Vector{Integer}) -> FinGenAbGroup, Map
 
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
@@ -204,7 +204,7 @@ function sunit_group(S::Vector{ZZRingElem})
   mp = MapSUnitGrpZ()
   mp.idl = S
 
-  function dexp(a::GrpAbFinGenElem)
+  function dexp(a::FinGenAbGroupElem)
     return evaluate(image(mu, a))
   end
 
@@ -435,7 +435,7 @@ mutable struct Divisors{T}
   lf::MSet{T}
   s#::Iterator
   f::Function
-  U::GrpAbFinGen
+  U::FinGenAbGroup
   function Divisors(a::T; units::Bool=false, power::Int=1) where {T}
     r = new{T}()
     r.n = a
@@ -540,13 +540,13 @@ function Base.show(io::IO, D::Divisors)
 end
 
 @doc raw"""
-    unit_group(::ZZRing) -> GrpAbFinGen, Map
+    unit_group(::ZZRing) -> FinGenAbGroup, Map
 
 The unit group of $\mathbb{Z}$, i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
 """
 function unit_group(::ZZRing)
   G = abelian_group([2])
-  exp = function (z::GrpAbFinGenElem)
+  exp = function (z::FinGenAbGroupElem)
     return isodd(z[1]) ? ZZRingElem(-1) : ZZRingElem(1)
   end
   log = function (z::ZZRingElem)
@@ -556,13 +556,13 @@ function unit_group(::ZZRing)
 end
 
 @doc raw"""
-    unit_group(::Integers{T}) -> GrpAbFinGen, Map
+    unit_group(::Integers{T}) -> FinGenAbGroup, Map
 
 The unit group of , i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
 """
 function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   G = abelian_group([2])
-  exp = function (z::GrpAbFinGenElem)
+  exp = function (z::FinGenAbGroupElem)
     return isodd(z[1]) ? T(-1) : T(1)
   end
   log = function (z::T)

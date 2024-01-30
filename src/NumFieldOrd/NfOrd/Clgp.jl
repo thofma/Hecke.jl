@@ -402,7 +402,7 @@ end
 @doc raw"""
     class_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; bound = -1,
                           redo = false,
-                          GRH = true)   -> GrpAbFinGen, Map
+                          GRH = true)   -> FinGenAbGroup, Map
 
 Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$. The
 inverse of the map is the projection onto the group of ideals modulo the group
@@ -432,18 +432,18 @@ function class_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldEle
   c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH, saturate_at_2 = saturate_at_2)
 
   @assert b == 1
-  return class_group(c, O)::Tuple{GrpAbFinGen, MapClassGrp}
+  return class_group(c, O)::Tuple{FinGenAbGroup, MapClassGrp}
 end
 
 function _unit_group_maximal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
-  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
+  return unit_group(c, U)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
 end
 
 
 @doc raw"""
-    unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> GrpAbFinGen, Map
+    unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
@@ -454,12 +454,12 @@ function unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem
   if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
-    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
+    return unit_group_non_maximal(O)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
   end
 end
 
 @doc raw"""
-    unit_group_fac_elem(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> GrpAbFinGen, Map
+    unit_group_fac_elem(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
@@ -470,13 +470,13 @@ All elements will be returned in factored form.
 function unit_group_fac_elem(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
-    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
-    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
-    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
@@ -484,7 +484,7 @@ function unit_group_fac_elem(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNum
   end
   _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
   @assert b==1
-  return unit_group_fac_elem(UU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+  return unit_group_fac_elem(UU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
 end
 
 @doc raw"""

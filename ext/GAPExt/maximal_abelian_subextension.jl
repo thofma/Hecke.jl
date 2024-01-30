@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp, GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, F::FieldsTower, IdExtension::GAP.GapObj)
+function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp, FinGenAbGroupHom}, Vector{FinGenAbGroupHom}}}, F::FieldsTower, IdExtension::GAP.GapObj)
   K = F.field
   autos = F.generators_of_automorphisms
   i = 1
@@ -38,7 +38,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   return check_abelian_extensions(class_fields, autos, F.subfields[i])
 end
 
-function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})#, deg_mas::Set{Int})
+function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,FinGenAbGroupHom}, Vector{FinGenAbGroupHom}}}, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})#, deg_mas::Set{Int})
   @vprintln :MaxAbExt 3 "Starting checking abelian extension"
   K = base_field(class_fields[1][1])
   d = degree(K)
@@ -81,7 +81,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   for i = 1:length(class_fields)
     @vprintln :MaxAbExt 3 "Class Field $i"
     C, res_act = class_fields[i]
-    res_act_new = Vector{GrpAbFinGenMap}(undef, length(act_indices))
+    res_act_new = Vector{FinGenAbGroupHom}(undef, length(act_indices))
     for i = 1:length(act_indices)
       res_act_new[i] = res_act[act_indices[i]]
     end
@@ -92,7 +92,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
 end
 
 
-function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
+function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{FinGenAbGroupHom}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
   #I consider the action on every P-sylow and see if it is trivial
   G = codomain(C.quotientmap)
   expG = Int(exponent(G))
@@ -275,13 +275,13 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFieldHom{Ab
   @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
   listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mp, x) for x in lP]
   # Create the map between R and r by taking norms
-  preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
+  preimgs = Vector{FinGenAbGroupElem}(undef, length(listn))
   for i = 1:length(preimgs)
     preimgs[i] = mr\listn[i]
   end
   proj = hom(gS, preimgs)
   #compute the norm group of A in R
-  prms = Vector{GrpAbFinGenElem}(undef, length(lP))
+  prms = Vector{FinGenAbGroupElem}(undef, length(lP))
   for i = 1:length(lP)
     if haskey(mR1.prime_ideal_preimage_cache, lP[i])
       f = mR1.prime_ideal_preimage_cache[lP[i]]

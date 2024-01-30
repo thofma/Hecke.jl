@@ -17,14 +17,14 @@ end
 
 
 #  Action of a matrix on an element of the group
-function *(x::GrpAbFinGenElem, M::zzModMatrix)
+function *(x::FinGenAbGroupElem, M::zzModMatrix)
   G = parent(x)
   @assert ngens(G) == nrows(M)
   R = base_ring(M)
   coeff = map_entries(R, x.coeff)
   y = coeff*M
   l = lift(y)
-  return GrpAbFinGenElem(G, l)
+  return FinGenAbGroupElem(G, l)
 end
 
 
@@ -46,7 +46,7 @@ function Nemo.snf(M::ZpnGModule)
   return ZpnGModule(S, H), mS
 end
 
-function is_stable(act::Vector{T}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function is_stable(act::Vector{T}, mS::FinGenAbGroupHom) where T <: Map{FinGenAbGroup, FinGenAbGroup}
 
   S=mS.header.domain
   for s in gens(S)
@@ -81,7 +81,7 @@ end
 #  Given a group $G$ and a group of automorphisms of G, this function returns the corresponding ZpnGModule
 #
 
-function action(V::GrpAbFinGen, act::Vector{T}) where T<: Map{GrpAbFinGen, GrpAbFinGen}
+function action(V::FinGenAbGroup, act::Vector{T}) where T<: Map{FinGenAbGroup, FinGenAbGroup}
 
   expon = Int(exponent(V))
   @hassert :StabSub 1 length(factor(order(V)).fac)==1
@@ -136,7 +136,7 @@ function dual_module(M::ZpnGModule)
 
 end
 
-function _dualize(M::zzModMatrix, V::GrpAbFinGen, v::Vector{ZZRingElem})
+function _dualize(M::zzModMatrix, V::FinGenAbGroup, v::Vector{ZZRingElem})
   #  First, compute the kernel of the corresponding homomorphisms
   K = abelian_group(ZZRingElem[V.snf[end] for j=1:nrows(M)])
   A = lift(transpose(M))
@@ -145,7 +145,7 @@ function _dualize(M::zzModMatrix, V::GrpAbFinGen, v::Vector{ZZRingElem})
       A[j, k] *= v[j]
     end
   end
-  mH = Hecke.GrpAbFinGenMap(V, K, A)
+  mH = Hecke.FinGenAbGroupHom(V, K, A)
   newel = kernel_as_submodule(mH)
   return change_base_ring(base_ring(M), newel)
 end
@@ -163,7 +163,7 @@ function _dualize_1(M::zzModMatrix, snf_struct::Vector{ZZRingElem})
 
 end
 
-function kernel_as_submodule(h::GrpAbFinGenMap)
+function kernel_as_submodule(h::FinGenAbGroupHom)
   G = domain(h)
   H = codomain(h)
   hn, t = hnf_with_transform(vcat(h.map, rels(H)))
@@ -329,7 +329,7 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
         A[j,k]*=v[j]
       end
     end
-    mH = Hecke.GrpAbFinGenMap(S.V,K,A)
+    mH = Hecke.FinGenAbGroupHom(S.V,K,A)
     sg, msg = kernel(mH)
     push!(list, reduce(vcat, [(mS(msg(y))).coeff for y in gens(sg)]))
   end
@@ -509,7 +509,7 @@ function main_submodules_cyclic(M::ZpnGModule, ord::Int)
       for i = 1:length(newlist)
         mat_test = lift(newlist[i])
         mul!(mat_test, mat_test, c)
-        el = GrpAbFinGenElem(M.V, mat_test)
+        el = FinGenAbGroupElem(M.V, mat_test)
         if !iszero(el)
           push!(list1, newlist[i])
         end
@@ -589,7 +589,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
       for s = 1:length(newlist)
         ord = ZZRingElem(1)
 	      for t = 1:nrows(newlist[s])
-          ord *= order(GrpAbFinGenElem(M.V, lift(view(newlist[s], t:t, 1:ncols(newlist[s])))))
+          ord *= order(FinGenAbGroupElem(M.V, lift(view(newlist[s], t:t, 1:ncols(newlist[s])))))
 	      end
         if ord >= order_test
           t1, mt1 = submodule_to_subgroup(M, newlist[s])
@@ -606,7 +606,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
   return list
 end
 
-function _special_is_isomorphic(G::GrpAbFinGen, Gtest::GrpAbFinGen)
+function _special_is_isomorphic(G::FinGenAbGroup, Gtest::FinGenAbGroup)
   if is_snf(G)
     return G.snf == Gtest.snf
   end
@@ -830,23 +830,23 @@ end
 ##################################################################################
 
 @doc raw"""
-    stable_subgroups(R::GrpAbFinGen, quotype::Vector{Int}, act::Vector{T}; op=sub)
+    stable_subgroups(R::FinGenAbGroup, quotype::Vector{Int}, act::Vector{T}; op=sub)
 
 Given a group $R$, an array of endomorphisms of the group and the type of the quotient, it returns all the stable
 subgroups of $R$ such that the corresponding quotient has the required type.
 """
-function stable_subgroups(R::GrpAbFinGen, act::Vector{T}; op = sub, quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function stable_subgroups(R::FinGenAbGroup, act::Vector{T}; op = sub, quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{FinGenAbGroup, FinGenAbGroup}
   subs = _stable_subgroups(R, act; quotype = quotype, minimal = minimal)
   #Finally, translate back to R.
   return (op(R, x) for x in subs)
 end
 
-function stable_subgroups_for_abexts(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}, quotype::Vector{Int})
+function stable_subgroups_for_abexts(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}, quotype::Vector{Int})
   S, mS = snf(R)
   #I translate the action to S
-  actS = Vector{GrpAbFinGenMap}(undef, length(act))
+  actS = Vector{FinGenAbGroupHom}(undef, length(act))
   for i = 1:length(act)
-    imgs = Vector{GrpAbFinGenElem}(undef, ngens(S))
+    imgs = Vector{FinGenAbGroupElem}(undef, ngens(S))
     for j = 1:length(imgs)
       imgs[j] = mS\(act[i](mS(S[j])))
     end
@@ -856,7 +856,7 @@ function stable_subgroups_for_abexts(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}
   return (inv(mS)*quo(S, y, false)[2] for y in subs_snf)
 end
 
-function _stable_subgroups(R::GrpAbFinGen, act::Vector{T}; quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+function _stable_subgroups(R::FinGenAbGroup, act::Vector{T}; quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{FinGenAbGroup, FinGenAbGroup}
   if quotype[1] != -1 && minimal
     error("Cannot compute minimal submodules with prescribed quotient type")
   end
@@ -869,19 +869,19 @@ function _stable_subgroups(R::GrpAbFinGen, act::Vector{T}; quotype::Vector{Int} 
   Q, mQ = quo(R, c, false)
   S, mS = snf(Q)
   #I translate the action to S
-  actS = Vector{GrpAbFinGenMap}(undef, length(act))
+  actS = Vector{FinGenAbGroupHom}(undef, length(act))
   for i = 1:length(act)
-    imgs = Vector{GrpAbFinGenElem}(undef, ngens(S))
+    imgs = Vector{FinGenAbGroupElem}(undef, ngens(S))
     for j = 1:length(imgs)
       imgs[j] = mS\(mQ(act[i](mQ\mS(S[j]))))
     end
     actS[i] = hom(S, S, imgs, check = false)
   end
   subs_snf = _stable_subgroup_snf(S, actS; quotype = quotype, minimal = minimal)
-  return (GrpAbFinGenElem[mQ\mS(x) for x in y] for y in subs_snf)
+  return (FinGenAbGroupElem[mQ\mS(x) for x in y] for y in subs_snf)
 end
 
-function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quotype::Vector{Int} = Int[-1], minimal::Bool = false)
+function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; quotype::Vector{Int} = Int[-1], minimal::Bool = false)
   @assert is_snf(R)
   c = exponent(R)
   lf = factor(c)
@@ -932,7 +932,7 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
       RR = residue_ring(FlintZZ, Int(p)^x1, cached=false)[1]
       act_mat1 = Vector{zzModMatrix}(undef, length(act))
       for z=1:length(act)
-        imgs = GrpAbFinGenElem[]
+        imgs = FinGenAbGroupElem[]
 	      for w = 1:ngens(S)
 	        el = act[z](comp(S[w]))
 	        fl, el1 = has_preimage_with_preimage(mG, el)
@@ -979,14 +979,14 @@ function _stable_subgroup_snf(R::GrpAbFinGen, act::Vector{GrpAbFinGenMap}; quoty
   end
 end
 
-function _lift_and_construct(A::Zmodn_mat, mp::GrpAbFinGenMap)
+function _lift_and_construct(A::Zmodn_mat, mp::FinGenAbGroupHom)
   R = codomain(mp)
   G = domain(mp)
-  newsub = GrpAbFinGenElem[]
+  newsub = FinGenAbGroupElem[]
   for i=1:nrows(A)
     if !is_zero_row(A, i)
       y = view(A, i:i, 1:ncols(A))
-      el = GrpAbFinGenElem(G, lift(y))
+      el = FinGenAbGroupElem(G, lift(y))
       push!(newsub, mp(el))
     end
   end

@@ -62,7 +62,7 @@ $G$ may be any set and `op` a group operation on $G$.
 """
 group_algebra(K::Ring, G; op = *) = GroupAlgebra(K, G, op = op)
 
-group_algebra(K::Ring, G::GrpAbFinGen) = GroupAlgebra(K, G)
+group_algebra(K::Ring, G::FinGenAbGroup) = GroupAlgebra(K, G)
 
 function group_algebra(K::Field, G; op = *)
   A = GroupAlgebra(K, G, op = op)
@@ -74,7 +74,7 @@ function group_algebra(K::Field, G; op = *)
   return A
 end
 
-function group_algebra(K::Field, G::GrpAbFinGen)
+function group_algebra(K::Field, G::FinGenAbGroup)
   A = group_algebra(K, G, op = +)
   A.is_commutative = true
   return A
@@ -82,12 +82,12 @@ end
 
 @doc raw"""
     (K::Ring)[G::Group] -> GroupAlgebra
-    (K::Ring)[G::GrpAbFinGen] -> GroupAlgebra
+    (K::Ring)[G::FinGenAbGroup] -> GroupAlgebra
 
 Returns the group ring $K[G]$.
 """
 getindex(K::Ring, G::Group) = group_algebra(K, G)
-getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
+getindex(K::Ring, G::FinGenAbGroup) = group_algebra(K, G)
 
 ################################################################################
 #
@@ -524,7 +524,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 #
 #  invM = inv(M)
 #
-#  z = NfToAlgGrpMor{QQFieldElem, GrpGen, GrpGenElem}()
+#  z = NfToAlgGrpMor{QQFieldElem, MultTableGroup, MultTableGroupElem}()
 #  z.K = K
 #  z.mG = aut
 #  z.A = A
@@ -765,7 +765,7 @@ function decompose(A::GroupAlgebra)
   if isdefined(A, :decomposition)
     return A.decomposition::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
   end
-  if group(A) isa GrpAbFinGen && (base_ring(A) isa QQField)
+  if group(A) isa FinGenAbGroup && (base_ring(A) isa QQField)
     res = __decompose_abelian_group_algebra(A)
     A.decomposition = res
     return res
@@ -794,7 +794,7 @@ function _compute_matrix_algebras_from_reps(A, res)
     field, _ = number_field(Qx(data.fields[j]), "a", cached = false)
     d = data.dims[j]
     mats = dense_matrix_type(AbsSimpleNumFieldElem)[ matrix(field, d, d, map(field, data.mod[j][k])) for k in 1:length(data.mod[j])]
-    D = Tuple{GrpGenElem, dense_matrix_type(AbsSimpleNumFieldElem)}[(H[H.gens[i]], mats[i]) for i in 1:length(H.gens)]
+    D = Tuple{MultTableGroupElem, dense_matrix_type(AbsSimpleNumFieldElem)}[(H[H.gens[i]], mats[i]) for i in 1:length(H.gens)]
     op = (x, y) -> (x[1] * y[1], x[2] * y[2])
     id = (Hecke.id(H), identity_matrix(field, d))
     cl = closure(D, op, id)
@@ -978,7 +978,7 @@ elem_type(::Type{NfMorSet{AbsSimpleNumField}}) = NumFieldHom{AbsSimpleNumField, 
 #
 ################################################################################
 
-function opposite_algebra(A::GroupAlgebra{S, GrpAbFinGen, GrpAbFinGenElem}) where S
+function opposite_algebra(A::GroupAlgebra{S, FinGenAbGroup, FinGenAbGroupElem}) where S
   G = group(A)
   z = zero_matrix(base_ring(A), dim(A), dim(A))
   for g in G

@@ -1163,7 +1163,7 @@ function gens(E::EllipticCurve{T}) where {T <: FinFieldElem}
 end
 
 @doc raw"""
-    abelian_group(E::EllipticCurve{<:FinFieldElem}) -> GrpAbFinGen, Map
+    abelian_group(E::EllipticCurve{<:FinFieldElem}) -> FinGenAbGroup, Map
 
 Return an abelian group $A$ isomorphic to the group of rational points of $E$
 and a map $E \to A$.

@@ -40,12 +40,12 @@ is_bijective(m::NumFieldHom) = is_surjective(m)
 #
 ################################################################################
 
-mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
-  G::GrpGen
+mutable struct GrpGenToNfMorSet{S, T} <: Map{MultTableGroup, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
+  G::MultTableGroup
   aut::Vector{S}
-  header::MapHeader{GrpGen, NfMorSet{T}}
+  header::MapHeader{MultTableGroup, NfMorSet{T}}
 
-  function GrpGenToNfMorSet(aut::Vector{S}, G::GrpGen, s::NfMorSet{T}) where {S, T}
+  function GrpGenToNfMorSet(aut::Vector{S}, G::MultTableGroup, s::NfMorSet{T}) where {S, T}
     z = new{S, T}()
     z.header = MapHeader(G, s)
     z.aut = aut
@@ -54,21 +54,21 @@ mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpG
   end
 end
 
-function GrpGenToNfMorSet(G::GrpGen, K::NumField)
+function GrpGenToNfMorSet(G::MultTableGroup, K::NumField)
   return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFieldHom
+function GrpGenToNfMorSet(G::MultTableGroup, aut::Vector{S}, K::NumField) where S <: NumFieldHom
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
 
-function image(f::GrpGenToNfMorSet, g::GrpGenElem)
+function image(f::GrpGenToNfMorSet, g::MultTableGroupElem)
   @assert parent(g) == f.G
   K = codomain(f).field
   return f.aut[g[]]
 end
 
-function (f::GrpGenToNfMorSet)(g::GrpGenElem)
+function (f::GrpGenToNfMorSet)(g::MultTableGroupElem)
   return image(f, g)
 end
 

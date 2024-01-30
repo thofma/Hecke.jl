@@ -29,7 +29,7 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
   PS = IdealSet(ZKa)
   S = reduce(vcat, Vector{ideal_type(ZKa)}[collect(keys(factor(PS(mkK, p)))) for p = s], init = Vector{ideal_type(ZKa)}())
 
-  local U::GrpAbFinGen
+  local U::FinGenAbGroup
 
   if length(S) == 0
     U, mU = unit_group_fac_elem(ZKa)
@@ -39,7 +39,7 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
 
   class_group(parent(a))
 
-  local u::GrpAbFinGen
+  local u::FinGenAbGroup
 
   if length(s) == 0
     u, mu = unit_group_fac_elem(maximal_order(parent(a)))
@@ -47,7 +47,7 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
     u, mu = sunit_group_fac_elem(collect(s))
   end
   No = hom(U, u, elem_type(u)[preimage(mu, norm(mkK, mU(g))) for g = gens(U)])
-  aa = preimage(mu, FacElem(a))::GrpAbFinGenElem
+  aa = preimage(mu, FacElem(a))::FinGenAbGroupElem
   fl, so = has_preimage_with_preimage(No, aa)
   fl || return fl, FacElem(one(K))
   return true, FacElem(K, Dict{elem_type(K), ZZRingElem}([image(KasToKa * mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))

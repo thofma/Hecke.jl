@@ -497,7 +497,7 @@ function genus_generators(L::HermLat)
     if !isempty(PP)
       U, f = unit_group_fac_elem(Rabs)
       UU, ff = unit_group_fac_elem(RR)
-      nnorm = hom(U, UU, GrpAbFinGenElem[ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
+      nnorm = hom(U, UU, FinGenAbGroupElem[ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
       l = length(PP)
       VD = Int[ valuation(D, P) for P in PP ]
       K, k = kernel(nnorm)
@@ -527,8 +527,8 @@ function genus_generators(L::HermLat)
   Gens = Tuple{ideal_type(R), ZZRingElem}[]
 
   if isempty(PP)
-    S = GrpAbFinGenElem[]
-    Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
+    S = FinGenAbGroupElem[]
+    Q, q = quo(Q0, S)::Tuple{FinGenAbGroup, FinGenAbGroupHom}
     Work = def ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
     while order(Q) > 1
@@ -537,11 +537,11 @@ function genus_generators(L::HermLat)
         Work = ideal_type(R)[ QQ for QQ in support(p * R) if length(prime_decomposition(R,minimum(QQ))) == 2 && valuation(bad_prod, minimum(QQ)) == 0 ]
       end
       P = popfirst!(Work)
-      c = (q00\(EabstoE\P))::GrpAbFinGenElem
+      c = (q00\(EabstoE\P))::FinGenAbGroupElem
       o = order(q(c))::ZZRingElem
       if !isone(o)
         push!(S, c)
-        Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
+        Q, q = quo(Q0, S)::Tuple{FinGenAbGroup, FinGenAbGroupHom}
         push!(Gens, (P, o))
       end
     end

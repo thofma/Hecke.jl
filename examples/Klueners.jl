@@ -101,7 +101,7 @@ Base.IteratorSize(::Sqfr) = Base.SizeUnknown()
 Base.HasEltype(::Sqfr{T}) where T = T
 Base.eltype(::Type{PrimeIdealsSet}) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
-function Base.intersect(A::GrpAbFinGen, B::GrpAbFinGen...)
+function Base.intersect(A::FinGenAbGroup, B::FinGenAbGroup...)
   for b = B
     A = intersect(A, b)
   end
@@ -209,7 +209,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
     ac = action(R, ss)
     s = stable_subgroups(R.M, [ac], quotype = [3], op = (R, x) -> sub(R, x, false))
     for B = s
-      CC = mapreduce(x->image(GrpAbFinGenMap(B[2]*action(R, x)), false)[2], (x,y) -> intersect(x, y, false)[2], domain(mA))
+      CC = mapreduce(x->image(FinGenAbGroupHom(B[2]*action(R, x)), false)[2], (x,y) -> intersect(x, y, false)[2], domain(mA))
       if divexact(degree(r), order(domain(CC))) != 27
         @show degree(r), order(codomain(CC))
         continue
@@ -283,7 +283,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
     end
 
     m2, map2 = sub(R.M, reduce(vcat, [lift(mat(x[2])) for x = i2]), !false)
-    sub_m2 = Hecke.stable_subgroups(m2, [GrpAbFinGenMap(map2*x*pseudo_inv(map2)) for x = R.ac], quotype = [3, 3], op = (R, x) -> sub(R, x, !false))
+    sub_m2 = Hecke.stable_subgroups(m2, [FinGenAbGroupHom(map2*x*pseudo_inv(map2)) for x = R.ac], quotype = [3, 3], op = (R, x) -> sub(R, x, !false))
     m1 = []
     target_ind = 0
     for (k,v) = ii
@@ -590,7 +590,7 @@ function s3_extensions2(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
     end
 
     m2, map2 = sub(R.M, reduce(vcat, [lift(mat(x[2])) for x = i2]), !false)
-    sub_m2 = Hecke.stable_subgroups(m2, [GrpAbFinGenMap(map2*x*pseudo_inv(map2)) for x = R.ac], quotype = [3, 3], op = (R, x) -> sub(R, x, !false))
+    sub_m2 = Hecke.stable_subgroups(m2, [FinGenAbGroupHom(map2*x*pseudo_inv(map2)) for x = R.ac], quotype = [3, 3], op = (R, x) -> sub(R, x, !false))
     m1 = []
     target_ind = 0
     for (k,v) = ii

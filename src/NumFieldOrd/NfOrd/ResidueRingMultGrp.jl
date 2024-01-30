@@ -11,8 +11,8 @@
 ################################################################################
 
 @doc raw"""
-    multiplicative_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAbFinGen, Map{GrpAbFinGen, AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
-    unit_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAbFinGen, Map{GrpAbFinGen, AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+    multiplicative_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FinGenAbGroup, Map{FinGenAbGroup, AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+    unit_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FinGenAbGroup, Map{FinGenAbGroup, AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
 
 Returns the unit group of $Q$ as an abstract group $A$ and
 an isomorphism map $f \colon A \to Q^\times$.
@@ -57,7 +57,7 @@ end
 ################################################################################
 
 @doc raw"""
-    _multgrp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> (GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap)
+    _multgrp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> (FinGenAbGroup, GrpAbFinGenToAbsOrdQuoRingMultMap)
 
 Returns the group $Q^\times$ and a map from this group to $Q$.
 """
@@ -74,7 +74,7 @@ function _multgrp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimple
   end
 
   prime_powers = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
-  groups = Vector{GrpAbFinGen}()
+  groups = Vector{FinGenAbGroup}()
   maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}()
   tame_ind = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[]
   ind = 1
@@ -107,7 +107,7 @@ end
 ################################################################################
 
 @doc raw"""
-    _multgrp_mod_pv(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> (GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap)
+    _multgrp_mod_pv(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> (FinGenAbGroup, GrpAbFinGenToAbsOrdQuoRingMultMap)
 
 Given a prime ideal $p$ in a maximal order $\mathcal O$, an integer $v > 0$ and
 $pv = p^v$, the function returns the group $(\mathcal O/p^v)^\times$ and a map
@@ -1150,7 +1150,7 @@ function _multgrp_non_maximal(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumFiel
 
   # Compute the groups (O_P/AO_P)^\times
   Pm = [ prime_ideals[i]^m[i] for i in 1:length(prime_ideals)]
-  groups = Vector{GrpAbFinGen}(undef, length(prime_ideals))
+  groups = Vector{FinGenAbGroup}(undef, length(prime_ideals))
   maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(undef, length(prime_ideals))
   for i= 1:length(prime_ideals)
     H, HtoQQ = _multgrp_Op_aOp(Q, prime_ideals[i], m[i], Pm[i])
@@ -1220,7 +1220,7 @@ end
 # Returns the SNF S of G and a map from S to G and one from S to codomain(GtoR).
 # If RtoQ is given, then the generators of S are computed modulo codomain(RtoQ).
 # It is assumed, that codomain(GtoR) == domain(RtoQ) in this case.
-function snf(G::GrpAbFinGen, GtoR::Union{GrpAbFinGenToAbsOrdQuoRingMultMap, GrpAbFinGenToAbsOrdMap}, modulo_map::AbsOrdQuoMap...)
+function snf(G::FinGenAbGroup, GtoR::Union{GrpAbFinGenToAbsOrdQuoRingMultMap, GrpAbFinGenToAbsOrdMap}, modulo_map::AbsOrdQuoMap...)
   S, StoG = snf(G)
 
   R = codomain(GtoR)
@@ -1281,7 +1281,7 @@ snf(GtoR::Union{GrpAbFinGenToAbsOrdQuoRingMultMap, GrpAbFinGenToAbsOrdMap}, modu
 # This function returns the direct product of G and H and a map from the
 # product to O/(IJ).
 # It is assumed that I and J are coprime.
-function direct_product(G::GrpAbFinGen, GtoQ::GrpAbFinGenToAbsOrdQuoRingMultMap, H::GrpAbFinGen, HtoQ::GrpAbFinGenToAbsOrdQuoRingMultMap)
+function direct_product(G::FinGenAbGroup, GtoQ::GrpAbFinGenToAbsOrdQuoRingMultMap, H::FinGenAbGroup, HtoQ::GrpAbFinGenToAbsOrdQuoRingMultMap)
   return direct_product([G, H], [GtoQ, GtoH])
 end
 
@@ -1290,7 +1290,7 @@ end
 # This function returns the direct product of the G_i, a map from the
 # product to O/(\prod_i I_i) and a map from O to this quotient.
 # It is assumed that the ideals I_i are coprime.
-function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{T}) where T <: GrpAbFinGenToAbsOrdQuoRingMultMap
+function direct_product(groups::Vector{FinGenAbGroup}, maps::Vector{T}) where T <: GrpAbFinGenToAbsOrdQuoRingMultMap
   @assert length(groups) == length(maps)
   @assert length(groups) != 0
 
@@ -1312,7 +1312,7 @@ end
 
 # This function returns the direct product of the G_i and a map from the
 # product to Q.
-function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{T}, Q::AbsOrdQuoRing) where T <: GrpAbFinGenToAbsOrdQuoRingMultMap
+function direct_product(groups::Vector{FinGenAbGroup}, maps::Vector{T}, Q::AbsOrdQuoRing) where T <: GrpAbFinGenToAbsOrdQuoRingMultMap
   @assert length(groups) == length(maps)
   @assert length(groups) != 0
 
@@ -1329,7 +1329,7 @@ end
 # If tame_wild is true, it is assumed, that for each map in maps the field tame
 # is defined and contains exactly one key. The returned map will then contain
 # a dictionary of all given tame respectively wild parts with changed generators.
-function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::Vector{T}, Q::AbsOrdQuoRing{S, T}, tame_wild::Bool = false) where {S, T, U <: GrpAbFinGenToAbsOrdQuoRingMultMap}
+function _direct_product(groups::Vector{FinGenAbGroup}, maps::Vector{U}, ideals::Vector{T}, Q::AbsOrdQuoRing{S, T}, tame_wild::Bool = false) where {S, T, U <: GrpAbFinGenToAbsOrdQuoRingMultMap}
   @assert length(groups) == length(maps)
   @assert length(groups) != 0
   @assert length(ideals) >= length(groups)
@@ -1357,7 +1357,7 @@ function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{U}, ideals::V
     return groups[1], m
   end
 
-  G = direct_product(groups..., task = :none)::GrpAbFinGen
+  G = direct_product(groups..., task = :none)::FinGenAbGroup
 
   if tame_wild
     tame = Dict{T, GrpAbFinGenToAbsOrdMap{S}}()
@@ -1432,7 +1432,7 @@ end
 function _direct_product!(ideals_and_maps::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{GrpAbFinGenToNfAbsOrdMap}}}, Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert !isempty(ideals_and_maps)
 
-  groups = Vector{GrpAbFinGen}()
+  groups = Vector{FinGenAbGroup}()
   ideals = [x[1] for x in ideals_and_maps]
   O = base_ring(Q)
   oneO = O(1)
@@ -1480,7 +1480,7 @@ function _direct_product!(ideals_and_maps::Dict{AbsNumFieldOrderIdeal{AbsSimpleN
 
   ideals = collect(keys(ideals_and_maps))
 
-  groups = Vector{GrpAbFinGen}()
+  groups = Vector{FinGenAbGroup}()
   O = base_ring(Q)
   oneO = O(1)
   generators = Vector{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()

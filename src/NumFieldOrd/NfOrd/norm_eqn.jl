@@ -122,7 +122,7 @@ function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=
     #@assert norm(evaluate(x)) == evaluate(image(mu, h[end]))
   end
   s, ms = sub(u, h)
-  mp = GrpAbFinGenMap(U, u, reduce(vcat, [x.coeff for x=h]))
+  mp = FinGenAbGroupHom(U, u, reduce(vcat, [x.coeff for x=h]))
 
   fl, p = has_preimage_with_preimage(mp, preimage(mu, a))
   if fl

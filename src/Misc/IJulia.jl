@@ -410,13 +410,13 @@ function math_html(io::IO, I::AbsNumFieldOrderIdealSet)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", G::GrpAbFinGen)
+function Base.show(io::IO, ::MIME"text/html", G::FinGenAbGroup)
   print(io, "\$")
   math_html(io, G)
   print(io, "\$")
 end
 
-function show_tensor_product(io::IO, ::MIME"text/html", G::GrpAbFinGen)
+function show_tensor_product(io::IO, ::MIME"text/html", G::FinGenAbGroup)
   T = get_attribute(G, :tensor_product)
   @assert T !== nothing
   io = IOContext(io, :compact => true)
@@ -429,7 +429,7 @@ end
 #TODO: other special show functions for abelian groups
 #      add special(?) for class group
 #      add parent of tuple... (occurs in tensor product)
-function math_html(io::IO, G::GrpAbFinGen)
+function math_html(io::IO, G::FinGenAbGroup)
   n = find_name(G)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))

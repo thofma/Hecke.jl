@@ -231,7 +231,7 @@ function _automorphism_group_generic(K::AbsSimpleNumField)
       mult_table[s, i] = D[Hecke.compose_mod(pols[s], pols[i], fmod)]
     end
   end
-  G = GrpGen(mult_table)
+  G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
@@ -243,7 +243,7 @@ function automorphism_group(K::NumField)
       mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
-  G = GrpGen(mult_table)
+  G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
@@ -261,7 +261,7 @@ function automorphism_group(L::NumField, K::NumField)
       mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
-  G = GrpGen(mult_table)
+  G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, L)
 end
 
@@ -279,7 +279,7 @@ function absolute_automorphism_group(L::NumField)
       mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
-  G = GrpGen(mult_table)
+  G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, L)
 end
 
@@ -399,9 +399,9 @@ function generic_group(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
     end
   end
 
-  Gen = GrpGen(m_table)
-  GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
-  GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
+  Gen = MultTableGroup(m_table)
+  GentoG = Dict{MultTableGroupElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
+  GtoGen = Dict{eltype(G), MultTableGroupElem}(G[i] => Gen[i] for i in 1:length(G))
   return Gen, GtoGen, GentoG
 end
 

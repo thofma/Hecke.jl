@@ -63,7 +63,7 @@ function power_product_class(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, 
   return B
 end
 
-function class_group_disc_exp(a::GrpAbFinGenElem, c::ClassGrpCtx)
+function class_group_disc_exp(a::FinGenAbGroupElem, c::ClassGrpCtx)
   if length(c.dl_data) == 3
     Ti = inv(c.dl_data[2])
     c.dl_data = (c.dl_data[1], c.dl_data[2], c.dl_data[3], Ti)
@@ -97,7 +97,7 @@ function class_group_disc_log(r::SRow{ZZRingElem}, c::ClassGrpCtx)
   for (p,v) = r
     rr[1, p-s+1] = v
   end
-  d = GrpAbFinGenElem(C, view(rr*T, 1:1, nrows(T)-length(C.snf)+1:nrows(T)))
+  d = FinGenAbGroupElem(C, view(rr*T, 1:1, nrows(T)-length(C.snf)+1:nrows(T)))
 #  println(d)
   return d
 end
@@ -261,7 +261,7 @@ function class_group(c::ClassGrpCtx, O::AbsNumFieldOrder{AbsSimpleNumField, AbsS
 
   local expo
   let c = c
-    function expo(x::GrpAbFinGenElem)
+    function expo(x::FinGenAbGroupElem)
       return class_group_disc_exp(x, c)
     end
   end
@@ -277,7 +277,7 @@ end
 function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 
   if !redo && isdefined(c, :dl_data)
-    return c.dl_data[3]::GrpAbFinGen
+    return c.dl_data[3]::FinGenAbGroup
   end
 
   h, p = class_group_get_pivot_info(c)
@@ -673,7 +673,7 @@ function find_coprime_representatives(mC::MapClassGrp, m::AbsNumFieldOrderIdeal{
 
   local exp
   let L = L, C = C
-    function exp(a::GrpAbFinGenElem)
+    function exp(a::FinGenAbGroupElem)
       e = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},ZZRingElem}()
       for i = 1:ngens(C)
         if !iszero(a[i])

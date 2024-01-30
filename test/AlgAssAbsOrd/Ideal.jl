@@ -1,5 +1,5 @@
 @testset "AlgAssAbsOrdIdl" begin
-  QG = group_algebra(FlintQQ, GrpAbFinGen([ 4 ]))
+  QG = group_algebra(FlintQQ, FinGenAbGroup([ 4 ]))
 
   @testset "Arithmetic" begin
     O = any_order(QG)

@@ -49,8 +49,8 @@ end
 # For convenience, there is a quotient constructor for an extension of orders.
 # The quotient will be represented as an abelian group.
 mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
-              Map{GrpAbFinGen, T1, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
-  domain::GrpAbFinGen
+              Map{FinGenAbGroup, T1, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
+  domain::FinGenAbGroup
   codomain::T1
   bottom::T2
   offset::Int
@@ -121,7 +121,7 @@ function show(io::IO, f::GrpAbFinGenToNfOrdQuoNfOrd)
   print(io, "\n(kernel with basis: ", basis(f.bottom), ")")
 end
 
-function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x::GrpAbFinGenElem) where {S1, S2, T, U}
+function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x::FinGenAbGroupElem) where {S1, S2, T, U}
   t = zero(codomain(f))
   z = deepcopy(f.top_snf_basis_in_order[1 + f.offset])
   mul!(z, x.coeff[1], z)
@@ -170,7 +170,7 @@ end
 
 function induce(f::GrpAbFinGenToNfOrdQuoNfOrd, g)
   G = domain(f)
-  imgs = Vector{GrpAbFinGenElem}(undef, ngens(G))
+  imgs = Vector{FinGenAbGroupElem}(undef, ngens(G))
   d = degree(codomain(f))
   m = zero_matrix(FlintZZ, d, d)
   for i in 1:ngens(G)
@@ -249,7 +249,7 @@ function _minimal_overorders_nonrecursive_meataxe(O, M)
 
   B = mA.bottom_snf_basis
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:degree(O)
     if isone(B[i])
@@ -330,7 +330,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
   K = _algebra(O)
   #@assert isone(B[1])
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:degree(O)
     if isone(B[i])
@@ -453,7 +453,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
 
   f = valuation(norm(P), 2)
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:degree(O)
     if isone(B[i])
@@ -747,7 +747,7 @@ function poverorders_one_step_generic(O, p::ZZRingElem)
 
   B = mA.bottom_snf_basis
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:d
     if isone(B[i])
@@ -876,7 +876,7 @@ function poverorders_nonrecursive_meataxe(O, N, p::ZZRingElem)
 
   B = mA.bottom_snf_basis
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:d
     if isone(B[i])
@@ -1149,7 +1149,7 @@ function ideals_with_norm(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFie
   ideals = []
   B = basis(O)
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   A = abelian_group(ZZRingElem[pn for i in 1:d])
 
@@ -1247,14 +1247,14 @@ function is_isomorphic(Q1::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, Abs
 
   l = length(Q1_A.snf)
 
-  elements_with_correct_order = Dict{ZZRingElem, Vector{GrpAbFinGenElem}}()
+  elements_with_correct_order = Dict{ZZRingElem, Vector{FinGenAbGroupElem}}()
 
   for g in Q2_A
     o = order(g)
     if o in orders
       #elem_g = Q2_mA(g)
       if !haskey(elements_with_correct_order, o)
-        elements_with_correct_order[o] = GrpAbFinGenElem[g]
+        elements_with_correct_order[o] = FinGenAbGroupElem[g]
       else
         push!(elements_with_correct_order[o], g)
       end

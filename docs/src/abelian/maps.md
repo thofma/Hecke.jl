@@ -1,4 +1,4 @@
-Maps between abelian groups are mainly of type `GrpAbFinGenMap`. They
+Maps between abelian groups are mainly of type `FinGenAbGroupHom`. They
 allow normal map operations such as `image`, `preimage`, `domain`, `codomain`
 and can be created in a variety of situations.
 ## Maps
@@ -9,8 +9,8 @@ Maps between abelian groups can be constructed via
  - and isomorphism/ inclusion testing
 
 ```@docs
-hom(G::GrpAbFinGen, H::GrpAbFinGen, A::Matrix{ <: Map{GrpAbFinGen, GrpAbFinGen}})
-is_isomorphic(G::GrpAbFinGen, H::GrpAbFinGen)
+hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}})
+is_isomorphic(G::FinGenAbGroup, H::FinGenAbGroup)
 ```
 
 ```@repl

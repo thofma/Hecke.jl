@@ -957,7 +957,7 @@ end
 function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   OK = maximal_order(K)
-  local A::GrpAbFinGen
+  local A::FinGenAbGroup
   A, exp, log = sign_map(OK, _embedding.(I), 1 * OK)
   uni = infinite_uniformizers(K)
   target_signs = zeros(Int, ngens(A))
@@ -969,7 +969,7 @@ function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   end
 
   for P in I
-    v = log(uni[embedding(P)])::GrpAbFinGenElem
+    v = log(uni[embedding(P)])::FinGenAbGroupElem
     for i in 1:ngens(A)
       if v.coeff[i] == 1
         target_signs[i] = val[i] == -1 ? 1 : 0

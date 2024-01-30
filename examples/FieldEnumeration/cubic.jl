@@ -38,15 +38,15 @@ end
 #Note: this is not optimised, but hopefully correct.
 #if you need more, analyse Hasse...
 
-function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::T) where T <: Map{GrpAbFinGen,
+function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::T) where T <: Map{FinGenAbGroup,
 Hecke.FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
-#function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Hecke.MapRayClassGrpFacElem{Hecke.GrpAbFinGen})
+#function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Hecke.MapRayClassGrpFacElem{Hecke.FinGenAbGroup})
   lp, x = Hecke.find_gens(
         Hecke.MapFromFunc(base_ring(codomain(mR)),
                           domain(mR),
                           x->preimage(mR, FacElem(Dict(x=>1)))),
         PrimesSet(100, -1))
-  return hom(x, GrpAbFinGenElem[preimage(mR, Hecke.induce_image(p, phi)) for p = lp])
+  return hom(x, FinGenAbGroupElem[preimage(mR, Hecke.induce_image(p, phi)) for p = lp])
 end
 
 function s3_with_discriminant(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})

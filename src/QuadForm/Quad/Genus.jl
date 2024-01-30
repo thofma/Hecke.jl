@@ -1804,7 +1804,7 @@ function _possible_determinants(K, local_symbols, signatures)
     end
   end
   rlp = real_embeddings(K)
-  local R::GrpAbFinGen
+  local R::FinGenAbGroup
   R, _exp, _log = sign_map(OK, rlp, 1 * OK)
   tar = R(Int[isodd(signatures[infinite_place(sigma)]) ? 1 : 0 for sigma in rlp])
   gensU = gens(U)

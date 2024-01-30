@@ -193,7 +193,7 @@ function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrder
   return Q, f
 end
 
-function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}, ::Type{GrpAbFinGen})
+function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}, ::Type{FinGenAbGroup})
   f = GrpAbFinGenToNfOrdQuoNfOrd(O, I)
   return domain(f), f
 end
@@ -834,7 +834,7 @@ end
 ################################################################################
 
 @doc raw"""
-    group_structure(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAbFinGen
+    group_structure(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FinGenAbGroup
 
 Returns an abelian group with the structure of $(Q,+)$.
 """

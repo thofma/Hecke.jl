@@ -146,7 +146,7 @@ end
   maps_to_numberfields
   maximal_order
 
-  function GroupAlgebra(K::Ring, G::GrpAbFinGen, cached::Bool = true)
+  function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool = true)
     A = GroupAlgebra(K, G, op = +, cached = cached)
     A.is_commutative = true
     return A

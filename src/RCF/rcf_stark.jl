@@ -8,7 +8,7 @@ function Base.show(io::IO, C::RCFCharacter)
   println(IOContext(io, :compact => true), "Character of $(C.C)")
 end
 
-function character(C::ClassField, x::GrpAbFinGenElem, mGhat::Map)
+function character(C::ClassField, x::FinGenAbGroupElem, mGhat::Map)
   return RCFCharacter(C, x, mGhat)
 end
 
@@ -43,7 +43,7 @@ function conductor(chi::RCFCharacter)
 end
 
 (chi::RCFCharacter)(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) = image(chi, I, prec)
-(chi::RCFCharacter)(I::GrpAbFinGenElem, prec::Int) = image(chi, I, prec)
+(chi::RCFCharacter)(I::FinGenAbGroupElem, prec::Int) = image(chi, I, prec)
 
 function image(chi::RCFCharacter{MapClassGrp, T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) where T
   CC = AcbField(prec)
@@ -74,7 +74,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::AbsNumFieldOrderIdeal{Ab
     C = chi.C
     mR = C.rayclassgroupmap
     if !isdefined(mR, :prime_ideal_preimage_cache)
-      mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}()
+      mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
     end
     if haskey(mR.prime_ideal_preimage_cache, I)
       pim = mR.prime_ideal_preimage_cache[I]
@@ -97,7 +97,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::AbsNumFieldOrderIdeal{Ab
   mp = chi.mp_cond
   mQ = chi.C.quotientmap
   if !isdefined(mR, :prime_ideal_preimage_cache)
-    mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}()
+    mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
   end
   if haskey(mR.prime_ideal_preimage_cache, I)
     el = mR.prime_ideal_preimage_cache[I]
@@ -115,7 +115,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::AbsNumFieldOrderIdeal{Ab
   return cispi(2*CC(img))
 end
 
-function image(chi::RCFCharacter, x::GrpAbFinGenElem, prec::Int)
+function image(chi::RCFCharacter, x::FinGenAbGroupElem, prec::Int)
   CC = AcbField(prec)
   mp = chi.mGhat(chi.x)
   img = lift(mp(x))
@@ -136,7 +136,7 @@ function assure_with_conductor(chi::RCFCharacter)
   c = conductor(chi)
   r, mr = ray_class_group(c, chi.conductor_inf_plc, n_quo = degree(C))
   lp, sR = find_gens(mR)
-  imgs = GrpAbFinGenElem[mr\x for x in lp]
+  imgs = FinGenAbGroupElem[mr\x for x in lp]
   mpR = hom(sR, imgs)
   chi.mrcond = mr
   chi.mp_cond = mpR
@@ -165,7 +165,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   p = 64
   #I don't need the character with value 1 on the generator of the
   #quadratic extension
-  chars = RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}[character(C1, x, mGhat) for x in Ghat if !iszero(lift(mGhat(x)(y)))]
+  chars = RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}[character(C1, x, mGhat) for x in Ghat if !iszero(lift(mGhat(x)(y)))]
   @hassert :ClassField 1 length(chars) == degree(C)
   #First, we get an approximation of the defpoly at v
   fl = false
@@ -332,12 +332,12 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
         newc = merge(max, c, lf)
         r, mr = ray_class_group_quo(OK, newc, w, ctx)
         gens, group_gens = find_gens(mr)
-        images = GrpAbFinGenElem[mQ(mR\J) for J in gens]
+        images = FinGenAbGroupElem[mQ(mR\J) for J in gens]
         mp = hom(group_gens, images, check = false)
         k, mk = kernel(mp)
         ls = subgroups(k, quotype = Int[2], fun = (x, y) -> sub(x, y, false)[2])
         for ms in ls
-          ms::GrpAbFinGenMap
+          ms::FinGenAbGroupHom
           q, mq = cokernel(ms*mk, false)
           Cnew = ray_class_field(mr, mq)
           cnew, inf_plcc = conductor(Cnew)
@@ -366,12 +366,12 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   end
 end
 
-function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::GrpAbFinGenMap, D::Dict{S, T}) where {S, T}
+function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::FinGenAbGroupHom, D::Dict{S, T}) where {S, T}
   Dzeta = Vector{AcbFieldElem}()
   ks = keys(D)
   CC = parent(first(values(D)))
   R = codomain(C.quotientmap)
-  mp1 = hom(R, codomain(mp), GrpAbFinGenElem[mp(C.quotientmap\x) for x in gens(R)])
+  mp1 = hom(R, codomain(mp), FinGenAbGroupElem[mp(C.quotientmap\x) for x in gens(R)])
   k1, mk1 = kernel(mp1)
   ck, mck = cokernel(mk1)
   for x1 in ck
@@ -385,8 +385,8 @@ function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::GrpAbFinGenMa
   return Dzeta
 end
 
-function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}}, prec::Int)
-  chars1 = Vector{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}}()
+function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}}, prec::Int)
+  chars1 = Vector{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}}()
   idxs = Tuple{Int, Bool}[]
   for i = 1:length(chars)
     idx = 0
@@ -407,9 +407,9 @@ function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapR
   end
   coeffs1 = _approximate_derivative_Artin_L_function(chars1, prec)
   if length(chars1) == length(chars)
-    return Dict{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}, AcbFieldElem}(zip(chars, coeffs1))
+    return Dict{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}, AcbFieldElem}(zip(chars, coeffs1))
   end
-  coeffs = Dict{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}, AcbFieldElem}()
+  coeffs = Dict{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}, AcbFieldElem}()
   for i = 1:length(chars)
     if idxs[i][2]
       coeffs[chars[i]] = conj(coeffs1[idxs[i][1]])

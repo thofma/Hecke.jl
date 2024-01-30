@@ -112,13 +112,13 @@ function translate_extension(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
   @vtime :ClassField 3 lP, gS = Hecke.find_gens(mRM, coprime_to = minimum(defining_modulus(mR)[1]))
   listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mL, x) for x in lP]
   # Create the map between R and r by taking norms
-  preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
+  preimgs = Vector{FinGenAbGroupElem}(undef, length(listn))
   for i = 1:length(preimgs)
     preimgs[i] = mr\listn[i]
   end
   proj = hom(gS, preimgs)
   #compute the norm group of C in RM
-  prms = Vector{GrpAbFinGenElem}(undef, length(lP))
+  prms = Vector{FinGenAbGroupElem}(undef, length(lP))
   for i = 1:length(lP)
     prms[i] = C.quotientmap(mR\lP[i])
   end
@@ -140,7 +140,7 @@ function translate_extension(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
   mq1 = cokernel(ms1, false)[2]
   mqq = mck * mq1
   @hassert :ClassField 1 domain(mqq) == r
-  C1 = ClassField_pp{MapRayClassGrp, GrpAbFinGenMap}()
+  C1 = ClassField_pp{MapRayClassGrp, FinGenAbGroupHom}()
   C1.quotientmap = mqq
   C1.rayclassgroupmap = mr
   return true, C1

@@ -78,14 +78,14 @@ mutable struct NormCache{S, T, U, M, T2, T3}
   valuations::Vector{Int}
   fac_elem_mon::FacElemMon{S}
   partial_solutions::Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}
-  solutions_mod_units::Vector{Dict{FacElem{U, S},  GrpAbFinGenElem}}
+  solutions_mod_units::Vector{Dict{FacElem{U, S},  FinGenAbGroupElem}}
 
   # Only used if S <: AbstractAssociativeAlgebra{QQFieldElem}
   norm_minus_one::Vector{U}
 
   # These fields are only set if S <: AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}
   UktoOk::MapUnitGrp
-  GtoUk::Vector{GrpAbFinGenMap}
+  GtoUk::Vector{FinGenAbGroupHom}
   GtoUk_surjective::BitVector
   fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}}
 
@@ -120,15 +120,15 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     z.valuations = valuations
     z.fac_elem_mon = FacElemMon(A)
     z.partial_solutions = Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}(undef, length(orders))
-    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, GrpAbFinGenElem}}(undef, length(orders))
-    z.GtoUk = Vector{GrpAbFinGenMap}(undef, length(orders))
+    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, FinGenAbGroupElem}}(undef, length(orders))
+    z.GtoUk = Vector{FinGenAbGroupHom}(undef, length(orders))
     z.GtoUk_surjective = falses(length(orders))
     z.fields_in_product = Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}}(undef, length(orders))
     for i = 1:length(orders)
       z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
       z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
-      z.solutions_mod_units[i] = Dict{FacElem{U, S}, GrpAbFinGenElem}()
-      z.GtoUk[i] = hom([ GrpAbFinGen(ZZRingElem[])() ], [ Uk() ])
+      z.solutions_mod_units[i] = Dict{FacElem{U, S}, FinGenAbGroupElem}()
+      z.GtoUk[i] = hom([ FinGenAbGroup(ZZRingElem[])() ], [ Uk() ])
       z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}()
     end
 
@@ -149,11 +149,11 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     z.valuations = valuations
     z.fac_elem_mon = FacElemMon(A)
     z.partial_solutions = Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}(undef, length(orders))
-    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, GrpAbFinGenElem}}(undef, length(orders))
+    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, FinGenAbGroupElem}}(undef, length(orders))
     for i = 1:length(orders)
       z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
       z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
-      z.solutions_mod_units[i] = Dict{FacElem{U, S}, GrpAbFinGenElem}()
+      z.solutions_mod_units[i] = Dict{FacElem{U, S}, FinGenAbGroupElem}()
     end
 
     return z

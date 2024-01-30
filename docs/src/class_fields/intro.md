@@ -49,7 +49,7 @@ It should be noted that this is a _lazy_ construction: nothing is computed at th
 
 ```@docs
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp})
-ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.GrpAbFinGenMap)
+ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.FinGenAbGroupHom)
 ray_class_field(I::Hecke.AbsNumFieldOrderIdeal; n_quo, p_part)
 ray_class_field(I::Hecke.AbsNumFieldOrderIdeal, ::Vector{InfPlc}; n_quo, p_part)
 hilbert_class_field(k::AbsSimpleNumField)

@@ -11,7 +11,7 @@ add_verbosity_scope(:LocallyFreeClassGroup)
 # case if O is the integral group ring of a group algebra), the computation can
 # be speeded up by setting cond = :left.
 @doc raw"""
-    locally_free_class_group(O::AlgAssAbsOrd) -> GrpAbFinGen
+    locally_free_class_group(O::AlgAssAbsOrd) -> FinGenAbGroup
 
 Given an order $O$ in a semisimple algebra over $\mathbb Q$, this function
 returns the locally free class group of $O$.
@@ -113,7 +113,7 @@ end
 # See Bley, Wilson: "Computations in relative algebraic K-groups".
 @doc raw"""
     locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
-      -> GrpAbFinGen, DiscLogLocallyFreeClassGroup
+      -> FinGenAbGroup, DiscLogLocallyFreeClassGroup
 
 Given a group ring $O$, this function returns the locally free class group of
 $O$ and map from the set of ideals of $O$ to this group.
@@ -163,7 +163,7 @@ function _reduced_norms(a::AbstractAssociativeAlgebraElem, mR::MapRayClassGroupA
     r = hcat(r, g.coeff)
   end
   G = codomain(mR.into_product_of_groups)
-  return mR.into_product_of_groups\(GrpAbFinGenElem(G, r))
+  return mR.into_product_of_groups\(FinGenAbGroupElem(G, r))
 end
 
 ################################################################################
@@ -399,7 +399,7 @@ end
 
 mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLogLocallyFreeClassGroup}
   header::MapHeader{S, T}
-  RtoC::GrpAbFinGenMap # Map from the ray class group of the centre to the class group
+  RtoC::FinGenAbGroupHom # Map from the ray class group of the centre to the class group
   mR::MapRayClassGroupAlg
   FinZ::AlgAssAbsOrdIdl # Conductor of the order in the maximal order contracted to the centre
   FinKs::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
@@ -407,7 +407,7 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
   fields_and_maps
   ZtoA
 
-  function DiscLogLocallyFreeClassGroup{S, T}(IdlSet::S, C::T, RtoC::GrpAbFinGenMap, mR::MapRayClassGroupAlg, FinZ::AlgAssAbsOrdIdl) where {S, T}
+  function DiscLogLocallyFreeClassGroup{S, T}(IdlSet::S, C::T, RtoC::FinGenAbGroupHom, mR::MapRayClassGroupAlg, FinZ::AlgAssAbsOrdIdl) where {S, T}
     m = new{S, T}()
     O = order(IdlSet)
     A = algebra(O)
@@ -492,7 +492,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
     x = locally_free_basis(I, p)
     gamma = normred_over_center(x, ZtoA)
 
-    elts_in_R = Vector{GrpAbFinGenElem}(undef, length(fields_and_maps))
+    elts_in_R = Vector{FinGenAbGroupElem}(undef, length(fields_and_maps))
     for j = 1:length(fields_and_maps)
       K, ZtoK = fields_and_maps[j]
       OK = maximal_order(K)
@@ -559,7 +559,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
 
     # Put the components together and map it to C
     G = codomain(mR.into_product_of_groups)
-    r = mR.into_product_of_groups \ (GrpAbFinGenElem(G, reduce(hcat, [e.coeff for e in elts_in_R])))
+    r = mR.into_product_of_groups \ (FinGenAbGroupElem(G, reduce(hcat, [e.coeff for e in elts_in_R])))
     c += RtoC(r)
   end
   return c

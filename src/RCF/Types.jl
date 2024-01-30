@@ -7,9 +7,9 @@ mutable struct KummerExt <: AbelianExt
   n::Int
   gen::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
 
-  AutG::GrpAbFinGen
-  frob_cache::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, GrpAbFinGenElem}
-  frob_gens::Tuple{Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{GrpAbFinGenElem}}
+  AutG::FinGenAbGroup
+  frob_cache::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}
+  frob_gens::Tuple{Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{FinGenAbGroupElem}}
   gen_mod_nth_power::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
   eval_mod_nth::Vector{AbsSimpleNumFieldElem}
 
@@ -49,7 +49,7 @@ mutable struct ClassField_pp{S, T}
   AutG::Vector{NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}}
   AutR::ZZMatrix
   bigK::KummerExt
-  h::GrpAbFinGenMap #The Artin Map provided by the function build_map
+  h::FinGenAbGroupHom #The Artin Map provided by the function build_map
   degree::Int # The degree of the relative extension we are searching for.
               # In other words, the order of the codomain of quotientmap
 
@@ -61,8 +61,8 @@ mutable struct ClassField_pp{S, T}
 end
 
 @attributes mutable struct ClassField{S, T} <: AbelianExt
-  rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
-  quotientmap::T#GrpAbFinGenMap
+  rayclassgroupmap::S#Union{MapRayClassGrp{FinGenAbGroup}, MapClassGrp{FinGenAbGroup}}
+  quotientmap::T#FinGenAbGroupHom
 
   factored_conductor::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
   conductor::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
@@ -84,16 +84,16 @@ end
 
 mutable struct RCFCharacter{S, T}
   C::ClassField{S, T}
-  x::GrpAbFinGenElem
+  x::FinGenAbGroupElem
   mGhat::Map
   factored_conductor::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
   conductor::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   conductor_inf_plc::Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
-  mp_cond::GrpAbFinGenMap
+  mp_cond::FinGenAbGroupHom
   charcond::Map #Character directly on the rcf given by the conductor
 
-  function RCFCharacter(C::ClassField{S, T}, x::GrpAbFinGenElem, mGhat::Map) where {S, T}
+  function RCFCharacter(C::ClassField{S, T}, x::FinGenAbGroupElem, mGhat::Map) where {S, T}
     z = new{S, T}()
     z.C = C
     z.x = x

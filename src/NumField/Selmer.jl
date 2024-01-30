@@ -5,7 +5,7 @@ using Hecke
 Adds an element to the group. For this to work, C needs to be a subgroup of the parent of a.
 Should move to GrpAb
 """
-function Base.push!(C::GrpAbFinGen, a::GrpAbFinGenElem)
+function Base.push!(C::FinGenAbGroup, a::FinGenAbGroupElem)
   g = gens(C)
   push!(g, a)
   #TODO: find common overgroup? Assuming for now that parent(a) is it.
@@ -14,7 +14,7 @@ end
 
 #TODO: should be exported, but at this point, index is not yet a symbol, so it can't be extended.
 #Should move to GrpAb
-function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
+function index(G::FinGenAbGroup, U::FinGenAbGroup; check::Bool = true)
   return divexact(order(G), order(U))
 end
 
@@ -108,7 +108,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
   # the backward map is more tricky, but the indirect route via
   # class field theory (Frobenius) works for Magma - it should work here.
 
-  function toK(x::GrpAbFinGenElem; algo::Symbol = algo)
+  function toK(x::FinGenAbGroupElem; algo::Symbol = algo)
     @assert parent(x) == Sel
     @assert algo in [:compRep, :raw]
     x = preimage(mSel, x)
@@ -236,7 +236,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{ZZRingElem}; algo::Symbol = :r
     @assert p == 2
   end
   G = abelian_group([p for i = S])
-  function toQ(a::GrpAbFinGenElem)
+  function toQ(a::FinGenAbGroupElem)
     @assert parent(a) == G
     return FacElem(QQ, map(QQFieldElem, S), [a[i] for i = 1:ngens(G)], parent = R)
   end

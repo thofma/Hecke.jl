@@ -136,7 +136,7 @@ function DefaultSmallGroupDB()
   end
 end
 
-is_from_db(G::GrpGen) = G.isfromdb
+is_from_db(G::MultTableGroup) = G.isfromdb
 
 function small_group(i, j; DB = DefaultSmallGroupDB())
   data = DB.db[i][j]

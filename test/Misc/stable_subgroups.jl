@@ -60,9 +60,9 @@
     ls=submodules(M,typesub=[2,3])
     y=subgroups(V,quotype=[4,8])
 
-    mp1=Hecke.GrpAbFinGenMap(V,V,lift(A))
-    mp2=Hecke.GrpAbFinGenMap(V,V,lift(B))
-    mp3=Hecke.GrpAbFinGenMap(V,V,lift(C))
+    mp1=Hecke.FinGenAbGroupHom(V,V,lift(A))
+    mp2=Hecke.FinGenAbGroupHom(V,V,lift(B))
+    mp3=Hecke.FinGenAbGroupHom(V,V,lift(C))
     act=[mp1,mp2,mp3]
 
     i=0

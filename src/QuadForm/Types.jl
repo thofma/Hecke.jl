@@ -266,7 +266,7 @@ then the coordinates with respec to the basis of `M` are given by
 `solve_left(basis_matrix(M), v)`.
 """
 @attributes mutable struct TorQuadModule
-  ab_grp::GrpAbFinGen             # underlying abelian group
+  ab_grp::FinGenAbGroup             # underlying abelian group
   cover::ZZLat                     # ZZLat -> ab_grp, x -> x * proj
   rels::ZZLat
   proj::ZZMatrix                  # is a projection and respects the forms
@@ -287,10 +287,10 @@ end
 ### Element
 
 mutable struct TorQuadModuleElem
-  data::GrpAbFinGenElem
+  data::FinGenAbGroupElem
   parent::TorQuadModule
 
-  TorQuadModuleElem(T::TorQuadModule, a::GrpAbFinGenElem) = new(a, T)
+  TorQuadModuleElem(T::TorQuadModule, a::FinGenAbGroupElem) = new(a, T)
 end
 
 ### Maps
@@ -405,9 +405,9 @@ for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
 """
 mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMap}
   header::MapHeader{TorQuadModule, TorQuadModule}
-  map_ab::GrpAbFinGenMap
+  map_ab::FinGenAbGroupHom
 
-  function TorQuadModuleMap(T::TorQuadModule, S::TorQuadModule, m::GrpAbFinGenMap)
+  function TorQuadModuleMap(T::TorQuadModule, S::TorQuadModule, m::FinGenAbGroupHom)
     z = new()
     z.header = MapHeader(T, S)
     z.map_ab = m

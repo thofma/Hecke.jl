@@ -180,7 +180,7 @@ end
 
 # Computes all subgroups of S/a as fractional ideals of R.
 function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrder, AlgAssAbsOrd }, T2 <: Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
-  Q, mQ = quo(S, a, GrpAbFinGen)
+  Q, mQ = quo(S, a, FinGenAbGroup)
   if order(Q) == 1
     return [ a ]
   end
@@ -198,7 +198,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrd
   offset = mQ.offset
   subs = subgroups(Q)
 
-  function group_to_ideal(s::Tuple{GrpAbFinGen, GrpAbFinGenMap})
+  function group_to_ideal(s::Tuple{FinGenAbGroup, FinGenAbGroupHom})
     H, HtoQ = image(s[2], false)
     for i = 1:(d - offset)
       v = HtoQ(H[i]).coeff

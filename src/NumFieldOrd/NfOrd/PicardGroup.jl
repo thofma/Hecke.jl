@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc raw"""
-    picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> GrpAbFinGen, MapClassGrp
+    picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup, MapClassGrp
 
 Returns the Picard group of $O$ and a map from the group in the set of
 (invertible) ideals of $O$.
@@ -17,7 +17,7 @@ function picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldEl
       return class_group_as_picard(OK)[2]
     end
     return _picard_group(O)[2]
-  end::MapPicardGrp{GrpAbFinGen, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  end::MapPicardGrp{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   return domain(mP), mP
 end
 
@@ -41,7 +41,7 @@ end
 
 function class_group_as_picard(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
   C, mC = class_group(OK)
-  mp = MapPicardGrp{GrpAbFinGen, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
+  mp = MapPicardGrp{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   mp.header = MapHeader(C, IdealSet(OK), mC.header.image, mC.header.preimage)
   return C, mp
 end
@@ -70,7 +70,7 @@ function OO_mod_F_mod_O_mod_F(O::AbsNumFieldOrder)
     i += 1
   end
 
-  groups = Vector{GrpAbFinGen}()
+  groups = Vector{FinGenAbGroup}()
   maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}()
   for p in keys(D)
     # Find m such that p^m*O_p \subseteq F*O_p
@@ -87,7 +87,7 @@ function OO_mod_F_mod_O_mod_F(O::AbsNumFieldOrder)
     end
 
     # Compute (OK_p/F*OK_p)^\times
-    groups2 = Vector{GrpAbFinGen}(undef, length(prime_ideals_over_p))
+    groups2 = Vector{FinGenAbGroup}(undef, length(prime_ideals_over_p))
     maps2 = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(undef, length(prime_ideals_over_p))
     for i = 1:length(prime_ideals_over_p)
       q, eq = prime_ideals_over_p[i]
@@ -114,7 +114,7 @@ function OO_mod_F_mod_O_mod_F(O::AbsNumFieldOrder)
     gens = map(x -> GtoQ\(OKtoQ(OK(x.elem))), gens)
     =#
 
-    gens = Vector{GrpAbFinGenElem}(undef, length(mGG.generators))
+    gens = Vector{FinGenAbGroupElem}(undef, length(mGG.generators))
     for ind_for = 1:length(gens)
       gens[ind_for] = GtoQ\(OKtoQ(OK(mGG.generators[ind_for].elem)))
     end
@@ -147,7 +147,7 @@ function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, G
   # 0 --> O^\times --> O_K^\times --> (O_K/F)^\times)/(O/F)^\times
   # that is 0 --> O^\times --> G --> H.
   # So, O^\times is the kernel of a map from G to H
-  # (we really want a GrpAbFinGenMap, so we can't use compose to build this map)
+  # (we really want a FinGenAbGroupHom, so we can't use compose to build this map)
   M = zero_matrix(FlintZZ, ngens(G), ngens(H))
   for i = 1:ngens(G)
     q = OKtoQ(GtoOK(G[i]))
@@ -163,7 +163,7 @@ function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, G
   StoG = compose(StoK, KtoG)
 
   # Build the map from S to O
-  function _image(x::GrpAbFinGenElem)
+  function _image(x::FinGenAbGroupElem)
     @assert parent(x) == S
     y = GtoOK(StoG(x))
     if T <: FacElemMon
@@ -278,7 +278,7 @@ function _picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldE
   # Build the map
   local disc_exp_picard_group
   let O = O, gens_snf = gens_snf
-    function disc_exp_picard_group(x::GrpAbFinGenElem)
+    function disc_exp_picard_group(x::FinGenAbGroupElem)
       y = ideal(O, 1)
       for i = 1:length(x.coeff)
         y *= gens_snf[i]^Int(x.coeff[1, i])
@@ -315,7 +315,7 @@ function _picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldE
       @assert b1
       @hassert :AbsNumFieldOrder 1 is_divisible(OKtoQ(OK(1)), a)[1]
       h = GtoQ\a
-      p = GrpAbFinGenElem(P, hcat(c.coeff, h.coeff))
+      p = FinGenAbGroupElem(P, hcat(c.coeff, h.coeff))
       b, s = has_preimage_with_preimage(StoP, p)
       @assert b
       return s

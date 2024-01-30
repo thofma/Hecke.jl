@@ -7,7 +7,7 @@
   C, mC = Hecke.sunit_group_fac_elem(S)
   Q, mQ = quo(C, 3)
   CC, mCC = Hecke.NormRel._sunit_group_fac_elem_quo_via_brauer(K, S, 3)
-  elts = GrpAbFinGenElem[]
+  elts = FinGenAbGroupElem[]
   for i in 1:ngens(CC)
     u = mCC(CC[i])
     push!(elts, mQ(mC\u))
