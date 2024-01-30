@@ -1,4 +1,4 @@
-include("NumFieldOrd/AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}.jl")
+include("NumFieldOrd/NfOrd.jl")
 include("NumFieldOrd/NumFieldOrdIdl.jl")
 include("NumFieldOrd/NfRelOrd/NfRelOrd.jl")
 include("NumFieldOrd/NfRelOrd/OrdElem.jl")

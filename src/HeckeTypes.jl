@@ -1065,17 +1065,17 @@ AbsNumFieldOrderIdeal(O::AbsNumFieldOrder{S, T}, x::ZZRingElem) where {S, T} = A
 #
 ################################################################################
 
-mutable struct NfAbsOrdFracIdlSet{S, T}
+mutable struct AbsNumFieldOrderFractionalIdealSet{S, T}
   order::AbsNumFieldOrder{S, T}
 
-  function NfAbsOrdFracIdlSet{S, T}(O::AbsNumFieldOrder{S, T}, cached::Bool=false) where {S, T}
+  function AbsNumFieldOrderFractionalIdealSet{S, T}(O::AbsNumFieldOrder{S, T}, cached::Bool=false) where {S, T}
     return get_cached!(NfAbsOrdFracIdlSetID, O, cached) do
       return new{S, T}(O)
-    end::NfAbsOrdFracIdlSet{S, T}
+    end::AbsNumFieldOrderFractionalIdealSet{S, T}
   end
 end
 
-const NfAbsOrdFracIdlSetID = Dict{AbsNumFieldOrder, NfAbsOrdFracIdlSet}()
+const NfAbsOrdFracIdlSetID = Dict{AbsNumFieldOrder, AbsNumFieldOrderFractionalIdealSet}()
 
 mutable struct AbsNumFieldOrderFractionalIdeal{S, T} <: NumFieldOrderFractionalIdeal
   order::AbsNumFieldOrder{S, T}

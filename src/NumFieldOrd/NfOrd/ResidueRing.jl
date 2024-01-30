@@ -38,7 +38,7 @@
 #
 ################################################################################
 
-add_assertion_scope(:AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+add_assertion_scope(:AbsOrdQuoRing)
 
 ################################################################################
 #
@@ -184,8 +184,8 @@ The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl})
   @assert order(I) === O
   if O isa AlgAssAbsOrd
-    @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 _test_ideal_sidedness(I, O, :left)
-    @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 _test_ideal_sidedness(I, O, :right)
+    @hassert :AbsOrdQuoRing 1 _test_ideal_sidedness(I, O, :left)
+    @hassert :AbsOrdQuoRing 1 _test_ideal_sidedness(I, O, :right)
   end
   # We should check that I is not zero
   Q = AbsOrdQuoRing(O, I)
@@ -458,7 +458,7 @@ function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
     return fl, zero(R)
   end
   z = R(O(ZZRingElem[sol[i, 1] for i = 1:degree(O)]))
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 z*y == x
+  @hassert :AbsOrdQuoRing 1 z*y == x
   return true, z
 end
 
@@ -526,7 +526,7 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z = R(-base_ring(R)(ZZRingElem[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
   ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 z*y == x
+  @hassert :AbsOrdQuoRing 1 z*y == x
   return true, z
 end
 
@@ -539,7 +539,7 @@ end
 function _divexact_strong(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   n = euclid(x)
   m = euclid(y)
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 mod(n, m) == 0
+  @hassert :AbsOrdQuoRing 1 mod(n, m) == 0
   target = divexact(n, m)
 
   #println("target valuation: $target")
@@ -566,8 +566,8 @@ function _divexact_strong(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumFiel
     end
   end
 
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 q*y == x
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 euclid(q) *euclid(y) == euclid(x)
+  @hassert :AbsOrdQuoRing 1 q*y == x
+  @hassert :AbsOrdQuoRing 1 euclid(q) *euclid(y) == euclid(x)
 
   return q
 end
@@ -622,7 +622,7 @@ function euclid(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimp
     mul!(z, z, U[i, i])
   end
 
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 z == norm(ideal(parent(x.elem), x.elem) + parent(x).ideal)
+  @hassert :AbsOrdQuoRing 1 z == norm(ideal(parent(x.elem), x.elem) + parent(x).ideal)
 
   return z
 end
@@ -647,7 +647,7 @@ function Base.divrem(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, Ab
     q = rand(parent(x))
     r = x - q*y
     if euclid(r) < e
-      @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 euclid(r) < e
+      @hassert :AbsOrdQuoRing 1 euclid(r) < e
       return q, r
     end
     if cnt > 1000
@@ -794,7 +794,7 @@ function xxgcd(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
   u = Q(-O([ V[1,i] for i in (d + 2):(2*d + 1)]))
   v = Q(-O([ V[1,i] for i in (2*d + 2):(3*d + 1)]))
 
-  @hassert :AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} 1 Q(O(1)) == u*e - (v*(-f))
+  @hassert :AbsOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
   ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
 

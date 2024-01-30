@@ -60,7 +60,7 @@ end
 #################################################################################
 
 function FractionalIdealSet(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return NfAbsOrdFracIdlSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O)
+  return AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O)
 end
 
 ################################################################################
@@ -176,10 +176,10 @@ end
 #
 ################################################################################
 
-parent(a::AbsNumFieldOrderFractionalIdeal{S, T}) where {S, T} = NfAbsOrdFracIdlSet{S, T}(order(a), false)
+parent(a::AbsNumFieldOrderFractionalIdeal{S, T}) where {S, T} = AbsNumFieldOrderFractionalIdealSet{S, T}(order(a), false)
 
 function FracIdealSet(O::AbsNumFieldOrder{S, T}) where {S, T}
-  return NfAbsOrdFracIdlSet{S, T}(O, false)
+  return AbsNumFieldOrderFractionalIdealSet{S, T}(O, false)
 end
 
 function Base.hash(a::AbsNumFieldOrderFractionalIdeal, h::UInt)
@@ -187,11 +187,11 @@ function Base.hash(a::AbsNumFieldOrderFractionalIdeal, h::UInt)
   return hash(numerator(b, copy = false), hash(denominator(b, copy = false), h))
 end
 
-elem_type(::Type{NfAbsOrdFracIdlSet{S, T}}) where {S, T} = AbsNumFieldOrderFractionalIdeal{S, T}
+elem_type(::Type{AbsNumFieldOrderFractionalIdealSet{S, T}}) where {S, T} = AbsNumFieldOrderFractionalIdeal{S, T}
 
-parent_type(::Type{AbsNumFieldOrderFractionalIdeal{S, T}}) where {S, T} = NfAbsOrdFracIdlSet{S, T}
+parent_type(::Type{AbsNumFieldOrderFractionalIdeal{S, T}}) where {S, T} = AbsNumFieldOrderFractionalIdealSet{S, T}
 
-==(a::NfAbsOrdFracIdlSet, b::NfAbsOrdFracIdlSet) = order(a) === order(b)
+==(a::AbsNumFieldOrderFractionalIdealSet, b::AbsNumFieldOrderFractionalIdealSet) = order(a) === order(b)
 
 ################################################################################
 #
@@ -199,7 +199,7 @@ parent_type(::Type{AbsNumFieldOrderFractionalIdeal{S, T}}) where {S, T} = NfAbsO
 #
 ################################################################################
 
-order(a::NfAbsOrdFracIdlSet) = a.order
+order(a::AbsNumFieldOrderFractionalIdealSet) = a.order
 
 @doc raw"""
     order(a::AbsNumFieldOrderFractionalIdeal) -> AbsNumFieldOrder
@@ -355,7 +355,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, s::NfAbsOrdFracIdlSet)
+function show(io::IO, s::AbsNumFieldOrderFractionalIdealSet)
    print(io, "Set of fractional ideals of ")
    print(io, s.order)
 end
