@@ -5,7 +5,7 @@
   @test order(T) == 1
   # discriminant_group group of a non full lattice
   L = integer_lattice(2*identity_matrix(ZZ,2))
-  S = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  S = lattice(ambient_space(L),basis_matrix(L)[1:1,:])
   @test order(discriminant_group(S)) == 4
   @test discriminant_group(S) === discriminant_group(S)
 
@@ -20,7 +20,7 @@
   @test order(T) == 4
   @test elementary_divisors(T) == ZZRingElem[2, 2]
 
-  S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
+  S = lattice(ambient_space(L),basis_matrix(L)[2:2,:])
   D = discriminant_group(S)
   D0, _ = sub(D,gens(D)[1:0])
   @test order(D0)==1

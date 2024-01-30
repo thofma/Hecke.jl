@@ -1354,7 +1354,7 @@ function _isotropic_subspace_unimodular_gram_no_lll(G)
   for i in 2:n
     for j in i+1:n
       if d[i]//d[i-1] == - d[j]//d[j-1]
-        v = (T[i,:]+T[j,:])
+        v = (T[i:i,:]+T[j:j,:])
         v = change_base_ring(ZZ,denominator(v)*v)
         return v
       end

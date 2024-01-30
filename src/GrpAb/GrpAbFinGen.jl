@@ -1439,7 +1439,7 @@ function is_subgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatt
     error("no common overgroup known")
   end
   hH = hom(H, GH, mH)
-  els = [GrpAbFinGenElem(GH, mG[j, :]) for j = 1:nrows(mG)]
+  els = [GrpAbFinGenElem(GH, mG[j:j, :]) for j = 1:nrows(mG)]
   fl, imgs = has_preimage_with_preimage(hH, els)
   if !fl
     return false, hH

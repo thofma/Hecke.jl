@@ -51,7 +51,7 @@ function FakeAbsOrdQuoRing(O::S, id::T) where {S, T}
   Snf, U, V = snf_with_transform(B)
   # the new basis is given by V^-1, since Snf = U * B * V
   Vinv = inv(V)
-  newbas = [ O(_eltseq(Vinv[i, :])) for i in 1:degree(O)]
+  newbas = [ O(_eltseq(Vinv[i:i, :])) for i in 1:degree(O)]
   @assert O == Order(algebra(O), elem_in_algebra.(newbas))
   eld = diagonal(Snf)
   # I am assuming everything fits Int :)

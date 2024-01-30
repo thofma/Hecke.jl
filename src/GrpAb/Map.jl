@@ -91,7 +91,7 @@ function has_preimage_with_preimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem
   end
 
   if fl
-    s = [GrpAbFinGenElem(domain(M), p[i, 1:ngens(domain(M))]) for i=1:length(a)]
+    s = [GrpAbFinGenElem(domain(M), p[i:i, 1:ngens(domain(M))]) for i=1:length(a)]
     # @assert all(i->M(s[i]) == a[i], 1:length(a))
     return fl, s
   else
@@ -212,7 +212,7 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix)
   # need to check if Y -> X --> U lands in V
   # if Y -> X -> B is zero.
   R = rels(A) * M
-  return all(x -> iszero(GrpAbFinGenElem(B, R[x, :])), 1:nrows(R))
+  return all(x -> iszero(GrpAbFinGenElem(B, R[x:x, :])), 1:nrows(R))
 end
 
 function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix; check::Bool = true)

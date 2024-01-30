@@ -246,6 +246,7 @@
 
     mats2 = map(v -> matrix(FlintQQ, v), mats)
     A = matrix_algebra(FlintQQ, mats2)
+    @test dim(A) == 22
     J = radical(A)
     B, = quo(A, J)
     @test dim(B) == 4

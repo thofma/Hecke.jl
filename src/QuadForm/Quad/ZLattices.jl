@@ -84,7 +84,7 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
   V = quadratic_space(QQ, gram)
   B = zero_matrix(QQ, length(gens), length(gens[1]))
   for i in 1:length(gens)
-    B[i,:] = gens[i]
+    B[i:i,:] = gens[i]
   end
   return lattice(V, B; isbasis = false)
 end
@@ -1795,7 +1795,7 @@ function _irreducible_components_gram(L::ZZLat)
   L = lll(L)
   V = ambient_space(L)
   B = basis_matrix(L)
-  B = [B[i,:] for i in 1:nrows(B)]
+  B = [B[i:i,:] for i in 1:nrows(B)]
   C = QQMatrix[]
   components = ZZLat[]
   while length(B) > 0
@@ -2046,7 +2046,7 @@ return the primitive closure $M \cap \mathbb{Q} N$ of `N` in `M`.
 ```jldoctest
 julia> M = root_lattice(:D, 6);
 
-julia> N = lattice_in_same_ambient_space(M, 3*basis_matrix(M)[1,:]);
+julia> N = lattice_in_same_ambient_space(M, 3*basis_matrix(M)[1:1,:]);
 
 julia> basis_matrix(N)
 [3   0   0   0   0   0]
@@ -2091,7 +2091,7 @@ julia> U = hyperbolic_plane_lattice(3);
 
 julia> bU = basis_matrix(U);
 
-julia> e1, e2 = bU[1,:], bU[2,:]
+julia> e1, e2 = bU[1:1,:], bU[2:2,:]
 ([1 0], [0 1])
 
 julia> N = lattice_in_same_ambient_space(U, e1 + e2)
@@ -2190,7 +2190,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   gens = TorQuadModuleElem[]
   imgs = TorQuadModuleElem[]
   for i in 1:rank(L)
-    d = bL[i,:]
+    d = bL[i:i,:]
     g = DS(vec(collect(d * prS)))
     if all(is_zero, lift(g))
       continue
@@ -2361,7 +2361,7 @@ function reflection(gram::MatElem, v::MatElem)
   c = base_ring(gram)(2) * ((v * gram * transpose(v)))[1,1]^(-1)
   ref = zero_matrix(base_ring(gram), n, n)
   for k in 1:n
-    ref[k,:] = E[k,:] - c*(E[k,:] * gram * transpose(v))*v
+    ref[k:k,:] = E[k:k,:] - c*(E[k:k,:] * gram * transpose(v))*v
   end
   return ref
 end
@@ -2396,21 +2396,21 @@ function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)
   Trem = deepcopy(T)
   k = 1
   while k <= l
-    g = Trem[k,:]
-    bm = g - E[k,:]
+    g = Trem[k:k,:]
+    bm = g - E[k:k,:]
     qm = bm * G * transpose(bm)
     if valuation(qm, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bm)
       push!(reflection_vectors, bm)
       Trem = Trem * tau1
     else
-      bp = g + E[k,:]
+      bp = g + E[k:k,:]
       qp = bp * G * transpose(bp)
       @assert valuation(qp, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bp)
-      tau2 = reflection(G, E[k,:])
+      tau2 = reflection(G, E[k:k,:])
       push!(reflection_vectors,bp)
-      push!(reflection_vectors,E[k,:])
+      push!(reflection_vectors,E[k:k,:])
       Trem = Trem * tau1 * tau2
     end
     k += 1
@@ -2550,10 +2550,10 @@ function _norm_generator(gram_normal, p)
   E = identity_matrix(QQ, n)
   q = gram_normal[i,i]
   if q!=0 && valuation(q, p) <= 1
-    return E[i,:]
+    return E[i:i,:]
   end
   @assert p==2
-  return E[i,:] + E[i-1,:]
+  return E[i:i,:] + E[i-1:i-1,:]
 end
 
 ################################################################################

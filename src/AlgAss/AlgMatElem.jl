@@ -24,6 +24,9 @@ function assure_has_coeffs(a::AlgMatElem)
     a.coeffs = _matrix_in_algebra(matrix(a), parent(a))
     a.has_coeffs = true
   end
+  @hassert :AlgAss 1 begin B = basis(parent(a));
+                           sum(B[i] * a.coeffs[i] for i in 1:length(a.coeffs)) == a
+                     end
   return nothing
 end
 

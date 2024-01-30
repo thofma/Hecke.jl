@@ -1360,7 +1360,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
 
   for i=1:m
     for j=1:m
-      a = reduce(hcat, view(mb^k, 1+(i-1)*n2, :)*view(G, :, 1+(j-1)*n2) for k in 0:n2-1)
+      a = reduce(hcat, view(mb^k, 1+(i-1)*n2:1+(i-1)*n2, :)*view(G, :, 1+(j-1)*n2:1+(j-1)*n2) for k in 0:n2-1)
       co = solve_left(trace_mat, a)
       gram[i,j] = only(co*bs)
     end

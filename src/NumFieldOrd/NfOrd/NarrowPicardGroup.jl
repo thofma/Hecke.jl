@@ -59,7 +59,7 @@ function narrow_picard_group(O::NfOrd)
     fl, a = is_principal(I)
     @assert fl
     q = elem_to_Q(elem_in_nf(a))
-    R[ngens(Q) + i,:] = hcat(-q.coeff, Crels[i, :])
+    R[[ngens(Q) + i],:] = hcat(-q.coeff, Crels[i:i, :])
   end
 
 
