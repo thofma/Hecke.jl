@@ -294,7 +294,7 @@ function ideal(O::NfRelOrd{T, S, U}, a::S; check::Bool = true) where {T, S, U}
   return NfRelOrdIdl{T, S, U}(O, PM)
 end
 
-function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl; check::Bool = true)
+function ideal(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl}, a::NfOrdIdl; check::Bool = true)
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
   return ideal(O, aa; check)
 end
@@ -463,7 +463,7 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
   for i = 2:degree(order(a))
     n *= c[i]*d[i]
   end
-  if T == nf_elem
+  if T == AbsSimpleNumFieldElem
     simplify(n)
     @assert n.den == 1
     a.norm = n.num
@@ -511,7 +511,7 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   check_parent(a, b)
   d = degree(order(a))
   H = vcat(basis_pmatrix(a, copy = false), basis_pmatrix(b, copy = false))
-  if T === nf_elem
+  if T === AbsSimpleNumFieldElem
     m = (norm(a) + norm(b)) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(H, m, :lowerleft), (d + 1):2*d, 1:d)
   else
@@ -552,7 +552,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   end
   PM = pseudo_matrix(M, C)
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
-  if T == nf_elem
+  if T == AbsSimpleNumFieldElem
     m = norm(a)*norm(b) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(PM, m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   else
@@ -602,7 +602,7 @@ function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(pseudo_matrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
-  if T === nf_elem
+  if T === AbsSimpleNumFieldElem
     m = intersect(norm(a), norm(b)) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(M, m, :lowerleft), 1:d, 1:d)
   else
@@ -811,7 +811,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   OK = maximal_order(K)
   pb = pseudo_basis(O, copy = false)
 
-  is_absolute = (typeof(K) == AnticNumberField)
+  is_absolute = (typeof(K) == AbsSimpleNumField)
 
   # Compute a pseudo basis of O with integral ideals:
   basis_mat_int = zero_matrix(K, d, d)
@@ -885,7 +885,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   return ideal(O, PM; check=false, M_in_hnf=true)
 end
 
-function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}}
+function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfRelNSElem{AbsSimpleNumFieldElem}, NfRelElem{AbsSimpleNumFieldElem}}}
   d = degree(O)
   L = nf(O)
   K = base_field(L)
@@ -905,7 +905,7 @@ function pradical(O::NfRelOrd{S, T, U}, P::NfOrdIdl) where {S, T, U <: Union{NfR
   prime_ideals = factor(pOK)
   kprimes = collect(keys(prime_ideals))
 
-  elts_with_val = Vector{nf_elem}(undef, d)
+  elts_with_val = Vector{AbsSimpleNumFieldElem}(undef, d)
   for i = 1:d
     elts_with_val[i] = element_with_valuation(pbint[i][2], kprimes).elem_in_nf
   end
@@ -1001,7 +1001,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2, T3}) where {T1, T2, T3}
     end
   end
   PM = pseudo_matrix(transpose(M), C)
-  if T1 == nf_elem && isdefined(O, :index)
+  if T1 == AbsSimpleNumFieldElem && isdefined(O, :index)
     PM = sub(pseudo_hnf_full_rank_with_modulus!(PM, O.index*minimum(a, copy = false), :upperright), 1:d, 1:d)
   else
     PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
@@ -1010,7 +1010,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2, T3}) where {T1, T2, T3}
   N = inv(transpose(PM.matrix))
   PN = pseudo_matrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   res = typeof(O)(nf(O), PN)
-  if T1 == nf_elem && isdefined(O, :index)
+  if T1 == AbsSimpleNumFieldElem && isdefined(O, :index)
     res.index = O.index*minimum(a, copy = false)
   end
   return res

@@ -14,9 +14,9 @@
 
 @deprecate subgroup sub
 
-@deprecate upper_bound(x::arb, y::Type{ZZRingElem}) upper_bound(y, x)
+@deprecate upper_bound(x::ArbFieldElem, y::Type{ZZRingElem}) upper_bound(y, x)
 
-@deprecate abs_upper_bound(x::arb, y::Type{ZZRingElem}) abs_upper_bound(y, x)
+@deprecate abs_upper_bound(x::ArbFieldElem, y::Type{ZZRingElem}) abs_upper_bound(y, x)
 
 @deprecate is_equivalent is_isometric
 
@@ -54,7 +54,7 @@
 
 @deprecate ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool) where {T, S} ideal(O, M; check)
 
-@deprecate ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool) ideal(O, a; check)
+@deprecate ideal(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool) ideal(O, a; check)
 
 @deprecate ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool) ideal(O, a; check)
 
@@ -74,13 +74,13 @@
 
 @deprecate factor(a::QQFieldElem, Z::ZZRing) factor(Z, a)
 
-@deprecate factor(f::QQPolyRingElem, K::AnticNumberField) factor(K, f)
+@deprecate factor(f::QQPolyRingElem, K::AbsSimpleNumField) factor(K, f)
 
-@deprecate factor(f::ZZPolyRingElem, K::AnticNumberField) factor(K, f)
+@deprecate factor(f::ZZPolyRingElem, K::AbsSimpleNumField) factor(K, f)
 
-@deprecate factor(a::nf_elem, I::NfOrdIdlSet) factor(I, a)
+@deprecate factor(a::AbsSimpleNumFieldElem, I::NfOrdIdlSet) factor(I, a)
 
-@deprecate factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) factor(I, a)
+@deprecate factor(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::NfOrdIdlSet) factor(I, a)
 
 @deprecate factor(a::Generic.RationalFunctionFieldElem{T}, R::S) where {T, S<:PolyRing{T}} factor(R, a)
 
@@ -96,10 +96,10 @@
 
 @deprecate factor(f::Union{ZZPolyRingElem, QQPolyRingElem}, R::AcbField, abs_tol::Int=R.prec, initial_prec::Int...) factor(R, f, abs_tol, initial_prec...)
 
-@deprecate factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet; refine::Bool = false) factor_coprime(I, a, refine = refine)
+@deprecate factor_coprime(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::NfOrdIdlSet; refine::Bool = false) factor_coprime(I, a, refine = refine)
 
-@deprecate roots(f::QQPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
-@deprecate roots(f::ZZPolyRingElem, K::AnticNumberField; kw...) roots(K, f; kw...)
+@deprecate roots(f::QQPolyRingElem, K::AbsSimpleNumField; kw...) roots(K, f; kw...)
+@deprecate roots(f::ZZPolyRingElem, K::AbsSimpleNumField; kw...) roots(K, f; kw...)
 
 @deprecate roots(f::Union{fpPolyRingElem, fqPolyRepPolyRingElem}, F::Union{fqPolyRepField, Hecke.RelFinField}) roots(F, f)
 
@@ -142,7 +142,7 @@
 # Things that moved to Nemo
 
 # > 0.18.1
-simplest_inside(x::arb) = simplest_rational_inside(x)
+simplest_inside(x::ArbFieldElem) = simplest_rational_inside(x)
 
 # Deprecated during 0.18.*
 

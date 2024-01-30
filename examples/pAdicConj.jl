@@ -7,12 +7,12 @@ using Hecke
 
 #= kept for the comments
 
-function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
+function mult_syzygies_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   p = next_prime(2^10) #experimentally, the runtime is dominated by
          # log which in case is dominated by the a^(p^n-1) in the 1st step
          # thus try p smaller..., ideally also try n smaller...
          # also, see comments at _log
-  u = FacElem{nf_elem, AnticNumberField}[]
+  u = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   la = [conjugates_pAdic_log(e, p, 300) for e = a] #can loose precision
     # needs to be traced
     # precision needs to be updated.

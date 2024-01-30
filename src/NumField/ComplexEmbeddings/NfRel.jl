@@ -10,7 +10,7 @@
 #
 # We store the the following data on the field L itself, which can be accessed via
 # _conjugate_data_arb_new(L, prec)):
-#   Vector{Tuple{Emb{base_field(L)}, Vector{acb}, Vector{arb}, Vector{acb}}
+#   Vector{Tuple{Emb{base_field(L)}, Vector{AcbFieldElem}, Vector{ArbFieldElem}, Vector{AcbFieldElem}}
 #
 # We use the following ordering, which is very important and must not be changed:
 # Let (p, rts, r_rts, c_rts) be such an entry.
@@ -22,7 +22,7 @@
 #   - all complex roots with positive imaginary part, ordered -oo to oo
 #
 # For each place p of K, we have a tuple
-#   (p, roots of p(g), arb[], acb[]) if p is complex, and
+#   (p, roots of p(g), ArbFieldElem[], AcbFieldElem[]) if p is complex, and
 #   (p, roots of p(g), real roots of g(a), complex roots of g(a) (one per pair))
 #   if p is real.
 #
@@ -35,7 +35,7 @@ mutable struct NumFieldEmbNfRel{S, T} <: NumFieldEmb{T}
   isreal::Bool          # Whether the embedding is real.
   i::Int                # Index of the root of p(g) to which the embedding
                         # is corresponding to.
-  r::acb                # The root of p(g)
+  r::AcbFieldElem                # The root of p(g)
   absolute_index::Int   # Absolute index for bookkeeping.
   conjugate::Int        # Absolute index of the conjugate embedding.
 end
@@ -259,7 +259,7 @@ end
 #
 ################################################################################
 
-function complex_embedding(K::NfRel, e::NumFieldEmb, r::acb)
+function complex_embedding(K::NfRel, e::NumFieldEmb, r::AcbFieldElem)
   @req number_field(e) === base_field(K) "Embedding must be embedding of base field"
   embs = complex_embeddings(K)
   cnt = 0

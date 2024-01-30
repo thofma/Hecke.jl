@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc raw"""
-    restrict_scalars(A::AlgAss{nf_elem}, Q::QQField)
+    restrict_scalars(A::AlgAss{AbsSimpleNumFieldElem}, Q::QQField)
     restrict_scalars(A::AlgAss{fqPolyRepFieldElem}, Fp::fpField)
     restrict_scalars(A::AlgAss{FqPolyRepFieldElem}, Fp::EuclideanRingResidueField{ZZRingElem})
       -> AlgAss, Map
@@ -14,7 +14,7 @@ Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
 function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
 """
 # Top level functions to avoid "type mix-ups" (like AlgAss{fqPolyRepFieldElem} with FlintQQ)
-function restrict_scalars(A::AbsAlgAss{nf_elem}, Q::QQField)
+function restrict_scalars(A::AbsAlgAss{AbsSimpleNumFieldElem}, Q::QQField)
   return _restrict_scalars(A, Q)
 end
 
@@ -38,14 +38,14 @@ end
 #end
 
 @doc raw"""
-    restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
+    restrict_scalars(A::AlgAss{AbsSimpleNumFieldElem}, KtoL::NfToNfMor)
       -> AlgAss, Map
 
 Given an algebra $A$ over a number field $L$ and an inclusion map `KtoL` from
 a number field $K$ to $L$, this function returns the restriction $B$ of $A$
 to $K$ and the morphism $B \to A$.
 """
-function restrict_scalars(A::AbsAlgAss{nf_elem}, KtoL::NfToNfMor)
+function restrict_scalars(A::AbsAlgAss{AbsSimpleNumFieldElem}, KtoL::NfToNfMor)
   return _restrict_scalars(A, KtoL)
 end
 
@@ -107,7 +107,7 @@ function image(f::AlgAssResMor, a)
   return A(yy)
 end
 
-#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{QQField, fpField, EuclideanRingResidueField{ZZRingElem}}) where { T <: Union{nf_elem, fqPolyRepFieldElem, FqPolyRepFieldElem} }
+#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{QQField, fpField, EuclideanRingResidueField{ZZRingElem}}) where { T <: Union{AbsSimpleNumFieldElem, fqPolyRepFieldElem, FqPolyRepFieldElem} }
 # TODO: fix the type
 function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
   K = base_ring(A)
@@ -238,7 +238,7 @@ function preimage(f::AlgAssExtMor, a)
   return B(yy)
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, QQFieldElem}}
+function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{AbsSimpleNumFieldElem, QQFieldElem}}
   extpT = _ext_type(T)
   extT = elem_type(extpT)
   eltA = elem_type(A)
@@ -381,7 +381,7 @@ function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 
-function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{nf_elem}})
+function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{AbsSimpleNumFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 

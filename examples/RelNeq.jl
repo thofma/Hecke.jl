@@ -3,19 +3,19 @@ module module_RelNeq
 using Hecke
 
 struct RelNeq
-  k::AnticNumberField
-  K::AnticNumberField
-  Kk::Hecke.NfRel{nf_elem}
+  k::AbsSimpleNumField
+  K::AbsSimpleNumField
+  Kk::Hecke.NfRel{AbsSimpleNumFieldElem}
   m_k_K::Map
   m_Kk_K::Map
-  function RelNeq(k::AnticNumberField, Kk::Hecke.NfRel{nf_elem})
+  function RelNeq(k::AbsSimpleNumField, Kk::Hecke.NfRel{AbsSimpleNumFieldElem})
     k = base_ring(Kk)
     K, m_K_Kk = absolute_simple_field(Kk)
     m1 = inv(m_K_Kk)
     return new(k, K, Kk, m1, restrict(m1, k))
   end
 
-  function RelNeq(k::AnticNumberField, K::AnticNumberField)
+  function RelNeq(k::AbsSimpleNumField, K::AbsSimpleNumField)
     kt, t = polynomial_ring(k, cached = false)
     fl, mp = Hecke.is_subfield(k, K)
     Qt = parent(K.pol)
@@ -151,11 +151,11 @@ function norm_1_subgroup(A::RelNeq)
 end
 
 
-function knot(K::AnticNumberField)
+function knot(K::AbsSimpleNumField)
   return knot(rationals_as_number_field()[1], K)
 end
 
-function knot(k::AnticNumberField, K::AnticNumberField)
+function knot(k::AbsSimpleNumField, K::AbsSimpleNumField)
   R = RelNeq(k, K)
   #TODO: is this better than using implicit extensions?
   mr, mq, gens, gg = norm_1_subgroup(R)
@@ -210,7 +210,7 @@ mutable struct Norm1Group
   A::RelNeq
   gC::Vector{Tuple{Hecke.NfOrdFracIdl, GrpAbFinGenElem}}
   sC::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
-  gU::Vector{Tuple{FacElem{nf_elem, AnticNumberField}, GrpAbFinGenElem}}
+  gU::Vector{Tuple{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, GrpAbFinGenElem}}
   sU::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
   C::Any
   U::Any
@@ -252,7 +252,7 @@ end
 function is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
   zk = order(base_ring(A))
   B = FacElem(Dict((numerator(x), v) for (x,v) = A.fac))
-  den = Dict{nf_elem, ZZRingElem}()
+  den = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
   for (x,v) = A.fac
     k = nf(zk)(denominator(x))
     if haskey(den, k)

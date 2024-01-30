@@ -19,7 +19,7 @@ or via explicit coercion. Elements will be of type `NfAbsOrdElem`,
 the type if actually parametrized by the type of the surrounding field and
 the type of the field elements. E.g. the type of any element in any
 order of an absolute simple field will be
-`NfAbsOrdElem{AnticNumberField,nf_elem}`
+`NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}`
 
 
 ```@docs
@@ -53,7 +53,7 @@ All the usual arithmetic operatinos are defined:
 
 ```@docs
 representation_matrix(::NfAbsOrdElem)
-representation_matrix(::NfOrdElem, ::AnticNumberField)
+representation_matrix(::NfOrdElem, ::AbsSimpleNumField)
 tr(::NumFieldOrdElem)
 norm(::NumFieldOrdElem)
 absolute_norm(::NfAbsOrdElem)

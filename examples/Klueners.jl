@@ -108,7 +108,7 @@ function Base.intersect(A::GrpAbFinGen, B::GrpAbFinGen...)
   return A
 end
 
-function s3_extensions(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
+function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
   zk = maximal_order(k)
   dk = abs(discriminant(zk))
   K, mkK = normal_closure(k)
@@ -443,7 +443,7 @@ function s3_extensions(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
 end
 
 
-function s3_extensions2(k::AnticNumberField, d::ZZRingElem, _T::Int = 0)
+function s3_extensions2(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
   zk = maximal_order(k)
   dk = abs(discriminant(zk))
   K, mkK = normal_closure(k)

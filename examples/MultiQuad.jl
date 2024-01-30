@@ -391,7 +391,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
 end
 
 fe(a::FacElem) = a
-fe(a::nf_elem) = FacElem(a)
+fe(a::AbsSimpleNumFieldElem) = FacElem(a)
 
 function elems_from_sat(c::Hecke.ClassGrpCtx, z)
   res = []
@@ -515,7 +515,7 @@ end
 function sunits_mod_units(c::Hecke.ClassGrpCtx)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
-  su = Vector{FacElem{nf_elem, AnticNumberField}}()
+  su = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}()
   for i=1:length(c.FB.ideals)
     x = zeros(ZZRingElem, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
@@ -530,7 +530,7 @@ end
 
 function simplify(c::Hecke.ClassGrpCtx)
   d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+  U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
@@ -558,7 +558,7 @@ end
 
 function units(c::Hecke.ClassGrpCtx)
   d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+  U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo

@@ -195,18 +195,18 @@ end
 
 struct acb_roots
   p::Int
-  roots::Vector{acb}
-  real_roots::Vector{arb}
-  complex_roots::Vector{acb}
+  roots::Vector{AcbFieldElem}
+  real_roots::Vector{ArbFieldElem}
+  complex_roots::Vector{AcbFieldElem}
 end
 
 mutable struct acb_root_ctx
   poly::QQPolyRingElem
   _roots::Ptr{acb_struct}
   prec::Int
-  roots::Vector{acb}
-  real_roots::Vector{arb}
-  complex_roots::Vector{acb}
+  roots::Vector{AcbFieldElem}
+  real_roots::Vector{ArbFieldElem}
+  complex_roots::Vector{AcbFieldElem}
   signature::Tuple{Int, Int}
 
   function acb_root_ctx(x::QQPolyRingElem, p::Int = 32)
@@ -219,13 +219,13 @@ mutable struct acb_root_ctx
     z.signature = (r, s)
 
     for i = 1:degree(x)
-      ccall((:acb_set, libarb), Nothing, (Ptr{acb_struct}, Ref{acb}),
+      ccall((:acb_set, libarb), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}),
             z._roots + (i - 1) * sizeof(acb_struct), z.roots[i])
     end
 
     z.prec = p
-    A = Array{arb}(undef, z.signature[1])
-    B = Array{acb}(undef, z.signature[2])
+    A = Array{ArbFieldElem}(undef, z.signature[1])
+    B = Array{AcbFieldElem}(undef, z.signature[2])
 
     for i in 1:r
       @assert isreal(z.roots[i])
@@ -468,12 +468,12 @@ end
 ################################################################################
 
 mutable struct EnumCtxArb
-  G::arb_mat
+  G::ArbMatrix
   L::Vector{ZZMatrix}
   x::ZZMatrix
   p::Int
 
-  function EnumCtxArb(G::arb_mat)
+  function EnumCtxArb(G::ArbMatrix)
     z = new()
     z.G = G
     z.x = zero_matrix(FlintZZ, 1, nrows(G))
@@ -576,32 +576,32 @@ Parent for factored elements, ie. power products.
 """
 mutable struct FacElemMon{S} <: Ring
   base_ring::S  # for the base
-  basis_conjugates_log::Dict{RingElem, Tuple{Int, Vector{arb}}}
-  basis_conjugates::Dict{RingElem, Tuple{Int, Vector{arb}}}
-  conj_log_cache::Dict{Int, Dict{nf_elem, Vector{arb}}}
+  basis_conjugates_log::Dict{RingElem, Tuple{Int, Vector{ArbFieldElem}}}
+  basis_conjugates::Dict{RingElem, Tuple{Int, Vector{ArbFieldElem}}}
+  conj_log_cache::Dict{Int, Dict{AbsSimpleNumFieldElem, Vector{ArbFieldElem}}}
 
   function FacElemMon{S}(R::S, cached::Bool = false) where {S}
     return get_cached!(FacElemMonDict, R, cached) do
       new{S}(R,
-        Dict{RingElem, Vector{arb}}(),
-        Dict{RingElem, Vector{arb}}(),
-        Dict{Int, Dict{nf_elem, Vector{arb}}}()
+        Dict{RingElem, Vector{ArbFieldElem}}(),
+        Dict{RingElem, Vector{ArbFieldElem}}(),
+        Dict{Int, Dict{AbsSimpleNumFieldElem, Vector{ArbFieldElem}}}()
         )
     end::FacElemMon{S}
   end
 
-  function FacElemMon{AnticNumberField}(R::AnticNumberField, cached::Bool = true)
+  function FacElemMon{AbsSimpleNumField}(R::AbsSimpleNumField, cached::Bool = true)
     if haskey(FacElemMonDict, R)
-      return FacElemMonDict[R]::FacElemMon{AnticNumberField}
+      return FacElemMonDict[R]::FacElemMon{AbsSimpleNumField}
     end
     if has_attribute(R, :fac_elem_mon)
-      F = get_attribute(R, :fac_elem_mon)::FacElemMon{AnticNumberField}
+      F = get_attribute(R, :fac_elem_mon)::FacElemMon{AbsSimpleNumField}
       return F
     end
-    z = new{AnticNumberField}(R,
-      Dict{RingElem, Vector{arb}}(),
-      Dict{RingElem, Vector{arb}}(),
-      Dict{Int, Dict{nf_elem, Vector{arb}}}()
+    z = new{AbsSimpleNumField}(R,
+      Dict{RingElem, Vector{ArbFieldElem}}(),
+      Dict{RingElem, Vector{ArbFieldElem}}(),
+      Dict{Int, Dict{AbsSimpleNumFieldElem, Vector{ArbFieldElem}}}()
       )
     if cached
       set_attribute!(R, :fac_elem_mon => z)
@@ -668,7 +668,7 @@ const NfOrdSet = NfAbsOrdSet
   disc::ZZRingElem                    # Discriminant
   is_equation_order::Bool             # Equation order of ambient number field?
 
-  minkowski_matrix::Tuple{arb_mat, Int}        # Minkowski matrix
+  minkowski_matrix::Tuple{ArbMatrix, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{ZZMatrix, Int} # Minkowski matrix - gram * 2^prec and rounded
   minkowski_gram_CMfields::ZZMatrix
   complex_conjugation_CM::Map
@@ -760,7 +760,7 @@ NfAbsOrd(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = NfAbsOrd{S, ele
 
 NfAbsOrd(b::Vector{T}, cached::Bool = false) where {T} = NfAbsOrd{parent_type(T), T}(b, cached)
 
-const NfOrd = NfAbsOrd{AnticNumberField, nf_elem}
+const NfOrd = NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, NfAbsOrd}()
 
@@ -822,7 +822,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
   function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
     k = nf(O)
-    if isa(k, AnticNumberField)
+    if isa(k, AbsSimpleNumField)
       if is_equation_order(O)
         z.elem_in_nf = k(k.pol.parent(arr))
       else
@@ -864,7 +864,7 @@ NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{U}) where {S, T, U <: Integer} = NfA
 
 #NfAbsOrdElem(O::NfAbsOrd{S, T}, p::ZZRingElem) where {S, T} = NfAbsOrdElem{S, T}(O, p)
 
-const NfOrdElem = NfAbsOrdElem{AnticNumberField, nf_elem}
+const NfOrdElem = NfAbsOrdElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
@@ -886,7 +886,7 @@ function NfAbsOrdIdlSet(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
   return NfAbsOrdIdlSet{S, T}(O, cached)
 end
 
-const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
+const NfOrdIdlSet = NfAbsOrdIdlSet{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
@@ -901,7 +901,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     Creates the ideal $(a,b)$ of the order of $b$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
 
-  NfOrdIdl(O::NfOrd, a::ZZRingElem, b::nf_elem) -> NfOrdIdl
+  NfOrdIdl(O::NfOrd, a::ZZRingElem, b::AbsSimpleNumFieldElem) -> NfOrdIdl
 
     Creates the ideal $(a,b)$ of $O$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
@@ -982,7 +982,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::ZZRingElem, b::nf_elem) where {S, T}
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::ZZRingElem, b::AbsSimpleNumFieldElem) where {S, T}
     # create ideal (a,b) of O
     r = NfAbsOrdIdl(a, O(b, false))
     return r
@@ -1067,7 +1067,7 @@ NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::Int) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
 
 NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::ZZRingElem) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
 
-const NfOrdIdl = NfAbsOrdIdl{AnticNumberField, nf_elem}
+const NfOrdIdl = NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
@@ -1158,9 +1158,9 @@ function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}, a::T) where {S, T}
   return NfAbsOrdFracIdl{S, T}(O, a)
 end
 
-const NfOrdFracIdlSet = NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}
+const NfOrdFracIdlSet = NfAbsOrdFracIdlSet{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
-const NfOrdFracIdl = NfAbsOrdFracIdl{AnticNumberField, nf_elem}
+const NfOrdFracIdl = NfAbsOrdFracIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
@@ -1168,33 +1168,33 @@ const NfOrdFracIdl = NfAbsOrdFracIdl{AnticNumberField, nf_elem}
 #
 ################################################################################
 
-mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
+mutable struct UnitGrpCtx{T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem}}}
   order::NfOrd
   rank::Int
   full_rank::Bool
   units::Vector{T}
-  regulator::arb
-  tentative_regulator::arb
+  regulator::ArbFieldElem
+  tentative_regulator::ArbFieldElem
   regulator_precision::Int
   #torsion_units::Vector{NfOrdElem}
   torsion_units_order::Int
   torsion_units_gen::NfOrdElem
-  conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
-  conj_log_mat_cutoff::Dict{Int, arb_mat}
-  conj_log_mat_cutoff_inv::Dict{Int, arb_mat}
-  conj_log_mat::Tuple{arb_mat, Int}
-  conj_log_mat_transpose::Tuple{arb_mat, Int}
-  conj_log_mat_times_transpose::Tuple{arb_mat, Int}
+  conj_log_cache::Dict{Int, Dict{AbsSimpleNumFieldElem, ArbFieldElem}}
+  conj_log_mat_cutoff::Dict{Int, ArbMatrix}
+  conj_log_mat_cutoff_inv::Dict{Int, ArbMatrix}
+  conj_log_mat::Tuple{ArbMatrix, Int}
+  conj_log_mat_transpose::Tuple{ArbMatrix, Int}
+  conj_log_mat_times_transpose::Tuple{ArbMatrix, Int}
   rel_add_prec::Int
   tors_prec::Int
   indep_prec::Int
 
-  residue::arb
+  residue::ArbFieldElem
 
   unit_map::Map
   finished::Bool
   auts# automorphisms of the field
-  cache::Vector{Dict{nf_elem, nf_elem}}
+  cache::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   relations_used::Vector{Int}
 
   function UnitGrpCtx{T}(O::NfOrd) where {T}
@@ -1205,8 +1205,8 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.regulator_precision = -1
     z.torsion_units_order = -1
     z.units = Vector{T}()
-    z.conj_log_mat_cutoff = Dict{Int, arb_mat}()
-    z.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
+    z.conj_log_mat_cutoff = Dict{Int, ArbMatrix}()
+    z.conj_log_mat_cutoff_inv = Dict{Int, ArbMatrix}()
     z.rel_add_prec = 32
     z.tors_prec = 16
     z.indep_prec = 16
@@ -1266,7 +1266,7 @@ mutable struct BigComplex
     return BigComplex(BigFloat(Base.real(r)), BigFloat(Base.imag(r)))
   end
 
-  function BigComplex(r::acb)
+  function BigComplex(r::AcbFieldElem)
     return BigComplex(BigFloat(midpoint(real(r))), BigFloat(midpoint(imag(r))))
   end
 end
@@ -1295,7 +1295,7 @@ mutable struct roots_ctx
     r = new()
     return r
   end
-  function roots_ctx(K::AnticNumberField)
+  function roots_ctx(K::AbsSimpleNumField)
     return get_attribute!(K, :roots_ctx) do
       return conjugates_init(K.pol)
     end::roots_ctx
@@ -1422,7 +1422,7 @@ mutable struct FactorBaseSingleP{T}
   end
 end
 
-function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::QQFieldElem = QQFieldElem(0))
+function fb_doit(a::AbsSimpleNumFieldElem, v::Int, sP::FactorBaseSingleP, no::QQFieldElem = QQFieldElem(0))
   if !isdefined(sP, :lf)
     return fb_naive_doit(a, v, sP, no)
   end
@@ -1433,7 +1433,7 @@ function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::QQFieldElem = QQ
   return fb_naive_doit(a, v, sP, no)
 end
 
-function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::QQFieldElem = QQFieldElem(0))
+function fb_naive_doit(a::AbsSimpleNumFieldElem, v::Int, sP::FactorBaseSingleP, no::QQFieldElem = QQFieldElem(0))
   lp = sP.lp
   r = Vector{Tuple{Int, Int}}()
   for x=1:length(lp)
@@ -1446,7 +1446,7 @@ function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::QQFieldEle
   return r, v
 end
 
-function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
+function fb_int_doit(a::AbsSimpleNumFieldElem, v::Int, sP::FactorBaseSingleP)
   g = parent(sP.lf[1])(a)
   g = gcd(g, sP.pt.prod)
   fl = is_smooth(sP.pt, g)[1]
@@ -1574,7 +1574,7 @@ mutable struct RandIdlCtx
   end
 end
 
-const nf_elem_or_fac_elem = Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
+const nf_elem_or_fac_elem = Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
 
 abstract type NormCtx end
 
@@ -1607,7 +1607,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either ZZMatrix or S
 
   largePrimeCnt::Int
   B2::Int
-  largePrime::Dict{ZZPolyRingElem, Tuple{nf_elem, QQFieldElem}}
+  largePrime::Dict{ZZPolyRingElem, Tuple{AbsSimpleNumFieldElem, QQFieldElem}}
   largePrime_success::Int
   largePrime_no_success::Int
 
@@ -1641,7 +1641,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either ZZMatrix or S
     r.R_rel = Vector{nf_elem_or_fac_elem}()
     r.RS = Set{UInt}()
     r.largePrimeCnt = 0
-    r.largePrime = Dict{ZZPolyRingElem, Tuple{nf_elem, QQFieldElem}}()
+    r.largePrime = Dict{ZZPolyRingElem, Tuple{AbsSimpleNumFieldElem, QQFieldElem}}()
     r.largePrime_success = 0
     r.largePrime_no_success = 0
     r.normStat = Dict{Int, Int}()
@@ -1881,18 +1881,18 @@ abstract type NumFieldEmb{T} end
 #
 ################################################################################
 
-mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AnticNumberField}
-  K::AnticNumberField  # Number Field
+mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AbsSimpleNumField}
+  K::AbsSimpleNumField  # Number Field
   i::Int               # The position of the root r in conjugates_arb(a),
                        # where a is the primitive element of K
-  r::acb               # Approximation of the root
+  r::AcbFieldElem               # Approximation of the root
   isreal::Bool         # True if and only if the embedding is real.
   conjugate::Int       # The conjuagte embedding
-  uniformizer::nf_elem # An element which is positive at the embedding
+  uniformizer::AbsSimpleNumFieldElem # An element which is positive at the embedding
                        # and negative at all the other real embeddings.
                        # Makes sense only if the place is real.
 
-  function NumFieldEmbNfAbs(K::AnticNumberField, c::acb_roots, i::Int)
+  function NumFieldEmbNfAbs(K::AbsSimpleNumField, c::acb_roots, i::Int)
     z = new()
     z.K = K
     r1, r2 = length(c.real_roots), length(c.complex_roots)

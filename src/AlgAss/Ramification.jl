@@ -42,7 +42,7 @@ function is_split(A::AbsAlgAss{QQFieldElem})
   return true
 end
 
-function is_split(A::AbsAlgAss{nf_elem})
+function is_split(A::AbsAlgAss{AbsSimpleNumFieldElem})
   K = base_ring(A)
   for p in infinite_places(K)
     if !is_split(A, p)
@@ -66,9 +66,9 @@ end
 #
 ################################################################################
 
-function ramified_infinite_places(A::AlgAss{nf_elem})
+function ramified_infinite_places(A::AlgAss{AbsSimpleNumFieldElem})
   K = base_ring(A)
-  inf_plc = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
+  inf_plc = Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}()
   places = real_places(K)
   for p in places
     if !is_split(A, p)
@@ -82,7 +82,7 @@ end
 function ramified_infinite_places_of_center(A::AbsAlgAss)
   dec = decompose(A)
   C, = center(A)
-  res = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}[]
+  res = Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}[]
   for i in 1:length(dec)
     K, = component(Field, C, i)
     B, = _as_algebra_over_center(dec[i][1])
@@ -129,7 +129,7 @@ function schur_index(A::AbsAlgAss{QQFieldElem}, ::PosInf)
   end
 end
 
-function schur_index(A::AbsAlgAss{nf_elem}, P::InfPlc)
+function schur_index(A::AbsAlgAss{AbsSimpleNumFieldElem}, P::InfPlc)
   @req is_central(A) "Algebra must be central"
   @req is_simple(A) "Algebra must be simple"
 
@@ -219,7 +219,7 @@ end
 
 # Tests whether A fulfils the Eichler condition relative to the maximal Z-order
 # of base_ring(A)
-function _is_eichler_csa(A::AbsAlgAss{nf_elem})
+function _is_eichler_csa(A::AbsAlgAss{AbsSimpleNumFieldElem})
   @assert is_simple(A)
   @assert is_central(A)
 

@@ -236,17 +236,17 @@ include("Assertions.jl")
 #
 ################################################################################
 
-function is_maximal_order_known(K::AnticNumberField)
+function is_maximal_order_known(K::AbsSimpleNumField)
   return has_attribute(K, :maximal_order)
 end
 
-function conjugate_data_arb(K::AnticNumberField)
+function conjugate_data_arb(K::AbsSimpleNumField)
   return get_attribute!(K, :conjugate_data_arb) do
     return acb_root_ctx(K.pol)
   end::acb_root_ctx
 end
 
-function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
+function conjugate_data_arb_roots(K::AbsSimpleNumField, p::Int)
   already_set = false
   _c = get_attribute(K, :conjugate_data_arb_roots)
   if _c !== nothing
@@ -272,27 +272,27 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
       p = max(p, 2)
       rall = [one(AcbField(p, cached = false))]
       rreal = [one(ArbField(p, cached = false))]
-      rcomplex = Vector{acb}()
+      rcomplex = Vector{AcbFieldElem}()
     elseif f == 2
       # x + 1
       p = max(p, 2)
       rall = [-one(AcbField(p, cached = false))]
       rreal = [-one(ArbField(p, cached = false))]
-      rcomplex = Vector{acb}()
+      rcomplex = Vector{AcbFieldElem}()
     else
       # Use that e^(i phi) = cos(phi) + i sin(phi)
       # Call sincospi to determine these values
       pstart = max(p, 2) # Sometimes this gets called with -1
-      local _rall::Vector{Tuple{arb, arb}}
-      rreal = arb[]
-      rcomplex = Vector{acb}(undef, div(degree(K), 2))
+      local _rall::Vector{Tuple{ArbFieldElem, ArbFieldElem}}
+      rreal = ArbFieldElem[]
+      rcomplex = Vector{AcbFieldElem}(undef, div(degree(K), 2))
       while true
         R = ArbField(pstart, cached = false)
         # We need to pair them
-        _rall = Tuple{arb, arb}[ sincospi(QQFieldElem(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
+        _rall = Tuple{ArbFieldElem, ArbFieldElem}[ sincospi(QQFieldElem(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
         if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
           CC = AcbField(pstart, cached = false)
-          rall = acb[ CC(l[2], l[1]) for l in _rall]
+          rall = AcbFieldElem[ CC(l[2], l[1]) for l in _rall]
           j = 1
           good = true
           for i in 1:degree(K)
@@ -341,13 +341,13 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   return c[p]::acb_roots
 end
 
-function signature(K::AnticNumberField)
+function signature(K::AbsSimpleNumField)
   return get_attribute!(K, :signature) do
     return signature(defining_polynomial(K))
   end::Tuple{Int, Int}
 end
 
-function _get_prime_data_lifting(K::AnticNumberField)
+function _get_prime_data_lifting(K::AbsSimpleNumField)
   return get_attribute!(K, :_get_prime_data_lifting) do
     return Dict{Int,Any}()
   end::Dict{Int,Any}
@@ -622,7 +622,7 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-#precompile(maximal_order, (AnticNumberField, ))
+#precompile(maximal_order, (AbsSimpleNumField, ))
 
 ################################################################################
 #
@@ -891,8 +891,8 @@ function clear_cache()
   clear_cache(find_cache(Hecke))
 end
 
-precompile(maximal_order, (AnticNumberField, ))
-precompile(class_group, (NfAbsOrd{AnticNumberField, nf_elem},))
+precompile(maximal_order, (AbsSimpleNumField, ))
+precompile(class_group, (NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem},))
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 

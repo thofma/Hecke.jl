@@ -56,7 +56,7 @@ end
 Return the period lattices of an elliptic curve $E$ over a number field for each possible
 embedding in $mathb{C}$.
 """
-function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{QQFieldElem, nf_elem}
+function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{QQFieldElem, AbsSimpleNumFieldElem}
   K = base_field(E)
   if K == QQ
     return [period_real_embedding(E, nothing, prec)]
@@ -68,7 +68,7 @@ function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{QQFieldElem, nf
 end
 
 #Compute the period lattice of an elliptic curve over a number field using a chosen real embedding.
-function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Union{QQFieldElem, nf_elem}
+function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   attempt = 1
   K = base_field(E)
@@ -120,7 +120,7 @@ end
 #Compute the period lattice of an elliptic curve over a number field using a chosen embedding.
 #Also works for real embeddings, but as the other one exclusively uses real arithmetic, it is probably
 #faster.
-function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Union{QQFieldElem, nf_elem}
+function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   attempt = 1
   K = base_field(E)

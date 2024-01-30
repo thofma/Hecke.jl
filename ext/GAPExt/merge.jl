@@ -157,7 +157,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
   emb_suby = y.subfields[i]
   lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
   Seemb, mSeemb = simple_extension(lsub, check = false)
-  ev = nf_elem[mK\(mx(image_primitive_element(emb_subx))), mK\(my(image_primitive_element(emb_suby)))]
+  ev = AbsSimpleNumFieldElem[mK\(mx(image_primitive_element(emb_subx))), mK\(my(image_primitive_element(emb_suby)))]
   embs = NfToNfMor[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
   for j = 1:length(x.subfields)
     if codomain(x.subfields[j]) != domain(emb_subx)
@@ -331,7 +331,7 @@ function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::ZZRingEl
 end
 
 function maximal_abelian_subextension(F::FieldsTower)
-  fields = AnticNumberField[]
+  fields = AbsSimpleNumField[]
   for x in F.subfields
     if degree(domain(x)) == 1
       push!(fields, codomain(x))
@@ -341,7 +341,7 @@ function maximal_abelian_subextension(F::FieldsTower)
 end
 
 
-function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL::Vector{AnticNumberField}, bound::ZZRingElem)
+function check_norm_group_and_disc(lfieldsK::Vector{AbsSimpleNumField}, lfieldsL::Vector{AbsSimpleNumField}, bound::ZZRingElem)
 
   target_deg = prod(degree(x) for x in lfieldsK) * prod(degree(x) for x in lfieldsL)
   discK = lcm([discriminant(maximal_order(x)) for x in lfieldsK])

@@ -34,7 +34,7 @@ function _lll_CM(A::NfOrdIdl)
   OK = order(A)
   @vprintln :LLL 3 "Reduction"
   M = _minkowski_matrix_CM(OK)
-  @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.3, 0.51))
+  @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), LLLContext(0.3, 0.51))
   g = BM*M*transpose(BM)
   @hassert :LLL 1 is_positive_definite(g)
   @vtime :LLL 3 l, t = lll_gram_with_transform(g)
@@ -94,7 +94,7 @@ function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int =
   n = degree(order(A))
   prec = max(prec, 4*n)
 
-  ctx1 = lll_ctx(0.5, 0.51)
+  ctx1 = LLLContext(0.5, 0.51)
   l, t1 = lll_with_transform(basis_matrix(A, copy = false), ctx1)
 
   if iszero(v)
@@ -142,10 +142,10 @@ function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int =
     fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
   end
 
-  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
+  ctx = Nemo.LLLContext(0.99, 0.51, :gram)
 
   ccall((:fmpz_mat_one, libflint), Nothing, (Ref{ZZMatrix}, ), g)
-  ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
@@ -271,12 +271,12 @@ function _minkowski_via_approximation(B::Vector{T}) where T <: NumFieldElem
   n = length(B)
   g = zero_matrix(FlintZZ, n, n)
   prec = 16
-  imgs = Vector{Vector{arb}}(undef, n)
+  imgs = Vector{Vector{ArbFieldElem}}(undef, n)
   for i = 1:n
     imgs[i] = minkowski_map(B[i], prec)
   end
   i = 1
-  t = arb()
+  t = ArbFieldElem()
   while i <= n
     j = i
     while j <= n
@@ -572,8 +572,8 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
     for i=1:l
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
-    ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d1, g, ctx)
+    ctx = Nemo.LLLContext(0.99, 0.51, :gram)
+    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d1, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       prec *= 2
@@ -605,7 +605,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   disc = abs(discriminant(M))
   local g::ZZMatrix
   local d::ZZMatrix
-  ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
+  ctx = Nemo.LLLContext(parameters[1], parameters[2], :gram)
   dM = sum(nbits(Hecke.upper_bound(ZZRingElem, t2(x))) for x in basis(M, K))
   @vprintln :LLL 1 "Input profile: $(dM)"
   @vprintln :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2))"
@@ -639,7 +639,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g, ctx)
+    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true
@@ -726,7 +726,7 @@ function lll_basis(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::
   K = nf(order(A))
   nS = numerator(S)
   dS = denominator(S)
-  q = nf_elem[elem_from_mat_row(K, nS, i, dS) for i=1:degree(K)]
+  q = AbsSimpleNumFieldElem[elem_from_mat_row(K, nS, i, dS) for i=1:degree(K)]
   return q
 end
 
@@ -737,7 +737,7 @@ function lll_basis(A::NfOrdFracIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); pr
   K = nf(order(A))
   nS = numerator(S)
   dS = denominator(S)
-  q = nf_elem[elem_from_mat_row(K, nS, i, dS*A.den) for i=1:degree(K)]
+  q = AbsSimpleNumFieldElem[elem_from_mat_row(K, nS, i, dS*A.den) for i=1:degree(K)]
   return q
 end
 
@@ -805,7 +805,7 @@ end
 
 
 @doc raw"""
-    reduce_ideal(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
+    reduce_ideal(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{AbsSimpleNumFieldElem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
@@ -814,7 +814,7 @@ function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
-  a = FacElem(Dict{nf_elem, ZZRingElem}(one(K) => ZZRingElem(1)))
+  a = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}(one(K) => ZZRingElem(1)))
   A = ideal(O, 1)
   for (k, v) = I.fac
     @assert order(k) === O
@@ -844,7 +844,7 @@ end
 
 # The bound should be sqrt(disc) (something from LLL)
 @doc raw"""
-    power_reduce(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl, FacElem{nf_elem}
+    power_reduce(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl, FacElem{AbsSimpleNumFieldElem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
 $B$ has small norm.
@@ -1037,7 +1037,7 @@ function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   mul!(iA, C, iA)
   divexact!(iA, iA, de)
   hnf_modular_eldiv!(iA, minimum(J))
-  @vtime :LLL 3 lll!(iA, lll_ctx(0.3, 0.51))
+  @vtime :LLL 3 lll!(iA, LLLContext(0.3, 0.51))
   @vtime :LLL 3 lll!(iA)
   mul!(iA, iA, A)
   return iA

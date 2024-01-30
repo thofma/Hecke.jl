@@ -40,11 +40,11 @@ function defining_modulus(CF::ClassField_pp)
 end
 
 function _modulus(mq::MapRayClassGrp)
-  return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
+  return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
 end
 
 function _modulus(mq::MapClassGrp)
-  return (ideal(order(codomain(mq)), 1), InfPlc{AnticNumberField, NumFieldEmbNfAbs}[])::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
+  return (ideal(order(codomain(mq)), 1), InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[])::Tuple{NfOrdIdl, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
 end
 
 ###############################################################################
@@ -529,11 +529,11 @@ function ray_class_field(m::S, quomap::T) where {S <: Union{MapClassGrp, MapRayC
 end
 
 @doc raw"""
-    hilbert_class_field(k::AnticNumberField) -> ClassField
+    hilbert_class_field(k::AbsSimpleNumField) -> ClassField
 
 The Hilbert class field of $k$ as a formal (ray-) class field.
 """
-function hilbert_class_field(k::AnticNumberField)
+function hilbert_class_field(k::AbsSimpleNumField)
   return ray_class_field(class_group(k)[2])
 end
 
@@ -576,7 +576,7 @@ The field will be constructed as a `ray_class_field`.
 # EXAMPLES
 ```julia
 julia> A = grunwald_wang(Dict(3*ZZ => 3, 5*ZZ => 2))
-Class field defined mod (<13, 13>, InfPlc{AnticNumberField, NumFieldEmbNfAbs}[]) of structure Abelian group with structure: Z/6
+Class field defined mod (<13, 13>, InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[]) of structure Abelian group with structure: Z/6
 
 julia> K = absolute_simple_field(number_field(A))[1];
 

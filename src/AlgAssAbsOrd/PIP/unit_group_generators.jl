@@ -103,7 +103,7 @@ function _SLn_generators(OK, n)
     #
     # We find a small generating set of OK as Z-algebra
     found = false
-    local G::Vector{nf_elem}
+    local G::Vector{AbsSimpleNumFieldElem}
     for i in 1:d
       for j in 1:10
         G = [elem_in_nf(rand(OK, 2)) for k in 1:i]

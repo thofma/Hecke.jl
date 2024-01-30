@@ -29,7 +29,7 @@ parent.
 
 Important special cases are
  * ```FacElem{ZZRingElem, ZZRing}```, factored integers
- * ```FacElem{nf_elem, AnticNumberField}```, factored algerbaic numbers
+ * ```FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}```, factored algerbaic numbers
  * ```FacElem{NfAbsOrdIdl, NfAbsOrdIdlSet}```, factored ideals
 
 It should be noted that an object of type ```FacElem{ZZRingElem, ZZRing}``
@@ -42,11 +42,11 @@ base and the exponent, or a dictionary containing the pairs:
 
 ```@docs
 FacElem
-FacElem(a::nf_elem)
+FacElem(a::AbsSimpleNumFieldElem)
 ```
 
 ```@docs
-ideal(::NfOrd, ::FacElem{nf_elem, AnticNumberField})
+ideal(::NfOrd, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
 
@@ -79,24 +79,24 @@ isone(x::FacElem{QQFieldElem, S} where S)
 factor_coprime(::FacElem{ZZRingElem, S} where S)
 factor_coprime(::FacElem{NfOrdIdl, NfOrdIdlSet})
 factor_coprime(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor_coprime(::NfOrdIdlSet, ::FacElem{nf_elem, AnticNumberField})
+factor_coprime(::NfOrdIdlSet, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 factor(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor(::NfOrdIdlSet, ::FacElem{nf_elem, AnticNumberField})
+factor(::NfOrdIdlSet, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
 For factorised algebraic numbers a unique simplification is not possible,
 however, this allows still do obtain partial results:
 
 ```@docs
-compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2)
+compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int = 2)
 ```
 
 ```@docs
-valuation(::FacElem{nf_elem,AnticNumberField}, ::NfAbsOrdIdl{AnticNumberField,nf_elem})
-valuation(::FacElem{NfAbsOrdIdl{AnticNumberField,nf_elem},Hecke.NfAbsOrdIdlSet{AnticNumberField,nf_elem}}, ::NfAbsOrdIdl{AnticNumberField,nf_elem})
-evaluate_mod(::FacElem{nf_elem,AnticNumberField}, ::NfOrdFracIdl)
-reduce_ideal(::FacElem{NfAbsOrdIdl{AnticNumberField,nf_elem},Hecke.NfAbsOrdIdlSet{AnticNumberField,nf_elem}})
-modular_proj(::FacElem{nf_elem,AnticNumberField}, ::Hecke.modular_env)
+valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
+valuation(::FacElem{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.NfAbsOrdIdlSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
+evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::NfOrdFracIdl)
+reduce_ideal(::FacElem{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.NfAbsOrdIdlSet{AbsSimpleNumField,AbsSimpleNumFieldElem}})
+modular_proj(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::Hecke.modular_env)
 ```
 
 ## Positivity & Signs

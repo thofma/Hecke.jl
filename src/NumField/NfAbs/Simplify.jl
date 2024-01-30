@@ -1,7 +1,7 @@
 add_verbosity_scope(:Simplify)
 
 @doc raw"""
-    simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
+    simplify(K::AbsSimpleNumField; canonical::Bool = false) -> AbsSimpleNumField, NfToNfMor
 
 Tries to find an isomorphic field $L$ given by a "simpler" defining polynomial.
 By default, "simple" is defined to be of smaller index, testing is done only
@@ -13,7 +13,7 @@ http://beta.lmfdb.org/knowledge/show/nf.polredabs.
 
 Both versions require a LLL reduced basis for the maximal order.
 """
-function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
+function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
   Qx, x = polynomial_ring(FlintQQ, "x")
 
   if degree(K) == 1
@@ -47,7 +47,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
       mp = hom(L1, K, b, check = false)
       _assure_has_inverse_data(mp)
       B = basis(OK, K)
-      BOL1 = Vector{nf_elem}(undef, degree(L1))
+      BOL1 = Vector{AbsSimpleNumFieldElem}(undef, degree(L1))
       for i = 1:degree(L1)
         BOL1[i] = mp\(B[i])
       end
@@ -74,7 +74,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false, cached::Bool = t
   if save_LLL_basis
     _assure_has_inverse_data(m)
     B = basis(ZK, K)
-    BOL = Vector{nf_elem}(undef, degree(L))
+    BOL = Vector{AbsSimpleNumFieldElem}(undef, degree(L))
     for i = 1:degree(L)
       BOL[i] = m\(B[i])
     end
@@ -128,7 +128,7 @@ function _simplify(O::NfAbsOrd)
   return a
 end
 
-function primitive_element(K::AnticNumberField)
+function primitive_element(K::AbsSimpleNumField)
   return gen(K)
 end
 
@@ -205,7 +205,7 @@ function _block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpFi
   return b
 end
 
-function _sieve_primitive_elements(B::Vector{nf_elem})
+function _sieve_primitive_elements(B::Vector{AbsSimpleNumFieldElem})
   K = parent(B[1])
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
@@ -245,7 +245,7 @@ end
  #the length of such a block (system) is the degree of Q(a):Q, the length
  # of a block is the degree K:Q(a)
  # a is primitive iff the block system has length n
-function _block(a::nf_elem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRingElem)
+function _block(a::AbsSimpleNumFieldElem, R::Vector{fqPolyRepFieldElem}, ap::fqPolyRepPolyRingElem)
   # TODO:
   # Maybe this _tmp business has to be moved out of this function too
   _R = Native.GF(Int(characteristic(base_ring(ap))), cached = false)
@@ -339,7 +339,7 @@ function _find_prime(v::Vector{ZZPolyRingElem})
   return res[1], res[2]
 end
 
-function polredabs(K::AnticNumberField)
+function polredabs(K::AbsSimpleNumField)
   #intended to implement
   # http://beta.lmfdb.org/knowledge/show/nf.polredabs
   #as in pari
@@ -397,7 +397,7 @@ function polredabs(K::AnticNumberField)
                        #as none of the elements can be primitive.
 
   a = gen(K)
-  all_a = nf_elem[a]
+  all_a = AbsSimpleNumFieldElem[a]
   la = length(a)*BigFloat(E.t_den^2)
   Ec = BigFloat(E.c//E.d)
   eps = BigFloat(E.d)^(1//2)
@@ -425,7 +425,7 @@ function polredabs(K::AnticNumberField)
 #          @show "new one", q, minpoly(q), bb
         else
           a = q
-          all_a = nf_elem[a]
+          all_a = AbsSimpleNumFieldElem[a]
           if lq/la < 0.8
 #            @show "re-init"
             enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
@@ -470,16 +470,16 @@ K"orper definieren ??
   end
   all_a = all_a[1:i]
 
-  all_f = Tuple{nf_elem, QQPolyRingElem}[(x, minpoly(x)) for x=all_a]
+  all_f = Tuple{AbsSimpleNumFieldElem, QQPolyRingElem}[(x, minpoly(x)) for x=all_a]
   all_d = QQFieldElem[abs(discriminant(x[2])) for x= all_f]
   m = minimum(all_d)
-  L1 = Tuple{nf_elem, QQPolyRingElem}[]
+  L1 = Tuple{AbsSimpleNumFieldElem, QQPolyRingElem}[]
   for i = 1:length(all_f)
     if all_d[i] == m
       push!(L1, all_f[i])
     end
   end
-  L2 = Tuple{nf_elem, QQPolyRingElem}[minQ(x) for x=L1]
+  L2 = Tuple{AbsSimpleNumFieldElem, QQPolyRingElem}[minQ(x) for x=L1]
   if length(L2) == 1
     return L2[1]
   end
@@ -502,7 +502,7 @@ function Q1Q2(f::PolyRingElem)
   return q1, q2
 end
 
-function minQ(A::Tuple{nf_elem, QQPolyRingElem})
+function minQ(A::Tuple{AbsSimpleNumFieldElem, QQPolyRingElem})
   a = A[1]
   f = A[2]
   q1, q2 = Q1Q2(f)

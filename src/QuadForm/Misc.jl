@@ -319,7 +319,7 @@ function _strong_approximation(S, ep, xp)
     end
   end
   _ep = ZZRingElem[]
-  _xp = nf_elem[]
+  _xp = AbsSimpleNumFieldElem[]
   _S = support(d * OK)
   _SS = ideal_type(OK)[]
   for i in 1:length(S)
@@ -616,7 +616,7 @@ The number field $L/K$ must be a simple extension of degree 2.
 """
 is_local_norm(::NumField, ::NumFieldElem, ::Any)
 
-function is_local_norm(K::AnticNumberField, a::QQFieldElem, p::ZZRingElem)
+function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, p::ZZRingElem)
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
   b = (2 * x - tr(x))^2
@@ -625,20 +625,20 @@ function is_local_norm(K::AnticNumberField, a::QQFieldElem, p::ZZRingElem)
   return hilbert_symbol(a, bQ, p) == 1
 end
 
-function is_local_norm(K::AnticNumberField, a::QQFieldElem, P::NfOrdIdl)
+function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, P::NfOrdIdl)
   p = minimum(P)
   return is_local_norm(K, a, p)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, P::NfOrdIdl)
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, P::NfOrdIdl)
   return is_local_norm(K, FlintQQ(a), P)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, p::ZZRingElem)
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, p::ZZRingElem)
   return is_local_norm(K, FlintQQ(a), p)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, p::Integer)
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, p::Integer)
   return is_local_norm(K, FlintQQ(a), ZZRingElem(p))
 end
 
@@ -870,7 +870,7 @@ function _find_quaternion_algebra(b, P, I)
 
   L, f = sunit_group(identity.(__P))
   M = zero_matrix(F, 0, length(__P) + length(I))
-  elts = nf_elem[]
+  elts = AbsSimpleNumFieldElem[]
 
   for i in 1:ngens(L)
     v = sign_vector(f(L[i]))
@@ -935,7 +935,7 @@ function _find_quaternion_algebra(b::QQFieldElem, P, I)
     @assert length(I) == 1
     IK = infinite_places(K)
   end
-  c = _find_quaternion_algebra(bK, PK, IK)::nf_elem
+  c = _find_quaternion_algebra(bK, PK, IK)::AbsSimpleNumFieldElem
   return coeff(c, 0)
 end
 

@@ -114,11 +114,11 @@ end
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
 @doc raw"""
-    rational_reconstruction(a::nf_elem, b::ZZRingElem)
+    rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem)
 
 Applies the `rational_reconstruction` function to each coefficient.
 """
-function rational_reconstruction(a::nf_elem, b::ZZRingElem; ErrorTolerant::Bool = false)
+function rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem; ErrorTolerant::Bool = false)
   K= parent(a)
   Qx = parent(K.pol)
   res = Qx(0)

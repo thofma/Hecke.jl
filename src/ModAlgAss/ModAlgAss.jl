@@ -535,9 +535,9 @@ end
 ################################################################################
 
 # Type to represent a Q[Gal(K)]-linear map K -> V
-mutable struct NfToModAlgAssMor{S, T, U} <: Map{AnticNumberField, ModAlgAss{S, T, U}, HeckeMap, NfToModAlgAssMor}
-  K::AnticNumberField
-  mG::GrpGenToNfMorSet{NfToNfMor, AnticNumberField}
+mutable struct NfToModAlgAssMor{S, T, U} <: Map{AbsSimpleNumField, ModAlgAss{S, T, U}, HeckeMap, NfToModAlgAssMor}
+  K::AbsSimpleNumField
+  mG::GrpGenToNfMorSet{NfToNfMor, AbsSimpleNumField}
   V::ModAlgAss{S, T, U}
   M::QQMatrix
   Minv::QQMatrix
@@ -571,13 +571,13 @@ end
 
 automorphism_map(f::NfToModAlgAssMor) = f.mG
 
-function galois_module(K::AnticNumberField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+function galois_module(K::AbsSimpleNumField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
   G = domain(aut)
   A = FlintQQ[G]
   return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
 end
 
-function _galois_module(K::AnticNumberField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+function _galois_module(K::AbsSimpleNumField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
   G = domain(aut)
   alpha = normal_basis_generator
 
@@ -614,7 +614,7 @@ domain(f::NfToModAlgAssMor) = f.K
 
 codomain(f::NfToModAlgAssMor) = f.V
 
-function image(f::NfToModAlgAssMor, x::nf_elem)
+function image(f::NfToModAlgAssMor, x::AbsSimpleNumFieldElem)
   K = domain(f)
   @assert parent(x) === K
   V = codomain(f)

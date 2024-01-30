@@ -12,7 +12,7 @@ export factor_absolute, is_absolutely_irreducible
 add_verbosity_scope(:AbsFact)
 add_assertion_scope(:AbsFact)
 
-function Hecke.norm(f::MPolyRingElem{nf_elem})
+function Hecke.norm(f::MPolyRingElem{AbsSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(Kx)
   n = nvars(Kx)
@@ -406,7 +406,7 @@ mutable struct RootCtxSingle{T}
     R = base_ring(parent(f))
     k, mk = residue_field(R)
     g = map_coefficients(mk, f)
-    # should be zero-ish, but if T is acb, this is difficult.
+    # should be zero-ish, but if T is AcbFieldElem, this is difficult.
     is_exact_type(T) && @assert iszero(g(r))
     o = inv(derivative(g)(r))
     return new{elem_type(R)}(f, R([r], 1, 1, 0), R([o], 1, 1, 0))
@@ -1282,7 +1282,7 @@ function lift_prime_power(
 end
 
 
-function example(k::AnticNumberField, d::Int, nt::Int, c::AbstractRange=-10:10)
+function example(k::AbsSimpleNumField, d::Int, nt::Int, c::AbstractRange=-10:10)
   kx, (x, y) = polynomial_ring(k, 2, cached = false)
   f = kx()
   for i=1:nt
@@ -1479,8 +1479,8 @@ julia> z = factor_absolute(f)
 
 3-element Vector{Any}:
                                                                             1
-                AbstractAlgebra.Generic.MPoly{nf_elem}[x + _a*y, x - _a*y] => 1
- AbstractAlgebra.Generic.MPoly{nf_elem}[x + _a*y, x^2 - _a*x*y + _a^2*y^2] => 1
+                AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}[x + _a*y, x - _a*y] => 1
+ AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}[x + _a*y, x^2 - _a*x*y + _a^2*y^2] => 1
 
 julia> z[2][1][1]
 x + _a*y
@@ -1525,7 +1525,7 @@ using .MPolyFact
 
 function factor(C::AcbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
   fa = factor_absolute(f)
-  D = Dict{Generic.MPoly{acb}, Int}()
+  D = Dict{Generic.MPoly{AcbFieldElem}, Int}()
   Cx, x = polynomial_ring(C, map(String, symbols(parent(f))), cached = false)
   for i=2:length(fa)
     K = base_ring(fa[i][1][1])
@@ -1549,7 +1549,7 @@ end
 
 function factor(R::ArbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
   fa = factor_absolute(f)
-  D = Dict{Generic.MPoly{arb}, Int}()
+  D = Dict{Generic.MPoly{ArbFieldElem}, Int}()
   Rx, x = polynomial_ring(R, map(String, symbols(parent(f))), cached = false)
   C = AcbField(precision(R))
   Cx, x = polynomial_ring(C, map(String, symbols(parent(f))), cached = false)

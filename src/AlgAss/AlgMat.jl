@@ -651,7 +651,7 @@ function AlgAss(A::AlgMat{T, S}) where {T, S}
     B.decomposition = dec
   end
   if isdefined(A, :maps_to_numberfields)
-    fields_and_maps = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[]
+    fields_and_maps = Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[]
     for (K, AtoK) in A.maps_to_numberfields
       BtoK = AbsAlgAssToNfAbsMor(B, K, AtoK.mat, AtoK.imat)
       push!(fields_and_maps, (K, BtoK))

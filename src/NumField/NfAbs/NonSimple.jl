@@ -853,7 +853,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   end
   s = solve(transpose(M), transpose(N))
   b = basis(Ka)
-  emb = Vector{nf_elem}(undef, n)
+  emb = Vector{AbsSimpleNumFieldElem}(undef, n)
   for i = 1:n
     emb[i] = zero(Ka)
     for j = 1:degree(Ka)
@@ -866,7 +866,7 @@ function simple_extension(K::NfAbsNS; cached::Bool = true, check = true, simplif
   return Ka, h
 end
 
-function number_field(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
+function number_field(K1::AbsSimpleNumField, K2::AbsSimpleNumField; cached::Bool = false, check::Bool = false)
   K , l = number_field([K1.pol, K2.pol], "_\$", check = check, cached = cached)
   mp1 = hom(K1, K, l[1], check = false)
   mp2 = hom(K2, K, l[2], check = false)
@@ -875,7 +875,7 @@ function number_field(K1::AnticNumberField, K2::AnticNumberField; cached::Bool =
   return K, mp1, mp2
 end
 
-function number_field(fields::Vector{AnticNumberField}; cached::Bool = true, check::Bool = true)
+function number_field(fields::Vector{AbsSimpleNumField}; cached::Bool = true, check::Bool = true)
   pols = Vector{QQPolyRingElem}(undef, length(fields))
   for i = 1:length(fields)
     pols[i] = fields[i].pol

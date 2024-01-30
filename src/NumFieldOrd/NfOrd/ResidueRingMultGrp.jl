@@ -549,7 +549,7 @@ function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrd
   O = order(p)
   Q = NfOrdQuoRing(O, pv)
   map!(x -> p_adic_exp(Q, p, v, x), g, g)
-  powers = Dict{Int, nf_elem}()
+  powers = Dict{Int, AbsSimpleNumFieldElem}()
   local discrete_logarithm
   let Q = Q, p = p, v = v, dlog = dlog, powers = powers
     function discrete_logarithm(b::NfOrdElem)
@@ -613,7 +613,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
   return s.elem
 end
 
-function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::Dict{Int, nf_elem} = Dict{Int, nf_elem}())
+function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem, powers::Dict{Int, AbsSimpleNumFieldElem} = Dict{Int, AbsSimpleNumFieldElem}())
   O = parent(y)
   isone(y) && return zero(O)
   pnum = minimum(p)

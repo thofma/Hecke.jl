@@ -61,8 +61,8 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   clg.last = 0
 
   clg.M = ModuleCtx_fmpz(length(FB.ideals))
-  clg.R_gen = Vector{nf_elem}()
-  clg.R_rel = Vector{nf_elem}()
+  clg.R_gen = Vector{AbsSimpleNumFieldElem}()
+  clg.R_rel = Vector{AbsSimpleNumFieldElem}()
 
   clg.c = conjugates_init(nf(O).pol)
   add_rels && for I in clg.FB.ideals

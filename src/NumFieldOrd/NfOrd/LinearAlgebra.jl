@@ -83,7 +83,7 @@ function det(M::Generic.Mat{NfOrdElem})
   t_reducing = 0.0
   t_splitting = 0.0
   used_primes = Vector{UInt}()
-  tmp_polys = Vector{nf_elem}()
+  tmp_polys = Vector{AbsSimpleNumFieldElem}()
 
   while P < 2*B
     # reject some bad primes
@@ -283,20 +283,20 @@ function pseudo_matrix(O::NumFieldOrd, m::AbstractAlgebra.MatElem{T}, c::Vector{
 end
 
 @doc raw"""
-    pseudo_matrix(m::Generic.Mat{nf_elem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
+    pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldElem}, c::Vector{NfOrdIdl}) -> PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
-function pseudo_matrix(m::AbstractAlgebra.MatElem{nf_elem}, c::Vector{NfOrdIdl})
+function pseudo_matrix(m::AbstractAlgebra.MatElem{AbsSimpleNumFieldElem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
   cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
-  return PMat{nf_elem, NfOrdFracIdl}(m, cc)
+  return PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}(m, cc)
 end
 
 @doc raw"""
-    pseudo_matrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl}) -> PMat{nf_elem, NfOrdFracIdl}
+    pseudo_matrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl}) -> PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
@@ -306,17 +306,17 @@ function pseudo_matrix(m::Generic.Mat{NfOrdElem}, c::Vector{NfOrdIdl})
   @assert nrows(m) == length(c)
   mm = change_base_ring(nf(base_ring(m)), m)
   cc = map(z -> NfOrdFracIdl(z, ZZRingElem(1)), c)
-  return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
+  return PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}(mm, cc)
 end
 
 @doc raw"""
-    pseudo_matrix(m::Generic.Mat{NfOrdElem}) -> PMat{nf_elem, NfOrdFracIdl}
+    pseudo_matrix(m::Generic.Mat{NfOrdElem}) -> PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}
 
 Returns the free (row) pseudo matrix representing the $Z_k$-module
  $$\sum Z_k m_i$$
  where $m_i$ are the rows of $M$.
 """
-function pseudo_matrix(m::Generic.Mat{nf_elem})
+function pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldElem})
    K = base_ring(m)
    O = maximal_order(K)
    return pseudo_matrix(O, m, fractional_ideal_type(O)[ideal(O, K(1)) for i = 1:nrows(m)])
@@ -403,7 +403,7 @@ end
 
 function _coprime_integral_ideal_class(x::FacElem{NfOrdIdl, NfOrdIdlSet}, y::NfOrdIdl)
   D = typeof(x.fac)()
-  D2 = Dict{nf_elem, ZZRingElem}()
+  D2 = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
   O = order(y)
   for (I, e) in x
     II, a = _coprime_integral_ideal_class(I, y)
@@ -467,12 +467,12 @@ rand(I::NfOrdIdl, B::Int) = rand(GLOBAL_RNG, I, B)
 rand(rng::AbstractRNG, I::NfOrdIdl, B::Int) = rand(rng, make(I, B))
 
 
-RandomExtensions.maketype(I::NfOrdFracIdl, ::Int) = nf_elem
+RandomExtensions.maketype(I::NfOrdFracIdl, ::Int) = AbsSimpleNumFieldElem
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{nf_elem,NfOrdFracIdl,Int}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem,NfOrdFracIdl,Int}})
   I, B = sp[][1:2]
   z = rand(rng, make(numerator(I), B))
-  return divexact(elem_in_nf(z), denominator(I))::nf_elem
+  return divexact(elem_in_nf(z), denominator(I))::AbsSimpleNumFieldElem
   # type assert to help inference in Julia 1.0
 end
 
@@ -490,7 +490,7 @@ A optional second argument can be specified as a symbols, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
-function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false)
+function pseudo_hnf(P::PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false)
   if full_rank
     Q = pseudo_hnf_full_rank(P, shape)
     if is_square(matrix(Q))
@@ -526,7 +526,7 @@ A optional second argument can be specified as a symbol, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
-pseudo_hnf_with_transform(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
+pseudo_hnf_with_transform(P::PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
 
 pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: NumFieldElem, S} = pseudo_hnf_kb(P, shape)
 
@@ -689,7 +689,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, copy(P.coeffs))
+  res = PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}(res_mat, copy(P.coeffs))
 
   shift = 0
   if shape == :lowerleft
@@ -933,7 +933,7 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
   return true
 end
 
-function _spans_subset_of_pseudohnf(M::PMat{nf_elem, NfOrdFracIdl}, P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright)
+function _spans_subset_of_pseudohnf(M::PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}, P::PMat{AbsSimpleNumFieldElem, NfOrdFracIdl}, shape::Symbol = :upperright)
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   for i in 1:nrows(M)
@@ -992,7 +992,7 @@ end
 Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
 by H. Cohen.
 =#
-function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_transform::Bool = false) where T <: nf_elem
+function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_transform::Bool = false) where T <: AbsSimpleNumFieldElem
    m = nrows(H)
    n = ncols(H)
    A = H.matrix
@@ -1090,7 +1090,7 @@ function swap_rows!(P::PMat, i::Int, j::Int)
    return nothing
 end
 
-function _in_span(v::Vector{nf_elem}, P::PMat)
+function _in_span(v::Vector{AbsSimpleNumFieldElem}, P::PMat)
    @assert length(v) == ncols(P)
    m = nrows(P)
    n = ncols(P)
@@ -1399,11 +1399,11 @@ end
 
 mutable struct PMat2
    parent
-   matrix::Generic.MatSpaceElem{nf_elem}
+   matrix::Generic.MatSpaceElem{AbsSimpleNumFieldElem}
    row_coeffs::Vector{NfOrdFracIdl}
    col_coeffs::Vector{NfOrdFracIdl}
 
-   function PMat2(m::Generic.MatSpaceElem{nf_elem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
+   function PMat2(m::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
       z = new()
       z.matrix = m
       z.row_coeffs = r
@@ -1427,7 +1427,7 @@ function show(io::IO, P::PMat2)
    end
 end
 
-function pseudo_matrix2(m::Generic.Mat{nf_elem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
+function pseudo_matrix2(m::Generic.Mat{AbsSimpleNumFieldElem}, r::Vector{NfOrdFracIdl}, c::Vector{NfOrdFracIdl})
    ( nrows(m) != length(r) || ncols(m) != length(c) ) && error("Dimensions do not match.")
    return PMat2(m, r, c)
 end
@@ -1473,7 +1473,7 @@ function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
    end
 end
 
-function kb_clear_row!(S::PMat2, K::Generic.Mat{nf_elem}, i::Int, with_transform::Bool)
+function kb_clear_row!(S::PMat2, K::Generic.Mat{AbsSimpleNumFieldElem}, i::Int, with_transform::Bool)
    m = nrows(S)
    n = ncols(S)
    A = S.matrix
@@ -1528,7 +1528,7 @@ function kb_clear_row!(S::PMat2, K::Generic.Mat{nf_elem}, i::Int, with_transform
    return nothing
 end
 
-function pseudo_snf_kb!(S::PMat2, U::Generic.Mat{nf_elem}, K::Generic.Mat{nf_elem}, with_transform::Bool = false)
+function pseudo_snf_kb!(S::PMat2, U::Generic.Mat{AbsSimpleNumFieldElem}, K::Generic.Mat{AbsSimpleNumFieldElem}, with_transform::Bool = false)
    m = nrows(S)
    n = ncols(S)
    A = S.matrix
@@ -1586,7 +1586,7 @@ function show(io::IO, M::ModDed)
    end
 end
 
-ModDed(m::Generic.Mat{nf_elem}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
+ModDed(m::Generic.Mat{AbsSimpleNumFieldElem}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
 
 ModDed(m::Generic.Mat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
 
@@ -1594,7 +1594,7 @@ ModDed(c::Vector{NfOrdFracIdl}) = ModDed(pseudo_matrix(c), true; check = false)
 
 ModDed(c::Vector{NfOrdIdl}) = ModDed(pseudo_matrix(c), true; check = false)
 
-function in(v::Vector{nf_elem}, M::ModDed)
+function in(v::Vector{AbsSimpleNumFieldElem}, M::ModDed)
    P = M.pmatrix
    if !M.is_triu
       P = pseudo_hnf_kb(M.pmatrix)

@@ -28,7 +28,7 @@ function Base.show(io::IO, ::MIME"text/html", a::PolyRingElem)
   print(io, "\$")
 end
 
-function math_html(io::IO, a::AnticNumberField)
+function math_html(io::IO, a::AbsSimpleNumField)
   n = find_name(a)
   if n === nothing || !get(io, :compact, false)
     print(io, "\\text{Number field over Rational field with defining polynomial }")
@@ -72,7 +72,7 @@ function math_html(io::IO, a::NfAbsNS)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::AnticNumberField)
+function Base.show(io::IO, ::MIME"text/html", a::AbsSimpleNumField)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -109,11 +109,11 @@ end
 =#
 
 #=
-function Base.show(io::IO, b::HTML{nf_elem})
+function Base.show(io::IO, b::HTML{AbsSimpleNumFieldElem})
   math_html(io, b.content)
 end
 
-function Base.show(io::IO, b::HTML{AnticNumberField})
+function Base.show(io::IO, b::HTML{AbsSimpleNumField})
   math_html(io, b.content)
 end
 =#
@@ -139,7 +139,7 @@ end
 #  print(io, ")")
 #end
 
-function math_html(io::IO, a::nf_elem)
+function math_html(io::IO, a::AbsSimpleNumFieldElem)
   s = t = parent(a).S
   f, c = is_cyclotomic_type(parent(a))
   if f
@@ -165,7 +165,7 @@ function math_html(io::IO, a::nf_elem)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::nf_elem)
+function Base.show(io::IO, ::MIME"text/html", a::AbsSimpleNumFieldElem)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -334,7 +334,7 @@ function Base.show(io::IO, ::MIME"text/html", a::NfAbsOrdElem)
   print(io, "\$")
 end
 
-function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
+function math_html(io::IO, O::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem})
   c = get(io, :compact, false)
   if is_maximal_known_and_maximal(O)
     n = "Maximal order of"
@@ -363,7 +363,7 @@ function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::NfAbsOrd{AnticNumberField, nf_elem})
+function Base.show(io::IO, ::MIME"text/html", a::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem})
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")

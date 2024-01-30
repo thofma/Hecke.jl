@@ -39,7 +39,7 @@ function absolute_primitive_element(K::NfAbsNS)
   return primitive_element(K)
 end
 
-function absolute_primitive_element(K::AnticNumberField)
+function absolute_primitive_element(K::AbsSimpleNumField)
   return gen(K)
 end
 
@@ -71,7 +71,7 @@ function is_absolutely_primitive(a::NumFieldElem)
   return degree(absolute_minpoly(a)) == absolute_degree(parent(a))
 end
 
-function is_absolutely_primitive(a::T) where T <: Union{NfRelNSElem{nf_elem}, NfRelElem{nf_elem}}
+function is_absolutely_primitive(a::T) where T <: Union{NfRelNSElem{AbsSimpleNumFieldElem}, NfRelElem{AbsSimpleNumFieldElem}}
   L = parent(a)
   rt, PR, tmp = _setup_block_system(L)
   if _is_primitive_via_block(a, rt, PR, tmp)
@@ -94,19 +94,19 @@ $M/\mathbf{Q}$ together with a $\mathbf{Q}$-linear isomorphism $M \to K$.
 """
 absolute_simple_field(::NumField)
 
-function absolute_simple_field(K::AnticNumberField)
+function absolute_simple_field(K::AbsSimpleNumField)
   return K, id_hom(K)
 end
 
 function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool = false)
   abs = get_attribute(K, :abs_simple_field)
-  MT = morphism_type(AnticNumberField, NfAbsNS)
+  MT = morphism_type(AbsSimpleNumField, NfAbsNS)
   if abs !== nothing
-    if haskey(abs::Dict{Bool, Tuple{AnticNumberField, MT}}, simplify)
-      return abs[simplify]::Tuple{AnticNumberField, MT}
+    if haskey(abs::Dict{Bool, Tuple{AbsSimpleNumField, MT}}, simplify)
+      return abs[simplify]::Tuple{AbsSimpleNumField, MT}
     end
   else
-    abs = Dict{Bool, Tuple{AnticNumberField, MT}}()
+    abs = Dict{Bool, Tuple{AbsSimpleNumField, MT}}()
     set_attribute!(K, :abs_simple_field => abs)
   end
   L, mL = simple_extension(K, cached = cached, simplified = simplify)
@@ -115,16 +115,16 @@ function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool =
 end
 
 function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool = false)
-  local Kabs::AnticNumberField
-  MT = morphism_type(AnticNumberField, typeof(K))
+  local Kabs::AbsSimpleNumField
+  MT = morphism_type(AbsSimpleNumField, typeof(K))
 
   abs = get_attribute(K, :abs_simple_field)
   if abs !== nothing
     if haskey(abs, simplify)
-      return abs[simplify]::Tuple{AnticNumberField, MT}
+      return abs[simplify]::Tuple{AbsSimpleNumField, MT}
     end
   else
-    abs = Dict{Bool, Tuple{AnticNumberField, MT}}()
+    abs = Dict{Bool, Tuple{AbsSimpleNumField, MT}}()
     set_attribute!(K, :abs_simple_field => abs)
   end
 
@@ -142,22 +142,22 @@ function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool
   return Kabs, mp
 end
 
-#Special function for NfRel{nf_elem}. In this case, we can easily construct the
+#Special function for NfRel{AbsSimpleNumFieldElem}. In this case, we can easily construct the
 #inverse of the isomorphism, so we do it separately
-function absolute_simple_field(K::NfRel{nf_elem}; cached::Bool = false, simplify::Bool = false)
-  MT = morphism_type(AnticNumberField, typeof(K))
+function absolute_simple_field(K::NfRel{AbsSimpleNumFieldElem}; cached::Bool = false, simplify::Bool = false)
+  MT = morphism_type(AbsSimpleNumField, typeof(K))
 
   abs = get_attribute(K, :abs_simple_field)
   if abs !== nothing
     if haskey(abs, simplify)
-      return abs[simplify]::Tuple{AnticNumberField, MT}
+      return abs[simplify]::Tuple{AbsSimpleNumField, MT}
     end
   else
-    abs = Dict{Bool, Tuple{AnticNumberField, MT}}()
+    abs = Dict{Bool, Tuple{AbsSimpleNumField, MT}}()
     set_attribute!(K, :abs_simple_field => abs)
   end
 
-  local Ka::AnticNumberField
+  local Ka::AbsSimpleNumField
   if simplify
     Ka, mp = simplified_absolute_field(K, cached = cached)
     abs[simplify] = (Kabs, mp)

@@ -18,7 +18,7 @@ parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
 
 parent(a::AbsAlgAssElem) = a.parent
 
-function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
+function (K::AbsSimpleNumField)(a::AbsAlgAssElem{AbsSimpleNumFieldElem})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))

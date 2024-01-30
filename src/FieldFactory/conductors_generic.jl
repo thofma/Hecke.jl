@@ -578,7 +578,7 @@ end
 
 
 
-function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
+function conductors_generic(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
   #I am assuming that gtype is in "SNF"
   conds_tame = conductors_generic_tame(K, gtype, absolute_bound)
   if only_tame
@@ -666,7 +666,7 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
   return conds
 end
 
-function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::ZZRingElem)
+function conductors_generic_tame(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem)
 
   OK = maximal_order(K)
   n = prod(gtype)

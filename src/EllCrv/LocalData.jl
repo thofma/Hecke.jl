@@ -42,8 +42,8 @@
 
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc raw"""
-    tates_algorithm_local(E::EllCrv{nf_elem}, p:: NfOrdIdl)
-    -> EllipticCurve{nf_elem}, String, ZZRingElem, ZZRingElem, Bool
+    tates_algorithm_local(E::EllCrv{AbsSimpleNumFieldElem}, p:: NfOrdIdl)
+    -> EllipticCurve{AbsSimpleNumFieldElem}, String, ZZRingElem, ZZRingElem, Bool
 
 Returns a tuple $(\tilde E, K, m, f, c, s)$, where $\tilde E$ is a minimal
 model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol, $f$ is the
@@ -57,7 +57,7 @@ end
 # internal version
 # extend this for global fields
 
-function _tates_algorithm(E::EllCrv{nf_elem}, P::NfOrdIdl)
+function _tates_algorithm(E::EllCrv{AbsSimpleNumFieldElem}, P::NfOrdIdl)
   OK = order(P)
   F, _mF = residue_field(OK, P)
   mF = extend(_mF, nf(OK))
@@ -971,7 +971,7 @@ end
 
 Return the local Tamagawa number for E at p.
 """
-function tamagawa_number(E::EllCrv{nf_elem},p::NfOrdIdl)
+function tamagawa_number(E::EllCrv{AbsSimpleNumFieldElem},p::NfOrdIdl)
   return tates_algorithm_local(E,p)[4]
 end
 
@@ -981,30 +981,30 @@ end
 Return the sequence of Tamagawa numbers for $E$ at all the bad
 prime ideals $p$ of $E$.
 """
-function tamagawa_numbers(E::EllCrv{nf_elem})
+function tamagawa_numbers(E::EllCrv{AbsSimpleNumFieldElem})
   badp = bad_primes(E)
   return [tamagawa_number(E,p) for p in badp]
 end
 
 @doc raw"""
-    kodaira_symbol(E::EllCrv{nf_elem}, p::NfOrdIdl)
+    kodaira_symbol(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl)
       -> String
 
 Return the reduction type of E at the prime ideal p using
 a Kodaira symbol.
 """
-function kodaira_symbol(E::EllCrv{nf_elem},p::NfOrdIdl)
+function kodaira_symbol(E::EllCrv{AbsSimpleNumFieldElem},p::NfOrdIdl)
   return tates_algorithm_local(E,p)[2]
 end
 
 @doc raw"""
-    kodaira_symbols(E::EllCrv{nf_elem}, p::NfOrdIdl)
+    kodaira_symbols(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl)
       -> Vector{(NfOrdIdl, String)}
 
 Return the reduction types of E at all bad primes as a sequence of
 Kodaira symbols.
 """
-function kodaira_symbols(E::EllCrv{nf_elem})
+function kodaira_symbols(E::EllCrv{AbsSimpleNumFieldElem})
   badp = bad_primes(E)
   return [kodaira_symbol(E,p) for p in badp]
 end
@@ -1035,13 +1035,13 @@ function reduction_type(E::EllCrv{QQFieldElem}, p)
 end
 
 @doc raw"""
-    reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl) -> String
+    reduction_type(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl) -> String
 
 Return the reduction type of E at the prime ideal p.
 It can either be good, additive, split multiplicative or
 nonsplit mutiplicative.
 """
-function reduction_type(E::EllCrv{nf_elem}, p::NfOrdIdl)
+function reduction_type(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl)
   Ep, Kp, f, c, split = tates_algorithm_local(E, p)
 
   if Kp=="I0"
@@ -1082,11 +1082,11 @@ function conductor(E::EllCrv{QQFieldElem})
 end
 
 @doc raw"""
-    conductor(E::EllCrv{nf_elem}) -> NfOrdIdl
+    conductor(E::EllCrv{AbsSimpleNumFieldElem}) -> NfOrdIdl
 
 Return conductor of $E$ over a number field as an ideal.
 """
-function conductor(E::EllCrv{nf_elem})
+function conductor(E::EllCrv{AbsSimpleNumFieldElem})
   badp = bad_primes(E)
 
   result = 1
@@ -1114,7 +1114,7 @@ end
 
 Return a list of prime ideals that divide the discriminant of $E$.
 """
-function bad_primes(E::EllCrv{nf_elem})
+function bad_primes(E::EllCrv{AbsSimpleNumFieldElem})
   OK = ring_of_integers(base_field(E))
   d = OK(discriminant(E))
   L = factor(d*OK)
@@ -1129,11 +1129,11 @@ end
 
 #Magma also returns reduction map
 @doc raw"""
-    modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl) -> EllCrv
+    modp_reduction(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl) -> EllCrv
 
 Return the reduction of $E$ modulo the prime ideal p if p has good reduction
 """
-function modp_reduction(E::EllCrv{nf_elem}, p::NfOrdIdl)
+function modp_reduction(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl)
   if !is_prime(p)
     throw(DomainError(p,"p is not a prime ideal"))
   end

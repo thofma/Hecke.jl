@@ -67,7 +67,7 @@ julia> O = maximal_order(K);
 
 julia> O
 Maximal order of Number field of degree 3 over QQ
-with basis nf_elem[1, a, a^2]
+with basis AbsSimpleNumFieldElem[1, a, a^2]
 ```
 
 The documentation of the single functions can also be accessed at the julia prompt. Here is an example:

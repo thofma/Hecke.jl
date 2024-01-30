@@ -154,7 +154,7 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
   return x0::Tc
 end
 
-  function _comp_summand(R, p::ZZRingElem, m::Int, aa::arb)
+  function _comp_summand(R, p::ZZRingElem, m::Int, aa::ArbFieldElem)
     logp = log(R(p))
 
     pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
@@ -178,7 +178,7 @@ end
     return pro*pro3
   end
 
-  function _comp_summand(R, p::Int, m::Int, aa::arb)
+  function _comp_summand(R, p::Int, m::Int, aa::ArbFieldElem)
     return _comp_summand(R, ZZRingElem(p), m, aa)
   end
 
@@ -303,7 +303,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
 
   valaddederror = deepcopy(val)
   ccall((:arb_add_error_arf, libarb), Nothing,
-              (Ref{arb}, Ref{arf_struct}), valaddederror, error_prime_arf)
+              (Ref{ArbFieldElem}, Ref{arf_struct}), valaddederror, error_prime_arf)
 
   while (!radiuslttwopower(val, -der)) ||
                 !((radius(valaddederror)) < error)
@@ -319,7 +319,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
     val = _term_bf(O, x0, ArbField(prec, cached = false))
     valaddederror = deepcopy(val)
     ccall((:arb_add_error_arf, libarb), Nothing,
-                (Ref{arb}, Ref{arf_struct}), valaddederror, error_prime_arf)
+                (Ref{ArbFieldElem}, Ref{arf_struct}), valaddederror, error_prime_arf)
   end
 
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), error_prime_arf)
@@ -335,10 +335,10 @@ end
 ################################################################################
 
 @doc raw"""
-    zeta_log_residue(O::NfOrd, error::Float64) -> arb
+    zeta_log_residue(O::NfOrd, error::Float64) -> ArbFieldElem
 
 Computes the residue of the zeta function of $\mathcal O$ at $1$.
-The output will be an element of type `arb` with radius less then
+The output will be an element of type `ArbFieldElem` with radius less then
 `error`.
 """
 function zeta_log_residue(O::NfOrd, abs_error::Float64)

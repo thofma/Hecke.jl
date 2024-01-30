@@ -38,7 +38,7 @@ julia> K, a = number_field(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
 """
-function MaximalOrder(K::AnticNumberField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function MaximalOrder(K::AbsSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     E = any_order(K)
     O = new_maximal_order(E, ramified_primes = ramified_primes)
@@ -50,11 +50,11 @@ function MaximalOrder(K::AnticNumberField; discriminant::ZZRingElem = ZZRingElem
       end
     end
     return O
-  end::NfAbsOrd{AnticNumberField, nf_elem}
+  end::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
 end
 
 @doc raw"""
-    ring_of_integers(K::AnticNumberField) -> NfAbsOrd
+    ring_of_integers(K::AbsSimpleNumField) -> NfAbsOrd
 
 Returns the ring of integers of $K$.
 

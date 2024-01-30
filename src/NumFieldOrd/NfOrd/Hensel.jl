@@ -82,20 +82,20 @@ end
 # ispure means that f = X^deg(f) + coeff(f, 0)
 # is_normal means that if there are either no or all roots
 
-function _roots_hensel(f::Generic.Poly{nf_elem};
+function _roots_hensel(f::Generic.Poly{AbsSimpleNumFieldElem};
                        max_roots::Int = degree(f),
                        ispure::Bool = false,
                        is_normal::Bool = false,
                        root_bound::Vector{ZZRingElem} = ZZRingElem[])
   # f must be squarefree
   # I should check that
-  K::AnticNumberField = base_ring(f)
+  K::AbsSimpleNumField = base_ring(f)
 
   if iszero(constant_coefficient(f))
-    rs = nf_elem[zero(K)]
+    rs = AbsSimpleNumFieldElem[zero(K)]
     f = div(f, gen(parent(f)))
   else
-    rs = nf_elem[]
+    rs = AbsSimpleNumFieldElem[]
   end
 
   if length(rs) >= max_roots
@@ -229,7 +229,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
 
   if length(root_bound) > 0
     @assert length(root_bound) == r1 + r2
-    bound_root = Vector{arb}(undef, r1 + r2)
+    bound_root = Vector{ArbFieldElem}(undef, r1 + r2)
     for i in 1:(r1 + r2)
       bound_root[i] = root_bound[i] * abs(gsa_con[i])
     end
@@ -238,20 +238,20 @@ function _roots_hensel(f::Generic.Poly{nf_elem};
     R = parent(conj[1])
     a_con = [R(abs_upper_bound(ZZRingElem, abs(e))) for e in conj]
 
-    bound_root = Vector{arb}(undef, r1 + r2)
+    bound_root = Vector{ArbFieldElem}(undef, r1 + r2)
 
     for i in 1:r1+r2
       bound_root[i] = root(abs(a_con[i]), degree(f)) * abs(gsa_con[i])
     end
   else
-    bound_root = Vector{arb}(undef, r1 + r2)
+    bound_root = Vector{ArbFieldElem}(undef, r1 + r2)
 
     CC = AcbField(64, cached = false)
     CCt, t = polynomial_ring(CC, "t", cached=false)
-    conjugates_of_coeffs = Vector{acb}[ conjugates_arb(c, 32) for c in coeffs_f ]
+    conjugates_of_coeffs = Vector{AcbFieldElem}[ conjugates_arb(c, 32) for c in coeffs_f ]
 
     for i in 1:r1+r2
-      g = CCt(acb[ conjugates_of_coeffs[j + 1][i] for j in 0:degree(f) ])
+      g = CCt(AcbFieldElem[ conjugates_of_coeffs[j + 1][i] for j in 0:degree(f) ])
       bound_root[i] = roots_upper_bound(g) * abs(gsa_con[i])
     end
   end
@@ -295,7 +295,7 @@ end
 #= not used
 function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   n = nrows(Mold)
-  ctx = lll_ctx(0.5, 0.51)
+  ctx = LLLContext(0.5, 0.51)
   modu = ZZRingElem(p)^25
   for j = (pr[i-1]+25):25:pr[i]
     pp = ZZRingElem(p)^j
@@ -340,7 +340,7 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
 end
 =#
 
-function _hensel(f::Generic.Poly{nf_elem},
+function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
                  fac_pol_mod_p::fpPolyRingElem,
                  fp::fqPolyRepPolyRingElem, k::Int;
                  max_roots::Int = degree(f),
@@ -467,8 +467,8 @@ function _hensel(f::Generic.Poly{nf_elem},
 
   ##for the result, to check for stabilising
 
-  res = nf_elem[zero(K) for x = RT]
-  rs = nf_elem[]
+  res = AbsSimpleNumFieldElem[zero(K) for x = RT]
+  rs = AbsSimpleNumFieldElem[]
 
   #we'll be working in (Z/p^k)[t]/gg
 
@@ -514,7 +514,7 @@ function _hensel(f::Generic.Poly{nf_elem},
 
     pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
 
-    ctx_lll = lll_ctx(0.3, 0.51)
+    ctx_lll = LLLContext(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
       M, Mi, d = _cache_lll[pr[i]]::Tuple{ZZMatrix, ZZMatrix, ZZRingElem}
     elseif is_defining_polynomial_nice(K) && i > 10
@@ -535,7 +535,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       @vtime :Saturate 1 lll!(Mint, ctx_lll)
       @vtime :Saturate 1 lll!(Mint)
       mul!(Mint, Mint, Mold)
-      @vtime :Saturate 1 lll!(Mint, lll_ctx(0.6, 0.51))
+      @vtime :Saturate 1 lll!(Mint, LLLContext(0.6, 0.51))
       @vtime :Saturate 1 lll!(Mint)
       Miold, dold = pseudo_inv(Mint)
       Mold = Mint
@@ -547,7 +547,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       @vtime :Saturate 1 lll!(M, ctx_lll)
       @vtime :Saturate 1 lll!(M)
       mul!(M, M, Mold)
-      @vtime :Saturate 1 lll!(M, lll_ctx(0.6, 0.51))
+      @vtime :Saturate 1 lll!(M, LLLContext(0.6, 0.51))
       @vtime :Saturate 1 lll!(M)
       Mi, d = pseudo_inv(M)
       if caching
@@ -568,7 +568,7 @@ function _hensel(f::Generic.Poly{nf_elem},
       @vtime :Saturate 1 lll!(M, ctx_lll)
       @vtime :Saturate 1 lll!(M)
       mul!(M, M, Mold)
-      @vtime :Saturate 1 lll!(M, lll_ctx(0.6, 0.51))
+      @vtime :Saturate 1 lll!(M, LLLContext(0.6, 0.51))
       @vtime :Saturate 1 lll!(M)
       Mi, d = pseudo_inv(M)
       if caching
@@ -655,7 +655,7 @@ function _hensel(f::Generic.Poly{nf_elem},
         # I lifted to the end and one root did not lift to a root of f
         # and f is normal. Then there are no roots.
         if i == length(pr) && is_normal
-          return nf_elem[]
+          return AbsSimpleNumFieldElem[]
         end
       else
         res[j] = zz
@@ -666,7 +666,7 @@ function _hensel(f::Generic.Poly{nf_elem},
   return rs
 end
 
-function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degree(f))
+function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem}, p::Int, k::Int; max_roots::Int = degree(f))
   # Let f be a polynomial over a number field K
   # This function expects
   # p = prime number
@@ -701,8 +701,8 @@ end
 #
 ################################################################################
 
-function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb})
-  # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
+function _lifting_expo(p::Int, deg_p::Int, K::AbsSimpleNumField, bnd::Vector{ArbFieldElem})
+  # return _lifting_expo_using_logbound(p, deg_p, O, ArbFieldElem[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
   # we're using a prime ideal above p of inertia degree deg_p
@@ -750,8 +750,8 @@ function _lifting_expo(p::Int, deg_p::Int, K::AnticNumberField, bnd::Vector{arb}
   return ss
 end
 
-function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{arb})
-  # return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
+function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Vector{ArbFieldElem})
+  # return _lifting_expo_using_logbound(p, deg_p, O, ArbFieldElem[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   # bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
   # we're using a prime ideal above p of inertia degree deg_p

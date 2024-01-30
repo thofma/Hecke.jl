@@ -281,7 +281,7 @@ coercible to `K`, this functions returns the element of `L` with coefficients
 """
 (K::SimpleNumField)(c::Vector)
 
-function (K::AnticNumberField)(c::Vector{QQFieldElem})
+function (K::AbsSimpleNumField)(c::Vector{QQFieldElem})
   @assert length(c) == degree(K)
   return K(parent(K.pol)(c))
 end
@@ -292,7 +292,7 @@ function (L::NfRel{T})(a::Vector{T}) where T
   return z
 end
 
-for F in [AnticNumberField, NfRel]
+for F in [AbsSimpleNumField, NfRel]
   @eval begin
     function (L::$F)(a::Vector)
       length(a) != degree(L) && error("Vector must have length ($(length(a))) equal to the degree ($(degree(L)))")
@@ -380,7 +380,7 @@ function absolute_tr(a::T) where T <: NumFieldElem
   return absolute_tr(tr(a))
 end
 
-absolute_tr(a::nf_elem) = tr(a)
+absolute_tr(a::AbsSimpleNumFieldElem) = tr(a)
 
 absolute_tr(a::NfAbsNSElem) = tr(a)
 
@@ -395,7 +395,7 @@ function absolute_norm(a::T) where T <: NumFieldElem
   return absolute_norm(norm(a))
 end
 
-absolute_norm(a::T) where T <: Union{nf_elem, NfAbsNSElem} = norm(a)
+absolute_norm(a::T) where T <: Union{AbsSimpleNumFieldElem, NfAbsNSElem} = norm(a)
 
 absolute_norm(a::QQFieldElem) = a
 
@@ -429,7 +429,7 @@ norm(a::QQPolyRingElem) = a
 
 absolute_norm(a::QQPolyRingElem) = a
 
-function absolute_norm(f::PolyRingElem{nf_elem})
+function absolute_norm(f::PolyRingElem{AbsSimpleNumFieldElem})
   return norm(f)
 end
 
@@ -510,7 +510,7 @@ with respect to the basis of $K$ (the output of the 'basis' function).
 """
 coordinates(::NumFieldElem)
 
-function coordinates(a::nf_elem)
+function coordinates(a::AbsSimpleNumFieldElem)
   K = parent(a)
   v = Vector{QQFieldElem}(undef, degree(K))
   for i = 1:length(v)
@@ -596,9 +596,9 @@ end
 #
 ################################################################################
 
-function denominator!(z::ZZRingElem, a::nf_elem)
+function denominator!(z::ZZRingElem, a::AbsSimpleNumFieldElem)
    ccall((:nf_elem_get_den, libantic), Nothing,
-         (Ref{ZZRingElem}, Ref{nf_elem}, Ref{AnticNumberField}),
+         (Ref{ZZRingElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}),
          z, a, a.parent)
    return z
 end
@@ -650,7 +650,7 @@ function minpoly(a::T, ::QQField) where T <: Union{NfRelNSElem, NfRelElem}
   return n
 end
 
-absolute_minpoly(a::nf_elem) = minpoly(a)
+absolute_minpoly(a::AbsSimpleNumFieldElem) = minpoly(a)
 absolute_minpoly(a::NfAbsNS) = minpoly(a)
 
 absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)

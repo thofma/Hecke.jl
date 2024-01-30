@@ -1217,7 +1217,7 @@ function show(io::IO, G::HermGenus)
   end
 end
 
-function _print_short(io::IO, a::arb)
+function _print_short(io::IO, a::ArbFieldElem)
   r = BigFloat(a)
   s = string(r)
   if length(s) >= 10
@@ -1228,7 +1228,7 @@ function _print_short(io::IO, a::arb)
   print(io, ss)
 end
 
-function _print_short(io::IO, a::acb)
+function _print_short(io::IO, a::AcbFieldElem)
   _print_short(io, real(a))
   if !iszero(imag(a))
     print(io, " + ")

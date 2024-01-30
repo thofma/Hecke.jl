@@ -10,13 +10,13 @@ L = localization(OK, P)
 
   @testset "Constructor" begin
 
-    @test parent_type(OrdLocElem{nf_elem}) == OrdLoc{nf_elem}
+    @test parent_type(OrdLocElem{AbsSimpleNumFieldElem}) == OrdLoc{AbsSimpleNumFieldElem}
 
     lp = prime_decomposition(OK, 3)
     P = lp[1][1]
     L = localization(OK, P)
 
-    @test elem_type(L) == OrdLocElem{nf_elem}
+    @test elem_type(L) == OrdLocElem{AbsSimpleNumFieldElem}
     @test nf(L) == K
     @test nf(L()) == K
 

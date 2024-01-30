@@ -37,9 +37,9 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   H = c.M.basis
   T = c.M.trafo
 
-  U = Vector{FacElem{nf_elem, Nemo.AnticNumberField}}()
+  U = Vector{FacElem{AbsSimpleNumFieldElem, Nemo.AbsSimpleNumField}}()
 
-  X = Vector{nf_elem}()
+  X = Vector{AbsSimpleNumFieldElem}()
 
   rr = sparse_matrix(FlintZZ)
 
@@ -134,7 +134,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   local log
   let I = I, S1 = S1, C = C
 
-    function log(a::FacElem{nf_elem, AnticNumberField})
+    function log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
       b = sparse_row(FlintZZ)
       for i=1:length(I)
         v = valuation(a, I[i])
@@ -152,7 +152,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
       return C(c)
     end
 
-    function log(a::nf_elem)
+    function log(a::AbsSimpleNumFieldElem)
       return log(FacElem(a))
     end
   end
@@ -207,7 +207,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
 
   local log
   let mS = mS, mU = mU, G = G
-    function log(a::FacElem{nf_elem, AnticNumberField})
+    function log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
       a1 = preimage(mS, a)
       a2 = a*inv(image(mS, a1))
       #     @assert is_unit(O(evaluate(a2)))
@@ -215,7 +215,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
       return GrpAbFinGenElem(G, hcat(a3.coeff, a1.coeff))
     end
 
-    function log(a::nf_elem)
+    function log(a::AbsSimpleNumFieldElem)
       return log(FacElem(a))
     end
   end
@@ -255,7 +255,7 @@ function sunit_group(I::Vector{NfOrdIdl})
 
   local log
   let mG = mG
-    function log(a::nf_elem)
+    function log(a::AbsSimpleNumFieldElem)
       return preimage(mG, FacElem(a))
     end
   end

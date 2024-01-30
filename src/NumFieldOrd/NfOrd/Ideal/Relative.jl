@@ -1,10 +1,10 @@
 @doc raw"""
-    norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
+    norm(m::T, I::NfOrdIdl) where T <: Map{AbsSimpleNumField, AbsSimpleNumField} -> NfOrdIdl
 
 Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the norm
 $N_{K/k}(I)$.
 """
-function norm(m::T, I::NfOrdIdl; order = maximal_order(domain(m))) where T <: Map{AnticNumberField, AnticNumberField}
+function norm(m::T, I::NfOrdIdl; order = maximal_order(domain(m))) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
   K = codomain(m)
   @assert K == nf(Hecke.order(I))
   k = domain(m)
@@ -27,7 +27,7 @@ function norm(m::T, I::NfOrdIdl; order = maximal_order(domain(m))) where T <: Ma
   return J
 end
 
-function norm(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
+function norm(m::T, I::NfOrdFracIdl) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
   return norm(m, numerator(I))//denominator(I)^div(degree(codomain(m)), degree(domain(m)))
 end
 
@@ -35,12 +35,12 @@ end
 #TODO: intersect_nonindex uses a worse algo in a more special case. Combine.
 #  for prime ideals, the gcd's can be done in F_p/ F_q hence might be faster
 @doc raw"""
-    minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
+    minimum(m::T, I::NfOrdIdl) where T <: Map{AbsSimpleNumField, AbsSimpleNumField} -> NfOrdIdl
 
 Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the
 intersect $I \cap \mathbf{Z}_k$.
 """
-function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
+function minimum(m::T, I::NfOrdIdl) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
   K = codomain(m)
   @assert K == nf(order(I))
   k = domain(m)
@@ -93,7 +93,7 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
   return J
 end
 
-function minimum(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
+function minimum(m::T, I::NfOrdFracIdl) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
   return minimum(m, numerator(I))//denominator(I)
 end
 

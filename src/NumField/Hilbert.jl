@@ -308,7 +308,7 @@ function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Plc)
 end
 
 @doc raw"""
-    hilbert_symbol(a::nf_elem, b::nf_elem, p::InfPlc) -> Int
+    hilbert_symbol(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, p::InfPlc) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """

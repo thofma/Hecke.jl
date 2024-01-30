@@ -15,7 +15,7 @@ function unit_group_disc_exp(x::GrpAbFinGenElem, U::UnitGrpCtx)
   return y
 end
 
-function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::GrpAbFinGen) #snf
+function unit_group_disc_log(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField} , U::UnitGrpCtx, G::GrpAbFinGen) #snf
 
   if length(U.units) == 0
     r = [-1]

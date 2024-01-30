@@ -9,8 +9,8 @@ mutable struct ctx_rayclassgrp
   class_group_map::MapClassGrp #The class group mod n map
   n::Int #the n for n_quo
   diffC::ZZRingElem #exponent of the full class group, divided by n
-  units::Vector{FacElem{nf_elem, AnticNumberField}}
-  princ_gens::Vector{FacElem{nf_elem, AnticNumberField}}
+  units::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
+  princ_gens::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
 
   computed::Vector{Tuple{Dict{NfOrdIdl, Int}, Bool, MapRayClassGrp}}
   multiplicative_groups::Dict{NfOrdIdl, GrpAbFinGenToAbsOrdQuoRingMultMap}
@@ -45,8 +45,8 @@ function assure_elements_to_be_eval(ctx::ctx_rayclassgrp)
   mC = ctx.class_group_map
   _assure_princ_gen(mC)
   n = ctx.n
-  units = FacElem{nf_elem, AnticNumberField}[_preproc(mU(U[i]), ZZRingElem(n)) for i = 1:ngens(U)]
-  princ_gens = FacElem{nf_elem, AnticNumberField}[_preproc(mC.princ_gens[i][2], ZZRingElem(n)) for i = 1:length(mC.princ_gens)]
+  units = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[_preproc(mU(U[i]), ZZRingElem(n)) for i = 1:ngens(U)]
+  princ_gens = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[_preproc(mC.princ_gens[i][2], ZZRingElem(n)) for i = 1:length(mC.princ_gens)]
   ctx.units = units
   ctx.princ_gens = princ_gens
   return nothing
@@ -81,8 +81,8 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   lp = merge(max, y1, y2)
 
   powers = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
-  quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[]
-  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AnticNumberField,nf_elem},NfAbsOrdIdl{AnticNumberField,nf_elem},NfAbsOrdElem{AnticNumberField,nf_elem}}}[]
+  quo_rings = Tuple{NfOrdQuoRing, Hecke.AbsOrdQuoMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
+  groups_and_maps = Tuple{GrpAbFinGen, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
   for (PP, ee) in lp
     if isone(ee)
       dtame = Dict{NfOrdIdl, Int}(PP => 1)
@@ -180,7 +180,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 
 
   @vprintln :RayFacElem 1 "Collecting elements to be evaluated; first, units"
-  tobeeval = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nU+ngens(C))
+  tobeeval = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, nU+ngens(C))
   for i = 1:nU
     tobeeval[i] = ctx.units[i]
   end
@@ -274,7 +274,7 @@ function ray_class_group_quo(m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       for i = 1:length(powers)
         P, Q = powers[i]
         exponq = gcd(expon, norm(Q)-divexact(norm(Q), norm(P)))
-        el = fac_elems_eval(P, Q, FacElem{nf_elem, AnticNumberField}[z1], exponq)
+        el = fac_elems_eval(P, Q, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[z1], exponq)
         y = (invd*(groups_and_maps[i][2]\quo_rings[i][1](el[1]))).coeff
         for s = 1:ncols(y)
           coeffs[1, ii-1+ngens(C)+s] = y[1, s]
@@ -429,7 +429,7 @@ function log_infinite_primes(O::NfOrd, p::Vector{<: InfPlc})
 
     local log1
     let S = S
-      function log1(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
+      function log1(B::T) where T <: Union{AbsSimpleNumFieldElem ,FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
         return id(S)
       end
     end
@@ -439,7 +439,7 @@ function log_infinite_primes(O::NfOrd, p::Vector{<: InfPlc})
   S = abelian_group(Int[2 for i=1:length(p)])
   local log
   let S = S, p = p
-    function log(B::T) where T <: Union{nf_elem ,FacElem{nf_elem, AnticNumberField}}
+    function log(B::T) where T <: Union{AbsSimpleNumFieldElem ,FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
       emb = signs(B, _embedding.(p))
       ar = zero_matrix(FlintZZ, 1, length(p))
       for i = 1:length(p)

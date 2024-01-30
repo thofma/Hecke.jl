@@ -201,7 +201,7 @@ function number_field(f::PolyRingElem{<: NumFieldElem}; cached::Bool = false, ch
 end
 
 #Conversion to absolute non simple
-function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
+function number_field(::Type{AbsSimpleNumField}, L::NfRel{AbsSimpleNumFieldElem})
   @assert degree(base_field(L)) == 1
   pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol))
   return number_field(pol, check = false)
@@ -446,7 +446,7 @@ end
 #
 ################################################################################
 
-function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
+function hash(a::Hecke.NfRelElem{AbsSimpleNumFieldElem}, b::UInt)
   return hash(a.data, b)
 end
 
@@ -457,7 +457,7 @@ end
 ################################################################################
 
 
-function (K::AnticNumberField)(a::NfRelElem{nf_elem})
+function (K::AbsSimpleNumField)(a::NfRelElem{AbsSimpleNumFieldElem})
   K != base_field(parent(a)) && return force_coerce_throwing(K, a)
   for i in 2:degree(parent(a))
     @assert iszero(coeff(a, i - 1))
@@ -465,7 +465,7 @@ function (K::AnticNumberField)(a::NfRelElem{nf_elem})
   return coeff(a, 0)
 end
 
-function in(a::NfRelElem{nf_elem}, K::AnticNumberField)
+function in(a::NfRelElem{AbsSimpleNumFieldElem}, K::AbsSimpleNumField)
   L = parent(a)
   @assert base_field(L) == K
   for i in 2:degree(parent(a))
@@ -561,7 +561,7 @@ function absolute_representation_matrix(a::NfRelElem)
   return m
 end
 
-function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
+function norm(a::NfRelElem{AbsSimpleNumFieldElem}, new::Bool = !true)
   if new && is_monic(parent(a).pol) #should be much faster - eventually
     return resultant_mod(parent(a).pol, a.data)
   end
@@ -607,7 +607,7 @@ function tr(a::NfRelElem)
   return t
 end
 
-function tr(a::NfRelElem{nf_elem})
+function tr(a::NfRelElem{AbsSimpleNumFieldElem})
   K = parent(a)
   assure_trace_basis(K)
   t = coeff(a, 0)*K.trace_basis[1]
@@ -652,7 +652,7 @@ function minpoly(a::NfRelElem{S}) where {S}
   return minpoly(R, M, false)::Generic.Poly{S}
 end
 
-function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, QQField})
+function charpoly(a::NfRelElem, k::Union{NfRel, AbsSimpleNumField, QQField})
   f = charpoly(a)
   return _poly_norm_to(f, k)
 end
@@ -661,7 +661,7 @@ function absolute_charpoly(a::NfRelElem)
   return charpoly(a, FlintQQ)
 end
 
-function (R::Generic.PolyRing{nf_elem})(a::NfRelElem{nf_elem})
+function (R::Generic.PolyRing{AbsSimpleNumFieldElem})(a::NfRelElem{AbsSimpleNumFieldElem})
   if base_ring(R)==base_field(parent(a))
     return a.data
   end
@@ -722,7 +722,7 @@ end
 ################################################################################
 
 # Mostly the same as in the absolute case
-function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
+function normal_basis(L::NfRel{AbsSimpleNumFieldElem}, check::Bool = false)
   O = EquationOrder(L)
   K = base_field(L)
   OK = base_ring(O)
@@ -800,12 +800,12 @@ rand(rng::AbstractRNG, L::NfRel, B::AbstractUnitRange{Int}) = rand(rng, make(L, 
 ################################################################################
 
 @doc raw"""
-    kummer_generator(K::NfRel{nf_elem}) -> nf_elem
+    kummer_generator(K::NfRel{AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldElem
 
 Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
 such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
 """
-function kummer_generator(K::NfRel{nf_elem})
+function kummer_generator(K::NfRel{AbsSimpleNumFieldElem})
   n = degree(K)
   k = base_field(K)
   tuo, gen_tu = _torsion_units_gen(k)

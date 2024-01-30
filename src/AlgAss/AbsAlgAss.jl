@@ -492,7 +492,7 @@ end
 
 @doc raw"""
     as_number_fields(A::AbsAlgAss{QQFieldElem})
-      -> Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor}}
+      -> Vector{Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor}}
 
 Given a commutative algebra $A$ over $\mathbb Q$, this function returns a
 decomposition of $A$ as direct sum of number fields and maps from $A$ to
@@ -514,9 +514,9 @@ function __as_number_fields(A::AbsAlgAss{T}; use_maximal_order::Bool = true) whe
   return result
 end
 
-_ext_type(::Type{QQFieldElem}) = AnticNumberField
+_ext_type(::Type{QQFieldElem}) = AbsSimpleNumField
 
-_ext_type(::Type{nf_elem}) = NfRel{nf_elem}
+_ext_type(::Type{AbsSimpleNumFieldElem}) = NfRel{AbsSimpleNumFieldElem}
 
 function _as_number_fields(A::AbsAlgAss{T}; use_maximal_order::Bool = true) where {T}
   d = dim(A)
@@ -622,8 +622,8 @@ function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbsAlgAss
   return A(c)
 end
 
-function rand(A::AbsAlgAss{nf_elem}, rng::AbstractUnitRange{Int} = -10:10)
-  c = nf_elem[rand(base_ring(A), rng) for i = 1:dim(A)]
+function rand(A::AbsAlgAss{AbsSimpleNumFieldElem}, rng::AbstractUnitRange{Int} = -10:10)
+  c = AbsSimpleNumFieldElem[rand(base_ring(A), rng) for i = 1:dim(A)]
   return A(c)
 end
 
@@ -967,7 +967,7 @@ function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::
   return __as_field_with_isomorphism(A, mina, M)
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{S}, f, M) where {S <: Union{QQFieldElem, nf_elem}}
+function __as_field_with_isomorphism(A::AbsAlgAss{S}, f, M) where {S <: Union{QQFieldElem, AbsSimpleNumFieldElem}}
   K = number_field(f, cached = false)[1]
   return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
 end
@@ -1029,7 +1029,7 @@ end
 
 
 #K/Q is a Galois extension.
-function CrossedProductAlgebra(K::AnticNumberField, G::Vector{T}, cocval::Matrix{nf_elem}) where T
+function CrossedProductAlgebra(K::AbsSimpleNumField, G::Vector{T}, cocval::Matrix{AbsSimpleNumFieldElem}) where T
 
   n=degree(K)
   m=length(G)
@@ -1072,7 +1072,7 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Vector{T}, cocval::Matrix
 
 end
 
-function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{nf_elem}) where T
+function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{AbsSimpleNumFieldElem}) where T
 
   n=degree(O)
   m=length(G)
@@ -1176,7 +1176,7 @@ end
 
 # This is the generic fallback which constructs an associative algebra
 @doc raw"""
-    restrict_scalars(A::AbsAlgAss{nf_elem}, Q::QQField)
+    restrict_scalars(A::AbsAlgAss{AbsSimpleNumFieldElem}, Q::QQField)
     restrict_scalars(A::AbsAlgAss{fqPolyRepFieldElem}, Fp::fpField)
     restrict_scalars(A::AbsAlgAss{FqPolyRepFieldElem}, Fp::EuclideanRingResidueField{ZZRingElem})
       -> AlgAss, Function, Function
@@ -1214,7 +1214,7 @@ end
 
 Returns the Jacobson-Radical of $A$.
 """
-function radical(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem, QQFieldElem, nf_elem } }
+function radical(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem, QQFieldElem, AbsSimpleNumFieldElem } }
   return ideal_from_gens(A, _radical(A), :twosided)
 end
 
@@ -1343,7 +1343,7 @@ function _radical(A::AbsAlgAss{T}) where { T <: Union{ fqPolyRepFieldElem, FqPol
   return elem_type(A)[ A2toA(elem_from_mat_row(A2, C, i)) for i = 1:nrows(C) ]
 end
 
-function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{QQPolyRingElem}) where { T <: Union{ fqPolyRepFieldElem, FqPolyRepFieldElem, FqFieldElem } }
+function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{AbsSimpleNumFieldElem}, M3::MatElem{QQPolyRingElem}) where { T <: Union{ fqPolyRepFieldElem, FqPolyRepFieldElem, FqFieldElem } }
   @assert ncols(M1) == ncols(M2) && ncols(M1) == ncols(M3)
   @assert nrows(M1) == nrows(M2) && nrows(M1) == nrows(M3)
   n = degree(base_ring(M1))
@@ -1351,7 +1351,7 @@ function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{QQPolyR
   R = base_ring(M3)
   for i = 1:nrows(M1)
     for j = 1:ncols(M1)
-      # Sadly, there is no setcoeff! for nf_elem...
+      # Sadly, there is no setcoeff! for AbsSimpleNumFieldElem...
       for k = 0:(n - 1)
         if T === FqFieldElem
           M3[i, j] = setcoeff!(M3[i, j], k, QQFieldElem(Nemo._coeff(M1[i, j], k)))
@@ -1359,7 +1359,7 @@ function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{QQPolyR
           M3[i, j] = setcoeff!(M3[i, j], k, QQFieldElem(coeff(M1[i, j], k)))
         end
       end
-      ccall((:nf_elem_set_fmpq_poly, libantic), Nothing, (Ref{nf_elem}, Ref{QQPolyRingElem}, Ref{AnticNumberField}), M2[i, j], M3[i, j], K)
+      ccall((:nf_elem_set_fmpq_poly, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{QQPolyRingElem}, Ref{AbsSimpleNumField}), M2[i, j], M3[i, j], K)
     end
   end
   return M2
@@ -1392,7 +1392,7 @@ function is_semisimple(A::AbsAlgAss)
   return b == 1
 end
 
-function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem, QQFieldElem, nf_elem } }
+function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem, QQFieldElem, AbsSimpleNumFieldElem } }
   if A.issemisimple == 0
     if isempty(_radical(A))
       A.issemisimple = 1
@@ -1443,7 +1443,7 @@ end
 #
 ################################################################################
 
-function trace_signature(A::AbsAlgAss{nf_elem}, P::InfPlc)
+function trace_signature(A::AbsAlgAss{AbsSimpleNumFieldElem}, P::InfPlc)
   M = trred_matrix(basis(A))
   Ky, y = polynomial_ring(base_ring(A), "y", cached = false)
   f = charpoly(Ky, M)

@@ -9,7 +9,7 @@
   g = t^2 + 5
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 2])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b + 8, b + 9, 0]), map(E, [-25*b + 66, -51//2*b + 171//2, -5//2*b + 1]), map(E, [104*b + 150, 132*b + 145, 5//2*b + 35//2]), map(E, [529*b - 47, 1243//2*b - 437//2, 28*b + 95//2])]
+  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [b + 8, b + 9, 0]), map(E, [-25*b + 66, -51//2*b + 171//2, -5//2*b + 1]), map(E, [104*b + 150, 132*b + 145, 5//2*b + 35//2]), map(E, [529*b - 47, 1243//2*b - 437//2, 28*b + 95//2])]
   L = hermitian_lattice(E, gens, gram = D)
 
   L1 = @inferred hermitian_lattice(base_field(L), pseudo_matrix(L))
@@ -46,7 +46,7 @@
   @test rank(LL) == 0
 
   D = matrix(E, 0, 0, [])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[]
+  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[]
   L = @inferred hermitian_lattice(E, gens, gram = D)
   @test is_definite(L)
   @test rank(L) == 0
@@ -63,7 +63,7 @@
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [0, 1, 0]), map(E, [0, 0, 1])]
+  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [0, 1, 0]), map(E, [0, 0, 1])]
   L = hermitian_lattice(E, gens, gram = D)
 
   @test sprint(show, "text/plain", L) isa String
@@ -89,7 +89,7 @@
   g = t^2 + 2
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-14*b - 18, -10, 0, 0]), map(E, [1//2*b - 1//2, b - 1//2, 1, 0]), map(E, [27*b + 85, -33//2*b + 28, -9//4*b - 3//2, -1//4*b - 2]), map(E, [-16*b - 92, 20*b - 24, 2*b + 2, 2])]
+  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [-14*b - 18, -10, 0, 0]), map(E, [1//2*b - 1//2, b - 1//2, 1, 0]), map(E, [27*b + 85, -33//2*b + 28, -9//4*b - 3//2, -1//4*b - 2]), map(E, [-16*b - 92, 20*b - 24, 2*b + 2, 2])]
   L = hermitian_lattice(E, gens, gram = D)
 
   Lmax = @inferred Hecke.maximal_integral_lattice(L)
@@ -118,7 +118,7 @@
   g = t^2 + 3
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
+  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
   L = hermitian_lattice(E, gens, gram = D)
 
   p = genus(L).LGS[1].p

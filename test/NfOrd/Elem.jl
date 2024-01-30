@@ -299,7 +299,7 @@
   @testset "Conjugates" begin
     b = O1(a1)
     c = @inferred conjugates_arb(b, 1024)
-    @test isa(c, Vector{acb})
+    @test isa(c, Vector{AcbFieldElem})
     @test overlaps(c[1], CC(root(RR(2), 3)))
     @test Hecke.radiuslttwopower(c[1], -1024)
     @test overlaps(c[2], (-CC(1)//2 + onei(CC)*Base.sqrt(RR(3))//2)*CC(root(RR(2), 3)))
@@ -308,7 +308,7 @@
     @test Hecke.radiuslttwopower(c[1], -1024)
 
     c = @inferred conjugates_arb_log(b, 1024)
-    @test isa(c, Vector{arb})
+    @test isa(c, Vector{ArbFieldElem})
     @test overlaps(c[1], log(RR(2))//3)
     @test Hecke.radiuslttwopower(c[1], -1024)
     @test overlaps(c[2], 2*log(RR(2))//3)

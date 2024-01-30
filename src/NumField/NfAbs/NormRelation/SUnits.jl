@@ -17,7 +17,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
     @assert length(lpk) > 0
     Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
 
-    D = Dict{nf_elem, nf_elem}()
+    D = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
     function N_mk(x, D, i)
       if haskey(D, x)
         return D[x]
@@ -41,7 +41,7 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
       for l=1:ngens(Szk)
         u = mS(Szk[l])  #do compact rep here???
         valofnewelement = mS.valuations[l] * z
-        el_to_add = FacElem(Dict{nf_elem, AnticNumberField}((N(x, i, j), v) for (x,v) = u.fac))
+        el_to_add = FacElem(Dict{AbsSimpleNumFieldElem, AbsSimpleNumField}((N(x, i, j), v) for (x,v) = u.fac))
         Hecke.class_group_add_relation(c, el_to_add, valofnewelement)#, always = false)
       end
     end
@@ -59,7 +59,7 @@ end
 function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
-  skipped_units = FacElem{nf_elem, AnticNumberField}[]
+  skipped_units = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   autos = automorphism_list(field(N), copy = false)
 
   for i = 1:length(N)
@@ -74,7 +74,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
     @time Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
     @show length(N.coefficients_gen[i])
 
-    #D = Dict{nf_elem, nf_elem}()
+    #D = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
     cc = Vector{Tuple{Int, ZZRingElem}}[]
     induced = induce_action_from_subfield(N, i, lpk, c.FB, cc)
     for l in 1:ngens(Szk)
@@ -82,7 +82,7 @@ function _compute_sunit_and_unit_group!(c, U, N, saturate = true)
       for j in 1:length(induced)
         aut = autos[j]
         valofnewelement = mS.valuations[l] * induced[j]
-        el_to_add = FacElem(Dict{nf_elem, AnticNumberField}((aut(embedding(N, i)(x)), v) for (x,v) = u.fac))
+        el_to_add = FacElem(Dict{AbsSimpleNumFieldElem, AbsSimpleNumField}((aut(embedding(N, i)(x)), v) for (x,v) = u.fac))
         Hecke.class_group_add_relation(c, el_to_add, valofnewelement)#, always = false)
       end
     end
@@ -133,7 +133,7 @@ end
 #
 ################################################################################
 
-function _embed(N::NormRelation, i::Int, a::nf_elem)
+function _embed(N::NormRelation, i::Int, a::AbsSimpleNumFieldElem)
   b = get(N.embed_cache_triv[i], a, nothing)
   if b === nothing
     _, mk = subfield(N, i)
@@ -166,7 +166,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
   # I am assuming that c.FB.ideals is invariant under the action of the automorphism group used by N
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
-  add_unit_later = FacElem{nf_elem, AnticNumberField}[]
+  add_unit_later = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   @vprintln :NormRelation 1 "Adding trivial relations"
   for I in c.FB.ideals
     a = I.gen_one
@@ -212,7 +212,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vprintln :NormRelation 3 "  Compact presentation ..."
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{NfOrdIdl, Int}())
         end
-        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(N, i, x), v) for (x,v) = u.fac))
+        @vtime :NormRelation 4 img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
         if !found_torsion
           fl = Hecke.is_torsion_unit(img_u, false, 16)[1]
@@ -250,7 +250,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vprintln :NormRelation 3 "  Compact presentation ..."
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = sup)
         end
-        @vtime :NormRelation 4 img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
+        @vtime :NormRelation 4 img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
         @hassert :NormRelation 1 sparse_row(FlintZZ, [ (j, valuation(img_u, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_u, p) != 0]) == valofnewelement
         @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
         #=
@@ -325,7 +325,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
   return z
 end
 
-function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = true, cached = true)
+function norm_relation(K::AbsSimpleNumField, coprime::Int = 0; small_degree = true, cached = true)
   local N
   if cached
     if has_attribute(K, :norm_relation)
@@ -364,7 +364,7 @@ function norm_relation(K::AnticNumberField, coprime::Int = 0; small_degree = tru
   end
 end
 
-function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, invariant::Bool = false; saturate_units::Bool = false)
+function _sunit_group_fac_elem_quo_via_brauer(K::AbsSimpleNumField, S, n::Int, invariant::Bool = false; saturate_units::Bool = false)
   @vprintln :NormRelation 1 "Setting up the norm relation context ..."
   fl, N = norm_relation(K, n)
   if !fl
@@ -381,7 +381,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AnticNumberField, S, n::Int, in
   return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{GrpAbFinGen, Hecke.MapSUnitGrpFacElem}
 end
 
-function _sunit_group_fac_elem_via_brauer(K::AnticNumberField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
+function _sunit_group_fac_elem_via_brauer(K::AbsSimpleNumField, S::Vector{NfOrdIdl}, invariant::Bool = false, compact::Int = 0)
   @vprintln :NormRelation 1 "Setting up the norm relation context ..."
   fl, N = norm_relation(K, 0, small_degree = false)
   @assert fl
@@ -399,8 +399,8 @@ function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K)
   FB = NfFactorBase(ZK, S)
   c = Hecke.class_group_init(FB)
   UZK = get_attribute!(ZK, :UnitGrpCtx) do
-    return Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(ZK)
-  end::Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
+    return Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(ZK)
+  end::Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
   return c, UZK
 end
 
@@ -470,7 +470,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   c = Hecke.RelSaturate.simplify(c, UZK, use_LLL = true)
   perm_ideals = _find_perm(S, c.FB.ideals)
   if invariant
-    sunitsmodunits = FacElem{nf_elem, AnticNumberField}[x for x in c.R_gen] # These are generators for the S-units (mod units, mod n)
+    sunitsmodunits = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[x for x in c.R_gen] # These are generators for the S-units (mod units, mod n)
     valuations_sunitsmodunits = Vector{SRow{ZZRingElem}}(undef, length(S))
     for i = 1:length(sunitsmodunits)
       r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
@@ -480,7 +480,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   else
     # I need to extract the S-units from the Sclosed-units
     # Now I need to find the correct indices in the c.FB.ideals
-    sunitsmodunits = FacElem{nf_elem, AnticNumberField}[]
+    sunitsmodunits = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
     valuations_sunitsmodunits = SRow{ZZRingElem}[]
     ind = Int[]
     for P in S
@@ -528,7 +528,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{NfOrdI
   @assert ngens(Q) == 1
   m = order(Q)
   if !isone(m)
-    units = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(unitsmodtorsion)+1)
+    units = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, length(unitsmodtorsion)+1)
     units[1] = FacElem(elem_in_nf(mT(mQ\Q[1])))
     for i = 2:length(units)
       units[i] = unitsmodtorsion[i-1]

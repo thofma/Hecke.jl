@@ -67,9 +67,9 @@
 
     m = make(L, 1:3)
     for x in (rand(L, 1:3), rand(rng, L, 1:3), rand(m), rand(rng, m))
-      @test x isa Hecke.NfRelElem{nf_elem}
+      @test x isa Hecke.NfRelElem{AbsSimpleNumFieldElem}
     end
-    @test rand(m, 3) isa Vector{Hecke.NfRelElem{nf_elem}}
+    @test rand(m, 3) isa Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}
     @test reproducible(m)
     @test reproducible(L, 1:3)
   end

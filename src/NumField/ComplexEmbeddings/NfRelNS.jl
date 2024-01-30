@@ -1,14 +1,14 @@
 mutable struct NumFieldEmbNfNS{S, U} <: NumFieldEmb{S}
   field::S             # Number field
   base_field_emb::U    # Embedding of base field
-  data::Vector{acb}    # For each L = K[x]/(g_i) component a root p(g_i)
+  data::Vector{AcbFieldElem}    # For each L = K[x]/(g_i) component a root p(g_i)
   absolute_index::Int  # Bookkeeping
   isreal::Bool         # Whether the embedding is real
   conjugate::Int       # The absolute index of the conjugate
 
   function NumFieldEmbNfNS{S, U}(field::S,
                                  base_field_emb::U,
-                                 data::Vector{acb},
+                                 data::Vector{AcbFieldElem},
                                  absolute_index::Int,
                                  isreal::Bool,
                                  conjugate::Int) where {S,  U}
@@ -104,7 +104,7 @@ function (g::NumFieldEmbNfNS)(a::NfRelNSElem, prec::Int = 32)
   end
   K = base_field(L)
   plcK = complex_embeddings(K)
-  pols = Vector{Generic.MPoly{acb}}(undef, length(plcK))
+  pols = Vector{Generic.MPoly{AcbFieldElem}}(undef, length(plcK))
   r, s = signature(L)
 
   while true
@@ -144,27 +144,27 @@ evaluate(a::NfRelNSElem, g::NumFieldEmbNfNS, prec::Int = 32) = g(a, prec)
 function _conjugates_data_new(L::NfRelNS{T}, p::Int) where T
   cd = get_attribute(L, :conjugates_data_new)
   if cd === nothing
-    D = Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}}()
+    D = Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}}()
     res = __conjugates_data_new(L, p)
     D[p] = res
     set_attribute!(L, :conjugates_data_new => D)
     return res
   end
-  cd::Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}}
+  cd::Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}}
   if haskey(cd, p)
-    res = cd[p]::Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}
+    res = cd[p]::Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}
     return res
   end
   res = __conjugates_data_new(L, p)
   cd[p] = res
-  return res::Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}
+  return res::Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}
 end
 
 function __conjugates_data_new(L::NfRelNS{T}, p::Int) where T
   data = [_conjugates_data(component(L, j)[1], p) for j = 1:ngens(L)]
   plcs = complex_embeddings(base_field(L), conjugates = false)
   r, s = signature(L)
-  res = Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}(undef, r+s)
+  res = Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}(undef, r+s)
   r_cnt = 0
   c_cnt = 0
   for P in plcs
@@ -173,17 +173,17 @@ function __conjugates_data_new(L::NfRelNS{T}, p::Int) where T
       ind_real, ind_complex = enumerate_conj_prim_rel(datas)
       for y in ind_real
         r_cnt += 1
-        res[r_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)])
+        res[r_cnt] = (P, AcbFieldElem[datas[j][2][y[j]] for j = 1:length(y)])
       end
       for y in ind_complex
         c_cnt += 1
-        res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)])
+        res[r + c_cnt] = (P, AcbFieldElem[datas[j][2][y[j]] for j = 1:length(y)])
       end
     else
       it = cartesian_product_iterator([1:length(x[2]) for x in datas], inplace = true)
       for y in it
         c_cnt += 1
-        res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)])
+        res[r + c_cnt] = (P, AcbFieldElem[datas[j][2][y[j]] for j = 1:length(y)])
       end
     end
   end
@@ -235,7 +235,7 @@ end
 #
 ################################################################################
 
-function complex_embedding(K::NfRelNS, e::NumFieldEmb, r::Vector{acb})
+function complex_embedding(K::NfRelNS, e::NumFieldEmb, r::Vector{AcbFieldElem})
   @req number_field(e) === base_field(K) "Embedding must be embedding of base field"
   embs = complex_embeddings(K)
   cnt = 0

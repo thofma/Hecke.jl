@@ -97,7 +97,7 @@ function absolute_simple_field(V::HermSpace)
     set_attribute!(V, :absolute_field => (Eabs, EabsToE))
     return Eabs, EabsToE
   else
-    return c::Tuple{AnticNumberField, NfToNfRel}
+    return c::Tuple{AbsSimpleNumField, NfToNfRel}
   end
 end
 

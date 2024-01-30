@@ -15,8 +15,8 @@
 #    - is_domain_type
 #
 # Seems to work for
-# -  R = ZZ, F = AnticNumberField
-# -  R = Loc{ZZRingElem}, F = AnticNumberField
+# -  R = ZZ, F = AbsSimpleNumField
+# -  R = LocalizedEuclideanRing{ZZRingElem}, F = AbsSimpleNumField
 #
 # -  R = k[x], F = FunctionField (for k = QQ, F_q)
 # -  R = localization(k(x), degree), F = FunctionField
@@ -424,12 +424,12 @@ function Hecke.integral_split(a::Generic.FunctionFieldElem, O::GenOrd)
   return O(base_ring(parent(a))(d)*a, check = false), d
 end
 
-function Hecke.integral_split(a::nf_elem, O::GenOrd)
+function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd)
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   return O(d.data*a, check =false), d #evil, but no legal way found
 end
 
-function Hecke.integral_split(a::nf_elem, O::GenOrd{<: Any, ZZRing})
+function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd{<: Any, ZZRing})
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   return O(d*a, check = false), d #evil, but no legal way found
 end
@@ -645,14 +645,14 @@ julia> k, a = quadratic_field(12);
 julia> integral_closure(ZZ, k)
 
 Maximal order of Real quadratic field defined by x^2 - 12
-with basis nf_elem[1, 1//2*sqrt(12)]
+with basis AbsSimpleNumFieldElem[1, 1//2*sqrt(12)]
 ```
 """
-function integral_closure(::ZZRing, F::AnticNumberField)
+function integral_closure(::ZZRing, F::AbsSimpleNumField)
   return Hecke.maximal_order(F)
 end
 
-function integral_closure(S::Loc{ZZRingElem}, F::AnticNumberField)
+function integral_closure(S::LocalizedEuclideanRing{ZZRingElem}, F::AbsSimpleNumField)
   return _integral_closure(S, F)
 end
 
@@ -753,13 +753,13 @@ function Hecke.basis(O::GenOrd, F::Generic.FunctionField)
   return map(F, basis(O))
 end
 
-function (K::AnticNumberField)(b::GenOrdElem)
+function (K::AbsSimpleNumField)(b::GenOrdElem)
   O = parent(b)
   @assert O.F == K
   return b.data
 end
 
-function Hecke.basis(O::GenOrd, F::AnticNumberField)
+function Hecke.basis(O::GenOrd, F::AbsSimpleNumField)
   return map(F, basis(O))
 end
 

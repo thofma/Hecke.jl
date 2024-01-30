@@ -60,7 +60,7 @@ function bkz_basis(A::NfOrdIdl, bs::Int;
   g, tt = bkz_trans(g, bs)  ## check: bkz_trans seems to s.t. kill the input
 
   c = tt*b
-  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
+  q = AbsSimpleNumFieldElem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
 
   return q
 end
@@ -92,7 +92,7 @@ function fplll_basis(rt_c::Hecke.roots_ctx, A::NfOrdIdl, bs::Int;
   @time g, tt = FPlll.lll_trans(g)  ## check: bkz_trans seems to s.t. kill the input
 
   c = tt*b
-  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
+  q = AbsSimpleNumFieldElem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
 
   return q
 end
@@ -124,7 +124,7 @@ function tschebyschew(Qx::Nemo.QQPolyRing, n::Int)
 end
 
 
-function auto_of_maximal_real(K::AnticNumberField, n::Int)
+function auto_of_maximal_real(K::AbsSimpleNumField, n::Int)
   # image of zeta -> zeta^n
   # assumes K = Q(zeta+1/zeta)
   # T = tschebyschew(n), then
@@ -135,7 +135,7 @@ function auto_of_maximal_real(K::AnticNumberField, n::Int)
   return hom(K, K, i, check = false)
 end
 
-function auto_simplify(A::Map, K::AnticNumberField)
+function auto_simplify(A::Map, K::AbsSimpleNumField)
   Qx = parent(K.pol)
   b = A(gen(K))
   return hom(K, K, b, check = false)
@@ -154,7 +154,7 @@ function auto_power(A::Map, n::Int)
   end
 end
 
-function orbit(f::Map, a::Nemo.nf_elem)
+function orbit(f::Map, a::Nemo.AbsSimpleNumFieldElem)
   b = Set([a])
   nb = 1
   while true
@@ -167,7 +167,7 @@ function orbit(f::Map, a::Nemo.nf_elem)
 end
 
 
-function order_of_auto(f::Map, K::AnticNumberField)
+function order_of_auto(f::Map, K::AbsSimpleNumField)
   a = gen(K)
   b = f(a)
   i = 1

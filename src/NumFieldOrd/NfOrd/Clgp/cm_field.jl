@@ -3,7 +3,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
   K = domain(mL)
   OK = lll(maximal_order(L))
   c = create_ctx(OK, use_aut = use_aut, redo = redo, bound = bound)
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(OK)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(OK)
   set_attribute!(OK, :UnitGrpCtx => U)
   set_attribute!(OK, :ClassGrpCtx => c)
 
@@ -14,7 +14,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
   lp1 = collect(lp)
 
   vals_subfield = val_from_subfield(c.FB, mL, lp1)
-  cache_mL = Dict{nf_elem, nf_elem}()
+  cache_mL = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
   @vprintln :ClassGroup 1 "Computing S-units of totally real subfield"
   S, mS = Hecke.sunit_group_fac_elem(lp1)
   @vprintln :ClassGroup 1 "Embedding S-units of totally real subfield"
@@ -28,7 +28,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
       end
       add_unit!(U, u)
     else
-      img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(mL, cache_mL, x), v) for (x,v) = u.fac if !iszero(v)))
+      img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(mL, cache_mL, x), v) for (x,v) = u.fac if !iszero(v)))
       valofnewelement = mS.valuations[i] * vals_subfield
       Hecke.class_group_add_relation(c, u, valofnewelement, add_orbit = false, always = false)
     end

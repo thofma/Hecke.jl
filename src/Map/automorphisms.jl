@@ -24,7 +24,7 @@ function _automorphisms(K::NfAbsNS; is_abelian::Bool = false)
 end
 
 
-function _automorphisms(K::AnticNumberField; is_abelian::Bool = false)
+function _automorphisms(K::AbsSimpleNumField; is_abelian::Bool = false)
   if degree(K) == 1
     return NfToNfMor[hom(K, K, one(K))]
   end
@@ -50,7 +50,7 @@ function _automorphisms(K::AnticNumberField; is_abelian::Bool = false)
 
   Kt, t = polynomial_ring(K, "t", cached = false)
   f1 = change_base_ring(K, f, parent = Kt)
-  divpol = Kt(nf_elem[-gen(K), K(1)])
+  divpol = Kt(AbsSimpleNumFieldElem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
   lr = roots(f1, max_roots = div(ord_aut, 2))
   Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
@@ -63,7 +63,7 @@ function _automorphisms(K::AnticNumberField; is_abelian::Bool = false)
 end
 
 
-function _order_bound(K::AnticNumberField)
+function _order_bound(K::AbsSimpleNumField)
   p = 101
   i = 0
   ord = degree(K)
@@ -93,7 +93,7 @@ function _order_bound(K::AnticNumberField)
   return ord
 end
 
-function _auts_cyclo(K::AnticNumberField)
+function _auts_cyclo(K::AbsSimpleNumField)
   f = get_attribute(K, :cyclo)::Int
   a = gen(K)
   A, mA = unit_group(residue_ring(FlintZZ, f, cached = false)[1])
@@ -101,7 +101,7 @@ function _auts_cyclo(K::AnticNumberField)
   return auts
 end
 
-function _generator_automorphisms(K::AnticNumberField)
+function _generator_automorphisms(K::AbsSimpleNumField)
   if degree(K) == 1
     return NfToNfMor[]
   end
@@ -111,7 +111,7 @@ function _generator_automorphisms(K::AnticNumberField)
   f = K.pol
   Kt, t = polynomial_ring(K, "t", cached = false)
   f1 = change_base_ring(K, f, parent = Kt)
-  divpol = Kt(nf_elem[-gen(K), K(1)])
+  divpol = Kt(AbsSimpleNumFieldElem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
   lr = roots(f1, max_roots = div(degree(K), 2))
   Aut1 = Vector{NfToNfMor}(undef, length(lr))
@@ -121,7 +121,7 @@ function _generator_automorphisms(K::AnticNumberField)
   return small_generating_set(Aut1)
 end
 
-automorphism_type(::AnticNumberField) = NfToNfMor
+automorphism_type(::AbsSimpleNumField) = NfToNfMor
 automorphism_type(::NfAbsNS) = NfAbsNSToNfAbsNS
 
 function automorphism_list(K::NumField{QQFieldElem}; copy::Bool = true, is_abelian::Bool = false)
@@ -151,11 +151,11 @@ function automorphism_list(K::NumField{QQFieldElem}; copy::Bool = true, is_abeli
   end
 end
 
-function is_automorphisms_known(K::Union{AnticNumberField,NfAbsNS})
+function is_automorphisms_known(K::Union{AbsSimpleNumField,NfAbsNS})
   return has_attribute(K, :automorphisms)
 end
 
-function get_automorphisms(K::AnticNumberField)
+function get_automorphisms(K::AbsSimpleNumField)
   return get_attribute(K, :automorphisms)::Vector{NfToNfMor}
 end
 
@@ -163,11 +163,11 @@ function get_automorphisms(K::NfAbsNS)
   return get_attribute(K, :automorphisms)::Vector{NfAbsNSToNfAbsNS}
 end
 
-function set_automorphisms(K::Union{AnticNumberField,NfAbsNS}, auts::Vector)
+function set_automorphisms(K::Union{AbsSimpleNumField,NfAbsNS}, auts::Vector)
   set_attribute!(K, :automorphisms => auts)
 end
 
-function involution(K::Union{NfRel, AnticNumberField})
+function involution(K::Union{NfRel, AbsSimpleNumField})
   @req degree(K) == 2 "Number field must have degree 2 over its base field"
   a = gen(K)
   A = automorphism_list(K)
@@ -189,7 +189,7 @@ end
 
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
 """
-function automorphism_group(K::AnticNumberField)
+function automorphism_group(K::AbsSimpleNumField)
   if Nemo.is_cyclo_type(K)
     return _automorphism_group_cyclo(K)
   else
@@ -207,7 +207,7 @@ function _automorphism_group_cyclo(K)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
-function _automorphism_group_generic(K::AnticNumberField)
+function _automorphism_group_generic(K::AbsSimpleNumField)
   aut = automorphism_list(K)
   n = degree(K)
   #First, find a good prime
@@ -411,7 +411,7 @@ end
 #
 ################################################################################
 
-function _automorphisms_abelian(K::AnticNumberField)
+function _automorphisms_abelian(K::AbsSimpleNumField)
 
   #@assert is_abelian(K)
   auts = NfToNfMor[id_hom(K)]
@@ -441,7 +441,7 @@ function _automorphisms_abelian(K::AnticNumberField)
   return auts
 end
 
-function lift_root(K::AnticNumberField, b, bound::Int)
+function lift_root(K::AbsSimpleNumField, b, bound::Int)
   Fx = parent(b)
   fF = Fx(K.pol)
   Zx = polynomial_ring(FlintZZ, "x")[1]
@@ -503,7 +503,7 @@ function lift_root(K::AnticNumberField, b, bound::Int)
 end
 
 
-function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = NfToNfMor[]; bound::Int = 100)
+function _frobenius_at(K::AbsSimpleNumField, p::Int, auts::Vector{NfToNfMor} = NfToNfMor[]; bound::Int = 100)
 
   Zx = FlintZZ["x"][1]
   F = residue_ring(FlintZZ, p, cached = false)[1]
@@ -522,9 +522,9 @@ function _frobenius_at(K::AnticNumberField, p::Int, auts::Vector{NfToNfMor} = Nf
 end
 
 
-function _coefficients_bound(K::AnticNumberField)
+function _coefficients_bound(K::AbsSimpleNumField)
   r1, r2 = signature(K)
-  bound_root = Vector{arb}(undef, r1 + r2)
+  bound_root = Vector{ArbFieldElem}(undef, r1 + r2)
   a = gen(K)
   dfa = K(derivative(K.pol))
   dfa_conjs = conjugates_arb(dfa, 32)
@@ -551,7 +551,7 @@ function _coefficients_bound(K::AnticNumberField)
   return upper_bound(ZZRingElem, sqrt(R(c2)*boundt2))
 end
 
-function check_root(K::AnticNumberField, p::Int, el::nf_elem)
+function check_root(K::AbsSimpleNumField, p::Int, el::AbsSimpleNumFieldElem)
   isroot = true
   cnt = 0
   q = p
@@ -579,7 +579,7 @@ end
 # This is flag, v
 # If flag == true, then v is the center of the automorphism group
 # If flag == false, then v is contained in the center
-function _automorphisms_center(K::AnticNumberField)
+function _automorphisms_center(K::AbsSimpleNumField)
   auts = morphism_type(K)[id_hom(K)]
   p = 2
   dp = denominator(K.pol)
@@ -618,7 +618,7 @@ function _automorphisms_center(K::AnticNumberField)
   return length(auts) == ord, auts
 end
 
-function is_abelian2(K::AnticNumberField)
+function is_abelian2(K::AbsSimpleNumField)
   if is_automorphisms_known(K)
     return is_abelian(automorphism_group(K)[1])
   end
