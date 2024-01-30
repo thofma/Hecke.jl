@@ -720,11 +720,6 @@ function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]))
 end
 
-function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
-  rt = roots(AcbField(precision(R)), f, abs_tol, initial_prec...)
-  return real.(filter(isreal, rt))
-end
-
 function roots(x::RealPoly)
   rt = roots(map_coefficients(ComplexField(), x), isolate_real=true)
   return real.(filter(isreal, rt))
