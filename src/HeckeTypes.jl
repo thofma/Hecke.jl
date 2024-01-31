@@ -2279,6 +2279,8 @@ const AbsSimpleNumFieldOrderElem = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSi
 
 const AbsSimpleNumFieldOrderIdeal = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
+const AbsSimpleNumFieldOrderFractionalIdeal = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
 const AbsSimpleNumFieldOrderQuoRing = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 const AbsSimpleNumFieldOrderQuoRingElem = AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}

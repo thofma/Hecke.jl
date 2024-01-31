@@ -20,6 +20,7 @@ export AbsSimpleNumFieldEmbedding
 export AbsSimpleNumFieldOrder
 export AbsSimpleNumFieldOrderElem
 export AbsSimpleNumFieldOrderIdeal
+export AbsSimpleNumFieldOrderFractionalIdeal
 export AbsSimpleNumFieldOrderQuoRing
 export AbsSimpleNumFieldOrderQuoRingElem
 export StructureConstantAlgebra
