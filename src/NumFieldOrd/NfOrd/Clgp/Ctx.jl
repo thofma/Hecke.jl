@@ -135,7 +135,7 @@ function class_group_init(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFie
 end
 
 function _get_autos_from_ctx(ctx::ClassGrpCtx)
-  return ctx.aut_grp::Vector{Tuple{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Perm{Int}}}
+  return ctx.aut_grp::Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Perm{Int}}}
 end
 
 ################################################################################
