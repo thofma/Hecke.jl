@@ -27,13 +27,13 @@ end
 
 mutable struct FieldsTower
   field::AbsSimpleNumField
-  generators_of_automorphisms::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
-  subfields::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
+  generators_of_automorphisms::Vector{_AbsSimpleNumFieldAut}
+  subfields::Vector{_AbsSimpleNumFieldHom}
   ramified_primes::Vector{ZZRingElem}
   is_abelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
-  isomorphism::Dict{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, GAP.GapObj}
+  isomorphism::Dict{_AbsSimpleNumFieldHom, GAP.GapObj}
   admissible_cocycles::Vector{cocycle_ctx}
   projections_for_conductors::Vector{GAP.GapObj}
 
@@ -161,7 +161,7 @@ function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: A
    end
 end
 
-function permutation_group(G::Vector{Hecke.NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
+function permutation_group(G::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   permutations = permutation_group1(G)
   return _perm_to_gap_grp(permutations)
 end

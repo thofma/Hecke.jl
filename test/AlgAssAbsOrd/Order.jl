@@ -30,7 +30,7 @@
       K, a = number_field(x^2-b, check = false, cached = false)
       O = maximal_order(K);
       cocval = Matrix{AbsSimpleNumFieldElem}(undef, 2, 2)
-      G = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(K,K,a),hom(K,K,-a)]
+      G = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(K,K,a),hom(K,K,-a)]
       cocval[1,1] = K(1)
       cocval[1,2] = K(1)
       cocval[2,1] = K(1)
@@ -62,7 +62,7 @@
 
     K, a = number_field(x^4-4*x^2+1)
     O = maximal_order(K)
-    Autos = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, 4)
+    Autos = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, 4)
     Autos[1] = hom(K, K, a)
     Autos[2] = hom(K, K, -a)
     Autos[3] = hom(K, K, a^3 - 4*a)
@@ -257,7 +257,7 @@
   end
 
   # zero algebra
-  
+
   A = zero_algebra(QQ)
   B = basis_matrix(elem_type(A)[], FakeFmpqMat)
   @test (nrows(B), ncols(B)) == (0, 0)

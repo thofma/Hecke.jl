@@ -38,7 +38,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   return check_abelian_extensions(class_fields, autos, F.subfields[i])
 end
 
-function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,FinGenAbGroupHom}, Vector{FinGenAbGroupHom}}}, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})#, deg_mas::Set{Int})
+function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,FinGenAbGroupHom}, Vector{FinGenAbGroupHom}}}, autos::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})#, deg_mas::Set{Int})
   @vprintln :MaxAbExt 3 "Starting checking abelian extension"
   K = base_field(class_fields[1][1])
   d = degree(K)

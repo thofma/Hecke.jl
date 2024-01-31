@@ -537,7 +537,7 @@ end
 # Type to represent a Q[Gal(K)]-linear map K -> V
 mutable struct NfToModAlgAssMor{S, T, U} <: Map{AbsSimpleNumField, ModAlgAss{S, T, U}, HeckeMap, NfToModAlgAssMor}
   K::AbsSimpleNumField
-  mG::GrpGenToNfMorSet{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, AbsSimpleNumField}
+  mG::GrpGenToNfMorSet{_AbsSimpleNumFieldAut, AbsSimpleNumField}
   V::ModAlgAss{S, T, U}
   M::QQMatrix
   Minv::QQMatrix

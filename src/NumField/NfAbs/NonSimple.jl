@@ -881,7 +881,7 @@ function number_field(fields::Vector{AbsSimpleNumField}; cached::Bool = true, ch
     pols[i] = fields[i].pol
   end
   K, gK = number_field(pols, "\$", check = check, cached = cached)
-  mps = Vector{NumFieldHom{AbsSimpleNumField, AbsNonSimpleNumField}}(undef, length(fields))
+  mps = Vector{morphism_type(AbsSimpleNumField, AbsNonSimpleNumField)}(undef, length(fields))
   for i = 1:length(fields)
     mps[i] = hom(fields[i], K, gK[i])
     if cached

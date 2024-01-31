@@ -262,7 +262,7 @@ function elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem)
   a_invars = [my_const(i) for i in [a1,a2,a3,a4,a6]]
   (a1,a2,a3,a4,a6) = a_invars
   @assert f == (-(y^2 + a1*x*y + a3*y) + (x^3 + a2*x^2 + a4*x + a6))
-  E = EllipticCurve(kf, kf.([a1,a2,a3,a4,a6]))
+  E = elliptic_curve(kf, kf.([a1,a2,a3,a4,a6]))
   return E
 end
 

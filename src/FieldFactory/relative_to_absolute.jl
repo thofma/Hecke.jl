@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-function _relative_to_absoluteQQ(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, auts::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
+function _relative_to_absoluteQQ(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, auts::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   K, gK = number_field(AbsNonSimpleNumField, L)
   Ks, mKs = simplified_simple_extension(K, is_abelian = true, cached = false)
   #Now, I have to translate the automorphisms.
@@ -21,7 +21,7 @@ function _relative_to_absoluteQQ(L::RelNonSimpleNumField{AbsSimpleNumFieldElem},
   end
   #Final step: translate the automorphisms to Ks
   Hecke._assure_has_inverse_data(mKs)
-  autsKs = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(autsK))
+  autsKs = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(autsK))
   for i = 1:length(autsK)
     autsKs[i] = hom(Ks, Ks, mKs\(image_primitive_element(mKs*autsK[i])), check = false)
   end

@@ -471,7 +471,7 @@ end
 
 mutable struct NfToAlgGrpMor{S, T, U} <: Map{AbsSimpleNumField, GroupAlgebra{S, T, U}, HeckeMap, AbsAlgAssMor}
   K::AbsSimpleNumField
-  mG::GrpGenToNfMorSet{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, AbsSimpleNumField}
+  mG::GrpGenToNfMorSet{_AbsSimpleNumFieldAut, AbsSimpleNumField}
   A::GroupAlgebra{S, T, U}
   M::QQMatrix
   Minv::QQMatrix
@@ -970,7 +970,7 @@ function _evaluate_rep(el, d, rep, f)
   return z
 end
 
-elem_type(::Type{NfMorSet{AbsSimpleNumField}}) = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
+elem_type(::Type{NfMorSet{AbsSimpleNumField}}) = morphism_type(AbsSimpleNumField, AbsSimpleNumField)
 
 ################################################################################
 #

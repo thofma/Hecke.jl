@@ -87,7 +87,7 @@ function _get_polys_from_auto(f::NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFi
   return res
 end
 
-function permutation_group1(G::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
+function permutation_group1(G::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   L = domain(G[1])
   K = base_field(L)
   dK = absolute_degree(L)
