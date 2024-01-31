@@ -655,7 +655,7 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
       f = P.splitting_type[2]
       #@vprintln :AbsNumFieldOrder 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))"
       P.gen_one = ZZRingElem(p)
-      @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 find_random_second_gen(P)
+      @vtime :AbsNumFieldOrder 3 find_random_second_gen(P)
       u = P.gen_two
       modulo = norm(P)*p
       x = zero(parent(u))
@@ -990,7 +990,7 @@ function prime_decomposition_polygons(O::AbsNumFieldOrder{AbsSimpleNumField, Abs
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
   @vprintln :AbsNumFieldOrder 1 "Factoring the polynomial"
-  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 1 fac = factor(f1)
+  @vtime :AbsNumFieldOrder 1 fac = factor(f1)
   res = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[]
   l = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[]
   for (g, m) in fac
@@ -1034,9 +1034,9 @@ function prime_decomposition_polygons(O::AbsNumFieldOrder{AbsSimpleNumField, Abs
     push!(l, (i1, i2))
   end
   if !isempty(l)
-    @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 Ip = pradical1(O, p)
+    @vtime :AbsNumFieldOrder 3 Ip = pradical1(O, p)
     for (I, Q) in l
-      @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 lp = _decomposition(O, I, Ip, Q, p)
+      @vtime :AbsNumFieldOrder 3 lp = _decomposition(O, I, Ip, Q, p)
       for (P, e) in lp
         if degree(P) > degree_limit || degree(P) < lower_limit
           continue

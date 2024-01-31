@@ -40,7 +40,7 @@ function _maximal_order_round_four(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, 
         continue
       end
     end
-    @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} fac = factor(s)
+    @vtime :AbsNumFieldOrder fac = factor(s)
     for (p, j) in fac
       @vprintln :AbsNumFieldOrder 1 "Computing p-maximal overorder for $p ..."
       O1 = pmaximal_overorder(O, p)

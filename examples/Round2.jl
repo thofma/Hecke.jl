@@ -448,7 +448,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
   end
   H = mm
 
-  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 Hi, d = pseudo_inv(H)
+  @vtime :AbsNumFieldOrder 2 Hi, d = pseudo_inv(H)
 
   O = Order(O, Hi', d)
   return O

@@ -757,7 +757,7 @@ function new_maximal_order(O::AlgAssAbsOrd{S, T}, cache_in_substructures::Bool =
     OO = _maximal_order_via_decomposition(O, cache_in_substructures)
   else
     d = discriminant(O)
-    @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} fac = factor(abs(d))
+    @vtime :AbsNumFieldOrder fac = factor(abs(d))
 
     OO = O
     for (p, j) in fac

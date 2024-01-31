@@ -203,7 +203,7 @@ function new_maximal_order(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFi
         OO = O1
         first = false
       else
-        @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 OO = sum_as_Z_modules(OO, O1, auxmat)
+        @vtime :AbsNumFieldOrder 3 OO = sum_as_Z_modules(OO, O1, auxmat)
       end
     end
     rem = abs(rem)
@@ -538,11 +538,11 @@ end
 ################################################################################
 
 function _poverorder(O::AbsNumFieldOrder, p::ZZRingElem)
-  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 I = pradical1(O, p)
+  @vtime :AbsNumFieldOrder 3 I = pradical1(O, p)
   if isdefined(I, :princ_gen) && I.princ_gen == p
     return O
   end
-  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 3 R = ring_of_multipliers(I)
+  @vtime :AbsNumFieldOrder 3 R = ring_of_multipliers(I)
   return R
 end
 

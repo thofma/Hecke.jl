@@ -516,7 +516,7 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
 #  H = hnf(map_entries(x->preimage(mR, x), mm))
   H = hnf_modular(map_entries(x->preimage(mR, x), mm), p, is_prime)
 
-  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 Hi, d = pseudo_inv(H)
+  @vtime :AbsNumFieldOrder 2 Hi, d = pseudo_inv(H)
 
   O = GenOrd(O, transpose(Hi), d, check = false)
   return O
@@ -538,7 +538,7 @@ function ring_of_multipliers(O::GenOrd, I::MatElem)
   end
   H = mm
 
-  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 Hi, d = pseudo_inv(H)
+  @vtime :AbsNumFieldOrder 2 Hi, d = pseudo_inv(H)
 
   O = GenOrd(O, transpose(Hi), d, check = false)
   return O
@@ -702,7 +702,7 @@ function Hecke.maximal_order(O::GenOrd)
   S = base_ring(O)
   d = discriminant(O)
   @vprintln :AbsNumFieldOrder 2 "factoring the discriminant..."
-  @vtime :AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} 2 ld = factor(d)
+  @vtime :AbsNumFieldOrder 2 ld = factor(d)
   local Op
   first = true
   for (p,k) = ld.fac
