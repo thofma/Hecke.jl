@@ -28,12 +28,12 @@ function _relative_to_absoluteQQ(L::RelNonSimpleNumField{AbsSimpleNumFieldElem},
   return Ks, autsKs
 end
 
-function _relative_to_absolute(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, auts::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
+function _relative_to_absolute(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, auts::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   Ks, mKs = simplified_absolute_field(L)
   Hecke._assure_has_inverse_data(mKs)
   #Now, I have to translate the automorphisms.
   #First, to automorphisms of K.
-  autsKs = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(auts))
+  autsKs = Vector{automorphism_type(Ks)}(undef, length(auts))
   imggen = mKs(gen(Ks))
   for i = 1:length(auts)
     autsKs[i] = hom(Ks, Ks, mKs\(auts[i](imggen)))
