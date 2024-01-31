@@ -25,17 +25,17 @@
 
 mutable struct NormRelation{T}
   K::AbsSimpleNumField
-  subfields::Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}
+  subfields::Vector{Tuple{AbsSimpleNumField, Hecke._AbsSimpleNumFieldAut}}
   denominator::Int
-  coefficients::Vector{Vector{Tuple{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Int}}}
+  coefficients::Vector{Vector{Tuple{Hecke._AbsSimpleNumFieldAut, Int}}}
   ispure::Bool
   pure_coefficients::Vector{Int}
   is_abelian::Bool
   isgeneric::Bool
-  coefficients_gen::Vector{Vector{Tuple{Int, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}}
+  coefficients_gen::Vector{Vector{Tuple{Int, Hecke._AbsSimpleNumFieldAut, Hecke._AbsSimpleNumFieldAut}}}
   embed_cache::Dict{Tuple{Int, Int}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
-  mor_cache::Dict{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
-  induced::Dict{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Perm{Int}}
+  mor_cache::Dict{Hecke._AbsSimpleNumFieldAut, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
+  induced::Dict{Hecke._AbsSimpleNumFieldAut, Perm{Int}}
   embed_cache_triv::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   nonredundant::Vector{Int}
   isoptimal::Int
@@ -48,8 +48,8 @@ mutable struct NormRelation{T}
     z.isgeneric = false
     z.denominator = 0
     z.embed_cache = Dict{Tuple{Int, Int}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
-    z.mor_cache = Dict{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
-    z.induced = Dict{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Perm{Int}}()
+    z.mor_cache = Dict{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
+    z.induced = Dict{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Perm{Int}}()
     z.isoptimal = -1
     return z
   end
@@ -83,12 +83,12 @@ function _norm_relation_setup_abelian(K::AbsSimpleNumField; small_degree::Bool =
 
   z = NormRelation{Int}()
   z.K = K
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = false
 
   for i in 1:n
-    F, mF = Hecke.fixed_field1(K, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[AtoG[f] for f in ls[i][2]])
+    F, mF = Hecke.fixed_field1(K, morphism_type(AbsSimpleNumField, AbsSimpleNumField)[AtoG[f] for f in ls[i][2]])
     S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
@@ -102,9 +102,9 @@ function _norm_relation_setup_abelian(K::AbsSimpleNumField; small_degree::Bool =
       z.pure_coefficients[i] = ls[i][1]
     end
   else
-    z.coefficients = Vector{Vector{Tuple{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Int}}}(undef, n)
+    z.coefficients = Vector{Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}}}(undef, n)
     for i in 1:n
-      w = Vector{Tuple{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, Int}}(undef, length(ls[i][1]))
+      w = Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}}(undef, length(ls[i][1]))
       for (j, (expo, auto)) in enumerate(ls[i][1])
         w[j] = (AtoG[auto], expo)
       end
@@ -154,7 +154,7 @@ function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = tr
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_Type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = pure
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -167,7 +167,7 @@ function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = tr
   @vprintln :NormRelation 1 "Computing subfields"
   for i in 1:n
     @vprintln :NormRelation 3 "Computing subfield $i / $n"
-		auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[GtoA[f] for f in ls[nsubs[i]][1]]
+		auts = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[GtoA[f] for f in ls[nsubs[i]][1]]
     @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
     @vprintln :NormRelation 1 "Simplifying \n $F"
     @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
@@ -219,7 +219,7 @@ function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool =
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = pure
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -232,7 +232,7 @@ function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool =
   @vprintln :NormRelation 1 "Computing subfields"
   for i in 1:n
     @vprintln :NormRelation 3 "Computing subfield $i / $n"
-		auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[GtoA[f] for f in ls[i][1]]
+		auts = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[GtoA[f] for f in ls[i][1]]
     @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
     @vprintln :NormRelation 1 "Simplifying \n $F"
     @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
@@ -242,10 +242,10 @@ function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool =
     z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
-  z.coefficients_gen = Vector{Vector{Tuple{Int, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}}(undef, n)
+  z.coefficients_gen = Vector{Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
 
   for i in 1:n
-    w = Vector{Tuple{Int, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}(undef, length(ls[i][2]))
+    w = Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(ls[i][2]))
     for (j, (expo, auto_pre, auto_post)) in enumerate(ls[i][2])
       w[j] = (expo, GtoA[auto_pre], GtoA[auto_post])
     end
@@ -1102,7 +1102,7 @@ function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = true
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -1113,7 +1113,7 @@ function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
   end
 
   for i in 1:n
-    F, mF = Hecke.fixed_field1(K, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[mG(f) for f in ls[i][1]])
+    F, mF = Hecke.fixed_field1(K, morphism_type(AbsSimpleNumField, AbsSimpleNumField)[mG(f) for f in ls[i][1]])
     S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
@@ -1121,10 +1121,10 @@ function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
     z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
-  z.coefficients_gen = Vector{Vector{Tuple{Int, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}}(undef, n)
+  z.coefficients_gen = Vector{Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
 
   for i in 1:n
-    w = Vector{Tuple{Int, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}}(undef, length(ls[i][2]))
+    w = Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(ls[i][2]))
     for (j, (expo, auto_pre, auto_post)) in enumerate(ls[i][2])
       w[j] = (expo, mG(auto_pre), mG(auto_post))
     end

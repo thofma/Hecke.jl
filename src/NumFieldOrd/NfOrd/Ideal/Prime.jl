@@ -1744,7 +1744,7 @@ function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleN
   K = nf(O)
   orderG = ramification_index(P)
   if isone(orderG)
-    return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[id_hom(K)]
+    return morphism_type(AbsSimpleNumField, AbsSimpleNumField)[id_hom(K)]
   end
   F, mF = residue_field(O, P)
   if isempty(G)
@@ -1755,7 +1755,7 @@ function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleN
   end
   gF = gen(F)
   igF = K(mF\gF)
-  inertia_grp = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
+  inertia_grp = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
   q = 2
   R = residue_ring(FlintZZ, q, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
@@ -1785,7 +1785,7 @@ function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleN
       push!(inertia_grp, g)
       elems = zzModPolyRingElem[Rx(image_primitive_element(el)) for el in inertia_grp]
       new_elems = closure(elems, ppp, gen(Rx))
-      inertia_grp = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[G[D[x]] for x in new_elems]
+      inertia_grp = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[G[D[x]] for x in new_elems]
       if length(inertia_grp) == orderG
         break
       end
@@ -1794,7 +1794,7 @@ function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleN
   return inertia_grp
 end
 
-function inertia_subgroup_easy(F, mF, G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function inertia_subgroup_easy(F, mF, G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   P = mF.P
   OK = order(P)
   K = nf(OK)
@@ -1842,7 +1842,7 @@ function ramification_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpl
   end
   A = inertia_subgroup(P)
   pi = uniformizer(P)
-  res = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
+  res = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
   a = elem_in_nf(pi)
   for f in A
     b = f(a)

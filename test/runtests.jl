@@ -186,6 +186,8 @@ end
 # Include all test/*.jl by hand
 # We want many jobs for the parallel run
 
+reverse!(tests)
+
 if isparallel
   newtests = String[]
   for t in tests
