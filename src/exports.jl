@@ -80,7 +80,7 @@ export AbsNumFieldOrderElem
 export AbsNumFieldOrderIdeal
 export AbsNumFieldOrderSet
 export RelNonSimpleNumField
-export NumFieldAut
+#export NumFieldAut
 export NumFieldHom
 export NonSimpleNumField
 export NonSimpleNumFieldElem

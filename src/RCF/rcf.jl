@@ -780,7 +780,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 
   @vprintln :ClassField 2 "building automorphism group over ground field..."
   ng = ngens(g)+1
-  AutA_gen = Vector{Hecke.NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}}(undef, ng)
+  AutA_gen = Vector{morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem})}(undef, ng)
   AutA_rel = zero_matrix(FlintZZ, ng, ng)
   zeta = C.mp[1]\(gen(Kr))
   n = degree(A)
@@ -833,7 +833,7 @@ function auts_in_snf!(CF::ClassField_pp)
   G = abelian_group(CF.AutR)
   S, mS = snf(G)
   auts = CF.AutG
-  gens = Vector{NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}}(undef, ngens(S))
+  gens = Vector{morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem})}(undef, ngens(S))
   for i = 1:ngens(S)
     el = mS(S[i])
     aut = id_hom(domain(CF.AutG[1]))
@@ -847,7 +847,7 @@ function auts_in_snf!(CF::ClassField_pp)
   return nothing
 end
 
-function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, r::Int = -1)
+function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, r::Int = -1)
   @hassert :ClassField 1 is_kummer_extension(K)
   #@assert is_kummer_extension(K)
   k = base_field(K)
@@ -935,7 +935,7 @@ function _rcf_descent(CF::ClassField_pp)
     s, ms = sub(AutA, e, false)
     ss, mss = snf(s)
     ms = mss*ms
-    gss = NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}[AutA_gen[1]^e]
+    gss = morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem})[AutA_gen[1]^e]
     @vprintln :ClassField 2 "computing orbit of primitive element"
     pe = gen(A)
     os = RelSimpleNumFieldElem{AbsSimpleNumFieldElem}[x[2] for x in find_orbit(gss, ss, pe)]
@@ -1020,7 +1020,7 @@ function _rcf_descent(CF::ClassField_pp)
       gsq *= AutA_gen[i]^Int(el_in_q[i])
     end
   end
-  genssq = NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}[gsq]
+  genssq = morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem})[gsq]
 
 
   @assert Int(order(q)) == degree(CF)

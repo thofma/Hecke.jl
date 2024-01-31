@@ -30,7 +30,7 @@
       K, a = number_field(x^2-b, check = false, cached = false)
       O = maximal_order(K);
       cocval = Matrix{AbsSimpleNumFieldElem}(undef, 2, 2)
-      G = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K,K,a),hom(K,K,-a)]
+      G = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(K,K,a),hom(K,K,-a)]
       cocval[1,1] = K(1)
       cocval[1,2] = K(1)
       cocval[2,1] = K(1)

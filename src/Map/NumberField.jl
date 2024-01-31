@@ -188,7 +188,7 @@ function is_cm_field_known(K::NumField)
   return c !== nothing
 end
 
-function _find_complex_conj(auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _find_complex_conj(auts::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   K = domain(auts[1])
   for x in auts
     if !is_involution(x)
@@ -490,7 +490,7 @@ function _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
 end
 
 
-function small_generating_set(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 
   if length(G) == 1
     return G
@@ -517,12 +517,12 @@ function small_generating_set(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimple
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
     if length(closure(fpPolyRingElem[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
-      return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[trygen]
+      return morphism_type(AbsSimpleNumField, AbsSimpleNumField)[trygen]
     end
   end
 
   for i in 1:secondtry
-    gens = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
+    gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -530,7 +530,7 @@ function small_generating_set(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimple
   end
 
   for i in 1:thirdtry
-    gens = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
+    gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -548,7 +548,7 @@ function small_generating_set(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimple
       error("Something wrong with generator search")
     end
     j = j + 1
-    gens = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
+    gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -556,7 +556,7 @@ function small_generating_set(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimple
   end
 end
 
-function _order(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   K = domain(G[1])
 	p = 2
   R = Native.GF(p, cached = false)

@@ -489,7 +489,7 @@ function automorphism_list(C::CyclotomicExt; gens::Vector{NumFieldHom{AbsSimpleN
     return automorphism_list(C.Ka, copy = copy)
   end
   genK = C.mp[1](gen(C.Ka))
-  gnew = Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
+  gnew = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
   #First extend the old generators
   for g in gens
     ng = Hecke.extend_to_cyclotomic(C, g)

@@ -1356,7 +1356,7 @@ function rewrite_with_conductor(C::ClassField)
   return C
 end
 
-function induce_action(C::ClassField, Aut::Vector{Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[])
+function induce_action(C::ClassField, Aut::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[])
   return induce_action(C.rayclassgroupmap, Aut, C.quotientmap)
 end
 
@@ -1385,7 +1385,7 @@ function is_normal(C::ClassField, mk::NumFieldHom{AbsSimpleNumField, AbsSimpleNu
 end
 
 
-function is_normal_easy(C::ClassField, aut::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = automorphism_list(base_field(C)))
+function is_normal_easy(C::ClassField, aut::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = automorphism_list(base_field(C)))
   c, inf = conductor(C)
   if any(x-> c != induce_image(x, c), aut)
     return false

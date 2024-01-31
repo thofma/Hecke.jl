@@ -9,7 +9,7 @@ function _relative_to_absoluteQQ(L::RelNonSimpleNumField{AbsSimpleNumFieldElem},
   Ks, mKs = simplified_simple_extension(K, is_abelian = true, cached = false)
   #Now, I have to translate the automorphisms.
   #First, to automorphisms of K.
-  autsK = Vector{NumFieldAut{AbsNonSimpleNumField}}(undef, length(auts))
+  autsK = Vector{morphism_type(AbsNonSimpleNumField)}(undef, length(auts))
   Qxy = parent(K.pol[1])
   for i = 1:length(auts)
     embs = Vector{AbsNonSimpleNumFieldElem}(undef, ngens(K))

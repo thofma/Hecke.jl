@@ -71,7 +71,7 @@ function frobenius_easy(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
   return A(res)
 end
 
-elem_type(::Type{Hecke.NfMorSet{RelNonSimpleNumField{AbsSimpleNumFieldElem}}}) = Hecke.NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}
+elem_type(::Type{Hecke.NfMorSet{RelNonSimpleNumField{AbsSimpleNumFieldElem}}}) = morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})
 
 @doc raw"""
     frobenius_map(C::ClassField)
@@ -170,22 +170,22 @@ function absolute_automorphism_group(C::ClassField, check::Bool = false)
   return absolute_automorphism_group(C, autK_gen)
 end
 
-function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   L = number_field(C)
   @vprint :ClassField 1 "Computing rel_auto "
-  @vtime :ClassField 1 aut_L_rel = rel_auto(C)::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}
+  @vtime :ClassField 1 aut_L_rel = rel_auto(C)::Vector{morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}
   if is_cyclic(C) && length(aut_L_rel) > 1
     aut = aut_L_rel[1]
     for i = 2:length(aut_L_rel)
       aut *= aut_L_rel[i]
     end
-    aut_L_rel = NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}[aut]
+    aut_L_rel = morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})[aut]
   end
   @vprint :ClassField 1 "Extending automorphisms"
   @vtime :ClassField 1 rel_extend = Hecke.new_extend_aut(C, aut_gen_of_base_field)
-  rel_gens = vcat(aut_L_rel, rel_extend)::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}
+  rel_gens = vcat(aut_L_rel, rel_extend)::Vector{morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}
   C.AbsAutGrpA = rel_gens
-  return rel_gens::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}
+  return rel_gens::Vector{morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}
 end
 
 function automorphism_groupQQ(C::ClassField)
@@ -374,7 +374,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   end
   lG = gens(L)
   #P-Sylow subgroups are invariant, I can reduce to the prime power case.
-  res = Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}(undef, length(autos))
+  res = Vector{morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}(undef, length(autos))
   for (p, v) = lp.fac
     @vprint :ClassField 1 "Extending auto pp ..."
     @vtime :ClassField 1 imgs = extend_aut_pp(A, autos, p)
@@ -537,7 +537,7 @@ function find_gens(KK::KummerExt, gens_imgs::Vector{Vector{FacElem{AbsSimpleNumF
 end
 
 #extension of automorphisms in the case of extensions of exponent 2
-function extend_aut2(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function extend_aut2(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   Cp = [x for x in A.cyc if degree(x) % 2 == 0]
   autos_extended = Vector{Vector{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   AA, gAA = number_field([c.A.pol for c in Cp], check = false)
@@ -584,7 +584,7 @@ function extend_aut2(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField,
 end
 
 #inefficient, not called, but useful accaisonly...
-function extend_generic(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
+function extend_generic(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   A, gA = number_field([c.A.pol for c in Cp], check = false)
   rts = Vector{Vector{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
@@ -628,7 +628,7 @@ end
 
 Base.Int64(a::QQFieldElem) = Int(ZZ(a)) #move elsewhere?
 
-function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
+function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   if !all(x -> isdefined(x, :a), Cp)
     return extend_generic(A, autos, p)
@@ -695,14 +695,14 @@ function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumFiel
   # by all the cyclic components.
   # I extend the automorphisms to C
 
-  Autos_abs = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(autos))
+  Autos_abs = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(autos))
   for i = 1:length(autos)
     aut = extend_to_cyclotomic(C, autos[i])
     Autos_abs[i] = hom(KC, KC, C.mp[1]\(aut(C.mp[1](gen(KC)))), check = false)
   end
 
   #I compute the embeddings of the small cyclotomic extensions into the others
-  abs_emb = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(Cp))
+  abs_emb = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(Cp))
   for i = 1:length(Cp)
     dCp = degree(Cp[i])
     if dCp == d
@@ -738,7 +738,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumFiel
 
   K, gK = number_field(KK)
   #I need the inclusions of the single extensions Cp[i].K in K
-  incs = Vector{NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}(undef, length(Cp))
+  incs = Vector{morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}(undef, length(Cp))
   for i = 1:length(Cp)
     incs[i] = hom(Cp[i].K, K, abs_emb[i], gK[i])
   end
@@ -837,7 +837,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{NumFieldHom{AbsSimpleNumFiel
                           FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[x[2] for x = ng])
     K, gK = number_field(KK)
     #I need the inclusions of the single extensions Cp[i].K in the new K
-    incs = Vector{NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}(undef, length(Cp))
+    incs = Vector{morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}(undef, length(Cp))
     for i = 1:length(Cp)
       @assert ng[i][1] == i
       ex = ng[i][4]
@@ -898,7 +898,7 @@ end
 
 #This function restricts the automorphisms in autos to the number field generated by the class fields in Cp
 # incs are the inclusions of the class fields in K
-function restriction(K::RelNonSimpleNumField{AbsSimpleNumFieldElem}, Cp::Vector{ClassField_pp{S, T}}, autos::Vector{NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}, incs::Vector{NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}) where {S, T}
+function restriction(K::RelNonSimpleNumField{AbsSimpleNumFieldElem}, Cp::Vector{ClassField_pp{S, T}}, autos::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}, incs::Vector{<:NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}}) where {S, T}
 
   C = cyclotomic_extension(base_field(Cp[1]), maximum(degree(x) for x in Cp))
   #First, I compute the images in K of the generators of the class fields

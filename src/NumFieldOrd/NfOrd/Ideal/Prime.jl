@@ -1634,7 +1634,7 @@ such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$.
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the decomposition group with that subgroup.
 """
 
-function decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[],
+function decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[],
                              orderG::Int = degree(P)*ramification_index(P))
   @assert is_prime(P)
   OK = order(P)
@@ -1660,7 +1660,7 @@ function decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
     for i = 1:length(G)
       D[Rx(image_primitive_element(G[i]))] = i
     end
-    dec_group = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
+    dec_group = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
     local ppp
     let fmod = fmod
       function ppp(a::zzModPolyRingElem, b::zzModPolyRingElem)
@@ -1677,7 +1677,7 @@ function decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
         #I take the closure of dec_group modularly
         elems = zzModPolyRingElem[Rx(image_primitive_element(el)) for el in dec_group]
         new_elems = closure(elems, ppp, gen(Rx))
-        dec_group = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[G[D[x]] for x in new_elems]
+        dec_group = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[G[D[x]] for x in new_elems]
       end
       if length(dec_group) == orderG
         break
@@ -1738,7 +1738,7 @@ such that $\sigma_i(P) = P$ for all $i = 1,\dots, s$ and induce the identity on 
 If a subgroup $G$ of automorphisms is given, the output is the intersection of the inertia group with $G$.
 """
 
-function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[])
+function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[])
   @assert is_prime(P)
   O = order(P)
   K = nf(O)

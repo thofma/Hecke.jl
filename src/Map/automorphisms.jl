@@ -53,7 +53,7 @@ function _automorphisms(K::AbsSimpleNumField; is_abelian::Bool = false)
   divpol = Kt(AbsSimpleNumFieldElem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
   lr = roots(f1, max_roots = div(ord_aut, 2))
-  Aut1 = automorphism_type(K)(undef, length(lr)+1)
+  Aut1 = Vector{automorphism_type(K)}(undef, length(lr)+1)
   for i = 1:length(lr)
     Aut1[i] = hom(K, K, lr[i], check = false)
   end
@@ -202,7 +202,7 @@ function _automorphism_group_cyclo(K)
   a = gen(K)
   A, mA = unit_group(residue_ring(FlintZZ, f)[1])
   G, AtoG, GtoA = generic_group(collect(A), +)
-  aut = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
+  aut = automorphism_type(K)[ hom(K, K, a^lift(mA(GtoA[g])), check = false) for g in G]
   set_automorphisms(K, aut)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
