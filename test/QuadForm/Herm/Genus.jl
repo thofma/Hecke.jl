@@ -435,9 +435,10 @@
 
   @test norm(L) == norm(genus(L))
 
-  # Hyperbolic plane
+  # Hyperbolic plane of scale P^3, and norm p^2
   E,b = cyclotomic_field_as_cm_extension(3)
-  M = matrix(E, 2, 2, [0 1-b; 1-inv(b) 0])
+  M = matrix(E, 2, 2, [           0  (1-b)^3;
+                       (1-inv(b))^3        0])
   L = lattice(hermitian_space(E, M))
   @test norm(L) == norm(genus(L))
 

@@ -239,13 +239,13 @@ function norm(G::HermLocalGenus, i::Int)
     return scale(G, i)
   elseif !is_dyadic(G)
     # Two cases: either the scale valuation is odd and the Jordan
-    # block is a direct sum of subnormal planes. In this case, the
-    # norm and the scale have the same valuations (at P and p respectively).
+    # block is a direct sum of subnormal planes. In this case, if j
+    # is the scale P-valuation, the norm p-valuation is (j+1)/2.
     # Or the scale valuation is even, the Jordan block is diagonal so the
     # scale and norm are the same: in that case though the P-valuation of
     # p is two so we must divide the P-valuation of the scale by 2.
     si = scale(G, i)
-    ni = is_even(si) ? div(si, 2) : si
+    ni = div(si+1, 2)
     return ni
   else
     # Already computed at the creation of the genus symbol.
