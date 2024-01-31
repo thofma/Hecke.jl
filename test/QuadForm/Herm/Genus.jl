@@ -278,7 +278,7 @@
   @test !is_inert(g)
   @test is_split(g)
   @test !is_dyadic(g)
-  @test_throws AssertionError norms(g)
+  @test isone(inv(norm(g))*scale(g))
   @test discriminant(g) == 1
   @test g == g
   @test sprint(show, "text/plain", g) isa String
@@ -421,6 +421,8 @@
   @test is_isometric_with_isometry(LM, L2)[1]
 
   # Fix norm in non-dyadic ramified case
+
+  # Rank 1 example
   Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^10 - 10*x^8 + 35*x^6 + x^5 - 50*x^4 - 5*x^3 + 25*x^2 + 5*x - 1
   K, a = number_field(f, "a", cached = false)
@@ -431,6 +433,12 @@
   gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [5]), map(E, [a + 3]), map(E, [a^2 + 1]), map(E, [a^3 + 2]), map(E, [a^4 + 4]), map(E, [a^5 + 3]), map(E, [a^6 + 1]), map(E, [a^7 + 2]), map(E, [a^8 + 4]), map(E, [a^9 + 3]), map(E, [b + 4]), map(E, [a*b + 4*a]), map(E, [a^2*b + 4*a^2]), map(E, [a^3*b + 4*a^3]), map(E, [a^4*b + 4*a^4]), map(E, [a^5*b + 4*a^5]), map(E, [a^6*b + 4*a^6]), map(E, [a^7*b + 4*a^7]), map(E, [a^8*b + 4*a^8]), map(E, [a^9*b + 4*a^9])]
   L = hermitian_lattice(E, gens, gram = D)
 
+  @test norm(L) == norm(genus(L))
+
+  # Hyperbolic plane
+  E,b = cyclotomic_field_as_cm_extension(3)
+  M = matrix(E, 2, 2, [0 1-b; 1-inv(b) 0])
+  L = lattice(hermitian_space(E, M))
   @test norm(L) == norm(genus(L))
 
   ##############################################################################

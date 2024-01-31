@@ -223,25 +223,44 @@ function discriminant(G::HermLocalGenus)
   end
 end
 
-# this only works if it is ramified and dyadic
 @doc raw"""
     norm(g::HermLocalGenus, i::Int) -> Int
 
-Given a ramified dyadic local genus symbol `g` for hermitian lattices over $E/K$ at a
-prime ideal $\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuation of
-the norm of the `i`th Jordan block of `g`.
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuation of the norm of
+the `i`th Jordan block of `g`.
 """
-norm(G::HermLocalGenus, i::Int) = begin @assert is_dyadic(G) && is_ramified(G); G.norm_val[i] end
+function norm(G::HermLocalGenus, i::Int)
+  if !is_ramified(G)
+    # In the unramified case, the Jordan block is
+    # diagonal so the norm and the scale agree. Moreover,
+    # the P-valuation of p is one, so we keep the same valuations
+    # too.
+    return scale(G, i)
+  elseif !is_dyadic(G)
+    # Two cases: either the scale valuation is odd and the Jordan
+    # block is a direct sum of subnormal planes. In this case, the
+    # norm and the scale have the same valuations (at P and p respectively).
+    # Or the scale valuation is even, the Jordan block is diagonal so the
+    # scale and norm are the same: in that case though the P-valuation of
+    # p is two so we must divide the P-valuation of the scale by 2.
+    si = scale(G, i)
+    ni = is_even(si) ? div(si, 2) : si
+    return ni
+  else
+    # Already computed at the creation of the genus symbol.
+    return G.norm_val[i]
+  end
+end
 
-# this only works if it is ramified and dyadic
 @doc raw"""
     norms(g::HermLocalGenus) -> Vector{Int}
 
-Given a ramified dyadic local genus symbol `g` for hermitian lattices over $E/K$ at a
-prime ideal $\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuations of the
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime ideal
+$\mathfrak p$ of $\mathcal O_K$, return the $\mathfrak p$-valuations of the
 norms of the Jordan blocks of `g`.
 """
-norms(G::HermLocalGenus) = begin @assert is_dyadic(G) && is_ramified(G); G.norm_val end
+norms(G::HermLocalGenus) = map(i -> norm(G, i), 1:length(G))::Vector{Int}
 
 @doc raw"""
     norm(g::HermLocalGenus) -> NfOrdFracIdl
@@ -255,15 +274,7 @@ $\mathfrak p$-valuation.
 function norm(G::HermLocalGenus)
   p = prime(G)
   OK = order(p)
-  if !is_ramified(G)
-    return fractional_ideal(OK, p)^scale(G, 1)
-  elseif !is_dyadic(G)
-    # If the prime ideal ramifies, then p = P^2, so we need to divide the scale
-    # valuation by 2 to obtain the correct norm valuation
-    return fractional_ideal(OK, p)^(div(scale(G, 1), 2))
-  else
-    return fractional_ideal(p)^minimum(norms(G))
-  end
+  return fractional_ideal(OK, p)^(minimum(norms(G)))
 end
 
 @doc raw"""
