@@ -690,6 +690,7 @@ morphism_type(::Type{S}, ::Type{T}) where {S <: NumField, T <: NumField} = NumFi
 ################################################################################
 
 const _AbsSimpleNumFieldAut = morphism_type(AbsSimpleNumField, AbsSimpleNumField)
+const _AbsSimpleNumFieldHom = morphism_type(AbsSimpleNumField, AbsSimpleNumField)
 #const NumFieldAut{T, U, V, W} = NumFieldHom{T, T, U, V, W}
 
 ################################################################################
