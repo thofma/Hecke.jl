@@ -16,6 +16,11 @@ export AbstractLat
 export AbstractSpace
 export AbstractSpaceMor
 export AbstractSpaceRes
+export AbsSimpleNumFieldOrder
+export AbsSimpleNumFieldOrderElem
+export AbsSimpleNumFieldOrderIdeal
+export AbsSimpleNumFieldOrderQuoRing
+export AbsSimpleNumFieldOrderQuoRingElem 
 export StructureConstantAlgebra
 export AssociativeAlgebraElem
 export GroupAlgebra

@@ -2267,4 +2267,19 @@ mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
   parent::KInftyRing{T}
 end
 
+################################################################################
+#
+#  Aliases
+#
+################################################################################
+
+const AbsSimpleNumFieldOrder = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
+const AbsSimpleNumFieldOrderElem = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
+const AbsSimpleNumFieldOrderIdeal = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
+const AbsSimpleNumFieldOrderQuoRing = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+
+const AbsSimpleNumFieldOrderQuoRingElem = AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
