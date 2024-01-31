@@ -201,7 +201,7 @@ end
 function abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
                             absolute_discriminant_bound::ZZRingElem;
                             absolutely_distinct::Bool = false,
-                            ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[]),
+                            ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]),
                             only_tame::Bool = false,
                             signatures::Vector{Tuple{Int, Int}} = Tuple{Int, Int}[])
 

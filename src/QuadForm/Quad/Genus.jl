@@ -1646,7 +1646,7 @@ function genus(L::QuadLat{})
     bad = bad_primes(L, even = true)
     S = real_places(base_field(L))
     D = diagonal(rational_span(L))
-    signatures = Dict{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}, Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
+    signatures = Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
     G = QuadGenus(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
     return G::genus_quad_type(base_field(L))
   end

@@ -65,7 +65,7 @@ end
   quotientmap::T#FinGenAbGroupHom
 
   factored_conductor::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
-  conductor::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
+  conductor::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
   relative_discriminant::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
   absolute_discriminant::Dict{ZZRingElem,Int}
   cyc::Vector{ClassField_pp{S, T}}
@@ -88,7 +88,7 @@ mutable struct RCFCharacter{S, T}
   mGhat::Map
   factored_conductor::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
   conductor::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
-  conductor_inf_plc::Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}
+  conductor_inf_plc::Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}
   mrcond::Union{MapClassGrp, MapRayClassGrp}
   mp_cond::FinGenAbGroupHom
   charcond::Map #Character directly on the rcf given by the conductor

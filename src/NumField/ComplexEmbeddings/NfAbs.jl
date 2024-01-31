@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-embedding_type(::Type{AbsSimpleNumField}) = NumFieldEmbNfAbs
+embedding_type(::Type{AbsSimpleNumField}) = AbsSimpleNumFieldEmbedding
 
 embedding_type(::AbsSimpleNumField) = embedding_type(AbsSimpleNumField)
 
@@ -14,11 +14,11 @@ embedding_type(::AbsSimpleNumField) = embedding_type(AbsSimpleNumField)
 #
 ################################################################################
 
-number_field(f::NumFieldEmbNfAbs) = f.K
+number_field(f::AbsSimpleNumFieldEmbedding) = f.K
 
-isreal(f::NumFieldEmbNfAbs) = f.isreal
+isreal(f::AbsSimpleNumFieldEmbedding) = f.isreal
 
-_absolute_index(f::NumFieldEmbNfAbs) = f.i
+_absolute_index(f::AbsSimpleNumFieldEmbedding) = f.i
 
 ################################################################################
 #
@@ -42,7 +42,7 @@ function __complex_embeddings(K::AbsSimpleNumField)
   c = conjugate_data_arb_roots(K, 16)
   res = Vector{embedding_type(K)}(undef, degree(K))
   for i in 1:degree(K)
-    res[i] = NumFieldEmbNfAbs(K, c, i)
+    res[i] = AbsSimpleNumFieldEmbedding(K, c, i)
   end
   return res
 end
@@ -53,7 +53,7 @@ end
 #
 ################################################################################
 
-function conj(f::NumFieldEmbNfAbs)
+function conj(f::AbsSimpleNumFieldEmbedding)
   return complex_embeddings(number_field(f))[f.conjugate]
 end
 
@@ -63,7 +63,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(f::NumFieldEmbNfAbs, g::NumFieldEmbNfAbs)
+function Base.:(==)(f::AbsSimpleNumFieldEmbedding, g::AbsSimpleNumFieldEmbedding)
   return number_field(f) === number_field(g) &&
       _absolute_index(f) == _absolute_index(g)
 end
@@ -74,7 +74,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbs)
+function Base.show(io::IO, ::MIME"text/plain", f::AbsSimpleNumFieldEmbedding)
   print(io, "Complex embedding corresponding to ")
   _print_acb_neatly(io, f.r)
   println(io)
@@ -83,7 +83,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbs)
   Base.show(io, MIME"text/plain"(), number_field(f))
 end
 
-function Base.show(io::IO, f::NumFieldEmbNfAbs)
+function Base.show(io::IO, f::AbsSimpleNumFieldEmbedding)
   if get(io, :supercompact, false)
     print(io, "Complex embedding of number field")
   else
@@ -100,9 +100,9 @@ end
 #
 ################################################################################
 
-evaluate(x::AbsSimpleNumFieldElem, f::NumFieldEmbNfAbs, p::Int = 32) = f(x, p)
+evaluate(x::AbsSimpleNumFieldElem, f::AbsSimpleNumFieldEmbedding, p::Int = 32) = f(x, p)
 
-function (f::NumFieldEmbNfAbs)(x::AbsSimpleNumFieldElem, abs_tol::Int = 32)
+function (f::AbsSimpleNumFieldEmbedding)(x::AbsSimpleNumFieldElem, abs_tol::Int = 32)
   K = parent(x)
   d = degree(K)
   r1, r2 = signature(K)

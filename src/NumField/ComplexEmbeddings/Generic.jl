@@ -10,12 +10,12 @@ imaginary embedding per conjugated pairs is returned.
 julia> K, a = quadratic_field(-3);
 
 julia> complex_embeddings(K)
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
+2-element Vector{AbsSimpleNumFieldEmbedding}:
  Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
  Complex embedding corresponding to 0.00 - 1.73 * i of imaginary quadratic field defined by x^2 + 3
 
 julia> complex_embeddings(K, conjugates = false)
-1-element Vector{Hecke.NumFieldEmbNfAbs}:
+1-element Vector{AbsSimpleNumFieldEmbedding}:
  Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
 ```
 """
@@ -32,7 +32,7 @@ Return the real embeddings of $K$.
 julia> K, a = quadratic_field(3);
 
 julia> real_embeddings(K)
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
+2-element Vector{AbsSimpleNumFieldEmbedding}:
  Embedding corresponding to ≈ -1.73
  Embedding corresponding to ≈ 1.73
 ```
@@ -180,7 +180,7 @@ julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 julia> e = complex_embeddings(k)[1];
 
 julia> extend(e, ktoK)
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
+2-element Vector{AbsSimpleNumFieldEmbedding}:
  Complex embedding corresponding to -0.81 + 0.59 * i of cyclotomic field of order 5
  Complex embedding corresponding to -0.81 - 0.59 * i of cyclotomic field of order 5
 ```
@@ -301,7 +301,7 @@ are by default all real embeddings of the number field.
 julia> K, a = quadratic_field(3);
 
 julia> signs(a)
-Dict{Hecke.NumFieldEmbNfAbs, Int64} with 2 entries:
+Dict{AbsSimpleNumFieldEmbedding, Int64} with 2 entries:
   Complex embedding corresponding to -1.73 of real quadratic field define… => -1
   Complex embedding corresponding to 1.73 of real quadratic field defined… => 1
 ```

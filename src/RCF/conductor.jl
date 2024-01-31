@@ -324,7 +324,7 @@ Checks if (m, inf_plc) is the conductor of the abelian extension corresponding t
 given modulus is a multiple of the conductor.
 This is usually faster than computing the conductor.
 """
-function is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{<: InfPlc} = InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[]; check::Bool=true)
+function is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{<: InfPlc} = InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]; check::Bool=true)
   if isdefined(C, :conductor)
     real_cond = C.conductor
     return real_cond[1] == m && Set(real_cond[2]) == Set(inf_plc)
@@ -788,7 +788,7 @@ end
 function defining_modulus(mC::MapClassGrp)
   OK = order(codomain(mC))
   I = ideal(OK, 1)
-  lp = Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}()
+  lp = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}()
   return I, lp
 end
 

@@ -681,7 +681,7 @@ end
 # parameter atinfinity can be a list of tuples <v, +1 or -1>, where v is an
 # element of real_places(nf(base_ring(L))). All places, finite or infinite, which
 # are unspecified are interpreted as 1.}
-function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}, Int}[]) where {T}
+function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}[]) where {T}
   #local s::AbsSimpleNumFieldElem
   R = order(base_ring(codomain(mRCG)))
   F = nf(R)

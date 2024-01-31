@@ -60,7 +60,7 @@ See also [`embedding`](@ref).
 julia> K,  = quadratic_field(-5);
 
 julia> embeddings(complex_places(K)[1])
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
+2-element Vector{AbsSimpleNumFieldEmbedding}:
  Complex embedding corresponding to 0.00 + 2.24 * i of imaginary quadratic field defined by x^2 + 5
  Complex embedding corresponding to 0.00 - 2.24 * i of imaginary quadratic field defined by x^2 + 5
 ```
@@ -192,7 +192,7 @@ Return all infinite places of the number field.
 julia> K,  = quadratic_field(5);
 
 julia> infinite_places(K)
-2-element Vector{InfPlc{AbsSimpleNumField, Hecke.NumFieldEmbNfAbs}}:
+2-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
  Infinite place corresponding to (Complex embedding corresponding to -2.24 of real quadratic field defined by x^2 - 5)
  Infinite place corresponding to (Complex embedding corresponding to 2.24 of real quadratic field defined by x^2 - 5)
 ```
@@ -212,7 +212,7 @@ Return all infinite real places of the number field.
 julia> K,  = quadratic_field(5);
 
 julia> infinite_places(K)
-2-element Vector{InfPlc{AbsSimpleNumField, Hecke.NumFieldEmbNfAbs}}:
+2-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
  Infinite place corresponding to (Complex embedding corresponding to -2.24 of real quadratic field defined by x^2 - 5)
  Infinite place corresponding to (Complex embedding corresponding to 2.24 of real quadratic field defined by x^2 - 5)
 ```
@@ -230,7 +230,7 @@ Return all infinite complex places of $K$.
 julia> K,  = quadratic_field(-5);
 
 julia> complex_places(K)
-1-element Vector{InfPlc{AbsSimpleNumField, Hecke.NumFieldEmbNfAbs}}:
+1-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
  Infinite place corresponding to (Complex embedding corresponding to 0.00 + 2.24 * i of imaginary quadratic field defined by x^2 + 5)
 ```
 """
@@ -290,7 +290,7 @@ julia> L, b = number_field(polynomial(K, [-2, 0, 0, 1]), "b");
 julia> p = infinite_places(K)[1];
 
 julia> extend(p, L)
-2-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, Hecke.NumFieldEmbNfRel{Hecke.NumFieldEmbNfAbs, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
+2-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumFieldEmbedding{AbsSimpleNumFieldEmbedding, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
  Infinite place corresponding to (Complex embedding corresponding to root 1.26 of relative number field)
  Infinite place corresponding to (Complex embedding corresponding to root -0.63 + 1.09 * i of relative number field)
 ```

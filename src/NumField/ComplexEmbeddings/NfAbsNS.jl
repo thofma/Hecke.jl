@@ -1,4 +1,4 @@
-mutable struct NumFieldEmbNfAbsNS <: NumFieldEmb{AbsNonSimpleNumField}
+mutable struct AbsNonSimpleNumFieldEmbedding <: NumFieldEmb{AbsNonSimpleNumField}
   field::AbsNonSimpleNumField
   index::Vector{Int}
   absolute_index::Int
@@ -7,24 +7,24 @@ mutable struct NumFieldEmbNfAbsNS <: NumFieldEmb{AbsNonSimpleNumField}
   conjugate::Int
 end
 
-_absolute_index(P::NumFieldEmbNfAbsNS) = P.absolute_index
+_absolute_index(P::AbsNonSimpleNumFieldEmbedding) = P.absolute_index
 
-number_field(P::NumFieldEmbNfAbsNS) = P.field
+number_field(P::AbsNonSimpleNumFieldEmbedding) = P.field
 
-embedding_type(::Type{AbsNonSimpleNumField}) = NumFieldEmbNfAbsNS
+embedding_type(::Type{AbsNonSimpleNumField}) = AbsNonSimpleNumFieldEmbedding
 
-embedding_type(::AbsNonSimpleNumField) = NumFieldEmbNfAbsNS
+embedding_type(::AbsNonSimpleNumField) = AbsNonSimpleNumFieldEmbedding
 
-isreal(P::NumFieldEmbNfAbsNS) = P.isreal
+isreal(P::AbsNonSimpleNumFieldEmbedding) = P.isreal
 
-is_imaginary(P::NumFieldEmbNfAbsNS) = !P.isreal
+is_imaginary(P::AbsNonSimpleNumFieldEmbedding) = !P.isreal
 
-conj(P::NumFieldEmbNfAbsNS) = complex_embeddings(number_field(P))[P.conjugate]
+conj(P::AbsNonSimpleNumFieldEmbedding) = complex_embeddings(number_field(P))[P.conjugate]
 
 function complex_embeddings(K::AbsNonSimpleNumField; conjugates::Bool = true)
   emb = get_attribute!(K, :complex_embeddings) do
     _complex_embeddings(K)
-  end::Vector{NumFieldEmbNfAbsNS}
+  end::Vector{AbsNonSimpleNumFieldEmbedding}
   if conjugates
     return emb
   else
@@ -37,27 +37,27 @@ function _complex_embeddings(K::AbsNonSimpleNumField)
   c = conjugate_data_arb_roots(K, 32, copy = false)
 
   r, s = signature(K)
-  res = Vector{NumFieldEmbNfAbsNS}(undef, degree(K))
+  res = Vector{AbsNonSimpleNumFieldEmbedding}(undef, degree(K))
 
   l = ngens(K)
 
   j = 1
 
   for v in c[2]
-    res[j] = NumFieldEmbNfAbsNS(K, v, j, true, AcbFieldElem[c[1][i].roots[v[i]] for i in 1:l], j)
+    res[j] = AbsNonSimpleNumFieldEmbedding(K, v, j, true, AcbFieldElem[c[1][i].roots[v[i]] for i in 1:l], j)
     j += 1
   end
 
   for v in c[3]
-    res[j] = NumFieldEmbNfAbsNS(K, v, j, false, AcbFieldElem[c[1][i].roots[v[i]] for i in 1:l], j + s)
-    res[j + s] = NumFieldEmbNfAbsNS(K, v, j + s, false, AcbFieldElem[conj(c[1][i].roots[v[i]]) for i in 1:l], j)
+    res[j] = AbsNonSimpleNumFieldEmbedding(K, v, j, false, AcbFieldElem[c[1][i].roots[v[i]] for i in 1:l], j + s)
+    res[j + s] = AbsNonSimpleNumFieldEmbedding(K, v, j + s, false, AcbFieldElem[conj(c[1][i].roots[v[i]]) for i in 1:l], j)
     j += 1
   end
 
   return res
 end
 
-function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbsNS)
+function Base.show(io::IO, ::MIME"text/plain", f::AbsNonSimpleNumFieldEmbedding)
   io = pretty(io)
   print(io, "Complex embedding ")
   print(io, "corresponding to roots ")
@@ -73,7 +73,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbsNS)
   Base.show(io, MIME"text/plain"(), number_field(f))
 end
 
-function Base.show(io::IO, f::NumFieldEmbNfAbsNS)
+function Base.show(io::IO, f::AbsNonSimpleNumFieldEmbedding)
   if get(io, :supercompact, false)
     print(io, "Complex embedding of number field")
   else
@@ -91,7 +91,7 @@ function Base.show(io::IO, f::NumFieldEmbNfAbsNS)
   end
 end
 
-function (f::NumFieldEmbNfAbsNS)(a::AbsNonSimpleNumFieldElem, prec::Int = 32)
+function (f::AbsNonSimpleNumFieldEmbedding)(a::AbsNonSimpleNumFieldElem, prec::Int = 32)
   K = parent(a)
   wprec = prec
   pol_a = data(a)
@@ -117,7 +117,7 @@ function (f::NumFieldEmbNfAbsNS)(a::AbsNonSimpleNumFieldElem, prec::Int = 32)
   end
 end
 
-function evaluate(a::AbsNonSimpleNumFieldElem, P::NumFieldEmbNfAbsNS, prec::Int)
+function evaluate(a::AbsNonSimpleNumFieldElem, P::AbsNonSimpleNumFieldEmbedding, prec::Int)
   return P(a, prec)
 end
 

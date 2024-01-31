@@ -233,7 +233,7 @@ mutable struct QuadGenus{S, T, U}
   primes::Vector{T}
   LGS::Vector{QuadLocalGenus{S, T, U}}
   rank::Int
-  signatures::Dict{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}, Int}
+  signatures::Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}
   d::U
   space
 

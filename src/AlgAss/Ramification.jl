@@ -68,7 +68,7 @@ end
 
 function ramified_infinite_places(A::StructureConstantAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
-  inf_plc = Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}()
+  inf_plc = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}()
   places = real_places(K)
   for p in places
     if !is_split(A, p)
@@ -82,7 +82,7 @@ end
 function ramified_infinite_places_of_center(A::AbstractAssociativeAlgebra)
   dec = decompose(A)
   C, = center(A)
-  res = Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}[]
+  res = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}[]
   for i in 1:length(dec)
     K, = component(Field, C, i)
     B, = _as_algebra_over_center(dec[i][1])

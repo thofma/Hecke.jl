@@ -40,11 +40,11 @@ function defining_modulus(CF::ClassField_pp)
 end
 
 function _modulus(mq::MapRayClassGrp)
-  return mq.defining_modulus::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
+  return mq.defining_modulus::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
 end
 
 function _modulus(mq::MapClassGrp)
-  return (ideal(order(codomain(mq)), 1), InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[])::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}}}
+  return (ideal(order(codomain(mq)), 1), InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[])::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
 end
 
 ###############################################################################
@@ -576,7 +576,7 @@ The field will be constructed as a `ray_class_field`.
 # EXAMPLES
 ```julia
 julia> A = grunwald_wang(Dict(3*ZZ => 3, 5*ZZ => 2))
-Class field defined mod (<13, 13>, InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}[]) of structure Abelian group with structure: Z/6
+Class field defined mod (<13, 13>, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]) of structure Abelian group with structure: Z/6
 
 julia> K = absolute_simple_field(number_field(A))[1];
 

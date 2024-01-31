@@ -1863,7 +1863,7 @@ abstract type NumFieldEmb{T} end
 #
 ################################################################################
 
-mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AbsSimpleNumField}
+mutable struct AbsSimpleNumFieldEmbedding <: NumFieldEmb{AbsSimpleNumField}
   K::AbsSimpleNumField  # Number Field
   i::Int               # The position of the root r in conjugates_arb(a),
                        # where a is the primitive element of K
@@ -1874,7 +1874,7 @@ mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AbsSimpleNumField}
                        # and negative at all the other real embeddings.
                        # Makes sense only if the place is real.
 
-  function NumFieldEmbNfAbs(K::AbsSimpleNumField, c::acb_roots, i::Int)
+  function AbsSimpleNumFieldEmbedding(K::AbsSimpleNumField, c::acb_roots, i::Int)
     z = new()
     z.K = K
     r1, r2 = length(c.real_roots), length(c.complex_roots)

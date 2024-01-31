@@ -42,15 +42,15 @@ end
 
 mutable struct CMType
   field::AbsSimpleNumField
-  embeddings::Vector{NumFieldEmbNfAbs}
+  embeddings::Vector{AbsSimpleNumFieldEmbedding}
 
-  function CMType(K::AbsSimpleNumField, embeddings::Vector{NumFieldEmbNfAbs})
+  function CMType(K::AbsSimpleNumField, embeddings::Vector{AbsSimpleNumFieldEmbedding})
     z = new(K, embeddings)
     return z
   end
 end
 
-function cm_type(K::AbsSimpleNumField, embeddings::Vector{NumFieldEmbNfAbs})
+function cm_type(K::AbsSimpleNumField, embeddings::Vector{AbsSimpleNumFieldEmbedding})
   @req is_cm_field(K)[1] "Field must a CM field"
   @req 2 * length(embeddings) == degree(K) "Wrong number of embeddings"
   @req all(x -> all(y -> conj(y) != x, embeddings), embeddings) "Embeddings must be pairwise non-conjugated"

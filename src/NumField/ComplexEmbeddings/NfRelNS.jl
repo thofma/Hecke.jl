@@ -1,4 +1,4 @@
-mutable struct NumFieldEmbNfNS{S, U} <: NumFieldEmb{S}
+mutable struct RelNonSimpleNumFieldEmbedding{S, U} <: NumFieldEmb{S}
   field::S             # Number field
   base_field_emb::U    # Embedding of base field
   data::Vector{AcbFieldElem}    # For each L = K[x]/(g_i) component a root p(g_i)
@@ -6,7 +6,7 @@ mutable struct NumFieldEmbNfNS{S, U} <: NumFieldEmb{S}
   isreal::Bool         # Whether the embedding is real
   conjugate::Int       # The absolute index of the conjugate
 
-  function NumFieldEmbNfNS{S, U}(field::S,
+  function RelNonSimpleNumFieldEmbedding{S, U}(field::S,
                                  base_field_emb::U,
                                  data::Vector{AcbFieldElem},
                                  absolute_index::Int,
@@ -18,24 +18,24 @@ mutable struct NumFieldEmbNfNS{S, U} <: NumFieldEmb{S}
 end
 
 function embedding_type(::Type{RelNonSimpleNumField{T}}) where {T}
-  return NumFieldEmbNfNS{RelNonSimpleNumField{T}, embedding_type(parent_type(T))}
+  return RelNonSimpleNumFieldEmbedding{RelNonSimpleNumField{T}, embedding_type(parent_type(T))}
 end
 
 embedding_type(L::RelNonSimpleNumField{T}) where {T} = embedding_type(RelNonSimpleNumField{T})
 
-isreal(P::NumFieldEmbNfNS) = P.isreal
+isreal(P::RelNonSimpleNumFieldEmbedding) = P.isreal
 
-is_imaginary(P::NumFieldEmbNfNS) = !P.isreal
+is_imaginary(P::RelNonSimpleNumFieldEmbedding) = !P.isreal
 
-number_field(f::NumFieldEmbNfNS) = f.field
+number_field(f::RelNonSimpleNumFieldEmbedding) = f.field
 
-_absolute_index(P::NumFieldEmbNfNS) = P.absolute_index
+_absolute_index(P::RelNonSimpleNumFieldEmbedding) = P.absolute_index
 
-function conj(f::NumFieldEmbNfNS)
+function conj(f::RelNonSimpleNumFieldEmbedding)
   return complex_embeddings(number_field(f))[f.conjugate]
 end
 
-function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfNS)
+function Base.show(io::IO, ::MIME"text/plain", f::RelNonSimpleNumFieldEmbedding)
   print(io, "Embedding of\n")
   println(io, number_field(f))
   print(io, "extending the \n", f.base_field_emb, "\n")
@@ -50,7 +50,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfNS)
   print(io, "]")
 end
 
-function Base.show(io::IO, f::NumFieldEmbNfNS)
+function Base.show(io::IO, f::RelNonSimpleNumFieldEmbedding)
   print(io, "Embedding corresponding to (", f.base_field_emb, ") and ")
   print(io, "[ ")
   for i in 1:length(f.data)
@@ -91,7 +91,7 @@ function _complex_embeddings(L::RelNonSimpleNumField{T}) where {T}
   return res
 end
 
-function (g::NumFieldEmbNfNS)(a::RelNonSimpleNumFieldElem, prec::Int = 32)
+function (g::RelNonSimpleNumFieldEmbedding)(a::RelNonSimpleNumFieldElem, prec::Int = 32)
   # This is very slow.
   @req number_field(g) === parent(a) "Parent mismatch"
   f = data(a)
@@ -133,7 +133,7 @@ function (g::NumFieldEmbNfNS)(a::RelNonSimpleNumFieldElem, prec::Int = 32)
   end
 end
 
-evaluate(a::RelNonSimpleNumFieldElem, g::NumFieldEmbNfNS, prec::Int = 32) = g(a, prec)
+evaluate(a::RelNonSimpleNumFieldElem, g::RelNonSimpleNumFieldEmbedding, prec::Int = 32) = g(a, prec)
 
 ################################################################################
 #
@@ -196,7 +196,7 @@ end
 #
 ################################################################################
 
-function restrict(f::NumFieldEmbNfNS, K::NumField)
+function restrict(f::RelNonSimpleNumFieldEmbedding, K::NumField)
   if K === number_field(f)
     return f
   end

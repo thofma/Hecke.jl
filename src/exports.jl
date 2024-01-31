@@ -16,11 +16,12 @@ export AbstractLat
 export AbstractSpace
 export AbstractSpaceMor
 export AbstractSpaceRes
+export AbsSimpleNumFieldEmbedding
 export AbsSimpleNumFieldOrder
 export AbsSimpleNumFieldOrderElem
 export AbsSimpleNumFieldOrderIdeal
 export AbsSimpleNumFieldOrderQuoRing
-export AbsSimpleNumFieldOrderQuoRingElem 
+export AbsSimpleNumFieldOrderQuoRingElem
 export StructureConstantAlgebra
 export AssociativeAlgebraElem
 export GroupAlgebra
@@ -80,11 +81,13 @@ export MaximalOrder
 export NewtonPolygon
 export AbsNonSimpleNumField
 export AbsNonSimpleNumFieldElem
+export AbsNonSimpleNumFieldEmbedding
 export AbsNumFieldOrder
 export AbsNumFieldOrderElem
 export AbsNumFieldOrderIdeal
 export AbsNumFieldOrderSet
 export RelNonSimpleNumField
+export RelNonSimpleNumFieldEmbedding
 #export NumFieldAut
 export NumFieldHom
 export NonSimpleNumField
@@ -954,3 +957,4 @@ export zero_algebra
 export zero_divisor
 export zero_map
 export zeta_log_residue
+export RelSimpleNumFieldEmbedding
