@@ -27,13 +27,13 @@ end
 
 mutable struct FieldsTower
   field::AbsSimpleNumField
-  generators_of_automorphisms::Vector{_AbsSimpleNumFieldAut}
-  subfields::Vector{_AbsSimpleNumFieldHom}
+  generators_of_automorphisms::Vector{Hecke._AbsSimpleNumFieldAut}
+  subfields::Vector{Hecke._AbsSimpleNumFieldHom}
   ramified_primes::Vector{ZZRingElem}
   is_abelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
-  isomorphism::Dict{_AbsSimpleNumFieldHom, GAP.GapObj}
+  isomorphism::Dict{Hecke._AbsSimpleNumFieldHom, GAP.GapObj}
   admissible_cocycles::Vector{cocycle_ctx}
   projections_for_conductors::Vector{GAP.GapObj}
 
