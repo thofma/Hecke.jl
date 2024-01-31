@@ -13,7 +13,7 @@ function _automorphisms(K::AbsNonSimpleNumField; is_abelian::Bool = false)
   for i = 1:length(pols)
     rt[i] = roots(K, pols[i])
   end
-  auts = Vector{NumFieldAut{AbsNonSimpleNumField}}(undef, prod(length(x) for x in rt))
+  auts = Vector{automorphism_type(K)}(undef, prod(length(x) for x in rt))
   ind = 1
   I = cartesian_product_iterator([1:length(x) for x in rt], inplace = true)
   for i in I
@@ -26,13 +26,13 @@ end
 
 function _automorphisms(K::AbsSimpleNumField; is_abelian::Bool = false)
   if degree(K) == 1
-    return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[hom(K, K, one(K))]
+    return automorphism_type(K)[hom(K, K, one(K))]
   end
   if Nemo.is_cyclo_type(K)
     f = get_attribute(K, :cyclo)::Int
     a = gen(K)
     A, mA = unit_group(residue_ring(FlintZZ, f, cached = false)[1])
-    auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
+    auts = automorphism_type(K)[ hom(K, K, a^lift(mA(g)), check = false) for g in A]
     return auts
   end
   if is_abelian
@@ -45,7 +45,7 @@ function _automorphisms(K::AbsSimpleNumField; is_abelian::Bool = false)
   f = K.pol
   ord_aut = _order_bound(K)
   if ord_aut == 1
-    return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[id_hom(K)]
+    return automorphism_type(K)[id_hom(K)]
   end
 
   Kt, t = polynomial_ring(K, "t", cached = false)
@@ -53,7 +53,7 @@ function _automorphisms(K::AbsSimpleNumField; is_abelian::Bool = false)
   divpol = Kt(AbsSimpleNumFieldElem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
   lr = roots(f1, max_roots = div(ord_aut, 2))
-  Aut1 = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(lr)+1)
+  Aut1 = automorphism_type(K)(undef, length(lr)+1)
   for i = 1:length(lr)
     Aut1[i] = hom(K, K, lr[i], check = false)
   end
@@ -103,7 +103,7 @@ end
 
 function _generator_automorphisms(K::AbsSimpleNumField)
   if degree(K) == 1
-    return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]
+    return automorphism_type(K)[]
   end
   if Nemo.is_cyclo_type(K)
     return _auts_cyclo(K)
@@ -114,15 +114,15 @@ function _generator_automorphisms(K::AbsSimpleNumField)
   divpol = Kt(AbsSimpleNumFieldElem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
   lr = roots(f1, max_roots = div(degree(K), 2))
-  Aut1 = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, length(lr))
+  Aut1 = Vector{automorphism_type(K)}(undef, length(lr))
   for i = 1:length(lr)
     Aut1[i] = hom(K, K, lr[i], check = false)
   end
   return small_generating_set(Aut1)
 end
 
-automorphism_type(::AbsSimpleNumField) = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
-automorphism_type(::AbsNonSimpleNumField) = NumFieldAut{AbsNonSimpleNumField}
+automorphism_type(K::AbsSimpleNumField) = morphism_type(K, K)
+automorphism_type(K::AbsNonSimpleNumField) = morphism_type(K)
 
 function automorphism_list(K::NumField{QQFieldElem}; copy::Bool = true, is_abelian::Bool = false)
   T = automorphism_type(K)
@@ -156,11 +156,11 @@ function is_automorphisms_known(K::Union{AbsSimpleNumField,AbsNonSimpleNumField}
 end
 
 function get_automorphisms(K::AbsSimpleNumField)
-  return get_attribute(K, :automorphisms)::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}
+  return get_attribute(K, :automorphisms)::Vector{automorphism_type(K)}
 end
 
 function get_automorphisms(K::AbsNonSimpleNumField)
-  return get_attribute(K, :automorphisms)::Vector{NumFieldAut{AbsNonSimpleNumField}}
+  return get_attribute(K, :automorphisms)::Vector{automorphism_type(K)}
 end
 
 function set_automorphisms(K::Union{AbsSimpleNumField,AbsNonSimpleNumField}, auts::Vector)
@@ -291,7 +291,7 @@ automorphism_group(L::NumField, ::QQField) = absolute_automorphism_group(L)
 #
 ###############################################################################
 
-function closure(S::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, final_order::Int = -1)
+function closure(S::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, final_order::Int = -1)
 
   K = domain(S[1])
   d = numerator(discriminant(K.pol))
@@ -370,7 +370,7 @@ function closure(S::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, f
   return elements
 end
 
-function generic_group(G::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, ::typeof(*), full::Bool = true)
+function generic_group(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, ::typeof(*), full::Bool = true)
   K = domain(G[1])
   n = length(G)
   #First, find a good prime
@@ -503,7 +503,7 @@ function lift_root(K::AbsSimpleNumField, b, bound::Int)
 end
 
 
-function _frobenius_at(K::AbsSimpleNumField, p::Int, auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[]; bound::Int = 100)
+function _frobenius_at(K::AbsSimpleNumField, p::Int, auts::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = automorphism_type(K)[]; bound::Int = 100)
 
   Zx = FlintZZ["x"][1]
   F = residue_ring(FlintZZ, p, cached = false)[1]
@@ -622,7 +622,7 @@ function is_abelian2(K::AbsSimpleNumField)
   if is_automorphisms_known(K)
     return is_abelian(automorphism_group(K)[1])
   end
-  auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[id_hom(K)]
+  auts = automorphism_type(K)[id_hom(K)]
   p = 2
   dp = denominator(K.pol)
   coeffs_bound = 2*_coefficients_bound(K)

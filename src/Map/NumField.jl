@@ -689,7 +689,7 @@ morphism_type(::Type{S}, ::Type{T}) where {S <: NumField, T <: NumField} = NumFi
 #
 ################################################################################
 
-const NumFieldAut{T} = NumFieldHom{T, T}
+const NumFieldAut{T, U, V, W} = NumFieldHom{T, T, U, V, W}
 
 ################################################################################
 #
