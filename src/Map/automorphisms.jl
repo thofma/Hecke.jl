@@ -97,7 +97,7 @@ function _auts_cyclo(K::AbsSimpleNumField)
   f = get_attribute(K, :cyclo)::Int
   a = gen(K)
   A, mA = unit_group(residue_ring(FlintZZ, f, cached = false)[1])
-  auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
+  auts = automorphism_type(K)[ hom(K, K, a^lift(mA(g)), check = false) for g in gens(A)]
   return auts
 end
 
@@ -305,7 +305,7 @@ function closure(S::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
 
   t = length(S)
   order = 1
-  elements = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[id_hom(K)]
+  elements = automorphism_type(K)[id_hom(K)]
   pols = fpPolyRingElem[x]
   gpol = Rx(image_primitive_element(S[1]))
   if gpol != x
@@ -414,7 +414,7 @@ end
 function _automorphisms_abelian(K::AbsSimpleNumField)
 
   #@assert is_abelian(K)
-  auts = NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}[id_hom(K)]
+  auts = automorphism_type(K)[id_hom(K)]
   p = 2
   dp = denominator(K.pol)
   while length(auts) != degree(K)
