@@ -223,7 +223,7 @@ function _hasse_invariant(D::Vector, p)
 end
 
 @doc raw"""
-    hasse_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
+    hasse_invariant(V::QuadSpace, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Returns the Hasse invariant of the quadratic space `V` at `p`. This is equal
 to the product of local Hilbert symbols $(a_i, a_j)_p$, $i < j$, where $V$ is
@@ -343,7 +343,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
 end
 
 @doc raw"""
-    witt_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
+    witt_invariant(V::QuadSpace, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Returns the Witt invariant of the quadratic space `V` at `p`.
 
@@ -460,7 +460,7 @@ end
 
 @doc raw"""
     invariants(M::QuadSpace)
-          -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
+          -> FieldElem, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, Vector{Tuple{InfPlc, Int}}
 
 Returns a tuple `(n, k, d, H, I)` of invariants of `M`, which determine the
 isometry class completely. Here `n` is the dimension. The dimension of the kernel
@@ -718,7 +718,7 @@ function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, f
 
 
 #  // The binary case
-  a = _find_quaternion_algebra(-det::AbsSimpleNumFieldElem, finite::Vector{NfOrdIdl}, InfPlc[p for (p, n) in negative if n == 2])
+  a = _find_quaternion_algebra(-det::AbsSimpleNumFieldElem, finite::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, InfPlc[p for (p, n) in negative if n == 2])
   push!(D, a)
   push!(D, det * a)
   M = diagonal_matrix(D)
@@ -772,7 +772,7 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
   end
   # readjust the invariants
   local _d::AbsSimpleNumFieldElem
-  local _f::Dict{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Int64}
+  local _f::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Int64}
   _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
   PP = append!(support(K(2)*det, OK), finite)::Vector{ideal_type(OK)}

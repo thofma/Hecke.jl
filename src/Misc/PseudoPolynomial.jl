@@ -186,7 +186,7 @@ function gb(G::Vector{S}, mmod) where {S}
     C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
-    Nfinv = mmod * inv(C)::NfOrdFracIdl
+    Nfinv = mmod * inv(C)::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
     newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
@@ -221,7 +221,7 @@ function gb(G::Vector{S}, mmod) where {S}
     C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
-    Nfinv = mmod * inv(C)::NfOrdFracIdl
+    Nfinv = mmod * inv(C)::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
     newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
@@ -262,7 +262,7 @@ end
 #
 ################################################################################
 
-function lcm(a::NfOrdFracIdl, b::NfOrdFracIdl)
+function lcm(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   a = simplify(a)
   b = simplify(b)
   da = denominator(a)
@@ -277,11 +277,11 @@ function lcm(a::NfOrdFracIdl, b::NfOrdFracIdl)
 end
 
 
-function divides(a::NfAbsOrdElem, b::NfAbsOrdElem)
+function divides(a::AbsNumFieldOrderElem, b::AbsNumFieldOrderElem)
   c = divexact(elem_in_nf(a), elem_in_nf(b))
   x, y = _check_elem_in_order(c, parent(a))
   if x
-    return true, NfAbsOrdElem(parent(a), c, y)
+    return true, AbsNumFieldOrderElem(parent(a), c, y)
   else
     return false, a
   end

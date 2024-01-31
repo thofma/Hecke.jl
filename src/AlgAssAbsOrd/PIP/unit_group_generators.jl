@@ -303,7 +303,7 @@ function _orbit_stabilizer(G, idity, a)
   return OT, Y
 end
 
-function _operate(g::AbsAlgAssElem, b)
+function _operate(g::AbstractAssociativeAlgebraElem, b)
   M = representation_matrix(g, :right)
   c = hnf(b * FakeFmpqMat(M))
   return c

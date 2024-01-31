@@ -51,7 +51,7 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   A = algebra(M)
   ZA, _ = _as_algebra_over_center(A)
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+    local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     B, AtoB = A.isomorphic_full_matrix_algebra
     #@show B
     OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])

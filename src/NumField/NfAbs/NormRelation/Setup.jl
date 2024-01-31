@@ -25,17 +25,17 @@
 
 mutable struct NormRelation{T}
   K::AbsSimpleNumField
-  subfields::Vector{Tuple{AbsSimpleNumField, NfToNfMor}}
+  subfields::Vector{Tuple{AbsSimpleNumField, Hecke._AbsSimpleNumFieldAut}}
   denominator::Int
-  coefficients::Vector{Vector{Tuple{NfToNfMor, Int}}}
+  coefficients::Vector{Vector{Tuple{Hecke._AbsSimpleNumFieldAut, Int}}}
   ispure::Bool
   pure_coefficients::Vector{Int}
   is_abelian::Bool
   isgeneric::Bool
-  coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
+  coefficients_gen::Vector{Vector{Tuple{Int, Hecke._AbsSimpleNumFieldAut, Hecke._AbsSimpleNumFieldAut}}}
   embed_cache::Dict{Tuple{Int, Int}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
-  mor_cache::Dict{NfToNfMor, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
-  induced::Dict{NfToNfMor, Perm{Int}}
+  mor_cache::Dict{Hecke._AbsSimpleNumFieldAut, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
+  induced::Dict{Hecke._AbsSimpleNumFieldAut, Perm{Int}}
   embed_cache_triv::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   nonredundant::Vector{Int}
   isoptimal::Int
@@ -48,8 +48,8 @@ mutable struct NormRelation{T}
     z.isgeneric = false
     z.denominator = 0
     z.embed_cache = Dict{Tuple{Int, Int}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
-    z.mor_cache = Dict{NfToNfMor, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
-    z.induced = Dict{NfToNfMor, Perm{Int}}()
+    z.mor_cache = Dict{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}()
+    z.induced = Dict{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Perm{Int}}()
     z.isoptimal = -1
     return z
   end
@@ -83,12 +83,12 @@ function _norm_relation_setup_abelian(K::AbsSimpleNumField; small_degree::Bool =
 
   z = NormRelation{Int}()
   z.K = K
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = false
 
   for i in 1:n
-    F, mF = Hecke.fixed_field1(K, NfToNfMor[AtoG[f] for f in ls[i][2]])
+    F, mF = Hecke.fixed_field1(K, morphism_type(AbsSimpleNumField, AbsSimpleNumField)[AtoG[f] for f in ls[i][2]])
     S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
@@ -102,9 +102,9 @@ function _norm_relation_setup_abelian(K::AbsSimpleNumField; small_degree::Bool =
       z.pure_coefficients[i] = ls[i][1]
     end
   else
-    z.coefficients = Vector{Vector{Tuple{NfToNfMor, Int}}}(undef, n)
+    z.coefficients = Vector{Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}}}(undef, n)
     for i in 1:n
-      w = Vector{Tuple{NfToNfMor, Int}}(undef, length(ls[i][1]))
+      w = Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}}(undef, length(ls[i][1]))
       for (j, (expo, auto)) in enumerate(ls[i][1])
         w[j] = (AtoG[auto], expo)
       end
@@ -154,7 +154,7 @@ function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = tr
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_Type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = pure
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -167,7 +167,7 @@ function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = tr
   @vprintln :NormRelation 1 "Computing subfields"
   for i in 1:n
     @vprintln :NormRelation 3 "Computing subfield $i / $n"
-		auts = NfToNfMor[GtoA[f] for f in ls[nsubs[i]][1]]
+		auts = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[GtoA[f] for f in ls[nsubs[i]][1]]
     @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
     @vprintln :NormRelation 1 "Simplifying \n $F"
     @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
@@ -219,7 +219,7 @@ function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool =
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = pure
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -232,7 +232,7 @@ function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool =
   @vprintln :NormRelation 1 "Computing subfields"
   for i in 1:n
     @vprintln :NormRelation 3 "Computing subfield $i / $n"
-		auts = NfToNfMor[GtoA[f] for f in ls[i][1]]
+		auts = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[GtoA[f] for f in ls[i][1]]
     @vtime :NormRelation 3 F, mF = Hecke.fixed_field1(K, auts)
     @vprintln :NormRelation 1 "Simplifying \n $F"
     @vtime :NormRelation 3 S, mS = simplify(F, cached = false)
@@ -242,10 +242,10 @@ function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool =
     z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
-  z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
+  z.coefficients_gen = Vector{Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
 
   for i in 1:n
-    w = Vector{Tuple{Int, NfToNfMor, NfToNfMor}}(undef, length(ls[i][2]))
+    w = Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(ls[i][2]))
     for (j, (expo, auto_pre, auto_post)) in enumerate(ls[i][2])
       w[j] = (expo, GtoA[auto_pre], GtoA[auto_post])
     end
@@ -291,7 +291,7 @@ function check_relation(N::NormRelation, a::AbsSimpleNumFieldElem)
   end
 end
 
-function _apply_auto(N::NormRelation, auto::NfToNfMor, x::AbsSimpleNumFieldElem)
+function _apply_auto(N::NormRelation, auto::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::AbsSimpleNumFieldElem)
   if haskey(N.mor_cache, auto)
     d = N.mor_cache[auto]
     if haskey(d, x)
@@ -591,7 +591,7 @@ end
 #
 ################################################################################
 
-function zeta_log_residue(O::NfOrd, N::NormRelation, abs_error::Float64)
+function zeta_log_residue(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, N::NormRelation, abs_error::Float64)
   degree(O) == 1 && error("Number field must be of degree > 1")
   !ispure(N) && error("Norm relation must be a Brauer relation")
   @show index(N)
@@ -639,7 +639,7 @@ end
 ################################################################################
 
 # TODO: Make this great again
-function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenToGrpGenMor}};
+function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTableGroup, MultTableGroupHom}};
                                      primitive::Bool = false,
                                      greedy::Bool = false,
                                      large_index::Bool = false,
@@ -656,7 +656,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     reverse!(H)
   end
 
-  QG = AlgGrp(FlintQQ, G)
+  QG = GroupAlgebra(FlintQQ, G)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(H))
   for i in 1:length(H)
@@ -693,7 +693,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     end
 
     if !b
-      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
     end
 
     @assert b
@@ -709,12 +709,12 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
       den = lcm!(den, den, denominator(v[1, i]))
     end
 
-    vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+    vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
     for i in 1:length(vvv)
-      vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
+      vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
     end
 
-    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+    solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
 
     for i in 1:length(subgroups_needed)
       push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
@@ -752,7 +752,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   subgroups_needed = Int[]
 
   if any(isempty, nonannihilating)
-    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
   end
 
   subgroups_needed = Int[]
@@ -801,8 +801,8 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   # Instead of working with the Q-basis (g N_H h)_(H, g in G, h in H), we take
   # (g N_H h)_(H, g in G/H, h in G\N_G(H))
 
-  left_cosets_for_sub = Vector{GrpGenElem}[]
-  right_cosets_for_normalizer = Vector{GrpGenElem}[]
+  left_cosets_for_sub = Vector{MultTableGroupElem}[]
+  right_cosets_for_normalizer = Vector{MultTableGroupElem}[]
 
   for i in 1:length(subgroups_needed)
     lc = Hecke.left_cosets(G, H[subgroups_needed[i]][2])
@@ -880,11 +880,11 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     den = lcm(den, denominator(v[1, i]))
   end
 
-  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+  solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
 
-  vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
   for i in 1:length(vvv)
-    vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
+    vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
   end
 
   for cc in 1:ncols(v)
@@ -985,7 +985,7 @@ end
 #
 ################################################################################
 
-function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
+function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem)
 
   primes = ZZRingElem[ p for (p, _) in factor(m)]
 
@@ -997,7 +997,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
 
   reverse!(all_non_trivial_subs)
 
-  QG = AlgGrp(FlintQQ, G, cached = false)
+  QG = GroupAlgebra(FlintQQ, G, cached = false)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(all_non_trivial_subs))
   for i in 1:length(all_non_trivial_subs)
@@ -1020,7 +1020,7 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
   fl, v = can_solve_with_solution(M, onee, side = :left)
 
   if !fl
-    solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+    solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
     return false, ZZRingElem(0), solutions
   end
 
@@ -1047,12 +1047,12 @@ function _smallest_scalar_norm_relation_coprime(G::GrpGen, m::ZZRingElem)
 
   @assert is_coprime(den, m)
 
-  vvv = Vector{Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}(undef, length(subgroups_needed))
+  vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
   for i in 1:length(vvv)
-    vvv[i] = Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}()
+    vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
   end
 
-  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{ZZRingElem, GrpGenElem, GrpGenElem}}}}()
+  solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
 
   for i in 1:length(subgroups_needed)
     push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
@@ -1102,7 +1102,7 @@ function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, NfToNfMor}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = true
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -1113,7 +1113,7 @@ function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
   end
 
   for i in 1:n
-    F, mF = Hecke.fixed_field1(K, NfToNfMor[mG(f) for f in ls[i][1]])
+    F, mF = Hecke.fixed_field1(K, morphism_type(AbsSimpleNumField, AbsSimpleNumField)[mG(f) for f in ls[i][1]])
     S, mS = simplify(F, cached = false)
     L = S
     mL = mS * mF
@@ -1121,10 +1121,10 @@ function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
     z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
-  z.coefficients_gen = Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}(undef, n)
+  z.coefficients_gen = Vector{Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
 
   for i in 1:n
-    w = Vector{Tuple{Int, NfToNfMor, NfToNfMor}}(undef, length(ls[i][2]))
+    w = Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(ls[i][2]))
     for (j, (expo, auto_pre, auto_post)) in enumerate(ls[i][2])
       w[j] = (expo, mG(auto_pre), mG(auto_post))
     end

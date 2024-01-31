@@ -15,25 +15,25 @@ representation is that as a field element.
 ## Creation
 
 Elements are constructed either as linear combinations of basis elements
-or via explicit coercion. Elements will be of type `NfAbsOrdElem`,
+or via explicit coercion. Elements will be of type `AbsNumFieldOrderElem`,
 the type if actually parametrized by the type of the surrounding field and
 the type of the field elements. E.g. the type of any element in any
 order of an absolute simple field will be
-`NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}`
+`AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}`
 
 
 ```@docs
-NfAbsOrd
+AbsNumFieldOrder
 ```
 
 ## Basic properties
 
 ```@docs
-parent(::NfOrdElem)
-elem_in_nf(::NfOrdElem)
-coordinates(::NfOrdElem)
-discriminant(::Vector{NfOrdElem})
-==(::NfOrdElem, ::NfOrdElem)
+parent(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+elem_in_nf(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+coordinates(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+discriminant(::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+==(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
 ## Arithmetic
@@ -41,32 +41,32 @@ discriminant(::Vector{NfOrdElem})
 All the usual arithmetic operatinos are defined:
 
 - `-(::NUmFieldOrdElem)`
-- `+(::NumFieldOrdElem, ::NumFieldOrdElem)`
-- `-(::NumFieldOrdElem, ::NumFieldOrdElem)`
-- `*(::NumFieldOrdElem, ::NumFieldOrdElem)`
-- `^(::NumFieldOrdElem, ::Int)`
-- `mod(::NfAbsOrdElem, ::Int)`
-- `mod_sym(::NumFieldOrdElem, ::ZZRingElem)`
-- `powermod(::NfAbsOrdElem, ::ZZRingElem, ::Int)`
+- `+(::NumFieldOrderElem, ::NumFieldOrderElem)`
+- `-(::NumFieldOrderElem, ::NumFieldOrderElem)`
+- `*(::NumFieldOrderElem, ::NumFieldOrderElem)`
+- `^(::NumFieldOrderElem, ::Int)`
+- `mod(::AbsNumFieldOrderElem, ::Int)`
+- `mod_sym(::NumFieldOrderElem, ::ZZRingElem)`
+- `powermod(::AbsNumFieldOrderElem, ::ZZRingElem, ::Int)`
 
 ## Miscellaneous
 
 ```@docs
-representation_matrix(::NfAbsOrdElem)
-representation_matrix(::NfOrdElem, ::AbsSimpleNumField)
-tr(::NumFieldOrdElem)
-norm(::NumFieldOrdElem)
-absolute_norm(::NfAbsOrdElem)
-absolute_tr(::NfAbsOrdElem)
-rand(::NfOrd, ::Int)
-minkowski_map(::NfOrdElem, ::Int)
-conjugates_arb(::NfOrdElem, ::Int)
-conjugates_arb_log(::NfOrdElem, ::Int)
-t2(::NfOrdElem, ::Int)
-minpoly(::NfOrdElem)
-charpoly(::NfOrdElem)
-factor(::NfOrdElem)
-denominator(a::NumFieldElem, O::NfRelOrd)
-discriminant(::Vector{NfAbsOrdElem})
+representation_matrix(::AbsNumFieldOrderElem)
+representation_matrix(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsSimpleNumField)
+tr(::NumFieldOrderElem)
+norm(::NumFieldOrderElem)
+absolute_norm(::AbsNumFieldOrderElem)
+absolute_tr(::AbsNumFieldOrderElem)
+rand(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+minkowski_map(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+conjugates_arb(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+conjugates_arb_log(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+t2(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+minpoly(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+charpoly(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+factor(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+denominator(a::NumFieldElem, O::RelNumFieldOrder)
+discriminant(::Vector{AbsNumFieldOrderElem})
 ```
 

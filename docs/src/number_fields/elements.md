@@ -42,7 +42,7 @@ julia> L([a, 1, 1//2])
 
 ```@docs
 quadratic_defect(a::NumFieldElem, p)
-hilbert_symbol(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+hilbert_symbol(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
 representation_matrix(::NumFieldElem)
 basis_matrix(::Vector{AbsSimpleNumFieldElem})
 coefficients(::SimpleNumFieldElem)

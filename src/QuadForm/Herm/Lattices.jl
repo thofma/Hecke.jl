@@ -280,7 +280,7 @@ end
 
 @doc raw"""
     bad_primes(L::HermLat; discriminant::Bool = false, dyadic::Bool = false)
-                                                             -> Vector{NfOrdIdl}
+                                                             -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Given a hermitian lattice `L` over $E/K$, return the prime ideals of $\mathcal O_K$
 dividing the scale or the volume of `L`.

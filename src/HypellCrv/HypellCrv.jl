@@ -191,7 +191,7 @@ end
 ################################################################################
 
 @doc raw"""
-    base_change(K::Field, C::HypellCrv) -> EllCrv
+    base_change(K::Field, C::HypellCrv) -> EllipticCurve
 
 Return the base change of the hyperelliptic curve $C$ over K if coercion is
 possible.
@@ -482,7 +482,7 @@ function show(io::IO, P::HypellCrvPt)
 end
 
 @doc raw"""
-    ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
+    ==(P::EllipticCurvePoint, Q::EllipticCurvePoint) -> Bool
 
 Return true if $P$ and $Q$ are equal and live over the same elliptic curve
 $E$.

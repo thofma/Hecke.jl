@@ -892,7 +892,7 @@ function clear_cache()
 end
 
 precompile(maximal_order, (AbsSimpleNumField, ))
-precompile(class_group, (NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem},))
+precompile(class_group, (AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},))
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 

@@ -415,7 +415,7 @@
   g = t^2 - a*t + 1;
   E, b = number_field(g, "b", cached = false);
   D = matrix(E, 1, 1, [-a + 2]);
-  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [1]), map(E, [a]), map(E, [b]), map(E, [a*b])];
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1]), map(E, [a]), map(E, [b]), map(E, [a*b])];
   LM = hermitian_lattice(E, gens, gram = D);
   L2 = @inferred representative(genus(LM))
   @test is_isometric_with_isometry(LM, L2)[1]
@@ -515,7 +515,7 @@ end
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [1, 1, 0]), map(E, [0, 0, -1]), map(E, [(1//2*a + 1//2)*b + 1//2*a - 1//2, 0, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 1, 0]), map(E, [0, 0, -1]), map(E, [(1//2*a + 1//2)*b + 1//2*a - 1//2, 0, 0])]
   L = hermitian_lattice(E, gens, gram = D)
   G = genus(L)
   G2 = @inferred rescale(G, -1//(a^2+5))
@@ -577,9 +577,9 @@ end
   vals = Int[2, 2, 2, 2, 0, 2];
   sig = Dict(S[i] => vals[i] for i in 1:6);
   OK = maximal_order(K);
-  ps = NfOrdIdl[ideal(OK, v) for v in Vector{NfOrdElem}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
+  ps = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, v) for v in Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
   datas = [[(0, 2, 1)], [(-11, 2, 1)]];
-  lgs = Hecke.HermLocalGenus{typeof(E), NfOrdIdl}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
+  lgs = Hecke.HermLocalGenus{typeof(E), AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
   G = Hecke.HermGenus(E, 2, lgs, sig)
   h = Hecke._hermitian_form_with_invariants(E, 2, Hecke._non_norm_primes(local_symbols(G)), sig)
   L = lattice(hermitian_space(E, h))
@@ -595,7 +595,7 @@ end
   g = t^2 + 3
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{AbsSimpleNumFieldElem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
   L = hermitian_lattice(E, gens, gram = D)
   p1 = minimum(support(3*maximal_order(E))[1])
   p2 = minimum(support(2*maximal_order(E))[1])

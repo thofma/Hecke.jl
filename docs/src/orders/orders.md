@@ -26,11 +26,11 @@ and can also be interpreted as a normalization of any other order.
 ```@docs
 Order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
 Order(::AbsSimpleNumField, ::FakeFmpqMat)
-Order(::NfOrdFracIdl)
+Order(::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 EquationOrder(::AbsSimpleNumField)
 MaximalOrder(::AbsSimpleNumField)
-MaximalOrder(::NfOrd)
-lll(::NfOrd)
+MaximalOrder(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+lll(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
 any_order(K::AbsSimpleNumField)
 ```
 
@@ -44,49 +44,49 @@ O = EquationOrder(K)
 ```
 
 ```@docs
-parent(::NfOrd)
-signature(::NfOrd)
-nf(::NfOrd)
-basis(::NfOrd)
-lll_basis(::NfOrd)
-basis(::NfOrd, ::AbsSimpleNumField)
-pseudo_basis(::NfRelOrd)
-basis_pmatrix(::NfRelOrd)
-basis_nf(::NfRelOrd)
-inv_coeff_ideals(::NfRelOrd)
-basis_matrix(::NfAbsOrd)
-basis_mat_inv(::NfOrd)
-gen_index(::NfOrd)
-is_index_divisor(::NfOrd, ::ZZRingElem)
-minkowski_matrix(::NfOrd, ::Int)
-in(::AbsSimpleNumFieldElem, ::NfOrd)
-norm_change_const(::NfOrd)
-trace_matrix(::NfOrd)
-+(::NfAbsOrd, ::NfAbsOrd)
-poverorder(::NfOrd, ::ZZRingElem)
-poverorders(::NfOrd, ::ZZRingElem)
-pmaximal_overorder(::NfOrd, ::ZZRingElem)
-pradical(::NfAbsOrd, ::Union{Integer, ZZRingElem})
-pradical(::NfRelOrd, ::Union{Hecke.NfRelOrdIdl, NfOrdIdl})
-ring_of_multipliers(::NfAbsOrdIdl)
+parent(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+signature(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+nf(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+basis(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+lll_basis(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+basis(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsSimpleNumField)
+pseudo_basis(::RelNumFieldOrder)
+basis_pmatrix(::RelNumFieldOrder)
+basis_nf(::RelNumFieldOrder)
+inv_coeff_ideals(::RelNumFieldOrder)
+basis_matrix(::AbsNumFieldOrder)
+basis_mat_inv(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+gen_index(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+is_index_divisor(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem)
+minkowski_matrix(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int)
+in(::AbsSimpleNumFieldElem, ::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+norm_change_const(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+trace_matrix(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
++(::AbsNumFieldOrder, ::AbsNumFieldOrder)
+poverorder(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem)
+poverorders(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem)
+pmaximal_overorder(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem)
+pradical(::AbsNumFieldOrder, ::Union{Integer, ZZRingElem})
+pradical(::RelNumFieldOrder, ::Union{Hecke.RelNumFieldOrderIdeal, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+ring_of_multipliers(::AbsNumFieldOrderIdeal)
 
 ```
 
 ## Invariants
 
 ```@docs
-discriminant(::NfOrd)
-discriminant(::NfAbsOrd)
-reduced_discriminant(::NfOrd)
-degree(::NfOrd)
-index(::NfOrd)
-different(::NfOrd)
-codifferent(::NfOrd)
-is_gorenstein(::NfOrd)
-is_bass(::NfOrd)
-is_equation_order(::NfOrd)
-zeta_log_residue(::NfOrd, ::Float64)
-ramified_primes(::NfOrd)
+discriminant(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+discriminant(::AbsNumFieldOrder)
+reduced_discriminant(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+degree(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+index(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+different(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+codifferent(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+is_gorenstein(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+is_bass(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+is_equation_order(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+zeta_log_residue(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Float64)
+ramified_primes(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
 ## Arithmetic
@@ -104,15 +104,15 @@ allow a point-wise inverse to server as the *discrete logarithm* map.
 For more information on abelian group, see [here](@ref AbelianGroupLink),
 for ideals, [here](@ref NfOrdIdlLink).
 
-- [`torsion_unit_group(::NfOrd)`](@ref)
-- [`unit_group(::NfOrd)`](@ref)
-- [`unit_group_fac_elem(::NfOrd)`](@ref)
-- [`sunit_group(::Vector{NfOrdIdl})`](@ref)
-- [`sunit_group_fac_elem(::Vector{NfOrdIdl})`](@ref)
-- [`sunit_mod_units_group_fac_elem(::Vector{NfOrdIdl})`](@ref)
-- [`class_group(::NfOrd)`](@ref)
-- [`picard_group(::NfOrd)`](@ref)
-- [`narrow_class_group(::NfOrd)`](@ref)
+- [`torsion_unit_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})`](@ref)
+- [`unit_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})`](@ref)
+- [`unit_group_fac_elem(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})`](@ref)
+- [`sunit_group(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})`](@ref)
+- [`sunit_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})`](@ref)
+- [`sunit_mod_units_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})`](@ref)
+- [`class_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})`](@ref)
+- [`picard_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})`](@ref)
+- [`narrow_class_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})`](@ref)
 
 For the processing of units, there are a couple of helper functions
 also available:
@@ -124,7 +124,7 @@ is_independent
 ## Predicates
 
 ```@docs
-Hecke.is_contained(::NfAbsOrd, ::NfAbsOrd)
-is_maximal(::NfAbsOrd)
+Hecke.is_contained(::AbsNumFieldOrder, ::AbsNumFieldOrder)
+is_maximal(::AbsNumFieldOrder)
 ```
 

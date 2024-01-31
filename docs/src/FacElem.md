@@ -30,7 +30,7 @@ parent.
 Important special cases are
  * ```FacElem{ZZRingElem, ZZRing}```, factored integers
  * ```FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}```, factored algerbaic numbers
- * ```FacElem{NfAbsOrdIdl, NfAbsOrdIdlSet}```, factored ideals
+ * ```FacElem{AbsNumFieldOrderIdeal, AbsNumFieldOrderIdealSet}```, factored ideals
 
 It should be noted that an object of type ```FacElem{ZZRingElem, ZZRing}``
 will, in general, not represent an integer as the exponents can be
@@ -46,7 +46,7 @@ FacElem(a::AbsSimpleNumFieldElem)
 ```
 
 ```@docs
-ideal(::NfOrd, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+ideal(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
 
@@ -68,7 +68,7 @@ In the case where the parent of the base allows for efficient gcd computation,
 power products can be made unique:
 
 ```@docs
-simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+simplify(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 simplify(x::FacElem{QQFieldElem,S} where S)
 ```
 
@@ -77,11 +77,11 @@ The simplified version can then be used further:
 ```@docs
 isone(x::FacElem{QQFieldElem, S} where S)
 factor_coprime(::FacElem{ZZRingElem, S} where S)
-factor_coprime(::FacElem{NfOrdIdl, NfOrdIdlSet})
-factor_coprime(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor_coprime(::NfOrdIdlSet, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
-factor(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor(::NfOrdIdlSet, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+factor_coprime(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor_coprime(::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor_coprime(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+factor(::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
 For factorised algebraic numbers a unique simplification is not possible,
@@ -92,10 +92,10 @@ compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::In
 ```
 
 ```@docs
-valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
-valuation(::FacElem{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.NfAbsOrdIdlSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem})
-evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::NfOrdFracIdl)
-reduce_ideal(::FacElem{NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.NfAbsOrdIdlSet{AbsSimpleNumField,AbsSimpleNumFieldElem}})
+valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
+valuation(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
+evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+reduce_ideal(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}})
 modular_proj(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::Hecke.modular_env)
 ```
 

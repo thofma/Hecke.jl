@@ -1,6 +1,5 @@
-add_verbosity_scope(:NfOrd)
-add_assertion_scope(:NfOrd)
-
+add_verbosity_scope(:AbsNumFieldOrder)
+add_assertion_scope(:AbsNumFieldOrder)
 #set_verbosity_level(:NfOrd, 1)
 
 include("NfOrd/NfMaxOrd.jl")

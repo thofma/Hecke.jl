@@ -9,20 +9,20 @@ CurrentModule = Hecke
 Number fields, in Hecke, come in several
 different types:
  - `AbsSimpleNumField`: a finite simple extension of the rational numbers $\mathbf{Q}$
- - `NfAbsNS`: a finite extension of $\mathbf{Q}$ given by several polynomials.
+ - `AbsNonSimpleNumField`: a finite extension of $\mathbf{Q}$ given by several polynomials.
    We will refer to this as a non-simple field - even though mathematically
    we can find a primitive elements.
- - `NfRel`: a finite simple extension of a number field. This is
+ - `RelSimpleNumField`: a finite simple extension of a number field. This is
    actually parametried by the (element) type of the coefficient field.
    The complete type of an extension of an absolute field (`AbsSimpleNumField`)
-   is `NfRel{AbsSimpleNumFieldElem}`. The next extension thus will be
-   `NfRel{NfRelElem{AbsSimpleNumFieldElem}}`.
- - `NfRelNS`: extensions of number fields given by several polynomials.
+   is `RelSimpleNumField{AbsSimpleNumFieldElem}`. The next extension thus will be
+   `RelSimpleNumField{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}`.
+ - `RelNonSimpleNumField`: extensions of number fields given by several polynomials.
     This too will be referred to as a non-simple field.
 
-The simple types `AbsSimpleNumField` and `NfRel` are also called simple
-fields in the rest of this document, `NfRel` and `NfRelNS` are referred
-to as relative extensions while `AbsSimpleNumField` and `NfAbsNS` are
+The simple types `AbsSimpleNumField` and `RelSimpleNumField` are also called simple
+fields in the rest of this document, `RelSimpleNumField` and `RelNonSimpleNumField` are referred
+to as relative extensions while `AbsSimpleNumField` and `AbsNonSimpleNumField` are
 called absolute.
 
 Internally, simple fields are essentially just (univariate) polynomial

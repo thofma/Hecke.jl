@@ -1,6 +1,6 @@
 @testset "Isomorphisms" begin
   K = GF(7)
-  E = EllipticCurve(K, [1, 2, 3, 4, 5])
+  E = elliptic_curve(K, [1, 2, 3, 4, 5])
   P = rand(E)
   f = @inferred negation_map(E)
   @test f(P) == -P
@@ -61,9 +61,9 @@
   @test @inferred degree(phi1) == 1
 
   # automorphism group
-  E6 = EllipticCurve([1, 2])
+  E6 = elliptic_curve([1, 2])
   K, = Hecke.rationals_as_number_field()
-  E7 = EllipticCurve(K, [1, 2])
+  E7 = elliptic_curve(K, [1, 2])
 
 
   K = GF(2,4)
@@ -71,8 +71,8 @@
   E2_a = elliptic_curve_from_j_invariant(a)
 
   E2_0_2 = elliptic_curve_from_j_invariant(GF(2)(0))
-  E2_0_4 = EllipticCurve(K, [0, 0, 1, a^3 + a^2, 0])
-  E2_0_6 = EllipticCurve(K, [0, 0, a, 0, 0])
+  E2_0_4 = elliptic_curve(K, [0, 0, 1, a^3 + a^2, 0])
+  E2_0_6 = elliptic_curve(K, [0, 0, a, 0, 0])
   E2_0_24 = elliptic_curve_from_j_invariant(K(0))
 
   E3_2 = elliptic_curve_from_j_invariant(L(2))
@@ -80,8 +80,8 @@
   K = GF(3, 2)
   a = gen(K)
   E3_0_2 = elliptic_curve_from_j_invariant(GF(3)(0))
-  E3_0_4 = EllipticCurve(K, [2*a, 0])
-  E3_0_6 = EllipticCurve(K, [0, 0, 0, 2, 1])
+  E3_0_4 = elliptic_curve(K, [2*a, 0])
+  E3_0_6 = elliptic_curve(K, [0, 0, 0, 2, 1])
   E3_0_12 = elliptic_curve_from_j_invariant(K(0))
 
 

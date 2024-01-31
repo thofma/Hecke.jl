@@ -439,7 +439,7 @@ end
 #
 ################################################################################
 
-function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
+function evaluate(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}; coprime::Bool = false)
   O = order(base_ring(x))
   if !coprime
     x = simplify(x) # the other method won't work due to one()

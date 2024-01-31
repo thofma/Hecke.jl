@@ -42,10 +42,10 @@ function compute_residue_field_data!(P)
   p = minimum(P)
   if fits(Int, p)
     smallp = Int(p)
-    A, m = AlgAss(order(P), P, smallp)
+    A, m = StructureConstantAlgebra(order(P), P, smallp)
     compute_residue_field_data!(P, m)
   else
-    AA, mm = AlgAss(order(P), P, p)
+    AA, mm = StructureConstantAlgebra(order(P), P, p)
     compute_residue_field_data!(P, mm)
   end
   return nothing
@@ -185,13 +185,13 @@ end
 #
 ################################################################################
 @doc raw"""
-    residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true) -> Field, Map
+    residue_field(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool = true) -> Field, Map
 
 Returns the residue field of the prime ideal $P$ together with the
 projection map. If ```check``` is true, the ideal is checked for
 being prime.
 """
-function residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true)
+function residue_field(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool = true)
   if check
     !is_prime(P) && error("Ideal must be prime")
   end
@@ -205,7 +205,7 @@ function residue_field(O::NfOrd, P::NfOrdIdl, check::Bool = true)
   end
 end
 
-function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
+function ResidueFieldSmall(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   if !is_maximal_known(O) || !is_maximal(O) || !is_defining_polynomial_nice(nf(O))
@@ -218,7 +218,7 @@ function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
   end
 end
 
-function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
+function ResidueFieldDegree1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert degree(P) == 1
   if !is_maximal_known(O) || !is_maximal(O)
     return _residue_field_generic(O, P, Val{false}, Val{true})
@@ -231,7 +231,7 @@ function ResidueFieldDegree1(O::NfOrd, P::NfOrdIdl)
 end
 
 
-function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
+function ResidueFieldSmallDegree1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   @assert degree(P) == 1
@@ -246,7 +246,7 @@ function ResidueFieldSmallDegree1(O::NfOrd, P::NfOrdIdl)
 end
 
 @doc raw"""
-    relative_residue_field(O::NfRelOrd, P::NfRelOrdIdl) -> RelFinField, Map
+    relative_residue_field(O::RelNumFieldOrder, P::RelNumFieldOrderIdeal) -> RelFinField, Map
 
 Given a maximal order `O` in a relative number field $E/K$ and a prime ideal
 `P` of `O`, return the residue field $O/P$ seen as an extension of the (relative)
@@ -255,7 +255,7 @@ residue field of a maximal order in `K` at $minimum(P)$.
 Note that if `K` is a relative number field, the latter will also be seen as a
 relative residue field.
 """
-function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) where {S, T, U}
+function relative_residue_field(O::RelNumFieldOrder{S, T, U}, P::RelNumFieldOrderIdeal{S, T, U}) where {S, T, U}
   @req is_maximal(O) "O must be maximal"
   @req order(P) === O "P must be an ideal of O"
   E = nf(O)
@@ -264,7 +264,7 @@ function relative_residue_field(O::NfRelOrd{S, T, U}, P::NfRelOrdIdl{S, T, U}) w
   projK = get_attribute(p, :rel_residue_field_map)
   if projK === nothing
     OK = maximal_order(K)
-    if !(K isa Hecke.NfRel)
+    if !(K isa Hecke.RelSimpleNumField)
       _, projK = residue_field(OK, p)
       set_attribute!(p, :rel_residue_field_map, projK)
     else

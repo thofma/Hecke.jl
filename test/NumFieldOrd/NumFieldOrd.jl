@@ -1,4 +1,4 @@
-@testset "NumFieldOrd" begin
+@testset "NumFieldOrder" begin
   x = polynomial_ring(FlintQQ, "x", cached = false)[2]
   K, a = number_field(x^2+1, check = false, cached = false)
   Kns, gKns = number_field([x^2+1], check = false, cached = false)

@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc raw"""
-    relative_simple_extension(K::NumField, k::NumField) -> NfRel
+    relative_simple_extension(K::NumField, k::NumField) -> RelSimpleNumField
 
 Given two fields $K\supset k$, it returns $K$ as a simple relative
 extension $L$ of $k$ and an isomorphism $L \to K$.
@@ -32,7 +32,7 @@ function relative_simple_extension(K::AbsSimpleNumField, k::AbsSimpleNumField)
   return relative_simple_extension(mp)
 end
 
-function relative_simple_extension(m::NfToNfMor)
+function relative_simple_extension(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   k = domain(m)
   K = codomain(m)
   lf = factor(k, K.pol)

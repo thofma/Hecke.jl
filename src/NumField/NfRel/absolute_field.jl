@@ -11,7 +11,7 @@ such that $K = \mathbf{Q}(\gamma)$.
 """
 absolute_primitive_element(::NumField)
 
-function absolute_primitive_element(K::NfRelNS)
+function absolute_primitive_element(K::RelNonSimpleNumField)
   k = base_field(K)
   a = primitive_element(K)
   if is_absolutely_primitive(a)
@@ -25,7 +25,7 @@ function absolute_primitive_element(K::NfRelNS)
   return a
 end
 
-function absolute_primitive_element(K::NfRel)
+function absolute_primitive_element(K::RelSimpleNumField)
   k = base_field(K)
   gk = absolute_primitive_element(k)
   a = gen(K)
@@ -35,7 +35,7 @@ function absolute_primitive_element(K::NfRel)
   return a
 end
 
-function absolute_primitive_element(K::NfAbsNS)
+function absolute_primitive_element(K::AbsNonSimpleNumField)
   return primitive_element(K)
 end
 
@@ -71,7 +71,7 @@ function is_absolutely_primitive(a::NumFieldElem)
   return degree(absolute_minpoly(a)) == absolute_degree(parent(a))
 end
 
-function is_absolutely_primitive(a::T) where T <: Union{NfRelNSElem{AbsSimpleNumFieldElem}, NfRelElem{AbsSimpleNumFieldElem}}
+function is_absolutely_primitive(a::T) where T <: Union{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}
   L = parent(a)
   rt, PR, tmp = _setup_block_system(L)
   if _is_primitive_via_block(a, rt, PR, tmp)
@@ -98,9 +98,9 @@ function absolute_simple_field(K::AbsSimpleNumField)
   return K, id_hom(K)
 end
 
-function absolute_simple_field(K::NfAbsNS; cached::Bool = true, simplify::Bool = false)
+function absolute_simple_field(K::AbsNonSimpleNumField; cached::Bool = true, simplify::Bool = false)
   abs = get_attribute(K, :abs_simple_field)
-  MT = morphism_type(AbsSimpleNumField, NfAbsNS)
+  MT = morphism_type(AbsSimpleNumField, AbsNonSimpleNumField)
   if abs !== nothing
     if haskey(abs::Dict{Bool, Tuple{AbsSimpleNumField, MT}}, simplify)
       return abs[simplify]::Tuple{AbsSimpleNumField, MT}
@@ -142,9 +142,9 @@ function absolute_simple_field(K::NumField; cached::Bool = false, simplify::Bool
   return Kabs, mp
 end
 
-#Special function for NfRel{AbsSimpleNumFieldElem}. In this case, we can easily construct the
+#Special function for RelSimpleNumField{AbsSimpleNumFieldElem}. In this case, we can easily construct the
 #inverse of the isomorphism, so we do it separately
-function absolute_simple_field(K::NfRel{AbsSimpleNumFieldElem}; cached::Bool = false, simplify::Bool = false)
+function absolute_simple_field(K::RelSimpleNumField{AbsSimpleNumFieldElem}; cached::Bool = false, simplify::Bool = false)
   MT = morphism_type(AbsSimpleNumField, typeof(K))
 
   abs = get_attribute(K, :abs_simple_field)
@@ -172,7 +172,7 @@ function absolute_simple_field(K::NfRel{AbsSimpleNumFieldElem}; cached::Bool = f
 end
 
 #Trager: p4, Algebraic Factoring and Rational Function Integration
-function _absolute_field(K::NfRel; cached::Bool = false, do_embedding::Bool = true)
+function _absolute_field(K::RelSimpleNumField; cached::Bool = false, do_embedding::Bool = true)
   f = K.pol
   kx = parent(f)
   k = base_ring(kx)
@@ -240,7 +240,7 @@ end
 #
 ################################################################################
 
-function collapse_top_layer(K::NfRel{T}; cached::Bool = false, do_embedding::Bool = true) where T <: SimpleNumFieldElem
+function collapse_top_layer(K::RelSimpleNumField{T}; cached::Bool = false, do_embedding::Bool = true) where T <: SimpleNumFieldElem
   Ka, a, b, c = _absolute_field(K, do_embedding = do_embedding)
   if !do_embedding
     h = hom(Ka, Ka, gen(Ka), check = false)

@@ -1,7 +1,7 @@
 @testset "Orders" begin
 
-  @test elem_type(parent_type(NfOrdElem)) === NfOrdElem
-  @test parent_type(elem_type(NfOrd)) === NfOrd
+  @test elem_type(parent_type(AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})) === AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  @test parent_type(elem_type(AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})) === AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
   @testset "Construction" begin
      Qx, x = polynomial_ring(FlintQQ, "x")
@@ -353,7 +353,7 @@
     @test O4 +
  O4 == O4
     @test (@inferred O6_2 +
- O6_2) isa NfOrd
+ O6_2) isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
   end
 
   @testset "Maximal Order" begin

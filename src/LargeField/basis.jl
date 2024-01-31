@@ -1,4 +1,4 @@
-function lll_basis_profile(A::NfOrdIdl; prec::Int = 100)
+function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 100)
   c = Hecke.minkowski_matrix(Hecke.nf(order(A)), prec)
   l = lll(basis_matrix(A))
   b = FakeFmpqMat(l)*basis_matrix(order(A))
@@ -23,7 +23,7 @@ function lll_basis_profile(A::NfOrdIdl; prec::Int = 100)
   return lp
 end
 
-#function short_elem(c::roots_ctx, A::NfOrdIdl,
+#function short_elem(c::roots_ctx, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
 #                v::ZZMatrix = matrix_space(FlintZZ, 1,1)(); prec::Int = 100)
 #  l, t = lll(c, A, v, prec = prec)
 #  w = window(t, 1,1, 1, ncols(t))
@@ -32,7 +32,7 @@ end
 #  return q
 #end
 
-function bkz_basis(A::NfOrdIdl, bs::Int;
+function bkz_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, bs::Int;
                       v::ZZMatrix = zero_matrix(FlintZZ, 1, 1),
                       prec::Int = 100)
 
@@ -65,7 +65,7 @@ function bkz_basis(A::NfOrdIdl, bs::Int;
   return q
 end
 
-function fplll_basis(rt_c::Hecke.roots_ctx, A::NfOrdIdl, bs::Int;
+function fplll_basis(rt_c::Hecke.roots_ctx, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, bs::Int;
                       v::ZZMatrix = zero_matrix(FlintZZ, 1,1),
                       prec::Int = 100)
 

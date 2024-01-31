@@ -945,7 +945,7 @@ function Base.:(==)(G1::QuadLocalGenus, G2::QuadLocalGenus)
   return true
 end
 
-function is_locally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function is_locally_isometric(L::QuadLat, M::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   fl = genus(L, p) == genus(M, p)
   #@assert fl == is_locally_isometric_kirschmer(L, M, p)
   return fl
@@ -1189,7 +1189,7 @@ end
 
 # TODO: I have to redo this
 
-function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
+function _genus_symbol_kirschmer(L::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; uniformizer = zero(order(p)))
   O = order(p)
   nf(O) != base_field(L) && error("Prime ideal must be an ideal of the base field of the lattice")
   # If you pull from cache, you might have to adjust the symbol according
@@ -1646,7 +1646,7 @@ function genus(L::QuadLat{})
     bad = bad_primes(L, even = true)
     S = real_places(base_field(L))
     D = diagonal(rational_span(L))
-    signatures = Dict{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}, Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
+    signatures = Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
     G = QuadGenus(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
     return G::genus_quad_type(base_field(L))
   end
@@ -1804,7 +1804,7 @@ function _possible_determinants(K, local_symbols, signatures)
     end
   end
   rlp = real_embeddings(K)
-  local R::GrpAbFinGen
+  local R::FinGenAbGroup
   R, _exp, _log = sign_map(OK, rlp, 1 * OK)
   tar = R(Int[isodd(signatures[infinite_place(sigma)]) ? 1 : 0 for sigma in rlp])
   gensU = gens(U)

@@ -19,8 +19,8 @@ function kummer_extension(n::Int, gen::Vector{FacElem{AbsSimpleNumFieldElem, Abs
   K.zeta = zeta^div(o, n)
   K.n = n
   K.gen = gen
-  K.AutG = GrpAbFinGen(ZZRingElem[n for i=gen])
-  K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+  K.AutG = FinGenAbGroup(ZZRingElem[n for i=gen])
+  K.frob_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
   return K
 end
 
@@ -35,7 +35,7 @@ function kummer_extension(exps::Vector{Int}, gens::Vector{FacElem{AbsSimpleNumFi
   K.n = n
   K.gen = gens
   K.AutG = abelian_group(exps)
-  K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+  K.frob_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
   return K
 end
 
@@ -125,14 +125,14 @@ function assure_gens_mod_nth_powers(K::KummerExt)
 end
 
 @doc raw"""
-    canonical_frobenius(p::NfOrdIdl, K::KummerExt) -> GrpAbFinGenElem
+    canonical_frobenius(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::KummerExt) -> FinGenAbGroupElem
 
 Computes the element of the automorphism group of $K$ corresponding to the
 Frobenius automorphism induced by the prime ideal $p$ of the base field of $K$.
 It fails if the prime is an index divisor or if $p$ divides the given generators
 of $K$
 """
-function canonical_frobenius(p::NfOrdIdl, K::KummerExt)
+function canonical_frobenius(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::KummerExt)
   @assert norm(p, copy = false) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
@@ -186,7 +186,7 @@ function _compute_frob(K, mF, p)
   return aut
 end
 
-function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
+function canonical_frobenius_fmpz(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::KummerExt)
   @assert norm(p, copy = false) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
@@ -229,7 +229,7 @@ function canonical_frobenius_fmpz(p::NfOrdIdl, K::KummerExt)
 end
 
 #In this function, we are computing the image of $sqrt[n](g) under the Frobenius automorphism of p
-function canonical_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{AbsSimpleNumFieldElem})
+function canonical_frobenius(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::KummerExt, g::FacElem{AbsSimpleNumFieldElem})
   Zk = order(p)
   if index(Zk) % minimum(p) == 0
     throw(BadPrime(p))
@@ -298,11 +298,11 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
   k = base_field(K)
   ZK = maximal_order(k)
   R = K.AutG
-  sR = Vector{GrpAbFinGenElem}(undef, length(K.gen))
-  lp = Vector{NfOrdIdl}(undef, length(K.gen))
+  sR = Vector{FinGenAbGroupElem}(undef, length(K.gen))
+  lp = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, length(K.gen))
 
   indZK = index(ZK)
-  q, mq = quo(R, GrpAbFinGenElem[], false)
+  q, mq = quo(R, FinGenAbGroupElem[], false)
   s, ms = snf(q)
   ind = 1
   threshold = max(div(degree(k), 5), 5)
@@ -313,7 +313,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
     end
     @vprintln :ClassField 2 "Computing Frobenius over $p"
     lP = prime_decomposition(ZK, p)
-    LP = NfOrdIdl[P for (P, e) in lP if degree(P) < threshold]
+    LP = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[P for (P, e) in lP if degree(P) < threshold]
     if isempty(LP)
       continue
     end
@@ -369,7 +369,7 @@ function find_gens(K::KummerExt, S::PrimesSet, cp::ZZRingElem=ZZRingElem(1))
 end
 
 
-function _canonical_frobenius_with_cache(p::NfOrdIdl, K::KummerExt, cached::Bool, D::Vector{Vector{fpPolyRingElem}})
+function _canonical_frobenius_with_cache(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::KummerExt, cached::Bool, D::Vector{Vector{fpPolyRingElem}})
   @assert norm(p, copy = false) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
@@ -500,14 +500,14 @@ end
 
 @doc raw"""
     reduce_mod_powers(a::AbsSimpleNumFieldElem, n::Int) -> AbsSimpleNumFieldElem
-    reduce_mod_powers(a::AbsSimpleNumFieldElem, n::Int, primes::Vector{NfOrdIdl}) -> AbsSimpleNumFieldElem
+    reduce_mod_powers(a::AbsSimpleNumFieldElem, n::Int, primes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> AbsSimpleNumFieldElem
 
 Given some non-zero algebraic integeri $\alpha$, try to find  $\beta$ s.th.
 $\beta$ is "small" and $\alpha/\beta$ is an $n$-th power.
 If the factorisation of $a$ into prime ideals is known, the ideals
 should be passed in.
 """
-function reduce_mod_powers(a::AbsSimpleNumFieldElem, n::Int, primes::Vector{NfOrdIdl})
+function reduce_mod_powers(a::AbsSimpleNumFieldElem, n::Int, primes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @vprintln :ClassField 2 "reducing modulo $(n)-th powers"
   @vprintln :ClassField 3 "starting with $a"
   return reduce_mod_powers(FacElem(a), n, primes)
@@ -517,7 +517,7 @@ function reduce_mod_powers(a::AbsSimpleNumFieldElem, n::Int)
   return reduce_mod_powers(FacElem(a), n)
 end
 
-function reduce_mod_powers(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int, decom::Dict{NfOrdIdl, ZZRingElem})
+function reduce_mod_powers(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int, decom::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem})
   a1 = RelSaturate._mod_exponents(a, n)
   if nbits(maximum(values(a.fac))) > 30000
     b = compact_presentation(a1, n)
@@ -546,15 +546,15 @@ function reduce_mod_powers(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField},
   return FacElem(b1)
 end
 
-function reduce_mod_powers(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int, primes::Vector{NfOrdIdl})
+function reduce_mod_powers(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int, primes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   vals = ZZRingElem[valuation(a, p) for p in primes]
-  lp = Dict{NfOrdIdl, ZZRingElem}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
+  lp = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}(primes[i] => vals[i] for i = 1:length(primes) if !iszero(vals[i]))
   return reduce_mod_powers(a, n, lp)
 end
 
 function reduce_mod_powers(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int)
   Zk = maximal_order(base_ring(a))
   lp = factor_coprime(IdealSet(Zk), a)
-  lp1 = Dict{NfOrdIdl, ZZRingElem}((x, ZZRingElem(y)) for (x, y) in lp)
+  lp1 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((x, ZZRingElem(y)) for (x, y) in lp)
   return reduce_mod_powers(a, n, lp1)
 end

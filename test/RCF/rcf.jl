@@ -187,7 +187,7 @@ end
   @test Hecke.has_quotient(r, [16])
   class_fields = []
   for s in ls;
-    C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}
+    C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}
     CC = number_field(C)
     if Hecke._is_conductor_minQQ(C, 16)
       push!(class_fields, CC)

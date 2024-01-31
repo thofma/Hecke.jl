@@ -1,7 +1,7 @@
 @testset "Elements in algebras" begin
   Qx, x = FlintQQ["x"]
   f = x^2 + 1
-  A = AlgAss(f)
+  A = StructureConstantAlgebra(f)
 
   @testset "Is integral" begin
     @test Hecke.is_integral(A[1]) == true
@@ -43,7 +43,7 @@
   end
 
   # Fix reduced char poly
-  A = Hecke.AlgQuat(QQ, QQ(-1), QQ(-1))
+  A = Hecke.QuaternionAlgebra(QQ, QQ(-1), QQ(-1))
   M = matrix_algebra(QQ, A, 2)
   a = A(QQFieldElem[0, -2, -1, 1])
   b = A(QQFieldElem[0, 1, -2, -1//2])

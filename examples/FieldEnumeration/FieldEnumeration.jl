@@ -16,7 +16,7 @@ function __to_univariate(Qx, f)
   return z
 end
 
-function _write_fields(list::Vector{Tuple{AbsSimpleNumField, NfRelNS{AbsSimpleNumFieldElem}, ZZRingElem}}, filename::String)
+function _write_fields(list::Vector{Tuple{AbsSimpleNumField, RelNonSimpleNumField{AbsSimpleNumFieldElem}, ZZRingElem}}, filename::String)
   f=open(filename, "a")
   for L in list
     Qx = parent(L[1].pol)

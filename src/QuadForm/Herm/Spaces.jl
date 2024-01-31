@@ -97,7 +97,7 @@ function absolute_simple_field(V::HermSpace)
     set_attribute!(V, :absolute_field => (Eabs, EabsToE))
     return Eabs, EabsToE
   else
-    return c::Tuple{AbsSimpleNumField, NfToNfRel}
+    return c::Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}
   end
 end
 
@@ -191,7 +191,7 @@ function is_isometric(L::HermSpace, M::HermSpace, p::ZZRingElem)
   return _isisometric(L, M, p)
 end
 
-function is_isometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+function is_isometric(L::HermSpace, M::HermSpace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return _isisometric(L, M, p)
 end
 
@@ -265,7 +265,7 @@ end
 #
 ################################################################################
 
-function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
+function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrderIdeal
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
   else
@@ -292,7 +292,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_locally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
+    is_locally_hyperbolic(V::Hermspace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the completion of the hermitian space `V` over $E/K$ at the prime
 ideal `p` of $\mathcal O_K$ is hyperbolic.

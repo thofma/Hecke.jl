@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function _unit_group(O::NfOrd, c::ClassGrpCtx)
+function _unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, c::ClassGrpCtx)
   u = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   _unit_group_find_units(u, c)
   return u

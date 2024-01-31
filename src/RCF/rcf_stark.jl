@@ -8,7 +8,7 @@ function Base.show(io::IO, C::RCFCharacter)
   println(IOContext(io, :compact => true), "Character of $(C.C)")
 end
 
-function character(C::ClassField, x::GrpAbFinGenElem, mGhat::Map)
+function character(C::ClassField, x::FinGenAbGroupElem, mGhat::Map)
   return RCFCharacter(C, x, mGhat)
 end
 
@@ -42,10 +42,10 @@ function conductor(chi::RCFCharacter)
   return chi.conductor
 end
 
-(chi::RCFCharacter)(I::NfOrdIdl, prec::Int) = image(chi, I, prec)
-(chi::RCFCharacter)(I::GrpAbFinGenElem, prec::Int) = image(chi, I, prec)
+(chi::RCFCharacter)(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) = image(chi, I, prec)
+(chi::RCFCharacter)(I::FinGenAbGroupElem, prec::Int) = image(chi, I, prec)
 
-function image(chi::RCFCharacter{MapClassGrp, T}, I::NfOrdIdl, prec::Int) where T
+function image(chi::RCFCharacter{MapClassGrp, T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) where T
   CC = AcbField(prec)
   x = chi.x
   mGhat = chi.mGhat
@@ -60,7 +60,7 @@ function image(chi::RCFCharacter{MapClassGrp, T}, I::NfOrdIdl, prec::Int) where 
   return cispi(2*CC(img))
 end
 
-function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) where T
+function image(chi::RCFCharacter{MapRayClassGrp, T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int) where T
   CC = AcbField(prec)
   x = chi.x
   mGhat = chi.mGhat
@@ -74,7 +74,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
     C = chi.C
     mR = C.rayclassgroupmap
     if !isdefined(mR, :prime_ideal_preimage_cache)
-      mR.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+      mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
     end
     if haskey(mR.prime_ideal_preimage_cache, I)
       pim = mR.prime_ideal_preimage_cache[I]
@@ -97,7 +97,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
   mp = chi.mp_cond
   mQ = chi.C.quotientmap
   if !isdefined(mR, :prime_ideal_preimage_cache)
-    mR.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+    mR.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
   end
   if haskey(mR.prime_ideal_preimage_cache, I)
     el = mR.prime_ideal_preimage_cache[I]
@@ -115,7 +115,7 @@ function image(chi::RCFCharacter{MapRayClassGrp, T}, I::NfOrdIdl, prec::Int) whe
   return cispi(2*CC(img))
 end
 
-function image(chi::RCFCharacter, x::GrpAbFinGenElem, prec::Int)
+function image(chi::RCFCharacter, x::FinGenAbGroupElem, prec::Int)
   CC = AcbField(prec)
   mp = chi.mGhat(chi.x)
   img = lift(mp(x))
@@ -136,7 +136,7 @@ function assure_with_conductor(chi::RCFCharacter)
   c = conductor(chi)
   r, mr = ray_class_group(c, chi.conductor_inf_plc, n_quo = degree(C))
   lp, sR = find_gens(mR)
-  imgs = GrpAbFinGenElem[mr\x for x in lp]
+  imgs = FinGenAbGroupElem[mr\x for x in lp]
   mpR = hom(sR, imgs)
   chi.mrcond = mr
   chi.mp_cond = mpR
@@ -165,7 +165,7 @@ function rcf_using_stark_units(C::T; cached::Bool = true) where T <: ClassField_
   p = 64
   #I don't need the character with value 1 on the generator of the
   #quadratic extension
-  chars = RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}[character(C1, x, mGhat) for x in Ghat if !iszero(lift(mGhat(x)(y)))]
+  chars = RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}[character(C1, x, mGhat) for x in Ghat if !iszero(lift(mGhat(x)(y)))]
   @hassert :ClassField 1 length(chars) == degree(C)
   #First, we get an approximation of the defpoly at v
   fl = false
@@ -332,12 +332,12 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
         newc = merge(max, c, lf)
         r, mr = ray_class_group_quo(OK, newc, w, ctx)
         gens, group_gens = find_gens(mr)
-        images = GrpAbFinGenElem[mQ(mR\J) for J in gens]
+        images = FinGenAbGroupElem[mQ(mR\J) for J in gens]
         mp = hom(group_gens, images, check = false)
         k, mk = kernel(mp)
         ls = subgroups(k, quotype = Int[2], fun = (x, y) -> sub(x, y, false)[2])
         for ms in ls
-          ms::GrpAbFinGenMap
+          ms::FinGenAbGroupHom
           q, mq = cokernel(ms*mk, false)
           Cnew = ray_class_field(mr, mq)
           cnew, inf_plcc = conductor(Cnew)
@@ -366,12 +366,12 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   end
 end
 
-function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::GrpAbFinGenMap, D::Dict{S, T}) where {S, T}
+function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::FinGenAbGroupHom, D::Dict{S, T}) where {S, T}
   Dzeta = Vector{AcbFieldElem}()
   ks = keys(D)
   CC = parent(first(values(D)))
   R = codomain(C.quotientmap)
-  mp1 = hom(R, codomain(mp), GrpAbFinGenElem[mp(C.quotientmap\x) for x in gens(R)])
+  mp1 = hom(R, codomain(mp), FinGenAbGroupElem[mp(C.quotientmap\x) for x in gens(R)])
   k1, mk1 = kernel(mp1)
   ck, mck = cokernel(mk1)
   for x1 in ck
@@ -385,8 +385,8 @@ function approximate_artin_zeta_derivative_at_0(C::ClassField, mp::GrpAbFinGenMa
   return Dzeta
 end
 
-function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}}, prec::Int)
-  chars1 = Vector{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}}()
+function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}}, prec::Int)
+  chars1 = Vector{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}}()
   idxs = Tuple{Int, Bool}[]
   for i = 1:length(chars)
     idx = 0
@@ -407,9 +407,9 @@ function approximate_derivative_Artin_L_function(chars::Vector{RCFCharacter{MapR
   end
   coeffs1 = _approximate_derivative_Artin_L_function(chars1, prec)
   if length(chars1) == length(chars)
-    return Dict{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}, AcbFieldElem}(zip(chars, coeffs1))
+    return Dict{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}, AcbFieldElem}(zip(chars, coeffs1))
   end
-  coeffs = Dict{RCFCharacter{MapRayClassGrp, GrpAbFinGenMap}, AcbFieldElem}()
+  coeffs = Dict{RCFCharacter{MapRayClassGrp, FinGenAbGroupHom}, AcbFieldElem}()
   for i = 1:length(chars)
     if idxs[i][2]
       coeffs[chars[i]] = conj(coeffs1[idxs[i][1]])
@@ -514,7 +514,7 @@ end
 
 function compute_values_f_quadratic(chars::Vector, target_prec::Int)
   prec = min(10, div(degree(chars[1].C), 2))*target_prec
-  res = Dict{NfOrdIdl, Vector{Tuple{ArbFieldElem, ArbFieldElem}}}()
+  res = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{Tuple{ArbFieldElem, ArbFieldElem}}}()
   for x in chars
     c = conductor(x)
     if haskey(res, c)
@@ -589,13 +589,13 @@ function compute_coeffs_L_function(chi::T, n::Int, prec::Int) where T <: RCFChar
   return coeffs_old
 end
 
-function ideals_up_to(OK::NfOrd, n::Int, coprime_to::NfOrdIdl = ideal(OK, 1))
+function ideals_up_to(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, coprime_to::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = ideal(OK, 1))
 
   lp = prime_ideals_up_to(OK, n)
   filter!(x -> is_coprime(x, coprime_to), lp)
-  lI = NfOrdIdl[ideal(OK, 1)]
+  lI = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, 1)]
   for i = 1:length(lp)
-    lnew = NfOrdIdl[]
+    lnew = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
     P = lp[i]
     nP = Int(norm(P, copy = false))
     @assert nP <= n
@@ -678,7 +678,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   @hassert :ClassField 1 is_coprime(h, c)
   Qc, mQc = quo(OK, c)
   G, mG = multiplicative_group(Qc)
-  reps = NfOrdElem[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
+  reps = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
   for (j, x) in enumerate(G)
     @hassert :ClassField 1 x == mG\Qc(reps[j])
     @hassert :ClassField 1 is_totally_positive(reps[j])
@@ -702,7 +702,7 @@ end
 #
 ################################################################################
 
-function _lambda_and_artin_quadratic(chi::RCFCharacter, target_prec::Int, vf::Dict{NfOrdIdl, Vector{Tuple{ArbFieldElem, ArbFieldElem}}})
+function _lambda_and_artin_quadratic(chi::RCFCharacter, target_prec::Int, vf::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{Tuple{ArbFieldElem, ArbFieldElem}}})
   prec = min(10, div(degree(chi.C), 2))*target_prec
   Wchi = artin_root_number(chi, prec)
   CC = AcbField(prec)

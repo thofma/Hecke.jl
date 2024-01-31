@@ -5,7 +5,7 @@ add_verbosity_scope(:Saturate)
 
 export saturate!
 
-function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::NfOrdIdl, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)
+function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
   mF1 = Hecke.extend_easy(mF, number_field(Zk))
@@ -360,7 +360,7 @@ function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit
   K = nf(O)
   success = false
   restart = false
-  decom = Dict{NfOrdIdl, ZZRingElem}()
+  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
   while true
     @vprintln :Saturate 1 "Computing candidates for the saturation"
     R = U.units
@@ -444,7 +444,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         end
       end
 
-      decom = Dict{NfOrdIdl, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
+      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
       @vprintln :Saturate 1 "Testing if element is an n-th power"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl

@@ -78,7 +78,7 @@ as a base field of (a base field) of $K$ or $\iota$ is provided:
 
 ```@docs
 restrict(::NumFieldEmb, ::NumField)
-restrict(::NumFieldEmb, ::NumFieldMor)
+restrict(::NumFieldEmb, ::NumFieldHom)
 ```
 
 ## Extension
@@ -87,7 +87,7 @@ Given a complex embedding $f \colon k \to \mathbf{C}$ and a morphism $\iota \col
 all extensions can be computed as follows:
 
 ```@docs
-extend(::NumFieldEmb, ::NumFieldMor)
+extend(::NumFieldEmb, ::NumFieldHom)
 ```
 
 ## [Positivity & Signs](@id positivity_and_signs)
@@ -113,7 +113,7 @@ julia> Qx, x = QQ["x"];
 julia> K, a = number_field([x^2 + 1, x^3 + 2], "a");
 
 julia> emb = complex_embeddings(K)
-6-element Vector{Hecke.NumFieldEmbNfAbsNS}:
+6-element Vector{AbsNonSimpleNumFieldEmbedding}:
  Complex embedding corresponding to [1.00 * i, -1.26] of non-simple number field
  Complex embedding corresponding to [1.00 * i, 0.63 + 1.09 * i] of non-simple number field
  Complex embedding corresponding to [-1.00 * i, 0.63 + 1.09 * i] of non-simple number field

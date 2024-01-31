@@ -1,6 +1,6 @@
 ################################################################################
 #
-#          EllCrv/Models.jl : Different models of elliptic curves
+#          EllipticCurve/Models.jl : Different models of elliptic curves
 #
 # This file is part of Hecke.
 #
@@ -41,15 +41,15 @@
 ################################################################################
 
 @doc raw"""
-    short_weierstrass_model(E::EllCrv{QQFieldElem}) ->
-      (EE::EllCrv, EllCrvIso, EllCrvIso)
+    short_weierstrass_model(E::EllipticCurve{QQFieldElem}) ->
+      (EE::EllipticCurve, EllCrvIso, EllCrvIso)
 
 Transform a curve given in long Weierstrass form over QQ to short Weierstrass
 form. Return short form and both transformations for points on the curve;
 first transformation from E (long form) to EE (short form),
 second transformation is the inverse of this map.
 """
-function short_weierstrass_model(E::EllCrv)
+function short_weierstrass_model(E::EllipticCurve)
 
   R = base_field(E)
   p = characteristic(R)
@@ -62,7 +62,7 @@ function short_weierstrass_model(E::EllCrv)
 end
 
 #=
-function _short_weierstrass_model(E::EllCrv{T}) where T
+function _short_weierstrass_model(E::EllipticCurve{T}) where T
   R = base_field(E)
   p = characteristic(R)
 
@@ -79,7 +79,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
   Anew = -divexact(c4, 48)
   Bnew = -divexact(c6, 864)
 
-  EE = elliptic_curve([Anew, Bnew])::EllCrv{T}
+  EE = elliptic_curve([Anew, Bnew])::EllipticCurve{T}
 
   # we are hitting https://github.com/JuliaLang/julia/issues/15276
 
@@ -88,7 +88,7 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
   _a3 = deepcopy(a3)
 
   # transforms a point on E (long form) to a point on EE (short form)
-  trafo = function(P::EllCrvPt)
+  trafo = function(P::EllipticCurvePoint)
 
     if P.is_infinite
       return infinity(EE)
@@ -96,12 +96,12 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
 
     xnew = P[1] + divexact(_b2, 12)
     ynew = P[2] + divexact(_a1*P[1] + _a3, 2)
-    Q = EE([xnew, ynew])::EllCrvPt{T}
+    Q = EE([xnew, ynew])::EllipticCurvePoint{T}
     return Q
   end
 
   # transforms a point on EE (short form) back to a point on E (long form)
-  ruecktrafo = function(R::EllCrvPt)
+  ruecktrafo = function(R::EllipticCurvePoint)
     if R.is_infinite
         return infinity(E)
     end
@@ -109,20 +109,20 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
     xnew = R[1] - divexact(_b2, 12)
     ynew = R[2] - divexact(_a1*xnew + _a3, 2)
     S = E([xnew, ynew])
-    return S::EllCrvPt{T}
+    return S::EllipticCurvePoint{T}
   end
 
   # type annotation necessary due to #15276
-  return EE::EllCrv{T}, trafo, ruecktrafo
+  return EE::EllipticCurve{T}, trafo, ruecktrafo
 end
 =#
 
 @doc raw"""
-    is_short_weierstrass_model(E::EllCrv) -> Bool
+    is_short_weierstrass_model(E::EllipticCurve) -> Bool
 
 Return true if E is in short Weierstrass form.
 """
-function is_short_weierstrass_model(E::EllCrv)
+function is_short_weierstrass_model(E::EllipticCurve)
   return E.short
 end
 
@@ -135,8 +135,8 @@ end
 ################################################################################
 
 @doc raw"""
-    simplified_model(E::EllCrv) ->
-      (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
+    simplified_model(E::EllipticCurve) ->
+      (EE::EllipticCurve, function(EllipticCurvePoint), function(EllipticCurvePoint))
 
 Transform an elliptic curve to simplified Weierstrass form as defined in Connell.
 Return simplified form and both transformations for points on the curve;
@@ -154,7 +154,7 @@ Returns equation of the form $y^2 = x^3 + a4x + a6$
 if $\char K = 3$ and $j(E) = 0$.
 """
 #Magma returns minimal model if base field is QQ. Not sure if we want the same.
-function simplified_model(E::EllCrv)
+function simplified_model(E::EllipticCurve)
   K = base_field(E)
   a1, a2, a3, a4, a6 = a_invars(E)
   if characteristic(K) == 2
@@ -181,11 +181,11 @@ end
 
 
 @doc raw"""
-    is_simplified_model(E::EllCrv) -> Bool
+    is_simplified_model(E::EllipticCurve) -> Bool
 
 Return true if E is a simplified model.
 """
-function is_simplified_model(E::EllCrv)
+function is_simplified_model(E::EllipticCurve)
   K = base_field(E)
   a1, a2, a3, a4, a6 = a_invars(E)
   if characteristic(K) == 2
@@ -215,13 +215,13 @@ end
 ################################################################################
 #=
 @doc raw"""
-    integral_model(E::EllCrv{QQFieldElem}) -> (F::EllCrv{ZZRingElem}, function, function)
+    integral_model(E::EllipticCurve{QQFieldElem}) -> (F::EllipticCurve{ZZRingElem}, function, function)
 
 Given an elliptic curve $E$ over $\mathbf Q$ in short form, returns an
 isomorphic curve $F$ with model over $\mathbf Z$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
-function integral_model_old(E::EllCrv{QQFieldElem})
+function integral_model_old(E::EllipticCurve{QQFieldElem})
   _, _, _, A, B = a_invars(E)
 
   mue = lcm(denominator(A), denominator(B))
@@ -251,19 +251,19 @@ function integral_model_old(E::EllCrv{QQFieldElem})
     return S
   end
 
-  return E_int::EllCrv{QQFieldElem}, trafo_int, trafo_rat
+  return E_int::EllipticCurve{QQFieldElem}, trafo_int, trafo_rat
 end
 =#
 
 @doc raw"""
-    integral_model(E::EllCrv{T}) -> (F::EllCrv{T}, EllCrvIso, EllCrvIso)
+    integral_model(E::EllipticCurve{T}) -> (F::EllipticCurve{T}, EllCrvIso, EllCrvIso)
       where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
 Given an elliptic curve $E$ over QQ or a number field $K$, returns an
 isomorphic curve $F$ with model over $\mathcal{O}_K$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
-function integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
+function integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
   mu = lcm(a1, a2, a3, a4, a6)
@@ -271,12 +271,12 @@ function integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, AbsSimpleNumFi
 end
 
 @doc raw"""
-    is_integral_model(E::EllCrv{T}) -> Bool where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
+    is_integral_model(E::EllipticCurve{T}) -> Bool where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
 Given an elliptic curve $E$ over QQ or a number field $K$, return
 true if $E$ is an integral model of $E$.
 """
-function is_integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
+function is_integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
   mu = lcm(a1, a2, a3, a4, a6)
@@ -288,12 +288,12 @@ function is_integral_model(E::EllCrv{T}) where T<:Union{QQFieldElem, AbsSimpleNu
 end
 
 @doc raw"""
-    is_local_integral_model(E::EllCrv{AbsSimpleNumFieldElem}, P::NfOrdIdl) -> Bool
+    is_local_integral_model(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Given an elliptic curve $E$ over a number field $K$ and a prime ideal, return
 true if $E$ is a local integral model of $E$.
 """
-function is_local_integral_model(E::EllCrv{AbsSimpleNumFieldElem}, P::NfOrdIdl)
+function is_local_integral_model(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return all(Bool[a==0 ||valuation(a, P)>=0 for a in a_invars(E)])
 end
 

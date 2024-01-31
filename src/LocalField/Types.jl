@@ -35,7 +35,7 @@ end
 
 mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, CompletionMap{S, T}}
   header::MapHeader{AbsSimpleNumField, S}
-  P::NfOrdIdl
+  P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   prim_img::T
   inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}
   precision::Int

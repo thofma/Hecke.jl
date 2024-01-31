@@ -117,7 +117,7 @@ function multi_quad(d::Vector{ZZRingElem}, B::Int)
     else
       S, mS = Hecke.unit_group_fac_elem(zk)
     end
-    h = Hecke.NfToNfMor(k, K, bb[i])
+    h = hom(k, K, bb[i])
     @assert bb[i]^2 == all_d[i]
 
     for i=2:ngens(S) # don't need torsion here - it's the "same" everywhere
@@ -236,7 +236,7 @@ function _nullspace(A::zzModMatrix)
   return ncols(A), A
 end
 
-function mod_p(R, Q::NfOrdIdl, p::Int)
+function mod_p(R, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
   F, mF = Hecke.ResidueFieldSmall(order(Q), Q)
   mF = Hecke.extend_easy(mF, nf(order(Q)))
   @assert size(F) % p == 1

@@ -135,7 +135,7 @@ function algebraic_reconstruction(a::AbsSimpleNumFieldElem, M::ZZRingElem)
   return true, n//d
 end
 
-function algebraic_reconstruction(a::AbsSimpleNumFieldElem, M::NfAbsOrdIdl)
+function algebraic_reconstruction(a::AbsSimpleNumFieldElem, M::AbsNumFieldOrderIdeal)
   K = parent(a)
   n = degree(K)
   Znn = matrix_space(FlintZZ, n, n)

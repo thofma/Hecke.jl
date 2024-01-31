@@ -1,67 +1,67 @@
-@testset "GrpAbFinGen" begin
+@testset "FinGenAbGroup" begin
   @testset "Type stuff" begin
-    @test elem_type(GrpAbFinGen) == GrpAbFinGenElem
-    @test parent_type(GrpAbFinGenElem) == GrpAbFinGen
+    @test elem_type(FinGenAbGroup) == FinGenAbGroupElem
+    @test parent_type(FinGenAbGroupElem) == FinGenAbGroup
   end
 
   @testset "Constructor" begin
     M1 = matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
     G = @inferred abelian_group(M1)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
     @test G.rels == M1
 
-    G = @inferred abelian_group(GrpAbFinGen, M1)
-    @test isa(G, GrpAbFinGen)
+    G = @inferred abelian_group(FinGenAbGroup, M1)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
     @test G.rels == M1
 
     M = FlintZZ[1 2 3; 4 5 6] # ZZMatrix
     G = @inferred abelian_group(M)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
     @test G.rels == M1
 
     M = ZZRingElem[1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
     @test G.rels == M1
 
     M = [1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
     @test G.rels == M1
 
     M = [3, 0]
     G = @inferred abelian_group(M)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
 
     M = ZZRingElem[3, 0]
     G = @inferred abelian_group(M)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
 
     N = [3, 5]
     G = @inferred abelian_group(N)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     N = ZZRingElem[3, 5]
     G = @inferred abelian_group(N)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
     @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     G = @inferred free_abelian_group(2)
-    @test isa(G, GrpAbFinGen)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
 
-    G = @inferred free_abelian_group(GrpAbFinGen, 2)
-    @test isa(G, GrpAbFinGen)
+    G = @inferred free_abelian_group(FinGenAbGroup, 2)
+    @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
 
   end
@@ -221,7 +221,7 @@
   end
 
   @testset "Subgroup" begin
-    @test_throws ErrorException sub(GrpAbFinGenElem[])
+    @test_throws ErrorException sub(FinGenAbGroupElem[])
 
     G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
     g1 = G[1]
@@ -276,7 +276,7 @@
   @testset "Quotient" begin
     G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
 
-    Q, mQ = @inferred quo(G, GrpAbFinGenElem[])
+    Q, mQ = @inferred quo(G, FinGenAbGroupElem[])
     @test is_isomorphic(Q, G)
 
     g2 = G[2]
@@ -386,12 +386,12 @@
   @testset "Diagonalize" begin
 
     local isdiagonal_subgroup
-    function isdiagonal_subgroup(mHH::GrpAbFinGenMap)
+    function isdiagonal_subgroup(mHH::FinGenAbGroupHom)
       ord = ZZRingElem(1)
       HH = domain(mHH)
       GG = codomain(mHH)
       for i = 1:ngens(GG)
-        ss, mss = sub(GG, GrpAbFinGenElem[GG[i]])
+        ss, mss = sub(GG, FinGenAbGroupElem[GG[i]])
         int, mint = intersect(mss, mHH)
         ord *= order(int)
       end

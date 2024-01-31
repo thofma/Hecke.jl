@@ -19,7 +19,7 @@ function SpinorGeneraCtx(L::QuadLat)
   RCG, mRCG, Gens = _compute_ray_class_group(L)
 
   # 1) Map the generators into the class group to create the factor group.
-  subgroupgens = GrpAbFinGenElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
+  subgroupgens = FinGenAbGroupElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
 
   for g in gens(RCG)
     push!(subgroupgens, 2*g)
@@ -681,7 +681,7 @@ end
 # parameter atinfinity can be a list of tuples <v, +1 or -1>, where v is an
 # element of real_places(nf(base_ring(L))). All places, finite or infinite, which
 # are unspecified are interpreted as 1.}
-function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AbsSimpleNumField, NumFieldEmbNfAbs}, Int}[]) where {T}
+function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}[]) where {T}
   #local s::AbsSimpleNumFieldElem
   R = order(base_ring(codomain(mRCG)))
   F = nf(R)
@@ -1394,7 +1394,7 @@ function show(io::IO, f::LocMultGrpModSquMap)
   end
 end
 
-function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
+function image(f::LocMultGrpModSquMap, x::FinGenAbGroupElem)
   @assert parent(x) == f.domain
   K = f.codomain
   if !f.is_dyadic
@@ -1806,7 +1806,7 @@ function _fractional_ideal_from_base_ring_generators(OE, v)
   return fractional_ideal(OE, basis_matrix(v) * basis_mat_inv(OE))
 end
 
-function _intersect(I::NfRelOrdFracIdl, J::NfRelOrdFracIdl)
+function _intersect(I::RelNumFieldOrderFractionalIdeal, J::RelNumFieldOrderFractionalIdeal)
   pm = _intersect_modules(basis_pmatrix(I), basis_pmatrix(J))
   return fractional_ideal(order(I), pm)
 end
@@ -1925,11 +1925,11 @@ function absolute_norm(A::Hecke.AlgAssAbsOrdIdl)
   return norm(A)
 end
 
-function absolute_norm(A::NfAbsOrdFracIdl)
+function absolute_norm(A::AbsNumFieldOrderFractionalIdeal)
   return norm(A)
 end
 
-function *(a::NfAbsOrdFracIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.NfAbsOrdFracIdl{AbsSimpleNumField,AbsSimpleNumFieldElem},AlgAss{AbsSimpleNumFieldElem}})
+function *(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},StructureConstantAlgebra{AbsSimpleNumFieldElem}})
   pm = basis_pmatrix(b)
   pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
   return ideal(algebra(order(b)), pmnew)
@@ -2042,7 +2042,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
     end
   end
 
-  A = AlgAss(K, mult_tb)
+  A = StructureConstantAlgebra(K, mult_tb)
   B = basis(A)
   sigma(a) = A([a.coeffs[2], a.coeffs[1]])
   inv2 = inv(A(2))
@@ -2193,7 +2193,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   # So if proper = true, we don't have to do anything
   # and if proper = false, we have to sieve using is_equivalent
   for c in C
-    I::NfOrdFracIdl = _exp(c)
+    I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = _exp(c)
     J = numerator(I)
     f = _ideal_to_form(J, d)
     if proper || all(h -> !is_equivalent(h, f, proper = false), res)
@@ -2223,7 +2223,7 @@ function _form_to_ideal(f::QuadBin{ZZRingElem}, O, a)
 end
 
 # This is from Kani
-function _ideal_to_form(I::NfAbsOrdIdl, delta)
+function _ideal_to_form(I::AbsNumFieldOrderIdeal, delta)
   # first make primitive
   M = _hnf(basis_matrix(I), :lowerleft)
   g = reduce(gcd, [M[1, 1], M[1, 2], M[2, 2]])

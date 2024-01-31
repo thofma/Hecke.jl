@@ -7,7 +7,7 @@
   C, mC = Hecke.sunit_group_fac_elem(S)
   Q, mQ = quo(C, 3)
   CC, mCC = Hecke.NormRel._sunit_group_fac_elem_quo_via_brauer(K, S, 3)
-  elts = GrpAbFinGenElem[]
+  elts = FinGenAbGroupElem[]
   for i in 1:ngens(CC)
     u = mCC(CC[i])
     push!(elts, mQ(mC\u))
@@ -22,7 +22,7 @@
   Qx, x = polynomial_ring(FlintQQ, "x");
   K, a = number_field(x^4-2*x^2+9);
   OK = maximal_order(K);
-  lP = NfOrdIdl[]
+  lP = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   push!(lP, ideal(OK, 43, OK(a^2 - 12)));
   push!(lP, ideal(OK, 47, OK(a^2 - 14*a + 3)));
   push!(lP, ideal(OK, 53, OK(a^2 - 7*a - 3)));
