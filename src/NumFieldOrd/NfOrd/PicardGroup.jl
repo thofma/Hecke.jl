@@ -350,6 +350,9 @@ function _is_principal_non_maximal(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrd
   # (O_K/F)^\times/(O/F)^\times and hence an element of (O/F)^\times, so of O.
   # But I*O_K = c*O_K, as b is a unit of O_K, so I = c*O.
   O = order(I)
+  if I isa AlgAssAbsOrdIdl
+    @assert is_one(denominator(I, O))
+  end
   if !is_invertible(I)[1]
     return false, O()
   end
