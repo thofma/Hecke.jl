@@ -478,10 +478,21 @@ function _principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
 end
 
 function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl)
-  if is_maximal(order(a))
-    return _is_principal_maximal(a)
+  # all the internal functions assume that the ideal is an ideal of the order
+  O = order(a)
+  d = denominator(a, O)
+  b = d * a
+  if is_maximal(O)
+    fl, z = _is_principal_maximal(b)
+  else
+    fl, z =  _is_principal_non_maximal(b)
   end
-  return _is_principal_non_maximal(a)
+  if !fl
+    return fl, elem_in_algebra(z)
+  else
+    # d * a = z * O
+    return fl, 1//d * elem_in_algebra(z)
+  end
 end
 
 function is_principal_fac_elem(a::AlgAssAbsOrdIdl)
@@ -496,6 +507,7 @@ end
 
 function _is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
+  @assert is_one(denominator(a, O))
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
 
