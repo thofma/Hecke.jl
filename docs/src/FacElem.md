@@ -46,7 +46,7 @@ FacElem(a::AbsSimpleNumFieldElem)
 ```
 
 ```@docs
-ideal(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+ideal(::AbsSimpleNumFieldOrder, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
 
@@ -78,9 +78,9 @@ The simplified version can then be used further:
 isone(x::FacElem{QQFieldElem, S} where S)
 factor_coprime(::FacElem{ZZRingElem, S} where S)
 factor_coprime(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-factor_coprime(::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor_coprime(::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 factor_coprime(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
-factor(::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor(::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 factor(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
@@ -94,7 +94,7 @@ compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::In
 ```@docs
 valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
 valuation(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
-evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsSimpleNumFieldOrderFractionalIdeal)
 reduce_ideal(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}})
 modular_proj(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::Hecke.modular_env)
 ```

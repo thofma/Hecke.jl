@@ -90,7 +90,7 @@ over $\mathfrak p$.
 scale(G::HermLocalGenus, i::Int) = G.data[i][1]
 
 @doc raw"""
-    scale(g::HermLocalGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    scale(g::HermLocalGenus) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime
 $\mathfrak p$ of $\mathcal O_K$, return the scale of the Jordan block of minimum
@@ -244,7 +244,7 @@ norms of the Jordan blocks of `g`.
 norms(G::HermLocalGenus) = begin @assert is_dyadic(G) && is_ramified(G); G.norm_val end
 
 @doc raw"""
-    norm(g::HermLocalGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    norm(g::HermLocalGenus) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the norm of `g`, i.e. the norm of any of its representatives.  
 
@@ -1288,7 +1288,7 @@ function _scale(G::HermGenus)
 end
 
 @doc raw"""
-    scale(G::HermGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    scale(G::HermGenus) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the scale ideal of any hermitian lattice with global genus symbol `G`.
 """
@@ -1299,7 +1299,7 @@ function scale(G::HermGenus)
 end
 
 @doc raw"""
-    norm(G::HermGenus) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    norm(G::HermGenus) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the norm ideal of any hermitian lattice with global genus symbol `G`.
 """

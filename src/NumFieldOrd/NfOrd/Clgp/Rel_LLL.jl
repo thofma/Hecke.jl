@@ -71,7 +71,7 @@ function norm(a::ZZMatrix, NC::NormCtx_simple, div::ZZRingElem = ZZRingElem(1))
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
-                O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 200, val::Int = 0,
+                O::AbsSimpleNumFieldOrder; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
   return class_group_small_lll_elements_relation_start(clg, ideal(O, parent(basis_matrix(O).num)(1)), prec = prec)
 end

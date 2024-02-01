@@ -635,7 +635,7 @@ end
 
 ################################################################################
 #
-#  AbsNumFieldOrderSet/AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+#  AbsNumFieldOrderSet/AbsSimpleNumFieldOrder
 #
 ################################################################################
 
@@ -760,9 +760,11 @@ AbsNumFieldOrder(b::Vector{T}, cached::Bool = false) where {T} = AbsNumFieldOrde
 
 const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, AbsNumFieldOrder}()
 
+const AbsSimpleNumFieldOrder = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
 ################################################################################
 #
-#  AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+#  AbsSimpleNumFieldOrder/AbsSimpleNumFieldOrderElem
 #
 ################################################################################
 
@@ -860,6 +862,8 @@ AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, arr::Vector{U}) where {S, T, U <
 
 #AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, p::ZZRingElem) where {S, T} = AbsNumFieldOrderElem{S, T}(O, p)
 
+const AbsSimpleNumFieldOrderElem = AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}
+
 ################################################################################
 #
 #  AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
@@ -883,22 +887,22 @@ end
 const NfAbsOrdIdlSetID = Dict{AbsNumFieldOrder, AbsNumFieldOrderIdealSet}()
 
 @doc raw"""
-    AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::ZZMatrix) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsSimpleNumFieldOrder, a::ZZMatrix) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the ideal of $O$ with basis matrix $a$.
     No sanity checks. No data is copied, $a$ should not be used anymore.
 
-  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(a::ZZRingElem, b::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the ideal $(a,b)$ of the order of $b$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
 
-  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::ZZRingElem, b::AbsSimpleNumFieldElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsSimpleNumFieldOrder, a::ZZRingElem, b::AbsSimpleNumFieldElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the ideal $(a,b)$ of $O$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
 
-  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(x::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the principal ideal $(x)$ of the order of $O$.
     No sanity checks. No data is copied, $x$ should not be used anymore.
@@ -1059,9 +1063,11 @@ AbsNumFieldOrderIdeal(O::AbsNumFieldOrder{S, T}, x::Int) where {S, T} = AbsNumFi
 
 AbsNumFieldOrderIdeal(O::AbsNumFieldOrder{S, T}, x::ZZRingElem) where {S, T} = AbsNumFieldOrderIdeal{S, T}(O, x)
 
+const AbsSimpleNumFieldOrderIdeal = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
 ################################################################################
 #
-#  AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+#  AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsSimpleNumFieldOrderFractionalIdeal
 #
 ################################################################################
 
@@ -1148,6 +1154,8 @@ function AbsNumFieldOrderFractionalIdeal(O::AbsNumFieldOrder{S, T}, a::T) where 
   return AbsNumFieldOrderFractionalIdeal{S, T}(O, a)
 end
 
+const AbsSimpleNumFieldOrderFractionalIdeal = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
 ################################################################################
 #
 #  UnitGrpCtx
@@ -1155,16 +1163,16 @@ end
 ################################################################################
 
 mutable struct UnitGrpCtx{T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem}}}
-  order::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  order::AbsSimpleNumFieldOrder
   rank::Int
   full_rank::Bool
   units::Vector{T}
   regulator::ArbFieldElem
   tentative_regulator::ArbFieldElem
   regulator_precision::Int
-  #torsion_units::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  #torsion_units::Vector{AbsSimpleNumFieldOrderElem}
   torsion_units_order::Int
-  torsion_units_gen::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  torsion_units_gen::AbsSimpleNumFieldOrderElem
   conj_log_cache::Dict{Int, Dict{AbsSimpleNumFieldElem, ArbFieldElem}}
   conj_log_mat_cutoff::Dict{Int, ArbMatrix}
   conj_log_mat_cutoff_inv::Dict{Int, ArbMatrix}
@@ -1183,7 +1191,7 @@ mutable struct UnitGrpCtx{T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNum
   cache::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   relations_used::Vector{Int}
 
-  function UnitGrpCtx{T}(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {T}
+  function UnitGrpCtx{T}(O::AbsSimpleNumFieldOrder) where {T}
     z = new{T}()
     z.order = O
     z.rank = -1
@@ -1549,7 +1557,7 @@ end
 
 mutable struct RandIdlCtx
   base::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
-  ibase::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  ibase::Vector{AbsSimpleNumFieldOrderFractionalIdeal}
   rand::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   exp::Vector{Int}
   ub::ZZRingElem
@@ -1696,10 +1704,10 @@ end
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
-  tmp_xxgcd::ZZMatrix # used only by xxgcd in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/residue_ring.jl
-  tmp_div::ZZMatrix # used only by div in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/residue_ring.jl
-  tmp_ann::ZZMatrix # used only by annihilator in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/residue_ring.jl
-  tmp_euc::ZZMatrix # used only by euclid in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/residue_ring.jl
+  tmp_xxgcd::ZZMatrix # used only by xxgcd in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_div::ZZMatrix # used only by div in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_ann::ZZMatrix # used only by annihilator in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_euc::ZZMatrix # used only by euclid in AbsSimpleNumFieldOrder/residue_ring.jl
 
   multiplicative_group::Map
 
@@ -2273,15 +2281,7 @@ end
 #
 ################################################################################
 
-const AbsSimpleNumFieldOrder = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+const AbsSimpleNumFieldOrderQuoRing = AbsOrdQuoRing{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderIdeal}
 
-const AbsSimpleNumFieldOrderElem = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
-
-const AbsSimpleNumFieldOrderIdeal = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
-
-const AbsSimpleNumFieldOrderFractionalIdeal = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
-
-const AbsSimpleNumFieldOrderQuoRing = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
-
-const AbsSimpleNumFieldOrderQuoRingElem = AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+const AbsSimpleNumFieldOrderQuoRingElem = AbsOrdQuoRingElem{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderIdeal, AbsSimpleNumFieldOrderElem}
 

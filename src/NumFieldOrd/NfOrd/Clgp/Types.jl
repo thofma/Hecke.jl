@@ -34,7 +34,7 @@ mutable struct SmallLLLRelationsCtx{T}
 end
 
 mutable struct NormCtx_split <: NormCtx
-  O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  O::AbsSimpleNumFieldOrder
   lp::Vector{Int}  #the primes
   lR::Vector{fpField} #the local (finite field) splitting field
   nb::Int #bound on the number of bits the norm is allowed to have
@@ -42,7 +42,7 @@ mutable struct NormCtx_split <: NormCtx
   mp::Vector{fpMatrix} # temp. variable
   np::Vector{fpMatrix} # temp. variable
   #= used in 
-    NumFieldOrder/AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Clgp/Rel_LLL.jl
+    NumFieldOrder/AbsSimpleNumFieldOrder/Clgp/Rel_LLL.jl
     a coordinate vector of an order element is mapped mod p into mp
     multiplied by lC into np
   =#

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#    AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}.jl : Orders in absolute number fields
+#    AbsSimpleNumFieldOrder/AbsSimpleNumFieldOrder.jl : Orders in absolute number fields
 #
 # This file is part of Hecke.
 #
@@ -34,7 +34,7 @@
 
 ################################################################################
 #
-#  Make AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} fully working Nemo ring
+#  Make AbsSimpleNumFieldOrder fully working Nemo ring
 #
 ################################################################################
 
@@ -46,9 +46,9 @@ ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsNumFieldOrderIdeal{S, T}
 
 ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderIdeal{S, T}
 
-fractional_ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+fractional_ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
 
-fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
 
 Nemo.base_ring(::AbsNumFieldOrder) = FlintZZ
 
@@ -58,7 +58,7 @@ Nemo.base_ring(::AbsNumFieldOrder) = FlintZZ
 Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
 number field.
 """
-parent(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) = AbsNumFieldOrderSet(nf(O), false)
+parent(O::AbsSimpleNumFieldOrder) = AbsNumFieldOrderSet(nf(O), false)
 
 function contains_equation_order(O::AbsNumFieldOrder)
   if isdefined(O, :index)
@@ -151,12 +151,12 @@ Returns the $\mathbf Z$-basis of $\mathcal O$.
 @inline basis(O::AbsNumFieldOrder; copy::Bool = true) = basis_ord(O, copy = copy)
 
 @doc raw"""
-    basis(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::AbsSimpleNumField) -> Vector{AbsSimpleNumFieldElem}
+    basis(O::AbsSimpleNumFieldOrder, K::AbsSimpleNumField) -> Vector{AbsSimpleNumFieldElem}
 
 Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
 ambient number field.
 """
-function basis(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, K::AbsSimpleNumField; copy::Bool = true)
+function basis(O::AbsSimpleNumFieldOrder, K::AbsSimpleNumField; copy::Bool = true)
   nf(O) != K && error()
   if copy
     return deepcopy(O.basis_nf)
@@ -273,7 +273,7 @@ function assure_has_discriminant(O::AbsNumFieldOrder)
 end
 
 @doc raw"""
-    discriminant(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    discriminant(O::AbsSimpleNumFieldOrder) -> ZZRingElem
 
 Returns the discriminant of $\mathcal O$.
 """
@@ -284,12 +284,12 @@ end
 
 #TODO: compute differently in equation orders, this is the rres...
 @doc raw"""
-    reduced_discriminant(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    reduced_discriminant(O::AbsSimpleNumFieldOrder) -> ZZRingElem
 
 Returns the reduced discriminant, that is, the largest elementary divisor of
 the trace matrix of $\mathcal O$.
 """
-function reduced_discriminant(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function reduced_discriminant(O::AbsSimpleNumFieldOrder)
   if is_equation_order(O)
     Zx = polynomial_ring(FlintZZ, cached = false)[1]
     f = Zx(nf(O).pol)
@@ -305,7 +305,7 @@ end
 ################################################################################
 
 @doc raw"""
-    gen_index(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> QQFieldElem
+    gen_index(O::AbsSimpleNumFieldOrder) -> QQFieldElem
 
 Returns the generalized index of $\mathcal O$ with respect to the equation
 order of the ambient number field.
@@ -324,7 +324,7 @@ function gen_index(O::AbsNumFieldOrder)
 end
 
 @doc raw"""
-    index(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    index(O::AbsSimpleNumFieldOrder) -> ZZRingElem
 
 Assuming that the order $\mathcal O$ contains the equation order
 $\mathbf Z[\alpha]$ of the ambient number field, this function returns the
@@ -350,8 +350,8 @@ end
 ################################################################################
 
 @doc raw"""
-    is_index_divisor(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, d::ZZRingElem) -> Bool
-    is_index_divisor(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, d::Int) -> Bool
+    is_index_divisor(O::AbsSimpleNumFieldOrder, d::ZZRingElem) -> Bool
+    is_index_divisor(O::AbsSimpleNumFieldOrder, d::Int) -> Bool
 
 Returns whether $d$ is a divisor of the index of $\mathcal O$. It is assumed
 that $\mathcal O$ contains the equation order of the ambient number field.
@@ -519,7 +519,7 @@ end
 
 Checks whether $a$ lies in $\mathcal O$.
 """
-function in(a::AbsSimpleNumFieldElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function in(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
   @assert parent(a) == nf(O)
   if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O)
     d = denominator!(O.tcontain_fmpz, a)
@@ -560,7 +560,7 @@ end
 ################################################################################
 
 @doc raw"""
-    denominator(a::AbsSimpleNumFieldElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    denominator(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder) -> ZZRingElem
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
@@ -573,7 +573,7 @@ function denominator(a::AbsNonSimpleNumFieldElem, O::AbsNumFieldOrder)
 end
 
 
-function denominator(a::AbsSimpleNumFieldElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function denominator(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
   @assert parent(a) == nf(O)
   if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O)
     d = denominator(a)
@@ -603,7 +603,7 @@ function denominator(a::AbsSimpleNumFieldElem, O::AbsNumFieldOrder{AbsSimpleNumF
 end
 
 
-function integral_split(a::AbsSimpleNumFieldElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function integral_split(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
   assure_has_basis_mat_inv(O)
   M = O.tcontain
   elem_to_mat_row!(M.num, 1, M.den, a)
@@ -632,7 +632,7 @@ end
 # TODO: Make this rigorous using interval arithmetic. The only problem is that
 #       the characteristic polynomial might not be squarefree.
 @doc raw"""
-    norm_change_const(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> (Float64, Float64)
+    norm_change_const(O::AbsSimpleNumFieldOrder) -> (Float64, Float64)
 
 Returns $(c_1, c_2) \in \mathbf R_{>0}^2$ such that for all
 $x = \sum_{i=1}^d x_i \omega_i \in \mathcal O$ we have
@@ -641,7 +641,7 @@ and
 $\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)$,
 where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
 """
-function norm_change_const(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; cached::Bool = true)
+function norm_change_const(O::AbsSimpleNumFieldOrder; cached::Bool = true)
   if cached && isdefined(O, :norm_change_const)
     return O.norm_change_const::Tuple{BigFloat, BigFloat}
   end
@@ -729,8 +729,8 @@ function Order(a::Vector{T}; check::Bool = true, isbasis::Bool = false,
 end
 
 @doc raw"""
-    Order(a::Vector{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true, isbasis::Bool = false) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
-    Order(K::AbsSimpleNumField, a::Vector{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true, isbasis::Bool = false) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    Order(a::Vector{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true, isbasis::Bool = false) -> AbsSimpleNumFieldOrder
+    Order(K::AbsSimpleNumField, a::Vector{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true, isbasis::Bool = false) -> AbsSimpleNumFieldOrder
 
 Returns the order generated by $a$. If `check` is set, it is checked
 whether $a$ defines an order, in particular the integrality of the elements is
@@ -770,7 +770,7 @@ function Order(K, a::Vector; check::Bool = true, isbasis::Bool = false,
 end
 
 @doc raw"""
-    Order(K::AbsSimpleNumField, A::FakeFmpqMat; check::Bool = true) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    Order(K::AbsSimpleNumField, A::FakeFmpqMat; check::Bool = true) -> AbsSimpleNumFieldOrder
 
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
@@ -790,7 +790,7 @@ function Order(K::S, a::FakeFmpqMat; check::Bool = true,
 end
 
 @doc raw"""
-    Order(K::AbsSimpleNumField, A::QQMatrix; check::Bool = true) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    Order(K::AbsSimpleNumField, A::QQMatrix; check::Bool = true) -> AbsSimpleNumFieldOrder
 
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
@@ -801,7 +801,7 @@ function Order(K::S, a::QQMatrix; check::Bool = true,
 end
 
 @doc raw"""
-    Order(K::AbsSimpleNumField, A::ZZMatrix, check::Bool = true) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    Order(K::AbsSimpleNumField, A::ZZMatrix, check::Bool = true) -> AbsSimpleNumFieldOrder
 
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
@@ -866,7 +866,7 @@ function any_order(K::AbsSimpleNumField)
       end
     end
     @hassert :AbsNumFieldOrder 1 defines_order(K, FakeFmpqMat(M))[1]
-    z = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(K, FakeFmpqMat(M))
+    z = AbsSimpleNumFieldOrder(K, FakeFmpqMat(M))
     z.is_equation_order = false
     return z
   end
@@ -926,7 +926,7 @@ function __equation_order(K::AbsSimpleNumField)
   if isone(denominator(f) * leading_coefficient(f))
     M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-    z = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(K, M, Minv, basis(K), false)
+    z = AbsSimpleNumFieldOrder(K, M, Minv, basis(K), false)
     z.is_equation_order = true
     return z
   else
@@ -949,8 +949,8 @@ function __equation_order(K::AbsNonSimpleNumField)
 end
 
 @doc raw"""
-    EquationOrder(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
-    equation_order(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    EquationOrder(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsSimpleNumFieldOrder
+    equation_order(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsSimpleNumFieldOrder
 
 Returns the equation order defined by the monic polynomial $f$.
 """
@@ -962,8 +962,8 @@ end
 equation_order(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true) = EquationOrder(f, cached = cached, check = check)
 
 @doc raw"""
-    EquationOrder(f::QQPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
-    equation_order(f::QQPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    EquationOrder(f::QQPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsSimpleNumFieldOrder
+    equation_order(f::QQPolyRingElem; cached::Bool = true, check::Bool = true) -> AbsSimpleNumFieldOrder
 
 Returns the equation order defined by the monic integral polynomial $f$.
 """
@@ -977,7 +977,7 @@ end
 equation_order(f::QQPolyRingElem; cached::Bool = true, check::Bool = true) = EquationOrder(f, cached = cached, check = check)
 
 @doc raw"""
-    equation_order(M::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    equation_order(M::AbsSimpleNumFieldOrder) -> AbsSimpleNumFieldOrder
 
 The equation order of the number field.
 """
@@ -1142,7 +1142,7 @@ end
 ################################################################################
 
 # This is the function which is used in dictionaries
-function Base.isequal(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, S::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function Base.isequal(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder)
   return R === S
 end
 
@@ -1223,7 +1223,7 @@ end
 ################################################################################
 
 @doc raw"""
-    +(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, S::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    +(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder) -> AbsSimpleNumFieldOrder
 
 Given two orders $R$, $S$ of $K$, this function returns the smallest order
 containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
@@ -1272,7 +1272,7 @@ function sum_as_Z_modules_fast(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * de
   M = FakeFmpqMat(view(z, (nrows(z)-ncols(z)+1):nrows(z), 1:ncols(z)), lcm(R1.den, S1.den))
   @hassert :AbsNumFieldOrder 1 defines_order(K, M)[1]
   OK = Order(K, M, check = false)::typeof(O1)
-  if OK isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  if OK isa AbsSimpleNumFieldOrder
     OK.primesofmaximality = union(O1.primesofmaximality, O2.primesofmaximality)
   end
   OK.index = divexact(denominator(M)^d, prod(ZZRingElem[M.num[i, i] for i in 1:d]))
@@ -1352,7 +1352,7 @@ end
 ################################################################################
 
 @doc raw"""
-    different(x::AbsNumFieldOrderElem) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    different(x::AbsNumFieldOrderElem) -> AbsSimpleNumFieldOrderElem
 
 The different of $x$, i.e. $0$ if $x$ is not a primitive element, or
 $f'(x)$ for $f$ the minimal polynomial of $x$ otherwise.
@@ -1405,13 +1405,13 @@ function different(R::AbsNumFieldOrder; proof::Bool = true)
 end
 
 @doc raw"""
-    discriminant(m::Map, R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    discriminant(m::Map, R::AbsSimpleNumFieldOrder) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 The discriminant ideal of $R$ over the maximal order of the domain of the map $m$,
 that is, the ideal generated by all norms of differents
 of elements in $R$.
 """
-function discriminant(m::T, R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) where T <: Map
+function discriminant(m::T, R::AbsSimpleNumFieldOrder) where T <: Map
   D = different(R)
   #TODO: maybe mix norm and different to only generate the discriminant ideal, not the
   #      full different first.
@@ -1451,12 +1451,12 @@ trace_dual(R::AbsNumFieldOrder) = codifferent(R)
 # TODO: This can be improved by building the matrix N more clever and using
 #       a modular HNF algorithm.
 @doc raw"""
-    conductor(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, S::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal
+    conductor(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder) -> AbsNumFieldOrderIdeal
 
 The conductor $\{x \in R | xS\subseteq R\}$
 for orders $R\subseteq S$.
 """
-function conductor(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, S::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function conductor(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder)
   n = degree(R)
   t = basis_matrix(R, copy = false) * basis_mat_inv(S, copy = false)
   if !isone(t.den)
@@ -1482,8 +1482,8 @@ function conductor(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 end
 
 @doc raw"""
-    conductor(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal
+    conductor(R::AbsSimpleNumFieldOrder) -> AbsNumFieldOrderIdeal
 
 The conductor of $R$ in the maximal order.
 """
-conductor(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) = conductor(R, maximal_order(R))
+conductor(R::AbsSimpleNumFieldOrder) = conductor(R, maximal_order(R))

@@ -98,7 +98,7 @@ end
 
 =#
 
-function non_torsion_lower_bound(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int = 2*degree(R))
+function non_torsion_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
   L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(FlintZZ, 0, 0))
   n = degree(R)
   i = B
@@ -117,7 +117,7 @@ function non_torsion_lower_bound(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
   end
 end
 
-function unit_lower_bound(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int = 2*degree(R))
+function unit_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
   L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(FlintZZ, 0, 0))
   n = degree(R)
   i = B
@@ -141,7 +141,7 @@ function unit_lower_bound(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFie
 end
 
 
-function regulator_lower_bound(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int = 2*degree(R))
+function regulator_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
   Ms, _ = unit_lower_bound(R, B)
   r1, r2 = signature(R)
   r = r1+r2-1

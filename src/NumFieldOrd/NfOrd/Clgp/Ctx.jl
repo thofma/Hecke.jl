@@ -114,7 +114,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   return clg
 end
 
-function class_group_init(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int; min_size::Int = 20, add_rels::Bool = true,
+function class_group_init(O::AbsSimpleNumFieldOrder, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           use_aut::Bool = false,
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array})
   @vprintln :ClassGroup 2 "Computing factor base ..."

@@ -207,7 +207,7 @@ end
 
 norm_equation(R::AbsNumFieldOrder, k::Integer; abs::Bool = false) = norm_equation(R, ZZRingElem(k), abs = abs)
 
-function norm_equation_fac_elem(R::Hecke.RelNumFieldOrder{AbsSimpleNumFieldElem,Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
+function norm_equation_fac_elem(R::Hecke.RelNumFieldOrder{AbsSimpleNumFieldElem,Hecke.AbsSimpleNumFieldOrderFractionalIdeal}, a::AbsSimpleNumFieldOrderElem)
 
   @assert Hecke.is_maximal(R)
   Ka, mKa, mkK = collapse_top_layer(nf(R))
@@ -249,7 +249,7 @@ function norm_equation_fac_elem(R::Hecke.RelNumFieldOrder{AbsSimpleNumFieldElem,
   return sol
 end
 
-function Hecke.is_irreducible(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
+function Hecke.is_irreducible(a::AbsSimpleNumFieldOrderElem)
   if iszero(a)
     return false
   end
@@ -317,11 +317,11 @@ function irreducibles(S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpl
 end
 
 @doc raw"""
-    factorisations(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}) -> Vector{Fac{OrdElem}}
+    factorisations(a::AbsSimpleNumFieldOrderElem) -> Vector{Fac{OrdElem}}
 
 Computes all factorisations of $a$ into irreducibles.
 """
-function factorisations(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem})
+function factorisations(a::AbsSimpleNumFieldOrderElem)
   O = parent(a)
   S = collect(keys(factor(a*O)))
   if length(S) == 0
@@ -331,7 +331,7 @@ function factorisations(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFi
   A = matrix([ZZRingElem[valuation(x, y) for y = S] for x = irr])
   b = matrix([ZZRingElem[valuation(a, y) for y = S]])
   sol = solve_non_negative(A, b)
-  res = Fac{AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}[]
+  res = Fac{AbsSimpleNumFieldOrderElem}[]
   for j=1:nrows(sol)
     x = Dict{typeof(a), Int}()
     y = a

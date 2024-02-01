@@ -278,7 +278,7 @@ function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleN
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {T <: Hecke.NumFieldHom}
+function image(S::T, A::AbsSimpleNumFieldOrderFractionalIdeal) where {T <: Hecke.NumFieldHom}
   return S(numerator(A))//denominator(A)
 end
 

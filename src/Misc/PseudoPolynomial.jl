@@ -186,7 +186,7 @@ function gb(G::Vector{S}, mmod) where {S}
     C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
-    Nfinv = mmod * inv(C)::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    Nfinv = mmod * inv(C)::AbsSimpleNumFieldOrderFractionalIdeal
     newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
@@ -221,7 +221,7 @@ function gb(G::Vector{S}, mmod) where {S}
     C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
-    Nfinv = mmod * inv(C)::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    Nfinv = mmod * inv(C)::AbsSimpleNumFieldOrderFractionalIdeal
     newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
@@ -262,7 +262,7 @@ end
 #
 ################################################################################
 
-function lcm(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function lcm(a::AbsSimpleNumFieldOrderFractionalIdeal, b::AbsSimpleNumFieldOrderFractionalIdeal)
   a = simplify(a)
   b = simplify(b)
   da = denominator(a)

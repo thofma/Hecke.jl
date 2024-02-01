@@ -389,7 +389,7 @@ end
 #
 ###############################################################################
 
-function gens_overorder_polygons(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem)
+function gens_overorder_polygons(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   K = nf(O)
   f = K.pol
   Qx = parent(f)
@@ -452,7 +452,7 @@ function gens_overorder_polygons(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
 end
 
 
-function polygons_overorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem)
+function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
   Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
@@ -515,7 +515,7 @@ function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::QQFieldElem = 
 
   n = degree(K)
   closed = false
-  Oattempt = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(elt)
+  Oattempt = AbsSimpleNumFieldOrder(elt)
 
   # Since 1 is in elt, prods will contain all elements
   first = true
@@ -902,7 +902,7 @@ function find_elem_of_valuation_1(P::AbsNumFieldOrderIdeal{S, T}, P2::AbsNumFiel
   return el
 end
 
-function decomposition_type_polygon(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Union{ZZRingElem, Int})
+function decomposition_type_polygon(O::AbsSimpleNumFieldOrder, p::Union{ZZRingElem, Int})
   K = nf(O)
   Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
   f = Zx(K.pol)
@@ -979,7 +979,7 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Union{ZZRingElem, Int}, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_decomposition_polygons(O::AbsSimpleNumFieldOrder, p::Union{ZZRingElem, Int}, degree_limit::Int = 0, lower_limit::Int = 0)
   if degree_limit == 0
     degree_limit = degree(O)
   end

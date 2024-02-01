@@ -54,7 +54,7 @@
 
 @deprecate ideal(O::RelNumFieldOrder{T, S}, M::Generic.Mat{T}, check::Bool) where {T, S} ideal(O, M; check)
 
-@deprecate ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool) ideal(O, a; check)
+@deprecate ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool) ideal(O, a; check)
 
 @deprecate ideal(O::RelNumFieldOrder, a::RelNumFieldOrderIdeal, check::Bool) ideal(O, a; check)
 

@@ -329,8 +329,8 @@ mutable struct LocMultGrpModSquMap <: Map{FinGenAbGroup, FinGenAbGroup, HeckeMap
   pi::AbsSimpleNumFieldElem
   piinv::AbsSimpleNumFieldElem
   hext::NfToFinFldMor{FqField}
-  h::AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
-  g::GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}
+  h::AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsSimpleNumFieldOrderElem}
+  g::GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsSimpleNumFieldOrderElem}
   i::FinGenAbGroupHom
   mS::FinGenAbGroupHom
 

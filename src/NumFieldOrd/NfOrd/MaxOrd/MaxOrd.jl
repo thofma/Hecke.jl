@@ -50,7 +50,7 @@ function MaximalOrder(K::AbsSimpleNumField; discriminant::ZZRingElem = ZZRingEle
       end
     end
     return O
-  end::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  end::AbsSimpleNumFieldOrder
 end
 
 @doc raw"""
@@ -76,12 +76,12 @@ end
 #
 ################################################################################
 @doc raw"""
-    pmaximal_overorder_at(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, primes::Vector{ZZRingElem}) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingElem}) -> AbsSimpleNumFieldOrder
 
 Given a set of prime numbers, this function returns an overorder of $O$ which
 is maximal at those primes.
 """
-function pmaximal_overorder_at(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, primes::Vector{ZZRingElem})
+function pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingElem})
 
   primes1 = setdiff(primes, O.primesofmaximality)
   if isempty(primes1)
@@ -138,7 +138,7 @@ end
 ################################################################################
 
 #  Buchmann-Lenstra for simple absolute number fields.
-function new_maximal_order(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
 
   K = nf(O)
   if degree(K) == 1
@@ -252,7 +252,7 @@ function new_maximal_order(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFi
 
 end
 
-function _TameOverorderBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Vector{ZZRingElem})
+function _TameOverorderBL(O::AbsSimpleNumFieldOrder, lp::Vector{ZZRingElem})
 
   K = nf(O)
   OO = O
@@ -302,7 +302,7 @@ function _TameOverorderBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFie
   return OO, Q
 end
 
-function _radical_by_poly(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
+function _radical_by_poly(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
   R = residue_ring(FlintZZ, q, cached=false)[1]
@@ -337,11 +337,11 @@ function _radical_by_poly(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFie
   end
   I1 = ideal(O, q, gen2)
   I1.basis_matrix = M1
-  I1.gens = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[O(q), gen2]
+  I1.gens = AbsSimpleNumFieldOrderElem[O(q), gen2]
   return ZZRingElem(1), I1
 end
 
-function _radical_by_trace(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
+function _radical_by_trace(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
   R = residue_ring(FlintZZ, q, cached=false)[1]
@@ -372,7 +372,7 @@ function _radical_by_trace(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFi
   return ZZRingElem(1), I
 end
 
-function _qradical(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
+function _qradical(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   K = nf(O)
   @vprintln :AbsNumFieldOrder 1 "\nradical computation"
   if is_defining_polynomial_nice(K) && isone(gcd(index(O), q))
@@ -382,7 +382,7 @@ function _qradical(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
   end
 end
 
-function _cycleBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem)
+function _cycleBL(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
 
   q1, I = _qradical(O, q)
   if !isone(q1)
@@ -430,7 +430,7 @@ function _cycleBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem},
 
 end
 
-function _cycleBL2(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::ZZRingElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _cycleBL2(O::AbsSimpleNumFieldOrder, q::ZZRingElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
   h = 2
   ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, 3)
@@ -471,7 +471,7 @@ end
 
 
 
-function TameOverorderBL(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Vector{ZZRingElem}=ZZRingElem[])
+function TameOverorderBL(O::AbsSimpleNumFieldOrder, lp::Vector{ZZRingElem}=ZZRingElem[])
 
   # First, we hope that we can get a factorization of the discriminant by computing
   # the structure of the group OO^*/OO
@@ -547,8 +547,8 @@ function _poverorder(O::AbsNumFieldOrder, p::ZZRingElem)
 end
 
 @doc raw"""
-    poverorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
-    poverorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    poverorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem) -> AbsSimpleNumFieldOrder
+    poverorder(O::AbsSimpleNumFieldOrder, p::Integer) -> AbsSimpleNumFieldOrder
 
 This function tries to find an order that is locally larger than $\mathcal O$
 at the prime $p$: If $p$ divides the index $[ \mathcal O_K : \mathcal O]$,
@@ -579,8 +579,8 @@ end
 ################################################################################
 
 @doc raw"""
-    pmaximal_overorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
-    pmaximal_overorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    pmaximal_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem) -> AbsSimpleNumFieldOrder
+    pmaximal_overorder(O::AbsSimpleNumFieldOrder, p::Integer) -> AbsSimpleNumFieldOrder
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
 the index $[ \mathcal O_K : R]$ is not divisible by $p$.
@@ -719,7 +719,7 @@ function factor_shape_refined(x::PolyRingElem)
   return res
 end
 
-function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
+function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
   R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -741,7 +741,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
   M1 = representation_matrix_mod(gen2, ZZRingElem(p))
   hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   powers = Dict{Int, Vector{ZZRingElem}}()
-  gens = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[O(p), gen2]
+  gens = AbsSimpleNumFieldOrderElem[O(p), gen2]
   B = basis(O, copy = false)
   it = 0
   while true
@@ -798,7 +798,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
       return I
     end
     #First, find the generators
-    new_gens = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
+    new_gens = Vector{AbsSimpleNumFieldOrderElem}()
     for i = 1:length(X)
       coords = zeros(FlintZZ, d)
       for j=1:nr
@@ -835,7 +835,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
   end
 end
 
-function pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
+function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
   R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -924,7 +924,7 @@ function pradical_frobenius1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNum
   return I
 end
 
-function pradical_trace1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::IntegerUnion)
+function pradical_trace1(O::AbsSimpleNumFieldOrder, p::IntegerUnion)
   if isone(gcd(discriminant(O), p))
     return ideal(O, p)
   end
@@ -950,7 +950,7 @@ function pradical_trace1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFiel
     return ideal(O, p)
   end
 
-  gens = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[O(p), gen2]
+  gens = AbsSimpleNumFieldOrderElem[O(p), gen2]
   for i = 1:k
     coords = Vector{ZZRingElem}(undef, d)
     for j = 1:d

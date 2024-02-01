@@ -127,7 +127,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{FinGenAbGr
 
 end
 
-function _bound_exp_conductor_wild(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, q::Int, bound::ZZRingElem)
+function _bound_exp_conductor_wild(O::AbsSimpleNumFieldOrder, n::Int, q::Int, bound::ZZRingElem)
   d = degree(O)
   lp = prime_decomposition_type(O, q)
   f_times_r = divexact(d, lp[1][2])

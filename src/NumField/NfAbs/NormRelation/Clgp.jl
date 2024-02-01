@@ -17,7 +17,7 @@ function get_sunits_from_subfield_data!(c::Hecke.ClassGrpCtx, UZK::Hecke.UnitGrp
   end
 end
 
-function class_group_via_brauer(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, N::NormRelation; compact::Bool = true)
+function class_group_via_brauer(O::AbsSimpleNumFieldOrder, N::NormRelation; compact::Bool = true)
   K = N.K
   OK = lll(maximal_order(nf(O)))
 

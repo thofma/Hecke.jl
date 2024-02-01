@@ -144,7 +144,7 @@ function cyclotomic_extension(k::AbsSimpleNumField, n::Int; cached::Bool = true,
         for j = 1:length(b_k)
           B_k[j+length(b_k)] = B_k[j]*g
         end
-        ZKa = Hecke.AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(B_k)
+        ZKa = Hecke.AbsSimpleNumFieldOrder(B_k)
         ZKa.disc = discriminant(f)^degree(k)*discriminant(Zk)^degree(fk)
         ZKa.index = root(divexact(numerator(discriminant(Ka)), ZKa.disc), 2)
         ZKa.gen_index = QQFieldElem(ZKa.index)
@@ -207,7 +207,7 @@ function cyclotomic_extension(k::AbsSimpleNumField, n::Int; cached::Bool = true,
           s += 1
         end
       end
-      ZKa = Hecke.AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(B_k)
+      ZKa = Hecke.AbsSimpleNumFieldOrder(B_k)
       if degree(Kr) == euler_phi(n)
         ZKa.disc = (discriminant(Zk)^euler_phi(n))*discriminant(f)^degree(k)
         ZKa.index = root(divexact(numerator(discriminant(Ka)), discriminant(ZKa)), 2)
@@ -270,7 +270,7 @@ function cyclotomic_extension(k::ClassField, n::Int; cached::Bool = true)
   return k*cyclotomic_extension(ClassField, base_ring(k), n)
 end
 
-function cyclotomic_extension(::Type{ClassField}, zk::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int; cached::Bool = true)
+function cyclotomic_extension(::Type{ClassField}, zk::AbsSimpleNumFieldOrder, n::Int; cached::Bool = true)
   c = cyclotomic_field(ClassField, n)
   k = nf(zk)
   r = ray_class_field(n*zk, real_places(k), n_quo = degree(c))
@@ -431,7 +431,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   for i = 1:length(BKa)
     BKa[i] = abs2ns\(BOS[i])
   end
-  OKa = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(BKa)
+  OKa = AbsSimpleNumFieldOrder(BKa)
   OKa.is_maximal = 1
   OKa.disc = OS.disc
   OKa.index = root(divexact(abs(numerator(discriminant(Ka))), abs(discriminant(OKa))), 2)

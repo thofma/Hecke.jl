@@ -97,7 +97,7 @@ function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, g
   return e
 end
 
-function Hecke.denominator(P::Hecke.PMat, M::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function Hecke.denominator(P::Hecke.PMat, M::AbsSimpleNumFieldOrder)
   l = ZZRingElem(1)
   p = matrix(P)
   for i=1:nrows(P)
@@ -157,7 +157,7 @@ function my_mod_sym!(A::ZZMatrix, X::ZZRingElem, ::Any)
   mod_sym!(A, X)
 end
 
-function valuation(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}, X::ZZRingElem)
+function valuation(a::AbsSimpleNumFieldOrderElem, X::ZZRingElem)
   v = 0
   first = true
   for x = coordinates(a)
@@ -173,7 +173,7 @@ function valuation(a::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldEl
   return v
 end
 
-function mod_sym(A::AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}, X::ZZRingElem)
+function mod_sym(A::AbsSimpleNumFieldOrderElem, X::ZZRingElem)
   c = coordinates(A)
   d = map(x->Hecke.mod_sym(x, X), c)
   return parent(A)(d)

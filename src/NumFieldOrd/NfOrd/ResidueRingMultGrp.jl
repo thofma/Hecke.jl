@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/ResidueRingMultGrp.jl : Multiplicative group of Residue Rings
+#  AbsSimpleNumFieldOrder/ResidueRingMultGrp.jl : Multiplicative group of Residue Rings
 #
 ################################################################################
 
@@ -11,13 +11,13 @@
 ################################################################################
 
 @doc raw"""
-    multiplicative_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FinGenAbGroup, Map{FinGenAbGroup, AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
-    unit_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FinGenAbGroup, Map{FinGenAbGroup, AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+    multiplicative_group(Q::AbsSimpleNumFieldOrderQuoRing) -> FinGenAbGroup, Map{FinGenAbGroup, AbsSimpleNumFieldOrderQuoRing}
+    unit_group(Q::AbsSimpleNumFieldOrderQuoRing) -> FinGenAbGroup, Map{FinGenAbGroup, AbsSimpleNumFieldOrderQuoRing}
 
 Returns the unit group of $Q$ as an abstract group $A$ and
 an isomorphism map $f \colon A \to Q^\times$.
 """
-function multiplicative_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function multiplicative_group(Q::AbsSimpleNumFieldOrderQuoRing)
   if !isdefined(Q, :multiplicative_group)
     if is_maximal_known_and_maximal(base_ring(Q))
       G, GtoQ = _multgrp(Q)
@@ -30,19 +30,19 @@ function multiplicative_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumFiel
   return domain(mQ), mQ
 end
 
-unit_group(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = multiplicative_group(Q)
+unit_group(Q::AbsSimpleNumFieldOrderQuoRing) = multiplicative_group(Q)
 
 @doc raw"""
-    multiplicative_group_generators(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Vector{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+    multiplicative_group_generators(Q::AbsSimpleNumFieldOrderQuoRing) -> Vector{AbsSimpleNumFieldOrderQuoRingElem}
 
 Return a set of generators for $Q^\times$.
 """
-function multiplicative_group_generators(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function multiplicative_group_generators(Q::AbsSimpleNumFieldOrderQuoRing)
   return multiplicative_group(Q).generators
 end
 
 # Factors Q.ideal, the result is saved in Q.factor
-function factor(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function factor(Q::AbsSimpleNumFieldOrderQuoRing)
   if !isdefined(Q, :factor)
     Q.factor = factor(Q.ideal)
   end
@@ -57,16 +57,16 @@ end
 ################################################################################
 
 @doc raw"""
-    _multgrp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> (FinGenAbGroup, GrpAbFinGenToAbsOrdQuoRingMultMap)
+    _multgrp(Q::AbsSimpleNumFieldOrderQuoRing) -> (FinGenAbGroup, GrpAbFinGenToAbsOrdQuoRingMultMap)
 
 Returns the group $Q^\times$ and a map from this group to $Q$.
 """
-function _multgrp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, save_tame_wild::Bool = false; method = nothing)
+function _multgrp(Q::AbsSimpleNumFieldOrderQuoRing, save_tame_wild::Bool = false; method = nothing)
 
   fac = factor(Q)
 
   if isempty(fac)
-    disc_log = function(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+    disc_log = function(x::AbsSimpleNumFieldOrderQuoRingElem)
       return ZZRingElem[]
     end
     GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(Q, elem_type(Q)[], ZZRingElem[], disc_log)
@@ -124,7 +124,7 @@ function _multgrp_mod_pv(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
   if v == 1
     G1toO.disc_log = G1[1]
     tame_part[p] = G1toO
-    function disc_log(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+    function disc_log(x::AbsSimpleNumFieldOrderQuoRingElem)
       return G1toO.discrete_logarithm((OtoQ\x))
     end
     GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(G1, Q, map(OtoQ, G1toO.generators), disc_log)
@@ -147,7 +147,7 @@ function _multgrp_mod_pv(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
     tame_part[p] = G1toO
 
     obcs_inv = gcdx(G2.snf[end], rel1)[2]
-    function disc_log2(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+    function disc_log2(x::AbsSimpleNumFieldOrderQuoRingElem)
       y = OtoQ\x
       r = mod((G1toO.discrete_logarithm(y))[1]*obcs_inv, rel1)
       y *= powermod(gen1_obcs, mod(-r, rel1), pnumv)
@@ -179,7 +179,7 @@ function _multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
   big_step_cache = Dict{ZZRingElem, Dict{typeof(gen_quo), ZZRingElem}}()
   local discrete_logarithm
   let mQ = mQ, n = n, Q = Q, gen_quo = gen_quo, factor_n = factor_n, big_step_cache = big_step_cache
-    function discrete_logarithm(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    function discrete_logarithm(x::AbsSimpleNumFieldOrderElem)
       y = mQ(x)
       if isone(y)
         return ZZRingElem[0]
@@ -248,10 +248,10 @@ function _1_plus_p_mod_1_plus_pv(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, Abs
   end
 
   @assert size(rels) == (length(gens),length(gens))
-  toO = GrpAbFinGenToNfAbsOrdMap(order(p), gens, rels, disc_log, pnumv)::GrpAbFinGenToAbsOrdMap{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  toO = GrpAbFinGenToNfAbsOrdMap(order(p), gens, rels, disc_log, pnumv)::GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderElem}
   Q, OtoQ = quo(order(p), pv)
   S, mS, StoO = snf(toO, OtoQ)
-  return S, StoO::GrpAbFinGenToAbsOrdMap{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  return S, StoO::GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderElem}
 end
 
 ################################################################################
@@ -271,7 +271,7 @@ function _iterative_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
     e = ramification_index(p)
     k0 = 1 + Int(div(ZZRingElem(e),(pnum-1)))::Int
   end
-  g = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
+  g = Vector{AbsSimpleNumFieldOrderElem}()
   M = zero_matrix(FlintZZ, 0, 0)
   dlogs = Vector{Function}()
 
@@ -284,24 +284,24 @@ function _iterative_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
     if use_p_adic && k>=k0
       l = v
       pl = p^l
-      h, N, disc_log = _p_adic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{ZZRingElem}, Function}
+      h, N, disc_log = _p_adic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{AbsSimpleNumFieldOrderElem}, Vector{ZZRingElem}, Function}
     elseif base_method == :quadratic
       l = min(2*k, v)
       pl = p^l
-      h, N, disc_log = _quadratic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{ZZRingElem}, Function}
+      h, N, disc_log = _quadratic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{AbsSimpleNumFieldOrderElem}, Vector{ZZRingElem}, Function}
     else
       l = Int(min(pnum*k, v))
       pl = p^l
-      h, N, disc_log = _artin_hasse_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{ZZRingElem}, Function}
+      h, N, disc_log = _artin_hasse_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{AbsSimpleNumFieldOrderElem}, Vector{ZZRingElem}, Function}
     end
     g, M = _expand(g, M, h, N, disc_log, pl)
     push!(dlogs, disc_log)
   end
 
-  Q = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(order(pl), pl)
+  Q = AbsSimpleNumFieldOrderQuoRing(order(pl), pl)
   local discrete_logarithm
   let Q = Q, dlogs = dlogs, pl = pl
-    function discrete_logarithm(b::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    function discrete_logarithm(b::AbsSimpleNumFieldOrderElem)
       b1 = Q(b)
       a = ZZRingElem[]
       k1 = 1
@@ -329,7 +329,7 @@ end
 # Given generators and relations for groups of two consecutives steps, this function computes
 # generators and relations for the product
 #
-function _expand(g::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, M::ZZMatrix, h::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, N::Vector{ZZRingElem}, disc_log::Function, pl::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _expand(g::Vector{AbsSimpleNumFieldOrderElem}, M::ZZMatrix, h::Vector{AbsSimpleNumFieldOrderElem}, N::Vector{ZZRingElem}, disc_log::Function, pl::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if isempty(g)
     M1 = zero_matrix(FlintZZ, length(N), length(N))
     for i = 1:length(N)
@@ -381,7 +381,7 @@ function _pu_mod_pv(pu::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
   S, mS=snf(G)
 
   #Generators
-  gens=Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, ngens(S))
+  gens=Vector{AbsSimpleNumFieldOrderElem}(undef, ngens(S))
   for i=1:ngens(S)
     x=mS(S[i])
     gens[i]= zero(O)
@@ -395,7 +395,7 @@ function _pu_mod_pv(pu::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
   x_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
   local disclog
   let M = M, O = O, S = S, x_fakemat2 = x_fakemat2
-    function disclog(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    function disclog(x::AbsSimpleNumFieldOrderElem)
       x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(x, copy = false)))
       mul!(x_fakemat2, x_fakemat, M)
       #@assert x_fakemat2 == x_fakemat * M
@@ -422,7 +422,7 @@ function _1_plus_pa_mod_1_plus_pb_structure(p::AbsNumFieldOrderIdeal{AbsSimpleNu
   e = ramification_index(p)
   k0 = 1 + div(ZZRingElem(e),(pnum-1))
   a >= k0 || return false, nothing
-  Q = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(O,p^(b-a))
+  Q = AbsSimpleNumFieldOrderQuoRing(O,p^(b-a))
   return true, group_structure(Q)
 end
 
@@ -439,7 +439,7 @@ function _quadratic_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   @assert 2*u >= v >= u >= 1
   g, M, dlog = _pu_mod_pv(pu,pv)
   map!(x -> x + 1, g, g)
-  function discrete_logarithm(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  function discrete_logarithm(x::AbsSimpleNumFieldOrderElem)
     res = dlog(mod(x-1,pv))
     for i = 1:length(res)
       res[i] = mod(res[i], M[end])
@@ -470,7 +470,7 @@ function _artin_hasse_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   map!(x -> artin_hasse_exp(Q(x), pnum), g, g)
   local discrete_logarithm
   let Q = Q, pnum = pnum, dlog = dlog
-    function discrete_logarithm(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    function discrete_logarithm(x::AbsSimpleNumFieldOrderElem)
       res = dlog(artin_hasse_log(Q(x), pnum))
       for i = 1:length(res)
         res[i] = mod(res[i], M[end])
@@ -481,7 +481,7 @@ function _artin_hasse_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   return g, M, discrete_logarithm
 end
 
-function artin_hasse_exp(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, pnum::ZZRingElem)
+function artin_hasse_exp(x::AbsSimpleNumFieldOrderQuoRingElem, pnum::ZZRingElem)
   Q = parent(x)
   s = Q(1)
   fac_i = ZZRingElem(1)
@@ -500,7 +500,7 @@ function artin_hasse_exp(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField
   return s.elem
 end
 
-function artin_hasse_log(y::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, pnum::ZZRingElem)
+function artin_hasse_log(y::AbsSimpleNumFieldOrderQuoRingElem, pnum::ZZRingElem)
   Q = parent(y)
   x = y - Q(1)
   if iszero(x)
@@ -547,12 +547,12 @@ function _p_adic_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
   @assert u >= k0
   g, M, dlog = _pu_mod_pv(pu, pv)
   O = order(p)
-  Q = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(O, pv)
+  Q = AbsSimpleNumFieldOrderQuoRing(O, pv)
   map!(x -> p_adic_exp(Q, p, v, x), g, g)
   powers = Dict{Int, AbsSimpleNumFieldElem}()
   local discrete_logarithm
   let Q = Q, p = p, v = v, dlog = dlog, powers = powers
-    function discrete_logarithm(b::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    function discrete_logarithm(b::AbsSimpleNumFieldOrderElem)
       res = dlog(p_adic_log(Q, p, v, b, powers))
       for i = 1:length(res)
         res[i] = mod(res[i], M[end])
@@ -575,7 +575,7 @@ function _divexact(x::AbsOrdQuoRingElem, y::ZZRingElem)
 end
 
 
-function p_adic_exp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function p_adic_exp(Q::AbsSimpleNumFieldOrderQuoRing, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, x::AbsSimpleNumFieldOrderElem)
   O = parent(x)
   iszero(x) && return one(O)
   pnum = p.minimum
@@ -583,7 +583,7 @@ function p_adic_exp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimp
   val_p_x = valuation(x, p)
   max_i = floor(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
   val_p_maximum = Int(max_i*val_p_x) + 1
-  Q_ = AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(O, p^val_p_maximum)
+  Q_ = AbsSimpleNumFieldOrderQuoRing(O, p^val_p_maximum)
   x1 = Q_(x)
   s = one(Q)
   inc = one(Q_)
@@ -613,7 +613,7 @@ function p_adic_exp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimp
   return s.elem
 end
 
-function p_adic_log(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, y::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, powers::Dict{Int, AbsSimpleNumFieldElem} = Dict{Int, AbsSimpleNumFieldElem}())
+function p_adic_log(Q::AbsSimpleNumFieldOrderQuoRing, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::Int, y::AbsSimpleNumFieldOrderElem, powers::Dict{Int, AbsSimpleNumFieldElem} = Dict{Int, AbsSimpleNumFieldElem}())
   O = parent(y)
   isone(y) && return zero(O)
   pnum = minimum(p)
@@ -817,7 +817,7 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
   end
   inv=gcdx(m,ZZRingElem(powerp))[2]
 
-  function disclog(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  function disclog(x::AbsSimpleNumFieldOrderElem)
     t=mQ(x)^m
     if powerp<10
       w=1
@@ -837,7 +837,7 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
 end
 
 
-function _mult_grp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::Integer)
+function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
   O = Q.base_ring
   OtoQ = NfOrdQuoMap(O, Q)
 
@@ -859,7 +859,7 @@ function _mult_grp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
 
   if isempty(y1) && isempty(y2)
     G = abelian_group(ZZRingElem[])
-    disc_log = function(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+    disc_log = function(x::AbsSimpleNumFieldOrderQuoRingElem)
       return ZZRingElem[]
     end
     return G, GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), y1
@@ -885,7 +885,7 @@ function _mult_grp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
       obcs = G2.snf[end] # order of the biggest cyclic subgroup
       obcs_inv = gcdx(nq, obcs)[2]
 
-      disc_log2 = function(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+      disc_log2 = function(x::AbsSimpleNumFieldOrderElem)
         y = Q(x)^Int(nq)
         z = G2toO.discrete_logarithm(y.elem)
         for i = 1:length(z)
@@ -956,7 +956,7 @@ function _n_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   w = g^quot
   local disclog
   let m = m, quot = quot, k = k, w = w, inv = inv
-    function disclog(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    function disclog(x::AbsSimpleNumFieldOrderElem)
       t = mQ(x)^(m*quot)
       if iszero(t)
         error("Not coprime!")
@@ -978,9 +978,9 @@ function _n_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
     end
   end
   G = abelian_group([k])
-  gens = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, 1)
+  gens = Vector{AbsSimpleNumFieldOrderElem}(undef, 1)
   gens[1] = preimage(mQ, g)
-  map = GrpAbFinGenToNfAbsOrdMap(G, O, gens, disclog)::GrpAbFinGenToAbsOrdMap{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  map = GrpAbFinGenToNfAbsOrdMap(G, O, gens, disclog)::GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderElem}
   return G, map
 end
 
@@ -996,7 +996,7 @@ function bound_exp_mult_grp(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpl
 end
 
 
-function _mult_grp_mod_n(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y1::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, y2::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, n::Integer)
+function _mult_grp_mod_n(Q::AbsSimpleNumFieldOrderQuoRing, y1::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, y2::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, n::Integer)
 
   O = Q.base_ring
   idQ = Q.ideal
@@ -1008,7 +1008,7 @@ function _mult_grp_mod_n(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, Ab
 
   if isempty(y1) && isempty(y2)
     G = abelian_group(ZZRingElem[])
-    disc_log = function(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+    disc_log = function(x::AbsSimpleNumFieldOrderQuoRingElem)
       return ZZRingElem[]
     end
     return G, GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), tame_part, wild_part
@@ -1052,7 +1052,7 @@ function _mult_grp_mod_n(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, Ab
 
       local disc_log2
       let Q = Q, nq = nq, G2toO = G2toO
-        function disc_log2(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+        function disc_log2(x::AbsSimpleNumFieldOrderElem)
           y = Q(x)^nq
           z = G2toO.discrete_logarithm(y.elem)
           for i = 1:length(z)
@@ -1062,7 +1062,7 @@ function _mult_grp_mod_n(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, Ab
         end
       end
 
-      G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)::GrpAbFinGenToAbsOrdMap{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+      G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)::GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderElem}
       push!(maps, G2toO2)
       wild_part[q] = G2toO2
     end
@@ -1087,14 +1087,14 @@ end
 ################################################################################
 
 # Computes generators and relations for (O_P/AO_P)^\times, where Pm = P^m, Q = O/A.
-function _multgrp_Op_aOp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::Int, Pm::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _multgrp_Op_aOp(Q::AbsSimpleNumFieldOrderQuoRing, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::Int, Pm::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   A = ideal(Q)
   O = order(A)
 
   # Compute generators for (1 + (A + P^m))/(1 + P^m)
   I = A + Pm
   I2 = I^2
-  S = Set{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
+  S = Set{AbsSimpleNumFieldOrderElem}()
   j = 0
   k = floor(Int, log(2, m))
   while j <= k
@@ -1122,7 +1122,7 @@ function _multgrp_Op_aOp(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, Ab
   return H, HtoQQ
 end
 
-function _multgrp_non_maximal(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _multgrp_non_maximal(Q::AbsSimpleNumFieldOrderQuoRing)
   A = ideal(Q)
   O = order(A)
 
@@ -1429,14 +1429,14 @@ function _direct_product(groups::Vector{FinGenAbGroup}, maps::Vector{U}, ideals:
 end
 
 
-function _direct_product!(ideals_and_maps::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{GrpAbFinGenToNfAbsOrdMap}}}, Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _direct_product!(ideals_and_maps::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{GrpAbFinGenToNfAbsOrdMap}}}, Q::AbsSimpleNumFieldOrderQuoRing)
   @assert !isempty(ideals_and_maps)
 
   groups = Vector{FinGenAbGroup}()
   ideals = [x[1] for x in ideals_and_maps]
   O = base_ring(Q)
   oneO = O(1)
-  generators = Vector{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
+  generators = Vector{AbsSimpleNumFieldOrderQuoRingElem}()
   if length(ideals) != 1
     moduli = _compute_products_for_make_coprime(ideals)
   end
@@ -1458,7 +1458,7 @@ function _direct_product!(ideals_and_maps::Vector{Tuple{AbsNumFieldOrderIdeal{Ab
   @assert !isempty(groups)
   G = direct_product(groups..., task = :none)
 
-  function disc_log(a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+  function disc_log(a::AbsSimpleNumFieldOrderQuoRingElem)
     result = Vector{ZZRingElem}()
     for i = 1:length(ideals)
       for map in ideals_and_maps[i][2]
@@ -1475,7 +1475,7 @@ end
 # ideals_and_maps as maps and the keys as ideals.
 # However, there can be more than one map (or group) for one ideal and the
 # generators of the maps are changed IN PLACE.
-function _direct_product!(ideals_and_maps::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{GrpAbFinGenToNfAbsOrdMap}}, Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _direct_product!(ideals_and_maps::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{GrpAbFinGenToNfAbsOrdMap}}, Q::AbsSimpleNumFieldOrderQuoRing)
   @assert !isempty(ideals_and_maps)
 
   ideals = collect(keys(ideals_and_maps))
@@ -1483,7 +1483,7 @@ function _direct_product!(ideals_and_maps::Dict{AbsNumFieldOrderIdeal{AbsSimpleN
   groups = Vector{FinGenAbGroup}()
   O = base_ring(Q)
   oneO = O(1)
-  generators = Vector{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
+  generators = Vector{AbsSimpleNumFieldOrderQuoRingElem}()
   if length(ideals) != 1
     moduli = _compute_products_for_make_coprime(ideals)
   end
@@ -1505,7 +1505,7 @@ function _direct_product!(ideals_and_maps::Dict{AbsNumFieldOrderIdeal{AbsSimpleN
   @assert !isempty(groups)
   G = direct_product(groups..., task = :none)
 
-  function disc_log(a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+  function disc_log(a::AbsSimpleNumFieldOrderQuoRingElem)
     result = Vector{ZZRingElem}()
     for ideal in ideals
       for map in ideals_and_maps[ideal]

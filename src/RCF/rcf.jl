@@ -196,7 +196,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
   @vprintln :ClassField 2 "Maximal order of cyclotomic extension"
   ZK = maximal_order(K)
   if isdefined(ZK, :lllO)
-    ZK = ZK.lllO::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    ZK = ZK.lllO::AbsSimpleNumFieldOrder
   end
 
   lP = Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]

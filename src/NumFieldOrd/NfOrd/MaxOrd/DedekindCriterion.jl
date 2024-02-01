@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-function dedekind_test(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem, compute_order::Type{Val{S}} = Val{true}) where S
+function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, compute_order::Type{Val{S}} = Val{true}) where S
   !is_equation_order(O) && error("Order must be an equation order")
 
   if rem(discriminant(O), p^2) != 0
@@ -113,15 +113,15 @@ end
 
 
 
-dedekind_test(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) = dedekind_test(O, FlintZZ(p))
+dedekind_test(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_test(O, FlintZZ(p))
 
-dedekind_ispmaximal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p, Val{false})
 
-dedekind_ispmaximal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) = dedekind_ispmaximal(O, FlintZZ(p))
+dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_ispmaximal(O, FlintZZ(p))
 
-dedekind_poverorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) = dedekind_test(O, p)[2]
+dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p)[2]
 
-dedekind_poverorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
+dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 
 
 ###############################################################################
@@ -130,7 +130,7 @@ dedekind_poverorder(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem
 #
 ###############################################################################
 
-function dedekind_test_composite(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem)
+function dedekind_test_composite(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   @assert is_equation_order(O)
 
   Zy = polynomial_ring(FlintZZ, "y")[1]
@@ -183,7 +183,7 @@ function dedekind_test_composite(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
   b = FakeFmpqMat(Malpha, p)
 
   @hassert :AbsNumFieldOrder 1 defines_order(nf(O), b)[1]
-  OO = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}(nf(O), b)
+  OO = AbsSimpleNumFieldOrder(nf(O), b)
   temp = divexact(b.den^degree(O), prod_diagonal(b.num))
   fl, qq = divides(discriminant(O), temp^2)
   @assert fl
