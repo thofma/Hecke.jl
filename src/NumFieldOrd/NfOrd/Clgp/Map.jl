@@ -222,7 +222,7 @@ function class_group_disc_log(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSim
   return class_group_disc_log(w, c)
 end
 
-function change_base_ring(mC::MapClassGrp, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function change_base_ring(mC::MapClassGrp, O::AbsSimpleNumFieldOrder)
   L = order(codomain(mC))
   mD = MapClassGrp()
   mD.header = MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), y -> mC.header.preimage(codomain(mC)(y)))
@@ -235,7 +235,7 @@ function show(io::IO, mC::MapClassGrp)
   show(IOContext(io, :compact => true), codomain(mC))
 end
 
-function class_group(c::ClassGrpCtx, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} = order(c); redo::Bool = false)
+function class_group(c::ClassGrpCtx, O::AbsSimpleNumFieldOrder = order(c); redo::Bool = false)
   if !redo
     if isdefined(c, :cl_map)
       mC = c.cl_map::MapClassGrp
@@ -355,7 +355,7 @@ function principal_generator_fac_elem(I::FacElem{AbsNumFieldOrderIdeal{AbsSimple
 end
 
 @doc raw"""
-    principal_generator(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    principal_generator(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem
 
 For a principal ideal $A$, find a generator.
 """
@@ -493,8 +493,8 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
 end
 
 @doc raw"""
-    is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
-    is_principal(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbsSimpleNumFieldOrderElem
+    is_principal(A::AbsSimpleNumFieldOrderFractionalIdeal) -> Bool, AbsSimpleNumFieldOrderElem
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
@@ -522,7 +522,7 @@ function is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFi
   return fl, ev
 end
 
-function is_principal(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function is_principal(A::AbsSimpleNumFieldOrderFractionalIdeal)
   O = order(A)
   if !is_maximal(O)
     fl, a = is_principal_non_maximal(numerator(A, copy = false))
@@ -826,6 +826,6 @@ end
 #
 ################################################################################
 
-function is_principal_with_data(I::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function is_principal_with_data(I::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderFractionalIdeal})
   return is_principal(I)
 end

@@ -780,7 +780,7 @@ function roots(a::AbsSimpleNumFieldElem, n::Int)
   return AbsSimpleNumFieldElem[x//d for x = rt]
 end
 
-function root(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int)
+function root(a::AbsSimpleNumFieldOrderElem, n::Int)
   fl, rt = is_power(a.elem_in_nf, n)
   if fl
     O = parent(a)

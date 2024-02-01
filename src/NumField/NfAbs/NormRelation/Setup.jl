@@ -591,7 +591,7 @@ end
 #
 ################################################################################
 
-function zeta_log_residue(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, N::NormRelation, abs_error::Float64)
+function zeta_log_residue(O::AbsSimpleNumFieldOrder, N::NormRelation, abs_error::Float64)
   degree(O) == 1 && error("Number field must be of degree > 1")
   !ispure(N) && error("Norm relation must be a Brauer relation")
   @show index(N)

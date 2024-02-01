@@ -4,7 +4,7 @@
 #
 ##########################################################################################################
 
-function tame_conductors_degree_2(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function tame_conductors_degree_2(O::AbsSimpleNumFieldOrder, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   K = nf(O)
   d = degree(O)
   b1 = Int(iroot(bound,d))
@@ -45,7 +45,7 @@ function tame_conductors_degree_2(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimp
 
 end
 
-function squarefree_for_conductors(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, deg::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
+function squarefree_for_conductors(O::AbsSimpleNumFieldOrder, n::Int, deg::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
 
   sqf = trues(n)
   primes = trues(n)
@@ -159,7 +159,7 @@ function squarefree_for_conductors(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSim
 end
 
 
-function conductors_tame(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductors_tame(O::AbsSimpleNumFieldOrder, n::Int, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   if n == 2
     return tame_conductors_degree_2(O, bound, unramified_outside = unramified_outside)
@@ -221,7 +221,7 @@ function conductors_tame(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFiel
   return final_list
 end
 
-function conductors(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   #Careful: I am assuming that a is in snf!
   K = nf(O)
@@ -340,7 +340,7 @@ end
 #
 ###############################################################################
 
-function squarefree_for_conductorsQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, a::Vector{Int}; coprime_to::Vector{ZZRingElem}=ZZRingElem[], unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function squarefree_for_conductorsQQ(O::AbsSimpleNumFieldOrder, n::Int, a::Vector{Int}; coprime_to::Vector{ZZRingElem}=ZZRingElem[], unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   G = map(Int, snf(abelian_group(a))[1].snf)
   sqf= trues(n)
@@ -452,7 +452,7 @@ end
 
 
 
-function conductors_tameQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::Vector{Int}, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductors_tameQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   #
   #  First, conductors coprime to the ramified primes and to the
@@ -468,7 +468,7 @@ function conductors_tameQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFi
 
 end
 
-function conductorsQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   K = nf(O)
   d = degree(O)

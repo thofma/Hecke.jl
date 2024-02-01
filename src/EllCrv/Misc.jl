@@ -251,11 +251,11 @@ function mod(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumFiel
 end
 
 @doc raw"""
-	inv_mod(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+	inv_mod(a::AbsSimpleNumFieldOrderElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem
 
 Return a lift of the inverse of an element modulo a prime ideal.
 """
-function Base.invmod(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function Base.invmod(a::AbsSimpleNumFieldOrderElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(I)
   k, phi = residue_field(R, I)
   return preimage(phi, inv(phi(R(a))))
@@ -271,11 +271,11 @@ function Base.invmod(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal{AbsSimpl
 end
 
 @doc raw"""
-	pth_root_mod(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+	pth_root_mod(a::AbsSimpleNumFieldOrderElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem
 
 Return a lift of the pth root of an element mod a prime ideal lying over p.
 """
-function pth_root_mod(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function pth_root_mod(a::AbsSimpleNumFieldOrderElem, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(pIdeal)
   p = pIdeal.gen_one
   k, phi = residue_field(R, pIdeal)

@@ -56,7 +56,7 @@ function abelian_extensions(gtype::Vector{Int}, conds::Vector{Int}, absolute_dis
   return fields
 end
 
-function abelian_extensions(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
+function abelian_extensions(O::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false, only_complex::Bool = false, tame::Bool = false)
   K = nf(O)
   @assert degree(K)==1
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
@@ -985,7 +985,7 @@ end
 
 #same function but for ray class groups over QQ
 
-function discriminant_conductorQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::ClassField, m::Int, bound::ZZRingElem)
+function discriminant_conductorQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::Int, bound::ZZRingElem)
 
   n = degree(C)
   discr=ZZRingElem(1)
@@ -1074,7 +1074,7 @@ function discriminant_conductorQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimp
   return true
 end
 
-function discriminantQQ(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::ClassField, m::Int)
+function discriminantQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::Int)
 
   discr=ZZRingElem(1)
   n = degree(C)

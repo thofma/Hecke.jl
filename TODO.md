@@ -16,7 +16,7 @@
  * [ ] Clean up uniformizer (p-uniformizer? strong uniformizer?)
  * [x] Residue fields of degree one
  * [ ] Parent checks for `(::Order)(::NumFieldElem)`.
- * [ ] Coercion of AbsSimpleNumFieldElem in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+ * [ ] Coercion of AbsSimpleNumFieldElem in AbsSimpleNumFieldOrder
 
 ## Number fields
  * [ ] Overhaul the morphisms

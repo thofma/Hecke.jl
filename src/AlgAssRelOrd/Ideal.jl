@@ -170,7 +170,7 @@ Returns the ideal $O \cdot x$ or $x \cdot O$ respectively.
 *(x::Union{ Int, ZZRingElem }, O::AlgAssRelOrd{S, T, U}) where {S, T, U} = ideal(O, O(x), :right)
 
 @doc raw"""
-    ideal(O::AlgAssRelOrd, a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AlgAssRelOrdIdl
+    ideal(O::AlgAssRelOrd, a::AbsSimpleNumFieldOrderFractionalIdeal) -> AlgAssRelOrdIdl
     ideal(O::AlgAssRelOrd, a::RelNumFieldOrderFractionalIdeal) -> AlgAssRelOrdIdl
 
 Returns the ideal $a \cdot O$ where $a$ is a fractional ideal of `base_ring(O)`.
@@ -190,7 +190,7 @@ end
 
 Returns the ideal $a \cdot O$ where $a$ is an ideal of `base_ring(O)`.
 """
-function ideal(O::AlgAssRelOrd{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, a::AbsNumFieldOrderIdeal)
+function ideal(O::AlgAssRelOrd{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, a::AbsNumFieldOrderIdeal)
   @assert order(a) === base_ring(O)
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
   return ideal(O, aa)
@@ -206,11 +206,11 @@ end
 @doc raw"""
     *(O::AlgAssRelOrd, a::AbsNumFieldOrderIdeal) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, a::RelNumFieldOrderIdeal) -> AlgAssRelOrdIdl
-    *(O::AlgAssRelOrd, a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AlgAssRelOrdIdl
+    *(O::AlgAssRelOrd, a::AbsSimpleNumFieldOrderFractionalIdeal) -> AlgAssRelOrdIdl
     *(O::AlgAssRelOrd, a::RelNumFieldOrderFractionalIdeal) -> AlgAssRelOrdIdl
     *(a::AbsNumFieldOrderIdeal, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
     *(a::RelNumFieldOrderIdeal, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
-    *(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
+    *(a::AbsSimpleNumFieldOrderFractionalIdeal, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
     *(a::RelNumFieldOrderFractionalIdeal, O::AlgAssRelOrd) -> AlgAssRelOrdIdl
 
 Returns the ideal $a \cdot O$ where $a$ is a (fractional) ideal of `base_ring(O)`.
@@ -1767,7 +1767,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssRelOrdIdl)
   OA = maximal_order(A)
   # Transport OA to B
   M = zero_matrix(base_ring(B), dim(B), dim(B))
-  c = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
+  c = AbsSimpleNumFieldOrderFractionalIdeal[]
   PB = pseudo_basis(OA, copy = false)
   for i = 1:dim(A)
     t = m(PB[i][1])

@@ -143,12 +143,12 @@
     R, x = polynomial_ring(FlintQQ, "x")
     K, a = number_field(x, "a")
     O = maximal_order(K)
-    I = Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(ideal(O, O(2)), ZZRingElem(2))
-    @assert I isa Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    I = Hecke.AbsSimpleNumFieldOrderFractionalIdeal(ideal(O, O(2)), ZZRingElem(2))
+    @assert I isa Hecke.AbsSimpleNumFieldOrderFractionalIdeal
     J = numerator(I)
     @assert J isa Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
-    for (T, E) in (I => AbsSimpleNumFieldElem, J => Hecke.AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    for (T, E) in (I => AbsSimpleNumFieldElem, J => Hecke.AbsSimpleNumFieldOrderElem)
       m = make(T, 3)
       @test all(x -> x isa E,
                 (rand(T, 3), rand(rng, T, 3), rand(m), rand(rng, m)))

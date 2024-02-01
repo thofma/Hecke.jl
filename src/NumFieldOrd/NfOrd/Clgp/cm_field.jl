@@ -90,7 +90,7 @@ function val_from_subfield(FB, mk, s)
   return z
 end
 
-function class_group_cm(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
+function class_group_cm(OK::AbsSimpleNumFieldOrder; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
   K = nf(OK)
   O = lll(OK)
   fl, conj = is_cm_field(nf(O))
@@ -100,7 +100,7 @@ function class_group_cm(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFiel
   return class_group(c, OK)
 end
 
-function create_ctx(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
+function create_ctx(OK::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
   if !redo
     c = get_attribute(OK, :ClassGrpCtx)
     if c !== nothing

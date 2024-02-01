@@ -19,7 +19,7 @@ function _pivot(A, start_row, col)
   return 0
 end
 
-function _strong_echelon_form(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, strategy)
+function _strong_echelon_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem}, strategy)
   B = deepcopy(A)
 
   if nrows(B) < ncols(B)
@@ -43,7 +43,7 @@ function _strong_echelon_form(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{
   end
 end
 
-function strong_echelon_form(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, shape::Symbol = :upperright, strategy::Symbol = :split)
+function strong_echelon_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
   if shape == :lowerleft
     h = _strong_echelon_form(reverse_cols(A), strategy)
     reverse_cols!(h)
@@ -57,7 +57,7 @@ function strong_echelon_form(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{A
   end
 end
 
-function triangularize!(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function triangularize!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   n = nrows(A)
   m = ncols(A)
   d = one(base_ring(A))
@@ -112,7 +112,7 @@ function triangularize!(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSim
   return d
 end
 
-function triangularize(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function triangularize(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   #println("copying ...")
   B = deepcopy(A)
   #println("done")
@@ -128,7 +128,7 @@ end
 
 # Naive version of inplace strong echelon form
 # It is assumed that A has more rows then columns.
-function strong_echelon_form_naive!(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function strong_echelon_form_naive!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   #A = deepcopy(B)
   n = nrows(A)
   m = ncols(A)
@@ -204,7 +204,7 @@ end
 #
 ################################################################################
 
-function howell_form!(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function howell_form!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   @assert nrows(A) >= ncols(A)
 
   k = nrows(A)
@@ -227,7 +227,7 @@ function howell_form!(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpl
   return k
 end
 
-function howell_form(A::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function howell_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   B = deepcopy(A)
 
   if nrows(B) < ncols(B)
@@ -245,7 +245,7 @@ end
 #
 ################################################################################
 
-function det(M::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function det(M::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   nrows(M) != ncols(M) && error("Matrix must be square matrix")
   N = deepcopy(M)
   d = triangularize!(N)
@@ -318,7 +318,7 @@ function z_split(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEl
   return A, B
 end
 
-function can_map_into_integer_quotient(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function can_map_into_integer_quotient(Q::AbsSimpleNumFieldOrderQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   for i in 2:ncols(B)
     if !isone(B[i, i])
@@ -328,18 +328,18 @@ function can_map_into_integer_quotient(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimp
   return true
 end
 
-function map_into_integer_quotient(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function map_into_integer_quotient(Q::AbsSimpleNumFieldOrderQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
   R = residue_ring(FlintZZ, m, cached = false)[1]
   local f
   let R = R, Q = Q
-    function f(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+    function f(x::AbsSimpleNumFieldOrderQuoRingElem)
       mod!(x.elem, Q)
       return R(coordinates(x.elem, copy = false)[1])
     end
   end
-  g = (y -> Q(y.data)::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+  g = (y -> Q(y.data)::AbsSimpleNumFieldOrderQuoRingElem)
   return R, f, g
 end
 
@@ -374,7 +374,7 @@ function make_small(Q::Nemo.ZZModRing)
 end
 
 
-function _strong_echelon_form_split(M::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, ideals1)
+function _strong_echelon_form_split(M::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, ideals1)
   Q = base_ring(M)
   R = base_ring(Q)
   modulus = ideal(Q)
@@ -471,7 +471,7 @@ function _strong_echelon_form_split(M::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrde
   return r
 end
 
-function mul!(a::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, b::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, c::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function mul!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, c::AbsSimpleNumFieldOrderQuoRingElem)
   for i = 1:nrows(b)
     for j = 1:ncols(b)
       mul!(a[i, j], b[i, j], c)
@@ -480,7 +480,7 @@ function mul!(a::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, A
   return a
 end
 
-function mul_special!(a::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, b::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function mul_special!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::AbsSimpleNumFieldOrderQuoRingElem)
   for i = 1:min(nrows(a), ncols(a))
     for j = i:ncols(a)
       mul!(a[i, j], a[i, j], b)
@@ -489,7 +489,7 @@ function mul_special!(a::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNum
   return a
 end
 
-function add_special!(a::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, b::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function add_special!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::MatElem{AbsSimpleNumFieldOrderQuoRingElem})
   for i = 1:min(nrows(b), ncols(b))
     for j = i:ncols(b)
       add!(a[i, j], a[i, j], b[i, j])
@@ -498,7 +498,7 @@ function add_special!(a::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNum
   return a
 end
 
-function add!(a::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, b::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, c::MatElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function add!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, c::MatElem{AbsSimpleNumFieldOrderQuoRingElem})
   for i = 1:nrows(b)
     for j = 1:ncols(b)
       add!(a[i, j], b[i, j], c[i, j])
@@ -640,7 +640,7 @@ function test_pseudohnf()
   for i in 2:15
     K, a = number_field(x^i - 10, "a")
     O = maximal_order(K)
-    lp = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
+    lp = AbsSimpleNumFieldOrderFractionalIdeal[]
     for p in [2, 3, 5, 7, 11, 13]
       pp = prime_decomposition(O, p)
       for P in pp

@@ -27,7 +27,7 @@ function norm(m::T, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFiel
   return J
 end
 
-function norm(m::T, I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
+function norm(m::T, I::AbsSimpleNumFieldOrderFractionalIdeal) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
   return norm(m, numerator(I))//denominator(I)^div(degree(codomain(m)), degree(domain(m)))
 end
 
@@ -93,7 +93,7 @@ function minimum(m::T, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumF
   return J
 end
 
-function minimum(m::T, I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
+function minimum(m::T, I::AbsSimpleNumFieldOrderFractionalIdeal) where T <: Map{AbsSimpleNumField, AbsSimpleNumField}
   return minimum(m, numerator(I))//denominator(I)
 end
 
@@ -105,13 +105,13 @@ end
 ################################################################################
 
 @doc raw"""
-    intersect_prime(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, O_k::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    intersect_prime(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, O_k::AbsSimpleNumFieldOrder) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$
 of number fields, find the unique prime $p$ in $k$ below.
 $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
 """
-function intersect_prime(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Ok::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} = maximal_order(domain(f)))
+function intersect_prime(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Ok::AbsSimpleNumFieldOrder = maximal_order(domain(f)))
   @assert is_prime(P)
   p = minimum(P)
   if isone(degree(Ok))
@@ -138,7 +138,7 @@ function intersect_prime(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, Abs
 
 end
 
-function intersect_nonindex(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Zk::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} = maximal_order(domain(f)))
+function intersect_nonindex(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Zk::AbsSimpleNumFieldOrder = maximal_order(domain(f)))
   @assert is_prime(P)
   #let g be minpoly of k, G minpoly of K and h in Qt the primitive
   #element of k in K (image of gen(k))
@@ -166,14 +166,14 @@ end
 
 
 @doc raw"""
-    prime_decomposition_nonindex(f::Map, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Z_K::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
+    prime_decomposition_nonindex(f::Map, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Z_K::AbsSimpleNumFieldOrder) -> Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
 
 Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
 a prime ideal in the maximal order of $k$, find all prime ideals in
 the maximal order of $K$ above.
 The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
 """
-function prime_decomposition(f::Map, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} = maximal_order(codomain(f)))
+function prime_decomposition(f::Map, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZK::AbsSimpleNumFieldOrder = maximal_order(codomain(f)))
   @assert p.is_prime == 1
   k = domain(f)
   K = codomain(f)

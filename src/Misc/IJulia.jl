@@ -334,7 +334,7 @@ function Base.show(io::IO, ::MIME"text/html", a::AbsNumFieldOrderElem)
   print(io, "\$")
 end
 
-function math_html(io::IO, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function math_html(io::IO, O::AbsSimpleNumFieldOrder)
   c = get(io, :compact, false)
   if is_maximal_known_and_maximal(O)
     n = "Maximal order of"
@@ -363,7 +363,7 @@ function math_html(io::IO, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFi
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function Base.show(io::IO, ::MIME"text/html", a::AbsSimpleNumFieldOrder)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")

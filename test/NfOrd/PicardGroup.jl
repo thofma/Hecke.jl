@@ -1,4 +1,4 @@
-function test_disc_log_picard(P, mP, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function test_disc_log_picard(P, mP, O::AbsSimpleNumFieldOrder)
   # principal ideals should always be invertible
   i = 1
   while i <= 5
@@ -38,7 +38,7 @@ function test_disc_log_picard(P, mP, O::AbsNumFieldOrder{AbsSimpleNumField, AbsS
   return true
 end
 
-function test_disc_log_units(U, mU, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function test_disc_log_units(U, mU, O::AbsSimpleNumFieldOrder)
   if !iszero(mU\O(1))
     return false
   end

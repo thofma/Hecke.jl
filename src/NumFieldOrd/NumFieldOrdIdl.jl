@@ -13,7 +13,7 @@ nf(x::NumFieldOrderIdeal) = nf(order(x))
 
 
 @doc raw"""
-    order(I::NumFieldOrderIdeal) -> AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    order(I::NumFieldOrderIdeal) -> AbsSimpleNumFieldOrder
 
 Returns the order of $I$.
 """
@@ -352,7 +352,7 @@ end
 
 is_integral(I::NumFieldOrderIdeal) = true
 
-function is_integral(I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function is_integral(I::AbsSimpleNumFieldOrderFractionalIdeal)
   @assert is_maximal(order(I))
   simplify(I)
   return denominator(I) == 1
@@ -421,7 +421,7 @@ function small_generating_set(I::AbsNumFieldOrderIdeal)
   id_gen = zero_matrix(FlintZZ, 2*n, n)
   m = minimum(I, copy = false)
   B = basis(I, copy = false)
-  gens = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
+  gens = AbsSimpleNumFieldOrderElem[]
   for i = 1:length(B)
     if i != 1
       c = matrix(FlintZZ, 1, n, coordinates(B[i]))

@@ -589,7 +589,7 @@ function compute_coeffs_L_function(chi::T, n::Int, prec::Int) where T <: RCFChar
   return coeffs_old
 end
 
-function ideals_up_to(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, coprime_to::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = ideal(OK, 1))
+function ideals_up_to(OK::AbsSimpleNumFieldOrder, n::Int, coprime_to::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = ideal(OK, 1))
 
   lp = prime_ideals_up_to(OK, n)
   filter!(x -> is_coprime(x, coprime_to), lp)
@@ -678,7 +678,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   @hassert :ClassField 1 is_coprime(h, c)
   Qc, mQc = quo(OK, c)
   G, mG = multiplicative_group(Qc)
-  reps = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
+  reps = AbsSimpleNumFieldOrderElem[make_positive(lift(mG(x)), minimum(c)^2) for x in G]
   for (j, x) in enumerate(G)
     @hassert :ClassField 1 x == mG\Qc(reps[j])
     @hassert :ClassField 1 is_totally_positive(reps[j])

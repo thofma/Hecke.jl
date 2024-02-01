@@ -6,21 +6,21 @@
 #
 ################################################################################
 
-function NfFactorBase(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
+function NfFactorBase(O::AbsSimpleNumFieldOrder, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
   @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::AbstractVector{Int}, degree_limit::Int = 0)
+function NfFactorBase(O::AbsSimpleNumFieldOrder, lp::AbstractVector{Int}, degree_limit::Int = 0)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lP = prime_ideals_over(O, lp, degree_limit = degree_limit)
   @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lP)
 end
 
-function NfFactorBase(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int;
+function NfFactorBase(O::AbsSimpleNumFieldOrder, B::Int;
                         complete::Bool = true, degree_limit::Int = 5)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
@@ -28,7 +28,7 @@ function NfFactorBase(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldEl
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function NfFactorBase(O::AbsSimpleNumFieldOrder, lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   lp = sort(lp, lt = function(a,b) return norm(a, copy = false) > norm(b, copy = false); end)
   FB = NfFactorBase()
   FB.size = length(lp)

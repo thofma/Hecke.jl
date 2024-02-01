@@ -5,7 +5,7 @@
 ###############################################################################
 
 mutable struct ctx_rayclassgrp
-  order::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  order::AbsSimpleNumFieldOrder
   class_group_map::MapClassGrp #The class group mod n map
   n::Int #the n for n_quo
   diffC::ZZRingElem #exponent of the full class group, divided by n
@@ -21,7 +21,7 @@ mutable struct ctx_rayclassgrp
   end
 end
 
-function rayclassgrp_ctx(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, expo::Int)
+function rayclassgrp_ctx(O::AbsSimpleNumFieldOrder, expo::Int)
 
   C1, mC1 = class_group(O, use_aut = true)
   valclass = ppio(exponent(C1), ZZRingElem(expo))[1]
@@ -81,8 +81,8 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   lp = merge(max, y1, y2)
 
   powers = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
-  quo_rings = Tuple{AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Hecke.AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
-  groups_and_maps = Tuple{FinGenAbGroup, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}}}[]
+  quo_rings = Tuple{AbsSimpleNumFieldOrderQuoRing, Hecke.AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsSimpleNumFieldOrderElem}}[]
+  groups_and_maps = Tuple{FinGenAbGroup, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsSimpleNumFieldOrderElem}}[]
   for (PP, ee) in lp
     if isone(ee)
       dtame = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(PP => 1)
@@ -291,7 +291,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
     end
   end
 
-  Dgens = Tuple{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}[]
+  Dgens = Tuple{AbsSimpleNumFieldOrderElem, FinGenAbGroupElem}[]
   ind = 1
   #We need generators of the full multiplicative group
   #In particular, we need the idempotents...
@@ -423,7 +423,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
 end
 
 
-function log_infinite_primes(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Vector{<: InfPlc})
+function log_infinite_primes(O::AbsSimpleNumFieldOrder, p::Vector{<: InfPlc})
   if isempty(p)
     S = abelian_group(Int[])
 
@@ -454,7 +454,7 @@ function log_infinite_primes(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNum
 end
 
 
-function ray_class_group_quo(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::Int, wprimes::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
+function ray_class_group_quo(O::AbsSimpleNumFieldOrder, m::Int, wprimes::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
 
   d1 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   lp = factor(m)
@@ -486,7 +486,7 @@ end
 
 
 
-function ray_class_group_quo(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
+function ray_class_group_quo(O::AbsSimpleNumFieldOrder, y::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true, check::Bool = true)
 
   y1=Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}()
   y2=Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}()

@@ -205,7 +205,7 @@ function reco(a::AbsNumFieldOrderElem, M, pM)
   return parent(a)(m)
 end
 
-function is_prime_nice(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
+function is_prime_nice(O::AbsSimpleNumFieldOrder, p::Int)
   f = is_prime_nice(nf(O), p)
   f || return f
   if discriminant(O) %p == 0
@@ -239,11 +239,11 @@ The decision is based on the number of local factors.
 """
 function factor_new(f::PolyRingElem{AbsSimpleNumFieldElem})
   k = base_ring(f)
-  local zk::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  local zk::AbsSimpleNumFieldOrder
   if is_maximal_order_known(k)
     zk = maximal_order(k)
     if isdefined(zk, :lllO)
-      zk = zk.lllO::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+      zk = zk.lllO::AbsSimpleNumFieldOrder
     end
   else
     zk = any_order(k)
@@ -266,7 +266,7 @@ function factor_new(f::PolyRingElem{AbsSimpleNumFieldElem})
     if length(P) == 0
       continue
     end
-    F, mF1 = ResidueFieldSmallDegree1(zk::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P[1][1])
+    F, mF1 = ResidueFieldSmallDegree1(zk::AbsSimpleNumFieldOrder, P[1][1])
     mF = extend(mF1, k)
     fp = map_coefficients(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))

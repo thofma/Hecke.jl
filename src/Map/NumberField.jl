@@ -337,7 +337,7 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
   end
   if !has_2_elem(I)
     #I need to translate the basis matrix
-    bb = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, degree(K))
+    bb = Vector{AbsSimpleNumFieldOrderElem}(undef, degree(K))
     B = basis(x, copy = false)
     for i = 1:length(bb)
       bb[i] = OK(f(K(B[i])))

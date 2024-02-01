@@ -4,7 +4,7 @@ add_verbosity_scope(:PseudoHnf)
 add_assertion_scope(:PseudoHnf)
 add_verbosity_scope(:PseudoHnfKB)
 
-function _det_bound(M::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _det_bound(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
   n = nrows(M)
   O = base_ring(M)
   d = degree(O)
@@ -13,7 +13,7 @@ function _det_bound(M::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSi
   return ZZRingElem(BigInt(ceil(sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))^n)))
 end
 
-function _max_max(M::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _max_max(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
   d = FlintZZ(1)
   for i in 1:nrows(M)
     for j in 1:ncols(M)
@@ -28,8 +28,8 @@ function _max_max(M::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimp
   return d
 end
 
-#function det(M::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-#  O = base_ring(M)::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+#function det(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
+#  O = base_ring(M)::AbsSimpleNumFieldOrder
 #  B = _det_bound(M)
 #  p = next_prime(2^60) # magic numbers
 #  P = ZZRingElem(1)
@@ -71,8 +71,8 @@ function _get_coeff_raw(x::fpPolyRingElem, i::Int)
   return u
 end
 
-function det(M::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-  O = base_ring(M)::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+function det(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
+  O = base_ring(M)::AbsSimpleNumFieldOrder
   K = nf(O)
   B = _det_bound(M)
   p = next_prime(p_start) #global
@@ -179,7 +179,7 @@ function __helper!(z, mF, entries)
   return z
 end
 
-function mod_sym(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::ZZRingElem)
+function mod_sym(x::AbsSimpleNumFieldOrderElem, m::ZZRingElem)
   z = coordinates(x)
   for i in 1:length(z)
     z[i] = mod(z[i], m)
@@ -189,9 +189,9 @@ function mod_sym(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldEle
   end
   return parent(x)(z)
 end
-mod_sym(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::Integer) = mod_sym(x, ZZRingElem(m))
+mod_sym(x::AbsSimpleNumFieldOrderElem, m::Integer) = mod_sym(x, ZZRingElem(m))
 
-function _basis_coord_nonneg(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _basis_coord_nonneg(x::AbsSimpleNumFieldOrderElem)
   b = coordinates(x)
   for i in 1:length(b)
     if b[i] < 0
@@ -201,7 +201,7 @@ function _basis_coord_nonneg(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpl
   return true
 end
 
-function rand(M::Generic.MatSpace{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::Union{Int, ZZRingElem})
+function rand(M::Generic.MatSpace{AbsSimpleNumFieldOrderElem}, B::Union{Int, ZZRingElem})
   z = M()
   for i in 1:nrows(z)
     for j in 1:ncols(z)
@@ -283,7 +283,7 @@ function pseudo_matrix(O::NumFieldOrder, m::AbstractAlgebra.MatElem{T}, c::Vecto
 end
 
 @doc raw"""
-    pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldElem}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+    pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldElem}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
@@ -291,26 +291,26 @@ Returns the (row) pseudo matrix representing the $Z_k$-module
 """
 function pseudo_matrix(m::AbstractAlgebra.MatElem{AbsSimpleNumFieldElem}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert nrows(m) == length(c)
-  cc = map(z -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(z, ZZRingElem(1)), c)
-  return PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(m, cc)
+  cc = map(z -> AbsSimpleNumFieldOrderFractionalIdeal(z, ZZRingElem(1)), c)
+  return PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}(m, cc)
 end
 
 @doc raw"""
-    pseudo_matrix(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+    pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldOrderElem}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}
 
 Returns the (row) pseudo matrix representing the $Z_k$-module
  $$\sum c_i m_i$$
  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$.
 """
-function pseudo_matrix(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldOrderElem}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert nrows(m) == length(c)
   mm = change_base_ring(nf(base_ring(m)), m)
-  cc = map(z -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(z, ZZRingElem(1)), c)
-  return PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(mm, cc)
+  cc = map(z -> AbsSimpleNumFieldOrderFractionalIdeal(z, ZZRingElem(1)), c)
+  return PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}(mm, cc)
 end
 
 @doc raw"""
-    pseudo_matrix(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+    pseudo_matrix(m::Generic.Mat{AbsSimpleNumFieldOrderElem}) -> PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}
 
 Returns the free (row) pseudo matrix representing the $Z_k$-module
  $$\sum Z_k m_i$$
@@ -335,7 +335,7 @@ function pseudo_matrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T 
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 
-pseudo_matrix(m::MatElem{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = pseudo_matrix(change_base_ring(nf(base_ring(m)), m))
+pseudo_matrix(m::MatElem{AbsSimpleNumFieldOrderElem}) = pseudo_matrix(change_base_ring(nf(base_ring(m)), m))
 
 function pseudo_matrix(c::Vector{S}) where S
    K = nf(order(c[1]))
@@ -343,7 +343,7 @@ function pseudo_matrix(c::Vector{S}) where S
    return pseudo_matrix(m, c)
 end
 
-pseudo_matrix(c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = pseudo_matrix(map(z -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(z, ZZRingElem(1)), c))
+pseudo_matrix(c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = pseudo_matrix(map(z -> AbsSimpleNumFieldOrderFractionalIdeal(z, ZZRingElem(1)), c))
 
 function number_of_rows(m::PMat)
   return number_of_rows(m.matrix)
@@ -381,7 +381,7 @@ end
 *(x::U, P::PMat{T, S}) where { T, S, U <: Union{ Int, RingElem } } = P*x
 
 # this is slow
-function _coprime_integral_ideal_class(x::Union{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _coprime_integral_ideal_class(x::Union{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   O = order(y)
   x_inv = inv(x)
   check = true
@@ -415,7 +415,7 @@ end
 
 
 # this is slow
-function _coprime_norm_integral_ideal_class(x, y) #x::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _coprime_norm_integral_ideal_class(x, y) #x::AbsSimpleNumFieldOrderFractionalIdeal, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   # x must be nonzero
   O = order(y)
   if is_coprime(norm(numerator(x, copy = false), copy = false), norm(y, copy = false))
@@ -450,9 +450,9 @@ function _coprime_norm_integral_ideal_class(x, y) #x::AbsNumFieldOrderFractional
   return J, res2
 end
 
-RandomExtensions.maketype(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int) = AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+RandomExtensions.maketype(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int) = AbsSimpleNumFieldOrderElem
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldOrderElem,AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}})
   I, B = sp[][1:end]
   r = rand(rng, -B:B, degree(order(I)))
   b = basis(I)
@@ -467,17 +467,17 @@ rand(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int)
 rand(rng::AbstractRNG, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int) = rand(rng, make(I, B))
 
 
-RandomExtensions.maketype(I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int) = AbsSimpleNumFieldElem
+RandomExtensions.maketype(I::AbsSimpleNumFieldOrderFractionalIdeal, ::Int) = AbsSimpleNumFieldElem
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem,AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem,AbsSimpleNumFieldOrderFractionalIdeal,Int}})
   I, B = sp[][1:2]
   z = rand(rng, make(numerator(I), B))
   return divexact(elem_in_nf(z), denominator(I))::AbsSimpleNumFieldElem
   # type assert to help inference in Julia 1.0
 end
 
-rand(I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int) = rand(GLOBAL_RNG, I, B)
-rand(rng::AbstractRNG, I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int) = rand(rng, make(I, B))
+rand(I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(rng::AbstractRNG, I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(rng, make(I, B))
 
 @doc raw"""
     pseudo_hnf(P::PMat)
@@ -490,7 +490,7 @@ A optional second argument can be specified as a symbols, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
-function pseudo_hnf(P::PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, shape::Symbol = :upperright, full_rank::Bool = false)
+function pseudo_hnf(P::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, shape::Symbol = :upperright, full_rank::Bool = false)
   if full_rank
     Q = pseudo_hnf_full_rank(P, shape)
     if is_square(matrix(Q))
@@ -526,7 +526,7 @@ A optional second argument can be specified as a symbol, indicating the desired
 shape of the echelon form. Possible are
 `:upperright` (the default) and `:lowerleft`
 """
-pseudo_hnf_with_transform(P::PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
+pseudo_hnf_with_transform(P::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
 
 pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: NumFieldElem, S} = pseudo_hnf_kb(P, shape)
 
@@ -689,7 +689,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  res = PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(res_mat, copy(P.coeffs))
+  res = PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}(res_mat, copy(P.coeffs))
 
   shift = 0
   if shape == :lowerleft
@@ -699,7 +699,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
   for i in 1:ncols(P)
     if iszero(zz[i + shift, i])
       res.matrix[i + shift, i] = one(nf(O))
-      res.coeffs[i + shift] = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(m, ZZRingElem(1))
+      res.coeffs[i + shift] = AbsSimpleNumFieldOrderFractionalIdeal(m, ZZRingElem(1))
     else
       o = ideal(O, lift(zz[i + shift, i]))
       t_sum += @elapsed g = o + m
@@ -713,7 +713,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
         @hassert :PseudoHnf mm * g == m
       end
       t_idem += @elapsed e, f = idempotents(oo, mm)
-      res.coeffs[i + shift] = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(g, ZZRingElem(1))
+      res.coeffs[i + shift] = AbsSimpleNumFieldOrderFractionalIdeal(g, ZZRingElem(1))
       t = divexact(elem_in_nf(e), elem_in_nf(zz[i + shift, i].elem))
       mul_row!(res.matrix, i + shift, t)
       res.matrix[i + shift, i] = one(nf(O))
@@ -809,11 +809,11 @@ function _matrix_for_reduced_span(P::PMat, m::RelNumFieldOrderIdeal)
   end
   return z
 end
-(::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})(a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = a
+(::AbsSimpleNumFieldOrderQuoRing)(a::AbsSimpleNumFieldOrderQuoRingElem) = a
 
 _check(a) = a.has_coord ? dot(a.coordinates, basis(parent(a))) == a : true
 
-function _check(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _check(m::Generic.Mat{AbsSimpleNumFieldOrderElem})
   for i in 1:nrows(m)
     for j in 1:ncols(m)
       if !_check(m[i, j].elem)
@@ -824,7 +824,7 @@ function _check(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimple
   end
 end
 
-function _check(m::Generic.Mat{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function _check(m::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   for i in 1:nrows(m)
     for j in 1:ncols(m)
       if !_check(m[i, j].elem)
@@ -933,7 +933,7 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
   return true
 end
 
-function _spans_subset_of_pseudohnf(M::PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, P::PMat{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, shape::Symbol = :upperright)
+function _spans_subset_of_pseudohnf(M::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, P::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, shape::Symbol = :upperright)
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   for i in 1:nrows(M)
@@ -1400,10 +1400,10 @@ end
 mutable struct PMat2
    parent
    matrix::Generic.MatSpaceElem{AbsSimpleNumFieldElem}
-   row_coeffs::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
-   col_coeffs::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+   row_coeffs::Vector{AbsSimpleNumFieldOrderFractionalIdeal}
+   col_coeffs::Vector{AbsSimpleNumFieldOrderFractionalIdeal}
 
-   function PMat2(m::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, r::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, c::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+   function PMat2(m::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, r::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, c::Vector{AbsSimpleNumFieldOrderFractionalIdeal})
       z = new()
       z.matrix = m
       z.row_coeffs = r
@@ -1427,16 +1427,16 @@ function show(io::IO, P::PMat2)
    end
 end
 
-function pseudo_matrix2(m::Generic.Mat{AbsSimpleNumFieldElem}, r::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, c::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function pseudo_matrix2(m::Generic.Mat{AbsSimpleNumFieldElem}, r::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, c::Vector{AbsSimpleNumFieldOrderFractionalIdeal})
    ( nrows(m) != length(r) || ncols(m) != length(c) ) && error("Dimensions do not match.")
    return PMat2(m, r, c)
 end
 
 
-function pseudo_matrix2(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, r::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function pseudo_matrix2(m::Generic.Mat{AbsSimpleNumFieldOrderElem}, r::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
    mm = change_base_ring(nf(base_ring(m)), m)
-   rr = map(z -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(z, ZZRingElem(1)), r)
-   cc = map(z -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(z, ZZRingElem(1)), c)
+   rr = map(z -> AbsSimpleNumFieldOrderFractionalIdeal(z, ZZRingElem(1)), r)
+   cc = map(z -> AbsSimpleNumFieldOrderFractionalIdeal(z, ZZRingElem(1)), c)
    return PMat(mm, rr, cc)
 end
 
@@ -1561,7 +1561,7 @@ end
 
 mutable struct ModDed
    pmatrix::PMat
-   base_ring::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+   base_ring::AbsSimpleNumFieldOrder
    is_triu::Bool
    function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
       if check
@@ -1588,9 +1588,9 @@ end
 
 ModDed(m::Generic.Mat{AbsSimpleNumFieldElem}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
 
-ModDed(m::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
+ModDed(m::Generic.Mat{AbsSimpleNumFieldOrderElem}, is_triu::Bool = false; check::Bool = true) = ModDed(pseudo_matrix(m), is_triu; check = check)
 
-ModDed(c::Vector{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = ModDed(pseudo_matrix(c), true; check = false)
+ModDed(c::Vector{AbsSimpleNumFieldOrderFractionalIdeal}) = ModDed(pseudo_matrix(c), true; check = false)
 
 ModDed(c::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = ModDed(pseudo_matrix(c), true; check = false)
 
@@ -1849,7 +1849,7 @@ end
 
 # Returns x in K with xa integral and coprime to m
 
-function integral_and_coprime_to(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::AbsNumFieldOrderIdeal)
+function integral_and_coprime_to(a::AbsSimpleNumFieldOrderFractionalIdeal, m::AbsNumFieldOrderIdeal)
   O = order(m)
   b = inv(a)
   B = absolute_basis(b)
@@ -1867,7 +1867,7 @@ function integral_and_coprime_to(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNum
   end
 end
 
-function integral_and_coprime_to(a::Union{ AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderFractionalIdeal }, m::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
+function integral_and_coprime_to(a::Union{ AbsSimpleNumFieldOrderFractionalIdeal, RelNumFieldOrderFractionalIdeal }, m::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
   O = order(m)
 
   facm = factor(m)
@@ -1961,7 +1961,7 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
       continue
     end
 
-    if a isa AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} && a.num.is_principal == 1
+    if a isa AbsSimpleNumFieldOrderFractionalIdeal && a.num.is_principal == 1
       x = divexact(K(a.num.princ_gen), K(a.den))
       mul_row!(A, r, x)
       with_transform ? divide_row!(U, r, x) : nothing
@@ -2035,7 +2035,7 @@ end
 #
 ################################################################################
 
-function inv(x::Generic.MatSpaceElem{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function inv(x::Generic.MatSpaceElem{AbsSimpleNumFieldOrderElem})
   R = base_ring(x)
   K = nf(R)
   return change_base_ring(R, inv(change_base_ring(K, x)))

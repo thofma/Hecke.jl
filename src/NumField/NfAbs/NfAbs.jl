@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-order_type(::AbsSimpleNumField) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+order_type(::AbsSimpleNumField) = AbsSimpleNumFieldOrder
 
-order_type(::Type{AbsSimpleNumField}) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+order_type(::Type{AbsSimpleNumField}) = AbsSimpleNumFieldOrder
 
 ################################################################################
 #

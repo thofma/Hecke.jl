@@ -883,7 +883,7 @@ end
 
 @doc raw"""
     modular_proj(a::Generic.Mat{AbsSimpleNumFieldElem}, me::modular_env) -> Array{Matrix}
-    modular_proj(a::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, me::modular_env) -> Array{Matrix}
+    modular_proj(a::Generic.Mat{AbsSimpleNumFieldOrderElem}, me::modular_env) -> Array{Matrix}
 
 Apply the \code{modular_proj} function to each entry of $a$.
 Computes an array of matrices over the respective residue class fields.
@@ -904,7 +904,7 @@ function modular_proj(a::Generic.Mat{AbsSimpleNumFieldElem}, me::modular_env)
   return Mp
 end
 
-function modular_proj(a::Generic.Mat{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, me::modular_env)
+function modular_proj(a::Generic.Mat{AbsSimpleNumFieldOrderElem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
     push!(Mp, zero_matrix(me.fld[i], nrows(a), ncols(a)))

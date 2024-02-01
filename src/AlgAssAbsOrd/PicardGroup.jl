@@ -536,7 +536,7 @@ function _is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   return true, FacElem(bases, exps)
 end
 
-# for is_principal_non_maximal see AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/PicardGroup.jl
+# for is_principal_non_maximal see AbsSimpleNumFieldOrder/PicardGroup.jl
 
 ################################################################################
 #
@@ -898,7 +898,7 @@ end
 #
 ################################################################################
 
-# Mostly taken from AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/LinearAlgebra.jl
+# Mostly taken from AbsSimpleNumFieldOrder/LinearAlgebra.jl
 function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   O = order(b)
   @assert isone(denominator(b, O))

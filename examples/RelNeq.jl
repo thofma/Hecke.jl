@@ -205,10 +205,10 @@ end
 
 =#
 mutable struct Norm1Group
-  gens::Vector{Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  gens::Vector{Hecke.AbsSimpleNumFieldOrderFractionalIdeal}
   rels
   A::RelNeq
-  gC::Vector{Tuple{Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}}
+  gC::Vector{Tuple{Hecke.AbsSimpleNumFieldOrderFractionalIdeal, FinGenAbGroupElem}}
   sC::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
   gU::Vector{Tuple{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, FinGenAbGroupElem}}
   sU::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
@@ -249,7 +249,7 @@ function is_principal_fac_elem(A::FacElem{<:AbsNumFieldOrderIdeal})
   return fl, c*b
 end
 
-function is_principal_fac_elem(A::FacElem{<:Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function is_principal_fac_elem(A::FacElem{<:Hecke.AbsSimpleNumFieldOrderFractionalIdeal})
   zk = order(base_ring(A))
   B = FacElem(Dict((numerator(x), v) for (x,v) = A.fac))
   den = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
@@ -272,7 +272,7 @@ function is_principal_fac_elem(A::FacElem{<:Hecke.AbsNumFieldOrderFractionalIdea
 end
 
 
-function Base.push!(N::Norm1Group, I::Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function Base.push!(N::Norm1Group, I::Hecke.AbsSimpleNumFieldOrderFractionalIdeal)
   A = N.A
   @assert isone(norm(A.m_k_K, I))
   c, mc = N.C
@@ -311,7 +311,7 @@ function order_bound(N::Norm1Group)
   return order(N.U[1]) * order(N.C[1])
 end
 
-Hecke.elem_type(::Type{Hecke.AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+Hecke.elem_type(::Type{Hecke.AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = Hecke.AbsSimpleNumFieldOrderFractionalIdeal
 
 function Hecke.evaluate(N::Norm1Group)
   # want the group extension (and the disc log and such)
@@ -346,7 +346,7 @@ function Hecke.evaluate(N::Norm1Group)
     return I1*I2
   end
 
-  function log(I::Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  function log(I::Hecke.AbsSimpleNumFieldOrderFractionalIdeal)
     @assert isone(norm(N.A.m_k_K, I))
     r = N.C[2]\numerator(I)
     fl, s = has_preimage_with_preimage(N.sC[2], r)

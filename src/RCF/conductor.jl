@@ -92,7 +92,7 @@ end
 #  This functions constructs generators for 1+p^u/1+p^u+1
 #
 
-function _1pluspk_1pluspk1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pk::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, powers::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, a::Union{Int, ZZRingElem}, n::Int)
+function _1pluspk_1pluspk1(O::AbsSimpleNumFieldOrder, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pk::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, pv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, powers::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, a::Union{Int, ZZRingElem}, n::Int)
 
   L = nf(O)
   b = basis(pk, copy = false)
@@ -100,7 +100,7 @@ function _1pluspk_1pluspk1(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFi
   G = abelian_group(N.num)
   S, mS = snf(G)
   #Generators
-  gens = Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, ngens(S))
+  gens = Vector{AbsSimpleNumFieldOrderElem}(undef, ngens(S))
   for i=1:ngens(S)
     gens[i] = one(O)
     for j = 1:ngens(G)
@@ -1153,7 +1153,7 @@ end
 
 #TODO: add version with a 2nd field....
 #  using:
-#      prime_decomposition(f::Map, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem} = maximal_order(codomain(f)))
+#      prime_decomposition(f::Map, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZK::AbsSimpleNumFieldOrder = maximal_order(codomain(f)))
 #      PrimeIdealsSet
 @doc raw"""
     maximal_central_subfield(A::ClassField) -> ClassField
@@ -1620,13 +1620,13 @@ end
 
 Base.intersect(R::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal) = intersect(I, R)
 
-function Base.intersect(I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, R::AbsNumFieldOrder)
+function Base.intersect(I::AbsSimpleNumFieldOrderFractionalIdeal, R::AbsNumFieldOrder)
   @assert is_maximal(R)
   n, d = integral_split(I)
   return intersect(n, R)
 end
 
-Base.intersect(R::AbsNumFieldOrder, I::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = intersect(I, R)
+Base.intersect(R::AbsNumFieldOrder, I::AbsSimpleNumFieldOrderFractionalIdeal) = intersect(I, R)
 
 @doc raw"""
     content_ideal(f::PolyRingElem{AbsSimpleNumFieldElem}, R::AbsNumFieldOrder) -> AbsNumFieldOrderIdeal

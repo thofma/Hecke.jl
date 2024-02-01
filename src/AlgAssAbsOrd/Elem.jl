@@ -463,7 +463,7 @@ function powermod(a::AlgAssAbsOrdElem, i::Union{ZZRingElem, Int}, m::AlgAssAbsOr
   return b
 end
 
-# This is mostly is_divisible in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/residue_ring.jl
+# This is mostly is_divisible in AbsSimpleNumFieldOrder/residue_ring.jl
 function is_divisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
 
   iszero(y) && error("Dividing by zero")
