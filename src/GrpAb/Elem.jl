@@ -131,6 +131,11 @@ end
 function show(io::IO, a::FinGenAbGroupElem)
   @show_special_elem(io, a)
 
+  if get(io, :compact, false) || get(io, :supercompact, false)
+    print(io, "[", join(a.coeff, ", "), "]")
+    return
+  end
+
   print(io, "Abelian group element [", join(a.coeff, ", "), "]")
 end
 
