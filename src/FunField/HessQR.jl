@@ -335,7 +335,7 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
   F = GF(b.c)
   Ft, t = rational_function_field(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
-  S = parent(a).R
+  S = a.R
   return Ft, MapFromFunc(a, Ft,
                          x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
                          y->HessQRElem(a, ZZRingElem(1), map_coefficients(z -> lift(ZZ, z), numerator(y), parent = S), map_coefficients(z -> lift(ZZ, z), denominator(y), parent = S)))
