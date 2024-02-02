@@ -34,62 +34,6 @@ function modord(a::Integer, m::Integer)
   return i
 end
 
-################################################################################
-#
-#  Chinese remaindering modulo UInts to ZZRingElem
-#
-################################################################################
-
-mutable struct fmpz_comb
-  primes::Ptr{UInt}
-  num_primes::Int
-  n::Int
-  comb::Ptr{Ptr{ZZRingElem}}
-  res::Ptr{Ptr{ZZRingElem}}
-  mod_n::UInt
-  mod_ninv::UInt
-  mod_norm::UInt
-
-  function fmpz_comb(primes::Vector{UInt})
-    z = new()
-    ccall((:fmpz_comb_init, libflint), Nothing, (Ref{fmpz_comb}, Ptr{UInt}, Int),
-      z, primes, length(primes))
-    finalizer(_fmpz_comb_clear_fn, z)
-    return z
-  end
-end
-
-function _fmpz_comb_clear_fn(z::fmpz_comb)
-  ccall((:fmpz_comb_clear, libflint), Nothing, (Ref{fmpz_comb},), z)
-end
-
-mutable struct fmpz_comb_temp
-  n::Int
-  comb_temp::Ptr{Ptr{ZZRingElem}}
-  temp::Ptr{ZZRingElem}
-  temp2::Ptr{ZZRingElem}
-
-  function fmpz_comb_temp(comb::fmpz_comb)
-    z = new()
-    ccall((:fmpz_comb_temp_init, libflint), Nothing,
-      (Ref{fmpz_comb_temp}, Ref{fmpz_comb}), z, comb)
-    finalizer(_fmpz_comb_temp_clear_fn, z)
-    return z
-  end
-end
-
-function _fmpz_comb_temp_clear_fn(z::fmpz_comb_temp)
-  ccall((:fmpz_comb_temp_clear, libflint), Nothing, (Ref{fmpz_comb_temp},), z)
-end
-
-
-function fmpz_multi_crt_ui!(z::ZZRingElem, a::Vector{UInt}, b::fmpz_comb, c::fmpz_comb_temp)
-  ccall((:fmpz_multi_CRT_ui, libflint), Nothing,
-    (Ref{ZZRingElem}, Ptr{UInt}, Ref{fmpz_comb}, Ref{fmpz_comb_temp}, Cint),
-    z, a, b, c, 1)
-  return z
-end
-
 function _fmpz_preinvn_struct_clear_fn(z::fmpz_preinvn_struct)
   ccall((:fmpz_preinvn_clear, libflint), Nothing, (Ref{fmpz_preinvn_struct},), z)
 end
@@ -208,7 +152,7 @@ function sunit_group(S::Vector{ZZRingElem})
     return evaluate(image(mu, a))
   end
 
-  mp.header = MapHeader(u, FlintQQ, dexp, mu.header.preimage)
+  mp.header = MapHeader(u, FlintQQ, dexp, y->preimage(mu, y))
 
   return u, mp
 end
