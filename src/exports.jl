@@ -216,6 +216,7 @@ export coefficient_ideals
 export coefficients
 export coinvariant_lattice
 export cokernel
+export collapse_top_layer
 export colon
 export common_eigenspaces
 export commutator_subgroup
@@ -547,6 +548,7 @@ export is_primitive
 export is_primitive_over
 export is_principal
 export is_principal_fac_elem
+export is_principal_with_data
 export is_probable_supersingular
 export is_pure
 export is_quadratic
