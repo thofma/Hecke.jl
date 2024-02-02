@@ -653,9 +653,9 @@ function genus_representatives(L::HermLat; max=inf, use_auto::Bool = true,
     # S. Brandhorst Al. Cattaneo, the set of isometry classes in
     # the genus of L is in bijection with the quotient J/J_0.
     #
-    # If we denote s the generator of Gal(E/K), then
-    # where J is the set of ideals I in O_E such that I*s(I) = O_E
-    # and and J_0 is the set of principal such ideals.
+    # We denote by s the generator of Gal(E/K), 
+    # by J the set of fractional ideals I of O_E such that I*s(I) = O_E
+    # and by J_0 = {e O_E | e \in E: e*s(e) =1 }.
     # To compute representatives of classes in J/J_0, we use the bijection
     #
     #                C/C_0 -> J/J_0, I -> I/s(I)
