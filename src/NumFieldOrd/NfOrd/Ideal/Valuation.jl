@@ -218,7 +218,7 @@ function valuation_with_anti_uni(a::AbsSimpleNumFieldElem, anti_uni::AbsSimpleNu
   return v
 end
 
-function _isindex_divisor(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _isindex_divisor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert is_prime_known(P) && is_prime(P)
   if !isone(denominator(P.gen_two.elem_in_nf))
     return true
@@ -400,17 +400,17 @@ end
 
 @doc raw"""
     valuation(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
-    valuation(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldOrderElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
     valuation(a::ZZRingElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-valuation(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = valuation(a.elem_in_nf, p)
+valuation(a::AbsSimpleNumFieldOrderElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = valuation(a.elem_in_nf, p)
 
 @doc raw"""
     valuation(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
-    valuation(a::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldOrderElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
     valuation(a::ZZRingElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$

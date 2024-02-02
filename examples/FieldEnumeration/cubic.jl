@@ -10,7 +10,7 @@ function ideals_with_pp_norm(lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
   return r
 end
 
-function ideals_with_norm(i::ZZRingElem, M::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function ideals_with_norm(i::ZZRingElem, M::AbsSimpleNumFieldOrder)
   @assert M.is_maximal == 1
   if isone(i)
     return [ideal(M, 1)]

@@ -18,12 +18,12 @@ function norm(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFi
   return evaluate(factored_norm(A))
 end
 
-function factored_norm(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function factored_norm(A::AbsSimpleNumFieldOrderFractionalIdeal)
   n = norm(A)
   return FacElem(Dict(QQFieldElem(numerator(n)) => 1, QQFieldElem(denominator(n)) => -1))
 end
 
-function factored_norm(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function factored_norm(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   b = Dict{QQFieldElem, ZZRingElem}()
   for (p, k) = A.fac
     if iszero(k)
@@ -50,14 +50,14 @@ function factored_norm(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumFi
   return bb
 end
 
-function norm(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function norm(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   return evaluate(factored_norm(A))
 end
 
 
 
 @doc raw"""
-    valuation(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    valuation(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
     valuation(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 The valuation of $A$ at $P$.
@@ -66,16 +66,16 @@ function valuation(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   return sum(valuation(I, p)*v for (I, v) = A.fac if !iszero(v))
 end
 
-function valuation(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function valuation(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return sum(valuation(I, p)*v for (I, v) = A.fac)
 end
 
 @doc raw"""
-     ideal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField)
+     ideal(O::AbsSimpleNumFieldOrder, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField)
 The factored fractional ideal $a*O$.
 """
-function ideal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
-  de = Dict{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+function ideal(O::AbsSimpleNumFieldOrder, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+  de = Dict{AbsSimpleNumFieldOrderFractionalIdeal, ZZRingElem}()
   for (e, k) = a.fac
     if !iszero(k)
       I = ideal(O, e)
@@ -91,18 +91,18 @@ function ==(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, 
 end
 ==(B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = A == B
 
-function ==(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function ==(A::AbsSimpleNumFieldOrderFractionalIdeal, B::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   C = A*inv(B)
   return isone(C)
 end
-==(B::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = A == B
+==(B::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = A == B
 
-function isone(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function isone(A::AbsSimpleNumFieldOrderFractionalIdeal)
   B = simplify(A)
   return B.den == 1 && isone(B.num)
 end
 
-function ==(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function ==(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert check_parent(A, B) "Elements must have same parent"
   return isone(A*inv(B))
 end
@@ -110,16 +110,16 @@ function ==(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFiel
   @assert check_parent(A, B) "Elements must have same parent"
   return isone(A*inv(B))
 end
-function ==(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function ==(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert order(base_ring(A)) === order(base_ring(B)) "Elements must be defined over the same order"
   return isone(A*inv(B))
 end
 
-==(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B==A
+==(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B==A
 
-==(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = isone(A*inv(B))
+==(A::AbsSimpleNumFieldOrderFractionalIdeal, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = isone(A*inv(B))
 
-function *(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function *(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert order(base_ring(A)) === order(base_ring(B)) "Elements must be defined over the same order"
   C = copy(B)
   for (i,k) = A.fac
@@ -127,7 +127,7 @@ function *(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumField
   end
   return C
 end
-*(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B*A
+*(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B*A
 
 function isone(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   if all(x -> iszero(x), values(A.fac))
@@ -137,7 +137,7 @@ function isone(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumF
   return length(A.fac) == 1 && (isone(first(keys(A.fac))) || iszero(first(values(A.fac))))
 end
 
-function isone(A::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function isone(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   A = simplify(A)
   return length(A.fac) == 1 && (isone(first(keys(A.fac))) || iszero(first(values(A.fac))))
 end
@@ -158,7 +158,7 @@ function factor(Q::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
   return fac
 end
 
-function FacElem(Q::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, O::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function FacElem(Q::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, O::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem})
   D = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
   for (I, v) = Q.fac
     if iszero(v)
@@ -177,23 +177,23 @@ end
 
 
 @doc raw"""
-    factor_coprime(Q::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
+    factor_coprime(Q::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
 
 A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
 a coprime basis is computed.
 This does {\bf not} use any factorisation.
 """
-function factor_coprime(Q::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function factor_coprime(Q::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   D = FacElem(Q, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(order(base_ring(Q))))
   S = factor_coprime(D)
   return S
 end
 
 @doc raw"""
-     factor(Q::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
+     factor(Q::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}
 The factorisation of $Q$, by refining a coprime factorisation.
 """
-function factor(Q::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function factor(Q::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   S = factor_coprime(Q)
   fac = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (p, e) = S
@@ -208,7 +208,7 @@ end
 #TODO: expand the coprime stuff to automatically also get the exponents
 @doc raw"""
     simplify(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FacElem
-    simplify(x::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FacElem
+    simplify(x::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FacElem
 
 Uses ```coprime_base``` to obtain a simplified version of $x$, ie.
 in the simplified version all base ideals will be pariwise coprime
@@ -265,13 +265,13 @@ function simplify!(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   return nothing
 end
 
-function simplify(x::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function simplify(x::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   z = copy(x)
   simplify!(z)
   return z
 end
 
-function simplify!(x::FacElem{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function simplify!(x::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   de = factor_coprime(x)
   if length(de)==0
     de = Dict(ideal(order(base_ring(parent(x))), 1) => ZZRingElem(1))

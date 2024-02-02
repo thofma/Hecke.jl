@@ -479,7 +479,7 @@ function _infinite_uniformizers(K::AbsSimpleNumField)
   return D
 end
 
-function sign_map(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Vector, lying_in::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = 1 * O)
+function sign_map(O::AbsSimpleNumFieldOrder, p::Vector, lying_in::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = 1 * O)
   K = nf(O)
 
   if isempty(p)

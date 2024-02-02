@@ -92,7 +92,7 @@ using .RelSaturate
 #
 ################################################################################
 
-function class_group_ctx(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
+function class_group_ctx(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
 
   if !redo
     c = get_attribute(O, :ClassGrpCtx)
@@ -210,7 +210,7 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
 
   @vprintln :UnitGroup 1 "Computing tentative class and unit group ..."
 
@@ -400,7 +400,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 end
 
 @doc raw"""
-    class_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; bound = -1,
+    class_group(O::AbsSimpleNumFieldOrder; bound = -1,
                           redo = false,
                           GRH = true)   -> FinGenAbGroup, Map
 
@@ -417,7 +417,7 @@ Keyword arguments:
 - `bound`: When specified, this is used for the bound for the factor base.
 - `GRH`: If `false`, the correctness of the result does not depend on GRH.
 """
-function class_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; bound::Int = -1, method::Int = 3,
+function class_group(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
                      large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
                      saturate_at_2::Bool = true)
@@ -435,7 +435,7 @@ function class_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldEle
   return class_group(c, O)::Tuple{FinGenAbGroup, MapClassGrp}
 end
 
-function _unit_group_maximal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _unit_group_maximal(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
   return unit_group(c, U)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
@@ -443,14 +443,14 @@ end
 
 
 @doc raw"""
-    unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
+    unit_group(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
 obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
-function unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function unit_group(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
@@ -459,7 +459,7 @@ function unit_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem
 end
 
 @doc raw"""
-    unit_group_fac_elem(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
+    unit_group_fac_elem(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
@@ -467,7 +467,7 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 All elements will be returned in factored form.
 """
-function unit_group_fac_elem(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
+function unit_group_fac_elem(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
     UUU, mUUU = unit_group_fac_elem(OK)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
@@ -488,11 +488,11 @@ function unit_group_fac_elem(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNum
 end
 
 @doc raw"""
-    regulator(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    regulator(O::AbsSimpleNumFieldOrder)
 
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
-function regulator(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function regulator(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
     O = lll(maximal_order(nf(O)))

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/residue_ring.jl : Quotients of maximal orders of number fields
+#  AbsSimpleNumFieldOrder/residue_ring.jl : Quotients of maximal orders of number fields
 #
 # This file is part of Hecke.
 #
@@ -86,10 +86,10 @@ hash(x::AbsOrdQuoRingElem, h::UInt) = hash(mod(x.elem, parent(x)), h)
 #
 ################################################################################
 
-Nemo.promote_rule(::Type{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}},
-                                ::Type{S}) where {S <: Integer} = AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+Nemo.promote_rule(::Type{AbsSimpleNumFieldOrderQuoRingElem},
+                                ::Type{S}) where {S <: Integer} = AbsSimpleNumFieldOrderQuoRingElem
 
-Nemo.promote_rule(::Type{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}, ::Type{ZZRingElem}) = AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+Nemo.promote_rule(::Type{AbsSimpleNumFieldOrderQuoRingElem}, ::Type{ZZRingElem}) = AbsSimpleNumFieldOrderQuoRingElem
 
 ################################################################################
 #
@@ -100,7 +100,7 @@ Nemo.promote_rule(::Type{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, A
 Base.deepcopy_internal(x::AbsOrdQuoRingElem, dict::IdDict) =
         AbsOrdQuoRingElem(parent(x), Base.deepcopy_internal(x.elem, dict))
 
-#copy(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = deepcopy(x)
+#copy(x::AbsSimpleNumFieldOrderQuoRingElem) = deepcopy(x)
 
 ################################################################################
 #
@@ -127,7 +127,7 @@ end
 ################################################################################
 
 #TODO: Inplace versions of mod
-function _easy_mod(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _easy_mod(x::AbsSimpleNumFieldOrderQuoRingElem)
   Q = parent(x)
   I = Q.ideal
   O = parent(x.elem)
@@ -175,7 +175,7 @@ end
 ################################################################################
 
 @doc raw"""
-    quo(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Map
+    quo(O::AbsSimpleNumFieldOrder, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderQuoRing, Map
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing, Map
 
 The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
@@ -199,7 +199,7 @@ function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrder
 end
 
 @doc raw"""
-    residue_ring(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+    residue_ring(O::AbsSimpleNumFieldOrder, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderQuoRing
     residue_ring(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
 
 The quotient ring $O$ modulo $I$ as a new ring.
@@ -207,22 +207,22 @@ The quotient ring $O$ modulo $I$ as a new ring.
 Nemo.residue_ring(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
 
 @doc raw"""
-    lift(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    lift(O::AbsSimpleNumFieldOrder, a::AbsSimpleNumFieldOrderQuoRingElem) -> AbsSimpleNumFieldOrderElem
 
 Returns a lift of $a$ back to $O$.
 """
-function lift(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function lift(O::AbsSimpleNumFieldOrder, a::AbsSimpleNumFieldOrderQuoRingElem)
   f = NfOrdQuoMap(O, parent(a))
   return preimage(f, a)
 end
 
 @doc raw"""
-    lift(a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    lift(a::AbsSimpleNumFieldOrderQuoRingElem) -> AbsSimpleNumFieldOrderElem
 
 Given an element of the quotient ring $\mathcal O/I$, return a lift in
 $\mathcal O$.
 """
-function lift(a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function lift(a::AbsSimpleNumFieldOrderQuoRingElem)
   simplify!(a)
   return a.elem
 end
@@ -314,8 +314,8 @@ function ^(a::AbsOrdQuoRingElem, f::ZZRingElem)
   return b
 end
 
-#^(a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, f::Integer) = a^ZZRingElem(f)
-function ^(a::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, b::Int)
+#^(a::AbsSimpleNumFieldOrderQuoRingElem, f::Integer) = a^ZZRingElem(f)
+function ^(a::AbsSimpleNumFieldOrderQuoRingElem, b::Int)
   if b < 0
     a = inv(a)
     b = -b
@@ -490,7 +490,7 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   # u will be the coefficient vector of the quotient
 
   V = R.tmp_div
-  if typeof(base_ring(parent(x))) <: AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+  if typeof(base_ring(parent(x))) <: AbsSimpleNumFieldOrder
     A = representation_matrix_mod(y.elem, minimum(R.ideal))
   else
     A = representation_matrix(y.elem, :left)#, minimum(R.ideal))
@@ -536,7 +536,7 @@ end
 #
 ################################################################################
 
-function _divexact_strong(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _divexact_strong(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldOrderQuoRingElem)
   n = euclid(x)
   m = euclid(y)
   @hassert :AbsOrdQuoRing 1 mod(n, m) == 0
@@ -602,7 +602,7 @@ is_unit(x::AbsOrdQuoRingElem) = is_invertible(x)[1]
 #
 ################################################################################
 
-function euclid(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function euclid(x::AbsSimpleNumFieldOrderQuoRingElem)
   if iszero(x)
     return ZZRingElem(-1)
   end
@@ -633,7 +633,7 @@ end
 #
 ################################################################################
 
-function Base.divrem(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function Base.divrem(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldOrderQuoRingElem)
   b, q = is_divisible(x, y)
   if b
     return q, zero(parent(x))
@@ -662,9 +662,9 @@ end
 #
 ################################################################################
 
-Random.gentype(::Type{AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}) = elem_type(AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+Random.gentype(::Type{AbsSimpleNumFieldOrderQuoRing}) = elem_type(AbsSimpleNumFieldOrderQuoRing)
 
-function rand(rng::AbstractRNG, Qsp::Random.SamplerTrivial{AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
+function rand(rng::AbstractRNG, Qsp::Random.SamplerTrivial{AbsSimpleNumFieldOrderQuoRing})
   Q = Qsp[]
   A = basis_matrix(Q)
   B = basis(base_ring(Q))
@@ -683,7 +683,7 @@ end
 #
 ################################################################################
 
-function annihilator(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function annihilator(x::AbsSimpleNumFieldOrderQuoRingElem)
   I = parent(x).ideal
   O = base_ring(parent(x))
   d = degree(O)
@@ -710,7 +710,7 @@ end
 #
 ################################################################################
 
-function gcd(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function gcd(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldOrderQuoRingElem)
   Q = parent(x)
   O = base_ring(Q)
 
@@ -741,7 +741,7 @@ end
 #
 ################################################################################
 
-function xxgcd(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}, y::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function xxgcd(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldOrderQuoRingElem)
   Q = parent(x)
   O = base_ring(Q)
 
@@ -801,9 +801,9 @@ function xxgcd(x::AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpl
   return g, u, v, -f, e
 end
 
-function (M::Generic.MatSpace{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}})(x::Generic.MatSpaceElem{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-  z = map(base_ring(M), x.entries)::Matrix{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
-  return M(z)::Generic.MatSpaceElem{AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+function (M::Generic.MatSpace{AbsSimpleNumFieldOrderQuoRingElem})(x::Generic.MatSpaceElem{AbsSimpleNumFieldOrderElem})
+  z = map(base_ring(M), x.entries)::Matrix{AbsSimpleNumFieldOrderQuoRingElem}
+  return M(z)::Generic.MatSpaceElem{AbsSimpleNumFieldOrderQuoRingElem}
 end
 
 ################################################################################
@@ -814,7 +814,7 @@ end
 
 # Just for debugging purposes
 # This governs the runtime of the probabilistic algorithms.
-function probability(O::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function probability(O::AbsSimpleNumFieldOrderQuoRing)
   p = 1.0
   I = O.ideal
   f = factor(norm(I))
@@ -834,11 +834,11 @@ end
 ################################################################################
 
 @doc raw"""
-    group_structure(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> FinGenAbGroup
+    group_structure(Q::AbsSimpleNumFieldOrderQuoRing) -> FinGenAbGroup
 
 Returns an abelian group with the structure of $(Q,+)$.
 """
-function group_structure(Q::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function group_structure(Q::AbsSimpleNumFieldOrderQuoRing)
   i = ideal(Q)
   fac = factor(i)
   structure = Vector{ZZRingElem}()

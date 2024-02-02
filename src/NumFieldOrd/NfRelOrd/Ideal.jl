@@ -262,13 +262,13 @@ function ideal(O::RelNumFieldOrder{T, S, U}, x::RelNumFieldOrderElem{T, U}) wher
   return RelNumFieldOrderIdeal{T, S, U}(O, PM)
 end
 
-function ideal(O::RelNumFieldOrder, x::Union{ Int, ZZRingElem, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function ideal(O::RelNumFieldOrder, x::Union{ Int, ZZRingElem, AbsSimpleNumFieldOrderElem})
   return ideal(O, O(x))
 end
 
-*(O::RelNumFieldOrder, x::T) where { T <: Union{ Int, ZZRingElem, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem } } = ideal(O, x)
+*(O::RelNumFieldOrder, x::T) where { T <: Union{ Int, ZZRingElem, AbsSimpleNumFieldOrderElem, RelNumFieldOrderElem } } = ideal(O, x)
 
-*(x::T, O::RelNumFieldOrder) where { T <: Union{ Int, ZZRingElem, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem } } = ideal(O, x)
+*(x::T, O::RelNumFieldOrder) where { T <: Union{ Int, ZZRingElem, AbsSimpleNumFieldOrderElem, RelNumFieldOrderElem } } = ideal(O, x)
 
 @doc raw"""
     ideal(O::RelNumFieldOrder{T, S}, a::S; check::Bool = true) -> RelNumFieldOrderIdeal{T, S}
@@ -294,7 +294,7 @@ function ideal(O::RelNumFieldOrder{T, S, U}, a::S; check::Bool = true) where {T,
   return RelNumFieldOrderIdeal{T, S, U}(O, PM)
 end
 
-function ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; check::Bool = true)
+function ideal(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; check::Bool = true)
   aa = fractional_ideal(order(a), a, ZZRingElem(1))
   return ideal(O, aa; check)
 end
@@ -306,9 +306,9 @@ function ideal(O::RelNumFieldOrder, a::RelNumFieldOrderIdeal; check::Bool = true
   return ideal(O, aa; check)
 end
 
-*(O::RelNumFieldOrder{T, S, U}, a::S) where {T, S <: Union{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderFractionalIdeal}, U} = fractional_ideal(O, a)
+*(O::RelNumFieldOrder{T, S, U}, a::S) where {T, S <: Union{AbsSimpleNumFieldOrderFractionalIdeal, RelNumFieldOrderFractionalIdeal}, U} = fractional_ideal(O, a)
 
-*(a::S, O::RelNumFieldOrder{T, S}) where {T, S <: Union{AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderFractionalIdeal}} = fractional_ideal(O, a)
+*(a::S, O::RelNumFieldOrder{T, S}) where {T, S <: Union{AbsSimpleNumFieldOrderFractionalIdeal, RelNumFieldOrderFractionalIdeal}} = fractional_ideal(O, a)
 
 *(O::RelNumFieldOrder, a::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) = ideal(O, a)
 
@@ -1667,7 +1667,7 @@ end
 #
 ################################################################################
 
-# See also approximate_nonnegative and approximate_simple in AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Ideal/Prime.jl
+# See also approximate_nonnegative and approximate_simple in AbsSimpleNumFieldOrder/Ideal/Prime.jl
 
 # Returns x in K such that v_p(x) = v[i] for p = primes[i] and v_p(x) \geq 0 for all other primes p.
 # Algorithm 1.7.8 in Hoppe: Normal forms over Dedekind domains

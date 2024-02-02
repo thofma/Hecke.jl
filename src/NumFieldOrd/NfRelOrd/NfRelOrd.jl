@@ -277,7 +277,7 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}})
+function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -301,7 +301,7 @@ function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsN
   return nothing
 end
 
-function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}})
+function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -468,11 +468,11 @@ end
 ################################################################################
 
 function Order(L::RelSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
-  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
+  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
 function Order(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
-  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
+  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
 
@@ -948,7 +948,7 @@ end
 #
 ################################################################################
 
-function relative_order(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
+function relative_order(O::AbsSimpleNumFieldOrder, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   L = codomain(m)
   Labs = domain(m)
   @assert nf(O) == Labs
@@ -992,7 +992,7 @@ end
 ################################################################################
 
 @doc raw"""
-    denominator(a::NumFieldElem, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    denominator(a::NumFieldElem, O::AbsSimpleNumFieldOrder) -> ZZRingElem
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.

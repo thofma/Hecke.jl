@@ -286,7 +286,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
     St = pseudo_matrix(L)
     d = ncols(St)
     for i in 1:nrows(St)
-      if base_ring(L) isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+      if base_ring(L) isa AbsSimpleNumFieldOrder
         I = numerator(coefficient_ideals(St)[i])
         den = denominator(coefficient_ideals(St)[i])
         _assure_weakly_normal_presentation(I)
@@ -317,7 +317,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
 
     I = numerator(coefficient_ideals(St)[d])
     den = denominator(coefficient_ideals(St)[d])
-    if minimal && base_ring(L) isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    if minimal && base_ring(L) isa AbsSimpleNumFieldOrder
       b, a = is_principal(I)
       if b
         push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
@@ -325,7 +325,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
       return v
     end
 
-    if base_ring(L) isa AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    if base_ring(L) isa AbsSimpleNumFieldOrder
       _assure_weakly_normal_presentation(I)
       push!(v, T[K(I.gen_one)//den * matrix(St)[n, j] for j in 1:d])
       push!(v, T[K(I.gen_two)//den * matrix(St)[n, j] for j in 1:d])
@@ -443,7 +443,7 @@ end
 ################################################################################
 
 @doc raw"""
-    discriminant(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    discriminant(L::AbstractLat) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the discriminant of the lattice `L`, that is, the generalized index ideal
 $[L^\# : L]$.
@@ -737,7 +737,7 @@ norm(::AbstractLat)
 ################################################################################
 
 @doc raw"""
-    scale(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    scale(L::AbstractLat) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the scale of the lattice `L`.
 """
@@ -794,7 +794,7 @@ dual(::AbstractLat)
 ################################################################################
 
 @doc raw"""
-    volume(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    volume(L::AbstractLat) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the volume of the lattice `L`.
 """
@@ -809,7 +809,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_modular(L::AbstractLat) -> Bool, AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    is_modular(L::AbstractLat) -> Bool, AbsSimpleNumFieldOrderFractionalIdeal
 
 Return whether the lattice `L` is modular. In this case, the second returned value
 is a fractional ideal $\mathfrak a$ of the base algebra of `L` such that

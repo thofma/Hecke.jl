@@ -5,12 +5,12 @@
 ################################################################################
 
 @doc raw"""
-    picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup, MapClassGrp
+    picard_group(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, MapClassGrp
 
 Returns the Picard group of $O$ and a map from the group in the set of
 (invertible) ideals of $O$.
 """
-function picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function picard_group(O::AbsSimpleNumFieldOrder)
   mP = get_attribute!(O, :picard_group) do
     OK = maximal_order(nf(O)) # We need it later anyway
     if O == OK
@@ -21,7 +21,7 @@ function picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldEl
   return domain(mP), mP
 end
 
-function unit_group_non_maximal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function unit_group_non_maximal(O::AbsSimpleNumFieldOrder)
   mU = get_attribute!(O, :unit_group_non_maximal) do
     if is_maximal(O)
       return _unit_group_maximal(O)[2]
@@ -29,7 +29,7 @@ function unit_group_non_maximal(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimple
     OK = maximal_order(O)
     UU, mUU = unit_group(OK)
     return _unit_group_non_maximal(O, OK, mUU)[2]
-  end::MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  end::MapUnitGrp{AbsSimpleNumFieldOrder}
   return domain(mU), mU
 end
 
@@ -39,7 +39,7 @@ end
 #
 ################################################################################
 
-function class_group_as_picard(OK::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function class_group_as_picard(OK::AbsSimpleNumFieldOrder)
   C, mC = class_group(OK)
   mp = MapPicardGrp{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   mp.header = MapHeader(C, IdealSet(OK), mC.header.image, mC.header.preimage)
@@ -196,7 +196,7 @@ function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, G
   return S, StoO
 end
 
-function _picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function _picard_group(O::AbsSimpleNumFieldOrder)
   # We use the exact sequence
   # OK^\times \to \bigoplus_p OK_p^\times/O_p^\times \to Pic(O) \to Pic(OK) \to 1
   # and Algorithm 4.1.9 in Cohen: Advanced topics in computational number theory
@@ -350,6 +350,9 @@ function _is_principal_non_maximal(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrd
   # (O_K/F)^\times/(O/F)^\times and hence an element of (O/F)^\times, so of O.
   # But I*O_K = c*O_K, as b is a unit of O_K, so I = c*O.
   O = order(I)
+  if I isa AlgAssAbsOrdIdl
+    @assert is_one(denominator(I, O))
+  end
   if !is_invertible(I)[1]
     return false, O()
   end

@@ -181,7 +181,7 @@ function _construct_grp(IdH::GAP.GapObj, uncom::Int)
   return IdCheck
 end
 
-function max_ramified_prime(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, gtype::Vector{Int}, bound::ZZRingElem)
+function max_ramified_prime(O::AbsSimpleNumFieldOrder, gtype::Vector{Int}, bound::ZZRingElem)
   n = prod(gtype)
   fac = factor(n)
   m = Int(minimum(keys(fac.fac)))

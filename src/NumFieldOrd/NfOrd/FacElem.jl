@@ -1,6 +1,6 @@
 ################################################################################
 #
-# AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/FacElem.jl : Factored elements over number fields
+# AbsSimpleNumFieldOrder/FacElem.jl : Factored elements over number fields
 #
 # This file is part of hecke.
 #
@@ -137,9 +137,9 @@ _base_ring(x::NumFieldOrderElem) = nf(parent(x))
 
 _base_ring(x::FacElem) = base_ring(x)
 
-*(x::FacElem{AbsSimpleNumFieldElem}, y::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}) = x*elem_in_nf(y)
+*(x::FacElem{AbsSimpleNumFieldElem}, y::AbsSimpleNumFieldOrderElem) = x*elem_in_nf(y)
 
-*(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::FacElem{AbsSimpleNumFieldElem}) = y*x
+*(x::AbsSimpleNumFieldOrderElem, y::FacElem{AbsSimpleNumFieldElem}) = y*x
 
 function _conjugates_arb_log(A::FacElemMon{AbsSimpleNumField}, a::AbsSimpleNumFieldElem, abs_tol::Int)
   abs_tol = 1<<nbits(abs_tol)

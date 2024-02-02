@@ -27,15 +27,15 @@ in the ring, of type `AbsNumFieldOrderIdealSet`.
 ## Creation
 
 ```@docs
-ideal(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem)
-ideal(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZMatrix)
-ideal(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
-ideal(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem, ::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+ideal(::AbsSimpleNumFieldOrder, ::ZZRingElem)
+ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix)
+ideal(::AbsSimpleNumFieldOrder, ::AbsSimpleNumFieldOrderElem)
+ideal(::AbsSimpleNumFieldOrder, ::ZZRingElem, ::AbsSimpleNumFieldOrderElem)
 ideal(::AbsNumFieldOrder, ::ZZRingElem, ::AbsNumFieldOrderElem)
 ideal(::AbsNumFieldOrder, ::ZZRingElem)
 ideal(::AbsNumFieldOrder, ::AbsNumFieldOrderElem)
 
-*(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+*(::AbsSimpleNumFieldOrder, ::AbsSimpleNumFieldOrderElem)
 factor(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 factor(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsSimpleNumFieldElem)
 coprime_base(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
@@ -53,7 +53,7 @@ All the usual operations are supported:
 ```@docs
 intersect(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 colon(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-in(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal)
+in(::AbsSimpleNumFieldOrderElem, ::AbsNumFieldOrderIdeal)
 is_power(::AbsNumFieldOrderIdeal, ::Int)
 is_power(::AbsNumFieldOrderIdeal)
 is_invertible(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
@@ -68,9 +68,9 @@ and Picard group
 or ring class group in general.
 
 ```@docs
-class_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-narrow_class_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-picard_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+class_group(::AbsSimpleNumFieldOrder)
+narrow_class_group(::AbsSimpleNumFieldOrder)
+picard_group(::AbsSimpleNumFieldOrder)
 ring_class_group(::AbsNumFieldOrder)
 ```
 
@@ -100,8 +100,8 @@ power_class(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},::
 power_product_class(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, ::Vector{ZZRingElem})
 power_reduce(::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},::ZZRingElem)
 class_group_ideal_relation(::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, ::Hecke.ClassGrpCtx)
-factor_base_bound_grh(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-factor_base_bound_bach(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+factor_base_bound_grh(::AbsSimpleNumFieldOrder)
+factor_base_bound_bach(::AbsSimpleNumFieldOrder)
 prime_ideals_up_to
 ```
 
@@ -116,12 +116,12 @@ is_principal_fac_elem(I)
 The computation of $S$-units is also tied to the class group:
 
 ```@docs
-torsion_units(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-torsion_unit_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-torsion_units_generator(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-Hecke.torsion_units_gen_order(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-unit_group(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
-unit_group_fac_elem(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+torsion_units(::AbsSimpleNumFieldOrder)
+torsion_unit_group(::AbsSimpleNumFieldOrder)
+torsion_units_generator(::AbsSimpleNumFieldOrder)
+Hecke.torsion_units_gen_order(::AbsSimpleNumFieldOrder)
+unit_group(::AbsSimpleNumFieldOrder)
+unit_group_fac_elem(::AbsSimpleNumFieldOrder)
 sunit_group(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 sunit_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 sunit_mod_units_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
@@ -170,15 +170,15 @@ Hecke.has_norm(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 idempotents(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 is_prime(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 Hecke.is_prime_known(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-is_ramified(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Union{Int, ZZRingElem})
+is_ramified(::AbsSimpleNumFieldOrder, ::Union{Int, ZZRingElem})
 ramification_index(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 degree(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 valuation(::AbsSimpleNumFieldElem, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-valuation(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+valuation(::AbsSimpleNumFieldOrderElem, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 valuation(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 valuation(::Integer, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 valuation(::ZZRingElem, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-valuation(::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+valuation(::AbsSimpleNumFieldOrderFractionalIdeal, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 idempotents(::AbsNumFieldOrderIdeal, ::AbsNumFieldOrderIdeal)
 ```
 
@@ -186,12 +186,12 @@ idempotents(::AbsNumFieldOrderIdeal, ::AbsNumFieldOrderIdeal)
 
 ```@docs
 quo(::Union{AbsNumFieldOrder, AlgAssAbsOrd}, ::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl})
-residue_ring(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-residue_field(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Bool)
-mod(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal)
-crt(::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+residue_ring(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+residue_field(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Bool)
+mod(::AbsSimpleNumFieldOrderElem, ::AbsNumFieldOrderIdeal)
+crt(::AbsSimpleNumFieldOrderElem, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsSimpleNumFieldOrderElem, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 euler_phi(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-Hecke.multiplicative_group(::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-Hecke.multiplicative_group_generators(::AbsOrdQuoRing{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+Hecke.multiplicative_group(::AbsSimpleNumFieldOrderQuoRing)
+Hecke.multiplicative_group_generators(::AbsSimpleNumFieldOrderQuoRing)
 ```
 

@@ -270,7 +270,7 @@ function ray_class_group_p_part(p::Integer, m::AbsNumFieldOrderIdeal{AbsSimpleNu
 
   @assert is_snf(U)
   @vprintln :RayFacElem 1 "Collecting elements to be evaluated; first, units"
-  evals = Hecke.AbsOrdQuoRingElem{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}[]
+  evals = Hecke.AbsSimpleNumFieldOrderQuoRingElem[]
   tobeeval = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   if gcd(U.snf[1],p)!=1
     if U.snf[1]==2

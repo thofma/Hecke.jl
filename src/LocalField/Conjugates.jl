@@ -354,7 +354,7 @@ function regulator(K::AbsSimpleNumField, C::qAdicConj, n::Int = 10; flat::Bool =
   return regulator(maximal_order(K), C, n, flat = flat)
 end
 
-function regulator(R::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::qAdicConj, n::Int = 10; flat::Bool = false)
+function regulator(R::AbsSimpleNumFieldOrder, C::qAdicConj, n::Int = 10; flat::Bool = false)
   u, mu = unit_group_fac_elem(R)
   return regulator([mu(u[i]) for i=2:ngens(u)], C, n, flat = flat)
 end

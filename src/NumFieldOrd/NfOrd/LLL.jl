@@ -730,7 +730,7 @@ function lll_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumField
   return q
 end
 
-function lll_basis(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::AbsSimpleNumFieldOrderFractionalIdeal, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   L, T = lll(A.num, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(order(A))
@@ -747,7 +747,7 @@ end
 #
 ################################################################################
 
-function short_elem(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
+function short_elem(A::AbsSimpleNumFieldOrderFractionalIdeal,
                 v::ZZMatrix=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
@@ -794,7 +794,7 @@ function reduce_product(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
 end
 
 
-function reduce_ideal(A::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function reduce_ideal(A::AbsSimpleNumFieldOrderFractionalIdeal)
   B = inv(A)
   b = short_elem(B.num)
   C = divexact(b, B.den)*A

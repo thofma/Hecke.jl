@@ -24,12 +24,12 @@
 ################################################################################
 
 @doc raw"""
-      picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup, MapClassGrp
+      picard_group(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, MapClassGrp
 
 Returns the Picard group of O and a map from the group in the set of
 (invertible) ideals of O.
 """
-function narrow_picard_group(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function narrow_picard_group(O::AbsSimpleNumFieldOrder)
   U, mU = unit_group(O)
 
   # determine the totally positive units
@@ -132,12 +132,12 @@ function _principal_ideals_modulo_totally_positive_principal_ideals(O, mU)
   return QQ, ff, gg
 end
 
-function units_modulo_totally_positive_units(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function units_modulo_totally_positive_units(O::AbsSimpleNumFieldOrder)
   U, mU = unit_group(O)
   return units_modulo_totally_positive_units(O, mU)
 end
 
-function units_modulo_totally_positive_units(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, mU)
+function units_modulo_totally_positive_units(O::AbsSimpleNumFieldOrder, mU)
   OK = maximal_order(O) # Will be computed anyway
   U = domain(mU)
   K = nf(O)

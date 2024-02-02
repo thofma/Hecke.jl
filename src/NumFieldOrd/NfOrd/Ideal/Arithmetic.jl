@@ -1,6 +1,6 @@
 ################################################################################
 #
-# AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}/Ideal/Arithmetic.jl : Arithmetic for ideals in orders of absolute
+# AbsSimpleNumFieldOrder/Ideal/Arithmetic.jl : Arithmetic for ideals in orders of absolute
 #                             number fields
 #
 # This file is part of Hecke.
@@ -476,7 +476,7 @@ end
 #
 ################################################################################
 
-# Falls back to generic case +(::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem})
+# Falls back to generic case +(::AbsSimpleNumFieldOrder, ::AbsSimpleNumFieldOrder)
 #for ideals in the maximal order, the gcd is well defined...
 
 function gcd(A::S, B::S) where S <: AbsNumFieldOrderIdeal
@@ -698,12 +698,12 @@ end
 
 *(x::Integer, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = y * x
 
-function *(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function *(x::AbsSimpleNumFieldOrderElem, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   return ideal(parent(x), x) * y
 end
 
-*(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}) = y * x
+*(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsSimpleNumFieldOrderElem) = y * x
 
 function mul_gen(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
   if y == 0
@@ -735,7 +735,7 @@ end
 ################################################################################
 
 @doc raw"""
-    idempotents(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    idempotents(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem, AbsSimpleNumFieldOrderElem
 
 Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
 `1 = e + f`.
@@ -832,17 +832,17 @@ end
 ################################################################################
 
 @doc raw"""
-    crt(r1::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, i1::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, r2::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, i2::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    crt(r1::AbsSimpleNumFieldOrderElem, i1::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, r2::AbsSimpleNumFieldOrderElem, i2::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem
 
 Find $x$ such that $x \equiv r_1 \bmod i_1$ and $x \equiv r_2 \bmod i_2$
 using `idempotents`.
 """
-function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
+function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{AbsSimpleNumFieldOrderElem, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)
   return r1*v + r2*u
 end
 
-function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
+function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{AbsSimpleNumFieldOrderElem, RelNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
   if length(a) == 1
     return a[1]
   end
@@ -1005,6 +1005,6 @@ function contract(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   return res
 end
 
-intersect(O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = contract(A, O)
+intersect(O::AbsSimpleNumFieldOrder, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = contract(A, O)
 
-intersect(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, O::AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}) = contract(A, O)
+intersect(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, O::AbsSimpleNumFieldOrder) = contract(A, O)

@@ -315,13 +315,13 @@ function c4c6_model(c4, c6)
   return elliptic_curve([-c4//48, -c6//864])
 end
 
-function check_kraus_conditions_global(c4::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, c6::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function check_kraus_conditions_global(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem)
   OK = parent(c4)
 
   #Find b2 values for all the primes dividing 3
   OK3 = 3*OK
   Plist3 = prime_ideals_over(OK, 3)
-  dat = Tuple{Bool, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}[check_kraus_conditions_at_3(c4, c6, P) for P in Plist3]
+  dat = Tuple{Bool, AbsSimpleNumFieldOrderElem}[check_kraus_conditions_at_3(c4, c6, P) for P in Plist3]
   if !all(Bool[d[1] for d in dat])
     return false, elliptic_curve(OK.nf, [0, 0, 0, 0, 0], false)
   end
@@ -383,7 +383,7 @@ function check_kraus_conditions_global(c4::AbsNumFieldOrderElem{AbsSimpleNumFiel
   return transform_rstu(c4c6_model(c4, c6), [r, s, t, 1])[1]
 end
 
-function check_kraus_conditions_at_2(c4::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, c6::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, a1::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function check_kraus_conditions_at_2(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, a1::AbsSimpleNumFieldOrderElem)
   @req P.gen_one == 2 "Prime ideal needs to be above 2"
   OK = parent(c4)
   e = ramification_index(P)
@@ -401,7 +401,7 @@ function check_kraus_conditions_at_2(c4::AbsNumFieldOrderElem{AbsSimpleNumField,
   return check_kraus_at_2_remainder(c4, c6, P, [a1])
 end
 
-function check_kraus_conditions_at_2(c4::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, c6::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function check_kraus_conditions_at_2(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @req P.gen_one == 2 "Prime ideal needs to be above 2"
   OK = parent(c4)
   e = ramification_index(P)
@@ -462,7 +462,7 @@ function check_kraus_at_2_remainder(c4, c6, P, as)
   return false, zero(OK), zero(OK)
 end
 
-function check_kraus_conditions_at_3(c4::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, c6::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function check_kraus_conditions_at_3(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @req P.gen_one == 3 "Prime ideal needs to be above 3"
   OK = ring_of_integers(parent(c4))
   e = ramification_index(P)
@@ -600,7 +600,7 @@ function make_integral(a::AbsSimpleNumFieldElem, P::AbsNumFieldOrderIdeal{AbsSim
   error("Cannot lift a to O_K mod P^e)")
 end
 
-function sqrt_mod_4(x::AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function sqrt_mod_4(x::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   e = ramification_index(P)
   P2 = P^e
   OK = parent(x)
@@ -754,7 +754,7 @@ function _gcd(a::Vector{ZZRingElem})
   return gcd(a)
 end
 
-function _gcd(a::Vector{AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+function _gcd(a::Vector{AbsSimpleNumFieldOrderElem})
   @assert length(a) > 0
   R = parent(a[1])
   I = sum(b * R for b in a)

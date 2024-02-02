@@ -160,11 +160,11 @@ end
 
 _module_scale_ideal(a::PMat, b::AbsNumFieldOrderIdeal) = _module_scale_ideal(b, a)
 
-function _module_scale_ideal(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::PMat)
+function _module_scale_ideal(a::AbsSimpleNumFieldOrderFractionalIdeal, b::PMat)
   return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
-_module_scale_ideal(a::PMat, b::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = _module_scale_ideal(b, a)
+_module_scale_ideal(a::PMat, b::AbsSimpleNumFieldOrderFractionalIdeal) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::RelNumFieldOrderIdeal, b::PMat)
   return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
@@ -180,7 +180,7 @@ _module_scale_ideal(a::PMat, b::RelNumFieldOrderFractionalIdeal) = _module_scale
 
 *(a::AbsNumFieldOrderIdeal, b::PMat) = _module_scale_ideal(a, b)
 
-*(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::PMat) = _module_scale_ideal(a, b)
+*(a::AbsSimpleNumFieldOrderFractionalIdeal, b::PMat) = _module_scale_ideal(a, b)
 
 *(a::RelNumFieldOrderIdeal, b::PMat) = _module_scale_ideal(a, b)
 

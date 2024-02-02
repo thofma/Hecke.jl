@@ -294,7 +294,7 @@ function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, relation_matrix::ZZ
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, relation_matrix, disc_log, modulus...)
 end
 
-const GrpAbFinGenToNfAbsOrdMap = GrpAbFinGenToAbsOrdMap{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+const GrpAbFinGenToNfAbsOrdMap = GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderElem}
 
 ################################################################################
 #
@@ -365,7 +365,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, 
   end
 end
 
-const GrpAbFinGenToNfOrdQuoRingMultMap = GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderElem{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+const GrpAbFinGenToNfOrdQuoRingMultMap = GrpAbFinGenToAbsOrdQuoRingMultMap{AbsSimpleNumFieldOrder, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderElem}
 
 function GrpAbFinGenToAbsOrdQuoRingMultMap(G::FinGenAbGroup, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
   return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G, Q, generators, disc_log)
