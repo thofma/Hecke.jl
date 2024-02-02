@@ -395,7 +395,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       end
       hh = FKabsz()
       ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
-      h = map_coefficients(FKabstoFK, hh)
+      h = map_coefficients(FKabstoFK, hh, cached = false)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h
 
@@ -443,7 +443,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       h = P.non_index_div_poly
       hh = FKabsz()
       ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
-      h = map_coefficients(FKabstoFK, hh)
+      h = map_coefficients(FKabstoFK, hh, cached = false)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h
 

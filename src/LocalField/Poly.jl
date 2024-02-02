@@ -349,7 +349,7 @@ function invmod(f::Generic.Poly{T}, M1::Generic.Poly{T}) where T <: Union{QadicF
   K = base_ring(f)
   Kt = parent(f)
   k, mk = residue_field(K)
-  fk = map_coefficients(mk, f)
+  fk = map_coefficients(mk, f, cached = false)
   M1k = map_coefficients(mk, M1, parent = parent(fk))
   invc = map_coefficients(x->preimage(mk, x), invmod(fk, M1k), parent = parent(f))
   g = invc
@@ -1108,7 +1108,7 @@ function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Un
   s = characteristic_polynomial(f, mu)
   E = Int(denominator(QQFieldElem(Int(valuation(constant_coefficient(s))*absolute_ramification_index), degree(s))))
   k, mk = residue_field(K)
-  sp = map_coefficients(mk, s)
+  sp = map_coefficients(mk, s, cached = false)
   sq = factor_squarefree(sp)
   @assert length(sq) == 1
   F = degree(first(keys(sq)))
@@ -1155,7 +1155,7 @@ function _factor(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicField
       if degree(facts[1]) > 1
         #Extend the base field
         F, gF = unramified_extension(K, degree(facts[1]), precision(K))
-        fF = map_coefficients(F, f)
+        fF = map_coefficients(F, f, cached = false)
         lf = Hensel_factorization(fF)
         fnew = first(values(lf))
         lfF = _factor()

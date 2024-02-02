@@ -111,7 +111,7 @@ end
 function _generates_unramified_extension(f::PolyRingElem{S}) where S <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   K = base_ring(f)
   F, mF = residue_field(K)
-  g = map_coefficients(mF, f)
+  g = map_coefficients(mF, f, cached = false)
   return is_irreducible(g)
 end
 
@@ -361,7 +361,7 @@ end
 function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
   K = PadicField(p, precision)
-  fK = map_coefficients(K, f)
+  fK = map_coefficients(K, f, cached = false)
   return local_field(fK, s, T, cached = cached, check = check)
 end
 

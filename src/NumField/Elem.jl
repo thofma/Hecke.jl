@@ -447,7 +447,7 @@ function AbstractAlgebra.factor(f::PolyRingElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, mKa = absolute_simple_field(K)
 
-  fKa = map_coefficients(inv(mKa), f)
+  fKa = map_coefficients(inv(mKa), f, cached = false)
   lf = factor(fKa)
   res = Fac(map_coefficients(mKa, lf.unit, parent = parent(f)), Dict(map_coefficients(mKa, k, parent = parent(f)) => v for (k,v) = lf.fac))
 

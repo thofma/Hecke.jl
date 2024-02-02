@@ -8,7 +8,7 @@ function roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldEl
   K = base_ring(f)
   e = absolute_ramification_index(K)
   k, mk = residue_field(K)
-  fk = map_coefficients(mk, f)
+  fk = map_coefficients(mk, f, cached = false)
   #TODO: We don't need a full Hensel factorization.
   lH = Hensel_factorization(f)
   rt = elem_type(K)[]
@@ -88,7 +88,7 @@ function _roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldE
   @assert degree(f) > 1
   K = base_ring(f)
   k, mk = residue_field(K)
-  fk = map_coefficients(mk, f)
+  fk = map_coefficients(mk, f, cached = false)
   rts = roots(fk)
   if length(rts) == 0
     return elem_type(K)[]
@@ -106,7 +106,7 @@ function _roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldE
 end
 
 function automorphism_list(K::T) where T <: Union{LocalField, QadicField}
-  f = map_coefficients(K, defining_polynomial(K))
+  f = map_coefficients(K, defining_polynomial(K), cached = false)
   rt = roots(f)
   rt = refine_roots1(f, rt)
 
@@ -121,7 +121,7 @@ function absolute_automorphism_list(K::LocalField{QadicFieldElem, S}) where S
   autsk = small_generating_set(automorphism_list(base_field(K)))
   auts = morphism_type(K)[]
   for f in autsk
-    fnew = map_coefficients(f, defining_polynomial(K))
+    fnew = map_coefficients(f, defining_polynomial(K), cached = false)
     rt = roots(K, fnew)
     for x in rt
       push!(auts, hom(K, K, f, x))
@@ -168,7 +168,7 @@ function _automorphisms(K::S, F::T, L::U) where {S <: Union{LocalField, QadicFie
   autsk = _automorphisms(base_field(K), F, L)
   auts = morphism_type(K, F)[]
   for f in autsk
-    fK = map_coefficients(f, defining_polynomial(K))
+    fK = map_coefficients(f, defining_polynomial(K), cached = false)
     rt = roots(fK)
     rt = refine_roots1(fK, rt)
     for x in rt

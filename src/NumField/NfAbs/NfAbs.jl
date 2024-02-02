@@ -800,11 +800,11 @@ function splitting_field(fl::Vector{<:PolyRingElem{AbsSimpleNumFieldElem}}; do_r
   end
 
   K, a = number_field(lg[1], check = false, cached = false)
-  ggl = [map_coefficients(K, lg[1])]
+  ggl = [map_coefficients(K, lg[1], cached = false)]
   ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - a)
 
   for i = 2:length(lg)
-    push!(ggl, map_coefficients(K, lg[i]))
+    push!(ggl, map_coefficients(K, lg[i], parent = parent(ggl[1])))
   end
   if do_roots
     R = [K(x) for x = r]
@@ -848,11 +848,11 @@ function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::
   end
 
 
-  ggl = [map_coefficients(mk, lg[1])]
+  ggl = [map_coefficients(mk, lg[1], cached = false)]
   ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - preimage(nk, a))
 
   for i = 2:length(lg)
-    push!(ggl, map_coefficients(mk, lg[i]))
+    push!(ggl, map_coefficients(mk, lg[i], parent = parent(ggl[1])))
   end
   if do_roots == Val{true}
     R = [mk(x) for x = r]

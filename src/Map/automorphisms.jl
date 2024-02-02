@@ -698,7 +698,7 @@ function _automorphisms(K::NumField, F::NumField, L::T) where {T <: Union{NumFie
   autsk = _automorphisms(base_field(K), F, L)
   auts = morphism_type(K, F)[]
   for f in autsk
-    rt = roots(map_coefficients(f, defining_polynomial(K)))
+    rt = roots(map_coefficients(f, defining_polynomial(K)), cached = false)
     for x in rt
       push!(auts, hom(K, F, f, x))
     end

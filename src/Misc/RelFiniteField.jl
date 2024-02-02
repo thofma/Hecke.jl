@@ -675,10 +675,10 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
   d = absolute_degree(F)
   K, gK = Native.finite_field(p, d, "a", cached = cached)
   k, mk = absolute_field(base_field(F))
-  def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F))
+  def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F), cached = false)
   img_gen_k = roots(K, defining_polynomial(k))[1]
   mp = hom(k, K, img_gen_k)
-  g = map_coefficients(mp, def_pol_new)
+  g = map_coefficients(mp, def_pol_new, cached = false)
   img_gen_F = roots(g)[1]
   img_basis_k = powers(img_gen_k, degree(k)-1)
   img_absolute_basis = Vector{elem_type(K)}(undef, degree(K))
@@ -745,7 +745,7 @@ function factor(f::PolyRingElem{T}) where T <: RelFinFieldElem
   F, mF = absolute_field(K)
   imF = inv(mF)
   @assert domain(imF) == K
-  fF = map_coefficients(imF, f)
+  fF = map_coefficients(imF, f, cached = false)
   lfF = factor(fF)
   facs = Dict{typeof(f), Int}()
   for (p, k) in lfF

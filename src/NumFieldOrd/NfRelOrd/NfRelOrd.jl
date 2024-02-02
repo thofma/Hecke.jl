@@ -1196,7 +1196,7 @@ function dedekind_test_composite(O::RelNumFieldOrder{U1, V, Z}, P::Union{RelNumF
   F, mF = quo(OK, P)
   Fy, y = polynomial_ring(F,"y", cached=false)
 
-  t = map_coefficients(mF, map_coefficients(OK, T), parent = Fy)
+  t = map_coefficients(mF, map_coefficients(OK, T, cached = false), parent = Fy)
   fail, g = gcd_with_failure(t, derivative(t))
   if !isone(fail)
     return K(fail.elem), O
@@ -1208,7 +1208,7 @@ function dedekind_test_composite(O::RelNumFieldOrder{U1, V, Z}, P::Union{RelNumF
   assure_2_normal(P)
   pi = anti_uniformizer(P)
   F = pi*(G*H - T)
-  f = map_coefficients(mF, map_coefficients(OK, F), parent = Fy)
+  f = map_coefficients(mF, map_coefficients(OK, F, cached = false), parent = Fy)
 
   fail, dd = gcd_with_failure(g, h)
   if !isone(fail)
@@ -1224,7 +1224,7 @@ function dedekind_test_composite(O::RelNumFieldOrder{U1, V, Z}, P::Union{RelNumF
   end
 
   u = divrem(t, d)[1]
-  U = map_coefficients(K, map_coefficients(x -> x.elem, u), parent = Kx)
+  U = map_coefficients(K, map_coefficients(x -> x.elem, u, cached = false), parent = Kx)
   M = representation_matrix(pi*L(U))
   PM = pseudo_matrix(representation_matrix(pi*L(U)), [ K(1)*OK for i = 1:degree(O) ])
   BM = basis_pmatrix(O)
@@ -1251,7 +1251,7 @@ function prefactorization_discriminant(K::RelSimpleNumField, d::Union{RelNumFiel
     end
     Q, mQ = quo(OK, I)
     Qx = polynomial_ring(Q, cached = false)[1]
-    fQ = map_coefficients(mQ, map_coefficients(OK, f) , parent = Qx)
+    fQ = map_coefficients(mQ, map_coefficients(OK, f, cached = false) , parent = Qx)
     fQ1 = derivative(fQ)
     fail = gcd_with_failure(fQ, fQ1)[1]
     if isone(fail)
@@ -1342,7 +1342,7 @@ function overorder_polygons(O::RelNumFieldOrder{S, T, RelSimpleNumFieldElem{AbsS
   Ok = maximal_order(k)
   F, mF = residue_field(Ok, p)
   mF1 = extend(mF, k)
-  f1 = map_coefficients(mF1, f)
+  f1 = map_coefficients(mF1, f, cached = false)
   sqf = factor_squarefree(f1)
   l = powers(gen(K), degree(K)-1)
   maxv = 0

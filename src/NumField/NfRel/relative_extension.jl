@@ -41,7 +41,7 @@ function relative_simple_extension(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNu
   p = pols[1]
   if length(pols) > 1
     i = 2
-    while !iszero(map_coefficients(m, p)(gen(K)))
+    while !iszero(map_coefficients(m, p, cached = false)(gen(K)))
       p = pols[i]
       i += 1
     end

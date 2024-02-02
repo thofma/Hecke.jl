@@ -342,7 +342,7 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{QadicFieldElem}})
   j = i-1
   while j > 0
     if i==length(C.lf)
-      f = evaluate(map_coefficients(Q, C.f), [gen(St), St(gen(S))])
+      f = evaluate(map_coefficients(Q, C.f, cached = false), [gen(St), St(gen(S))])
       f *= inv(leading_coefficient(f))
     else
 #      f = _set_precision(C.lf[i], N2)
@@ -405,7 +405,7 @@ mutable struct RootCtxSingle{T}
   function RootCtxSingle(f::PolyRingElem{<:SeriesElem{T}}, r::T) where {T}
     R = base_ring(parent(f))
     k, mk = residue_field(R)
-    g = map_coefficients(mk, f)
+    g = map_coefficients(mk, f, cached = false)
     # should be zero-ish, but if T is AcbFieldElem, this is difficult.
     is_exact_type(T) && @assert iszero(g(r))
     o = inv(derivative(g)(r))
@@ -419,10 +419,10 @@ mutable struct RootCtxSingle{T}
     r.f = map_coefficients(x->map_coefficients(K, x, parent = RR), f)
     k, mk = residue_field(R)
     _, mK = residue_field(RR)
-    g = map_coefficients(mk, f)
-    @vtime :AbsFact 2 rt = Nemo.any_root(map_coefficients(K, g))
+    g = map_coefficients(mk, f, cached = false)
+    @vtime :AbsFact 2 rt = Nemo.any_root(map_coefficients(K, g, cached = false))
     r.R = preimage(mK, rt)
-    g = map_coefficients(K, g)
+    g = map_coefficients(K, g, cached = false)
     @vtime :AbsFact 2 r.o = preimage(mK, inv(derivative(g)(rt)))
     return r
   end
@@ -522,7 +522,7 @@ mutable struct RootCtx
     r = new()
     r.f = f
     den = lcm(map(denominator, coefficients(f)))
-    g = map_coefficients(numerator, den*f)
+    g = map_coefficients(numerator, den*f, cached = false)
     @vtime :AbsFact 2 mu = HenselCtxFqRelSeries(g, p, t)
     mu === nothing && return mu
     r.H = mu
@@ -584,7 +584,7 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   #f in Qxy
   Zx = Hecke.Globals.Zx
   f *= lcm([denominator(x) for x = coefficients(f)])
-  ff = map_coefficients(ZZ, f)
+  ff = map_coefficients(ZZ, f, cached = false)
   #TODO: 0 might not be a good evaluation point...
   #f needs to be irreducible over Q and g square-free
   g = evaluate(ff, [gen(Zx), Zx(0)])
@@ -697,7 +697,7 @@ function combination(RC::RootCtx)
   lc = leading_coefficient(f, 1)
   d += degree(lc, 2)
 
-  ld = evaluate(map_coefficients(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
+  ld = evaluate(map_coefficients(x->F(ZZ(x)), lc, cached = false), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
   @assert precision(ld) >= n
   R = R .* ld
 
@@ -718,7 +718,7 @@ function combination(RC::RootCtx)
     root(RC, 1, 1)
     R = RC.all_R
     n = precision(R[1])
-    ld = evaluate(map_coefficients(x->F(ZZ(x)), lc), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
+    ld = evaluate(map_coefficients(x->F(ZZ(x)), lc, cached = false), [set_precision(Ft(0), n), set_precision(gen(Ft), n)])
     R = R .* ld
     @assert precision(R[1]) >= n
 
@@ -1049,7 +1049,7 @@ function field(RC::RootCtx, m::MatElem)
 
     setprecision!(coeff(X, 1), pr+2)
     setprecision!(coeff(Y, 1), pr+2)
-    el = [map_coefficients(q -> lift(Qqt, q)(Y), f)(X) for f = z]
+    el = [map_coefficients(q -> lift(Qqt, q)(Y), f, cached = false)(X) for f = z]
 
 #    # lift mod p^1 -> p^pr x^2+y^2+px+1 was bad I think
 #    @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
