@@ -201,7 +201,7 @@ end
   fa = factor(AcbField(100), f)
   @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
   r = roots(ComplexField(), f)
-  @test length(r) == 1
+  @test length(r) == 3
   fa = factor(ComplexField(), f)
   @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
 
