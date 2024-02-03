@@ -968,7 +968,7 @@ end
 function evaluate(p::QQPolyRingElem, f::TorQuadModuleMap)
   @req domain(f) === codomain(f) "f must be a self-map"
   @req all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
-  return evaluate(map_coefficients(ZZ, p), f)
+  return evaluate(map_coefficients(ZZ, p, cached = false), f)
 end
 
 (p::ZZPolyRingElem)(f::TorQuadModuleMap) = evaluate(p, f)

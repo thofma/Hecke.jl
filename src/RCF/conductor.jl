@@ -614,7 +614,7 @@ function is_abelian(K::AbsSimpleNumField)
   KQ = rationals_as_number_field()[1]
   ZKQ = maximal_order(KQ)
   r, mr = ray_class_group(ideal(ZKQ, d1), real_places(KQ), n_quo = degree(K))
-  s, ms = norm_group(map_coefficients(KQ, K.pol), mr, false, cached = false)
+  s, ms = norm_group(map_coefficients(KQ, K.pol, cached = false), mr, false, cached = false)
   deg = divexact(order(r), order(s))
   if deg == degree(K)
     set_attribute!(K, :is_abelian => true)
@@ -734,7 +734,7 @@ function norm_group(l_pols::Vector{T}, mR::U, is_abelian::Bool = true; of_closur
               =#
       fl = true
       for x = l_pols
-        g = map_coefficients(mFp, x)
+        g = map_coefficients(mFp, x, cached = false)
         if degree(g) != degree(x) || iszero(discriminant(g))
           fl = false
           break

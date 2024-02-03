@@ -185,7 +185,7 @@ function _is_primitive_via_block(el::AbsNonSimpleNumFieldElem, rt::Vector{Vector
 end
 
 function _block(el::AbsNonSimpleNumFieldElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpField)
-  fR = map_coefficients(R, data(el))
+  fR = map_coefficients(R, data(el), cached = false)
   s = fqPolyRepFieldElem[evaluate(fR, x) for x in rt]
   b = Vector{Int}[]
   a = BitSet()

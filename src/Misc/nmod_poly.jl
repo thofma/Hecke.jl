@@ -809,7 +809,7 @@ function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
       gc = NTuple{3, ZZPolyRingElem}[]
       for p = cp
         F, mF = quo(parent(p), p^valuation(modulus(R), p))
-        gp = map_coefficients(mF, g)
+        gp = map_coefficients(mF, g, cached = false)
         @assert base_ring(gp) == F
         fp = map_coefficients(mF, f, parent = parent(gp))
         if !is_unit(leading_coefficient(fp))
@@ -826,7 +826,7 @@ function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
             _, gp = fun_factor(gp)
           end
         end
-        push!(gc, map(y->map_coefficients(x->lift(x), y), gcd_sircana(fp, gp)))
+        push!(gc, map(y->map_coefficients(x->lift(x), y, cached = false), gcd_sircana(fp, gp)))
       end
       f = map_coefficients(R, induce_crt([x[1] for x = gc], cp), parent = parent(f))
       qf = map_coefficients(R, induce_crt([x[2] for x = gc], cp), parent = parent(f))

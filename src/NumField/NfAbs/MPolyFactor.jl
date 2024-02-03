@@ -5,7 +5,7 @@
 function _doit(a::Generic.MPoly{<:NumFieldElem}, fxn::Function)
   k = base_ring(a)
   ks, ms = absolute_simple_field(k)
-  lf = fxn(map_coefficients(pseudo_inv(ms), a))
+  lf = fxn(map_coefficients(pseudo_inv(ms), a, cached = false))
   return Fac(map_coefficients(ms, unit(lf), parent = parent(a)), Dict(map_coefficients(ms, k, parent = parent(a)) => v for (k,v) = lf.fac))
 end
 

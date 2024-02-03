@@ -26,7 +26,7 @@ mutable struct HenselCtxQadic <: Hensel
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x->setprecision(map_coefficients(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
+    return new(f, map(x->setprecision(map_coefficients(y->preimage(mK, y), x, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
   function HenselCtxQadic(f::PolyRingElem{QadicFieldElem})
@@ -220,7 +220,7 @@ function is_prime_nice(K::AbsSimpleNumField, p::Int)
     return false
   end
   F = Native.GF(p)
-  f = map_coefficients(F, d*K.pol)
+  f = map_coefficients(F, d*K.pol, cached = false)
   if degree(f) < degree(K)
     return false
   end
@@ -565,9 +565,9 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f))
+    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f, cached = false))
   else
-    vH.H = HenselCtxQadic(map_coefficients(mC, f))
+    vH.H = HenselCtxQadic(map_coefficients(mC, f, cached = false))
   end
   vH.C = C
   vH.P = P
@@ -623,9 +623,9 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
     @vprintln :PolyFactor 1 "setting prec to $i, and lifting the info ..."
     setprecision!(codomain(mC), i)
     if degree(P) == 1
-      vH.H.f = map_coefficients(x->coeff(mC(x), 0), f)
+      vH.H.f = map_coefficients(x->coeff(mC(x), 0), f, cached = false)
     else
-      vH.H.f = map_coefficients(mC, f)
+      vH.H.f = map_coefficients(mC, f, cached = false)
     end
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
