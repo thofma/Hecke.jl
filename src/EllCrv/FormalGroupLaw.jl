@@ -9,11 +9,11 @@
 
 #Can probably be made more efficient using Newton iteration like Sage does.
 @doc raw"""
-    formal_w(E::EllCrv, prec::Int) -> LaurentSeriesElem
+    formal_w(E::EllipticCurve, prec::Int) -> LaurentSeriesElem
 
 Return the formal expansion of w = -1/y at infinity in terms of parameter z= -x/y up to O(z^prec).
 """
-function formal_w(E::EllCrv, prec::Int = 20)
+function formal_w(E::EllipticCurve, prec::Int = 20)
   k = base_field(E)
   kz, z = laurent_series_ring(k, prec, "z")
   kzw, w = polynomial_ring(kz, "w")
@@ -31,11 +31,11 @@ function formal_w(E::EllCrv, prec::Int = 20)
 end
 
 @doc raw"""
-    formal_y(E::EllCrv, prec::Int) -> LaurentSeriesElem
+    formal_y(E::EllipticCurve, prec::Int) -> LaurentSeriesElem
 
 Return the formal expansion of y at infinity in terms of parameter z= -x/y up to O(z^prec).
 """
-function formal_y(E::EllCrv, prec::Int = 20)
+function formal_y(E::EllipticCurve, prec::Int = 20)
 
   #I took this prec + 6 from Sage
   w = formal_w(E, prec + 6)
@@ -44,11 +44,11 @@ function formal_y(E::EllCrv, prec::Int = 20)
 end
 
 @doc raw"""
-    formal_x(E::EllCrv, prec::Int) -> LaurentSeriesElem
+    formal_x(E::EllipticCurve, prec::Int) -> LaurentSeriesElem
 
 Return the formal expansion of x at infinity in terms of parameter z= -x/y up to O(z^prec).
 """
-function formal_x(E::EllCrv, prec::Int = 20)
+function formal_x(E::EllipticCurve, prec::Int = 20)
 
   y = formal_y(E, prec)
   z = gen(parent(y))
@@ -57,12 +57,12 @@ function formal_x(E::EllCrv, prec::Int = 20)
 end
 
 @doc raw"""
-    formal_differential_form(E::EllCrv, prec::Int) -> LaurentSeriesElem
+    formal_differential_form(E::EllipticCurve, prec::Int) -> LaurentSeriesElem
 
 Return the formal expansion of f(z) where f(z)dz is the invariant differential dx/(2y + a_1 x + a_3)
 at infinity in terms of parameter z= -x/y up to O(z^prec).
 """
-function formal_differential_form(E::EllCrv, prec::Int = 20)
+function formal_differential_form(E::EllipticCurve, prec::Int = 20)
   a1, a2, a3, a4, a6 = a_invars(E)
   x = formal_x(E, prec + 1)
   y = formal_y(E, prec + 1)
@@ -72,16 +72,16 @@ function formal_differential_form(E::EllCrv, prec::Int = 20)
 end
 
 @doc raw"""
-    formal_log(E::EllCrv, prec::Int) -> LaurentSeriesElem
+    formal_log(E::EllipticCurve, prec::Int) -> LaurentSeriesElem
 
 Return the formal logarithm of E as a power series at infinity in terms of the parameter z= -x/y up to O(z^prec).
 """
-function formal_log(E::EllCrv, prec::Int = 20)
+function formal_log(E::EllipticCurve, prec::Int = 20)
   return integral(formal_differential_form(E, prec - 1))
 end
 
 #Taking powers is inefficient here everywhere
-#=function formal_group_law(E::EllCrv, prec::Int = 20)
+#=function formal_group_law(E::EllipticCurve, prec::Int = 20)
   k = base_field(E)
   a1, a2, a3, a4, a6 = a_invars(E)
   ktt, (z1, z2) = power_series_ring(k, prec + 1, ["z1", "z2"])
@@ -114,12 +114,12 @@ end
 =#
 
 @doc raw"""
-    formal_inverse(E::EllCrv, prec::Int) -> LaurentSeriesElem
+    formal_inverse(E::EllipticCurve, prec::Int) -> LaurentSeriesElem
 
 Return the formal power series i with the property that F(z, i(z)) = 0 where F is the formal group law of E
 in terms of the parameter z= -x/y up to O(z^prec).
 """
-function formal_inverse(E::EllCrv, prec::Int = 20)
+function formal_inverse(E::EllipticCurve, prec::Int = 20)
    x = formal_x(E, prec+1)
    y = formal_y(E, prec+1)
    a1, a2, a3 = a_invars(E)

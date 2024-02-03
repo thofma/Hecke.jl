@@ -6,18 +6,18 @@
 ###############################################################################
 
 mutable struct OrdLoc{T<:AbsSimpleNumFieldElem} <: Hecke.Ring
-   OK::NfAbsOrd{AbsSimpleNumField,T}
-   prime::NfAbsOrdIdl{AbsSimpleNumField,T}
+   OK::AbsNumFieldOrder{AbsSimpleNumField,T}
+   prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}
    comp::Bool
 
-   function OrdLoc{T}(OK::NfAbsOrd{AbsSimpleNumField,T}, prime::NfAbsOrdIdl{AbsSimpleNumField,T}, cached::Bool = true, comp::Bool = false) where {T <: AbsSimpleNumFieldElem}
+   function OrdLoc{T}(OK::AbsNumFieldOrder{AbsSimpleNumField,T}, prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}, cached::Bool = true, comp::Bool = false) where {T <: AbsSimpleNumFieldElem}
       return get_cached!(OrdLocDict, (OK, prime, comp), cached) do
          return new(OK, prime, comp)
       end::OrdLoc{T}
    end
 end
 
-function ppio(a::NfOrdIdl, b::NfOrdIdl)
+function ppio(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
    c = gcd(a, b)
    n = divexact(a, c)
    g = gcd(c, n)
@@ -65,7 +65,7 @@ some more detail in divrem
 
 =#
 
-OrdLocDict = Dict{Tuple{NfAbsOrd{AbsSimpleNumField,AbsSimpleNumFieldElem}, NfAbsOrdIdl{AbsSimpleNumField,AbsSimpleNumFieldElem}, Bool}, Hecke.Ring}()
+OrdLocDict = Dict{Tuple{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, Bool}, Hecke.Ring}()
 
 mutable struct OrdLocElem{T<:AbsSimpleNumFieldElem} <: RingElem
    data::T
@@ -280,7 +280,7 @@ end
 @doc raw"""
      div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
 """
-function _make_legal(a::AbsSimpleNumFieldElem, S::NfOrdIdl)
+function _make_legal(a::AbsSimpleNumFieldElem, S::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   d = denominator(a, order(S))
   n = order(S)(d*a)
   b, _ = ppio(d*order(S), S)
@@ -397,7 +397,7 @@ end
 #
 ###############################################################################
 
-function principal_generator(L::OrdLoc{T}, I::NfAbsOrdIdl{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
+function principal_generator(L::OrdLoc{T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
   #possible for !L.comp due to semi local
   #theoretical for L.comp if L.prime large enough...
    valuation(L(I.gen_one)) >= valuation(L(I.gen_two)) ? L(I.gen_two) : L(I.gen_one)
@@ -460,7 +460,7 @@ function (L::OrdLoc{T})(data::T, checked::Bool = true) where {T <: AbsSimpleNumF
    return OrdLocElem{T}(data,L,checked)
 end
 
-function (L::OrdLoc{T})(data::NfAbsOrdElem{AbsSimpleNumField,T}, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
+function (L::OrdLoc{T})(data::AbsNumFieldOrderElem{AbsSimpleNumField,T}, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
    return OrdLocElem{T}(nf(parent(data))(data),L,checked)
 end
 
@@ -484,11 +484,11 @@ end
 ################################################################################
 
 @doc raw"""
-    valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
+    valuation(a::OrdLocElem{T}, prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
 
 Returns the valuation `n` of $a$ at $P$.
 """
-valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem} = valuation(data(a), prime)
+valuation(a::OrdLocElem{T}, prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem} = valuation(data(a), prime)
 
 ###############################################################################
 #
@@ -527,7 +527,7 @@ end
 ###############################################################################
 
 @doc raw"""
-    localization(OK::NfAbsOrd{AbsSimpleNumField,T}, S::NfAbsOrdIdl{AbsSimpleNumField,T}; cached=true, comp = false) where {T <: AbsSimpleNumFieldElem}
+    localization(OK::AbsNumFieldOrder{AbsSimpleNumField,T}, S::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}; cached=true, comp = false) where {T <: AbsSimpleNumFieldElem}
 
 Returns the localization of the order $OK$ at the ideal $S$.
 If `cached == true` (the default) then the resulting
@@ -536,6 +536,6 @@ to the constructor with the same order $OK$ and ideal $S$.
 `comp == false` means primes dividing $S$ are invertible,
 `comp == true` means all primes not dividing $S$ become units.
 """
-function localization(OK::NfAbsOrd{AbsSimpleNumField,T}, S::NfAbsOrdIdl{AbsSimpleNumField,T}; cached=true, comp::Bool = false) where {T <: AbsSimpleNumFieldElem}
+function localization(OK::AbsNumFieldOrder{AbsSimpleNumField,T}, S::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}; cached=true, comp::Bool = false) where {T <: AbsSimpleNumFieldElem}
    return OrdLoc{T}(OK, S, cached, comp)
 end

@@ -1,5 +1,5 @@
 @testset "AlgAssAbsOrdIdl" begin
-  QG = group_algebra(FlintQQ, GrpAbFinGen([ 4 ]))
+  QG = group_algebra(FlintQQ, FinGenAbGroup([ 4 ]))
 
   @testset "Arithmetic" begin
     O = any_order(QG)
@@ -51,7 +51,7 @@
 
   @testset "rand" begin
     Qx, x = FlintQQ["x"]
-    A = AlgAss(x^2 - QQFieldElem(1, 5))
+    A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
     I = 2*O
     T = elem_type(A)
@@ -183,7 +183,7 @@
   m[:, :, 2] = m2
   m[:, :, 3] = m3
   m[:, :, 4] = m4
-  A = AlgAss(QQ, m)
+  A = StructureConstantAlgebra(QQ, m)
   basO = map(x -> A(x), Vector{QQFieldElem}[[1//24, 0, 0, 0], [0, 1//48, 0, 0], [1//48, 0, 1//48, 0], [0, 0, 0, 1//48]])
   O = Order(A, basO)
   I = A(48) * O

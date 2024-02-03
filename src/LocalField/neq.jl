@@ -1018,7 +1018,7 @@ function one_unit_group(K::LocalField)
   if length(gens) == absolute_degree(K)
     o = map(_order_1_unit, gens)
     G = abelian_group([minimum(o) for x = gens])
-    from_G = function (g::GrpAbFinGenElem)
+    from_G = function (g::FinGenAbGroupElem)
       return prod(gens[i]^g[i] for i=1:length(gens))
     end
     to_G = function (a::LocalFieldElem)
@@ -1067,7 +1067,7 @@ function one_unit_group(K::LocalField)
     ord = map(_order_1_unit, gens[2:end])
     ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
     G = abelian_group(ord)
-    from_G = function (g::GrpAbFinGenElem)
+    from_G = function (g::FinGenAbGroupElem)
       return prod(bas[i]^g[i] for i=1:length(gens))
     end
     to_G = function (a::LocalFieldElem) #still uncertain
@@ -1127,7 +1127,7 @@ function unit_group(K::LocalField)
   gk = teichmuller(gk)
   @assert order(u[1]) == order(u)
 
-  from_G = function(g::GrpAbFinGenElem)
+  from_G = function(g::FinGenAbGroupElem)
     return uniformizer(K)^g[1] * gk^pro[2](g)[1] * mU(pro[3](g))
   end
 
@@ -1155,7 +1155,7 @@ function unit_group(R::QadicRing)
 
   G, pro, inj = direct_product(u, U, task = :both)
 
-  from_G = function(g::GrpAbFinGenElem)
+  from_G = function(g::FinGenAbGroupElem)
     return preimage(mk, mu(pro[1](g))) * mU(pro[2](g))
   end
 

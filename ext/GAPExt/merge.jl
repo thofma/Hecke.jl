@@ -128,17 +128,17 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension
   # Then translating them is straightforward.
-  autK = Vector{NfToNfMor}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
+  autK = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
   el = image_primitive_element(mK)
   for i = 1:length(x.generators_of_automorphisms)
     ima = mx(image_primitive_element(x.generators_of_automorphisms[i]))
-    autns = hom(Kns, Kns, NfAbsNSElem[ima, gens(Kns)[2]], check = false)
+    autns = hom(Kns, Kns, AbsNonSimpleNumFieldElem[ima, gens(Kns)[2]], check = false)
     ima = mK\(autns(el))
     autK[i] = hom(K, K, ima, check = false)
   end
   for j = 1:length(y.generators_of_automorphisms)
     ima = my(image_primitive_element(y.generators_of_automorphisms[j]))
-    autns = hom(Kns, Kns, NfAbsNSElem[gens(Kns)[1], ima], check = false)
+    autns = hom(Kns, Kns, AbsNonSimpleNumFieldElem[gens(Kns)[1], ima], check = false)
     ima = mK\(autns(el))
     autK[j+length(x.generators_of_automorphisms)] = hom(K, K, ima, check = false)
   end
@@ -158,7 +158,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
   lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
   Seemb, mSeemb = simple_extension(lsub, check = false)
   ev = AbsSimpleNumFieldElem[mK\(mx(image_primitive_element(emb_subx))), mK\(my(image_primitive_element(emb_suby)))]
-  embs = NfToNfMor[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
+  embs = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
   for j = 1:length(x.subfields)
     if codomain(x.subfields[j]) != domain(emb_subx)
       push!(embs, x.subfields[j])
@@ -568,7 +568,7 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
   Kt = polynomial_ring(K, "t", cached = false)[1]
-  norm_groups = Vector{GrpAbFinGenMap}(undef, length(v))
+  norm_groups = Vector{FinGenAbGroupHom}(undef, length(v))
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
     lfieldsL = maximal_abelian_subextension(list2[v[i][2]])

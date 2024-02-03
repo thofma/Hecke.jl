@@ -160,7 +160,7 @@ end
 ################################################################################
 
 @doc raw"""
-    abelian_group(T::TorQuadModule) -> GrpAbFinGen
+    abelian_group(T::TorQuadModule) -> FinGenAbGroup
 
 Return the underlying abelian group of `T`.
 """
@@ -305,7 +305,7 @@ elem_type(::Type{TorQuadModule}) = TorQuadModuleElem
 ###############################################################################
 
 @doc raw"""
-    (T::TorQuadModule)(a::GrpAbFinGenElem) -> TorQuadModuleElem
+    (T::TorQuadModule)(a::FinGenAbGroupElem) -> TorQuadModuleElem
 
 Coerce `a` to `T`.
 
@@ -323,7 +323,7 @@ julia> A(T(a)) == a
 true
 ```
 """
-function (T::TorQuadModule)(a::GrpAbFinGenElem)
+function (T::TorQuadModule)(a::FinGenAbGroupElem)
   @req abelian_group(T) === parent(a) "Parents do not match"
   return TorQuadModuleElem(T, a)
 end
@@ -480,14 +480,14 @@ getindex(T::TorQuadModule, i::Int) = gen(T, i)
 parent(a::TorQuadModuleElem) = a.parent
 
 @doc raw"""
-    data(a::TorQuadModuleElem) -> GrpAbFinGenElem
+    data(a::TorQuadModuleElem) -> FinGenAbGroupElem
 
 Return `a` as an element of the underlying abelian group.
 """
 data(a::TorQuadModuleElem) = a.data
 
 @doc raw"""
-    (A::GrpAbFinGen)(a::TorQuadModuleElem)
+    (A::FinGenAbGroup)(a::TorQuadModuleElem)
 
 Return `a` as an element of the underlying abelian group.
 
@@ -509,7 +509,7 @@ julia> d == D(A(d))
 true
 ```
 """
-function (A::GrpAbFinGen)(a::TorQuadModuleElem)
+function (A::FinGenAbGroup)(a::TorQuadModuleElem)
   @req A === abelian_group(parent(a)) "Parents do not match"
   return a.data
 end
@@ -681,7 +681,7 @@ containing as many elements as `ngens(T)`, return the abelian group homomorphism
 between `T` and `S` mapping the generators of `T` to the elements of `img`.
 """
 function hom(T::TorQuadModule, S::TorQuadModule, img::Vector{TorQuadModuleElem})
-  _img = GrpAbFinGenElem[]
+  _img = FinGenAbGroupElem[]
   @req length(img) == ngens(T) "Wrong number of elements"
   for g in img
     @req parent(g) === S "Elements have the wrong parent"
@@ -692,7 +692,7 @@ function hom(T::TorQuadModule, S::TorQuadModule, img::Vector{TorQuadModuleElem})
 end
 
 @doc raw"""
-    abelian_group_homomorphism(f::TorQuadModuleMap) -> GrpAbFinGenMap
+    abelian_group_homomorphism(f::TorQuadModuleMap) -> FinGenAbGroupHom
 
 Return the underlying abelian group homomorphism of `f`.
 """
@@ -835,7 +835,7 @@ Return whether `f` is injective.
 """
 is_injective(f::TorQuadModuleMap) = is_injective(f.map_ab)
 
-# Rely on the algorithm implemented for GrpAbFinGenMap
+# Rely on the algorithm implemented for FinGenAbGroupHom
 @doc raw"""
     has_complement(i::TorQuadModuleMap) -> Bool, TorQuadModuleMap
 

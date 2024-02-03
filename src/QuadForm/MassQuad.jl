@@ -329,7 +329,7 @@ function local_factor(L::QuadLat, p)
       if def
         R = base_ring(L)
         rlp = real_places(K)
-        A::GrpAbFinGen, _exp, _log = sign_map(R, _embedding.(rlp), p)
+        A::FinGenAbGroup, _exp, _log = sign_map(R, _embedding.(rlp), p)
         sa = ss * a
         t = (1 + _exp(A(Int[ sign(sa, _embedding(rlp[j])) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
         @assert t - 1 in p

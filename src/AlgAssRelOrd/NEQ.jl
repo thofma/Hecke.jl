@@ -6,7 +6,7 @@
 
 # Returns the solution of the norm equation and the number of the order, in which
 # the solution was found.
-function norm_equation(orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
+function norm_equation(orders::Vector{<: AlgAssRelOrd}, a::AbsNumFieldOrderElem)
   A = algebra(orders[1])
   if iszero(a)
     return A(), 1
@@ -15,7 +15,7 @@ function norm_equation(orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
   return evaluate(d), i
 end
 
-function norm_equation_fac_elem(orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
+function norm_equation_fac_elem(orders::Vector{<: AlgAssRelOrd}, a::AbsNumFieldOrderElem)
   A = algebra(orders[1])
   @assert !iszero(a) # We cannot represent 0 as a FacElem
   NC = NormCache(A, orders, a)
@@ -124,7 +124,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         if !skip
           push!(fields_in_product, (LtoA, KtoL))
 
-          G, pi = direct_product(G, UK, task = :prod)::Tuple{GrpAbFinGen, Tuple{GrpAbFinGenMap, GrpAbFinGenMap}}
+          G, pi = direct_product(G, UK, task = :prod)::Tuple{FinGenAbGroup, Tuple{FinGenAbGroupHom, FinGenAbGroupHom}}
           GtoUk = hom(gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
           if is_surjective(GtoUk)
             NC.GtoUk_surjective[order_num] = true
@@ -164,7 +164,7 @@ end
 # Finds a in O such that v_{p_i}(normred(a)) == v_i where p_i = primes[i] and
 # v_i = valuations[i] and such that v_q(normred(a)) == 0 for all other primes q,
 # assuming that such an element exists.
-function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int})
+function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: AbsNumFieldOrderIdeal}, valuations::Vector{Int})
   @assert !isempty(primes)
   @assert length(primes) == length(valuations)
   A = algebra(O)
@@ -232,7 +232,7 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: NfAbs
 end
 
 # Finds any a \in O \cap L such that v_p(nr(a)) = vals[i] for p = primes[i].
-function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, KtoL::NfToNfRel, ktoK::NfToNfMor, primes_in_k::Vector{<: NfAbsOrdIdl}, vals::Vector{Int}, cache::Vector{Any})
+function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, KtoL::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int}, cache::Vector{Any})
   A = algebra(O)
   sols = __neq_sunit(ktoK, primes_in_k, vals)
   if isempty(sols)
@@ -310,7 +310,7 @@ end
 # Let S be the set of primes lying over primes_in_k.
 # This finds a set of representatives of the S-units of K modulo units of O_K,
 # whose norm has the valuations vals at the primes primes_in_k.
-function __neq_sunit(ktoK::NfToNfMor, primes_in_k::Vector{<: NfAbsOrdIdl}, vals::Vector{Int})
+function __neq_sunit(ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, primes_in_k::Vector{<: AbsNumFieldOrderIdeal}, vals::Vector{Int})
   K = codomain(ktoK)
   OK = maximal_order(K)
   primes_in_K = Vector{ideal_type(OK)}()
@@ -350,7 +350,7 @@ function __neq_sunit(ktoK::NfToNfMor, primes_in_k::Vector{<: NfAbsOrdIdl}, vals:
   return elem_type(codomain(mSK))[ mSK(SK(sols[i, :])) for i in 1:nrows(sols) ]
 end
 
-function __neq_lift_unit(NC::NormCache, order_num::Int, g::GrpAbFinGenElem)
+function __neq_lift_unit(NC::NormCache, order_num::Int, g::FinGenAbGroupElem)
   if isone(g)
     return one(NC.algebra)
   end
@@ -379,7 +379,7 @@ function __neq_lift_unit(NC::NormCache, order_num::Int, g::GrpAbFinGenElem)
   return x
 end
 
-function __neq_find_good_primes(NC::NormCache, OL::NfRelOrd)
+function __neq_find_good_primes(NC::NormCache, OL::RelNumFieldOrder)
   n = NC.n
   m = degree(nf(OL))
   mn = m//n
@@ -408,11 +408,11 @@ end
 ################################################################################
 
 # Let K = base_ring(A). Then this returns the field K(x) and a map to A.
-function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}) where { T <: Union{ QQFieldElem, AbsSimpleNumFieldElem, NfRelElem } }
+function _as_subfield(A::AbstractAssociativeAlgebra{T}, x::AbstractAssociativeAlgebraElem{T}) where { T <: Union{ QQFieldElem, AbsSimpleNumFieldElem, RelSimpleNumFieldElem } }
   return _as_subfield(A, x, minpoly(x))
 end
 
-function _as_subfield(A::AbsAlgAss{QQFieldElem}, x::AbsAlgAssElem{QQFieldElem}, f::PolyRingElem{QQFieldElem})
+function _as_subfield(A::AbstractAssociativeAlgebra{QQFieldElem}, x::AbstractAssociativeAlgebraElem{QQFieldElem}, f::PolyRingElem{QQFieldElem})
   s = one(A)
   M = zero_matrix(FlintQQ, degree(f), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -424,7 +424,7 @@ function _as_subfield(A::AbsAlgAss{QQFieldElem}, x::AbsAlgAssElem{QQFieldElem}, 
   return K, NfAbsToAbsAlgAssMor(K, A, M)
 end
 
-function _as_subfield(A::AbsAlgAss{T}, x::AbsAlgAssElem{T}, f::PolyRingElem{T}) where { T <: Union{ AbsSimpleNumFieldElem, NfRelElem } }
+function _as_subfield(A::AbstractAssociativeAlgebra{T}, x::AbstractAssociativeAlgebraElem{T}, f::PolyRingElem{T}) where { T <: Union{ AbsSimpleNumFieldElem, RelSimpleNumFieldElem } }
   s = one(A)
   M = zero_matrix(base_ring(A), degree(f), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -438,7 +438,7 @@ end
 
 # The matrices in modules should generate full lattices in A.
 # This returns the numbers of the modules of which LtoA(O) is a submodule.
-function _issubmodule(modules::Vector{<: PMat}, O::NfRelOrd, LtoA::NfRelToAbsAlgAssMor)
+function _issubmodule(modules::Vector{<: PMat}, O::RelNumFieldOrder, LtoA::NfRelToAbsAlgAssMor)
   L = domain(LtoA)
   A = codomain(LtoA)
   B = absolute_basis(O)
@@ -462,7 +462,7 @@ function _issubmodule(modules::Vector{<: PMat}, O::NfRelOrd, LtoA::NfRelToAbsAlg
   return result
 end
 
-function _issubmodule(modules::Vector{<: AlgAssAbsOrd}, O::NfAbsOrd, LtoA::NfAbsToAbsAlgAssMor)
+function _issubmodule(modules::Vector{<: AlgAssAbsOrd}, O::AbsNumFieldOrder, LtoA::NfAbsToAbsAlgAssMor)
   L = domain(LtoA)
   A = codomain(LtoA)
   B = basis(O)
@@ -482,8 +482,8 @@ function _issubmodule(modules::Vector{<: AlgAssAbsOrd}, O::NfAbsOrd, LtoA::NfAbs
   return result
 end
 
-_issubmodule(FO::FieldOracle, OL::NfRelOrd, LtoA::NfRelToAbsAlgAssMor) = _issubmodule(FO.hnf_basis_pmats, OL, LtoA)
-_issubmodule(FO::FieldOracle, OL::NfAbsOrd, LtoA::NfAbsToAbsAlgAssMor) = _issubmodule(FO.maximal_orders, OL, LtoA)
+_issubmodule(FO::FieldOracle, OL::RelNumFieldOrder, LtoA::NfRelToAbsAlgAssMor) = _issubmodule(FO.hnf_basis_pmats, OL, LtoA)
+_issubmodule(FO::FieldOracle, OL::AbsNumFieldOrder, LtoA::NfAbsToAbsAlgAssMor) = _issubmodule(FO.maximal_orders, OL, LtoA)
 
 # Returns a LLL-reduced basis of O
 function small_elements(O::AlgAssRelOrd)
@@ -523,7 +523,7 @@ end
 # Adds a field for order number i (and possibly for other orders too)
 function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
   A = FO.algebra
-  function _add_field(x::AbsAlgAssElem)
+  function _add_field(x::AbstractAssociativeAlgebraElem)
     f = minpoly(x)
     L, LtoA = _as_subfield(A, x, f)
 

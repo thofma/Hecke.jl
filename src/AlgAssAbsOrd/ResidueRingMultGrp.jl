@@ -6,8 +6,8 @@
 
 @doc raw"""
     multiplicative_group(Q::AlgAssAbsOrdQuoRing)
-      -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
-    unit_group(Q::AlgAssAbsOrdQuoRing) -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
+      -> FinGenAbGroup, GrpAbFinGenToAbsOrdMap
+    unit_group(Q::AlgAssAbsOrdQuoRing) -> FinGenAbGroup, GrpAbFinGenToAbsOrdMap
 
 Returns the group $Q^\times$ and the injection $Q^\times -> Q$.
 """
@@ -35,7 +35,7 @@ function _multgrp_non_maximal(Q::AbsOrdQuoRing{U, T}) where {U, T}
   OO = maximal_order(A)
 
   primary_ideals = primary_decomposition(a, O)
-  groups = Vector{GrpAbFinGen}()
+  groups = Vector{FinGenAbGroup}()
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap{U, T, elem_type(OO)}}()
   ideals = Vector{ideal_type(O)}() # values of primary_ideals, but in the "right" order
   for (q, p) in primary_ideals
@@ -56,7 +56,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
   a = ideal(Q)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap{NfOrd, NfOrdIdl, NfOrdElem}}}()
+  groups = Vector{Tuple{FinGenAbGroup, GrpAbFinGenToAbsOrdQuoRingMultMap{AbsSimpleNumFieldOrder, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderElem}}}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     ai = _as_ideal_of_number_field(a, AtoK)
@@ -65,7 +65,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
 
   G = groups[1][1]
   for i = 2:length(groups)
-    G = direct_product(G, groups[i][1]; task = :none)::GrpAbFinGen
+    G = direct_product(G, groups[i][1]; task = :none)::FinGenAbGroup
   end
   S, StoG = snf(G)
 
@@ -183,7 +183,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   q = numerator(q)
   q = q - 1 # the cardinality of (O/p)^\times
   if isone(q)
-    G = GrpAbFinGen(ZZRingElem[])
+    G = FinGenAbGroup(ZZRingElem[])
     function disc_log2(x::AlgAssAbsOrdElem)
       return ZZRingElem[]
     end
@@ -258,7 +258,7 @@ end
 #
 ################################################################################
 
-# Much of this is taken from the implementation in NfOrd/ResidueRingMultGrp.jl
+# Much of this is taken from the implementation in AbsSimpleNumFieldOrder/ResidueRingMultGrp.jl
 
 # Computes (1 + p)/(1 + q) where q is a p-primary ideal (in a non-maximal order)
 function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)

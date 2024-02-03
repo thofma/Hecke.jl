@@ -117,7 +117,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
   else
     @vprintln :ClassGroup 1 "want $(stop-start) primes for random. Try distinct rational primes..."
 #    @show start, stop
-    JJ = NfOrdIdl[c.FB.ideals[stop]]
+    JJ = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[c.FB.ideals[stop]]
     start += length(c.FB.ideals) - stop
     stop  += length(c.FB.ideals) - stop
     i = stop

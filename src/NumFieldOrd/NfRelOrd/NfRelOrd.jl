@@ -1,4 +1,4 @@
-add_verbosity_scope(:NfRelOrd)
+add_verbosity_scope(:RelNumFieldOrder)
 
 ################################################################################
 #
@@ -6,7 +6,7 @@ add_verbosity_scope(:NfRelOrd)
 #
 ################################################################################
 
-function is_maximal_order_known(K::T) where T <: Union{NfRel, NfRelNS}
+function is_maximal_order_known(K::T) where T <: Union{RelSimpleNumField, RelNonSimpleNumField}
   return has_attribute(K, :maximal_order)
 end
 
@@ -16,19 +16,19 @@ end
 #
 ################################################################################
 
-parent(O::NfRelOrd) = O.parent
+parent(O::RelNumFieldOrder) = O.parent
 
-base_ring(O::NfRelOrd) = order(pseudo_basis(O, copy = false)[1][2])
+base_ring(O::RelNumFieldOrder) = order(pseudo_basis(O, copy = false)[1][2])
 
-elem_type(::Type{NfRelOrd{T, S, U}}) where {T, S, U} = NfRelOrdElem{T, U}
+elem_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderElem{T, U}
 
-ideal_type(::NfRelOrd{T, S, U}) where {T, S, U} = NfRelOrdIdl{T, S, U}
+ideal_type(::RelNumFieldOrder{T, S, U}) where {T, S, U} = RelNumFieldOrderIdeal{T, S, U}
 
-ideal_type(::Type{NfRelOrd{T, S, U}}) where {T, S, U} = NfRelOrdIdl{T, S, U}
+ideal_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderIdeal{T, S, U}
 
-fractional_ideal_type(::NfRelOrd{T, S, U}) where {T, S, U} = NfRelOrdFracIdl{T, S, U}
+fractional_ideal_type(::RelNumFieldOrder{T, S, U}) where {T, S, U} = RelNumFieldOrderFractionalIdeal{T, S, U}
 
-fractional_ideal_type(::Type{NfRelOrd{T, S, U}}) where {T, S, U} = NfRelOrdFracIdl{T, S, U}
+fractional_ideal_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderFractionalIdeal{T, S, U}
 
 ################################################################################
 #
@@ -39,7 +39,7 @@ fractional_ideal_type(::Type{NfRelOrd{T, S, U}}) where {T, S, U} = NfRelOrdFracI
 # Return a small OK-ideal I such that I * OK^n \subseteq OL (with respect to
 # the basis of OK)
 # This is required for the modular computations with ideals.
-function _modulus(O::NfRelOrd)
+function _modulus(O::RelNumFieldOrder)
   D = get_attribute(O, :modulus)
   if D isa Nothing
     D = reduce(lcm, coefficient_ideals(basis_pmatrix(O)))
@@ -61,7 +61,7 @@ end
 #
 ################################################################################
 
-function assure_has_basis_pmatrix(O::NfRelOrd{T, S, U}) where {T, S, U}
+function assure_has_basis_pmatrix(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
   if isdefined(O, :basis_pmatrix)
     return nothing
   end
@@ -80,7 +80,7 @@ function assure_has_basis_pmatrix(O::NfRelOrd{T, S, U}) where {T, S, U}
   return nothing
 end
 
-function assure_has_pseudo_basis(O::NfRelOrd{T, S, U}) where {T, S, U}
+function assure_has_pseudo_basis(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
   if isdefined(O, :pseudo_basis)
     return nothing
   end
@@ -98,7 +98,7 @@ function assure_has_pseudo_basis(O::NfRelOrd{T, S, U}) where {T, S, U}
   return nothing
 end
 
-function assure_has_basis_nf(O::NfRelOrd{T, S, U}) where {T, S, U}
+function assure_has_basis_nf(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
   if isdefined(O, :basis_nf)
     return nothing
   end
@@ -112,7 +112,7 @@ function assure_has_basis_nf(O::NfRelOrd{T, S, U}) where {T, S, U}
   return nothing
 end
 
-function assure_has_basis_matrix(O::NfRelOrd)
+function assure_has_basis_matrix(O::RelNumFieldOrder)
   if isdefined(O, :basis_matrix)
     return nothing
   end
@@ -120,7 +120,7 @@ function assure_has_basis_matrix(O::NfRelOrd)
   return nothing
 end
 
-function assure_has_basis_mat_inv(O::NfRelOrd)
+function assure_has_basis_mat_inv(O::RelNumFieldOrder)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
@@ -128,7 +128,7 @@ function assure_has_basis_mat_inv(O::NfRelOrd)
   return nothing
 end
 
-function assure_has_inv_coeff_ideals(O::NfRelOrd)
+function assure_has_inv_coeff_ideals(O::RelNumFieldOrder)
   if isdefined(O, :inv_coeff_ideals)
     return nothing
   end
@@ -144,11 +144,11 @@ end
 ################################################################################
 
 @doc raw"""
-      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
+      pseudo_basis(O::RelNumFieldOrder{T, S}) -> Vector{Tuple{NumFieldElem{T}, S}}
 
 Returns the pseudo-basis of $\mathcal O$.
 """
-function pseudo_basis(O::NfRelOrd; copy::Bool = true)
+function pseudo_basis(O::RelNumFieldOrder; copy::Bool = true)
   assure_has_pseudo_basis(O)
   if copy
     return deepcopy(O.pseudo_basis)
@@ -158,12 +158,12 @@ function pseudo_basis(O::NfRelOrd; copy::Bool = true)
 end
 
 @doc raw"""
-      basis_pmatrix(O::NfRelOrd) -> PMat
+      basis_pmatrix(O::RelNumFieldOrder) -> PMat
 
 Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_pmatrix(O::NfRelOrd; copy::Bool = true)
+function basis_pmatrix(O::RelNumFieldOrder; copy::Bool = true)
   assure_has_basis_pmatrix(O)
   if copy
     return deepcopy(O.basis_pmatrix)
@@ -173,11 +173,11 @@ function basis_pmatrix(O::NfRelOrd; copy::Bool = true)
 end
 
 @doc raw"""
-      inv_coeff_ideals(O::NfRelOrd{T, S}) -> Vector{S}
+      inv_coeff_ideals(O::RelNumFieldOrder{T, S}) -> Vector{S}
 
 Returns the inverses of the coefficient ideals of the pseudo basis of $O$.
 """
-function inv_coeff_ideals(O::NfRelOrd; copy::Bool = true)
+function inv_coeff_ideals(O::RelNumFieldOrder; copy::Bool = true)
   assure_has_inv_coeff_ideals(O)
   if copy
     return deepcopy(O.inv_coeff_ideals)
@@ -193,12 +193,12 @@ end
 ################################################################################
 
 @doc raw"""
-      basis_nf(O::NfRelOrd) -> Vector{NumFieldElem}
+      basis_nf(O::RelNumFieldOrder) -> Vector{NumFieldElem}
 
 Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
 ambient number field.
 """
-function basis_nf(O::NfRelOrd{S, T, U}; copy::Bool = true) where {S, T, U}
+function basis_nf(O::RelNumFieldOrder{S, T, U}; copy::Bool = true) where {S, T, U}
   assure_has_basis_nf(O)
   if copy
     return deepcopy(O.basis_nf)::Vector{U}
@@ -207,7 +207,7 @@ function basis_nf(O::NfRelOrd{S, T, U}; copy::Bool = true) where {S, T, U}
   end
 end
 
-function basis_matrix(O::NfRelOrd; copy::Bool = true)
+function basis_matrix(O::RelNumFieldOrder; copy::Bool = true)
   assure_has_basis_matrix(O)
   if copy
     return deepcopy(O.basis_matrix)
@@ -216,7 +216,7 @@ function basis_matrix(O::NfRelOrd; copy::Bool = true)
   end
 end
 
-function basis_mat_inv(O::NfRelOrd; copy::Bool = true)
+function basis_mat_inv(O::RelNumFieldOrder; copy::Bool = true)
   assure_has_basis_mat_inv(O)
   if copy
     return deepcopy(O.basis_mat_inv)
@@ -236,7 +236,7 @@ function show(io::IO, S::NfRelOrdSet)
   print(io, S.nf)
 end
 
-function show(io::IO, O::NfRelOrd)
+function show(io::IO, O::RelNumFieldOrder)
   compact = get(io, :compact, false)
   if compact
     if is_maximal_known_and_maximal(O)
@@ -277,7 +277,7 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelElem{AbsSimpleNumFieldElem}})
+function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -301,7 +301,7 @@ function assure_has_discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl
   return nothing
 end
 
-function assure_has_discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelNSElem{AbsSimpleNumFieldElem}})
+function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
@@ -332,7 +332,7 @@ function assure_has_discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl
   return nothing
 end
 
-function assure_has_discriminant(O::NfRelOrd{T, S, U}) where {T, S, U}
+function assure_has_discriminant(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
   if isdefined(O, :disc_rel)
     return nothing
   end
@@ -348,17 +348,17 @@ function assure_has_discriminant(O::NfRelOrd{T, S, U}) where {T, S, U}
   return nothing
 end
 
-function discriminant(O::NfRelOrd{AbsSimpleNumFieldElem, S}) where S
+function discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, S}) where S
   assure_has_discriminant(O)
   return deepcopy(O.disc_abs)
 end
 
-function discriminant(O::NfRelOrd{T, S}) where {T <: NumFieldElem{U} where U, S}
+function discriminant(O::RelNumFieldOrder{T, S}) where {T <: NumFieldElem{U} where U, S}
   assure_has_discriminant(O)
   return deepcopy(O.disc_rel)::ideal_type(order_type(base_field(nf(O))))
 end
 
-function absolute_discriminant(O::NfRelOrd{T, S}) where {T, S}
+function absolute_discriminant(O::RelNumFieldOrder{T, S}) where {T, S}
   d = norm(discriminant(O))
   d1 = absolute_discriminant(base_ring(O))
   di = abs(d1^(degree(O))*d)
@@ -372,7 +372,7 @@ function absolute_discriminant(O::NfRelOrd{T, S}) where {T, S}
   end
 end
 
-function absolute_discriminant(O::NfAbsOrd)
+function absolute_discriminant(O::AbsNumFieldOrder)
   return discriminant(O)
 end
 
@@ -382,7 +382,7 @@ end
 #
 ################################################################################
 
-function codifferent(O::NfRelOrd)
+function codifferent(O::RelNumFieldOrder)
   T = trace_matrix(O, copy = false)
   R = base_ring(O)
   K = nf(R)
@@ -392,7 +392,7 @@ function codifferent(O::NfRelOrd)
   return fractional_ideal(O, pm)
 end
 
-function different(O::NfRelOrd)
+function different(O::RelNumFieldOrder)
   if !is_maximal_known_and_maximal(O)
     error("Order not known to be maximal")
   end
@@ -405,7 +405,7 @@ end
 #
 ################################################################################
 
-degree(O::NfRelOrd) = degree(nf(O))
+degree(O::RelNumFieldOrder) = degree(nf(O))
 
 ################################################################################
 #
@@ -413,8 +413,8 @@ degree(O::NfRelOrd) = degree(nf(O))
 #
 ################################################################################
 
-function Base.deepcopy_internal(O::NfRelOrd{T, S, U}, dict::IdDict) where {T, S, U}
-  z = NfRelOrd{T, S, U}(O.nf)
+function Base.deepcopy_internal(O::RelNumFieldOrder{T, S, U}, dict::IdDict) where {T, S, U}
+  z = RelNumFieldOrder{T, S, U}(O.nf)
   for x in fieldnames(typeof(O))
     if x != :nf && x != :parent && isdefined(O, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
@@ -431,7 +431,7 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::U, O::NfRelOrd{T, S, U}, short::Type{Val{V}} = Val{false}) where {T, S, U, V}
+function _check_elem_in_order(a::U, O::RelNumFieldOrder{T, S, U}, short::Type{Val{V}} = Val{false}) where {T, S, U, V}
   b_pmat = basis_pmatrix(O, copy = false)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
@@ -457,7 +457,7 @@ function _check_elem_in_order(a::U, O::NfRelOrd{T, S, U}, short::Type{Val{V}} = 
   end
 end
 
-function in(a::U, O::NfRelOrd{T, S, U}) where {T, S, U}
+function in(a::U, O::RelNumFieldOrder{T, S, U}) where {T, S, U}
   return _check_elem_in_order(a, O, Val{true})
 end
 
@@ -467,22 +467,22 @@ end
 #
 ################################################################################
 
-function Order(L::NfRel{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
-  return NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
+function Order(L::RelSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
+  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
-function Order(L::NfRelNS{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
-  return NfRelOrd{AbsSimpleNumFieldElem, NfOrdFracIdl, NfRelNSElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
+function Order(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
+  return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
 
 function Order(L::NumField{S}, M::Generic.Mat{S}) where S <: NumFieldElem{T} where T
-  return NfRelOrd{S, NfRelOrdFracIdl{T}, elem_type(L)}(L, deepcopy(M))
+  return RelNumFieldOrder{S, RelNumFieldOrderFractionalIdeal{T}, elem_type(L)}(L, deepcopy(M))
 end
 
 #=
 @doc raw"""
-      Order(K::NumField, M::PMat) -> NfRelOrd
+      Order(K::NumField, M::PMat) -> RelNumFieldOrder
 
 Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
 of $K$.
@@ -490,7 +490,7 @@ of $K$.
 =#
 function Order(L::NumField{T}, M::PMat{T, S}) where {T, S}
   # checks
-  return NfRelOrd{T, S, elem_type(L)}(L, deepcopy(M))
+  return RelNumFieldOrder{T, S, elem_type(L)}(L, deepcopy(M))
 end
 
 function EquationOrder(L::NumField)
@@ -502,7 +502,7 @@ function EquationOrder(L::NumField)
   return O
 end
 
-function any_order(K::NfRel)
+function any_order(K::RelSimpleNumField)
   f = defining_polynomial(K)
   de = _integral_multiplicator(f)
   g = f * de
@@ -522,7 +522,7 @@ function any_order(K::NfRel)
   end
 end
 
-function any_order(K::NfRelNS)
+function any_order(K::RelNonSimpleNumField)
   normalized_gens = Vector{elem_type(K)}(undef, ngens(K))
   g = gens(K)
   pols = defining_polynomials(K)
@@ -545,7 +545,7 @@ function any_order(K::NfRelNS)
   return Order(K, basis_matrix(b))
 end
 
-function EquationOrder(L::NfRel{AbsSimpleNumFieldElem})
+function EquationOrder(L::RelSimpleNumField{AbsSimpleNumFieldElem})
   a = gen(L)
   @req is_integral(a) "Generator of must be integral"
   M = identity_matrix(base_field(L), degree(L))
@@ -567,29 +567,29 @@ function MaximalOrder(L::NumField)
   end::order_type(L)
 end
 
-function maximal_order_via_absolute(L::NfRel)
+function maximal_order_via_absolute(L::RelSimpleNumField)
   Labs, LabsToL = absolute_simple_field(L)
   Oabs = maximal_order(Labs)
   return relative_order(Oabs, LabsToL)
 end
 
-function maximal_order_via_absolute(m::NfToNfRel)
+function maximal_order_via_absolute(m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   Oabs = maximal_order(domain(m))
   return relative_order(Oabs, m)
 end
 
-function maximal_order_via_simple(L::NfRelNS)
+function maximal_order_via_simple(L::RelNonSimpleNumField)
   Ls, m = simple_extension(L)
   Os = maximal_order(Ls)
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_simple(m::NumFieldMor{<:NfRel, <:NfRelNS})
+function maximal_order_via_simple(m::NumFieldHom{<:RelSimpleNumField, <:RelNonSimpleNumField})
   Os = maximal_order(domain(m))
   return non_simple_order(Os, m)
 end
 
-function maximal_order_via_relative(K::AbsSimpleNumField, m::NfToNfRel)
+function maximal_order_via_relative(K::AbsSimpleNumField, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   return get_attribute!(K, :maximal_order) do
     L = codomain(m)
     OL = maximal_order(L)
@@ -600,7 +600,7 @@ function maximal_order_via_relative(K::AbsSimpleNumField, m::NfToNfRel)
   end::order_type(K)
 end
 
-function absolute_basis(O::NfRelOrd{T, S, U}, K::NumField{T}) where {T, S, U}
+function absolute_basis(O::RelNumFieldOrder{T, S, U}, K::NumField{T}) where {T, S, U}
   pb = pseudo_basis(O, copy = false)
   res = Vector{elem_type(K)}()
   for i = 1:degree(O)
@@ -617,7 +617,7 @@ end
 #
 ################################################################################
 
-function ==(R::NfRelOrd, S::NfRelOrd)
+function ==(R::RelNumFieldOrder, S::RelNumFieldOrder)
   nf(R) != nf(S) && return false
   return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
 end
@@ -630,13 +630,13 @@ end
 
 #=
 @doc raw"""
-    trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
+    trace_matrix(O::RelNumFieldOrder{T, S}) -> Generic.Mat{T}
 
 Returns the trace matrix of $\mathcal O$ with respect to $(\omega_1,\dotsc,\omega_d)$
 where $(\mathfrak c_i, \omega_i)$ is the pseudo-basis of $\mathcal O$.
 """
 =#
-function trace_matrix(O::NfRelOrd; copy::Bool = true)
+function trace_matrix(O::RelNumFieldOrder; copy::Bool = true)
   if isdefined(O, :trace_mat)
     if copy
       return deepcopy(O.trace_mat)
@@ -683,13 +683,13 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{AbsSimpleNumFieldElem}
   return g
 end
 
-function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f) where {T <: Union{AbsSimpleNumFieldElem, NfRelElem}}
+function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f) where {T <: Union{AbsSimpleNumFieldElem, RelSimpleNumFieldElem}}
   return map_coefficients(m, f, parent = R)
 end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: NfRelElem}
+function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: RelSimpleNumFieldElem}
   !is_equation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
@@ -735,9 +735,9 @@ function dedekind_test(O::NfRelOrd{U1, V, Z}, p::Union{NfAbsOrdIdl, NfRelOrdIdl}
   end
 end
 
-dedekind_ispmaximal(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p, Val{false})
 
-dedekind_poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p)[2]
+dedekind_poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p)[2]
 
 ################################################################################
 #
@@ -747,33 +747,33 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) = dedekind_
 
 #=
 @doc raw"""
-      poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
+      poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) -> RelNumFieldOrder
 
 This function tries to find an order that is locally larger than $\mathcal O$
 at the prime $p$.
 """
 =#
-function poverorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   if is_equation_order(O) && is_simple(O)
-    @vprintln :NfRelOrd 3 "Applying Dedekind criterion"
+    @vprintln :RelNumFieldOrder 3 "Applying Dedekind criterion"
     return dedekind_poverorder(O, p)
   else
-    @vprintln :NfRelOrd 3 "Computing pradical"
-    @vtime :NfRelOrd 4 Ip = pradical(O, p)
-    @vprintln :NfRelOrd 3 "Computing ring of multipliers"
-    @vtime :NfRelOrd 4 Op = ring_of_multipliers(Ip)
+    @vprintln :RelNumFieldOrder 3 "Computing pradical"
+    @vtime :RelNumFieldOrder 4 Ip = pradical(O, p)
+    @vprintln :RelNumFieldOrder 3 "Computing ring of multipliers"
+    @vtime :RelNumFieldOrder 4 Op = ring_of_multipliers(Ip)
     return Op
   end
 end
 
-function poverorder(O::NfRelOrd{S, T, NfRelElem{AbsSimpleNumFieldElem}}, p::NfOrdIdl) where {S, T}
+function poverorder(O::RelNumFieldOrder{S, T, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {S, T}
   if is_equation_order(O)
     return overorder_polygons(O, p)
   end
-  @vprintln :NfRelOrd 3 "Computing pradical"
-  @vtime :NfRelOrd 4 Ip = pradical(O, p)
-  @vprintln :NfRelOrd 3 "Computing ring of multipliers"
-  @vtime :NfRelOrd 4 Op = ring_of_multipliers(Ip)
+  @vprintln :RelNumFieldOrder 3 "Computing pradical"
+  @vtime :RelNumFieldOrder 4 Ip = pradical(O, p)
+  @vprintln :RelNumFieldOrder 3 "Computing ring of multipliers"
+  @vtime :RelNumFieldOrder 4 Op = ring_of_multipliers(Ip)
   return Op
 end
 
@@ -784,12 +784,12 @@ end
 ################################################################################
 #=
 @doc raw"""
-      pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
+      pmaximal_overorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) -> RelNumFieldOrder
 
 This function finds a $p$-maximal order $R$ containing $\mathcal O$.
 """
 =#
-function pmaximal_overorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function pmaximal_overorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   d = discriminant(O)
   if valuation(d, p) < 2
     return O
@@ -807,7 +807,7 @@ function pmaximal_overorder(O::NfRelOrd, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
   return OO
 end
 
-function MaximalOrder(O::NfRelOrd)
+function MaximalOrder(O::RelNumFieldOrder)
   disc = discriminant(O)
   fac = factor(disc)
   OO = O
@@ -821,11 +821,11 @@ function MaximalOrder(O::NfRelOrd)
   return OO
 end
 
-function MaximalOrder(O::NfRelOrd{S, T, U}) where {S, T, U <: NonSimpleNumFieldElem}
+function MaximalOrder(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: NonSimpleNumFieldElem}
   L = nf(O)
   K = base_field(L)
   Obase_K = maximal_order(K)
-  fields = Vector{Tuple{NfRel{S}, morphism_type(NfRel{S}, NfRelNS{S})}}(undef, length(L.pol))
+  fields = Vector{Tuple{RelSimpleNumField{S}, morphism_type(RelSimpleNumField{S}, RelNonSimpleNumField{S})}}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fields[i] = component(L, i)
   end
@@ -861,7 +861,7 @@ function MaximalOrder(O::NfRelOrd{S, T, U}) where {S, T, U <: NonSimpleNumFieldE
   return Ostart
 end
 
-function product_pseudobasis(l::Vector{Vector{Tuple{T, S}}}) where {S, T <: Union{NfAbsOrdElem, NfRelOrdElem, NumFieldElem}}
+function product_pseudobasis(l::Vector{Vector{Tuple{T, S}}}) where {S, T <: Union{AbsNumFieldOrderElem, RelNumFieldOrderElem, NumFieldElem}}
   nelems = 1
   for i = 1:length(l)
     nelems *= length(l[i])
@@ -889,7 +889,7 @@ end
 #
 ################################################################################
 #TODO: this is wrong unless the indices are coprime
-function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
+function +(a::RelNumFieldOrder{T, S, U}, b::RelNumFieldOrder{T, S, U}) where {T, S, U}
   # checks
   @assert nf(a) == nf(b)
   d = degree(a)
@@ -897,10 +897,10 @@ function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
   bB = basis_pmatrix(b, copy = false)
   M = vcat(aB, bB)
   PM = sub(pseudo_hnf(M, :lowerleft, true), d + 1:2*d, 1:d)
-  return NfRelOrd{T, S, U}(nf(a), PM)
+  return RelNumFieldOrder{T, S, U}(nf(a), PM)
 end
 
-function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: Union{NfRelElem{AbsSimpleNumFieldElem}, NfRelNSElem{AbsSimpleNumFieldElem}}}
+function +(a::RelNumFieldOrder{T, S, U}, b::RelNumFieldOrder{T, S, U}) where {T, S, U <: Union{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}}
   # checks
   @assert nf(a) == nf(b)
   K = base_field(nf(a))
@@ -917,10 +917,10 @@ function +(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: Union{N
     M.coeffs[i] = M.coeffs[i]*inv(K(z))
     simplify(M.coeffs[i])
   end
-  return NfRelOrd{T, S, U}(nf(a), M)
+  return RelNumFieldOrder{T, S, U}(nf(a), M)
 end
 
-function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U <: NfRelElem{AbsSimpleNumFieldElem}}
+function sum_as_OK_modules(a::RelNumFieldOrder{T, S, U}, b::RelNumFieldOrder{T, S, U}) where {T, S, U <: RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}
   if !isdefined(a, :index) || !isdefined(b, :index)
     return a+b
   end
@@ -931,14 +931,14 @@ function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T,
   M = vcat(aB, bB)
   new_index = a.index * b.index
   M = sub(pseudo_hnf_full_rank_with_modulus(M, new_index, :lowerleft), d+1:2*d, 1:d)
-  res = NfRelOrd{T, S, U}(nf(a), M)
+  res = RelNumFieldOrder{T, S, U}(nf(a), M)
   res.index = new_index
   res.disc_abs = simplify(gcd(discriminant(a), discriminant(b)))
   return res
 end
 
 
-function sum_as_OK_modules(a::NfRelOrd{T, S, U}, b::NfRelOrd{T, S, U}) where {T, S, U}
+function sum_as_OK_modules(a::RelNumFieldOrder{T, S, U}, b::RelNumFieldOrder{T, S, U}) where {T, S, U}
   return a+b
 end
 
@@ -948,7 +948,7 @@ end
 #
 ################################################################################
 
-function relative_order(O::NfOrd, m::NfToNfRel)
+function relative_order(O::AbsSimpleNumFieldOrder, m::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}})
   L = codomain(m)
   Labs = domain(m)
   @assert nf(O) == Labs
@@ -970,7 +970,7 @@ end
 #
 ################################################################################
 
-function non_simple_order(O::NfRelOrd, m::NumFieldMor{<:NfRel, <:NfRelNS})
+function non_simple_order(O::RelNumFieldOrder, m::NumFieldHom{<:RelSimpleNumField, <:RelNonSimpleNumField})
   L = domain(m)
   L_ns = codomain(m)
   @assert nf(O) == L
@@ -982,7 +982,7 @@ function non_simple_order(O::NfRelOrd, m::NumFieldMor{<:NfRel, <:NfRelNS})
     elem_to_mat_row!(M, i, m(L(B[i])))
   end
   PM = pseudo_hnf(pseudo_matrix(M, Hecke.basis_pmatrix(O).coeffs), :lowerleft, true)
-  return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1]), elem_type(L_ns)}(L_ns, PM)
+  return RelNumFieldOrder{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1]), elem_type(L_ns)}(L_ns, PM)
 end
 
 ################################################################################
@@ -992,12 +992,12 @@ end
 ################################################################################
 
 @doc raw"""
-    denominator(a::NumFieldElem, O::NfOrd) -> ZZRingElem
+    denominator(a::NumFieldElem, O::AbsSimpleNumFieldOrder) -> ZZRingElem
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
 """
-function denominator(a::NumFieldElem, O::NfRelOrd)
+function denominator(a::NumFieldElem, O::RelNumFieldOrder)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
@@ -1017,9 +1017,9 @@ end
 #
 ################################################################################
 
-RandomExtensions.maketype(O::NfRelOrd, ::Int) = elem_type(O)
+RandomExtensions.maketype(O::RelNumFieldOrder, ::Int) = elem_type(O)
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelOrdElem,<:NfRelOrd,Int}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:RelNumFieldOrderElem,<:RelNumFieldOrder,Int}})
   O, B = sp[][1:2]
   pb = pseudo_basis(O, copy = false)
   z = nf(O)()
@@ -1030,8 +1030,8 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelOrdElem,<:NfRe
   return O(z)
 end
 
-rand(O::NfRelOrd, B::Int) = rand(GLOBAL_RNG, O, B)
-rand(rng::AbstractRNG, O::NfRelOrd, B::Int) = rand(rng, make(O, B))
+rand(O::RelNumFieldOrder, B::Int) = rand(GLOBAL_RNG, O, B)
+rand(rng::AbstractRNG, O::RelNumFieldOrder, B::Int) = rand(rng, make(O, B))
 
 ################################################################################
 #
@@ -1039,9 +1039,9 @@ rand(rng::AbstractRNG, O::NfRelOrd, B::Int) = rand(rng, make(O, B))
 #
 ################################################################################
 
-Order(elt::Vector{S}; check::Bool = false, cached::Bool = false) where {S <: Union{NfRelElem, NfRelNSElem}} = _order(elt, check = check)
+Order(elt::Vector{S}; check::Bool = false, cached::Bool = false) where {S <: Union{RelSimpleNumFieldElem, RelNonSimpleNumFieldElem}} = _order(elt, check = check)
 
-function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{NfRelElem, NfRelNSElem}}
+function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{RelSimpleNumFieldElem, RelNonSimpleNumFieldElem}}
   @assert length(elt) > 0
   K = parent(elt[1])
   n = degree(K)
@@ -1083,14 +1083,14 @@ function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{NfRelElem
   end
 
   # Make an explicit check
-  @hassert :NfRelOrd 1 defines_order(K, B)[1]
+  @hassert :RelNumFieldOrder 1 defines_order(K, B)[1]
   return Order(K, B)
 end
 
 function _get_gens(M::PMat)
   mat = M.matrix
   ids = M.coeffs
-  gens = Vector{NfRelElem{AbsSimpleNumFieldElem}}()
+  gens = Vector{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}()
   for i = 1:nrows(M)
     el = elem_from_mat_row(K, B.matrix, i)
     if isone(ids[i].num)
@@ -1103,9 +1103,9 @@ function _get_gens(M::PMat)
   return gens
 end
 
-function _get_gens(O::NfRelOrd)
+function _get_gens(O::RelNumFieldOrder)
   B = pseudo_basis(O)
-  gens = Vector{NfRelElem{AbsSimpleNumFieldElem}}()
+  gens = Vector{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}()
   for i = 1:length(B)
     el = B[i][1]
     I = B[i][2]
@@ -1120,7 +1120,7 @@ function _get_gens(O::NfRelOrd)
 end
 
 
-function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
+function add_to_order(O::RelNumFieldOrder, elt::Vector{T}; check::Bool = false) where T
   K = nf(O)
   k = base_field(K)
   Ok = maximal_order(k)
@@ -1130,7 +1130,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
   count = 0
   for e = elt
     count += 1
-    @vprintln :NfRelOrd 1 "Element $count / $lelt"
+    @vprintln :RelNumFieldOrder 1 "Element $count / $lelt"
     if e in O
       continue
     end
@@ -1153,7 +1153,7 @@ function add_to_order(O::NfRelOrd, elt::Vector{T}; check::Bool = false) where T
         break
       end
       bas = _get_gens(O)
-      els_to_add = Vector{NfRelElem{AbsSimpleNumFieldElem}}()
+      els_to_add = Vector{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}()
       for x in bas
         el = e*x
         if el in O
@@ -1185,7 +1185,7 @@ end
 ################################################################################
 
 
-function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, NfOrdIdl}) where {U1, V, Z <: NfRelElem}
+function dedekind_test_composite(O::RelNumFieldOrder{U1, V, Z}, P::Union{RelNumFieldOrderIdeal, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) where {U1, V, Z <: RelSimpleNumFieldElem}
   !is_equation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
@@ -1236,7 +1236,7 @@ function dedekind_test_composite(O::NfRelOrd{U1, V, Z}, P::Union{NfRelOrdIdl, Nf
   return one(K), OO
 end
 
-function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdIdl})
+function prefactorization_discriminant(K::RelSimpleNumField, d::Union{RelNumFieldOrderIdeal, AbsNumFieldOrderIdeal})
   OK = order(d)
   @assert nf(OK) == base_field(K)
   f = K.pol
@@ -1265,7 +1265,7 @@ function prefactorization_discriminant(K::NfRel, d::Union{NfRelOrdIdl, NfAbsOrdI
   return factors
 end
 
-function prefactorization(I::NfRelOrdIdl)
+function prefactorization(I::RelNumFieldOrderIdeal)
   OK = order(I)
   m = absolute_minimum(I)
   ideals = typeof(I)[]
@@ -1280,30 +1280,30 @@ function prefactorization(I::NfRelOrdIdl)
   return ideals
 end
 
-function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
+function maximal_order(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
   K = nf(O)
   L = base_field(K)
   OL = maximal_order(L)
   d = discriminant(O)
   facts = prefactorization_discriminant(K, d)
   sort!(facts, by = x -> absolute_minimum(x), rev = true)
-  @vprintln :NfRelOrd 1 "Factors of the discriminant lying over $([minimum(x) for x in facts])"
+  @vprintln :RelNumFieldOrder 1 "Factors of the discriminant lying over $([minimum(x) for x in facts])"
   E = EquationOrder(K)
   OO = O
   while !isempty(facts)
     p = pop!(facts)
     pm = absolute_minimum(p)
     if is_prime_power(pm)
-      @vprintln :NfRelOrd 1 "Factoring ideal over $(pm)"
-      @vtime :NfRelOrd 1 lf = factor(p)
+      @vprintln :RelNumFieldOrder 1 "Factoring ideal over $(pm)"
+      @vtime :RelNumFieldOrder 1 lf = factor(p)
       for q in keys(lf)
-        @vprintln :NfRelOrd 1 "Computing pmaximal order for $(q)"
-        @vtime :NfRelOrd 1 Oq = pmaximal_overorder(O, q)
-        @vtime :NfRelOrd 1 OO = sum_as_OK_modules(OO, Oq)
+        @vprintln :RelNumFieldOrder 1 "Computing pmaximal order for $(q)"
+        @vtime :RelNumFieldOrder 1 Oq = pmaximal_overorder(O, q)
+        @vtime :RelNumFieldOrder 1 OO = sum_as_OK_modules(OO, Oq)
       end
     else
-      @vprintln :NfRelOrd 1 "Dedekind test for ideal lying over $(pm)"
-      @vtime :NfRelOrd 1 fail, E1 = Hecke.dedekind_test_composite(E, p)
+      @vprintln :RelNumFieldOrder 1 "Dedekind test for ideal lying over $(pm)"
+      @vtime :RelNumFieldOrder 1 fail, E1 = Hecke.dedekind_test_composite(E, p)
       if !isone(fail)
         J = ideal(OL, OL(fail))
         cp = coprime_base(typeof(p)[J, p])
@@ -1315,16 +1315,16 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
         continue
       end
       if discriminant(E) != discriminant(E1)
-        @vtime :NfRelOrd 1 OO = sum_as_OK_modules(OO, E1)
+        @vtime :RelNumFieldOrder 1 OO = sum_as_OK_modules(OO, E1)
       end
       g = gcd(discriminant(OO), p)
       if !isone(g)
-        @vprintln :NfRelOrd 1 "Factoring ideal over $(absolute_minimum(g))"
-        @vtime :NfRelOrd 1 lf = factor(g)
+        @vprintln :RelNumFieldOrder 1 "Factoring ideal over $(absolute_minimum(g))"
+        @vtime :RelNumFieldOrder 1 lf = factor(g)
         for q in keys(lf)
-          @vprintln :NfRelOrd 1 "Computing pmaximal order for $(q)"
-          @vtime :NfRelOrd 1 Oq = pmaximal_overorder(O, q)
-          @vtime :NfRelOrd 1 OO = sum_as_OK_modules(OO, Oq)
+          @vprintln :RelNumFieldOrder 1 "Computing pmaximal order for $(q)"
+          @vtime :RelNumFieldOrder 1 Oq = pmaximal_overorder(O, q)
+          @vtime :RelNumFieldOrder 1 OO = sum_as_OK_modules(OO, Oq)
         end
       end
     end
@@ -1333,7 +1333,7 @@ function maximal_order(O::NfRelOrd{S, T, U}) where {S, T, U <: NfRelElem}
   return OO
 end
 
-function overorder_polygons(O::NfRelOrd{S, T, NfRelElem{AbsSimpleNumFieldElem}}, p::NfOrdIdl) where {S, T}
+function overorder_polygons(O::RelNumFieldOrder{S, T, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where {S, T}
   @assert is_equation_order(O)
   K = nf(O)
   f = K.pol
@@ -1385,7 +1385,7 @@ end
 #
 ################################################################################
 
-function is_ramified(R::NfRelOrd, p::T) where T <: Union{NfAbsOrdIdl, NfRelOrdIdl, ZZRingElem, Int}
+function is_ramified(R::RelNumFieldOrder, p::T) where T <: Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal, ZZRingElem, Int}
   @assert is_prime(p)
   D = prime_decomposition(R, p)
   for (_, e) in D

@@ -1,6 +1,6 @@
 @testset "Group algebras" begin
   G = small_group(8, 4)
-  A = AlgGrp(FlintQQ, G)
+  A = GroupAlgebra(FlintQQ, G)
 
   @testset "Regular matrix algebra" begin
     B, BtoA = Hecke.regular_matrix_algebra(A)

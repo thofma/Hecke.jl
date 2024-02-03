@@ -108,7 +108,7 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
   return rts, real_rts, compl_rts
 end
 
-function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
+function _conjugates_data(L::RelSimpleNumField{T}, prec::Int) where {T}
   c = get_attribute(L, :conjugate_data_arb_new)
   S = embedding_type(parent_type(T))
   if c === nothing
@@ -129,7 +129,7 @@ function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
   end
 end
 
-function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
+function _get_conjugate_data(L::RelSimpleNumField{T}, prec::Int) where {T}
   K = base_field(L)
   S = embedding_type(parent_type(T))
   g = defining_polynomial(L)
@@ -141,7 +141,7 @@ function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
   return data
 end
 
-function conjugates_arb(a::NfRelElem, prec::Int = 64)
+function conjugates_arb(a::RelSimpleNumFieldElem, prec::Int = 64)
   z = AcbFieldElem[]
   L = parent(a)
   g = defining_polynomial(L)

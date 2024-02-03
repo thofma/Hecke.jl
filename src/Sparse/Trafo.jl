@@ -561,15 +561,15 @@ end
 #
 ################################################################################
 
-#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoSwap)
+#function apply_left!(x::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, y::TrafoSwap)
 #  x[y.i], x[y.j] = x[y.j], x[y.i]
 #end
 #
-#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoAddScaled)
+#function apply_left!(x::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, y::TrafoAddScaled)
 #  x[y.j] = x[y.j] * x[y.i]^Int(y.s)
 #end
 #
-#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoPartialDense)
+#function apply_left!(x::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, y::TrafoPartialDense)
 #  z = view(deepcopy(x), y.cols)
 #  xx = view(x, y.cols)
 #  for i in 1:nrows(y.U)  ## use power product instead

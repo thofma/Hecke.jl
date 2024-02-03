@@ -26,7 +26,7 @@ end
 
   Qx, x = FlintQQ["x"]
   f = x^3 + 31*x^2 + 43*x + 77
-  A = AlgAss(f)
+  A = StructureConstantAlgebra(f)
   O = Order(A, basis(A))
   icm = ideal_class_monoid(O)
   @test length(icm) == 59
@@ -40,7 +40,7 @@ end
 
   f1 = x^2 + 4*x + 7
   f2 = x^3 - 9*x^2 - 3*x - 1
-  A = AlgAss(f1*f2)
+  A = StructureConstantAlgebra(f1*f2)
   O = Order(A, basis(A))
   icm = ideal_class_monoid(O)
   @test length(icm) == 852

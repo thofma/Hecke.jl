@@ -31,14 +31,14 @@ abstract type NonSimpleNumFieldElem{T} <: NumFieldElem{T} end
 ################################################################################
 
 """
-    NumFieldOrd
+    NumFieldOrder
 
 Abstract overtype for all orders in number fields. An order is a unitary
 subring that has the same ZZ-dimension as the QQ-dimension of the field.
 """
-abstract type NumFieldOrd <: Ring end
+abstract type NumFieldOrder <: Ring end
 
-abstract type NumFieldOrdElem <: RingElem end
+abstract type NumFieldOrderElem <: RingElem end
 
 ################################################################################
 #
@@ -47,21 +47,21 @@ abstract type NumFieldOrdElem <: RingElem end
 ################################################################################
 
 """
-    NumFieldOrdIdl
+    NumFieldOrderIdeal
 
 Common, abstract, type for all integral ideals in orders. See also
-`NumFieldOrd`.
+`NumFieldOrder`.
 """
-abstract type NumFieldOrdIdl end
+abstract type NumFieldOrderIdeal end
 
 """
-    NumFieldOrdFracIdl
+    NumFieldOrderFractionalIdeal
 
 Common, abstract, type for all fractional ideals in orders, fractional
 ideals are, as a set, just an integral ideal divided by some integer. See also
-`NumFieldOrd`.
+`NumFieldOrder`.
 """
-abstract type NumFieldOrdFracIdl end
+abstract type NumFieldOrderFractionalIdeal end
 
 ################################################################################
 #
@@ -635,30 +635,28 @@ end
 
 ################################################################################
 #
-#  NfOrdSet/NfOrd
+#  AbsNumFieldOrderSet/AbsSimpleNumFieldOrder
 #
 ################################################################################
 
-mutable struct NfAbsOrdSet{T}
+mutable struct AbsNumFieldOrderSet{T}
   nf::T
 
-  function NfAbsOrdSet{T}(a::T, cached::Bool = false) where {T}
+  function AbsNumFieldOrderSet{T}(a::T, cached::Bool = false) where {T}
     return get_cached!(NfAbsOrdSetID, a, cached) do
-      return new{T}(a)::NfAbsOrdSet{T}
-    end::NfAbsOrdSet{T}
+      return new{T}(a)::AbsNumFieldOrderSet{T}
+    end::AbsNumFieldOrderSet{T}
   end
 end
 
-NfAbsOrdSet(a::T, cached::Bool = false) where {T} = NfAbsOrdSet{T}(a, cached)
+AbsNumFieldOrderSet(a::T, cached::Bool = false) where {T} = AbsNumFieldOrderSet{T}(a, cached)
 
 const NfAbsOrdSetID = IdDict()
 
-const NfOrdSet = NfAbsOrdSet
-
-@attributes mutable struct NfAbsOrd{S, T} <: NumFieldOrd
+@attributes mutable struct AbsNumFieldOrder{S, T} <: NumFieldOrder
   nf::S
   basis_nf::Vector{T}        # Basis as array of number field elements
-  basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
+  basis_ord#::Vector{AbsNumFieldOrderElem}    # Basis as array of order elements
   basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of K
   basis_mat_inv::FakeFmpqMat          # Inverse of basis matrix
   gen_index::QQFieldElem              # The det of basis_mat_inv as QQFieldElem
@@ -673,7 +671,7 @@ const NfOrdSet = NfAbsOrdSet
   minkowski_gram_CMfields::ZZMatrix
   complex_conjugation_CM::Map
 
-  torsion_units#::Tuple{Int, NfAbsOrdElem}
+  torsion_units#::Tuple{Int, AbsNumFieldOrderElem}
 
   is_maximal::Int                  # 0 Not known
                                    # 1 Known to be maximal
@@ -694,12 +692,12 @@ const NfOrdSet = NfAbsOrdSet
   tidempotents::ZZMatrix           # Temporary variable for idempotents()
 
   index_div::Dict{ZZRingElem, Vector}    # the index divisor splitting
-                                   # Any = Array{NfAbsOrdIdl, Int}
+                                   # Any = Array{AbsNumFieldOrderIdeal, Int}
                                    # but forward references are illegal
 
-  lllO::NfAbsOrd{S, T}             # the same order with a lll-reduced basis
+  lllO::AbsNumFieldOrder{S, T}             # the same order with a lll-reduced basis
 
-   function NfAbsOrd{S, T}(a::S) where {S, T}
+   function AbsNumFieldOrder{S, T}(a::S) where {S, T}
     # "Default" constructor with default values.
     r = new{S, elem_type(S)}()
     r.nf = a
@@ -716,20 +714,20 @@ const NfOrdSet = NfAbsOrdSet
     return r
   end
 
-  function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
+  function AbsNumFieldOrder{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
     return get_cached!(NfAbsOrdID, (K, x), cached) do
-      z = NfAbsOrd{S, T}(K)
+      z = AbsNumFieldOrder{S, T}(K)
       n = degree(K)
       z.basis_nf = B
       z.basis_matrix = x
       z.basis_mat_inv = xinv
       return z
-    end::NfAbsOrd{S, T}
+    end::AbsNumFieldOrder{S, T}
   end
 
-  function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
+  function AbsNumFieldOrder{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
     return get_cached!(NfAbsOrdID, (K, x), cached) do
-      z = NfAbsOrd{S, T}(K)
+      z = AbsNumFieldOrder{S, T}(K)
       n = degree(K)
       B_K = basis(K)
       d = Vector{T}(undef, n)
@@ -739,44 +737,44 @@ const NfOrdSet = NfAbsOrdSet
       z.basis_nf = d
       z.basis_matrix = x
       return z
-    end::NfAbsOrd{S, T}
+    end::AbsNumFieldOrder{S, T}
   end
 
-  function NfAbsOrd{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
+  function AbsNumFieldOrder{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
     return get_cached!(NfAbsOrdID, (K, A), cached) do
-      z = NfAbsOrd{parent_type(T), T}(K)
+      z = AbsNumFieldOrder{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_matrix = A
       return z
-    end::NfAbsOrd{S, T}
+    end::AbsNumFieldOrder{S, T}
   end
 end
 
-NfAbsOrd(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T} = NfAbsOrd{S, T}(K, x, xinv, B, cached)
+AbsNumFieldOrder(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T} = AbsNumFieldOrder{S, T}(K, x, xinv, B, cached)
 
-NfAbsOrd(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = NfAbsOrd{S, elem_type(S)}(K, x, cached)
+AbsNumFieldOrder(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = AbsNumFieldOrder{S, elem_type(S)}(K, x, cached)
 
-NfAbsOrd(b::Vector{T}, cached::Bool = false) where {T} = NfAbsOrd{parent_type(T), T}(b, cached)
+AbsNumFieldOrder(b::Vector{T}, cached::Bool = false) where {T} = AbsNumFieldOrder{parent_type(T), T}(b, cached)
 
-const NfOrd = NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}
+const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, AbsNumFieldOrder}()
 
-const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, NfAbsOrd}()
+const AbsSimpleNumFieldOrder = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
-#  NfOrd/NfOrdElem
+#  AbsSimpleNumFieldOrder/AbsSimpleNumFieldOrderElem
 #
 ################################################################################
 
-mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
+mutable struct AbsNumFieldOrderElem{S, T} <: NumFieldOrderElem
   elem_in_nf::T
   coordinates::Vector{ZZRingElem}
   has_coord::Bool
-  parent::NfAbsOrd{S, T}
+  parent::AbsNumFieldOrder{S, T}
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}) where {S, T}
+  function AbsNumFieldOrderElem{S, T}(O::AbsNumFieldOrder{S, T}) where {S, T}
     z = new{S, T}()
     z.parent = O
     z.elem_in_nf = nf(O)()
@@ -785,7 +783,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
+  function AbsNumFieldOrderElem{S, T}(O::AbsNumFieldOrder{S, T}, a::T) where {S, T}
     z = new{S, T}()
     z.elem_in_nf = a
     z.coordinates = Vector{ZZRingElem}(undef, degree(O))
@@ -794,7 +792,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T, arr::Vector{ZZRingElem}) where {S, T}
+  function AbsNumFieldOrderElem{S, T}(O::AbsNumFieldOrder{S, T}, a::T, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
     z.parent = O
     z.elem_in_nf = a
@@ -803,7 +801,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::ZZMatrix) where {S, T}
+  function AbsNumFieldOrderElem{S, T}(O::AbsNumFieldOrder{S, T}, arr::ZZMatrix) where {S, T}
     (nrows(arr) > 1 && ncols(arr) > 1) &&
         error("Matrix must have 1 row or 1 column")
 
@@ -819,7 +817,7 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T}
+  function AbsNumFieldOrderElem{S, T}(O::AbsNumFieldOrder{S, T}, arr::Vector{ZZRingElem}) where {S, T}
     z = new{S, T}()
     k = nf(O)
     if isa(k, AbsSimpleNumField)
@@ -839,87 +837,85 @@ mutable struct NfAbsOrdElem{S, T} <: NumFieldOrdElem
     return z
   end
 
-  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{U}) where {S, T, U <: Integer}
-    return NfAbsOrdElem{S, T}(O, map(FlintZZ, arr))
+  function AbsNumFieldOrderElem{S, T}(O::AbsNumFieldOrder{S, T}, arr::Vector{U}) where {S, T, U <: Integer}
+    return AbsNumFieldOrderElem{S, T}(O, map(FlintZZ, arr))
   end
 
-  function NfAbsOrdElem{S, T}(x::NfAbsOrdElem{S, T}) where {S, T}
+  function AbsNumFieldOrderElem{S, T}(x::AbsNumFieldOrderElem{S, T}) where {S, T}
     return deepcopy(x)  ### Check parent?
   end
 end
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdElem{S, T}(O)
+AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}) where {S, T} = AbsNumFieldOrderElem{S, T}(O)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T) where {S, T} = NfAbsOrdElem{S, T}(O, a)
+AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, a::T) where {S, T} = AbsNumFieldOrderElem{S, T}(O, a)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T, arr::Vector{ZZRingElem}) where {S, T} = NfAbsOrdElem{S, T}(O, a, arr)
+AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, a::T, arr::Vector{ZZRingElem}) where {S, T} = AbsNumFieldOrderElem{S, T}(O, a, arr)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{ZZRingElem}) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
+AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, arr::Vector{ZZRingElem}) where {S, T} = AbsNumFieldOrderElem{S, T}(O, arr)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::ZZMatrix) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
+AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, arr::ZZMatrix) where {S, T} = AbsNumFieldOrderElem{S, T}(O, arr)
 
-NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{U}) where {S, T, U <: Integer} = NfAbsOrdElem{S, T}(O, arr)
+AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, arr::Vector{U}) where {S, T, U <: Integer} = AbsNumFieldOrderElem{S, T}(O, arr)
 
-#NfAbsOrdElem(O::NfAbsOrd{S, T}, p::Integer) where {S, T} = NfAbsOrdElem{S, T}(O, p)
+#AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, p::Integer) where {S, T} = AbsNumFieldOrderElem{S, T}(O, p)
 
-#NfAbsOrdElem(O::NfAbsOrd{S, T}, p::ZZRingElem) where {S, T} = NfAbsOrdElem{S, T}(O, p)
+#AbsNumFieldOrderElem(O::AbsNumFieldOrder{S, T}, p::ZZRingElem) where {S, T} = AbsNumFieldOrderElem{S, T}(O, p)
 
-const NfOrdElem = NfAbsOrdElem{AbsSimpleNumField, AbsSimpleNumFieldElem}
+const AbsSimpleNumFieldOrderElem = AbsNumFieldOrderElem{AbsSimpleNumField,AbsSimpleNumFieldElem}
 
 ################################################################################
 #
-#  NfOrdIdlSet/NfOrdIdl
+#  AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 #
 ################################################################################
 
-struct NfAbsOrdIdlSet{S, T}
-  order::NfAbsOrd{S, T}
+struct AbsNumFieldOrderIdealSet{S, T}
+  order::AbsNumFieldOrder{S, T}
 
-  function NfAbsOrdIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
+  function AbsNumFieldOrderIdealSet{S, T}(O::AbsNumFieldOrder{S, T}, cached::Bool = false) where {S, T}
     return get_cached!(NfAbsOrdIdlSetID, O, cached) do
       return new{S, T}(O)
-    end::NfAbsOrdIdlSet{S, T}
+    end::AbsNumFieldOrderIdealSet{S, T}
   end
 end
 
-function NfAbsOrdIdlSet(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
-  return NfAbsOrdIdlSet{S, T}(O, cached)
+function AbsNumFieldOrderIdealSet(O::AbsNumFieldOrder{S, T}, cached::Bool = false) where {S, T}
+  return AbsNumFieldOrderIdealSet{S, T}(O, cached)
 end
 
-const NfOrdIdlSet = NfAbsOrdIdlSet{AbsSimpleNumField, AbsSimpleNumFieldElem}
-
-const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
+const NfAbsOrdIdlSetID = Dict{AbsNumFieldOrder, AbsNumFieldOrderIdealSet}()
 
 @doc raw"""
-    NfOrdIdl(O::NfOrd, a::ZZMatrix) -> NfOrdIdl
+    AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsSimpleNumFieldOrder, a::ZZMatrix) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the ideal of $O$ with basis matrix $a$.
     No sanity checks. No data is copied, $a$ should not be used anymore.
 
-  NfOrdIdl(a::ZZRingElem, b::NfOrdElem) -> NfOrdIdl
+  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the ideal $(a,b)$ of the order of $b$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
 
-  NfOrdIdl(O::NfOrd, a::ZZRingElem, b::AbsSimpleNumFieldElem) -> NfOrdIdl
+  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsSimpleNumFieldOrder, a::ZZRingElem, b::AbsSimpleNumFieldElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the ideal $(a,b)$ of $O$.
     No sanity checks. No data is copied, $a$ and $b$ should not be used anymore.
 
-  NfOrdIdl(x::NfOrdElem) -> NfOrdIdl
+  AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(x::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     Creates the principal ideal $(x)$ of the order of $O$.
     No sanity checks. No data is copied, $x$ should not be used anymore.
 
 """
-@attributes mutable struct NfAbsOrdIdl{S, T} <: NumFieldOrdIdl
-  order::NfAbsOrd{S, T}
-  basis::Vector{NfAbsOrdElem{S, T}}
+@attributes mutable struct AbsNumFieldOrderIdeal{S, T} <: NumFieldOrderIdeal
+  order::AbsNumFieldOrder{S, T}
+  basis::Vector{AbsNumFieldOrderElem{S, T}}
   basis_matrix::ZZMatrix
   basis_mat_inv::FakeFmpqMat
   lll_basis_matrix::ZZMatrix
   gen_one::ZZRingElem
-  gen_two::NfAbsOrdElem{S, T}
+  gen_two::AbsNumFieldOrderElem{S, T}
   gens_short::Bool
   gens_normal::ZZRingElem
   gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
@@ -931,7 +927,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
                            # 2 known to be not prime
   iszero::Int              # as above
   is_principal::Int        # as above
-  princ_gen::NfAbsOrdElem{S, T}
+  princ_gen::AbsNumFieldOrderElem{S, T}
   princ_gen_fac_elem::FacElem{T, S}
   princ_gen_special::Tuple{Int, Int, ZZRingElem}
                            # Check if the ideal is generated by an integer
@@ -946,14 +942,14 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
   valuation::Function      # a function returning "the" valuation -
                            # mind that the ideal is not prime
 
-  gens::Vector{NfAbsOrdElem{S, T}}  # A set of generators of the ideal
+  gens::Vector{AbsNumFieldOrderElem{S, T}}  # A set of generators of the ideal
 
   ## For residue fields of non-index divisors
-  prim_elem::NfAbsOrdElem{S, T}
+  prim_elem::AbsNumFieldOrderElem{S, T}
   min_poly_prim_elem::ZZPolyRingElem  # minimal polynomial modulo P
   basis_in_prim::Vector{ZZMatrix} #
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}) where {S, T}
+  function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}) where {S, T}
     # populate the bits types (Bool, Int) with default values
     r = new{S, T}()
     r.order = O
@@ -966,37 +962,37 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::ZZMatrix) where {S, T}
+  function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}, a::ZZMatrix) where {S, T}
     # create ideal of O with basis_matrix a
     # Note that the constructor 'destroys' a, a should not be used anymore
-    r = NfAbsOrdIdl(O)
+    r = AbsNumFieldOrderIdeal(O)
     r.basis_matrix = a
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(a::ZZRingElem, b::NfAbsOrdElem{S, T}) where {S, T}
+  function AbsNumFieldOrderIdeal{S, T}(a::ZZRingElem, b::AbsNumFieldOrderElem{S, T}) where {S, T}
     # create ideal (a,b) of order(b)
-    r = NfAbsOrdIdl(parent(b))
+    r = AbsNumFieldOrderIdeal(parent(b))
     r.gen_one = a
     r.gen_two = b
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::ZZRingElem, b::AbsSimpleNumFieldElem) where {S, T}
+  function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}, a::ZZRingElem, b::AbsSimpleNumFieldElem) where {S, T}
     # create ideal (a,b) of O
-    r = NfAbsOrdIdl(a, O(b, false))
+    r = AbsNumFieldOrderIdeal(a, O(b, false))
     return r
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::NfAbsOrdElem{S, T}) where {S, T}
-    return NfAbsOrdIdl(a)
+  function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}, a::AbsNumFieldOrderElem{S, T}) where {S, T}
+    return AbsNumFieldOrderIdeal(a)
   end
 
-  function NfAbsOrdIdl{S, T}(x::NfAbsOrdElem{S, T}) where {S, T}
+  function AbsNumFieldOrderIdeal{S, T}(x::AbsNumFieldOrderElem{S, T}) where {S, T}
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     O = parent(x)
-    C = NfAbsOrdIdl{S, T}(O)
+    C = AbsNumFieldOrderIdeal{S, T}(O)
     C.princ_gen = x
     C.princ_gen_fac_elem = FacElem(elem_in_nf(x))
     C.is_principal = 1
@@ -1014,10 +1010,10 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     return C
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, x::Int) where {S, T}
+  function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}, x::Int) where {S, T}
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
-    C = NfAbsOrdIdl(O)
+    C = AbsNumFieldOrderIdeal(O)
     C.princ_gen = O(x)
     C.princ_gen_fac_elem = FacElem(nf(O)(x))
     C.is_principal = 1
@@ -1034,10 +1030,10 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     return C
   end
 
-  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, x::ZZRingElem) where {S, T}
+  function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}, x::ZZRingElem) where {S, T}
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
-    C = NfAbsOrdIdl(O)
+    C = AbsNumFieldOrderIdeal(O)
     C.princ_gen = O(x)
     C.princ_gen_fac_elem = FacElem(nf(O)(x))
     C.is_principal = 1
@@ -1055,53 +1051,53 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
   end
 end
 
-NfAbsOrdIdl(a::ZZRingElem, b::NfAbsOrdElem{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(a, b)
+AbsNumFieldOrderIdeal(a::ZZRingElem, b::AbsNumFieldOrderElem{S, T}) where {S, T} = AbsNumFieldOrderIdeal{S, T}(a, b)
 
-NfAbsOrdIdl(O::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(O)
+AbsNumFieldOrderIdeal(O::AbsNumFieldOrder{S, T}) where {S, T} = AbsNumFieldOrderIdeal{S, T}(O)
 
-NfAbsOrdIdl(a::NfAbsOrdElem{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(a)
+AbsNumFieldOrderIdeal(a::AbsNumFieldOrderElem{S, T}) where {S, T} = AbsNumFieldOrderIdeal{S, T}(a)
 
-NfAbsOrdIdl(O::NfAbsOrd{S, T}, a::ZZMatrix) where {S, T} = NfAbsOrdIdl{S, T}(O, a)
+AbsNumFieldOrderIdeal(O::AbsNumFieldOrder{S, T}, a::ZZMatrix) where {S, T} = AbsNumFieldOrderIdeal{S, T}(O, a)
 
-NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::Int) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
+AbsNumFieldOrderIdeal(O::AbsNumFieldOrder{S, T}, x::Int) where {S, T} = AbsNumFieldOrderIdeal{S, T}(O, x)
 
-NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::ZZRingElem) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
+AbsNumFieldOrderIdeal(O::AbsNumFieldOrder{S, T}, x::ZZRingElem) where {S, T} = AbsNumFieldOrderIdeal{S, T}(O, x)
 
-const NfOrdIdl = NfAbsOrdIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}
+const AbsSimpleNumFieldOrderIdeal = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
-#  NfOrdFracIdlSet/NfOrdFracIdl
+#  AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}/AbsSimpleNumFieldOrderFractionalIdeal
 #
 ################################################################################
 
-mutable struct NfAbsOrdFracIdlSet{S, T}
-  order::NfAbsOrd{S, T}
+mutable struct AbsNumFieldOrderFractionalIdealSet{S, T}
+  order::AbsNumFieldOrder{S, T}
 
-  function NfAbsOrdFracIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool=false) where {S, T}
+  function AbsNumFieldOrderFractionalIdealSet{S, T}(O::AbsNumFieldOrder{S, T}, cached::Bool=false) where {S, T}
     return get_cached!(NfAbsOrdFracIdlSetID, O, cached) do
       return new{S, T}(O)
-    end::NfAbsOrdFracIdlSet{S, T}
+    end::AbsNumFieldOrderFractionalIdealSet{S, T}
   end
 end
 
-const NfAbsOrdFracIdlSetID = Dict{NfAbsOrd, NfAbsOrdFracIdlSet}()
+const NfAbsOrdFracIdlSetID = Dict{AbsNumFieldOrder, AbsNumFieldOrderFractionalIdealSet}()
 
-mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
-  order::NfAbsOrd{S, T}
-  num::NfAbsOrdIdl{S, T}
+mutable struct AbsNumFieldOrderFractionalIdeal{S, T} <: NumFieldOrderFractionalIdeal
+  order::AbsNumFieldOrder{S, T}
+  num::AbsNumFieldOrderIdeal{S, T}
   den::ZZRingElem
   norm::QQFieldElem
   basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
 
-  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}) where {S, T}
+  function AbsNumFieldOrderFractionalIdeal{S, T}(O::AbsNumFieldOrder{S, T}) where {S, T}
     z = new{S, T}()
     z.order = O
     return z
   end
 
-  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::NfAbsOrdIdl{S, T}, b::ZZRingElem) where {S, T}
+  function AbsNumFieldOrderFractionalIdeal{S, T}(O::AbsNumFieldOrder{S, T}, a::AbsNumFieldOrderIdeal{S, T}, b::ZZRingElem) where {S, T}
     z = new{S, T}()
     z.order = O
     b = abs(b)
@@ -1111,14 +1107,14 @@ mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
     return z
   end
 
-  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::FakeFmpqMat) where {S, T}
+  function AbsNumFieldOrderFractionalIdeal{S, T}(O::AbsNumFieldOrder{S, T}, a::FakeFmpqMat) where {S, T}
     z = new{S, T}()
     z.order = O
     z.basis_matrix = a
     return z
   end
 
-  function NfAbsOrdFracIdl{S, T}(x::NfAbsOrdIdl{S, T}, y::ZZRingElem) where {S, T}
+  function AbsNumFieldOrderFractionalIdeal{S, T}(x::AbsNumFieldOrderIdeal{S, T}, y::ZZRingElem) where {S, T}
     z = new{S, T}()
     z.order = order(x)
     z.num = x
@@ -1126,7 +1122,7 @@ mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
     return z
   end
 
-  function NfAbsOrdFracIdl{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
+  function AbsNumFieldOrderFractionalIdeal{S, T}(O::AbsNumFieldOrder{S, T}, a::T) where {S, T}
     z = new{S, T}()
     z.order = O
     d = denominator(a, O)
@@ -1137,30 +1133,28 @@ mutable struct NfAbsOrdFracIdl{S, T} <: NumFieldOrdFracIdl
   end
 end
 
-function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}) where {S, T}
-  return NfAbsOrdFracIdl{S, T}(O)
+function AbsNumFieldOrderFractionalIdeal(O::AbsNumFieldOrder{S, T}) where {S, T}
+  return AbsNumFieldOrderFractionalIdeal{S, T}(O)
 end
 
-function NfAbsOrdFracIdl(O::NfAbsOrd{S, T},
-                         a::NfAbsOrdIdl{S, T}, b::ZZRingElem) where {S, T}
-  return NfAbsOrdFracIdl{S, T}(O, a, b)
+function AbsNumFieldOrderFractionalIdeal(O::AbsNumFieldOrder{S, T},
+                         a::AbsNumFieldOrderIdeal{S, T}, b::ZZRingElem) where {S, T}
+  return AbsNumFieldOrderFractionalIdeal{S, T}(O, a, b)
 end
 
-function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}, a::FakeFmpqMat) where {S, T}
-  return NfAbsOrdFracIdl{S, T}(O, a)
+function AbsNumFieldOrderFractionalIdeal(O::AbsNumFieldOrder{S, T}, a::FakeFmpqMat) where {S, T}
+  return AbsNumFieldOrderFractionalIdeal{S, T}(O, a)
 end
 
-function NfAbsOrdFracIdl(x::NfAbsOrdIdl{S, T}, y::ZZRingElem) where {S, T}
-  return NfAbsOrdFracIdl{S, T}(x, y)
+function AbsNumFieldOrderFractionalIdeal(x::AbsNumFieldOrderIdeal{S, T}, y::ZZRingElem) where {S, T}
+  return AbsNumFieldOrderFractionalIdeal{S, T}(x, y)
 end
 
-function NfAbsOrdFracIdl(O::NfAbsOrd{S, T}, a::T) where {S, T}
-  return NfAbsOrdFracIdl{S, T}(O, a)
+function AbsNumFieldOrderFractionalIdeal(O::AbsNumFieldOrder{S, T}, a::T) where {S, T}
+  return AbsNumFieldOrderFractionalIdeal{S, T}(O, a)
 end
 
-const NfOrdFracIdlSet = NfAbsOrdFracIdlSet{AbsSimpleNumField, AbsSimpleNumFieldElem}
-
-const NfOrdFracIdl = NfAbsOrdFracIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}
+const AbsSimpleNumFieldOrderFractionalIdeal = AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
@@ -1169,16 +1163,16 @@ const NfOrdFracIdl = NfAbsOrdFracIdl{AbsSimpleNumField, AbsSimpleNumFieldElem}
 ################################################################################
 
 mutable struct UnitGrpCtx{T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem}}}
-  order::NfOrd
+  order::AbsSimpleNumFieldOrder
   rank::Int
   full_rank::Bool
   units::Vector{T}
   regulator::ArbFieldElem
   tentative_regulator::ArbFieldElem
   regulator_precision::Int
-  #torsion_units::Vector{NfOrdElem}
+  #torsion_units::Vector{AbsSimpleNumFieldOrderElem}
   torsion_units_order::Int
-  torsion_units_gen::NfOrdElem
+  torsion_units_gen::AbsSimpleNumFieldOrderElem
   conj_log_cache::Dict{Int, Dict{AbsSimpleNumFieldElem, ArbFieldElem}}
   conj_log_mat_cutoff::Dict{Int, ArbMatrix}
   conj_log_mat_cutoff_inv::Dict{Int, ArbMatrix}
@@ -1197,7 +1191,7 @@ mutable struct UnitGrpCtx{T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNum
   cache::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   relations_used::Vector{Int}
 
-  function UnitGrpCtx{T}(O::NfOrd) where {T}
+  function UnitGrpCtx{T}(O::AbsSimpleNumFieldOrder) where {T}
     z = new{T}()
     z.order = O
     z.rank = -1
@@ -1386,24 +1380,24 @@ end
 mutable struct FactorBaseSingleP{T}
   P::ZZRingElem
   pt::FactorBase{T}
-  lp::Vector{Tuple{Int,NfOrdIdl}}
+  lp::Vector{Tuple{Int,AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
   lf::Vector{T}
 
-  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, NfOrdIdl}})
+  function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
     Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false)[1], "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, NfOrdIdl}})
+  function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
     Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false)[1], "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
-  function FactorBaseSingleP(fp::S, lp::Vector{Tuple{Int, NfOrdIdl}}) where {S}
+  function FactorBaseSingleP(fp::S, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}) where {S}
     FB = new{S}()
     FB.lp = lp
     p = characteristic(base_ring(fp))
@@ -1479,12 +1473,12 @@ mutable struct NfFactorBase
   fb::Dict{ZZRingElem, FactorBaseSingleP}
   size::Int
   fb_int::FactorBase{ZZRingElem}
-  ideals::Vector{NfOrdIdl}
+  ideals::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   rw::Vector{Int}
   mx::Int
 
   function NfFactorBase()
-    r = new(Dict{ZZRingElem, Vector{Tuple{Int, NfOrdIdl}}}())
+    r = new(Dict{ZZRingElem, Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}}())
     r.size = 0
     return r
   end
@@ -1562,9 +1556,9 @@ end
 ################################################################################
 
 mutable struct RandIdlCtx
-  base::Vector{NfOrdIdl}
-  ibase::Vector{NfOrdFracIdl}
-  rand::NfOrdIdl
+  base::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  ibase::Vector{AbsSimpleNumFieldOrderFractionalIdeal}
+  rand::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   exp::Vector{Int}
   ub::ZZRingElem
   lb::ZZRingElem
@@ -1661,7 +1655,7 @@ end
 ################################################################################
 
 mutable struct IdealRelationsCtx{Tx, TU, TC}
-  A::NfOrdIdl
+  A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   v::Vector{Int}  # the infinite valuation will be exp(v[i])
   E::enum_ctx{Tx, TU, TC}
   c::ZZRingElem           # the last length
@@ -1672,7 +1666,7 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
   vl::Int
   rr::UnitRange{Int}
 
-  function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::NfOrdIdl;
+  function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem};
                  prec::Int = 100, val::Int=0, limit::Int = 0) where {Tx, TU, TC}
     v = matrix(FlintZZ, Base.rand(-val:val, 1,
                     nrows(clg.val_base)))*clg.val_base
@@ -1710,10 +1704,10 @@ end
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
-  tmp_xxgcd::ZZMatrix # used only by xxgcd in NfOrd/residue_ring.jl
-  tmp_div::ZZMatrix # used only by div in NfOrd/residue_ring.jl
-  tmp_ann::ZZMatrix # used only by annihilator in NfOrd/residue_ring.jl
-  tmp_euc::ZZMatrix # used only by euclid in NfOrd/residue_ring.jl
+  tmp_xxgcd::ZZMatrix # used only by xxgcd in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_div::ZZMatrix # used only by div in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_ann::ZZMatrix # used only by annihilator in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_euc::ZZMatrix # used only by euclid in AbsSimpleNumFieldOrder/residue_ring.jl
 
   multiplicative_group::Map
 
@@ -1765,10 +1759,6 @@ function AbsOrdQuoRingElem(Q::AbsOrdQuoRing{S, T}, x::U) where {S, T, U}
   return AbsOrdQuoRingElem{S, T, U}(Q, x)
 end
 
-const NfOrdQuoRing = AbsOrdQuoRing{NfOrd, NfOrdIdl}
-
-const NfOrdQuoRingElem = AbsOrdQuoRingElem{NfOrd, NfOrdIdl, NfOrdElem}
-
 ################################################################################
 #
 #  Finitely generated abelian groups and their elements
@@ -1779,16 +1769,16 @@ abstract type GrpAb <: AbstractAlgebra.AdditiveGroup end
 
 abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
-@attributes mutable struct GrpAbFinGen <: GrpAb
+@attributes mutable struct FinGenAbGroup <: GrpAb
   rels::ZZMatrix
   hnf::ZZMatrix
   is_snf::Bool
   snf::Vector{ZZRingElem}
-  snf_map::Map{GrpAbFinGen, GrpAbFinGen}
+  snf_map::Map{FinGenAbGroup, FinGenAbGroup}
   exponent::ZZRingElem
   isfinalized::Bool
 
-  function GrpAbFinGen(R::ZZMatrix, is_hnf::Bool = false)
+  function FinGenAbGroup(R::ZZMatrix, is_hnf::Bool = false)
     r = new()
     r.is_snf = false
     r.rels = R
@@ -1799,7 +1789,7 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
     return r
   end
 
-  function GrpAbFinGen(R::Vector{ZZRingElem}, is_snf::Bool = true)
+  function FinGenAbGroup(R::Vector{ZZRingElem}, is_snf::Bool = true)
     r = new()
     r.is_snf = is_snf
     r.snf = R
@@ -1807,7 +1797,7 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
     return r
   end
 
-  function GrpAbFinGen(R::Vector{T}, is_snf::Bool = true) where T <: Integer
+  function FinGenAbGroup(R::Vector{T}, is_snf::Bool = true) where T <: Integer
     r = new()
     r.is_snf = is_snf
     r.snf = map(ZZRingElem, R)
@@ -1817,11 +1807,11 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
 end
 
-mutable struct GrpAbFinGenElem <: GrpAbElem
-  parent::GrpAbFinGen
+mutable struct FinGenAbGroupElem <: GrpAbElem
+  parent::FinGenAbGroup
   coeff::ZZMatrix
 
-  GrpAbFinGenElem() = new()
+  FinGenAbGroupElem() = new()
 end
 
 ################################################################################
@@ -1881,7 +1871,7 @@ abstract type NumFieldEmb{T} end
 #
 ################################################################################
 
-mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AbsSimpleNumField}
+mutable struct AbsSimpleNumFieldEmbedding <: NumFieldEmb{AbsSimpleNumField}
   K::AbsSimpleNumField  # Number Field
   i::Int               # The position of the root r in conjugates_arb(a),
                        # where a is the primitive element of K
@@ -1892,7 +1882,7 @@ mutable struct NumFieldEmbNfAbs <: NumFieldEmb{AbsSimpleNumField}
                        # and negative at all the other real embeddings.
                        # Makes sense only if the place is real.
 
-  function NumFieldEmbNfAbs(K::AbsSimpleNumField, c::acb_roots, i::Int)
+  function AbsSimpleNumFieldEmbedding(K::AbsSimpleNumField, c::acb_roots, i::Int)
     z = new()
     z.K = K
     r1, r2 = length(c.real_roots), length(c.complex_roots)
@@ -1941,37 +1931,37 @@ end
 #
 ################################################################################
 
-@attributes mutable struct NfRel{T} <: SimpleNumField{T}
+@attributes mutable struct RelSimpleNumField{T} <: SimpleNumField{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
   trace_basis::Vector{T}
 
-  function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
+  function RelSimpleNumField{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     return get_cached!(NfRelID, (parent(f), f, s), cached) do
       z = new{T}()
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
       return z
-    end::NfRel{T}
+    end::RelSimpleNumField{T}
   end
 end
 
 const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
-                     NfRel}()
+                     RelSimpleNumField}()
 
 
-mutable struct NfRelElem{T} <: SimpleNumFieldElem{T}
+mutable struct RelSimpleNumFieldElem{T} <: SimpleNumFieldElem{T}
   data::Generic.Poly{T}
-  parent::NfRel{T}
+  parent::RelSimpleNumField{T}
 
-  NfRelElem{T}(g::Generic.Poly{T}) where {T} = new{T}(g)
+  RelSimpleNumFieldElem{T}(g::Generic.Poly{T}) where {T} = new{T}(g)
 end
 
-elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
+elem_type(::Type{RelSimpleNumField{T}}) where {T} = RelSimpleNumFieldElem{T}
 
-parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
+parent_type(::Type{RelSimpleNumFieldElem{T}}) where {T} = RelSimpleNumField{T}
 
 
 ################################################################################
@@ -1984,11 +1974,11 @@ abstract type GModule end
 
 mutable struct ZpnGModule <: GModule
   R::Nemo.zzModRing
-  V::GrpAbFinGen
+  V::FinGenAbGroup
   G::Vector{zzModMatrix}
   p::Int
 
-  function ZpnGModule(V::GrpAbFinGen,G::Vector{zzModMatrix})
+  function ZpnGModule(V::FinGenAbGroup,G::Vector{zzModMatrix})
     @assert ngens(V)==ncols(G[1]) && ngens(V)==nrows(G[1])
     z=new()
     z.G=G
@@ -2039,7 +2029,7 @@ mutable struct RelLattice{T <: Any, D <: Any}
     z.graph = Graph{UInt, D}()
     z.weak_vertices_rev = Dict{UInt, WeakRef}()
     z.to_delete = Vector{UInt}()
-    z.block_gc = Dict{GrpAbFinGen, Nothing}()
+    z.block_gc = Dict{FinGenAbGroup, Nothing}()
     return z
   end
 end
@@ -2048,11 +2038,11 @@ function GrpAbLatticeCreate()
   r = GrpAbLattice()
   r.zero = ZZMatrix(0,0)
   r.mult = *
-  r.make_id = G::GrpAbFinGen -> identity_matrix(FlintZZ, ngens(G))
+  r.make_id = G::FinGenAbGroup -> identity_matrix(FlintZZ, ngens(G))
   return r
 end
 
-const GrpAbLattice = RelLattice{GrpAbFinGen, ZZMatrix}
+const GrpAbLattice = RelLattice{FinGenAbGroup, ZZMatrix}
 const GroupLattice = GrpAbLatticeCreate()
 
 ###############################################################################
@@ -2085,17 +2075,17 @@ end
 #
 ################################################################################
 
-@attributes mutable struct NfAbsNS <: NonSimpleNumField{QQFieldElem}
+@attributes mutable struct AbsNonSimpleNumField <: NonSimpleNumField{QQFieldElem}
   pol::Vector{QQMPolyRingElem}
   abs_pol::Vector{QQPolyRingElem}
   S::Vector{Symbol}
-  basis#::Vector{NfAbsNSElem}
+  basis#::Vector{AbsNonSimpleNumFieldElem}
   degree::Int
   degrees::Vector{Int}
   signature::Tuple{Int, Int}
   traces::Vector{Vector{QQFieldElem}}
 
-  function NfAbsNS(ff::Vector{QQPolyRingElem}, f::Vector{QQMPolyRingElem}, S::Vector{Symbol}, cached::Bool = false)
+  function AbsNonSimpleNumField(ff::Vector{QQPolyRingElem}, f::Vector{QQMPolyRingElem}, S::Vector{Symbol}, cached::Bool = false)
     r = new()
     r.abs_pol = ff
     r.pol = f
@@ -2105,11 +2095,11 @@ end
   end
 end
 
-mutable struct NfAbsNSElem <: NonSimpleNumFieldElem{QQFieldElem}
+mutable struct AbsNonSimpleNumFieldElem <: NonSimpleNumFieldElem{QQFieldElem}
   data::QQMPolyRingElem
-  parent::NfAbsNS
+  parent::AbsNonSimpleNumField
 
-  function NfAbsNSElem(K::NfAbsNS, g::QQMPolyRingElem)
+  function AbsNonSimpleNumFieldElem(K::AbsNonSimpleNumField, g::QQMPolyRingElem)
     return new(g, K)
   end
 
@@ -2285,4 +2275,13 @@ mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
   parent::KInftyRing{T}
 end
 
+################################################################################
+#
+#  Aliases
+#
+################################################################################
+
+const AbsSimpleNumFieldOrderQuoRing = AbsOrdQuoRing{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderIdeal}
+
+const AbsSimpleNumFieldOrderQuoRingElem = AbsOrdQuoRingElem{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderIdeal, AbsSimpleNumFieldOrderElem}
 

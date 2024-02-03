@@ -31,7 +31,7 @@ import Base: +, -, *, ^
   Thus it works...
 =#
 
-function mod_lll(a::NfAbsOrdElem, I::NfAbsOrdIdl)
+function mod_lll(a::AbsNumFieldOrderElem, I::AbsNumFieldOrderIdeal)
   l = lll(I)[2]
   S = l*basis_matrix(I)
   Si = pseudo_inv(S)
@@ -40,7 +40,7 @@ function mod_lll(a::NfAbsOrdElem, I::NfAbsOrdIdl)
   return a - Hecke.parent(a)(collect(d*S))
 end
 
-function mod_lll(a::AbsSimpleNumFieldElem, I::Hecke.NfAbsOrdFracIdl)
+function mod_lll(a::AbsSimpleNumFieldElem, I::Hecke.AbsNumFieldOrderFractionalIdeal)
   O = order(I)
   d = lcm(denominator(a, O), denominator(I))
   return divexact(Hecke.parent(a)(mod_lll(O(d*a), simplify(I*d).num)), d)
@@ -97,12 +97,12 @@ function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, g
   return e
 end
 
-function Hecke.denominator(P::Hecke.PMat, M::NfOrd)
+function Hecke.denominator(P::Hecke.PMat, M::AbsSimpleNumFieldOrder)
   l = ZZRingElem(1)
   p = matrix(P)
   for i=1:nrows(P)
     I = coefficient_ideals(P)[i]
-    if isa(I, Hecke.NfAbsOrdFracIdl)
+    if isa(I, Hecke.AbsNumFieldOrderFractionalIdeal)
       Hecke.assure_2_normal(I.num)
     else
       Hecke.assure_2_normal(I)
@@ -157,7 +157,7 @@ function my_mod_sym!(A::ZZMatrix, X::ZZRingElem, ::Any)
   mod_sym!(A, X)
 end
 
-function valuation(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}, X::ZZRingElem)
+function valuation(a::AbsSimpleNumFieldOrderElem, X::ZZRingElem)
   v = 0
   first = true
   for x = coordinates(a)
@@ -173,7 +173,7 @@ function valuation(a::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}, X::
   return v
 end
 
-function mod_sym(A::NfAbsOrdElem{AbsSimpleNumField,AbsSimpleNumFieldElem}, X::ZZRingElem)
+function mod_sym(A::AbsSimpleNumFieldOrderElem, X::ZZRingElem)
   c = coordinates(A)
   d = map(x->Hecke.mod_sym(x, X), c)
   return parent(A)(d)

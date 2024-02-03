@@ -1,7 +1,7 @@
 add_verbosity_scope(:Simplify)
 
 @doc raw"""
-    simplify(K::AbsSimpleNumField; canonical::Bool = false) -> AbsSimpleNumField, NfToNfMor
+    simplify(K::AbsSimpleNumField; canonical::Bool = false) -> AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Tries to find an isomorphic field $L$ given by a "simpler" defining polynomial.
 By default, "simple" is defined to be of smaller index, testing is done only
@@ -51,7 +51,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
       for i = 1:degree(L1)
         BOL1[i] = mp\(B[i])
       end
-      OL1 = NfOrd(BOL1, false)
+      OL1 = AbsSimpleNumFieldOrder(BOL1, false)
       OL1.is_maximal = 1
       set_attribute!(L1, :maximal_order => OL1)
       @vprintln :Simplify 3 "Trying to simplify $(L1.pol)"
@@ -78,7 +78,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
     for i = 1:degree(L)
       BOL[i] = m\(B[i])
     end
-    OL = NfOrd(BOL, false)
+    OL = AbsSimpleNumFieldOrder(BOL, false)
     if isdefined(ZK, :disc)
       OL.disc = ZK.disc
       if is_defining_polynomial_nice(L)
@@ -95,7 +95,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
   return L, m
 end
 
-function _simplify(O::NfAbsOrd)
+function _simplify(O::AbsNumFieldOrder)
   K = nf(O)
 
   B = basis(O, K, copy = false)
@@ -132,7 +132,7 @@ function primitive_element(K::AbsSimpleNumField)
   return gen(K)
 end
 
-function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
+function _sieve_primitive_elements(B::Vector{AbsNonSimpleNumFieldElem})
   K = parent(B[1])
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
   pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
@@ -167,7 +167,7 @@ function _sieve_primitive_elements(B::Vector{NfAbsNSElem})
   return B[indices]
 end
 
-function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, Rt::MPolyRing)
+function _is_primitive_via_block(el::AbsNonSimpleNumFieldElem, rt::Vector{Vector{fqPolyRepFieldElem}}, Rt::MPolyRing)
   K = parent(el)
   fR = map_coefficients(base_ring(Rt), data(el), parent = Rt)
   s = Set{fqPolyRepFieldElem}()
@@ -184,7 +184,7 @@ function _is_primitive_via_block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFie
   error("Something went wrong")
 end
 
-function _block(el::NfAbsNSElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpField)
+function _block(el::AbsNonSimpleNumFieldElem, rt::Vector{Vector{fqPolyRepFieldElem}}, R::fpField)
   fR = map_coefficients(R, data(el))
   s = fqPolyRepFieldElem[evaluate(fR, x) for x in rt]
   b = Vector{Int}[]

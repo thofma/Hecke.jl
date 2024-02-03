@@ -1,6 +1,6 @@
 using Hecke
 
-function ideals_with_pp_norm(lp::Vector{NfOrdIdl}, k::Int)
+function ideals_with_pp_norm(lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, k::Int)
   l = [degree(x) for x= lp]
 #  println("pp with $l and $k")
   #need sum([e[i]*l[i] == k, e[i] >= 0])
@@ -10,7 +10,7 @@ function ideals_with_pp_norm(lp::Vector{NfOrdIdl}, k::Int)
   return r
 end
 
-function ideals_with_norm(i::ZZRingElem, M::NfOrd)
+function ideals_with_norm(i::ZZRingElem, M::AbsSimpleNumFieldOrder)
   @assert M.is_maximal == 1
   if isone(i)
     return [ideal(M, 1)]
@@ -21,7 +21,7 @@ function ideals_with_norm(i::ZZRingElem, M::NfOrd)
   return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = cartesian_product_iterator([1:length(lp[i]) for i=1:length(lp)], inplace = true)]
 end
 
-function orbit_reps(I::Vector{NfOrdIdl}, s::Hecke.NfToNfMor)
+function orbit_reps(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, s::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   O = Set([I[1], Hecke.induce_image(I[1], s)])
   R = [I[1]]
   for i=I
@@ -38,25 +38,25 @@ end
 #Note: this is not optimised, but hopefully correct.
 #if you need more, analyse Hasse...
 
-function induce_action(phi::Hecke.NfToNfMor, mR::T) where T <: Map{GrpAbFinGen,
-Hecke.FacElemMon{Hecke.NfOrdIdlSet}}
-#function induce_action(phi::Hecke.NfToNfMor, mR::Hecke.MapRayClassGrpFacElem{Hecke.GrpAbFinGen})
+function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::T) where T <: Map{FinGenAbGroup,
+Hecke.FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+#function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Hecke.MapRayClassGrpFacElem{Hecke.FinGenAbGroup})
   lp, x = Hecke.find_gens(
         Hecke.MapFromFunc(base_ring(codomain(mR)),
                           domain(mR),
                           x->preimage(mR, FacElem(Dict(x=>1)))),
         PrimesSet(100, -1))
-  return hom(x, GrpAbFinGenElem[preimage(mR, Hecke.induce_image(p, phi)) for p = lp])
+  return hom(x, FinGenAbGroupElem[preimage(mR, Hecke.induce_image(p, phi)) for p = lp])
 end
 
-function s3_with_discriminant(I::NfOrdIdl)
+function s3_with_discriminant(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   lI = factor(I)
   kx = polynomial_ring(order(I).nf)[1]
   #we need deccompositions I = df^2
   #and f is squarefree - exccept at 3
   #there can only be wild ramification at primes dividing the degree
   #similarly: d is squarefree outside 2...
-  all_poss = Vector{Tuple{NfOrdIdl, NfOrdIdl}}()
+  all_poss = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
   l23 = []
   f = ideal(order(I), 1)
   d = ideal(order(I), 1)
@@ -184,7 +184,7 @@ end
 function Gunter_Qi(r::Range, pref="Qi.new")
   Qt, t = FlintQQ["t"]
   k, a = number_field(t^2+1, "k.1")
-  s = Hecke.NfToNfMor(k, k, -a)
+  s = Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}(k, k, -a)
   M = maximal_order(k)
   kx, x = k["kx.1"]
   f = open("/tmp/$pref", "a")
@@ -197,7 +197,7 @@ function Gunter_Qi(r::Range, pref="Qi.new")
       if length(I)==0
         continue
       end
-      I = NfOrdIdl[I[x] for x = linearindices(I)]
+      I = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[I[x] for x = linearindices(I)]
       R = orbit_reps(I, s)
       for r in R
         z = s3_with_discriminant(r)

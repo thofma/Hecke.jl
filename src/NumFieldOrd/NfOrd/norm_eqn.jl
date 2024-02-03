@@ -1,6 +1,6 @@
 #TODO: verbose printing
 
-function norm_1_generators(A::Vector{NfOrdIdl})
+function norm_1_generators(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert all(is_prime, A)
   @assert all(x->x.gen_one == A[1].gen_one, A)
 
@@ -122,7 +122,7 @@ function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=
     #@assert norm(evaluate(x)) == evaluate(image(mu, h[end]))
   end
   s, ms = sub(u, h)
-  mp = GrpAbFinGenMap(U, u, reduce(vcat, [x.coeff for x=h]))
+  mp = FinGenAbGroupHom(U, u, reduce(vcat, [x.coeff for x=h]))
 
   fl, p = has_preimage_with_preimage(mp, preimage(mu, a))
   if fl

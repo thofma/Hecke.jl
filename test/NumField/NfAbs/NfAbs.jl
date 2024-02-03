@@ -36,7 +36,7 @@ end
   Kt, t = polynomial_ring(K, "t")
   g = t^4-2
   L = splitting_field(g)
-  @test typeof(L) == Hecke.NfRel{AbsSimpleNumFieldElem}
+  @test typeof(L) == Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   @test absolute_degree(L) == 8
 end
 

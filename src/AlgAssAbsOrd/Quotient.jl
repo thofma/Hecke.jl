@@ -27,7 +27,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
       mt[i, j, :] = (coordinates(bij) * V)[k:end]
     end
   end
-  quoAlg = AlgAss(QQ, mt; check = false)
+  quoAlg = StructureConstantAlgebra(QQ, mt; check = false)
   ord = Order(quoAlg, basis(quoAlg))
   #
   bminvO = QQMatrix(basis_mat_inv(O))
@@ -40,8 +40,8 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   # Lets determine the decomposition of quoAlg if the decomposition of algebra(O) is known
 
   #if isdefined(A, :decomposition)
-  #  dec = Vector{Tuple{AlgAss{QQFieldElem},
-  #               morphism_type(AlgAss{QQFieldElem}, typeof(quoAlg))}}()
+  #  dec = Vector{Tuple{StructureConstantAlgebra{QQFieldElem},
+  #               morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(quoAlg))}}()
 
   #  d = 0
   #  for (B, mB) in decompose(A)

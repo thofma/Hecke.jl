@@ -91,7 +91,7 @@ function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{QQPolyRingElem, 
   return true
 end
 
-function is_eisenstein_polynomial(f::PolyRingElem{<:NumFieldElem}, p::NumFieldOrdIdl)
+function is_eisenstein_polynomial(f::PolyRingElem{<:NumFieldElem}, p::NumFieldOrderIdeal)
   @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false

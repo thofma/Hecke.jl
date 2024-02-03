@@ -131,7 +131,7 @@ function INB_via_gauss(K::ClassField)
   U, mU = unit_group(R)
 
   #find the fix group in C of K, kind of...
-  g = Tuple{GrpAbFinGenElem, GrpAbFinGenElem}[]
+  g = Tuple{FinGenAbGroupElem, FinGenAbGroupElem}[]
   p = 1
   q, mq = quo(U, [zero(U)])
   while order(q) > 1

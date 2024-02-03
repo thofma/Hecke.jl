@@ -5,10 +5,10 @@ using Hecke
 struct RelNeq
   k::AbsSimpleNumField
   K::AbsSimpleNumField
-  Kk::Hecke.NfRel{AbsSimpleNumFieldElem}
+  Kk::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   m_k_K::Map
   m_Kk_K::Map
-  function RelNeq(k::AbsSimpleNumField, Kk::Hecke.NfRel{AbsSimpleNumFieldElem})
+  function RelNeq(k::AbsSimpleNumField, Kk::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem})
     k = base_ring(Kk)
     K, m_K_Kk = absolute_simple_field(Kk)
     m1 = inv(m_K_Kk)
@@ -98,7 +98,7 @@ function norm_1_subgroup(A::RelNeq)
   q, mq = quo(r, elem_type(r)[])
 
   S = PrimesSet(1, -1)
-  gens = Set{NfOrdIdl}()
+  gens = Set{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   gg = []
 
   max_stable = 15*ngens(r)
@@ -205,13 +205,13 @@ end
 
 =#
 mutable struct Norm1Group
-  gens::Vector{Hecke.NfOrdFracIdl}
+  gens::Vector{Hecke.AbsSimpleNumFieldOrderFractionalIdeal}
   rels
   A::RelNeq
-  gC::Vector{Tuple{Hecke.NfOrdFracIdl, GrpAbFinGenElem}}
-  sC::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
-  gU::Vector{Tuple{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, GrpAbFinGenElem}}
-  sU::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
+  gC::Vector{Tuple{Hecke.AbsSimpleNumFieldOrderFractionalIdeal, FinGenAbGroupElem}}
+  sC::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
+  gU::Vector{Tuple{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, FinGenAbGroupElem}}
+  sU::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
   C::Any
   U::Any
 
@@ -239,7 +239,7 @@ function Base.show(io::IO, N::Norm1Group)
   println(io, "currently, using $(length(N.gens)) generators")
 end
 
-function is_principal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
+function is_principal_fac_elem(A::FacElem{<:AbsNumFieldOrderIdeal})
   a,b = Hecke.reduce_ideal(A)
   # a*b == A
   fl, c = is_principal_fac_elem(a)
@@ -249,7 +249,7 @@ function is_principal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
   return fl, c*b
 end
 
-function is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
+function is_principal_fac_elem(A::FacElem{<:Hecke.AbsSimpleNumFieldOrderFractionalIdeal})
   zk = order(base_ring(A))
   B = FacElem(Dict((numerator(x), v) for (x,v) = A.fac))
   den = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
@@ -272,7 +272,7 @@ function is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
 end
 
 
-function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
+function Base.push!(N::Norm1Group, I::Hecke.AbsSimpleNumFieldOrderFractionalIdeal)
   A = N.A
   @assert isone(norm(A.m_k_K, I))
   c, mc = N.C
@@ -311,7 +311,7 @@ function order_bound(N::Norm1Group)
   return order(N.U[1]) * order(N.C[1])
 end
 
-Hecke.elem_type(::Type{Hecke.NfOrdFracIdlSet}) = Hecke.NfOrdFracIdl
+Hecke.elem_type(::Type{Hecke.AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = Hecke.AbsSimpleNumFieldOrderFractionalIdeal
 
 function Hecke.evaluate(N::Norm1Group)
   # want the group extension (and the disc log and such)
@@ -336,7 +336,7 @@ function Hecke.evaluate(N::Norm1Group)
   end
   A = abelian_group(R)
   ZK = maximal_order(N.A.K)
-  function exp(a::GrpAbFinGenElem)
+  function exp(a::FinGenAbGroupElem)
     a1 = sub(a.coeff, 1:1, 1:ngens(s2))
     a2 = sub(a.coeff, 1:1, ngens(s2)+(1:ngens(s1)))
     b1 = ms2(s2(a1))
@@ -346,7 +346,7 @@ function Hecke.evaluate(N::Norm1Group)
     return I1*I2
   end
 
-  function log(I::Hecke.NfOrdFracIdl)
+  function log(I::Hecke.AbsSimpleNumFieldOrderFractionalIdeal)
     @assert isone(norm(N.A.m_k_K, I))
     r = N.C[2]\numerator(I)
     fl, s = has_preimage_with_preimage(N.sC[2], r)
@@ -377,7 +377,7 @@ function n1group(A::RelNeq, B::Int)
   ZK = maximal_order(K)
   N = Norm1Group(A)
 
-  function single_prime(P::NfAbsOrdIdl)
+  function single_prime(P::AbsNumFieldOrderIdeal)
     p = minimum(P)
     if numerator(discriminant(K)) % p == 0 ||
        numerator(discriminant(k)) % p == 0

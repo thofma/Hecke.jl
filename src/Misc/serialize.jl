@@ -50,14 +50,14 @@
 #  return number_field(deserialize(s), cached=false)[1]
 #end
 #
-#function serialize(s::AbstractSerializer, t::NfToNfMor)
-#  Serialization.serialize_type(s, NfToNfMor)
+#function serialize(s::AbstractSerializer, t::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
+#  Serialization.serialize_type(s, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
 #  return serialize(s, (domain(t), codomain(t), t.prim_img))
 #end
 #
-#function deserialize(s::AbstractSerializer, ::Type{NfToNfMor})
+#function deserialize(s::AbstractSerializer, ::Type{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 #  K, L, a = deserialize(s)
-#  return NfToNfMor(K, L, a)
+#  return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}(K, L, a)
 #end
 #
 add_verbosity_scope(:Par)

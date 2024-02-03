@@ -49,8 +49,8 @@ end
 # For convenience, there is a quotient constructor for an extension of orders.
 # The quotient will be represented as an abelian group.
 mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
-              Map{GrpAbFinGen, T1, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
-  domain::GrpAbFinGen
+              Map{FinGenAbGroup, T1, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
+  domain::FinGenAbGroup
   codomain::T1
   bottom::T2
   offset::Int
@@ -59,7 +59,7 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
   bottom_snf_basis::Vector{S}
   top_basis_mat_inv::FakeFmpqMat
 
-  function GrpAbFinGenToNfOrdQuoNfOrd(M::T1, N::T2) where { T1 <: Union{ NfAbsOrd, AlgAssAbsOrd }, T2 <: Union{ NfAbsOrd, AlgAssAbsOrd, NfAbsOrdIdl, AlgAssAbsOrdIdl } }
+  function GrpAbFinGenToNfOrdQuoNfOrd(M::T1, N::T2) where { T1 <: Union{ AbsNumFieldOrder, AlgAssAbsOrd }, T2 <: Union{ AbsNumFieldOrder, AlgAssAbsOrd, AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
     TT = elem_type(_algebra(M))
     z = new{T1, T2, TT, elem_type(T1)}()
     d = degree(M)
@@ -121,7 +121,7 @@ function show(io::IO, f::GrpAbFinGenToNfOrdQuoNfOrd)
   print(io, "\n(kernel with basis: ", basis(f.bottom), ")")
 end
 
-function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x::GrpAbFinGenElem) where {S1, S2, T, U}
+function image(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x::FinGenAbGroupElem) where {S1, S2, T, U}
   t = zero(codomain(f))
   z = deepcopy(f.top_snf_basis_in_order[1 + f.offset])
   mul!(z, x.coeff[1], z)
@@ -141,7 +141,7 @@ function preimage(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x) where {S1, S2,
   return domain(f)(sub(t, 1:1, (1 + f.offset):ncols(t)).num)
 end
 
-function quo(M::NfOrd, O::NfOrd)
+function quo(M::AbsSimpleNumFieldOrder, O::AbsSimpleNumFieldOrder)
   f = GrpAbFinGenToNfOrdQuoNfOrd(M, O)
   return domain(f), f
 end
@@ -170,7 +170,7 @@ end
 
 function induce(f::GrpAbFinGenToNfOrdQuoNfOrd, g)
   G = domain(f)
-  imgs = Vector{GrpAbFinGenElem}(undef, ngens(G))
+  imgs = Vector{FinGenAbGroupElem}(undef, ngens(G))
   d = degree(codomain(f))
   m = zero_matrix(FlintZZ, d, d)
   for i in 1:ngens(G)
@@ -201,7 +201,7 @@ function poverorders(O, p::ZZRingElem)
 end
 
 @doc raw"""
-    overorders(O::NfOrd, type = :all) -> Vector{Ord}
+    overorders(O::AbsSimpleNumFieldOrder, type = :all) -> Vector{Ord}
 
 Returns all overorders of `O`. If `type` is `:bass` or `:gorenstein`, then
 only Bass and Gorenstein orders respectively are returned.
@@ -249,7 +249,7 @@ function _minimal_overorders_nonrecursive_meataxe(O, M)
 
   B = mA.bottom_snf_basis
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:degree(O)
     if isone(B[i])
@@ -330,7 +330,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
   K = _algebra(O)
   #@assert isone(B[1])
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:degree(O)
     if isone(B[i])
@@ -453,7 +453,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
 
   f = valuation(norm(P), 2)
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:degree(O)
     if isone(B[i])
@@ -747,7 +747,7 @@ function poverorders_one_step_generic(O, p::ZZRingElem)
 
   B = mA.bottom_snf_basis
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:d
     if isone(B[i])
@@ -876,7 +876,7 @@ function poverorders_nonrecursive_meataxe(O, N, p::ZZRingElem)
 
   B = mA.bottom_snf_basis
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   for i in 1:d
     if isone(B[i])
@@ -1023,7 +1023,7 @@ function is_bass(O, P)
   return div(ext_dim, resfield_dim) <= 2
 end
 
-function is_bass(O::NfOrd, p::ZZRingElem)
+function is_bass(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   M = maximal_order(O)
   p_critical_primes = Set{ideal_type(O)}()
   lp = prime_decomposition(M, p)
@@ -1042,11 +1042,11 @@ function is_bass(O::NfOrd, p::ZZRingElem)
 end
 
 @doc doc"""
-    is_bass(O::NfOrd) -> Bool
+    is_bass(O::AbsSimpleNumFieldOrder) -> Bool
 
 Return whether the order `\mathcal{O}` is Bass.
 """
-function is_bass(O::NfOrd)
+function is_bass(O::AbsSimpleNumFieldOrder)
   f = minimum(conductor(O))
   M = maximal_order(nf(O))
   for (p, ) in factor(f)
@@ -1078,11 +1078,11 @@ end
 ################################################################################
 
 @doc doc"""
-    is_gorenstein(O::NfOrd) -> Bool
+    is_gorenstein(O::AbsSimpleNumFieldOrder) -> Bool
 
 Return whether the order `\mathcal{O}` is Gorenstein.
 """
-function is_gorenstein(O::NfOrd)
+function is_gorenstein(O::AbsSimpleNumFieldOrder)
   codiff = codifferent(O)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)
   return isone(norm(R))
@@ -1119,7 +1119,7 @@ function is_gorenstein(O, P)
 end
 
 # This is very slow!
-function intersect(x::NfOrd, y::NfOrd)
+function intersect(x::AbsSimpleNumFieldOrder, y::AbsSimpleNumFieldOrder)
   d = degree(x)
   g = lcm(denominator(basis_matrix(x)), denominator(basis_matrix(y)))
   H = vcat(divexact(g * basis_matrix(x).num, basis_matrix(x).den), divexact(g * basis_matrix(y).num, basis_matrix(y).den))
@@ -1141,7 +1141,7 @@ end
 #
 ################################################################################
 
-function ideals_with_norm(O::NfOrd, p::ZZRingElem, n::Int)
+function ideals_with_norm(O::AbsSimpleNumFieldOrder, p::ZZRingElem, n::Int)
   pn = p^n
   pInt = Int(p)
   K = nf(O)
@@ -1149,7 +1149,7 @@ function ideals_with_norm(O::NfOrd, p::ZZRingElem, n::Int)
   ideals = []
   B = basis(O)
 
-  autos = GrpAbFinGenMap[]
+  autos = FinGenAbGroupHom[]
 
   A = abelian_group(ZZRingElem[pn for i in 1:d])
 
@@ -1186,7 +1186,7 @@ function ideals_with_norm(O::NfOrd, p::ZZRingElem, n::Int)
   return ideals
 end
 
-function index(R::NfOrd, S::NfOrd)
+function index(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder)
   r = gen_index(R)
   s = gen_index(S)
   i = r^-1 * s
@@ -1194,7 +1194,7 @@ function index(R::NfOrd, S::NfOrd)
   return FlintZZ(i)
 end
 
-function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::ZZRingElem)
+function poverorders_goursat(O1::AbsSimpleNumFieldOrder, O2::AbsSimpleNumFieldOrder, p::ZZRingElem)
   l1 = poverorders(O1, p)
   l2 = poverorders(O2, p)
   data_from_l2 = Dict{Vector{Int}, Vector{Tuple{typeof(O1), ideal_type(O1)}}}()
@@ -1226,7 +1226,7 @@ function abelian_group(Q::AbsOrdQuoRing)
   return S, f, g
 end
 
-function is_isomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
+function is_isomorphic(Q1::AbsSimpleNumFieldOrderQuoRing, Q2::AbsSimpleNumFieldOrderQuoRing)
   Q1_A, Q1_mA, Q1_mA_inv = abelian_group(Q1)
   Q2_A, Q2_mA, Q2_mA_inv = abelian_group(Q2)
 
@@ -1247,14 +1247,14 @@ function is_isomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
 
   l = length(Q1_A.snf)
 
-  elements_with_correct_order = Dict{ZZRingElem, Vector{GrpAbFinGenElem}}()
+  elements_with_correct_order = Dict{ZZRingElem, Vector{FinGenAbGroupElem}}()
 
   for g in Q2_A
     o = order(g)
     if o in orders
       #elem_g = Q2_mA(g)
       if !haskey(elements_with_correct_order, o)
-        elements_with_correct_order[o] = GrpAbFinGenElem[g]
+        elements_with_correct_order[o] = FinGenAbGroupElem[g]
       else
         push!(elements_with_correct_order[o], g)
       end

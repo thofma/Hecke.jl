@@ -83,7 +83,7 @@
 
   @testset "Basis" begin
     b = @inferred basis(I)
-    @test b == NfOrdElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
+    @test b == AbsSimpleNumFieldOrderElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
   end
 
   @testset "Basismatrix" begin

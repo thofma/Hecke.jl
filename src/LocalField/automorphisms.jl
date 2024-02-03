@@ -207,7 +207,7 @@ function automorphism_group(K::QadicField)
       mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
-  G = GrpGen(mult_table)
+  G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, K)
 end
 
@@ -248,7 +248,7 @@ function automorphism_group(L::LocalField, K::Union{LocalField, PadicField, Qadi
       mult_table[s, i] = p
     end
   end
-  G = GrpGen(mult_table)
+  G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, L)
 end
 
@@ -266,6 +266,6 @@ function absolute_automorphism_group(L::LocalField)
       mult_table[s, i] = findfirst(isequal(aut[s]*aut[i]), aut)
     end
   end
-  G = GrpGen(mult_table)
+  G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, L)
 end

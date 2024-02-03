@@ -338,7 +338,7 @@ end
 @doc raw"""
     regulator(u::Vector{T}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}
     regulator(K::AbsSimpleNumField, C::qAdicConj, n::Int = 10; flat::Bool = true)
-    regulator(R::NfAbsOrd, C::qAdicConj, n::Int = 10; flat::Bool = true)
+    regulator(R::AbsNumFieldOrder, C::qAdicConj, n::Int = 10; flat::Bool = true)
 
 Returns the determinant of $m^t m$ where the columns of $m$ are the `conjugates_log` of the units
 in either the array, or the fundamental units for $K$ (the maximal order of $K$) or $R$.
@@ -354,7 +354,7 @@ function regulator(K::AbsSimpleNumField, C::qAdicConj, n::Int = 10; flat::Bool =
   return regulator(maximal_order(K), C, n, flat = flat)
 end
 
-function regulator(R::NfAbsOrd{AbsSimpleNumField, AbsSimpleNumFieldElem}, C::qAdicConj, n::Int = 10; flat::Bool = false)
+function regulator(R::AbsSimpleNumFieldOrder, C::qAdicConj, n::Int = 10; flat::Bool = false)
   u, mu = unit_group_fac_elem(R)
   return regulator([mu(u[i]) for i=2:ngens(u)], C, n, flat = flat)
 end
@@ -362,7 +362,7 @@ end
 @doc raw"""
     regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}} -> QadicFieldElem
     regulator_iwasawa(K::AbsSimpleNumField, C::qAdicConj, n::Int = 10) -> QadicFieldElem
-    regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10) -> QadicFieldElem
+    regulator_iwasawa(R::AbsNumFieldOrder, C::qAdicConj, n::Int = 10) -> QadicFieldElem
 
 For a totally real field $K$, the regulator as defined by Iwasawa: the determinant of the
 matrix containing the logarithms of the conjugates, supplemented by a column containing all $1$.
@@ -381,7 +381,7 @@ function regulator_iwasawa(K::AbsSimpleNumField, C::qAdicConj, n::Int = 10)
   return regulator_iwasawa(maximal_order(K), C, n)
 end
 
-function regulator_iwasawa(R::NfAbsOrd, C::qAdicConj, n::Int = 10)
+function regulator_iwasawa(R::AbsNumFieldOrder, C::qAdicConj, n::Int = 10)
   @assert is_totally_real(nf(R))
   u, mu = unit_group_fac_elem(R)
   return regulator_iwasawa([mu(u[i]) for i=2:ngens(u)], C, n)
@@ -496,7 +496,7 @@ function lift_root(f::ZZPolyRingElem, a::AbsSimpleNumFieldElem, o::AbsSimpleNumF
 end
 
 @doc raw"""
-    completion_easy(K::AbsSimpleNumField, P::NfOrdIdl)
+    completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
                                                -> QadicField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at the
@@ -506,7 +506,7 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift.  Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 """
-function completion_easy(K::AbsSimpleNumField, P::NfOrdIdl, precision::Int = 10)
+function completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 10)
   #non-unique!! will have deg(P) many
   p = minimum(P)
   C = qAdicConj(K, Int(p))

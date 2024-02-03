@@ -96,8 +96,8 @@ zero(O::AlgAssAbsOrd) = O(algebra(O)())
 ################################################################################
 
 @doc raw"""
-    elem_in_algebra(x::AlgAssAbsOrdElem; copy::Bool = true) -> AbsAlgAssElem
-    elem_in_algebra(x::AlgAssRelOrdElem; copy::Bool = true) -> AbsAlgAssElem
+    elem_in_algebra(x::AlgAssAbsOrdElem; copy::Bool = true) -> AbstractAssociativeAlgebraElem
+    elem_in_algebra(x::AlgAssRelOrdElem; copy::Bool = true) -> AbstractAssociativeAlgebraElem
 
 Returns $x$ as an element of the algebra containing it.
 """
@@ -463,7 +463,7 @@ function powermod(a::AlgAssAbsOrdElem, i::Union{ZZRingElem, Int}, m::AlgAssAbsOr
   return b
 end
 
-# This is mostly is_divisible in NfOrd/residue_ring.jl
+# This is mostly is_divisible in AbsSimpleNumFieldOrder/residue_ring.jl
 function is_divisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
 
   iszero(y) && error("Dividing by zero")

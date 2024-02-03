@@ -2,7 +2,7 @@
   Qx, x = FlintQQ["x"]
   f = x^2 - 10x - 8
   K, a = number_field(f, "a")
-  KG = group_algebra(K, GrpAbFinGen([ 2 ]))
+  KG = group_algebra(K, FinGenAbGroup([ 2 ]))
 
   @testset "Arithmetic" begin
     O = any_order(KG)
@@ -56,7 +56,7 @@
     M[1,2,2] = one(K)
     M[2,1,2] = one(K)
     M[2,2,1] = K(-12)
-    E = Hecke.AlgAss(K,M)
+    E = Hecke.StructureConstantAlgebra(K,M)
     OE = maximal_order(E)
     @test is_prime(numerator(norm(@inferred Hecke.maximal_integral_ideal(OE, 3*o, :left))))
   end

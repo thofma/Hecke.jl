@@ -1,4 +1,4 @@
-function signature(L::NfRelNS)
+function signature(L::RelNonSimpleNumField)
   c = get_attribute(L, :signature)
   if c isa Tuple{Int, Int}
     return c::Tuple{Int, Int}
@@ -22,7 +22,7 @@ function signature(L::NfRelNS)
   return r, s
 end
 
-function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
+function conjugates_arb(a::RelNonSimpleNumFieldElem{T}, prec::Int = 32) where {T}
   # This is very slow.
 
   f = data(a)
@@ -84,7 +84,7 @@ end
 #
 ################################################################################
 
-function _conjugates_data(L::NfRelNS{T}, p::Int) where T
+function _conjugates_data(L::RelNonSimpleNumField{T}, p::Int) where T
   cd = get_attribute(L, :conjugates_data)
   if cd === nothing
     D = Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}}()
@@ -103,7 +103,7 @@ function _conjugates_data(L::NfRelNS{T}, p::Int) where T
   return res
 end
 
-function __conjugates_data(L::NfRelNS{T}, p::Int) where T
+function __conjugates_data(L::RelNonSimpleNumField{T}, p::Int) where T
   data = [_conjugates_data(component(L, j)[1], p) for j = 1:ngens(L)]
   plcs = complex_embeddings(base_field(L), conjugates = false)
   r, s = signature(L)

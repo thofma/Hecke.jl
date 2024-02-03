@@ -69,9 +69,9 @@
 #    end
 #  end
 #
-#  A = AlgAss(K, structure)
+#  A = StructureConstantAlgebra(K, structure)
 #
-#  gens = Vector{AlgAssElem{elem_type(K)}}(length(Morig))
+#  gens = Vector{AssociativeAlgebraElem{elem_type(K)}}(length(Morig))
 #
 #  for l in 1:length(Morig)
 #    N = Morig[l]
@@ -89,8 +89,8 @@
 #  return A
 #end
 
-#function gens(A::AlgAss{T}) where {T}
-#  #return A.gens::Vector{AlgAssElem{T}}
+#function gens(A::StructureConstantAlgebra{T}) where {T}
+#  #return A.gens::Vector{AssociativeAlgebraElem{T}}
 #end
 
 ##

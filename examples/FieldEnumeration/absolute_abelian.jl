@@ -1,6 +1,6 @@
 using Hecke
 
-Base.:*(x::Hecke.NfRelNSElem{Nemo.AbsSimpleNumFieldElem}) = x
+Base.:*(x::Hecke.RelNonSimpleNumFieldElem{Nemo.AbsSimpleNumFieldElem}) = x
 
 function _get_simple_extension_and_maximal_order(K)
   @assert degree(base_ring(K)) == 1

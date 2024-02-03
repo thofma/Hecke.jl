@@ -1,6 +1,6 @@
 ################################################################################
 #
-#             EllCrv/MinimalModels.jl : Minimal models and global minimal models
+#             EllipticCurve/MinimalModels.jl : Minimal models and global minimal models
 #
 # This file is part of Hecke.
 #
@@ -42,12 +42,12 @@
 
 # algorithm of Laska-Kraus-Connell
 @doc raw"""
-    laska_kraus_connell(E::EllCrv{ZZRingElem}) -> Array{Nemo.ZZRingElem}
+    laska_kraus_connell(E::EllipticCurve{ZZRingElem}) -> Array{Nemo.ZZRingElem}
 
 Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
 isomorphic elliptic curve over $\mathbf Q$ with minimal discriminant.
 """
-function laska_kraus_connell(E::EllCrv{QQFieldElem})
+function laska_kraus_connell(E::EllipticCurve{QQFieldElem})
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
@@ -108,7 +108,7 @@ function laska_kraus_connell(E::EllCrv{QQFieldElem})
   na6 = divexact(b6 - na3, 4)
 
 
-  return elliptic_curve([na1, na2, na3, na4, na6])::EllCrv{QQFieldElem}
+  return elliptic_curve([na1, na2, na3, na4, na6])::EllipticCurve{QQFieldElem}
 end
 
 ################################################################################
@@ -118,26 +118,26 @@ end
 ################################################################################
 
 @doc raw"""
-    minimal_model(E::EllCrv{QQFieldElem}, p::Int) -> EllCrv{QQFieldElem},
+    minimal_model(E::EllipticCurve{QQFieldElem}, p::Int) -> EllipticCurve{QQFieldElem},
       EllCrvIso{QQFieldElem}, EllCrvIso{QQFieldElem}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
 is prime.
 """
-function minimal_model(E::EllCrv{QQFieldElem}, p::Int)
+function minimal_model(E::EllipticCurve{QQFieldElem}, p::Int)
   Ep = tates_algorithm_local(E, p)[1]
   phi = isomorphism(E, Ep)
   return Ep, phi, inv(phi)
 end
 
 @doc raw"""
-    minimal_model(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl) -> EllCrv{AbsSimpleNumFieldElem},
+    minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> EllipticCurve{AbsSimpleNumFieldElem},
       EllCrvIso{AbsSimpleNumFieldElem}, EllCrvIso{AbsSimpleNumFieldElem}
 
 Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
 is a prime ideal.
 """
-function minimal_model(E::EllCrv, p)
+function minimal_model(E::EllipticCurve, p)
   Ep = tates_algorithm_local(E, p)
   Ep = Ep[1]
   phi = isomorphism(E, Ep)
@@ -146,13 +146,13 @@ end
 
 
 @doc raw"""
-    tidy_model(E::EllCrv{QQFieldElem}) -> EllCrv{QQFieldElem}
+    tidy_model(E::EllipticCurve{QQFieldElem}) -> EllipticCurve{QQFieldElem}
 
 Given an elliptic curve with minimal model, this functions returns an
 isomorphic curve with reduced minimal model, that is, $a_1, a_3 \in \{0, 1\}$
 and $a_2 \in \{-1,0,1\}$.
 """
-function tidy_model(E::EllCrv{QQFieldElem})
+function tidy_model(E::EllipticCurve{QQFieldElem})
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
 
@@ -188,22 +188,22 @@ end
 ################################################################################
 
 @doc raw"""
-    minimal_model(E::EllCrv{QQFieldElem}) -> EllCrv{QQFieldElem}
+    minimal_model(E::EllipticCurve{QQFieldElem}) -> EllipticCurve{QQFieldElem}
 
 Returns the reduced global minimal model of $E$.
 """
-function minimal_model(E::EllCrv{QQFieldElem})
+function minimal_model(E::EllipticCurve{QQFieldElem})
   F = laska_kraus_connell(E)
   phi = isomorphism(E, F)
   return F, phi, inv(phi)
 end
 
 @doc raw"""
-    minimal_model(E::EllCrv{AbsSimpleNumFieldElem}) -> EllCrv, EllCrvIso, EllCrvIso
+    minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem}) -> EllipticCurve, EllCrvIso, EllCrvIso
 
 Returns the reduced global minimal model if it exists.
 """
-function minimal_model(E::EllCrv{AbsSimpleNumFieldElem})
+function minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
   if has_global_minimal_model(E)
     F, phi,phi_inv, I = semi_global_minimal_model(E)
     return F, phi, phi_inv
@@ -212,25 +212,25 @@ function minimal_model(E::EllCrv{AbsSimpleNumFieldElem})
 end
 
 @doc raw"""
-    has_global_minimal_model(E::EllCrv{T}) -> Bool where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
+    has_global_minimal_model(E::EllipticCurve{T}) -> Bool where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
 Return true when a global minimal model for E exists.
 """
-function has_global_minimal_model(E::EllCrv{QQFieldElem})
+function has_global_minimal_model(E::EllipticCurve{QQFieldElem})
   return true
 end
 
-function has_global_minimal_model(E::EllCrv{AbsSimpleNumFieldElem})
+function has_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
   return is_principal(global_minimality_class(E))[1]
 end
 
 @doc raw"""
-    global_minimalirt_class(E::EllCrv{AbsSimpleNumFieldElem}) -> NfOrdIdl
+    global_minimalirt_class(E::EllipticCurve{AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the element in the ideal class group that forms the obstruction for
 E not having a minimal model
 """
-function global_minimality_class(E::EllCrv{AbsSimpleNumFieldElem})
+function global_minimality_class(E::EllipticCurve{AbsSimpleNumFieldElem})
   K = base_field(E)
   OK = ring_of_integers(K)
   Cl, phi = class_group(K)
@@ -248,11 +248,11 @@ end
 # The semi-minimal model is inspired by the SageMath implementation
 
 @doc raw"""
-    semi_global_minimal_model(E::EllCrv{AbsSimpleNumFieldElem}, p::NfOrdIdl) -> EllCrv, EllCrvIso, EllCrvIso, NfOrdIdl
+    semi_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> EllipticCurve, EllCrvIso, EllCrvIso, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return a semi global minimal model and the unique prime at which the model is non-minimal.
 """
-function semi_global_minimal_model(E::EllCrv{AbsSimpleNumFieldElem})
+function semi_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
   OK = ring_of_integers(base_field(E))
   G, mG = class_group(OK)
   if false #order(G) == 1
@@ -275,7 +275,7 @@ function semi_global_minimal_model(E::EllCrv{AbsSimpleNumFieldElem})
   return F, phi, inv(phi), I
 end
 
-function _semi_global_minimal_model(E::EllCrv{T}) where T <:AbsSimpleNumFieldElem
+function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumFieldElem
   I = global_minimality_class(E)
   K = base_field(E)
   OK = ring_of_integers(K)
@@ -315,13 +315,13 @@ function c4c6_model(c4, c6)
   return elliptic_curve([-c4//48, -c6//864])
 end
 
-function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
+function check_kraus_conditions_global(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem)
   OK = parent(c4)
 
   #Find b2 values for all the primes dividing 3
   OK3 = 3*OK
   Plist3 = prime_ideals_over(OK, 3)
-  dat = Tuple{Bool, NfOrdElem}[check_kraus_conditions_at_3(c4, c6, P) for P in Plist3]
+  dat = Tuple{Bool, AbsSimpleNumFieldOrderElem}[check_kraus_conditions_at_3(c4, c6, P) for P in Plist3]
   if !all(Bool[d[1] for d in dat])
     return false, elliptic_curve(OK.nf, [0, 0, 0, 0, 0], false)
   end
@@ -383,7 +383,7 @@ function check_kraus_conditions_global(c4::NfOrdElem, c6::NfOrdElem)
   return transform_rstu(c4c6_model(c4, c6), [r, s, t, 1])[1]
 end
 
-function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl, a1::NfOrdElem)
+function check_kraus_conditions_at_2(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, a1::AbsSimpleNumFieldOrderElem)
   @req P.gen_one == 2 "Prime ideal needs to be above 2"
   OK = parent(c4)
   e = ramification_index(P)
@@ -401,7 +401,7 @@ function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl, 
   return check_kraus_at_2_remainder(c4, c6, P, [a1])
 end
 
-function check_kraus_conditions_at_2(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
+function check_kraus_conditions_at_2(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @req P.gen_one == 2 "Prime ideal needs to be above 2"
   OK = parent(c4)
   e = ramification_index(P)
@@ -462,7 +462,7 @@ function check_kraus_at_2_remainder(c4, c6, P, as)
   return false, zero(OK), zero(OK)
 end
 
-function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
+function check_kraus_conditions_at_3(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @req P.gen_one == 3 "Prime ideal needs to be above 3"
   OK = ring_of_integers(parent(c4))
   e = ramification_index(P)
@@ -491,24 +491,24 @@ function check_kraus_conditions_at_3(c4::NfOrdElem, c6::NfOrdElem, P::NfOrdIdl)
 end
 
 @doc raw"""
-    minimal_discriminant(E::EllCrv{QQFieldElem}) -> QQFieldElem
+    minimal_discriminant(E::EllipticCurve{QQFieldElem}) -> QQFieldElem
 
 Return the minimal discriminant ideal D_min of E. If E has a global minimal model
 this is equal to the ideal generated by discriminant(E_min).
 """
-function minimal_discriminant(E::EllCrv{QQFieldElem})
+function minimal_discriminant(E::EllipticCurve{QQFieldElem})
   P = bad_primes(E)
   v = Int[valuation(discriminant(tates_algorithm_local(E, p)[1]),p) for p in P]
   I = prod([P[i]^(v[i]) for i in (1:length(P))]; init = one(QQFieldElem))
 end
 
 @doc raw"""
-    minimal_discriminant(E::EllCrv{AbsSimpleNumFieldElem}) -> NfOrdIdl
+    minimal_discriminant(E::EllipticCurve{AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the minimal discriminant ideal D_min of E. If E has a global minimal model
 this is equal to the ideal generated by discriminant(E_min).
 """
-function minimal_discriminant(E::EllCrv{AbsSimpleNumFieldElem})
+function minimal_discriminant(E::EllipticCurve{AbsSimpleNumFieldElem})
   K = base_field(E)
   OK = ring_of_integers(K)
   P = bad_primes(E)
@@ -522,7 +522,7 @@ end
 #
 ################################################################################
 
-function reduce_model(E::EllCrv{T}) where T
+function reduce_model(E::EllipticCurve{T}) where T
   @req is_integral_model(E) "E has to be an integral model."
   OK = ring_of_integers(base_field(E))
   a1, a2, a3, a4, a6 = map(OK, a_invars(E))
@@ -533,7 +533,7 @@ function reduce_model(E::EllCrv{T}) where T
 end
 
 #Reduce a model of a curve by rescaling with units
-function rescale_curve(E::EllCrv{T}) where T <: AbsSimpleNumFieldElem
+function rescale_curve(E::EllipticCurve{T}) where T <: AbsSimpleNumFieldElem
   K = base_field(E)
   r1, r2 = signature(K)
   if r1 + r2 == 1
@@ -587,7 +587,7 @@ end
 
 #Given an element a in a number field
 #Return b integral such that b is congruent to a modulo P^e
-function make_integral(a::AbsSimpleNumFieldElem, P::NfOrdIdl, e::Int)
+function make_integral(a::AbsSimpleNumFieldElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::Int)
   Pe = P^e
   OK = order(P)
   G, phi = abelian_group(residue_ring(OK, Pe))
@@ -600,7 +600,7 @@ function make_integral(a::AbsSimpleNumFieldElem, P::NfOrdIdl, e::Int)
   error("Cannot lift a to O_K mod P^e)")
 end
 
-function sqrt_mod_4(x::NfOrdElem, P::NfOrdIdl)
+function sqrt_mod_4(x::AbsSimpleNumFieldOrderElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   e = ramification_index(P)
   P2 = P^e
   OK = parent(x)
@@ -614,11 +614,11 @@ function sqrt_mod_4(x::NfOrdElem, P::NfOrdIdl)
   return false, zero(OK)
 end
 
-function reduce_model(E::EllCrv{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
+function reduce_model(E::EllipticCurve{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
   return _minimize(E)
 end
 
-function _minimize(E::EllCrv{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
+function _minimize(E::EllipticCurve{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
   Kt = base_field(E)
   Rt = base_ring(Kt.fraction_field)
   E, = integral_model(E)
@@ -630,7 +630,7 @@ function _minimize(E::EllCrv{<: AbstractAlgebra.Generic.RationalFunctionFieldEle
   return E
 end
 
-function _minimize(E::EllCrv, u, e)
+function _minimize(E::EllipticCurve, u, e)
   v = one(u)
   if abs(e) > 11
     v = u^(fdiv(ZZ(e), 12))
@@ -754,7 +754,7 @@ function _gcd(a::Vector{ZZRingElem})
   return gcd(a)
 end
 
-function _gcd(a::Vector{NfOrdElem})
+function _gcd(a::Vector{AbsSimpleNumFieldOrderElem})
   @assert length(a) > 0
   R = parent(a[1])
   I = sum(b * R for b in a)
@@ -776,7 +776,7 @@ function _make_primitive(pol)
 end
 
 #@doc raw"""
-#    integral_model(E::EllCrv) -> EllCrv, EllCrvIso, EllCrvIso
+#    integral_model(E::EllipticCurve) -> EllipticCurve, EllCrvIso, EllCrvIso
 #
 #Given an elliptic curve over a field $K$, return an isomorphic elliptic curve
 #with integral Weierstrass equation (over the ring $R$), where $R$ is defined as
@@ -789,7 +789,7 @@ end
 #!!! note
 #    This function is experimental. The interface might change in the future.
 #"""
-#function integral_model(E::EllCrv{QQFieldElem})
+#function integral_model(E::EllipticCurve{QQFieldElem})
 #  ai = collect(a_invars(E))
 #  wts = [1, 2, 3, 4, 6]
 #  for a in ai
@@ -804,7 +804,7 @@ end
 #  return elliptic_curve(ai)
 #end
 
-function integral_model(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{QQFieldElem}})
+function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{QQFieldElem}})
   Zx = Hecke.Globals.Zx
   K = base_field(E)
   ai = collect(a_invars(E))
@@ -825,7 +825,7 @@ function integral_model(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFiel
   return EE, phi, inv(phi)
 end
 
-function integral_model(E::EllCrv{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{AbsSimpleNumFieldElem}})
+function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{AbsSimpleNumFieldElem}})
   K = base_field(E)
   ai = collect(a_invars(E))
   aiorig = ai

@@ -1,8 +1,8 @@
 @testset "Rank computations using descent" begin
-  E1 = EllipticCurve([1, 1, 1, -352, -2689])
-  E2 = EllipticCurve([0, 1, 0, -41, -116])
-  E3 = EllipticCurve([1, 0, 1, -231, -442])
-  E4 = EllipticCurve([0, -1, 0, -289, 289])
+  E1 = elliptic_curve([1, 1, 1, -352, -2689])
+  E2 = elliptic_curve([0, 1, 0, -41, -116])
+  E3 = elliptic_curve([1, 0, 1, -231, -442])
+  E4 = elliptic_curve([0, -1, 0, -289, 289])
   @testset "2-torsion descent" begin
 
     lower, upper, III_phi,_III_phi = @inferred rank_2_torsion(E1)

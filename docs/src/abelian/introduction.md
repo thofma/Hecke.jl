@@ -16,8 +16,8 @@ restricted to abelian groups that are finitely presented as $\mathbb Z$-modules.
 
 ### Basic Creation
 
-Finitely presented (as $\mathbb Z$-modules) abelian groups are of type `GrpAbFinGen`
-with elements of type `GrpAbFinGenElem`. The creation is mostly via a relation
+Finitely presented (as $\mathbb Z$-modules) abelian groups are of type `FinGenAbGroup`
+with elements of type `FinGenAbGroupElem`. The creation is mostly via a relation
 matrix $M = (m_{i,j})$ for $1\le i\le n$ and $1\le j\le m$. This creates
 a group with $m$ generators $e_j$ and relations
 ```math
@@ -52,18 +52,18 @@ abelian_groups(8)
 
 ### Invariants
 ```@docs
-is_snf(A::GrpAbFinGen)
-number_of_generators(A::GrpAbFinGen)
-nrels(G::GrpAbFinGen)
-rels(A::GrpAbFinGen)
-is_finite(A::GrpAbFinGen)
-is_infinite(A::GrpAbFinGen)
-rank(A::GrpAbFinGen)
-order(A::GrpAbFinGen)
-exponent(A::GrpAbFinGen)
-is_trivial(A::GrpAbFinGen)
-is_torsion(G::GrpAbFinGen)
-is_cyclic(G::GrpAbFinGen)
-elementary_divisors(G::GrpAbFinGen)
+is_snf(A::FinGenAbGroup)
+number_of_generators(A::FinGenAbGroup)
+nrels(G::FinGenAbGroup)
+rels(A::FinGenAbGroup)
+is_finite(A::FinGenAbGroup)
+is_infinite(A::FinGenAbGroup)
+rank(A::FinGenAbGroup)
+order(A::FinGenAbGroup)
+exponent(A::FinGenAbGroup)
+is_trivial(A::FinGenAbGroup)
+is_torsion(G::FinGenAbGroup)
+is_cyclic(G::FinGenAbGroup)
+elementary_divisors(G::FinGenAbGroup)
 ```
 

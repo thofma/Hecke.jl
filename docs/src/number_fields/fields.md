@@ -84,7 +84,7 @@ is_cm_field(::NumField)
 is_kummer_extension(::SimpleNumField)
 is_radical_extension(::SimpleNumField)
 is_linearly_disjoint(::SimpleNumField, ::SimpleNumField)
-is_weakly_ramified(::AbsSimpleNumField, ::NfOrdIdl)
+is_weakly_ramified(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 is_tamely_ramified(::AbsSimpleNumField)
 is_tamely_ramified(::AbsSimpleNumField, p::Int)
 is_abelian(::NumField)
@@ -117,8 +117,8 @@ simplified_simple_extension(::NonSimpleNumField)
 ```@docs
 is_isomorphic(::SimpleNumField, ::SimpleNumField)
 is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
-is_involution(::NfToNfMor)
-fixed_field(::NumFieldMor)
+is_involution(::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
+fixed_field(::NumFieldHom)
 automorphism_list(::NumField)
 automorphism_group(::AbsSimpleNumField)
 complex_conjugation(::AbsSimpleNumField)
@@ -128,9 +128,9 @@ complex_conjugation(::AbsSimpleNumField)
 
 ```@docs
 normal_basis(::NumField)
-decomposition_group(::AbsSimpleNumField, ::NfOrdIdl, ::Map)
-ramification_group(::AbsSimpleNumField, ::NfOrdIdl, ::Int, ::Map)
-inertia_subgroup(::AbsSimpleNumField, ::NfOrdIdl, ::Map)
+decomposition_group(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Map)
+ramification_group(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int, ::Map)
+inertia_subgroup(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Map)
 ```
 
 ## Infinite places

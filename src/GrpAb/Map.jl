@@ -40,13 +40,13 @@
 ################################################################################
 
 @doc raw"""
-    has_preimage_with_preimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
-                                                       -> Bool, GrpAbFinGenElem
+    has_preimage_with_preimage(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
+                                                       -> Bool, FinGenAbGroupElem
 
 Returns whether $a$ is in the image of $M$. If so, the second return value is
 an element $b$ with $M(b) = a$.
 """
-function has_preimage_with_preimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
+function has_preimage_with_preimage(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
   if isdefined(M, :imap)
     return true, preimage(M, a)
   end
@@ -55,13 +55,13 @@ function has_preimage_with_preimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   fl, p = can_solve_with_solution(m, a.coeff, side = :left)
 
   if fl
-    return true, GrpAbFinGenElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
+    return true, FinGenAbGroupElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
   else
     return false, id(domain(M))
   end
 end
 
-function has_preimage_with_preimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem})
+function has_preimage_with_preimage(M::FinGenAbGroupHom, a::Vector{FinGenAbGroupElem})
   if isdefined(M, :imap)
     return true, map(x->preimage(M, x), a)
   end
@@ -91,11 +91,11 @@ function has_preimage_with_preimage(M::GrpAbFinGenMap, a::Vector{GrpAbFinGenElem
   end
 
   if fl
-    s = [GrpAbFinGenElem(domain(M), p[i:i, 1:ngens(domain(M))]) for i=1:length(a)]
+    s = [FinGenAbGroupElem(domain(M), p[i:i, 1:ngens(domain(M))]) for i=1:length(a)]
     # @assert all(i->M(s[i]) == a[i], 1:length(a))
     return fl, s
   else
-    return false, GrpAbFinGenElem[id(domain(M))]
+    return false, FinGenAbGroupElem[id(domain(M))]
   end
 end
 
@@ -107,7 +107,7 @@ end
 # h = pseudo_inv(mS)
 # Now h is a partial function on G with domain of definition the image of mS.
 # Then has_image(h, x) would check if x is in the image of mS.
-function has_image_with_image(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
+function has_image_with_image(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
   if isdefined(M, :map)
     return true, image(M, a)
   end
@@ -127,14 +127,14 @@ end
 #
 ################################################################################
 
-id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), check = false)
+id_hom(G::FinGenAbGroup) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), check = false)
 
 @doc raw"""
-    hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}) -> Map
+    hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}) -> Map
 
 Creates the homomorphism $A[i] \mapsto B[i]$.
 """
-function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool = true)
+function hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}; check::Bool = true)
   GA = parent(A[1])
   GB = parent(B[1])
   @assert length(B) == length(A)
@@ -171,11 +171,11 @@ function hom(A::Vector{GrpAbFinGenElem}, B::Vector{GrpAbFinGenElem}; check::Bool
 end
 
 @doc raw"""
-    hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}) -> Map
+    hom(G::FinGenAbGroup, B::Vector{FinGenAbGroupElem}) -> Map
 
 Creates the homomorphism which maps $G[i]$ to $B[i]$.
 """
-function hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
+function hom(G::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; check::Bool = true)
   GB = parent(B[1])
   @assert length(B) == ngens(G)
   M = reduce(vcat, [B[i].coeff for i = 1:length(B)])
@@ -183,7 +183,7 @@ function hom(G::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
   return h
 end
 
-function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::Bool = true)
+function hom(G::FinGenAbGroup, H::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; check::Bool = true)
   @assert length(B) == ngens(G)
   @assert all(i -> parent(i) == H, B)
   if length(B) == 0
@@ -203,7 +203,7 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Vector{GrpAbFinGenElem}; check::
   return h
 end
 
-function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix)
+function check_mat(A::FinGenAbGroup, B::FinGenAbGroup, M::ZZMatrix)
   #we have A = X/Y  and B = U/V (generators and relations)
   #        M defines a map (hom) from X -> U
   #        Y -> X is the canonical embedding
@@ -212,32 +212,32 @@ function check_mat(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix)
   # need to check if Y -> X --> U lands in V
   # if Y -> X -> B is zero.
   R = rels(A) * M
-  return all(x -> iszero(GrpAbFinGenElem(B, R[x:x, :])), 1:nrows(R))
+  return all(x -> iszero(FinGenAbGroupElem(B, R[x:x, :])), 1:nrows(R))
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix; check::Bool = true)
+function hom(A::FinGenAbGroup, B::FinGenAbGroup, M::ZZMatrix; check::Bool = true)
   if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
   end
 
-  return GrpAbFinGenMap(A, B, M)::GrpAbFinGenMap
+  return FinGenAbGroupHom(A, B, M)::FinGenAbGroupHom
 end
 
-function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::ZZMatrix, Minv; check::Bool = true)
+function hom(A::FinGenAbGroup, B::FinGenAbGroup, M::ZZMatrix, Minv; check::Bool = true)
   if check
     check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
     check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
-    h = GrpAbFinGenMap(A, B, M, Minv)
+    h = FinGenAbGroupHom(A, B, M, Minv)
     ph = pseudo_inv(h)
     all(x -> x == ph(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
-    return h::GrpAbFinGenMap
+    return h::FinGenAbGroupHom
   end
 
-  return GrpAbFinGenMap(A, B, M, Minv)::GrpAbFinGenMap
+  return FinGenAbGroupHom(A, B, M, Minv)::FinGenAbGroupHom
 end
 
 
-==(f::GrpAbFinGenMap, g::GrpAbFinGenMap) = domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
+==(f::FinGenAbGroupHom, g::FinGenAbGroupHom) = domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
 
 ################################################################################
 #
@@ -245,7 +245,7 @@ end
 #
 ################################################################################
 
-function inv(f::GrpAbFinGenMap)
+function inv(f::FinGenAbGroupHom)
   if isdefined(f, :imap)
     return hom(codomain(f), domain(f), f.imap, f.map, check = false)
   end
@@ -269,13 +269,13 @@ end
 #TODO: store and reuse on map. Maybe need to change map
 
 @doc raw"""
-    kernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
+    kernel(h::FinGenAbGroupHom) -> FinGenAbGroup, Map
 
 Let $G$ be the domain of $h$. This function returns an abelian group $A$ and an
 injective morphism $f \colon A \to G$, such that the image of $f$ is the kernel
 of $h$.
 """
-function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
+function kernel(h::FinGenAbGroupHom, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
   m = zero_matrix(FlintZZ, nrows(h.map)+nrows(rels(H)),
@@ -308,20 +308,20 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
 end
 
 @doc raw"""
-    image(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
+    image(h::FinGenAbGroupHom) -> FinGenAbGroup, Map
 
 Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
 an injective morphism $f \colon A \to G$, such that the image of $f$ is the
 image of $h$.
 """
-function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
+function image(h::FinGenAbGroupHom, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
   hn = hnf(vcat(h.map, rels(H)))
-  im = GrpAbFinGenElem[]
+  im = FinGenAbGroupElem[]
   for i = 1:nrows(hn)
     if !is_zero_row(hn, i)
-      push!(im, GrpAbFinGenElem(H, sub(hn, i:i, 1:ngens(H))))
+      push!(im, FinGenAbGroupElem(H, sub(hn, i:i, 1:ngens(H))))
     else
       break
     end
@@ -330,15 +330,15 @@ function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
 end
 
 @doc raw"""
-    cokernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
+    cokernel(h::FinGenAbGroupHom) -> FinGenAbGroup, Map
 
 Let $G$ be the codomain of $h$. This function returns an abelian group $A$ and
 a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with
 respect to the image of $h$.
 """
-function cokernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
+function cokernel(h::FinGenAbGroupHom, add_to_lattice::Bool = true)
   S, mS = image(h, false)
-  return quo(codomain(h), GrpAbFinGenElem[mS(g) for g in gens(S)], add_to_lattice)
+  return quo(codomain(h), FinGenAbGroupElem[mS(g) for g in gens(S)], add_to_lattice)
 end
 
 ################################################################################
@@ -348,11 +348,11 @@ end
 ################################################################################
 
 @doc raw"""
-    is_surjective(h::GrpAbFinGenMap) -> Bool
+    is_surjective(h::FinGenAbGroupHom) -> Bool
 
 Returns whether $h$ is surjective.
 """
-@attr Bool function is_surjective(A::GrpAbFinGenMap)
+@attr Bool function is_surjective(A::FinGenAbGroupHom)
   if isfinite(codomain(A))
     H, mH = image(A, false)
     return (order(codomain(A)) == order(H))::Bool
@@ -368,11 +368,11 @@ end
 #
 ################################################################################
 
-function iszero(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
+function iszero(h::T) where T <: Map{<:FinGenAbGroup, <:FinGenAbGroup}
   return all(x -> iszero(h(x)), gens(domain(h)))
 end
 
-function is_identity(h::T) where T <: Map{<:GrpAbFinGen, <:GrpAbFinGen}
+function is_identity(h::T) where T <: Map{<:FinGenAbGroup, <:FinGenAbGroup}
   @assert domain(h) === codomain(h)
   return all(x -> iszero(h(x)-x), gens(domain(h)))
 end
@@ -384,11 +384,11 @@ end
 
 #TODO: Improve in the finite case
 @doc raw"""
-    is_injective(h::GrpAbFinGenMap) -> Bool
+    is_injective(h::FinGenAbGroupHom) -> Bool
 
 Returns whether $h$ is injective.
 """
-@attr Bool function is_injective(A::GrpAbFinGenMap)
+@attr Bool function is_injective(A::FinGenAbGroupHom)
   K = kernel(A, false)[1]
   return isfinite(K) && isone(order(K))
 end
@@ -401,15 +401,15 @@ end
 
 #TODO: Improve in the finite case
 @doc raw"""
-    is_bijective(h::GrpAbFinGenMap) -> Bool
+    is_bijective(h::FinGenAbGroupHom) -> Bool
 
 Returns whether $h$ is bijective.
 """
-@attr Bool function is_bijective(A::GrpAbFinGenMap)
+@attr Bool function is_bijective(A::FinGenAbGroupHom)
   return is_injective(A) && is_surjective(A)
 end
 
-is_isomorphism(A::GrpAbFinGenMap) = is_bijective(A)
+is_isomorphism(A::FinGenAbGroupHom) = is_bijective(A)
 
 ###############################################################################
 #
@@ -417,7 +417,7 @@ is_isomorphism(A::GrpAbFinGenMap) = is_bijective(A)
 #
 ###############################################################################
 
-function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+function compose(f::FinGenAbGroupHom, g::FinGenAbGroupHom)
   @assert domain(g) == codomain(f)
   C = codomain(g)
   if isdefined(C, :exponent)
@@ -446,7 +446,7 @@ function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   return hom(domain(f), codomain(g), M, check = false)
 end
 
-function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+function +(f::FinGenAbGroupHom, g::FinGenAbGroupHom)
   @assert domain(f) == domain(g)
   @assert codomain(f) == codomain(g)
   M = f.map + g.map
@@ -461,7 +461,7 @@ function +(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
-function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+function -(f::FinGenAbGroupHom, g::FinGenAbGroupHom)
   @assert domain(f) == domain(g)
   @assert codomain(f) == codomain(g)
   M = f.map - g.map
@@ -476,7 +476,7 @@ function -(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
-function -(f::GrpAbFinGenMap)
+function -(f::FinGenAbGroupHom)
   M = -f.map
   C = codomain(f)
   if is_snf(C)
@@ -489,7 +489,7 @@ function -(f::GrpAbFinGenMap)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
-function Base.:(*)(a::IntegerUnion, f::GrpAbFinGenMap)
+function Base.:(*)(a::IntegerUnion, f::FinGenAbGroupHom)
   M = a*f.map
   C = codomain(f)
   if is_snf(C)
@@ -501,9 +501,9 @@ function Base.:(*)(a::IntegerUnion, f::GrpAbFinGenMap)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
-Base.:(*)(f::GrpAbFinGenMap, a::IntegerUnion) = a*f
+Base.:(*)(f::FinGenAbGroupHom, a::IntegerUnion) = a*f
 
-function Base.:^(f::GrpAbFinGenMap, n::Integer)
+function Base.:^(f::FinGenAbGroupHom, n::Integer)
   @assert domain(f) === codomain(f)
   @assert n >= 0
   C = codomain(f)
@@ -531,7 +531,7 @@ function Base.:^(f::GrpAbFinGenMap, n::Integer)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
-function evaluate(p::ZZPolyRingElem, f::GrpAbFinGenMap)
+function evaluate(p::ZZPolyRingElem, f::FinGenAbGroupHom)
   @assert domain(f) === codomain(f)
   M = p(f.map)
   C = codomain(f)
@@ -544,15 +544,15 @@ function evaluate(p::ZZPolyRingElem, f::GrpAbFinGenMap)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
-function evaluate(p::QQPolyRingElem, f::GrpAbFinGenMap)
+function evaluate(p::QQPolyRingElem, f::FinGenAbGroupHom)
   @assert domain(f) === codomain(f)
   @assert all(a -> is_integral(a), coefficients(p))
   return evaluate(map_coefficients(ZZ, p), f)
 end
 
-(p::ZZPolyRingElem)(f::GrpAbFinGenMap) = evaluate(p, f)
+(p::ZZPolyRingElem)(f::FinGenAbGroupHom) = evaluate(p, f)
 
-(p::QQPolyRingElem)(f::GrpAbFinGenMap) = evaluate(p, f)
+(p::QQPolyRingElem)(f::FinGenAbGroupHom) = evaluate(p, f)
 
 ###############################################################################
 struct MapParent
@@ -575,7 +575,7 @@ function show(io::IO, MP::MapParent)
   print(IOContext(io, :supercompact => true), Lowercase(), MP.codom)
 end
 
-parent(f::GrpAbFinGenMap) = MapParent(domain(f), codomain(f), "homomorphisms")
+parent(f::FinGenAbGroupHom) = MapParent(domain(f), codomain(f), "homomorphisms")
 
 function cyclic_hom(a::ZZRingElem, b::ZZRingElem)
   #hom from Z/a -> Z/b
@@ -591,21 +591,21 @@ end
 
 
 @doc raw"""
-    hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map) -> GrpAbFinGen, Map
+    hom(G::FinGenAbGroup, H::FinGenAbGroup; task::Symbol = :map) -> FinGenAbGroup, Map
 
 Computes the group of all homomorpisms from $G$ to $H$ as an abstract group.
 If `task` is ":map", then a map $\phi$ is computed that can be used
 to obtain actual homomorphisms. This map also allows preimages.
 Set `task` to ":none" to not compute the map.
 """
-function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
+function hom(G::FinGenAbGroup, H::FinGenAbGroup; task::Symbol = :map)
   @assert task in [:map, :none]
   sG, mG = snf(G)  # mG : sG -> G
   sH, mH = snf(H)  # mH : sH -> G
   n = ngens(sG)
   m = ngens(sH)
   r = [cyclic_hom(x, y) for x = sG.snf for y = sH.snf]
-  R = GrpAbFinGen([x[1] for x = r])
+  R = FinGenAbGroup([x[1] for x = r])
   set_attribute!(R, :hom=>(G, H), :show => show_hom)
   if task == :none
     return R
@@ -613,11 +613,11 @@ function hom(G::GrpAbFinGen, H::GrpAbFinGen; task::Symbol = :map)
 
   c = [x[2] for x = r]
 
-  function phi(r::GrpAbFinGenElem)
-    return GrpAbFinGenMap(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i] * c[i] for i=1:length(c)]), check = true) * mH)
+  function phi(r::FinGenAbGroupElem)
+    return FinGenAbGroupHom(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i] * c[i] for i=1:length(c)]), check = true) * mH)
   end
 
-  function ihp(r::GrpAbFinGenMap)
+  function ihp(r::FinGenAbGroupHom)
     #transpose is due to linear indexing being wrong order
     if ngens(sG) == 0
       return R[0]
@@ -634,7 +634,7 @@ end
 #
 ################################################################################
 
-function _prepostinverse(f::GrpAbFinGenMap)
+function _prepostinverse(f::FinGenAbGroupHom)
   # in the surjective case, we find the preimage and
   # if it does not exist, we find any element of the domain,
   # which is also fine
@@ -642,13 +642,13 @@ function _prepostinverse(f::GrpAbFinGenMap)
 end
 
 # Given surjective f, find g such that fg = id
-function preinverse(f::GrpAbFinGenMap)
+function preinverse(f::FinGenAbGroupHom)
   @req is_surjective(f) "Map must be surjective"
   return hom(codomain(f), domain(f), _prepostinverse(f))
 end
 
 # Given surjective f, find g such that gf = id
-function postinverse(f::GrpAbFinGenMap)
+function postinverse(f::FinGenAbGroupHom)
   @req is_injective(f) "Map must be injective"
   return hom(codomain(f), domain(f), _prepostinverse(f))
 end

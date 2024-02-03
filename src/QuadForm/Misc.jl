@@ -255,40 +255,40 @@ end
 ################################################################################
 
 # This can be done more efficiently
-function image(f::NfToNfRel, I::NfAbsOrdIdl, OK)
+function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal, OK)
   return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in basis(I)), init = 0 * OK)
 end
 
-function image(f::NfToNfRel, I::NfAbsOrdIdl)
+function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal)
   OK = maximal_order(codomain(f))
   return image(f, I, OK)
 end
 
-function image(f::NfRelToNfRelMor_nf_elem_nf_elem, I::NfRelOrdIdl)
+function image(f::NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal)
   OK = order(I)
   return reduce(+, (OK(f(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdIdl, OK)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal, OK)
   return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdIdl)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal)
   OK = maximal_order(domain(f))
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldMor}
+function image(S::T, A::AbsSimpleNumFieldOrderFractionalIdeal) where {T <: Hecke.NumFieldHom}
   return S(numerator(A))//denominator(A)
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdFracIdl, OK)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderFractionalIdeal, OK)
   E = codomain(f)
   den = (f\E(denominator(I)))*OK
   return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(numerator(I))), init = 0 * OK)//den
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdFracIdl)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderFractionalIdeal)
   OK = maximal_order(domain(f))
   return preimage(f, I, OK)
 end
@@ -477,7 +477,7 @@ end
 #
 ################################################################################
 
-function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
+function image(f::NumFieldHom, I::RelNumFieldOrderIdeal{T, S}) where {T, S}
   #f has to be an automorphism!!!!
   O = order(I)
   @assert is_maximal(O) # Otherwise the order might change
@@ -533,7 +533,7 @@ function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
   return J
 end
 
-function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}; order = order(I)) where {T, S}
+function image(f::NumFieldHom, I::RelNumFieldOrderFractionalIdeal{T, S}; order = order(I)) where {T, S}
   #S has to be an automorphism!!!!
   O = order
   @assert is_maximal(O) # Otherwise the order might change
@@ -625,12 +625,12 @@ function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, p::ZZRingElem)
   return hilbert_symbol(a, bQ, p) == 1
 end
 
-function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, P::NfOrdIdl)
+function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   p = minimum(P)
   return is_local_norm(K, a, p)
 end
 
-function is_local_norm(K::AbsSimpleNumField, a::RingElement, P::NfOrdIdl)
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return is_local_norm(K, FlintQQ(a), P)
 end
 
@@ -642,7 +642,7 @@ function is_local_norm(K::AbsSimpleNumField, a::RingElement, p::Integer)
   return is_local_norm(K, FlintQQ(a), ZZRingElem(p))
 end
 
-function is_local_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
+function is_local_norm(K::RelSimpleNumField{T}, a::T, P) where {T} # ideal of parent(a)
   nf(order(P)) != parent(a) && error("Prime ideal must have the same base field as the second argument")
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
@@ -858,7 +858,7 @@ function _find_quaternion_algebra(b, P, I)
     return one(K)
   end
 
-  #__P = convert(Vector{NfOrdIdl}, collect(keys(_P)))
+  #__P = convert(Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, collect(keys(_P)))
 
   found = false
   U, h = unit_group(R)
@@ -957,7 +957,7 @@ end
 function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   OK = maximal_order(K)
-  local A::GrpAbFinGen
+  local A::FinGenAbGroup
   A, exp, log = sign_map(OK, _embedding.(I), 1 * OK)
   uni = infinite_uniformizers(K)
   target_signs = zeros(Int, ngens(A))
@@ -969,7 +969,7 @@ function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   end
 
   for P in I
-    v = log(uni[embedding(P)])::GrpAbFinGenElem
+    v = log(uni[embedding(P)])::FinGenAbGroupElem
     for i in 1:ngens(A)
       if v.coeff[i] == 1
         target_signs[i] = val[i] == -1 ? 1 : 0

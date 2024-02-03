@@ -55,7 +55,7 @@
     @test h(f(z)) == l(z)
   end
 
-  # AbsSimpleNumField -> NfRel{AbsSimpleNumFieldElem}
+  # AbsSimpleNumField -> RelSimpleNumField{AbsSimpleNumFieldElem}
 
   QQQ, q = number_field(x - 1, "q")
   QQQt, t = QQQ["t"]
@@ -106,7 +106,7 @@
     @test l(z) == f(h(z))
   end
 
-  # NfRel{AbsSimpleNumFieldElem} -> AbsSimpleNumField
+  # RelSimpleNumField{AbsSimpleNumFieldElem} -> AbsSimpleNumField
 
   K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
@@ -152,7 +152,7 @@
   @test_throws ErrorException hom(L, M, h, one(M))
   @test f(L(a)) == 1//576*z^7 - 7//144*z^5 - 7//72*z^3 + 5//3*z
 
-  # NfRel{AbsSimpleNumFieldElem} -> NfRel{AbsSimpleNumFieldElem}
+  # RelSimpleNumField{AbsSimpleNumFieldElem} -> RelSimpleNumField{AbsSimpleNumFieldElem}
 
   K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
@@ -193,7 +193,7 @@
   @test f(b) == 1//4*bb^3 - 7//2*bb
   @test f(L(a)) == LL(-a)
 
-  # NfRel to NfRelNfRel
+  # RelSimpleNumField to NfRelNfRel
 
   Qx, x = QQ["x"]
   _K, a = number_field(x^2 - 2, "a")
@@ -204,7 +204,7 @@
   K, c = number_field(y^2 + y + b - 5, "c")
   f = hom(Ka, K, c, inverse = (-_b^2 - _b + 5, _b))
 
-  # NfAbsNS
+  # AbsNonSimpleNumField
 
   K, a = number_field([x^2 - 2])
   f = @inferred id_hom(K)
@@ -214,7 +214,7 @@
   end
   @test f * f == f
 
-  # NfRelNS
+  # RelNonSimpleNumField
 
   K, a = number_field(x^2 - 2)
   Kt, t = K["t"]
@@ -226,7 +226,7 @@
   end
   @test f * f == f
 
-  # NfRel{NfAbsNS}
+  # RelSimpleNumField{AbsNonSimpleNumField}
 
   Kt, t = K["t"]
   E, b = number_field(t^2 - 3)

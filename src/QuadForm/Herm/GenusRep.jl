@@ -29,7 +29,7 @@ function _all_row_span(M)
 end
 
 @doc raw"""
-    smallest_neighbour_prime(L::HermLat) -> Bool, NfRelOrdIdl, Vector{NfOrdIdl}
+    smallest_neighbour_prime(L::HermLat) -> Bool, RelNumFieldOrderIdeal, Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Given a hermitian lattice `L`, return `def, P0, bad` such that:
 
@@ -317,7 +317,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
 end
 
 @doc raw"""
-    neighbours(L::HermLat, P::NfRelOrdIdl, max = inf) -> Vector{HermLat}
+    neighbours(L::HermLat, P::RelNumFieldOrderIdeal, max = inf) -> Vector{HermLat}
 
 Return the immediate `P`-neighbours of `L`. At most `max` neighbours are returned.
 
@@ -336,7 +336,7 @@ function neighbours(L::HermLat, P, max = inf)
 end
 
 @doc raw"""
-    iterated_neighbours(L:HermLat, P::NfRelOrdIdl; use_auto = false, max = inf,
+    iterated_neighbours(L:HermLat, P::RelNumFieldOrderIdeal; use_auto = false, max = inf,
 				                   callback = eqcallback,
 						   missing_mass = Ref{QQFieldElem}(zero(QQFieldElem)))
                                                                             -> Vector{HermLat}
@@ -401,7 +401,7 @@ function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
 end
 
 @doc raw"""
-    neighbours_with_ppower(L::HermLat, P::NfRelOrdIdl, e::Integer)
+    neighbours_with_ppower(L::HermLat, P::RelNumFieldOrderIdeal, e::Integer)
                                                                       -> Vector{HermLat}
 
 Return a sequence of `P`-neighbours of length `e`, $L=L_1, L_2, \dots, L_e$ such that
@@ -428,8 +428,8 @@ end
 ################################################################################
 
 @doc raw"""
-    genus_generators(L::HermLat) -> Vector{Tuple{NfRelOrdIdl, ZZRingElem}}, Bool,
-                                    NfRelOrdIdl
+    genus_generators(L::HermLat) -> Vector{Tuple{RelNumFieldOrderIdeal, ZZRingElem}}, Bool,
+                                    RelNumFieldOrderIdeal
 
 Given a hermitian lattice `L`, return `gens, def, P0` such that:
 
@@ -497,7 +497,7 @@ function genus_generators(L::HermLat)
     if !isempty(PP)
       U, f = unit_group_fac_elem(Rabs)
       UU, ff = unit_group_fac_elem(RR)
-      nnorm = hom(U, UU, GrpAbFinGenElem[ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
+      nnorm = hom(U, UU, FinGenAbGroupElem[ff\FacElem(nf(RR)(norm(f(U[i])))) for i in 1:ngens(U)])
       l = length(PP)
       VD = Int[ valuation(D, P) for P in PP ]
       K, k = kernel(nnorm)
@@ -527,8 +527,8 @@ function genus_generators(L::HermLat)
   Gens = Tuple{ideal_type(R), ZZRingElem}[]
 
   if isempty(PP)
-    S = GrpAbFinGenElem[]
-    Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
+    S = FinGenAbGroupElem[]
+    Q, q = quo(Q0, S)::Tuple{FinGenAbGroup, FinGenAbGroupHom}
     Work = def ? typeof(P0)[ P0 ] : typeof(P0)[]
     p = 2
     while order(Q) > 1
@@ -537,11 +537,11 @@ function genus_generators(L::HermLat)
         Work = ideal_type(R)[ QQ for QQ in support(p * R) if length(prime_decomposition(R,minimum(QQ))) == 2 && valuation(bad_prod, minimum(QQ)) == 0 ]
       end
       P = popfirst!(Work)
-      c = (q00\(EabstoE\P))::GrpAbFinGenElem
+      c = (q00\(EabstoE\P))::FinGenAbGroupElem
       o = order(q(c))::ZZRingElem
       if !isone(o)
         push!(S, c)
-        Q, q = quo(Q0, S)::Tuple{GrpAbFinGen, GrpAbFinGenMap}
+        Q, q = quo(Q0, S)::Tuple{FinGenAbGroup, FinGenAbGroupHom}
         push!(Gens, (P, o))
       end
     end

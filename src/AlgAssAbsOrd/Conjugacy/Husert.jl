@@ -206,7 +206,7 @@ function _issimilar_husert_generic(A, B)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
       B, mB = dec[i]
-      local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+      local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = B.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(B))
     end
@@ -227,7 +227,7 @@ function _issimilar_husert_generic(A, B)
     D = Vector{Generic.MatSpaceElem{AbsSimpleNumFieldElem}}(undef, length(dec))
     for i in 1:length(dec)
       B, mB = dec[i]
-      local C::AlgMat{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+      local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = B.isomorphic_full_matrix_algebra
       z = BtoC(mB\y)::elem_type(C)
       D[i] = matrix(z)
@@ -290,10 +290,10 @@ end
 
 function _matrix_algebra(Ks, ns)
   s = length(Ks)
-  algs = AlgAss{QQFieldElem}[]
+  algs = StructureConstantAlgebra{QQFieldElem}[]
   for i in 1:s
     A = matrix_algebra(Ks[i], ns[i])
-    B, BtoA = AlgAss(A)
+    B, BtoA = StructureConstantAlgebra(A)
     C, CtoB = restrict_scalars(B, FlintQQ)
     C.isomorphic_full_matrix_algebra = (A, CtoB * BtoA)
     push!(algs, C)

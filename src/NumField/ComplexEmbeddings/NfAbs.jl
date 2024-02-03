@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-embedding_type(::Type{AbsSimpleNumField}) = NumFieldEmbNfAbs
+embedding_type(::Type{AbsSimpleNumField}) = AbsSimpleNumFieldEmbedding
 
 embedding_type(::AbsSimpleNumField) = embedding_type(AbsSimpleNumField)
 
@@ -14,11 +14,11 @@ embedding_type(::AbsSimpleNumField) = embedding_type(AbsSimpleNumField)
 #
 ################################################################################
 
-number_field(f::NumFieldEmbNfAbs) = f.K
+number_field(f::AbsSimpleNumFieldEmbedding) = f.K
 
-isreal(f::NumFieldEmbNfAbs) = f.isreal
+isreal(f::AbsSimpleNumFieldEmbedding) = f.isreal
 
-_absolute_index(f::NumFieldEmbNfAbs) = f.i
+_absolute_index(f::AbsSimpleNumFieldEmbedding) = f.i
 
 ################################################################################
 #
@@ -42,7 +42,7 @@ function __complex_embeddings(K::AbsSimpleNumField)
   c = conjugate_data_arb_roots(K, 16)
   res = Vector{embedding_type(K)}(undef, degree(K))
   for i in 1:degree(K)
-    res[i] = NumFieldEmbNfAbs(K, c, i)
+    res[i] = AbsSimpleNumFieldEmbedding(K, c, i)
   end
   return res
 end
@@ -53,7 +53,7 @@ end
 #
 ################################################################################
 
-function conj(f::NumFieldEmbNfAbs)
+function conj(f::AbsSimpleNumFieldEmbedding)
   return complex_embeddings(number_field(f))[f.conjugate]
 end
 
@@ -63,7 +63,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(f::NumFieldEmbNfAbs, g::NumFieldEmbNfAbs)
+function Base.:(==)(f::AbsSimpleNumFieldEmbedding, g::AbsSimpleNumFieldEmbedding)
   return number_field(f) === number_field(g) &&
       _absolute_index(f) == _absolute_index(g)
 end
@@ -74,7 +74,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbs)
+function Base.show(io::IO, ::MIME"text/plain", f::AbsSimpleNumFieldEmbedding)
   print(io, "Complex embedding corresponding to ")
   _print_acb_neatly(io, f.r)
   println(io)
@@ -83,7 +83,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::NumFieldEmbNfAbs)
   Base.show(io, MIME"text/plain"(), number_field(f))
 end
 
-function Base.show(io::IO, f::NumFieldEmbNfAbs)
+function Base.show(io::IO, f::AbsSimpleNumFieldEmbedding)
   if get(io, :supercompact, false)
     print(io, "Complex embedding of number field")
   else
@@ -100,9 +100,9 @@ end
 #
 ################################################################################
 
-evaluate(x::AbsSimpleNumFieldElem, f::NumFieldEmbNfAbs, p::Int = 32) = f(x, p)
+evaluate(x::AbsSimpleNumFieldElem, f::AbsSimpleNumFieldEmbedding, p::Int = 32) = f(x, p)
 
-function (f::NumFieldEmbNfAbs)(x::AbsSimpleNumFieldElem, abs_tol::Int = 32)
+function (f::AbsSimpleNumFieldEmbedding)(x::AbsSimpleNumFieldElem, abs_tol::Int = 32)
   K = parent(x)
   d = degree(K)
   r1, r2 = signature(K)
@@ -170,7 +170,7 @@ end
 #
 ################################################################################
 
-function restrict(e::NumFieldEmb, f::NumFieldMor{AbsSimpleNumField, <: Any, <: Any})
+function restrict(e::NumFieldEmb, f::NumFieldHom{AbsSimpleNumField, <: Any, <: Any})
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)
@@ -315,10 +315,10 @@ function _infinite_uniformizers(K::AbsSimpleNumField)
   p = real_embeddings(K) #Important: I assume these are ordered as the roots of the defining polynomial!
   S = abelian_group(Int[2 for i = 1:length(p)])
 
-  s = Vector{GrpAbFinGenElem}(undef, length(p))
+  s = Vector{FinGenAbGroupElem}(undef, length(p))
   g = Vector{AbsSimpleNumFieldElem}(undef, length(p))
   ind = 1
-  q, mq = quo(S, GrpAbFinGenElem[], false)
+  q, mq = quo(S, FinGenAbGroupElem[], false)
   b = 10
   cnt = 0
   pr = 16
@@ -473,20 +473,20 @@ function _infinite_uniformizers(K::AbsSimpleNumField)
   D = Dict{embedding_type(K), AbsSimpleNumFieldElem}()
   for i = 1:length(p)
     D[p[i]] = r[i]
-    @hassert :NfOrd 1 sign(r[i], p[i]) == -1
-    #@hassert :NfOrd 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
+    @hassert :AbsNumFieldOrder 1 sign(r[i], p[i]) == -1
+    #@hassert :AbsNumFieldOrder 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
   end
   return D
 end
 
-function sign_map(O::NfOrd, p::Vector, lying_in::NfOrdIdl = 1 * O)
+function sign_map(O::AbsSimpleNumFieldOrder, p::Vector, lying_in::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = 1 * O)
   K = nf(O)
 
   if isempty(p)
     S = abelian_group(Int[])
     local exp1
     let S = S, lying_in = lying_in, O = O
-      function exp1(A::GrpAbFinGenElem)
+      function exp1(A::FinGenAbGroupElem)
         return O(minimum(lying_in))
       end
     end
@@ -506,7 +506,7 @@ function sign_map(O::NfOrd, p::Vector, lying_in::NfOrdIdl = 1 * O)
 
   local exp
   let S = S, D = D, p = p, O = O, lying_in = lying_in, K = K
-    function exp(A::GrpAbFinGenElem)
+    function exp(A::FinGenAbGroupElem)
       s = one(K)
       if iszero(A)
         return minimum(lying_in)*O(s)

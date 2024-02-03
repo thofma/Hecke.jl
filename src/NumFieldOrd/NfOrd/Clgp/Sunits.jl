@@ -12,13 +12,13 @@ end
 #  saturate T|-d??
 
 @doc raw"""
-    sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$ modulo the units of the field.
 The map will return elements in factored form.
 """
-function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
+function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   #deal with trivial case somehow!!!
   @assert length(I) > 0
   O = order(I[1])
@@ -119,7 +119,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
 
   local exp
   let U = U
-    function exp(a::GrpAbFinGenElem)
+    function exp(a::FinGenAbGroupElem)
       b = U[1]^a.coeff[1, 1]
       for i = 2:length(U)
         if iszero(a.coeff[1, i])
@@ -174,13 +174,13 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
 end
 
 @doc raw"""
-    sunit_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 The map will return elements in factored form.
 """
-function sunit_group_fac_elem(I::Vector{NfOrdIdl})
+function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   O = order(I[1])
   S, mS = sunit_mod_units_group_fac_elem(I)
   U, mU = unit_group_fac_elem(O)
@@ -199,9 +199,9 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
 
   local exp
   let mU = mU, mS = mS, U = U, G = G
-    function exp(a::GrpAbFinGenElem)
-      return image(mU, GrpAbFinGenElem(U, sub(a.coeff, 1:1, 1:length(U.snf))))*
-             image(mS, GrpAbFinGenElem(S, sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
+    function exp(a::FinGenAbGroupElem)
+      return image(mU, FinGenAbGroupElem(U, sub(a.coeff, 1:1, 1:length(U.snf))))*
+             image(mS, FinGenAbGroupElem(S, sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
     end
   end
 
@@ -212,7 +212,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
       a2 = a*inv(image(mS, a1))
       #     @assert is_unit(O(evaluate(a2)))
       a3 = preimage(mU, a2)
-      return GrpAbFinGenElem(G, hcat(a3.coeff, a1.coeff))
+      return FinGenAbGroupElem(G, hcat(a3.coeff, a1.coeff))
     end
 
     function log(a::AbsSimpleNumFieldElem)
@@ -234,12 +234,12 @@ function show(io::IO, mC::MapSUnitGrp)
 end
 
 @doc raw"""
-    sunit_group(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 """
-function sunit_group(I::Vector{NfOrdIdl})
+function sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   O = order(I[1])
   G, mG = sunit_group_fac_elem(I)
 
@@ -248,7 +248,7 @@ function sunit_group(I::Vector{NfOrdIdl})
 
   local exp
   let mG = mG
-    function exp(a::GrpAbFinGenElem)
+    function exp(a::FinGenAbGroupElem)
       return evaluate(image(mG, a))
     end
   end

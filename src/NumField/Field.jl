@@ -215,7 +215,7 @@ function is_cached(L::AbsSimpleNumField)
   return false
 end
 
-function is_cached(L::NfRel)
+function is_cached(L::RelSimpleNumField)
   if haskey(NfRelID, (parent(L.pol), L.pol, L.S))
     return NfRelID[parent(L.pol), L.pol, L.S] === L
   end
@@ -288,7 +288,7 @@ end
 
 is_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
 
-function is_cyclotomic_type(L::Union{AbsSimpleNumField, NfRel})
+function is_cyclotomic_type(L::Union{AbsSimpleNumField, RelSimpleNumField})
   f = get_attribute(L, :cyclo)::Union{Nothing,Int}
   if f === nothing
     return false, ZZRingElem(1)
@@ -297,7 +297,7 @@ function is_cyclotomic_type(L::Union{AbsSimpleNumField, NfRel})
 end
 
 is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
-is_quadratic_type(K::NfRel) = false, ZZRingElem(1)
+is_quadratic_type(K::RelSimpleNumField) = false, ZZRingElem(1)
 function is_quadratic_type(L::AbsSimpleNumField)
   f = get_attribute(L, :show)
   if f === Hecke.show_quad
@@ -464,7 +464,7 @@ function is_abelian(::NumField) end
 ################################################################################
 
 @doc doc"""
-    automorphism_list(L::NumField) -> Vector{NumFieldMor}
+    automorphism_list(L::NumField) -> Vector{NumFieldHom}
 
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.
 """
@@ -488,6 +488,6 @@ function _appears_as_base_field(K::NumField, ::AbsSimpleNumField)
   return false
 end
 
-function _appears_as_base_field(K::NumField, ::NfAbsNS)
+function _appears_as_base_field(K::NumField, ::AbsNonSimpleNumField)
   return false
 end

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  The NumFieldMor type
+#  The NumFieldHom type
 #
 ################################################################################
 
@@ -409,7 +409,7 @@ function inv(f::LocalFieldMor{S, T}) where {S, T}
   _assure_has_inverse_data(f)
   pr = f.inverse_data
   hd = MapHeader(codomain(f), domain(f))
-  g = NumFieldMor{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
+  g = NumFieldHom{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
   return g
 end
 
@@ -554,10 +554,10 @@ end
 #
 ################################################################################
 
-function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, QadicField}
+function GrpGenToNfMorSet(G::MultTableGroup, K::T) where T <: Union{LocalField, QadicField}
   return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, QadicField}}
+function GrpGenToNfMorSet(G::MultTableGroup, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, QadicField}}
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
