@@ -605,7 +605,7 @@ function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, l
   F = function_field(O)
   a = gen(F)
   for (fac, e) in fact
-    facnew = map_coefficients(y -> preimage(mK, y), fac)
+    facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
     I = GenOrdIdl(O, p, O(facnew(a)))
     I.is_prime = 1
     f = degree(fac)

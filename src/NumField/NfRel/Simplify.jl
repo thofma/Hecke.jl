@@ -102,7 +102,7 @@ function _find_prime(L::RelSimpleNumField{AbsSimpleNumFieldElem})
     P = lp[1][1]
     F, mF = residue_field(OK, P)
     mF1 = extend(mF, K)
-    fF = map_coefficients(mF1, f)
+    fF = map_coefficients(mF1, f, cached = false)
     if degree(fF) != degree(f) || !is_squarefree(fF)
       continue
     end
@@ -113,7 +113,7 @@ function _find_prime(L::RelSimpleNumField{AbsSimpleNumFieldElem})
       Q = lp[j][1]
       F2, mF2 = residue_field(OK, Q)
       mF3 = extend(mF2, K)
-      fF2 = map_coefficients(mF3, f)
+      fF2 = map_coefficients(mF3, f, cached = false)
       if degree(fF2) != degree(f) || !is_squarefree(fF2)
         acceptable = false
         break
@@ -201,7 +201,7 @@ function _find_prime(L::RelNonSimpleNumField{AbsSimpleNumFieldElem})
     Fx, _ = polynomial_ring(F, "x", cached = false)
     is_proj = true
     for j = 1:length(pols)
-      fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
+      fF = to_univariate(Fx, map_coefficients(mF1, pols[j], cached = false))
       if degree(fF) != total_degree(pols[j]) || !is_squarefree(fF)
         is_proj = false
         break
@@ -226,7 +226,7 @@ function _find_prime(L::RelNonSimpleNumField{AbsSimpleNumFieldElem})
       mF1 = extend(mF, K)
       is_proj = true
       for j = 1:length(pols)
-        fF = to_univariate(Fx, map_coefficients(mF1, pols[j]))
+        fF = to_univariate(Fx, map_coefficients(mF1, pols[j], cached = false))
         if degree(fF) != total_degree(pols[j]) || !is_squarefree(fF)
           is_proj = false
           break

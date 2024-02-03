@@ -778,12 +778,12 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   if ramification_index(L) == degree(L) && e > 1#so we're ramified
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
-    E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E)))
+    E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E), cached = false))
     G2 = automorphism_list(E2, prime_field(E2))
     GG = morphism_type(E)[]
     for e = G2
       ime = e(gen(E2))
-      imeE = E(map_coefficients(L, ime.data))
+      imeE = E(map_coefficients(L, ime.data, cached = false))
       res_e = coeff(e(E2(gen(bL))), 0)
       for g = G
         res_g = coeff(g(L(gen(bL))), 0)

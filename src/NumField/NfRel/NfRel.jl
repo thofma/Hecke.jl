@@ -201,10 +201,10 @@ function number_field(f::PolyRingElem{<: NumFieldElem}; cached::Bool = false, ch
 end
 
 #Conversion to absolute non simple
-function number_field(::Type{AbsSimpleNumField}, L::RelSimpleNumField{AbsSimpleNumFieldElem})
+function number_field(::Type{AbsSimpleNumField}, L::RelSimpleNumField{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true)
   @assert degree(base_field(L)) == 1
-  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol))
-  return number_field(pol, check = false)
+  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol, cached = false))
+  return number_field(pol, check = false, cached = cached)
 end
 
 function (K::RelSimpleNumField{T})(a::Generic.Poly{T}) where T <: NumFieldElem

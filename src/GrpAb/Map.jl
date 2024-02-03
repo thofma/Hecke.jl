@@ -547,7 +547,7 @@ end
 function evaluate(p::QQPolyRingElem, f::FinGenAbGroupHom)
   @assert domain(f) === codomain(f)
   @assert all(a -> is_integral(a), coefficients(p))
-  return evaluate(map_coefficients(ZZ, p), f)
+  return evaluate(map_coefficients(ZZ, p, cached = false), f)
 end
 
 (p::ZZPolyRingElem)(f::FinGenAbGroupHom) = evaluate(p, f)

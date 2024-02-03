@@ -61,7 +61,7 @@ function frobenius_easy(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
     mu = gen(K, i)
     s = powermod(t, norm(p), map_coefficients(mF, f[i], parent = Ft))
     for j=0:order(A[i])-1
-      if evaluate(map_coefficients(mF, mu.data), g) == s
+      if evaluate(map_coefficients(mF, mu.data, cached = false), g) == s
         push!(res, j)
         break
       end
@@ -591,7 +591,7 @@ function extend_generic(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumF
   for i = 1:length(autos)
     imgs = Vector{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(undef, length(Cp))
     for j = 1:length(gA)
-      pol = map_coefficients(autos[i], Cp[j].A.pol)
+      pol = map_coefficients(autos[i], Cp[j].A.pol, cached = false)
       imgs[j] = roots(A, pol)[1]
     end
     rts[i] = imgs
@@ -615,7 +615,7 @@ function check_disjoint_cyclotomic(A::ClassField, p::ZZRingElem)
   mq = A.quotientmap
   x = gen(Globals.Zx)
   f = cyclotomic(Int(e), x)
-  fK = map_coefficients(K, f)
+  fK = map_coefficients(K, f, cached = false)
   #seems to work, however, I don't quite see the correctness
   #the conductor of A needs to be coprime to p or the norm_group
   #will be wrong. I think the function is only called in this
