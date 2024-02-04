@@ -43,6 +43,8 @@ export Divisor
 export Divisors
 export EllipticCurve
 export EllipticCurvePoint
+export EmbeddedAbsSimpleNumField
+export EmbeddedAbsSimpleNumFieldElem
 export EmbeddedNumFieldElem
 export EmbeddedNumField
 export EquationOrder

@@ -715,11 +715,6 @@ function extend(f::T, K::AbsSimpleNumField) where T <: Union{NfOrdToFqNmodMor, N
   return z
 end
 
-#=
-function (f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor})(p::PolyRingElem{AbsSimpleNumFieldOrderElem})
-  return map_coefficients(f, p)
-end
-=#
 @doc raw"""
     extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AbsSimpleNumField) -> NfToFqNmodMor
 

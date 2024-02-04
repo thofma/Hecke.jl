@@ -34,7 +34,7 @@ function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalFie
   pr = ceil(Int, min(f.precision, precision(a)) / ramification_index(Kp))
   for i = 0:degree(a.data)
     as_pol = Qpx(coeff(a.data, i))
-    as_fmpq_poly = map_coefficients(x->lift(setprecision(x, min(precision(x), pr))), as_pol)
+    as_fmpq_poly = map_coefficients(x->lift(setprecision(x, min(precision(x), pr))), as_pol, cached = false)
     push!(coeffs, evaluate(as_fmpq_poly, f.inv_img[1]))
   end
   K = domain(f)
@@ -45,7 +45,7 @@ end
 
 function preimage(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, a::LocalFieldElem{PadicFieldElem, EisensteinLocalField})
   @assert codomain(f) === parent(a)
-  return evaluate(map_coefficients(lift, a.data), f.inv_img[2])
+  return evaluate(map_coefficients(lift, a.data, cached = false), f.inv_img[2])
 end
 
 function preimage(f::CompletionMap{QadicField, QadicFieldElem}, a::QadicFieldElem)
@@ -53,7 +53,7 @@ function preimage(f::CompletionMap{QadicField, QadicFieldElem}, a::QadicFieldEle
   @assert Kp == parent(a)
   Qpx = parent(defining_polynomial(Kp))
   as_pol = Qpx(a)
-  as_fmpq_poly = map_coefficients(lift, as_pol)
+  as_fmpq_poly = map_coefficients(lift, as_pol, cached = false)
   return evaluate(as_fmpq_poly, f.inv_img[1])
 end
 
@@ -158,7 +158,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
-  pol_gq = map_coefficients(lift,  defining_polynomial(Qq))
+  pol_gq = map_coefficients(lift,  defining_polynomial(Qq), cached = false)
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #@assert mF(OK(gq_in_K)) == mp(g)
 
@@ -279,7 +279,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
     gq, u = f.inv_img
     ex = div(new_prec+e-1, e)
     Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
-    pol_gq = map_coefficients(lift, defining_polynomial(base_field(Kp)))
+    pol_gq = map_coefficients(lift, defining_polynomial(base_field(Kp)), cached = false)
     gq = _increase_precision(gq, pol_gq, div(f.precision+e-1, e), ex, P)
     f.inv_img = (gq, f.inv_img[2])
 

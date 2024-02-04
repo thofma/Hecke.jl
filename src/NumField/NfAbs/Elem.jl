@@ -368,7 +368,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
 
   Zx = Hecke.Globals.Zx
   @vtime :PolyFactor Np = norm_mod(g, p, Zx)
-  while is_constant(Np) || !is_squarefree(map_coefficients(F, Np))
+  while is_constant(Np) || !is_squarefree(map_coefficients(F, Np, cached = false))
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
     @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
