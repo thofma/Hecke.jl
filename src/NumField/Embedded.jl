@@ -19,6 +19,10 @@ mutable struct EmbeddedNumFieldElem{T} <: FieldElem
   end
 end
 
+const EmbeddedAbsSimpleNumField = EmbeddedNumField{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}
+
+const EmbeddedAbsSimpleNumFieldElem = EmbeddedNumFieldElem{AbsSimpleNumFieldElem}
+
 function (E::EmbeddedNumField{S})(x::T) where {S, T <: NumFieldElem}
   if elem_type(S) === T
     @assert parent(x) === number_field(E)
