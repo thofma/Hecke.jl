@@ -427,7 +427,7 @@ end
 #
 ################################################################################
 
-"""
+@doc raw"""
 Given a degree 2 extension of number field E/K, with Eabs an absolute simple
 number field isomorphic to E and R a maximal order in E, return the quotient
 C/C_0 where C is the class group of E and C_0 is the subgroup of classes
