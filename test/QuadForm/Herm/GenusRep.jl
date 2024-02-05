@@ -129,8 +129,24 @@
   # Rank 1 example
   #
 
+  # CM and relative class number 1
   E, b = cyclotomic_field_as_cm_extension(12, cached=false)
   V = hermitian_space(E, 1)
   L = lattice(V)
   @test length(genus_representatives(L)) == 1
+
+  # CM and relative class number 3
+  E, b = cyclotomic_field_as_cm_extension(23; cached=false)
+  L = lattice(hermitian_space(E, 1))
+  @test length(genus_representatives(L)) == 3
+
+  # Non-CM and class number 1; Salem polynomial
+  _, x = QQ["x"]
+  _, _b = number_field(x^(10)+x^9-x^7-x^6-x^5-x^4-x^3+x+1; cached=false)
+  K, a = number_field(minpoly(_b+inv(_b)); cached=false)
+  _, t = polynomial_ring(K, "t"; cached=false)
+  E, _ = number_field(t^2-a*t+1; cached=false)
+  H = lattice(hermitian_space(E, 1))
+  @test length(genus_representatives(H)) == 1
+
 end
