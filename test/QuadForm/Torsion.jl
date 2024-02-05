@@ -39,7 +39,7 @@
   @test lift(inner_product(a,b)) == 1//2
   @test order(a) == 2
   @test order(0*a) == 1
-  set_attribute!(q1, :name, "q1")
+  AbstractAlgebra.set_name!(q1, "q1")
   f = hom(q1,q1, ZZ[2 0; 0 1])
   @test sprint(show, f) isa String
 
