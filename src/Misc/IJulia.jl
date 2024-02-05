@@ -29,7 +29,7 @@ function Base.show(io::IO, ::MIME"text/html", a::PolyRingElem)
 end
 
 function math_html(io::IO, a::AbsSimpleNumField)
-  n = find_name(a)
+  n = get_name(a)
   if n === nothing || !get(io, :compact, false)
     print(io, "\\text{Number field over Rational field with defining polynomial }")
     math_html(io, a.pol)
@@ -45,7 +45,7 @@ function Base.show(io::IO, ::MIME"text/html", a::RelNonSimpleNumField)
 end
 
 function math_html(io::IO, a::RelNonSimpleNumField)
-  n = find_name(a)
+  n = get_name(a)
   if n === nothing || !get(io, :compact, false)
     print(io, "\\text{non-simple Relative number field over }")
     math_html(io, base_field(a))
@@ -63,7 +63,7 @@ function Base.show(io::IO, ::MIME"text/html", a::AbsNonSimpleNumField)
 end
 
 function math_html(io::IO, a::AbsNonSimpleNumField)
-  n = find_name(a)
+  n = get_name(a)
   if n === nothing || !get(io, :compact, false)
     print(io, "\\text{non-simple number field with defining polynomials: }")
     math_html(io, a.pol)
@@ -349,12 +349,12 @@ function math_html(io::IO, O::AbsSimpleNumFieldOrder)
     return
   end
 
-  n = find_name(O)
-  if !(n===nothing)
+  n = get_name(O)
+  if n !== nothing
     print(io, string(n))
     return
   end
-  n = find_name(nf(O))
+  n = get_name(nf(O))
   if n === nothing
     print(io, "\\text{$n }")
     math_html(io, nf(O))
@@ -371,7 +371,7 @@ end
 
 
 function math_html(io::IO, M::Map)
-  n = find_name(M)
+  n = get_name(M)
   cio = IOContext(io, :compact => true)
   if n === nothing
     print(io, "\\text{Map from }")
@@ -379,14 +379,14 @@ function math_html(io::IO, M::Map)
     print(io, string(n))
     print(io, ": ")
   end
-  n = find_name(domain(M))
+  n = get_name(domain(M))
   if n === nothing
     math_html(cio, domain(M))
   else
     print(io, string(n))
   end
   print(io, "\\to ")
-  n = find_name(codomain(M))
+  n = get_name(codomain(M))
   if n === nothing
     math_html(cio, codomain(M))
   else
@@ -402,7 +402,7 @@ end
 
 function math_html(io::IO, I::AbsNumFieldOrderIdealSet)
   print(io, "\\text{Set of ideals of }")
-  n = find_name(order(I))
+  n = get_name(order(I))
   if n === nothing || !get(io, :compact, false)
     math_html(IOContext(io, :compact => true), order(I))
   else
@@ -430,7 +430,7 @@ end
 #      add special(?) for class group
 #      add parent of tuple... (occurs in tensor product)
 function math_html(io::IO, G::FinGenAbGroup)
-  n = find_name(G)
+  n = get_name(G)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
     return
@@ -458,7 +458,7 @@ function math_html(io::IO, G::FinGenAbGroup)
 end
 
 function math_html(io::IO, R::PolyRing)
-  n = find_name(R)
+  n = get_name(R)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
     return
@@ -474,7 +474,7 @@ function Base.show(io::IO, ::MIME"text/html", K::PolyRing)
 end
 
 function math_html(io::IO, K::RelSimpleNumField)
-  n = find_name(K)
+  n = get_name(K)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
     return
