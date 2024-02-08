@@ -12,7 +12,7 @@ function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
     w = w*M
     res = Hecke.cleanvect(E, w)
   end
-  fl, c = Hecke.can_solve_with_solution(v, w, side = :left)
+  fl, c = Solve.can_solve_with_solution(v, w, side = :left)
   @assert fl
   return v, c
 end
@@ -322,8 +322,8 @@ function find_invariant_complement(M::MatElem{T}, C::MatElem{T}) where T <: Fiel
       N[j, i] = ed[j, 1]
     end
   end
-  k, K = kernel(N, side = :left)
-  return view(K, 1:k, 1:ncols(K))*S
+  K = Solve.kernel(N, side = :left)
+  return K*S
 end
 
 function _closure(M::MatElem{T}, v::MatElem{T}, d::Int) where T <: FieldElem
@@ -345,7 +345,7 @@ end
 #The function returns a matrix representing the restriction of the linear map to the subspace
 function restriction(M::MatElem{T}, S::MatElem{T}) where T <: FieldElem
   TR = S*M
-  fl, R = Hecke.can_solve_with_solution(S, TR, side = :left)
+  fl, R = Solve.can_solve_with_solution(S, TR, side = :left)
   if !fl
     error("The subspace is not invariant!")
   end
@@ -569,7 +569,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
       gMW = Hecke._subst(g, MW)
       kernels = Vector{typeof(M)}()
       push!(kernels, zero_matrix(base_ring(MW), 0, ncols(gMW)))
-      d, K = kernel(gMW, side = :left)
+      K = Solve.kernel(gMW, side = :left)
       rref!(K)
       push!(kernels, K)
       M1 = gMW
@@ -579,7 +579,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
           push!(kernels, identity_matrix(base_ring(MW), ncols(M1)))
           break
         end
-        d1, K = kernel(M1, side = :left)
+        K = Solve.kernel(M1, side = :left)
         rref!(K)
         push!(kernels, K)
       end
@@ -738,8 +738,8 @@ end
 function _intersect(A::Hecke.MatElem{T}, B::Hecke.MatElem{T}) where T <: Hecke.FieldElem
   n = Hecke.nrows(A)
   M = Hecke.vcat(A, B)
-  a, N = Hecke.kernel(M, side=:left)
-  return N[1:a, 1:n]*A
+  N = Solve.kernel(M, side = :left)
+  return view(N, 1:nrows(N), 1:n)*A
 end
 
 
@@ -802,7 +802,7 @@ function simultaneous_diagonalization(L::Vector{S}, K::W; check::Bool = true) wh
 end
 
 @doc raw"""
-    common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :right)
+    common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :left)
       where T <: FieldElem -> Dict{Vector{T}, MatElem{T}}
 
 Return a dictionary containing vectors of eigenvalues of the matrices in `L` as
@@ -812,12 +812,12 @@ of a key and a value, then `v` is the eigenspace of `L[i]` w.r.t. the eigenvalue
 If side is `:right`, the right eigenspaces are computed, if it is `:left` then the
 left eigenspaces are computed.
 """
-function common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :right) where T <: FieldElem
-  eigs = [ eigenspaces(M, side = side) for M in L ]
+function common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :left) where T <: FieldElem
+  eigs = [ eigenspaces(M; side = side) for M in L ]
   return intersect_eigenspaces([ Dict([x] => v for (x, v) in eig) for eig in eigs ], side = side)
 end
 
-function intersect_eigenspaces(L::Vector{Dict{Vector{T}, S}}; side::Symbol = :right) where S <: MatElem{T} where T <: FieldElem
+function intersect_eigenspaces(L::Vector{Dict{Vector{T}, S}}; side::Symbol = :left) where S <: MatElem{T} where T <: FieldElem
   @assert !isempty(L)
 
   n = length(L)

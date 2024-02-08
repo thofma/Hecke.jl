@@ -1541,8 +1541,8 @@ function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   BMint = change_base_ring(ZZ, d * BM)
   BNint = change_base_ring(ZZ, d * BN)
   H = vcat(BMint, BNint)
-  k, K = left_kernel(H)
-  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  K = Solve.kernel(H, side = :left)
+  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   N = FakeFmpqMat(BI)
   return ideal(algebra(O), O, N; side = :nothing)
 end
@@ -1581,8 +1581,8 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl)
   BMint = change_base_ring(ZZ, d * BM)
   BNint = change_base_ring(ZZ, d * BN)
   H = vcat(BMint, BNint)
-  k, K = left_kernel(H)
-  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  K = Solve.kernel(H, side = :left)
+  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   N = FakeFmpqMat(BI)
   #@show BI
 
@@ -1631,7 +1631,7 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
   N = basis_matrix(O, copy = false)*basis_mat_inv(OB, copy = false)
   @assert N.den == 1
   H = vcat(M, N.num)
-  K = left_kernel(H)[2]
+  K = Solve.kernel(H, side = :left)
   N = sub(K, 1:dim(B), 1:dim(B))*M
   # Map the basis to A
   basis_in_A = Vector{elem_type(A)}(undef, dim(B))

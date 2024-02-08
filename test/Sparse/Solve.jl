@@ -32,8 +32,8 @@
     fl, sol = can_solve_with_solution(Ms, Ns, side = :right)
     @test fl == can_solve(Ms, Ns, side = :right)
     @test nnz(sol) == sum(length(sol.rows[i].values) for i = 1:nrows(sol); init = 0)
-    fl2, sol2 = can_solve_with_solution(M, N, side = :right)
-    @test fl2 == can_solve(M, N, side = :right)
+    fl2, sol2 = Hecke.Solve.can_solve_with_solution(M, N, side = :right)
+    @test fl2 == Hecke.Solve.can_solve(M, N, side = :right)
     @test fl == fl2
     if fl
       @test M*matrix(sol) == N

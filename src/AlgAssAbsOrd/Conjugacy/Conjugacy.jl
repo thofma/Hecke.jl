@@ -417,7 +417,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
 
   YY = matrix(FlintZZ, 1, dim(AA), coordinates(OO(d * y)))
 
-  fl, vv = can_solve_with_solution(Y, YY, side = :left)
+  fl, vv = Solve.can_solve_with_solution(Y, YY, side = :left)
   @assert fl
   yy = zero_matrix(FlintQQ, nrows(A), nrows(A))
   for i in 1:length(vv)
@@ -467,7 +467,7 @@ function _basis_of_integral_commutator_algebra(A::QQMatrix, B::QQMatrix)
       end
     end
   end
-  r, K = right_kernel(z)
+  K = Solve.kernel(z; side = :right)
   KK = change_base_ring(FlintZZ, denominator(K) * K)
   KK = transpose(saturate(transpose(KK)))
   res = QQMatrix[]
@@ -501,7 +501,7 @@ function _basis_of_commutator_algebra(A::MatElem, B::MatElem)
       end
     end
   end
-  r, K = right_kernel(z)
+  K = Solve.kernel(z; side = :right)
   res = typeof(A)[]
   for k in 1:ncols(K)
     cartind = cartesian_product_iterator([1:x for x in (n, m)], inplace = true)
@@ -539,7 +539,7 @@ function _basis_of_commutator_algebra(As::Vector{T}, Bs::Vector{T}) where T <: M
     end
     zz = vcat(zz, z)
   end
-  r, K = right_kernel(zz)
+  K = Solve.kernel(zz; side = :right)
   res = eltype(As)[]
   for k in 1:ncols(K)
     cartind = cartesian_product_iterator([1:x for x in (n, m)],
@@ -582,7 +582,7 @@ function _basis_of_integral_commutator_algebra(As::Vector{QQMatrix},
     end
     zz = vcat(zz, z)
   end
-  r, K = right_kernel(zz)
+  K = Solve.kernel(zz; side = :right)
   KK = change_base_ring(FlintZZ, denominator(K) * K)
   KK = transpose(saturate(transpose(KK)))
   res = QQMatrix[]

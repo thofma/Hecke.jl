@@ -199,7 +199,7 @@ function intersect(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumField
   end
   d = degree(order(x))
   H = vcat(basis_matrix(x, copy = false), basis_matrix(y, copy = false))
-  K = left_kernel(H)[2]
+  K = Solve.kernel(H, side = :left)
   g = lcm(minimum(x),minimum(y))
   return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_matrix(x, copy = false), g, :lowerleft); check=false, M_in_hnf=true)
 end
@@ -993,7 +993,7 @@ function contract(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   M = basis_matrix(O, copy = false)*basis_mat_inv(order(A), copy = false)
   @assert M.den == 1
   H = vcat(basis_matrix(A, copy = false), M.num)
-  K = left_kernel(H)[2]
+  K = Solve.kernel(H, side = :left)
   M = view(K, 1:d, 1:d)*basis_matrix(A, copy = false)
   M = M*basis_matrix(order(A), copy = false)*basis_mat_inv(O, copy = false)
   @assert M.den == 1

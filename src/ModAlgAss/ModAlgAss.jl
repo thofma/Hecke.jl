@@ -521,7 +521,7 @@ function Amodule(A::AbstractAssociativeAlgebra, B::Vector{<:Vector}; is_basis::B
     for bb in B
       push!(BBB, reduce(vcat, [coefficients(b * bb[i]) for i in 1:length(bb)]))
     end
-    fl, X = can_solve_with_solution(bmat, matrix(BBB), side = :left)
+    fl, X = Solve.can_solve_with_solution(bmat, matrix(BBB), side = :left)
     @assert fl
     push!(action_matrices, transpose(X))
   end

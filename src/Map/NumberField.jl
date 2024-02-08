@@ -418,7 +418,7 @@ end
 function has_preimage_with_preimage(m::NfAbsToAbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
   A = parent(a)
   t = matrix(FlintQQ, 1, dim(A), coefficients(a))
-  b, p = can_solve_with_solution(m.mat, t, side = :left)
+  b, p = Solve.can_solve_with_solution(m.mat, t, side = :left)
   if b
     return true, domain(m)([ p[1, i] for i = 1:nrows(m.mat) ])
   else

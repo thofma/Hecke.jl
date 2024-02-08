@@ -558,7 +558,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(M)}(A, B)
 
   function _image(x::AbstractAssociativeAlgebraElem)
-    t, y = can_solve_with_solution(N, matrix(K, 1, dim(A), coefficients(x, copy = false)), side = :left)
+    t, y = Solve.can_solve_with_solution(N, matrix(K, 1, dim(A), coefficients(x, copy = false)), side = :left)
     if t
       return B([ y[1, i] for i in 1:dim(B) ])
     else
