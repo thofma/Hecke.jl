@@ -1,5 +1,3 @@
-import Nemo: can_solve, can_solve_with_solution
-
 function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)

@@ -879,7 +879,7 @@ function _find_quaternion_algebra(b, P, I)
     end
     M = vcat(M, v)
     push!(elts, f(L[i])) # cache
-    fl, w = can_solve_with_solution(M, target, side = :left)
+    fl, w = Solve.can_solve_with_solution(M, target, side = :left)
     if fl
       found = true
       break
@@ -914,7 +914,7 @@ function _find_quaternion_algebra(b, P, I)
       end
     end
   end
-  fl, v = can_solve_with_solution(M, target, side = :left)
+  fl, v = Solve.can_solve_with_solution(M, target, side = :left)
   @assert fl
   z = evaluate(FacElem(Dict(elts[i] => Int(lift(v[1, i])) for i in 1:ncols(v))))
   @assert sign_vector(z) == target

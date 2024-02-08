@@ -52,7 +52,7 @@ function _principal_subfields_basis(K::SimpleNumField)
         end
       end
     end
-    nu, ker = kernel(M, side = :left)
+    ker = Solve.kernel(M, side = :left)
 
     # This might be expensive for bigger fields?
     if K isa NumField{QQFieldElem}

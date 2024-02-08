@@ -469,8 +469,8 @@ function is_maximal_integral(L::QuadLat, p)
 
   Gmodp = map(hext, G)
 
-  r, V = left_kernel(Gmodp)
-  @assert r > 0
+  V = Solve.kernel(Gmodp, side = :left)
+  @assert nrows(V) > 0
   local v::dense_matrix_type(K)
   if !is_dyadic(p)
     T = map(y -> hext\y, V)

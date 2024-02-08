@@ -194,6 +194,7 @@ export brown_invariant
 export c_invars
 export can_scale_totally_positive
 export can_solve
+export can_solve_with_solution
 export canonical_divisor
 export canonical_height
 export canonical_injection
@@ -875,6 +876,7 @@ export small_group
 #export small_groups_limit #(conflict with Oscar?)
 export snf
 export snf_with_transform
+export solve
 export solvemod
 export sparse
 export sparse_matrix

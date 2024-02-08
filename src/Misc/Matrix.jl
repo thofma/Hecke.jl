@@ -45,7 +45,7 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   # For any invertible H' with H'H = 1, also S = H'HS = H'A.
   H = hnf!(transpose(A))
   H = transpose(H[1:rank(H), :])
-  S = solve(H, A)
+  S = Solve.solve(H, A; side = :right)
   @assert rank(S) == rank(H)
   return S
 end
@@ -1269,7 +1269,7 @@ function left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
   R = base_ring(A)
   Alift = lift(A)
   F = GF(p)
-  _, _M = left_kernel(change_base_ring(F, Alift))
+  _M = Solve.kernel(change_base_ring(F, Alift), side = :left)
   M = lift(_M)
   Mi = hnf_modular_eldiv(M, ZZRingElem(p))
   r = nrows(Mi)
@@ -1280,7 +1280,7 @@ function left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
   Mfi = Mi * Alift
   local H
   for i in 1:(l - 1)
-    _, K = left_kernel(change_base_ring(F, divexact(Mfi, p^i)))
+    K = Solve.kernel(change_base_ring(F, divexact(Mfi, p^i)), side = :left)
     H = hnf_modular_eldiv(lift(K), ZZRingElem(p))
     r = nrows(H)
     while is_zero_row(H, r)

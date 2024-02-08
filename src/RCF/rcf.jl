@@ -643,12 +643,11 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   # for all a in the kernel
   R = residue_ring(FlintZZ, C.n, cached=false)[1]
   M = change_base_ring(R, mk.map)
-  i, l = right_kernel(M)
-  @assert i > 0
+  l = Solve.kernel(M; side = :right)
   n = lift(l)
   e1 = degree(CF)
   N = FinGenAbGroup(ZZRingElem[ZZRingElem(e1) for j=1:nrows(n)])
-  s, ms = sub(N, FinGenAbGroupElem[N(ZZRingElem[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
+  s, ms = sub(N, FinGenAbGroupElem[N(ZZRingElem[n[j, ind] for j=1:nrows(n)]) for ind=1:ncols(n)], false)
   ms = Hecke.make_domain_snf(ms)
   H = domain(ms)
   @hassert :ClassField 1 is_cyclic(H)

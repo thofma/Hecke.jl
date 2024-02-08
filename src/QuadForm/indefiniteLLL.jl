@@ -146,7 +146,7 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
     if det(GG) != 0
       continue
     end
-    sol = left_kernel(GG)[2][1:1,:]
+    sol = Solve.kernel(GG, side = :left)[1:1,:]
     sol = divexact(sol,content(sol))
     sol = hcat(sol,zero_matrix(base_ring(sol),1,n-i))
     if !base

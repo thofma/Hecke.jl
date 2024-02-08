@@ -332,7 +332,7 @@ end
   for h in [f, g]
     n = multiplicative_order(h)
     M = kernel_lattice(E8, cyclotomic_polynomial(n)(h))
-    hM = solve_left(basis_matrix(M), basis_matrix(M)*h)
+    hM = Hecke.Solve.solve(basis_matrix(M), basis_matrix(M)*h; side = :left)
     @test is_cyclotomic_polynomial(minpoly(hM))
     M = integer_lattice(gram = gram_matrix(M))
     H, res = hermitian_structure_with_transfer_data(M, hM)

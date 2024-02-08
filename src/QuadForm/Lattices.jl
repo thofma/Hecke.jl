@@ -1276,7 +1276,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   if rank(_L) != degree(_L)
     L = integer_lattice(;gram = gram_matrix(_L))
     if ambient_representation
-      ok, f = can_solve_with_solution(basis_matrix(_L), basis_matrix(_L)*f; side=:left)
+      ok, f = Solve.can_solve_with_solution(basis_matrix(_L), basis_matrix(_L)*f; side=:left)
       @req ok "Isometry does not restrict to L"
     end
   else
@@ -1361,7 +1361,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   for i=1:m
     for j=1:m
       a = reduce(hcat, view(mb^k, 1+(i-1)*n2:1+(i-1)*n2, :)*view(G, :, 1+(j-1)*n2:1+(j-1)*n2) for k in 0:n2-1)
-      co = solve_left(trace_mat, a)
+      co = Solve.solve(trace_mat, a; side = :left)
       gram[i,j] = only(co*bs)
     end
   end
@@ -1506,8 +1506,8 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   # Now translate to get the automorphisms with respect to basis_matrix(L)
   BmatL = basis_matrix_of_rational_span(L)
 
-  b1, s1 = can_solve_with_solution(BabsmatL, BmatL; side = :left)
-  b2, s2 = can_solve_with_solution(BmatL, BabsmatL; side = :left)
+  b1, s1 = Solve.can_solve_with_solution(BabsmatL, BmatL; side = :left)
+  b2, s2 = Solve.can_solve_with_solution(BmatL, BabsmatL; side = :left)
 
   t_gens = Vector{typeof(BmatL)}(undef, length(gens))
 
@@ -1701,8 +1701,8 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
 
   if b
     T = change_base_ring(FlintQQ, inv(TL)*T*TM)
-    fl, s1 = can_solve_with_solution(BabsmatL, basis_matrix_of_rational_span(L); side = :left)
-    fl, s2 = can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM; side = :left)
+    fl, s1 = Solve.can_solve_with_solution(BabsmatL, basis_matrix_of_rational_span(L); side = :left)
+    fl, s2 = Solve.can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM; side = :left)
     T = s1 * change_base_ring(E, T) * s2
     @hassert :Lattice 1 T * gram_matrix(rational_span(M)) *
                             _map(transpose(T), involution(L)) ==
@@ -1768,7 +1768,7 @@ function maximal_sublattices(L::AbstractLat, p; use_auto::Bool = false,
   E = Int[]
   for i in 1:length(Ls)
     if use_auto
-      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]); side = :left)[2]))
+      m = map_entries(y -> hext\y, (Solve.kernel(matrix(Ls[i][1]); side = :left)))
     else
       m = map_entries(y -> hext\y, Ls[i])
     end

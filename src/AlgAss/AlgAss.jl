@@ -1357,7 +1357,7 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(aa)))
-    b, yy = can_solve_with_solution(transpose(N), NN)
+    b, yy = Solve.can_solve_with_solution(transpose(N), NN; side = :right)
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 

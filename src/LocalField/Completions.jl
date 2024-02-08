@@ -238,7 +238,7 @@ if true
 else
   MZp = map_entries(Zp, MK.num)
   bZp = map_entries(Zp, bK.num)
-  fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+  fl, xZp = Solve.can_solve_with_solution(MZp, bZp, side = :left)
   @assert fl
 end 
   coeffs_eisenstein = Vector{QadicFieldElem}(undef, e+1)
@@ -349,7 +349,7 @@ function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderId
   end
   MZp = map_entries(Zp, MK.num)
   bZp = map_entries(Zp, bK.num)
-  fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+  fl, xZp = Solve.can_solve_with_solution(MZp, bZp, side = :left)
   @assert fl
   coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
   for i = 1:e
@@ -398,7 +398,7 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     MK = basis_matrix(pows_u)
     MQp = map_entries(Zp, MK)
     bQp = map_entries(Zp, bK)
-    fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+    fl, xZp = Solve.can_solve_with_solution(MZp, bZp, side = :left)
     @assert fl
     coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
     for i = 1:e
@@ -468,7 +468,7 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
     end
     MZp = map_entries(Zp, MK.num)
     bZp = map_entries(Zp, bK.num)
-    fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+    fl, xZp = Solve.can_solve_with_solution(MZp, bZp, side = :left)
     @assert fl
     img = Qq()
     for j = 0:f-1
