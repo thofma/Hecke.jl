@@ -263,7 +263,7 @@ julia> lift(d)
 N.B. Since there are no elements of $\mathbb{Z}$-lattices, we think of elements of `M` as
 elements of the ambient vector space. Thus if `v::Vector` is such an element
 then the coordinates with respec to the basis of `M` are given by
-`solve_left(basis_matrix(M), v)`.
+`solve(basis_matrix(M), v; side = :left)`.
 """
 @attributes mutable struct TorQuadModule
   ab_grp::FinGenAbGroup             # underlying abelian group

@@ -1017,7 +1017,7 @@ function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem
 
   onee = matrix(S, 1, n, coefficients(one(QG)))
 
-  fl, v = can_solve_with_solution(M, onee, side = :left)
+  fl, v = Solve.can_solve_with_solution(M, onee, side = :left)
 
   if !fl
     solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
@@ -1027,7 +1027,7 @@ function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem
   k = 0
 
   for i in 1:length(all_non_trivial_subs)
-    fl, v = can_solve_with_solution(view(M, 1:i, 1:ncols(M)), onee, side = :left)
+    fl, v = Solve.can_solve_with_solution(view(M, 1:i, 1:ncols(M)), onee, side = :left)
     if fl
       k = i
       break

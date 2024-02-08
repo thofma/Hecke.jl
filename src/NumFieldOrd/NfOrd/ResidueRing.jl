@@ -696,7 +696,7 @@ function annihilator(x::AbsSimpleNumFieldOrderQuoRingElem)
    _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
    _copy_matrix_into_matrix(U, d + 1, 1, I.basis_matrix)
 
-  m = left_kernel(U)[2]
+  m = Solve.kernel(U, side = :left)
   I = ideal(O, _hnf_modular_eldiv(sub(m, 1:degree(O), 1:degree(O)),
                                   minimum(I), :lowerleft))
   z = f(I)

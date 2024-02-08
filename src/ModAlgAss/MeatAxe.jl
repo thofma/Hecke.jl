@@ -429,7 +429,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
       return true, identity_matrix(K, n)
     else
       N = _subst(t, A)
-      null, kern = kernel(N, side = :left)
+      kern = Solve.kernel(N, side = :left)
       B = closure(sub(kern, 1:1, 1:n), G)
       return false, B
     end
@@ -460,25 +460,25 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     poly = minpoly(Kx, A)
     for f in lazy_factor(poly)
       N = _subst(f, A)
-      a, kern = kernel(N, side = :left)
-      @assert a > 0
+      kern = Solve.kernel(N, side = :left)
+      @assert nrows(kern) > 0
       #  Norton test
       B = closure(sub(kern, 1:1, 1:n), M.action_of_gens)
       if nrows(B) != n
         M.is_irreducible = 2
         return false, B
       end
-      aa, kernt = kernel(transpose(N), side = :left)
-      @assert aa == a
+      kernt = Solve.kernel(transpose(N), side = :left)
+      @assert nrows(kernt) == nrows(kern)
       Bt = closure(sub(kernt, 1:1, 1:n), Gt)
       if nrows(Bt) != n
-        aa, Btnu = kernel(Bt)
+        Btnu = Solve.kernel(Bt; side = :right)
         subst = transpose(Btnu)
         #@assert nrows(subst)==nrows(closure(subst,G))
         M.is_irreducible = 2
         return false, subst
       end
-      if degree(f) == a
+      if degree(f) == nrows(kern)
         # f is a good factor, irreducibility!
         M.is_irreducible = 1
         return true, identity_matrix(K, n)
@@ -671,8 +671,8 @@ function eigenspace_as_matrix(M::MatElem{T}, lambda::T) where T <: FieldElem
   for i = 1:ncols(N)
     N[i, i] -= lambda
   end
-  d, res = Hecke.left_kernel(N)
-  return view(res, 1:d, 1:ncols(res))
+  res = Solve.kernel(N, side = :left)
+  return res
 end
 
 
@@ -731,7 +731,7 @@ function _relations(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V
         rref!(X)
         push!(matrices, matrices[i]*H[j])
       else
-        fl, x = can_solve_with_solution(B, v, side = :left)
+        fl, x = Solve.can_solve_with_solution(B, v, side = :left)
         @assert fl
         A = sum(T[x[1, q]*matrices[q] for q = 1:k])
         A = sub!(A, A, matrices[i]*H[j])

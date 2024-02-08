@@ -329,7 +329,7 @@ function orthogonal_submodule(L::ZZLat, C::QQMatrix)
   V = ambient_space(L)
   G = gram_matrix(V)
   M = B * G * transpose(C)
-  _, K = left_kernel(M)
+  K = Solve.kernel(M, side = :left)
   K = change_base_ring(ZZ, K*denominator(K))
   Ks = saturate(K)
   return lattice(V, Ks*B; check = false)
@@ -628,7 +628,7 @@ function is_sublattice(M::ZZLat, N::ZZLat)
     return false
   end
 
-  hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
+  hassol, _rels = Solve.can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
 
   if !hassol || !isone(denominator(_rels))
     return false
@@ -649,7 +649,7 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
      return false, basis_matrix(M)
    end
 
-   hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
+   hassol, _rels = Solve.can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
 
    if !hassol || !isone(denominator(_rels))
      return false, basis_matrix(M)
@@ -996,8 +996,8 @@ function intersect(M::ZZLat, N::ZZLat)
   BMint = change_base_ring(FlintZZ, d * BM)
   BNint = change_base_ring(FlintZZ, d * BN)
   H = vcat(BMint, BNint)
-  k, K = left_kernel(H)
-  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  K = Solve.kernel(H, side = :left)
+  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return lattice(ambient_space(M), BI; check = false)
 end
 
@@ -1192,14 +1192,14 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
   G = change_base_ring(ZZ, gram_matrix(L))
   k = Native.GF(p)
   Gmodp = change_base_ring(k, G)
-  r, V = left_kernel(Gmodp)
-  VZ = lift(V[1:r,:])
+  V = Solve.kernel(Gmodp, side = :left)
+  VZ = lift(V)
   H = divexact(VZ * G * transpose(VZ), p)
   if p != 2
     Hk = change_base_ring(k, H)
     ok, __v = _isisotropic_with_vector_finite(Hk)
     if !ok
-      @assert r == 2
+      @assert nrows(V) == 2
       return true, L
     end
     _v = matrix(k, 1, length(__v), __v)
@@ -1218,7 +1218,7 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
     findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
-      v = zero_matrix(ZZ, 1, r)
+      v = zero_matrix(ZZ, 1, nrows(V))
       if !(i isa Nothing)
         v[1, i] = 1
         return true, v
@@ -1459,7 +1459,7 @@ function kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = tru
   bL = basis_matrix(L)
   if ambient_representation
     if !is_square(bL)
-      fl, finL = can_solve_with_solution(bL, bL * f; side = :left)
+      fl, finL = Solve.can_solve_with_solution(bL, bL * f; side = :left)
       @req fl "f must preserve the lattice L"
     else
       finL = bL * f * inv(bL)
@@ -1467,7 +1467,7 @@ function kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = tru
   else
     finL = f
   end
-  k, K = left_kernel(change_base_ring(ZZ, finL))
+  K = Solve.kernel(change_base_ring(ZZ, finL), side = :left)
   return lattice(ambient_space(L), K*basis_matrix(L); check = false)
 end
 
@@ -1554,7 +1554,7 @@ function Base.in(v::QQMatrix, L::ZZLat)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   @req nrows(v) == 1 "Must be a row vector."
   B = basis_matrix(L)
-  fl, w = can_solve_with_solution(B, v; side=:left)
+  fl, w = Solve.can_solve_with_solution(B, v; side=:left)
   return fl && isone(denominator(w))
 end
 
@@ -1835,7 +1835,7 @@ function _irreducible_components_short_vectors(L, ub)
     if s[2]>l
       # we hit a new length and should check if we can split
       l = s[2]
-      k, K = kernel(B*G)
+      K = Solve.kernel(B*G; side = :right)
       if isone(hnf(vcat(B,transpose(K))))
         break
       end
@@ -2069,7 +2069,7 @@ false
 function primitive_closure(M::ZZLat, N::ZZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must be in the same ambient space"
 
-  ok, B = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side = :left)
+  ok, B = Solve.can_solve_with_solution(basis_matrix(M), basis_matrix(N); side = :left)
 
   @req ok "N must be contained in the rational span of M"
 
@@ -2709,7 +2709,7 @@ julia> V = ambient_space(N);
 
 julia> vG = map_entries(x->Zmodh(ZZ(x)), inner_product(V, v, basis_matrix(N)));
 
-julia> LN = transpose(lift(kernel(vG)[2]))*basis_matrix(N); # vectors whose inner product with `v` is divisible by `h`.
+julia> LN = transpose(lift(Hecke.Solve.kernel(vG; side = :right)))*basis_matrix(N); # vectors whose inner product with `v` is divisible by `h`.
 
 julia> lattice(V, LN) == intersect(L, N)
 true
@@ -2740,7 +2740,7 @@ function leech_lattice(niemeier_lattice::ZZLat)
   # sanity checks
   @hassert :Lattice 1 inner_product(V, rho, rho) == 2 * h * (h+1)
   @hassert :Lattice 1 all(h == coxeter_number(i...) for i in ade)
-  rhoB = solve_left(basis_matrix(N), rho)
+  rhoB = Solve.solve(basis_matrix(N), rho; side = :left)
   v = QQ(1, h) * transpose(rhoB)
   A = integer_lattice(gram=gram_matrix(N))
   c = QQ(2 + 2//h)
@@ -2750,7 +2750,7 @@ function leech_lattice(niemeier_lattice::ZZLat)
   @hassert :Lattice 1 length(sv)^2 == abs(det(ADE))
   G = reduce(vcat, sv)
   FG = vcat(F, G)
-  K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))))[2])
+  K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))), side = :right))
   B = change_base_ring(QQ, K) * FG
   B = hnf(FakeFmpqMat(B))
   B = QQ(1, B.den) * change_base_ring(QQ, B.num[end-23:end, :])

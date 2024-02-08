@@ -220,7 +220,7 @@ function sub(M::ZpnGModule, n::Int)
   big_m = vcat(msg.map, rels(M.V))
   for k = 1:length(M.G)
     A = map_entries(R, msg.map)*M.G[k]
-    fl, res = can_solve_with_solution(big_m, lift(A), side = :left)
+    fl, res = Solve.can_solve_with_solution(big_m, lift(A), side = :left)
     @assert fl
     G[k] = map_entries(R, view(res, 1:ngens(sg), 1:ngens(sg)))
   end

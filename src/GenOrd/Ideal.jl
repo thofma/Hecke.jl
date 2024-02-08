@@ -430,7 +430,7 @@ function assure_has_minimum(A::GenOrdIdl)
   M = basis_matrix(A, copy = false)
   d = prod([M[i, i] for i = 1:nrows(M)])
   v = transpose(matrix(map(base_ring(O), coordinates(O(d)))))
-  fl, s = can_solve_with_solution(M, v, side = :left)
+  fl, s = Solve.can_solve_with_solution(M, v, side = :left)
   @assert fl
   den = denominator(s[1]//d)
   for i = 2:ncols(s)

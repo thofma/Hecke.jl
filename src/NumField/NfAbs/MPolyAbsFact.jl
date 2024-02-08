@@ -741,9 +741,9 @@ function combination(RC::RootCtx)
 
     nn = vcat(nn, mn)
 
-    ke = kernel(nn)
-    @vprintln :AbsFact 2 "current kernel dimension: $(ke[1])"
-    if last_rank == ke[1]
+    ke = Hecke.Solve.kernel(nn; side = :right)
+    @vprintln :AbsFact 2 "current kernel dimension: $(ncols(ke))"
+    if last_rank == ncols(ke)
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
@@ -755,14 +755,13 @@ function combination(RC::RootCtx)
     else
       bad = 0
       stable = 0
-      last_rank = ke[1]
+      last_rank = ncols(ke)
     end
-    if ke[1] == 0 || mod(length(R), ke[1]) != 0 || mod(total_degree(f), ke[1]) != 0
+    if ncols(ke) == 0 || mod(length(R), ncols(ke)) != 0 || mod(total_degree(f), ncols(ke)) != 0
       continue
     end
-    m = ke[2]
-    z = transpose(m)*m
-    if z != div(length(R), ke[1])
+    z = transpose(ke)*ke
+    if z != div(length(R), ncols(ke))
       @vprintln :AbsFact 2 "not a equal size partition"
       continue
     end
@@ -771,7 +770,7 @@ function combination(RC::RootCtx)
       @vprintln :AbsFact 2 "need confirmation..."
       continue
     end
-    return transpose(m)
+    return transpose(ke)
   end
 end
 
@@ -1091,7 +1090,7 @@ function field(RC::RootCtx, m::MatElem)
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
       n = transpose(matrix([[coeff(x, j)] for x = fl]))
-      s = solve(m, transpose(n))
+      s = Hecke.Solve.solve(m, transpose(n); side = :right)
       @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
       s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
       if !all(x->x[1], s)

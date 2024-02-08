@@ -495,7 +495,7 @@ end
   N = invariant_lattice(L, G)
   @test ambient_space(N) === ambient_space(L)
   @test rank(N) == 0
-  @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
+  @test invariant_lattice(L, identity_matrix(QQ, 2)) == L
 
   L = [root_lattice(:D,i) for i in 2:10]
   @test all(l -> det(l) == 4, L)

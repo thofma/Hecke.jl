@@ -57,7 +57,7 @@ end
 
 function preimage(f::ModAlgHom, a::ModAlgAssElem)
   @assert parent(a) === codomain(f)
-  fl, b = can_solve_with_solution(matrix(f), matrix([coordinates(a)]), side = :left)
+  fl, b = Solve.can_solve_with_solution(matrix(f), matrix([coordinates(a)]), side = :left)
   if !fl
     error("No preimage")
   else
@@ -100,7 +100,7 @@ function preimage(f::EndAlgMap, b::ModAlgHom)
   A = domain(f)
   B = basis(A)
   M = matrix([Hecke._eltseq(matrix(f(b))) for b in B])
-  fl, v = can_solve_with_solution(M, matrix(base_ring(A), 1, ncols(M), Hecke._eltseq(matrix(b))), side = :left)
+  fl, v = Solve.can_solve_with_solution(M, matrix(base_ring(A), 1, ncols(M), Hecke._eltseq(matrix(b))), side = :left)
   @assert fl
   a = sum(v[i]*B[i] for i in 1:length(B))
   @assert f(a) == b
