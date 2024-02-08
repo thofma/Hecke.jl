@@ -82,7 +82,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   nr = normred(b)
   nr = simplify(nr)
   #@show nr
-  fl, c = is_principal(nr)
+  fl, c = is_principal_with_data(nr)
   if !fl
     return false, zero(A)
   end
@@ -198,7 +198,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     K, AAtoK = _as_field_with_isomorphism(AA)
     MK = maximal_order(K)
     I = sum(fractional_ideal_type(order_type(K))[AAtoK(AAtoA\(b)) * MK for b in absolute_basis(a)])
-    fl, zK = is_principal(I)
+    fl, zK = is_principal_with_data(I)
     gen = AAtoA(AAtoK\(elem_in_nf(zK)))
     if fl
       @assert gen * M == a
@@ -261,7 +261,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   J = st.coeffs[end] * inv(a)
   #@show J
   #@show basis(J)
-  fl, _alpha = is_principal(J)
+  fl, _alpha = is_principal_with_data(J)
   if !fl
     return false, zero(algebra(M))
   end

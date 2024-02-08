@@ -612,7 +612,7 @@ function factor(a::AbsSimpleNumFieldOrderElem)
   D = Dict{AbsSimpleNumFieldOrderElem, Int}()
   u = a
   for (p, e) in factor(I)
-    b, c = is_principal(p)
+    b, c = is_principal_with_data(p)
     !b && error("Prime ideal dividing the element not principal")
     D[c] = e
     u = divexact(u, c^e)

@@ -318,7 +318,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
     I = numerator(coefficient_ideals(St)[d])
     den = denominator(coefficient_ideals(St)[d])
     if minimal && base_ring(L) isa AbsSimpleNumFieldOrder
-      b, a = is_principal(I)
+      b, a = is_principal_with_data(I)
       if b
         push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
       end

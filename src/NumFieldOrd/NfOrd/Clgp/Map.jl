@@ -493,13 +493,13 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
 end
 
 @doc raw"""
-    is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbsSimpleNumFieldOrderElem
-    is_principal(A::AbsSimpleNumFieldOrderFractionalIdeal) -> Bool, AbsSimpleNumFieldOrderElem
+    is_principal_with_data(A::AbsSimpleNumFieldOrderIdeal) -> Bool, AbsSimpleNumFieldOrderElem
+    is_principal_with_data(A::AbsSimpleNumFieldOrderFractionalIdeal) -> Bool, AbsSimpleNumFieldElem
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 """
-function is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+function is_principal_with_data(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if A.is_principal == 1 && isdefined(A, :princ_gen)
     return true, A.princ_gen
   end
@@ -522,7 +522,7 @@ function is_principal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFi
   return fl, ev
 end
 
-function is_principal(A::AbsSimpleNumFieldOrderFractionalIdeal)
+function is_principal_with_data(A::AbsSimpleNumFieldOrderFractionalIdeal)
   O = order(A)
   if !is_maximal(O)
     fl, a = is_principal_non_maximal(numerator(A, copy = false))
@@ -532,6 +532,16 @@ function is_principal(A::AbsSimpleNumFieldOrderFractionalIdeal)
     b = evaluate(a)
   end
   return fl, b//denominator(A, copy = false)
+end
+
+function is_principal(A::Union{AbsSimpleNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal})
+  if A.is_principal == 1
+    return true
+  end
+  if A.is_principal == 2
+    return false
+  end
+  return is_principal_fac_elem(A)[2]
 end
 
 # does not work, cannot work. Problem
@@ -818,14 +828,4 @@ function probabilistic_coprime(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
     I1 = I.num
   end
   return I1, s*I.den
-end
-
-################################################################################
-#
-#  Wrapper
-#
-################################################################################
-
-function is_principal_with_data(I::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderFractionalIdeal})
-  return is_principal(I)
 end
