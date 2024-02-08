@@ -352,7 +352,7 @@ function pres_show(io::IO, C::ComplexOfMorphisms)
       if isnothing(M_name)
         M_name = "$R_name^$(rank(M))"
       end
-      push!(name_mod, name)
+      push!(name_mod, M_name)
       push!(rank_mod, rank(M))
     end
   end
