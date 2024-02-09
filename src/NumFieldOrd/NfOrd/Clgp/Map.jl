@@ -535,13 +535,18 @@ function is_principal_with_data(A::AbsSimpleNumFieldOrderFractionalIdeal)
 end
 
 function is_principal(A::Union{AbsSimpleNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal})
-  if A.is_principal == 1
-    return true
+  if A isa AbsSimpleNumFieldOrderIdeal
+    if A.is_principal == 1
+      return true
+    end
+    if A.is_principal == 2
+      return false
+    end
+    return is_principal_fac_elem(A)[2]
+  else
+    # _fac_elem does not exist for fractional ideals?
+    return is_principal_with_data(A)[2]
   end
-  if A.is_principal == 2
-    return false
-  end
-  return is_principal_fac_elem(A)[2]
 end
 
 # does not work, cannot work. Problem

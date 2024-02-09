@@ -303,7 +303,7 @@ function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumF
       bound = 2*bound
     end
   end
-  fl, u = is_principal(I)
+  fl, u = is_principal_with_data(I)
   rc4 = OK(c4//u^4)
   rc6 = OK(c6//u^6)
 
