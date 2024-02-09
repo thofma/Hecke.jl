@@ -542,7 +542,7 @@ function is_principal(A::Union{AbsSimpleNumFieldOrderIdeal, AbsSimpleNumFieldOrd
     if A.is_principal == 2
       return false
     end
-    return is_principal_fac_elem(A)[2]
+    return is_principal_fac_elem(A)[1]
   else
     # _fac_elem does not exist for fractional ideals?
     return is_principal_with_data(A)[2]
