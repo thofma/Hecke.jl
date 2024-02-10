@@ -167,14 +167,14 @@ end
 function number_field(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true) where T
   length(S) == length(f) || error("number of names must match the number of polynomials")
   R = base_ring(f[1])
-  Rx, x = polynomial_ring(R, S)
+  Rx, x = polynomial_ring(R, S)::Tuple{mpoly_ring_type(T), Vector{mpoly_type(T)}}
   K = RelNonSimpleNumField(f, [f[i](x[i]) for i=1:length(f)], S)
   if check
     if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end
-  return K, gens(K)
+  return K, gens(K)::Vector{elem_type(K)}
 end
 
 function number_field(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
@@ -191,7 +191,7 @@ function number_field(::Type{AbsNonSimpleNumField}, L::RelNonSimpleNumField{AbsS
   return number_field(pols, cached = false, check = false)
 end
 
-Nemo.gens(K::RelNonSimpleNumField) = [K(x) for x = gens(parent(K.pol[1]))]
+Nemo.gens(K::RelNonSimpleNumField{T}) where {T} = elem_type(K)[K(x) for x = gens(parent(K.pol[1]))::Vector{mpoly_type(T)}]
 
 function (K::RelNonSimpleNumField{T})(a::Generic.MPoly{T}) where T
   q, w = divrem(a, K.pol)
