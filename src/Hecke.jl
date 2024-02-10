@@ -385,23 +385,6 @@ function _get_version()
 end
 const pkg_version = _get_version()
 
-######################################################################
-# named printing support
-######################################################################
-
-# to use:
-# in HeckeMap
-#   in the show function, start with @show_name(io, map)
-# for other objects
-#   add @attributes to the struct
-#   add @show_name(io, obj) to show
-#   optionally, add @show_special(io, obj) as well
-# on creation, or whenever, call set_name!(obj, string)
-# @show_name will set on printing if bound in the REPL
-# moved into AbstractAlgebra
-
-#maps are different - as are number fields
-
 ################################################################################
 #
 #  Jupyter notebook check
@@ -423,7 +406,7 @@ abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
 
 import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special,
        _get_attributes, _get_attributes!, _is_attribute_storing_type,
-       @show_special_elem, @attributes, extra_name, set_name!, find_name
+       @show_special_elem, @attributes, extra_name, set_name!, get_name
 
 # Hecke maps store attributes in the header object
 _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)

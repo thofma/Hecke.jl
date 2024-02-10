@@ -325,24 +325,7 @@ map_type(C::ComplexOfMorphisms) = valtype(C.maps)
 
 Hecke.base_ring(::FinGenAbGroup) = ZZ
 
-function get_name(M, na::String)
-  name = get_attribute(M, :name)
-  if name !== nothing
-    return name
-  end
-  name = AbstractAlgebra.find_name(M)
-  if name !== nothing
-    return String(name)
-  end
-  return na
-end
-
 function pres_show(io::IO, C::ComplexOfMorphisms)
-  Cn = get_attribute(C, :name)
-  if Cn === nothing
-    Cn = "F"
-  end
-
   name_mod = String[]
   rank_mod = Int[]
 
@@ -350,15 +333,26 @@ function pres_show(io::IO, C::ComplexOfMorphisms)
   arr = ("<--", "--")
 
   R = Nemo.base_ring(C[first(rng)])
-  R_name = get_name(R, "$R")
+  R_name = get_name(R)
+  if isnothing(R_name)
+    R_name = "$R"
+  end
 
   for i=reverse(rng)
     M = C[i]
     if i == -1 #the object that is presented
-      push!(name_mod, get_name(M, "M"))
+      M_name = get_name(M)
+      if isnothing(M_name)
+        M_name = "M"
+      end
+      push!(name_mod, M_name)
       push!(rank_mod, 0)
     else
-      push!(name_mod, get_name(M, "$R_name^$(rank(M))"))
+      M_name = get_name(M)
+      if isnothing(M_name)
+        M_name = "$R_name^$(rank(M))"
+      end
+      push!(name_mod, M_name)
       push!(rank_mod, rank(M))
     end
   end
@@ -397,11 +391,6 @@ end
 
 
 function free_show(io::IO, C::ComplexOfMorphisms)
-  Cn = get_attribute(C, :name)
-  if Cn === nothing
-    Cn = "F"
-  end
-
   name_mod = String[]
   rank_mod = Int[]
 
@@ -410,18 +399,18 @@ function free_show(io::IO, C::ComplexOfMorphisms)
   arr = ("<--", "--")
 
   R = Nemo.base_ring(C[first(rng)])
-  R_name = get_attribute(R, :name)
+  R_name = get_name(R)
   if R_name === nothing
     R_name = "$R"
   end
 
   for i=reverse(rng)
     M = C[i]
-    if get_attribute(M, :name) !== nothing
-      push!(name_mod, get_attribute(M, :name))
-    else
-      push!(name_mod, "$R_name^$(rank(M))")
+    M_name = get_name(M)
+    if M_name === nothing
+      M_name = "$R_name^$(rank(M))"
     end
+    push!(name_mod, M_name)
     push!(rank_mod, rank(M))
   end
 
@@ -462,7 +451,7 @@ function show(io::IO, C::ComplexOfMorphisms)
   @show_name(io, C)
   @show_special(io, C)
 
-  Cn = get_attribute(C, :name)
+  Cn = get_name(C)
   if Cn === nothing
     Cn = "C"
   end
@@ -481,11 +470,11 @@ function show(io::IO, C::ComplexOfMorphisms)
 
   for i=rng
     M = obj(C, i)
-      if is_chain_complex(C)
-        name_mod[i] = "$(Cn)_$i"
-      else
-        name_mod[i] = "$(Cn)^$i"
-      end
+    if is_chain_complex(C)
+      name_mod[i] = "$(Cn)_$i"
+    else
+      name_mod[i] = "$(Cn)^$i"
+    end
   end
 
   io = IOContext(io, :compact => true)
