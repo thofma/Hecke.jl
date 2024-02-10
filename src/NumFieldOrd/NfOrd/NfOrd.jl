@@ -221,15 +221,11 @@ function show(io::IO, S::AbsNumFieldOrderSet)
 end
 
 function extra_name(O::AbsNumFieldOrder)
-  set_name!(O)
-  s = get_attribute(O, :name)
-  s !== nothing && return
-  set_name!(nf(O))
-  s = get_attribute(nf(O), :name)
+  s = get_name(nf(O))
   if s !== nothing
-    set_name!(O, "O_$s")
+    return "O_$s"
   end
-  return get_attribute(O, :name)
+  return nothing
 end
 
 function show(io::IO, O::AbsNumFieldOrder)
