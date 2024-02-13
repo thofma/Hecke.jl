@@ -518,27 +518,49 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   end
 
   # Build the basis matrix for the quotient
-  M = zero_matrix(K, dim(A), dim(A))
   n = nrows(Ma) - nrows(Mb)
+  M = zero_matrix(K, n, dim(A))
   for i = 1:n
     for j = 1:dim(A)
       M[i, j] = deepcopy(Ma[pivot_cols[i], j])
     end
   end
 
-  mult_table = _build_subalgebra_mult_table!(A, M)
-  # M is now in rref
+  # Lift a basis of the quotient to A
+  quotient_basis = Vector{elem_type(A)}(undef, n)
+  b = zero_matrix(K, 1, n)
+  for i = 1:n
+    b[1, i] = one(K)
+    bM = b*M
+    quotient_basis[i] = A([ bM[1, j] for j in 1:dim(A) ])
+    b[1, i] = zero(K)
+  end
+
+  # Another basis matrix for a: basis of the quotient + basis of b
+  N = vcat(M, Mb)
+
+  # Build the multiplication table
+  t = A()
+  s = zero_matrix(K, 1, dim(A))
+  mult_table = Array{elem_type(K), 3}(undef, n, n, n)
+  for i = 1:n
+    for j = 1:n
+      t = mul!(t, quotient_basis[i], quotient_basis[j])
+      elem_to_mat_row!(s, 1, t)
+      fl, y = can_solve_with_solution(N, s, side = :left)
+      @assert fl
+      mult_table[i, j, :] = [ y[1, k] for k = 1:n ]
+    end
+  end
 
   B = StructureConstantAlgebra(K, mult_table)
-  MM = sub(M, 1:dim(B), 1:dim(A))
 
-  AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(MM)}(A, B)
+  AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(M)}(A, B)
 
-  N = transpose(vcat(MM, Mb)) # Another basis matrix for a
   function _image(x::AbstractAssociativeAlgebraElem)
-    t, y = can_solve_with_solution(N, matrix(K, dim(A), 1, coefficients(x, copy = false)))
+    t, y = can_solve_with_solution(N, matrix(K, 1, dim(A), coefficients(x, copy = false)), side = :left)
     if t
-      return B([ y[i, 1] for i = 1:dim(B) ])
+      return B([ y[1, i] for i in 1:dim(B) ])
     else
       error("Element is not in the domain")
     end
@@ -549,8 +571,8 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
     for i = 1:dim(B)
       t[1, i] = x.coeffs[i]
     end
-    tt = t*MM
-    return A([ tt[1, i] for i = 1:dim(A) ])
+    tt = t*M
+    return A([ tt[1, i] for i in 1:dim(A) ])
   end
 
   AtoB.header.image = _image
