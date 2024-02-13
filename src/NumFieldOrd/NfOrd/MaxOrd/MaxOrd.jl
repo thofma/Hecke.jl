@@ -345,7 +345,7 @@ function _radical_by_trace(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
   R = residue_ring(FlintZZ, q, cached=false)[1]
-  B = Solve.kernel(R, trace_matrix(O); side = :right)
+  B = kernel(R, trace_matrix(O); side = :right)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:ncols(B)
     for j = 1:d
@@ -789,7 +789,7 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
         A[i, s+nr] = R(M1[s, i])
       end
     end
-    X = right_kernel_basis(A)
+    X = _right_kernel_basis(A)
     if isempty(X)
       I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
@@ -886,7 +886,7 @@ function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
       A[i, s+nr] = R(M1[s, i])
     end
   end
-  X = right_kernel_basis(A)
+  X = _right_kernel_basis(A)
   gens = elem_type(O)[O(p), gen2]
   if isempty(X)
     I = ideal(O, p, gen2)
@@ -945,7 +945,7 @@ function pradical_trace1(O::AbsSimpleNumFieldOrder, p::IntegerUnion)
   hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   I1 = ideal(O, p, gen2)
   I1.basis_matrix = M1
-  B = Solve.kernel(F, M; side = :right)
+  B = kernel(F, M; side = :right)
   if iszero(ncols(B))
     return ideal(O, p)
   end

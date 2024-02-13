@@ -168,27 +168,27 @@ function nullspace(M::SMat{T}) where {T <: FieldElement}
 end
 
 @doc raw"""
-    left_kernel(M::SMat{T}) where {T <: FieldElement}
+    _left_kernel(M::SMat{T}) where {T <: FieldElement}
 
 Return a tuple $\nu, N$ where $N$ is a matrix whose rows generate the
 left kernel of $M$, i.e. $NM = 0$ and $\nu$ is the rank of the kernel.
 If $M$ is an $m\times n$ matrix $N$ will be a $\nu\times m$ matrix in dense
 representation. The rows of $N$ are in lower-left reduced echelon form.
 """
-function left_kernel(M::SMat{T}) where T <: FieldElement
+function _left_kernel(M::SMat{T}) where T <: FieldElement
   n, N = nullspace(transpose(M))
   return n, transpose(N)
 end
 
 @doc raw"""
-    right_kernel(M::SMat{T}) where {T <: FieldElement}
+    _right_kernel(M::SMat{T}) where {T <: FieldElement}
 
 Return a tuple $\nu, N$ where $N$ is a matrix whose columns generate the
 right kernel of $M$, i.e. $MN = 0$ and $\nu$ is the rank of the kernel.
 If $M$ is an $m\times n$ matrix $N$ will be a $n \times \nu$ matrix in dense
 representation. The columns of $N$ are in upper-right reduced echelon form.
 """
-function right_kernel(M::SMat{T}) where T <: FieldElement
+function _right_kernel(M::SMat{T}) where T <: FieldElement
   return nullspace(M)
 end
 
@@ -203,9 +203,9 @@ of rows whose span is the left kernel space.
 """
 function kernel(M::SMat{T}; side::Symbol = :right) where T <: FieldElement
   if side == :right
-    return right_kernel(M)
+    return _right_kernel(M)
   elseif side == :left
-    return left_kernel(M)
+    return _left_kernel(M)
   else
     error("Unsupported argument: :$side for side: must be :left or :right")
   end

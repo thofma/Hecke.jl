@@ -584,7 +584,7 @@ function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, short::Type{Val{U}}
   #@show B, tt
   #@show UU
   #@show UU * B == R
-  b, N = can_solve_given_rref(R, UU, piv, t)
+  b, N = _can_solve_given_rref(R, UU, piv, t)
   #b, N = can_solve_with_solution(B, tt, side = :left)
   #@assert b == bb && NN == [N[1, i] for i in 1:length(N)]
   if short == Val{true}

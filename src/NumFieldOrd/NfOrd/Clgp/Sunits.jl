@@ -64,7 +64,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
   @vprintln :ClassGroup 1 "... done"
 
   @vprintln :ClassGroup 1 "solving..."
-  @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
+  @vtime :ClassGroup 1 R, d = _solve_ut(H, rr)
   Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), ZZRingElem(-1)*R)
   @vprintln :ClassGroup 1 ".. done, now saturating ..."
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
@@ -143,7 +143,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
           push!(b.values, v)
         end
       end
-      s, d = solve_ut(S1, b)
+      s, d = _solve_ut(S1, b)
       @assert d == 1  # this would indicate element is not in group...
       c = zeros(ZZRingElem, length(I))
       for (p,v) = s

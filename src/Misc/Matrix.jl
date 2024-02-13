@@ -45,7 +45,7 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   # For any invertible H' with H'H = 1, also S = H'HS = H'A.
   H = hnf!(transpose(A))
   H = transpose(H[1:rank(H), :])
-  S = Solve.solve(H, A; side = :right)
+  S = solve(H, A; side = :right)
   @assert rank(S) == rank(H)
   return S
 end
@@ -323,27 +323,27 @@ end
 #
 ################################################################################
 @doc raw"""
-    kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
+    _kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
 It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
 specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
 """
-function kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAlgebra.FieldElem
+function _kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAlgebra.FieldElem
   if side == :right
-    return right_kernel_basis(A)
+    return _right_kernel_basis(A)
   elseif side == :left
-    return left_kernel_basis(A)
+    return _left_kernel_basis(A)
   else
     error("Unsupported argument: :$side for side: Must be :left or :right")
   end
 end
 
 @doc raw"""
-    right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
+    _right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
 It returns a basis for the right kernel of the matrix defined over a field.
 """
-function right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
+function _right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
   R = base_ring(a)
   n, z = nullspace(a)
   ar = typeof(Array{T}(undef, nrows(z)))[]
@@ -358,11 +358,11 @@ function right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
 end
 
 @doc raw"""
-    left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
+    _left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
 
 It returns a basis for the left kernel of the matrix.
 """
-left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
+_left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = _right_kernel_basis(transpose(a))
 
 
 ################################################################################
@@ -612,13 +612,13 @@ function _rref_with_trans(M::T) where {T <: MatElem{S} where {S <: FieldElem}}
   return s, sub(n, 1:nrows(M), 1:ncols(M)), sub(n, 1:nrows(M), ncols(M)+1:ncols(n))
 end
 
-# can_solve_ut over a field
+# _can_solve_ut over a field
 #
 #Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
 #\times k$, this function computes $x$ such that $Ax = b$. Might fail if
 #the pivots of $A$ are not invertible.
 #"""
-function can_solve_rref_ut(A::MatElem{T}, b::Vector{T}, pivots::Vector{Int}) where T <: FieldElem
+function _can_solve_rref_ut(A::MatElem{T}, b::Vector{T}, pivots::Vector{Int}) where T <: FieldElem
   n = nrows(A)
   m = ncols(A)
   @assert n == length(b)
@@ -661,37 +661,37 @@ function _get_pivots_ut(A::MatElem{<: FieldElem})
   return pivots
 end
 
-function can_solve_using_rref(A::MatElem{T}, b::Vector{T}) where {T}
+function _can_solve_using_rref(A::MatElem{T}, b::Vector{T}) where {T}
   s, R, U = _rref_with_trans(A)
   pivots = _get_pivots_ut(R)
-  fl, x = can_solve_given_rref(R, U, pivots, b)
+  fl, x = _can_solve_given_rref(R, U, pivots, b)
   if fl
     @assert A * matrix(base_ring(A), length(x), 1, x) == matrix(base_ring(A), length(b), 1, b)
   end
   return fl, x
 end
 
-function can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
+function _can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
   Ub = U * b
-  fl, x = can_solve_rref_ut(R, Ub, pivots)
+  fl, x = _can_solve_rref_ut(R, Ub, pivots)
   return fl, x
 end
 
-function can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
+function _can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
   Ub = U * matrix(base_ring(R), length(b), 1, b)
-  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots)
+  fl, x = _can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots)
   return fl, x
 end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
 
 @doc raw"""
-    solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
+    _solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
 \times k$, this function computes $x$ such that $Ax = b$. Might fail if
 the pivots of $A$ are not invertible.
 """
-function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
+function _solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
   s = ncols(b)
@@ -727,13 +727,13 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
 end
 
 @doc raw"""
-    solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
+    _solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given a lower triangular $m \times m$ matrix $A$ and a matrix $b$ of size
 $m \times k$, this function computes $x$ such that $Ax = b$. Might fail if the
 pivots of $A$ are not invertible.
 """
-function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
+function _solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
   s = ncols(b)
@@ -766,7 +766,7 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   return x
 end
 
-function solve_lt(A::MatElem{T}, b::Vector{T}) where T
+function _solve_lt(A::MatElem{T}, b::Vector{T}) where T
   m = nrows(A)
   n = ncols(A)
   @assert m <= n
@@ -953,18 +953,18 @@ non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 #end
 
 #@doc raw"""
-#    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
+#    _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
 #
 #Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
 #It returns the solution and the right respectively left kernel of $A$.
 #"""
-#function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
+#function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
 #  @assert base_ring(A) == base_ring(B)
 #  if side === :right
 #    @assert nrows(A) == nrows(B)
-#    return _can_solve_with_kernel(A, B)
+#    return __can_solve_with_kernel(A, B)
 #  elseif side === :left
-#    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
+#    b, C, K = __can_solve_with_kernel(transpose(A), transpose(B))
 #    @assert ncols(A) == ncols(B)
 #    if b
 #      return b, transpose(C), transpose(K)
@@ -976,7 +976,7 @@ non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 #  end
 #end
 
-#function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
+#function __can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 #  R = base_ring(A)
 #  mu = [A B]
 #  rank, mu = rref(mu)
@@ -1075,18 +1075,18 @@ non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 #end
 
 #@doc raw"""
-#    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
+#    _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
 #
 #Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
 #It returns the solution and the right respectively left kernel of $A$.
 #"""
-#function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
+#function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
 #  @assert base_ring(A) == base_ring(B)
 #  if side === :right
 #    @assert nrows(A) == nrows(B)
-#    return _can_solve_with_kernel(A, B)
+#    return __can_solve_with_kernel(A, B)
 #  elseif side === :left
-#    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
+#    b, C, K = __can_solve_with_kernel(transpose(A), transpose(B))
 #    @assert ncols(A) == ncols(B)
 #    if b
 #      return b, transpose(C), transpose(K)
@@ -1098,7 +1098,7 @@ non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 #  end
 #end
 
-#function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
+#function __can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
 #  H, T = hnf_with_transform(transpose(a))
 #  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
 #  l = min(nrows(a), ncols(a))
@@ -1219,7 +1219,7 @@ largest_elementary_divisor(A::ZZMatrix) = maximal_elementary_divisor(A)
 #
 ################################################################################
 
-function _left_kernel_of_howell_form_aurel(A::zzModMatrix)
+function __left_kernel_of_howell_form_aurel(A::zzModMatrix)
   n = nrows(A)
   m = ncols(A)
   K = zero_matrix(base_ring(A), n, n)
@@ -1247,7 +1247,7 @@ function _left_kernel_of_howell_form_aurel(A::zzModMatrix)
   return K
 end
 
-function _left_kernel_naive(A::zzModMatrix)
+function __left_kernel_naive(A::zzModMatrix)
   m = Int(modulus(base_ring(A)))
   D1 = abelian_group(Int[m for i in 1:nrows(A)])
   D2 = abelian_group(Int[m for i in 1:ncols(A)])
@@ -1265,11 +1265,11 @@ function _left_kernel_naive(A::zzModMatrix)
   return z
 end
 
-function left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
+function _left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
   R = base_ring(A)
   Alift = lift(A)
   F = GF(p)
-  _M = Solve.kernel(change_base_ring(F, Alift), side = :left)
+  _M = kernel(change_base_ring(F, Alift), side = :left)
   M = lift(_M)
   Mi = hnf_modular_eldiv(M, ZZRingElem(p))
   r = nrows(Mi)
@@ -1280,7 +1280,7 @@ function left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
   Mfi = Mi * Alift
   local H
   for i in 1:(l - 1)
-    K = Solve.kernel(change_base_ring(F, divexact(Mfi, p^i)), side = :left)
+    K = kernel(change_base_ring(F, divexact(Mfi, p^i)), side = :left)
     H = hnf_modular_eldiv(lift(K), ZZRingElem(p))
     r = nrows(H)
     while is_zero_row(H, r)
@@ -1452,13 +1452,13 @@ mutable struct LinearSolveCtx{S, T}
   end
 end
 
-function solve_context(A; side::Symbol)
+function _solve_context(A; side::Symbol)
   return LinearSolveCtx(A, side)
 end
 
 function solve(L::LinearSolveCtx, b::Vector)
   L.v = mul!(L.v, L.U, b)
-  fl, w = can_solve_rref_ut(L.R, L.v, L.pivots)
+  fl, w = _can_solve_rref_ut(L.R, L.v, L.pivots)
   # entries of w are aliasing v, which we don't want for some reason
   #if fl
   #  @assert L.A * w == b

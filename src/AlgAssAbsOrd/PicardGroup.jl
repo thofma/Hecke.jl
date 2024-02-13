@@ -933,7 +933,7 @@ function _intersect_modules(BM::FakeFmpqMat, BN::FakeFmpqMat)
   BMint = change_base_ring(FlintZZ, numerator(d * BM))
   BNint = change_base_ring(FlintZZ, numerator(d * BN))
   H = vcat(BMint, BNint)
-  K = Solve.kernel(H, side = :left)
+  K = kernel(H, side = :left)
   BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return BI
 end

@@ -50,7 +50,7 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
     push!(add_units, xj)
     push!(rel, x.M.rel_gens[xj])
   end
-  time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
+  time_kernel += @elapsed k, d = __solve_dixon_sf(x.M.bas_gens, rel)
   @vprintln :UnitGroup 1 "Saturating the kernel"
   @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
   @vprintln :UnitGroup 1 "Done"

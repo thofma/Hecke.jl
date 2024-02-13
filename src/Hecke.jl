@@ -96,7 +96,7 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!, :can_solve_with_solution, :kernel, :solve,]
+           :set_entry!,]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue
@@ -112,20 +112,6 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              valuation!
 
 const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
-
-const solve = AbstractAlgebra.Solve.solve
-const can_solve = AbstractAlgebra.Solve.can_solve
-const can_solve_with_solution = AbstractAlgebra.Solve.can_solve_with_solution
-
-kernel(args...; kw...) = AbstractAlgebra.kernel(args...; kw...)
-
-function kernel(M::MatElem; side::Symbol = :right)
-  return AbstractAlgebra.Solve.kernel(M, side = side)
-end
-
-function kernel(R::Ring, M::MatElem; side::Symbol = :right)
-  return AbstractAlgebra.Solve.kernel(R, M, side = side)
-end
 
 ###############################################################################
 #

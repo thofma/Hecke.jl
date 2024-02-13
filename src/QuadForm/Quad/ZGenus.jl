@@ -129,7 +129,7 @@ function _p_adic_symbol(A::ZZMatrix, p::ZZRingElem, val::Int)
   A = divexact(A, q)
   Fp = Native.GF(p)
   A_p = change_base_ring(Fp, A)
-  B_p = Solve.kernel(A_p, side = :left)
+  B_p = kernel(A_p, side = :left)
   rref!(B_p)
   if nrows(B_p) == 0
     e0 = _kronecker_symbol(lift(det(A_p)),p)
@@ -197,7 +197,7 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   q = ZZ(2)^m0
   A = divexact(A, q)
   A_2 = change_base_ring(Native.GF(2), A)
-  B_2 = Solve.kernel(A_2, side = :left)
+  B_2 = kernel(A_2, side = :left)
   rref!(B_2)
   R_8 = residue_ring(ZZ, 8)[1]
   # deal with the matrix being non-degenerate mod 2.

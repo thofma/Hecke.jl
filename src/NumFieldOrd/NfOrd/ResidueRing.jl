@@ -453,7 +453,7 @@ function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   a = coordinates(x.elem, copy = false)
   rhs = matrix(FlintZZ, d, 1, a)
 
-  fl, sol = cansolve(V, rhs)
+  fl, sol = _cansolve(V, rhs)
   if !fl
     return fl, zero(R)
   end
@@ -696,7 +696,7 @@ function annihilator(x::AbsSimpleNumFieldOrderQuoRingElem)
    _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
    _copy_matrix_into_matrix(U, d + 1, 1, I.basis_matrix)
 
-  m = Solve.kernel(U, side = :left)
+  m = kernel(U, side = :left)
   I = ideal(O, _hnf_modular_eldiv(sub(m, 1:degree(O), 1:degree(O)),
                                   minimum(I), :lowerleft))
   z = f(I)

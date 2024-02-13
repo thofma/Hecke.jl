@@ -333,7 +333,7 @@ function fixed_field(K::AbsSimpleNumField, A::Vector{<:NumFieldHom{AbsSimpleNumF
     return K, id_hom(K)
   else
     bigmatrix = reduce(hcat, ar_mat)
-    Ker = Solve.kernel(bigmatrix, side = :left)
+    Ker = kernel(bigmatrix, side = :left)
     bas = Vector{elem_type(K)}(undef, nrows(Ker))
     if simplify
       KasFMat = _improve_subfield_basis(K, Ker)
@@ -396,7 +396,7 @@ function fixed_field(K::RelSimpleNumField, A::Vector{T}; simplify::Bool = true) 
     return K, id_hom(K)
   else
     bigmatrix = reduce(hcat, ar_mat)
-    Ker = Solve.kernel(bigmatrix, side = :left)
+    Ker = kernel(bigmatrix, side = :left)
     bas = Vector{elem_type(K)}(undef, nrows(Ker))
     for i in 1:nrows(Ker)
       bas[i] = elem_from_mat_row(K, Ker, i)
@@ -466,7 +466,7 @@ function fixed_field1(K::AbsSimpleNumField, auts::Vector{<:NumFieldHom{AbsSimple
     end
 		_copy_matrix_into_matrix(M, 1, (i-1)*degree(K)+1, B.num)
 	end
-	@vtime :Subfields 1 Ker = Solve.kernel(M, side = :left)
+	@vtime :Subfields 1 Ker = kernel(M, side = :left)
   @assert nrows(Ker) == degree_subfield
   @vtime :Subfields 1 Ker = lll(Ker)
 	#The kernel is the maximal order of the subfield.

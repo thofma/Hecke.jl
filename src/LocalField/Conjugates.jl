@@ -558,7 +558,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
   end
   m = matrix(GF(p), d, d, [lift(ZZ, coeff(pa[i], j-1)) for j=1:d for i=1:d])
   o = matrix(GF(p), d, 1, [lift(ZZ, coeff(gen(R), j-1)) for j=1:d])
-  s = Solve.solve(m, o, side = :right)
+  s = solve(m, o, side = :right)
   @hassert :qAdic 1 m*s == o
   a = K()
   for i=1:d
@@ -567,7 +567,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
   f = defining_polynomial(parent(ca), FlintZZ)
   fso = inv(derivative(f)(gen(R)))
   o = matrix(GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
-  s = Solve.solve(m, o; side = :right)
+  s = solve(m, o; side = :right)
   b = K()
   for i=1:d
     _num_setcoeff!(b, i-1, lift(ZZ, s[i,1]))

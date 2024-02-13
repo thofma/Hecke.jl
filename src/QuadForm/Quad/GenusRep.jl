@@ -933,7 +933,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   if use_auto
     G = automorphism_group_generators(L)
     @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
-    adjust_gens = eltype(G)[Solve.solve(B, B*g; side = :left) for g in G]
+    adjust_gens = eltype(G)[solve(B, B*g; side = :left) for g in G]
     @hassert :GenRep 1 all(let form = form; g -> g * form * transpose(g) == form; end, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
     adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]

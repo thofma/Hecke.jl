@@ -109,7 +109,7 @@ function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyRingElem, fqP
     b *= a
   end
   elem_to_mat_row!(B, 1, -b)
-  s = solve_rational(M', B')
+  s = Nemo._solve_rational(M', B')
   if isa(s, Tuple)
     s = s[1] * inv(s[2])
   end

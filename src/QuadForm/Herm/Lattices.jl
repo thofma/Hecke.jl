@@ -475,7 +475,7 @@ function _is_maximal_integral(L::HermLat, p)
   F, h = residue_field(R, D[1][1])
   hext = extend(h, E)
   sGmodp = map_entries(hext, s * G)
-  V = Solve.kernel(sGmodp, side = :left)
+  V = kernel(sGmodp, side = :left)
   if nrows(V) == 0
     return true, zero_matrix(E, 0, 0)
   end

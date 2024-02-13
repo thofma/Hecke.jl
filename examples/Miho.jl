@@ -55,7 +55,7 @@ function INB(K::AbsSimpleNumField)
 
   phi = function(x::AbsSimpleNumFieldElem)
     c = matrix(coordinates(x))
-    s = Solve.solve(trafo, c; side = :right)
+    s = solve(trafo, c; side = :right)
     return sum(s[i,1]*z^(i-1) for i=1:p)
   end
 

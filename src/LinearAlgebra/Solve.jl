@@ -206,7 +206,7 @@ end
 # - extend to non-unique solutions
 # - make Aip*D mult faster, A*y as well?
 #
-function solve_dixon(A::Generic.Mat{AbsSimpleNumFieldElem}, B::Generic.Mat{AbsSimpleNumFieldElem})
+function _solve_dixon(A::Generic.Mat{AbsSimpleNumFieldElem}, B::Generic.Mat{AbsSimpleNumFieldElem})
   p = next_prime(p_start)
   K = base_ring(A)
 

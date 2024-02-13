@@ -13,7 +13,7 @@ function slope_eigenspace(M::MatElem{T}) where T <: Hecke.NonArchLocalFieldElem
   zk = maximal_order(k)
 
   for f = keys(lf)
-    se[f] = Solve.kernel(f(M); side = :right) #hopefully, this is in rref
+    se[f] = kernel(f(M); side = :right) #hopefully, this is in rref
   end
   @assert sum(ncols(x) for x = values(se)) == nrows(M)
   return se
@@ -30,7 +30,7 @@ function _intersect(M::MatElem{T}, N::MatElem{T}) where T <: Hecke.FieldElem
     end
   end
 
-  v = Solve.kernel(I; side = :right) #precision issues...
+  v = kernel(I; side = :right) #precision issues...
   l = M*v[1:ncols(M), 1:ncols(v)]
   return transpose(rref(transpose(l))[2])
 end

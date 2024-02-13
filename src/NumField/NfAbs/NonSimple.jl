@@ -851,7 +851,7 @@ function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check = 
   for i = 1:n
     elem_to_mat_row!(N, i, g[i])
   end
-  s = Solve.solve(transpose(M), transpose(N); side = :right)
+  s = solve(transpose(M), transpose(N); side = :right)
   b = basis(Ka)
   emb = Vector{AbsSimpleNumFieldElem}(undef, n)
   for i = 1:n

@@ -741,7 +741,7 @@ function simple_extension(K::RelNonSimpleNumField{T}; simplified::Bool = false, 
   emb = Vector{RelSimpleNumFieldElem{T}}(undef, n)
   for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
-    s = Solve.solve(transpose(M), transpose(N); side = :right)
+    s = solve(transpose(M), transpose(N); side = :right)
     emb[i] = zero(Ka)
     for j = 1:degree(Ka)
       emb[i] += b1[j]*s[j, 1]

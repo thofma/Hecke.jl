@@ -31,7 +31,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPol
       end
       b = zero_matrix(base_ring(base_ring(R)), 1, degree(R.modulus))
       elem_to_mat_row!(b, 1, a)
-      s = solve_rational(Mt', b') # why, oh why is solve operating on columns????
+      s = Nemo._solve_rational(Mt', b') # why, oh why is solve operating on columns????
       # This is the worst
       if isa(s, Tuple) ## again, why, oh why is solve doing things differently
                    ## over rings than fields?
@@ -72,7 +72,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPol
       end
       b = zero_matrix(base_ring(base_ring(R)), 1, degree(R.modulus))
       elem_to_mat_row!(b, 1, a)
-      s = solve_rational(Mt', b') # why, oh why is solve operating on columns????
+      s = Nemo._solve_rational(Mt', b') # why, oh why is solve operating on columns????
       # This is the worst
       if isa(s, Tuple) ## again, why, oh why is solve doing things differently
                    ## over rings than fields?

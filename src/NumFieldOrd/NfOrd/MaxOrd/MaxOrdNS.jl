@@ -250,7 +250,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
         A[i, s+nr] = R(M1[s, i])
       end
     end
-    X = right_kernel_basis(A)
+    X = _right_kernel_basis(A)
     if isempty(X)
       I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)

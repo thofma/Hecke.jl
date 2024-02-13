@@ -52,7 +52,7 @@ function has_preimage_with_preimage(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
   end
 
   m = vcat(M.map, rels(codomain(M)))
-  fl, p = Solve.can_solve_with_solution(m, a.coeff, side = :left)
+  fl, p = can_solve_with_solution(m, a.coeff, side = :left)
 
   if fl
     return true, FinGenAbGroupElem(domain(M), view(p, 1:1, 1:ngens(domain(M))))
@@ -84,10 +84,10 @@ function has_preimage_with_preimage(M::FinGenAbGroupHom, a::Vector{FinGenAbGroup
     isdefined(H, :exponent) && G.exponent == H.exponent
     e = G.exponent
     RR = Native.GF(Int(e))
-    fl, p = Solve.can_solve_with_solution(map_entries(RR, m), map_entries(RR, reduce(vcat, [x.coeff for x = a])), side = :left)
+    fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, reduce(vcat, [x.coeff for x = a])), side = :left)
     p = map_entries(x -> lift(x), p)
   else
-    fl, p = Solve.can_solve_with_solution(m, reduce(vcat, [x.coeff for x = a]), side = :left)
+    fl, p = can_solve_with_solution(m, reduce(vcat, [x.coeff for x = a]), side = :left)
   end
 
   if fl
@@ -113,7 +113,7 @@ function has_image_with_image(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
   end
 
   m = vcat(M.imap, rels(domain(M)))
-  fl, p = Solve.can_solve_with_solution(m, a.coeff, side = :left)
+  fl, p = can_solve_with_solution(m, a.coeff, side = :left)
   if fl
     return true, codomain(M)(view(p, 1:1, 1:ngens(codomain(M))))
   else

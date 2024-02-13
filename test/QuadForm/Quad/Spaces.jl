@@ -475,7 +475,7 @@
                                                        # in the ambient, so its basis is fixed
                                                        # by projection
 
-    B = Hecke.Solve.kernel(pr.matrix, side = :left)
+    B = Hecke.kernel(pr.matrix, side = :left)
     @test nrows(B) == 4
     Msup = lattice(ambient_space(L), B)
     @test is_sublattice(Msup, M) # A priori the kernel is bigger since M is integral

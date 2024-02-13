@@ -1198,7 +1198,7 @@ function maximal_central_subfield(A::ClassField; stable::Int = 3, lower_bound::I
     end
     lp = prime_decomposition(ZK, p)
     n = matrix(ZZ, 1, length(lp), [degree(P[1]) for P = lp])
-    k = Solve.kernel(n; side = :right)
+    k = kernel(n; side = :right)
     S = [prod((lp[j][1]//1)^k[j, i] for j = 1:length(lp)) for i=1:ncols(k)]
     s = [mQ(preimage(mN, numerator(p))- preimage(mN, denominator(p)*ZK)) for p = S]
     if all(iszero, s)

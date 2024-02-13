@@ -171,7 +171,7 @@ function pmaximal_sublattices(L::ModAlgAssLat, p::Int; filter = nothing, composi
           #k = add!(k ,k, v[i] * H[i])
         end
       end
-      K = Solve.kernel(k, side = :left)
+      K = kernel(k, side = :left)
       r = nrows(K)
       _, K = rref(K)
       K = vcat(K, zero_matrix(base_ring(K), ncols(K) - r, ncols(K)))

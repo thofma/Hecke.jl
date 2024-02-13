@@ -12,7 +12,7 @@ function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
     w = w*M
     res = Hecke.cleanvect(E, w)
   end
-  fl, c = Solve.can_solve_with_solution(v, w, side = :left)
+  fl, c = can_solve_with_solution(v, w, side = :left)
   @assert fl
   return v, c
 end
@@ -322,7 +322,7 @@ function find_invariant_complement(M::MatElem{T}, C::MatElem{T}) where T <: Fiel
       N[j, i] = ed[j, 1]
     end
   end
-  K = Solve.kernel(N, side = :left)
+  K = kernel(N, side = :left)
   return K*S
 end
 
@@ -345,7 +345,7 @@ end
 #The function returns a matrix representing the restriction of the linear map to the subspace
 function restriction(M::MatElem{T}, S::MatElem{T}) where T <: FieldElem
   TR = S*M
-  fl, R = Solve.can_solve_with_solution(S, TR, side = :left)
+  fl, R = can_solve_with_solution(S, TR, side = :left)
   if !fl
     error("The subspace is not invariant!")
   end
@@ -569,7 +569,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
       gMW = Hecke._subst(g, MW)
       kernels = Vector{typeof(M)}()
       push!(kernels, zero_matrix(base_ring(MW), 0, ncols(gMW)))
-      K = Solve.kernel(gMW, side = :left)
+      K = kernel(gMW, side = :left)
       rref!(K)
       push!(kernels, K)
       M1 = gMW
@@ -579,7 +579,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
           push!(kernels, identity_matrix(base_ring(MW), ncols(M1)))
           break
         end
-        K = Solve.kernel(M1, side = :left)
+        K = kernel(M1, side = :left)
         rref!(K)
         push!(kernels, K)
       end
@@ -738,7 +738,7 @@ end
 function _intersect(A::Hecke.MatElem{T}, B::Hecke.MatElem{T}) where T <: Hecke.FieldElem
   n = Hecke.nrows(A)
   M = Hecke.vcat(A, B)
-  N = Solve.kernel(M, side = :left)
+  N = kernel(M, side = :left)
   return view(N, 1:nrows(N), 1:n)*A
 end
 

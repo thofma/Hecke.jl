@@ -1907,7 +1907,7 @@ function locally_isometric_sublattice(M::QuadLat, L::QuadLat, p)
       while all(iszero, v)
         v = elem_type(k)[ rand(k) for i in 1:m ]
       end
-      KM = Solve.kernel(matrix(k, length(v), 1, v), side = :left)
+      KM = kernel(matrix(k, length(v), 1, v), side = :left)
       KM = map_entries(x -> E(h\x)::elem_type(E), KM)
       _new_pmat = _sum_modules(pseudo_matrix(KM * BM), pM)
       LL = lattice(ambient_space(M), _new_pmat)

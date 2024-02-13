@@ -661,7 +661,7 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
     M = basis_matrix(A, copy = false)
     d = prod(ZZRingElem[M[i, i] for i = 1:nrows(M)])
     v = matrix(FlintZZ, 1, nrows(M), coordinates(order(A)(d)))
-    fl, s = Solve.can_solve_with_solution(M, v, side = :left)
+    fl, s = can_solve_with_solution(M, v, side = :left)
     @assert fl
     den = denominator(s[1]//d)
     for i = 2:ncols(s)
@@ -2037,7 +2037,7 @@ function pradical_frobenius(O::AbsNumFieldOrder, p::IntegerUnion)
       A[k, i] = ar[k]
     end
   end
-  X = right_kernel_basis(A)
+  X = _right_kernel_basis(A)
   gens = elem_type(O)[O(p)]
   if isempty(X)
     I = ideal(O, p)

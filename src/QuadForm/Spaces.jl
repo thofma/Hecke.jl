@@ -60,12 +60,12 @@ function preimage(f::AbstractSpaceMor, L::ZZLat)
   V = domain(f)
   W = codomain(f)
   @req W === ambient_space(L) "L not in codomain"
-  ok, B = Solve.can_solve_with_solution(f.matrix, basis_matrix(L); side=:left)
+  ok, B = can_solve_with_solution(f.matrix, basis_matrix(L); side=:left)
   if !ok
     # intersect with the image
     L1 = intersect(lattice(W, f.matrix) , L)
     L2 = primitive_closure(L, L1)
-    ok, B = Solve.can_solve_with_solution(f.matrix, basis_matrix(L2); side=:left)
+    ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2); side=:left)
     @assert ok
   end
   return lattice(V, B)
@@ -290,7 +290,7 @@ Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the s
 """
 function orthogonal_basis(V::AbstractSpace)
   G = gram_matrix(V)
-  Rad = Solve.kernel(G, side = :left)
+  Rad = kernel(G, side = :left)
   r = nrows(Rad)
   if r > 0
     basis_nondeg = _basis_complement(Rad)
@@ -657,7 +657,7 @@ matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbstractSpace, M::MatElem)
   N = gram_matrix(V) * _map(transpose(M), involution(V))
-  K = Solve.kernel(N, side = :left)
+  K = kernel(N, side = :left)
   return K
 end
 

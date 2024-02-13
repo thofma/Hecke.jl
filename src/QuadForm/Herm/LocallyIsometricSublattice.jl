@@ -267,7 +267,7 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
       while all(Bool[iszero(v[i]) for i in 1:m])
         v = elem_type(k)[ rand(k) for i in 1:m ]
       end
-      _KM = Solve.kernel(matrix(k, length(v), 1, v), side = :left)
+      _KM = kernel(matrix(k, length(v), 1, v), side = :left)
       KM = map_entries(x -> E(h\x), _KM)
       _new_pmat = _sum_modules(pseudo_matrix(KM * BBM), pM)
       LL = lattice(ambient_space(M), _new_pmat)

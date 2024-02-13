@@ -187,7 +187,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
       end
       pr, pos = iterate(sp, pos)
     end
-    fl, sol = Solve.can_solve_with_solution(dl, dx; side = :right)
+    fl, sol = can_solve_with_solution(dl, dx; side = :right)
     @assert fl
     return Sel(map(lift, vec(collect(sol))))
   end

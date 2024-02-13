@@ -643,7 +643,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   # for all a in the kernel
   R = residue_ring(FlintZZ, C.n, cached=false)[1]
   M = change_base_ring(R, mk.map)
-  l = Solve.kernel(M; side = :right)
+  l = kernel(M; side = :right)
   n = lift(l)
   e1 = degree(CF)
   N = FinGenAbGroup(ZZRingElem[ZZRingElem(e1) for j=1:nrows(n)])

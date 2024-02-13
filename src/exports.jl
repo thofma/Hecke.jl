@@ -195,6 +195,7 @@ export c_invars
 export can_scale_totally_positive
 export can_solve
 export can_solve_with_solution
+export can_solve_with_solution_and_kernel
 export canonical_divisor
 export canonical_height
 export canonical_injection
@@ -613,7 +614,6 @@ export jordan_decomposition
 export jordan_normal_form
 export k3_lattice
 export kernel
-export kernel_basis
 export kernel_group
 export kernel_lattice
 export kissing_number
@@ -877,6 +877,7 @@ export small_group
 export snf
 export snf_with_transform
 export solve
+export solve_init
 export solvemod
 export sparse
 export sparse_matrix

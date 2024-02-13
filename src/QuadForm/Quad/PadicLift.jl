@@ -166,7 +166,7 @@ function _solve_X(Y::fpMatrix, b, g)
   n = ncols(Y)
   # A*Xcoeff == c
   A, c = _solve_X_get_A_and_c(Y, b, g)
-  fl, Xcoeff = Solve.can_solve_with_solution(A, c, side=:right)
+  fl, Xcoeff = can_solve_with_solution(A, c, side=:right)
   @assert fl
   X = matrix(k, n, n, reshape(collect(transpose(Xcoeff)), :))
   # confirm the computation
@@ -183,7 +183,7 @@ function _solve_X_ker(Y::fpMatrix, b, g)
   n = ncols(Y)
   A, c = _solve_X_get_A_and_c(Y, b, g)
   Ker = dense_matrix_type(k)[]
-  K = Solve.kernel(A; side = :right)
+  K = kernel(A; side = :right)
   for i in 1:ncols(K)
     tmp = vec(collect(K[:,i]))
     X = matrix(k, n, n, tmp)

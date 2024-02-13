@@ -14,7 +14,7 @@ function _defines_lattice(V::ModAlgAss{QQField}, O, B)
     d1 = denominator(BT)
     d2 = denominator(B)
     d = lcm(d1, d2)
-    if !Solve.can_solve(change_base_ring(ZZ, d*B), change_base_ring(ZZ, (d * BT)), side = :left)
+    if !can_solve(change_base_ring(ZZ, d*B), change_base_ring(ZZ, (d * BT)), side = :left)
       return false
     end
   end
@@ -184,7 +184,7 @@ function intersect(L::T, M::T) where {T <: ModAlgAssLat}
   BMint = change_base_ring(FlintZZ, d * BM)
   BNint = change_base_ring(FlintZZ, d * BN)
   H = vcat(BMint, BNint)
-  K = Solve.kernel(H, side = :left)
+  K = kernel(H, side = :left)
   BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return lattice(L.V, L.base_ring, BI)
 end
@@ -357,5 +357,5 @@ function is_subset(L::ModAlgAssLat, M::ModAlgAssLat)
   dL = denominator(BL)
   dM = denominator(BM)
   d = lcm(dL, dM)
-  return Solve.can_solve(map_entries(ZZ, d * BM), map_entries(ZZ, d * BL), side = :left)
+  return can_solve(map_entries(ZZ, d * BM), map_entries(ZZ, d * BL), side = :left)
 end

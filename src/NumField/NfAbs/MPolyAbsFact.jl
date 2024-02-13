@@ -741,7 +741,7 @@ function combination(RC::RootCtx)
 
     nn = vcat(nn, mn)
 
-    ke = Hecke.Solve.kernel(nn; side = :right)
+    ke = Hecke.kernel(nn; side = :right)
     @vprintln :AbsFact 2 "current kernel dimension: $(ncols(ke))"
     if last_rank == ncols(ke)
       bad += 1
@@ -1090,7 +1090,7 @@ function field(RC::RootCtx, m::MatElem)
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
       n = transpose(matrix([[coeff(x, j)] for x = fl]))
-      s = Hecke.Solve.solve(m, transpose(n); side = :right)
+      s = Hecke.solve(m, transpose(n); side = :right)
       @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
       s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
       if !all(x->x[1], s)

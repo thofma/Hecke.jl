@@ -1,4 +1,4 @@
-function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
+function _can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)
   @hassert :HNF 2  is_upper_triangular(A)
@@ -41,8 +41,8 @@ function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModR
   return sol
 end
 
-function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
-  fl, sol = can_solve_ut(A, g)
+function _solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
+  fl, sol = _can_solve_ut(A, g)
   @assert fl
   return sol
 end
@@ -85,7 +85,7 @@ function rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem)
   return true, B, de
 end
 
-function solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
+function _solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
   @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
 
@@ -111,13 +111,13 @@ function solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
   return sol, den
 end
 
-function solve_ut(A::SMat{ZZRingElem}, b::SMat{ZZRingElem})
+function _solve_ut(A::SMat{ZZRingElem}, b::SMat{ZZRingElem})
   @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
   d = ZZRingElem(1)
   r = sparse_matrix(FlintZZ)
   for i = b
-    x, dx = solve_ut(A, i)
+    x, dx = _solve_ut(A, i)
     nd = lcm(d, dx)
     if nd != d
       dd = div(nd, d)
@@ -153,7 +153,7 @@ function det_mc(A::SMat{ZZRingElem})
   end
 
   b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
-  _, qq = solve_dixon_sf(A, b)
+  _, qq = __solve_dixon_sf(A, b)
 
   q = p_start # global prime
   first = true
@@ -224,8 +224,8 @@ function echelon_with_transform(A::SMat{zzModRingElem})
 end
 
 @doc raw"""
-    solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false) -> SRow{ZZRingElem}, ZZRingElem
-    solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false) -> SMat{ZZRingElem}, ZZRingElem
+    __solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false) -> SRow{ZZRingElem}, ZZRingElem
+    __solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false) -> SMat{ZZRingElem}, ZZRingElem
 
 For a sparse square matrix $A$ of full rank and a sparse matrix (row), find
 a sparse matrix (row) $x$ and an integer $d$ s.th.
@@ -235,14 +235,14 @@ The algorithm is a Dixon-based linear p-adic lifting method.
 If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
 rational reconstruction is avoided.
 """
-function solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false)
+function __solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false)
   B = sparse_matrix(FlintZZ)
   push!(B, b)
-  s, d = solve_dixon_sf(A, B, is_int)
+  s, d = __solve_dixon_sf(A, B, is_int)
   return s[1], d
 end
 
-function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
+function __solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
   R = residue_ring(FlintZZ, p, cached = false)[1]
@@ -289,7 +289,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
 
     while true
       bp = bp * Tp
-      zp = solve_ut(Ep, bp)
+      zp = _solve_ut(Ep, bp)
       z = lift(zp)
 
       sol += pp*z

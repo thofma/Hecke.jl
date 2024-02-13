@@ -328,7 +328,7 @@ function radical_basis_power(O::Order, p::RingElem)
       m[j,i] = mF(O.R(c[j]))
     end
   end
-  B = Solve.kernel(m; side = :right)
+  B = kernel(m; side = :right)
 
   M2 = B'
   M2 = map_entries(x->preimage(mF, x), M2)
@@ -349,7 +349,7 @@ function radical_basis_trace(O::Order, p::RingElem)
   end
 
   TT = map_entries(mR, T)
-  B = Solve.kernel(TT; side = :right)
+  B = kernel(TT; side = :right)
   M2 = map_entries(x->preimage(mR, x), B)'
   M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
@@ -408,7 +408,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
       end
     end
   end
-  B = Solve.kernel(m; side = :right)
+  B = kernel(m; side = :right)
 
   M2 = B'
   M2 = map_entries(x->preimage(mF, x), M2)

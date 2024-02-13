@@ -547,8 +547,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
     for j = 1:n
       t = mul!(t, quotient_basis[i], quotient_basis[j])
       elem_to_mat_row!(s, 1, t)
-      fl, y = can_solve_with_solution(N, s, side = :left)
-      @assert fl
+      y = solve(N, s, side = :left)
       mult_table[i, j, :] = [ y[1, k] for k = 1:n ]
     end
   end
@@ -558,7 +557,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(M)}(A, B)
 
   function _image(x::AbstractAssociativeAlgebraElem)
-    t, y = Solve.can_solve_with_solution(N, matrix(K, 1, dim(A), coefficients(x, copy = false)), side = :left)
+    t, y = can_solve_with_solution(N, matrix(K, 1, dim(A), coefficients(x, copy = false)), side = :left)
     if t
       return B([ y[1, i] for i in 1:dim(B) ])
     else

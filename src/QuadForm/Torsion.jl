@@ -43,7 +43,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
     gens_in_A = elem_type(A)[]
     for g in gens
       @req length(g) == n "Generator not an element of the ambient space"
-      fl, v = Solve.can_solve_with_solution(BM,
+      fl, v = can_solve_with_solution(BM,
                                       matrix(FlintQQ, 1, n, g);
                                       side = :left)
       @req denominator(v) == 1 "Generator not an element of the lattice"
@@ -349,7 +349,7 @@ end
 function (T::TorQuadModule)(v::Vector{QQFieldElem})
   @req length(v) == degree(cover(T)) "Vector of wrong length"
   vv = matrix(FlintQQ, 1, length(v), v)
-  vv = change_base_ring(ZZ, Solve.solve(basis_matrix(cover(T)), vv; side = :left))
+  vv = change_base_ring(ZZ, solve(basis_matrix(cover(T)), vv; side = :left))
   return T(abelian_group(T)(vv * T.proj))
 end
 
@@ -1499,7 +1499,7 @@ function radical_quadratic(T::TorQuadModule)
   G = gram_matrix_quadratic(Kb)*1//modulus_bilinear_form(Kb)
   F = Native.GF(2; cached=false)
   G2 = matrix(F, nrows(G), 1, F.(diagonal(G)))
-  kermat = Solve.kernel(G2, side = :left)
+  kermat = kernel(G2, side = :left)
   kermat = lift(kermat)
   g = gens(Kb)
   n = length(g)

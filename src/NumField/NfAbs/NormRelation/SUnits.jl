@@ -508,7 +508,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
         end
       end
     end
-    K = Solve.kernel(z, side = :left)
+    K = kernel(z, side = :left)
     for i in 1:nrows(K)
       if is_zero_row(K, i)
         continue
