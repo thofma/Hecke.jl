@@ -293,7 +293,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
       @assert ok != 0
       if !ram
         el = order(p)(base_field(K)(nrm)//pi)
-        b, s, V = can_solve_with_kernel(Tram, matrix(kp, 1, 1, [hp(-el)]), side = :left)
+        b, s, V = can_solve_with_solution_and_kernel(Tram, matrix(kp, 1, 1, [hp(-el)]), side = :left)
         @assert b
         @assert s * Tram == matrix(kp, 1, 1, [hp(-el)])
         _kernel = [ matrix(kp, 1, 2, v) for v in _all_row_span(V)]
@@ -670,7 +670,7 @@ function genus_representatives(L::HermLat; max=inf, use_auto::Bool = true,
     # S. Brandhorst Al. Cattaneo, the set of isometry classes in
     # the genus of L is in bijection with the quotient J/J_0.
     #
-    # We denote by s the generator of Gal(E/K), 
+    # We denote by s the generator of Gal(E/K),
     # by J the set of fractional ideals I of O_E such that I*s(I) = O_E
     # and by J_0 = {e O_E | e \in E: e*s(e) = 1 }.
     # To compute representatives of classes in J/J_0, we use the bijection
