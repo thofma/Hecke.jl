@@ -900,7 +900,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
   if r == 0
     if return_LU == Val{true}
       #return Array{elem_type(K), 3}(undef, 0, 0, 0),  SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0), LinearSolveCtx{typeof(B)}
-      return Array{elem_type(K), 3}(undef, 0, 0, 0), LinearSolveCtx{typeof(B)}()
+      return Array{elem_type(K), 3}(undef, 0, 0, 0), solve_init(B)
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
     end
@@ -913,7 +913,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
 
   Btr = transpose(B)
   #_, p, L, U = lu(Btr)
-  LL = solve_context(Btr, side = :right)
+  LL = solve_init(Btr)
 
   iscom = is_commutative || Hecke.is_commutative(A)
 
@@ -935,7 +935,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
       #d = solve_lt(L, d)
       #d = solve_ut(U, d)
       #@assert Btr * d == mc
-      fl,dd = solve(LL, c.coeffs)
+      fl, dd = can_solve_with_solution(LL, c.coeffs, side = :right)
       @assert fl
       for k = 1:r
         #@assert dd[k] == d[k, 1]
