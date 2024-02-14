@@ -156,7 +156,7 @@ function _local_factor_cho(L, p)
 
   for s in S
     AG = diagonal_matrix(eltype(G)[2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
-    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
+    B = kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]), side = :left)
     @assert all(is_square(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
@@ -182,13 +182,13 @@ function _local_factor_cho(L, p)
 
     @assert matrix(k, length(BB), length(BB), [ (b * Q * transpose(c))[1, 1] + (c * Q * transpose(b))[1, 1] for b in BB, c in BB]) == Q + transpose(Q)
 
-    _, N = left_kernel(Q + transpose(Q))
+    N = kernel(Q + transpose(Q), side = :left)
     ok = is_diagonal(N * Q * transpose(N))
     @assert ok
     D = diagonal(N * Q * transpose(N))
 
     @assert ok
-    _, rad = left_kernel(matrix(k, length(D), 1, D))
+    rad = kernel(matrix(k, length(D), 1, D), side = :left)
 
     rad = rad * N
 

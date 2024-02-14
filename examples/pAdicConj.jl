@@ -25,7 +25,7 @@ function mult_syzygies_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
       continue
     end
     lv = vcat(lu, la[i])
-    k = Hecke.left_kernel_basis(lv)
+    k = Hecke._left_kernel_basis(lv)
     @assert length(k) < 2
     if length(k) == 0
       println("new at $i")

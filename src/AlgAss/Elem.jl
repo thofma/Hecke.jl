@@ -408,7 +408,7 @@ function is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeA
     return false, A()
   end
 
-  vc = solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
+  vc = _solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
   return true, A([ vc[i, 1] for i = 1:dim(A) ])
 end
 

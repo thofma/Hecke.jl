@@ -18,7 +18,7 @@ module Strassen
 using Hecke
 using LinearAlgebra, Profile, Base.Intrinsics
 import Hecke.AbstractAlgebra, Hecke.Nemo
-import Hecke.Nemo: add!, mul!, zero!, sub!, solve_triu!, solve_tril!
+import Hecke.Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_triu!, AbstractAlgebra._solve_tril!
 
 const cutoff = 1500
 

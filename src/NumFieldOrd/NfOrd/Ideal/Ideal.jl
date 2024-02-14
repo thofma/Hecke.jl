@@ -2037,7 +2037,7 @@ function pradical_frobenius(O::AbsNumFieldOrder, p::IntegerUnion)
       A[k, i] = ar[k]
     end
   end
-  X = right_kernel_basis(A)
+  X = _right_kernel_basis(A)
   gens = elem_type(O)[O(p)]
   if isempty(X)
     I = ideal(O, p)

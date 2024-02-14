@@ -2,7 +2,7 @@ module NormRel
 
 using Hecke
 
-import Hecke: one, can_solve_with_kernel, lcm!, simplify, NfFactorBase, morphism_type
+import Hecke: one, can_solve_with_solution_and_kernel, kernel, lcm!, simplify, NfFactorBase, morphism_type
 
 add_verbosity_scope(:NormRelation)
 add_assertion_scope(:NormRelation)

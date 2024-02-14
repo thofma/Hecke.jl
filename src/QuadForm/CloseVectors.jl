@@ -227,7 +227,7 @@ Converts a quadratic triple QT = [Q, K, d] to the input values required for clos
 function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: RingElem
   @req all(G[i,i]>0 for i in 1:nrows(G)) "G must be positive definite"  #cheap sanity check
   Q = G
-  vector = -solve(Q, K) #-inv(Q) * K
+  vector = -solve(Q, K; side = :right) #-inv(Q) * K
   upperbound = (transpose(vector) * Q * vector)[1,1] - d
   Lattice = integer_lattice(gram = Q, check=false)
   return Lattice, vector, upperbound

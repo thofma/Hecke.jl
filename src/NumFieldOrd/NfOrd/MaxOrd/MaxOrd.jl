@@ -345,9 +345,9 @@ function _radical_by_trace(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
   R = residue_ring(FlintZZ, q, cached=false)[1]
-  k, B = kernel(trace_matrix(O), R)
+  B = kernel(R, trace_matrix(O); side = :right)
   M2 = zero_matrix(FlintZZ, d, d)
-  for i = 1:k
+  for i = 1:ncols(B)
     for j = 1:d
       na = lift(B[j, i])
       if q != na && !iszero(na) && !isone(gcd(na, q))
@@ -357,7 +357,7 @@ function _radical_by_trace(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
     end
   end
   gens = elem_type(O)[O(q)]
-  for i=1:k
+  for i=1:ncols(B)
     push!(gens, elem_from_mat_row(O, M2, i))
   end
   hnf_modular_eldiv!(M2, q, :lowerleft)
@@ -789,7 +789,7 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
         A[i, s+nr] = R(M1[s, i])
       end
     end
-    X = right_kernel_basis(A)
+    X = _right_kernel_basis(A)
     if isempty(X)
       I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
@@ -886,7 +886,7 @@ function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
       A[i, s+nr] = R(M1[s, i])
     end
   end
-  X = right_kernel_basis(A)
+  X = _right_kernel_basis(A)
   gens = elem_type(O)[O(p), gen2]
   if isempty(X)
     I = ideal(O, p, gen2)
@@ -945,13 +945,13 @@ function pradical_trace1(O::AbsSimpleNumFieldOrder, p::IntegerUnion)
   hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   I1 = ideal(O, p, gen2)
   I1.basis_matrix = M1
-  k, B = kernel(M, F)
-  if iszero(k)
+  B = kernel(F, M; side = :right)
+  if iszero(ncols(B))
     return ideal(O, p)
   end
 
   gens = AbsSimpleNumFieldOrderElem[O(p), gen2]
-  for i = 1:k
+  for i = 1:ncols(B)
     coords = Vector{ZZRingElem}(undef, d)
     for j = 1:d
       coords[j] = lift(B[j, i])

@@ -509,7 +509,7 @@ function minpoly_sparse(a::RelNonSimpleNumFieldElem)
   f = kt()
   while true
     if n % i == 0
-      fl, so = can_solve_with_solution(M, sz)
+      fl, so = can_solve_with_solution(M, sz) # sparse
       if fl
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
@@ -741,7 +741,7 @@ function simple_extension(K::RelNonSimpleNumField{T}; simplified::Bool = false, 
   emb = Vector{RelSimpleNumFieldElem{T}}(undef, n)
   for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
-    s = solve(transpose(M), transpose(N))
+    s = solve(transpose(M), transpose(N); side = :right)
     emb[i] = zero(Ka)
     for j = 1:degree(Ka)
       emb[i] += b1[j]*s[j, 1]

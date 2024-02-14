@@ -8,7 +8,7 @@
       A = rand(matrix_space(K, 4, 4), 10:100)
     end
     b = rand(matrix_space(K, 4 ,1), 10:100)
-    @test A * Hecke.solve_dixon(A, b) == b
+    @test A * Hecke._solve_dixon(A, b) == b
   end
 
   @testset "Pseudo matrices" begin

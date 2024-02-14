@@ -103,7 +103,7 @@ function check_index(M::ModuleCtx_fmpz)
 
   for i=length(M.rel_reps_p)+1:length(M.rel_gens)
     reduce(C, M.rel_gens[i], d)
-    push!(M.rel_reps_p, solve_ut(M.Mp.basis, change_base_ring(M.Mp.R, M.rel_gens[i])))
+    push!(M.rel_reps_p, _solve_ut(M.Mp.basis, change_base_ring(M.Mp.R, M.rel_gens[i])))
   end
 
 #=

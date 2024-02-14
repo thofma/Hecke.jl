@@ -61,4 +61,8 @@
     (a*x*t*u*w+(e3+1)*y*z^2*v^2)*(a*x*z*u*v+(e3+1)*y*t^2*w^2)*
     (a*x*t*u*v+(-e3-1)*y*z^2*w^2)*(a*x*t*u*w+(-e3-1)*y*z^2*v^2))
 
+   QQxy, (x, y) = QQ["x", "y"]
+   f = (x^3+5*y^3)*(x^2+2*y^2)
+   # not a real test, just check that it does not crash
+   @test length(factor_absolute(f)) == 3
 end

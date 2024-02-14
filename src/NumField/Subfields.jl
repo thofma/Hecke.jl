@@ -333,11 +333,11 @@ function fixed_field(K::AbsSimpleNumField, A::Vector{<:NumFieldHom{AbsSimpleNumF
     return K, id_hom(K)
   else
     bigmatrix = reduce(hcat, ar_mat)
-    k, Ker = kernel(bigmatrix, side = :left)
-    bas = Vector{elem_type(K)}(undef, k)
+    Ker = kernel(bigmatrix, side = :left)
+    bas = Vector{elem_type(K)}(undef, nrows(Ker))
     if simplify
       KasFMat = _improve_subfield_basis(K, Ker)
-      for i in 1:k
+      for i in 1:nrows(Ker)
         bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
       end
     else
@@ -346,7 +346,7 @@ function fixed_field(K::AbsSimpleNumField, A::Vector{<:NumFieldHom{AbsSimpleNumF
       Ksat = saturate(KasFMat.num)
       Ksat = lll(Ksat)
       onee = one(ZZRingElem)
-      for i in 1:k
+      for i in 1:nrows(Ker)
         #bas[i] = elem_from_mat_row(K, KasFMat.num, i, KasFMat.den)
         bas[i] = elem_from_mat_row(K, Ksat, i, onee)
       end
@@ -396,9 +396,9 @@ function fixed_field(K::RelSimpleNumField, A::Vector{T}; simplify::Bool = true) 
     return K, id_hom(K)
   else
     bigmatrix = reduce(hcat, ar_mat)
-    k, Ker = kernel(bigmatrix, side = :left)
-    bas = Vector{elem_type(K)}(undef, k)
-    for i in 1:k
+    Ker = kernel(bigmatrix, side = :left)
+    bas = Vector{elem_type(K)}(undef, nrows(Ker))
+    for i in 1:nrows(Ker)
       bas[i] = elem_from_mat_row(K, Ker, i)
     end
   end
@@ -466,9 +466,8 @@ function fixed_field1(K::AbsSimpleNumField, auts::Vector{<:NumFieldHom{AbsSimple
     end
 		_copy_matrix_into_matrix(M, 1, (i-1)*degree(K)+1, B.num)
 	end
-	@vtime :Subfields 1 rk, Ker = kernel(M, side = :left)
-  @assert rk == degree_subfield
-  Ker = view(Ker, 1:rk, 1:degree(K))
+	@vtime :Subfields 1 Ker = kernel(M, side = :left)
+  @assert nrows(Ker) == degree_subfield
   @vtime :Subfields 1 Ker = lll(Ker)
 	#The kernel is the maximal order of the subfield.
   bas = Vector{AbsSimpleNumFieldElem}(undef, degree_subfield)

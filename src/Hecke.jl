@@ -77,6 +77,8 @@ import AbstractAlgebra: get_cached!, @alias
 
 import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent
 
+import AbstractAlgebra: Solve
+
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
@@ -94,7 +96,7 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!,]
+           :set_entry!,]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue

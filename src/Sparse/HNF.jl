@@ -192,7 +192,7 @@ function saturate(A::SMat{ZZRingElem})
   Hti = transpose(hnf(transpose(A)))
   Hti = sub(Hti , 1:nrows(Hti), 1:nrows(Hti))
   Hti = transpose(Hti)
-  S, s = solve_ut(Hti, transpose(A))
+  S, s = _solve_ut(Hti, transpose(A))
   @assert isone(s)
   SS = transpose(S)
   return SS

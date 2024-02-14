@@ -129,9 +129,8 @@ function _p_adic_symbol(A::ZZMatrix, p::ZZRingElem, val::Int)
   A = divexact(A, q)
   Fp = Native.GF(p)
   A_p = change_base_ring(Fp, A)
-  bp, B_p = left_kernel(A_p)
+  B_p = kernel(A_p, side = :left)
   rref!(B_p)
-  B_p = B_p[1:bp, 1:end]
   if nrows(B_p) == 0
     e0 = _kronecker_symbol(lift(det(A_p)),p)
     return Vector{Int}[Int[m0, n, e0]]
@@ -198,12 +197,11 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   q = ZZ(2)^m0
   A = divexact(A, q)
   A_2 = change_base_ring(Native.GF(2), A)
-  k2, B_2 = left_kernel(A_2)
+  B_2 = kernel(A_2, side = :left)
   rref!(B_2)
-  B_2 = B_2[1:k2,1:end]
   R_8 = residue_ring(ZZ, 8)[1]
   # deal with the matrix being non-degenerate mod 2.
-  if k2 == 0
+  if nrows(B_2) == 0
     d0 = mod(det(A), 8)
     @assert d0 != 0    # SANITY CHECK: The mod 8 determinant shouldn't be zero.
     even, i = _iseven(A)    # Determine whether the matrix is even || odd.

@@ -121,7 +121,7 @@ function find_one(A::StructureConstantAlgebra)
   if n != 1 && !iszero(Mc[n + 1, n + 1])
     return false, zeros(base_ring(A), n)
   end
-  cc = solve_ut(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
+  cc = _solve_ut(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
   one = elem_type(base_ring(A))[ cc[i, 1] for i = 1:n ]
   return true, one
 end
@@ -900,7 +900,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
   if r == 0
     if return_LU == Val{true}
       #return Array{elem_type(K), 3}(undef, 0, 0, 0),  SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0), LinearSolveCtx{typeof(B)}
-      return Array{elem_type(K), 3}(undef, 0, 0, 0), LinearSolveCtx{typeof(B)}()
+      return Array{elem_type(K), 3}(undef, 0, 0, 0), solve_init(B)
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
     end
@@ -913,7 +913,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
 
   Btr = transpose(B)
   #_, p, L, U = lu(Btr)
-  LL = solve_context(Btr, side = :right)
+  LL = solve_init(Btr)
 
   iscom = is_commutative || Hecke.is_commutative(A)
 
@@ -932,11 +932,10 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
       #_d = deepcopy(d)
       #mc = matrix(K, length(c.coeffs), 1, c.coeffs)
       #@assert can_solve_with_solution(Btr, mc)[1]
-      #d = solve_lt(L, d)
-      #d = solve_ut(U, d)
+      #d = _solve_lt(L, d)
+      #d = _solve_ut(U, d)
       #@assert Btr * d == mc
-      fl,dd = solve(LL, c.coeffs)
-      @assert fl
+      dd = solve(LL, c.coeffs, side = :right)
       for k = 1:r
         #@assert dd[k] == d[k, 1]
         mult_table[i, j, k] = dd[k]
@@ -991,14 +990,13 @@ function subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T,
     # for k = 1:n
     #   d[p[k], 1] = e.coeffs[k]
     # end
-    # d = solve_lt(L, d)
-    # d = solve_ut(U, d)
+    # d = _solve_lt(L, d)
+    # d = _solve_ut(U, d)
     # v = Vector{elem_type(R)}(undef, r)
     # for i in 1:r
     #   v[i] = d[i, 1]
     # end
-    fl, vv = solve(LL, e.coeffs)
-    @assert fl
+    vv = solve(LL, e.coeffs, side = :right)
     #@assert v == vv[1:r]
     eA = StructureConstantAlgebra(R, mult_table, vv[1:r])
   else
@@ -1019,10 +1017,9 @@ function subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T,
       #for k = 1:n
       #  d[p[k], 1] = B2[i, k]
       #end
-      #d = solve_lt(L, d)
-      #d = solve_ut(U, d)
-      fl, dd = solve(LL, [B2[i, k] for k in 1:n])
-      @assert fl
+      #d = _solve_lt(L, d)
+      #d = _solve_ut(U, d)
+      dd = solve(LL, [B2[i, k] for k in 1:n], side = :right)
       #@assert [d[i, 1] for i in 1:nrows(d)] == dd
       for k in 1:r
         C[i, k] = dd[k]
@@ -1216,7 +1213,7 @@ function _find_idempotent_via_non_squarefree_poly(A::StructureConstantAlgebra{T}
   end
   MN = hcat(transpose(M), N)
   r = rref!(MN)
-  be = solve_ut(sub(MN, 1:r, 1:dim(bA)), sub(MN, 1:r, (dim(bA) + 1):(dim(bA) + 1)))
+  be = _solve_ut(sub(MN, 1:r, 1:dim(bA)), sub(MN, 1:r, (dim(bA) + 1):(dim(bA) + 1)))
   e = bAtoA(bA([ be[i, 1] for i = 1:dim(bA) ]))
   return e
 end
@@ -1341,7 +1338,7 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     M4 = representation_matrix(bb - one(eAe), :right)
 
     M = hcat(M1, M2, M3, M4)
-    xx = eAe(left_kernel_basis(M)[1])
+    xx = eAe(_left_kernel_basis(M)[1])
     x = m1(m2(xx))
 
     new_basis[1 + (i - 1)*k] = x # this is e_1i
@@ -1358,7 +1355,7 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(aa)))
-    b, yy = can_solve_with_solution(transpose(N), NN)
+    b, yy = can_solve_with_solution(transpose(N), NN; side = :right)
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 

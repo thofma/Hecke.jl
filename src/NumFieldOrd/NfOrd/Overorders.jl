@@ -1123,7 +1123,7 @@ function intersect(x::AbsSimpleNumFieldOrder, y::AbsSimpleNumFieldOrder)
   d = degree(x)
   g = lcm(denominator(basis_matrix(x)), denominator(basis_matrix(y)))
   H = vcat(divexact(g * basis_matrix(x).num, basis_matrix(x).den), divexact(g * basis_matrix(y).num, basis_matrix(y).den))
-  K = left_kernel(H)[2]
+  K = kernel(H, side = :left)
   return Order(nf(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(x).num, basis_matrix(x).den), :lowerleft), g))
 end
 
@@ -1131,7 +1131,7 @@ function intersect(x::AlgAssAbsOrd, y::AlgAssAbsOrd)
   d = degree(x)
   g = lcm(denominator(basis_matrix(x)), denominator(basis_matrix(y)))
   H = vcat(divexact(g * basis_matrix(x).num, basis_matrix(x).den), divexact(g * basis_matrix(y).num, basis_matrix(y).den))
-  K = left_kernel(H)[2]
+  K = kernel(H, side = :left)
   return Order(_algebra(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(x).num, basis_matrix(x).den), :lowerleft), g))
 end
 
