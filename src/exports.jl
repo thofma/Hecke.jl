@@ -495,6 +495,7 @@ export is_elementary
 export is_elementary_with_prime
 export is_equal_locally
 export is_equation_order
+export is_equivalent
 export is_etale
 export is_exact
 export is_finite
