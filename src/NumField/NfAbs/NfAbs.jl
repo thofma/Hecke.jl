@@ -116,12 +116,25 @@ function quadratic_field(d::ZZRingElem; cached::Bool = true, check::Bool = true)
   return q, a
 end
 
+# we need to add this, because there is no fallback
+function show_quad(io::IO, mime, q::AbsSimpleNumField)
+  show_quad(io, q)
+end
+
 function show_quad(io::IO, q::AbsSimpleNumField)
   d = trailing_coefficient(q.pol)
-  if d < 0
-    print(io, "Real quadratic field defined by ", q.pol)
+  if get(io, :supercompact, false)
+    if d < 0
+      print(io, "real quadratic field")
+    else
+      print(io, "imaginary quadratic field")
+    end
   else
-    print(io, "Imaginary quadratic field defined by ", q.pol)
+    if d < 0
+      print(io, "Real quadratic field defined by ", q.pol)
+    else
+      print(io, "Imaginary quadratic field defined by ", q.pol)
+    end
   end
 end
 
