@@ -1,13 +1,3 @@
-# aliases for deprecation
-is_equivalent(U::AbstractLat, V::AbstractLat) = is_isometric(U, V)
-is_equivalent(U::AbstractLat, V::AbstractLat, p) = is_isometric(U, V, p)
-is_rationally_equivalent(U::AbstractLat, V::AbstractLat) = is_rationally_isometric(U, V)
-is_rationally_equivalent(U::AbstractLat, V::AbstractLat, p) = is_rationally_isometric(U, V, p)
-is_equivalent(U::AbstractSpace, V::AbstractSpace) = is_isometric(U, V)
-is_equivalent(U::AbstractSpace, V::AbstractSpace, p) = is_isometric(U, V, p)
-is_equivalent_with_isometry(U::AbstractLat, V::AbstractLat) = is_isometric_with_isometry(U, V)
-is_equivalent_with_isometry(U::AbstractSpace, V::AbstractSpace) = is_isometric_with_isometry(U, V)
-
 ################################################################################
 #
 #  Verbosity and assertion scopes
