@@ -193,20 +193,19 @@ function _right_kernel(M::SMat{T}) where T <: FieldElement
 end
 
 @doc raw"""
-    kernel(M::SMat{T}; side::Symbol = :right) where {T <: FieldElement}
+    kernel(M::SMat{T}; side::Symbol = :left) where {T <: FieldElement}
 
-Return a tuple $(n, N)$, where n is the rank of the kernel and $N$ is a
-basis for it. If side is $:right$ or not specified, the right kernel is
-computed, i.e. the matrix of columns whose span gives the right kernel
-space. If side is $:left$, the left kernel is computed, i.e. the matrix
-of rows whose span is the left kernel space.
+Return a matrix $N$ containing a basis of the kernel of $M$.
+If `side` is `:left` (default), the left kernel is
+computed, i.e. the matrix of rows whose span gives the left kernel
+space. If `side` is `:right`, the right kernel is computed, i.e. the matrix
+of columns whose span is the right kernel space.
 """
-function kernel(M::SMat{T}; side::Symbol = :right) where T <: FieldElement
+function kernel(M::SMat{T}; side::Symbol = :left) where T <: FieldElement
+  Solve.check_option(side, [:right, :left], "side")
   if side == :right
     return _right_kernel(M)
   elseif side == :left
     return _left_kernel(M)
-  else
-    error("Unsupported argument: :$side for side: must be :left or :right")
   end
 end
