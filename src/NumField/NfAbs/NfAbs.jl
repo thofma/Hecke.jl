@@ -125,9 +125,9 @@ function show_quad(io::IO, q::AbsSimpleNumField)
   d = trailing_coefficient(q.pol)
   if get(io, :supercompact, false)
     if d < 0
-      print(io, "real quadratic field")
+      print(io, "Real quadratic field")
     else
-      print(io, "imaginary quadratic field")
+      print(io, "Imaginary quadratic field")
     end
   else
     if d < 0
