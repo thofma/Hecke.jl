@@ -936,6 +936,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
       #d = solve_ut(U, d)
       #@assert Btr * d == mc
       fl,dd = solve(LL, c.coeffs)
+      @assert fl
       for k = 1:r
         #@assert dd[k] == d[k, 1]
         mult_table[i, j, k] = dd[k]
