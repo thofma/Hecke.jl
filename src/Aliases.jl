@@ -72,7 +72,6 @@ include(joinpath(pathof(Nemo), "..", "Aliases.jl"))
 @alias iseq is_eq
 @alias isequation_order is_equation_order
 @alias isequivalent is_equivalent
-@alias isequivalent_with_isometry is_equivalent_with_isometry
 @alias isfinite_gen is_finite_gen
 @alias isfinite_snf is_finite_snf
 @alias isfixed_point_free is_fixed_point_free
@@ -158,7 +157,6 @@ include(joinpath(pathof(Nemo), "..", "Aliases.jl"))
 @alias isquaternion_algebra is_quaternion_algebra
 @alias isradical_extension is_radical_extension
 @alias isramified is_ramified
-@alias isrationally_equivalent is_rationally_equivalent
 @alias isrationally_isometric is_rationally_isometric
 @alias isreduced is_reduced
 @alias isreducible is_reducible
