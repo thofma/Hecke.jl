@@ -153,7 +153,7 @@ function det_mc(A::SMat{ZZRingElem})
   end
 
   b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
-  _, qq = __solve_dixon_sf(A, b)
+  _, qq = solve_dixon_sf(A, b)
 
   q = p_start # global prime
   first = true
@@ -224,8 +224,8 @@ function echelon_with_transform(A::SMat{zzModRingElem})
 end
 
 @doc raw"""
-    __solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false) -> SRow{ZZRingElem}, ZZRingElem
-    __solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false) -> SMat{ZZRingElem}, ZZRingElem
+    solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false) -> SRow{ZZRingElem}, ZZRingElem
+    solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false) -> SMat{ZZRingElem}, ZZRingElem
 
 For a sparse square matrix $A$ of full rank and a sparse matrix (row), find
 a sparse matrix (row) $x$ and an integer $d$ s.th.
@@ -235,14 +235,14 @@ The algorithm is a Dixon-based linear p-adic lifting method.
 If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
 rational reconstruction is avoided.
 """
-function __solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false)
+function solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false)
   B = sparse_matrix(FlintZZ)
   push!(B, b)
-  s, d = __solve_dixon_sf(A, B, is_int)
+  s, d = solve_dixon_sf(A, B, is_int)
   return s[1], d
 end
 
-function __solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
+function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
   R = residue_ring(FlintZZ, p, cached = false)[1]
