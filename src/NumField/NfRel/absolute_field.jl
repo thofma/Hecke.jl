@@ -198,7 +198,7 @@ function _absolute_field(K::RelSimpleNumField; cached::Bool = false, do_embeddin
     else
       l = div(i, 2)
     end
-    g = compose(f, gen(kx) - l*gen(k))
+    g = compose(f, gen(kx) - l*gen(k), inner = :second)
     N = norm(g)
   end
 

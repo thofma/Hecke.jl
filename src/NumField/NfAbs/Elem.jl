@@ -370,7 +370,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
   @vtime :PolyFactor Np = norm_mod(g, p, Zx)
   while is_constant(Np) || !is_squarefree(map_coefficients(F, Np, cached = false))
     k = k + 1
-    g = compose(f, gen(Kx) - k*gen(K))
+    g = compose(f, gen(Kx) - k*gen(K), inner = :second)
     @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
   end
 
@@ -393,7 +393,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
   while is_constant(N) || !is_squarefree(N)
     error("should not happen")
     k = k + 1
-    g = compose(f, gen(Kx) - k*gen(K))
+    g = compose(f, gen(Kx) - k*gen(K), inner = :second)
     @vtime :PolyFactor 2 N = norm_mod(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
@@ -402,7 +402,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
 
   for i in keys(fac.fac)
     t = change_base_ring(K, i, parent = Kx)
-    t = compose(t, gen(Kx) + k*gen(K))
+    t = compose(t, gen(Kx) + k*gen(K), inner = :second)
     @vtime :PolyFactor 2 t = gcd(f, t)
     push!(res, t)
   end
