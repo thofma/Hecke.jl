@@ -349,7 +349,7 @@ end
 function (T::TorQuadModule)(v::Vector{QQFieldElem})
   @req length(v) == degree(cover(T)) "Vector of wrong length"
   vv = matrix(FlintQQ, 1, length(v), v)
-  vv = change_base_ring(FlintZZ, solve_left(basis_matrix(cover(T)), vv))
+  vv = change_base_ring(ZZ, solve(basis_matrix(cover(T)), vv; side = :left))
   return T(abelian_group(T)(vv * T.proj))
 end
 
@@ -1499,11 +1499,11 @@ function radical_quadratic(T::TorQuadModule)
   G = gram_matrix_quadratic(Kb)*1//modulus_bilinear_form(Kb)
   F = Native.GF(2; cached=false)
   G2 = matrix(F, nrows(G), 1, F.(diagonal(G)))
-  r, kermat = left_kernel(G2)
-  kermat = lift(kermat[1:r,:])
+  kermat = kernel(G2, side = :left)
+  kermat = lift(kermat)
   g = gens(Kb)
   n = length(g)
-  kergen = TorQuadModuleElem[sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:r]
+  kergen = TorQuadModuleElem[sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:nrows(kermat)]
   Kq, iq = sub(Kb,kergen)
   @assert iszero(gram_matrix_quadratic(Kq))
   return Kq, compose(iq,ib)

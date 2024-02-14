@@ -78,7 +78,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Arr
       end
     end
     r = sparse_row(FlintZZ, els_r, sort = false)
-    sol, d = solve_ut(RelHnf, r)
+    sol, d = _solve_ut(RelHnf, r)
     @assert isone(d)
     rs = zeros(ZZRingElem, c.M.bas_gens.r + c.M.rel_gens.r)
 

@@ -234,7 +234,7 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
           end
         end
       end
-      @vtime :qAdic 1 k = Hecke.left_kernel_basis(lv)
+      @vtime :qAdic 1 k = Hecke._left_kernel_basis(lv)
       @assert length(k) < 2
       if length(k) == 0
         println("new ")

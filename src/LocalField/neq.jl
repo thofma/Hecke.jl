@@ -498,8 +498,8 @@ function frobenius_equation(d::Int, c::FinFieldElem)
    p = characteristic(F)
    #F is a GF(p) vector space and x->x^(p^d)-cx is a linear map
    M = absolute_frobenius_matrix(F, d) - absolute_representation_matrix(c)
-   r, k = kernel(M, side = :left)
-   @assert r > 0
+   k = kernel(M, side = :left)
+   @assert nrows(k) > 0
    return dot(absolute_basis(F), k[1, :])
 end
 
@@ -511,8 +511,8 @@ function frobenius_equation(X::ArtinSchreierSolveCtx, c::FinFieldElem)
    p = characteristic(F)
    #F is a GF(p) vector space and x->x^(p^d)-cx is a linear map
    M = X.frob_mat - absolute_representation_matrix(c)
-   r, k = kernel(M, side = :left)
-   @assert r > 0
+   k = kernel(M, side = :left)
+   @assert nrows(k) > 0
    return dot(X.basis, k[1, :])
 end
 
@@ -529,7 +529,7 @@ function artin_schreier_equation(d::Int, c::FinFieldElem)
    M = absolute_frobenius_matrix(F, d)
    M = M-identity_matrix(base_ring(M), nrows(M))
    b = matrix(base_ring(M), 1, ncols(M), absolute_coordinates(c))
-   s = solve_left(M, b)
+   s = solve(M, b; side = :left)
    return dot(absolute_basis(F), s)
 end
 
@@ -540,7 +540,7 @@ function artin_schreier_equation(X::ArtinSchreierSolveCtx, c::FinFieldElem)
    M = X.frob_mat
    M = M-identity_matrix(base_ring(M), nrows(M))
    b = matrix(base_ring(M), 1, ncols(M), absolute_coordinates(c))
-   s = solve_left(M, b)
+   s = solve(M, b, side = :left)
    return dot(X.basis, s)
 end
 

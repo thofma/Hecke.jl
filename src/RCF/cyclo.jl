@@ -416,7 +416,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   for i = 1:2
     elem_to_mat_row!(N, i, S[i])
   end
-  s = solve(transpose(M), transpose(N))
+  s = solve(transpose(M), transpose(N); side = :right)
   b = basis(Ka)
   emb = Vector{typeof(b[1])}(undef, 2)
   for i = 1:2

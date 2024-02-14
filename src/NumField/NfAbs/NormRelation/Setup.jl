@@ -677,7 +677,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
       onee = matrix(FlintQQ, 1, n, coefficients(one(QG)))
 
-      b, v, K = can_solve_with_kernel(m, onee, side = :left)
+      b, v, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
     else
       m = zero_matrix(FlintZZ, length(H), n)
       for i in 1:length(H)
@@ -688,7 +688,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
       onee = matrix(FlintZZ, 1, n, coefficients(one(QG)))
 
-      b, w, K = can_solve_with_kernel(m, target_den * onee, side = :left)
+      b, w, K = can_solve_with_solution_and_kernel(m, target_den * onee, side = :left)
       v = 1//target_den * change_base_ring(FlintQQ, w)
     end
 
@@ -834,7 +834,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
       end
     end
 
-    b, w, K = can_solve_with_kernel(m, onee, side = :left)
+    b, w, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
     v = w
   elseif true
     onee = matrix(FlintZZ, 1, n, coefficients(target_den * one(QG)))
@@ -855,7 +855,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
       end
     end
 
-    b, w, K = can_solve_with_kernel(m, onee, side = :left)
+    b, w, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
 
     v = 1//target_den * change_base_ring(FlintQQ, w)
   end
@@ -1034,7 +1034,7 @@ function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem
     end
   end
 
-  _,_, K = can_solve_with_kernel(view(M, 1:k, 1:ncols(M)), onee, side = :left)
+  K = kernel(view(M, 1:k, 1:ncols(M)), side = :left)
 
   v = _reduce_modulo(v, K)
 

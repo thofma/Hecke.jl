@@ -194,7 +194,8 @@ diagonal_with_transform(V::QuadSpace) = _diagonal(V)
 function _diagonal(V::QuadSpace, with_transform::Bool = true)
   E = base_ring(V)
   g = gram_matrix(V)
-  k, K = left_kernel(g)
+  K = kernel(g, side = :left)
+  k = nrows(K)
   B = complete_to_basis(K)
   g = B[k+1:end, :]*g*transpose(B[k+1:end,:])
   D, U = _gram_schmidt(g, involution(V))
@@ -1248,7 +1249,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
   # treat the degenerate case
   if !is_regular(q)
     g = gram_matrix(q)
-    r, B = left_kernel(g)
+    B = kernel(g, side = :left)
     C = _basis_complement(B)
     G = gram_matrix(q,C)
     q1 = quadratic_space(QQ, G)
@@ -1321,7 +1322,7 @@ function _maximal_isotropic_subspace_unimodular(L)
   G = gram_matrix(L)
   iso = _isotropic_subspace_unimodular_gram_no_lll(G)
   # complete to a hyperbolic subspace
-  B = solve_left(change_base_ring(ZZ,G*transpose(iso)), identity_matrix(ZZ,nrows(iso)))
+  B = solve(change_base_ring(ZZ,G*transpose(iso)), identity_matrix(ZZ,nrows(iso)); side = :left)
   H = vcat(iso, B)*basis_matrix(L)
   L1 = orthogonal_submodule(L, lattice(ambient_space(L), H))
   @assert abs(det(L1))==1
@@ -1734,8 +1735,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   # Decompose F into an anisotropic kernel, an hyperbolic space and its radical
   @req is_symmetric(F) "Matrix must be symmetric"
   K = base_ring(F)
-  r, Rad = left_kernel(F)
-  @hassert :Lattice 1 nrows(Rad) == r
+  Rad = kernel(F, side = :left)
   RadComp = _find_direct_sum(Rad)
   newF = RadComp * F * transpose(RadComp)
   H = similar(F, 0, ncols(F))
@@ -1826,8 +1826,7 @@ function _find_direct_sum(B::MatrixElem)
 end
 
 function _orthogonal_complement(F::MatrixElem, B::MatrixElem)
-  r, R = left_kernel(F * transpose(B))
-  @hassert :Lattice 1 nrows(R) == r
+  R = kernel(F * transpose(B), side = :left)
   if !iszero(det(F))
     @hassert :Lattice 1 nrows(R) + nrows(B) == nrows(F)
   end

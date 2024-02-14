@@ -851,7 +851,7 @@ function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check = 
   for i = 1:n
     elem_to_mat_row!(N, i, g[i])
   end
-  s = solve(transpose(M), transpose(N))
+  s = solve(transpose(M), transpose(N); side = :right)
   b = basis(Ka)
   emb = Vector{AbsSimpleNumFieldElem}(undef, n)
   for i = 1:n
@@ -1190,7 +1190,7 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
     if k == 1
       pe = primitive_element(K)
     end
-    g = compose(f, gen(Kx) - k*pe)
+    g = compose(f, gen(Kx) - k*pe, inner = :second)
     @vtime :PolyFactor 2 N = norm(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
@@ -1199,7 +1199,7 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
 
   for i in keys(fac.fac)
     t = change_base_ring(K, i, parent = Kx)
-    t = compose(t, gen(Kx) + k*pe)
+    t = compose(t, gen(Kx) + k*pe, inner = :second)
     @vtime :PolyFactor 2 t = gcd(f, t)
     res[t] = 1
   end

@@ -11,12 +11,12 @@ julia> K, a = quadratic_field(-3);
 
 julia> complex_embeddings(K)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
- Complex embedding corresponding to 0.00 - 1.73 * i of imaginary quadratic field defined by x^2 + 3
+ Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field
+ Complex embedding corresponding to 0.00 - 1.73 * i of imaginary quadratic field
 
 julia> complex_embeddings(K, conjugates = false)
 1-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
+ Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field
 ```
 """
 complex_embeddings(K::NumField)
@@ -127,8 +127,7 @@ julia> e = complex_embeddings(L);
 
 julia> restrict(e[1], K)
 Complex embedding corresponding to -1.73
-  of number field with defining polynomial x^2 - 3
-    over rational field
+  of real quadratic field defined by x^2 - 3
 ```
 """
 restrict(f::NumFieldEmb, K::NumField)

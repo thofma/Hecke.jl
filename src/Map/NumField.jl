@@ -772,7 +772,7 @@ function has_preimage_with_preimage(f::NumFieldHom, g::NumFieldElem)
   cc = absolute_coordinates(g)
   K = domain(f)
   _assert_has_preimage_data(f)
-  fl, s = can_solve_given_rref(f.rref[1], f.rref[2], f.pivots_of_rref, cc)
+  fl, s = _can_solve_given_rref(f.rref[1], f.rref[2], f.pivots_of_rref, cc)
   if !fl
     return false, zero(K)
   else

@@ -261,7 +261,7 @@ function Hecke.is_irreducible(a::AbsSimpleNumFieldOrderElem)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(S)
   V = matrix([ZZRingElem[valuation(ms(x), y) for y = S] for x = gens(s)])
   b = matrix([ZZRingElem[valuation(a, y) for y = S]])
-  sol = solve(V, b)
+  sol = solve(V, b; side = :right)
 
   #want to write sol = x+y where
   # Cx, Cy > 0

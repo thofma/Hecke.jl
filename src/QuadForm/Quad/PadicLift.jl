@@ -183,8 +183,8 @@ function _solve_X_ker(Y::fpMatrix, b, g)
   n = ncols(Y)
   A, c = _solve_X_get_A_and_c(Y, b, g)
   Ker = dense_matrix_type(k)[]
-  r, K = right_kernel(A)
-  for i in 1:r
+  K = kernel(A; side = :right)
+  for i in 1:ncols(K)
     tmp = vec(collect(K[:,i]))
     X = matrix(k, n, n, tmp)
     push!(Ker, X)

@@ -6,7 +6,7 @@ module Det
 using Hecke
 import AbstractAlgebra, Nemo
 using LinearAlgebra, Profile, Base.Intrinsics
-import Nemo: add!, mul!, zero!, sub!, solve_triu!, solve_tril!
+import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_triu!, AbstractAlgebra._solve_tril!
 
 #creates an unimodular n x n matrix where the inverse is much larger
 #than the original matrix. Entries are chosen in U
@@ -620,7 +620,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     @time T1 = hcol(TS, d)
     push!(T, T1)
     @show :solve
-    @time AT = Strassen.solve_triu(T1, AT)
+    @time AT = Strassen.AbstractAlgebra._solve_triu(T1, AT)
 #    @show nbits(prod_p), nbits(d1)
 #    @show nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)))
     if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
@@ -632,7 +632,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
     @show Had / nbits(d1)
-      AT = Nemo.solve_triu_left(h, AT)
+      AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
       if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
@@ -646,7 +646,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   @show t_det(h) // det_p, det(h)
   d1 *= t_det(h)
 
-  @time AT = Nemo.solve_triu_left(h, AT)
+  @time AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)

@@ -437,7 +437,7 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   x, r = class_group_ideal_relation(A, c)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
 
-  R, d = solve_ut(H, r)
+  R, d = _solve_ut(H, r)
 
   if d != 1
     A.is_principal = 2

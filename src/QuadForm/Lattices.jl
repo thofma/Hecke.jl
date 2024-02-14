@@ -1361,7 +1361,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   for i=1:m
     for j=1:m
       a = reduce(hcat, view(mb^k, 1+(i-1)*n2:1+(i-1)*n2, :)*view(G, :, 1+(j-1)*n2:1+(j-1)*n2) for k in 0:n2-1)
-      co = solve_left(trace_mat, a)
+      co = solve(trace_mat, a; side = :left)
       gram[i,j] = only(co*bs)
     end
   end
@@ -1768,7 +1768,7 @@ function maximal_sublattices(L::AbstractLat, p; use_auto::Bool = false,
   E = Int[]
   for i in 1:length(Ls)
     if use_auto
-      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]); side = :left)[2]))
+      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]); side = :left)))
     else
       m = map_entries(y -> hext\y, Ls[i])
     end

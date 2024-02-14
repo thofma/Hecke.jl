@@ -184,8 +184,8 @@ function intersect(L::T, M::T) where {T <: ModAlgAssLat}
   BMint = change_base_ring(FlintZZ, d * BM)
   BNint = change_base_ring(FlintZZ, d * BN)
   H = vcat(BMint, BNint)
-  k, K = left_kernel(H)
-  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  K = kernel(H, side = :left)
+  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return lattice(L.V, L.base_ring, BI)
 end
 

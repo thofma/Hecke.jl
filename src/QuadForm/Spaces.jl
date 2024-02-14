@@ -290,7 +290,8 @@ Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the s
 """
 function orthogonal_basis(V::AbstractSpace)
   G = gram_matrix(V)
-  r, Rad = left_kernel(G)
+  Rad = kernel(G, side = :left)
+  r = nrows(Rad)
   if r > 0
     basis_nondeg = _basis_complement(Rad)
     G_nondeg = gram_matrix(V, basis_nondeg)
@@ -656,8 +657,7 @@ matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbstractSpace, M::MatElem)
   N = gram_matrix(V) * _map(transpose(M), involution(V))
-  r, K = left_kernel(N)
-  @assert r == nrows(K)
+  K = kernel(N, side = :left)
   return K
 end
 

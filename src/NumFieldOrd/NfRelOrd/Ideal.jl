@@ -1165,7 +1165,7 @@ function prime_dec_index(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{Abs
     f = dim(B)
     idem = BtoA(B[1]) # Assumes that B == idem*A
     M = representation_matrix(idem)
-    ker = left_kernel_basis(M)
+    ker = _left_kernel_basis(M)
     N = basis_pmatrix(Ip)
     for i = 1:length(ker)
       b = coordinates(AtoO(A(ker[i])))
@@ -1602,7 +1602,7 @@ function anti_uniformizer(P::RelNumFieldOrderIdeal{T, S}) where {T, S}
       Mp[i, j] = mmF(M[i, j])
     end
   end
-  K = left_kernel_basis(Mp)
+  K = _left_kernel_basis(Mp)
   @assert length(K) > 0
   x = nf(O)()
   pbO = pseudo_basis(O, copy = false)

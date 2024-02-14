@@ -127,11 +127,9 @@ julia> i = hom(k, K, a[1]);
 
 julia> restrict(emb[1], i)
 Complex embedding corresponding to 1.00 * i
-  of number field with defining polynomial x^2 + 1
-    over rational field
+  of imaginary quadratic field defined by x^2 + 1
 
 julia> restrict(emb[3], i)
 Complex embedding corresponding to -1.00 * i
-  of number field with defining polynomial x^2 + 1
-    over rational field
+  of imaginary quadratic field defined by x^2 + 1
 ```
