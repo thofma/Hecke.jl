@@ -71,7 +71,7 @@ Once orders are created, we can play with elements and ideals:
 lp = prime_decomposition(Z_K, 2)
 p = lp[1][1]
 is_principal(p)
-fl, alpha = is_principal(p^2)
+fl, alpha = is_principal_with_data(p^2)
 norm(alpha)
 ```
 

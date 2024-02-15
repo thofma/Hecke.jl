@@ -60,7 +60,7 @@ function INB(K::AbsSimpleNumField)
   end
 
   I = sum(phi(x)*OC for x = basis(OK, K))
-  fl, gamma = is_principal(I)
+  fl, gamma = is_principal_with_data(I)
   @assert fl
 
   local tr

@@ -221,7 +221,7 @@ function has_global_minimal_model(E::EllipticCurve{QQFieldElem})
 end
 
 function has_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
-  return is_principal(global_minimality_class(E))[1]
+  return is_principal(global_minimality_class(E))
 end
 
 @doc raw"""
@@ -281,7 +281,7 @@ function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumF
   OK = ring_of_integers(K)
   c4, c6 = c_invars(E)
 
-  if is_principal(I)[1]
+  if is_principal(I)
     P0 = 1*OK
     u = one(OK)
   else
@@ -293,7 +293,7 @@ function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumF
       for P in prime_ideals_up_to(OK, bound)
         if mC\P == mCI
           P0 = P
-          fl, u = is_principal(I*inv(P))
+          fl, u = is_principal_with_data(I*inv(P))
           found = true
           @assert fl
           I = I//P0
@@ -303,7 +303,7 @@ function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumF
       bound = 2*bound
     end
   end
-  fl, u = is_principal(I)
+  fl, u = is_principal_with_data(I)
   rc4 = OK(c4//u^4)
   rc6 = OK(c6//u^6)
 
@@ -678,7 +678,7 @@ function _factor_nf(n::AbsSimpleNumFieldElem)
   F = factor(IdealSet(maximal_order(K)), n)
   D = Dict{AbsSimpleNumFieldElem, Int}()
   for (I, e) in F
-    fl, a = is_principal(I)
+    fl, a = is_principal_with_data(I)
     !fl && error("Prime ideal factor not principal")
     D[elem_in_nf(a)] = e
   end
@@ -758,7 +758,7 @@ function _gcd(a::Vector{AbsSimpleNumFieldOrderElem})
   @assert length(a) > 0
   R = parent(a[1])
   I = sum(b * R for b in a)
-  fl, g = is_principal(I)
+  fl, g = is_principal_with_data(I)
   !fl && error("Elements do not have a GCD")
   return g
 end

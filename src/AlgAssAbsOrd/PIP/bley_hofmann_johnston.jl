@@ -380,7 +380,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   # the center is a number field
   #@show FinZA
   el, id = pseudo_basis(FinZA)[1]
-  fl, el2 = is_principal(id)
+  fl, el2 = is_principal_with_data(id)
   # now lift
 
   a = nice_order_ideal(M)

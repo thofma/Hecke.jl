@@ -579,7 +579,7 @@ function genus_generators(L::HermLat)
         I = EabstoE(Iabs)
         J = I * inv(a(I))
         Jabs = EabstoE\J
-        ok, x = is_principal(Jabs)
+        ok, x = is_principal_with_data(Jabs)
         u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
         x = x * u
         @assert norm(x) == 1
@@ -609,7 +609,7 @@ function genus_generators(L::HermLat)
       I = EabstoE(Iabs)
       J = I * inv(a(I))
       Jabs = EabstoE\J
-      ok, x = is_principal(Jabs)
+      ok, x = is_principal_with_data(Jabs)
       u = f(nnorm\(-(ff\FacElem(nf(RR)(norm(x))))))
       x = x * u
       @assert norm(x) == 1

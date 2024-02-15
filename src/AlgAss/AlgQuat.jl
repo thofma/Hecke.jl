@@ -450,7 +450,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   nr = simplify(nr)
   #@show norm(nr)
   #@show nr
-  fl, c = is_principal(nr)
+  fl, c = is_principal_with_data(nr)
   if !fl
     return false, zero(A)
   end
