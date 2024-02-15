@@ -124,7 +124,9 @@ function _get_sfpoly(Kx, M)
   temp = zero_matrix(k,n,1)
   temp[my+1,1] = one(k)
   null_mat = hcat(null_mat,temp)
-  mat_poly = nullspace(null_mat)[2]
+  mat_poly = kernel(null_mat, side = :right)
+  @assert ncols(mat_poly) == 1
+  mat_poly = inv(mat_poly[n + 1, 1])*mat_poly # produce a 1 in the lowest entry
   ar_coeff = Vector{elem_type(K)}(undef,my)
   for i = 1:my
     indx = 1
@@ -137,9 +139,6 @@ function _get_sfpoly(Kx, M)
   end
   #w.l. we cannot assume basis ordered in any way
   push!(ar_coeff,K(mat_poly[n+1,1]))
-  if !isone(mat_poly[n+1,1])
-      error("LC of minpoly not 1")
-  end
   return Kx(ar_coeff)
 end
 
