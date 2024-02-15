@@ -1915,7 +1915,7 @@ function _real_weak_approximation(s, I)
   K = number_field(s)
   a = gen(K)
   while true
-    x = simplest_inside(real(evaluate(a, s, 10)))
+    x = simplest_rational_inside(real(evaluate(a, s, 10)))
     a = 2 * (a - x)
     if all(t -> t == s || abs(evaluate(a, t)) >= 2, I)
       break

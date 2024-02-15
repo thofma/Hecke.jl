@@ -183,7 +183,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
 
   # Now test local freeness at the primes dividing the index [M : O]
   for p in prime_divisors(index(O, M))
-    if !islocally_free(O, I, p, side = :right)[1]
+    if !is_locally_free(O, I, p, side = :right)[1]
       @vprintln :PIP "Not locally free at $p"
       return false, zero(A)
     end

@@ -52,7 +52,7 @@
   @test (psi4 * inv(phi4)) == identity_map(E4) || (psi4 * inv(phi4)) == negation_map(E4)
   @test (psi5 * inv(phi5)) == identity_map(E5) || (psi5 * inv(phi5)) == negation_map(E5)
 
-  P = points_with_x(E4, b)[1]
+  P = points_with_x_coordinate(E4, b)[1]
   @test @inferred preimage(psi4, psi4(P)) == P
   E4oo = infinity(E4)
   @test @inferred preimage(psi4, psi4(E4oo)) == E4oo

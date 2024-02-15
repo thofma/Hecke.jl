@@ -234,7 +234,7 @@ end
   Lres, f = Hecke.restrict_scalars_with_map(L, FlintQQ)
   Mres = Hecke.restrict_scalars(M, f)
   @test Lres == Hecke.restrict_scalars(L, f)
-  @test issublattice(Lres, Mres)
+  @test is_sublattice(Lres, Mres)
   @test_throws ArgumentError Hecke.restrict_scalars(O, f)
 end
 
