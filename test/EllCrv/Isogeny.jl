@@ -19,7 +19,7 @@
   @test @inferred codomain(phi) == E2
   @test @inferred is_infinite(image(phi, E1([1,2])))
   phihat = @inferred dual_isogeny(phi)
-  P = points_with_x(E1, 0)[1]
+  P = points_with_x_coordinate(E1, 0)[1]
   @test (phi * phihat)(P) == 2*P
 
   f = @inferred identity_isogeny(E1)
@@ -31,7 +31,7 @@
   @test @inferred domain(phi) == E1
   @test @inferred codomain(phi) == E2
   @test is_isomorphic(E1, codomain(phi))
-  P = points_with_x(E1, 1)[1]
+  P = points_with_x_coordinate(E1, 1)[1]
   g = @inferred multiplication_by_m_map(E1, 32)
   g(P) == 32*P
 
@@ -39,7 +39,7 @@
   p = 11
   E = elliptic_curve(GF(p), [1, 1])
   phi = @inferred multiplication_by_m_map(E, p)
-  P = points_with_x(E, 4)[1]
+  P = points_with_x_coordinate(E, 4)[1]
   @test 11*P == phi(P)
 
   psi = frobenius_map(E)
@@ -52,14 +52,14 @@
   a = gen(K)
   E = elliptic_curve_from_j_invariant(a)
   phi = @inferred multiplication_by_m_map(E, p)
-  P = points_with_x(E, a^2)[1]
+  P = points_with_x_coordinate(E, a^2)[1]
   @test 2*P == phi(P)
 
   K = GF(2,6)
   a = gen(K)
   E = elliptic_curve_from_j_invariant(zero(K))
   phi = @inferred multiplication_by_m_map(E, p)
-  P = points_with_x(E, a^3)[1]
+  P = points_with_x_coordinate(E, a^3)[1]
   @test 2*P == phi(P)
 
 
@@ -77,7 +77,7 @@
   E = elliptic_curve_from_j_invariant(K(2))
   div30 = division_polynomial_univariate(E,30)[1]
   L = isogeny_from_kernel_factored(E,div30)
-  P = points_with_x(E, 1)[1]
+  P = points_with_x_coordinate(E, 1)[1]
   image(L, P)
 
   f = @inferred frobenius_map(E)

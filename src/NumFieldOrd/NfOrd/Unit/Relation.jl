@@ -217,7 +217,7 @@ function _denominator_bound_in_relation(rreg::ArbFieldElem, K::AbsSimpleNumField
 end
 
 function simplest_inside(x::ArbFieldElem, B::ZZRingElem)
-  q = simplest_inside(x)
+  q = simplest_rational_inside(x)
   if denominator(q) < B
     return true, q
   else

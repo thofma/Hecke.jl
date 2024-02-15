@@ -95,6 +95,7 @@ more efficient.
 
 ```@docs
 is_principal(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+is_principal_with_data(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 is_principal_fac_elem(::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
 power_class(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},::ZZRingElem)
 power_product_class(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, ::Vector{ZZRingElem})

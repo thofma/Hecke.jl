@@ -46,7 +46,7 @@
   @test y * q + r == x
   @test iszero(r)
 
-  fl, = Hecke.isGLZ_conjugate(ZZ[0 1; 0 0], ZZ[0 2; 0 0])
+  fl, = Hecke.is_GLZ_conjugate(ZZ[0 1; 0 0], ZZ[0 2; 0 0])
   @test !fl
 
   I = matrix(ZZ, 8, 8, [-21 12 17 -3 -3 15 10 -8;

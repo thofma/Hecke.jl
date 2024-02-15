@@ -593,7 +593,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
   fl = false
 
   if make_free
-    fl, beta = is_principal(a)
+    fl, beta = is_principal_with_data(a)
   end
 
   if fl

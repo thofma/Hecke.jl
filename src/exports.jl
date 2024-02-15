@@ -346,7 +346,6 @@ export factor_mod_pk
 export factor_mod_pk_init
 export faltings_height
 export farey_lift
-export field_of_fractions
 export find_identity
 export find_points
 export find_row_starting_with
@@ -496,6 +495,7 @@ export is_elementary
 export is_elementary_with_prime
 export is_equal_locally
 export is_equation_order
+export is_equivalent
 export is_etale
 export is_exact
 export is_finite

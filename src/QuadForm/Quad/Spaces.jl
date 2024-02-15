@@ -1522,7 +1522,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           end
           o = order(mQ(mCl\(q)))
           c = -(hh\(o * (mCl\(q))))
-          fl, _x = is_principal(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
+          fl, _x = is_principal_with_data(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
           x = elem_in_nf(_x)
           _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
           _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
@@ -1915,7 +1915,7 @@ function _real_weak_approximation(s, I)
   K = number_field(s)
   a = gen(K)
   while true
-    x = simplest_inside(real(evaluate(a, s, 10)))
+    x = simplest_rational_inside(real(evaluate(a, s, 10)))
     a = 2 * (a - x)
     if all(t -> t == s || abs(evaluate(a, t)) >= 2, I)
       break
