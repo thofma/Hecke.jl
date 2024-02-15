@@ -11,49 +11,49 @@
 
   Q = matrix_algebra(QQ, 3)
   @test (@inferred schur_index(Q, inf)) == 1
-  @test iseichler(Q)
+  @test is_eichler(Q)
 
   # Test (-1, -1/QQ)
   Q = Hecke.QuaternionAlgebra(QQ, QQ(-1), QQ(-1))
-  @test !issplit(Q, 2)
+  @test !is_split(Q, 2)
   @test schur_index(Q, 2) == 2
   @test schur_index(Q, ZZ(2)) == 2
   @test schur_index(Q, inf) == 2
-  @test !issplit(Q, inf)
+  @test !is_split(Q, inf)
   @test schur_index(Q, 3) == 1
   @test schur_index(Q, ZZ(3)) == 1
-  @test issplit(Q, ZZ(3))
+  @test is_split(Q, ZZ(3))
   @test schur_index(Q) == 2
-  @test !issplit(Q)
-  @test !iseichler(Q)
+  @test !is_split(Q)
+  @test !is_eichler(Q)
 
   Q, = StructureConstantAlgebra(Q)
-  @test !issplit(Q, 2)
+  @test !is_split(Q, 2)
   @test schur_index(Q, 2) == 2
   @test schur_index(Q, ZZ(2)) == 2
   @test schur_index(Q, inf) == 2
-  @test !issplit(Q, inf)
+  @test !is_split(Q, inf)
   @test schur_index(Q, 3) == 1
   @test schur_index(Q, ZZ(3)) == 1
-  @test issplit(Q, ZZ(3))
+  @test is_split(Q, ZZ(3))
   @test schur_index(Q) == 2
-  @test !issplit(Q)
-  @test !iseichler(Q)
+  @test !is_split(Q)
+  @test !is_eichler(Q)
 
   # Test Mat_2((-1, -1)/QQ)
   Q = Hecke.QuaternionAlgebra(QQ, QQ(-1), QQ(-1))
   A = matrix_algebra(QQ, Q, 2)
-  @test !issplit(A, 2)
+  @test !is_split(A, 2)
   @test schur_index(A, 2) == 2
   @test schur_index(A, ZZ(2)) == 2
   @test schur_index(A, inf) == 2
-  @test !issplit(A, inf)
+  @test !is_split(A, inf)
   @test schur_index(A, 3) == 1
   @test schur_index(A, ZZ(3)) == 1
-  @test issplit(A, ZZ(3))
+  @test is_split(A, ZZ(3))
   @test schur_index(A) == 2
-  @test !issplit(A)
-  @test iseichler(A)
+  @test !is_split(A)
+  @test is_eichler(A)
 
   K, = Hecke.rationals_as_number_field()
   OK = maximal_order(K)
@@ -62,59 +62,59 @@
   p2 = prime_decomposition(OK, 2)[1][1]
   p3 = prime_decomposition(OK, 3)[1][1]
   rlp = real_places(K)[1]
-  @test !issplit(Q, p2)
+  @test !is_split(Q, p2)
   @test schur_index(Q, p2) == 2
   @test schur_index(Q, rlp) == 2
-  @test !issplit(Q, rlp)
+  @test !is_split(Q, rlp)
   @test schur_index(Q, p3) == 1
-  @test issplit(Q, p3)
+  @test is_split(Q, p3)
   @test schur_index(Q) == 2
-  @test !issplit(Q)
-  @test !iseichler(Q)
+  @test !is_split(Q)
+  @test !is_eichler(Q)
 
   Q, = StructureConstantAlgebra(Q)
-  @test !issplit(Q, p2)
+  @test !is_split(Q, p2)
   @test schur_index(Q, p2) == 2
   @test schur_index(Q, rlp) == 2
-  @test !issplit(Q, rlp)
+  @test !is_split(Q, rlp)
   @test schur_index(Q, p3) == 1
-  @test issplit(Q, p3)
+  @test is_split(Q, p3)
   @test schur_index(Q) == 2
-  @test !issplit(Q)
-  @test !iseichler(Q)
+  @test !is_split(Q)
+  @test !is_eichler(Q)
 
   A = Hecke.QuaternionAlgebra(QQ, QQ(1), QQ(1))
   @test schur_index(A) == 1
-  @test issplit(A)
-  @test iseichler(A)
+  @test is_split(A)
+  @test is_eichler(A)
   A = Hecke.QuaternionAlgebra(K, K(1), K(1))
   @test schur_index(A) == 1
-  @test issplit(A)
-  @test iseichler(A)
+  @test is_split(A)
+  @test is_eichler(A)
 
   K, = quadratic_field(5)
   A = Hecke.QuaternionAlgebra(K, K(1), K(1))
   @test schur_index(A) == 1
-  @test issplit(A)
-  @test iseichler(A)
+  @test is_split(A)
+  @test is_eichler(A)
 
   K, = quadratic_field(5)
   A = Hecke.QuaternionAlgebra(K, K(-1), K(-1))
   @test schur_index(A) == 2
-  @test !issplit(A)
-  @test !iseichler(A)
+  @test !is_split(A)
+  @test !is_eichler(A)
 
   A = matrix_algebra(K, 3)
-  @test iseichler(A)
+  @test is_eichler(A)
 
   Qx, x = QQ["x"]
   K, a = number_field(x^3 - 2, "a")
   A = Hecke.QuaternionAlgebra(K, K(-1), K(-1))
   @test schur_index(A) == 2
-  @test !issplit(A)
-  @test iseichler(A)
+  @test !is_split(A)
+  @test is_eichler(A)
   p = complex_places(K)
-  @test issplit(A, p[1])
+  @test is_split(A, p[1])
 
   A = matrix_algebra(QQ, 2)
   @test schur_index(A) == 1

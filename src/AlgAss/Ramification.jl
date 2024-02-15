@@ -223,7 +223,7 @@ function _is_eichler_csa(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem})
   @assert is_simple(A)
   @assert is_central(A)
 
-  if !istotally_real(base_ring(A))
+  if !is_totally_real(base_ring(A))
     return true
   end
 
