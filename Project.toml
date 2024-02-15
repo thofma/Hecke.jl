@@ -28,7 +28,6 @@ GAPExt = "GAP"
 PolymakeExt = "Polymake"
 
 [compat]
-AbstractAlgebra = "^0.37.6"
 AbstractAlgebra = "^0.39.0"
 Dates = "1.6"
 Distributed = "1.6"
