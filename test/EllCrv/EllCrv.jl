@@ -168,7 +168,7 @@
     @test parent(P) == Eshort
 
     E = elliptic_curve(GF(7,2),[1,2,3,4,5])
-    L = @inferred points_with_x(E,0)
+    L = @inferred points_with_x_coordinate(E,0)
     @test E([0,5]) in L && E([0, 6]) in L
 
 
