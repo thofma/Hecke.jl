@@ -65,4 +65,13 @@
    f = (x^3+5*y^3)*(x^2+2*y^2)
    # not a real test, just check that it does not crash
    @test length(factor_absolute(f)) == 3
+
+   # non-integral defining equation
+   Qx, x = QQ["x"]
+   K, a = number_field(x^2 - 1//3*x + 1);
+   R, (u, v) = polynomial_ring(K, ["u", "v"])
+   f = (u + a)*(v^2 + a)
+   fa = factor(f)
+   @test unit(fa) * prod(g^e for (g, e) in fa) == f
+
 end
