@@ -9,7 +9,7 @@
 
     @test sort(euler_phi_inv(ZZ(4))) == [ZZ(5), ZZ(8), ZZ(10), ZZ(12)]
 
-    @test is_prime_power(ZZ(8))
+    @test Hecke.is_prime_power(ZZ(8))
 
     @test Hecke.is_prime_power(8) 
 
