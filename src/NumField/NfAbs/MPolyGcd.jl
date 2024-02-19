@@ -267,10 +267,12 @@ function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MP
   Zx = Hecke.Globals.Zx
   R = RecoCtx(K)
 
-  de = lcm(lcm(map(denominator, coefficients(f))), lcm(map(denominator, coefficients(g))))
+  E = any_order(K)
+  de = lcm(lcm(map(c -> denominator(c, E), coefficients(f))),
+           lcm(map(c -> denominator(c, E), coefficients(g))))
+
   f*=de
   g*=de
-  E = any_order(K)
   lI = E*E(leading_coefficient(f)) + E*E(leading_coefficient(g))
   gl = Hecke.short_elem(lI)
   gl *= evaluate(derivative(K.pol), gen(K))  # use Kronnecker basis
