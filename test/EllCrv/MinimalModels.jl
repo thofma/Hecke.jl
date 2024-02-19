@@ -3,21 +3,21 @@
   @testset "Minimal model (Laska-Kraus-Connell)" begin
     E = elliptic_curve([1,2,3,4,5])
     EE, phi = @inferred minimal_model(E)
-    @test a_invars(EE) == (1, -1, 0, 4, 3)
+    @test a_invariants(EE) == (1, -1, 0, 4, 3)
     EE = @inferred tates_algorithm_global(E)
-    @test a_invars(EE) == (1, -1, 0, 4, 3)
+    @test a_invariants(EE) == (1, -1, 0, 4, 3)
 
     E = elliptic_curve([625, -15625, 19531250, -2929687500, -34332275390625])
     EE, phi = @inferred minimal_model(E)
-    @test a_invars(EE) == (1, -1, 0, 4, 3)
+    @test a_invariants(EE) == (1, -1, 0, 4, 3)
     EE = @inferred tates_algorithm_global(E)
-    @test a_invars(EE) == (1, -1, 0, 4, 3)
+    @test a_invariants(EE) == (1, -1, 0, 4, 3)
 
     F, phi = minimal_model(elliptic_curve([6^2*3^3, 6^5*2^2]))
-    @test a_invars(F) == (0, 0, 0, 972, 31104)
+    @test a_invariants(F) == (0, 0, 0, 972, 31104)
 
     F, phi = minimal_model(elliptic_curve([2^2*15, 2^4*15]))
-    @test a_invars(F) == (0, 0, 0, 60, 240)
+    @test a_invariants(F) == (0, 0, 0, 60, 240)
 
   end
 
@@ -57,9 +57,9 @@
   Kt, t = rational_function_field(QQ, "t")
   E = elliptic_curve(Kt.([0, t^21, 1//216, -7//1296, 1//t]))
   EE, = integral_model(E)
-  @test all(p -> is_one(denominator(p)) && is_one(denominator(numerator(p))), a_invars(EE))
+  @test all(p -> is_one(denominator(p)) && is_one(denominator(numerator(p))), a_invariants(EE))
   EE = Hecke.reduce_model(E)
-  @test all(p -> is_one(denominator(p)) && is_one(denominator(numerator(p))), a_invars(EE))
+  @test all(p -> is_one(denominator(p)) && is_one(denominator(numerator(p))), a_invariants(EE))
 
   Qx, x = QQ["x"]
   K, z = number_field(x^2 + 1, "z", cached = false)

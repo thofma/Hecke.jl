@@ -17,8 +17,8 @@ L = localization(OK, P)
     L = localization(OK, P)
 
     @test elem_type(L) == OrdLocElem{AbsSimpleNumFieldElem}
-    @test nf(L) == K
-    @test nf(L()) == K
+    @test Hecke.nf(L) == K
+    @test Hecke.nf(L()) == K
 
 end
 

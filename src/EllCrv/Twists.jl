@@ -16,7 +16,7 @@ Compute the quadratic twist of $E$ by $d$.
 #Adapted from Connell's Handbook of elliptic curves.
 function quadratic_twist(E::EllipticCurve{T}, d) where T<: FieldElem
 
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   K = base_field(E)
   if characteristic(K) != 2
     return elliptic_curve(K, [a1, a2*d + a1^2*(d-1)//4, a3, a4*d^2 + a1*a3*(d^2-1)//2, a6*d^3 + a3^2*(d^3 -1)//4])
@@ -128,13 +128,13 @@ function twists(E::EllipticCurve{T}) where T<: FinFieldElem
       return supersingular_twists3(E)
    elseif j == 0
       a = gen(K)
-      c4, c6 = c_invars(E)
+      c4, c6 = c_invariants(E)
       c = -c6//864
       n = gcd(6, order(K)-1)
       return EllipticCurve{T}[ elliptic_curve(K, [0,c*a^i]) for i in (0:n-1) ]
    elseif j == 1728
       a = gen(K)
-      c4, c6 = c_invars(E)
+      c4, c6 = c_invariants(E)
       c = -c4//48;
       n = gcd(4, order(K)-1)
       return EllipticCurve{T}[ elliptic_curve(K, [c*a^i,0]) for i in (0:n-1)]

@@ -151,7 +151,7 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
   # number of roots of monic cubic (a = 1)
   _nrootscubic(b, c, d) = length(roots(Fx(_red.([d, c, b, one(b)]))))
 
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
 
   if minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) < 0
     # Non-integral at P, lets make integral
@@ -184,8 +184,8 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
 
   while true
     E = elliptic_curve(K, [a1, a2, a3, a4, a6])
-    b2, b4, b6, b8 = b_invars(E)
-    c4, c6 = c_invars(E)
+    b2, b4, b6, b8 = b_invariants(E)
+    c4, c6 = c_invariants(E)
     delta = discriminant(E)
     vD = _val(delta)
     if vD == 0 # Good reduction
@@ -216,8 +216,8 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
 
     # transform and update invariants
     E, = transform_rstu(E, [r, 0, t, 1])
-    a1, a2, a3, a4, a6 = a_invars(E)
-    b2, b4, b6, b8 = b_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
+    b2, b4, b6, b8 = b_invariants(E)
 
     @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
     # Model is still p-Integral, good!
@@ -280,9 +280,9 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
 
     # transform and update invariants
     E, = transform_rstu(E, [0, s, t, 1])
-    a1, a2, a3, a4, a6 = a_invars(E)
-    b2, b4, b6, b8 = b_invars(E)
-    c4, c6 = c_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
+    b2, b4, b6, b8 = b_invariants(E)
+    c4, c6 = c_invariants(E)
 
     @assert _val(a1) > 0
     @assert _val(a2) > 0
@@ -326,9 +326,9 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
       r = pi * _redmod(r)
 
       E, = transform_rstu(E, [r, 0, 0, 1])
-      a1, a2, a3, a4, a6 = a_invars(E)
-      b2, b4, b6, b8 = b_invars(E)
-      c4, c6 = c_invars(E)
+      a1, a2, a3, a4, a6 = a_invariants(E)
+      b2, b4, b6, b8 = b_invariants(E)
+      c4, c6 = c_invariants(E)
 
       ix = 3
       iy = 3
@@ -347,8 +347,8 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
             t = my * _redmod(-a3t * onehalfmodp)
           end
           E, = transform_rstu(E, [0, 0, t, 1])
-          a1, a2, a3, a4, a6 = a_invars(E)
-          b2, b4, b6, b8 = b_invars(E)
+          a1, a2, a3, a4, a6 = a_invariants(E)
+          b2, b4, b6, b8 = b_invariants(E)
           my = my * pi
           iy = iy + 1
           a2t = a2//pi
@@ -362,8 +362,8 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
               r = mx * _redmod(-a4t * _invmod(2*a2t))
             end
             E, = transform_rstu(E, [r, 0, 0, 1])
-            a1, a2, a3, a4, a6 = a_invars(E)
-            b2, b4, b6, b8 = b_invars(E)
+            a1, a2, a3, a4, a6 = a_invariants(E)
+            b2, b4, b6, b8 = b_invariants(E)
             mx = mx * pi
             ix = ix + 1
             # Stay in the loop
@@ -394,8 +394,8 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
       end
       r = pi * _redmod(r)
       E, = transform_rstu(E, [r, 0, 0, 1])
-      a1, a2, a3, a4, a6 = a_invars(E)
-      b2, b4, b6, b8 = b_invars(E)
+      a1, a2, a3, a4, a6 = a_invariants(E)
+      b2, b4, b6, b8 = b_invariants(E)
       @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
       # Cubic after transform must have triple root at 0"
       @assert !(_val(a2) < 2 || _val(a4) < 3 || _val(a6) < 4)
@@ -418,8 +418,8 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
         t = pi^2 * _redmod(-a3t * onehalfmodp)
       end
       E, = transform_rstu(E, [0, 0, t, 1])
-      a1, a2, a3, a4, a6 = a_invars(E)
-      b2, b4, b6, b8 = b_invars(E)
+      a1, a2, a3, a4, a6 = a_invariants(E)
+      b2, b4, b6, b8 = b_invariants(E)
 
       # Test for types III*, II*
 
@@ -461,7 +461,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
 
   p = FlintZZ(p)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -507,7 +507,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
   trans = transform_rstu(E, [r, 0, t, 1])
   E = trans[1]
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -568,7 +568,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
   trans = transform_rstu(E, ZZRingElem[0, s, t, 1])
   E = trans[1]
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -603,7 +603,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
-    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+    a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
     b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -636,7 +636,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
         trans = transform_rstu(E, [0, 0, t, 1])
         E = trans[1]
 
-        a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+        a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
         b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -664,7 +664,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
           trans = transform_rstu(E, [r, 0, 0, 1])
           E = trans[1]
 
-          a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+          a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
           b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -693,7 +693,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
-    a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+    a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
     b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -723,7 +723,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
       trans = transform_rstu(E, [0, 0, t, 1])
       E = trans[1]
 
-      a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+      a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
       b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -1156,7 +1156,7 @@ function modp_reduction(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldO
 
   K, phi = residue_field(order(p),p)
 
-  a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invars(E)))
+  a1, a2, a3, a4, a6 = map(phi,map(order(p), a_invariants(E)))
 
   return elliptic_curve(K, [a1, a2, a3, a4, a6])
 
@@ -1175,7 +1175,7 @@ end
 Computes the invariants $b2$, $b4$, $b6$, $b8$ of an elliptic curve $E$ with integer coefficients.
 """
 function get_b_integral(E)
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
   b2 = a1^2 + 4*a2
   b4 = a1*a3 + 2*a4

@@ -29,7 +29,7 @@ mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCr
     end
     r, s, t, u = data[1], data[2], data[3], data[4]
     f.data = (r, s, t, u)
-    a1, a2, a3, a4, a6 = a_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
 
     a1new = divexact(a1 + 2*s, u)
     a2new = divexact(a2 - s*a1 + 3*r - s^2, u^2)
@@ -60,7 +60,7 @@ end
 Return the negation isomorphism on the elliptic curve $E$.
 """
 function negation_map(E::EllipticCurve)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   return isomorphism(E, [0, -a1, -a3, -1])
 end
 
@@ -141,8 +141,8 @@ function is_isomorphic(E1::EllipticCurve{T}, E2::EllipticCurve{T}) where T
   if char == 2
     E1, phi1 = simplified_model(E1)
     E2, phi2 = simplified_model(E2)
-    a1, a2, a3, a4, a6 = a_invars(E1)
-    _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
+    a1, a2, a3, a4, a6 = a_invariants(E1)
+    _a1, _a2, _a3, _a4, _a6 = a_invariants(E2)
     Rx, x = polynomial_ring(K, "x")
     # j-invariant non-zero
     if j1!=0
@@ -168,8 +168,8 @@ function is_isomorphic(E1::EllipticCurve{T}, E2::EllipticCurve{T}) where T
   if char == 3 && j1 == 0
     E1, phi1 = simplified_model(E1)
     E2, phi2 = simplified_model(E2)
-    a1, a2, a3, a4, a6 = a_invars(E1)
-    _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
+    a1, a2, a3, a4, a6 = a_invariants(E1)
+    _a1, _a2, _a3, _a4, _a6 = a_invariants(E2)
     Rx, x = polynomial_ring(K, "x", cached = false)
     us = roots(x^4 - a4//_a4)
     for u in us
@@ -182,8 +182,8 @@ function is_isomorphic(E1::EllipticCurve{T}, E2::EllipticCurve{T}) where T
     return false
   end
 
-  c4, c6 = c_invars(E1)
-  _c4, _c6 = c_invars(E2)
+  c4, c6 = c_invariants(E1)
+  _c4, _c6 = c_invariants(E2)
 
 
   if j1!=0 && j1!=1728
@@ -220,8 +220,8 @@ function isomorphism(E1::EllipticCurve, E2::EllipticCurve)
 
   E1s, pre_iso = simplified_model(E1)
   E2s, _, post_iso = simplified_model(E2)
-  a1, a2, a3, a4, a6 = a_invars(E1s)
-  _a1, _a2, _a3, _a4, _a6 = a_invars(E2s)
+  a1, a2, a3, a4, a6 = a_invariants(E1s)
+  _a1, _a2, _a3, _a4, _a6 = a_invariants(E2s)
 
 
   if char == 2
@@ -273,8 +273,8 @@ function isomorphism(E1::EllipticCurve, E2::EllipticCurve)
     end
   end
 
-  c4, c6 = c_invars(E1)
-  _c4, _c6 = c_invars(E2)
+  c4, c6 = c_invariants(E1)
+  _c4, _c6 = c_invariants(E2)
 
   if j1 == 0 #Then c4 and _c4 are equal to 0
     Rx, x = polynomial_ring(K, "x")
@@ -299,8 +299,8 @@ function isomorphism(E1::EllipticCurve, E2::EllipticCurve)
   end
 
   #Characteristic != 2 and j!= 0, 1728
-  c4, c6 = c_invars(E1)
-  _c4, _c6 = c_invars(E2)
+  c4, c6 = c_invariants(E1)
+  _c4, _c6 = c_invariants(E2)
   usq = (c6//_c6)//(c4//_c4)
 
   is_square(usq) || error("Curves are not isomorphic")
@@ -315,11 +315,11 @@ function isomorphism(E::EllipticCurve, E2::EllipticCurve)
   char = characteristic(base_field(E))
   if char!= 2 && char!= 3
     if is_isomorphic(E, E2)
-      a1, a2, a3 = a_invars(E)
-      _a1, _a2, _a3 = a_invars(E2)
+      a1, a2, a3 = a_invariants(E)
+      _a1, _a2, _a3 = a_invariants(E2)
 
-      c4, c6 = c_invars(E)
-      _c4, _c6 = c_invars(E2)
+      c4, c6 = c_invariants(E)
+      _c4, _c6 = c_invariants(E2)
       usq = (c6//_c6)//(c4//_c4)
 
       u = sqrt(usq)
@@ -450,7 +450,7 @@ function automorphism_group_generators(E::EllipticCurve{T}) where {T}
 
   Kx, x = polynomial_ring(K, cached = false)
   Es, pre_iso, post_iso = simplified_model(E)
-  a1, a2, a3, a4, a6 = a_invars(Es)
+  a1, a2, a3, a4, a6 = a_invariants(Es)
 
   if char != 2 && char != 3
     if j == 1728

@@ -69,7 +69,7 @@
   @test sprint(show, "text/plain", L) isa String
   @test get_attribute(L, :absolute_pseudo_matrix) === nothing
   PMabs = @inferred Hecke.absolute_pseudo_matrix(L)
-  Eabs = nf(base_ring(PMabs))
+  Eabs = Hecke.nf(base_ring(PMabs))
   @test change_base_ring(Eabs, L.pmat.matrix) == PMabs.matrix
   @test get_attribute(L, :absolute_pseudo_matrix) === Hecke.absolute_pseudo_matrix(L)
 
@@ -122,7 +122,7 @@
   L = hermitian_lattice(E, gens, gram = D)
 
   p = genus(L).LGS[1].p
-  v = infinite_places(nf(base_ring(L)))[1]
+  v = infinite_places(Hecke.nf(base_ring(L)))[1]
   @test_throws ErrorException hasse_invariant(L,p)
   @test_throws ErrorException witt_invariant(L,p)
 

@@ -18,7 +18,7 @@ function formal_w(E::EllipticCurve, prec::Int = 20)
   kz, z = laurent_series_ring(k, prec, "z")
   kzw, w = polynomial_ring(kz, "w")
 
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
 
   f = z^3 + a1*z*w + a2*z^2*w + a3*w^2 + a4*z*w^2 + a6*w^3
   result = z^3 + a1*z*w + a2*z^2*w + a3*w^2 + a4*z*w^2 + a6*w^3
@@ -63,7 +63,7 @@ Return the formal expansion of f(z) where f(z)dz is the invariant differential d
 at infinity in terms of parameter z= -x/y up to O(z^prec).
 """
 function formal_differential_form(E::EllipticCurve, prec::Int = 20)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   x = formal_x(E, prec + 1)
   y = formal_y(E, prec + 1)
   dx = derivative(x)
@@ -83,7 +83,7 @@ end
 #Taking powers is inefficient here everywhere
 #=function formal_group_law(E::EllipticCurve, prec::Int = 20)
   k = base_field(E)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   ktt, (z1, z2) = power_series_ring(k, prec + 1, ["z1", "z2"])
 
   #We now compute the slope lambda of the addition in the formal group law
@@ -122,7 +122,7 @@ in terms of the parameter z= -x/y up to O(z^prec).
 function formal_inverse(E::EllipticCurve, prec::Int = 20)
    x = formal_x(E, prec+1)
    y = formal_y(E, prec+1)
-   a1, a2, a3 = a_invars(E)
+   a1, a2, a3 = a_invariants(E)
    return truncate(x //(y + a1*x + a3), prec)
 end
 
