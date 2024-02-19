@@ -127,7 +127,13 @@ end
 
 *(x::ZZIdl, y::ZZIdl) = ZZIdl(x.gen * y.gen)
 
-intersect(x::ZZIdl, y::ZZIdl) = ZZIdl(lcm(x.gen, y.gen))
+function intersect(x::ZZIdl, y::ZZIdl...)
+  g = gen(x)
+  for I in y
+    g = lcm(g, gen(I))
+  end
+  return ZZIdl(g)
+end
 
 lcm(x::ZZIdl, y::ZZIdl) = intersect(x, y)
 
@@ -152,6 +158,13 @@ isone(I::ZZIdl) = isone(I.gen)
 iszero(I::ZZIdl) = iszero(gen(I))
 is_maximal(I::ZZIdl) = is_prime(gen(I))
 is_prime(I::ZZIdl) = is_zero(I) || is_maximal(I)
+is_primary(I::ZZIdl) = is_zero(I) || is_prime_power_with_data(gen(I))[1]
+
+is_subset(I::ZZIdl, J::ZZIdl) = is_divisible_by(gen(J), gen(I))
+
+radical(I::ZZIdl) = iszero(I) ? I : ideal(ZZ, radical(gen(I)))
+primary_decomposition(I::ZZIdl) = iszero(I) ? [ (I,I) ] :
+  [ (ideal(ZZ, p^k), ideal(ZZ, p)) for (p,k) in factor(gen(I)) ]
 
 maximal_order(::QQField) = ZZ
 

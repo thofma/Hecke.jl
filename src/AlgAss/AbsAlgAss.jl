@@ -1212,7 +1212,7 @@ end
 @doc raw"""
      radical(A::AbstractAssociativeAlgebra) -> AbsAlgAssIdl
 
-Returns the Jacobson-Radical of $A$.
+Returns the Jacobson radical of $A$.
 """
 function radical(A::AbstractAssociativeAlgebra{T}) where { T } #<: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem, QQFieldElem, AbsSimpleNumFieldElem } }
   return ideal_from_gens(A, _radical(A), :twosided)
