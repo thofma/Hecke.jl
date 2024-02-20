@@ -1343,7 +1343,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
     uni_sub = zeros(Hecke.Globals.Qx, nvars(R))
     uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
     K1, alpha = number_field(evaluate(a, uni_sub), cached = false)
-    R1 = polynomial_ring(K1, map(string, symbols(R)), ordering = ordering(R), cached = false)[1]
+    R1 = polynomial_ring(K1, map(string, symbols(R)), internal_ordering = internal_ordering(R), cached = false)[1]
     A = map_coefficients(K1, a, parent = R1)
     x = gen(R1, vars[1])
     return (unit, [x - alpha, divexact(A, x - alpha)])
@@ -1352,7 +1352,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
     bi_sub[vars[2]] = y
     f, fbar = absolute_bivariate_factorisation(evaluate(a, bi_sub))
     K1 = base_ring(f)
-    R1 = polynomial_ring(K1, map(string, symbols(R)), ordering = ordering(R), cached = false)[1]
+    R1 = polynomial_ring(K1, map(string, symbols(R)), internal_ordering = internal_ordering(R), cached = false)[1]
     revsub = [gen(R1, vars[1]), gen(R1, vars[2])]
     return (unit, [evaluate(f, revsub), evaluate(fbar, revsub)])
   end
@@ -1416,7 +1416,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   f, fbar = absolute_bivariate_factorisation(bi_a)
 
   K1 = base_ring(f)
-  R1 = polynomial_ring(K1, map(string, symbols(R)), ordering = ordering(R), cached = false)[1]
+  R1 = polynomial_ring(K1, map(string, symbols(R)), internal_ordering = internal_ordering(R), cached = false)[1]
   f = _yzero_image(R1, f, mainvar)
   fbar = _yzero_image(R1, fbar, mainvar)
 
