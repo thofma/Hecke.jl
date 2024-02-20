@@ -345,7 +345,7 @@ function _radical_by_trace(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
   R = residue_ring(FlintZZ, q, cached=false)[1]
-  B = kernel(R, trace_matrix(O); side = :right)
+  B = kernel(change_base_ring(R, trace_matrix(O)); side = :right)
   M2 = zero_matrix(FlintZZ, d, d)
   for i = 1:ncols(B)
     for j = 1:d
@@ -945,7 +945,7 @@ function pradical_trace1(O::AbsSimpleNumFieldOrder, p::IntegerUnion)
   hnf_modular_eldiv!(M1, ZZRingElem(p), :lowerleft)
   I1 = ideal(O, p, gen2)
   I1.basis_matrix = M1
-  B = kernel(F, M; side = :right)
+  B = kernel(change_base_ring(F, M); side = :right)
   if iszero(ncols(B))
     return ideal(O, p)
   end
