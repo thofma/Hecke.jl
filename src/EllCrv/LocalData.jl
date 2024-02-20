@@ -774,6 +774,18 @@ function tates_algorithm_global(E::EllipticCurve{QQFieldElem})
   return E::EllipticCurve{QQFieldElem}
 end
 
+function tates_algorithm_global(E::T) where T<: EllipticCurve{ <:AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem,<:PolyRingElem}}
+
+  R = base_ring(base_field(E).fraction_field)
+
+  delta = factor(R, discriminant(E))
+
+  for (p,_) in delta
+    E = tates_algorithm_local(E,p)[1]
+  end
+
+  return E::T
+end
 
 
 struct KodairaSymbol

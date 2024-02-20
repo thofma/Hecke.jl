@@ -804,6 +804,12 @@ end
 #  return elliptic_curve(ai)
 #end
 
+function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FqFieldElem}})
+  F = base_field(E).fraction_field
+  R = base_ring(F)
+  return integral_model(R, E)
+end
+
 function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{QQFieldElem}})
   Zx = Hecke.Globals.Zx
   K = base_field(E)
