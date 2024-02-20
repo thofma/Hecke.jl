@@ -990,12 +990,12 @@ function contract(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   end
 
   d = degree(O)
-  M = basis_matrix(O, copy = false)*basis_mat_inv(order(A), copy = false)
+  M = basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(FakeFmpqMat, order(A), copy = false)
   @assert M.den == 1
   H = vcat(basis_matrix(A, copy = false), M.num)
   K = kernel(H, side = :left)
   M = view(K, 1:d, 1:d)*basis_matrix(A, copy = false)
-  M = M*basis_matrix(order(A), copy = false)*basis_mat_inv(O, copy = false)
+  M = M*basis_matrix(FakeFmpqMat, order(A), copy = false)*basis_mat_inv(FakeFmpqMat, O, copy = false)
   @assert M.den == 1
   M = _hnf_modular_eldiv(M.num, minimum(A), :lowerleft)
   res = ideal(O, M; check=false, M_in_hnf=true)

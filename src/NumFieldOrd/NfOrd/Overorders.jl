@@ -298,7 +298,7 @@ function _minimal_overorders_nonrecursive_meataxe(O, M)
     end
     bL = hnf!(bL)
     #bL = basis_matrix(L, copy = false)
-    if any(x -> basis_matrix(x, copy = false) == bL, orders)
+    if any(x -> basis_matrix(FakeFmpqMat, x, copy = false) == bL, orders)
       continue
     else
       push!(orders, Order(K, bL, check = false, cached = false))
@@ -321,7 +321,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
     return orders
   end
   if order(A) == p^f
-    O1 = Order(_algebra(O), hnf(basis_matrix(M)), check = false, cached = false)
+    O1 = Order(_algebra(O), hnf(basis_matrix(FakeFmpqMat, M)), check = false, cached = false)
     push!(orders, O1)
     return orders
   end
@@ -446,7 +446,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
   d = degree(O)
   K = _algebra(O)
   if norm(P) == order(A)
-    O1 = Order(K, hnf(basis_matrix(M, copy = false)), check = false, cached = false)
+    O1 = Order(K, hnf(basis_matrix(FakeFmpqMat, M, copy = false)), check = false, cached = false)
     push!(orders, O1)
     return orders
   end
@@ -681,7 +681,7 @@ function pprimary_overorders(O, P)
       if length(lQ) == 1 && is_bass(N, Q)
         new = pprimary_overorders_bass(N, Q)
         for S in new
-          H = basis_matrix(S, copy = false)
+          H = basis_matrix(FakeFmpqMat, S, copy = false)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
             c = current[ind]
@@ -697,7 +697,7 @@ function pprimary_overorders(O, P)
       else
         new = _minimal_poverorders_in_ring_of_multipliers(N, Q, excess)
         for S in new
-          H = basis_matrix(S, copy = false)
+          H = basis_matrix(FakeFmpqMat, S, copy = false)
           #@assert is_hnf(H.num, :lowerleft)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
@@ -806,7 +806,7 @@ function poverorders_recursive_generic(O, p::ZZRingElem)
     N = pop!(to_enlarge)
     new = poverorders_one_step_generic(N, p)
     for S in new
-      H = basis_matrix(S, copy = false)
+      H = basis_matrix(FakeFmpqMat, S, copy = false)
       ind = prod(H.num[i, i] for i in 1:degree(O))//H.den
       if haskey(current, ind)
         c = current[ind]
@@ -960,7 +960,7 @@ function pprimary_overorders_bass(O, P)
     return res
   end
   K = _algebra(O)
-  O1n = Order(K, hnf(basis_matrix(O1, copy = false)), check = false, cached = false)
+  O1n = Order(K, hnf(basis_matrix(FakeFmpqMat, O1, copy = false)), check = false, cached = false)
   push!(res, O1n)
   primes = prime_ideals_over(O1, P)
   while length(primes) == 1
@@ -968,7 +968,7 @@ function pprimary_overorders_bass(O, P)
     if discriminant(O2) == discriminant(O1)
       return res
     end
-    O2n = Order(K, hnf(basis_matrix(O2, copy = false)), check = false, cached = false)
+    O2n = Order(K, hnf(basis_matrix(FakeFmpqMat, O2, copy = false)), check = false, cached = false)
     push!(res, O2n)
     O1 = O2
     primes = prime_ideals_over(O1, primes[1])
@@ -979,7 +979,7 @@ function pprimary_overorders_bass(O, P)
   O3 = O1
   O2 = ring_of_multipliers(primes[1])
   while discriminant(O3) != discriminant(O2)
-    O2n = Order(K, hnf(basis_matrix(O2, copy = false)), check = false, cached = false)
+    O2n = Order(K, hnf(basis_matrix(FakeFmpqMat, O2, copy = false)), check = false, cached = false)
     push!(res1, O2n)
     O3 = O2
     P = prime_ideals_over(O2, primes[1])[1]
@@ -990,7 +990,7 @@ function pprimary_overorders_bass(O, P)
   O3 = O1
   O2 = ring_of_multipliers(primes[2])
   while discriminant(O3) != discriminant(O2)
-    O2n = Order(K, hnf(basis_matrix(O2, copy = false)), check = false, cached = false)
+    O2n = Order(K, hnf(basis_matrix(FakeFmpqMat, O2, copy = false)), check = false, cached = false)
     push!(res2, O2)
     O3 = O2
     P = prime_ideals_over(O2, primes[2])[1]
@@ -1121,18 +1121,18 @@ end
 # This is very slow!
 function intersect(x::AbsSimpleNumFieldOrder, y::AbsSimpleNumFieldOrder)
   d = degree(x)
-  g = lcm(denominator(basis_matrix(x)), denominator(basis_matrix(y)))
-  H = vcat(divexact(g * basis_matrix(x).num, basis_matrix(x).den), divexact(g * basis_matrix(y).num, basis_matrix(y).den))
+  g = lcm(denominator(basis_matrix(FakeFmpqMat, x, copy = false)), denominator(basis_matrix(FakeFmpqMat, y)))
+  H = vcat(divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), divexact(g * basis_matrix(FakeFmpqMat, y).num, basis_matrix(FakeFmpqMat, y).den))
   K = kernel(H, side = :left)
-  return Order(nf(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(x).num, basis_matrix(x).den), :lowerleft), g))
+  return Order(nf(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), :lowerleft), g))
 end
 
 function intersect(x::AlgAssAbsOrd, y::AlgAssAbsOrd)
   d = degree(x)
-  g = lcm(denominator(basis_matrix(x)), denominator(basis_matrix(y)))
-  H = vcat(divexact(g * basis_matrix(x).num, basis_matrix(x).den), divexact(g * basis_matrix(y).num, basis_matrix(y).den))
+  g = lcm(denominator(basis_matrix(FakeFmpqMat, x)), denominator(basis_matrix(FakeFmpqMat, y)))
+  H = vcat(divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), divexact(g * basis_matrix(FakeFmpqMat, y).num, basis_matrix(FakeFmpqMat, y).den))
   K = kernel(H, side = :left)
-  return Order(_algebra(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(x).num, basis_matrix(x).den), :lowerleft), g))
+  return Order(_algebra(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), :lowerleft), g))
 end
 
 ################################################################################
@@ -1352,7 +1352,7 @@ function _overorders_via_idempotent_splitting(M)
 
   I = Iterators.product(oorders...)
   @time for (j, i) in enumerate(I)
-    H = hnf!(basis_matrix(vcat(i...)))
+    H = hnf!(basis_matrix(FakeFmpqMat, vcat(i...)))
     res[j] = Order(A, H)
   end
   return res

@@ -853,7 +853,7 @@ function find_random_second_gen(A::AbsNumFieldOrderIdeal{S, T}) where {S, T}
   m = zero_matrix(FlintZZ, 1, degree(O))
 
   cnt = 0
-  dBmat = denominator(basis_matrix(O, copy = false))
+  dBmat = denominator(basis_matrix(FakeFmpqMat, O, copy = false))
   while true
     cnt += 1
     if cnt > 1000
@@ -872,7 +872,7 @@ function find_random_second_gen(A::AbsNumFieldOrderIdeal{S, T}) where {S, T}
     end
 
     mul!(m, m, basis_matrix(A, copy = false))
-    mul!(m, m, basis_matrix(O, copy = false).num)
+    mul!(m, m, basis_matrix(FakeFmpqMat, O, copy = false).num)
     gen = elem_from_mat_row(K, m, 1, dBmat)
     if is_simple(K) && is_defining_polynomial_nice(K)
       gen = mod(gen, Amin2)

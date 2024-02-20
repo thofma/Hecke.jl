@@ -414,7 +414,7 @@ function _cycleBL(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   # We have to test that (OO:a)/B is a free Z/qZ module.
   #TODO: Check, I am doing something stupid here
   inva = colon(ideal(O, 1), I, true)
-  M1 = basis_mat_inv(inva)
+  M1 = basis_mat_inv(FakeFmpqMat, inva)
   @assert isone(M1.den)
   G1 = divisors(M1.num, q)
   for i = 1:length(G1)
@@ -444,7 +444,7 @@ function _cycleBL2(O::AbsSimpleNumFieldOrder, q::ZZRingElem, I::AbsNumFieldOrder
     I1 = (ideals[1] + ideal(O, q))*(ideals[3] + ideal(O, q))
     I2 = (ideals[2] + ideal(O, q))^2
     if I1 != I2
-      M2 = basis_matrix(I2, copy = false)*basis_mat_inv(I1, copy = false)
+      M2 = basis_matrix(I2, copy = false)*basis_mat_inv(FakeFmpqMat, I1, copy = false)
       @assert isone(M2.den)
       G2 = divisors(M2.num, q)
       for i = 1:length(G2)
@@ -631,7 +631,7 @@ with $xI \subseteq I$.
 function ring_of_multipliers(a::AbsNumFieldOrderIdeal)
   O = order(a)
   n = degree(O)
-  bmatinv = basis_mat_inv(a, copy = false)
+  bmatinv = basis_mat_inv(FakeFmpqMat, a, copy = false)
   if isdefined(a, :gens) && length(a.gens) < n
     B = vcat(elem_type(O)[O(minimum(a))], a.gens)
   else
@@ -675,7 +675,7 @@ function ring_of_multipliers(a::AbsNumFieldOrderIdeal)
   # mhnf is upper right HNF
   transpose!(mhnf, mhnf)
   b = FakeFmpqMat(pseudo_inv(mhnf))
-  mul!(b, b, basis_matrix(O, copy = false))
+  mul!(b, b, basis_matrix(FakeFmpqMat, O, copy = false))
   @hassert :AbsNumFieldOrder 1 defines_order(nf(O), b)[1]
   O1 = AbsNumFieldOrder(nf(O), b)
   if isdefined(O, :disc)

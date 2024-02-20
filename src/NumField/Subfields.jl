@@ -49,7 +49,7 @@ function _improve_subfield_basis(K, bas)
   # Then B_Ok = N * B_LLL_OK
   # Then B' defined as lllN * B_LLL_OK will hopefully be small
   OK = maximal_order(K)
-  OKbmatinv = basis_mat_inv(OK, copy = false)
+  OKbmatinv = basis_mat_inv(FakeFmpqMat, OK, copy = false)
   basinOK = bas * QQMatrix(OKbmatinv.num) * QQFieldElem(1, OKbmatinv.den)
   deno = ZZRingElem(1)
   for i in 1:nrows(basinOK)
@@ -58,11 +58,11 @@ function _improve_subfield_basis(K, bas)
     end
   end
    S = saturate(map_entries(FlintZZ, basinOK * deno))
-  SS = S * basis_matrix(OK, copy = false)
+  SS = S * basis_matrix(FakeFmpqMat, OK, copy = false)
   lllOK = lll(OK)
-  N = (SS * basis_mat_inv(lllOK)).num
+  N = (SS * basis_mat_inv(FakeFmpqMat, lllOK)).num
   lllN = lll(N)
-  maybesmaller = lllN * basis_matrix(lllOK)
+  maybesmaller = lllN * basis_matrix(FakeFmpqMat, lllOK)
   return maybesmaller
 end
 
@@ -77,7 +77,7 @@ function _improve_subfield_basis_no_lll(K, bas)
     end
   end
   S = saturate(map_entries(FlintZZ, basinOK * deno))
-  SS = S * basis_matrix(OK, copy = false)
+  SS = S * basis_matrix(FakeFmpqMat, OK, copy = false)
   return SS
 end
 
@@ -449,8 +449,8 @@ function fixed_field1(K::AbsSimpleNumField, auts::Vector{<:NumFieldHom{AbsSimple
   end
   M = zero_matrix(FlintZZ, degree(K), degree(K)*length(auts_new))
   v = Vector{AbsSimpleNumFieldElem}(undef, degree(K))
-  MOK = basis_matrix(OK, copy = false)
-  MOKinv = basis_mat_inv(OK, copy = false)
+  MOK = basis_matrix(FakeFmpqMat, OK, copy = false)
+  MOKinv = basis_mat_inv(FakeFmpqMat, OK, copy = false)
   for i = 1:length(auts_new)
 		v[1] = one(K)
     v[2] = image_primitive_element(auts_new[i])

@@ -184,6 +184,7 @@ export base_ring
 export basis
 export basis_mat_inv
 export basis_matrix
+export basis_matrix_inverse
 export basis_matrix_of_rational_span
 export basis_of_differentials
 export basis_pmatrix

@@ -8,26 +8,26 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
 
   @testset "Construction" begin
     I = @inferred fractional_ideal(O1, i)
-    @test basis_matrix(I) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(1))
-    @test basis_mat_inv(I) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(16))
+    @test basis_matrix(FakeFmpqMat, I) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(1))
+    @test basis_mat_inv(FakeFmpqMat, I) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(16))
 
     J = @inferred fractional_ideal(O1, i, 2)
-    @test basis_matrix(J) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
-    @test basis_mat_inv(J) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
+    @test basis_matrix(FakeFmpqMat, J) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
+    @test basis_mat_inv(FakeFmpqMat, J) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
 
     K = @inferred fractional_ideal(O1, FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
     @test isdefined(K, :basis_matrix)
-    @test basis_matrix(K) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
-    @test basis_mat_inv(K) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
+    @test basis_matrix(FakeFmpqMat, K) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
+    @test basis_mat_inv(FakeFmpqMat, K) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
 
     L = @inferred fractional_ideal(O1, Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2)))
     @test L.basis_matrix == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
-    @test basis_matrix(L) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
-    @test basis_mat_inv(L) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
+    @test basis_matrix(FakeFmpqMat, L) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
+    @test basis_mat_inv(FakeFmpqMat, L) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
 
     M = @inferred fractional_ideal(O1, 2*a1//2)
-    @test basis_matrix(M) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
-    @test basis_mat_inv(M) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
+    @test basis_matrix(FakeFmpqMat, M) == Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
+    @test basis_mat_inv(FakeFmpqMat, M) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
 
     @test J == K
     @test K == L
@@ -60,7 +60,7 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     i = ideal(O1, FlintZZ[2 0 0; 0 1 0; 0 0 1])
     N = @inferred ring_of_multipliers(i)
 
-    @test basis_matrix(N) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 2], ZZRingElem(1))
+    @test basis_matrix(N) == QQMatrix(Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 2], ZZRingElem(1)))
   end
 
   @testset "Denominator" begin
@@ -71,7 +71,7 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
       O = maximal_order(K)
       I = Hecke.AbsSimpleNumFieldOrderFractionalIdeal(ideal(O, O(2)), ZZRingElem(2))
       @test denominator(I) == ZZRingElem(2)
-      basis_matrix(I)
+      basis_matrix(FakeFmpqMat, I)
       @test denominator(I) == ZZRingElem(2)
     end
   end

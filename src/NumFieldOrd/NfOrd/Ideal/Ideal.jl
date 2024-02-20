@@ -531,11 +531,15 @@ Returns whether $A$ knows its inverse basis matrix.
 @inline has_basis_mat_inv(A::AbsNumFieldOrderIdeal) = isdefined(A, :basis_mat_inv)
 
 @doc raw"""
-    basis_mat_inv(A::AbsNumFieldOrderIdeal) -> ZZMatrix
+    basis_matrix_inverse(A::AbsNumFieldOrderIdeal) -> QQMatrix
 
 Returns the inverse basis matrix of $A$.
 """
-function basis_mat_inv(A::AbsNumFieldOrderIdeal; copy::Bool = true)
+function basis_matrix_inverse(A::AbsNumFieldOrderIdeal; copy::Bool = true)
+  return QQMatrix(basis_mat_inv(FakeFmpqMat, A, copy = false))
+end
+
+function basis_mat_inv(::Type{FakeFmpqMat}, A::AbsNumFieldOrderIdeal; copy::Bool = true)
   assure_has_basis_mat_inv(A)
   if copy
     return deepcopy(A.basis_mat_inv)
@@ -544,11 +548,6 @@ function basis_mat_inv(A::AbsNumFieldOrderIdeal; copy::Bool = true)
   end
 end
 
-@doc raw"""
-    basis_mat_inv(A::AbsNumFieldOrderIdeal) -> FakeFmpqMat
-
-Returns the inverse of the basis matrix of $A$.
-"""
 function assure_has_basis_mat_inv(A::AbsNumFieldOrderIdeal)
   if isdefined(A, :basis_mat_inv)
     return nothing
@@ -868,8 +867,8 @@ function in(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIdeal)
 end
 
 function containment_by_matrices(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIdeal)
-  R = residue_ring(FlintZZ, basis_mat_inv(y, copy = false).den, cached = false)[1]
-  M = map_entries(R, basis_mat_inv(y, copy = false).num)
+  R = residue_ring(FlintZZ, basis_mat_inv(FakeFmpqMat, y, copy = false).den, cached = false)[1]
+  M = map_entries(R, basis_mat_inv(FakeFmpqMat, y, copy = false).num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x, copy = false))
   mul!(v, v, M)
   return iszero(v)
@@ -1076,7 +1075,7 @@ function _minmod_comp_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   if isone(acom)
     return min_uncom
   end
-  e, _ = ppio(denominator(basis_matrix(Zk, copy = false)), acom)
+  e, _ = ppio(denominator(basis_matrix(FakeFmpqMat, Zk, copy = false)), acom)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)
   mod = acom*d*e
@@ -1124,7 +1123,7 @@ function _minmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   if isone(acom)
     return min_uncom
   end
-  e, _ = ppio(denominator(basis_matrix(Zk, copy = false)), acom)
+  e, _ = ppio(denominator(basis_matrix(FakeFmpqMat, Zk, copy = false)), acom)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)
   mod = acom*d*e
@@ -1191,7 +1190,7 @@ function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   k = nf(Zk)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
-   e, _ = ppio(basis_matrix(Zk, copy = false).den, a)
+   e, _ = ppio(basis_matrix(FakeFmpqMat, Zk, copy = false).den, a)
   mod_r = a^2*d*e
   if fits(Int, mod_r)
     S1 = residue_ring(FlintZZ, Int(mod_r), cached=false)[1]
@@ -2110,7 +2109,7 @@ function colon(a::AbsNumFieldOrderIdeal, b::AbsNumFieldOrderIdeal, contains::Boo
     B = basis(b)
   end
 
-  bmatinv = basis_mat_inv(a, copy = false)
+  bmatinv = basis_mat_inv(FakeFmpqMat, a, copy = false)
 
   if contains
     m = zero_matrix(FlintZZ, n*length(B), n)

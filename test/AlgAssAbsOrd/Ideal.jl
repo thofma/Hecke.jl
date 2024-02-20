@@ -116,7 +116,7 @@
     @test is_equal_locally(X, I, 2)
     @test is_equal_locally(X, J, 3)
     @test is_equal_locally(X, K, 13)
-    T = basis_matrix(X) * basis_mat_inv(O)
+    T = basis_matrix(X) * basis_mat_inv(FakeFmpqMat, O)
     for a in QQMatrix(T)
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end

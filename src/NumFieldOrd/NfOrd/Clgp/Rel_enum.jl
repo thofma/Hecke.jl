@@ -14,7 +14,7 @@ function enum_ctx_from_ideal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   l, t = lll(A, v, prec = prec)
   OK = order(A)
   K = nf(OK)
-  temp = FakeFmpqMat(basis_matrix(A, copy = false))*basis_matrix(OK, copy = false)
+  temp = FakeFmpqMat(basis_matrix(A, copy = false))*basis_matrix(FakeFmpqMat, OK, copy = false)
   b = temp.num
   b_den = temp.den
 
@@ -35,7 +35,7 @@ function enum_ctx_from_ideal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   d = ZZRingElem(ceil(abs(prod(TC[TC(E.C[i,i]) for i=1:E.limit]))))
   ## but we don't want to overshoot too much the length of the last
   ## basis element.
-  den = basis_matrix(OK, copy = false).den ## we ignore the den above, but this
+  den = basis_matrix(FakeFmpqMat, OK, copy = false).den ## we ignore the den above, but this
                                 ## changes the discriminant!!!
   b = min(den^2 * (iroot(d, E.limit) + 1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
   @v_do :ClassGroup 3 println("T_2 from disc ", (iroot(d, E.limit)+1)*E.limit * E.d)

@@ -465,8 +465,8 @@ Returns the representation matrix of the element $a$ with entries reduced mod $d
 function representation_matrix_mod(a::AbsNumFieldOrderElem, d::ZZRingElem)
   O = parent(a)
   A, den = representation_matrix_q(elem_in_nf(a))
-  BM = basis_matrix(O, copy = false)
-  BMinv = basis_mat_inv(O, copy = false)
+  BM = basis_matrix(FakeFmpqMat, O, copy = false)
+  BMinv = basis_mat_inv(FakeFmpqMat, O, copy = false)
   d2 = BM.den * BMinv.den * den
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c

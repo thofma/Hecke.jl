@@ -107,7 +107,7 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   else
     c = minkowski_matrix(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
-    b = l*basis_matrix(order(A), copy = false)
+    b = l*basis_matrix(FakeFmpqMat, order(A), copy = false)
 
 
     rt_c = roots_ctx(K)
@@ -233,7 +233,7 @@ function _lll_gram(M::AbsNumFieldOrder)
   @assert is_totally_real(K)
   g = trace_matrix(M)
   w = lll_gram_with_transform(g)[2]
-  On = AbsNumFieldOrder(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -330,7 +330,7 @@ function _lll_CM(M::AbsNumFieldOrder)
   @vprintln :LLL 1 "Now LLL"
   @hassert :LLL 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
-  On = AbsNumFieldOrder(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -354,7 +354,7 @@ function _lll_quad(M::AbsNumFieldOrder)
   g = matrix(FlintZZ, 2, 2, ZZRingElem[a1, a12, a12, a2])
   @hassert :ClassGroup 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
-  On = AbsNumFieldOrder(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -512,7 +512,7 @@ function lll_precomputation(M::AbsNumFieldOrder, prec::Int, nblocks::Int = 4)
     end
     if block == length(to_do)+1
       blocks_selection = Vector{Int}[]
-      On = AbsNumFieldOrder(K, g*basis_matrix(M, copy = false))
+      On = AbsNumFieldOrder(K, g*basis_matrix(FakeFmpqMat, M, copy = false))
       On.is_maximal = M.is_maximal
       if isdefined(M, :index)
       On.index = M.index
@@ -658,7 +658,7 @@ function _lll_with_parameters(M::AbsNumFieldOrder, parameters::Tuple{Float64, Fl
         break
       end
     end
-    On = AbsNumFieldOrder(K, g*basis_matrix(M, copy = false))
+    On = AbsNumFieldOrder(K, g*basis_matrix(FakeFmpqMat, M, copy = false))
     On.is_maximal = M.is_maximal
     if isdefined(M, :index)
       On.index = M.index
@@ -684,7 +684,7 @@ function _lll_with_parameters(M::AbsNumFieldOrder, parameters::Tuple{Float64, Fl
     end
     @vprintln :LLL 3 "Still in the loop"
   end
-  On = AbsNumFieldOrder(K, g*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, g*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -722,7 +722,7 @@ A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric
 """
 function lll_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
-  S = FakeFmpqMat(T)*basis_matrix(A, copy = false)*basis_matrix(order(A), copy = false)
+  S = FakeFmpqMat(T)*basis_matrix(FakeFmpqMat, A, copy = false)*basis_matrix(FakeFmpqMat, order(A), copy = false)
   K = nf(order(A))
   nS = numerator(S)
   dS = denominator(S)
@@ -733,7 +733,7 @@ end
 function lll_basis(A::AbsSimpleNumFieldOrderFractionalIdeal, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   L, T = lll(A.num, v, prec=prec)
-  S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(order(A))
+  S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(FakeFmpqMat, order(A))
   K = nf(order(A))
   nS = numerator(S)
   dS = denominator(S)
@@ -760,7 +760,7 @@ function short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFiel
   t = lll(A, v, prec = prec)[2]
   w = view(t, 1:1, 1:ncols(t))
   mul!(w, w, basis_matrix(A, copy = false))
-  c = w*basis_matrix(order(A), copy = false)
+  c = w*basis_matrix(FakeFmpqMat, order(A), copy = false)
   q = elem_from_mat_row(K, c.num, 1, c.den)
   return q
 end

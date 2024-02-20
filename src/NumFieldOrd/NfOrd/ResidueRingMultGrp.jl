@@ -375,7 +375,7 @@ function _pu_mod_pv(pu::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
 
   O=order(pu)
   b=basis(pu)
-  N = basis_matrix(pv, copy = false)*basis_mat_inv(pu, copy = false)
+  N = basis_matrix(pv, copy = false)*basis_mat_inv(FakeFmpqMat, pu, copy = false)
   @assert isone(N.den)
   G = abelian_group(N.num)
   S, mS=snf(G)
@@ -391,7 +391,7 @@ function _pu_mod_pv(pu::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
   end
 
   #Disclog
-  M = basis_mat_inv(pu, copy = false)*mS.imap
+  M = basis_mat_inv(FakeFmpqMat, pu, copy = false)*mS.imap
   x_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
   local disclog
   let M = M, O = O, S = S, x_fakemat2 = x_fakemat2

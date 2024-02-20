@@ -123,7 +123,7 @@ These tests can be disabled by setting `check = false`.
 """
 function locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
   if check
-    if !(algebra(O) isa GroupAlgebra) || basis_matrix(O, copy = false) != FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(O))), ZZRingElem(1))
+    if !(algebra(O) isa GroupAlgebra) || basis_matrix(FakeFmpqMat, O, copy = false) != FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(O))), ZZRingElem(1))
       error("Only implemented for group rings")
     end
   end
@@ -196,7 +196,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
   OinZ = _as_order_of_smaller_algebra(ZtoA, O, OA)
   @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :left)
   @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :right)
-  @assert isone(denominator(basis_matrix(FinZ) * basis_mat_inv(OinZ)))
+  @assert isone(denominator(basis_matrix(FinZ) * basis_mat_inv(FakeFmpqMat, OinZ)))
 
   primary_ideals = Vector{Tuple{ideal_type(O), ideal_type(O)}}()
   prim = primary_decomposition(FinZ, OinZ)
