@@ -613,16 +613,6 @@ function _get_pivots_ut(A::MatElem{<: FieldElem})
   return pivots
 end
 
-function _can_solve_using_rref(A::MatElem{T}, b::Vector{T}) where {T}
-  s, R, U = _rref_with_trans(A)
-  pivots = _get_pivots_ut(R)
-  fl, x = _can_solve_given_rref(R, U, pivots, b)
-  if fl
-    @assert A * matrix(base_ring(A), length(x), 1, x) == matrix(base_ring(A), length(b), 1, b)
-  end
-  return fl, x
-end
-
 function _can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
   Ub = U * b
   fl, x = _can_solve_rref_ut(R, Ub, pivots)
