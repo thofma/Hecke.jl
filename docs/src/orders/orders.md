@@ -25,7 +25,7 @@ and can also be interpreted as a normalization of any other order.
 
 ```@docs
 Order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
-Order(::AbsSimpleNumField, ::FakeFmpqMat)
+Order(::AbsSimpleNumField, ::QQMatrix)
 Order(::AbsSimpleNumFieldOrderFractionalIdeal)
 EquationOrder(::AbsSimpleNumField)
 MaximalOrder(::AbsSimpleNumField)

@@ -223,7 +223,7 @@ function _roots_hensel(f::Generic.Poly{AbsSimpleNumFieldElem};
   gsa = derivative(K.pol)(gen(K))
   if !is_defining_polynomial_nice(K)
     E = any_order(K)
-    gsa = K(discriminant(E)) * det(numerator(basis_matrix(E, copy= false)))
+    gsa = K(discriminant(E)) * det(numerator(basis_matrix(FakeFmpqMat, E, copy= false)))
   end
   gsa_con = conjugates_arb(gsa, 32)
 
@@ -460,7 +460,7 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
     E = any_order(K)
     den = ZX(discriminant(E))
     iden = QQFieldElem(1, discriminant(E))
-    sc = abs(det(numerator(basis_matrix(E))))
+    sc = abs(det(numerator(basis_matrix(FakeFmpqMat, E))))
   end
 
   @vprintln :Saturate 1 "using a denominator estimate of $den"
@@ -726,7 +726,7 @@ function _lifting_expo(p::Int, deg_p::Int, K::AbsSimpleNumField, bnd::Vector{Arb
 
   boundt2 = max(bd, one(R))
 
-  t = basis_matrix(any_order(K))
+  t = basis_matrix(FakeFmpqMat, any_order(K))
   @assert denominator(t) == 1
   tt = numerator(t)
   tt *= transpose(tt)

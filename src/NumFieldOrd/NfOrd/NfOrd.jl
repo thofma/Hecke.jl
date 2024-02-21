@@ -114,7 +114,7 @@ function assure_has_basis_mat_inv(O::AbsNumFieldOrder)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  M = basis_matrix(O, copy = false)
+  M = basis_matrix(FakeFmpqMat, O, copy = false)
   if isdefined(O, :index) && is_lower_triangular(M.num)
     #The order contains the equation order and the matrix is lower triangular
     #The inverse is lower triangular and it has denominator 1
@@ -123,7 +123,7 @@ function assure_has_basis_mat_inv(O::AbsNumFieldOrder)
     O.basis_mat_inv = FakeFmpqMat(I)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_matrix(O, copy = false))
+  O.basis_mat_inv = inv(basis_matrix(FakeFmpqMat, O, copy = false))
   return nothing
 end
 
@@ -181,12 +181,16 @@ end
 ################################################################################
 
 @doc raw"""
-    basis_matrix(O::AbsNumFieldOrder) -> FakeFmpqMat
+    basis_matrix(O::AbsNumFieldOrder) -> QQMatrix
 
 Returns the basis matrix of $\mathcal O$ with respect to the basis
 of the ambient number field.
 """
 function basis_matrix(O::AbsNumFieldOrder; copy::Bool = true)
+  return QQMatrix(basis_matrix(FakeFmpqMat, O, copy = false))
+end
+
+function basis_matrix(::Type{FakeFmpqMat}, O::AbsNumFieldOrder; copy::Bool = true)
   assure_has_basis_matrix(O)
   if copy
     return deepcopy(O.basis_matrix)
@@ -200,13 +204,17 @@ end
 
 Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv(O::AbsNumFieldOrder; copy::Bool = true)
+function basis_mat_inv(::Type{FakeFmpqMat}, O::AbsNumFieldOrder; copy::Bool = true)
   assure_has_basis_mat_inv(O)
   if copy
     return deepcopy(O.basis_mat_inv)
   else
     return O.basis_mat_inv
   end
+end
+
+function basis_matrix_inverse(O::AbsNumFieldOrder; copy::Bool = true)
+  return QQMatrix(basis_mat_inv(FakeFmpqMat, O, copy = false))
 end
 
 ################################################################################
@@ -311,10 +319,10 @@ function gen_index(O::AbsNumFieldOrder)
     return deepcopy(O.gen_index)
   else
     #TODO: Remove once the determinant checks if a matrix is upper/lower triangular.
-    if is_lower_triangular(basis_matrix(O, copy = false).num)
-      return basis_matrix(O, copy = false).den^degree(O)//prod_diagonal(basis_matrix(O, copy = false).num)
+    if is_lower_triangular(basis_matrix(FakeFmpqMat, O, copy = false).num)
+      return basis_matrix(FakeFmpqMat, O, copy = false).den^degree(O)//prod_diagonal(basis_matrix(FakeFmpqMat, O, copy = false).num)
     end
-    O.gen_index = inv(det(basis_matrix(O, copy = false)))
+    O.gen_index = inv(det(basis_matrix(FakeFmpqMat, O, copy = false)))
     return deepcopy(O.gen_index)
   end
 end
@@ -522,11 +530,11 @@ function in(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
     if isone(d)
       return true
     end
-    exp_index = basis_matrix(O, copy = false).den
+    exp_index = basis_matrix(FakeFmpqMat, O, copy = false).den
     if !is_divisible_by(exp_index, d)
       return false
     end
-    M = basis_mat_inv(O, copy = false)
+    M = basis_mat_inv(FakeFmpqMat, O, copy = false)
     d2 = ppio(M.den, d)[1]
     t = O.tcontain
     elem_to_mat_row!(t.num, 1, t.den, a)
@@ -564,7 +572,7 @@ $\mathcal O$.
 function denominator(a::AbsNonSimpleNumFieldElem, O::AbsNumFieldOrder)
   M = O.tcontain
   elem_to_mat_row!(M.num, 1, M.den, a)
-  M = mul!(M, M, basis_mat_inv(O, copy = false))
+  M = mul!(M, M, basis_mat_inv(FakeFmpqMat, O, copy = false))
   return deepcopy(M.den)
 end
 
@@ -582,7 +590,7 @@ function denominator(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
     end
     a1 = d2*a
     a1 = mod(a1, d1)
-    M = basis_mat_inv(O, copy = false)
+    M = basis_mat_inv(FakeFmpqMat, O, copy = false)
     d3 = ppio(M.den, d1)[1]
     M1 = mod(M.num, d1*d3)
     t = O.tcontain
@@ -594,7 +602,7 @@ function denominator(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
   end
   M = O.tcontain
   elem_to_mat_row!(M.num, 1, M.den, a)
-  M = mul!(M, M, basis_mat_inv(O, copy = false))
+  M = mul!(M, M, basis_mat_inv(FakeFmpqMat, O, copy = false))
   return deepcopy(M.den)
 end
 
@@ -766,11 +774,16 @@ function Order(K, a::Vector; check::Bool = true, isbasis::Bool = false,
 end
 
 @doc raw"""
-    Order(K::AbsSimpleNumField, A::FakeFmpqMat; check::Bool = true) -> AbsSimpleNumFieldOrder
+    Order(K::AbsSimpleNumField, A::QQMatrix; check::Bool = true) -> AbsSimpleNumFieldOrder
 
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
+function Order(K::S, a::QQMatrix; check::Bool = true,
+               cached::Bool = false) where {S <: NumField{QQFieldElem}}
+  return Order(K, FakeFmpqMat(a); check = check, cached = cached)
+end
+
 function Order(K::S, a::FakeFmpqMat; check::Bool = true,
                cached::Bool = false) where {S <: NumField{QQFieldElem}}
   if check
@@ -1000,7 +1013,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
     if is_maximal_known_and_maximal(extended_order) || length(elt) == 0
       return extended_order
     end
-    B = basis_matrix(extended_order)
+    B = basis_matrix(FakeFmpqMat, extended_order)
     bas = basis(extended_order, K)
     full_rank = true
     m = _det_triangular(numerator(B, copy = false))//denominator(B, copy = false)
@@ -1159,7 +1172,7 @@ end
 Checks if $R$ is contained in $S$.
 """
 function is_contained(R::AbsNumFieldOrder, S::AbsNumFieldOrder)
-  return (basis_matrix(R, copy = false)*basis_mat_inv(S, copy = false)).den == 1
+  return (basis_matrix(FakeFmpqMat, R, copy = false)*basis_mat_inv(FakeFmpqMat, S, copy = false)).den == 1
 end
 
 function ==(R::AbsNumFieldOrderSet, S::AbsNumFieldOrderSet)
@@ -1254,8 +1267,8 @@ function sum_as_Z_modules_fast(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * de
   @hassert :AbsNumFieldOrder 1 contains_equation_order(O1)
   @hassert :AbsNumFieldOrder 1 contains_equation_order(O2)
   K = _algebra(O1)
-  R1 = basis_matrix(O1, copy = false)
-  S1 = basis_matrix(O2, copy = false)
+  R1 = basis_matrix(FakeFmpqMat, O1, copy = false)
+  S1 = basis_matrix(FakeFmpqMat, O2, copy = false)
   d = degree(K)
   g = gcd(R1.den, S1.den)
   r1 = divexact(R1.den, g)
@@ -1454,7 +1467,7 @@ for orders $R\subseteq S$.
 """
 function conductor(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder)
   n = degree(R)
-  t = basis_matrix(R, copy = false) * basis_mat_inv(S, copy = false)
+  t = basis_matrix(FakeFmpqMat, R, copy = false) * basis_mat_inv(FakeFmpqMat, S, copy = false)
   if !isone(t.den)
     error("The first order is not contained in the second!")
   end

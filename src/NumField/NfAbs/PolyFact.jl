@@ -340,7 +340,7 @@ function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderI
   den = K(1)
   if !is_maximal_known_and_maximal(order(P))
     if !is_defining_polynomial_nice(K)
-      den = K(discriminant(order(P))*det(basis_matrix(order(P), copy = false)))
+      den = K(discriminant(order(P))*det(basis_matrix(FakeFmpqMat, order(P), copy = false)))
     else
       den = derivative(K.pol)(gen(K))
     end
@@ -495,7 +495,7 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   #M * basis_matrix(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
   vH.pMr = (F.num, F.den, fmpz_preinvn_struct(2*F.den))
-  F = basis_mat_inv(order(vH.P)) * F
+  F = basis_mat_inv(FakeFmpqMat, order(vH.P)) * F
   vH.pM = (F.num, F.den)
 end
 
@@ -552,7 +552,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   elseif is_defining_polynomial_nice(K)
     den = derivative(K.pol)(gen(K))
   else
-    den = K(discriminant(order(P))) * det(basis_matrix(order(P), copy= false))
+    den = K(discriminant(order(P))) * det(basis_matrix(FakeFmpqMat, order(P), copy= false))
   end
 
   _, mK = residue_field(order(P), P)

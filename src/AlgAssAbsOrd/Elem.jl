@@ -41,7 +41,7 @@ end
 end
 
 (O::AlgAssAbsOrd{S, T})(arr::Vector{ZZRingElem}) where {S, T} = begin
-  M = basis_matrix(O, copy = false)
+  M = basis_matrix(FakeFmpqMat, O, copy = false)
   N = matrix(FlintZZ, 1, degree(O), arr)
   NM = N*M
   x = elem_from_mat_row(algebra(O), NM.num, 1, NM.den)
@@ -371,8 +371,8 @@ The multiplication is from the left if `action == :left` and from the right if
 function representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left)
 
   O = parent(x)
-  M = basis_matrix(O, copy = false)
-  M1 = basis_mat_inv(O, copy = false)
+  M = basis_matrix(FakeFmpqMat, O, copy = false)
+  M1 = basis_mat_inv(FakeFmpqMat, O, copy = false)
 
   B = FakeFmpqMat(representation_matrix(elem_in_algebra(x, copy = false), action))
   B = mul!(B, M, B)
@@ -384,8 +384,8 @@ end
 
 function representation_matrix_mod(x::AlgAssAbsOrdElem, d::ZZRingElem, action::Symbol = :left)
   O = parent(x)
-  M = basis_matrix(O, copy = false)
-  M1 = basis_mat_inv(O, copy = false)
+  M = basis_matrix(FakeFmpqMat, O, copy = false)
+  M1 = basis_mat_inv(FakeFmpqMat, O, copy = false)
 
   A = FakeFmpqMat(representation_matrix(elem_in_algebra(x, copy = false), action))
   d2 = M.den * M1.den*A.den

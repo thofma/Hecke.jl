@@ -804,7 +804,7 @@ function probabilistic_coprime(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   O = order(a)
   K = nf(O)
   J = inv(a)
-  temp = basis_matrix(J.num, copy = false)*basis_matrix(O, copy = false)
+  temp = basis_matrix(J.num, copy = false)*basis_matrix(FakeFmpqMat, O, copy = false)
   b = temp.num
   b_den = temp.den
   prec = 100

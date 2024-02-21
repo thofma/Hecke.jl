@@ -96,7 +96,7 @@ function _1pluspk_1pluspk1(O::AbsSimpleNumFieldOrder, p::AbsNumFieldOrderIdeal{A
 
   L = nf(O)
   b = basis(pk, copy = false)
-  N = basis_matrix(pv, copy = false)*basis_mat_inv(pk, copy = false)
+  N = basis_matrix(pv, copy = false)*basis_mat_inv(FakeFmpqMat, pk, copy = false)
   G = abelian_group(N.num)
   S, mS = snf(G)
   #Generators

@@ -534,8 +534,8 @@ function _as_number_fields(A::AbstractAssociativeAlgebra{T}; use_maximal_order::
     # Compute a LLL reduced basis of the maximal order of A to find "small"
     # polynomials for the number fields.
     OA = maximal_order(A)
-    L = lll(basis_matrix(OA, copy = false).num)
-    n = basis_matrix(OA, copy = false).den
+    L = lll(basis_matrix(FakeFmpqMat, OA, copy = false).num)
+    n = basis_matrix(FakeFmpqMat, OA, copy = false).den
     basis_lll = elem_type(A)[ elem_from_mat_row(A, L, i, n) for i = 1:d ]
   elseif fields_not_cached
     basis_lll = basis(A)

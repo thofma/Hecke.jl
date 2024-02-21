@@ -217,3 +217,8 @@
 @deprecate real_field real_number_field
 
 @deprecate points_with_x points_with_x_coordinate
+
+# Deprecated during 0.28
+
+@deprecate basis_mat_inv(x; copy = true) basis_mat_inv(FakeFmpqMat, x; copy)
+

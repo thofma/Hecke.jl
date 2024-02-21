@@ -213,6 +213,7 @@ if isparallel
     end
   end
   tests = newtests
+  Hecke.Random.shuffle!(tests)
 end
 
 test_path(test) = joinpath(@__DIR__, test)

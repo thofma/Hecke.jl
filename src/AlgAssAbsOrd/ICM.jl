@@ -213,7 +213,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrd
       M = basis_matrix(potential_basis, FakeFmpqMat)
       return ideal(algebra(R), R, M)
     else
-      M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(R, copy = false)
+      M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(FakeFmpqMat, R, copy = false)
       return fractional_ideal(R, M)
     end
   end
@@ -243,7 +243,7 @@ function ideal_to_matrix(I::Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrder
   K = nf(O)
   a = gen(K)
   M = FakeFmpqMat(representation_matrix(a))
-  B = basis_matrix(I, copy = false)*basis_matrix(O, copy = false)
+  B = basis_matrix(I, copy = false)*basis_matrix(FakeFmpqMat, O, copy = false)
   C = inv(B)
   M = mul!(M, B, M)
   M = mul!(M, M, C)

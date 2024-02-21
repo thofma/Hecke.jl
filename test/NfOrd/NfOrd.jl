@@ -157,28 +157,28 @@
     @test O4.basis_nf == [ a4^0, 2*a4 ]
 
     b = @inferred basis_matrix(O1)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ)))
 
     b = @inferred basis_matrix(O2)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ)))
 
     b = @inferred basis_matrix(O3)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ)))
 
     b = @inferred basis_matrix(O4)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], one(FlintZZ)))
 
-    b = @inferred basis_mat_inv(O1)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ))
+    b = @inferred basis_matrix_inverse(O1)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ)))
 
-    b = @inferred basis_mat_inv(O2)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ))
+    b = @inferred basis_matrix_inverse(O2)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ)))
 
-    b = @inferred basis_mat_inv(O3)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ))
+    b = @inferred basis_matrix_inverse(O3)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ)))
 
-    b = @inferred basis_mat_inv(O4)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[2 0; 0 1], FlintZZ(2))
+    b = @inferred basis_matrix_inverse(O4)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(FlintZZ[2 0; 0 1], FlintZZ(2)))
   end
 
   @testset "Index" begin
@@ -346,7 +346,7 @@
 
     b = @inferred O6_2 +
  O6_3
-    @test basis_matrix(b) == Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6))
+    @test basis_matrix(b) == QQMatrix(Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)))
 
     @test discriminant(b) == 20
 

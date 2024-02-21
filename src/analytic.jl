@@ -174,7 +174,6 @@ end
 
 @doc raw"""
     exponential_integral(x::AbstractFloat) -> AbstractFloat
-    ei(x::AbstractFloat) -> AbstractFloat
 
 Compute the exponential integral function.
 """
