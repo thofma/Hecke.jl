@@ -564,38 +564,6 @@ function _rref_with_trans(M::T) where {T <: MatElem{S} where {S <: FieldElem}}
   return s, sub(n, 1:nrows(M), 1:ncols(M)), sub(n, 1:nrows(M), ncols(M)+1:ncols(n))
 end
 
-# _can_solve_ut over a field
-#
-#Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
-#\times k$, this function computes $x$ such that $Ax = b$. Might fail if
-#the pivots of $A$ are not invertible.
-#"""
-function _can_solve_rref_ut(A::MatElem{T}, b::Vector{T}, pivots::Vector{Int}) where T <: FieldElem
-  n = nrows(A)
-  m = ncols(A)
-  @assert n == length(b)
-  x = Vector{T}(undef, m)
-  K = base_ring(A)
-  for i in 1:m
-    x[i] = zero(K)
-  end
-  if length(pivots) == 0
-    pivots = _get_pivots_ut(A)
-  end
-  @assert length(pivots) == n
-
-  if any(i -> !iszero(b[i]) && iszero(pivots[i]), 1:n)
-    return false, x
-  else
-    for i in 1:n
-      if !iszero(pivots[i])
-        x[pivots[i]] = b[i]
-      end
-    end
-    return true, x
-  end
-end
-
 function _get_pivots_ut(A::MatElem{<: FieldElem})
   n = nrows(A)
   m = ncols(A)
@@ -613,19 +581,7 @@ function _get_pivots_ut(A::MatElem{<: FieldElem})
   return pivots
 end
 
-function _can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
-  Ub = U * b
-  fl, x = _can_solve_rref_ut(R, Ub, pivots)
-  return fl, x
-end
-
-function _can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
-  Ub = U * matrix(base_ring(R), length(b), 1, b)
-  fl, x = _can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots)
-  return fl, x
-end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
-
 @doc raw"""
     _solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
