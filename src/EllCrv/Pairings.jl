@@ -69,7 +69,7 @@ function straight_line(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}, R::El
 
   if P == Q
     #Line tangent to P
-    a1, a2, a3, a4, a6 = a_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
     num = 3*P[1]^2 + 2*a2*P[1] + a4 - a1*P[2]
     denom = 2*P[2] + a1*P[1] + a3
 

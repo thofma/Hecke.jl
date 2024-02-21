@@ -77,9 +77,9 @@ function period_real_embedding(E::EllipticCurve{T}, phi, prec::Int = 100) where 
     precnew = attempt*prec
 
     if phi === nothing
-      b2, b4, b6, b8 = map(ArbField(precnew), b_invars(E))
+      b2, b4, b6, b8 = map(ArbField(precnew), b_invariants(E))
     else
-      b2, b4, b6, b8 = map(real, (map(evaluation_function(phi, precnew), b_invars(E))))
+      b2, b4, b6, b8 = map(real, (map(evaluation_function(phi, precnew), b_invariants(E))))
     end
 
     delta = (-b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6)
@@ -129,9 +129,9 @@ function period_complex_embedding(E::EllipticCurve{T}, phi, prec = 100) where T 
     precnew = attempt*prec
 
     if phi === nothing
-      b2, b4, b6, b8 = map(AcbField(precnew), b_invars(E))
+      b2, b4, b6, b8 = map(AcbField(precnew), b_invariants(E))
     else
-      b2, b4, b6, b8 = map(evaluation_function(phi, precnew), b_invars(E))
+      b2, b4, b6, b8 = map(evaluation_function(phi, precnew), b_invariants(E))
     end
 
     C = parent(b2)

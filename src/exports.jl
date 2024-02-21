@@ -30,10 +30,7 @@ export GroupAlgebraElem
 export MatAlgebra
 export MatAlgebraElem
 export Amodule
-#export ArfField
 export BigComplex
-export CPS_dvev_complex
-export CPS_dvev_real
 export CPS_height_bounds
 export CPS_non_archimedean
 export ClassField
@@ -51,8 +48,6 @@ export EquationOrder
 export FacElem
 export FacElemMon
 export FactorBase
-export FakeFmpqMat
-export FakeFmpqMatSpace
 export FunFldDiff
 export GenOrdFracIdl
 export FinGenAbGroup
@@ -75,7 +70,6 @@ export Isogeny
 export KInftyElem
 export KInftyRing
 export KodairaSymbol
-export Line
 export MSet
 export Map
 export MapFromFunc
@@ -91,6 +85,7 @@ export AbsNumFieldOrderIdeal
 export AbsNumFieldOrderSet
 export RelNonSimpleNumField
 export RelNonSimpleNumFieldEmbedding
+export RelSimpleNumFieldEmbedding
 #export NumFieldAut
 export NumFieldHom
 export NonSimpleNumField
@@ -106,12 +101,10 @@ export Plc
 export Polygon
 export PrimeIdealsSet
 export PrimesSet
-export Qp_soluble
 export QuadBin
 export QuadGenus
 export QuadLat
 export QuadLocalGenus
-export R_soluble
 export RationalUnion
 export SMat
 export SMatSpace
@@ -121,13 +114,12 @@ export TorQuadModule
 export TorQuadModuleElem
 export TorQuadModuleMap
 export UnitGroup
-export VecSpaceRes
 export ZZGenus
 export ZZLat
 export ZZLocalGenus
 export ZZMatrix
 export ZpnGModule
-export a_invars
+export a_invariants
 export abelian_extensions
 export abelian_group
 export abelian_group_homomorphism
@@ -163,7 +155,6 @@ export annihilator
 export anti_uniformizer
 export any_order
 export approximate
-#export arf
 export artin_map
 export associative_algebra
 export atan2
@@ -173,7 +164,7 @@ export automorphism_group_generators
 export automorphism_group_order
 export automorphism_list
 export automorphous_numbers
-export b_invars
+export b_invariants
 export bach_F
 export bach_G
 export bach_rho
@@ -192,7 +183,7 @@ export berlekamp_massey
 export binary_quadratic_form
 export biproduct
 export brown_invariant
-export c_invars
+export c_invariants
 export can_scale_totally_positive
 export can_solve
 export can_solve_with_solution
@@ -282,7 +273,6 @@ export density
 export derivative
 export derived_series
 export det
-export det_mc
 export det_representative
 export dets
 export diagonal
@@ -297,9 +287,7 @@ export dimension
 export direct_product
 export direct_sum
 export disc_log
-export disc_log_bs_gs
 export disc_log_mod
-export disc_log_ph
 export discriminant
 export discriminant_group
 export div
@@ -316,7 +304,6 @@ export dual
 export dual_isogeny
 export dual_of_frobenius
 export echelon_with_transform
-export ei
 export eisenstein_extension
 export elem_in_algebra
 export elem_in_nf
@@ -343,17 +330,11 @@ export extension_field
 export factor
 export factor_absolute
 export factor_coprime
-export factor_mod_pk
-export factor_mod_pk_init
 export faltings_height
 export farey_lift
-export find_identity
 export find_points
-export find_row_starting_with
-export find_small_group
 export finite_divisor
 export finite_maximal_order
-export finite_split
 export fixed_field
 export fixed_ring
 export flat
@@ -373,9 +354,7 @@ export fundamental_discriminant
 export galois_module
 export gcd
 export gcd_into!
-export gen_2_ab
 export gen_index
-export gen_mod_pk
 export generators
 export generic_group
 export genus
@@ -418,7 +397,6 @@ export hilbert_symbol
 export hnf
 export hnf!
 export hnf_extend!
-export hnf_kannan_bachem
 export hom
 export homogeneous_equation
 export howell_form
@@ -597,7 +575,6 @@ export is_weakly_ramified
 export is_zero_row
 export isfinite
 export isnan
-#export isneginf
 export isogeny_from_kernel
 export isogeny_from_kernel_factored
 export isogeny_map_omega
@@ -633,7 +610,6 @@ export leading_coefficient
 export leech_lattice
 export left_order
 export level
-export li
 export lll
 export lll_basis
 export lll_gram_indef_isotropic
@@ -675,7 +651,6 @@ export mod
 export mod!
 export mod_sym!
 export modord
-export modp_reduction
 export modular_init
 export modulus_bilinear_form
 export modulus_quadratic_form
@@ -692,13 +667,10 @@ export multiplicities
 export multiplicity
 export multiset
 export naive_height
-#export nan
 export narrow_class_group
-#export neg_inf
 export negation_map
 export neron_tate_height
 export next_prime
-export nf
 export ngens
 export nnz
 export non_simple_extension
@@ -723,10 +695,6 @@ export one
 export opposite_algebra
 export orbit
 export order
-export order_via_bsgs
-export order_via_exhaustive_search
-export order_via_legendre
-export order_via_schoof
 export orthogonal_basis
 export orthogonal_complement
 export orthogonal_projection
@@ -734,7 +702,6 @@ export orthogonal_submodule
 export overlattice
 export overorders
 export parent
-export percent_P
 export periods
 export permute_row
 export phereditary_overorder
@@ -744,7 +711,6 @@ export points_at_infinity
 export points_with_x
 export points_with_x_coordinate
 export pole_divisor
-#export pos_inf
 export postinverse
 export poverorder
 export poverorders
@@ -776,7 +742,6 @@ export psi_upper
 export psubgroups
 export push!
 export push_through_isogeny
-export qAdicConj
 export quadratic_defect
 export quadratic_field
 export quadratic_lattice
@@ -784,8 +749,6 @@ export quadratic_product
 export quadratic_space
 export quadratic_twist
 export quadratic_twists
-export quartic_local_solubility
-export quartic_rational_point_search
 export quo
 export quotient
 export radical
@@ -799,7 +762,6 @@ export rand
 export rand!
 export rand_row
 export rank
-export rank_2_torsion
 export ranks
 export rational_canonical_form
 export rational_maps
@@ -874,21 +836,13 @@ export simplify
 export sin
 export small_generating_set
 export small_group
-#export small_groups_limit #(conflict with Oscar?)
 export snf
 export snf_with_transform
 export solve
 export solve_init
-export solvemod
 export sparse
 export sparse_matrix
 export sparse_row
-export sparse_trafo_add_scaled
-export sparse_trafo_move_row
-export sparse_trafo_para_add_scaled
-export sparse_trafo_partial_dense
-export sparse_trafo_scale
-export sparse_trafo_swap
 export sparsity
 export splitting_field
 export sqrt
@@ -921,7 +875,6 @@ export tates_algorithm_local
 export tensor_product
 export theta
 export tidy_model
-export to_hecke
 export torsion_bound
 export torsion_points
 export torsion_points_division_poly
@@ -950,7 +903,6 @@ export uniformizer
 export unit_group
 export unit_group_fac_elem
 export unramified_extension
-export valence_mc
 export valuation
 export value_module
 export value_module_quadratic_form
@@ -960,10 +912,8 @@ export volume
 export weil_pairing
 export wildanger_field
 export witt_invariant
-export xxgcd
 export zero
 export zero_algebra
 export zero_divisor
 export zero_map
 export zeta_log_residue
-export RelSimpleNumFieldEmbedding

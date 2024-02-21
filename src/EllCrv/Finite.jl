@@ -60,7 +60,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllipticCurve})
       end
       # choose random x-coordinate and check if there exists a corresponding y-coordinate
       x = rand(rng, R)
-      a1, a2, a3, a4, a6 = a_invars(E)
+      a1, a2, a3, a4, a6 = a_invariants(E)
       Ry, y = polynomial_ring(R,"y")
       f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
       ys = roots(f)
@@ -81,7 +81,7 @@ function rand(rng::AbstractRNG, Esp::Random.SamplerTrivial{<:EllipticCurve})
     end
 
     x = rand(rng, R)
-    _,_,_, a4, a6 = a_invars(E)
+    _,_,_, a4, a6 = a_invariants(E)
     Ry, y = polynomial_ring(R,"y")
     f = y^2 - x^3 - a4*x - a6
     ys = roots(f)
@@ -108,7 +108,7 @@ $\mathbf Z/p\mathbf Z$ using exhaustive search.
 function order_via_exhaustive_search(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   order = FlintZZ(1)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   Ry, y = polynomial_ring(R,"y")
   for x = R
     f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
@@ -149,7 +149,7 @@ function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
   if E.short == false
     E = short_weierstrass_model(E)[1]
   end
-  _, _, _, a4, a6 = a_invars(E)
+  _, _, _, a4, a6 = a_invariants(E)
   x = FlintZZ(0)
 
   while x < p
@@ -435,7 +435,7 @@ function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
         boolie = false
       end
     end
-    _, _, _, a4, a6 = a_invars(E)
+    _, _, _, a4, a6 = a_invariants(E)
     Eprime = elliptic_curve([a4*d^2, a6*d^3]) # quadratic twist
     bb = order_via_bsgs(Eprime)[1]
     output = [2*p + 2 - bb]
@@ -524,8 +524,8 @@ function fn_from_schoof2(E::EllipticCurve, n::Int, x)
   f = psi_poly_field(E, n, x, y)
 
  # println("f: $f, $(degree(f))")
-    A = E.a_invars[4]
-    B = E.a_invars[5]
+    A = E.a_invariants[4]
+    B = E.a_invariants[5]
 
   g = x^3 + A*x + B
 
@@ -572,7 +572,7 @@ function t_mod_prime(l, E)
   T, y = polynomial_ring(S, "y")
   Z = Native.GF(l, cached = false)
 
-  _, _, _, a4, a6 = a_invars(E)
+  _, _, _, a4, a6 = a_invariants(E)
   f = x^3 + a4*x + a6
   fl = division_polynomial_univariate(E, l, x)[2]
   if iseven(l)
@@ -753,8 +753,8 @@ end
 function psi_poly_field(E::EllipticCurve, n::Int, x, y)
 
     R = base_field(E)
-    A = E.a_invars[4]
-    B = E.a_invars[5]
+    A = E.a_invariants[4]
+    B = E.a_invariants[5]
 
     if n == -1
         return -y^0
@@ -779,8 +779,8 @@ end
 # computes psi_n^power mod g
 function psi_power_mod_poly(n, E, x, y, power, g)
 
-    A = E.a_invars[4]
-    B = E.a_invars[5]
+    A = E.a_invariants[4]
+    B = E.a_invariants[5]
 
     fn = fn_from_schoof2(E, n, x)
     f = x^3 + A*x + B

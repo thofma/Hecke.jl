@@ -69,10 +69,10 @@ max(|a|, |b|) <= bound.
 """
 function find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   @req is_integral_model(E) "Elliptic Curve needs to be integral"
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   transform = false
   if a1 != 0 || a3!= 0
-    b2, b4, b6 = b_invars(E)
+    b2, b4, b6 = b_invariants(E)
     coeffs = [b6, b4, b2, 4]
     transform = true
   else

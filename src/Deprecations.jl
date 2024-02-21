@@ -218,7 +218,10 @@
 
 @deprecate points_with_x points_with_x_coordinate
 
-# Deprecated during 0.28
 
+# Deprecated during 0.27
+
+@deprecate a_invars a_invariants
+@deprecate b_invars b_invariants
+@deprecate c_invars c_invariants
 @deprecate basis_mat_inv(x; copy = true) basis_mat_inv(FakeFmpqMat, x; copy)
-

@@ -48,7 +48,7 @@ Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
 isomorphic elliptic curve over $\mathbf Q$ with minimal discriminant.
 """
 function laska_kraus_connell(E::EllipticCurve{QQFieldElem})
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -154,7 +154,7 @@ and $a_2 \in \{-1,0,1\}$.
 """
 function tidy_model(E::EllipticCurve{QQFieldElem})
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
   if mod(a1, 2) == 0
     s = -divexact(a1, 2)
@@ -279,7 +279,7 @@ function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumF
   I = global_minimality_class(E)
   K = base_field(E)
   OK = ring_of_integers(K)
-  c4, c6 = c_invars(E)
+  c4, c6 = c_invariants(E)
 
   if is_principal(I)
     P0 = 1*OK
@@ -525,7 +525,7 @@ end
 function reduce_model(E::EllipticCurve{T}) where T
   @req is_integral_model(E) "E has to be an integral model."
   OK = ring_of_integers(base_field(E))
-  a1, a2, a3, a4, a6 = map(OK, a_invars(E))
+  a1, a2, a3, a4, a6 = map(OK, a_invariants(E))
   s = mod(-a1, 2)
   r = mod(-a2 + s*a1 + s^2, 3)
   t = mod(-a3 - r*a1, 2)
@@ -561,7 +561,7 @@ function rescale_curve(E::EllipticCurve{T}) where T <: AbsSimpleNumFieldElem
       end
     end
 
-    c4, c6 =c_invars(E)
+    c4, c6 =c_invariants(E)
     c4s = conjugates_arb(c4)
     c6s = conjugates_arb(c6)
 
@@ -790,7 +790,7 @@ end
 #    This function is experimental. The interface might change in the future.
 #"""
 #function integral_model(E::EllipticCurve{QQFieldElem})
-#  ai = collect(a_invars(E))
+#  ai = collect(a_invariants(E))
 #  wts = [1, 2, 3, 4, 6]
 #  for a in ai
 #    if !is_integral(a)
@@ -813,7 +813,7 @@ end
 function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{QQFieldElem}})
   Zx = Hecke.Globals.Zx
   K = base_field(E)
-  ai = collect(a_invars(E))
+  ai = collect(a_invariants(E))
   aiorig = ai
   wts = [1, 2, 3, 4, 6]
   for a in aiorig
@@ -833,7 +833,7 @@ end
 
 function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{AbsSimpleNumFieldElem}})
   K = base_field(E)
-  ai = collect(a_invars(E))
+  ai = collect(a_invariants(E))
   aiorig = ai
   wts = [1, 2, 3, 4, 6]
   facs = [is_zero(aiorig[i]) ? nothing : _factor_rational_function_field(ai[i]) for i in 1:5]

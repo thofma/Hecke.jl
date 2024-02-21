@@ -38,20 +38,20 @@
   end
 
   @testset "Order computation (Exhaustive_search)" begin
-    @test 24 == @inferred order_via_exhaustive_search(E1)
+    @test 24 == @inferred Hecke.order_via_exhaustive_search(E1)
   end
 
 
   @testset "Order computation (Legendre)" begin
-    @test 24 == @inferred order_via_legendre(E1)
+    @test 24 == @inferred Hecke.order_via_legendre(E1)
   end
 
   @testset "Order computation (BSGS)" begin
-    @test 24 in @inferred order_via_bsgs(E1)
-    @test 24 in @inferred order_via_bsgs(E2)
-    @test 24 in @inferred order_via_bsgs(E3)
-    @test 576 in @inferred order_via_bsgs(E4)
-    @test 576 in @inferred order_via_bsgs(E4_)
+    @test 24 in @inferred Hecke.order_via_bsgs(E1)
+    @test 24 in @inferred Hecke.order_via_bsgs(E2)
+    @test 24 in @inferred Hecke.order_via_bsgs(E3)
+    @test 576 in @inferred Hecke.order_via_bsgs(E4)
+    @test 576 in @inferred Hecke.order_via_bsgs(E4_)
   end
 
   @testset "Hasse interval" begin
@@ -83,11 +83,11 @@
   end
 
   @testset "Schoofs algorithm" begin
-    @test 24 == @inferred order_via_schoof(E1)
-    @test 24 == @inferred order_via_schoof(E2)
-    @test 24 == @inferred order_via_schoof(E3)
-    @test 576 == @inferred order_via_schoof(E4)
-    @test 576 == @inferred order_via_schoof(E4_)
+    @test 24 == @inferred Hecke.order_via_schoof(E1)
+    @test 24 == @inferred Hecke.order_via_schoof(E2)
+    @test 24 == @inferred Hecke.order_via_schoof(E3)
+    @test 576 == @inferred Hecke.order_via_schoof(E4)
+    @test 576 == @inferred Hecke.order_via_schoof(E4_)
   end
 
   @testset "Point counting" begin

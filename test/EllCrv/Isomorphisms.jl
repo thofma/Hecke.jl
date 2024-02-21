@@ -95,7 +95,7 @@
   for i in 1:length(Es)
     E = Es[i]
     G, GtoAut = @inferred automorphism_group(E)
-    @test find_small_group(G)[1] == ids[i]
+    @test Hecke.find_small_group(G)[1] == ids[i]
     for g in G
       a = GtoAut(g)
       @test domain(a) == codomain(a) == E

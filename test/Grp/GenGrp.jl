@@ -57,19 +57,19 @@
 
     @testset "GrpGenToGrpAb" begin
         G,AtoG,GtoA = Hecke.generic_group([1, -1, im, -im], *)
-        GrpAb, GtoGrpAb, GrpAbtoG = gen_2_ab(G)
+        GrpAb, GtoGrpAb, GrpAbtoG = Hecke.gen_2_ab(G)
         @test GrpAb.snf == ZZ.([4])
         @test order(GtoGrpAb(G[1])) == 1
         @test order(GtoGrpAb(G[2])) == 2
         @test order(GtoGrpAb(G[3])) == 4
         @test order(GtoGrpAb(G[4])) == 4
 
-        @test gen_2_ab(small_group(4,2))[1].snf == ZZ.([2, 2])
-        @test gen_2_ab(small_group(8,2))[1].snf == ZZ.([2, 4])
-        @test gen_2_ab(small_group(58,2))[1].snf == ZZ.([58])
-        @test gen_2_ab(small_group(56,13))[1].snf == ZZ.([2, 2, 14])
-        @test gen_2_ab(small_group(60,13))[1].snf == ZZ.([2, 30])
-        @test gen_2_ab(small_group(54,15))[1].snf == ZZ.([3, 3, 6])
+        @test Hecke.gen_2_ab(small_group(4,2))[1].snf == ZZ.([2, 2])
+        @test Hecke.gen_2_ab(small_group(8,2))[1].snf == ZZ.([2, 4])
+        @test Hecke.gen_2_ab(small_group(58,2))[1].snf == ZZ.([58])
+        @test Hecke.gen_2_ab(small_group(56,13))[1].snf == ZZ.([2, 2, 14])
+        @test Hecke.gen_2_ab(small_group(60,13))[1].snf == ZZ.([2, 30])
+        @test Hecke.gen_2_ab(small_group(54,15))[1].snf == ZZ.([3, 3, 6])
 
     end
     @testset "Trivia" begin
