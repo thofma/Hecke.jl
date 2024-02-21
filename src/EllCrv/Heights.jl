@@ -159,7 +159,7 @@ function local_height(P::EllipticCurvePoint{QQFieldElem}, p, prec::Int = 100)
   x = P[1]
   y = P[2]
 
-  a1, a2, a3, a4, a6 = map(numerator, a_invars(F))
+  a1, a2, a3, a4, a6 = map(numerator, a_invariants(F))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(F)
 
@@ -235,10 +235,10 @@ function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::AbsN
   x = P[1]
   y = P[2]
 
-  a1, a2, a3, a4, a6 = map(numerator, a_invars(F))
+  a1, a2, a3, a4, a6 = map(numerator, a_invariants(F))
 
-  b2, b4, b6, b8 = map(OK, b_invars(E))
-  c4, c6 = map(OK, c_invars(E))
+  b2, b4, b6, b8 = map(OK, b_invariants(E))
+  c4, c6 = map(OK, c_invariants(E))
 
   delta = discriminant(E)
 
@@ -311,7 +311,7 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
 
   b2, b4, b6, b8 = get_b_integral(F)
   H = max(ZZ(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
@@ -412,7 +412,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
   R = ArbField(prec)
   b2, b4, b6, b8 = map(t -> evaluate(t, v,  prec), get_b_integral(F))
   H = max(R(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
@@ -761,7 +761,7 @@ function CPS_dvev_real(E::EllipticCurve{T}, v::V, prec::Int = 100) where T where
   K = base_field(E)
   Kx, x = polynomial_ring(K, "x")
 
-  b2, b4, b6, b8 = b_invars(E)
+  b2, b4, b6, b8 = b_invariants(E)
 
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   df = 12*x^2 +2*b2*x + 2*b4
@@ -779,7 +779,7 @@ function CPS_dvev_real(E::EllipticCurve{T}, v::V, prec::Int = 100) where T where
 
   Rx, x = polynomial_ring(Rc, "x")
 
-  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, _embedding(v), prec), b_invars(E)))
+  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, _embedding(v), prec), b_invariants(E)))
 
   fR = 4*x^3 + b2R*x^2 + 2*b4R*x + b6R
   gR = x^4 - b4R*x^2 -2*b6R*x - b8R
@@ -819,7 +819,7 @@ function CPS_dvev_complex(E::EllipticCurve{T}, v::V, prec::Int = 100) where T wh
   K = base_field(E)
   Rx, x = polynomial_ring(C, "x")
 
-  b2, b4, b6, b8 = map(t -> evaluate(t, _embedding(v), prec), b_invars(E))
+  b2, b4, b6, b8 = map(t -> evaluate(t, _embedding(v), prec), b_invariants(E))
 
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   g = x^4 - b4*x^2 -2*b6*x - b8

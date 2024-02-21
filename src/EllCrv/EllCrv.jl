@@ -43,9 +43,9 @@
 @attributes mutable struct EllipticCurve{T}
   base_field::Ring
   short::Bool
-  a_invars::Tuple{T, T, T, T, T}
-  b_invars::Tuple{T, T, T, T}
-  c_invars::Tuple{T,T}
+  a_invariants::Tuple{T, T, T, T, T}
+  b_invariants::Tuple{T, T, T, T}
+  c_invariants::Tuple{T,T}
   disc::T
   j::T
   coeff::Vector{T}
@@ -63,7 +63,7 @@
           # fixed on Nemo master
           K = parent(coeffs[1])
           E.base_field = K
-          E.a_invars = (zero(K), zero(K), zero(K), coeffs[1], coeffs[2])
+          E.a_invariants = (zero(K), zero(K), zero(K), coeffs[1], coeffs[2])
           E.disc = d
         else
           error("Discriminant is zero")
@@ -73,7 +73,7 @@
         E.short = true
         K = parent(coeffs[1])
         E.base_field = K
-        E.a_invars = (zero(K),zero(K),zero(K),coeffs[1],coeffs[2])
+        E.a_invariants = (zero(K),zero(K),zero(K),coeffs[1],coeffs[2])
       end
     elseif length(coeffs) == 5 # coeffs = [a1, a2, a3, a4, a6]
       if check
@@ -97,8 +97,8 @@
           else
             E.short = false
           end
-          E.a_invars = (a1, a2, a3, a4, a6)
-          E.b_invars = (b2, b4, b6, b8)
+          E.a_invariants = (a1, a2, a3, a4, a6)
+          E.b_invariants = (b2, b4, b6, b8)
           E.disc = d
           E.base_field = parent(coeffs[1])
         else
@@ -116,7 +116,7 @@
           else
             E.short = false
           end
-        E.a_invars = (a1, a2, a3, a4, a6)
+        E.a_invariants = (a1, a2, a3, a4, a6)
         E.base_field = parent(coeffs[1])
       end
     else
@@ -259,8 +259,8 @@ function elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem)
   a2 = coeff(f, [x,y], [2,0])
   a3 = -coeff(f, [x,y], [0,1])
   a1 = -coeff(f, [x,y], [1,1])
-  a_invars = [my_const(i) for i in [a1,a2,a3,a4,a6]]
-  (a1,a2,a3,a4,a6) = a_invars
+  a_invariants = [my_const(i) for i in [a1,a2,a3,a4,a6]]
+  (a1,a2,a3,a4,a6) = a_invariants
   @assert f == (-(y^2 + a1*x*y + a3*y) + (x^3 + a2*x^2 + a4*x + a6))
   E = elliptic_curve(kf, kf.([a1,a2,a3,a4,a6]))
   return E
@@ -373,7 +373,7 @@ Return the base change of the elliptic curve $E$ over $K$ if coercion is
 possible.
 """
 function base_change(K::Field, E::EllipticCurve)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   return elliptic_curve(K, map(K, [a1, a2, a3, a4, a6])::Vector{elem_type(K)})
 end
 
@@ -383,7 +383,7 @@ end
 Return the base change of the elliptic curve $E$ using the map $f$.
 """
 function base_change(f, E::EllipticCurve)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   return elliptic_curve(map(f, [a1, a2, a3, a4, a6]))
 end
 
@@ -399,7 +399,7 @@ end
 Return true if $E$ and $F$ are given by the same model over the same field.
 """
 function ==(E::EllipticCurve, F::EllipticCurve)
-  return a_invars(E) == a_invars(F) && base_field(E) == base_field(F)
+  return a_invariants(E) == a_invariants(F) && base_field(E) == base_field(F)
 end
 
 ################################################################################
@@ -409,13 +409,13 @@ end
 ################################################################################
 
 @doc raw"""
-    a_invars(E::EllipticCurve{T}) -> Tuple{T, T, T, T, T}
+    a_invariants(E::EllipticCurve{T}) -> Tuple{T, T, T, T, T}
 
 Return the Weierstrass coefficients of $E$ as a tuple $(a_1, a_2, a_3, a_4, a_6)$
 such that $E$ is given by $y^2 + a_1xy + a_3y = x^3 + a_2x^2 + a_4x + a_6$.
 """
-function a_invars(E::EllipticCurve)
-  return E.a_invars
+function a_invariants(E::EllipticCurve)
+  return E.a_invariants
 end
 
 @doc raw"""
@@ -424,41 +424,41 @@ end
 Return the Weierstrass coefficients of $E$ as a tuple (a1, a2, a3, a4, a6)
 such that $E$ is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6.
 """
-coefficients(E::EllipticCurve) = a_invars(E)
+coefficients(E::EllipticCurve) = a_invariants(E)
 
 @doc raw"""
-    b_invars(E::EllipticCurve{T}) -> Tuple{T, T, T, T}
+    b_invariants(E::EllipticCurve{T}) -> Tuple{T, T, T, T}
 
 Return the b-invariants of $E$ as a tuple $(b_2, b_4, b_6, b_8)$.
 """
-function b_invars(E::EllipticCurve)
-  if isdefined(E, :b_invars)
-    return E.b_invars
+function b_invariants(E::EllipticCurve)
+  if isdefined(E, :b_invariants)
+    return E.b_invariants
   else
-    a1, a2, a3, a4, a6 = a_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
 
     b2 = a1^2 + 4*a2
     b4 = a1*a3 + 2*a4
     b6 = a3^2 + 4*a6
     b8 = a1^2*a6 - a1*a3*a4 + 4*a2*a6 + a2*a3^2 - a4^2
-    E.b_invars = b2, b4, b6, b8
+    E.b_invariants = b2, b4, b6, b8
     return b2, b4, b6, b8
   end
 end
 
 @doc raw"""
-    c_invars(E::EllipticCurve{T}) -> Tuple{T, T}
+    c_invariants(E::EllipticCurve{T}) -> Tuple{T, T}
 
 Return the c-invariants of $E as a tuple $(c_4, c_6)$.
 """
-function c_invars(E::EllipticCurve)
-  if isdefined(E, :c_invars)
-    return E.c_invars
+function c_invariants(E::EllipticCurve)
+  if isdefined(E, :c_invariants)
+    return E.c_invariants
   else
-    b2,b4,b6,b8 = b_invars(E)
+    b2,b4,b6,b8 = b_invariants(E)
     c4 = b2^2 - 24*b4
     c6 = -b2^3 + 36*b2*b4 - 216*b6
-    E.c_invars = c4, c6
+    E.c_invariants = c4, c6
     return  c4, c6
   end
 end
@@ -480,12 +480,12 @@ function discriminant(E::EllipticCurve{T}) where T
     return E.disc
   end
   if is_short_weierstrass_model(E)
-    _, _, _, a4, a6 = a_invars(E)
+    _, _, _, a4, a6 = a_invariants(E)
     d = -16*(4*a4^3 + 27*a6^2)
     E.disc = d
     return d::T
   else
-    b2, b4, b6, b8 = b_invars(E)
+    b2, b4, b6, b8 = b_invariants(E)
     d = -b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6
     E.disc = d
     return d::T
@@ -511,12 +511,12 @@ function j_invariant(E::EllipticCurve{T}) where T
 
   if E.short == true
     R = base_field(E)
-    a1, a2, a3, a4, a6 = a_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
     j = divexact(-1728*(4*a4)^3,discriminant(E))
     E.j = j
     return j::T
   else
-    c4, c6 = c_invars(E)
+    c4, c6 = c_invariants(E)
     j = divexact(c4^3, discriminant(E))
     E.j = j
     return j::T
@@ -555,7 +555,7 @@ function equation(Kxy::MPolyRing, E::EllipticCurve)
   K = base_field(E)
   @req base_ring(Kxy) === K "Base field of elliptic curve and polynomial ring must coincide"
   x, y = gens(Kxy)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   return y^2 + a1*x*y + a3*y - (x^3 + a2*x^2 + a4*x + a6)
 end
 
@@ -582,7 +582,7 @@ end
 function hyperelliptic_polynomials(Kx::PolyRing, E::EllipticCurve)
   x = gen(Kx)
   @req base_ring(Kx) === base_field(E) "Base field of elliptic curve and polynomial ring must coincide"
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   return x^3 + a2*x^2 + a4*x + a6, a1*x + a3
 end
 
@@ -685,7 +685,7 @@ end
 function points_with_x_coordinate(E::EllipticCurve{T}, x) where T
   R = base_field(E)
   x = R(x)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   Ry, y = polynomial_ring(R,"y")
   f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
   ys = roots(f)
@@ -742,7 +742,7 @@ false
 """
 function is_on_curve(E::EllipticCurve, coords::Vector)
   length(coords) != 2 && error("Array must be of length 2")
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   x = coords[1]
   y = coords[2]
 
@@ -780,7 +780,7 @@ end
 
 function show(io::IO, E::EllipticCurve)
   print(io, "Elliptic curve with equation\n")
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   sum = Expr(:call, :+)
   push!(sum.args, Expr(:call, :^, :y, 2))
   c = a1
@@ -881,7 +881,7 @@ function +(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where T
     elseif P[2] != Q[2]
         return infinity(E)
     elseif P[2] != 0
-        _, _, _, a4 = a_invars(E)
+        _, _, _, a4 = a_invariants(E)
         m = divexact(3*(P[1])^2 + a4, 2*P[2])
         x = m^2 - 2*P[1]
         y = m* (P[1] - x) - P[2]
@@ -892,7 +892,7 @@ function +(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where T
     Erg = E([x, y], check = false)
 
   else
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
 
     # Use [Cohen, p. 270]
     if P[1] == Q[1]
@@ -948,7 +948,7 @@ function -(P::EllipticCurvePoint)
   if E.short == true
     Q = E([P[1], -P[2]], check = false)
   else
-    a1,_, a3 = a_invars(E)
+    a1,_, a3 = a_invariants(E)
     Q = E([P[1], -a1*P[1] - a3 - P[2]], check = false)
   end
 
@@ -1036,7 +1036,7 @@ function multiplication_by_m_numerator(E::EllipticCurve, m::S, x = polynomial_ri
     return x*psi_m^2 + (psi_mmin*psi_mplus)
   end
 
-  b2, b4, b6, b8 = b_invars(E)
+  b2, b4, b6, b8 = b_invariants(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
 
   psi_mmin = division_polynomial_univariate(E, m-1, x)[2]
@@ -1060,7 +1060,7 @@ function multiplication_by_m_denominator(E::EllipticCurve, m::S, x = polynomial_
     return psi_m^2
   end
 
-  b2, b4, b6, b8 = b_invars(E)
+  b2, b4, b6, b8 = b_invariants(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
   psi_m = division_polynomial_univariate(E, m, x)[2]
 
@@ -1079,7 +1079,7 @@ function multiplication_by_m_y_coord(E::EllipticCurve, m::S, x = polynomial_ring
   Kxy = parent(y)
 
 
-  a1, a2, a3, a4 = a_invars(E)
+  a1, a2, a3, a4 = a_invariants(E)
   p = characteristic(base_field(E))
   if p == 2
     # See N. Koblitz - Constructing Elliptic Curve Cryptosystems, page 63
@@ -1103,7 +1103,7 @@ function multiplication_by_m_y_coord(E::EllipticCurve, m::S, x = polynomial_ring
     return y + f2on + (f_mplus^2*f_mmin2//(f2*f_m^3) + h4*(f_mplus*f_mmin)//(f2*f_m^2))
   end
 
-  b2, b4, b6, b8 = b_invars(E)
+  b2, b4, b6, b8 = b_invariants(E)
   B6= 4*x^3+b2*x^2+2*b4*x+b6
   x = Kxy(x)
   psi_mplus2 = division_polynomial(E, m+2, x, y)
@@ -1194,7 +1194,7 @@ function division_points(P::EllipticCurvePoint, m::S) where S<:Union{Integer, ZZ
     end
   end
   for a in roots(g)
-    a1, a2, a3, a4, a6 = a_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
     R = base_field(E)
     Ry, y = polynomial_ring(R,"y")
     f = y^2 +a1*a*y + a3*y - a^3 - a2*a^2 - a4*a - a6

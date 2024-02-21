@@ -70,11 +70,11 @@ function _short_weierstrass_model(E::EllipticCurve{T}) where T
       error("Converting to short form not possible in characteristic 2 and 3")
   end
 
-  a1, _, a3= a_invars(E)
+  a1, _, a3= a_invariants(E)
 
-  b2, b4, b6, b8 = b_invars(E)
+  b2, b4, b6, b8 = b_invariants(E)
 
-  c4, c6 = c_invars(E)
+  c4, c6 = c_invariants(E)
 
   Anew = -divexact(c4, 48)
   Bnew = -divexact(c6, 864)
@@ -156,7 +156,7 @@ if $\char K = 3$ and $j(E) = 0$.
 #Magma returns minimal model if base field is QQ. Not sure if we want the same.
 function simplified_model(E::EllipticCurve)
   K = base_field(E)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   if characteristic(K) == 2
     if j_invariant(E) == 0
       return transform_rstu(E, [a2, 0, 0, 1])
@@ -169,12 +169,12 @@ function simplified_model(E::EllipticCurve)
     if j_invariant(E) == 0
       return transform_rstu(E, [0, a1, a3, 1])
     else
-      b2, b4 = b_invars(E)
+      b2, b4 = b_invariants(E)
       return transform_rstu(E, [-b4//b2, a1, a3 - a1*b4//b2, 1])
     end
   end
 
-  b2, b4 = b_invars(E)
+  b2, b4 = b_invariants(E)
 
   return transform_rstu(E, [-b2//12, -a1//2, -a3//2 + a1*b2//24, 1])
 end
@@ -187,7 +187,7 @@ Return true if E is a simplified model.
 """
 function is_simplified_model(E::EllipticCurve)
   K = base_field(E)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   if characteristic(K) == 2
     if j_invariant(E) == 0
       return (a1, a2) == (0, 0)
@@ -222,7 +222,7 @@ isomorphic curve $F$ with model over $\mathbf Z$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
 function integral_model_old(E::EllipticCurve{QQFieldElem})
-  _, _, _, A, B = a_invars(E)
+  _, _, _, A, B = a_invariants(E)
 
   mue = lcm(denominator(A), denominator(B))
   Anew = mue^4 * A
@@ -265,14 +265,14 @@ return values are the isomorpisms $E \to F$ and $F \to E$.
 """
 function integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem,}
 
-  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
+  a1, a2, a3, a4, a6 = map(denominator, a_invariants(E))
   mu = lcm(a1, a2, a3, a4, a6)
   return transform_rstu(E, [0, 0, 0, 1//mu])
 end
 
 function integral_model(R::PolyRing{<:FieldElem}, E::EllipticCurve{T}) where {T<:AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem,<:PolyRingElem}}
 
-  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
+  a1, a2, a3, a4, a6 = map(denominator, a_invariants(E))
   mu = lcm(a1, a2, a3, a4, a6)
   return transform_rstu(E, [0, 0, 0, 1//mu])
 end
@@ -286,7 +286,7 @@ true if $E$ is an integral model of $E$.
 """
 function is_integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
-  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
+  a1, a2, a3, a4, a6 = map(denominator, a_invariants(E))
   mu = lcm(a1, a2, a3, a4, a6)
   if mu == 1
     return true
@@ -302,7 +302,7 @@ Given an elliptic curve $E$ over a number field $K$ and a prime ideal, return
 true if $E$ is a local integral model of $E$.
 """
 function is_local_integral_model(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return all(Bool[a==0 ||valuation(a, P)>=0 for a in a_invars(E)])
+  return all(Bool[a==0 ||valuation(a, P)>=0 for a in a_invariants(E)])
 end
 
 

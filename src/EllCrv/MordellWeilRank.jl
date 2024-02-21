@@ -269,7 +269,7 @@ Here phi: E -> E' is an isogeny defined by a rational 2-torsion point on E
 and phi' is its dual isogeny.
 """
 function rank_2_torsion(E::EllipticCurve, lim1=100, lim2 = 1000)
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
   if (a1==a3==0)
     s2 = a2
     s4 = a4

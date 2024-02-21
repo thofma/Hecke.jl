@@ -410,7 +410,7 @@ function dual_of_frobenius(E)
 
   supsing = is_supersingular(E)
 
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   f = Isogeny(E)
   K = base_field(E)
   p = characteristic(K)
@@ -751,8 +751,8 @@ function even_kernel_polynomial(E::EllipticCurve, psi_G)
   Kxy,y = polynomial_ring(R,"y")
 
 
-  a1, a2, a3, a4, a6 = a_invars(E)
-  b2, b4, b6 = b_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6 = b_invariants(E)
 
   if n == 1
     x0 = constant_coefficient(-psi_G)
@@ -804,8 +804,8 @@ function odd_kernel_polynomial(E, psi)
 
   char = characteristic(base_field(E))
 
-  a1, a2, a3, a4, a6 = a_invars(E)
-  b2, b4, b6 = b_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6 = b_invariants(E)
 
   R = parent(psi)
   x = gen(R)
@@ -867,7 +867,7 @@ function odd_kernel_polynomial(E, psi)
 end
 
 function compute_codomain(E::EllipticCurve, v, w)
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   newa4 = a4 - 5*v
   newa6 = a6 - (a1^2 + 4*a2)*v - 7*w
   return elliptic_curve([a1, a2, a3, newa4, newa6])

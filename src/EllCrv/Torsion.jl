@@ -126,7 +126,7 @@ function torsion_points_lutz_nagell(F::EllipticCurve{QQFieldElem})
 
   Zx, x = polynomial_ring(FlintZZ, "x")
 
-  _, _, _, a4, a6 = a_invars(E)
+  _, _, _, a4, a6 = a_invariants(E)
 
   # Lutz-Nagell: coordinates of torsion points need to be in ZZ
   for i = 1:length(ycand)
@@ -190,7 +190,7 @@ function torsion_points_division_poly(F::EllipticCurve{QQFieldElem})
   (E, trafo_int, trafo_rat) = integral_model(G)
 
   # curve has integer coefficients
-  _, _, _, A, B = map(numerator, a_invars(E))
+  _, _, _, A, B = map(numerator, a_invariants(E))
 
   torsionpoints = [infinity(E)]
 
@@ -612,7 +612,7 @@ function division_polynomial_univariate(E::EllipticCurve, n::S, x = polynomial_r
   if is_short_weierstrass_model(E)
     n == 0 ? poly = 0 : poly = divpol_g_short(E,n,x)
     if mod(n,2) == 0
-      _, _, _, A, B = a_invars(E)
+      _, _, _, A, B = a_invariants(E)
       twotorsfactor = 4*(x^3+A*x+B)
     else
       twotorsfactor = one(R)
@@ -620,7 +620,7 @@ function division_polynomial_univariate(E::EllipticCurve, n::S, x = polynomial_r
   else
     n == 0 ? poly = 0 : poly = divpol_g(E,n,x)
       if mod(n,2) == 0
-        b2, b4, b6 = b_invars(E)
+        b2, b4, b6 = b_invariants(E)
         twotorsfactor = 4*x^3+b2*x^2+2*b4*x+b6
       else
         twotorsfactor = one(R)
@@ -651,7 +651,7 @@ function division_polynomial(E::EllipticCurve, n::S, x = polynomial_ring(base_fi
       return R(divpol_g_short(E,n,x))
     end
   else
-    a1, _, a3 = a_invars(E)
+    a1, _, a3 = a_invariants(E)
     if mod(n,2) == 0
       return (2*y + a1*x + a3)*divpol_g(E,n,x)
     else
@@ -664,7 +664,7 @@ end
 function divpol_g_short(E::EllipticCurve, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   Kx = parent(x)
-  _, _, _, A, B = a_invars(E)
+  _, _, _, A, B = a_invariants(E)
 
   B6sqr = (4*x^3+4*A*x+4*B)^2
 
@@ -693,7 +693,7 @@ function divpol_g(E::EllipticCurve, n::S, x = polynomial_ring(base_field(E),"x")
 
   Kx = parent(x)
 
-  b2, b4, b6, b8 = E.b_invars
+  b2, b4, b6, b8 = E.b_invariants
   B4 = 6*x^2+b2*x+b4
   B6sqr = (4*x^3+b2*x^2+2*b4*x+b6)^2
   B8 = 3*x^4 + b2*x^3 + 3*b4*x^2 + 3*b6*x + b8

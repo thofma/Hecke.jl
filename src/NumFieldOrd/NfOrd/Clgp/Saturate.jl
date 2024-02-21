@@ -196,7 +196,7 @@ end
 
 function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::Float64 = 1.5)
   ZK = order(c.FB.ideals[1])
-  K = nf(ZK)
+  K = Hecke.nf(ZK)
   zeta, sT = Hecke.torsion_units_gen_order(K)
 
   @vprintln :Saturate 3 "Reducing exponents"
@@ -357,7 +357,7 @@ end
 function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert is_prime(n)
   O = order(U)
-  K = nf(O)
+  K = Hecke.nf(O)
   success = false
   restart = false
   decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
@@ -410,7 +410,7 @@ end
 
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert is_prime(n)
-  K = nf(U)
+  K = Hecke.nf(U)
   @vprintln :Saturate 1 "Simplifying the context"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
   success = false

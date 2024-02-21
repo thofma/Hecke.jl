@@ -259,7 +259,7 @@
   # zero algebra
 
   A = zero_algebra(QQ)
-  B = basis_matrix(elem_type(A)[], FakeFmpqMat)
+  B = basis_matrix(elem_type(A)[], Hecke.FakeFmpqMat)
   @test (nrows(B), ncols(B)) == (0, 0)
   M = maximal_order(A)
   @test is_maximal(M)
