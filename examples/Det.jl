@@ -6,7 +6,7 @@ module Det
 using Hecke
 import AbstractAlgebra, Nemo
 using LinearAlgebra, Profile, Base.Intrinsics
-import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_triu!, AbstractAlgebra._solve_tril!
+import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_tril!
 
 #creates an unimodular n x n matrix where the inverse is much larger
 #than the original matrix. Entries are chosen in U
@@ -41,7 +41,7 @@ function rand_hnf(n::Int, U::AbstractArray=1:10)
   return C
 end
 
-function graeffe(f::PolyElem)
+function graeffe(f::PolyRingElem)
 #  f = f*f(-gen(parent(f)))
 #  return parent(f)([coeff(f, 2*i) for i=0:div(degree(f), 2)])
    f_e = parent(f)([coeff(f, 2*i) for i=0:div(degree(f), 2)])
@@ -510,7 +510,7 @@ function UniCertZ_CRT(A::ZZMatrix)
     p = next_prime(p);
     ZZmodP = Native.GF(p, cached = false);
     MatModP = map_entries(ZZmodP, A)
-    B00 = inv_strassen(MatModP)
+    B00 = inv(MatModP)
     induce_crt!(B0,m, B00,p, signed = true);  #  also updates:  m = m*p;
   end
   println("Got modular inverse");
@@ -539,6 +539,169 @@ function UniCertZ_CRT(A::ZZMatrix)
     end
   end #for
   return false
+end
+
+function mod_sym!(a::Ptr{ZZRingElem}, b::Ptr{ZZRingElem}, c::ZZRingElem, t::ZZRingElem = ZZ(0))
+  ccall((:fmpz_ndiv_qr, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), t, a, b, c)
+end
+
+function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U))
+  i = start
+  R = zero_matrix(ZZ, 1, ncols(U))
+  t = ZZ(0)
+  while true
+    R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
+    U_ptr = Nemo.mat_entry_ptr(U, i, 1)
+    for j=1:ncols(U)
+      ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), R_ptr, R_ptr, U_ptr)
+      mod_sym!(U_ptr, R_ptr, m, t)
+      ccall((:fmpz_sub, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), R_ptr, R_ptr, U_ptr)
+      ccall((:fmpz_divexact, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), R_ptr, R_ptr, m)
+      R_ptr += sizeof(Clong)
+      U_ptr += sizeof(Clong)
+    end
+    i += 1
+    if i > nrows(U)
+      if i > last || is_zero(R)
+        return U
+      end
+      U.r += 1
+      @assert U.r <= last
+      U_ptr = Nemo.mat_entry_ptr(U, i, 1)
+      R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
+      for j=1:ncols(U)
+        ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), U_ptr, R_ptr)
+        ccall((:fmpz_zero, Nemo.libflint), Cvoid, (Ptr{ZZRingElem},), R_ptr)
+        R_ptr += sizeof(Clong)
+        U_ptr += sizeof(Clong)
+      end
+    end
+  end
+end
+
+function add_into!(A::ZZMatrix, C::ZZMatrix, c::Int)
+  A.r = max(A.r, C.r+c)
+  for i=1:nrows(C)
+    A_ptr = Nemo.mat_entry_ptr(A, i+c, 1)
+    C_ptr = Nemo.mat_entry_ptr(C, i, 1)
+    for j=1:ncols(A)
+      ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), A_ptr, A_ptr, C_ptr)
+      A_ptr += sizeof(Clong)
+      C_ptr += sizeof(Clong)
+    end
+  end
+end
+
+# "solves" xA = U using the double + 1 method
+# pr_max is the bit size (num + den) of the solution
+# the functions returns
+# - a matrix X
+# - an integer m
+# the rows of X are the base-m expansion of the solution
+# use e.g. to_base(X, m) to destructively get the solution
+# followed by induce_rational_reconstruction(xx, m^(nrows(X)-1))
+#
+function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
+  n = nrows(A);
+  #assume ncols == n
+  H = hadamard_bound2(A)
+  EntrySize = maximum(abs, A)
+  e = max(16, Int(2+ceil(2*log2(n)+log2(EntrySize))));
+  println("Modulus has  $e bits");
+
+  B0 = zero_matrix(ZZ,n,n) ## will be computed by crt in loop below
+  m = ZZ(1); p = 2^29;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
+  @time while (nbits(m) < e)
+    p = next_prime(p);
+    ZZmodP = Native.GF(p, cached = false);
+    MatModP = map_entries(ZZmodP, A)
+    B00 = inv(MatModP)
+    induce_crt!(B0,m, B00,p, signed = true);  #  also updates:  m = m*p;
+  end
+  println("Got modular inverse");
+
+  # Compute max num iters in k
+  k = (n-1)*(log2(EntrySize)+log2(n)/2) - (2*log2(n) + log2(EntrySize));
+  k = k/log2(m);
+  k = 2+Int(ceil(log2(k)));
+  println("Max num iters is k=$(k)");
+
+  ZZmodM, = residue_ring(ZZ,m);
+  B0_modm = map_entries(ZZmodM, B0);
+
+  @show size(U)
+  @assert nrows(U) == 1
+  @show pr = 2^(k+2)-1
+  V = zero_matrix(ZZ, pr, ncols(U))
+  V[1, :] = U
+  U = V
+  U.r = 1
+  @assert maximum(abs, U) <= m
+
+  I = identity_matrix(ZZ,n)
+  R = (I-A*B0)/m
+  V = zero_matrix(ZZ, pr, ncols(U))
+  V[1, :] = U*B0 #sol mod m
+  V.r = 1
+  renorm(V, m, last = 2)
+  add_into!(V, V*R, 1) #sol mod m^2
+  renorm(V, m, last = 3)
+
+  if is_zero(R)
+    return true;
+  end
+  ex = 1
+  for i in 0:k-1
+    println("UniCertZ: loop: i=$(i)");
+    @time R_bar = R^2;
+    @time M = lift(B0_modm*map_entries(ZZmodM, R_bar));
+    Hecke.mod_sym!(M, m)
+    @time R = (R_bar - A*M)/m;
+
+    @assert nrows(U) == 1
+
+    add_into!(V, U*M, 2*ex)  #sol mod 2ex+1
+    renorm(V, m, start = 2*ex, last = pr)
+    @show 2*ex+1
+
+
+    ex = 2*ex + 1
+
+    @show add_into!(V, V*R, ex) #sol mod 2(2ex+1)
+    renorm(V, m, start = ex-1, last = pr)
+
+    @show 2*ex
+    if 2*ex*nbits(m) >= pr_max
+      return V, m
+    end
+
+    if is_zero(R)
+      return V, m
+    end
+  end #for
+  return V, m
+end
+
+function to_base(a::ZZMatrix, b::ZZRingElem, nr::Int = nrows(a))
+  while nr > 1
+    for i=1:div(nr, 2)
+      add_row!(a, b, 2*i-1, 2*i)
+    end
+    if is_odd(nr)
+      add_row(a, b^2, nr-1, nr)
+    end
+    nr = div(nr, 2)
+  end
+  return a[1:1, :]
+end
+
+function in_base(a::ZZRingElem, b::ZZRingElem)
+  di = ZZRingElem[]
+  while !iszero(a)
+    push!(di, mod_sym(a, b))
+    a = divexact(a-di[end], b)
+  end
+  return di
 end
 
 function _det(a::fpMatrix)
@@ -642,6 +805,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     isone(d) && break
     d1 *= d
     @show  (Had - nbits(d1) - nbits(prod_p))/60
+    @show mod_sym(d1, prod_p) , det_p 
     if Had - nbits(d1) < nbits(prod_p)
       @show "at H-bound",  (Had - nbits(d1) - nbits(prod_p))/60
       return d1
@@ -661,7 +825,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     @time T1 = hcol(TS, d)
     push!(T, T1)
     @show :solve
-    @time AT = Strassen.AbstractAlgebra._solve_triu(T1, AT)
+    @time AT = AbstractAlgebra.Strassen._solve_triu(T1, AT)
     @assert _AT*T1 == AT
     @show maximum(nbits, _AT), maximum(nbits, T1), maximum(nbits, AT)
     AT = _AT
@@ -676,7 +840,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
     @show Had / nbits(d1)
-      AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
+      AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
       if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
@@ -684,13 +848,14 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   end
   det_p = invmod(d1, prod_p)*det_p
   @show det_p = mod_sym(det_p, prod_p)
+  @assert !is_zero(det_p)
   @assert nbits(abs(det_p)) < small
   @show :hnf
   @time h = hnf_modular_eldiv(AT, det_p)
   @show t_det(h) // det_p, det(h)
   d1 *= t_det(h)
 
-  @time AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
+  @time AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)
@@ -864,6 +1029,8 @@ function dixon_init(A::ZZMatrix, B::ZZMatrix)
 end
 
 function dixon_solve(D::DixonCtx, B::ZZMatrix)
+  #we're solveing Ax=B
+  @assert nrows(B) == nrows(D.A)
   zero!(D.x)
   d = deepcopy(B)
   ppow = ZZ(1)
@@ -908,6 +1075,7 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
             xp = next_prime(xp)
           end
         end
+        @show "prec", i
 #        @show fl
         fl && return num, den
       end
