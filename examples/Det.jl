@@ -1134,6 +1134,7 @@ mutable struct DixonCtx{T}
     return new{T}()
   end
 end
+
 #copied from flint to allow the use of adaptive reconstruction,
 #support cases with small primes and Float64
 function dixon_init(A::ZZMatrix, B::ZZMatrix, T::DataType = fpMatrix)
@@ -1286,7 +1287,6 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
             xp = next_prime(xp)
           end
         end
-        @show "prec", i
 #        @show fl
         fl && return num, den
       end
