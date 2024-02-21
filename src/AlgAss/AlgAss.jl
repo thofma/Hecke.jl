@@ -899,7 +899,6 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
   r = rref!(B)
   if r == 0
     if return_LU == Val{true}
-      #return Array{elem_type(K), 3}(undef, 0, 0, 0),  SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0), LinearSolveCtx{typeof(B)}
       return Array{elem_type(K), 3}(undef, 0, 0, 0), solve_init(B)
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)

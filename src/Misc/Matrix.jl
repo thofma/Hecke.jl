@@ -1133,46 +1133,6 @@ end
 
 ################################################################################
 #
-#  Linear solve context
-#
-################################################################################
-
-mutable struct LinearSolveCtx{S, T}
-  A::S
-  R::S # rref
-  U::S # U * A = R
-  v::T # temp vector
-  pivots::Vector{Int}
-
-  function LinearSolveCtx{S}() where {T, S <: MatElem{T}}
-    return new{S, Vector{T}}()
-  end
-
-  function LinearSolveCtx(A::MatElem{T}, side::Symbol) where {T <: RingElem}
-    @assert side === :right
-    r, R, U = _rref_with_trans(A)
-    pivots = _get_pivots_ut(R)
-    v = [zero(base_ring(A)) for i in 1:ncols(U)]
-    z = new{typeof(A), Vector{T}}(A, R, U, v, pivots)
-  end
-end
-
-function _solve_context(A; side::Symbol)
-  return LinearSolveCtx(A, side)
-end
-
-function solve(L::LinearSolveCtx, b::Vector)
-  L.v = mul!(L.v, L.U, b)
-  fl, w = _can_solve_rref_ut(L.R, L.v, L.pivots)
-  # entries of w are aliasing v, which we don't want for some reason
-  #if fl
-  #  @assert L.A * w == b
-  #end
-  return fl, deepcopy(w)
-end
-
-################################################################################
-#
 #  Determinant of triangular matrix
 #
 ################################################################################
