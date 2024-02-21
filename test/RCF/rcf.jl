@@ -341,3 +341,10 @@ end
   I = Hecke.lorenz_module(k, 12)
   @test Hecke.is_consistent(I)
 end
+
+@testset "Enumerate by conductor" begin
+  l = abelian_extensions([3], collect(1:10^3); only_real = true)
+  @test length(l) == 159
+  l = abelian_extensions([2], collect(1:10^3))
+  @test length(l) == 607
+end
