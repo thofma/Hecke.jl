@@ -1132,7 +1132,8 @@ function center(A::StructureConstantAlgebra{T}) where {T}
   M = zero_matrix(base_ring(A), n^2, n)
   # I concatenate the difference between the right and left representation matrices.
   _rep_for_center!(M, A)
-  k, B = nullspace(M)
+  B = kernel(M, side = :right)
+  k = ncols(B)
   res = Vector{elem_type(A)}(undef, k)
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])

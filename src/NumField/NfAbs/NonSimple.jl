@@ -507,11 +507,11 @@ function minpoly_dense(a::AbsNonSimpleNumFieldElem)
   Qt, _ = polynomial_ring(FlintQQ,"t", cached=false)
   while true
     if n % (i-1) == 0 && rank(M) < i
-      N = nullspace(transpose(sub(M, 1:i, 1:ncols(M))))
-      @assert N[1] == 1
+      N = kernel(transpose(sub(M, 1:i, 1:ncols(M))), side = :right)
+      @assert ncols(N) == 1
       v = Vector{QQFieldElem}(undef, i)
       for j in 1:i
-        v[j] = N[2][j, 1]
+        v[j] = N[j, 1]
       end
       #f = Qt([N[2][j, 1] for j=1:i])
       f = Qt(v)

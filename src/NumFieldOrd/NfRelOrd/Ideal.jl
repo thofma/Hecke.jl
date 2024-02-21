@@ -868,7 +868,7 @@ function pradical(O::RelNumFieldOrder, P::Union{AbsNumFieldOrderIdeal{AbsSimpleN
     end
   end
 
-  B = nullspace(A)[2]
+  B = kernel(A, side = :right)
   M1 = zero_matrix(K, d, d)
   imF = pseudo_inv(mF)
   # Write a basis of the kernel of A in the rows of M1.
@@ -941,7 +941,7 @@ function pradical(O::RelNumFieldOrder{S, T, U}, P::AbsNumFieldOrderIdeal{AbsSimp
     end
   end
   @vprintln :RelNumFieldOrder 4 "Computing nullspace"
-  B = nullspace(A)[2]
+  B = kernel(A, side = :right)
   @vprintln :RelNumFieldOrder 4 "Lifting nullspace"
   M1 = zero_matrix(K, nrows(B), d)
   imF = pseudo_inv(mF)

@@ -32,7 +32,7 @@ function rational_normal_form(M::T) where {T <: MatElem{S} where {S <: FieldElem
     m = (g^v)(M)
     this_g = zero_matrix(base_ring(M), nrows(M), 0)
     while true
-      d, km = nullspace(m)
+      km = kernel(m, side = :right)
       km = quo_gens(km, this_g)
       if ncols(km) == 0
         break
