@@ -1339,7 +1339,7 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     M4 = representation_matrix(bb - one(eAe), :right)
 
     M = hcat(M1, M2, M3, M4)
-    xx = eAe(_left_kernel_basis(M)[1])
+    xx = eAe(kernel(M, side = :left)[1, :])
     x = m1(m2(xx))
 
     new_basis[1 + (i - 1)*k] = x # this is e_1i

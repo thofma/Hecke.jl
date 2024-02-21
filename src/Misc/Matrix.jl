@@ -319,54 +319,6 @@ end
 
 ################################################################################
 #
-#  Kernel function
-#
-################################################################################
-@doc raw"""
-    _kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
-
-It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
-specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
-"""
-function _kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAlgebra.FieldElem
-  if side == :right
-    return _right_kernel_basis(A)
-  elseif side == :left
-    return _left_kernel_basis(A)
-  else
-    error("Unsupported argument: :$side for side: Must be :left or :right")
-  end
-end
-
-@doc raw"""
-    _right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
-
-It returns a basis for the right kernel of the matrix defined over a field.
-"""
-function _right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
-  R = base_ring(a)
-  n, z = nullspace(a)
-  ar = typeof(Array{T}(undef, nrows(z)))[]
-  for i in 1:n
-    t = Array{T}(undef, nrows(z))
-    for j in 1:nrows(z)
-      t[j] = R(z[j, i])
-    end
-    push!(ar,t)
-  end
-  return ar
-end
-
-@doc raw"""
-    _left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
-
-It returns a basis for the left kernel of the matrix.
-"""
-_left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = _right_kernel_basis(transpose(a))
-
-
-################################################################################
-#
 #  Copy matrix into another matrix
 #
 ################################################################################

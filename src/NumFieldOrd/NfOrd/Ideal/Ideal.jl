@@ -2036,26 +2036,26 @@ function pradical_frobenius(O::AbsNumFieldOrder, p::IntegerUnion)
       A[k, i] = ar[k]
     end
   end
-  X = _right_kernel_basis(A)
+  X = kernel(A, side = :right)
   gens = elem_type(O)[O(p)]
-  if isempty(X)
+  if is_zero(ncols(X))
     I = ideal(O, p)
     I.gens = gens
     return I
   end
   #First, find the generators
-  for i = 1:length(X)
+  for i = 1:ncols(X)
     coords = Vector{ZZRingElem}(undef, d)
     for j=1:d
-      coords[j] = lift(ZZ, X[i][j])
+      coords[j] = lift(ZZ, X[j, i])
     end
     push!(gens, O(coords))
   end
   #Then, construct the basis matrix of the ideal
   m = zero_matrix(FlintZZ, d, d)
-  for i = 1:length(X)
+  for i = 1:ncols(X)
     for j = 1:d
-      m[i, j] = lift(ZZ, X[i][j])
+      m[i, j] = lift(ZZ, X[j, i])
     end
   end
   mm = hnf_modular_eldiv!(m, ZZRingElem(p), :lowerleft)
