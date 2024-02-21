@@ -17,7 +17,7 @@ denominator. They are of type `AbsSimpleNumFieldOrderFractionalIdeal`.
 ```@docs
 fractional_ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix)
 fractional_ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix, ::ZZRingElem)
-fractional_ideal(::AbsSimpleNumFieldOrder, ::FakeFmpqMat)
+fractional_ideal(::AbsSimpleNumFieldOrder, ::QQMatrix)
 fractional_ideal(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 fractional_ideal(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem)
 fractional_ideal(::AbsSimpleNumFieldOrder, ::AbsSimpleNumFieldElem)

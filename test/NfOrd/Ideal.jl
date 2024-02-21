@@ -92,13 +92,13 @@
     b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
+    b = @inferred basis_mat_inv(FakeFmpqMat, M)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
 
     b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
+    b = @inferred basis_mat_inv(FakeFmpqMat, M)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
   end
 

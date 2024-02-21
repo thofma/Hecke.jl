@@ -165,9 +165,9 @@ function ideal(O::AlgAssAbsOrd{S, T}, x::T, side::Symbol) where { S, T }
   end
 
   if side == :left
-    M = basis_matrix(O)*FakeFmpqMat(representation_matrix(x, :right))
+    M = basis_matrix(FakeFmpqMat, O)*FakeFmpqMat(representation_matrix(x, :right))
   elseif side == :right
-    M = basis_matrix(O)*FakeFmpqMat(representation_matrix(x, :left))
+    M = basis_matrix(FakeFmpqMat, O)*FakeFmpqMat(representation_matrix(x, :left))
   else
     error("Option :$(side) for side not implemented")
   end
@@ -340,7 +340,7 @@ function assure_has_basis_matrix_wrt(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
     return nothing
   end
 
-  M = hnf(basis_matrix(a, copy = false)*basis_mat_inv(O, copy = false), :lowerleft)
+  M = hnf(basis_matrix(a, copy = false)*basis_mat_inv(FakeFmpqMat, O, copy = false), :lowerleft)
   a.basis_matrix_wrt[O] = M
   return nothing
 end
@@ -763,7 +763,7 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::ZZRingElem =
   m = zero_matrix(FlintZZ, degree(O)*length(B), degree(O))
   for i = 1:length(B)
     M = FakeFmpqMat(representation_matrix(B[i]))
-    M = mul!(M, basis_matrix(O, copy = false), M)
+    M = mul!(M, basis_matrix(FakeFmpqMat, O, copy = false), M)
     M = mul!(M, M, basis_mat_inv(I, copy = false))
     # M is now the representation matrix of B[i] as element of O multiplied
     # from the left by the inverse basis matrix of I in the basis of O.
@@ -788,7 +788,7 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::ZZRingElem =
   # n is upper right HNF
   n = transpose(view(m, 1:degree(O), 1:degree(O)))
   b = FakeFmpqMat(pseudo_inv(n))
-  mul!(b, b, basis_matrix(O, copy = false))
+  mul!(b, b, basis_matrix(FakeFmpqMat, O, copy = false))
   @hassert :AlgAssOrd 1 defines_order(algebra(O), b)[1]
   O1 = Order(algebra(O), b)
   O1.disc = divexact(discriminant(O), s^2)
@@ -894,7 +894,7 @@ function assure_has_norm(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}) where 
     return nothing
   end
 
-  a.norm[O] = abs(det(basis_matrix(a, copy = false))*det(basis_mat_inv(O, copy = false)))
+  a.norm[O] = abs(det(basis_matrix(a, copy = false))*det(basis_mat_inv(FakeFmpqMat, O, copy = false)))
   return nothing
 end
 
@@ -1172,7 +1172,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   end
   r = rref!(M1)
   if r == degree(O)
-    J = ideal(algebra(O), O, p*basis_matrix(O, copy = false); side=:twosided)
+    J = ideal(algebra(O), O, p*basis_matrix(FakeFmpqMat, O, copy = false); side=:twosided)
     J.gens = elem_type(algebra(O))[ p*one(algebra(O)) ]
     return J
   end
@@ -1187,7 +1187,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
     g[i] = elem_in_algebra(elem_from_mat_row(O, m, i), copy = false)
   end
   m = hnf_modular_eldiv!(m, ZZRingElem(p))
-  m = m*basis_matrix(O, copy = false)
+  m = m*basis_matrix(FakeFmpqMat, O, copy = false)
   g[nrows(dM) + 1] = p*one(algebra(O))
   J = ideal(algebra(O), O, m; side=:twosided)
   J.gens = g
@@ -1212,7 +1212,7 @@ function pradical(O::AlgAssAbsOrd, p::IntegerUnion)
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k == 0
-    J = ideal(algebra(O), O, p*basis_matrix(O, copy = false); side=:twosided)
+    J = ideal(algebra(O), O, p*basis_matrix(FakeFmpqMat, O, copy = false); side=:twosided)
     J.gens = elem_type(algebra(O))[ p*one(algebra(O)) ]
     return J
   end
@@ -1225,7 +1225,7 @@ function pradical(O::AlgAssAbsOrd, p::IntegerUnion)
     end
   end
   M = hnf_modular_eldiv!(M, ZZRingElem(p)) # This puts p in the "missing" pivot entries
-  M = M*basis_matrix(O, copy = false)
+  M = M*basis_matrix(FakeFmpqMat, O, copy = false)
   res = ideal(algebra(O), O, M; side=:twosided)
   B1 = map_entries(x -> lift(ZZ, x), transpose(B))
   res.gens = Vector{elem_type(algebra(O))}(undef, k + 1)
@@ -1268,7 +1268,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
     end
     g[i] = elem_in_algebra(elem_from_mat_row(O, m, i), copy = false)
   end
-  m = m*basis_matrix(O, copy = false)
+  m = m*basis_matrix(FakeFmpqMat, O, copy = false)
   m = vcat(m, basis_matrix(I, copy = false))
   m = sub(hnf(m, :lowerleft), nrows(x) + 1:nrows(m), 1:degree(O))
   J = ideal(algebra(O), O, m; side=:twosided, M_in_hnf=true)
@@ -1440,7 +1440,7 @@ function denominator(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}; copy::Bool
     return ZZRingElem(1)
   end
 
-  M = basis_matrix(a, copy = false)*basis_mat_inv(O, copy = false)
+  M = basis_matrix(a, copy = false)*basis_mat_inv(FakeFmpqMat, O, copy = false)
   return denominator(M, copy = false)
 end
 
@@ -1628,7 +1628,7 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
     elem_to_mat_row!(M, i, t)
   end
   # Compute the intersection of M and O (in OB)
-  N = basis_matrix(O, copy = false)*basis_mat_inv(OB, copy = false)
+  N = basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(FakeFmpqMat, OB, copy = false)
   @assert N.den == 1
   H = vcat(M, N.num)
   K = kernel(H, side = :left)
@@ -2115,7 +2115,7 @@ end
 ################################################################################
 
 function is_subset(R::AlgAssAbsOrdIdl, S::AlgAssAbsOrd)
-  B = basis_matrix(R, copy = false) * basis_mat_inv(S, copy = false)
+  B = basis_matrix(R, copy = false) * basis_mat_inv(FakeFmpqMat, S, copy = false)
   return is_one(denominator(B))
 end
 
@@ -2295,7 +2295,7 @@ function primary_decomposition(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd = left_order(
   @req is_etale(A) "Algebra must be etale"
   @req is_subset(I, O) && is_subset(O, left_order(I)) "Ideal not an ideal for this order"
 
-  M = numerator(basis_matrix(I) * basis_mat_inv(O))
+  M = numerator(basis_matrix(I) * basis_mat_inv(FakeFmpqMat, O))
   ps = prime_divisors(det(M))
   eds = elementary_divisors(M)
   d = degree(O)

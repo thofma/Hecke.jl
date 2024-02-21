@@ -296,7 +296,7 @@ end
 function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   @assert side == :right
   @assert _test_ideal_sidedness(I, M, :right)
-  @assert basis_matrix(M) == FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(M))))
+  @assert basis_matrix(M) == identity_matrix(FlintZZ, dim(algebra(M)))
   den = denominator(I, M)
   a = I * den
   if !is_full_lattice(a)
