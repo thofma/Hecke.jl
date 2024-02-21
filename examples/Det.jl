@@ -1229,6 +1229,7 @@ end
 
 function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
   @assert ncols(D.A) == nrows(B)
+  #we're solveing Ax=B
   zero!(D.x)
   d = deepcopy(B)
   ppow = ZZ(1)
@@ -1285,6 +1286,7 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
             xp = next_prime(xp)
           end
         end
+        @show "prec", i
 #        @show fl
         fl && return num, den
       end
