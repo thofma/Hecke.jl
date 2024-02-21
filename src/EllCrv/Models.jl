@@ -263,12 +263,20 @@ Given an elliptic curve $E$ over QQ or a number field $K$, returns an
 isomorphic curve $F$ with model over $\mathcal{O}_K$. The second and third
 return values are the isomorpisms $E \to F$ and $F \to E$.
 """
-function integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
+function integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem,}
 
   a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
   mu = lcm(a1, a2, a3, a4, a6)
   return transform_rstu(E, [0, 0, 0, 1//mu])
 end
+
+function integral_model(R::PolyRing{<:FieldElem}, E::EllipticCurve{T}) where {T<:AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem,<:PolyRingElem}}
+
+  a1, a2, a3, a4, a6 = map(denominator, a_invars(E))
+  mu = lcm(a1, a2, a3, a4, a6)
+  return transform_rstu(E, [0, 0, 0, 1//mu])
+end
+
 
 @doc raw"""
     is_integral_model(E::EllipticCurve{T}) -> Bool where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
