@@ -23,6 +23,39 @@ function abelian_extensions(O::Union{ZZRing, QQField},
   return l
 end
 
+function abelian_extensions(gtype::Vector{Int}, conds::Vector{Int}; only_real::Bool = false)
+  K = rationals_as_number_field()[1]
+  O = maximal_order(K)
+  gtype = map(Int, snf(abelian_group(gtype))[1].snf)
+  n = prod(gtype)
+
+  #Getting conductors
+  @vprintln :AbExt 1 "Number of conductors: $(length(conds))"
+  fields = ClassField{MapRayClassGrp, FinGenAbGroupHom}[]
+
+  #Now, the big loop
+  fun = (x, y) -> quo(x, y, false)[2]
+  for (i, k) in enumerate(conds)
+    @vprintln :AbExt 1 "Conductor: $k"
+    if i % 10000 == 0
+      @vprintln :AbExt 1 "Left: $(length(conds) - i)"
+    end
+    r, mr = Hecke.ray_class_groupQQ(O, k, !only_real, gtype[end])
+    if !has_quotient(r, gtype)
+      continue
+    end
+    ls = subgroups(r, quotype = gtype, fun = fun)
+    for s in ls
+      C = ray_class_field(mr, s)
+      if Hecke._is_conductor_minQQ(C, n)
+        @vprintln :AbExt 1 "New Field"
+        push!(fields, C)
+      end
+    end
+  end
+  return fields
+end
+
 function abelian_extensions(gtype::Vector{Int}, conds::Vector{Int}, absolute_discriminant_bound::ZZRingElem; only_real::Bool = false)
   K = rationals_as_number_field()[1]
   O = maximal_order(K)
