@@ -801,11 +801,28 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
     ex = 2*ex + 1
 
-    @show add_into!(V, V*R, ex) #sol mod 2(2ex+1)
-    renorm(V, m, start = ex-1, last = pr)
+    if nrows(V) > nrows(R)
+      n = nrows(R)
+      e = div(nrows(V), n)
+      for j=1:e
+        add_into!(V, V[(j-1)*n+1:j*n, :]*R, ex+(j-1)*n)
+        renorm(V, m, start = ex+(j-1)*n-1, last = pr)
+        if nrows(V)*nbits(m) >= pr_max
+          @show "abort at j", j, e, nrows(V), nrows(V)*nbits(m), pr_max
+          return V, m
+        end
+      end
+      add_into!(V, V[e*n+1:end, :]*R, ex+e*n)
+      renorm(V, m, start = ex+e*n-1, last = pr)
+    else
+      add_into!(V, V*R, ex) #sol mod 2(2ex+1)
+      renorm(V, m, start = ex-1, last = pr)
+    end
+
 
     @show 2*ex
     if 2*ex*nbits(m) >= pr_max
+      @show "done"
       return V, m
     end
 
@@ -1099,27 +1116,29 @@ function lift!(A::ZZMatrix, a::fpMatrix)
   ccall((:fmpz_mat_set_nmod_mat, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}), A, a)
 end
 
-mutable struct DixonCtx
+mutable struct DixonCtx{T}
   bound::ZZRingElem
-  Ainv::fpMatrix
+  Ainv::T
   p::UInt
   crt_primes::Vector{UInt}
-  A_mod::Vector{fpMatrix}
-  d_mod::fpMatrix
-  y_mod::fpMatrix
-  Ay_mod::fpMatrix
+  A_mod::Vector{T}
+  d_mod::T
+  y_mod::T
+  Ay_mod::T
   Ay::ZZMatrix
   x::ZZMatrix
   d::ZZMatrix
   A::ZZMatrix
-  function DixonCtx()
-    return new()
+  function DixonCtx(T::DataType)
+    return new{T}()
   end
 end
-
 #copied from flint to allow the use of adaptive reconstruction,
 #support cases with small primes and Float64
 function dixon_init(A::ZZMatrix, B::ZZMatrix, T::DataType = fpMatrix)
+  #solves, in the end, Ax = B
+  #NOT xA = B
+  @assert nrows(B) == ncols(A)
   D = DixonCtx(T)
   D.A = A
 
@@ -1208,6 +1227,7 @@ function map_entries!(A::Matrix{Float64}, k::Nemo.fpField, d::ZZMatrix)
 end
 
 function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
+  @assert ncols(D.A) == nrows(B)
   zero!(D.x)
   d = deepcopy(B)
   ppow = ZZ(1)
@@ -1329,3 +1349,27 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
 end
 
 end # module
+
+#= test:
+for i = 1:20
+   n = 100*i
+   for di = 1:10:101
+     N = matrix(ZZ, rand(-ZZ(10)^di:ZZ(10)^di, n, n))
+     V = matrix(ZZ, rand(-ZZ(10)^di:ZZ(10)^di, n, 1))
+     rt = time_ns()
+     d = Det.dixon_init(N, V)
+     s = Det.dixon_solve(d, V)
+     st = time_ns()
+     x = Det.UniCertZ_CRT(transpose(N), transpose(V), pr_max = 2*nbits(s[2]))
+     f = open("/tmp/res", "a")
+     println(f, "$i: n=$n : $di : $((st-rt)*1e-9) : $((time_ns() -st)*1e-9)")
+     close(f)
+     z = (time_ns() -st)*1e-9
+     if z > 500
+       break
+     end
+     @time Base.GC.gc()
+   end
+end
+=#
+
