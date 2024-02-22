@@ -858,26 +858,43 @@ function _log_one_units_fast(a::LocalFieldElem)
     false, a - 1
   end
   fl && return b
+  #= Plan:
+    log(1+b) = log(a) = sum (-b)^i/i
+    up to precision pr(a)
+    val(b^i / i) = i val(b) - val(i) and val(i) <= flog(i, p)
+    as a function in i, this is increasing past the min at i=val(a)
+    thus we need at least pr/val(b) many summands (since up to then
+    val(b^i / i) <= val(b^i) = i val(b) <= thus non-zero
+    For i sth. val(i) == 0, this is sharp.
+    For i = mult. of p, we need more terms, the largest possibility
+    i = p^r gets val(b^i / i) = p^r val(b) - r
+    again, this as a min and is growing otherwise.
+
+    Careful: valuation is extending from Q and might be fractional
+             precision is in pi, not p
+  =#
   vb = valuation(b)
   p = prime(K)
   N = precision(a)
   res = zero(K)
   e = absolute_ramification_index(K)
   res = setprecision!(res, N + e*flog(ZZRingElem(N), p))
-  bound1 = div(N, numerator(vb*e))
+  bound1 = div(N, numerator(vb*e)) #num(vb*e) = val(b) above
 
   l = 1
-  left = p*vb*e
-  right = N + e
+  left = p*vb*e  #val(b^p)
+  right = N + e  #powering will increase prec by e
+  #need p^i*val(b) - i >= pr, so p^i *val(b) >= pr + i is what we test
   while left < right
     left *= p
     right += e
     l += 1
   end
-  bound2 = p^l
+  bound2 = p^l #definitely an upper bound on terms
   el = one(K)
-  el = setprecision!(el, N+l)
-  b = setprecision(a, N+l) - el
+  el = setprecision!(el, N)
+  b = setprecision(a, N) - el
+  #sum (-b)^i/i for 1st step: crude estimate without val(den)
   for i = 1:bound1
     el *= b
     to_add = divexact(el, i)
@@ -888,7 +905,8 @@ function _log_one_units_fast(a::LocalFieldElem)
     end
   end
   leftlim = bound1 + p - mod(ZZRingElem(bound1), p)
-  if leftlim < bound2
+  #smallest expo (i) > bound so far
+  if leftlim <= bound2
     el *= b^(leftlim-bound1)
     if isodd(leftlim)
       res += divexact(el, leftlim)
