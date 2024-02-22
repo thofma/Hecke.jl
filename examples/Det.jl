@@ -1134,7 +1134,6 @@ mutable struct DixonCtx{T}
     return new{T}()
   end
 end
-
 #copied from flint to allow the use of adaptive reconstruction,
 #support cases with small primes and Float64
 function dixon_init(A::ZZMatrix, B::ZZMatrix, T::DataType = fpMatrix)
