@@ -11,7 +11,7 @@
 
     @test Hecke.is_prime_power(ZZ(8))
 
-    @test Hecke.is_prime_power(8) 
+    @test Hecke.is_prime_power(8)
 
     @test sort(euler_phi_inv(2)) == [3,4,6]
 
@@ -25,10 +25,13 @@
 
     @test carmichael_lambda(8) == 2
 
-    @test sort(Hecke.squarefree_up_to(2)) == [1,2] 
+    @test sort(Hecke.squarefree_up_to(2)) == [1,2]
 
     @test support(QQ(2)) == [2]
 
+    @test sort(euler_phi_inv(2)) == ZZ.([3,4,6])
+
+    @test radical(2) == ZZ(2)
 
 
 end
