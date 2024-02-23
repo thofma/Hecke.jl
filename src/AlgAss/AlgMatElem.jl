@@ -216,7 +216,7 @@ end
 Returns $a^b$.
 """
 function ^(a::MatAlgebraElem, b::Int)
-  return parent(a)(matrix(a, copy = false)^b)
+  return parent(a)(matrix(a, copy = false)^b, check = false)
 end
 
 ################################################################################
@@ -260,12 +260,13 @@ function (A::MatAlgebra{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)
   M = zero_matrix(R, degree(A), degree(A))
+  temp = zero_matrix(R, degree(A), degree(A))
   B = basis(A)
   for i = 1:dim(A)
-    #M = add!(M, M, matrix(basis(A)[i], copy = false)*v[i])
-    M += matrix(B[i], copy = false)*R(v[i])
+    temp = mul!(temp, matrix(B[i], copy = false), R(v[i]))
+    M = add!(M, M, temp)
   end
-  a = A(M; check = false)
+  a = A(M; check = false, deepcopy = false)
   if copy
     a.coeffs = Base.copy(v)
   else
