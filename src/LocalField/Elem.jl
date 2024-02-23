@@ -919,8 +919,12 @@ function _log_one_units_fast(a::LocalFieldElem)
   end
   bound2 = p^l #definitely an upper bound on terms
   el = one(K)
-  el = setprecision!(el, N)
-  b = setprecision(a, N) - el
+  el = setprecision!(el, N) #necc. if prec(K) < prec(a)
+  #prec here means rel. prec. Each mult. by el of valuation vb above
+  #will increase the abs. prec. The division by i will then reduce the abs. prec
+  # (and the rel prec), but the abs prec will be larger than the abs prec in el.
+  #
+  b = a - el
   #sum (-b)^i/i for 1st step: crude estimate without val(den)
   for i = 1:bound1
     el *= b
