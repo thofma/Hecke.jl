@@ -12,26 +12,26 @@
 
 function neighbour(L::ZZLat, v::ZZMatrix, p::ZZRingElem)
   M = gram_matrix(L)*v
-  r, K = left_kernel(matrix(GF(p), rank(L), 1, collect(M)))
-  _B = matrix(QQ, r, ncols(K), ZZRingElem[lift(ZZ, k) for k in view(K, 1:r, :)])
+  K = kernel(matrix(GF(p), rank(L), 1, collect(M)))
+  _B = map_entries(a -> lift(ZZ, a), K)
   LL = lattice_in_same_ambient_space(L, _B*basis_matrix(L)) + lattice_in_same_ambient_space(L, 1//p*(transpose(v)*basis_matrix(L))) + p*L
   return LL
 end
 
 function make_admissible!(w::ZZMatrix, form::ZZMatrix, p::ZZRingElem, K::FinField)
   m = only(transpose(w)*form*w)
-  a = mod(m, p^2)
-  iszero(a) && return nothing
-  a = K(div(a, p))
+  _a = mod(m, p^2)
+  iszero(_a) && return nothing
+  a = K(div(_a, p))
   v = 2*form*w
   vK = map_entries(b -> K(b)//a, v)
   vK = reduce(vcat, dense_matrix_type(K)[identity_matrix(K, 1), vK])
-  _, L = left_kernel(vK)
+  L = kernel(vK)
   @hassert :GenRep 3 !iszero(view(L, :, 1))
   j = findfirst(j -> !iszero(L[j, 1]), 1:nrows(L))
   @hassert :GenRep 3 !isnothing(j)
   L = map_entries(b -> b//L[j, 1], L)
-  v = lift(L[j, 2:ncols(L)])
+  v = ZZRingElem[lift(ZZ, a) for a in L[j, 2:ncols(L)]]
   for i in 1:nrows(w)
     w[i, 1] += p*v[i]
   end
@@ -63,7 +63,8 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
                                                              use_mass::Bool = true,
                                                              missing_mass::Union{Nothing, Base.RefValue{QQFieldElem}} = nothing,
                                                              vain::Base.RefValue{Int} = Ref{Int}(0),
-                                                             stop_after::IntExt = inf)
+                                                             stop_after::IntExt = inf,
+                                                             max::IntExt = inf)
   @assert !save_partial || !isnothing(save_path)
   K = GF(p)
   form = map_entries(ZZ, gram_matrix(L))
@@ -76,7 +77,8 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
   end
 
   G = automorphism_group_generators(L)
-  gensp = dense_matrix_type(K)[map_entries(K, solve_left(B, B*g)) for g in G]
+  _gensp = ZZMatrix[matrix(hom(Tp, Tp, TorQuadModuleElem[Tp(lift(a)*g) for a in gens(Tp)])) for g in G]
+  gensp = dense_matrix_type(K)[map_entries(K, g) for g in G]
   filter!(!is_diagonal, gensp)
   LO = Vector{elem_type(K)}[orb[1] for orb in line_orbits(gensp)]
 
@@ -126,6 +128,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
       sub!(__mass, __mass, 1//s)
       is_zero(__mass) && return result
     end
+    length(result) == max && break
   end
   return result
 end
@@ -139,7 +142,8 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Union{No
                                                             use_mass::Bool = true,
                                                             missing_mass::Union{Nothing, Base.RefValue{QQFieldElem}} = nothing,
                                                             vain::Base.RefValue{Int} = Ref{Int}(0),
-                                                            stop_after::IntExt = inf)
+                                                            stop_after::IntExt = inf,
+                                                            max::IntExt=inf)
   @assert !save_partial || !isnothing(save_path)
   K = GF(p)
   form = map_entries(ZZ, gram_matrix(L))
@@ -197,9 +201,9 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Union{No
     if use_mass
       s = automorphism_group_order(LL)
       sub!(__mass, __mass, 1//s)
-      println(__mass)
       is_zero(__mass) && return result
     end
+    length(result) == max && break
   end
   return result
 end
@@ -257,6 +261,7 @@ Optional:
 - missing_mass -> if "use_mass" and "distinct" are true, and the partial mass of "known" is known, mention what is the part of the mass missing
 - vain -> count the number of vain iterations without finding a new lattice in the given spinor genus
 - stop_after -> the algorithm breaks if we have done that amount of iterations without finding a new lattice
+- max -> maximum number of lattices to be found
 ======#
 
 function enumerate_definite_genus(
@@ -270,12 +275,14 @@ function enumerate_definite_genus(
     use_mass::Bool = true,
     _missing_mass::Union{QQFieldElem, Nothing} = nothing,
     vain::Base.RefValue{Int} = Ref{Int}(0),
-    stop_after::IntExt = inf
+    stop_after::IntExt = inf,
+    max::IntExt = inf
   )
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
   @req all(LL -> genus(LL) == genus(known[1]), known) "Known lattices must be in the same genus"
   @req algorithm == :orbit || algorithm == :random "Only :random and :orbit algorithms are currently implemented"
+  @req !is_finite(max) || max > 0 "max must be infinite or positive"
 
   res = copy(known)
   !distinct && _unique_iso_class!(res)
@@ -310,7 +317,7 @@ function enumerate_definite_genus(
   if use_mass
     _mass = mass(L)
     if isnothing(_missing_mass)
-      found = sum(1//automorphism_group_order(M) for M in res; init = QQ(0))
+      found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
     else
       @hassert :GenRep 3 _missing_mass <= _mass
@@ -329,15 +336,18 @@ function enumerate_definite_genus(
     i = findfirst(tbv)
     tbv[i] = false
     if algorithm == :orbit
-      N = _neighbours_definite_orbit(res[i], p; callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after)
+      N = _neighbours_definite_orbit(res[i], p; callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after, max)
     elseif algorithm == :random
-      N = _neighbours_definite_rand(res[i], p; rand_neigh, callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after)
+      N = _neighbours_definite_rand(res[i], p; rand_neigh, callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after, max)
     end
     
     if !is_empty(N)
       for M in N
         push!(tbv, true)
         push!(res, M)
+        if length(M) >= max
+          return res, use_mass ? missing_mass[] : zero(QQ)
+        end
       end
       use_mass && is_zero(missing_mass[]) && break
       if use_mass
@@ -355,13 +365,14 @@ end
 
 function enumerate_definite_genus(
     L::ZZLat,
-    algorithm::Symbol = _choose_algorithm(_L);
+    algorithm::Symbol = _choose_algorithm(L);
     rand_neigh::Union{Int, Nothing} = nothing,
     invariant_func::Function = default_func,
     save_partial::Bool = false,
     save_path::Union{IO, String, Nothing} = nothing,
     use_mass::Bool = true,
-    stop_after::IntExt = inf
+    stop_after::IntExt = inf,
+    max::IntExt = inf
   )
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
 
@@ -389,17 +400,21 @@ function enumerate_definite_genus(
                                                              use_mass,
                                                              _missing_mass,
                                                              vain,
-                                                             stop_after)
+                                                             stop_after,
+                                                             max=max-length(edg))
 
-    while use_mass && !is_zero(mm)
-      vain[] > stop_after && break
-      _edg, mm = enumerate_definite_genus(_edg, algorithm; rand_neigh, 
+    while (use_mass && !is_zero(mm)) || (vain[] < stop_after)
+      vain[] >= stop_after && break
+      (length(edg) + length(_edg)) >= max && break
+      _edg, mm = enumerate_definite_genus(_edg, algorithm; distinct=true,
+                                                           rand_neigh,
                                                            invariant_func,
                                                            save_partial,
                                                            save_path,
                                                            use_mass,
                                                            _missing_mass = mm,
-                                                           stop_after)
+                                                           stop_after,
+                                                           max=max-length(edg)-length(_edg))
     end
     append!(edg, _edg)
   end
@@ -414,15 +429,18 @@ function enumerate_definite_genus(
     save_partial::Bool = false,
     save_path::Union{IO, String, Nothing} = nothing,
     use_mass::Bool = true,
-    stop_after::IntExt = inf
+    stop_after::IntExt = inf,
+    max::IntExt = inf
   )
   L = representative(G)
+  max == 1 && return ZZLat[L]
   return enumerate_definite_genus(L, algorithm; rand_neigh,
                                                 invariant_func,
                                                 save_partial,
                                                 save_path,
                                                 use_mass,
-                                                stop_after)
+                                                stop_after,
+                                                max)
 end
 
 ###############################################################################
