@@ -13,7 +13,7 @@
 function neighbour(L::ZZLat, v::ZZMatrix, p::ZZRingElem)
   M = gram_matrix(L)*v
   K = kernel(matrix(GF(p), rank(L), 1, collect(M)))
-  _B = map_entries(a -> lift(ZZ, a), K)
+  _B = matrix(QQ, nrows(K), ncols(K), ZZRingElem[lift(ZZ, k) for k in K])
   LL = lattice_in_same_ambient_space(L, _B*basis_matrix(L)) + lattice_in_same_ambient_space(L, 1//p*(transpose(v)*basis_matrix(L))) + p*L
   return LL
 end
@@ -78,9 +78,13 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
 
   G = automorphism_group_generators(L)
   _gensp = ZZMatrix[matrix(hom(Tp, Tp, TorQuadModuleElem[Tp(lift(a)*g) for a in gens(Tp)])) for g in G]
-  gensp = dense_matrix_type(K)[map_entries(K, g) for g in G]
+  gensp = dense_matrix_type(K)[map_entries(K, g) for g in _gensp]
   filter!(!is_diagonal, gensp)
-  LO = Vector{elem_type(K)}[orb[1] for orb in line_orbits(gensp)]
+  if isempty(gensp)
+    LO = collect(enumerate_lines(K, rank(L)))
+  else
+    LO = Vector{elem_type(K)}[orb[1] for orb in line_orbits(gensp)]
+  end
 
   result = typeof(L)[]
 
@@ -94,7 +98,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
       vain[] += 1
       continue
     end
-    if has_preimage(jp, a)[1]
+    if has_preimage_with_preimage(jp, a)[1]
       vain[] += 1
       continue
     end
@@ -170,7 +174,7 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Union{No
       vain[] += 1
       continue
     end
-    if has_preimage(jp, a)[1]
+    if has_preimage_with_preimage(jp, a)[1]
       vain[] += 1
       continue
     end
@@ -203,7 +207,7 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Union{No
       sub!(__mass, __mass, 1//s)
       is_zero(__mass) && return result
     end
-    length(result) == max && break
+    length(result) == max && return result
   end
   return result
 end
@@ -214,7 +218,7 @@ end
 #
 ###############################################################################
 
-function _unique_iso_class!(L::Vector{ZZLat})
+function _unique_iso_class!(A::Vector{ZZLat})
   isempty(A) && return A
   idxs = eachindex(A)
   y = first(A)
@@ -235,7 +239,7 @@ end
 # Could complement with other invariants at some point if we want
 function default_func(L::ZZLat)
   m = minimum(L)
-  rlr = root_lattice_recognition(L)
+  rlr, _ = root_lattice_recognition(L)
   kn = kissing_number(L)::Int
   igo = automorphism_group_order(L)::ZZRingElem
   return (m, rlr, kn, igo)
@@ -307,7 +311,7 @@ function enumerate_definite_genus(
   end
 
   callback = function(M::ZZLat)
-    any(isequal(M), known) && return false
+    any(isequal(M), res) && return false
     invM = _invariants(M)
     !haskey(inv_dict, invM) && return true
     keep = all(N -> !is_isometric(N, M), inv_dict[invM])
@@ -345,7 +349,7 @@ function enumerate_definite_genus(
       for M in N
         push!(tbv, true)
         push!(res, M)
-        if length(M) >= max
+        if length(res) >= max
           return res, use_mass ? missing_mass[] : zero(QQ)
         end
       end
@@ -403,7 +407,7 @@ function enumerate_definite_genus(
                                                              stop_after,
                                                              max=max-length(edg))
 
-    while (use_mass && !is_zero(mm)) || (vain[] < stop_after)
+    while (use_mass && !is_zero(mm))
       vain[] >= stop_after && break
       (length(edg) + length(_edg)) >= max && break
       _edg, mm = enumerate_definite_genus(_edg, algorithm; distinct=true,
