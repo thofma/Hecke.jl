@@ -235,7 +235,7 @@ end
 # Could complement with other invariants at some point if we want
 function default_func(L::ZZLat)
   m = minimum(L)
-  genus = root_lattice_recognition(L)
+  rlr = root_lattice_recognition(L)
   kn = kissing_number(L)::Int
   igo = automorphism_group_order(L)::ZZRingElem
   return (m, rlr, kn, igo)
