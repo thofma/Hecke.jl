@@ -1108,7 +1108,7 @@ Return representatives for the isometry classes in the genus of `L`.
 function genus_representatives(L::ZZLat)
   s = denominator(scale(L))
   L = rescale(L, s)
-  if is_definite(L)
+  if is_definite(L) && rank(L) >= 3
     res = enumerate_definite_genus(L)
   else
     LL = _to_number_field_lattice(L)
