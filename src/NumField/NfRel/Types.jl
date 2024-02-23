@@ -1,6 +1,6 @@
 ###############################################################################
 #
-#  NfRelOrd
+#  RelNumFieldOrder
 #
 ###############################################################################
 
@@ -16,7 +16,7 @@ mutable struct NfRelOrdSet{T}
   end
 end
 
-@attributes mutable struct NfRelOrd{T, S, U} <: NumFieldOrd
+@attributes mutable struct RelNumFieldOrder{T, S, U} <: NumFieldOrder
   nf::NumField{T}
   basis_nf::Vector{U}
   basis_matrix::Generic.MatSpaceElem{T}
@@ -24,8 +24,8 @@ end
   basis_pmatrix::PMat{T, S}
   pseudo_basis::Vector{Tuple{U, S}}
 
-  disc_abs::NfOrdIdl # used if T == nf_elem
-  disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
+  disc_abs::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} # used if T == AbsSimpleNumFieldElem
+  disc_rel#::RelNumFieldOrderIdeal{T} # used otherwise; is a forward declaration
   parent::NfRelOrdSet{T}
 
   is_equation_order::Bool
@@ -36,12 +36,12 @@ end
 
   trace_mat::Generic.MatSpaceElem{T}
 
-  index::NfOrdIdl #Only if the base field is AnticNumberField
+  index::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} #Only if the base field is AbsSimpleNumField
 
   inv_coeff_ideals::Vector{S}
   index_div
 
-  function NfRelOrd{T, S, U}(K::NumField{T}) where {T, S, U}
+  function RelNumFieldOrder{T, S, U}(K::NumField{T}) where {T, S, U}
     z = new{T, S, U}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -51,8 +51,8 @@ end
     return z
   end
 
-  function NfRelOrd{T, S, U}(K::NumField{T}, M::PMat{T, S}) where {T, S, U}
-    z = NfRelOrd{T, S, U}(K)
+  function RelNumFieldOrder{T, S, U}(K::NumField{T}, M::PMat{T, S}) where {T, S, U}
+    z = RelNumFieldOrder{T, S, U}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_pmatrix = M
@@ -61,8 +61,8 @@ end
     return z
   end
 
-  function NfRelOrd{T, S, U}(K::NumField{T}, M::Generic.MatSpaceElem{T}) where {T, S, U}
-    z = NfRelOrd{T, S, U}(K)
+  function RelNumFieldOrder{T, S, U}(K::NumField{T}, M::Generic.MatSpaceElem{T}) where {T, S, U}
+    z = RelNumFieldOrder{T, S, U}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_matrix = M
@@ -74,17 +74,17 @@ end
 
 ###############################################################################
 #
-#  NfRelOrdElem
+#  RelNumFieldOrderElem
 #
 ###############################################################################
 
-mutable struct NfRelOrdElem{T, U} <: NumFieldOrdElem
-  parent#::NfRelOrd{T, S} # I don't want to drag the S around
+mutable struct RelNumFieldOrderElem{T, U} <: NumFieldOrderElem
+  parent#::RelNumFieldOrder{T, S} # I don't want to drag the S around
   elem_in_nf::U
   coordinates::Vector{T}
   has_coord::Bool
 
-  function NfRelOrdElem{T, U}(O::NfRelOrd{T}) where {T, U}
+  function RelNumFieldOrderElem{T, U}(O::RelNumFieldOrder{T}) where {T, U}
     z = new{T, U}()
     z.parent = O
     z.elem_in_nf = zero(nf(O))
@@ -93,7 +93,7 @@ mutable struct NfRelOrdElem{T, U} <: NumFieldOrdElem
     return z
   end
 
-  function NfRelOrdElem{T, U}(O::NfRelOrd{T}, a::U) where {T, U}
+  function RelNumFieldOrderElem{T, U}(O::RelNumFieldOrder{T}, a::U) where {T, U}
     z = new{T, U}()
     z.parent = O
     z.elem_in_nf = a
@@ -102,7 +102,7 @@ mutable struct NfRelOrdElem{T, U} <: NumFieldOrdElem
     return z
   end
 
-  function NfRelOrdElem{T, U}(O::NfRelOrd{T}, a::U, arr::Vector{T}) where {T, U}
+  function RelNumFieldOrderElem{T, U}(O::RelNumFieldOrder{T}, a::U, arr::Vector{T}) where {T, U}
     z = new{T, U}()
     z.parent = O
     z.elem_in_nf = a
@@ -114,21 +114,21 @@ end
 
 ###############################################################################
 #
-#  NfRelOrdFracIdl
+#  RelNumFieldOrderFractionalIdeal
 #
 ###############################################################################
 
 mutable struct NfRelOrdFracIdlSet{T, S, U}
-  order::NfRelOrd{T, S, U}
+  order::RelNumFieldOrder{T, S, U}
 
-  function NfRelOrdFracIdlSet{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
+  function NfRelOrdFracIdlSet{T, S, U}(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
     a = new(O)
     return a
   end
 end
 
-mutable struct NfRelOrdFracIdl{T, S, U} <: NumFieldOrdFracIdl
-  order::NfRelOrd{T, S, U}
+mutable struct RelNumFieldOrderFractionalIdeal{T, S, U} <: NumFieldOrderFractionalIdeal
+  order::RelNumFieldOrder{T, S, U}
   parent::NfRelOrdFracIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
   pseudo_basis::Vector{Tuple{U, S}}
@@ -139,7 +139,7 @@ mutable struct NfRelOrdFracIdl{T, S, U} <: NumFieldOrdFracIdl
   norm
   has_norm::Bool
 
-  function NfRelOrdFracIdl{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
+  function RelNumFieldOrderFractionalIdeal{T, S, U}(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
     z = new{T, S, U}()
     z.order = O
     z.parent = NfRelOrdFracIdlSet{T, S, U}(O)
@@ -147,8 +147,8 @@ mutable struct NfRelOrdFracIdl{T, S, U} <: NumFieldOrdFracIdl
     return z
   end
 
-  function NfRelOrdFracIdl{T, S, U}(O::NfRelOrd{T, S, U}, M::PMat{T, S}) where {T, S, U}
-    z = NfRelOrdFracIdl{T, S, U}(O)
+  function RelNumFieldOrderFractionalIdeal{T, S, U}(O::RelNumFieldOrder{T, S, U}, M::PMat{T, S}) where {T, S, U}
+    z = RelNumFieldOrderFractionalIdeal{T, S, U}(O)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
@@ -157,21 +157,21 @@ end
 
 ###############################################################################
 #
-#  NfRelOrdIdl
+#  RelNumFieldOrderIdeal
 #
 ###############################################################################
 
 mutable struct NfRelOrdIdlSet{T, S, U}
-  order::NfRelOrd{T, S, U}
+  order::RelNumFieldOrder{T, S, U}
 
-  function NfRelOrdIdlSet{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
+  function NfRelOrdIdlSet{T, S, U}(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
     a = new(O)
     return a
   end
 end
 
-@attributes mutable struct NfRelOrdIdl{T, S, U} <: NumFieldOrdIdl
-  order::NfRelOrd{T, S, U}
+@attributes mutable struct RelNumFieldOrderIdeal{T, S, U} <: NumFieldOrderIdeal
+  order::RelNumFieldOrder{T, S, U}
   parent::NfRelOrdIdlSet{T, S, U}
   basis_pmatrix::PMat{T, S}
   pseudo_basis::Vector{Tuple{U, S}}
@@ -187,10 +187,10 @@ end
 
   minimum
   non_index_div_poly::FqPolyRingElem # only used if the ideal is a prime ideal not dividing the index
-  p_uniformizer::NfRelOrdElem{T, U}
+  p_uniformizer::RelNumFieldOrderElem{T, U}
   anti_uniformizer::U
 
-  function NfRelOrdIdl{T, S, U}(O::NfRelOrd{T, S, U}) where {T, S, U}
+  function RelNumFieldOrderIdeal{T, S, U}(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
     z = new{T, S, U}()
     z.order = O
     z.parent = NfRelOrdIdlSet{T, S, U}(O)
@@ -200,8 +200,8 @@ end
     return z
   end
 
-  function NfRelOrdIdl{T, S, U}(O::NfRelOrd{T, S, U}, M::PMat{T, S}) where {T, S, U}
-    z = NfRelOrdIdl{T, S, U}(O)
+  function RelNumFieldOrderIdeal{T, S, U}(O::RelNumFieldOrder{T, S, U}, M::PMat{T, S}) where {T, S, U}
+    z = RelNumFieldOrderIdeal{T, S, U}(O)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix
     return z
@@ -210,18 +210,18 @@ end
 
 ################################################################################
 #
-#  NfRelNS / NfRelNSElem
+#  RelNonSimpleNumField / RelNonSimpleNumFieldElem
 #
 ################################################################################
 
-@attributes mutable struct NfRelNS{T} <: NonSimpleNumField{T}
+@attributes mutable struct RelNonSimpleNumField{T} <: NonSimpleNumField{T}
   base_ring::Nemo.Field
   pol::Vector{Nemo.Generic.MPoly{T}}
   abs_pol::Vector{Generic.Poly{T}}
   S::Vector{Symbol}
   basis_traces::Vector{Vector{T}}
 
-  function NfRelNS(abs_pol::Array{Generic.Poly{T}}, f::Vector{Nemo.Generic.MPoly{T}}, S::Vector{Symbol}; cached::Bool = false) where T
+  function RelNonSimpleNumField(abs_pol::Array{Generic.Poly{T}}, f::Vector{Nemo.Generic.MPoly{T}}, S::Vector{Symbol}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
     r.abs_pol = abs_pol
@@ -231,11 +231,11 @@ end
   end
 end
 
-mutable struct NfRelNSElem{T} <: NonSimpleNumFieldElem{T}
+mutable struct RelNonSimpleNumFieldElem{T} <: NonSimpleNumFieldElem{T}
   data::Nemo.Generic.MPoly{T}
-  parent::NfRelNS{T}
+  parent::RelNonSimpleNumField{T}
 
-  NfRelNSElem{T}(g::Generic.MPoly{T}) where {T} = new{T}(g)
+  RelNonSimpleNumFieldElem{T}(g::Generic.MPoly{T}) where {T} = new{T}(g)
 end
 
 ################################################################################

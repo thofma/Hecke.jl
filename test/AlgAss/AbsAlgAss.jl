@@ -1,4 +1,4 @@
-@testset "AbsAlgAss" begin
+@testset "AbstractAssociativeAlgebra" begin
 
   @testset "Decomposition" begin
     Fp = GF(3)
@@ -26,8 +26,8 @@
     ee = toFpG\one(FpG)
     @test ee^2 == ee
 
-    # And now the same for AlgAss
-    FpG = AlgAss(FpG)[1]
+    # And now the same for StructureConstantAlgebra
+    FpG = StructureConstantAlgebra(FpG)[1]
     dec = decompose(FpG)
     @test length(dec) == 5
     dim1 = 0
@@ -49,7 +49,7 @@
     ee = toFpG\one(FpG)
     @test ee^2 == ee
 
-    # And now for AlgMat
+    # And now for MatAlgebra
     A = matrix_algebra(Fp, 2)
 
     dec = decompose(A)
@@ -67,7 +67,7 @@
     @test_throws AssertionError decompose(A)
 
     Qx, x = FlintQQ["x"]
-    A = AlgAss((x^2 + 1)*(x^2 + 3))
+    A = StructureConstantAlgebra((x^2 + 1)*(x^2 + 3))
     dec = Hecke.as_number_fields(A)
 
     @test length(dec) == 2
@@ -83,7 +83,7 @@
 
   @testset "Generators" begin
     Qx, x = FlintQQ["x"]
-    A = AlgAss((x^2 + 1)*(x^2 + 3))
+    A = StructureConstantAlgebra((x^2 + 1)*(x^2 + 3))
     g, full_basis, v = gens(A, Val{true})
 
     @test length(full_basis) == dim(A)
@@ -109,7 +109,7 @@
     # f = x^2 + 1
     # g = x^3 + 3x^2 + 5x - 5
     f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
-    A = AlgAss(f2g3)
+    A = StructureConstantAlgebra(f2g3)
     fg = A(QQFieldElem[-5, 5, -2, 6, 3, 1, 0, 0, 0, 0, 0, 0, 0]) # = f*g
     J = radical(A)
     I = ideal(A, fg)
@@ -121,7 +121,7 @@
     # g = y^3 - 3y^2 - 3y + 2
     # h = y^2 + 5y + 5
     g2h3 = y^12 + 9y^11 + 3y^10 - 198y^9 - 603y^8 + 423y^7 + 4829y^6 + 8430y^5 + 4335y^4 - 2675y^3 - 3075y^2 + 500 # = g^2*h^3
-    A = AlgAss(g2h3)
+    A = StructureConstantAlgebra(g2h3)
     gh = A(map(K, [10, -5, -28, -13, 2, 1, 0, 0, 0, 0, 0, 0])) # = g*h
     J = radical(A)
     I = ideal(A, gh)
@@ -132,7 +132,7 @@
     A = group_algebra(F2, G)
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 7
-    A = AlgAss(A)[1]
+    A = StructureConstantAlgebra(A)[1]
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 7
 
@@ -145,7 +145,7 @@
     A = group_algebra(F4, G)
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 7
-    A = AlgAss(A)[1]
+    A = StructureConstantAlgebra(A)[1]
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 7
 
@@ -165,8 +165,8 @@
     Fp = GF(3)
     G = small_group(8, 4)
     FpG = group_algebra(Fp, G)
-    A = AlgAss(FpG)[1]
-    @assert A isa Hecke.AbsAlgAss
+    A = StructureConstantAlgebra(FpG)[1]
+    @assert A isa Hecke.AbstractAssociativeAlgebra
 
     E = elem_type(A)
     @test rand(A) isa E
@@ -205,8 +205,8 @@
   # etale
 
   Qx, x = QQ["x"]
-  @test is_etale(AlgAss(x))
-  @test !is_etale(AlgAss(x^2))
+  @test is_etale(StructureConstantAlgebra(x))
+  @test !is_etale(StructureConstantAlgebra(x^2))
 
   # zero algebra
 

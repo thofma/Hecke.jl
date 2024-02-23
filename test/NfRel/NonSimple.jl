@@ -1,4 +1,4 @@
-@testset "NfRelNS" begin
+@testset "RelNonSimpleNumField" begin
   Qx, x = FlintQQ["x"]
   K, _ = number_field(x^2 - 2)
   Ky, y = K["y"]

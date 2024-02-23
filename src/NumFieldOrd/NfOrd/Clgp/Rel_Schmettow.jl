@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function one_step(b::NfOrdFracIdl, p::NfOrdIdl; prec::Int = 100)
+function one_step(b::AbsSimpleNumFieldOrderFractionalIdeal, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 100)
   b = p*b
   simplify(b)
   g1 = short_elem(b, prec = prec)

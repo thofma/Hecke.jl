@@ -32,7 +32,7 @@ end
 #mutable struct FactorBaseSingleP{T}
 #  P::ZZRingElem
 #  pt::FactorBase{T}
-#  lp::Vector{Tuple{Int,NfOrdIdl}}
+#  lp::Vector{Tuple{Int,AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
 #  lf::Vector{T}
 
 function show(io::IO, c::ClassGrpCtx)
@@ -61,8 +61,8 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   clg.last = 0
 
   clg.M = ModuleCtx_fmpz(length(FB.ideals))
-  clg.R_gen = Vector{nf_elem}()
-  clg.R_rel = Vector{nf_elem}()
+  clg.R_gen = Vector{AbsSimpleNumFieldElem}()
+  clg.R_rel = Vector{AbsSimpleNumFieldElem}()
 
   clg.c = conjugates_init(nf(O).pol)
   add_rels && for I in clg.FB.ideals
@@ -114,7 +114,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   return clg
 end
 
-function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true,
+function class_group_init(O::AbsSimpleNumFieldOrder, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           use_aut::Bool = false,
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array})
   @vprintln :ClassGroup 2 "Computing factor base ..."
@@ -135,7 +135,7 @@ function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool =
 end
 
 function _get_autos_from_ctx(ctx::ClassGrpCtx)
-  return ctx.aut_grp::Vector{Tuple{NfToNfMor, Perm{Int}}}
+  return ctx.aut_grp::Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Perm{Int}}}
 end
 
 ################################################################################

@@ -480,7 +480,7 @@ function _n_real_roots_sf(f::ZZPolyRingElem)
   return _number_of_sign_changes(evminf) - _number_of_sign_changes(evinf)
 end
 
-function n_real_roots(f::PolyRingElem{<:NumFieldElem}, P; sturm_sequence = PolyRingElem{nf_elem}[])
+function n_real_roots(f::PolyRingElem{<:NumFieldElem}, P; sturm_sequence = PolyRingElem{AbsSimpleNumFieldElem}[])
   if length(sturm_sequence) == 0
     s = Hecke.sturm_sequence(f)
   else
@@ -497,7 +497,7 @@ end
 
 Return the number of positive roots of the polynomial $f$ at the real place $P$.
 """
-function n_positive_roots(f::PolyRingElem{nf_elem}, P::NumFieldEmb; multiplicities::Bool = false)
+function n_positive_roots(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFieldEmb; multiplicities::Bool = false)
   fsq = factor_squarefree(f)
   p = 0
   for (g, e) in fsq
@@ -506,12 +506,12 @@ function n_positive_roots(f::PolyRingElem{nf_elem}, P::NumFieldEmb; multipliciti
   return p
 end
 
-function _n_positive_roots_sqf(f::PolyRingElem{nf_elem}, P::NumFieldEmb; start_prec::Int = 32)
+function _n_positive_roots_sqf(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFieldEmb; start_prec::Int = 32)
   # We could do better this by not computing the roots.
   # We could just use the Sturm sequence as before.
   prec = start_prec
   while true
-    coeffs = Vector{acb}(undef, length(f))
+    coeffs = Vector{AcbFieldElem}(undef, length(f))
     c = evaluate(coeff(f, 0), P, prec)
     coeffs[1] = c
     C = parent(c)
@@ -543,7 +543,7 @@ end
 #
 ################################################################################
 
-function charpoly_mod(M::Generic.Mat{nf_elem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
+function charpoly_mod(M::Generic.Mat{AbsSimpleNumFieldElem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
   K = base_ring(M)
   p = p_start
   Kt, t = polynomial_ring(K, cached = false)
@@ -720,6 +720,11 @@ function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]))
 end
 
+function roots(x::RealPoly)
+  rt = roots(map_coefficients(ComplexField(), x), isolate_real=true)
+  return real.(filter(isreal, rt))
+end
+
 function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   g = squarefree_part(f)
   all_rts = _roots(g, prec)
@@ -731,8 +736,20 @@ end
 
 function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
-  d = Dict{acb_poly, Int}()
+  d = Dict{AcbPolyRingElem, Int}()
   Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  for (k,v) = g.fac
+    for r = roots(R, k)
+      d[t-r] = v
+    end
+  end
+  return Fac(Rt(g.unit), d)
+end
+
+function factor(R::ComplexField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
+  g = factor(f)
+  Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  d = Dict{typeof(t), Int}()
   for (k,v) = g.fac
     for r = roots(R, k)
       d[t-r] = v
@@ -753,11 +770,16 @@ function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return r
 end
 
-function factor(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
+function factor(R::Union{RealField, ArbField}, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
   g = factor(f)
-  d = Dict{arb_poly, Int}()
   Rx, x = polynomial_ring(R, String(var(parent(f))), cached = false)
-  C = AcbField(precision(R))
+  d = Dict{typeof(x), Int}()
+  if isa(R, RealField)
+    C = ComplexField()
+  else
+    C = AcbField(precision(R))
+  end
+
   for (k,v) = g.fac
     s, t = signature(k)
     r = roots(C, k)
@@ -877,7 +899,7 @@ specified, return the `n`-th cyclotomic polynomial over the integers.
 
 ```jldoctest
 julia> F, _ = finite_field(5)
-(Finite field of degree 1 over GF(5), 0)
+(Prime field of characteristic 5, 0)
 
 julia> Ft, _ = F["t"]
 (Univariate polynomial ring in t over GF(5), t)

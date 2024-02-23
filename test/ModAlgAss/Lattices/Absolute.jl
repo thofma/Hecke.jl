@@ -43,5 +43,5 @@ end
   O = Order(A, l)
   L = Hecke.natural_lattice(O)
   S = Hecke.sublattices(L, 3)
-  @time length(S) == 216
+  @test length(S) == 216
 end

@@ -1,5 +1,5 @@
 @testset "Power Residue" begin
-    R = residue_ring(ZZ,7)
+    R = residue_ring(ZZ,7)[1]
     Rx,x = R["x"]
     b = x^4+x+1 #irreducible
     a = rand(Rx, 1:10)

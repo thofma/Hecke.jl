@@ -1,6 +1,6 @@
 ################################################################################
 #
-#          NfOrd/Elem.jl : Elements of orders of number fields
+#          AbsSimpleNumFieldOrder/Elem.jl : Elements of orders of number fields
 #
 # This file is part of hecke.
 #
@@ -38,7 +38,7 @@
 #
 ################################################################################
 
-function Base.deepcopy_internal(x::NfAbsOrdElem{S, T}, dict::IdDict) where {S, T}
+function Base.deepcopy_internal(x::AbsNumFieldOrderElem{S, T}, dict::IdDict) where {S, T}
   z = parent(x)()
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
@@ -54,7 +54,7 @@ end
 #
 ################################################################################
 
-function elem_from_mat_row(O::NfAbsOrd, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
+function elem_from_mat_row(O::AbsNumFieldOrder, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
   return O(ZZRingElem[M[i, j] for j=1:degree(O)])
 end
 
@@ -65,97 +65,97 @@ end
 ################################################################################
 
 @doc raw"""
-      (O::NumFieldOrd)(a::NumFieldElem, check::Bool = true) -> NumFieldOrdElem
+      (O::NumFieldOrder)(a::NumFieldElem, check::Bool = true) -> NumFieldOrderElem
 
 Given an element $a$ of the ambient number field of $\mathcal O$, this
 function coerces the element into $\mathcal O$. It will be checked that $a$
 is contained in $\mathcal O$ if and only if `check` is `true`.
 """
-(O::NfAbsOrd{S, T})(a::T, check::Bool = true) where {S, T} = begin
+(O::AbsNumFieldOrder{S, T})(a::T, check::Bool = true) where {S, T} = begin
   if nf(O) !== parent(a)
     error("Underlying number fields not equal")
   end
   if check
     (x, y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
-    return NfAbsOrdElem(O, deepcopy(a), y)
+    return AbsNumFieldOrderElem(O, deepcopy(a), y)
   else
-    return NfAbsOrdElem(O, deepcopy(a))
+    return AbsNumFieldOrderElem(O, deepcopy(a))
   end
 end
 
 @doc raw"""
-      (O::NumFieldOrd)(a::NumFieldOrdElem, check::Bool = true) -> NumFieldOrdElem
+      (O::NumFieldOrder)(a::NumFieldOrderElem, check::Bool = true) -> NumFieldOrderElem
 
 Given an element $a$ of some order in the ambient number field of
 $\mathcal O$, this function coerces the element into $\mathcal O$. It
 will be checked that $a$ is contained in $\mathcal O$ if and only if
 `check` is `true`.
 """
-(O::NfAbsOrd{S, T})(a::NfAbsOrdElem{S, T}, check::Bool = true) where {S, T} = begin
+(O::AbsNumFieldOrder{S, T})(a::AbsNumFieldOrderElem{S, T}, check::Bool = true) where {S, T} = begin
   b = nf(parent(a))(a)
   if check
     (x, y) = _check_elem_in_order(b,O)
     !x && error("Number field element not in the order")
-    return NfAbsOrdElem(O, deepcopy(b), y)
+    return AbsNumFieldOrderElem(O, deepcopy(b), y)
   else
-    return NfAbsOrdElem(O, deepcopy(b))
+    return AbsNumFieldOrderElem(O, deepcopy(b))
   end
 end
 
-(O::NfAbsOrd{S, T})(a::T, arr::Vector{ZZRingElem}, check::Bool = false) where {S, T} = begin
+(O::AbsNumFieldOrder{S, T})(a::T, arr::Vector{ZZRingElem}, check::Bool = false) where {S, T} = begin
   if check
     (x, y) = _check_elem_in_order(a,O)
     (!x || arr != y ) && error("Number field element not in the order")
-    return NfAbsOrdElem(O, deepcopy(a), y)
+    return AbsNumFieldOrderElem(O, deepcopy(a), y)
   else
-    return NfAbsOrdElem(O, deepcopy(a), deepcopy(arr))
+    return AbsNumFieldOrderElem(O, deepcopy(a), deepcopy(arr))
   end
 end
 
-(O::NfAbsOrd{S, T})(a::T, arr::ZZMatrix, check::Bool = false) where {S, T} = begin
+(O::AbsNumFieldOrder{S, T})(a::T, arr::ZZMatrix, check::Bool = false) where {S, T} = begin
   if check
     (x, y) = _check_elem_in_order(a,O)
     (!x || arr != y ) && error("Number field element not in the order")
-    return NfAbsOrdElem(O, deepcopy(a), y)
+    return AbsNumFieldOrderElem(O, deepcopy(a), y)
   else
-    return NfAbsOrdElem(O, deepcopy(a), deepcopy(arr))
+    return AbsNumFieldOrderElem(O, deepcopy(a), deepcopy(arr))
   end
 end
 
 @doc raw"""
-      (O::NumFieldOrd)(a::IntegerUnion) -> NumFieldOrdElem
+      (O::NumFieldOrder)(a::IntegerUnion) -> NumFieldOrderElem
 
 Given an element $a$ of type `ZZRingElem` or `Integer`, this
 function coerces the element into $\mathcal O$.
 """
-(O::NfAbsOrd)(a::IntegerUnion) = begin
-  return NfAbsOrdElem(O, nf(O)(a))
+(O::AbsNumFieldOrder)(a::IntegerUnion) = begin
+  return AbsNumFieldOrderElem(O, nf(O)(a))
 end
 
 @doc raw"""
-      (O::NfAbsOrd)(arr::Vector{ZZRingElem})
+      (O::AbsNumFieldOrder)(arr::Vector{ZZRingElem})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfAbsOrd)(arr::Vector{ZZRingElem}) = begin
-  return NfAbsOrdElem(O, deepcopy(arr))
+(O::AbsNumFieldOrder)(arr::Vector{ZZRingElem}) = begin
+  return AbsNumFieldOrderElem(O, deepcopy(arr))
 end
 
-(O::NfAbsOrd)(arr::ZZMatrix) = begin
-  return NfAbsOrdElem(O, arr)
+(O::AbsNumFieldOrder)(arr::ZZMatrix) = begin
+  return AbsNumFieldOrderElem(O, arr)
 end
 
 @doc raw"""
-      (O::NfAbsOrd)(arr::Vector{Integer})
+      (O::AbsNumFieldOrder)(arr::Vector{Integer})
 
 Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfAbsOrd)(arr::Vector{S}) where {S <: Integer} = begin
-  return NfAbsOrdElem(O, deepcopy(arr))
+(O::AbsNumFieldOrder)(arr::Vector{S}) where {S <: Integer} = begin
+  return AbsNumFieldOrderElem(O, deepcopy(arr))
 end
 
-(O::NfAbsOrd)() = NfAbsOrdElem(O)
+(O::AbsNumFieldOrder)() = AbsNumFieldOrderElem(O)
 
 ################################################################################
 #
@@ -163,7 +163,7 @@ end
 #
 ################################################################################
 
-function check_parent(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
+function check_parent(x::AbsNumFieldOrderElem{S, T}, y::AbsNumFieldOrderElem{S, T}) where {S, T}
   return parent(x) === parent(y)
 end
 
@@ -173,7 +173,7 @@ end
 #
 ################################################################################
 
-function assure_has_coord(a::NfAbsOrdElem)
+function assure_has_coord(a::AbsNumFieldOrderElem)
   if a.has_coord
     return nothing
   else
@@ -192,13 +192,13 @@ end
 ################################################################################
 
 @doc raw"""
-    coordinates(a::NfAbsOrdElem) -> Vector{ZZRingElem}
+    coordinates(a::AbsNumFieldOrderElem) -> Vector{ZZRingElem}
 
 Returns the coefficient vector of $a$ with respect to the basis of the order.
 """
-function coordinates(a::NfAbsOrdElem; copy::Bool = true)
+function coordinates(a::AbsNumFieldOrderElem; copy::Bool = true)
   assure_has_coord(a)
-  @hassert :NfOrd 2 a == dot(a.coordinates, basis(parent(a), copy = false))
+  @hassert :AbsNumFieldOrder 2 a == dot(a.coordinates, basis(parent(a), copy = false))
   if copy
     return deepcopy(a.coordinates)
   else
@@ -213,21 +213,21 @@ end
 ################################################################################
 
 @doc raw"""
-    charpoly(a::NfAbsOrdElem) -> ZZPolyRingElem
-    charpoly(a::NfAbsOrdElem, FlintZZ) -> ZZPolyRingElem
+    charpoly(a::AbsNumFieldOrderElem) -> ZZPolyRingElem
+    charpoly(a::AbsNumFieldOrderElem, FlintZZ) -> ZZPolyRingElem
 
 The characteristic polynomial of $a$.
 """
-function charpoly(a::NfAbsOrdElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
+function charpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
   return Zx(charpoly(elem_in_nf(a)))
 end
 
 @doc raw"""
-    minpoly(a::NfAbsOrdElem) -> ZZPolyRingElem
+    minpoly(a::AbsNumFieldOrderElem) -> ZZPolyRingElem
 
 The minimal polynomial of $a$.
 """
-function minpoly(a::NfAbsOrdElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
+function minpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
   return Zx(minpoly(elem_in_nf(a)))
 end
 
@@ -237,11 +237,11 @@ end
 #
 ################################################################################
 
-function AbstractAlgebra.expressify(a::NfAbsOrdElem; context = nothing)
+function AbstractAlgebra.expressify(a::AbsNumFieldOrderElem; context = nothing)
   return AbstractAlgebra.expressify(a.elem_in_nf, context = context)
 end
 
-function show(io::IO, x::NfAbsOrdElem)
+function show(io::IO, x::AbsNumFieldOrderElem)
   print(io, AbstractAlgebra.obj_to_string(x, context = io))
 end
 
@@ -251,12 +251,12 @@ end
 #
 ################################################################################
 
-function //(x::nf_elem, y::NfOrdElem)
+function //(x::AbsSimpleNumFieldElem, y::AbsSimpleNumFieldOrderElem)
   check_parent(x, y.elem_in_nf)
   return x//y.elem_in_nf
 end
 
-function //(y::NfOrdElem, x::nf_elem)
+function //(y::AbsSimpleNumFieldOrderElem, x::AbsSimpleNumFieldElem)
   check_parent(x, y.elem_in_nf)
   return y.elem_in_nf//x
 end
@@ -267,13 +267,13 @@ end
 #
 ################################################################################
 
-function mod(a::NfAbsOrdElem, m::Union{ZZRingElem, Int})
+function mod(a::AbsNumFieldOrderElem, m::Union{ZZRingElem, Int})
   d = degree(parent(a))
   ar = coordinates(a)
   for i in 1:d
     ar[i] = mod(a.coordinates[i], m)
   end
-  return NfAbsOrdElem(parent(a), ar) # avoid making a copy of ar
+  return AbsNumFieldOrderElem(parent(a), ar) # avoid making a copy of ar
 end
 
 
@@ -283,7 +283,7 @@ end
 #
 ################################################################################
 
-function powermod(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
+function powermod(a::AbsNumFieldOrderElem, i::ZZRingElem, p::ZZRingElem)
 
   if is_defining_polynomial_nice(nf(parent(a))) && contains_equation_order(parent(a))
     return powermod_fast(a, i, p)
@@ -292,7 +292,7 @@ function powermod(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
   end
 end
 
-function powermod_gen(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
+function powermod_gen(a::AbsNumFieldOrderElem, i::ZZRingElem, p::ZZRingElem)
   if i == 0
     return one(parent(a))
   end
@@ -312,7 +312,7 @@ function powermod_gen(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
 end
 
 
-function powermod_fast(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
+function powermod_fast(a::AbsNumFieldOrderElem, i::ZZRingElem, p::ZZRingElem)
   if i == 0
     return one(parent(a))
   end
@@ -346,7 +346,7 @@ function powermod_fast(a::NfAbsOrdElem, i::ZZRingElem, p::ZZRingElem)
   return mod(parent(a)(b)*e, p)
 end
 
-function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::ZZRingElem, p::ZZRingElem)
+function powermod_fast(a::AbsNumFieldOrderElem{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}, i::ZZRingElem, p::ZZRingElem)
   if i == 0
     return one(parent(a))
   end
@@ -388,7 +388,7 @@ function powermod_fast(a::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}, i::ZZRingElem, p::
   return mod(parent(a)(b*e), p)
 end
 
-function powermod(a::NfOrdElem, i::ZZRingElem, I::NfOrdIdl)
+function powermod(a::AbsSimpleNumFieldOrderElem, i::ZZRingElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if i == 0
     return one(parent(a))
   end
@@ -415,11 +415,11 @@ function powermod(a::NfOrdElem, i::ZZRingElem, I::NfOrdIdl)
 end
 
 
-powermod(a::NfAbsOrdElem, i::Integer, m::Integer) = powermod(a, ZZRingElem(i), ZZRingElem(m))
+powermod(a::AbsNumFieldOrderElem, i::Integer, m::Integer) = powermod(a, ZZRingElem(i), ZZRingElem(m))
 
-powermod(a::NfAbsOrdElem, i::ZZRingElem, m::Integer)  = powermod(a, i, ZZRingElem(m))
+powermod(a::AbsNumFieldOrderElem, i::ZZRingElem, m::Integer)  = powermod(a, i, ZZRingElem(m))
 
-powermod(a::NfAbsOrdElem, i::Integer, m::ZZRingElem)  = powermod(a, ZZRingElem(i), m)
+powermod(a::AbsNumFieldOrderElem, i::Integer, m::ZZRingElem)  = powermod(a, ZZRingElem(i), m)
 
 ################################################################################
 #
@@ -428,11 +428,11 @@ powermod(a::NfAbsOrdElem, i::Integer, m::ZZRingElem)  = powermod(a, ZZRingElem(i
 ################################################################################
 
 @doc raw"""
-    representation_matrix(a::NfAbsOrdElem) -> ZZMatrix
+    representation_matrix(a::AbsNumFieldOrderElem) -> ZZMatrix
 
 Returns the representation matrix of the element $a$.
 """
-function representation_matrix(a::NfAbsOrdElem)
+function representation_matrix(a::AbsNumFieldOrderElem)
   O = parent(a)
   assure_has_basis_matrix(O)
   assure_has_basis_mat_inv(O)
@@ -444,13 +444,13 @@ function representation_matrix(a::NfAbsOrdElem)
 end
 
 @doc raw"""
-    representation_matrix(a::NfAbsOrdElem, K::AnticNumberField) -> FakeFmpqMat
+    representation_matrix(a::AbsNumFieldOrderElem, K::AbsSimpleNumField) -> FakeFmpqMat
 
 Returns the representation matrix of the element $a$ considered as an element
 of the ambient number field $K$. It is assumed that $K$ is the ambient number
 field of the order of $a$.
 """
-function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
+function representation_matrix(a::AbsNumFieldOrderElem{S, T}, K::S) where {S, T}
   nf(parent(a)) != K && error("Element not in this field")
   A, d = Nemo.representation_matrix_q(a.elem_in_nf)
   z = FakeFmpqMat(A, d)
@@ -458,20 +458,20 @@ function representation_matrix(a::NfAbsOrdElem{S, T}, K::S) where {S, T}
 end
 
 @doc raw"""
-    representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem) -> ZZMatrix
+    representation_matrix_mod(a::AbsNumFieldOrderElem, d::ZZRingElem) -> ZZMatrix
 
 Returns the representation matrix of the element $a$ with entries reduced mod $d$.
 """
-function representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem)
+function representation_matrix_mod(a::AbsNumFieldOrderElem, d::ZZRingElem)
   O = parent(a)
   A, den = representation_matrix_q(elem_in_nf(a))
-  BM = basis_matrix(O, copy = false)
-  BMinv = basis_mat_inv(O, copy = false)
+  BM = basis_matrix(FakeFmpqMat, O, copy = false)
+  BMinv = basis_mat_inv(FakeFmpqMat, O, copy = false)
   d2 = BM.den * BMinv.den * den
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
   if fits(Int, d1)
-    R = residue_ring(FlintZZ, Int(d1), cached = false)
+    R = residue_ring(FlintZZ, Int(d1), cached = false)[1]
     AR = map_entries(R, A)
     BMR = map_entries(R, BM.num)
     BMinvR = map_entries(R, BMinv.num)
@@ -491,7 +491,7 @@ function representation_matrix_mod(a::NfAbsOrdElem, d::ZZRingElem)
     mod!(res, d)
     return res
   else
-    RR = residue_ring(FlintZZ, d1, cached = false)
+    RR = residue_ring(FlintZZ, d1, cached = false)[1]
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
     mul!(ARR, BMRR, ARR)
@@ -521,7 +521,7 @@ end
 ################################################################################
 
 # TODO: Make this faster, don't allocate the ar array ...
-function rand!(z::NfAbsOrdElem{S, T}, B::Vector{NfAbsOrdElem{S, T}}, R) where {S, T}
+function rand!(z::AbsNumFieldOrderElem{S, T}, B::Vector{AbsNumFieldOrderElem{S, T}}, R) where {S, T}
   O = parent(z)
   y = O()
   for i in 1:degree(O)
@@ -531,7 +531,7 @@ function rand!(z::NfAbsOrdElem{S, T}, B::Vector{NfAbsOrdElem{S, T}}, R) where {S
   return z
 end
 
-function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::AbstractUnitRange{T}) where T <: Integer
+function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder, R::AbstractUnitRange{T}) where T <: Integer
   y = O()
   B = basis(O, copy = false)
   for i in 1:degree(O)
@@ -542,39 +542,39 @@ function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::AbstractUnitRange{T}) where T <:
 end
 
 @doc raw"""
-    rand(O::NfOrd, R::AbstractUnitRange{Integer}) -> NfAbsOrdElem
+    rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{Integer}) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in `R` and returns
 the corresponding element of the order.
 """
-function rand(O::NfOrd, R::AbstractUnitRange{T}) where T <: Integer
+function rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{T}) where T <: Integer
   z = O()
   rand!(z, O, R)
   return z
 end
 
-function rand!(z::NfAbsOrdElem, O::NfOrd, n::IntegerUnion)
+function rand!(z::AbsNumFieldOrderElem, O::AbsSimpleNumFieldOrder, n::IntegerUnion)
   return rand!(z, O, -n:n)
 end
 
 @doc raw"""
-    rand(O::NfOrd, n::IntegerUnion) -> NfAbsOrdElem
+    rand(O::AbsSimpleNumFieldOrder, n::IntegerUnion) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in
 $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the
 order $\mathcal O$.
 """
-function rand(O::NfOrd, n::Integer)
+function rand(O::AbsSimpleNumFieldOrder, n::Integer)
   return rand(O, -n:n)
 end
 
-function rand(O::NfOrd, n::ZZRingElem)
+function rand(O::AbsSimpleNumFieldOrder, n::ZZRingElem)
   z = O()
   rand!(z, O, BigInt(n))
   return z
 end
 
-function rand!(z::NfAbsOrdElem, O::NfOrd, n::ZZRingElem)
+function rand!(z::AbsNumFieldOrderElem, O::AbsSimpleNumFieldOrder, n::ZZRingElem)
   return rand!(z, O, BigInt(n))
 end
 
@@ -584,9 +584,9 @@ end
 #
 ################################################################################
 
-(K::AnticNumberField)(x::NfAbsOrdElem{AnticNumberField, nf_elem}) = elem_in_nf(x)
+(K::AbsSimpleNumField)(x::AbsSimpleNumFieldOrderElem) = elem_in_nf(x)
 
-(K::NfAbsNS)(x::NfAbsOrdElem{NfAbsNS, NfAbsNSElem}) = elem_in_nf(x)
+(K::AbsNonSimpleNumField)(x::AbsNumFieldOrderElem{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}) = elem_in_nf(x)
 
 ################################################################################
 #
@@ -595,7 +595,7 @@ end
 ################################################################################
 
 @doc raw"""
-    factor(a::NfOrdElem) -> Fac{NfOrdElem}
+    factor(a::AbsSimpleNumFieldOrderElem) -> Fac{AbsSimpleNumFieldOrderElem}
 
 Computes a factorization of $a$ into irreducible elements. The return value
 is a factorization `fac`, which satisfies `a = unit(fac) * prod(p^e for (p, e)
@@ -605,14 +605,14 @@ The function requires that $a$ is non-zero and that all prime ideals containing
 $a$ are principal, which is for example satisfied if class group of the order
 of $a$ is trivial.
 """
-function factor(a::NfOrdElem)
+function factor(a::AbsSimpleNumFieldOrderElem)
   iszero(a) && error("Element must be non-zero")
   OK = parent(a)
   I = a * OK
-  D = Dict{NfOrdElem, Int}()
+  D = Dict{AbsSimpleNumFieldOrderElem, Int}()
   u = a
   for (p, e) in factor(I)
-    b, c = is_principal(p)
+    b, c = is_principal_with_data(p)
     !b && error("Prime ideal dividing the element not principal")
     D[c] = e
     u = divexact(u, c^e)

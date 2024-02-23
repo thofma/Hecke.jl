@@ -18,23 +18,23 @@ elliptic_curve_from_j_invariant
 ## Basic properties
 
 ```@docs
-base_field(::EllCrv)
-base_change(::Field, ::EllCrv)
-base_change(::Any, ::EllCrv)
-coefficients(::EllCrv)
-a_invars(::EllCrv)
-b_invars(::EllCrv)
-c_invars(::EllCrv)
-discriminant(::EllCrv)
-j_invariant(::EllCrv)
-equation(::EllCrv)
-hyperelliptic_polynomials(::EllCrv)
+base_field(::EllipticCurve)
+base_change(::Field, ::EllipticCurve)
+base_change(::Any, ::EllipticCurve)
+coefficients(::EllipticCurve)
+a_invariants(::EllipticCurve)
+b_invariants(::EllipticCurve)
+c_invariants(::EllipticCurve)
+discriminant(::EllipticCurve)
+j_invariant(::EllipticCurve)
+equation(::EllipticCurve)
+hyperelliptic_polynomials(::EllipticCurve)
 ```
 
 ## Points
 
 ```julia
-    (E::EllCrv)(coords::Vector; check::Bool = true)
+    (E::EllipticCurve)(coords::Vector; check::Bool = true)
 ```
 
 Return the point $P$ of $E$ with coordinates specified by `coords`, which can
@@ -59,9 +59,9 @@ y^2 = x^3 + x + 2
 ```
 
 ```@docs
-infinity(::EllCrv)
-parent(::EllCrvPt)
-is_on_curve(::EllCrv, ::Vector)
-+(P::EllCrvPt{T}, Q::EllCrvPt{T}) where {T}
-division_points(::EllCrvPt, ::Int)
+infinity(::EllipticCurve)
+parent(::EllipticCurvePoint)
+is_on_curve(::EllipticCurve, ::Vector)
++(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where {T}
+division_points(::EllipticCurvePoint, ::Int)
 ```

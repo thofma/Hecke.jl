@@ -194,7 +194,8 @@ diagonal_with_transform(V::QuadSpace) = _diagonal(V)
 function _diagonal(V::QuadSpace, with_transform::Bool = true)
   E = base_ring(V)
   g = gram_matrix(V)
-  k, K = left_kernel(g)
+  K = kernel(g, side = :left)
+  k = nrows(K)
   B = complete_to_basis(K)
   g = B[k+1:end, :]*g*transpose(B[k+1:end,:])
   D, U = _gram_schmidt(g, involution(V))
@@ -223,7 +224,7 @@ function _hasse_invariant(D::Vector, p)
 end
 
 @doc raw"""
-    hasse_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
+    hasse_invariant(V::QuadSpace, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Returns the Hasse invariant of the quadratic space `V` at `p`. This is equal
 to the product of local Hilbert symbols $(a_i, a_j)_p$, $i < j$, where $V$ is
@@ -343,7 +344,7 @@ function witt_invariant(L::QuadSpace, p::InfPlc)
 end
 
 @doc raw"""
-    witt_invariant(V::QuadSpace, p::Union{InfPlc, NfOrdIdl}) -> Int
+    witt_invariant(V::QuadSpace, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Returns the Witt invariant of the quadratic space `V` at `p`.
 
@@ -460,7 +461,7 @@ end
 
 @doc raw"""
     invariants(M::QuadSpace)
-          -> FieldElem, Dict{NfOrdIdl, Int}, Vector{Tuple{InfPlc, Int}}
+          -> FieldElem, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, Vector{Tuple{InfPlc, Int}}
 
 Returns a tuple `(n, k, d, H, I)` of invariants of `M`, which determine the
 isometry class completely. Here `n` is the dimension. The dimension of the kernel
@@ -607,10 +608,10 @@ end
 
 #{Computes a quadratic form of dimension Dim and determinant Det that has Hasse invariants -1 at the primes in Finite.
 # The number of negative entries of the i-th real signature is given in Negative[i]}
-function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector, negative::Dict{<:InfPlc, Int})
+function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, finite::Vector, negative::Dict{<:InfPlc, Int})
   @hassert :Lattice 1 dim >= 1
   @hassert :Lattice 1 !iszero(det)
-  K::AnticNumberField = parent(det)
+  K::AbsSimpleNumField = parent(det)
   inf_plcs = real_places(K)
   @hassert :Lattice 1 length(inf_plcs) == length(negative)
   # All real places must be present
@@ -621,7 +622,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
   if dim == 1
     @hassert :Lattice 1 isempty(finite) # Impossible Hasse invariants
-    return matrix(K, 1, 1, nf_elem[det])
+    return matrix(K, 1, 1, AbsSimpleNumFieldElem[det])
   end
 
   local OK::order_type(K)
@@ -665,8 +666,8 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
   k = max(0, dim - maximum(valneg))
   D = elem_type(K)[one(K) for i in 1:k]
   dim = dim - k
-  local D2::Vector{nf_elem}
-  local D::Vector{nf_elem}
+  local D2::Vector{AbsSimpleNumFieldElem}
+  local D::Vector{AbsSimpleNumFieldElem}
   if dim >= 4
     D0, dim, det, finite, negative = _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
     append!(D, D0)
@@ -718,7 +719,7 @@ function _quadratic_form_with_invariants(dim::Int, det::nf_elem, finite::Vector,
 
 
 #  // The binary case
-  a = _find_quaternion_algebra(-det::nf_elem, finite::Vector{NfOrdIdl}, InfPlc[p for (p, n) in negative if n == 2])
+  a = _find_quaternion_algebra(-det::AbsSimpleNumFieldElem, finite::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, InfPlc[p for (p, n) in negative if n == 2])
   push!(D, a)
   push!(D, det * a)
   M = diagonal_matrix(D)
@@ -756,7 +757,7 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
       end
     end
 
-    x = _weak_approximation(V, _signs)::nf_elem
+    x = _weak_approximation(V, _signs)::AbsSimpleNumFieldElem
     s = signs(x)
     #@hassert :Lattice 1 all(Bool[sign(x, V[i]) == _signs[i] for i in 1:length(V)])
     let negative = negative, dim = dim
@@ -771,8 +772,8 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
     end
   end
   # readjust the invariants
-  local _d::nf_elem
-  local _f::Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64}
+  local _d::AbsSimpleNumFieldElem
+  local _f::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Int64}
   _,_,_d, _f = _quadratic_form_invariants(diagonal_matrix(D2))
 
   PP = append!(support(K(2)*det, OK), finite)::Vector{ideal_type(OK)}
@@ -979,7 +980,7 @@ function _solve_conic_affine(A, B, a)
 
   K = parent(A)
 
-  if K isa AnticNumberField
+  if K isa AbsSimpleNumField
     if degree(K) == 1
       fl, _u1, _w1 = _solve_conic_affine(coeff(A, 0), coeff(B, 0), coeff(a, 0))
       return fl, K(_u1), K(_w1)
@@ -1010,7 +1011,7 @@ function _solve_conic_affine(A, B, a)
       return false, zero(K), zero(K)
     end
 
-    if L isa AnticNumberField
+    if L isa AbsSimpleNumField
       n = evaluate(_n)
     else
       n = _n
@@ -1057,7 +1058,7 @@ function _solve_conic_affine(A, B, a, t)
 
     @hassert :Lattice 1 fl
 
-    if L isa AnticNumberField
+    if L isa AbsSimpleNumField
       n = evaluate(_n)
     else
       n = _n
@@ -1248,7 +1249,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
   # treat the degenerate case
   if !is_regular(q)
     g = gram_matrix(q)
-    r, B = left_kernel(g)
+    B = kernel(g, side = :left)
     C = _basis_complement(B)
     G = gram_matrix(q,C)
     q1 = quadratic_space(QQ, G)
@@ -1321,7 +1322,7 @@ function _maximal_isotropic_subspace_unimodular(L)
   G = gram_matrix(L)
   iso = _isotropic_subspace_unimodular_gram_no_lll(G)
   # complete to a hyperbolic subspace
-  B = solve_left(change_base_ring(ZZ,G*transpose(iso)), identity_matrix(ZZ,nrows(iso)))
+  B = solve(change_base_ring(ZZ,G*transpose(iso)), identity_matrix(ZZ,nrows(iso)); side = :left)
   H = vcat(iso, B)*basis_matrix(L)
   L1 = orthogonal_submodule(L, lattice(ambient_space(L), H))
   @assert abs(det(L1))==1
@@ -1354,7 +1355,7 @@ function _isotropic_subspace_unimodular_gram_no_lll(G)
   for i in 2:n
     for j in i+1:n
       if d[i]//d[i-1] == - d[j]//d[j-1]
-        v = (T[i,:]+T[j,:])
+        v = (T[i:i,:]+T[j:j,:])
         v = change_base_ring(ZZ,denominator(v)*v)
         return v
       end
@@ -1491,12 +1492,12 @@ function _isisotropic_with_vector(F::MatrixElem)
         _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
 
         ss = V(_v)
-        fl, _ = haspreimage(mS, ss)
+        fl, _ = has_preimage_with_preimage(mS, ss)
         if !fl
           push!(signsV, ss)
           push!(basis, x)
           S, mS = sub(V, signsV, false)
-          if haspreimage(mS, target)[1]
+          if has_preimage_with_preimage(mS, target)[1]
             found = true
             break
           end
@@ -1521,12 +1522,12 @@ function _isisotropic_with_vector(F::MatrixElem)
           end
           o = order(mQ(mCl\(q)))
           c = -(hh\(o * (mCl\(q))))
-          fl, _x = is_principal(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
+          fl, _x = is_principal_with_data(q * prod(P[i]^Int(c.coeff[i]) for i in 1:length(P)))
           x = elem_in_nf(_x)
           _v = append!(Int[_to_gf2(hilbert_symbol(-D[1] * D[2], x, p)) for p in P], Int[_to_gf2(hilbert_symbol(-D[3] * D[4], x, p)) for p in P])
           _v = append!(_v, Int[_to_gf2(sign(x, p)) for p in I])
           _s = V(_v)
-          if haspreimage(mS, _s + target)[1]
+          if has_preimage_with_preimage(mS, _s + target)[1]
             push!(basis, x)
             push!(signsV, _s)
             found = true
@@ -1734,8 +1735,7 @@ function _quadratic_form_decomposition(F::MatrixElem)
   # Decompose F into an anisotropic kernel, an hyperbolic space and its radical
   @req is_symmetric(F) "Matrix must be symmetric"
   K = base_ring(F)
-  r, Rad = left_kernel(F)
-  @hassert :Lattice 1 nrows(Rad) == r
+  Rad = kernel(F, side = :left)
   RadComp = _find_direct_sum(Rad)
   newF = RadComp * F * transpose(RadComp)
   H = similar(F, 0, ncols(F))
@@ -1826,8 +1826,7 @@ function _find_direct_sum(B::MatrixElem)
 end
 
 function _orthogonal_complement(F::MatrixElem, B::MatrixElem)
-  r, R = left_kernel(F * transpose(B))
-  @hassert :Lattice 1 nrows(R) == r
+  R = kernel(F * transpose(B), side = :left)
   if !iszero(det(F))
     @hassert :Lattice 1 nrows(R) + nrows(B) == nrows(F)
   end
@@ -1916,7 +1915,7 @@ function _real_weak_approximation(s, I)
   K = number_field(s)
   a = gen(K)
   while true
-    x = simplest_inside(real(evaluate(a, s, 10)))
+    x = simplest_rational_inside(real(evaluate(a, s, 10)))
     a = 2 * (a - x)
     if all(t -> t == s || abs(evaluate(a, t)) >= 2, I)
       break

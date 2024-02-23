@@ -39,11 +39,11 @@ end
 function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64, sort::Bool = true)
   wprec = Int(floor(1.3 * prec))
   # We definitely want to isolate the real roots as well as identify conjugated roots
-  local rts::Vector{acb}
+  local rts::Vector{AcbFieldElem}
   P = _P isa InfPlc ? _embedding(_P) : _P
   
   while true
-    con = acb[evaluate(coeff(f, i), P, wprec) for i in 0:degree(f)]
+    con = AcbFieldElem[evaluate(coeff(f, i), P, wprec) for i in 0:degree(f)]
     isreal(P) && @assert all(isreal, con)
     # We need a strictly real polynomial to isolate the real roots
     _wprec = maximum([precision(parent(c)) for c in con])
@@ -65,7 +65,7 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
 
   if isreal(P)
     r = 0
-    real_rts = Vector{arb}()
+    real_rts = Vector{ArbFieldElem}()
     for i in 1:length(rts)
       if !isreal(rts[i])
         break
@@ -87,7 +87,7 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
       sort!(_rts, by = x -> imag(x), rev = false)
     end
 
-    compl_rts = Vector{acb}()
+    compl_rts = Vector{AcbFieldElem}()
 
     s = 0
 
@@ -102,17 +102,17 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
     if sort
       sort!(rts, by = x -> imag(x),  rev = false)
     end
-    real_rts = arb[]
-    compl_rts = acb[]
+    real_rts = ArbFieldElem[]
+    compl_rts = AcbFieldElem[]
   end
   return rts, real_rts, compl_rts
 end
 
-function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
+function _conjugates_data(L::RelSimpleNumField{T}, prec::Int) where {T}
   c = get_attribute(L, :conjugate_data_arb_new)
   S = embedding_type(parent_type(T))
   if c === nothing
-    D = Dict{Int, Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}}()
+    D = Dict{Int, Vector{Tuple{S, Vector{AcbFieldElem}, Vector{ArbFieldElem}, Vector{AcbFieldElem}}}}()
     z = _get_conjugate_data(L, prec)
     D[prec] = z
     set_attribute!(L, :conjugate_data_arb_new => D)
@@ -120,7 +120,7 @@ function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
   else
     D = c
     if haskey(D, prec)
-      return D[prec]::Vector{Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}}
+      return D[prec]::Vector{Tuple{S, Vector{AcbFieldElem}, Vector{ArbFieldElem}, Vector{AcbFieldElem}}}
     else
       z = _get_conjugate_data(L, prec)
       D[prec] = z
@@ -129,24 +129,24 @@ function _conjugates_data(L::NfRel{T}, prec::Int) where {T}
   end
 end
 
-function _get_conjugate_data(L::NfRel{T}, prec::Int) where {T}
+function _get_conjugate_data(L::RelSimpleNumField{T}, prec::Int) where {T}
   K = base_field(L)
   S = embedding_type(parent_type(T))
   g = defining_polynomial(L)
   pls = complex_embeddings(K, conjugates = false)
-  data = Tuple{S, Vector{acb}, Vector{arb}, Vector{acb}}[]
+  data = Tuple{S, Vector{AcbFieldElem}, Vector{ArbFieldElem}, Vector{AcbFieldElem}}[]
   for p in pls
     push!(data, (p, _roots_squarefree(g, p, prec = prec)...))
   end
   return data
 end
 
-function conjugates_arb(a::NfRelElem, prec::Int = 64)
-  z = acb[]
+function conjugates_arb(a::RelSimpleNumFieldElem, prec::Int = 64)
+  z = AcbFieldElem[]
   L = parent(a)
   g = defining_polynomial(L)
   K = base_field(L)
-  conju = Vector{acb}(undef, absolute_degree(parent(a)))
+  conju = Vector{AcbFieldElem}(undef, absolute_degree(parent(a)))
   wprec = prec
   d = absolute_degree(L)
 
@@ -164,7 +164,7 @@ function conjugates_arb(a::NfRelElem, prec::Int = 64)
     for i in 1:length(data)
       P, rts, real_rts, compl_rts = data[i]
       a_as_poly = a.data
-      poly_evaluated = CCy(acb[evaluate(coeff(a_as_poly, i), P, wprec) for i in 0:degree(a_as_poly)])
+      poly_evaluated = CCy(AcbFieldElem[evaluate(coeff(a_as_poly, i), P, wprec) for i in 0:degree(a_as_poly)])
       if isreal(P)
         _conjs = evaluate(poly_evaluated, rts[1:length(real_rts)])
         for rt in _conjs

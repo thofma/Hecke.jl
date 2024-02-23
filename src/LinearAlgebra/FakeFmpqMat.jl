@@ -24,9 +24,9 @@ function denominator(x::FakeFmpqMat; copy::Bool = true)
   end
 end
 
-nrows(x::FakeFmpqMat) = nrows(x.num)
+number_of_rows(x::FakeFmpqMat) = number_of_rows(x.num)
 
-ncols(x::FakeFmpqMat) = ncols(x.num)
+number_of_columns(x::FakeFmpqMat) = number_of_columns(x.num)
 
 function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
@@ -279,7 +279,7 @@ end
 function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = _hnf_modular_eldiv(x.num, g, shape)
   if cutoff
-    # Since we are modular, we are in the full rank situation 
+    # Since we are modular, we are in the full rank situation
     n = nrows(x)
     m = ncols(x)
     if shape === :lowerleft
@@ -294,7 +294,7 @@ end
 
 function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = hnf_modular_eldiv!(x.num, g, shape)
-  # Since we are modular, we are in the full rank situation 
+  # Since we are modular, we are in the full rank situation
   if cutoff
     n = nrows(x)
     m = ncols(x)

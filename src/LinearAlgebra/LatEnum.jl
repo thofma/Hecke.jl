@@ -380,11 +380,11 @@ end
 
 ################################################################################
 #
-#  Enumerating using arb objects
+#  Enumerating using ArbFieldElem objects
 #
 ################################################################################
 
-function pseudo_cholesky(G::arb_mat)
+function pseudo_cholesky(G::ArbMatrix)
   n = ncols(G)
   C = deepcopy(G)
   for i = 1:n-1
@@ -420,12 +420,12 @@ function pseudo_cholesky(G::arb_mat)
 end
 
 
-function enumerate_using_gram(G::arb_mat, c::arb)
+function enumerate_using_gram(G::ArbMatrix, c::ArbFieldElem)
   E = EnumCtxArb(pseudo_cholesky(G))
   return _enumerate(E, c, nrows(G), zero_matrix(FlintZZ, 1, nrows(G)))
 end
 
-function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
+function _enumerate(E::EnumCtxArb, c::ArbFieldElem, i::Int, x::ZZMatrix)
   # assume x_n,x_n-1,...,x_i+1 are set
   # compute the bound for x_i
   G = E.G
@@ -453,8 +453,8 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
     tm = arf_struct(0, 0, 0, 0)
     ccall((:arf_init, libarb), Nothing, (Ref{arf_struct}, ), tm)
 
-    ccall((:arb_get_abs_ubound_arf, libarb), Nothing, (Ref{arf_struct}, Ref{arb}), tm, C)
-    ccall((:arb_set_arf, libarb), Nothing, (Ref{arb}, Ref{arf_struct}), C, tm)
+    ccall((:arb_get_abs_ubound_arf, libarb), Nothing, (Ref{arf_struct}, Ref{ArbFieldElem}), tm, C)
+    ccall((:arb_set_arf, libarb), Nothing, (Ref{ArbFieldElem}, Ref{arf_struct}), C, tm)
 
     ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), tm)
 
@@ -472,9 +472,9 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
   lb = -CC - C
   ub = -CC + C
 
-  tr_ptr = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), lb)
+  tr_ptr = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{ArbFieldElem}, ), lb)
 
-  tm_ptr = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), lb)
+  tm_ptr = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), lb)
   u = arf_struct(0, 0, 0, 0)
   ccall((:arf_init, libarb), Nothing, (Ref{arf_struct}, ), u)
 
@@ -483,8 +483,8 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::ZZMatrix)
   lbfmpz = ZZRingElem()
   ccall((:arf_get_fmpz, libarb), Nothing, (Ref{ZZRingElem}, Ref{arf_struct}, Cint), lbfmpz, u, 4)
 
-  tr = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), ub)
-  tm = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), ub)
+  tr = ccall((:arb_rad_ptr, libarb), Ptr{Nemo.mag_struct}, (Ref{ArbFieldElem}, ), ub)
+  tm = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), ub)
 
   ccall((:arf_set_mag, libarb), Nothing, (Ref{arf_struct}, Ptr{Nemo.mag_struct}), u, tr)
   ccall((:arf_sub, libarb), Nothing, (Ref{arf_struct}, Ptr{arf_struct}, Ref{arf_struct}, Int, Cint), u, tm, u, p, 3) # 3 is round to +infty

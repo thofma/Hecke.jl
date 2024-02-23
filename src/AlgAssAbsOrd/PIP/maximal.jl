@@ -51,7 +51,7 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   A = algebra(M)
   ZA, _ = _as_algebra_over_center(A)
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     B, AtoB = A.isomorphic_full_matrix_algebra
     #@show B
     OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
@@ -82,7 +82,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   nr = normred(b)
   nr = simplify(nr)
   #@show nr
-  fl, c = is_principal(nr)
+  fl, c = is_principal_with_data(nr)
   if !fl
     return false, zero(A)
   end
@@ -128,7 +128,7 @@ end
 
 # check if there is a unit u such that c * u is totally positive
 # and return representatives for totally positive units modulo squares
-function _reps_for_totally_positive(c::nf_elem, K::AnticNumberField)
+function _reps_for_totally_positive(c::AbsSimpleNumFieldElem, K::AbsSimpleNumField)
   # TODO: just use the sign_map
   OK = maximal_order(K)
   U, mU = unit_group(OK)
@@ -142,14 +142,14 @@ function _reps_for_totally_positive(c::nf_elem, K::AnticNumberField)
   if is_totally_positive(c)
     el = one(K)
   else
-    fl, q = haspreimage(h, tar)
+    fl, q = has_preimage_with_preimage(h, tar)
     if !fl
-      return false, zero(K), nf_elem[]
+      return false, zero(K), AbsSimpleNumFieldElem[]
     end
     el = mU(mQ\q)
   end
   K, mK = kernel(h)
-  res = nf_elem[]
+  res = AbsSimpleNumFieldElem[]
   for k in K
     push!(res, elem_in_nf(mU(mQ\mK(k))))
   end
@@ -198,7 +198,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     K, AAtoK = _as_field_with_isomorphism(AA)
     MK = maximal_order(K)
     I = sum(fractional_ideal_type(order_type(K))[AAtoK(AAtoA\(b)) * MK for b in absolute_basis(a)])
-    fl, zK = is_principal(I)
+    fl, zK = is_principal_with_data(I)
     gen = AAtoA(AAtoK\(elem_in_nf(zK)))
     if fl
       @assert gen * M == a
@@ -261,7 +261,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   J = st.coeffs[end] * inv(a)
   #@show J
   #@show basis(J)
-  fl, _alpha = is_principal(J)
+  fl, _alpha = is_principal_with_data(J)
   if !fl
     return false, zero(algebra(M))
   end
@@ -296,7 +296,7 @@ end
 function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   @assert side == :right
   @assert _test_ideal_sidedness(I, M, :right)
-  @assert basis_matrix(M) == FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(M))))
+  @assert basis_matrix(M) == identity_matrix(FlintZZ, dim(algebra(M)))
   den = denominator(I, M)
   a = I * den
   if !is_full_lattice(a)

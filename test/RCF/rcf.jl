@@ -187,7 +187,7 @@ end
   @test Hecke.has_quotient(r, [16])
   class_fields = []
   for s in ls;
-    C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}
+    C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}
     CC = number_field(C)
     if Hecke._is_conductor_minQQ(C, 16)
       push!(class_fields, CC)
@@ -340,4 +340,11 @@ end
   k = splitting_field(f)
   I = Hecke.lorenz_module(k, 12)
   @test Hecke.is_consistent(I)
+end
+
+@testset "Enumerate by conductor" begin
+  l = abelian_extensions([3], collect(1:10^3); only_real = true)
+  @test length(l) == 159
+  l = abelian_extensions([2], collect(1:10^3))
+  @test length(l) == 607
 end

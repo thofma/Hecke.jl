@@ -113,12 +113,12 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
   #Case 1: A basis vector is isotropic
   for i = 1:n
     if G[i,i] == 0
-      sol = H[i, :]
+      sol = H[i:i, :]
       if !base
         return G, H, sol
       end
-      H[i,:] = H[1,:]
-      H[1,:] = sol
+      H[i:i,:] = H[1:1,:]
+      H[1:1,:] = sol
 
       return H*G*transpose(H), H, sol
     end
@@ -129,12 +129,12 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
     if G[i-1,i] == 0 && abs(G[i-1,i-1])==1 &&abs(G[i,i])==1 && sign(G[i-1,i-1])*sign(G[i,i]) == -1
 
       H[i,i-1] = -1
-      sol = H[i,:]
+      sol = H[i:i,:]
       if !base
         return G, H, sol
       end
-      H[i,:] = H[1,:]
-      H[1,:] = sol
+      H[i:i,:] = H[1:1,:]
+      H[1:1,:] = sol
 
       return H*G*transpose(H), H, sol
     end
@@ -146,15 +146,15 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
     if det(GG) != 0
       continue
     end
-    sol = left_kernel(GG)[2][1,:]
+    sol = kernel(GG, side = :left)[1:1,:]
     sol = divexact(sol,content(sol))
     sol = hcat(sol,zero_matrix(base_ring(sol),1,n-i))
     if !base
       return G, H, transpose(sol)
     end
     H = _complete_to_basis(sol)
-    H[n,:] = - H[1,:]
-    H[1,:] = sol
+    H[n:n,:] = - H[1:1,:]
+    H[1:1,:] = sol
 
     return H*G*transpose(H), H, sol
   end
@@ -288,7 +288,7 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
 
   U1 = red[2]
   G2 = red[1]
-  U2 = transpose(_mathnf(G2[1,:])[2])
+  U2 = transpose(_mathnf(G2[1:1,:])[2])
   G3 = U2*G2*transpose(U2)
 
   #The first line of the matrix G3 only contains 0, except some 'g' on the right, where g² | det G.

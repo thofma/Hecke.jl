@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function JorDec(p, scales::Vector{Int}, ranks::Vector{Int}, dets::Vector{nf_elem})
+function JorDec(p, scales::Vector{Int}, ranks::Vector{Int}, dets::Vector{AbsSimpleNumFieldElem})
   K = nf(order(p))
   _weight = Vector{Int}()
   _normgen = Vector{elem_type(K)}()
@@ -83,7 +83,7 @@ end
 
 length(J::JorDec) = length(J.ranks)
 
-function JorDec(p, sc::Vector{Int}, rks::Vector{Int}, normgens::Vector{nf_elem}, weights::Vector{Int}, dets::Vector{nf_elem}, witts::Vector{Int})
+function JorDec(p, sc::Vector{Int}, rks::Vector{Int}, normgens::Vector{AbsSimpleNumFieldElem}, weights::Vector{Int}, dets::Vector{AbsSimpleNumFieldElem}, witts::Vector{Int})
   K = nf(order(p))
   z = JorDec{typeof(K), typeof(p), elem_type(K)}()
   z.is_dyadic = is_dyadic(p)
@@ -534,7 +534,7 @@ function det(G::QuadLocalGenus)
     G.det = d
   else
     pi = uniformizer(G)
-    d = reduce(*, nf_elem[pi^(G.ranks[i] * G.scales[i]) * G.detclasses[i] for i in 1:length(G)], init = one(nf(order(G.p))))
+    d = reduce(*, AbsSimpleNumFieldElem[pi^(G.ranks[i] * G.scales[i]) * G.detclasses[i] for i in 1:length(G)], init = one(nf(order(G.p))))
     G.det = d
   end
   return d
@@ -599,7 +599,7 @@ function jordan_decomposition(g::QuadLocalGenus)
   if isdefined(g,:jordec)
     j = g.jordec
   elseif rank(g) == 0
-    j = JorDec(g.p, Int[], Int[], nf_elem[])
+    j = JorDec(g.p, Int[], Int[], AbsSimpleNumFieldElem[])
     g.jordec = j
     return j
   else
@@ -680,7 +680,7 @@ end
 
 # Creation of non-dyadic genus symbol
 
-function genus(::Type{QuadLat}, p, pi::nf_elem, ranks::Vector{Int},
+function genus(::Type{QuadLat}, p, pi::AbsSimpleNumFieldElem, ranks::Vector{Int},
                                                 scales::Vector{Int},
                                                 normclass::Vector{Int})
   @req !is_dyadic(p) "Prime ideal must not be dyadic"
@@ -800,12 +800,12 @@ function Base.:(==)(G1::QuadLocalGenus, G2::QuadLocalGenus)
   if is_dyadic(G1)
     # Could be sped up for low rank
     w1 = witt_invariant(G1)
-    d1 = prod(nf_elem[G1.dets[i] for i in 1:length(G1)])
+    d1 = prod(AbsSimpleNumFieldElem[G1.dets[i] for i in 1:length(G1)])
     n1 = rank(G1)
     #s1 = _witt_hasse(w1, n1, d1, p)
 
     w2 = witt_invariant(G2)
-    d2 = prod(nf_elem[G2.dets[i] for i in 1:length(G2)])
+    d2 = prod(AbsSimpleNumFieldElem[G2.dets[i] for i in 1:length(G2)])
     n2 = rank(G2)
     #s2 = _witt_hasse(w2, n2, d2, p)
 
@@ -863,7 +863,7 @@ function Base.:(==)(G1::QuadLocalGenus, G2::QuadLocalGenus)
     return false
   end
 
-  bL = nf_elem[divexact(G1.normgens[i], G2.normgens[i]) for i in 1:r]
+  bL = AbsSimpleNumFieldElem[divexact(G1.normgens[i], G2.normgens[i]) for i in 1:r]
   qL = Union{PosInf, Int}[quadratic_defect(bL[i], p) for i in 1:r]
 
   for k in 1:r
@@ -877,8 +877,8 @@ function Base.:(==)(G1::QuadLocalGenus, G2::QuadLocalGenus)
   aL1 = G1.normgens
   aL2 = G2.normgens
 
-  d1 = nf_elem[prod(nf_elem[G1.dets[i] for i in 1:j]) for j in 1:r]
-  d2 = nf_elem[prod(nf_elem[G2.dets[i] for i in 1:j]) for j in 1:r]
+  d1 = AbsSimpleNumFieldElem[prod(AbsSimpleNumFieldElem[G1.dets[i] for i in 1:j]) for j in 1:r]
+  d2 = AbsSimpleNumFieldElem[prod(AbsSimpleNumFieldElem[G2.dets[i] for i in 1:j]) for j in 1:r]
 
   for i in 1:(r - 1)
     detquot = divexact(d1[i], d2[i])
@@ -945,7 +945,7 @@ function Base.:(==)(G1::QuadLocalGenus, G2::QuadLocalGenus)
   return true
 end
 
-function is_locally_isometric(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function is_locally_isometric(L::QuadLat, M::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   fl = genus(L, p) == genus(M, p)
   #@assert fl == is_locally_isometric_kirschmer(L, M, p)
   return fl
@@ -990,7 +990,7 @@ function _genus_symbol(L::QuadLat, p)
 
   t = length(G)
 
-  local pi::nf_elem
+  local pi::AbsSimpleNumFieldElem
 
   if minimum(p) != 2
     _, _h = residue_field(O, p)
@@ -1189,7 +1189,7 @@ end
 
 # TODO: I have to redo this
 
-function _genus_symbol_kirschmer(L::QuadLat, p::NfOrdIdl; uniformizer = zero(order(p)))
+function _genus_symbol_kirschmer(L::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; uniformizer = zero(order(p)))
   O = order(p)
   nf(O) != base_field(L) && error("Prime ideal must be an ideal of the base field of the lattice")
   # If you pull from cache, you might have to adjust the symbol according
@@ -1292,7 +1292,7 @@ function _unimodular_jordan_block(p, m)
   e = ramification_index(p)
   @assert is_dyadic(p)
   # weight, normgen, det, witt
-  res = Vector{Tuple{Int, nf_elem, nf_elem, Int}}()
+  res = Vector{Tuple{Int, AbsSimpleNumFieldElem, AbsSimpleNumFieldElem, Int}}()
 
   G, mG = local_multiplicative_group_modulo_squares(p)
   pi = elem_in_nf(uniformizer(p))
@@ -1330,7 +1330,7 @@ function _unimodular_jordan_block(p, m)
 
     norms = collect(0:e)
 
-    _find_special_class_dict = Dict{nf_elem, nf_elem}()
+    _find_special_class_dict = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
 
     __find_special_class = (x, p) -> get!(_find_special_class_dict, x, _find_special_class(x, p))
 
@@ -1462,7 +1462,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
 
     possible_ranks = unique!(reduce(vcat, Vector{Int}[[r[2] for r in s] for s in scales_rks]))
 
-    decs_per_rank = Dict{Int, Vector{Tuple{Int, nf_elem, nf_elem, Int}}}()
+    decs_per_rank = Dict{Int, Vector{Tuple{Int, AbsSimpleNumFieldElem, AbsSimpleNumFieldElem, Int}}}()
 
     for m in possible_ranks
       decs_per_rank[m] = _unimodular_jordan_block(p, m)
@@ -1473,7 +1473,7 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     end
     return res
     #for srwndw in scales_rks_norms_weights_normgens_dets_witts
-    #  push!(res, JorDec(p, Int[s[1] for s in srwndw], Int[s[2] for s in srwndw], nf_elem[pi^s[1] * s[5] for s in srwndw], Int[s[1] + s[4] for s in srwndw], nf_elem[pi^(s[1] * s[2]) * s[6] for s in srwndw], Int[isodd(s[2]) ? s[7] : s[7] * hilbert_symbol(pi^s[1], (-1)^divexact(s[2]*(s[2] - 1), 2) * pi^(s[1] * s[2]) * s[6], p) for s in srwndw]))
+    #  push!(res, JorDec(p, Int[s[1] for s in srwndw], Int[s[2] for s in srwndw], AbsSimpleNumFieldElem[pi^s[1] * s[5] for s in srwndw], Int[s[1] + s[4] for s in srwndw], AbsSimpleNumFieldElem[pi^(s[1] * s[2]) * s[6] for s in srwndw], Int[isodd(s[2]) ? s[7] : s[7] * hilbert_symbol(pi^s[1], (-1)^divexact(s[2]*(s[2] - 1), 2) * pi^(s[1] * s[2]) * s[6], p) for s in srwndw]))
     #end
     #return res
   end
@@ -1525,17 +1525,17 @@ function _local_jordan_decompositions_dyadic!(res, E, p, scalerank, G, mG, pi, k
     # local blocks in form weight, normgen, det, witt
     # JorDec(p, sc::Vector{Int},
     #           rks::Vector{Int},
-    #           normgens::Vector{nf_elem},
+    #           normgens::Vector{AbsSimpleNumFieldElem},
     #           weights::Vector{Int},
-    #           dets::Vector{nf_elem},
+    #           dets::Vector{AbsSimpleNumFieldElem},
     #           witts::Vector{Int})
 
     l = length(sr)
     J = JorDec(p, Int[s[1] for s in sr],
                Int[s[2] for s in sr],
-               nf_elem[pi^sr[i][1] * local_blocks[i][2] for i in 1:l],
+               AbsSimpleNumFieldElem[pi^sr[i][1] * local_blocks[i][2] for i in 1:l],
                Int[sr[i][1] + local_blocks[i][1] for i in 1:l],
-               nf_elem[pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3] for i in 1:l],
+               AbsSimpleNumFieldElem[pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3] for i in 1:l],
                Int[isodd(sr[i][2]) ? local_blocks[i][4] : local_blocks[i][4] * hilbert_symbol(pi^sr[i][1], (-1)^divexact(sr[i][2]*(sr[i][2] - 1), 2) * pi^(sr[i][1] * sr[i][2]) * local_blocks[i][3], p) for i in 1:l])
     push!(res, J)
   end
@@ -1554,7 +1554,7 @@ function _local_jordan_decompositions_dyadic!(res, E, p, scalerank)
 
   possible_ranks = unique!(reduce(vcat, Vector{Int}[[r[2] for r in s] for s in [scalerank]]))
 
-  decs_per_rank = Dict{Int, Vector{Tuple{Int, nf_elem, nf_elem, Int}}}()
+  decs_per_rank = Dict{Int, Vector{Tuple{Int, AbsSimpleNumFieldElem, AbsSimpleNumFieldElem, Int}}}()
 
   for m in possible_ranks
     decs_per_rank[m] = _unimodular_jordan_block(p, m)
@@ -1646,7 +1646,7 @@ function genus(L::QuadLat{})
     bad = bad_primes(L, even = true)
     S = real_places(base_field(L))
     D = diagonal(rational_span(L))
-    signatures = Dict{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
+    signatures = Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}(s => count(d -> is_negative(d, _embedding(s)), D) for s in S)
     G = QuadGenus(base_field(L), prod(D), [genus(L, p) for p in bad], signatures)
     return G::genus_quad_type(base_field(L))
   end
@@ -1726,7 +1726,7 @@ function quadratic_genera(K; rank::Int, signatures, det)
     # We only keep local symbols which are defined over a bad prime, or which
     # are not unimodular.
     filter!(g -> (prime(g) in bd) || scales(g) != Int[0], c)
-    de = _possible_determinants(K, c, signatures)::Vector{nf_elem}
+    de = _possible_determinants(K, c, signatures)::Vector{AbsSimpleNumFieldElem}
     for d in de
       b = _check_global_quadratic_genus(c, d, signatures)
       if b
@@ -1804,7 +1804,7 @@ function _possible_determinants(K, local_symbols, signatures)
     end
   end
   rlp = real_embeddings(K)
-  local R::GrpAbFinGen
+  local R::FinGenAbGroup
   R, _exp, _log = sign_map(OK, rlp, 1 * OK)
   tar = R(Int[isodd(signatures[infinite_place(sigma)]) ? 1 : 0 for sigma in rlp])
   gensU = gens(U)
@@ -1819,11 +1819,11 @@ function _possible_determinants(K, local_symbols, signatures)
 
   for P in s
     J = I * P^2
-    fl, u = is_principal(J)
+    fl, u = is_principal_with_data(J)
     @assert fl
     # I need to change u such that sign(u, sigma) = (-1)^signatures[sigma]
     v = _log(elem_in_nf(u)) + tar
-    fl, y = haspreimage(mS, v)
+    fl, y = has_preimage_with_preimage(mS, v)
     if fl
       z = elem_in_nf(u) * prod(elem_type(K)[ evaluate(mU(gensU[i]))^y.coeff[i] for i in 1:length(gensU)])
       @assert z * OK == J
@@ -1907,7 +1907,7 @@ function locally_isometric_sublattice(M::QuadLat, L::QuadLat, p)
       while all(iszero, v)
         v = elem_type(k)[ rand(k) for i in 1:m ]
       end
-      _, KM = kernel(matrix(k, length(v), 1, v), side = :left)
+      KM = kernel(matrix(k, length(v), 1, v), side = :left)
       KM = map_entries(x -> E(h\x)::elem_type(E), KM)
       _new_pmat = _sum_modules(pseudo_matrix(KM * BM), pM)
       LL = lattice(ambient_space(M), _new_pmat)

@@ -169,7 +169,7 @@ end
 function _find_exponent(f::Int, p::ZZRingElem, r::ZZRingElem, n::Int)
   xZx = ZZ["x"][2]
   phi = cyclotomic(f, xZx)
-  R = residue_ring(FlintZZ, r^(n+1), cached = false)
+  R = residue_ring(FlintZZ, r^(n+1), cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   phiR = Rx(phi)
   phiR1 = derivative(phiR)

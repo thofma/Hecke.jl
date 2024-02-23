@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfRel/NfRel.jl : Relative number field extensions
+#  RelSimpleNumField/RelSimpleNumField.jl : Relative number field extensions
 #
 # This file is part of Hecke.
 #
@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-add_assertion_scope(:NfRel)
+add_assertion_scope(:RelSimpleNumField)
 
 ################################################################################
 #
@@ -40,8 +40,8 @@ add_assertion_scope(:NfRel)
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelElem{T}, dict::IdDict) where T
-  z = NfRelElem{T}(Base.deepcopy_internal(data(a), dict))
+function Base.deepcopy_internal(a::RelSimpleNumFieldElem{T}, dict::IdDict) where T
+  z = RelSimpleNumFieldElem{T}(Base.deepcopy_internal(data(a), dict))
   z.parent = parent(a)
   return z
 end
@@ -52,21 +52,21 @@ end
 #
 ################################################################################
 
-function iszero(a::NfRelElem)
+function iszero(a::RelSimpleNumFieldElem)
   reduce!(a)
   return iszero(data(a))
 end
 
-function isone(a::NfRelElem)
+function isone(a::RelSimpleNumFieldElem)
   reduce!(a)
   return isone(data(a))
 end
 
-zero(K::NfRel) = K(zero(parent(K.pol)))
+zero(K::RelSimpleNumField) = K(zero(parent(K.pol)))
 
-one(K::NfRel) = K(one(parent(K.pol)))
+one(K::RelSimpleNumField) = K(one(parent(K.pol)))
 
-function zero!(a::NfRelElem)
+function zero!(a::RelSimpleNumFieldElem)
   zero!(a.data)
   return a
 end
@@ -77,9 +77,9 @@ end
 #
 ################################################################################
 
-order_type(K::NfRel{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K))), NfRelElem{T}}
+order_type(K::RelSimpleNumField{T}) where {T} = RelNumFieldOrder{T, fractional_ideal_type(order_type(base_field(K))), RelSimpleNumFieldElem{T}}
 
-order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), NfRelElem{T}}
+order_type(::Type{RelSimpleNumField{T}}) where {T} = RelNumFieldOrder{T, fractional_ideal_type(order_type(parent_type(T))), RelSimpleNumFieldElem{T}}
 
 ################################################################################
 #
@@ -87,13 +87,13 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order
 #
 ################################################################################
 
-@inline base_field(a::NfRel{T}) where {T} = a.base_ring::parent_type(T)
+@inline base_field(a::RelSimpleNumField{T}) where {T} = a.base_ring::parent_type(T)
 
-@inline data(a::NfRelElem) = a.data
+@inline data(a::RelSimpleNumFieldElem) = a.data
 
-@inline parent(a::NfRelElem{T}) where {T} = a.parent::NfRel{T}
+@inline parent(a::RelSimpleNumFieldElem{T}) where {T} = a.parent::RelSimpleNumField{T}
 
-@inline is_simple(a::NfRel) = true
+@inline is_simple(a::RelSimpleNumField) = true
 
 ################################################################################
 #
@@ -101,12 +101,12 @@ order_type(::Type{NfRel{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order
 #
 ################################################################################
 
-@inline coeff(a::NfRelElem{T}, i::Int) where {T} = coeff(a.data, i)
+@inline coeff(a::RelSimpleNumFieldElem{T}, i::Int) where {T} = coeff(a.data, i)
 
-@inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
+@inline setcoeff!(a::RelSimpleNumFieldElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
 
-# copy does not do anything (so far), this is only for compatibility with coefficients(::AbsAlgAssElem)
-function coefficients(a::NfRelElem{T}; copy::Bool = false) where {T}
+# copy does not do anything (so far), this is only for compatibility with coefficients(::AbstractAssociativeAlgebraElem)
+function coefficients(a::RelSimpleNumFieldElem{T}; copy::Bool = false) where {T}
   return T[coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
 end
 
@@ -116,7 +116,7 @@ end
 #
 ################################################################################
 
-@inline degree(L::Hecke.NfRel) = degree(L.pol)
+@inline degree(L::Hecke.RelSimpleNumField) = degree(L.pol)
 
 ################################################################################
 #
@@ -124,18 +124,18 @@ end
 #
 ################################################################################
 
-function reduce!(a::NfRelElem)
+function reduce!(a::RelSimpleNumFieldElem)
   a.data = mod(a.data, parent(a).pol)
   return a
 end
 
 ################################################################################
 #
-#  mod(::NfRelElem, ::ZZRingElem) as in the absolute case
+#  mod(::RelSimpleNumFieldElem, ::ZZRingElem) as in the absolute case
 #
 ################################################################################
 
-function mod(a::NfRelElem{T}, p::ZZRingElem) where T <: NumFieldElem
+function mod(a::RelSimpleNumFieldElem{T}, p::ZZRingElem) where T <: NumFieldElem
   K = parent(a)
   b = data(a)
   coeffs = Vector{T}(undef, degree(K)+1)
@@ -152,7 +152,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, ::MIME"text/plain", a::NfRel)
+function Base.show(io::IO, ::MIME"text/plain", a::RelSimpleNumField)
   println(io, "Relative number field with defining polynomial ", a.pol)
   io = pretty(io)
   print(io, Indent(), "over ", Lowercase())
@@ -160,7 +160,7 @@ function Base.show(io::IO, ::MIME"text/plain", a::NfRel)
   print(io, Dedent())
 end
 
-function Base.show(io::IO, a::NfRel)
+function Base.show(io::IO, a::RelSimpleNumField)
   if get(io, :supercompact, false)
     print(io, "Relative number field")
   else
@@ -170,11 +170,11 @@ function Base.show(io::IO, a::NfRel)
   end
 end
 
-function AbstractAlgebra.expressify(a::NfRelElem; context = nothing)
+function AbstractAlgebra.expressify(a::RelSimpleNumFieldElem; context = nothing)
   return AbstractAlgebra.expressify(data(a), var(parent(a)), context = context)
 end
 
-function Base.show(io::IO, a::NfRelElem)
+function Base.show(io::IO, a::RelSimpleNumFieldElem)
   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
@@ -187,7 +187,7 @@ end
 function number_field(f::PolyRingElem{T}, S::Symbol;
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
   check && !is_irreducible(f) && error("Polynomial must be irreducible")
-  K = NfRel{T}(f, S, cached)
+  K = RelSimpleNumField{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
@@ -201,36 +201,36 @@ function number_field(f::PolyRingElem{<: NumFieldElem}; cached::Bool = false, ch
 end
 
 #Conversion to absolute non simple
-function number_field(::Type{AnticNumberField}, L::NfRel{nf_elem})
+function number_field(::Type{AbsSimpleNumField}, L::RelSimpleNumField{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true)
   @assert degree(base_field(L)) == 1
-  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol))
-  return number_field(pol, check = false)
+  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol, cached = false))
+  return number_field(pol, check = false, cached = cached)
 end
 
-function (K::NfRel{T})(a::Generic.Poly{T}) where T <: NumFieldElem
-  z = NfRelElem{T}(mod(a, K.pol))
+function (K::RelSimpleNumField{T})(a::Generic.Poly{T}) where T <: NumFieldElem
+  z = RelSimpleNumFieldElem{T}(mod(a, K.pol))
   z.parent = K
   return z
 end
 
-function (K::NfRel{T})(a::T) where T <: NumFieldElem
+function (K::RelSimpleNumField{T})(a::T) where T <: NumFieldElem
   parent(a) != base_ring(parent(K.pol)) && error("Cannot coerce")
-  z = NfRelElem{T}(parent(K.pol)(a))
+  z = RelSimpleNumFieldElem{T}(parent(K.pol)(a))
   z.parent = K
   return z
 end
 
-(K::NfRel)(a::Integer) = K(parent(K.pol)(a))
+(K::RelSimpleNumField)(a::Integer) = K(parent(K.pol)(a))
 
-(K::NfRel)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))
+(K::RelSimpleNumField)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))
 
-(K::NfRel)(a::ZZRingElem) = K(parent(K.pol)(a))
+(K::RelSimpleNumField)(a::ZZRingElem) = K(parent(K.pol)(a))
 
-(K::NfRel)(a::QQFieldElem) = K(parent(K.pol)(a))
+(K::RelSimpleNumField)(a::QQFieldElem) = K(parent(K.pol)(a))
 
-(K::NfRel)() = zero(K)
+(K::RelSimpleNumField)() = zero(K)
 
-gen(K::NfRel) = K(gen(parent(K.pol)))
+gen(K::RelSimpleNumField) = K(gen(parent(K.pol)))
 
 ################################################################################
 #
@@ -238,7 +238,7 @@ gen(K::NfRel) = K(gen(parent(K.pol)))
 #
 ################################################################################
 
-function Base.:(-)(a::NfRelElem)
+function Base.:(-)(a::RelSimpleNumFieldElem)
   return parent(a)(-data(a))
 end
 
@@ -248,28 +248,28 @@ end
 #
 ################################################################################
 
-function Base.:(+)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
-  parent(a) == parent(b) || force_op(+, a, b)::NfRelElem{T}
+function Base.:(+)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
+  parent(a) == parent(b) || force_op(+, a, b)::RelSimpleNumFieldElem{T}
   return parent(a)(data(a) + data(b))
 end
 
-function Base.:(-)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
-  parent(a) == parent(b) || force_op(-, a, b)::NfRelElem{T}
+function Base.:(-)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
+  parent(a) == parent(b) || force_op(-, a, b)::RelSimpleNumFieldElem{T}
   return parent(a)(data(a) - data(b))
 end
 
-function Base.:(*)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
-  parent(a) == parent(b) || force_op(*, a, b)::NfRelElem{T}
+function Base.:(*)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
+  parent(a) == parent(b) || force_op(*, a, b)::RelSimpleNumFieldElem{T}
   return parent(a)(data(a) * data(b))
 end
 
-function divexact(a::NfRelElem{T}, b::NfRelElem{T}; check::Bool = true) where {T}
+function divexact(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}; check::Bool = true) where {T}
   b == 0 && error("Element not invertible")
-  parent(a) == parent(b) || force_op(divexact, a, b)::NfRelElem{T}
+  parent(a) == parent(b) || force_op(divexact, a, b)::RelSimpleNumFieldElem{T}
   return a*inv(b)
 end
 
-Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
+Base.:(//)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T} = divexact(a, b)
 
 ################################################################################
 #
@@ -277,7 +277,7 @@ Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 #
 ################################################################################
 
-function Base.inv(a::NfRelElem)
+function Base.inv(a::RelSimpleNumFieldElem)
   a == 0 && error("Element not invertible")
   g, s, _ = gcdx(data(a), parent(a).pol)
   @assert g == 1
@@ -290,9 +290,9 @@ end
 #
 ################################################################################
 
-Base.:(^)(a::NfRelElem, n::UInt) = a^Int(n)
+Base.:(^)(a::RelSimpleNumFieldElem, n::UInt) = a^Int(n)
 
-function Base.:(^)(a::NfRelElem, n::Int)
+function Base.:(^)(a::RelSimpleNumFieldElem, n::Int)
   K = parent(a)
   if iszero(a)
     return zero(K)
@@ -309,7 +309,7 @@ function Base.:(^)(a::NfRelElem, n::Int)
   return K(powermod(data(a), n, K.pol))
 end
 
-function Base.:(^)(a::NfRelElem, b::ZZRingElem)
+function Base.:(^)(a::RelSimpleNumFieldElem, b::ZZRingElem)
   if fits(Int, b)
     return a^Int(b)
   end
@@ -334,7 +334,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(a::NfRelElem{T}, b::NfRelElem{T}) where T
+function Base.:(==)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where T
   reduce!(a)
   reduce!(b)
   parent(a) == parent(b) || force_op(==, a, b)::Bool
@@ -342,7 +342,7 @@ function Base.:(==)(a::NfRelElem{T}, b::NfRelElem{T}) where T
 end
 
 if !isdefined(Nemo, :promote_rule1)
-  function Base.:(==)(a::NfRelElem{T}, b::Union{Integer, Rational}) where T
+  function Base.:(==)(a::RelSimpleNumFieldElem{T}, b::Union{Integer, Rational}) where T
     return a == parent(a)(b)
   end
 end
@@ -353,59 +353,59 @@ end
 #
 ################################################################################
 
-function Base.:(*)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
+function Base.:(*)(a::RelSimpleNumFieldElem{T}, b::T) where {T <: NumFieldElem}
   return parent(a)(data(a) * b)
 end
 
-Base.:(*)(a::T, b::NfRelElem{T}) where {T <: NumFieldElem} = b * a
+Base.:(*)(a::T, b::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem} = b * a
 
-function Base.:(+)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
+function Base.:(+)(a::RelSimpleNumFieldElem{T}, b::T) where {T <: NumFieldElem}
   return parent(a)(data(a) + b)
 end
 
-Base.:(+)(a::T, b::NfRelElem{T}) where {T <: NumFieldElem} = b + a
+Base.:(+)(a::T, b::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem} = b + a
 
-function Base.:(-)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem}
+function Base.:(-)(a::RelSimpleNumFieldElem{T}, b::T) where {T <: NumFieldElem}
   return parent(a)(data(a) - b)
 end
 
-function Base.:(-)(a::T, b::NfRelElem{T}) where {T <: NumFieldElem}
+function Base.:(-)(a::T, b::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem}
   return parent(b)(a - data(b))
 end
 
-function divexact(a::NfRelElem{T}, b::T; check::Bool=true) where {T <: NumFieldElem}
+function divexact(a::RelSimpleNumFieldElem{T}, b::T; check::Bool=true) where {T <: NumFieldElem}
   return parent(a)(divexact(data(a), b; check=check))
 end
 
-Base.:(//)(a::NfRelElem{T}, b::T) where {T <: NumFieldElem} = divexact(a, b)
+Base.:(//)(a::RelSimpleNumFieldElem{T}, b::T) where {T <: NumFieldElem} = divexact(a, b)
 
 for F in [ZZRingElem, QQFieldElem, Int]
   @eval begin
-    function Base.:(*)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
+    function Base.:(*)(a::RelSimpleNumFieldElem{T}, b::$F) where {T <: NumFieldElem}
       return parent(a)(data(a) * b)
     end
 
-    Base.:(*)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem} = b * a
+    Base.:(*)(a::$F, b::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem} = b * a
 
-    function Base.:(+)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
+    function Base.:(+)(a::RelSimpleNumFieldElem{T}, b::$F) where {T <: NumFieldElem}
       return parent(a)(data(a) + b)
     end
 
-    Base.:(+)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem} = b + a
+    Base.:(+)(a::$F, b::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem} = b + a
 
-    function Base.:(-)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem}
+    function Base.:(-)(a::RelSimpleNumFieldElem{T}, b::$F) where {T <: NumFieldElem}
       return parent(a)(data(a) - b)
     end
 
-    function Base.:(-)(a::$F, b::NfRelElem{T}) where {T <: NumFieldElem}
+    function Base.:(-)(a::$F, b::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem}
       return parent(b)(a - data(b))
     end
 
-    function divexact(a::NfRelElem{T}, b::$F; check::Bool=true) where {T <: NumFieldElem}
+    function divexact(a::RelSimpleNumFieldElem{T}, b::$F; check::Bool=true) where {T <: NumFieldElem}
       return parent(a)(divexact(data(a), b; check=check))
     end
 
-    Base.:(//)(a::NfRelElem{T}, b::$F) where {T <: NumFieldElem} = divexact(a, b)
+    Base.:(//)(a::RelSimpleNumFieldElem{T}, b::$F) where {T <: NumFieldElem} = divexact(a, b)
   end
 end
 
@@ -416,25 +416,25 @@ end
 #
 ################################################################################
 
-function mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+function mul!(c::RelSimpleNumFieldElem{T}, a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
   mul!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
 end
 
-function mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::T) where {T}
+function mul!(c::RelSimpleNumFieldElem{T}, a::RelSimpleNumFieldElem{T}, b::T) where {T}
   mul!(c.data, a.data, b)
   c = reduce!(c)
   return c
 end
 
-function addeq!(b::NfRelElem{T}, a::NfRelElem{T}) where {T}
+function addeq!(b::RelSimpleNumFieldElem{T}, a::RelSimpleNumFieldElem{T}) where {T}
   addeq!(b.data, a.data)
   b = reduce!(b)
   return b
 end
 
-function add!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+function add!(c::RelSimpleNumFieldElem{T}, a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
   add!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
@@ -446,7 +446,7 @@ end
 #
 ################################################################################
 
-function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
+function hash(a::Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}, b::UInt)
   return hash(a.data, b)
 end
 
@@ -457,7 +457,7 @@ end
 ################################################################################
 
 
-function (K::AnticNumberField)(a::NfRelElem{nf_elem})
+function (K::AbsSimpleNumField)(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem})
   K != base_field(parent(a)) && return force_coerce_throwing(K, a)
   for i in 2:degree(parent(a))
     @assert iszero(coeff(a, i - 1))
@@ -465,7 +465,7 @@ function (K::AnticNumberField)(a::NfRelElem{nf_elem})
   return coeff(a, 0)
 end
 
-function in(a::NfRelElem{nf_elem}, K::AnticNumberField)
+function in(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem}, K::AbsSimpleNumField)
   L = parent(a)
   @assert base_field(L) == K
   for i in 2:degree(parent(a))
@@ -476,14 +476,14 @@ function in(a::NfRelElem{nf_elem}, K::AnticNumberField)
   return true
 end
 
-function (K::QQField)(a::NfRelElem)
+function (K::QQField)(a::RelSimpleNumFieldElem)
   for i in 2:degree(parent(a))
     @req iszero(coeff(a, i - 1)) "Element must be rational"
   end
   return QQ(coeff(a, 0))
 end
 
-function is_rational(a::NfRelElem)
+function is_rational(a::RelSimpleNumFieldElem)
   for i in 2:degree(parent(a))
     if !iszero(coeff(a, i - 1))
       return false
@@ -498,7 +498,7 @@ end
 #
 ################################################################################
 
-function basis_matrix(v::Vector{<: NfRelElem})
+function basis_matrix(v::Vector{<: RelSimpleNumFieldElem})
   K = parent(v[1])
   k = base_field(K)
   z = zero_matrix(k, length(v), degree(K))
@@ -510,14 +510,14 @@ function basis_matrix(v::Vector{<: NfRelElem})
   return z
 end
 
-function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelElem{T}) where T
+function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::RelSimpleNumFieldElem{T}) where T
   for c = 1:ncols(M)
     M[i, c] = deepcopy(coeff(a, c - 1))
   end
   return nothing
 end
 
-function elem_from_mat_row(L::NfRel{T}, M::Generic.Mat{T}, i::Int) where T
+function elem_from_mat_row(L::RelSimpleNumField{T}, M::Generic.Mat{T}, i::Int) where T
   t = L(1)
   a = L()
   for c = 1:ncols(M)
@@ -527,7 +527,7 @@ function elem_from_mat_row(L::NfRel{T}, M::Generic.Mat{T}, i::Int) where T
   return a
 end
 
-function representation_matrix(a::NfRelElem)
+function representation_matrix(a::RelSimpleNumFieldElem)
   L = a.parent
   n = degree(L)
   M = zero_matrix(base_field(L), n, n)
@@ -542,13 +542,13 @@ function representation_matrix(a::NfRelElem)
 end
 
 @doc raw"""
-    absolute_representation_matrix(a::NfRelElem) -> MatrixElem
+    absolute_representation_matrix(a::RelSimpleNumFieldElem) -> MatrixElem
 
 Return the absolute representation matrix of `a`, that is the matrix
 representing multiplication with `a` with respect to a $\mathbb{Q}$-basis
-of the parent of `a` (see [`absolute_basis(::NfRel)`](@ref)).
+of the parent of `a` (see [`absolute_basis(::RelSimpleNumField)`](@ref)).
 """
-function absolute_representation_matrix(a::NfRelElem)
+function absolute_representation_matrix(a::RelSimpleNumFieldElem)
   E = parent(a)
   n = absolute_degree(E)
   B = absolute_basis(E)
@@ -561,7 +561,7 @@ function absolute_representation_matrix(a::NfRelElem)
   return m
 end
 
-function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
+function norm(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem}, new::Bool = !true)
   if new && is_monic(parent(a).pol) #should be much faster - eventually
     return resultant_mod(parent(a).pol, a.data)
   end
@@ -569,7 +569,7 @@ function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
   return det(M)
 end
 
-function norm(a::NfRelElem, new::Bool = true)
+function norm(a::RelSimpleNumFieldElem, new::Bool = true)
   if new && is_monic(parent(a).pol)
     return resultant(parent(a).pol, a.data)
   end
@@ -583,7 +583,7 @@ end
 #
 ################################################################################
 
-function assure_trace_basis(K::NfRel{T}) where T
+function assure_trace_basis(K::RelSimpleNumField{T}) where T
   if isdefined(K, :trace_basis)
     return nothing
   end
@@ -594,7 +594,7 @@ function assure_trace_basis(K::NfRel{T}) where T
   return nothing
 end
 
-function tr(a::NfRelElem)
+function tr(a::RelSimpleNumFieldElem)
   K = parent(a)
   assure_trace_basis(K)
   t = coeff(a, 0)*K.trace_basis[1]
@@ -607,7 +607,7 @@ function tr(a::NfRelElem)
   return t
 end
 
-function tr(a::NfRelElem{nf_elem})
+function tr(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem})
   K = parent(a)
   assure_trace_basis(K)
   t = coeff(a, 0)*K.trace_basis[1]
@@ -640,35 +640,35 @@ end
 #TODO: cache traces of powers of the generator on the field, then
 #      the trace does not need the matrix
 
-function charpoly(a::NfRelElem)
+function charpoly(a::RelSimpleNumFieldElem)
   M = representation_matrix(a)
   R = polynomial_ring(base_field(parent(a)), cached = false)[1]
   return charpoly(R, M)
 end
 
-function minpoly(a::NfRelElem{S}) where {S}
+function minpoly(a::RelSimpleNumFieldElem{S}) where {S}
   M = representation_matrix(a)
   R = polynomial_ring(base_field(parent(a)), cached = false)[1]
   return minpoly(R, M, false)::Generic.Poly{S}
 end
 
-function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, QQField})
+function charpoly(a::RelSimpleNumFieldElem, k::Union{RelSimpleNumField, AbsSimpleNumField, QQField})
   f = charpoly(a)
   return _poly_norm_to(f, k)
 end
 
-function absolute_charpoly(a::NfRelElem)
+function absolute_charpoly(a::RelSimpleNumFieldElem)
   return charpoly(a, FlintQQ)
 end
 
-function (R::Generic.PolyRing{nf_elem})(a::NfRelElem{nf_elem})
+function (R::Generic.PolyRing{AbsSimpleNumFieldElem})(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem})
   if base_ring(R)==base_field(parent(a))
     return a.data
   end
   error("wrong ring")
 end
 
-function (R::Generic.PolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
+function (R::Generic.PolyRing{RelSimpleNumFieldElem{T}})(a::RelSimpleNumFieldElem{RelSimpleNumFieldElem{T}}) where T
   if base_ring(R)==base_field(parent(a))
     return a.data
   end
@@ -681,7 +681,7 @@ end
 #
 ################################################################################
 
-function is_subfield(K::NfRel, L::NfRel)
+function is_subfield(K::RelSimpleNumField, L::RelSimpleNumField)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
@@ -705,7 +705,7 @@ function is_subfield(K::NfRel, L::NfRel)
   return false, hom(K, L, zero(L), check = false)
 end
 
-function is_isomorphic_with_map(K::NfRel, L::NfRel)
+function is_isomorphic_with_map(K::RelSimpleNumField, L::RelSimpleNumField)
   @assert base_field(K) == base_field(L)
   f = K.pol
   g = L.pol
@@ -722,7 +722,7 @@ end
 ################################################################################
 
 # Mostly the same as in the absolute case
-function normal_basis(L::NfRel{nf_elem}, check::Bool = false)
+function normal_basis(L::RelSimpleNumField{AbsSimpleNumFieldElem}, check::Bool = false)
   O = EquationOrder(L)
   K = base_field(L)
   OK = base_ring(O)
@@ -757,7 +757,7 @@ end
 #
 ################################################################################
 
-function is_linearly_disjoint(K1::NfRel, K2::NfRel)
+function is_linearly_disjoint(K1::RelSimpleNumField, K2::RelSimpleNumField)
   if base_field(K1) != base_field(K2)
     error("Number fields must have the same base field")
   end
@@ -776,9 +776,9 @@ end
 #
 ################################################################################
 
-RandomExtensions.maketype(L::NfRel, B) = elem_type(L)
+RandomExtensions.maketype(L::RelSimpleNumField, B) = elem_type(L)
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelElem,<:NfRel,<:AbstractUnitRange}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:RelSimpleNumFieldElem,<:RelSimpleNumField,<:AbstractUnitRange}})
   L, B = sp[][1:end]
   k = base_field(L)
   pb = basis(L)
@@ -790,8 +790,8 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:NfRelElem,<:NfRel,<
   return z
 end
 
-rand(L::NfRel, B::AbstractUnitRange{Int}) = rand(GLOBAL_RNG, L, B)
-rand(rng::AbstractRNG, L::NfRel, B::AbstractUnitRange{Int}) = rand(rng, make(L, B))
+rand(L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(GLOBAL_RNG, L, B)
+rand(rng::AbstractRNG, L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(rng, make(L, B))
 
 ################################################################################
 #
@@ -800,16 +800,16 @@ rand(rng::AbstractRNG, L::NfRel, B::AbstractUnitRange{Int}) = rand(rng, make(L, 
 ################################################################################
 
 @doc raw"""
-    kummer_generator(K::NfRel{nf_elem}) -> nf_elem
+    kummer_generator(K::RelSimpleNumField{AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldElem
 
 Given an extension $K/k$ which is a cyclic Kummer extension of degree $n$, returns an element $a\in k$
 such that $K = k(\sqrt[n]{a})$. Throws an error if the extension is not a cyclic Kummer extension.
 """
-function kummer_generator(K::NfRel{nf_elem})
+function kummer_generator(K::RelSimpleNumField{AbsSimpleNumFieldElem})
   n = degree(K)
   k = base_field(K)
   tuo, gen_tu = _torsion_units_gen(k)
-  if !divisible(tuo, n)
+  if !is_divisible_by(tuo, n)
     error("Not a Kummer extension!")
   end
   zeta = gen_tu^divexact(tuo, n)
@@ -860,7 +860,7 @@ end
 #
 ################################################################################
 
-function signature(L::NfRel)
+function signature(L::RelSimpleNumField)
   c = get_attribute(L, :signature)
   if c isa Tuple{Int, Int}
     return c::Tuple{Int, Int}
@@ -877,12 +877,12 @@ function signature(L::NfRel)
   return r, s
 end
 
-function is_totally_real(L::NfRel)
+function is_totally_real(L::RelSimpleNumField)
   r, s = signature(L)
   return s == 0
 end
 
-function is_totally_complex(L::NfRel)
+function is_totally_complex(L::RelSimpleNumField)
   r, s = signature(L)
   return r == 0
 end
@@ -895,7 +895,7 @@ end
 
 @doc raw"""
     cyclotomic_field_as_cm_extension(n::Int; cached::Bool = true)
-					                  -> NfRel, NfRelElem
+					                  -> RelSimpleNumField, RelSimpleNumFieldElem
 Given an integer `n`, return the `n`-th cyclotomic field $E = \mathbb{Q}(\zeta_n)$
 seen as a quadratic extension of its maximal real subfield `K` generated by
 $\zeta_n+zeta_n^{-1}$.
@@ -925,7 +925,7 @@ end
 ##
 #################################################################################
 #
-#function _integral_multiplicator(a::NfRelElem)
+#function _integral_multiplicator(a::RelSimpleNumFieldElem)
 #  f = minpoly(a)
 #  return lcm(ZZRingElem[_integral_multiplicator(c) for c in coefficients(f)])
 #end

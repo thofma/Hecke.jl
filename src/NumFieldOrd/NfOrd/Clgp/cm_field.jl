@@ -1,26 +1,26 @@
-function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = false, bound::Int = -1)
+function _add_relations_from_subfield(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}; use_aut = true, redo = false, bound::Int = -1)
   L = codomain(mL)
   K = domain(mL)
   OK = lll(maximal_order(L))
   c = create_ctx(OK, use_aut = use_aut, redo = redo, bound = bound)
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(OK)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(OK)
   set_attribute!(OK, :UnitGrpCtx => U)
   set_attribute!(OK, :ClassGrpCtx => c)
 
-  lp = Set{NfOrdIdl}()
+  lp = Set{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   for p in c.FB.ideals
     push!(lp, intersect_prime(mL, p))
   end
   lp1 = collect(lp)
 
   vals_subfield = val_from_subfield(c.FB, mL, lp1)
-  cache_mL = Dict{nf_elem, nf_elem}()
+  cache_mL = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}()
   @vprintln :ClassGroup 1 "Computing S-units of totally real subfield"
   S, mS = Hecke.sunit_group_fac_elem(lp1)
   @vprintln :ClassGroup 1 "Embedding S-units of totally real subfield"
   for i = 1:ngens(S)
     @vprintln :ClassGroup 1 "Embedding S-units $i/$(ngens(S))"
-    sup = Dict{NfOrdIdl, ZZRingElem}((mS.idl[i], v) for (i, v) in mS.valuations[i])
+    sup = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((mS.idl[i], v) for (i, v) in mS.valuations[i])
     u = compact_presentation(mS(S[i]), 2, decom = sup)
     if iszero(mS.valuations[i])
       if is_torsion_unit(u)[1]
@@ -28,7 +28,7 @@ function _add_relations_from_subfield(mL::NfToNfMor; use_aut = true, redo = fals
       end
       add_unit!(U, u)
     else
-      img_u = FacElem(Dict{nf_elem, ZZRingElem}((_embed(mL, cache_mL, x), v) for (x,v) = u.fac if !iszero(v)))
+      img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(mL, cache_mL, x), v) for (x,v) = u.fac if !iszero(v)))
       valofnewelement = mS.valuations[i] * vals_subfield
       Hecke.class_group_add_relation(c, u, valofnewelement, add_orbit = false, always = false)
     end
@@ -90,7 +90,7 @@ function val_from_subfield(FB, mk, s)
   return z
 end
 
-function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
+function class_group_cm(OK::AbsSimpleNumFieldOrder; redo = false, use_aut = true, bound::Int = Int(ceil((log(abs(discriminant(OK)))^2)*0.3)))
   K = nf(OK)
   O = lll(OK)
   fl, conj = is_cm_field(nf(O))
@@ -100,7 +100,7 @@ function class_group_cm(OK::NfOrd; redo = false, use_aut = true, bound::Int = In
   return class_group(c, OK)
 end
 
-function create_ctx(OK::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
+function create_ctx(OK::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
   if !redo
     c = get_attribute(OK, :ClassGrpCtx)
     if c !== nothing

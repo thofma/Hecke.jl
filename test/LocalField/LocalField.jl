@@ -149,7 +149,7 @@
   end
 
   @testset "Maps" begin
-    # FlintQadicField -> FlintQadicField
+    # QadicField -> QadicField
     Qq, a = QadicField(2, 3, 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(Qq)))
 
@@ -166,7 +166,7 @@
     for i in 1:10
       z = mk\(rand(k))
       @test z == f\(f(z))
-      fl, w = @inferred haspreimage(f, z)
+      fl, w = @inferred has_preimage_with_preimage(f, z)
       @test fl
       @test f(w) == z
     end
@@ -187,7 +187,7 @@
       @test g(f(z)) == z
     end
 
-    # FlintQadicField -> LocalField
+    # QadicField -> LocalField
     Qqt, t = Qq["t"]
     L, b = eisenstein_extension(t^3 + 2, "b")
     f = @inferred hom(Qq, L, L(gen(Qq)))
@@ -195,11 +195,11 @@
     @test f(a) == L(gen(Qq))
     @test_throws ErrorException hom(Qq, L, b)
     @test f\(L(gen(Qq))) == gen(Qq)
-    fl, z = @inferred haspreimage(f, b^3)
+    fl, z = @inferred has_preimage_with_preimage(f, b^3)
     @test fl
     @test f(z) == L(-2)
 
-    # LocalField -> FlintQadicField
+    # LocalField -> QadicField
     Qp = PadicField(2, 100)
     Qpx, x = polynomial_ring(Qp)
     K, a = Hecke.unramified_extension(x^2+x+1)

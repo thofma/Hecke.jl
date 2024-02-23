@@ -10,7 +10,7 @@ end
 ## Random points
 
 ```
-  rand(E::EllCrv{<: FinFieldElem})
+  rand(E::EllipticCurve{<: FinFieldElem})
 ```
 
 Return a random point on the elliptic curve $E$ defined over a finite field.
@@ -26,26 +26,26 @@ y^2 = x^3 + x + 2
 ## Cardinality and orders
 
 ```@docs
-order(::EllCrv{<:FinFieldElem})
-order(::EllCrvPt{<:FinFieldElem})
+order(::EllipticCurve{<:FinFieldElem})
+order(::EllipticCurvePoint{<:FinFieldElem})
 ```
 
 ## Frobenius
 
 ```@docs
-trace_of_frobenius(::EllCrv{<:FinFieldElem})
-trace_of_frobenius(::EllCrv{<:FinFieldElem}, ::Int)
+trace_of_frobenius(::EllipticCurve{<:FinFieldElem})
+trace_of_frobenius(::EllipticCurve{<:FinFieldElem}, ::Int)
 ```
 
 ## Group structure of rational points
 
 ```@docs
-gens(::EllCrv{T}) where {T <: FinFieldElem}
-abelian_group(::EllCrv{<:FinFieldElem})
+gens(::EllipticCurve{T}) where {T <: FinFieldElem}
+abelian_group(::EllipticCurve{<:FinFieldElem})
 ```
 
 ## Discrete logarithm
 
 ```@docs
-disc_log(::EllCrvPt, ::EllCrvPt)
+disc_log(::EllipticCurvePoint, ::EllipticCurvePoint)
 ```

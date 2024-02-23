@@ -125,7 +125,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
 end
 
 # Finds at least n units in the order F.maximal_orders[order_num]
-function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{nf_elem}, T, U, M }
+function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, T, U, M }
   O = F.maximal_orders[order_num]
   units = Vector{elem_type(O)}()
   while length(units) < n
@@ -146,7 +146,7 @@ function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) wh
   return units
 end
 
-function _eichler_find_transforming_unit_recurse(I::S, J::S, primes::Vector{T}) where { S <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, T <: Union{ Int, ZZRingElem, NfAbsOrdIdl, NfRelOrdIdl } }
+function _eichler_find_transforming_unit_recurse(I::S, J::S, primes::Vector{T}) where { S <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, T <: Union{ Int, ZZRingElem, AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal } }
   if length(primes) == 1
     u = _eichler_find_transforming_unit_maximal(I, J)
     return elem_in_algebra(u, copy = false)
@@ -236,7 +236,7 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
     return n
   end
 
-  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem} } }
+  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem} } }
     n = zero!(n)
     for i = 1:nrows(v)
       n = add!(n, n, lift!(v[i, 1], t))

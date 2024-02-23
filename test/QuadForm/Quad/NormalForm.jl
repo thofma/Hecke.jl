@@ -19,9 +19,9 @@ function _test_normal_form_congruence(G, D, B, p, prec = 0)
 end
 
 @testset "helpers" begin
-  R = residue_ring(ZZ, 9)
+  R = residue_ring(ZZ, 9)[1]
   @test Hecke._issquare(R(1), ZZ(3))
-  R = residue_ring(ZZ, ZZ(9))
+  R = residue_ring(ZZ, ZZ(9))[1]
   @test Hecke._issquare(R(1), ZZ(3))
 end
 
@@ -202,7 +202,7 @@ end
   D, B = Hecke.padic_normal_form(M, 3)
   @test _test_normal_form(M, D, B, 3)
 
-  R = residue_ring(FlintZZ, ZZRingElem(2)^30)
+  R = residue_ring(FlintZZ, ZZRingElem(2)^30)[1]
   U = matrix(R,2,2,[0,1,1,0])
   V = matrix(R,2,2,[2,1,1,2])
   W1 = matrix(R,1,1,[1])

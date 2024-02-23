@@ -4,13 +4,13 @@
 #
 ################################################################################
 
-function _isimag(x::acb)
-  z = arb()
-  ccall((:acb_get_real, libarb), Cvoid, (Ref{arb}, Ref{acb}), z, x)
+function _isimag(x::AcbFieldElem)
+  z = ArbFieldElem()
+  ccall((:acb_get_real, libarb), Cvoid, (Ref{ArbFieldElem}, Ref{AcbFieldElem}), z, x)
   return iszero(z)
 end
 
-function _print_acb_neatly(io, x::acb)
+function _print_acb_neatly(io, x::AcbFieldElem)
   has_real_part = !_isimag(x)
   has_imag_part = !isreal(x)
   if !has_real_part && !has_imag_part
@@ -41,16 +41,16 @@ end
 # [Streng2010]: Marco Streng, Complex multiplication of abelian surfaces, 2010
 
 mutable struct CMType
-  field::AnticNumberField
-  embeddings::Vector{NumFieldEmbNfAbs}
+  field::AbsSimpleNumField
+  embeddings::Vector{AbsSimpleNumFieldEmbedding}
 
-  function CMType(K::AnticNumberField, embeddings::Vector{NumFieldEmbNfAbs})
+  function CMType(K::AbsSimpleNumField, embeddings::Vector{AbsSimpleNumFieldEmbedding})
     z = new(K, embeddings)
     return z
   end
 end
 
-function cm_type(K::AnticNumberField, embeddings::Vector{NumFieldEmbNfAbs})
+function cm_type(K::AbsSimpleNumField, embeddings::Vector{AbsSimpleNumFieldEmbedding})
   @req is_cm_field(K)[1] "Field must a CM field"
   @req 2 * length(embeddings) == degree(K) "Wrong number of embeddings"
   @req all(x -> all(y -> conj(y) != x, embeddings), embeddings) "Embeddings must be pairwise non-conjugated"
@@ -70,7 +70,7 @@ embeddings(C::CMType) = C.embeddings
 #
 ################################################################################
 
-function induce(C::CMType, f::NfToNfMor)
+function induce(C::CMType, f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   @assert C.field == domain(f)
   K = codomain(f)
   res = embedding_type(K)[]
@@ -83,7 +83,7 @@ function induce(C::CMType, f::NfToNfMor)
   return CMType(K, res)
 end
 
-function is_induced(C::CMType, f::NfToNfMor)
+function is_induced(C::CMType, f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   k = domain(f)
   fl, _ = Hecke.is_cm_field(k)
   for D in cm_types(k)
@@ -106,7 +106,7 @@ function is_primitive(C::CMType)
   return true
 end
 
-function cm_types(K::AnticNumberField)
+function cm_types(K::AbsSimpleNumField)
   fl, _ = is_cm_field(K)
   @assert fl
   g = div(degree(K), 2)
@@ -119,7 +119,7 @@ function cm_types(K::AnticNumberField)
   return res
 end
 
-function Base.:(*)(f::NfToNfMor, C::CMType)
+function Base.:(*)(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, C::CMType)
   return CMType(domain(f), [f * E for E in C.embeddings])
 end
 

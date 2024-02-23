@@ -109,7 +109,7 @@ function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyRingElem, fqP
     b *= a
   end
   elem_to_mat_row!(B, 1, -b)
-  s = solve_rational(M', B')
+  s = Nemo._solve_rational(M', B')
   if isa(s, Tuple)
     s = s[1] * inv(s[2])
   end
@@ -218,7 +218,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
     descent = false
   else
     f = cyclotomic(r, polynomial_ring(FlintZZ)[2])
-    f = polynomial_ring(residue_ring(FlintZZ, p))[1](f)
+    f = polynomial_ring(residue_ring(FlintZZ, p)[1])[1](f)
     f = factor(f)
     k = keys(f.fac)
     st = start(k)
@@ -235,7 +235,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
     descent = true
     ord = degree(opt)
     R = Native.finite_field(opt, "a")[1]
-    T = residue_ring(FlintZZ, p)
+    T = residue_ring(FlintZZ, p)[1]
     J = CoerceMap(T, R)
   end
   zeta = primitive_root_r_div_qm1(R, r)
@@ -253,7 +253,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
   for i=1:s ## maybe do one step x^(r^s)-a only?
     #println("doin' stuff")
     Rx, x = polynomial_ring(R, "x_$i")
-    S = residue_ring(Rx, x^r-a)
+    S = residue_ring(Rx, x^r-a)[1]
     I = CoerceMap(R, S)
     a = S(x)
     if descent
@@ -269,7 +269,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
         arr[j+1] = preimage(J, preimage(I, coeff(pol, j)))
       end
       pol = polynomial_ring(T, "t_$i")[1](arr)
-      U = residue_ring(parent(pol), pol)
+      U = residue_ring(parent(pol), pol)[1]
       H = ResidueRingPolyMap(U, S, b, J)
       #H.coeff_map = J
       J = H
@@ -288,7 +288,7 @@ function plesken_as(p::ZZRingElem, r::Int, s::Int)
   t = 1
   while s>1
     Rx,x = polynomial_ring(R, "t_$i")
-    R = residue_ring(Rx, x^r-x-g^(r-1)) ## r==p, but of better type
+    R = residue_ring(Rx, x^r-x-g^(r-1))[1] ## r==p, but of better type
     g = gen(R)
     s -= 1
     t += 1
@@ -307,14 +307,14 @@ function plesken_2(p::ZZRingElem, r::Int, s::Int)
     @assert valuation(p+1, 2)>1
     R = finite_field(p)
     Rx,x = polynomial_ring(R, "t_1")
-    R = residue_ring(Rx, x^2+1)
+    R = residue_ring(Rx, x^2+1)[1]
     g = primitive_root_r_div_qm1(R, 2)
     s -= 1
     t = 2
   end
   while s>0
     Rx,x = polynomial_ring(R, "t_$t")
-    R = residue_ring(Rx, x^2-g)
+    R = residue_ring(Rx, x^2-g)[1]
     g = gen(R)
     t += 1
   end

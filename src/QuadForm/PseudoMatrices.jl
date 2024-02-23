@@ -72,7 +72,7 @@ end
 #
 ################################################################################
 
-function _sum_modules_with_map(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, f, full_rank = true)
+function _sum_modules_with_map(a::PMat{<: RelSimpleNumFieldElem, <: RelNumFieldOrderFractionalIdeal}, b::PMat, f, full_rank = true)
   H = vcat(a, b)
   return pseudo_hnf_via_absolute(H, f, shape = :lowerleft, nonzero = true)
 end
@@ -84,7 +84,7 @@ function _sum_modules(L::HermLat, a::PMat, b::PMat, full_rank = true)
   return _sum_modules_with_map(a, b, f, full_rank)
 end
 
-function _sum_modules(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
+function _sum_modules(a::PMat{<: RelSimpleNumFieldElem, <: RelNumFieldOrderFractionalIdeal}, b::PMat, full_rank = true)
   H = vcat(a, b)
   return pseudo_hnf_via_absolute(H, shape = :lowerleft, nonzero = true)
 end
@@ -113,17 +113,17 @@ function _intersect_modules(L::QuadLat, a::PMat, b::PMat, full_rank = true)
   return _intersect_modules(a, b, full_rank)
 end
 
-function _intersect_modules(L::HermLat, a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
+function _intersect_modules(L::HermLat, a::PMat{<: RelSimpleNumFieldElem, <: RelNumFieldOrderFractionalIdeal}, b::PMat, full_rank = true)
   f = absolute_simple_field(ambient_space(L))[2]
   return _intersect_modules_with_map(a, b, f, full_rank)
 end
 
-function _intersect_modules(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, full_rank = true)
+function _intersect_modules(a::PMat{<: RelSimpleNumFieldElem, <: RelNumFieldOrderFractionalIdeal}, b::PMat, full_rank = true)
   f = absolute_simple_field(nf(base_ring(a)))[2]
   return _intersect_modules_with_map(a, b, f, full_rank)
 end
 
-function _intersect_modules_with_map(a::PMat{<: NfRelElem, <: NfRelOrdFracIdl}, b::PMat, f, full_rank = true)
+function _intersect_modules_with_map(a::PMat{<: RelSimpleNumFieldElem, <: RelNumFieldOrderFractionalIdeal}, b::PMat, f, full_rank = true)
   OE = maximal_order(domain(f))
   aE = _translate_pseudo_hnf(a, pseudo_inv(f), OE)
   bE = _translate_pseudo_hnf(b, pseudo_inv(f), OE)
@@ -154,37 +154,37 @@ function _modules_equality(a::PMat, b::PMat)
   _spans_subset_of_pseudohnf(a, b, :lowerleft) && _spans_subset_of_pseudohnf(b, a, :lowerleft)
 end
 
-function _module_scale_ideal(a::NfAbsOrdIdl, b::PMat)
+function _module_scale_ideal(a::AbsNumFieldOrderIdeal, b::PMat)
   return pseudo_matrix(matrix(b), [ a * c for c in coefficient_ideals(b)])
 end
 
-_module_scale_ideal(a::PMat, b::NfAbsOrdIdl) = _module_scale_ideal(b, a)
+_module_scale_ideal(a::PMat, b::AbsNumFieldOrderIdeal) = _module_scale_ideal(b, a)
 
-function _module_scale_ideal(a::NfOrdFracIdl, b::PMat)
+function _module_scale_ideal(a::AbsSimpleNumFieldOrderFractionalIdeal, b::PMat)
   return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
-_module_scale_ideal(a::PMat, b::NfOrdFracIdl) = _module_scale_ideal(b, a)
+_module_scale_ideal(a::PMat, b::AbsSimpleNumFieldOrderFractionalIdeal) = _module_scale_ideal(b, a)
 
-function _module_scale_ideal(a::NfRelOrdIdl, b::PMat)
+function _module_scale_ideal(a::RelNumFieldOrderIdeal, b::PMat)
   return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
-_module_scale_ideal(a::PMat, b::NfRelOrdIdl) = _module_scale_ideal(b, a)
+_module_scale_ideal(a::PMat, b::RelNumFieldOrderIdeal) = _module_scale_ideal(b, a)
 
-function _module_scale_ideal(a::NfRelOrdFracIdl, b::PMat)
+function _module_scale_ideal(a::RelNumFieldOrderFractionalIdeal, b::PMat)
   return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
-_module_scale_ideal(a::PMat, b::NfRelOrdFracIdl) = _module_scale_ideal(b, a)
+_module_scale_ideal(a::PMat, b::RelNumFieldOrderFractionalIdeal) = _module_scale_ideal(b, a)
 
-*(a::NfAbsOrdIdl, b::PMat) = _module_scale_ideal(a, b)
+*(a::AbsNumFieldOrderIdeal, b::PMat) = _module_scale_ideal(a, b)
 
-*(a::NfOrdFracIdl, b::PMat) = _module_scale_ideal(a, b)
+*(a::AbsSimpleNumFieldOrderFractionalIdeal, b::PMat) = _module_scale_ideal(a, b)
 
-*(a::NfRelOrdIdl, b::PMat) = _module_scale_ideal(a, b)
+*(a::RelNumFieldOrderIdeal, b::PMat) = _module_scale_ideal(a, b)
 
-*(a::NfRelOrdFracIdl, b::PMat) = _module_scale_ideal(a, b)
+*(a::RelNumFieldOrderFractionalIdeal, b::PMat) = _module_scale_ideal(a, b)
 
 ################################################################################
 #
@@ -194,7 +194,7 @@ _module_scale_ideal(a::PMat, b::NfRelOrdFracIdl) = _module_scale_ideal(b, a)
 
 # Given a pseudo matrix over K with row span M and p a prime ideal of K, find a
 # basis matrix of M \otimes OK_p.
-function _local_basis_matrix(a::PMat, p::NfOrdIdl)
+function _local_basis_matrix(a::PMat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert base_ring(a) == order(p)
   uni = uniformizer(p)
   z = zero_matrix(base_ring(matrix(a)), nrows(a), ncols(a))
@@ -298,7 +298,7 @@ function _local_basis_submodule_matrix(a::PMat, p)
   return z
 end
 
-function _local_basis_supermodule_matrix(a::PMat, p::NfOrdIdl)
+function _local_basis_supermodule_matrix(a::PMat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   throw(NotImplemented())
 end
 

@@ -5,11 +5,11 @@
 ################################################################################
 
 @doc raw"""
-    parent(a::NumFieldOrdElem) -> NumFieldOrd
+    parent(a::NumFieldOrderElem) -> NumFieldOrder
 
 Returns the order of which $a$ is an element.
 """
-parent(a::NumFieldOrdElem) = a.parent::parent_type(a)
+parent(a::NumFieldOrderElem) = a.parent::parent_type(a)
 
 ################################################################################
 #
@@ -18,11 +18,11 @@ parent(a::NumFieldOrdElem) = a.parent::parent_type(a)
 ################################################################################
 
 @doc raw"""
-    elem_in_nf(a::NumFieldOrdElem) -> NumFieldElem
+    elem_in_nf(a::NumFieldOrderElem) -> NumFieldElem
 
 Returns the element $a$ considered as an element of the ambient number field.
 """
-function elem_in_nf(a::NumFieldOrdElem; copy::Bool = true)
+function elem_in_nf(a::NumFieldOrderElem; copy::Bool = true)
   if isdefined(a, :elem_in_nf)
     if copy
       return deepcopy(a.elem_in_nf)
@@ -33,7 +33,7 @@ function elem_in_nf(a::NumFieldOrdElem; copy::Bool = true)
   error("Not a valid order element")
 end
 
-_elem_in_algebra(a::NumFieldOrdElem; copy::Bool = true) = elem_in_nf(a, copy = copy)
+_elem_in_algebra(a::NumFieldOrderElem; copy::Bool = true) = elem_in_nf(a, copy = copy)
 
 ################################################################################
 #
@@ -41,15 +41,15 @@ _elem_in_algebra(a::NumFieldOrdElem; copy::Bool = true) = elem_in_nf(a, copy = c
 #
 ################################################################################
 
-zero(O::NumFieldOrd) = O(ZZRingElem(0))
+zero(O::NumFieldOrder) = O(ZZRingElem(0))
 
-one(O::NumFieldOrd) = O(ZZRingElem(1))
+one(O::NumFieldOrder) = O(ZZRingElem(1))
 
-zero(a::NumFieldOrdElem) = parent(a)(0)
+zero(a::NumFieldOrderElem) = parent(a)(0)
 
-one(a::NumFieldOrdElem) = one(parent(a))
+one(a::NumFieldOrderElem) = one(parent(a))
 
-function zero!(a::NumFieldOrdElem)
+function zero!(a::NumFieldOrderElem)
   zero!(a.elem_in_nf)
   a.has_coord = false
   return a
@@ -61,9 +61,9 @@ end
 #
 ################################################################################
 
-isone(a::NumFieldOrdElem) = isone(a.elem_in_nf)
+isone(a::NumFieldOrderElem) = isone(a.elem_in_nf)
 
-iszero(a::NumFieldOrdElem) = iszero(a.elem_in_nf)
+iszero(a::NumFieldOrderElem) = iszero(a.elem_in_nf)
 
 ################################################################################
 #
@@ -71,7 +71,7 @@ iszero(a::NumFieldOrdElem) = iszero(a.elem_in_nf)
 #
 ################################################################################
 
-function -(a::NumFieldOrdElem)
+function -(a::NumFieldOrderElem)
   b = parent(a)()
   b.elem_in_nf = - a.elem_in_nf
   if a.has_coord
@@ -87,14 +87,14 @@ end
 #
 ###############################################################################
 
-function *(x::T, y::T) where T <: NumFieldOrdElem
+function *(x::T, y::T) where T <: NumFieldOrderElem
   @req check_parent(x, y) "Wrong parents"
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
 end
 
-function +(x::T, y::T) where T <: NumFieldOrdElem
+function +(x::T, y::T) where T <: NumFieldOrderElem
   @req check_parent(x, y) "Wrong parents"
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
@@ -106,7 +106,7 @@ function +(x::T, y::T) where T <: NumFieldOrdElem
   return z
 end
 
-function -(x::T, y::T) where T <: NumFieldOrdElem
+function -(x::T, y::T) where T <: NumFieldOrderElem
   @req check_parent(x, y) "Wrong parents"
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
@@ -117,7 +117,7 @@ function -(x::T, y::T) where T <: NumFieldOrdElem
   return z
 end
 
-function divexact(x::T, y::T; check::Bool = true) where T <: NumFieldOrdElem
+function divexact(x::T, y::T; check::Bool = true) where T <: NumFieldOrderElem
   @req check_parent(x, y) "Wrong parents"
   a = divexact(x.elem_in_nf, y.elem_in_nf)
   if check && !(in(a, parent(x)))
@@ -128,7 +128,7 @@ function divexact(x::T, y::T; check::Bool = true) where T <: NumFieldOrdElem
   return z
 end
 
-function //(x::T, y::T) where {T <: NumFieldOrdElem}
+function //(x::T, y::T) where {T <: NumFieldOrderElem}
   return divexact(x.elem_in_nf, y.elem_in_nf)
 end
 
@@ -140,7 +140,7 @@ end
 
 for T in [Integer, ZZRingElem]
   @eval begin
-    function *(a::NumFieldOrdElem, b::$T)
+    function *(a::NumFieldOrderElem, b::$T)
       c = parent(a)()
       c.elem_in_nf = a.elem_in_nf*b
       if a.has_coord
@@ -150,29 +150,29 @@ for T in [Integer, ZZRingElem]
       return c
     end
 
-    *(a::$T, b::NumFieldOrdElem) = b*a
+    *(a::$T, b::NumFieldOrderElem) = b*a
 
-    function +(x::NumFieldOrdElem, y::$T)
+    function +(x::NumFieldOrderElem, y::$T)
       z = parent(x)()
       z.elem_in_nf = x.elem_in_nf + y
       return z
     end
 
-    +(x::$T, y::NumFieldOrdElem) = y + x
+    +(x::$T, y::NumFieldOrderElem) = y + x
 
-    function -(x::NumFieldOrdElem, y::$T)
+    function -(x::NumFieldOrderElem, y::$T)
       z = parent(x)()
       z.elem_in_nf = x.elem_in_nf - y
       return z
     end
 
-    function -(x::$T, y::NumFieldOrdElem)
+    function -(x::$T, y::NumFieldOrderElem)
       z = parent(y)()
       z.elem_in_nf = x - y.elem_in_nf
       return z
     end
 
-    function divexact(a::NumFieldOrdElem, b::$T; check::Bool = true)
+    function divexact(a::NumFieldOrderElem, b::$T; check::Bool = true)
       t = divexact(a.elem_in_nf, b)
       if check && !(in(t, parent(a)))
         throw(ArgumentError("Quotient not an element of the order."))
@@ -181,7 +181,7 @@ for T in [Integer, ZZRingElem]
       return c
     end
 
-    function //(a::NumFieldOrdElem, b::$T)
+    function //(a::NumFieldOrderElem, b::$T)
       return divexact(a.elem_in_nf, b)
     end
   end
@@ -197,7 +197,7 @@ end
 # necessary (as ^y should produce something mutable)
 for T in [Integer, ZZRingElem]
   @eval begin
-    function ^(x::NumFieldOrdElem, y::$T)
+    function ^(x::NumFieldOrderElem, y::$T)
       if y >= 0
         return parent(x)(elem_in_nf(x)^y, false)
       else
@@ -214,25 +214,25 @@ end
 #
 ################################################################################
 
-@inline function add!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
+@inline function add!(z::AbsNumFieldOrderElem, x::AbsNumFieldOrderElem, y::AbsNumFieldOrderElem)
   add!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
   z.has_coord = false
   return z
 end
 
-@inline function sub!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
+@inline function sub!(z::AbsNumFieldOrderElem, x::AbsNumFieldOrderElem, y::AbsNumFieldOrderElem)
   sub!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
   z.has_coord = false
   return z
 end
 
-@inline function mul!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
+@inline function mul!(z::AbsNumFieldOrderElem, x::AbsNumFieldOrderElem, y::AbsNumFieldOrderElem)
   mul!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
   z.has_coord = false
   return z
 end
 
-function addeq!(z::NfAbsOrdElem, x::NfAbsOrdElem)
+function addeq!(z::AbsNumFieldOrderElem, x::AbsNumFieldOrderElem)
   addeq!(z.elem_in_nf, x.elem_in_nf)
   if x.has_coord && z.has_coord
     for i in 1:degree(parent(z))
@@ -251,37 +251,37 @@ end
 # ad hoc
 for T in [Integer, ZZRingElem]
   @eval begin
-    @inline function mul!(z::NumFieldOrdElem, x::NumFieldOrdElem, y::$T)
+    @inline function mul!(z::NumFieldOrderElem, x::NumFieldOrderElem, y::$T)
       z.elem_in_nf = mul!(z.elem_in_nf, x.elem_in_nf, y)
       z.has_coord = false
       return z
     end
 
-    mul!(z::NumFieldOrdElem, x::$T, y::NumFieldOrdElem) = mul!(z, y, x)
+    mul!(z::NumFieldOrderElem, x::$T, y::NumFieldOrderElem) = mul!(z, y, x)
   end
 end
 
 for T in [Integer, ZZRingElem]
   @eval begin
-    @inline function add!(z::NumFieldOrdElem, x::NumFieldOrdElem, y::$T)
+    @inline function add!(z::NumFieldOrderElem, x::NumFieldOrderElem, y::$T)
       z.elem_in_nf = add!(z.elem_in_nf, x.elem_in_nf, y)
       z.has_coord = false
       return z
     end
 
-    add!(z::NumFieldOrdElem, x::$T, y::NumFieldOrdElem) = add!(z, y, x)
+    add!(z::NumFieldOrderElem, x::$T, y::NumFieldOrderElem) = add!(z, y, x)
   end
 end
 
 for T in [Integer, ZZRingElem]
   @eval begin
-    @inline function sub!(z::NumFieldOrdElem, x::NumFieldOrdElem, y::$T)
+    @inline function sub!(z::NumFieldOrderElem, x::NumFieldOrderElem, y::$T)
       z.elem_in_nf = sub!(z.elem_in_nf, x.elem_in_nf, y)
       z.has_coord = false
       return z
     end
 
-    sub!(z::NumFieldOrdElem, x::$T, y::NumFieldOrdElem) = add!(z, y, x)
+    sub!(z::NumFieldOrderElem, x::$T, y::NumFieldOrderElem) = add!(z, y, x)
   end
 end
 
@@ -291,13 +291,13 @@ end
 #
 ################################################################################
 
-dot(x::NumFieldOrdElem, y::Integer) = x * y
+dot(x::NumFieldOrderElem, y::Integer) = x * y
 
-dot(x::Integer, y::NumFieldOrdElem) = y * x
+dot(x::Integer, y::NumFieldOrderElem) = y * x
 
-dot(x::NumFieldOrdElem, y::ZZRingElem) = x * y
+dot(x::NumFieldOrderElem, y::ZZRingElem) = x * y
 
-dot(x::ZZRingElem, y::NumFieldOrdElem) = y * x
+dot(x::ZZRingElem, y::NumFieldOrderElem) = y * x
 
 
 ################################################################################
@@ -307,22 +307,22 @@ dot(x::ZZRingElem, y::NumFieldOrdElem) = y * x
 ################################################################################
 
 @doc raw"""
-    tr(a::NumFieldOrdElem)
+    tr(a::NumFieldOrderElem)
 
 Returns the trace of $a$ as an element of the base ring.
 """
-function tr(a::NumFieldOrdElem)
+function tr(a::NumFieldOrderElem)
   OK = parent(a)
   return base_ring(OK)(tr(a.elem_in_nf))
 end
 
 @doc raw"""
-    absolute_tr(a::NumFieldOrdElem) -> ZZRingElem
+    absolute_tr(a::NumFieldOrderElem) -> ZZRingElem
 
 Return the absolute trace as an integer.
 """
-absolute_tr(a::NfAbsOrdElem) = tr(a)
-absolute_tr(a::NfRelOrdElem) = absolute_tr(tr(a))
+absolute_tr(a::AbsNumFieldOrderElem) = tr(a)
+absolute_tr(a::RelNumFieldOrderElem) = absolute_tr(tr(a))
 
 ################################################################################
 #
@@ -331,22 +331,22 @@ absolute_tr(a::NfRelOrdElem) = absolute_tr(tr(a))
 ################################################################################
 
 @doc raw"""
-    norm(a::NumFieldOrdElem)
+    norm(a::NumFieldOrderElem)
 
 Returns the norm of $a$ as an element in the base ring.
 """
-function norm(a::NumFieldOrdElem)
+function norm(a::NumFieldOrderElem)
   OK = parent(a)
   return base_ring(OK)(norm(a.elem_in_nf))
 end
 
 @doc raw"""
-    absolute_norm(a::NumFieldOrdElem) -> ZZRingElem
+    absolute_norm(a::NumFieldOrderElem) -> ZZRingElem
 
 Return the absolute norm as an integer.
 """
-absolute_norm(a::NfAbsOrdElem) = norm(a)
-absolute_norm(a::NfRelOrdElem) = absolute_norm(norm(a))
+absolute_norm(a::AbsNumFieldOrderElem) = norm(a)
+absolute_norm(a::RelNumFieldOrderElem) = absolute_norm(norm(a))
 
 ################################################################################
 #
@@ -355,12 +355,12 @@ absolute_norm(a::NfRelOrdElem) = absolute_norm(norm(a))
 ################################################################################
 
 @doc raw"""
-    discriminant(B::Vector{NumFieldOrdElem})
+    discriminant(B::Vector{NumFieldOrderElem})
 
 Returns the discriminant of the family $B$ of algebraic numbers,
 i.e. $det((tr(B[i]*B[j]))_{i, j})^2$.
 """
-function discriminant(B::Vector{T}) where T <: NumFieldOrdElem
+function discriminant(B::Vector{T}) where T <: NumFieldOrderElem
   O = parent(B[1])
   n = degree(O)
   length(B) == 0 && error("Number of elements must be non-zero")
@@ -384,7 +384,7 @@ end
 #
 ################################################################################
 
-Base.hash(x::NumFieldOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
+Base.hash(x::NumFieldOrderElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 
 ################################################################################
 #
@@ -393,11 +393,11 @@ Base.hash(x::NumFieldOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 ################################################################################
 
 @doc raw"""
-    ==(x::NumFieldOrdElem, y::NumFieldOrdElem) -> Bool
+    ==(x::NumFieldOrderElem, y::NumFieldOrderElem) -> Bool
 
 Returns whether $x$ and $y$ are equal.
 """
-==(x::NumFieldOrdElem, y::NumFieldOrdElem) = parent(x) === parent(y) &&
+==(x::NumFieldOrderElem, y::NumFieldOrderElem) = parent(x) === parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
 
 ################################################################################
@@ -407,13 +407,13 @@ Returns whether $x$ and $y$ are equal.
 ################################################################################
 
 @doc raw"""
-    minkowski_map(a::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
+    minkowski_map(a::NumFieldOrderElem, abs_tol::Int) -> Vector{ArbFieldElem}
 
 Returns the image of $a$ under the Minkowski embedding.
-Every entry of the array returned is of type `arb` with radius less then
+Every entry of the array returned is of type `ArbFieldElem` with radius less then
 `2^-abs_tol`.
 """
-function minkowski_map(a::NumFieldOrdElem, abs_tol::Int = 32)
+function minkowski_map(a::NumFieldOrderElem, abs_tol::Int = 32)
   # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
   # The function minkowski_map does not alter the input!
   return minkowski_map(a.elem_in_nf, abs_tol)
@@ -426,9 +426,9 @@ end
 ################################################################################
 
 @doc raw"""
-    conjugates_arb(x::NumFieldOrdElem, abs_tol::Int) -> Vector{acb}
+    conjugates_arb(x::NumFieldOrderElem, abs_tol::Int) -> Vector{AcbFieldElem}
 
-Compute the conjugates of $x$ as elements of type `acb`.
+Compute the conjugates of $x$ as elements of type `AcbFieldElem`.
 Recall that we order the complex conjugates
 $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
@@ -436,22 +436,22 @@ $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 2 \leq i \leq r + s$.
 Every entry $y$ of the array returned satisfies `radius(real(y)) < 2^-abs_tol`,
 `radius(imag(y)) < 2^-abs_tol` respectively.
 """
-function conjugates_arb(x::NumFieldOrdElem, abs_tol::Int = 32)
+function conjugates_arb(x::NumFieldOrderElem, abs_tol::Int = 32)
   # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
   # The function minkowski_map does not alter the input!
   return conjugates_arb(x.elem_in_nf, abs_tol)
 end
 
 @doc raw"""
-    conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int) -> Vector{arb}
+    conjugates_arb_log(x::NumFieldOrderElem, abs_tol::Int) -> Vector{ArbFieldElem}
 
 Returns the elements
 $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
 \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
-2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
+2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `ArbFieldElem` radius
 less then `2^-abs_tol`.
 """
-function conjugates_arb_log(x::NumFieldOrdElem, abs_tol::Int = 32)
+function conjugates_arb_log(x::NumFieldOrderElem, abs_tol::Int = 32)
   return conjugates_arb_log(x.elem_in_nf, abs_tol)
 end
 
@@ -462,12 +462,12 @@ end
 ################################################################################
 
 @doc raw"""
-    t2(x::NumFieldOrdElem, abs_tol::Int = 32) -> arb
+    t2(x::NumFieldOrderElem, abs_tol::Int = 32) -> ArbFieldElem
 
 Return the $T_2$-norm of $x$. The radius of the result will be less than
 `2^-abs_tol`.
 """
-function t2(x::NumFieldOrdElem, abs_tol::Int = 32)
+function t2(x::NumFieldOrderElem, abs_tol::Int = 32)
   return t2(x.elem_in_nf, abs_tol)
 end
 
@@ -477,14 +477,14 @@ end
 #
 ################################################################################
 
-Nemo.promote_rule(::Type{S}, ::Type{U}) where {S <: NumFieldOrdElem, U <: Integer} = S
+Nemo.promote_rule(::Type{S}, ::Type{U}) where {S <: NumFieldOrderElem, U <: Integer} = S
 
-Nemo.promote_rule(::Type{S}, ::Type{ZZRingElem}) where {S <: NumFieldOrdElem} = S
+Nemo.promote_rule(::Type{S}, ::Type{ZZRingElem}) where {S <: NumFieldOrderElem} = S
 
-#Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
+#Nemo.promote_rule(::Type{AbsNumFieldOrderElem{S, T}}, ::Type{T}) where {S, T} = T
 
-Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T <: NumFieldElem} = T
+Nemo.promote_rule(::Type{T}, ::Type{AbsNumFieldOrderElem{S, T}}) where {S, T <: NumFieldElem} = T
 
-Nemo.promote_rule(::Type{NfRelOrdElem{S, T}}, ::Type{T}) where {S, T <: NumFieldElem} = T
+Nemo.promote_rule(::Type{RelNumFieldOrderElem{S, T}}, ::Type{T}) where {S, T <: NumFieldElem} = T
 
-Nemo.promote_rule(::Type{T}, ::Type{NfRelOrdElem{S, T}}) where {S, T <: NumFieldElem} = T
+Nemo.promote_rule(::Type{T}, ::Type{RelNumFieldOrderElem{S, T}}) where {S, T <: NumFieldElem} = T

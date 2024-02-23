@@ -4,14 +4,14 @@
     H, mH = sub(G, [G[1]])
     a = G[1]
     b = G[3]
-    bb, c = @inferred haspreimage(mH, a)
+    bb, c = @inferred has_preimage_with_preimage(mH, a)
     @test bb
     @test mH(c) == a
-    bb, c = @inferred haspreimage(mH, b)
+    bb, c = @inferred has_preimage_with_preimage(mH, b)
     @test !bb
     # TODO: Test for has_image missing
 
-    fl, c = @inferred haspreimage(mH, elem_type(H)[])
+    fl, c = @inferred has_preimage_with_preimage(mH, elem_type(H)[])
     @test fl
   end
 
@@ -57,7 +57,7 @@
     @test h(G[3]) == 2*H[3]
 
     I, mI = @inferred image(h)
-    @test all(haspreimage(h, mI(i))[1] for i in I)
+    @test all(has_preimage_with_preimage(h, mI(i))[1] for i in I)
     @test order(I) == 8
   end
 

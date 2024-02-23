@@ -6,7 +6,7 @@ module Det
 using Hecke
 import AbstractAlgebra, Nemo
 using LinearAlgebra, Profile, Base.Intrinsics
-import Nemo: add!, mul!, zero!, sub!, solve_triu!, solve_tril!
+import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_triu!, AbstractAlgebra._solve_tril!
 
 #creates an unimodular n x n matrix where the inverse is much larger
 #than the original matrix. Entries are chosen in U
@@ -27,7 +27,7 @@ end
 
 #applies n unimodular transformations (add scaled row/col)
 function perturb!(A, n::Int = 100, c::AbstractRange = -10:10)
-  for i=1:n 
+  for i=1:n
     x = rand(c)
     while iszero(x)
       x = rand(c)
@@ -151,7 +151,7 @@ function hcol(A::ZZMatrix, d::ZZRingElem)  # why not Vector{ZZRingElem}???
     end
     for k = 1:i-1
       h[k,i] = mod(-t[i]*w[k,1], h[i,i])
-      w[k,1] = mod(w[k,1]+h[k,i]*w[i,1], d)   
+      w[k,1] = mod(w[k,1]+h[k,i]*w[i,1], d)
     end
     w[i,1] = h[i,i]*w[i,1]
     d = d/h[i,i]
@@ -228,7 +228,7 @@ function mod!(A::AbstractArray{Float64}, pf::Float64, pfi::Float64)
 #  pf = Float64(p)
 #  pfi = 1/pf
 #  A = reshape(A, nrows(A)*ncols(A))
-#  A .= (x->myround(x, pf, pfi)).(A) 
+#  A .= (x->myround(x, pf, pfi)).(A)
 #  return
   Ap = pointer(A)
   @fastmath for i= 1:length(A)
@@ -251,7 +251,7 @@ end
 # CRT mod pq: x = a mod p, x = b mod q, 1 = ep+fq
 #  x = fqa + epb
 #
-function change_rns!(RE::Vector{Matrix{Float64}}, p::Vector{Int}, q::Vector{Int}, B::Vector{<:AbstractArray{Float64}}, U::Vector{Matrix{Float64}} = []) 
+function change_rns!(RE::Vector{Matrix{Float64}}, p::Vector{Int}, q::Vector{Int}, B::Vector{<:AbstractArray{Float64}}, U::Vector{Matrix{Float64}} = [])
   @show length(q), length(p)
   if length(p) > 40 # also slow, induce_crt! is killing it
           # to try, for 20 bit primes, to do pairwise CRT using BLAS
@@ -274,7 +274,7 @@ function change_rns!(RE::Vector{Matrix{Float64}}, p::Vector{Int}, q::Vector{Int}
         RE[i] .= reshape(map(Float64, y.view_parent[1]), size(B[1]))
       end
     end
-    return 
+    return
   end
   T = Float64
   bd = Int[]  # mixed radix rep (wrt to q) of (prod(q)-1)/2
@@ -351,9 +351,9 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   EntrySize = maximum(nbits, A)
   e = max(16, 2+ceil(Int, 2*log2(n)+EntrySize))
   println("Modulus X has  $e bits");
-  
+
   B0 = Matrix{Float64}[]
-  m = ZZ(1); p = 2^21;  # MAGIC NUMBER (initial prime needs to be such that 
+  m = ZZ(1); p = 2^21;  # MAGIC NUMBER (initial prime needs to be such that
                         #a full scalar product does not overflow:
                         #n*(p-1)^2 < 2^53 is my guess
   Xp = Int[]
@@ -373,7 +373,7 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   m_inv = fpFieldElem[]
   Y = ZZ(1)
   Yp = Int[]
-  while nbits(Y) < Int(1+ceil(log2(n)+EntrySize)) 
+  while nbits(Y) < Int(1+ceil(log2(n)+EntrySize))
     p = next_prime(p)
     push!(Yp, p)
     k = GF(p, cached = false)
@@ -462,7 +462,7 @@ function UniCertZ_CRT(A::ZZMatrix)
   EntrySize = maximum(abs, A)
   e = max(16, Int(2+ceil(2*log2(n)+log2(EntrySize))));
   println("Modulus has  $e bits");
-  
+
   B0 = zero_matrix(ZZ,n,n) ## will be computed by crt in loop below
   m = ZZ(1); p = 2^29;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
   @time while (nbits(m) < e)
@@ -480,7 +480,7 @@ function UniCertZ_CRT(A::ZZMatrix)
   k = 2+Int(ceil(log2(k)));
   println("Max num iters is k=$(k)");
 
-  ZZmodM = residue_ring(ZZ,m);
+  ZZmodM, = residue_ring(ZZ,m);
   B0_modm = map_entries(ZZmodM, B0);
   I = identity_matrix(ZZ,n)
   R = (I-A*B0)/m
@@ -579,7 +579,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   local D::DixonCtx
   f = true
   while !det_small
-    b = rand(matrix_space(ZZ,n,1),U); 
+    b = rand(matrix_space(ZZ,n,1),U);
     if f
       @show :solve_init
       D = dixon_init(A, b)
@@ -617,13 +617,13 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       mis = mod_sym(det_p*invmod(d1, prod_p), prod_p)
       return d1*mis
     end
-    @time T1 = hcol(TS, d)  
+    @time T1 = hcol(TS, d)
     push!(T, T1)
     @show :solve
-    @time AT = Strassen.solve_triu(T1, AT)
+    @time AT = Strassen.AbstractAlgebra._solve_triu(T1, AT)
 #    @show nbits(prod_p), nbits(d1)
 #    @show nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)))
-    if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small 
+    if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
       break
     end
 #    @show nbits(d), Ainf
@@ -631,8 +631,8 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       @show :doin_hnf
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
-    @show Had / nbits(d1)  
-      AT = Nemo.solve_triu_left(h, AT)
+    @show Had / nbits(d1)
+      AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
       if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
@@ -646,7 +646,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   @show t_det(h) // det_p, det(h)
   d1 *= t_det(h)
 
-  @time AT = Nemo.solve_triu_left(h, AT)
+  @time AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)
@@ -794,7 +794,7 @@ function dixon_init(A::ZZMatrix, B::ZZMatrix)
   D.bound = 2*maximum(abs, [_D, _N])^2 * 2^30
   D.crt_primes = UInt[]
   D.A_mod = fpMatrix[]
- 
+
   pr = ZZ(1)
   xp = p
   maxA = maximum(abs, A) *(p-1)*n*2
@@ -846,8 +846,8 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
 
       if fl
         # fl = (D.A*num == den*B)
-        sz = max(maximum(nbits, D.A) + maximum(nbits, num) 
-                                     + nbits(ncols(B)) + 1, 
+        sz = max(maximum(nbits, D.A) + maximum(nbits, num)
+                                     + nbits(ncols(B)) + 1,
                  maximum(nbits, B) + nbits(den))
         if sz < nbits(ppow)
 #          @show "no prod neccessary"
@@ -868,7 +868,7 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
         fl && return num, den
       end
     end
-  
+
     i += 1
 
     prod = ZZ(1)

@@ -26,7 +26,6 @@ function endomorphism_ring(f::EndAlgMap, L::ModAlgAssLat)
     end
     return O
   end
-  @show "endomorphism_ring computation: $(objectid(L))"
 
   Bm = basis_matrix(L)
   Bminv = basis_matrix_inverse(L)

@@ -12,10 +12,10 @@
 
   F = GF(3)
 
-  Hecke.change_base_ring(::Hecke.NfRel, ::Hecke.fpMatrix) = error("asd")
+  Hecke.change_base_ring(::Hecke.RelSimpleNumField, ::Hecke.fpMatrix) = error("asd")
   @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
 
-  Hecke.change_base_ring(::Hecke.NfRel, x::Hecke.fpMatrix) = x
+  Hecke.change_base_ring(::Hecke.RelSimpleNumField, x::Hecke.fpMatrix) = x
   @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
 
   V = @inferred hermitian_space(E, E[1 1; 1 1;])

@@ -4,15 +4,15 @@ using Hecke, Polymake
 
 import Hecke:
   solve_mixed,
-  ncols,
-  nrows
+  number_of_columns,
+  number_of_rows
 
 # Needs polymake (obviously)
 
 # Returns all vectors v such that Av == b and Cv >= 0.
 
-Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
-Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
+Hecke.number_of_rows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
+Hecke.number_of_columns(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
 function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_matrix(FlintZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(FlintZZ, 1, 1))
   if !iszero(A)

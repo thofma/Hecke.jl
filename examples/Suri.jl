@@ -31,7 +31,7 @@ import Base: +, -, *, ^
   Thus it works...
 =#
 
-function mod_lll(a::NfAbsOrdElem, I::NfAbsOrdIdl)
+function mod_lll(a::AbsNumFieldOrderElem, I::AbsNumFieldOrderIdeal)
   l = lll(I)[2]
   S = l*basis_matrix(I)
   Si = pseudo_inv(S)
@@ -40,7 +40,7 @@ function mod_lll(a::NfAbsOrdElem, I::NfAbsOrdIdl)
   return a - Hecke.parent(a)(collect(d*S))
 end
 
-function mod_lll(a::nf_elem, I::Hecke.NfAbsOrdFracIdl)
+function mod_lll(a::AbsSimpleNumFieldElem, I::Hecke.AbsNumFieldOrderFractionalIdeal)
   O = order(I)
   d = lcm(denominator(a, O), denominator(I))
   return divexact(Hecke.parent(a)(mod_lll(O(d*a), simplify(I*d).num)), d)
@@ -65,7 +65,7 @@ function _reduce(a::Hecke.PMat, T)
   end
 end
 
-function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.MatSpaceElem{nf_elem})
+function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, gamma::Generic.MatSpaceElem{AbsSimpleNumFieldElem})
 
   @assert iszero(hcat(M.matrix', b)*gamma)
   zk = base_ring(M)
@@ -97,12 +97,12 @@ function extend(M::Hecke.PMat, b::Generic.MatSpaceElem{nf_elem}, gamma::Generic.
   return e
 end
 
-function Hecke.denominator(P::Hecke.PMat, M::NfOrd)
+function Hecke.denominator(P::Hecke.PMat, M::AbsSimpleNumFieldOrder)
   l = ZZRingElem(1)
   p = matrix(P)
   for i=1:nrows(P)
     I = coefficient_ideals(P)[i]
-    if isa(I, Hecke.NfAbsOrdFracIdl)
+    if isa(I, Hecke.AbsNumFieldOrderFractionalIdeal)
       Hecke.assure_2_normal(I.num)
     else
       Hecke.assure_2_normal(I)
@@ -129,7 +129,7 @@ function Hecke.dual(P::Hecke.PMat)
   return pseudo_matrix(inv(P.matrix)', map(inv, coefficient_ideals(P)))
 end
 
-function Hecke.invmod(A::Generic.MatSpaceElem{nf_elem}, X::ZZRingElem)
+function Hecke.invmod(A::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, X::ZZRingElem)
   k = base_ring(A)
   zk = maximal_order(k)
   q, mq = quo(zk, X*zk)
@@ -157,7 +157,7 @@ function my_mod_sym!(A::ZZMatrix, X::ZZRingElem, ::Any)
   mod_sym!(A, X)
 end
 
-function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
+function valuation(a::AbsSimpleNumFieldOrderElem, X::ZZRingElem)
   v = 0
   first = true
   for x = coordinates(a)
@@ -173,13 +173,13 @@ function valuation(a::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
   return v
 end
 
-function mod_sym(A::NfAbsOrdElem{AnticNumberField,nf_elem}, X::ZZRingElem)
+function mod_sym(A::AbsSimpleNumFieldOrderElem, X::ZZRingElem)
   c = coordinates(A)
   d = map(x->Hecke.mod_sym(x, X), c)
   return parent(A)(d)
 end
 
-function my_mod_sym!(A::Generic.MatSpaceElem{nf_elem}, X::ZZRingElem)
+function my_mod_sym!(A::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, X::ZZRingElem)
   k = base_ring(A)
   zk = maximal_order(k)
   for i=1:nrows(A)
@@ -415,10 +415,10 @@ module RRSMatNf
 using Hecke
 
 mutable struct RRSMatSpace
-  k::AnticNumberField
+  k::AbsSimpleNumField
   p_data::Dict{Int, Any}
 
-  function RRSMatSpace(k::AnticNumberField)
+  function RRSMatSpace(k::AbsSimpleNumField)
     r = new()
     r.k = k
     r.p_data = Dict{Int, Any}()
@@ -469,7 +469,7 @@ mutable struct RRSMat
   ncols::Int
   data::Dict{Int, Any}
 
-  function RRSMat(R::RRSMatSpace, a::MatElem{nf_elem}, np::Int)
+  function RRSMat(R::RRSMatSpace, a::MatElem{AbsSimpleNumFieldElem}, np::Int)
     r = new()
     r.parent = R
     r.nrows = nrows(a)
@@ -495,8 +495,8 @@ mutable struct RRSMat
   end
 end
 
-Hecke.nrows(A::RRSMat) = A.nrows
-Hecke.ncols(A::RRSMat) = A.ncols
+Hecke.number_of_rows(A::RRSMat) = A.nrows
+Hecke.number_of_columns(A::RRSMat) = A.ncols
 
 Hecke.parent(M::RRSMat) = M.parent
 import Base:+, *, inv
@@ -529,7 +529,7 @@ function extend(A::RRSMat, P::Int)
   k =
   for p = keys(A.data)
     ce = parent(A).p_data[p]
-    fp[p] = [zero_matrix(residue_ring(ZZ, p), nrows(A), ncols(A)) for i = 1:degree(k)]
+    fp[p] = [zero_matrix(residue_ring(ZZ, p)[1], nrows(A), ncols(A)) for i = 1:degree(k)]
     nu = Hecke.modular_lift(A.data[p], ce)
     for i=1:nrows(A)
       for j=1:ncols(A)

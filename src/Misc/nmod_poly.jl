@@ -99,7 +99,7 @@ function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResE
   for p = cp
     lg = p^valuation(m, p)
     push!(pg, lg)
-    R1 = residue_ring(FlintZZ, S(lg), cached = false)
+    R1 = residue_ring(FlintZZ, S(lg), cached = false)[1]
     R1t = polynomial_ring(R1, cached = false)[1]
     #g is bad in R1, so factor it
     gR1 = R1t(T[R1(lift(coeff(g, i))) for i = 0:degree(g)])
@@ -199,7 +199,7 @@ function resultant_ideal_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: R
       s = gcd(lift(res), pn)
       if !isone(s)
         new_pn = divexact(pn, s)
-        R1 = residue_ring(FlintZZ, S(new_pn), cached = false)
+        R1 = residue_ring(FlintZZ, S(new_pn), cached = false)[1]
         R1t = polynomial_ring(R1, "y", cached = false)[1]
         f2 = R1t(T[R1(lift(coeff(f, i))) for i = 0:degree(f)])
         g2 = R1t(T[R1(lift(coeff(g, i))) for i = 0:degree(g)])
@@ -335,7 +335,7 @@ function rres_sircana_pp(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: Re
     end
     if degree(g) < 1
 
-      if divisible(lift(coeff(f, degree(f))), p)
+      if is_divisible_by(lift(coeff(f, degree(f))), p)
         #need the constant coeff * the annihilator of the others...
         a = coeff(f, 1)
         for i = 2:degree(f)
@@ -363,7 +363,7 @@ function rres_sircana_pp(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: Re
       return res
     end
 
-    if divisible(lift(coeff(g, degree(g))), p)
+    if is_divisible_by(lift(coeff(g, degree(g))), p)
       #one of the coefficient will now be invertible (at least after the splitting)
       g = fun_factor(g)[2]
     end
@@ -456,7 +456,7 @@ function rres_sircana(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: ResEl
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
-        R1 = residue_ring(FlintZZ, S(lg), cached=false)
+        R1 = residue_ring(FlintZZ, S(lg), cached=false)[1]
         R1t = polynomial_ring(R1, cached=false)[1]
         #g is bad in R1, so factor it
         gR1 = R1t(lift(Zx, g))
@@ -512,13 +512,13 @@ function rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResEle
   end
   if is_unit(leading_coefficient(g))
     q, r = divrem(u, g)
-    @hassert :NfOrd 1 res == r*f + (v+q*f)*g
+    @hassert :AbsNumFieldOrder 1 res == r*f + (v+q*f)*g
     mul!(q, q, f)
     add!(v, v, q)
     return res, r, v
   else
     q, r = divrem(v, f)
-    @hassert :NfOrd 1 res == (u+q*g)*f + r*g
+    @hassert :AbsNumFieldOrder 1 res == (u+q*g)*f + r*g
     mul!(q, q, g)
     add!(u, u, q)
     return res, u, r
@@ -539,11 +539,11 @@ function rresx_sircana_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Res
   end
   if is_unit(leading_coefficient(g))
     q, r = divrem(u, g)
-    @hassert :NfOrd 1 res == r*f + (v+q*f)*g
+    @hassert :AbsNumFieldOrder 1 res == r*f + (v+q*f)*g
     return res, r, v+q*f
   else
     q, r = divrem(v, f)
-    @hassert :NfOrd 1 res == (u+q*g)*f + r*g
+    @hassert :AbsNumFieldOrder 1 res == (u+q*g)*f + r*g
     return res, u+q*g, r
   end
 end
@@ -620,7 +620,7 @@ function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResEl
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
-        R1 = residue_ring(FlintZZ, S(lg), cached=false)
+        R1 = residue_ring(FlintZZ, S(lg), cached=false)[1]
         R1t = polynomial_ring(R1, cached=false)[1]
         #g is bad in R1, so factor it
         gR1 = R1t(lift(Zx, g))
@@ -809,7 +809,7 @@ function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
       gc = NTuple{3, ZZPolyRingElem}[]
       for p = cp
         F, mF = quo(parent(p), p^valuation(modulus(R), p))
-        gp = map_coefficients(mF, g)
+        gp = map_coefficients(mF, g, cached = false)
         @assert base_ring(gp) == F
         fp = map_coefficients(mF, f, parent = parent(gp))
         if !is_unit(leading_coefficient(fp))
@@ -826,7 +826,7 @@ function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
             _, gp = fun_factor(gp)
           end
         end
-        push!(gc, map(y->map_coefficients(x->lift(x), y), gcd_sircana(fp, gp)))
+        push!(gc, map(y->map_coefficients(x->lift(x), y, cached = false), gcd_sircana(fp, gp)))
       end
       f = map_coefficients(R, induce_crt([x[1] for x = gc], cp), parent = parent(f))
       qf = map_coefficients(R, induce_crt([x[2] for x = gc], cp), parent = parent(f))
@@ -962,7 +962,7 @@ function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Re
     push!(pg, lg)
 
     if lg != m
-      R1 = residue_ring(FlintZZ, S(lg), cached=false)
+      R1 = residue_ring(FlintZZ, S(lg), cached=false)[1]
       R1t = polynomial_ring(R1, cached=false)[1]
       #g is bad in R1, so factor it
       gR1 = R1t(lift(Zx, g))
@@ -1064,7 +1064,7 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
   f2 = lift(Zy, f)
   mod = ZZRingElem(gcd(smod, ZZRingElem(modulus(Rx)))) #We have the equality modulo mod
   mod = gcd(mod*mod, ZZRingElem(modulus(Rx)))
-  R1 = residue_ring(FlintZZ, mod, cached = false)
+  R1 = residue_ring(FlintZZ, mod, cached = false)[1]
   R1x, x = polynomial_ring(R1, "x", cached = false)
   s = R1x(lift(inv(coeff(u0, 0))))
   t = zero(R1x)
@@ -1073,7 +1073,7 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
 
   f1 = R1x(f2)
   u, g, s, t = _hensel(f1, u, g, s, t)
-  @hassert :NfOrd 1 f1 == u*g
+  @hassert :AbsNumFieldOrder 1 f1 == u*g
   i = 1
   modRx = ZZRingElem(modulus(Rx))
   while modRx > mod
@@ -1082,7 +1082,7 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
     if mod > modRx
       mod = modRx
     end
-    R1 = residue_ring(FlintZZ, mod, cached = false)
+    R1 = residue_ring(FlintZZ, mod, cached = false)[1]
     R1x, x = polynomial_ring(R1, "x", cached = false)
     u = R1x(lift(Zy, u))
     g = R1x(lift(Zy, g))
@@ -1093,7 +1093,7 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
 
     u, g, s, t = _hensel(f1, u, g, s, t)
 
-    @hassert :NfOrd 1 f1 == u*g
+    @hassert :AbsNumFieldOrder 1 f1 == u*g
 
     if i>20 #in general: loop forever... one could check that the
       # contents of f-gh and s*g+t*h - 1 is nilpotent.
@@ -1108,7 +1108,7 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
   end
   u0 = Rx(lift(Zy, u))
   g0 = Rx(lift(Zy, g))
-  @hassert :NfOrd 1 g0*u0 == f
+  @hassert :AbsNumFieldOrder 1 g0*u0 == f
   return u0, g0
 end
 
@@ -1203,13 +1203,12 @@ function primsplit(f::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerU
 end
 
 function quo(R::fqPolyRepPolyRing, f::fqPolyRepPolyRingElem)
-  Q = residue_ring(R, f)
-  mQ = MapFromFunc(R, Q, x -> Q(x), y -> lift(y))
+  Q, mQ = residue_ring(R, f)
   return Q, mQ
 end
 
 #= not finished
-function unit_group(R::Generic.ResidueRing{fqPolyRepPolyRingElem})
+function unit_group(R::EuclideanRingResidueRing{fqPolyRepPolyRingElem})
   f = modulus(R)
   lf = factor(f)
   lu = [unit_group_pp(p, k) for (p,k) = f.fac]
@@ -1490,10 +1489,10 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem,
       end
       cp = coprime_base(_to_base)
       for p in cp
-        if isone(p) || !divisible(ZZRingElem(m), p)
+        if isone(p) || !is_divisible_by(ZZRingElem(m), p)
           continue
         end
-        R = residue_ring(FlintZZ, Int(p), cached = false)
+        R = residue_ring(FlintZZ, Int(p), cached = false)[1]
         Rx = polynomial_ring(R, "x", cached = false)[1]
         f1 = Rx(lift(Zx, c*f))
         g1 = Rx(lift(Zx, c1*g))

@@ -58,7 +58,7 @@ isfinite(K::LocalField) = isfinite(base_field(K))
 #
 ################################################################################
 
-function is_eisenstein_polynomial(f::PolyRingElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
+function is_eisenstein_polynomial(f::PolyRingElem{S}) where S <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   if !iszero(valuation(leading_coefficient(f)))
     return false
   end
@@ -91,7 +91,7 @@ function is_eisenstein_polynomial(f::T, p::S) where {T <: Union{QQPolyRingElem, 
   return true
 end
 
-function is_eisenstein_polynomial(f::PolyRingElem{<:NumFieldElem}, p::NumFieldOrdIdl)
+function is_eisenstein_polynomial(f::PolyRingElem{<:NumFieldElem}, p::NumFieldOrderIdeal)
   @assert is_prime(p)
   if !iszero(valuation(leading_coefficient(f), p))
     return false
@@ -108,10 +108,10 @@ function is_eisenstein_polynomial(f::PolyRingElem{<:NumFieldElem}, p::NumFieldOr
   return true
 end
 
-function _generates_unramified_extension(f::PolyRingElem{S}) where S <: Union{padic, qadic, LocalFieldElem}
+function _generates_unramified_extension(f::PolyRingElem{S}) where S <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   K = base_ring(f)
   F, mF = residue_field(K)
-  g = map_coefficients(mF, f)
+  g = map_coefficients(mF, f, cached = false)
   return is_irreducible(g)
 end
 
@@ -131,9 +131,9 @@ end
 #
 ################################################################################
 
-function prime_field(L::Union{FlintQadicField, LocalField})
+function prime_field(L::Union{QadicField, LocalField})
   L = base_ring(defining_polynomial(L))
-  while typeof(L) != FlintPadicField
+  while typeof(L) != PadicField
     L = base_ring(defining_polynomial(L))
   end
   return L
@@ -148,8 +148,8 @@ function absolute_base_field(L::LocalField)
   return absolute_base_field(base_field(L))
 end
 
-absolute_base_field(L::FlintPadicField) = L
-absolute_base_field(L::FlintQadicField) = base_field(L)
+absolute_base_field(L::PadicField) = L
+absolute_base_field(L::QadicField) = base_field(L)
 
 ################################################################################
 #
@@ -161,11 +161,11 @@ function degree(K::LocalField)
   return degree(defining_polynomial(K, 1)) #inf. recursion loop otherwise
 end
 
-function absolute_degree(::FlintPadicField)
+function absolute_degree(::PadicField)
   return 1
 end
 
-function absolute_degree(K::FlintQadicField)
+function absolute_degree(K::QadicField)
   return degree(K)
 end
 function absolute_degree(K::LocalField)
@@ -195,11 +195,11 @@ end
 #
 ################################################################################
 
-function ramification_index(K::FlintPadicField)
+function ramification_index(K::PadicField)
   return 1
 end
 
-function ramification_index(K::FlintQadicField)
+function ramification_index(K::QadicField)
   return 1
 end
 
@@ -222,7 +222,7 @@ function absolute_ramification_index(K::LocalField{S, T}) where {S <: FieldElem,
   return ramification_index(K)*absolute_ramification_index(base_field(K))
 end
 
-function ramification_index(L::LocalField, K::Union{FlintPadicField, FlintQadicField, LocalField})
+function ramification_index(L::LocalField, K::Union{PadicField, QadicField, LocalField})
   ri = 1
   while absolute_degree(L) >= absolute_degree(K)
     ri *= ramification_index(L)
@@ -241,11 +241,11 @@ end
 #
 ################################################################################
 
-function inertia_degree(K::FlintPadicField)
+function inertia_degree(K::PadicField)
   return 1
 end
 
-function inertia_degree(K::FlintQadicField)
+function inertia_degree(K::QadicField)
   return degree(K)
 end
 
@@ -278,7 +278,7 @@ absolute_inertia_degree(K::QadicField) = degree(K)
 #
 ################################################################################
 
-function basis(K::Union{FlintQadicField, LocalField})
+function basis(K::Union{QadicField, LocalField})
   return powers(gen(K), degree(K)-1)
 end
 
@@ -294,8 +294,8 @@ function absolute_basis(K::LocalField)
   return BK
 end
 
-absolute_basis(K::FlintQadicField) = basis(K)
-absolute_basis(K::FlintPadicField) = padic[one(K)]
+absolute_basis(K::QadicField) = basis(K)
+absolute_basis(K::PadicField) = PadicFieldElem[one(K)]
 
 ################################################################################
 #
@@ -361,7 +361,7 @@ end
 function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
   K = PadicField(p, precision)
-  fK = map_coefficients(K, f)
+  fK = map_coefficients(K, f, cached = false)
   return local_field(fK, s, T, cached = cached, check = check)
 end
 
@@ -381,7 +381,7 @@ function setprecision!(K::LocalField, n::Int)
   return nothing
 end
 
-function setprecision(f::Function, K::Union{LocalField, FlintPadicField, FlintQadicField}, n::Int)
+function setprecision(f::Function, K::Union{LocalField, PadicField, QadicField}, n::Int)
   old = precision(K)
 #  @assert n>=0
   setprecision!(K, n)
@@ -485,7 +485,7 @@ end
 
  ################### unramified extension over local field L of a given degree n ####################
 
- function unramified_extension(L::Union{FlintPadicField, FlintQadicField, LocalField}, n::Int)
+ function unramified_extension(L::Union{PadicField, QadicField, LocalField}, n::Int)
    R, mR = residue_field(L)
    Rt, t = polynomial_ring(R, "t", cached = false)
    f = Rt(push!([rand(R) for i = 0:n-1], one(R)))

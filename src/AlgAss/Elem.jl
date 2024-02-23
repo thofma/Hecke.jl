@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function AbstractAlgebra.promote_rule(U::Type{<:AbsAlgAssElem{T}}, ::Type{S}) where {T, S}
+function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem{T}}, ::Type{S}) where {T, S}
   if AbstractAlgebra.promote_rule(T, S) === T
     return U
   else
@@ -12,13 +12,13 @@ function AbstractAlgebra.promote_rule(U::Type{<:AbsAlgAssElem{T}}, ::Type{S}) wh
   end
 end
 
-parent_type(::Type{AlgAssElem{T, S}}) where {T, S} = S
+parent_type(::Type{AssociativeAlgebraElem{T, S}}) where {T, S} = S
 
-parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
+parent_type(::Type{GroupAlgebraElem{T, S}}) where {T, S} = S
 
-parent(a::AbsAlgAssElem) = a.parent
+parent(a::AbstractAssociativeAlgebraElem) = a.parent
 
-function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
+function (K::AbsSimpleNumField)(a::AbstractAssociativeAlgebraElem{AbsSimpleNumFieldElem})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))
@@ -40,7 +40,7 @@ function (K::AnticNumberField)(a::AbsAlgAssElem{nf_elem})
   error("Not an element of the base field")
 end
 
-function (K::QQField)(a::AbsAlgAssElem{QQFieldElem})
+function (K::QQField)(a::AbstractAssociativeAlgebraElem{QQFieldElem})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
   o = one(parent(a))
@@ -70,7 +70,7 @@ end
 ################################################################################
 
 # This is may look weird but is really useful.
-function _elem_in_algebra(a::AbsAlgAssElem; copy::Bool = true)
+function _elem_in_algebra(a::AbstractAssociativeAlgebraElem; copy::Bool = true)
   if copy
     return deepcopy(a)
   else
@@ -84,9 +84,9 @@ end
 #
 ################################################################################
 
-zero(A::AbsAlgAss) = A()::elem_type(A)
+zero(A::AbstractAssociativeAlgebra) = A()::elem_type(A)
 
-function one(A::AbsAlgAss)
+function one(A::AbstractAssociativeAlgebra)
   if !has_one(A)
     error("Algebra does not have a one")
   end
@@ -100,11 +100,11 @@ end
 ################################################################################
 
 @doc raw"""
-    is_integral(a::AbsAlgAssElem) -> Bool
+    is_integral(a::AbstractAssociativeAlgebraElem) -> Bool
 
 Returns `true` if $a$ is integral and `false` otherwise.
 """
-function is_integral(a::AbsAlgAssElem)
+function is_integral(a::AbstractAssociativeAlgebraElem)
   f = minpoly(a)
   for i = 0:(degree(f) - 1)
     if !is_integral(coeff(f, i))
@@ -120,7 +120,7 @@ end
 #
 ################################################################################
 
-function -(a::AbsAlgAssElem{T}) where {T}
+function -(a::AbstractAssociativeAlgebraElem{T}) where {T}
   v = T[ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
   return parent(a)(v)
 end
@@ -131,7 +131,7 @@ end
 #
 ################################################################################
 
-function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
+function +(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   v = Vector{T}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
@@ -140,7 +140,7 @@ function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   return parent(a)(v)
 end
 
-function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
+function -(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   v = Vector{T}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
@@ -149,7 +149,7 @@ function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   return parent(a)(v)
 end
 
-function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
+function *(a::AssociativeAlgebraElem{T}, b::AssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
 
   ca = coefficients(a, copy = false)
@@ -179,7 +179,7 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   return c
 end
 
-function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
+function *(a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
   d = dim(A)
@@ -209,21 +209,21 @@ end
 #
 ################################################################################
 
-function zero!(a::AlgGrpElem)
+function zero!(a::GroupAlgebraElem)
   for i = 1:length(coefficients(a, copy = false))
     a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
   end
   return a
 end
 
-function zero!(a::AlgAssElem)
+function zero!(a::AssociativeAlgebraElem)
   for i = 1:length(coefficients(a, copy = false))
     a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
   end
   return a
 end
 
-function add!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
+function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   parent(c) != parent(b) && error("Parents don't match.")
   A = parent(a)
@@ -242,7 +242,7 @@ function add!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) whe
   return c
 end
 
-function addeq!(b::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}) where {T}
+function addeq!(b::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
 
@@ -253,7 +253,7 @@ function addeq!(b::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}) where {T}
   return b
 end
 
-function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::T) where {T}
+function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::T) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
   if c === a
@@ -268,9 +268,9 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::T) where {T}
   return c
 end
 
-mul!(c::AbsAlgAssElem{T}, a::T, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
+mul!(c::AbstractAssociativeAlgebraElem{T}, a::T, b::AbstractAssociativeAlgebraElem{T}) where {T} = mul!(c, b, a)
 
-function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, ZZRingElem }) where {T}
+function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::Union{ Int, ZZRingElem }) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
   if c === a
@@ -279,20 +279,22 @@ function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::Union{ Int, ZZRingEle
     return d
   end
 
+  ccoeffs = coefficients(c, copy = false)
+
   bfmpq = QQFieldElem(b, 1)
   for i = 1:dim(parent(a))
-    c.coeffs[i] = mul!(coefficients(c, copy = false)[i], coefficients(a, copy = false)[i], bfmpq)
+    ccoeffs[i] = mul!(ccoeffs[i], coefficients(a, copy = false)[i], bfmpq)
   end
 
-  if c isa AlgMatElem
+  if c isa MatAlgebraElem
     c.matrix = mul!(c.matrix, a.matrix, b)
   end
   return c
 end
 
-mul!(c::AbsAlgAssElem{T}, a::Union{ Int, ZZRingElem }, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
+mul!(c::AbstractAssociativeAlgebraElem{T}, a::Union{ Int, ZZRingElem }, b::AbstractAssociativeAlgebraElem{T}) where {T} = mul!(c, b, a)
 
-function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
+function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
   d = dim(A)
@@ -334,7 +336,7 @@ else
   _ismutabletype(::Type{T}) where {T} = ismutabletype(T)
 end
 
-function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
+function mul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::AssociativeAlgebraElem{T}) where {T}
   A = parent(a)
   n = dim(A)
   t = base_ring(A)()
@@ -384,14 +386,14 @@ end
 
 # Tries to compute a/b if action is :right and b\a if action is :left
 @doc raw"""
-    is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
-      -> Bool, AbsAlgAssElem
+    is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol)
+      -> Bool, AbstractAssociativeAlgebraElem
 
 Returns `true` and an element $c$ such that $a = c \cdot b$ (if
 `action == :right`) respectively $a = b \cdot c$ (if `action == :left`) if
 such an element exists and `false` and $0$ otherwise.
 """
-function is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+function is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol)
   parent(a) != parent(b) && error("Parents don't match.")
   # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
 
@@ -406,12 +408,12 @@ function is_divisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
     return false, A()
   end
 
-  vc = solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
+  vc = _solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
   return true, A([ vc[i, 1] for i = 1:dim(A) ])
 end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left; check::Bool=true)
+function divexact(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol = :left; check::Bool=true)
   t, c = is_divisible(a, b, action)
   if !t
     error("Division not possible")
@@ -420,18 +422,18 @@ function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol = :left; ch
 end
 
 @doc raw"""
-    divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
+    divexact_right(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem) -> AbstractAssociativeAlgebraElem
 
 Returns an element $c$ such that $a = c \cdot b$.
 """
-divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem; check::Bool=true) = divexact(a, b, :right; check=check)
+divexact_right(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem; check::Bool=true) = divexact(a, b, :right; check=check)
 
 @doc raw"""
-    divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) -> AbsAlgAssElem
+    divexact_left(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem) -> AbstractAssociativeAlgebraElem
 
 Returns an element $c$ such that $a = b \cdot c$.
 """
-divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem; check::Bool=true) = divexact(a, b, :left; check=check)
+divexact_left(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem; check::Bool=true) = divexact(a, b, :left; check=check)
 
 ################################################################################
 #
@@ -439,29 +441,29 @@ divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem; check::Bool=true) = divexact(a
 #
 ################################################################################
 
-function *(a::AbsAlgAssElem{S}, b::S) where {S <: RingElem}
+function *(a::AbstractAssociativeAlgebraElem{S}, b::S) where {S <: RingElem}
   return typeof(a)(parent(a), coefficients(a, copy = false).* Ref(b))
 end
 
-*(b::S, a::AbsAlgAssElem{S}) where {S <: RingElem} = a*b
+*(b::S, a::AbstractAssociativeAlgebraElem{S}) where {S <: RingElem} = a*b
 
-*(a::AbsAlgAssElem{T}, b::Integer) where {T <: RingElem} = a*base_ring(parent(a))(b)
+*(a::AbstractAssociativeAlgebraElem{T}, b::Integer) where {T <: RingElem} = a*base_ring(parent(a))(b)
 
-*(b::Integer, a::AbsAlgAssElem{T}) where {T <: RingElem} = a*b
+*(b::Integer, a::AbstractAssociativeAlgebraElem{T}) where {T <: RingElem} = a*b
 
-dot(a::AbsAlgAssElem{T}, b::T) where {T <: RingElem} = a*b
+dot(a::AbstractAssociativeAlgebraElem{T}, b::T) where {T <: RingElem} = a*b
 
-dot(b::T, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
+dot(b::T, a::AbstractAssociativeAlgebraElem{T}) where {T <: RingElem} = b*a
 
-dot(a::AbsAlgAssElem{T}, b::Integer) where {T <: RingElem} = a*b
+dot(a::AbstractAssociativeAlgebraElem{T}, b::Integer) where {T <: RingElem} = a*b
 
-dot(b::Integer, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
+dot(b::Integer, a::AbstractAssociativeAlgebraElem{T}) where {T <: RingElem} = b*a
 
-dot(a::AbsAlgAssElem{T}, b::ZZRingElem) where {T <: RingElem} = a*b
+dot(a::AbstractAssociativeAlgebraElem{T}, b::ZZRingElem) where {T <: RingElem} = a*b
 
-dot(b::ZZRingElem, a::AbsAlgAssElem{T}) where {T <: RingElem} = b*a
+dot(b::ZZRingElem, a::AbstractAssociativeAlgebraElem{T}) where {T <: RingElem} = b*a
 
-function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Generic.ResidueFieldElem{S} where S <: Union{Int, ZZRingElem}
+function dot(c::Vector{T}, V::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}}) where T <: EuclideanRingResidueFieldElem{S} where S <: Union{Int, ZZRingElem}
   @assert length(c) == length(V)
   A = parent(V[1])
   res = zero(A)
@@ -473,7 +475,7 @@ function dot(c::Vector{T}, V::Vector{AlgAssElem{T, AlgAss{T}}}) where T <: Gener
   return res
 end
 
-function dot(c::Vector{fpFieldElem}, V::Vector{AlgAssElem{fpFieldElem, AlgAss{fpFieldElem}}})
+function dot(c::Vector{fpFieldElem}, V::Vector{AssociativeAlgebraElem{fpFieldElem, StructureConstantAlgebra{fpFieldElem}}})
   @assert length(c) == length(V)
   A = parent(V[1])
   res = zero(A)
@@ -492,18 +494,18 @@ end
 ################################################################################
 
 @doc raw"""
-    is_invertible(a::AbsAlgAssElem) -> Bool, AbsAlgAssElem
+    is_invertible(a::AbstractAssociativeAlgebraElem) -> Bool, AbstractAssociativeAlgebraElem
 
 Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
 """
-is_invertible(a::AbsAlgAssElem) = is_divisible(one(parent(a)), a, :right)
+is_invertible(a::AbstractAssociativeAlgebraElem) = is_divisible(one(parent(a)), a, :right)
 
 @doc raw"""
-    inv(a::AbsAlgAssElem) -> AbsAlgAssElem
+    inv(a::AbstractAssociativeAlgebraElem) -> AbstractAssociativeAlgebraElem
 
 Assuming $a$ is a unit this function returns $a^{-1}$.
 """
-function inv(a::AbsAlgAssElem)
+function inv(a::AbstractAssociativeAlgebraElem)
   t, b = is_invertible(a)
   if !t
     error("Element is not invertible")
@@ -517,7 +519,7 @@ end
 #
 ################################################################################
 
-function ^(a::AbsAlgAssElem, b::Int)
+function ^(a::AbstractAssociativeAlgebraElem, b::Int)
   if b == 0
     return one(parent(a))
   elseif b == 1
@@ -544,7 +546,7 @@ function ^(a::AbsAlgAssElem, b::Int)
   end
 end
 
-function ^(a::AbsAlgAssElem, b::ZZRingElem)
+function ^(a::AbstractAssociativeAlgebraElem, b::ZZRingElem)
   if fits(Int, b)
     return a^Int(b)
   end
@@ -578,60 +580,60 @@ end
 #
 ################################################################################
 
-function (A::AlgAss{T})() where {T}
+function (A::StructureConstantAlgebra{T})() where {T}
   if iszero(A)
     return A(T[])
   end
-  return AlgAssElem{T, AlgAss{T}}(A)
+  return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A)
 end
 
-function (A::AlgQuat{T})() where {T}
-  return AlgAssElem{T, AlgAss{T}}(A)
+function (A::QuaternionAlgebra{T})() where {T}
+  return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A)
 end
 
-(A::AlgGrp{T, S, R})() where {T, S, R} = AlgGrpElem{T, typeof(A)}(A)
+(A::GroupAlgebra{T, S, R})() where {T, S, R} = GroupAlgebraElem{T, typeof(A)}(A)
 
-function (A::AlgAss{T})(c::Vector{T}; copy::Bool = true) where {T}
+function (A::StructureConstantAlgebra{T})(c::Vector{T}; copy::Bool = true) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
   if copy
-    return AlgAssElem{T, AlgAss{T}}(A, deepcopy(c))
+    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, deepcopy(c))
   else
-    return AlgAssElem{T, AlgAss{T}}(A, c)
+    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, c)
   end
 end
 
-function (A::AlgQuat{T})(c::Vector{T}; copy::Bool = true) where {T}
+function (A::QuaternionAlgebra{T})(c::Vector{T}; copy::Bool = true) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
-  return AlgAssElem{T, AlgQuat{T}}(A, copy ? deepcopy(c) : c)
+  return AssociativeAlgebraElem{T, QuaternionAlgebra{T}}(A, copy ? deepcopy(c) : c)
 end
 
-function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}
+function Base.getindex(A::AbstractAssociativeAlgebra{T}, i::Int) where {T}
   (i < 1 || i > dim(A)) && error("Index must be in range $(1:dim(A))")
   return basis(A)[i]
 end
 
-#function (A::AlgGrp{T, S, R})(c::Vector{T}) where {T, S, R}
+#function (A::GroupAlgebra{T, S, R})(c::Vector{T}) where {T, S, R}
 #  length(c) != dim(A) && error("Dimensions don't match.")
-#  return AlgGrpElem{T, typeof(A)}(A, deepcopy(c))
+#  return GroupAlgebraElem{T, typeof(A)}(A, deepcopy(c))
 #end
 
-function (A::AlgGrp{T, S, R})(c::R) where {T, S, R}
-  return AlgGrpElem{T, typeof(A)}(A, deepcopy(c))
+function (A::GroupAlgebra{T, S, R})(c::R) where {T, S, R}
+  return GroupAlgebraElem{T, typeof(A)}(A, deepcopy(c))
 end
 
 # Generic.Mat needs it
-function (A::AbsAlgAss)(a::AlgAssElem)
+function (A::AbstractAssociativeAlgebra)(a::AssociativeAlgebraElem)
   @assert parent(a) == A "Wrong parent"
   return a
 end
 
-function (A::AlgGrp)(a::AlgGrpElem)
+function (A::GroupAlgebra)(a::GroupAlgebraElem)
   @assert parent(a) == A "Wrong parent"
   return a
 end
 
 # For polynomial substitution
-for T in subtypes(AbsAlgAss)
+for T in subtypes(AbstractAssociativeAlgebra)
   @eval begin
     function (A::$T)(a::Union{Integer, ZZRingElem, Rational{<: Integer}})
       return A(base_ring(A)(a))
@@ -643,9 +645,9 @@ for T in subtypes(AbsAlgAss)
   end
 end
 
-(A::AbsAlgAss{T})(x::T) where {T <: RingElem} = x * one(A)
+(A::AbstractAssociativeAlgebra{T})(x::T) where {T <: RingElem} = x * one(A)
 
-(A::AbsAlgAss{T})(x::T) where {T <: AlgAssElem} = x * one(A)
+(A::AbstractAssociativeAlgebra{T})(x::T) where {T <: AssociativeAlgebraElem} = x * one(A)
 
 ################################################################################
 #
@@ -653,7 +655,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, a::AbsAlgAssElem)
+function show(io::IO, a::AbstractAssociativeAlgebraElem)
   if get(io, :compact, false)
     print(io, coefficients(a, copy = false))
   else
@@ -672,7 +674,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::AbsAlgAssElem{T}, dict::IdDict) where {T}
+function Base.deepcopy_internal(a::AbstractAssociativeAlgebraElem{T}, dict::IdDict) where {T}
   b = parent(a)()
   for x in fieldnames(typeof(a))
     if x != :parent && isdefined(a, x)
@@ -682,7 +684,7 @@ function Base.deepcopy_internal(a::AbsAlgAssElem{T}, dict::IdDict) where {T}
   return b
 end
 
-Base.copy(a::AbsAlgAssElem) = deepcopy(a)
+Base.copy(a::AbstractAssociativeAlgebraElem) = deepcopy(a)
 
 ################################################################################
 #
@@ -690,7 +692,7 @@ Base.copy(a::AbsAlgAssElem) = deepcopy(a)
 #
 ################################################################################
 
-function Base.hash(a::AbsAlgAssElem{T}, h::UInt) where {T}
+function Base.hash(a::AbstractAssociativeAlgebraElem{T}, h::UInt) where {T}
   return Base.hash(coefficients(a, copy = false), h)
 end
 
@@ -700,7 +702,7 @@ end
 #
 ################################################################################
 
-function ==(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
+function ==(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && return false
   return coefficients(a, copy = false) == coefficients(b, copy = false)
 end
@@ -712,35 +714,35 @@ end
 ################################################################################
 
 @doc raw"""
-    minpoly(a::AbsAlgAssElem) -> PolyRingElem
+    minpoly(a::AbstractAssociativeAlgebraElem) -> PolyRingElem
 
 Returns the minimal polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.
 """
-function Generic.minpoly(a::AbsAlgAssElem)
+function Generic.minpoly(a::AbstractAssociativeAlgebraElem)
   M = representation_matrix(a)
   R = polynomial_ring(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, a)
 end
 
-function Generic.minpoly(R::PolyRing, a::AbsAlgAssElem)
+function Generic.minpoly(R::PolyRing, a::AbstractAssociativeAlgebraElem)
   M = representation_matrix(a)
   return minpoly(R, M)
 end
 
 @doc raw"""
-    charpoly(a::AbsAlgAssElem) -> PolyRingElem
+    charpoly(a::AbstractAssociativeAlgebraElem) -> PolyRingElem
 
 Returns the characteristic polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.
 """
-function charpoly(a::AbsAlgAssElem)
+function charpoly(a::AbstractAssociativeAlgebraElem)
   M = representation_matrix(a)
   R = polynomial_ring(base_ring(parent(a)), "x", cached = false)[1]
   return charpoly(R, M)
 end
 
-function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
+function _reduced_charpoly_simple(a::AbstractAssociativeAlgebraElem, R::PolyRing)
   A = parent(a)
   @assert is_simple(A)
 
@@ -771,12 +773,12 @@ function _reduced_charpoly_simple(a::AbsAlgAssElem, R::PolyRing)
 end
 
 @doc raw"""
-    reduced_charpoly(a::AbsAlgAssElem) -> PolyRingElem
+    reduced_charpoly(a::AbstractAssociativeAlgebraElem) -> PolyRingElem
 
 Returns the reduced characteristic polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.
 """
-function reduced_charpoly(a::AbsAlgAssElem)
+function reduced_charpoly(a::AbstractAssociativeAlgebraElem)
   A = parent(a)
   R = polynomial_ring(base_ring(A), "x", cached = false)[1]
   W = decompose(A)
@@ -793,7 +795,7 @@ end
 #
 ################################################################################
 
-function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
+function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbstractAssociativeAlgebraElem{T}) where T
   ca = coefficients(a, copy = false)
   for c = 1:ncols(M)
     if M isa QQMatrix
@@ -805,7 +807,7 @@ function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
   return nothing
 end
 
-function elem_from_mat_row(A::AbsAlgAss{T}, M::MatElem{T}, i::Int) where T
+function elem_from_mat_row(A::AbstractAssociativeAlgebra{T}, M::MatElem{T}, i::Int) where T
   a = A()
   for c = 1:ncols(M)
     a.coeffs[c] = deepcopy(M[i, c])
@@ -813,7 +815,7 @@ function elem_from_mat_row(A::AbsAlgAss{T}, M::MatElem{T}, i::Int) where T
   return a
 end
 
-function elem_to_mat_row!(x::ZZMatrix, i::Int, d::ZZRingElem, a::AbsAlgAssElem{QQFieldElem})
+function elem_to_mat_row!(x::ZZMatrix, i::Int, d::ZZRingElem, a::AbstractAssociativeAlgebraElem{QQFieldElem})
   z = zero_matrix(FlintQQ, 1, ncols(x))
   elem_to_mat_row!(z, 1, a)
   z_q = FakeFmpqMat(z)
@@ -826,7 +828,7 @@ function elem_to_mat_row!(x::ZZMatrix, i::Int, d::ZZRingElem, a::AbsAlgAssElem{Q
   return nothing
 end
 
-function elem_from_mat_row(A::AbsAlgAss{QQFieldElem}, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
+function elem_from_mat_row(A::AbstractAssociativeAlgebra{QQFieldElem}, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
   a = A()
   for j in 1:ncols(M)
     a.coeffs[j] = QQFieldElem(M[i, j], d)
@@ -835,14 +837,14 @@ function elem_from_mat_row(A::AbsAlgAss{QQFieldElem}, M::ZZMatrix, i::Int, d::ZZ
 end
 
 @doc raw"""
-    representation_matrix(a::AbsAlgAssElem, action::Symbol = :left) -> MatElem
+    representation_matrix(a::AbstractAssociativeAlgebraElem, action::Symbol = :left) -> MatElem
 
 Returns a matrix over `base_ring(algebra(a))` representing multiplication with
 $a$ with respect to the basis of `algebra(a)`.
 The multiplication is from the left if `action == :left` and from the right if
 `action == :right`.
 """
-function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
+function representation_matrix(a::GroupAlgebraElem, action::Symbol=:left)
   A = parent(a)
   acoeff = coefficients(a, copy = false)
   mt = multiplication_table(A, copy = false)
@@ -878,7 +880,7 @@ function _addmul!(M::QQMatrix, i, j, a::QQFieldElem, b::QQFieldElem)
   ccall((:fmpq_addmul, libflint), Nothing, (Ptr{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), c, a, b)
 end
 
-function representation_matrix!(a::Union{AlgAssElem, AlgMatElem}, M::MatElem, action::Symbol = :left)
+function representation_matrix!(a::Union{AssociativeAlgebraElem, MatAlgebraElem}, M::MatElem, action::Symbol = :left)
   A = parent(a)
   acoeff = coefficients(a, copy = false)
   mt = multiplication_table(A, copy = false)
@@ -913,7 +915,7 @@ function representation_matrix!(a::Union{AlgAssElem, AlgMatElem}, M::MatElem, ac
   return M
 end
 
-function representation_matrix(a::Union{ AlgAssElem, AlgMatElem }, action::Symbol = :left)
+function representation_matrix(a::Union{ AssociativeAlgebraElem, MatAlgebraElem }, action::Symbol = :left)
   A = parent(a)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   representation_matrix!(a, M, action)
@@ -926,9 +928,9 @@ end
 #
 ################################################################################
 
-isone(a::AbsAlgAssElem) = a == one(parent(a))
+isone(a::AbstractAssociativeAlgebraElem) = a == one(parent(a))
 
-function iszero(a::AbsAlgAssElem)
+function iszero(a::AbstractAssociativeAlgebraElem)
   return all(i -> iszero(i), coefficients(a, copy = false))
 end
 
@@ -938,16 +940,16 @@ end
 #
 ################################################################################
 
-#function tr(x::AbsAlgAssElem)
+#function tr(x::AbstractAssociativeAlgebraElem)
 #  return tr(representation_matrix(x))
 #end
 
 @doc raw"""
-    tr(x::AbsAlgAssElem{T}) where T -> T
+    tr(x::AbstractAssociativeAlgebraElem{T}) where T -> T
 
 Returns the trace of $x$.
 """
-function tr(x::AbsAlgAssElem{T}) where T
+function tr(x::AbstractAssociativeAlgebraElem{T}) where T
   A=parent(x)
   _assure_trace_basis(A)
   tr=zero(base_ring(A))
@@ -957,16 +959,16 @@ function tr(x::AbsAlgAssElem{T}) where T
   return tr
 end
 
-#function _tr(x::AlgAssElem{T}) where {T}
+#function _tr(x::AssociativeAlgebraElem{T}) where {T}
 #  return trace(representation_matrix(x))
 #end
 
 @doc raw"""
-    trred(x::AbsAlgAssElem{T}) where T -> T
+    trred(x::AbstractAssociativeAlgebraElem{T}) where T -> T
 
 Returns the reduced trace of $x$.
 """
-function trred(a::AbsAlgAssElem)
+function trred(a::AbstractAssociativeAlgebraElem)
   A = parent(a)
   if is_simple_known(A) && A.is_simple == 1
     d = dimension_of_center(A)
@@ -991,24 +993,24 @@ end
 ################################################################################
 
 @doc raw"""
-    norm(x::AbsAlgAssElem{T}) where T -> T
+    norm(x::AbstractAssociativeAlgebraElem{T}) where T -> T
 
 Returns the norm of $x$.
 """
-function norm(a::AbsAlgAssElem{QQFieldElem})
+function norm(a::AbstractAssociativeAlgebraElem{QQFieldElem})
   return abs(det(representation_matrix(a)))
 end
 
-function norm(a::AbsAlgAssElem)
+function norm(a::AbstractAssociativeAlgebraElem)
   return det(representation_matrix(a))
 end
 
 @doc raw"""
-    normred(x::AbsAlgAssElem{T}) where T -> T
+    normred(x::AbstractAssociativeAlgebraElem{T}) where T -> T
 
 Returns the reduced norm of $x$.
 """
-function normred(a::AbsAlgAssElem{T}) where {T}
+function normred(a::AbstractAssociativeAlgebraElem{T}) where {T}
   f = reduced_charpoly(a)
   n = degree(f)
   if iseven(n)
@@ -1018,7 +1020,7 @@ function normred(a::AbsAlgAssElem{T}) where {T}
   end
 end
 
-function _normred_over_center_simple(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
+function _normred_over_center_simple(a::AbstractAssociativeAlgebraElem, ZtoA::AbsAlgAssMor)
   A = parent(a)
   Z = domain(ZtoA)
   fields = as_number_fields(Z)
@@ -1032,20 +1034,20 @@ end
 
 # Computes the norm of algebra(a) considered as an algebra over its centre.
 # ZtoA should be center(algebra(a))[2]
-function normred_over_center(a::AbsAlgAssElem, ZtoA::AbsAlgAssMor)
+function normred_over_center(a::AbstractAssociativeAlgebraElem, ZtoA::AbsAlgAssMor)
   A = parent(a)
   Adec = decompose(A)
   n = zero(domain(ZtoA))
   for (B, BtoA) in Adec
     _, ZtoB = center(B)
     n1 = _normred_over_center_simple(BtoA\a, ZtoB)
-    t, n2 = haspreimage(ZtoA, BtoA(ZtoB(n1)))
+    t, n2 = has_preimage_with_preimage(ZtoA, BtoA(ZtoB(n1)))
     n += n2
   end
   return n
 end
 
-function normred(x::FacElem{S, T}) where { S <: AbsAlgAssElem, T <: AbsAlgAss }
+function normred(x::FacElem{S, T}) where { S <: AbstractAssociativeAlgebraElem, T <: AbstractAssociativeAlgebra }
   K = base_ring(base_ring(parent(x)))
   @assert is_commutative(K) # so, it doesn't matter in which order we compute the norms
   n = one(K)
@@ -1062,12 +1064,12 @@ end
 ################################################################################
 
 @doc raw"""
-    trred_matrix(A::Vector{ <: AlgAssElem}) -> MatElem
+    trred_matrix(A::Vector{ <: AssociativeAlgebraElem}) -> MatElem
 
 Returns a matrix $M$ such that $M_{ij} = \mathrm{tr}(A_i \cdot A_j)$ where
 $\mathrm{tr}$ is the reduced trace.
 """
-function trred_matrix(A::Vector{<: AbsAlgAssElem})
+function trred_matrix(A::Vector{<: AbstractAssociativeAlgebraElem})
   n = length(A)
   n == 0 && error("Array must be non-empty")
   K = base_ring(parent(A[1]))
@@ -1091,7 +1093,7 @@ end
 
 Returns the coefficients of $a$ in the basis of `algebra(a)`.
 """
-function coefficients(a::AbsAlgAssElem; copy::Bool = true)
+function coefficients(a::AbstractAssociativeAlgebraElem; copy::Bool = true)
   if copy
     return deepcopy(a.coeffs)
   end
@@ -1104,6 +1106,6 @@ end
 #
 ################################################################################
 
-function denominator(x::AbsAlgAssElem)
+function denominator(x::AbstractAssociativeAlgebraElem)
   return lcm([ denominator(y) for y in coefficients(x, copy = false) ])
 end

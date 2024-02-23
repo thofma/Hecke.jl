@@ -1,4 +1,4 @@
-@testset "NumField/NfAbsNS/ConjugatesNS.jl" begin
+@testset "NumField/AbsNonSimpleNumField/ConjugatesNS.jl" begin
   Qx, x = QQ["x"]
   K, a = number_field([x^2 - 2, x^2 - 3, x^2 - 5], "a")
   r, s = @inferred signature(K)
@@ -18,7 +18,7 @@
   @test signature(L) == (8, 4)
 end
 
-@testset "NumField/NfAbsNS/Conjugates.jl" begin
+@testset "NumField/AbsNonSimpleNumField/Conjugates.jl" begin
   Qx, x = QQ["x"]
   K, a = wildanger_field(3, 13)
   r, s = @inferred signature(K)

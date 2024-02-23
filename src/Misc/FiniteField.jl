@@ -37,7 +37,7 @@ function (A::fqPolyRepField)(x::fpPolyRingElem)
   return u
 end
 
-function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp::zzModPolyRingElem)
+function _nf_to_fq!(a::fqPolyRepFieldElem, b::AbsSimpleNumFieldElem, K::fqPolyRepField, a_tmp::zzModPolyRingElem)
   Nemo.nf_elem_to_nmod_poly!(a_tmp, b)
   ccall((:fq_nmod_set, libflint), Nothing,
                      (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
@@ -45,7 +45,7 @@ function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp:
   _reduce(a)
 end
 
-function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp::fpPolyRingElem)
+function _nf_to_fq!(a::fqPolyRepFieldElem, b::AbsSimpleNumFieldElem, K::fqPolyRepField, a_tmp::fpPolyRingElem)
   Nemo.nf_elem_to_gfp_poly!(a_tmp, b)
   ccall((:fq_nmod_set, libflint), Nothing,
                      (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}),
@@ -53,7 +53,7 @@ function _nf_to_fq!(a::fqPolyRepFieldElem, b::nf_elem, K::fqPolyRepField, a_tmp:
   _reduce(a)
 end
 
-function _nf_to_fq!(a::FqPolyRepFieldElem, b::nf_elem, K::FqPolyRepField, a_tmp::FpPolyRingElem)
+function _nf_to_fq!(a::FqPolyRepFieldElem, b::AbsSimpleNumFieldElem, K::FqPolyRepField, a_tmp::FpPolyRingElem)
   Nemo.nf_elem_to_gfp_fmpz_poly!(a_tmp, b)
   ccall((:fq_set, libflint), Nothing,
                      (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}),
@@ -61,11 +61,11 @@ function _nf_to_fq!(a::FqPolyRepFieldElem, b::nf_elem, K::FqPolyRepField, a_tmp:
   _reduce(a)
 end
 
-function _nf_to_fq!(a::FqFieldElem, b::nf_elem, K::FqField)#, a_tmp::FpPolyRingElem)
-  # nf_elem -> QQPolyRingElem
+function _nf_to_fq!(a::FqFieldElem, b::AbsSimpleNumFieldElem, K::FqField)#, a_tmp::FpPolyRingElem)
+  # AbsSimpleNumFieldElem -> QQPolyRingElem
   z = QQPolyRingElem()
   ccall((:nf_elem_get_fmpq_poly, libantic), Nothing,
-        (Ref{QQPolyRingElem}, Ref{nf_elem}, Ref{AnticNumberField}), z, b, parent(b))
+        (Ref{QQPolyRingElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), z, b, parent(b))
   z.parent = Globals.Qx
   # QQPolyRingElem -> ZZPolyRingElem, ZZRingElem
   zz = ZZPolyRingElem()
@@ -129,7 +129,7 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepFiel
   n = order(F)-1
   k = ZZRingElem(1)
   if n_quo != -1
-    if !divisible(n, n_quo)
+    if !is_divisible_by(n, n_quo)
       return F(1)
     end
     n, k = ppio(n, ZZRingElem(n_quo))

@@ -29,12 +29,12 @@ function orbits(v::Vector{Perm{Int}})
 end
 
 @doc raw"""
-    induce_action(primes::Vector{NfOrdIdl}, A::Map) -> Perm{Int}
+    induce_action(primes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::Map) -> Perm{Int}
 
 Given a set of prime ideals invariant under the action of $A$, this function
 returns the corresponding permutation induced by $A$.
 """
-function induce_action(primes::Vector{NfOrdIdl}, A::Map)
+function induce_action(primes::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::Map)
   K = domain(A)
   f = A(gen(K)) # essentially a polynomial in the primitive element
 
@@ -49,7 +49,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
   primes_underneath = Set{ZZRingElem}([minimum(x, copy = false) for x in primes])
   for p in primes_underneath
     indices = [i for i in 1:length(primes) if minimum(primes[i], copy = false) == p]
-    lp = NfOrdIdl[primes[i] for i in indices]
+    lp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[primes[i] for i in indices]
     prm_p = _induce_action_p(lp, A)
     for (i, j) in prm_p
       push!(prm, (indices[i], indices[j]))
@@ -60,7 +60,7 @@ function induce_action(primes::Vector{NfOrdIdl}, A::Map)
 end
 
 #As above, but assumes that the prime ideals are lying over the same prime number p.
-function _induce_action_p(lp::Vector{NfOrdIdl}, A::Map)
+function _induce_action_p(lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, A::Map)
   O = order(lp[1])
   K = nf(O)
   prm = Tuple{Int, Int}[]
@@ -131,7 +131,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
 
   for p in FB.fb_int.base
     FP = FB.fb[p]
-    lp = NfOrdIdl[x[2] for x = FP.lp]
+    lp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[x[2] for x = FP.lp]
     prm_p = _induce_action_p(lp, A)
     for (a, b) in prm_p
       push!(prm, (FP.lp[a][1], FP.lp[b][1]))
@@ -146,16 +146,16 @@ end
   Tested for cyclic groups - unfortunately only.
   I still need to generate other input
 =#
-#function orbit_in_FB(op::Vector{Tuple{Map, Generic.Perm}}, a::nf_elem, s::SRow)
-function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
+#function orbit_in_FB(op::Vector{Tuple{Map, Generic.Perm}}, a::AbsSimpleNumFieldElem, s::SRow)
+function orbit_in_FB(op::Array, a::AbsSimpleNumFieldElem, s::SRow)
   function op_smat(n::SRow, p::Generic.Perm)
     r = [(p[i], v) for (i,v) = n]
     sort!(r, lt = (a,b)->a[1]<b[1])
     return typeof(n)(r)
   end
 
-  Ss = Dict{nf_elem, typeof(s)}()
-#  Ss = Dict{typeof(s), nf_elem}()
+  Ss = Dict{AbsSimpleNumFieldElem, typeof(s)}()
+#  Ss = Dict{typeof(s), AbsSimpleNumFieldElem}()
   Ss[a] = s
   # start with the cyclic group be op[1]
   n = s
@@ -254,7 +254,7 @@ function generated_subgroup(op::Array) #pairs: permutations and Map
 end
 
 
-function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
+function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   #I am assuming that auts contains all the automorphisms of K
   K = domain(auts[1])
   p = 11
@@ -269,13 +269,13 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{NfToNfMor})
   end
   S = small_generating_set(auts)
 
-  Dpols = Dict{fpPolyRingElem, NfToNfMor}()
+  Dpols = Dict{fpPolyRingElem, automorphism_type(K)}()
   for i = 1:length(auts)
     Dpols[Rx(image_primitive_element(auts[i]))] = auts[i]
   end
   Gperm = SymmetricGroup(length(ctx.FB.ideals))
 
-  elements = Vector{Tuple{NfToNfMor, Generic.Perm{Int}}}(undef, length(auts))
+  elements = Vector{Tuple{automorphism_type(K), Generic.Perm{Int}}}(undef, length(auts))
   elements[1] = (id_hom(K), one(Gperm))
   if length(auts) == 1
     return elements

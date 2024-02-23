@@ -151,7 +151,7 @@ function _local_factor_generic(L::HermLat, p)
   if def
     R = base_ring(base_ring(L))
     rlp = real_embeddings(K)
-    A::GrpAbFinGen, _exp, _log = sign_map(R, rlp, p)
+    A::FinGenAbGroup, _exp, _log = sign_map(R, rlp, p)
     sa = ss * a
     t = (1 + _exp(A(Int[ sign(sa, rlp[j]) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
     @assert t - 1 in p
@@ -198,7 +198,7 @@ end
 ################################################################################
 
 @doc raw"""
-    local_factor(L::HermLat, p::NfOrdIdl) -> QQFieldElem
+    local_factor(L::HermLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> QQFieldElem
 
 Given a definite hermitian lattice `L` and a bad prime ideal `p` of `L`,
 return the local density of `L` at `p`.
@@ -287,7 +287,7 @@ function _standard_mass(L::HermLat, prec::Int = 10)
   RR = ArbField(wprec, cached = false)
   _stdmass = RR(stdmass)
 
-  local relzeta::arb
+  local relzeta::ArbFieldElem
 
   while true
     relzeta = prod(_L_function(E, 1 - i, wprec) for i in 1:2:m; init = one(ArbField(wprec, cached = false)))

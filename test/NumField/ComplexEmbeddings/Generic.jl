@@ -60,7 +60,7 @@
     end
 
     c = FacElem(K(2))^1000 * FacElem(K(3))^-1000 * FacElem(K(5))^1000
-    @test (@inferred e(c)) isa acb
+    @test (@inferred e(c)) isa AcbFieldElem
   end
 
   K, a = quadratic_field(-1)

@@ -28,7 +28,7 @@
   @test number_field(C) === k
   @test Hecke.embeddings(C) == Hecke.complex_embeddings(k)[1:1]
   @test_throws ArgumentError cm_type(k, Hecke.complex_embeddings(k))
-  @test_throws ArgumentError cm_type(number_field(x - 1)[1], Hecke.NumFieldEmbNfAbs[])
+  @test_throws ArgumentError cm_type(number_field(x - 1)[1], AbsSimpleNumFieldEmbedding[])
   @test_throws ArgumentError cm_type(K, Hecke.complex_embeddings(K)[1:3]) # they are conjugated
   fl, c = Hecke.is_cm_field(k)
   @test c * C == cm_type(k, cembd[2:2])

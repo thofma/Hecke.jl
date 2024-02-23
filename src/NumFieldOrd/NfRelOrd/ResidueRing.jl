@@ -88,7 +88,7 @@ end
 #
 ################################################################################
 
-function quo(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl})
+function quo(O::Union{RelNumFieldOrder, AlgAssRelOrd}, I::Union{RelNumFieldOrderIdeal, AlgAssRelOrdIdl})
   @assert order(I) === O
   # We should check that I is not zero
   Q = RelOrdQuoRing(O, I)
@@ -96,7 +96,7 @@ function quo(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOr
   return Q, f
 end
 
-Nemo.residue_ring(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
+Nemo.residue_ring(O::Union{RelNumFieldOrder, AlgAssRelOrd}, I::Union{RelNumFieldOrderIdeal, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
 
 ################################################################################
 #

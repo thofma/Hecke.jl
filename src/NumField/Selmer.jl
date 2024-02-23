@@ -5,7 +5,7 @@ using Hecke
 Adds an element to the group. For this to work, C needs to be a subgroup of the parent of a.
 Should move to GrpAb
 """
-function Base.push!(C::GrpAbFinGen, a::GrpAbFinGenElem)
+function Base.push!(C::FinGenAbGroup, a::FinGenAbGroupElem)
   g = gens(C)
   push!(g, a)
   #TODO: find common overgroup? Assuming for now that parent(a) is it.
@@ -14,12 +14,12 @@ end
 
 #TODO: should be exported, but at this point, index is not yet a symbol, so it can't be extended.
 #Should move to GrpAb
-function index(G::GrpAbFinGen, U::GrpAbFinGen; check::Bool = true)
+function index(G::FinGenAbGroup, U::FinGenAbGroup; check::Bool = true)
   return divexact(order(G), order(U))
 end
 
 @doc raw"""
-    pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+    pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
 
 Let $K$ be the number field of the prime ideals in $S$. Then the $p$-Selmer group is a subgroup of
 $K^*$ modulo $p$-th powers of elements such that all valuations outside $S$ are divisible by $p$.
@@ -55,7 +55,7 @@ true
 
 ```
 """
-function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
   @assert all(x->order(x) == order(S[1]), S)
   @assert is_prime(p) #maybe not necessary
 
@@ -67,7 +67,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
   s, ms = sub(C, map(pseudo_inv(mC), S))
   P = PrimesSet(100, -1)
   pr, pos = iterate(P)
-  D = NfOrdIdl[]
+  D = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   while gcd(index(C, s), p) != 1
     lp = prime_decomposition(ZK, pr)
     for (pi, ei) = lp
@@ -108,7 +108,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
   # the backward map is more tricky, but the indirect route via
   # class field theory (Frobenius) works for Magma - it should work here.
 
-  function toK(x::GrpAbFinGenElem; algo::Symbol = algo)
+  function toK(x::FinGenAbGroupElem; algo::Symbol = algo)
     @assert parent(x) == Sel
     @assert algo in [:compRep, :raw]
     x = preimage(mSel, x)
@@ -123,11 +123,11 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
     end
   end
 
-  disc_log_data = Dict{NfOrdIdl, Tuple{Map, Vector{Int}}}()
-  function toSel(x::nf_elem; check::Bool = check)
+  disc_log_data = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Tuple{Map, Vector{Int}}}()
+  function toSel(x::AbsSimpleNumFieldElem; check::Bool = check)
     return toSel(FacElem([x], [1], check = check))
   end
-  function toSel(x::FacElem{nf_elem, AnticNumberField}; check::Bool = check)
+  function toSel(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}; check::Bool = check)
     if check
       A = ideal(ZK, x)
       for P = S
@@ -187,7 +187,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
       end
       pr, pos = iterate(sp, pos)
     end
-    fl, sol = Hecke.can_solve_with_solution(dl, dx)
+    fl, sol = can_solve_with_solution(dl, dx; side = :right)
     @assert fl
     return Sel(map(lift, vec(collect(sol))))
   end
@@ -196,12 +196,12 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:NfOrdIdl}; check::Bool = tru
 end
 
 @doc raw"""
-    pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+    pselmer_group(p::Int, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
 
 Similar to the `pselmer_group_fac_elem`, the difference is that the elements here are evaluated,
 ie. returned explicitly wrt the basis of the number field.
 """
-function pselmer_group(p::Int, S::Vector{NfOrdIdl}; check::Bool = true, algo::Symbol = :raw)
+function pselmer_group(p::Int, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; check::Bool = true, algo::Symbol = :raw)
   G, mp = pselmer_group_fac_elem(p, S, check = check, algo = algo)
   return G, MapFromFunc(G, number_field(order(S[1])), x->evaluate(mp(x)), y->preimage(mp, FacElem([y], ZZRingElem[1])))
 end
@@ -236,7 +236,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{ZZRingElem}; algo::Symbol = :r
     @assert p == 2
   end
   G = abelian_group([p for i = S])
-  function toQ(a::GrpAbFinGenElem)
+  function toQ(a::FinGenAbGroupElem)
     @assert parent(a) == G
     return FacElem(QQ, map(QQFieldElem, S), [a[i] for i = 1:ngens(G)], parent = R)
   end

@@ -83,7 +83,7 @@
 
   @testset "Basis" begin
     b = @inferred basis(I)
-    @test b == NfOrdElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
+    @test b == AbsSimpleNumFieldOrderElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
   end
 
   @testset "Basismatrix" begin
@@ -92,13 +92,13 @@
     b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
+    b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
 
     b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
+    b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
   end
 

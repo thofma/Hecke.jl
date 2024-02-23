@@ -1,4 +1,4 @@
-function test_disc_log_picard(P, mP, O::NfOrd)
+function test_disc_log_picard(P, mP, O::AbsSimpleNumFieldOrder)
   # principal ideals should always be invertible
   i = 1
   while i <= 5
@@ -38,7 +38,7 @@ function test_disc_log_picard(P, mP, O::NfOrd)
   return true
 end
 
-function test_disc_log_units(U, mU, O::NfOrd)
+function test_disc_log_units(U, mU, O::AbsSimpleNumFieldOrder)
   if !iszero(mU\O(1))
     return false
   end

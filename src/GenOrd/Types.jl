@@ -16,7 +16,7 @@
     empty && return r
     Qt = base_field(F)
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
-    f = map_coefficients(x->numerator(Qt(d)*x, R), defining_polynomial(F))
+    f = map_coefficients(x->numerator(Qt(d)*x, R), defining_polynomial(F), cached = false)
     if !is_monic(f) #need Lenstra Order
       d = degree(F)
       M = zero_matrix(Qt, d, d)

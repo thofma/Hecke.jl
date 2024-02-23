@@ -72,7 +72,7 @@ function quadratic_defect(a::QQFieldElem, p::ZZRingElem)
   return v + 1
 end
 
-function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function _quadratic_defect_unit(a::NumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   @assert valuation(a, p) == 0 && is_dyadic(p)
   o = order(p)
   f = nf(o)
@@ -103,7 +103,7 @@ function _quadratic_defect_unit(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdI
   return w, a
 end
 
-function quadratic_defect(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function quadratic_defect(a::NumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   if iszero(a)
     return inf
   end
@@ -131,16 +131,16 @@ function quadratic_defect(a::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
 end
 
 @doc doc"""
-    quadratic_defect(a::NfOrdElem, p) -> Union{Inf, PosInf}
+    quadratic_defect(a::AbsSimpleNumFieldOrderElem, p) -> Union{Inf, PosInf}
 
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
 can either be prime object or an infinite place of the parent of $a$.
 """
-function quadratic_defect(a::NumFieldOrdElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function quadratic_defect(a::NumFieldOrderElem, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   return quadratic_defect(elem_in_nf(a), p)
 end
 
-function quadratic_defect(a::IntegerUnion, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function quadratic_defect(a::IntegerUnion, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   return quadratic_defect(nf(order(p))(a), p)
 end
 
@@ -150,11 +150,11 @@ end
 #
 ################################################################################
 
-function hilbert_symbol(a::NumFieldElem, b::IntegerUnion, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function hilbert_symbol(a::NumFieldElem, b::IntegerUnion, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   return hilbert_symbol(a, parent(a)(b), p)
 end
 
-function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
   return hilbert_symbol(b, a, p)
 end
 
@@ -169,11 +169,11 @@ end
 #             ALGEBRAS AND QUADRATIC FORMS", In Quadratic and higher degree
 #             forms, volume 31 of Dev. Math., pages 255-298, 2012.
 @doc raw"""
-    hilbert_symbol(a::NumFieldElem, b::NumFieldElem, p::NfOrdIdl) -> Int
+    hilbert_symbol(a::NumFieldElem, b::NumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """
-function hilbert_symbol(a::T, b::T, p::Union{NfAbsOrdIdl, NfRelOrdIdl}) where {T <: NumFieldElem}
+function hilbert_symbol(a::T, b::T, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) where {T <: NumFieldElem}
   @req !iszero(a) && !iszero(b) "Arguments must be non-zero"
   o = order(p)
   f = nf(o)
@@ -308,7 +308,7 @@ function hilbert_symbol(a::IntegerUnion, b::NumFieldElem, p::Plc)
 end
 
 @doc raw"""
-    hilbert_symbol(a::nf_elem, b::nf_elem, p::InfPlc) -> Int
+    hilbert_symbol(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, p::InfPlc) -> Int
 
 Returns the local Hilbert symbol $(a,b)_p$.
 """

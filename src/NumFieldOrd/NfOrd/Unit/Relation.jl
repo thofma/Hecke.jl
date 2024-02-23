@@ -1,6 +1,6 @@
 # Checks whether x[1]^z[1] * ... x[n]^z[n]*y^[n+1] is a torsion unit
 # This can be improved
-function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField}}, y::FacElem{nf_elem, AnticNumberField}, z::Vector{ZZRingElem}, p::Int = 16)
+function _check_relation_mod_torsion(x::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, y::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, z::Vector{ZZRingElem}, p::Int = 16)
   (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
   r = x[1]^z[1]
 
@@ -15,7 +15,7 @@ function _check_relation_mod_torsion(x::Vector{FacElem{nf_elem, AnticNumberField
   return b
 end
 
-function _find_rational_relation!(rel::Vector{ZZRingElem}, v::arb_mat, bound::ZZRingElem)
+function _find_rational_relation!(rel::Vector{ZZRingElem}, v::ArbMatrix, bound::ZZRingElem)
   #push!(_debug, (deepcopy(rel), deepcopy(v), deepcopy(bound)))
   @vprintln :UnitGroup 2 "Finding rational approximation in $v"
   r = length(rel) - 1
@@ -206,7 +206,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
   return rel
 end
 
-function _denominator_bound_in_relation(rreg::arb, K::AnticNumberField)
+function _denominator_bound_in_relation(rreg::ArbFieldElem, K::AbsSimpleNumField)
   # Compute an upper bound in the denominator of an entry in the relation
   # using Cramer's rule and lower regulator bounds
 
@@ -216,8 +216,8 @@ function _denominator_bound_in_relation(rreg::arb, K::AnticNumberField)
   return abs_upper_bound(ZZRingElem, arb_bound)
 end
 
-function simplest_inside(x::arb, B::ZZRingElem)
-  q = simplest_inside(x)
+function simplest_inside(x::ArbFieldElem, B::ZZRingElem)
+  q = simplest_rational_inside(x)
   if denominator(q) < B
     return true, q
   else

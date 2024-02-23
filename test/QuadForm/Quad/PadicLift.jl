@@ -1,10 +1,10 @@
 @testset "PadicLift" begin
-  G = matrix(residue_ring(ZZ, 8), 3, 3, [4,0,0, 0,2,1, 0,1,2])
+  G = matrix(residue_ring(ZZ, 8)[1], 3, 3, [4,0,0, 0,2,1, 0,1,2])
   @test (2, 0, 2) == Hecke._last_block_index(G, 2)
 
   # We want to test for small and big residue rings
   for RR in [Int, ZZ]
-    R = residue_ring(ZZ, RR(3)^6)
+    R = residue_ring(ZZ, RR(3)^6)[1]
     F1 = matrix(R, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 1])
     F2 = matrix(R, 3, 3, [0, 1, 0, 1, 2, 2, 0, 2, 1])
     Flist = [F1,F2]
@@ -36,7 +36,7 @@
       @test all(0 == X[i,i] + sum([X[i,j]*gk[j] for j in 1:3]) for i in 1:3)
     end
 
-    R = residue_ring(ZZ, ZZ(3)^5)
+    R = residue_ring(ZZ, ZZ(3)^5)[1]
     G = diagonal_matrix([R(i) for i in [3^2,1,1]])
     Z = G + matrix(R, 3, 3, [0,3^2,0, 3^2,0,0, 0,0,3])
     F = matrix(R, 3, 3, [1,0,0, 0,0,1, 0,1,0])
@@ -44,14 +44,14 @@
     @test(4<=Hecke._min_val(Z - F*G*transpose(F),3))
 
     p = ZZ(3)
-    R = residue_ring(ZZ,p^7)
+    R = residue_ring(ZZ,p^7)[1]
     G = matrix(R, 6, 6, [0, 243, 0, 0, 0, 0, 243, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 0, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0])
     F = matrix(R, 6, 6, [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 1, 0, 1, 0, 0, 1, 2, 1, 0, 0, 0, 2, -1, 6, 3, 0, 1, 1, 9, 3, 6, 1, 0])
     Flift = Hecke.hensel_qf(G, F, 1, 6, p)
     @test Hecke._min_val(Flift*G*transpose(Flift)-G, p ) >= 6
 
     p = ZZ(2)
-    R = residue_ring(ZZ,p^10)
+    R = residue_ring(ZZ,p^10)[1]
     U = matrix(R, 2, 2,[0, 1, 1 ,0])
     V = matrix(R, 2, 2,[2, 1, 1 ,2])
     G = diagonal_matrix([2*U, 2*U, V])
@@ -66,7 +66,7 @@
 
 
     p = ZZ(2)
-    R = residue_ring(ZZ,p^10)
+    R = residue_ring(ZZ,p^10)[1]
     G = matrix(R, 4, 4,[0,1,0,0,
                         1,0,0,0,
                         0,0,1,0,
@@ -107,7 +107,7 @@
     @test 5<=Hecke._min_val(Er,2)
     @test 6<=Hecke._min_val(diagonal(Er),p)
 
-    R = residue_ring(ZZ, ZZ(2)^5)
+    R = residue_ring(ZZ, ZZ(2)^5)[1]
     G = matrix(R, 3, 3, [2, 1, 0,
                          1, 2, 0,
                          0, 0, 7])

@@ -2,14 +2,14 @@
 @testset "Morphisms" begin
     @testset "Find Automorphisms" begin
         G, = generic_group([1, -1, im, -im], *)
-        @test find_small_group(generic_group(automorphism_list(G), *)[1])[1] == (2,1)
-        @test find_small_group(generic_group(automorphism_list(small_group(8,2)), *)[1])[1] == (8,3)
-        @test find_small_group(generic_group(automorphism_list(small_group(13,1)), *)[1])[1] == (12,2)
-        @test find_small_group(generic_group(automorphism_list(small_group(18,5)), *)[1])[1] == (48,29)
-        @test find_small_group(generic_group(automorphism_list(small_group(24,12)), *)[1])[1] == (24,12)
-        @test find_small_group(generic_group(automorphism_list(small_group(33,1)), *)[1])[1] == (20,5)
-        @test find_small_group(generic_group(automorphism_list(small_group(36,2)), *)[1])[1] == (12,5)
-        @test find_small_group(generic_group(automorphism_list(small_group(42,3)), *)[1])[1] == (36,12)
+        @test Hecke.find_small_group(generic_group(automorphism_list(G), *)[1])[1] == (2,1)
+        @test Hecke.find_small_group(generic_group(automorphism_list(small_group(8,2)), *)[1])[1] == (8,3)
+        @test Hecke.find_small_group(generic_group(automorphism_list(small_group(13,1)), *)[1])[1] == (12,2)
+        @test Hecke.find_small_group(generic_group(automorphism_list(small_group(18,5)), *)[1])[1] == (48,29)
+        @test Hecke.find_small_group(generic_group(automorphism_list(small_group(24,12)), *)[1])[1] == (24,12)
+        @test Hecke.find_small_group(generic_group(automorphism_list(small_group(33,1)), *)[1])[1] == (20,5)
+        @test Hecke.find_small_group(generic_group(automorphism_list(small_group(36,2)), *)[1])[1] == (12,5)
+        @test Hecke.find_small_group(generic_group(automorphism_list(small_group(42,3)), *)[1])[1] == (36,12)
 
         @test length(automorphism_list(small_group(27,3))) == 432
 
@@ -85,14 +85,14 @@
 
     @testset "morphisms" begin
         G,AtoG,GtoA = generic_group([1, -1, im, -im], *)
-        Hom = GrpGenToGrpGenMor(G,G,[G[1],G[1],G[1],G[1]])
+        Hom = MultTableGroupHom(G,G,[G[1],G[1],G[1],G[1]])
         @test order(image(Hom)[1]) == 1
         @test order(kernel(Hom)[1]) == 4
         @test is_surjective(Hom) == false
         @test is_injective(Hom) == false
         @test is_bijective(Hom) == false
 
-        Hom = GrpGenToGrpGenMor(G,G,[G[1],G[2],G[3],G[4]])
+        Hom = MultTableGroupHom(G,G,[G[1],G[2],G[3],G[4]])
         @test order(image(Hom)[1]) == 4
         @test order(kernel(Hom)[1]) == 1
         @test is_surjective(Hom) == true

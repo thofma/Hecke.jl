@@ -69,7 +69,7 @@ function scaled_log_matrix(u::Vector{T}, pr::Int = 32) where T
     end
     for j in 1:length(c)
       tt = ZZRingElem()
-      t = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), c[j])
+      t = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), c[j])
       l = ccall((:arf_get_fmpz_fixed_si, libarb), Int, (Ref{ZZRingElem}, Ptr{arf_struct}, Int), tt, t, -pr)
       A[i, j] = tt
     end

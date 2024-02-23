@@ -16,8 +16,8 @@ Support for generic maximal orders over any PID
    - is_domain_type
 
 Seems to work for
--  R = ZZ, F = AnticNumberField
--  R = Loc{ZZRingElem}, F = AnticNumberField
+-  R = ZZ, F = AbsSimpleNumField
+-  R = LocalizedEuclideanRing{ZZRingElem}, F = AbsSimpleNumField
 
 -  R = k[x], F = FunctionField (for k = QQ, F_q)
 -  R = localization(k(x), degree), F = FunctionField
@@ -328,9 +328,9 @@ function radical_basis_power(O::Order, p::RingElem)
       m[j,i] = mF(O.R(c[j]))
     end
   end
-  k, B = kernel(m)
+  B = kernel(m; side = :right)
 
-  M2 = B[:, 1:k]'
+  M2 = B'
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
   return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
@@ -349,8 +349,8 @@ function radical_basis_trace(O::Order, p::RingElem)
   end
 
   TT = map_entries(mR, T)
-  k, B = kernel(TT)
-  M2 = map_entries(x->preimage(mR, x), B[:, 1:k])'
+  B = kernel(TT; side = :right)
+  M2 = map_entries(x->preimage(mR, x), B)'
   M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
@@ -408,9 +408,9 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
       end
     end
   end
-  k, B = kernel(m)
+  B = kernel(m; side = :right)
 
-  M2 = B[:, 1:k]'
+  M2 = B'
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf(vcat(M2, p*identity_matrix(parent(p), degree(O))))[1:degree(O), :]
   return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
@@ -434,7 +434,7 @@ end
 
 function ring_of_multipliers(O::Order, I::MatElem)
   #TODO: modular big hnf, peu-a-peu, not all in one
-  @vprintln :NfOrd 2 "ring of multipliers of ideal with basis matrix $I"
+  @vprintln :AbsNumFieldOrder 2 "ring of multipliers of ideal with basis matrix $I"
   II, d = pseudo_inv(I)
   @assert II*I == d
 #  return II, d, [representation_matrix(O(vec(collect(I[i, :])))) for i=1:nrows(I)]
@@ -448,7 +448,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
   end
   H = mm
 
-  @vtime :NfOrd 2 Hi, d = pseudo_inv(H)
+  @vtime :AbsNumFieldOrder 2 Hi, d = pseudo_inv(H)
 
   O = Order(O, Hi', d)
   return O
@@ -492,13 +492,13 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprintln :NfOrd 1 "using trace-radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprintln :NfOrd 1 "non-perfect case for radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprintln :NfOrd 1 "using radical-by-power for $p"
+    @vprintln :AbsNumFieldOrder 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   while true #TODO: check the discriminant to maybe skip the last iteration
@@ -511,7 +511,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
   end
 end
 
-function integral_closure(S::Loc{ZZRingElem}, F::AnticNumberField)
+function integral_closure(S::LocalizedEuclideanRing{ZZRingElem}, F::AbsSimpleNumField)
   return _integral_closure(S, F)
 end
 
@@ -579,16 +579,11 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-Hecke.base_ring(::AnticNumberField) = FlintQQ
+Hecke.base_ring(::AbsSimpleNumField) = FlintQQ
 
 function (R::PolyRing{T})(a::Generic.RationalFunctionFieldElem{T}) where {T}
   @assert isone(denominator(a))
   return R(numerator(a))
-end
-
-function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
-  K, _ = number_field(p)
-  return K, MapFromFunc(R, K, x->K(x), y->R(y))
 end
 
 function (F::Generic.FunctionField{T})(p::PolyRingElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T}
@@ -629,10 +624,10 @@ Hecke.integral_split(a::QQFieldElem, ::ZZRing) = (numerator(a), denominator(a))
 
 #######################################################################
 #
-# support for Loc{ZZRingElem}
+# support for LocalizedEuclideanRing{ZZRingElem}
 #
 #######################################################################
-function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
+function Hecke.integral_split(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem})
   d = denominator(a)
   p = R.prime
   q,w = Hecke.ppio(d, p)
@@ -642,11 +637,11 @@ function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
     return R(numerator(a)//w), R(q)
   end
 end
-Hecke.denominator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[2]
-Hecke.numerator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[1]
-(::QQField)(a::LocElem{ZZRingElem}) = data(a)
+Hecke.denominator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[2]
+Hecke.numerator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[1]
+(::QQField)(a::LocalizedEuclideanRingElem{ZZRingElem}) = data(a)
 
-function Hecke.factor(a::LocElem{ZZRingElem})
+function Hecke.factor(a::LocalizedEuclideanRingElem{ZZRingElem})
   c = canonical_unit(a)
   b = a*inv(c)
   L = parent(a)
@@ -655,14 +650,14 @@ function Hecke.factor(a::LocElem{ZZRingElem})
   return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
+function Hecke.residue_field(R::LocalizedEuclideanRing{ZZRingElem}, p::LocalizedEuclideanRingElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(y)))
 end
 
-Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
+Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
 
 #######################################################################
 #
@@ -1065,7 +1060,7 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
 end
 
 function Nemo.residue_ring(a::HessQR, b::HessQRElem)
-  F = residue_ring(FlintZZ, b.c)
+  F, _ = residue_ring(FlintZZ, b.c)
   return F, MapFromFunc(a, F, x->F(x.c), y->a(lift(y)))
 end
 

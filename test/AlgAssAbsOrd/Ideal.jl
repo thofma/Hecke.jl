@@ -1,5 +1,5 @@
 @testset "AlgAssAbsOrdIdl" begin
-  QG = group_algebra(FlintQQ, GrpAbFinGen([ 4 ]))
+  QG = group_algebra(FlintQQ, FinGenAbGroup([ 4 ]))
 
   @testset "Arithmetic" begin
     O = any_order(QG)
@@ -51,7 +51,7 @@
 
   @testset "rand" begin
     Qx, x = FlintQQ["x"]
-    A = AlgAss(x^2 - QQFieldElem(1, 5))
+    A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
     I = 2*O
     T = elem_type(A)
@@ -116,7 +116,7 @@
     @test is_equal_locally(X, I, 2)
     @test is_equal_locally(X, J, 3)
     @test is_equal_locally(X, K, 13)
-    T = basis_matrix(X) * basis_mat_inv(O)
+    T = basis_matrix(X) * basis_mat_inv(Hecke.FakeFmpqMat, O)
     for a in QQMatrix(T)
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
@@ -183,14 +183,14 @@
   m[:, :, 2] = m2
   m[:, :, 3] = m3
   m[:, :, 4] = m4
-  A = AlgAss(QQ, m)
+  A = StructureConstantAlgebra(QQ, m)
   basO = map(x -> A(x), Vector{QQFieldElem}[[1//24, 0, 0, 0], [0, 1//48, 0, 0], [1//48, 0, 1//48, 0], [0, 0, 0, 1//48]])
   O = Order(A, basO)
   I = A(48) * O
   PD = primary_decomposition(I, O)
 
-  J = typeof(I)(A, FakeFmpqMat(identity_matrix(QQ, 4)))
-  @test J * J == typeof(I)(A, FakeFmpqMat(48 * identity_matrix(QQ, 4)))
+  J = typeof(I)(A, Hecke.Hecke.FakeFmpqMat(identity_matrix(QQ, 4)))
+  @test J * J == typeof(I)(A, Hecke.Hecke.FakeFmpqMat(48 * identity_matrix(QQ, 4)))
 
   # zero algebra
 

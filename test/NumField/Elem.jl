@@ -58,14 +58,14 @@
     Qx, x = polynomial_ring(FlintQQ, "x")
     K, a = number_field(x^3 - 2)
     v = [a^0, a^2]
-    @assert elem_type(K) == nf_elem
+    @assert elem_type(K) == AbsSimpleNumFieldElem
     for args = ((v, 1:3), (v, 1:3, 2))
       m = make(K, args...)
       for x in (rand(args...), rand(rng, args...),
                 rand(m), rand(rng, m))
-        @test x isa nf_elem
+        @test x isa AbsSimpleNumFieldElem
       end
-      @test rand(m, 3) isa Vector{nf_elem}
+      @test rand(m, 3) isa Vector{AbsSimpleNumFieldElem}
       c = zero(K)
       @test c === rand!(c, m)
       @test c === rand!(rng, c, m)

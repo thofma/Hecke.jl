@@ -17,7 +17,7 @@ abstract type _PIPDefault end
 
 abstract type _PIPEichler end
 
-function _satisfies_condition_h(A::AbsAlgAss)
+function _satisfies_condition_h(A::AbstractAssociativeAlgebra)
   dec = decompose(A)
   for (B, _) in dec
     if is_commutative(B)

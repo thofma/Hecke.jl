@@ -57,7 +57,7 @@ end
     f = x^3 - 2
     K, a = number_field(f, "a")
 
-    A = AlgAss(MatrixAlgebra(K, 2))
+    A = StructureConstantAlgebra(matrix_ring(K, 2))
     B, BtoA = Hecke.restrict_scalars(A, FlintQQ)
     @test base_ring(B) == FlintQQ
     @test dim(B) == dim(A)*degree(K)
@@ -76,7 +76,7 @@ end
     L, b = number_field(g, "b")
     KtoL = hom(K, L, -2//45*b^7 + 7//9*b^4 + 109//45*b)
 
-    A = AlgAss(MatrixAlgebra(L, 2))
+    A = StructureConstantAlgebra(matrix_ring(L, 2))
     B, BtoA = Hecke.restrict_scalars(A, KtoL)
 
     @test base_ring(B) == K
@@ -88,7 +88,7 @@ end
     Fp = GF(7)
     Fq, a = finite_field(7, 3, "a")
 
-    A = AlgAss(MatrixAlgebra(Fq, 2))
+    A = StructureConstantAlgebra(matrix_ring(Fq, 2))
     B, BtoA = Hecke.restrict_scalars(A, Fp)
     @test base_ring(B) == Fp
     @test dim(B) == dim(A)*degree(K)
@@ -176,14 +176,14 @@ end
     Fp = GF(7)
     Fq, a = finite_field(7, 2, "a")
 
-    A = AlgAss(MatrixAlgebra(Fq, 3))
+    A = StructureConstantAlgebra(matrix_ring(Fq, 3))
     B, AtoB = Hecke._as_matrix_algebra(A)
     @test dim(B) == dim(A)
 
     test_mat_alg_morphism(AtoB, 3)
 
     G = SymmetricGroup(4)
-    A = AlgAss(AlgGrp(Fp, G))[1]
+    A = StructureConstantAlgebra(GroupAlgebra(Fp, G))[1]
     Adec = Hecke.decompose(A)
 
     i = 2
@@ -213,13 +213,13 @@ end
     G = small_group(8, 4)
     Qx, x = polynomial_ring(FlintQQ, "x")
     K, a = number_field(x - 1, "a")
-    A = Hecke.AlgGrp(K, G)
+    A = Hecke.GroupAlgebra(K, G)
     H = first(c[1] for c in Hecke.decompose(A) if dim(c[1]) == 4)
     P = infinite_places(K)[1]
     @test !is_split(H, P)
 
     K, a = number_field(x - 1, "a")
-    A = Hecke.AlgGrp(K, G)
+    A = Hecke.GroupAlgebra(K, G)
     H = first(c[1] for c in Hecke.decompose(A) if dim(c[1]) == 1)
     P = infinite_places(K)[1]
     @test is_split(H, P)

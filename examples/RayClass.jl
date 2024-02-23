@@ -1,6 +1,6 @@
-mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
+mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   header::Hecke.MapHeader
-  modulus_fin::Hecke.NfOrdIdl
+  modulus_fin::Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   modulus_inf::Vector{Hecke.InfPlc}
 
   function MapRayClassGrpNew{T}() where {T}
@@ -13,11 +13,11 @@ end
 # Modify the map of the class group so that the chosen representatives are coprime to m
 #
 
-function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
+function _coprime_ideal(C::FinGenAbGroup, mC::Map, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
   O=parent(m).order
   K=nf(O)
-  L=NfOrdIdl[]
+  L=AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for i=1:ngens(C)
     a=mC(C[i])
     if is_coprime(a,m)
@@ -38,7 +38,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
     end
   end
 
-  function exp(a::GrpAbFinGenElem)
+  function exp(a::FinGenAbGroupElem)
     I=ideal(O,1)
     for i=1:ngens(C)
       if Int(a.coeff[1,i])!= 0
@@ -49,7 +49,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
   end
 
   mp=Hecke.MapClassGrp{typeof(C)}()
-  mp.header=Hecke.MapHeader(C,Hecke.NfOrdIdlSet(O),exp, mC.header.preimage)
+  mp.header=Hecke.MapHeader(C,Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O),exp, mC.header.preimage)
 
   return mp
 
@@ -58,14 +58,14 @@ end
 
 @doc raw"""
 ***
-    ray_class_group(m::NfOrdIdl, A::Vector{InfPlc}=[]) -> FinGenGrpAb, Map
+    ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, A::Vector{InfPlc}=[]) -> FinGenGrpAb, Map
 
 > Compute the ray class group of the maximal order $L$ with respect to the modulus given by $m$ (the finite part) and the infinite primes of $A$
 > and return an abstract group isomorphic to the ray class group with a map
 > from the group to the ideals of $L$
 
 """
-function ray_class_group_std(m::NfOrdIdl, primes::Vector{InfPlc}=InfPlc[])
+function ray_class_group_std(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, primes::Vector{InfPlc}=InfPlc[])
 
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
@@ -136,7 +136,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Vector{InfPlc}=InfPlc[])
 # Discrete logarithm
 #
 
-  function disclog(J::NfOrdIdl)
+  function disclog(J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
     !is_coprime(J,m) && error("The ideal is not coprime to the modulus")
     if isone(J)
@@ -161,7 +161,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Vector{InfPlc}=InfPlc[])
 #
 
 
-  function expo(a::GrpAbFinGenElem)
+  function expo(a::FinGenAbGroupElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
     if isempty(primes)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
@@ -191,7 +191,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Vector{InfPlc}=InfPlc[])
   end
 
   mp=MapRayClassGrpNew{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, Hecke.NfOrdIdlSet(O), expo, disclog)
+  mp.header = Hecke.MapHeader(X, Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O), expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=p
 
@@ -205,7 +205,7 @@ end
 #  Ray Class Group - p-part
 #
 ########################################################
-function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}=InfPlc[])
+function ray_class_group_p_part(p::Integer, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{InfPlc}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)
@@ -270,8 +270,8 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
 
   @assert is_snf(U)
   @vprintln :RayFacElem 1 "Collecting elements to be evaluated; first, units"
-  evals = Hecke.NfOrdQuoRingElem[]
-  tobeeval = FacElem{nf_elem, AnticNumberField}[]
+  evals = Hecke.AbsSimpleNumFieldOrderQuoRingElem[]
+  tobeeval = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   if gcd(U.snf[1],p)!=1
     if U.snf[1]==2
       push!(evals,Q(-1))
@@ -341,7 +341,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
     return a
   end
 
-  function disclog(J::NfOrdIdl)
+  function disclog(J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
     if isone(J)
       return X([0 for i=1:ngens(X)])
     else
@@ -364,7 +364,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Vector{InfPlc}
 # Exp map
 #
 
-  function expon(a::GrpAbFinGenElem)
+  function expon(a::FinGenAbGroupElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
     if p!=2 || isempty(pr)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])

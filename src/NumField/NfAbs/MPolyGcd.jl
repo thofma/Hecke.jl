@@ -10,7 +10,7 @@ using ..Hecke
 
 import Hecke.Nemo
 
-function basis_matrix(d::ZZRingElem, f::ZZPolyRingElem, k::AnticNumberField)
+function basis_matrix(d::ZZRingElem, f::ZZPolyRingElem, k::AbsSimpleNumField)
   #assumes f is idl as above!!!
   #1st need to deconstruct f into the different degrees:
   #CRT of degree a>b and implies leading_coefficient(b) = 0 mod q, hence gcd's are my friend
@@ -83,9 +83,9 @@ mutable struct RecoCtx
   f::ZZPolyRingElem # the implicit ideal is <p1, f(gen(k))>
   LI::ZZMatrix #(Li, d) = pseudo_inv(L) - if set (integral = true)
   d::ZZRingElem
-  k::AnticNumberField
+  k::AbsSimpleNumField
   new_data::Bool
-  function RecoCtx(A::ZZMatrix, k::AnticNumberField)
+  function RecoCtx(A::ZZMatrix, k::AbsSimpleNumField)
     r= new()
     r.k = k
     r.L = lll(A)
@@ -93,7 +93,7 @@ mutable struct RecoCtx
     r.new_data = false
     return r
   end
-  function RecoCtx(k::AnticNumberField)
+  function RecoCtx(k::AbsSimpleNumField)
     r = new()
     r.L = identity_matrix(FlintZZ, degree(k))
     r.p1 = ZZRingElem(1)
@@ -126,7 +126,7 @@ function data_assure(R::RecoCtx)
   return R
 end
 
-function has_small_coeffs(a::nf_elem, B::ZZRingElem)
+function has_small_coeffs(a::AbsSimpleNumFieldElem, B::ZZRingElem)
   z = ZZRingElem()
   for i=0:degree(parent(a))-1
     Nemo.num_coeff!(z, a, i)
@@ -137,7 +137,7 @@ function has_small_coeffs(a::nf_elem, B::ZZRingElem)
   return true
 end
 
-function Hecke.induce_rational_reconstruction(a::Generic.MPoly{nf_elem}, R::RecoCtx; integral::Bool = false)
+function Hecke.induce_rational_reconstruction(a::Generic.MPoly{AbsSimpleNumFieldElem}, R::RecoCtx; integral::Bool = false)
   b = MPolyBuildCtx(parent(a))
   k = base_ring(a)
   d = k(2)
@@ -170,7 +170,7 @@ function Hecke.induce_rational_reconstruction(a::Generic.MPoly{nf_elem}, R::Reco
 end
 
 #TODO: split needs to be a val-arg
-function Hecke.rational_reconstruction(a::nf_elem, R::RecoCtx; integral::Bool = false, split::Bool = false)
+function Hecke.rational_reconstruction(a::AbsSimpleNumFieldElem, R::RecoCtx; integral::Bool = false, split::Bool = false)
   data_assure(R)
   if integral
     if !isdefined(R, :LI)
@@ -220,7 +220,7 @@ import Nemo, Nemo.zzModMPolyRingElem, Nemo.zzModMPolyRing
 import AbstractAlgebra
 import Hecke.RecoCtx
 
-function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
+function Hecke.gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MPoly{AbsSimpleNumFieldElem})
   Hecke.check_parent(f, g)
   @vprintln :MPolyGcd 1 "multivariate gcd of f with $(length(f)) and g with $(length(g)) terms over $(base_ring(f))"
 
@@ -239,7 +239,7 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
   return _gcd(f, g, ps)
 end
 
-function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int})
+function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, ps::PrimesSet{Int})
 #  @show "gcd start"
   p = iterate(ps)[1]
   K = base_ring(f)
@@ -267,10 +267,12 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
   Zx = Hecke.Globals.Zx
   R = RecoCtx(K)
 
-  de = lcm(lcm(map(denominator, coefficients(f))), lcm(map(denominator, coefficients(g))))
+  E = any_order(K)
+  de = lcm(lcm(map(c -> denominator(c, E), coefficients(f))),
+           lcm(map(c -> denominator(c, E), coefficients(g))))
+
   f*=de
   g*=de
-  E = any_order(K)
   lI = E*E(leading_coefficient(f)) + E*E(leading_coefficient(g))
   gl = Hecke.short_elem(lI)
   gl *= evaluate(derivative(K.pol), gen(K))  # use Kronnecker basis
@@ -344,7 +346,7 @@ function _gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, 
   end
 end
 
-function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::ZZRingElem, b::Hecke.Generic.MPoly{nf_elem}, q::ZZRingElem, signed::Bool = false)
+function Hecke.induce_crt(a::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, p::ZZRingElem, b::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, q::ZZRingElem, signed::Bool = false)
   pi = invmod(p, q)
   mul!(pi, pi, p)
   pq = p*q
@@ -434,7 +436,7 @@ function Hecke.induce_crt(a::ZZMatrix, p::ZZRingElem, b::ZZMatrix, q::ZZRingElem
   return c, pq
 end
 
-function Hecke.modular_proj(f::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
+function Hecke.modular_proj(f::Generic.MPoly{AbsSimpleNumFieldElem}, me::Hecke.modular_env)
   if !isdefined(me, :Kxy)
     me.Kxy = parent(f)
   else
@@ -458,7 +460,7 @@ function Hecke.modular_proj(f::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
   return map(finish, fp)
 end
 
-function Hecke.modular_proj(::Type{fqPolyRepFieldElem}, a::Generic.MPoly{nf_elem}, me::Hecke.modular_env)
+function Hecke.modular_proj(::Type{fqPolyRepFieldElem}, a::Generic.MPoly{AbsSimpleNumFieldElem}, me::Hecke.modular_env)
   Kxy = parent(a)
   if !isdefined(me, :Kxy)
     me.Kxy = Kxy

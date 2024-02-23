@@ -29,7 +29,7 @@ function number_field_over_subfield(C::ClassField_pp; using_norm_relation::Bool 
 end
 
 
-function translate_extension(mL::NfToNfMor, C::ClassField_pp)
+function translate_extension(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, C::ClassField_pp)
   L = domain(mL)
   OL = maximal_order(L)
   K = codomain(mL)
@@ -41,7 +41,7 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   F = factor(ideal(OK, d))
   mR = C.rayclassgroupmap
   fM0 = copy(factored_modulus(C))
-  fm0 = Dict{NfOrdIdl, Int}()
+  fm0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (p, v) in fM0
     p1 = Hecke.intersect_prime(mL, p)
     if !haskey(fm0, p1)
@@ -87,8 +87,8 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   end
   #Now, the norm group of K over L
   @vtime :ClassField 3 ngL, mngL = Hecke.norm_group(mL, mr)
-  @hassert :ClassField 1 divisible(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
-  if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
+  @hassert :ClassField 1 is_divisible_by(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
+  if !is_divisible_by(order(ngL), degree(C)) || !is_divisible_by(exponent(C), n)
     return false, C
   end
   #Finally, the norm group of C over L
@@ -110,15 +110,15 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   end
   @vtime :ClassField 3 RM, mRM = ray_class_group(OK, fM0, inf_plc2, n_quo = n)
   @vtime :ClassField 3 lP, gS = Hecke.find_gens(mRM, coprime_to = minimum(defining_modulus(mR)[1]))
-  listn = NfOrdIdl[norm(mL, x) for x in lP]
+  listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mL, x) for x in lP]
   # Create the map between R and r by taking norms
-  preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
+  preimgs = Vector{FinGenAbGroupElem}(undef, length(listn))
   for i = 1:length(preimgs)
     preimgs[i] = mr\listn[i]
   end
   proj = hom(gS, preimgs)
   #compute the norm group of C in RM
-  prms = Vector{GrpAbFinGenElem}(undef, length(lP))
+  prms = Vector{FinGenAbGroupElem}(undef, length(lP))
   for i = 1:length(lP)
     prms[i] = C.quotientmap(mR\lP[i])
   end
@@ -140,14 +140,14 @@ function translate_extension(mL::NfToNfMor, C::ClassField_pp)
   mq1 = cokernel(ms1, false)[2]
   mqq = mck * mq1
   @hassert :ClassField 1 domain(mqq) == r
-  C1 = ClassField_pp{MapRayClassGrp, GrpAbFinGenMap}()
+  C1 = ClassField_pp{MapRayClassGrp, FinGenAbGroupHom}()
   C1.quotientmap = mqq
   C1.rayclassgroupmap = mr
   return true, C1
 end
 
 
-function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
+function translate_up(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, C::ClassField_pp, C1::ClassField_pp)
   K = base_field(C)
   Ky = polynomial_ring(K, "y", cached = false)[1]
   L = domain(mL)
@@ -166,12 +166,12 @@ function translate_up(mL::NfToNfMor, C::ClassField_pp, C1::ClassField_pp)
   g = mrel(CEL.mp[1](gen(CEL.Ka)))
   mp = hom(CEL.Ka, CEK.Ka, CEK.mp[1]\(g), check = false)
   #Then, the fac elem corresponding to the generator of the Kummer Extension
-  C.a = FacElem(Dict{nf_elem, ZZRingElem}(mp(x) => v for (x, v) in C1.a))
+  C.a = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}(mp(x) => v for (x, v) in C1.a))
   #Now, the Kummer extension
   Lzeta = codomain(mp)
   Lt = polynomial_ring(Lzeta, "t", cached = false)[1]
   d1 = degree(C1.K)
-  coeffs = Vector{nf_elem}(undef, d1 + 1)
+  coeffs = Vector{AbsSimpleNumFieldElem}(undef, d1 + 1)
   coeffs[1] = mp(coeff(C1.K.pol, 0))
   for s = 2:length(coeffs)-1
     coeffs[s] = zero(Lzeta)

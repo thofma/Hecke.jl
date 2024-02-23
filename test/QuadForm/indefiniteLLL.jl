@@ -31,7 +31,7 @@ end
 
   G3 = ZZ[1 0 0 0; 0 -1 3 4; 0 3 -1 1; 0 4 1 1]
   v3 = Hecke._quadratic_form_solve_triv(G3;base = true)
-  @test v3[2][1,:] == v3[3]
+  @test v3[2][1:1,:] == v3[3]
   @test v3[3] * G3 * transpose(v3[3]) == 0
 end
 

@@ -29,7 +29,7 @@
   Qx, x = polynomial_ring(FlintQQ, "x")
   K1, a1 = number_field(x^2 - 2, "a1")
   K2, a2 = number_field(x^3 - 2, "a2")
-  
+
   K1t, t = polynomial_ring(K1, "t")
   L, b = number_field(t^2 + a1)
 
@@ -475,8 +475,8 @@
                                                        # in the ambient, so its basis is fixed
                                                        # by projection
 
-    r, B = left_kernel(pr.matrix)
-    @test r == 4
+    B = Hecke.kernel(pr.matrix, side = :left)
+    @test nrows(B) == 4
     Msup = lattice(ambient_space(L), B)
     @test is_sublattice(Msup, M) # A priori the kernel is bigger since M is integral
     @test !is_integral(Msup)

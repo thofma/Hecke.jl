@@ -7,7 +7,7 @@ add_assertion_scope(:LLL)
 #
 ################################################################################
 
-function _lll_gram(A::NfOrdIdl)
+function _lll_gram(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   K = nf(order(A))
   @assert is_totally_real(K)
   g = trace_matrix(A)
@@ -17,7 +17,7 @@ function _lll_gram(A::NfOrdIdl)
   return FakeFmpqMat(l, ZZRingElem(1)), t::ZZMatrix
 end
 
-function _lll_quad(A::NfOrdIdl)
+function _lll_quad(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   K = nf(order(A))
   @assert degree(K) == 2 && discriminant(order(A)) < 0
   b = basis(A)
@@ -30,11 +30,11 @@ function _lll_quad(A::NfOrdIdl)
   return FakeFmpqMat(l, ZZRingElem(1)), t::ZZMatrix
 end
 
-function _lll_CM(A::NfOrdIdl)
+function _lll_CM(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   OK = order(A)
   @vprintln :LLL 3 "Reduction"
   M = _minkowski_matrix_CM(OK)
-  @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), lll_ctx(0.3, 0.51))
+  @vtime :LLL 3 BM, T = lll_with_transform(basis_matrix(A, copy = false), LLLContext(0.3, 0.51))
   g = BM*M*transpose(BM)
   @hassert :LLL 1 is_positive_definite(g)
   @vtime :LLL 3 l, t = lll_gram_with_transform(g)
@@ -47,7 +47,7 @@ end
 #
 ################################################################################
 
-function lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
 
   K = nf(order(A))
 
@@ -89,12 +89,12 @@ function lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 end
 
 
-function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   K = nf(order(A))
   n = degree(order(A))
   prec = max(prec, 4*n)
 
-  ctx1 = lll_ctx(0.5, 0.51)
+  ctx1 = LLLContext(0.5, 0.51)
   l, t1 = lll_with_transform(basis_matrix(A, copy = false), ctx1)
 
   if iszero(v)
@@ -107,7 +107,7 @@ function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int =
   else
     c = minkowski_matrix(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
-    b = l*basis_matrix(order(A), copy = false)
+    b = l*basis_matrix(FakeFmpqMat, order(A), copy = false)
 
 
     rt_c = roots_ctx(K)
@@ -142,10 +142,10 @@ function _lll(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int =
     fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
   end
 
-  ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
+  ctx = Nemo.LLLContext(0.99, 0.51, :gram)
 
   ccall((:fmpz_mat_one, libflint), Nothing, (Ref{ZZMatrix}, ), g)
-  ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
@@ -191,11 +191,11 @@ end
 ###############################################################################
 
 @doc raw"""
-    lll(M::NfAbsOrd) -> NfAbsOrd
+    lll(M::AbsNumFieldOrder) -> AbsNumFieldOrder
 
 The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
-function lll(M::NfAbsOrd; prec::Int = 100)
+function lll(M::AbsNumFieldOrder; prec::Int = 100)
 
   if isdefined(M, :lllO)
     return M.lllO::typeof(M)
@@ -228,12 +228,12 @@ end
 
 
 #for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
-function _lll_gram(M::NfAbsOrd)
+function _lll_gram(M::AbsNumFieldOrder)
   K = nf(M)
   @assert is_totally_real(K)
   g = trace_matrix(M)
   w = lll_gram_with_transform(g)[2]
-  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -247,7 +247,7 @@ function _lll_gram(M::NfAbsOrd)
   return On
 end
 
-function _minkowski_matrix_CM(M::NfAbsOrd)
+function _minkowski_matrix_CM(M::AbsNumFieldOrder)
   if isdefined(M,  :minkowski_gram_CMfields)
     return M.minkowski_gram_CMfields
   end
@@ -271,12 +271,12 @@ function _minkowski_via_approximation(B::Vector{T}) where T <: NumFieldElem
   n = length(B)
   g = zero_matrix(FlintZZ, n, n)
   prec = 16
-  imgs = Vector{Vector{arb}}(undef, n)
+  imgs = Vector{Vector{ArbFieldElem}}(undef, n)
   for i = 1:n
     imgs[i] = minkowski_map(B[i], prec)
   end
   i = 1
-  t = arb()
+  t = ArbFieldElem()
   while i <= n
     j = i
     while j <= n
@@ -324,13 +324,13 @@ function trace_matrix(b::Vector{T}) where T <: NumFieldElem
 end
 
 
-function _lll_CM(M::NfAbsOrd)
+function _lll_CM(M::AbsNumFieldOrder)
   K = nf(M)
   g = _minkowski_matrix_CM(M)
   @vprintln :LLL 1 "Now LLL"
   @hassert :LLL 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
-  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -345,7 +345,7 @@ function _lll_CM(M::NfAbsOrd)
 end
 
 
-function _lll_quad(M::NfAbsOrd)
+function _lll_quad(M::AbsNumFieldOrder)
   K = nf(M)
   b = basis(M)
   a1 = 2*numerator(norm(b[1]))
@@ -354,7 +354,7 @@ function _lll_quad(M::NfAbsOrd)
   g = matrix(FlintZZ, 2, 2, ZZRingElem[a1, a12, a12, a2])
   @hassert :ClassGroup 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
-  On = NfAbsOrd(K, w*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, w*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -368,7 +368,7 @@ function _lll_quad(M::NfAbsOrd)
   return On
 end
 
-function _lll(M::NfAbsOrd, prec::Int)
+function _lll(M::AbsNumFieldOrder, prec::Int)
 
   K = nf(M)
   n = degree(K)
@@ -388,13 +388,13 @@ function _lll(M::NfAbsOrd, prec::Int)
   return M1
 end
 
-function _ordering_by_T2(M::NfAbsOrd, prec::Int = 32)
+function _ordering_by_T2(M::AbsNumFieldOrder, prec::Int = 32)
 
   K = nf(M)
   B = basis(M, K)
   ints = ZZRingElem[lower_bound(t2(x, prec), ZZRingElem) for x in B]
   p = sortperm(ints)
-  On = NfAbsOrd(B[p])
+  On = AbsNumFieldOrder(B[p])
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -489,7 +489,7 @@ function _has_trivial_intersection(v::Vector{Vector{Int}}, V::Vector{Vector{Int}
   return true
 end
 
-function lll_precomputation(M::NfAbsOrd, prec::Int, nblocks::Int = 4)
+function lll_precomputation(M::AbsNumFieldOrder, prec::Int, nblocks::Int = 4)
   n = degree(M)
   K = nf(M)
   dimension_blocks = div(n, nblocks)
@@ -512,7 +512,7 @@ function lll_precomputation(M::NfAbsOrd, prec::Int, nblocks::Int = 4)
     end
     if block == length(to_do)+1
       blocks_selection = Vector{Int}[]
-      On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
+      On = AbsNumFieldOrder(K, g*basis_matrix(FakeFmpqMat, M, copy = false))
       On.is_maximal = M.is_maximal
       if isdefined(M, :index)
       On.index = M.index
@@ -541,7 +541,7 @@ end
 
 
 
-function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
+function _lll_sublattice(M::AbsNumFieldOrder, u::Vector{Int}; prec = 100)
   K = nf(M)
   n = degree(M)
   l = length(u)
@@ -572,8 +572,8 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
     for i=1:l
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
-    ctx = Nemo.lll_ctx(0.99, 0.51, :gram)
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d1, g, ctx)
+    ctx = Nemo.LLLContext(0.99, 0.51, :gram)
+    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d1, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       prec *= 2
@@ -597,7 +597,7 @@ function _lll_sublattice(M::NfAbsOrd, u::Vector{Int}; prec = 100)
 end
 
 
-function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, prec; steps::Int = -1)
+function _lll_with_parameters(M::AbsNumFieldOrder, parameters::Tuple{Float64, Float64}, prec; steps::Int = -1)
 
   K = nf(M)
   n = degree(M)
@@ -605,7 +605,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
   disc = abs(discriminant(M))
   local g::ZZMatrix
   local d::ZZMatrix
-  ctx = Nemo.lll_ctx(parameters[1], parameters[2], :gram)
+  ctx = Nemo.LLLContext(parameters[1], parameters[2], :gram)
   dM = sum(nbits(Hecke.upper_bound(ZZRingElem, t2(x))) for x in basis(M, K))
   @vprintln :LLL 1 "Input profile: $(dM)"
   @vprintln :LLL 1 "Target profile: $(nbits(disc^2)+divexact(n*(n-1), 2))"
@@ -639,7 +639,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g, ctx)
+    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true
@@ -658,7 +658,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
         break
       end
     end
-    On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
+    On = AbsNumFieldOrder(K, g*basis_matrix(FakeFmpqMat, M, copy = false))
     On.is_maximal = M.is_maximal
     if isdefined(M, :index)
       On.index = M.index
@@ -684,7 +684,7 @@ function _lll_with_parameters(M::NfAbsOrd, parameters::Tuple{Float64, Float64}, 
     end
     @vprintln :LLL 3 "Still in the loop"
   end
-  On = NfAbsOrd(K, g*basis_matrix(M, copy = false))
+  On = AbsNumFieldOrder(K, g*basis_matrix(FakeFmpqMat, M, copy = false))
   On.is_maximal = M.is_maximal
   if isdefined(M, :index)
     On.index = M.index
@@ -706,38 +706,38 @@ end
 ################################################################################
 
 @doc raw"""
-    lll_basis(M::NumFieldOrd) -> Vector{NumFieldElem}
+    lll_basis(M::NumFieldOrder) -> Vector{NumFieldElem}
 
 A basis for $M$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
-function lll_basis(M::NfAbsOrd)
+function lll_basis(M::AbsNumFieldOrder)
   M1 = lll(M)
   return basis(M1, nf(M1))
 end
 
 @doc raw"""
-    lll_basis(I::NumFieldOrdIdl) -> Vector{NumFieldElem}
+    lll_basis(I::NumFieldOrderIdeal) -> Vector{NumFieldElem}
 
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
-function lll_basis(A::NfOrdIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
-  S = FakeFmpqMat(T)*basis_matrix(A, copy = false)*basis_matrix(order(A), copy = false)
+  S = FakeFmpqMat(T)*basis_matrix(FakeFmpqMat, A, copy = false)*basis_matrix(FakeFmpqMat, order(A), copy = false)
   K = nf(order(A))
   nS = numerator(S)
   dS = denominator(S)
-  q = nf_elem[elem_from_mat_row(K, nS, i, dS) for i=1:degree(K)]
+  q = AbsSimpleNumFieldElem[elem_from_mat_row(K, nS, i, dS) for i=1:degree(K)]
   return q
 end
 
-function lll_basis(A::NfOrdFracIdl, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::AbsSimpleNumFieldOrderFractionalIdeal, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   L, T = lll(A.num, v, prec=prec)
-  S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(order(A))
+  S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(FakeFmpqMat, order(A))
   K = nf(order(A))
   nS = numerator(S)
   dS = denominator(S)
-  q = nf_elem[elem_from_mat_row(K, nS, i, dS*A.den) for i=1:degree(K)]
+  q = AbsSimpleNumFieldElem[elem_from_mat_row(K, nS, i, dS*A.den) for i=1:degree(K)]
   return q
 end
 
@@ -747,20 +747,20 @@ end
 #
 ################################################################################
 
-function short_elem(A::NfOrdFracIdl,
+function short_elem(A::AbsSimpleNumFieldOrderFractionalIdeal,
                 v::ZZMatrix=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
 
-function short_elem(A::NfOrdIdl,
+function short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
                 v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
   t = lll(A, v, prec = prec)[2]
   w = view(t, 1:1, 1:ncols(t))
   mul!(w, w, basis_matrix(A, copy = false))
-  c = w*basis_matrix(order(A), copy = false)
+  c = w*basis_matrix(FakeFmpqMat, order(A), copy = false)
   q = elem_from_mat_row(K, c.num, 1, c.den)
   return q
 end
@@ -771,7 +771,7 @@ end
 #
 ################################################################################
 
-function reduce_ideal(A::NfOrdIdl)
+function reduce_ideal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   B = inv(A)
   b = short_elem(B)
   C = b*A
@@ -780,11 +780,11 @@ function reduce_ideal(A::NfOrdIdl)
   return C.num, b
 end
 
-function reduce_product(A::NfOrdIdl, B::NfOrdIdl)
+function reduce_product(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   I = inv(A)
   J = inv(B)
   @vtime :LLL 3 bIJ = _lll_product_basis(I.num, J.num)
-  pp = NfOrdIdl(order(A), bIJ)
+  pp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(order(A), bIJ)
   @vtime :LLL 3 b = divexact(short_elem(pp), I.den * J.den)
   AB = A*B
   C = b*AB
@@ -794,7 +794,7 @@ function reduce_product(A::NfOrdIdl, B::NfOrdIdl)
 end
 
 
-function reduce_ideal(A::NfOrdFracIdl)
+function reduce_ideal(A::AbsSimpleNumFieldOrderFractionalIdeal)
   B = inv(A)
   b = short_elem(B.num)
   C = divexact(b, B.den)*A
@@ -805,16 +805,16 @@ end
 
 
 @doc raw"""
-    reduce_ideal(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
+    reduce_ideal(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FacElem{AbsSimpleNumFieldElem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
-function reduce_ideal(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function reduce_ideal(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert !isempty(I.fac)
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
-  a = FacElem(Dict{nf_elem, ZZRingElem}(one(K) => ZZRingElem(1)))
+  a = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}(one(K) => ZZRingElem(1)))
   A = ideal(O, 1)
   for (k, v) = I.fac
     @assert order(k) === O
@@ -844,12 +844,12 @@ end
 
 # The bound should be sqrt(disc) (something from LLL)
 @doc raw"""
-    power_reduce(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl, FacElem{nf_elem}
+    power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FacElem{AbsSimpleNumFieldElem}
 
 Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
 $B$ has small norm.
 """
-function power_reduce(A::NfOrdIdl, e::ZZRingElem)
+function power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem)
   O = order(A)
   K= nf(O)
   if norm(A, copy = false) > abs(discriminant(O))
@@ -900,7 +900,7 @@ function power_reduce(A::NfOrdIdl, e::ZZRingElem)
 end
 
 
-function new_power_reduce(A::NfOrdIdl, e::ZZRingElem)
+function new_power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem)
   O = order(A)
   if iszero(e)
     return ideal(O, 1)
@@ -925,7 +925,7 @@ function new_power_reduce(A::NfOrdIdl, e::ZZRingElem)
   return res[1], al
 end
 
-function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRingElem)
+function _new_power_reduce(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem, Ainv::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, d::ZZRingElem)
   #Ainv//d is the inverse of A
   #We want to reduce A^e
   O = order(A)
@@ -973,7 +973,7 @@ function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRing
   else
     C2 = C^2
     basis_IJ = _lll_product_basis(Cinv, Cinv)
-    IJ = NfOrdIdl(O, basis_IJ)
+    IJ = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O, basis_IJ)
     newb = lll(IJ)[2]
     mul!(newb, newb, basis_matrix(IJ, copy = false))
     IJ.basis_matrix = newb
@@ -997,7 +997,7 @@ function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRing
     else
       A = C2*A
       basis_IJ = _lll_product_basis(C2inv, Ainv)
-      IJ = NfOrdIdl(O, basis_IJ)
+      IJ = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O, basis_IJ)
       newb = lll(IJ)[2]
       mul!(newb, newb, basis_matrix(IJ, copy = false))
       IJ.basis_matrix = newb
@@ -1012,7 +1012,7 @@ function _new_power_reduce(A::NfOrdIdl, e::ZZRingElem, Ainv::NfOrdIdl, d::ZZRing
   return A, al, Ainv, d
 end
 
-function short_elem_product(A::NfOrdIdl, B::NfOrdIdl)
+function short_elem_product(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return lll_basis_product(A, B)[1]
 end
 
@@ -1028,7 +1028,7 @@ end
 # Then we compute the lll of the matrix of the coordinates. This way we get a
 # better basis to start the computation of LLL
 #We compute the hnf to have a guaranteed bound on the entries
-function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
+function _lll_product_basis(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   A = lll(I)[2]
   mul!(A, A, basis_matrix(I, copy = false))
   IJ = I*J
@@ -1037,7 +1037,7 @@ function _lll_product_basis(I::NfOrdIdl, J::NfOrdIdl)
   mul!(iA, C, iA)
   divexact!(iA, iA, de)
   hnf_modular_eldiv!(iA, minimum(J))
-  @vtime :LLL 3 lll!(iA, lll_ctx(0.3, 0.51))
+  @vtime :LLL 3 lll!(iA, LLLContext(0.3, 0.51))
   @vtime :LLL 3 lll!(iA)
   mul!(iA, iA, A)
   return iA
@@ -1045,10 +1045,10 @@ end
 
 
 
-function lll_basis_product(I::NfOrdIdl, J::NfOrdIdl)
+function lll_basis_product(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
   basis_IJ = _lll_product_basis(I, J)
-  IJ = NfOrdIdl(order(I), basis_IJ)
+  IJ = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(order(I), basis_IJ)
   res = lll_basis(IJ)
   return res
 end

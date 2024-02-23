@@ -23,8 +23,8 @@ end
 
   M = sparse_matrix(matrix(GF(5), 3, 3, [ 0, 1, 2, 0, 1, 3, 0, 0, 4 ]))
   @test nullspace(M) == (1, matrix(GF(5), 3, 1, [ 1, 0, 0 ]))
-  @test kernel(M, side = :left) == (1, matrix(GF(5), 1, 3, [ 4, 1, 1 ]))
-  @test kernel(M, side = :right) == (1, matrix(GF(5), 3, 1, [ 1, 0, 0 ]))
+  @test kernel(M, side = :left) == matrix(GF(5), 1, 3, [ 4, 1, 1 ])
+  @test kernel(M, side = :right) == matrix(GF(5), 3, 1, [ 1, 0, 0 ])
 
   for i in 1:10
     r = 10

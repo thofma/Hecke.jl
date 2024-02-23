@@ -22,21 +22,21 @@ parent(A::SMat) = SMatSpace(base_ring(A), A.r, A.c)
 base_ring(A::SMat{T}) where {T} = A.base_ring::parent_type(T)
 
 @doc raw"""
-    nrows(A::SMat) -> Int
+    number_of_rows(A::SMat) -> Int
 
 Return the number of rows of $A$.
 """
-function nrows(A::SMat)
+function number_of_rows(A::SMat)
   @assert A.r == length(A.rows)
   return A.r
 end
 
 @doc raw"""
-    ncols(A::SMat) -> Int
+    number_of_columns(A::SMat) -> Int
 
 Return the number of columns of $A$.
 """
-function ncols(A::SMat)
+function number_of_columns(A::SMat)
   return A.c
 end
 

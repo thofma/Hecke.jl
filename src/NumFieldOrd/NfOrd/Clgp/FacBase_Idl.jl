@@ -6,21 +6,21 @@
 #
 ################################################################################
 
-function NfFactorBase(O::NfOrd, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
+function NfFactorBase(O::AbsSimpleNumFieldOrder, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
   @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::NfOrd, lp::AbstractVector{Int}, degree_limit::Int = 0)
+function NfFactorBase(O::AbsSimpleNumFieldOrder, lp::AbstractVector{Int}, degree_limit::Int = 0)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lP = prime_ideals_over(O, lp, degree_limit = degree_limit)
   @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lP)
 end
 
-function NfFactorBase(O::NfOrd, B::Int;
+function NfFactorBase(O::AbsSimpleNumFieldOrder, B::Int;
                         complete::Bool = true, degree_limit::Int = 5)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
@@ -28,7 +28,7 @@ function NfFactorBase(O::NfOrd, B::Int;
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
+function NfFactorBase(O::AbsSimpleNumFieldOrder, lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   lp = sort(lp, lt = function(a,b) return norm(a, copy = false) > norm(b, copy = false); end)
   FB = NfFactorBase()
   FB.size = length(lp)
@@ -38,7 +38,7 @@ function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
   FB.rw = Array{Int}(undef, 20)
   FB.mx = 20
 
-  fb = Dict{ZZRingElem, Vector{Tuple{Int, NfOrdIdl}}}()
+  fb = Dict{ZZRingElem, Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}}()
 
   for i = 1:length(lp)
     if !haskey(fb, minimum(lp[i]))
@@ -76,7 +76,7 @@ order(F::NfFactorBase) = ring(F)
 #
 ################################################################################
 
-function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
+function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::AbsSimpleNumFieldElem;
                  error = true, n = abs(norm(a))) where T
   fl, res = _factor(FB, a, error=error, n=n)
   if fl
@@ -85,7 +85,7 @@ function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
   return fl
 end
 
-function _factor!(FB::NfFactorBase, a::nf_elem,
+function _factor!(FB::NfFactorBase, a::AbsSimpleNumFieldElem,
                     error::Bool = true, n::QQFieldElem = abs(norm(a)), integral::Bool = true)
   T = ZZRingElem
   O = order(FB.ideals[1])
@@ -134,11 +134,11 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   end
 end
 
-function factor(FB::NfFactorBase, a::nf_elem)
+function factor(FB::NfFactorBase, a::AbsSimpleNumFieldElem)
   return _factor!(FB, a, true, abs(norm(a)), false)[2]
 end
 
-function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
+function _factor!(FB::Hecke.NfFactorBase, A::Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
                     error::Bool = true)
   T = ZZRingElem
   O = order(A)

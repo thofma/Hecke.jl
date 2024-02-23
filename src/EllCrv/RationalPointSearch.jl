@@ -60,19 +60,19 @@ function find_points(coefficients::Vector{ZZRingElem}, bound::IntegerUnion, N = 
 end
 
 @doc raw"""
-    find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion) -> ArbField
+    find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion) -> ArbField
 
 Given an elliptic curve E over QQ with integral coefficients and
 a bound, return a list of points (x: y: 1) on the curve
 where writing x = a//b with gcd(a, b) = 1 the points are bounded by
 max(|a|, |b|) <= bound.
 """
-function find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
+function find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   @req is_integral_model(E) "Elliptic Curve needs to be integral"
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   transform = false
   if a1 != 0 || a3!= 0
-    b2, b4, b6 = b_invars(E)
+    b2, b4, b6 = b_invariants(E)
     coeffs = [b6, b4, b2, 4]
     transform = true
   else
@@ -277,7 +277,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     end
     B = filter!(collect(1:bound)) do b
       for d in exclude_denom
-        if divisible(b,d)
+        if is_divisible_by(b,d)
           return false
         end
       end
@@ -689,7 +689,7 @@ end
 #       3 if only odd solutions
 function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
-  R = residue_ring(ZZ, 16)
+  R = residue_ring(ZZ, 16)[1]
   # a contains n+1 elements : a0, ...., an
   n = length(coefficients) - 1
 
@@ -916,7 +916,7 @@ function negative_intervals(N::NegativityCertificate)
   return l, N.intervals, r
 end
 
-function _get_interval(x::arb)
+function _get_interval(x::ArbFieldElem)
   a = ZZRingElem()
   b = ZZRingElem()
   e = ZZRingElem()
@@ -927,7 +927,7 @@ function _get_interval(x::arb)
     return y//1, y//1
   end
 
-  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arb}), a, b, e, x)
+  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ArbFieldElem}), a, b, e, x)
   ee = Int(e)
   @assert ee <= 0
   d = one(ZZRingElem) << -ee

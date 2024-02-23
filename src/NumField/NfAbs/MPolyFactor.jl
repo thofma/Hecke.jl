@@ -5,7 +5,7 @@
 function _doit(a::Generic.MPoly{<:NumFieldElem}, fxn::Function)
   k = base_ring(a)
   ks, ms = absolute_simple_field(k)
-  lf = fxn(map_coefficients(pseudo_inv(ms), a))
+  lf = fxn(map_coefficients(pseudo_inv(ms), a, cached = false))
   return Fac(map_coefficients(ms, unit(lf), parent = parent(a)), Dict(map_coefficients(ms, k, parent = parent(a)) => v for (k,v) = lf.fac))
 end
 
@@ -13,11 +13,11 @@ function AbstractAlgebra.factor(a::Generic.MPoly{<:NumFieldElem})
   return _doit(a, factor)
 end
 
-function AbstractAlgebra.factor(a::Generic.MPoly{nf_elem})
+function AbstractAlgebra.factor(a::Generic.MPoly{AbsSimpleNumFieldElem})
   return AbstractAlgebra.MPolyFactor.mfactor_char_zero(a)
 end
 
-function AbstractAlgebra.factor_squarefree(a::Generic.MPoly{nf_elem})
+function AbstractAlgebra.factor_squarefree(a::Generic.MPoly{AbsSimpleNumFieldElem})
   return AbstractAlgebra.MPolyFactor.mfactor_squarefree_char_zero(a)
 end
 
@@ -25,7 +25,7 @@ function AbstractAlgebra.factor_squarefree(a::Generic.MPoly{<:NumFieldElem})
   return _doit(a, factor_squarefree)
 end
 
-function AbstractAlgebra.factor(a::Generic.Poly{nf_elem})
+function AbstractAlgebra.factor(a::Generic.Poly{AbsSimpleNumFieldElem})
   return Hecke.factor(a)
 end
 
@@ -34,7 +34,7 @@ function AbstractAlgebra.MPolyFactor.mfactor_choose_eval_points!(
   A::E,
   mainvar::Int,
   minorvars::Vector{Int},
-  size::Int) where E <: Generic.MPoly{nf_elem}
+  size::Int) where E <: Generic.MPoly{AbsSimpleNumFieldElem}
 
   n = length(minorvars)
   R = parent(A)
@@ -60,7 +60,7 @@ function AbstractAlgebra.MPolyFactor.hlift_have_lcs(
   mainvar::Int,
   minorvars::Vector{Int},   # length n
   alphas::Vector
-) where E <: Generic.MPoly{nf_elem}
+) where E <: Generic.MPoly{AbsSimpleNumFieldElem}
 
   return hlift_have_lcs_generic(A, Auf, lcs, mainvar, minorvars, alphas)
 #  return hlift_have_lcs_crt(A, Auf, lcs, mainvar, minorvars, alphas)
@@ -69,7 +69,7 @@ end
 ###############################################################################
 #### implementation ###########################################################
 
-#### the original generic method using nf_elem arithmetic #####################
+#### the original generic method using AbsSimpleNumFieldElem arithmetic #####################
 
 function hlift_have_lcs_generic(
   A::E,                 # lead coeff should equal prod(lcs)
@@ -78,7 +78,7 @@ function hlift_have_lcs_generic(
   mainvar::Int,
   minorvars::Vector{Int},   # length n
   alphas::Vector
-) where E <: Generic.MPoly{nf_elem}
+) where E <: Generic.MPoly{AbsSimpleNumFieldElem}
 
   R = parent(A)
   K = base_ring(R)
@@ -129,7 +129,7 @@ end
 
 #### modular approach #########################################################
 
-function nf_elem_split(a::nf_elem)
+function nf_elem_split(a::AbsSimpleNumFieldElem)
   den = denominator(a)
   num = Hecke.Globals.Zx(parent(defining_polynomial(parent(a)))(a)*den)
   return num, den
@@ -141,7 +141,7 @@ end
     lcc*g is in Z[alpha][x1,x2,...]
     height(lcc*g) <= 2^bits
 =#
-function mfactor_martin_bounds(A::Generic.MPoly{nf_elem})
+function mfactor_martin_bounds(A::Generic.MPoly{AbsSimpleNumFieldElem})
   R = parent(A)
   K = base_ring(R)
   Alen = length(A)
@@ -197,7 +197,7 @@ function hlift_have_lcs_crt(
   mainvar::Int,
   minorvars::Vector{Int},   # length n
   alphas::Vector
-) where E <: Generic.MPoly{nf_elem}
+) where E <: Generic.MPoly{AbsSimpleNumFieldElem}
 
   R = parent(A)
   K = base_ring(R)
@@ -215,7 +215,7 @@ function hlift_have_lcs_crt(
 
     local pA, pAuf, plcs, palphas
 
-    if divisible(nf_lcc, p)
+    if is_divisible_by(nf_lcc, p)
         continue
     end
 

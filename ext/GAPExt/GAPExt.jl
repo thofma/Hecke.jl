@@ -22,7 +22,7 @@ import Hecke:
   is_fixed_point_free,
   IdGroup,
   number_field,
-  NumFieldEmbNfAbs,
+  AbsSimpleNumFieldEmbedding,
   permutation_group1,
   primitive_frobenius_extensions,
   ramified_primes,

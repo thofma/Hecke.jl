@@ -1,6 +1,6 @@
 using Hecke
 
-Base.:*(x::Hecke.NfRelNSElem{Nemo.nf_elem}) = x
+Base.:*(x::Hecke.RelNonSimpleNumFieldElem{Nemo.AbsSimpleNumFieldElem}) = x
 
 function _get_simple_extension_and_maximal_order(K)
   @assert degree(base_ring(K)) == 1
@@ -97,7 +97,7 @@ width = length(string(total_cond))
 
 #@show l_conductors
 
-fields=Tuple{AnticNumberField, ZZRingElem}[]
+fields=Tuple{AbsSimpleNumField, ZZRingElem}[]
 #  autos=Vector{NfRelNSToNfRelNSMor}[]
 
 #Now, the big loop

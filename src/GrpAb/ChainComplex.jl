@@ -18,20 +18,20 @@ Given $\phi: G\to F$ and $\psi:H \to F$ s.th. $\Im(\phi) \subseteq \Im(\psi)$
 return the map $G\to H$ to make the diagram commute.
 """
 function lift(phi::Map, psi::Map)
-  x = [haspreimage(psi, image(phi, g)) for g = gens(domain(phi))]
+  x = [has_preimage_with_preimage(psi, image(phi, g)) for g = gens(domain(phi))]
   @assert all(t -> t[1], x)
   return hom(domain(phi), domain(psi), [t[2] for t = x])
 end
 
 @doc raw"""
-    zero_map(G::GrpAbFinGen) -> Map
+    zero_map(G::FinGenAbGroup) -> Map
 Create the map $G \to \{0\}$.
 """
-function zero_map(G::GrpAbFinGen)
+function zero_map(G::FinGenAbGroup)
   return zero_map(G, zero_obj(G))
 end
 
-function zero_map(G::GrpAbFinGen, H::GrpAbFinGen)
+function zero_map(G::FinGenAbGroup, H::FinGenAbGroup)
   return hom(G, H, [H[0] for i=1:ngens(G)])
 end
 
@@ -156,7 +156,7 @@ end
 is_chain_complex(C::ComplexOfMorphisms) = C.typ == :chain
 is_cochain_complex(C::ComplexOfMorphisms) = C.typ == :cochain
 
-function zero_obj(::GrpAbFinGen)
+function zero_obj(::FinGenAbGroup)
   A = abelian_group([1])
   set_name!(A, "Zero")
   return A
@@ -323,26 +323,9 @@ Base.getindex(C::ComplexOfMorphisms, i::Int) = obj(C, i)
 obj_type(C::ComplexOfMorphisms{T}) where {T} = T
 map_type(C::ComplexOfMorphisms) = valtype(C.maps)
 
-Hecke.base_ring(::GrpAbFinGen) = ZZ
-
-function get_name(M, na::String)
-  name = get_attribute(M, :name)
-  if name !== nothing
-    return name
-  end
-  name = AbstractAlgebra.find_name(M)
-  if name !== nothing
-    return String(name)
-  end
-  return na
-end
+Hecke.base_ring(::FinGenAbGroup) = ZZ
 
 function pres_show(io::IO, C::ComplexOfMorphisms)
-  Cn = get_attribute(C, :name)
-  if Cn === nothing
-    Cn = "F"
-  end
-
   name_mod = String[]
   rank_mod = Int[]
 
@@ -350,15 +333,26 @@ function pres_show(io::IO, C::ComplexOfMorphisms)
   arr = ("<--", "--")
 
   R = Nemo.base_ring(C[first(rng)])
-  R_name = get_name(R, "$R")
+  R_name = get_name(R)
+  if isnothing(R_name)
+    R_name = "$R"
+  end
 
   for i=reverse(rng)
     M = C[i]
     if i == -1 #the object that is presented
-      push!(name_mod, get_name(M, "M"))
+      M_name = get_name(M)
+      if isnothing(M_name)
+        M_name = "M"
+      end
+      push!(name_mod, M_name)
       push!(rank_mod, 0)
     else
-      push!(name_mod, get_name(M, "$R_name^$(rank(M))"))
+      M_name = get_name(M)
+      if isnothing(M_name)
+        M_name = "$R_name^$(rank(M))"
+      end
+      push!(name_mod, M_name)
       push!(rank_mod, rank(M))
     end
   end
@@ -397,11 +391,6 @@ end
 
 
 function free_show(io::IO, C::ComplexOfMorphisms)
-  Cn = get_attribute(C, :name)
-  if Cn === nothing
-    Cn = "F"
-  end
-
   name_mod = String[]
   rank_mod = Int[]
 
@@ -410,18 +399,18 @@ function free_show(io::IO, C::ComplexOfMorphisms)
   arr = ("<--", "--")
 
   R = Nemo.base_ring(C[first(rng)])
-  R_name = get_attribute(R, :name)
+  R_name = get_name(R)
   if R_name === nothing
     R_name = "$R"
   end
 
   for i=reverse(rng)
     M = C[i]
-    if get_attribute(M, :name) !== nothing
-      push!(name_mod, get_attribute(M, :name))
-    else
-      push!(name_mod, "$R_name^$(rank(M))")
+    M_name = get_name(M)
+    if M_name === nothing
+      M_name = "$R_name^$(rank(M))"
     end
+    push!(name_mod, M_name)
     push!(rank_mod, rank(M))
   end
 
@@ -462,7 +451,7 @@ function show(io::IO, C::ComplexOfMorphisms)
   @show_name(io, C)
   @show_special(io, C)
 
-  Cn = get_attribute(C, :name)
+  Cn = get_name(C)
   if Cn === nothing
     Cn = "C"
   end
@@ -481,11 +470,11 @@ function show(io::IO, C::ComplexOfMorphisms)
 
   for i=rng
     M = obj(C, i)
-      if is_chain_complex(C)
-        name_mod[i] = "$(Cn)_$i"
-      else
-        name_mod[i] = "$(Cn)^$i"
-      end
+    if is_chain_complex(C)
+      name_mod[i] = "$(Cn)_$i"
+    else
+      name_mod[i] = "$(Cn)^$i"
+    end
   end
 
   io = IOContext(io, :compact => true)
@@ -505,29 +494,29 @@ function show(io::IO, C::ComplexOfMorphisms)
 end
 
 @doc raw"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
+    chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...) -> ComplexOfMorphisms{FinGenAbGroup}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the chain complex.
 """
-function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
+function chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0)
   return ComplexOfMorphisms(collect(A), seed = seed, typ = :chain)
 end
 
-function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
+function chain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0)
   return ComplexOfMorphisms(A, seed = seed, typ = :chain)
 end
-function cochain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
+function cochain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0)
   return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain)
 end
 
 @doc raw"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
+    chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...) -> ComplexOfMorphisms{FinGenAbGroup}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the cochain complex.
 The logical indexing and the printing for chain and cochain complexes differs.
 See `Hecke.ComplexOfMorphisms` for details.
 """
-function cochain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
+function cochain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0)
   return ComplexOfMorphisms(A, seed = seed, typ = :cochain)
 end
 
@@ -575,16 +564,16 @@ function is_exact(C::ComplexOfMorphisms)
 end
 
 @doc raw"""
-    free_resolution(G::GrpAbFinGen) -> ComplexOfMorphisms{GrpAbFinGen}
+    free_resolution(G::FinGenAbGroup) -> ComplexOfMorphisms{FinGenAbGroup}
 A free resolution for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
-function free_resolution(G::GrpAbFinGen)
+function free_resolution(G::FinGenAbGroup)
   A = free_abelian_group(ngens(G))
   R = rels(G)
   B = free_abelian_group(nrows(R))
   h_A_G = hom(A, G, gens(G))
-  h_B_A = hom(B, A, [GrpAbFinGenElem(A, R[i, :]) for i=1:ngens(B)])
+  h_B_A = hom(B, A, [FinGenAbGroupElem(A, R[i, :]) for i=1:ngens(B)])
   Z = zero_obj(G)
   C = chain_complex(hom(Z, B, [B[0]]), h_B_A)
   set_attribute!(C, :show => free_show, :free_res => G)
@@ -687,7 +676,7 @@ function hom(G::T, C::ComplexOfMorphisms{T}) where {T}
 end
 
 @doc raw"""
-    homology(C::ComplexOfMorphisms{GrpAbFinGen}) -> Vector{GrpAbFinGen}
+    homology(C::ComplexOfMorphisms{FinGenAbGroup}) -> Vector{FinGenAbGroup}
 Given a complex $A_i: G_i \to G_{i+1}$,
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """

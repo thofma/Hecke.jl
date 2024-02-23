@@ -156,7 +156,7 @@ function _local_factor_cho(L, p)
 
   for s in S
     AG = diagonal_matrix(eltype(G)[2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
-    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
+    B = kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]), side = :left)
     @assert all(is_square(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
@@ -182,13 +182,13 @@ function _local_factor_cho(L, p)
 
     @assert matrix(k, length(BB), length(BB), [ (b * Q * transpose(c))[1, 1] + (c * Q * transpose(b))[1, 1] for b in BB, c in BB]) == Q + transpose(Q)
 
-    _, N = left_kernel(Q + transpose(Q))
+    N = kernel(Q + transpose(Q), side = :left)
     ok = is_diagonal(N * Q * transpose(N))
     @assert ok
     D = diagonal(N * Q * transpose(N))
 
     @assert ok
-    _, rad = left_kernel(matrix(k, length(D), 1, D))
+    rad = kernel(matrix(k, length(D), 1, D), side = :left)
 
     rad = rad * N
 
@@ -329,7 +329,7 @@ function local_factor(L::QuadLat, p)
       if def
         R = base_ring(L)
         rlp = real_places(K)
-        A::GrpAbFinGen, _exp, _log = sign_map(R, _embedding.(rlp), p)
+        A::FinGenAbGroup, _exp, _log = sign_map(R, _embedding.(rlp), p)
         sa = ss * a
         t = (1 + _exp(A(Int[ sign(sa, _embedding(rlp[j])) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
         @assert t - 1 in p
@@ -652,7 +652,7 @@ function _L_function_negative(E, s, prec)
   wprec = 8 * prec
   R = ArbField(wprec, cached = false)
 
-  local pref::arb
+  local pref::ArbFieldElem
 
   while true
     R = ArbField(wprec, cached = false)
@@ -778,7 +778,7 @@ end
 # converges only "linear", that is doubling the number of primes only doubles
 # the precision.
 
-function _truncated_euler_product(K::AnticNumberField, T::Int, s, RR::ArbField)
+function _truncated_euler_product(K::AbsSimpleNumField, T::Int, s, RR::ArbField)
   z = one(RR)
   OK = maximal_order(K)
   p = 2
@@ -805,12 +805,12 @@ function _local_correction(K, p, RR)
   return z
 end
 
-function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int)
+function _dedekind_zeta_attwell_duval_positive(K::AbsSimpleNumField, s, prec::Int)
   RR = ArbField(512)
   d = degree(K)
   #@show prec
 
-  local_cor = prod(arb[_local_correction(K, p, RR) for p in primes_up_to(100)])
+  local_cor = prod(ArbFieldElem[_local_correction(K, p, RR) for p in primes_up_to(100)])
   #@show local_cor
 
   _b = RR(s - 1) * (root(RR(2)^(-prec + 1)//(local_cor * zeta(RR(s))^d) + 1, d) - 1)
@@ -859,7 +859,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
 
     valaddederror = deepcopy(z)
     ccall((:arb_add_error_arf, libarb), Nothing,
-                (Ref{arb}, Ref{arf_struct}), valaddederror, error_arf)
+                (Ref{ArbFieldElem}, Ref{arf_struct}), valaddederror, error_arf)
 
     if radiuslttwopower(valaddederror, -prec)
       break
@@ -871,7 +871,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
   return valaddederror
 end
 
-function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_prec::Int)
+function _dedekind_zeta_attwell_duval_negative(K::AbsSimpleNumField, s, target_prec::Int)
   @assert s < 0
   if iseven(s)
     return zero(ArbField(target_prec))
@@ -917,7 +917,7 @@ function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_pr
   return res
 end
 
-function dedekind_zeta(K::AnticNumberField, s::Int, prec::Int)
+function dedekind_zeta(K::AbsSimpleNumField, s::Int, prec::Int)
   @req s != 0 && s != 1 "Point $s is a pole"
   r1, r2 = signature(K)
   if r2 == 0
@@ -1293,7 +1293,7 @@ end
 #
 ################################################################################
 
-function dedekind_zeta_exact(K::AnticNumberField, s::Int)
+function dedekind_zeta_exact(K::AbsSimpleNumField, s::Int)
   @assert is_totally_real(K)
   @assert s < 0
 
@@ -1383,7 +1383,7 @@ end
 function _compute_g_function_coefficients_even(i, n, r1, r2, CC::AcbField)
   @assert i % 2 == 0
   q = div(i, 2)
-  res = Vector{acb}(undef, n + 1)
+  res = Vector{AcbFieldElem}(undef, n + 1)
   res[1] = zero(CC)
   RR = ArbField(precision(CC))
   for k in 1:n
@@ -1407,7 +1407,7 @@ function _compute_Aij_even(i, r1, r2, CC::AcbField)
   g = sum(coef[i + 1] * x^i for i in 1:(length(coef) - 1))
   expg = exp(g)
   pr = _compute_premultiplier_even(i, r1, r2, CC)
-  res = Vector{acb}(undef, r1 + r2 + 1)
+  res = Vector{AcbFieldElem}(undef, r1 + r2 + 1)
   for j in 0:(r1 + r2)
     # this is A_{i,j}
     res[j + 1] = coeff(expg, r1 + r2 - j) * pr
@@ -1424,7 +1424,7 @@ end
 function _compute_g_function_coefficients_odd(i, n, r1, r2, CC::AcbField)
   @assert i % 2 == 1
   q = div(i - 1, 2)
-  res = Vector{acb}(undef, n + 1)
+  res = Vector{AcbFieldElem}(undef, n + 1)
   res[1] = zero(CC)
   RR = ArbField(precision(CC))
   for k in 1:n
@@ -1448,7 +1448,7 @@ function _compute_Aij_odd(i, r1, r2, CC::AcbField)
   g = sum(coef[i + 1] * x^i for i in 1:(length(coef) - 1))
   expg = exp(g)
   pr = _compute_premultiplier_odd(i, r1, r2, CC)
-  res = Vector{acb}(undef, r1 + r2 + 1)
+  res = Vector{AcbFieldElem}(undef, r1 + r2 + 1)
   for j in 0:(r1 + r2)
     # this is A_{i,j}
     res[j + 1] = coeff(expg, r2 - j) * pr
@@ -1515,7 +1515,7 @@ function _tollis_f(x, s::Int, i0, r1, r2, CC)
   return z
 end
 
-function _tollis_f(x, s::acb, i0, r1, r2, CC)
+function _tollis_f(x, s::AcbFieldElem, i0, r1, r2, CC)
   z = zero(CC)
   @show "tollis f $x $s"
   for j in 1:(r1 + r2)

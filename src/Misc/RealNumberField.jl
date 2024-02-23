@@ -5,10 +5,10 @@
 #
 
 mutable struct RealNumberField <: Nemo.Field
-  K::AnticNumberField
+  K::AbsSimpleNumField
   P::InfPlc
 
-  function RealNumberField(K::AnticNumberField, P::InfPlc)
+  function RealNumberField(K::AbsSimpleNumField, P::InfPlc)
     if !isreal(P)
       error("place is not real")
     end
@@ -20,12 +20,12 @@ mutable struct RealNumberField <: Nemo.Field
 end
 
 @doc raw"""
-    real_number_field(K::AnticNumberField, i::Int)
+    real_number_field(K::AbsSimpleNumField, i::Int)
 
 The real field using the $i$-th conjugate for evaluation and comparison.
 $i$ has to define a real embedding.
 """
-function real_number_field(K::AnticNumberField, i::Int)
+function real_number_field(K::AbsSimpleNumField, i::Int)
   r1, r2 = signature(K)
   if i > r1 || i < 1
     error("$i does not define a real embedding")
@@ -35,12 +35,12 @@ function real_number_field(K::AnticNumberField, i::Int)
 end
 
 @doc raw"""
-    real_number_field(K::AnticNumberField, P::InfPlc)
+    real_number_field(K::AbsSimpleNumField, P::InfPlc)
 
 The real field using the real place $P$ to define the embedding for
 evaluation and comparison.
 """
-function real_number_field(K::AnticNumberField, P::InfPlc)
+function real_number_field(K::AbsSimpleNumField, P::InfPlc)
   return RealNumberField(K, P)
 end
 
@@ -49,9 +49,9 @@ function show(io::IO, K::RealNumberField)
 end
 
 mutable struct RealNumberFieldElem <: Nemo.FieldElem
-  data::nf_elem
+  data::AbsSimpleNumFieldElem
   parent::RealNumberField
-  function RealNumberFieldElem(K::RealNumberField, a::nf_elem)
+  function RealNumberFieldElem(K::RealNumberField, a::AbsSimpleNumFieldElem)
     r = new()
     r.data = a
     r.parent = K
@@ -104,7 +104,7 @@ inv(a::RealNumberFieldElem) = RealNumberFieldElem(a.parent, inv(a.data))
 +(a::QQFieldElem, b::RealNumberFieldElem) = RealNumberFieldElem(b.parent, a+b.data)
 
 
-(K::RealNumberField)(a::nf_elem) = RealNumberFieldElem(K, a)
+(K::RealNumberField)(a::AbsSimpleNumFieldElem) = RealNumberFieldElem(K, a)
 (K::RealNumberField)(a::Integer) = RealNumberFieldElem(K, K.parent(a))
 (K::RealNumberField)(a::ZZRingElem) = RealNumberFieldElem(K, K.parent(a))
 (K::RealNumberField)(a::QQFieldElem) = RealNumberFieldElem(K, K.parent(a))

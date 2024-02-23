@@ -1,4 +1,4 @@
-@testset "NumFieldOrd" begin
+@testset "NumFieldOrder" begin
   x = polynomial_ring(FlintQQ, "x", cached = false)[2]
   K, a = number_field(x^2+1, check = false, cached = false)
   Kns, gKns = number_field([x^2+1], check = false, cached = false)
@@ -7,7 +7,7 @@
   Lns, gLns = number_field([t^2+3], cached = false, check = false)
 
   OK = maximal_order(K)
-  @inferred nf(OK)
+  @inferred Hecke.nf(OK)
   @test is_simple(OK)
   @test is_commutative(OK)
   @test @inferred is_equation_order(OK)
@@ -20,7 +20,7 @@
   @test @inferred discriminant(OK, FlintQQ) == discriminant(OK)
 
   OKns = maximal_order(Kns)
-  @inferred nf(OKns)
+  @inferred Hecke.nf(OKns)
   @test !is_simple(OKns)
   @test is_commutative(OKns)
   @test @inferred !is_equation_order(OKns)
@@ -33,7 +33,7 @@
   @test @inferred discriminant(OKns, FlintQQ) == discriminant(OKns)
 
   OL = maximal_order(L)
-  @inferred nf(OL)
+  @inferred Hecke.nf(OL)
   @test is_simple(OL)
   @test is_commutative(OL)
   @test @inferred !is_equation_order(OL)
@@ -46,7 +46,7 @@
   @test @inferred discriminant(OL, FlintQQ) == absolute_discriminant(OL)
 
   OLns = maximal_order(Lns)
-  @inferred nf(OLns)
+  @inferred Hecke.nf(OLns)
   @test !is_simple(OLns)
   @test is_commutative(OLns)
   @test @inferred !is_equation_order(OLns)

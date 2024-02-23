@@ -1,4 +1,4 @@
-function test_disc_log_picard(P::GrpAbFinGen, mP::Hecke.MapPicardGrp, O::Hecke.AlgAssAbsOrd)
+function test_disc_log_picard(P::FinGenAbGroup, mP::Hecke.MapPicardGrp, O::Hecke.AlgAssAbsOrd)
   for i = 1:5
     I = ideal(O, rand(O, 10))
     while !is_invertible(I)[1]
@@ -33,7 +33,7 @@ end
   Qx, x = FlintQQ["x"]
   f = x^3 - 10x^2 - 3x - 2
   g = x^2 - 9x + 1
-  A = AlgAss(f*g)
+  A = StructureConstantAlgebra(f*g)
   O = maximal_order(A)
   P, mP = picard_group(O)
   @test is_snf(P)
@@ -50,15 +50,15 @@ end
 @testset "Picard group of non maximal orders of algebras" begin
 
   G = abelian_group([2, 3])
-  A = AlgGrp(FlintQQ, G)
+  A = GroupAlgebra(FlintQQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)
   @test is_snf(P)
   @test ngens(P) == 0
   @test mP\ideal(O, one(O)) in P
 
-  # To make sure it also works with AlgAss
-  B, mB = AlgAss(A)
+  # To make sure it also works with StructureConstantAlgebra
+  B, mB = StructureConstantAlgebra(A)
   O = Order(B, basis(B))
   P, mP = picard_group(O)
   @test is_snf(P)
@@ -66,7 +66,7 @@ end
   @test mP\ideal(O, one(O)) in P
 
   G = abelian_group([3, 3])
-  A = AlgGrp(FlintQQ, G)
+  A = GroupAlgebra(FlintQQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)
   @test is_snf(P)
@@ -76,7 +76,7 @@ end
   Qx, x = FlintQQ["x"]
   f = x^3 - 10x^2 - 3x - 2
   g = x^2 - 9x + 1
-  A = AlgAss(f*g)
+  A = StructureConstantAlgebra(f*g)
   O = Order(A, basis(A))
   P, mP = picard_group(O, true)
   @test is_snf(P)
@@ -106,17 +106,17 @@ end
   OK = equation_order(K)
   UK, mUK = unit_group(OK)
 
-  A = AlgAss(f)
+  A = StructureConstantAlgebra(f)
   OA = Order(A, basis(A))
   UA, mUA = unit_group(OA)
   @test is_snf(UA)
   @test UA.snf == ZZRingElem[ 2, 0 ]
   G, GtoUK = sub(UK, [ mUK\OK(K(coefficients(elem_in_algebra(mUA(UA[i]), copy = false), copy = false))) for i = 1:ngens(UA) ])
   for i = 1:ngens(UK)
-    @test haspreimage(GtoUK, UK[i])[1]
+    @test has_preimage_with_preimage(GtoUK, UK[i])[1]
   end
 
-  A = AlgAss(x * (x^2 - 113000))
+  A = StructureConstantAlgebra(x * (x^2 - 113000))
   O = Order(A, basis(A), cached = false)
   U, mU = unit_group(O)
   UU, mUU = unit_group_fac_elem(O)

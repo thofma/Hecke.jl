@@ -1,10 +1,10 @@
 @doc raw"""
-    is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
+    is_primitive_root(x::EuclideanRingResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Dict{ZZRingElem, Int64}) -> Bool
 
 Given $x$ in $Z/MZ$, the factorisation of $M$ (in `fM`), decide if $x$ is primitive.
 Intrinsically, only makes sense if the units of $Z/MZ$ are cyclic.
 """
-function is_primitive_root(x::Generic.ResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
+function is_primitive_root(x::EuclideanRingResidueRingElem{ZZRingElem}, M::ZZRingElem, fM::Fac{ZZRingElem})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -57,8 +57,8 @@ function gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=ZZRingElem(0))
   gc = gcd(p-1, mod)
   mi = divexact(p-1, gc)
   fp = factor(gc)
-  Rp = residue_ring(FlintZZ, p, cached=false)
-  Rpp = residue_ring(FlintZZ, p*p, cached=false)
+  Rp = residue_ring(FlintZZ, p, cached=false)[1]
+  Rpp = residue_ring(FlintZZ, p*p, cached=false)[1]
 
   g = ZZRingElem(2)
   if is_primitive_root(Rp(g)^mi, gc, fp)
@@ -82,10 +82,10 @@ function gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=ZZRingElem(0))
   end
 end
 
-mutable struct MapUnitGroupModM{T} <: Map{GrpAbFinGen, T, HeckeMap, MapUnitGroupModM}
- header::Hecke.MapHeader{GrpAbFinGen, T}
+mutable struct MapUnitGroupModM{T} <: Map{FinGenAbGroup, T, HeckeMap, MapUnitGroupModM}
+ header::Hecke.MapHeader{FinGenAbGroup, T}
 
-  function MapUnitGroupModM{T}(G::GrpAbFinGen, R::T, dexp::Function, dlog::Function) where {T}
+  function MapUnitGroupModM{T}(G::FinGenAbGroup, R::T, dexp::Function, dlog::Function) where {T}
     r = new{T}()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
@@ -94,7 +94,7 @@ end
 
 #TO BE FIXED. If mod is non-zero, it is wrong.
 @doc raw"""
-    UnitGroup(R::Generic.ResidueRing{ZZRingElem}) -> GrpAbFinGen, Map
+    UnitGroup(R::EuclideanRingResidueRing{ZZRingElem}) -> FinGenAbGroup, Map
 
 The unit group of $R = Z/nZ$ together with the appropriate map.
 """
@@ -156,7 +156,7 @@ function UnitGroup(R::Nemo.ZZModRing, mod::ZZRingElem=ZZRingElem(0))
   end
 
   G = abelian_group(r)
-  function dexp(x::GrpAbFinGenElem)
+  function dexp(x::FinGenAbGroupElem)
    return prod(Nemo.ZZModRingElem[R(g[i])^x[i] for i=1:ngens(G)])
   end
   function dlog(x::Nemo.ZZModRingElem)
@@ -224,7 +224,7 @@ function UnitGroup(R::Nemo.zzModRing, mod::ZZRingElem=ZZRingElem(0))
   end
 
   G = abelian_group(r)
-  function dexp(x::GrpAbFinGenElem)
+  function dexp(x::FinGenAbGroupElem)
     return prod([R(g[i])^x[i] for i=1:ngens(G)])
   end
   function dlog(x::zzModRingElem)
@@ -280,7 +280,7 @@ function disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
       @assert (b-1) % 8 == 0
       @assert (a^2-1) % 8 == 0
       if fM[p] > 3
-        F = FlintPadicField(p, fM[p], cached = false)
+        F = PadicField(p, fM[p], cached = false)
         g += 2*lift(divexact(log(F(b)), log(F(a^2))))
       end
       return g
@@ -462,7 +462,7 @@ function unit_group_mod(R::Nemo.zzModRing, n::Int)
 
   local expon
   let G = G, R = R
-    function expon(a::GrpAbFinGenElem)
+    function expon(a::FinGenAbGroupElem)
       res = one(R)
       for i=1:ngens(G)
         if !iszero(a[i])
@@ -486,7 +486,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
     if v>=2 && n % p==0
       #We know that (1+p)^(p-1) generates the p-Sylow of Z/p^vZ
       #We only need the quotient by p^valuation(n,p)
-      R = residue_ring(FlintZZ, p^v, cached=false)
+      R = residue_ring(FlintZZ, p^v, cached=false)[1]
       gen = R(1+p)^(p-1)
       ord1 = gcd(p^(v-1), n)
       aux1 = div(p^(v-1), ord1)
@@ -548,7 +548,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       return Int[], Int[], disclog4
     end
     if v==2
-      R = residue_ring(FlintZZ, 4, cached=false)
+      R = residue_ring(FlintZZ, 4, cached=false)[1]
       local disclog5
       let R = R
         function disclog5(x::Int)
@@ -562,7 +562,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       end
       return Int[-1], Int[2], disclog5
     else
-      R = residue_ring(FlintZZ, 2^v, cached=false)
+      R = residue_ring(FlintZZ, 2^v, cached=false)[1]
       ord = gcd(2^(v-2), n)
       gens = Int[-1,5]
       exps = divexact(2^(v-2), ord)

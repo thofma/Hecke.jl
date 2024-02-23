@@ -92,7 +92,7 @@ using .RelSaturate
 #
 ################################################################################
 
-function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
+function class_group_ctx(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
 
   if !redo
     c = get_attribute(O, :ClassGrpCtx)
@@ -210,7 +210,7 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
 
   @vprintln :UnitGroup 1 "Computing tentative class and unit group ..."
 
@@ -219,7 +219,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
-    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
+    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
     @assert U.finished
     @vprintln :UnitGroup 1 "... done (retrieved)."
     if c.GRH && !GRH
@@ -237,7 +237,7 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
 
   @vprintln :UnitGroup 1 "Tentative class number is now $(c.h)"
 
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
 
   need_more = true
 
@@ -364,7 +364,7 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
     end
   end
 
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   need_more = true
   while true
     r = _unit_group_find_units(U, c)
@@ -400,9 +400,9 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 end
 
 @doc raw"""
-    class_group(O::NfOrd; bound = -1,
+    class_group(O::AbsSimpleNumFieldOrder; bound = -1,
                           redo = false,
-                          GRH = true)   -> GrpAbFinGen, Map
+                          GRH = true)   -> FinGenAbGroup, Map
 
 Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$. The
 inverse of the map is the projection onto the group of ideals modulo the group
@@ -417,7 +417,7 @@ Keyword arguments:
 - `bound`: When specified, this is used for the bound for the factor base.
 - `GRH`: If `false`, the correctness of the result does not depend on GRH.
 """
-function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
+function class_group(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
                      large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
                      saturate_at_2::Bool = true)
@@ -432,34 +432,34 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
   c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH, saturate_at_2 = saturate_at_2)
 
   @assert b == 1
-  return class_group(c, O)::Tuple{GrpAbFinGen, MapClassGrp}
+  return class_group(c, O)::Tuple{FinGenAbGroup, MapClassGrp}
 end
 
-function _unit_group_maximal(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _unit_group_maximal(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
-  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+  return unit_group(c, U)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
 end
 
 
 @doc raw"""
-    unit_group(O::NfOrd) -> GrpAbFinGen, Map
+    unit_group(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
 obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
-function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function unit_group(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
-    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+    return unit_group_non_maximal(O)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
   end
 end
 
 @doc raw"""
-    unit_group_fac_elem(O::NfOrd) -> GrpAbFinGen, Map
+    unit_group_fac_elem(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
@@ -467,16 +467,16 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 All elements will be returned in factored form.
 """
-function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
+function unit_group_fac_elem(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
-    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
-    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
+    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
-    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}})::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
+    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
@@ -484,15 +484,15 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   end
   _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
   @assert b==1
-  return unit_group_fac_elem(UU)::Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}
+  return unit_group_fac_elem(UU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
 end
 
 @doc raw"""
-    regulator(O::NfOrd)
+    regulator(O::AbsSimpleNumFieldOrder)
 
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
-function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function regulator(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
     O = lll(maximal_order(nf(O)))
@@ -504,11 +504,11 @@ function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Boo
 end
 
 @doc raw"""
-    regulator(K::AnticNumberField)
+    regulator(K::AbsSimpleNumField)
 
 Computes the regulator of $K$, i.e. the discriminant of the unit lattice
 for the maximal order of $K$.
 """
-function regulator(K::AnticNumberField)
+function regulator(K::AbsSimpleNumField)
   return regulator(maximal_order(K))
 end

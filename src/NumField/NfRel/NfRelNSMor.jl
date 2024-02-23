@@ -7,7 +7,7 @@ end
 
 #apparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
-function msubst(f::Generic.MPoly{T}, v::Vector{NfRelElem{T}}) where T
+function msubst(f::Generic.MPoly{T}, v::Vector{RelSimpleNumFieldElem{T}}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -20,7 +20,7 @@ function msubst(f::Generic.MPoly{T}, v::Vector{NfRelElem{T}}) where T
   end
   return r
 end
-function msubst(f::Generic.MPoly{T}, v::Vector{NfRelNSElem{T}}) where T
+function msubst(f::Generic.MPoly{T}, v::Vector{RelNonSimpleNumFieldElem{T}}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -37,7 +37,7 @@ end
 #
 ################################################################################
 
-function _get_poly_from_elem(a::NfRelNSElem{nf_elem}, Qxy)
+function _get_poly_from_elem(a::RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, Qxy)
   K = base_field(parent(a))
   Qx = parent(K.pol)
   p = change_base_ring(a.data, x -> evaluate(Qx(x), gen(Qxy, nvars(Qxy))))
@@ -46,7 +46,7 @@ function _get_poly_from_elem(a::NfRelNSElem{nf_elem}, Qxy)
   return res
 end
 
-function multivariate_from_tower(f::Generic.MPoly{nf_elem}, Qxy)
+function multivariate_from_tower(f::Generic.MPoly{AbsSimpleNumFieldElem}, Qxy)
   M = MPolyBuildCtx(Qxy)
   K = base_ring(f)
   Qx = parent(K.pol)
@@ -71,7 +71,7 @@ function (Rxy::zzModMPolyRing)(f::QQMPolyRingElem)
   return res
 end
 
-function _get_polys_from_auto(f::NfRelNSToNfRelNSMor_nf_elem, Qxy)
+function _get_polys_from_auto(f::NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}, Qxy)
   res = Vector{elem_type(Qxy)}(undef, nvars(Qxy))
   if isdefined(f.image_data.base_field_map_data, :prim_image)
     # ap is a constant, but there is no easy way to coerce to the base field
@@ -87,16 +87,16 @@ function _get_polys_from_auto(f::NfRelNSToNfRelNSMor_nf_elem, Qxy)
   return res
 end
 
-function permutation_group1(G::Vector{NfRelNSToNfRelNSMor_nf_elem})
+function permutation_group1(G::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   L = domain(G[1])
   K = base_field(L)
   dK = absolute_degree(L)
   d1 = numerator(discriminant(L, FlintQQ))
   p = 2
-  while divisible(d1, p)
+  while is_divisible_by(d1, p)
     p = next_prime(p)
   end
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rm, gRm = polynomial_ring(R, ngens(L)+1, cached = false)
   fmod = Vector{zzModMPolyRingElem}(undef, ngens(L)+1)
   RQm, gRQm = polynomial_ring(FlintQQ, ngens(L)+1, cached = false)
@@ -244,22 +244,22 @@ function _compose_mod(a, vars, vals, powers, modu)
 end
 
 
-function Base.:(*)(f::Hecke.NfToNfRel, g::Hecke.NfRelToNfRelNSMor_nf_elem)
+function Base.:(*)(f::Hecke.NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, g::Hecke.NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}})
   @assert codomain(f) === domain(g)
   return hom(domain(f), codomain(g), g(f(gen(domain(f)))))
 end
 #
-#function hom(K::AnticNumberField, L::NfRelNS{nf_elem}, img_gen::NfRelNSElem{nf_elem})
+#function hom(K::AbsSimpleNumField, L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, img_gen::RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem})
 #  return Hecke.NfToNfRelNSMor(K, L, img_gen)
 #end
 #
-#function image(f::Hecke.NfToNfRelNSMor, a::nf_elem)
+#function image(f::Hecke.NfToNfRelNSMor, a::AbsSimpleNumFieldElem)
 #  K = parent(a)
 #  Qx = parent(K.pol)
 #  return evaluate(Qx(a), f.img_gen)
 #end
 #
-#function preimage(phi::Hecke.NfToNfRelNSMor, a::NfRelNSElem{nf_elem})
+#function preimage(phi::Hecke.NfToNfRelNSMor, a::RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem})
 #  @assert isdefined(phi, :preimg_base_field) && isdefined(phi, :preimgs)
 #  f = data(a)
 #  K = codomain(phi)
@@ -270,24 +270,24 @@ end
 #end
 #
 #
-function degrees(L::NfRelNS)
+function degrees(L::RelNonSimpleNumField)
   return Int[total_degree(x) for x in L.pol]
 end
 
-function automorphism_list(L::NfRelNS{T}) where T
+function automorphism_list(L::RelNonSimpleNumField{T}) where T
   return get_attribute!(L, :automorphisms) do
     return _automorphisms(L)
   end
 end
 
-function _automorphisms(L::NfRelNS{T}) where T
+function _automorphisms(L::RelNonSimpleNumField{T}) where T
   Kx, _ = polynomial_ring(base_field(L), "x", cached = false)
   rts = Vector{elem_type(L)}[roots(L, to_univariate(Kx, x)) for x in L.pol]
   auts = Vector{morphism_type(L)}(undef, prod(length(x) for x in rts))
   ind = 1
   it = cartesian_product_iterator([1:length(rts[i]) for i in 1:length(rts)], inplace = true)
   for i in it
-    embs = NfRelNSElem{T}[rts[j][i[j]] for j = 1:length(rts)]
+    embs = RelNonSimpleNumFieldElem{T}[rts[j][i[j]] for j = 1:length(rts)]
     auts[ind] = hom(L, L, embs)
     ind += 1
   end

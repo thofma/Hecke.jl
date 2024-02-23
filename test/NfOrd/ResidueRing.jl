@@ -12,7 +12,7 @@ end
   K,  a = number_field(x,"a");
   O = maximal_order(K)
   m0 = O(9)*O
-  Q = NfOrdQuoRing(O, m0)
+  Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, m0)
 
   for f in (rand(Q), rand(rng, Q))
     @test f isa elem_type(Q)
@@ -40,7 +40,7 @@ end
   @test isone(mQ(b))
   @test isone(mQ(O(5)))
 
-  A = AlgAss(x * (x^2 - 113000))
+  A = StructureConstantAlgebra(x * (x^2 - 113000))
   O = Order(A, basis(A), cached = false)
   I = 2 * O
   Q, mQ = quo(O, I)

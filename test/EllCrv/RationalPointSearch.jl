@@ -7,7 +7,7 @@
     @test length(pts) == c
   end
 
-  E = EllipticCurve([-7, 10])
+  E = elliptic_curve([-7, 10])
   for (b, c) in zip(bounds, cts)
     pts = @inferred Hecke.find_points(E, b)
     @test length(pts) == c
@@ -28,7 +28,7 @@
     pts = @inferred Hecke.find_points(coefficients, b)
     @test length(pts) == c
   end
-  
+
   coefficients = ZZRingElem[1, 0, -1, 10]
   bounds = [10, 100, 1000, 10000]
   cts = [11, 17, 21, 33]
@@ -36,7 +36,7 @@
     pts = @inferred Hecke.find_points(coefficients, b)
     @test length(pts) == c
   end
-  
+
   coefficients = ZZRingElem[3, -2, 0, -1, 10]
   bounds = [10, 100, 1000, 10000]
   cts = [4, 4, 4, 8]
@@ -44,15 +44,15 @@
     pts = @inferred Hecke.find_points(coefficients, b)
     @test length(pts) == c
   end
-  
-  coefficients = ZZRingElem[1, -2, 0, -1, 1, 5, 1] 
+
+  coefficients = ZZRingElem[1, -2, 0, -1, 1, 5, 1]
   bounds = [10, 100, 1000, 10000]
   cts = [6, 8, 8, 8]
   for (b, c) in zip(bounds, cts)
     pts = @inferred Hecke.find_points(coefficients, b)
     @test length(pts) == c
   end
-  
+
   coefficients = ZZRingElem[4, -2, 0,  1, 3, 1]
   bounds = [10000]
   cts = [9]

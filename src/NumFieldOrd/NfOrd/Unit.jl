@@ -1,6 +1,6 @@
 ################################################################################
 #
-#       NfOrd/Units.jl : Units in generic number field orders
+#       AbsSimpleNumFieldOrder/Units.jl : Units in generic number field orders
 #
 # This file is part of Hecke.
 #

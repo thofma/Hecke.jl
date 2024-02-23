@@ -35,8 +35,7 @@ julia> K, a = quadratic_field(5);
 
 julia> embedding(real_places(K)[1])
 Complex embedding corresponding to -2.24
-  of number field with defining polynomial x^2 - 5
-    over rational field
+  of real quadratic field defined by x^2 - 5
 ```
 """
 function embedding(p::InfPlc)
@@ -60,9 +59,9 @@ See also [`embedding`](@ref).
 julia> K,  = quadratic_field(-5);
 
 julia> embeddings(complex_places(K)[1])
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
- Complex embedding corresponding to 0.00 + 2.24 * i of imaginary quadratic field defined by x^2 + 5
- Complex embedding corresponding to 0.00 - 2.24 * i of imaginary quadratic field defined by x^2 + 5
+2-element Vector{AbsSimpleNumFieldEmbedding}:
+ Complex embedding corresponding to 0.00 + 2.24 * i of imaginary quadratic field
+ Complex embedding corresponding to 0.00 - 2.24 * i of imaginary quadratic field
 ```
 """
 function embeddings(p::InfPlc)
@@ -174,7 +173,7 @@ julia> infinite_place(complex_embedding(K, 2.24))
 Infinite place of
 Real quadratic field defined by x^2 - 5
 corresponding to
-Complex embedding corresponding to 2.24 of real quadratic field defined by x^2 - 5
+Complex embedding corresponding to 2.24 of real quadratic field
 ```
 """
 function infinite_place(e::NumFieldEmb)
@@ -192,9 +191,9 @@ Return all infinite places of the number field.
 julia> K,  = quadratic_field(5);
 
 julia> infinite_places(K)
-2-element Vector{InfPlc{AnticNumberField, Hecke.NumFieldEmbNfAbs}}:
- Infinite place corresponding to (Complex embedding corresponding to -2.24 of real quadratic field defined by x^2 - 5)
- Infinite place corresponding to (Complex embedding corresponding to 2.24 of real quadratic field defined by x^2 - 5)
+2-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
+ Infinite place corresponding to (Complex embedding corresponding to -2.24 of real quadratic field)
+ Infinite place corresponding to (Complex embedding corresponding to 2.24 of real quadratic field)
 ```
 """
 function infinite_places(K::NumField)
@@ -212,9 +211,9 @@ Return all infinite real places of the number field.
 julia> K,  = quadratic_field(5);
 
 julia> infinite_places(K)
-2-element Vector{InfPlc{AnticNumberField, Hecke.NumFieldEmbNfAbs}}:
- Infinite place corresponding to (Complex embedding corresponding to -2.24 of real quadratic field defined by x^2 - 5)
- Infinite place corresponding to (Complex embedding corresponding to 2.24 of real quadratic field defined by x^2 - 5)
+2-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
+ Infinite place corresponding to (Complex embedding corresponding to -2.24 of real quadratic field)
+ Infinite place corresponding to (Complex embedding corresponding to 2.24 of real quadratic field)
 ```
 """
 real_places(K::NumField) = place_type(K)[infinite_place(i) for i in real_embeddings(K)]
@@ -230,8 +229,8 @@ Return all infinite complex places of $K$.
 julia> K,  = quadratic_field(-5);
 
 julia> complex_places(K)
-1-element Vector{InfPlc{AnticNumberField, Hecke.NumFieldEmbNfAbs}}:
- Infinite place corresponding to (Complex embedding corresponding to 0.00 + 2.24 * i of imaginary quadratic field defined by x^2 + 5)
+1-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
+ Infinite place corresponding to (Complex embedding corresponding to 0.00 + 2.24 * i of imaginary quadratic field)
 ```
 """
 complex_places(K::NumField) = [p for p in infinite_places(K) if is_complex(p)]
@@ -261,7 +260,7 @@ julia> restrict(p, K)
 Infinite place of
 Real quadratic field defined by x^2 - 3
 corresponding to
-Complex embedding corresponding to -1.73 of real quadratic field defined by x^2 - 3
+Complex embedding corresponding to -1.73 of real quadratic field
 ```
 """
 restrict(p::InfPlc, K::NumField) = infinite_place(restrict(_embedding(p), K))
@@ -290,7 +289,7 @@ julia> L, b = number_field(polynomial(K, [-2, 0, 0, 1]), "b");
 julia> p = infinite_places(K)[1];
 
 julia> extend(p, L)
-2-element Vector{InfPlc{Hecke.NfRel{nf_elem}, Hecke.NumFieldEmbNfRel{Hecke.NumFieldEmbNfAbs, Hecke.NfRel{nf_elem}}}}:
+2-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumFieldEmbedding{AbsSimpleNumFieldEmbedding, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
  Infinite place corresponding to (Complex embedding corresponding to root 1.26 of relative number field)
  Infinite place corresponding to (Complex embedding corresponding to root -0.63 + 1.09 * i of relative number field)
 ```
@@ -310,12 +309,12 @@ end
 #In this way, (f\circ g)(P)= f(g(P)), otherwise it would fail.
 
 @doc raw"""
-    induce_image(m::NfToNfMor, P::InfPlc) -> InfPlc
+    induce_image(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc) -> InfPlc
 
 Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
 this is unique.
 """
-function induce_image(m::NfToNfMor, P::InfPlc)
+function induce_image(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::InfPlc)
   return infinite_place(first(extend(_embedding(P), m)))
 end
 
@@ -326,7 +325,7 @@ end
 ################################################################################
 
 @doc raw"""
-    absolute_value(x::NumFieldElem, p::InfPlc, prec::Int = 32) -> arb
+    absolute_value(x::NumFieldElem, p::InfPlc, prec::Int = 32) -> ArbFieldElem
 
 Return the evaluation of `x` at the normalized absolute valuation contained
 in the infinite place. If `e` is a complex embedding inducing `p`,
@@ -358,11 +357,11 @@ end
 #
 ################################################################################
 
-function sign(x::Union{NumFieldElem, FacElem, NumFieldOrdElem}, p::InfPlc)
+function sign(x::Union{NumFieldElem, FacElem, NumFieldOrderElem}, p::InfPlc)
   return sign(x, _embedding(p))
 end
 
-function signs(x::Union{NumFieldElem, FacElem, NumFieldOrdElem}, ps::Vector{<: InfPlc})
+function signs(x::Union{NumFieldElem, FacElem, NumFieldOrderElem}, ps::Vector{<: InfPlc})
   return Dict(p => sign(x, p) for p in ps)
 end
 

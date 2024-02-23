@@ -1,6 +1,6 @@
 ################################################################################
 #
-# NfOrd/FacElem.jl : Factored elements over number fields
+# AbsSimpleNumFieldOrder/FacElem.jl : Factored elements over number fields
 #
 # This file is part of hecke.
 #
@@ -42,7 +42,7 @@ function FacElem(x::ClassGrpCtx, y::Vector{ZZRingElem})
 end
 
 # Get the trivial factored element from an ordinary element
-function FacElem(x::T) where {T <: Union{NumFieldElem, QQFieldElem, AbsAlgAssElem}}
+function FacElem(x::T) where {T <: Union{NumFieldElem, QQFieldElem, AbstractAssociativeAlgebraElem}}
   z = FacElem{T, parent_type(T)}()
   z.fac[x] = ZZRingElem(1)
   z.parent = FacElemMon(parent(x)::parent_type(T))::FacElemMon{parent_type(T)}
@@ -99,7 +99,7 @@ function is_torsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) 
   error("precision was not sufficient")
 end
 
-function factored_norm(x::FacElem{nf_elem, AnticNumberField}; parent::FacElemMon{QQField} = FacElemMon(QQ))
+function factored_norm(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}; parent::FacElemMon{QQField} = FacElemMon(QQ))
   b = QQFieldElem[]
   c = ZZRingElem[]
   for (a, e) in x.fac
@@ -127,31 +127,31 @@ function factored_norm(x::FacElem{nf_elem, AnticNumberField}; parent::FacElemMon
   return f
 end
 
-function norm(x::FacElem{nf_elem})
+function norm(x::FacElem{AbsSimpleNumFieldElem})
   return evaluate(factored_norm(x))
 end
 
 _base_ring(x::NumFieldElem) = parent(x)
 
-_base_ring(x::NumFieldOrdElem) = nf(parent(x))
+_base_ring(x::NumFieldOrderElem) = nf(parent(x))
 
 _base_ring(x::FacElem) = base_ring(x)
 
-*(x::FacElem{nf_elem}, y::NfOrdElem) = x*elem_in_nf(y)
+*(x::FacElem{AbsSimpleNumFieldElem}, y::AbsSimpleNumFieldOrderElem) = x*elem_in_nf(y)
 
-*(x::NfOrdElem, y::FacElem{nf_elem}) = y*x
+*(x::AbsSimpleNumFieldOrderElem, y::FacElem{AbsSimpleNumFieldElem}) = y*x
 
-function _conjugates_arb_log(A::FacElemMon{AnticNumberField}, a::nf_elem, abs_tol::Int)
+function _conjugates_arb_log(A::FacElemMon{AbsSimpleNumField}, a::AbsSimpleNumFieldElem, abs_tol::Int)
   abs_tol = 1<<nbits(abs_tol)
-  the_cache = get!(Dict{nf_elem, Vector{arb}}, A.conj_log_cache, abs_tol)
+  the_cache = get!(Dict{AbsSimpleNumFieldElem, Vector{ArbFieldElem}}, A.conj_log_cache, abs_tol)
   return get!(the_cache, a) do
     conjugates_arb_log(a, abs_tol)
   end
 end
 
-function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
+function conjugates_arb(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, abs_tol::Int)
   d = degree(_base_ring(x))
-  res = Array{acb}(undef, d)
+  res = Array{AcbFieldElem}(undef, d)
 
   first = true
 
@@ -174,11 +174,11 @@ function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   return res
 end
 
-function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
+function conjugates_arb_log(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, abs_tol::Int)
   K = _base_ring(x)
   r1, r2 = signature(K)
   d = r1 + r2
-  res = Array{arb}(undef, d)
+  res = Array{ArbFieldElem}(undef, d)
 
   if isempty(x.fac) || all(x -> iszero(x), values(x.fac))
     x.fac[one(K)] = ZZRingElem(1)
@@ -198,7 +198,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
       z = _conjugates_arb_log(parent(x), a, pr)
       if first
         for j in 1:d
-          res[j] = parent(z[j])()::arb
+          res[j] = parent(z[j])()::ArbFieldElem
           muleq!(res[j], z[j], e)
           if !radiuslttwopower(res[j], -target_tol) || !isfinite(res[j])
             prec_too_low = true
@@ -233,17 +233,17 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   end
 end
 
-function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
+function conjugates_arb_log(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, R::ArbField)
   z = conjugates_arb_log(x, -R.prec)
   return map(R, z)
 end
 
 @doc raw"""
-    valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl) -> ZZRingElem
+    valuation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 The valuation of $a$ at $P$.
 """
-function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
+function valuation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   val = ZZRingElem(0)
   for (a, e) = a.fac
     if !iszero(e)
@@ -256,13 +256,13 @@ end
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
 @doc raw"""
-    conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
-    conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
+    conjugates_arb_log_normalise(x::AbsSimpleNumFieldElem, p::Int = 10)
+    conjugates_arb_log_normalise(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, p::Int = 10)
 
 The "normalised" logarithms, i.e. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,
 so the (weighted) sum adds up to zero.
 """
-function conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
+function conjugates_arb_log_normalise(x::AbsSimpleNumFieldElem, p::Int = 10)
   K = parent(x)
   r,s = signature(K)
   c = conjugates_arb_log(x, p)
@@ -279,7 +279,7 @@ end
 
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
-function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
+function conjugates_arb_log_normalise(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, p::Int = 10)
   K = base_ring(x)
   r,s = signature(K)
   c = conjugates_arb_log(x, p)
@@ -294,7 +294,7 @@ function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::
   return c
 end
 
-function _conj_arb_log_matrix_normalise_cutoff(u::Vector{T}, prec::Int = 32)::arb_mat where T
+function _conj_arb_log_matrix_normalise_cutoff(u::Vector{T}, prec::Int = 32)::ArbMatrix where T
   z = conjugates_arb_log_normalise(u[1], prec)
   A = zero_matrix(parent(z[1]), length(u), length(z)-1)
   for i=1:length(z)-1
@@ -312,22 +312,22 @@ end
 
 #used (hopefully) only inside the class group
 function FacElem(A::Vector{nf_elem_or_fac_elem}, v::Vector{ZZRingElem})
-  local B::FacElem{nf_elem, AnticNumberField}
-  if typeof(A[1]) == nf_elem
-    B = FacElem(A[1]::nf_elem)
+  local B::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}
+  if typeof(A[1]) == AbsSimpleNumFieldElem
+    B = FacElem(A[1]::AbsSimpleNumFieldElem)
   else
-    B = A[1]::FacElem{nf_elem, AnticNumberField}
+    B = A[1]::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}
   end
   B = B^v[1]
   for i=2:length(A)
     if iszero(v[i])
       continue
     end
-    if typeof(A[i]) == nf_elem
-      local t::nf_elem = A[i]::nf_elem
+    if typeof(A[i]) == AbsSimpleNumFieldElem
+      local t::AbsSimpleNumFieldElem = A[i]::AbsSimpleNumFieldElem
       add_to_key!(B.fac, t, v[i])
     else
-      local s::FacElem{nf_elem, AnticNumberField} = A[i]::FacElem{nf_elem, AnticNumberField}
+      local s::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField} = A[i]::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}
       for (k, v1) in s
         if iszero(v1)
           continue
@@ -336,7 +336,7 @@ function FacElem(A::Vector{nf_elem_or_fac_elem}, v::Vector{ZZRingElem})
       end
     end
   end
-  return B::FacElem{nf_elem, AnticNumberField}
+  return B::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}
 end
 
 ################################################################################
@@ -345,9 +345,9 @@ end
 #
 ################################################################################
 
-function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
+function _get_support(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem})
   Zk = order(I)
-  A = Tuple{NfOrdIdl, ZZRingElem}[]
+  A = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}[]
   sizehint!(A, length(a.fac))
   i = 0
   for (e, v) = a.fac
@@ -382,23 +382,23 @@ function _get_support(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   return A
 end
 @doc raw"""
-    factor_coprime(I::NfOrdIdlSet, a::FacElem{nf_elem, AnticNumberField}) -> Dict{NfOrdIdl, ZZRingElem}
+    factor_coprime(I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
 
 Factors the rincipal ideal generated by $a$ into coprimes by computing a coprime
 basis from the principal ideals in the factorisation of $a$.
 """
-function factor_coprime(I::NfOrdIdlSet, a::FacElem{nf_elem, AnticNumberField}; refine::Bool = false)
+function factor_coprime(I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}; refine::Bool = false)
   Zk = order(I)
   @assert nf(Zk) == base_ring(a)
   A = _get_support(a, I)
   if isempty(A)
-    return Dict{NfOrdIdl, ZZRingElem}(ideal(Zk, 1) => 1)
+    return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}(ideal(Zk, 1) => 1)
   end
-  base = NfOrdIdl[y for (y, v) in A if !iszero(v)]
+  base = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[y for (y, v) in A if !iszero(v)]
   cp = coprime_base(base, refine = refine)
-  ev = Dict{NfOrdIdl, ZZRingElem}()
+  ev = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
   if isempty(cp)
-    return Dict{NfOrdIdl, ZZRingElem}(ideal(Zk, 1) => 1)
+    return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}(ideal(Zk, 1) => 1)
   end
   for p in cp
     if isone(p)
@@ -412,7 +412,7 @@ function factor_coprime(I::NfOrdIdlSet, a::FacElem{nf_elem, AnticNumberField}; r
       if iszero(e)
         continue
       end
-      if divisible(norm(b, copy = false), P)
+      if is_divisible_by(norm(b, copy = false), P)
         v += valuation(b, p)*e
       end
     end
@@ -428,22 +428,22 @@ function factor_coprime(I::NfOrdIdlSet, a::FacElem{nf_elem, AnticNumberField}; r
 end
 
 @doc raw"""
-    factor(I::NfOrdIdlSet, a::nf_elem) -> Dict{NfOrdIdl, ZZRingElem}
+    factor(I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
 
 Factors the principal ideal generated by $a$.
 """
-function factor(I::NfOrdIdlSet, a::nf_elem)
+function factor(I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
   return factor(ideal(order(I),  a))
 end
 
 @doc raw"""
-    factor(I::NfOrdIdlSet, a::FacElem{nf_elem, AnticNumberField}) -> Dict{NfOrdIdl, ZZRingElem}
+    factor(I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) -> Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
 
 Factors the principal ideal generated by $a$ by refining a coprime factorisation.
 """
-function factor(I::NfOrdIdlSet, a::FacElem{nf_elem, AnticNumberField})
+function factor(I::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
   cp = factor_coprime(I, a, refine = true)
-  f = Dict{NfOrdIdl, ZZRingElem}()
+  f = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
   for (I, v) = cp
     lp = factor(I)
     for (p, e) = lp
