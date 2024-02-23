@@ -484,7 +484,7 @@ function minpoly_dense(a::RelNonSimpleNumFieldElem)
   while true
     if n % (i-1) == 0 && rank(M) < i
       N = kernel(sub(M, 1:i, 1:ncols(M))', side = :right)
-      @assert ncols(N)
+      @assert ncols(N) == 1
       f = polynomial_ring(k,"t", cached=false)[1]([N[j, 1] for j=1:i])
       return f*inv(leading_coefficient(f))
     end
