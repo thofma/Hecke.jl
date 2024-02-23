@@ -1,6 +1,7 @@
 @testset "AlgAss" begin
   include("AlgAss/AbsAlgAss.jl")
   include("AlgAss/AlgAss.jl")
+  include("AlgAss/radical.jl")
   include("AlgAss/AlgGrp.jl")
   include("AlgAss/AlgMat.jl")
   include("AlgAss/Elem.jl")

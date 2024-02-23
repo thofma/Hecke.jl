@@ -131,23 +131,33 @@
     F2 = GF(2)
     A = group_algebra(F2, G)
     I = radical(A)
-    @test nrows(basis_matrix(I, copy = false)) == 7
-    A = StructureConstantAlgebra(A)[1]
-    I = radical(A)
-    @test nrows(basis_matrix(I, copy = false)) == 7
+    bI = F2[1 0 0 0 0 0 0 1;
+            0 1 0 0 0 0 0 1;
+            0 0 1 0 0 0 0 1;
+            0 0 0 1 0 0 0 1;
+            0 0 0 0 1 0 0 1;
+            0 0 0 0 0 1 0 1;
+            0 0 0 0 0 0 1 1]
+    @test I == ideal(A, bI)
+    ge = [A(g) - A(one(G)) for g in G]
+    @test all(in(I), ge)
+    AS, AStoA = StructureConstantAlgebra(A)
+    I = radical(AS)
+    @test all(in(I), preimage.(Ref(AStoA), ge))
 
     F3 = GF(3)
     A = group_algebra(F3, G)
     I = radical(A)
-    @test nrows(basis_matrix(I, copy = false)) == 0
+    @test is_zero(I)
 
     F4 = GF(2, 2)
     A = group_algebra(F4, G)
     I = radical(A)
-    @test nrows(basis_matrix(I, copy = false)) == 7
-    A = StructureConstantAlgebra(A)[1]
-    I = radical(A)
-    @test nrows(basis_matrix(I, copy = false)) == 7
+    ge = [A(g) - A(one(G)) for g in G]
+    @test all(in(I), ge)
+    AS, AStoA = StructureConstantAlgebra(A)
+    I = radical(AS)
+    @test all(in(I), preimage.(Ref(AStoA), ge))
 
     A = group_algebra(FlintQQ, G)
     I = radical(A)
@@ -158,7 +168,6 @@
       I = radical(A)
       @test nrows(basis_matrix(I, copy = false)) == 1
     end
-
   end
 
   @testset "rand" begin
