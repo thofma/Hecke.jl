@@ -7,6 +7,7 @@ using Hecke
 import AbstractAlgebra, Nemo
 using LinearAlgebra, Profile, Base.Intrinsics
 import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_tril!
+import Hecke: mod_sym!
 
 #creates an unimodular n x n matrix where the inverse is much larger
 #than the original matrix. Entries are chosen in U
