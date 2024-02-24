@@ -1049,8 +1049,9 @@ $a \subseteq O$.
 See also `locally_free_basis`.
 """
 function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRingElem}; side::Symbol = :right)
-  b = _test_ideal_sidedness(I, O, side)
-  !b && error("Ideal is not a $(side) ideal of the order")
+  @hassert :AlgAssOrd _test_ideal_sidedness(I, O, side)
+  # maybe turn this into a check?
+  # error("Ideal is not a $(side) ideal of the order")
   d = denominator(I, O)
   I = d * I
   if side === :left
