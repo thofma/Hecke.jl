@@ -53,7 +53,7 @@ function endomorphism_ring(f::EndAlgMap, L::ModAlgAssLat)
     end
   end
   bas = [Bminv * b * Bm for b in BELint]
-  O = Order(E, E.(bas), isbasis = true, check = false)
+  O = Order(E, [E(b, check = false) for b in bas], isbasis = true, check = false)
   set_attribute!(L, :endomorphism_ring => (O, f))
   return O
 end
@@ -102,7 +102,7 @@ function _hom_space_as_ideal(L::ModAlgAssLat, M::ModAlgAssLat)
   @req L.V === M.V "Lattices must have equal ambient module"
   @req L.base_ring === M.base_ring "Lattices must have equal order"
 
-  E, f = endomorphism_algebra(L.V)
+  E, f = endomorphism_algebra(M.V)
   O = endomorphism_ring(f, M) # this is End_Lambda(M) in E = End_A(V)
 
   # write the basis of E with respect to the basis of L and M respectively
@@ -129,7 +129,7 @@ function _hom_space_as_ideal(L::ModAlgAssLat, M::ModAlgAssLat)
     end
   end
   bas = [basis_matrix_inverse(L) * b * basis_matrix(M) for b in Bint]
-  Ibas = E.(bas) # this is Hom_Lambda(L, M) in E = End_A(V)
+  Ibas = [E(x, check = false) for x in bas] # this is Hom_Lambda(L, M) in E = End_A(V)
   I = ideal(E, O, FakeFmpqMat(basis_matrix(Ibas)); side=:right)
 
   return E, f, O, I
@@ -142,12 +142,12 @@ end
 ################################################################################
 
 function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
-  fl, iso = is_isomorphic_with_isomorphism(M.V, L.V)
+  fl, iso = is_isomorphic_with_isomorphism(L.V, M.V)
   if !fl
     return false, zero_map(L.V, M.V)
   end
-  MM = iso(M)
-  return _is_locally_isomorphic_same_ambient_module(L, MM)
+  LL = iso(L)
+  return _is_locally_isomorphic_same_ambient_module(LL, M)
 end
 
 function _is_locally_isomorphic_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat)
@@ -155,8 +155,11 @@ function _is_locally_isomorphic_same_ambient_module(L::ModAlgAssLat, M::ModAlgAs
   d = denominator(T)
   dd = det(T)
   ps = union(prime_divisors(d), prime_divisors(numerator(dd)), prime_divisors(denominator(dd)))
+  # In the end these are all computations with endomorphism rings, so we do this once
+  E, f, O, I = _hom_space_as_ideal(L, M)
+
   for p in ps
-    if !is_locally_isomorphic(L, M, p)
+    if !_is_loc_iso_gen(L, M, p, E, f, O, I, Val{false})
       return false
     end
   end
@@ -198,6 +201,17 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
                          p::IntegerUnion,
                          with_iso::Type{Val{S}} = Val{true}) where {S}
   E, f, O, I = _hom_space_as_ideal(L, M)
+  return _is_loc_iso_gen(L, M, p, E, f, O, I, with_iso)
+end
+
+function _is_loc_iso_gen(L::ModAlgAssLat,
+                         M::ModAlgAssLat,
+                         p::IntegerUnion,
+                         E,
+                         f,
+                         O,
+                         I,
+                         with_iso::Type{Val{S}} = Val{true}) where {S}
   fl, alpha = is_locally_free(I, p, side = :right)
   imal = image(f, alpha)
   if !fl
@@ -254,11 +268,21 @@ end
 ################################################################################
 
 function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}} = Val{true}) where {T}
+  @vprintln :PIP 1 "is_isomorphic: computing hom space as ideal"
   E, f, O, I = _hom_space_as_ideal(L, M)
   # This is BHJ, 2022, Prop. 3.3
   # Need to check that L and M are locally isomorphic
+  @vprintln :PIP 1 "is_isomorphic: checking local isomorphism"
+  if !is_locally_isomorphic(L, M)
+    @vprintln :PIP 1 "is_isomorphic: not locally isomorphic"
+    return false
+  end
+    @vprintln :PIP 1 "is_isomorphic: locally isomorphic"
   if with_iso === Val{true}
-    fl, beta = is_principal_with_data(I, O, side = :right)
+    @vprintln :PIP 1 "is_isomorphic: doing pip test"
+    # Not that at this point, we know what L and M are locally isomorphic.
+    # In particular, I is locally free
+    fl, beta = _is_principal_with_data(I, O, side = :right, local_freeness = true)
     if !fl
       return false, zero_map(L.V, M.V)
     end
@@ -267,7 +291,7 @@ function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M:
     @assert isom(L) == M
     return true, isom
   else
-    return is_principal(I, O, side = :right)
+    return _is_principal(I, O, side = :right, local_freeness = true)
   end
 end
 
@@ -284,11 +308,12 @@ function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}
   # there is some choice we can make
   # we try to choose the order, where we already computed the endomorphism
   # algebra
+  #
+  # But we always prefer to do things in M
 
   endoMVknown = get_attribute(M.V, :endomorphism_algebra) !== nothing && isdefined(domain(get_attribute(M.V, :endomorphism_algebra)), :decomposition)
   endoLVknown = get_attribute(L.V, :endomorphism_algebra) !== nothing && isdefined(domain(get_attribute(L.V, :endomorphism_algebra)), :decomposition)
 
-  # We always prefer to do things in M
   if endoMVknown || (!endoMVknown && !endoLVknown)
     fl, iso = is_isomorphic_with_isomorphism(L.V, M.V)
     if !fl

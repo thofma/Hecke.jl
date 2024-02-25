@@ -477,8 +477,10 @@ function _principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
   return g
 end
 
-function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl)
+function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl; local_freeness::Bool = false)
   # all the internal functions assume that the ideal is an ideal of the order
+  #
+  # support the keyword argument, since the "generic" interface requires it
   O = order(a)
   d = denominator(a, O)
   b = d * a
