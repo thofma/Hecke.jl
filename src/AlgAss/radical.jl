@@ -184,7 +184,7 @@ function _radical_finite_prime_field(A::MatAlgebra{<:Union{fpFieldElem, FpFieldE
           M[j, i] = F(divexact(t, pl))
         end
       end
-      d = kernel(M; side = :right)
+      B = kernel(M; side = :right)
       d = ncols(B)
       if d == 0
         return elem_type(A)[]
