@@ -144,19 +144,17 @@ function basis_matrix_rref(A::MatAlgebra{S, T}) where {S, T}
   return A.basis_matrix_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
 end
 
-function assure_has_basis_matrix_transpose_rref(A::MatAlgebra)
-  if isdefined(A, :basis_matrix_transpose_rref)
+function assure_has_basis_matrix_solve_context(A::MatAlgebra)
+  if isdefined(A, :basis_matrix_solve_ctx)
     return nothing
   end
-  s, R, U = _rref_with_trans(transpose(basis_matrix(A, copy = false)))
-  pivots = _get_pivots_ut(R)
-  A.basis_matrix_transpose_rref = (R, U, pivots)
+  A.basis_matrix_solve_ctx = solve_init(basis_matrix(A))
   return nothing
 end
 
-function basis_matrix_transpose_rref(A::MatAlgebra{S, T}) where {S, T}
-  assure_has_basis_matrix_transpose_rref(A)
-  return A.basis_matrix_transpose_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
+function basis_matrix_solve_context(A::MatAlgebra{S, T}) where {S, T}
+  assure_has_basis_matrix_solve_context(A)
+  return A.basis_matrix_solve_ctx
 end
 
 ################################################################################
@@ -580,13 +578,8 @@ function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, short::Type{Val{U}}
       end
     end
   end
-  R, UU, piv = basis_matrix_transpose_rref(A)
-  #@show B, tt
-  #@show UU
-  #@show UU * B == R
-  b, N = _can_solve_given_rref(R, UU, piv, t)
-  #b, N = can_solve_with_solution(B, tt, side = :left)
-  #@assert b == bb && NN == [N[1, i] for i in 1:length(N)]
+  C = basis_matrix_solve_context(A)
+  b, N = can_solve_with_solution(C, t, side = :left)
   if short == Val{true}
     return b
   end

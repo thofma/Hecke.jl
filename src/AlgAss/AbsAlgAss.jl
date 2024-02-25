@@ -174,8 +174,8 @@ function kernel_of_frobenius(A::AbstractAssociativeAlgebra)
     end
   end
 
-  V = _right_kernel_basis(B)
-  return [ A(v) for v in V ]
+  V = kernel(B, side = :right)
+  return [ A(V[:, i]) for i in 1:ncols(V) ]
 end
 
 @doc raw"""
