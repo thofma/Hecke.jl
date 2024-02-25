@@ -54,7 +54,8 @@ end
 
 function _radical_zero(A::AbstractAssociativeAlgebra{T}) where { T <: Union{ QQFieldElem, NumFieldElem } }
   M = trace_matrix(A)
-  n, N = nullspace(M)
+  N = kernel(M; side = :right)
+  n = ncols(N)
   b = Vector{elem_type(A)}(undef, n)
   t = zeros(base_ring(A), dim(A))
   # the construct A(t) will make a copy (hopefully :))
@@ -150,7 +151,8 @@ function _radical_finite_prime_field(A::MatAlgebra{<:Union{fpFieldElem, FpFieldE
   # We have to take the matrix trace : M_n(K) -> K
   # and not the "algebra" trace
   MF = trace_matrix(A, x -> tr(matrix(x, copy = false)))
-  d, B = nullspace(MF)
+  B = kernel(MF; side = :right)
+  d = ncols(B)
   if d == 0
     return elem_type(A)[]
   end
@@ -182,7 +184,8 @@ function _radical_finite_prime_field(A::MatAlgebra{<:Union{fpFieldElem, FpFieldE
           M[j, i] = F(divexact(t, pl))
         end
       end
-      d, B = nullspace(M)
+      d = kernel(M; side = :right)
+      d = ncols(B)
       if d == 0
         return elem_type(A)[]
       end
@@ -200,7 +203,8 @@ function _radical_finite_prime_field(A::AbstractAssociativeAlgebra)
   k = flog(ZZRingElem(dim(A)), p)
 
   MF = trace_matrix(A)
-  d, B = nullspace(MF)
+  B = kernel(MF; side = :right)
+  d = ncols(B)
   if d == 0
     return elem_type(A)[]
   end
@@ -230,8 +234,8 @@ function _radical_finite_prime_field(A::AbstractAssociativeAlgebra)
         M[j, i] = F(divexact(t, pl))
       end
     end
-    d, B = nullspace(M)
-    if d == 0
+    B = kernel(M; side = :right)
+    if ncols(B) == 0
       return elem_type(A)[]
     end
     C = transpose(B)*C
@@ -282,8 +286,8 @@ function _radical_finite_generic(A::AbstractAssociativeAlgebra{T}) where {T <: U
   K, a = number_field(f, "a")
 
   MF = trace_matrix(A2)
-  d, B = nullspace(MF)
-  if d == 0
+  B = kernel(MF; side = :right)
+  if ncols(B) == 0
     return elem_type(A)[]
   end
 
@@ -309,8 +313,8 @@ function _radical_finite_generic(A::AbstractAssociativeAlgebra{T}) where {T <: U
         end
       end
     end
-    d, B = nullspace(M)
-    if d == 0
+    B = kernel(M; side = :right)
+    if ncols(B) == 0
       return elem_type(A)[]
     end
     C = transpose(B)*C
