@@ -589,12 +589,7 @@ end
 function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   ib = inv(b)
-  n = max(precision(a.data), precision(b.data))
-  pol = setprecision(base_ring(a.data), n) do
-    mod(a.data*ib.data, defining_polynomial(parent(a), n))
-  end
-  res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
-  return res
+  return a*ib
 end
 
 function Base.:(//)(a::LocalFieldElem{S, T}, b::Union{PadicFieldElem, QadicFieldElem}) where {S <: FieldElem, T <: LocalFieldParameter}
