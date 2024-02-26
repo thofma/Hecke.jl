@@ -772,8 +772,7 @@ function irreducible_submodules(N::ModAlgAss{S, T, V}, M::ModAlgAss{S, T, V}) wh
     if !iszero(rel[dim(N), dim(N)])
       return T[]
     end
-    kern = kernel(rel, side = :right)
-    a = ncols(kern)
+    a, kern = nullspace(rel)
     kern = transpose(kern)
     if a == 1
       return T[closure(kern, N.action_of_gens)]
@@ -978,7 +977,7 @@ function maximal_submodules(M::ModAlgAss{S, T, V}, index::Int=dim(M), lf = Tuple
   minlist = minimal_submodules(M_dual, index+1, lf)
   maxlist = Vector{T}(undef, length(minlist))
   for j=1:length(minlist)
-    maxlist[j]=transpose(kernel(minlist[j], side = :right))
+    maxlist[j]=transpose(nullspace(minlist[j])[2])
   end
   return maxlist
 
@@ -1125,7 +1124,7 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
   #  Duality
     M_dual=dual_space(M)
     dlist=submodules(M_dual, dim(M)-index)
-    list=T[transpose(kernel(x, side = :right)) for x in dlist]
+    list=T[transpose(nullspace(x)[2]) for x in dlist]
   end
   return list
 

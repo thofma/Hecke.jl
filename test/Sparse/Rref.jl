@@ -30,6 +30,6 @@ end
     r = 10
     c = 20
     M = matrix(FlintQQ, rand([0,0,0,0,0,0,0,0,0,0,1], r, c))
-    @test kernel(sparse_matrix(M)) == kernel(M)
+    @test nullspace(sparse_matrix(M)) == nullspace(M)
   end
 end

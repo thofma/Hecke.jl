@@ -1178,7 +1178,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
     return J
   end
   M1 = view(M1, 1:r, 1:degree(O))
-  dM = transpose(kernel(M1, side = :right))
+  dM = transpose(nullspace(M1)[2])
   g = Vector{elem_type(algebra(O))}(undef, nrows(dM) + 1)
   m = zero_matrix(FlintZZ, degree(O), degree(O))
   for i = 1:nrows(dM)
@@ -1210,8 +1210,7 @@ function pradical(O::AlgAssAbsOrd, p::IntegerUnion)
   F = GF(p, cached = false)
 
   I = change_base_ring(F, trred_matrix(O))
-  B = kernel(I, side = :right)
-  k = ncols(B)
+  k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k == 0
     J = ideal(algebra(O), O, p*basis_matrix(FakeFmpqMat, O, copy = false); side=:twosided)

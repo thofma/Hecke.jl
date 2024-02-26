@@ -1991,8 +1991,8 @@ function pradical_trace(O::AbsNumFieldOrder, p::IntegerUnion)
   M = trace_matrix(O)
   F = GF(p, cached = false)
   M1 = map_entries(F, M)
-  B = kernel(M1, side = :right)
-  if iszero(ncols(B))
+  k, B = nullspace(M1)
+  if iszero(k)
     return ideal(O, p)
   end
   M2 = zero_matrix(FlintZZ, d, d)
@@ -2036,26 +2036,26 @@ function pradical_frobenius(O::AbsNumFieldOrder, p::IntegerUnion)
       A[k, i] = ar[k]
     end
   end
-  X = kernel(A, side = :right)
+  X = _right_kernel_basis(A)
   gens = elem_type(O)[O(p)]
-  if is_zero(ncols(X))
+  if isempty(X)
     I = ideal(O, p)
     I.gens = gens
     return I
   end
   #First, find the generators
-  for i = 1:ncols(X)
+  for i = 1:length(X)
     coords = Vector{ZZRingElem}(undef, d)
     for j=1:d
-      coords[j] = lift(ZZ, X[j, i])
+      coords[j] = lift(ZZ, X[i][j])
     end
     push!(gens, O(coords))
   end
   #Then, construct the basis matrix of the ideal
   m = zero_matrix(FlintZZ, d, d)
-  for i = 1:ncols(X)
+  for i = 1:length(X)
     for j = 1:d
-      m[i, j] = lift(ZZ, X[j, i])
+      m[i, j] = lift(ZZ, X[i][j])
     end
   end
   mm = hnf_modular_eldiv!(m, ZZRingElem(p), :lowerleft)

@@ -259,7 +259,7 @@ function matrix_to_ideal(O::AlgAssAbsOrd, M::ZZMatrix)
   result = zeros(A, dim(A))
   for (K, AtoK) in fields_and_maps
     MK = change_base_ring(K, M) - gen(K)*identity_matrix(K, dim(A))
-    B = kernel(MK, side = :right)
+    _, B = nullspace(MK)
     for j = 1:ncols(B)
       for i = 1:dim(A)
         result[i] += AtoK\B[i, j]
@@ -275,7 +275,7 @@ function matrix_to_ideal(O::AbsNumFieldOrder, M::ZZMatrix)
   @assert K.pol == parent(K.pol)(f)
   result = zeros(K, degree(K))
   MK = change_base_ring(K, M) - gen(K)*identity_matrix(K, degree(K))
-  B = kernel(MK, side = :right)
+  _, B = nullspace(MK)
   for j = 1:ncols(B)
     for i = 1:degree(K)
       result[i] += B[i, j]
