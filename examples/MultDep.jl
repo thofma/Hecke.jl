@@ -234,16 +234,16 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
           end
         end
       end
-      @vtime :qAdic 1 k = kernel(lv, side = :left)
-      @assert nrows(k) < 2
-      if nrows(k) == 0
+      @vtime :qAdic 1 k = Hecke._left_kernel_basis(lv)
+      @assert length(k) < 2
+      if length(k) == 0
         println("new ")
         push!(u, a)
         lu = vcat(lu, la)
         @assert length(u) <= r
       else # length == 1 extend the module
         s = QQFieldElem[]
-        for x in k[1, :]
+        for x = k[1]
           @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
           if y === nothing
             prec *= 2
@@ -253,7 +253,7 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
           end
           push!(s, y)
         end
-        if length(s) < ncols(k)
+        if length(s) < length(k[1])
           continue
         end
         d = reduce(lcm, map(denominator, s))

@@ -5,7 +5,7 @@ function norm_1_generators(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, Ab
   @assert all(x->x.gen_one == A[1].gen_one, A)
 
   f = matrix(FlintZZ, 1, length(A), [degree(x) for x = A])
-  k = kernel(f, side = :right)
+  k = nullspace(f)[2]
 
   id = [FacElem(A, [k[i,j] for i=1:length(A)]) for j=1:ncols(k)]
   return id

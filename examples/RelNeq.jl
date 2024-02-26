@@ -123,8 +123,7 @@ function norm_1_subgroup(A::RelNeq)
       end
       f = [ZZRingElem(div(degree(Q[1]), degree(P[1]))) for Q = lP]
       m = matrix(FlintZZ, 1, length(f), f)
-      n = kernel(m, side = :right)
-      r = ncols(n)
+      r, n = nullspace(m)
 
       decom = [mq(mr\Q[1]) for Q = lP]
       for i=1:r
@@ -388,8 +387,7 @@ function n1group(A::RelNeq, B::Int)
       lq = Hecke.prime_decomposition_nonindex(A.m_k_K, P)
     end
     f = matrix(FlintZZ, 1, length(lq), ZZRingElem[div(degree(Q[1]), degree(P)) for Q = lq])
-    n = kernel(f, side = :right)
-    r = ncols(n)
+    r, n = nullspace(f)
     res = false
     for i = 1:r
       I = evaluate(FacElem(Dict((lq[j][1], n[j,i]) for j = 1:length(lq))), coprime = true)

@@ -789,8 +789,8 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
         A[i, s+nr] = R(M1[s, i])
       end
     end
-    X = kernel(A, side = :right)
-    if is_zero(ncols(X))
+    X = _right_kernel_basis(A)
+    if isempty(X)
       I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
@@ -799,10 +799,10 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
     end
     #First, find the generators
     new_gens = Vector{AbsSimpleNumFieldOrderElem}()
-    for i = 1:ncols(X)
+    for i = 1:length(X)
       coords = zeros(FlintZZ, d)
       for j=1:nr
-        coords[indices[j]] = lift(X[j, i])
+        coords[indices[j]] = lift(X[i][j])
       end
       if !iszero(coords)
         new_el = O(coords)
@@ -886,18 +886,18 @@ function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
       A[i, s+nr] = R(M1[s, i])
     end
   end
-  X = kernel(A, side = :right)
+  X = _right_kernel_basis(A)
   gens = elem_type(O)[O(p), gen2]
-  if is_zero(ncols(X))
+  if isempty(X)
     I = ideal(O, p, gen2)
     I.gens = gens
     return I
   end
   #First, find the generators
-  for i = 1:ncols(X)
+  for i = 1:length(X)
     coords = zeros(FlintZZ, d)
     for j=1:nr
-      coords[indices[j]] = lift(X[j, i])
+      coords[indices[j]] = lift(X[i][j])
     end
     if !iszero(coords)
       push!(gens, O(coords))

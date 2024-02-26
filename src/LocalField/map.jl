@@ -10,7 +10,8 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor
   inverse_data::V
   absolute_basis::Vector{W}
   absolute_basis_matrix_image::Generic.MatSpaceElem{PadicFieldElem}
-  solve_context::Solve.SolveCtx{PadicFieldElem, Generic.MatSpaceElem{PadicFieldElem}, Solve.LazyTransposeMatElem{PadicFieldElem, Generic.MatSpaceElem{PadicFieldElem}}}
+  rref::Tuple{Generic.MatSpaceElem{PadicFieldElem}, Generic.MatSpaceElem{PadicFieldElem}}
+  pivots_of_rref::Vector{Int}
 
   function LocalFieldMor{S, T, U, V}() where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}()
@@ -348,9 +349,13 @@ function _assert_has_preimage_data(f::LocalFieldMor)
     end
   end
 
-  f.solve_context = solve_init(M)
+  r, R, U =  _rref_with_trans(M) #terribly unstable numerically
+  pivots = _get_pivots_ut(R)
+
   f.absolute_basis_matrix_image = M
   f.absolute_basis = b
+  f.pivots_of_rref = pivots
+  f.rref = R, U
 
   return nothing
 end
@@ -364,7 +369,7 @@ function has_preimage_with_preimage(f::LocalFieldMor, g::Union{QadicFieldElem, L
   d = absolute_degree(K)
   cc = absolute_coordinates(g)
   _assert_has_preimage_data(f)
-  fl, s = can_solve_with_solution(f.solve_context, cc, side = :right)
+  fl, s = _can_solve_given_rref(f.rref[1], f.rref[2], f.pivots_of_rref, cc)
   if !fl
     return false, zero(K)
   else

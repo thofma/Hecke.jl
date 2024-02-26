@@ -282,7 +282,7 @@ end
   basis
   basis_matrix # matrix over the base_ring
   basis_matrix_rref
-  basis_matrix_solve_ctx
+  basis_matrix_transpose_rref
   dim::Int
   degree::Int
   is_simple::Int
