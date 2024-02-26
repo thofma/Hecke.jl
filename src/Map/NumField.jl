@@ -109,8 +109,7 @@ mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, NumFieldHom}
   inverse_data::V
   absolute_basis::Vector{W}
   absolute_basis_matrix_image::QQMatrix
-  rref::Tuple{QQMatrix, QQMatrix}
-  pivots_of_rref::Vector{Int}
+  solve_context::Solve.SolveCtx{QQFieldElem, QQMatrix, QQMatrix}
 
   function NumFieldHom{S, T, U, V}() where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}()
@@ -753,13 +752,9 @@ function _assert_has_preimage_data(f::NumFieldHom)
     end
   end
 
-  r, R, U =  _rref_with_trans(M)
-  pivots = _get_pivots_ut(R)
-
+  f.solve_context = solve_init(M)
   f.absolute_basis_matrix_image = M
   f.absolute_basis = b
-  f.pivots_of_rref = pivots
-  f.rref = R, U
 
   return nothing
 end
@@ -772,7 +767,7 @@ function has_preimage_with_preimage(f::NumFieldHom, g::NumFieldElem)
   cc = absolute_coordinates(g)
   K = domain(f)
   _assert_has_preimage_data(f)
-  fl, s = _can_solve_given_rref(f.rref[1], f.rref[2], f.pivots_of_rref, cc)
+  fl, s = can_solve_with_solution(f.solve_context, cc, side = :right)
   if !fl
     return false, zero(K)
   else
