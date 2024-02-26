@@ -165,11 +165,11 @@ function compute_candidates_for_saturate(v::Vector{FacElem{AbsSimpleNumFieldElem
           @vtime :Saturate 3 z = mod_p(v1, Q[1], Int(p), T, D, true)
         end
         z = z*A
-        z = kernel(z, side = :right)
-        if iszero(ncols(z))
+        rrz, z = nullspace(z)
+        if iszero(rrz)
           return zero_matrix(FlintZZ, 0, length(v1))
         end
-        A = A*z
+        A = A*sub(z, 1:nrows(z), 1:rrz)
         if cA == ncols(A)
           i += 1
         else
@@ -314,11 +314,11 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
     for i = 1:lfacts
       z = matrix(T, 1, length(R), Hecke.fpFieldElem[disc_log[evals[j][i]^e] for j = 1:length(R)])
       z = z*A
-      z = kernel(z, side = :right)
-      if iszero(ncols(z))
+      rrz, z = nullspace(z)
+      if iszero(rrz)
         return zero_matrix(FlintZZ, 0, length(R))
       end
-      A = A*z
+      A = A*sub(z, 1:nrows(z), 1:rrz)
       if cA == ncols(A)
         att += 1
       else

@@ -250,8 +250,8 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
         A[i, s+nr] = R(M1[s, i])
       end
     end
-    X = kernel(A, side = :right)
-    if is_zero(ncols(X))
+    X = _right_kernel_basis(A)
+    if isempty(X)
       I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
@@ -260,10 +260,10 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
     end
     #First, find the generators
     new_gens = Vector{elem_type(O)}()
-    for i = 1:ncols(X)
+    for i = 1:length(X)
       coords = zeros(FlintZZ, d)
       for j=1:nr
-        coords[indices[j]] = lift(X[j, i])
+        coords[indices[j]] = lift(X[i][j])
       end
       if !iszero(coords)
         new_el = O(coords)

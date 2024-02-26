@@ -83,7 +83,8 @@ function _contains(a::AbsSimpleNumFieldElem, I)
   v = matrix(FlintZZ, 1, degree(OK), coordinates(OK(d * a)))
   @assert all(isone(denominator(basis_matrix(d * id))) for id in I)
   M = reduce(vcat, [numerator(basis_matrix(d * id)) for id in I ])
-  w = solve(M', v', side = :right)
+  b, w = _cansolve(M', v')
+  @assert b
   res = AbsSimpleNumFieldElem[]
   for i in 1:length(I)
     B = basis(I[i])

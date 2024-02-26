@@ -301,9 +301,9 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
     end
   end
 
-  K = kernel(z, side = :left)
+  K = _left_kernel_basis(z)
 
-  k = K[1, :]
+  k = K[1]
   return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(k[i]) for i in 1:d]))
 end
 
