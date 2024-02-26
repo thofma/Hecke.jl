@@ -154,7 +154,7 @@ end
 function _intersect_spaces(A::Hecke.AbstractAlgebra.Generic.MatElem, B::Hecke.AbstractAlgebra.Generic.MatElem)
   A = transpose(A)
   B = transpose(B)
-  M = nullspace(hcat(A,-B))[2][1:size(A)[2],:]
+  M = kernel(hcat(A,-B), side = :right)[1:size(A)[2],:]
   intersect_mat = zero_matrix(base_ring(A), nrows(A), ncols(M))
   for i in 1:ncols(intersect_mat)
     intersect_mat[:,i] = A * M[:,i]
