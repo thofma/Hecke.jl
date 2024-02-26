@@ -429,9 +429,9 @@ function anti_uniformizer(P::AbsNumFieldOrderIdeal)
   M = representation_matrix(uniformizer(P))
   #Mp = matrix_space(residue_field(FlintZZ, p)[1], nrows(M), ncols(M), false)(M)
   Mp = change_base_ring(GF(p, cached = false), M)
-  K = _left_kernel_basis(Mp)
-  @assert length(K) > 0
-  P.anti_uniformizer = elem_in_nf(order(P)(map(x -> lift(ZZ, x), K[1])))//p
+  K = kernel(Mp, side = :left)
+  @assert nrows(K) > 0
+  P.anti_uniformizer = elem_in_nf(order(P)(map(x -> lift(ZZ, x), K[1, :])))//p
   return P.anti_uniformizer
 end
 
