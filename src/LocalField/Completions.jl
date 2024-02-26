@@ -103,7 +103,7 @@ function _increase_precision(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::
   end
   der = derivative(f)
   for i = 2:length(chain)
-    ex, r = divrem(2^chain[i], ramification_index(P))
+    ex, r = divrem(2*chain[i], ramification_index(P))
     if r > 0
       ex += 1
     end
