@@ -198,7 +198,12 @@ function Base.setprecision(a::Generic.MatSpaceElem{QadicRingElem{QadicFieldElem}
   return map_entries(x -> setprecision(x, n), a)
 end
 
-coefficient_ring(Q::QadicRing) = integers(coefficient_ring(Q.Q))
+coefficient_ring(Q::QadicRing) = ring_of_integers(coefficient_ring(Q.Q))
 
+coefficient_ring(K::LocalField) = base_field(K)
 
-
+function absolute_coordinates(a::QadicRingElem)
+  v = absolute_coordinates(a.x)
+  Zp = ring_of_integers(prime_field(parent(a.x)))
+  return Zp.(v)
+end
