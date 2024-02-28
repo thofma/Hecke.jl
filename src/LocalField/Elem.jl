@@ -859,12 +859,13 @@ function _log_one_units(a::LocalFieldElem)
 end
 
 function divexact(a::LocalFieldElem, b::Union{Integer, ZZRingElem}; check::Bool=true)
-  iszero(a) && return a
-  p = prime(parent(a))
+  K = parent(a)
+  p = prime(K)
+  e = absolute_ramification_index(K)
   v = valuation(b, p)
-  Qp = prime_field(parent(a))
+  iszero(a) && return setprecision(a, precision(a) - v*e)
+  Qp = prime_field(K)
   old = precision(Qp)
-  e = absolute_ramification_index(parent(a))
   setprecision!(Qp, e*precision(a)+round(Int, e*valuation(a)) + v)
   bb = inv(Qp(b))
   setprecision!(Qp, old)
