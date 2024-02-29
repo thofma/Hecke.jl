@@ -533,20 +533,27 @@ is_finite_gen(A::FinGenAbGroup) = isfinite(snf(A)[1])
 ################################################################################
 
 @doc raw"""
-    rank(A::FinGenAbGroup) -> Int
+    torsion_free_rank(A::FinGenAbGroup) -> Int
 
-Return the rank of $A$, that is, the dimension of the
+Return the torsion free rank of $A$, that is, the dimension of the
 $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
+
+See also [`rank`](@ref).
 """
-rank(A::FinGenAbGroup) = is_snf(A) ? rank_snf(A) : rank_gen(A)
+function torsion_free_rank(A::FinGenAbGroup)
+  if !is_snf(A)
+    A = snf(A)[1]
+  end
+  return length(findall(iszero, A.snf))
+end
 
-rank_snf(A::FinGenAbGroup) = length(findall(x -> iszero(x), A.snf))
-
-rank_gen(A::FinGenAbGroup) = rank(snf(A)[1])
-
-rank(A::FinGenAbGroup, p::Union{Int, ZZRingElem}) = is_snf(A) ? rank_snf(A, p) : rank_snf(snf(A)[1], p)
-
-function rank_snf(A::FinGenAbGroup, p::Union{Int, ZZRingElem})
+# return the p-rank of A, which is the dimension of the elementary abelian
+# group A/pA, or in other words, the rank (=size of minimal generating set) of
+# the maximal p-quotient of A
+function rank(A::FinGenAbGroup, p::Union{Int, ZZRingElem})
+  if !is_snf(A)
+    A = snf(A)[1]
+  end
   if isempty(A.snf)
     return 0
   end
@@ -556,6 +563,17 @@ function rank_snf(A::FinGenAbGroup, p::Union{Int, ZZRingElem})
   i = findfirst(x -> iszero(mod(x, p)), A.snf)
   return length(A.snf)-i+1
 end
+
+
+@doc raw"""
+    rank(A::FinGenAbGroup) -> Int
+
+Return the rank of $A$, that is, the size of a minimal generating set for $A$.
+
+See also [`torsion_free_rank`](@ref).
+"""
+rank(A::FinGenAbGroup) = error("rank(::FinGenAbGroup) has been renamed to torsion_free_rank")
+#rank(A::FinGenAbGroup) = is_snf(A) ? length(A.snf) : return rank(snf(A)[1])
 
 
 ################################################################################
