@@ -130,16 +130,20 @@
 
   @testset "Rank" begin
     G = abelian_group([3, 15])
-    @test @inferred rank(G) == 0
+    @test @inferred torsion_free_rank(G) == 0
+    #@test @inferred rank(G) == 2
 
     G = abelian_group([3, 5])
-    @test @inferred rank(G) == 0
+    @test @inferred torsion_free_rank(G) == 0
+    #@test @inferred rank(G) == 1
 
     G = abelian_group([3, 15, 0])
-    @test @inferred rank(G) == 1
+    @test @inferred torsion_free_rank(G) == 1
+    #@test @inferred rank(G) == 3
 
     G = abelian_group([3, 5, 0])
-    @test @inferred rank(G) == 1
+    @test @inferred torsion_free_rank(G) == 1
+    #@test @inferred rank(G) == 2
   end
 
   @testset "Order" begin
