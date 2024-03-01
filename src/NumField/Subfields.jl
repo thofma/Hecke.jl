@@ -14,7 +14,7 @@ function _subfield_basis(K::S, as::Vector{T}) where {
   k = base_field(K)
 
   d = degree(K)
-  Kvs = VectorSpace(k, d)
+  Kvs = vector_space(k, d)
   # We transition the coefficients of a in reverse order, so that the
   # first vector in the row reduced echelon form yields the highest
   # degree among all elements of Fas.

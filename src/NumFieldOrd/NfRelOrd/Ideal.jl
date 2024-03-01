@@ -868,7 +868,7 @@ function pradical(O::RelNumFieldOrder, P::Union{AbsNumFieldOrderIdeal{AbsSimpleN
     end
   end
 
-  B = nullspace(A)[2]
+  B = kernel(A, side = :right)
   M1 = zero_matrix(K, d, d)
   imF = pseudo_inv(mF)
   # Write a basis of the kernel of A in the rows of M1.
@@ -941,7 +941,7 @@ function pradical(O::RelNumFieldOrder{S, T, U}, P::AbsNumFieldOrderIdeal{AbsSimp
     end
   end
   @vprintln :RelNumFieldOrder 4 "Computing nullspace"
-  B = nullspace(A)[2]
+  B = kernel(A, side = :right)
   @vprintln :RelNumFieldOrder 4 "Lifting nullspace"
   M1 = zero_matrix(K, nrows(B), d)
   imF = pseudo_inv(mF)
@@ -1165,10 +1165,10 @@ function prime_dec_index(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{Abs
     f = dim(B)
     idem = BtoA(B[1]) # Assumes that B == idem*A
     M = representation_matrix(idem)
-    ker = _left_kernel_basis(M)
+    ker = kernel(M, side = :left)
     N = basis_pmatrix(Ip)
-    for i = 1:length(ker)
-      b = coordinates(AtoO(A(ker[i])))
+    for i = 1:nrows(ker)
+      b = coordinates(AtoO(A(ker[i, :])))
       for j = 1:degree(O)
         m.matrix[1, j] = b[j]
       end
@@ -1602,8 +1602,8 @@ function anti_uniformizer(P::RelNumFieldOrderIdeal{T, S}) where {T, S}
       Mp[i, j] = mmF(M[i, j])
     end
   end
-  K = _left_kernel_basis(Mp)
-  @assert length(K) > 0
+  K = kernel(Mp, side = :left)
+  @assert nrows(K) > 0
   x = nf(O)()
   pbO = pseudo_basis(O, copy = false)
   for i = 1:degree(O)
@@ -1611,7 +1611,7 @@ function anti_uniformizer(P::RelNumFieldOrderIdeal{T, S}) where {T, S}
     c = coprime_to(pbO[i][2]*inv(d[i]), p)
     b = immF(inv(mmF(c)))*c*pbO[i][1]*d[i]
 
-    x += immF(K[1][i])*b
+    x += immF(K[1, i])*b
   end
   P.anti_uniformizer = x*anti_uniformizer(p)
   return P.anti_uniformizer

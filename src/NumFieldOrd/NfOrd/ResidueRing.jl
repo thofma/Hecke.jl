@@ -453,7 +453,7 @@ function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   a = coordinates(x.elem, copy = false)
   rhs = matrix(FlintZZ, d, 1, a)
 
-  fl, sol = _cansolve(V, rhs)
+  fl, sol = can_solve_with_solution(V, rhs, side = :right)
   if !fl
     return fl, zero(R)
   end

@@ -54,9 +54,9 @@ function minimum(m::T, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumF
     bk = map(m, basis(maximal_order(k), k))
     bK = map(K, basis(I))
     d = lcm(lcm(map(denominator, bk)), lcm(map(denominator, bK)))
-    F = FreeModule(FlintZZ, degree(K))
+    F = free_module(FlintZZ, degree(K))
 
-    hsk = ModuleHomomorphism(FreeModule(FlintZZ, degree(k)), F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coefficients(d*x))) for x = bk])
+    hsk = ModuleHomomorphism(free_module(FlintZZ, degree(k)), F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coefficients(d*x))) for x = bk])
     hsK = ModuleHomomorphism(F, F, elem_type(F)[F(matrix(FlintZZ, 1, degree(K), coefficients(d*x))) for x = bK])
     sk = image(hsk)
     imhsK = image(hsK)

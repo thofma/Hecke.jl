@@ -5,9 +5,9 @@
 ################################################################################
 
 @doc raw"""
-    is_totally_real(K::number_field) -> Bool
+    is_totally_real(K::NumField) -> Bool
 
-Returns true if and only if $K$ is totally real, that is, if all roots of the
+Return `true` if and only if $K$ is totally real, that is, if all roots of the
 defining polynomial are real.
 """
 function is_totally_real(K::NumField)
@@ -17,9 +17,9 @@ end
 is_totally_real(::QQField) = true
 
 @doc raw"""
-    is_totally_complex(K::AbsSimpleNumField) -> Bool
+    is_totally_complex(K::NumField) -> Bool
 
-Returns true if and only if $K$ is totally complex, that is, if all roots of the
+Return `true` if and only if $K$ is totally complex, that is, if all roots of the
 defining polynomial are not real.
 """
 function is_totally_complex(K::NumField)

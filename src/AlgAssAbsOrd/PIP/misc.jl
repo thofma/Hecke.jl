@@ -64,6 +64,10 @@ function _get_a_twosided_conductor(O, M)
   end
 
   F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
+  if is_maximal(M)
+    F.left_order = M
+    F.right_order = M
+  end
   return F
 end
 

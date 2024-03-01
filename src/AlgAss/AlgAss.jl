@@ -899,7 +899,6 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
   r = rref!(B)
   if r == 0
     if return_LU == Val{true}
-      #return Array{elem_type(K), 3}(undef, 0, 0, 0),  SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0), LinearSolveCtx{typeof(B)}
       return Array{elem_type(K), 3}(undef, 0, 0, 0), solve_init(B)
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
@@ -1132,7 +1131,8 @@ function center(A::StructureConstantAlgebra{T}) where {T}
   M = zero_matrix(base_ring(A), n^2, n)
   # I concatenate the difference between the right and left representation matrices.
   _rep_for_center!(M, A)
-  k, B = nullspace(M)
+  B = kernel(M, side = :right)
+  k = ncols(B)
   res = Vector{elem_type(A)}(undef, k)
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
@@ -1338,7 +1338,7 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     M4 = representation_matrix(bb - one(eAe), :right)
 
     M = hcat(M1, M2, M3, M4)
-    xx = eAe(_left_kernel_basis(M)[1])
+    xx = eAe(kernel(M, side = :left)[1, :])
     x = m1(m2(xx))
 
     new_basis[1 + (i - 1)*k] = x # this is e_1i

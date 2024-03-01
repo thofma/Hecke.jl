@@ -1049,8 +1049,9 @@ $a \subseteq O$.
 See also `locally_free_basis`.
 """
 function is_locally_free(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int, ZZRingElem}; side::Symbol = :right)
-  b = _test_ideal_sidedness(I, O, side)
-  !b && error("Ideal is not a $(side) ideal of the order")
+  @hassert :AlgAssOrd _test_ideal_sidedness(I, O, side)
+  # maybe turn this into a check?
+  # error("Ideal is not a $(side) ideal of the order")
   d = denominator(I, O)
   I = d * I
   if side === :left
@@ -1177,7 +1178,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
     return J
   end
   M1 = view(M1, 1:r, 1:degree(O))
-  dM = transpose(nullspace(M1)[2])
+  dM = transpose(kernel(M1, side = :right))
   g = Vector{elem_type(algebra(O))}(undef, nrows(dM) + 1)
   m = zero_matrix(FlintZZ, degree(O), degree(O))
   for i = 1:nrows(dM)
@@ -1209,7 +1210,8 @@ function pradical(O::AlgAssAbsOrd, p::IntegerUnion)
   F = GF(p, cached = false)
 
   I = change_base_ring(F, trred_matrix(O))
-  k, B = nullspace(I)
+  B = kernel(I, side = :right)
+  k = ncols(B)
   # The columns of B give the coordinates of the elements in the order.
   if k == 0
     J = ideal(algebra(O), O, p*basis_matrix(FakeFmpqMat, O, copy = false); side=:twosided)

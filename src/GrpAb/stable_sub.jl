@@ -152,12 +152,12 @@ end
 
 function _dualize_1(M::zzModMatrix, snf_struct::Vector{ZZRingElem})
 
-  A=nullspace(transpose(M))
+  A=kernel(transpose(M), side = :right)
   B=vcat(transpose(A),zero_matrix(M[1,1].parent, ncols(A),ncols(A)))
   for j=1:ncols(A)
     B[nrows(A)+j,j]=snf_struct[j]
   end
-  S=nullspace(B)
+  S=kernel(B, side = :right)
   C=vcat(transpose(A),zero_matrix(M[1,1].parent, ncols(A),ncols(A)))
   return S*C
 

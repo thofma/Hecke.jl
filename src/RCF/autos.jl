@@ -1185,7 +1185,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
     @assert d == length(B)
     b_AA = basis(AA)
     Mk = _expand(M, pseudo_inv(Dy.mp[1]))
-    #@hassert :ClassField 2 nullspace(transpose(Mk))[1] == 0
+    #@hassert :ClassField 2 ncols(kernel(transpose(Mk), side = :right)) == 0
     N = SRow(h(C.pe))
     Nk = _expand(N, pseudo_inv(Dy.mp[1]))
     n = solve(Mk, Nk)
