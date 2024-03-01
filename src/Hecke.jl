@@ -561,6 +561,17 @@ add_assertion_scope(:PID_Test)
 
 ################################################################################
 #
+#  Function stub
+#
+################################################################################
+
+# - The following function is introduced in src/ModAlgAss/*
+# - The Hecke.MPolyFactor submodule wants to extend it, but is loaded earlier
+# - Introduce the function here, to make everyone happy
+function is_absolutely_irreducible end
+
+################################################################################
+#
 #  "Submodules"
 #
 ################################################################################
