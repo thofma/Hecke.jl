@@ -491,6 +491,9 @@ Given a totally complex normal number field, this function returns an
 automorphism which is the restriction of complex conjugation at one embedding.
 """
 function complex_conjugation(K::AbsSimpleNumField; auts::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[])
+  if is_totally_real(K)
+    return id_hom(K)
+  end
   if !isempty(auts)
     A = auts
   else
