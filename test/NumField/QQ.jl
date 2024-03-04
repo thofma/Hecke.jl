@@ -105,4 +105,7 @@ end
   @test !(1 in I)
   @test Hecke.lifted_numerator(ZZ(1))==ZZ(1)
   @test Hecke.lifted_denominator(ZZ(2))==ZZ(1)
+
+  @test residue_ring(ZZ, ZZ(5))[1] == residue_ring(ZZ, ideal(ZZ, 5))[1]
+  @test residue_field(ZZ, ZZ(5))[1] == residue_field(ZZ, ideal(ZZ, 5))[1]
 end
