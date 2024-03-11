@@ -33,6 +33,13 @@
 
     @test radical(2) == ZZ(2)
 
+    @test Hecke.ecm(ZZ(2)) == (0,2)
+
+    @test string(FacElem(Hecke.factor(ZZ(2)))) == "2^1"
+
+    @test carmichael_lambda(Hecke.factor(ZZ(2))) == 1
+
+
 
 end
 
