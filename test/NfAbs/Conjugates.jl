@@ -110,6 +110,9 @@ end
   K, a = cyclotomic_field(13)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a^-1
+  K, a = quadratic_field(5)
+  aut = @inferred complex_conjugation(K)
+  @test aut(a) == a
 end
 
 @testset "Bad example" begin

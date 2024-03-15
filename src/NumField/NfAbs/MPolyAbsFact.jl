@@ -1,13 +1,12 @@
 module MPolyFact
 
-using Hecke
-using Hecke: Nemo, find_morphism, rational_reconstruction
-import Hecke: set_precision!, set_precision
+using ..Hecke
+using ..Hecke: Nemo, find_morphism, rational_reconstruction
+import ..Hecke: set_precision!, set_precision, is_absolutely_irreducible
 
 import Nemo: shift_left, shift_right
 import Base: *
-
-export factor_absolute, is_absolutely_irreducible
+export factor_absolute
 
 add_verbosity_scope(:AbsFact)
 add_assertion_scope(:AbsFact)
