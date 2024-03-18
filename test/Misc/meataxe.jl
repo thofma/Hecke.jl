@@ -103,4 +103,8 @@
     end
   end
 
+  k = GF(3)
+  Mat = matrix_algebra(k, [k[1 0; 0 1]])
+  Mod = Hecke.regular_module(Mat)
+  @test length(maximal_submodules(Mod)) == 1
 end
