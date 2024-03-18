@@ -258,3 +258,9 @@ begin
   @test length(r) == 8
   @test all(iszero, h.(r))
 end
+
+begin
+  f = absolute_minpoly(QQ(1//3))
+  @test degree(f) == 1 && is_monic(f) && f(1//3) == 0
+end
+

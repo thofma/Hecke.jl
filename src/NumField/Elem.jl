@@ -651,9 +651,12 @@ function minpoly(a::T, ::QQField) where T <: Union{RelNonSimpleNumFieldElem, Rel
 end
 
 absolute_minpoly(a::AbsSimpleNumFieldElem) = minpoly(a)
+
 absolute_minpoly(a::AbsNonSimpleNumField) = minpoly(a)
 
 absolute_minpoly(a::T) where T <: Union{RelNonSimpleNumFieldElem, RelSimpleNumFieldElem} = minpoly(a, FlintQQ)
+
+absolute_minpoly(a::QQFieldElem) = Hecke.Globals.Qx([-a, 1])
 
 ################################################################################
 #
