@@ -305,6 +305,8 @@ quo(R::ZZRing, I::ZZIdl) = quo(R, gen(I))
 
 residue_ring(R::ZZRing, I::ZZIdl) = quo(R, I)
 
+residue_field(R::ZZRing, I::ZZIdl) = residue_field(R, gen(I))
+
 
 ################################################################################
 #
