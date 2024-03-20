@@ -32,7 +32,7 @@ Input:
 Output:
   - The sublattice `L_{v, p} := {w in L: b(v, w) in p*Z}` of `L`.
 """
-function prime_dual(L::ZZLat, v::Union{QQMatrix, ZZMatrix}, p::ZZRingElem)
+function prime_dual(L::ZZLat, v::QQMatrix, p::ZZRingElem)
   M = gram_matrix(L)*transpose(v)
   K = kernel(matrix(GF(p), rank(L), 1, collect(M)))
   _B = matrix(QQ, nrows(K), ncols(K), ZZRingElem[lift(ZZ, k) for k in K])
@@ -54,7 +54,7 @@ Output:
   - The `p`-neighbour of `L` defined as `L_{v, p} + 1/p*v` where
     `L_{v, p} := {w in L: b(v, w) in p*ZZ}`.
 """
-function neighbour(L::ZZLat, v::ZZMatrix, p::ZZRingElem)
+function neighbour(L::ZZLat, v::QQMatrix, p::ZZRingElem)
   Lvp = prime_dual(L, v, p)
   LL = Lvp + lattice_in_same_ambient_space(L, 1//p*(v*basis_matrix(L)))
   return LL
@@ -83,7 +83,7 @@ Output:
 The existence of `v` is ensured by the conditions on `w`
 (see [SP91, Chapter 1, conditions (i) & (vii)])
 """
-function make_admissible!(w::Union{ZZMatrix, QQMatrix}, form::ZZMatrix, m::ZZRingElem, K::FinField)
+function make_admissible!(w::QQMatrix, form::QQMatrix, m::ZZRingElem, K::FinField, _a::ZZRingElem)
   p = characteristic(K)
   # If p == 2, `form` is actually the Gram matrix of the maximal even sublattice
   # of the original lattice we started with. Otherwise, `form` is the Gram
@@ -100,8 +100,6 @@ function make_admissible!(w::Union{ZZMatrix, QQMatrix}, form::ZZMatrix, m::ZZRin
   # and `form` are distinct). So in particular, the rest of the function in the
   # case `p == 2` is only triggered when the original lattice was even, and
   # thus `m = 8`.
-  _a = mod(only(w*form*transpose(w)), m)
-  iszero(_a) && return nothing
 
   # In the case where `p` is odd, we can find a good vector `v` by solving the
   # linear system `x+2*y*b(w, v) == 0 mod p` in `(x, y)`. We can solve it because
@@ -155,7 +153,7 @@ function even_sublattice(L::ZZLat)
   TT = normal_form(torsion_quadratic_module(L, 2*L; modulus_qf=QQ(2)))[1]
   l = ngens(TT)
   if is_even(l)
-    gensT2 = union(gens(TT)[1:end-2], [TT[l-1]+TT[l]])
+    gensT2 = push!(gens(TT)[1:end-2], TT[l-1]+TT[l])
   else
     gensT2 = gens(TT)[1:l-1]
   end
@@ -227,10 +225,11 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
   if flag
     L0 = even_sublattice(L)
     L0toL = solve(basis_matrix(L), basis_matrix(L0)) # To change the coordinates of vectors in L0
+    LtoL0 = inv(L0toL)
   else
     L0 = L
   end
-  form0 = map_entries(ZZ, gram_matrix(L0))
+  form0 = gram_matrix(L0)
 
   # As stated before, to look for admissible vectors, we need to start by
   # finding lines in `L/p*L` for which the square of a representative is
@@ -248,7 +247,6 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
   # Note that since we chose `p` not to divide `det(L)`, we have that for all
   # `w` in `L\p*L`, the lattice `L_{w, p}` is different from `L`. In particular,
   # if `w^2` is divisible by `mqf`, the line `[w]` in `Tp` is (regular) isotropic.
-  Tp = torsion_quadratic_module(L0, p*L0; modulus=p, modulus_qf=mqf)
 
   if use_mass
     __mass = missing_mass[]
@@ -257,10 +255,13 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
   # For the orbit algorithm, we identify isotropic lines in `Tp` which are in
   # the same `O(L)`-orbit (because they give rise to isometric `p`-neighbours of
   # `L`).
-  G = automorphism_group_generators(L; ambient_representation=true)
-  _gensp = ZZMatrix[matrix(hom(Tp, Tp, TorQuadModuleElem[Tp(lift(a)*g) for a in gens(Tp)])) for g in G] # Get the action directly on `Tp`.
-  gensp = dense_matrix_type(K)[map_entries(K, g) for g in _gensp]
-  any(isone, gensp) || push!(gensp, one(first(gensp))) # To avoid empty lists for `line_orbits`.
+  G = automorphism_group_generators(L; ambient_representation=false)
+  if flag
+    gensp = dense_matrix_type(K)[map_entries(K, L0toL*g*LtoL0) for g in G]
+  else
+    gensp = dense_matrix_type(K)[map_entries(K, g) for g in G]
+  end
+  any(isone, gensp) || push!(gensp, one(first(gensp))) # To avoid empty lists for `line_orbits`
   filter!(m -> isone(m) || !is_diagonal(m), gensp)
   orbs = Vector{elem_type(K)}[orb[1] for orb in line_orbits(gensp)] # Hopefully we took care prior to this that `line_orbits`
                                                                     # terminates and do not blow the memory up...
@@ -271,26 +272,24 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
 
   for x in orbs
     vain[] > stop_after && break
-    w = ZZRingElem[lift(ZZ, k) for k in x]
-    a = Tp(abelian_group(Tp)(w))
-    if !iszero(quadratic_product(a)) # Our initial vector should be isotropic
+    w = matrix(QQ, 1, rank(L0), ZZRingElem[lift(ZZ, k) for k in x])
+    a = numerator(only(w*form0*transpose(w)))
+    if !is_divisible_by(a, mqf)
       vain[] += 1
       continue
     end
 
-    w = matrix(ZZ, 1, length(w), w)
     if p == 2
-      b = mod(numerator(first(w*gram_matrix(L0)*transpose(w))), 8)
-      if even && !iszero(b)
+      if even && !is_divisible_by(a, 8)
         prime_dual(L, w, p) != L0 || continue
-      elseif !even && iszero(b)
+      elseif !even && is_divisible_by(a, 8)
         prime_dual(L, w*L0toL, p) != L0 || continue # Corner case: in that situation, `w` should already be admissible! Otherwise we discard it
       end
     end
-    #w = flag ? w*LtoL0 : w # After we work in `L0`, so we change coordinates
-    make_admissible!(w, form0, m, K)
-    w = flag ? map_entries(ZZ, w*L0toL) : w # Now that `w` is admissible, we map it back to `L`
-    LL = lll(neighbour(L, w, p))
+
+    !is_divisible_by(a, m) && make_admissible!(w, form0, m, K, a)
+    w = flag ? w*L0toL : w # Now that `w` is admissible, we map it back to `L`
+    LL = neighbour(L, w, p)
     @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
     keep = callback(LL)
@@ -373,7 +372,7 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 10
   else
     L0 = L
   end
-  form0 = map_entries(ZZ, gram_matrix(L0))
+  form0 = gram_matrix(L0)
 
   if even
     mqf = 2*p
@@ -382,8 +381,6 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 10
     mqf = p == 2 ? 4 : p
     m = p^2
   end
-
-  Tp = torsion_quadratic_module(L0, p*L0; modulus=p, modulus_qf=mqf)
 
   if use_mass
     __mass = missing_mass[]
@@ -402,22 +399,24 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 10
 
   for i in 1:maxlines
     vain[] > stop_after && break
-    w = ZZRingElem[lift(ZZ, k) for k in rand(P)]
-    a = Tp(abelian_group(Tp)(w))
-    if !iszero(quadratic_product(a))
+    w = matrix(QQ, 1, rank(L), ZZRingElem[lift(ZZ, k) for k in rand(P)])
+    a = numerator(only(w*form0*transpose(w)))
+    if !is_divisible_by(a, mqf)
       vain[] += 1
       continue
     end
 
-    w = matrix(ZZ, 1, length(w), w)
-    if p == 2 && prime_dual(L, w, p) == L0
-      b = mod(numerator(first(w*gram_matrix(L)*transpose(w))), 8)
-      even && iszero(b) || continue
-      !even && !iszero(b) || continue
+    if p == 2
+      if even && !is_divisible_by(a, 8)
+        prime_dual(L, w, p) != L0 || continue
+      elseif !even && is_divisible_by(a, 8)
+        prime_dual(L, w*L0toL, p) != L0 || continue # Corner case: in that situation, `w` should already be admissible! Otherwise we discard it
+      end
     end
-    make_admissible!(w, form0, m, K)
-    w = flag ? map_entries(ZZ, w*L0toL) : w
-    LL = lll(neighbour(L, w, p))
+
+    !is_divisible_by(a, m) && make_admissible!(w, form0, m, K, a)
+    w = flag ? w*L0toL : w # Now that `w` is admissible, we map it back to `L`
+    LL = neighbour(L, w, p)
     @hassert :ZGenRep 3 is_locally_isometric(LL, L, p)
 
     keep = callback(LL)
@@ -521,7 +520,6 @@ Optional:
                                                    save_path::String = nothing,
                                                    use_mass::Bool = true,
                                                    _missing_mass::QQFieldElem = nothing,
-                                                   vain::Base.RefValue{Int} = Ref{Int}(0),
                                                    stop_after::IntExt = inf,
                                                    max::IntExt = inf)
                                                                    -> Vector{ZZLat}, QQFieldElem
@@ -548,7 +546,6 @@ The possible extra arguments are as follows:
 - `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
 - `use_mass` -> whether to use the mass formula as termination condition;
 - `missing_mass` -> if `use_mass` and `distinct` are true, and the partial mass of `known` is known, mention what is the part of the mass which is missing;
-- `vain` -> count the number of vain iterations without finding a new isometry class in the given (spinor) genus;
 - `stop_after` -> the algorithm breaks if we have done that amount of iterations without finding a new isometry class;
 - `max` -> the algorithm stops after finding `max` new isometry classes.
 
@@ -638,19 +635,18 @@ function enumerate_definite_genus(
     p = next_prime(p)
   end
 
-  @info "p = $p"
   if algorithm == :default
-    if log(ZZ(10), divexact(ZZ(p)^r-1, p-1)) < 10
+    # Seems to be a reasonable bound for now, less than 10,000,000 lines
+    if ndigits(ZZ(p)^r) < 10 + ndigits(p)
       algorithm = :orbit
     else
       algorithm = :random
     end
   end
 
-  tbv = trues(length(res))
-  while any(tbv)
-    i = findfirst(tbv)
-    tbv[i] = false
+  i = Int(0)
+  while i != length(res)
+    i += 1
     if algorithm == :orbit
       N = _neighbours_definite_orbit(res[i], p; callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after, max)
     elseif algorithm == :random
@@ -659,7 +655,6 @@ function enumerate_definite_genus(
     
     if !is_empty(N)
       for M in N
-        push!(tbv, true)
         push!(res, M)
         if length(res) >= max
           return res, use_mass ? missing_mass[] : zero(QQ)
@@ -686,7 +681,6 @@ end
                                        save_partial::Bool = false,
                                        save_path::String = nothing,
                                        use_mass::Bool = true,
-                                       vain::Base.RefValue{Int} = Ref{Int}(0),
                                        stop_after::IntExt = inf,
                                        max::IntExt = inf)
                                                                    -> Vector{ZZLat}
@@ -707,7 +701,6 @@ The possible extra arguments are as follows:
 - `save_partial` -> whether one wants to save iteratively new isometry classes (for instance for large genera);
 - `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
 - `use_mass` -> whether to use the mass formula as termination condition;
-- `vain` -> count the number of vain iterations without finding a new isometry class in the given (spinor) genus;
 - `stop_after` -> the algorithm breaks if we have done that amount of iterations without finding a new isometry class;
 - `max` -> the algorithm stops after finding `max` new isometry classes.
 
@@ -756,7 +749,7 @@ function enumerate_definite_genus(
       end
     else
       @req 0 < stop_after < inf "Need to provide a finite positive value for stop_after if the mass is not used. Otherwise the algorithm may eventually never stops"
-      _missing_mass = QQ(0)
+      _missing_mass = nothing
     end
     _edg, mm = enumerate_definite_genus(ZZLat[M], algorithm; rand_neigh,
                                                              invariant_func,
@@ -793,7 +786,6 @@ end
                                          save_partial::Bool = false,
                                          save_path::String = nothing,
                                          use_mass::Bool = true,
-                                         vain::Base.RefValue{Int} = Ref{Int}(0),
                                          stop_after::IntExt = inf,
                                          max::IntExt = inf)
                                                                    -> Vector{ZZLat}
@@ -814,7 +806,6 @@ The possible extra arguments are as follows:
 - `save_partial` -> whether one wants to save iteratively new isometry classes (for instance for large genera);
 - `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
 - `use_mass` -> whether to use the mass formula as termination condition;
-- `vain` -> count the number of vain iterations without finding a new isometry class in the given (spinor) genus;
 - `stop_after` -> the algorithm breaks if we have done that amount of iterations without finding a new isometry class;
 - `max` -> the algorithm stops after finding `max` new isometry classes.
 
