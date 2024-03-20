@@ -41,15 +41,15 @@
 
     @test string(factor(FacElem(factor(ZZ(2))))) == "1 * 2"
 
-    @test string(Divisors(factor(ZZ(2)))) == "Divisors of 2 = MSet(2)\n"
+    @test string(Divisors(factor(ZZ(2)))) == "Divisors of 2 = MSet(2)"
 
     @test euler_phi(factor(FacElem(factor(ZZ(2))))) == 1
 
     @test carmichael_lambda(factor(FacElem(factor(ZZ(2))))) == 1
 
-    @test string(sunit_group_fac_elem([2])) == "(GrpAb: Z/2 x Z, SUnits (in factored form) map of Factored elements over Rational field for ZZRingElem[-1, 2]\n)"
+    @test string(sunit_group_fac_elem([2])) == "(Z/2 x Z, SUnits (in factored form) map of Factored elements over Rational field for ZZRingElem[-1, 2]\n)"
 
-
-
+    
+    
 end
 
