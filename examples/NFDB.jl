@@ -1166,7 +1166,7 @@ function _p_adic_regulator(K, p, fast::Bool = false)
   A, mA = automorphism_group(K)
   @req order(A) == degree(K) "Field must be normal"
   @req is_totally_real(K) "Field must be totally real"
-  r = rank(U)
+  r = torsion_free_rank(U)
   prec = degree(K) + 10
   _det = Hecke.AbstractAlgebra.det_df
   while true
@@ -1282,7 +1282,7 @@ function _padic_regulator_non_normal(K, p)
 
   OK = ring_of_integers(K)
   U, mU = unit_group_fac_elem(OK)
-  r = rank(U)
+  r = torsion_free_rank(U)
   prec = 64
   _det = Hecke.AbstractAlgebra.det_df
   while true

@@ -347,8 +347,7 @@ function is_isomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T
 end
 
 function dual_space(M::ModAlgAss{S, T, V}) where {S, T, V}
-  @assert !isdefined(M, :algebra)
-  G = T[transpose(g) for g in M.action_of_gens]
+  G = T[transpose(g) for g in (isdefined(M, :action_of_gens) ? M.action_of_gens : M.action_of_basis)]
   return Amodule(G)
 end
 
