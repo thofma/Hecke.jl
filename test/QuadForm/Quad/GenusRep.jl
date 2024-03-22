@@ -1118,7 +1118,7 @@ end
   # Tests for random enumeration
   gg = integer_genera((0,4), 2^2*13; even=true)
   lis = Vector{ZZLat}[enumerate_definite_genus(G, :random; rand_neigh=5) for G in gg]
-  @test length.(lis) == [2, 2]
+  @test length.(lis) == [2, 2, 2]
 
   # Other random enumeration but too long for regular testing
 #  gg = integer_genera((0,10), 2^4*3, max_scale=6; even=true)[[1, 4]]
