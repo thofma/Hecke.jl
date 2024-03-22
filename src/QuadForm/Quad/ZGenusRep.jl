@@ -486,14 +486,12 @@ end
 function _unique_iso_class!(A::Vector{ZZLat})
   isempty(A) && return A
   idxs = eachindex(A)
-  y = first(A)
   T = NTuple{2, Any}
   it = iterate(idxs, (iterate(idxs)::T)[2])
   count = 1
   for x in Iterators.drop(A, 1)
-    if !is_isometric(x, y)
-      it = it::
-      y = A[it[1]] = x
+    if all(y -> !is_isometric(x, y), A[1:count])
+      A[it[1]] = x
       count += 1
       it = iterate(idxs, it[2])
     end

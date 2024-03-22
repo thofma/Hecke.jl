@@ -1110,35 +1110,35 @@ end
 end
 
 @testset "More ZZGenus representatives" begin
-  gg = genera((0,5), 3*23)
+  gg = integer_genera((0,5), 3*23)
   lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
   @test length.(lis) == [11, 9, 8, 12]
 
-  gg = genera((0,7), 2*3*5; even=true)
+  gg = integer_genera((0,7), 2*3*5; even=true)
   lis = Vector{ZZLat}[enumerate_definite_genus(G, :random; rand_neigh=15) for G in gg]
   @test length.(lis) == [2, 3]
 
-  gg = genera((0,10), 2^4*3, max_scale=6; even=true)[[1, 4]]
+  gg = integer_genera((0,10), 2^4*3, max_scale=6; even=true)[[1, 4]]
   lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
   @test length.(lis) == [3, 3]
 
-  gg = genera((0,6), 2^3*7)
+  gg = integer_genera((0,6), 2^3*7)
   lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
   @test length.(lis) == [10, 8, 4, 3, 14, 11, 6, 10, 8, 8, 8, 8, 10, 6]
 
-  gg = genera((0,10), 3^5; max_scale=3)
+  gg = integer_genera((0,10), 3^5; max_scale=3)
   lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
   @test length.(lis) == [3, 11, 17]
 
-  gg = genera((0,12), 5; max_scale=5)
+  gg = integer_genera((0,12), 5; max_scale=5)
   lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
   @test length.(lis) == [2, 7, 8]
 
-  gg = genera((0,7), 2^5*13; max_scale=26)
+  gg = integer_genera((0,7), 2^5*13; max_scale=26)
   lis = Vector{ZZLat}[enumerate_definite_genus(G; max=8) for G in gg]
   @test length.(lis) == [8, 8, 8, 8]
 
-  gg = genera((0,7), 2^3*3^2; max_scale=6)
+  gg = integer_genera((0,7), 2^3*3^2; max_scale=6)
   lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
   @test length.(lis) == [4, 12, 12, 4]
 end
