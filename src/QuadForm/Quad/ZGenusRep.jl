@@ -30,13 +30,13 @@ Input:
   - A vector `v` of `L` not lying in `p*L`.
 
 Output:
-  - The sublattice `L_{v, p} := {w in L: b(v, w) in p*Z}` of `L`.
+  - The sublattice `L_{v, p} := {w in L: b(v, w) in p*ZZ}` of `L`.
 """
 function prime_dual(L::ZZLat, v::QQMatrix, p::ZZRingElem)
   M = gram_matrix(L)*transpose(v)
-  K = kernel(matrix(GF(p), rank(L), 1, collect(M)))
-  _B = matrix(QQ, nrows(K), ncols(K), ZZRingElem[lift(ZZ, k) for k in K])
-  return lattice_in_same_ambient_space(L, _B*basis_matrix(L)) + p*L
+  K = kernel(map_entries(GF(p), M))
+  M = matrix(QQ, nrows(K), ncols(K), ZZRingElem[lift(ZZ, k) for k in K])
+  return lattice_in_same_ambient_space(L, M*basis_matrix(L)) + p*L
 end
 
 @doc raw"""
@@ -51,7 +51,7 @@ Input:
     by `p^2`.
 
 Output:
-  - The `p`-neighbour of `L` defined as `L_{v, p} + 1/p*v` where
+  - The `p`-neighbour of `L` defined as `L_{v, p} + 1//p*v` where
     `L_{v, p} := {w in L: b(v, w) in p*ZZ}`.
 """
 function neighbour(L::ZZLat, v::QQMatrix, p::ZZRingElem)
@@ -63,21 +63,21 @@ end
 @doc raw"""
     make_admissible!(w::ZZMatrix, form::ZZMatrix, m::ZZRingElem, K::FinField) -> Nothing
 
-Return a vector `v` congruent to `w` modulo `p*L` whose square with respect to
-`form` is divisible by `m`, where `L` is a lattice with Gram matrix `form`.
+Return a vector `v` congruent to `w` modulo `p*L0` whose square with respect to
+`form` is divisible by `m`, where `L0` is a lattice with Gram matrix `form`.
 
 Input:
   - A prime field `K` of characteristic `p`;
   - A symmetric integer matrix `form` of full rank representing the quadratic
-    form on an integer lattice `(L, b)`;
+    form on the even sublattice `(L0, b)` of an integer lattice `(L, b)`;
   - An integer `m`;
-  - A vector `w` in `L` not lying in `p*L` such that:
-    * `b(w, w)` is divisible by `2*p` if `(L, b)` is even, by `p` otherwise;
-    * if `p == 2` and the prime dual lattice `L_{w, p}` is equal to `(L, b)`,
+  - A vector `w` in `L0` not lying in `p*L0` such that:
+    * `b(w, w)` is divisible by `2*p` if `(L, b)` is even or `p == 2`; by `p` otherwise;
+    * if `p == 2` and the prime dual lattice `L_{w, 2}` is equal to `(L0, b)`,
       then `b(w, w)` is divisible by `m`.
 
 Output:
-  - A vector `v` congruent to `w` modulo `p*L` such that `b(v, v)` is divisible
+  - A vector `v` congruent to `w` modulo `p*L0` such that `b(v, v)` is divisible
     by `m`.
 
 The existence of `v` is ensured by the conditions on `w`
@@ -184,8 +184,8 @@ end
 # - `vain` refers to the number of vain iteration, i.e. how many new neighbours
 #   did not give rise to a non-explored isometry class in the neighbour graph;
 # - `stop_after` tells after how many vain iterations the algorithm should
-#   break;
-# - if `max` is not infinity, then the function breaks as soon as we have
+#   stop;
+# - if `max` is not infinity, then the function stops as soon as we have
 #   representatives for `max` isometry classes in the genus of `L`, in the
 #   outer scope.
 function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
@@ -218,7 +218,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
   #   prime dual lattice `L_{w, 2}` is not equal to `L0`, the maximal even
   #   sublattice of `L`.
   # Such an admissible vector exists if and only if there exists a vector `w` in
-  # `L\p*L` whose square is divisible by 4 and either `w` is already admissible,
+  # `L0\2*L0` whose square is divisible by 4 and either `w` is already admissible,
   # or `L_{w, 2}` must be different from `L0`. In the latter case, one can make
   # `w` admissible by adding to it a suitable vector from `2*L0`.
   flag = (p == 2 && !even)
@@ -247,12 +247,11 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
   # Note that since we chose `p` not to divide `det(L)`, we have that for all
   # `w` in `L\p*L`, the lattice `L_{w, p}` is different from `L`. In particular,
   # if `w^2` is divisible by `mqf`, the line `[w]` in `Tp` is (regular) isotropic.
-
   if use_mass
     __mass = missing_mass[]
   end
 
-  # For the orbit algorithm, we identify isotropic lines in `Tp` which are in
+  # For the orbit algorithm, we identify isotropic lines in `L0/p*L0` which are in
   # the same `O(L)`-orbit (because they give rise to isometric `p`-neighbours of
   # `L`).
   G = automorphism_group_generators(L; ambient_representation=false)
@@ -261,7 +260,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
   else
     gensp = dense_matrix_type(K)[map_entries(K, g) for g in G]
   end
-  any(isone, gensp) || push!(gensp, one(first(gensp))) # To avoid empty lists for `line_orbits`
+  any(isone, gensp) || push!(gensp, identity_matrix(K, rank(L))) # To avoid empty lists for `line_orbits`
   filter!(m -> isone(m) || !is_diagonal(m), gensp)
   orbs = Vector{elem_type(K)}[orb[1] for orb in line_orbits(gensp)] # Hopefully we took care prior to this that `line_orbits`
                                                                     # terminates and do not blow the memory up...
@@ -279,46 +278,74 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
       continue
     end
 
+    lifts = typeof(w)[]
     if p == 2
-      if even && !is_divisible_by(a, 8)
-        prime_dual(L, w, p) != L0 || continue
-      elseif !even && is_divisible_by(a, 8)
-        prime_dual(L, w*L0toL, p) != L0 || continue # Corner case: in that situation, `w` should already be admissible! Otherwise we discard it
+      bo = is_divisible_by(a, 8)
+      if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L0`
+        prime_dual(L, w, p) != L0 || (vain[] += 1 && continue)
+        make_admissible!(w, form0, m, K, a)
+        push!(lifts, w)
+      elseif even && bo # `w` is admissible so it is good
+        push!(lifts, w)
+      elseif !even && bo # Another corner case: `w` is admissible but if `L_{w, 2} == L0` then the neighbour is even, and we want an odd one
+        prime_dual(L, w*L0toL, p) != L0 || (vain[] += 1 && continue)
+        push!(lifts, w*L0toL)
+      else
+        # Here `w` is admissible of square 4 mod 8 so w/2 has odd square. Hence
+        # `L_{w, 2} == L0` is allowed.
+        #
+        # If `L0_{w, 2} != L0`, we could allow another vector congruent to `w`
+        # modulo 2*L0 with square divisible by 8. It is going to be another
+        # admissible vector, and the neighbour might not be isometric to the one
+        # obtained via `w`. The existence of such vectors is ensured only if
+        # there exists a vector in `L0` with odd product with `w`, i.e. if
+        # `L0_{w, 2} != L0` (which itself implies that `L_{w, 2} != L0`)
+        if prime_dual(L0, w, p) == L0
+          push!(lifts, w*L0toL)
+        else
+          push!(lifts, w*L0toL)
+          make_admissible!(w, form0, ZZ(8), K, a)
+          push!(lifts, w*L0toL)
+        end
       end
-    end
-
-    !is_divisible_by(a, m) && make_admissible!(w, form0, m, K, a)
-    w = flag ? w*L0toL : w # Now that `w` is admissible, we map it back to `L`
-    LL = neighbour(L, w, p)
-    @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
-
-    keep = callback(LL)
-    if !keep
-      vain[] += 1
-      continue
-    end
-
-    vain[] = Int(0)
-    @vprintln :ZGenRep 3 "Keep an isometry class"
-    invLL = _invariants(LL)
-    if haskey(inv_dict, invLL)
-      push!(inv_dict[invLL], LL)
     else
-      inv_dict[invLL] = ZZLat[LL]
-    end
-    push!(result, LL)
-
-    if save_partial
-      save_partial_lattice(LL, save_path)
+      !is_divisible_by(a, m) && make_admissible!(w, form0, m, K, a)
+      w = flag ? w*L0toL : w # Now that `w` is admissible, we map it back to `L`
+      push!(lifts, w)
     end
 
-    if use_mass
-      s = automorphism_group_order(LL)
-      sub!(__mass, __mass, 1//s)
-      is_zero(__mass) && return result
-    end
+    for v in lifts
+      LL = lll(neighbour(L, v, p))
+      @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
-    length(result) == max && break
+      keep = callback(LL)
+      if !keep
+        vain[] += 1
+        continue
+      end
+
+      vain[] = Int(0)
+      @vprintln :ZGenRep 3 "Keep an isometry class"
+      invLL = _invariants(LL)
+      if haskey(inv_dict, invLL)
+        push!(inv_dict[invLL], LL)
+      else
+        inv_dict[invLL] = ZZLat[LL]
+      end
+      push!(result, LL)
+
+      if save_partial
+        save_partial_lattice(LL, save_path)
+      end
+
+      if use_mass
+        s = automorphism_group_order(LL)
+        sub!(__mass, __mass, 1//s)
+        is_zero(__mass) && return result
+      end
+
+      length(result) == max && break
+    end
   end
   return result
 end
@@ -326,31 +353,8 @@ end
 # Comments and details about the process in the code are in the previous
 # function.
 #
-# Neighbour algorithm using random search in the neighbour graph.
-#
-# - L is the lattice from which we compute neighbours;
-# - `p` is a good prime: `p` does not divides `det(L)`, `L_p` is isotropic and
-#   we chose `p` to be the smallest prime satisfying these two properties;
-# - `callback` is a function to compare new neighbours with lattices already
-#   collected in the outer scope;
-# - `inv_dict` is a dictionary of invariants to make `callback` faster;
-# - `_invariants` is the function that computes the invariants of any
-#   new neighbour, and store them in `inv_dict`;
-# - `save_partial` tells us whether to save partial results on the machine;
-# - `save_path` is a path where to store the lattice in case `save_partial` is
-#   `true`.
-# - `use_mass` tells whether to use the mass of the genus of `L` for the
-#   termination of the algorithm;
-# - `missing_mass` tells us what proportion of the mass has not been computed
-#   yet in the outer scope;
-# - `vain` refers to the number of vain iteration, i.e. how many new neighbours
-#   did not give rise to a non-explored isometry class in the neighbour graph;
-# - `stop_after` tells after how many vain iterations the algorithm should
-#   break;
-# - if `max` is not infinity, then the function breaks as soon as we have
-#   representatives for `max` isometry classes in the genus of `L`, in the
-#   outer scope.
-function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 100,
+# - rand_neigh -> how many random neighbours are computed at each iteration;
+function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 10,
                                                             callback::Function,
                                                             inv_dict::Dict,
                                                             _invariants::Function,
@@ -388,7 +392,7 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 10
 
   # For the random algorithm, we create an iterator on the set of lines
   # in `K^{rank(L)}`, and we then test a random sample of lines. By default,
-  # we test at most 100 lines, but the user can choose to change this parameter.
+  # we test at most 10 lines, but the user can choose to change this parameter.
   P = enumerate_lines(K, rank(L))
 
   maxlines = min(rand_neigh, length(P))
@@ -406,46 +410,67 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 10
       continue
     end
 
+    lifts = typeof(w)[]
     if p == 2
-      if even && !is_divisible_by(a, 8)
-        prime_dual(L, w, p) != L0 || continue
-      elseif !even && is_divisible_by(a, 8)
-        prime_dual(L, w*L0toL, p) != L0 || continue # Corner case: in that situation, `w` should already be admissible! Otherwise we discard it
+      bo = is_divisible_by(a, 8)
+      if even && !bo
+        prime_dual(L, w, p) != L0 || (vain[] += 1 && continue)
+        make_admissible!(w, form0, m, K, a)
+        push!(lifts, w)
+      elseif even && bo
+        push!(lifts, w)
+      elseif !even && bo
+        prime_dual(L, w*L0toL, p) != L0 || (vain[] += 1 && continue)
+        push!(lifts, w*L0toL)
+      else
+        if prime_dual(L, w*L0toL, p) == L0
+          push!(lifts, w*L0toL)
+        elseif prime_dual(L0, w, p) == L0
+          push!(lifts, w*L0toL)
+        else
+          push!(lifts, w*L0toL)
+          make_admissible!(w, form0, ZZ(8), K, a)
+          push!(lifts, w*L0toL)
+        end
       end
-    end
-
-    !is_divisible_by(a, m) && make_admissible!(w, form0, m, K, a)
-    w = flag ? w*L0toL : w # Now that `w` is admissible, we map it back to `L`
-    LL = neighbour(L, w, p)
-    @hassert :ZGenRep 3 is_locally_isometric(LL, L, p)
-
-    keep = callback(LL)
-    if !keep
-      vain[] += 1
-      continue
-    end
-    vain[] = Int(0)
-
-    @vprintln :ZGenRep 3 "Keep an isometry class"
-    invLL = _invariants(LL)
-    if haskey(inv_dict, invLL)
-      push!(inv_dict[invLL], LL)
     else
-      inv_dict[invLL] = ZZLat[LL]
-    end
-    push!(result, LL)
-
-    if save_partial
-      save_partial_lattice(LL, save_path)
+      !is_divisible_by(a, m) && make_admissible!(w, form0, m, K, a)
+      w = flag ? w*L0toL : w
+      push!(lifts, w)
     end
 
-    if use_mass
-      s = automorphism_group_order(LL)
-      sub!(__mass, __mass, 1//s)
-      is_zero(__mass) && return result
-    end
+    for v in lifts
+      LL = lll(neighbour(L, v, p))
+      @hassert :ZGenRep 3 is_locally_isometric(LL, L, p)
 
-    length(result) == max && return result
+      keep = callback(LL)
+      if !keep
+        vain[] += 1
+        continue
+      end
+
+      vain[] = Int(0)
+      @vprintln :ZGenRep 3 "Keep an isometry class"
+      invLL = _invariants(LL)
+      if haskey(inv_dict, invLL)
+        push!(inv_dict[invLL], LL)
+      else
+        inv_dict[invLL] = ZZLat[LL]
+      end
+      push!(result, LL)
+
+      if save_partial
+        save_partial_lattice(LL, save_path)
+      end
+
+      if use_mass
+        s = automorphism_group_order(LL)
+        sub!(__mass, __mass, 1//s)
+        is_zero(__mass) && return result
+      end
+
+      length(result) == max && break
+    end
   end
   return result
 end
@@ -467,7 +492,7 @@ function _unique_iso_class!(A::Vector{ZZLat})
   count = 1
   for x in Iterators.drop(A, 1)
     if !is_isometric(x, y)
-      it = it::T
+      it = it::
       y = A[it[1]] = x
       count += 1
       it = iterate(idxs, it[2])
@@ -485,8 +510,8 @@ function default_func(L::ZZLat)
   m = minimum(L)
   rlr, _ = root_lattice_recognition(L)
   kn = kissing_number(L)::Int
-  igo = automorphism_group_order(L)::ZZRingElem
-  return (m, rlr, kn, igo)
+  ago = automorphism_group_order(L)::ZZRingElem
+  return (m, rlr, kn, ago)
 end
 
 ###############################################################################
@@ -497,24 +522,33 @@ end
 
 #======
 Input:
-- known -> finite list of known isometry classes (always non-empty by starting from a single lattice)
-- algorithm -> how to enumerate neighbours: using orbits of lines (:orbit) or doing a random search (:random)
+- known -> finite list of known isometry classes (always non-empty by starting
+           from a single lattice);
+- algorithm -> how to enumerate neighbours: using orbits of lines (:orbit) or
+               doing a random search (:random);
+
 Optional:
-- rand_neigh -> for random enumeration, how many random neighbours are computed at each iteration;
-- distinct -> if the lattices in "known" are known to be pairwise non-isometric
-- invariant_func -> functions to compute isometry invariants for comparing lattices
-- save_partial -> whether one wants to save iteratively new isometry classes (for instance for large genera)
-- save_path -> in the case "save_partial" is true, where to save the lattices
-- use_mass -> whether to use the mass formula as termination condition
-- missing_mass -> if "use_mass" and "distinct" are true, and the partial mass of "known" is known, mention what is the part of the mass missing
-- vain -> count the number of vain iterations without finding a new lattice in the given spinor genus
-- stop_after -> the algorithm breaks if we have done that amount of iterations without finding a new lattice
-- max -> maximum number of lattices to be found
+- rand_neigh -> for random enumeration, how many random neighbours are computed
+                at each iteration;
+- distinct -> if the lattices in "known" are known to be pairwise non-isometric;
+- invariant_func -> functions to compute isometry invariants for comparing
+                    lattices;
+- save_partial -> whether one wants to save iteratively new isometry classes
+                  (for instance for large genera);
+- save_path -> in the case "save_partial" is true, where to save the lattices;
+- use_mass -> whether to use the mass formula as termination condition;
+- missing_mass -> if "use_mass" and "distinct" are true, and the partial mass of
+                  "known" is known, mention what is the part of the mass missing;
+- vain -> count the number of vain iterations without finding a new lattice in
+          the given spinor genus;
+- stop_after -> the algorithm stops if we have done that amount of iterations
+                without finding a new isometry class;
+- max -> maximum number of lattices to be found.
 ======#
 @doc raw"""
     enumerate_definite_genus(known::Vector{ZZLat}, algorithm::Symbol = :default;
-                                                   rand_neigh::Int = 100,
-                                                   distinct::Bool = true,
+                                                   rand_neigh::Int = 10,
+                                                   distinct::Bool = false,
                                                    invariant_func::Function = default_func,
                                                    save_partial::Bool = false,
                                                    save_path::String = nothing,
@@ -535,7 +569,7 @@ The second argument gives the choice to which algorithm to use for the enumerati
 We currently support two algorithms:
 - `:random` which finds new isometry classes by constructing neighbours from random isotropic lines;
 - `:orbit` which makes a smart search by classifying orbits of isotropic lines before constructing neighbours.
-If `algorithm = :default`, the function choose the more appropriate algorithm
+If `algorithm = :default`, the function chooses the most appropriate algorithm
 depending on the rank and determinant of the genus to be enumerated.
 
 The possible extra arguments are as follows:
@@ -546,27 +580,27 @@ The possible extra arguments are as follows:
 - `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
 - `use_mass` -> whether to use the mass formula as termination condition;
 - `missing_mass` -> if `use_mass` and `distinct` are true, and the partial mass of `known` is known, mention what is the part of the mass which is missing;
-- `stop_after` -> the algorithm breaks if we have done that amount of iterations without finding a new isometry class;
+- `stop_after` -> the algorithm stops if we have done that amount of iterations without finding a new isometry class;
 - `max` -> the algorithm stops after finding `max` new isometry classes.
 
 If `distinct == false`, the function first compare all the lattices in `known`
 to only keep one representative for each isometry class represented.
 
 If `save_partial == true`, the lattices are stored in a compact way in a `.jl`
-file. The storing only remembers the rank of a lattice and half its Gram
+file. The storing only remembers the rank of a lattice and half of its Gram
 matrix (which is enough to reconstruct the lattice as a standalone object).
 
 The default function for `invariant_func` currently computes:
 - the absolute length of a shortest vector in the given lattice (also known as [`minimum`](@ref));
 - an ordered list of tuples consisting of the decomposition of the root sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
-- the kissing number of the given lattice;
+- the kissing number of the given lattice, which is proportional to the number of vectors of shortest length;
 - the order of the isometry group of the given lattice.
 """
 function enumerate_definite_genus(
     known::Vector{ZZLat},
     algorithm::Symbol = :default;
-    rand_neigh::Int = 100,
-    distinct::Bool = true,
+    rand_neigh::Int = 10,
+    distinct::Bool = false,
     invariant_func::Function = default_func,
     save_partial::Bool = false,
     save_path::Union{String, Nothing} = nothing,
@@ -636,8 +670,8 @@ function enumerate_definite_genus(
   end
 
   if algorithm == :default
-    # Seems to be a reasonable bound for now, less than 10,000,000 lines
-    if ndigits(ZZ(p)^r) < 10 + ndigits(p)
+    # Seems to be a reasonable bound for now, less than 1,000,000 lines
+    if ndigits(divexact(ZZ(p)^r-1, p-1)) < 7
       algorithm = :orbit
     else
       algorithm = :random
@@ -652,12 +686,11 @@ function enumerate_definite_genus(
     elseif algorithm == :random
       N = _neighbours_definite_rand(res[i], p; rand_neigh, callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after, max)
     end
-    
     if !is_empty(N)
       for M in N
         push!(res, M)
         if length(res) >= max
-          return res, use_mass ? missing_mass[] : zero(QQ)
+          return res, missing_mass[]
         end
       end
       use_mass && is_zero(missing_mass[]) && break
@@ -671,12 +704,12 @@ function enumerate_definite_genus(
       break
     end
   end
-  return res, use_mass ? missing_mass[] : zero(QQ)
+  return res, missing_mass[]
 end
 
 @doc raw"""
     enumerate_definite_genus(L::ZZLat, algorithm::Symbol = :default;
-                                       rand_neigh::Int = 100,
+                                       rand_neigh::Int = 10,
                                        invariant_func::Function = default_func,
                                        save_partial::Bool = false,
                                        save_path::String = nothing,
@@ -701,7 +734,7 @@ The possible extra arguments are as follows:
 - `save_partial` -> whether one wants to save iteratively new isometry classes (for instance for large genera);
 - `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
 - `use_mass` -> whether to use the mass formula as termination condition;
-- `stop_after` -> the algorithm breaks if we have done that amount of iterations without finding a new isometry class;
+- `stop_after` -> the algorithm stops if we have done that amount of iterations without finding a new isometry class;
 - `max` -> the algorithm stops after finding `max` new isometry classes.
 
 If `save_partial == true`, the lattices are stored in a compact way in a `.jl`
@@ -711,17 +744,17 @@ matrix (which is enough to reconstruct the lattice as a standalone object).
 The default function for `invariant_func` currently computes:
 - the absolute length of a shortest vector in the given lattice (also known as [`minimum`](@ref));
 - an ordered list of tuples consisting of the decomposition of the root sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
-- the kissing number of the given lattice;
+- the kissing number of the given lattice, which is proportional to the number of vectors of shortest length;
 - the order of the isometry group of the given lattice.
 
-Note: since we first compute a representatives of an isometry for each spinor
+Note: since we first compute a representative of an isometry class for each spinor
 genus in the genus of `L`, the lattice `L` must have rank at least 3. For rank
 1 and 2 lattices, please use the function [`genus_representatives`](@ref).
 """
 function enumerate_definite_genus(
     L::ZZLat,
     algorithm::Symbol = :default;
-    rand_neigh::Int = 100,
+    rand_neigh::Int = 10,
     invariant_func::Function = default_func,
     save_partial::Bool = false,
     save_path::Union{IO, String, Nothing} = nothing,
@@ -749,7 +782,7 @@ function enumerate_definite_genus(
       end
     else
       @req 0 < stop_after < inf "Need to provide a finite positive value for stop_after if the mass is not used. Otherwise the algorithm may eventually never stops"
-      _missing_mass = nothing
+      _missing_mass = QQ(0)
     end
     _edg, mm = enumerate_definite_genus(ZZLat[M], algorithm; rand_neigh,
                                                              invariant_func,
@@ -760,8 +793,7 @@ function enumerate_definite_genus(
                                                              vain,
                                                              stop_after,
                                                              max=max-length(edg))
-
-    while vain[] < stop_after && length(edg) + length(_edg) < max
+    while vain[] <= stop_after && length(edg) + length(_edg) < max
       use_mass && is_zero(mm) && break
       _edg, mm = enumerate_definite_genus(_edg, algorithm; distinct=true,
                                                            rand_neigh,
@@ -770,6 +802,7 @@ function enumerate_definite_genus(
                                                            save_path,
                                                            use_mass,
                                                            _missing_mass=mm,
+                                                           vain,
                                                            stop_after,
                                                            max=max-length(edg)-length(_edg))
     end
@@ -781,7 +814,7 @@ end
 
 @doc raw"""
     enumerate_definite_genus(G::ZZGenus, algorithm::Symbol = :default;
-                                         rand_neigh::Int = 100,
+                                         rand_neigh::Int = 10,
                                          invariant_func::Function = default_func,
                                          save_partial::Bool = false,
                                          save_path::String = nothing,
@@ -806,7 +839,7 @@ The possible extra arguments are as follows:
 - `save_partial` -> whether one wants to save iteratively new isometry classes (for instance for large genera);
 - `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
 - `use_mass` -> whether to use the mass formula as termination condition;
-- `stop_after` -> the algorithm breaks if we have done that amount of iterations without finding a new isometry class;
+- `stop_after` -> the algorithm stops if we have done that amount of iterations without finding a new isometry class;
 - `max` -> the algorithm stops after finding `max` new isometry classes.
 
 If `save_partial == true`, the lattices are stored in a compact way in a `.jl`
@@ -816,7 +849,7 @@ matrix (which is enough to reconstruct the lattice as a standalone object).
 The default function for `invariant_func` currently computes:
 - the absolute length of a shortest vector in the given lattice (also known as [`minimum`](@ref));
 - an ordered list of tuples consisting of the decomposition of the root sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
-- the kissing number of the given lattice;
+- the kissing number of the given lattice, which is proportional to the number of vectors of shortest length;
 - the order of the isometry group of the given lattice.
 
 Note: since we first compute a representatives of an isometry for each spinor
@@ -826,7 +859,7 @@ genus in `G`, the genus `G` must have rank at least 3. For rank
 function enumerate_definite_genus(
     G::ZZGenus,
     algorithm::Symbol = :default;
-    rand_neigh::Int = 100,
+    rand_neigh::Int = 10,
     invariant_func::Function = default_func,
     save_partial::Bool = false,
     save_path::Union{IO, String, Nothing} = nothing,
