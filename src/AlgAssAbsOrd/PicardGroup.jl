@@ -804,14 +804,15 @@ end
 ################################################################################
 
 @doc raw"""
-    kernel_group(O::AlgAssAbsOrd) -> FinGenAbGroup, MapPicardGroup
+    kernel_group_with_disc_log(O::AlgAssAbsOrd) -> FinGenAbGroup, MapPicardGroup
 
 Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
 returns the group $D$ in the exact sequence $0 \to D \to Pic(O) \to Pic(O')$
 where $O'$ is a maximal order containing $O$.
 """
-function kernel_group(O::AlgAssAbsOrd)
+function kernel_group_with_disc_log(O::AlgAssAbsOrd)
   A = algebra(O)
+  @req is_commutative(O) "Order must be commutative"
   OO = maximal_order(A)
 
   # We use the short exact sequence
