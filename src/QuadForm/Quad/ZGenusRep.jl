@@ -282,7 +282,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
     if p == 2
       bo = is_divisible_by(a, 8)
       if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L0`
-        if prime_dual(L, w, p) != L0
+        if prime_dual(L, w, p) == L0
           vain[] += 1
           continue
         end
@@ -291,7 +291,7 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
       elseif even && bo # `w` is admissible so it is good
         push!(lifts, w)
       elseif !even && bo # Another corner case: `w` is admissible but if `L_{w, 2} == L0` then the neighbour is even, and we want an odd one
-        if prime_dual(L, w*L0toL, p) != L0
+        if prime_dual(L, w*L0toL, p) == L0
           vain[] += 1
           continue
         end
@@ -305,8 +305,10 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
         # admissible vector, and the neighbour might not be isometric to the one
         # obtained via `w`. The existence of such vectors is ensured only if
         # there exists a vector in `L0` with odd product with `w`, i.e. if
-        # `L0_{w, 2} != L0` (which itself implies that `L_{w, 2} != L0`)
-        if prime_dual(L0, w, p) == L0
+        # `L0_{w, 2} != L0`
+        if prime_dual(L, w*L0toL, p) == L0
+          push!(lifts, w*L0toL)
+        elseif prime_dual(L0, w, p) == L0
           push!(lifts, w*L0toL)
         else
           push!(lifts, w*L0toL)
@@ -674,7 +676,7 @@ function enumerate_definite_genus(
 
   r = rank(L)
   d = abs(det(L))
-  p = ZZ(2)
+  p = r >= 5 ? ZZ(2) : ZZ(3) # Seems to be a problem for low ranks
   while valuation(d, p) != 0 || !is_isotropic(L, p)
     p = next_prime(p)
   end
