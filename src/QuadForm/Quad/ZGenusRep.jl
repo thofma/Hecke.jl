@@ -282,13 +282,19 @@ function _neighbours_definite_orbit(L::ZZLat, p::ZZRingElem; callback::Function,
     if p == 2
       bo = is_divisible_by(a, 8)
       if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L0`
-        prime_dual(L, w, p) != L0 || (vain[] += 1 && continue)
+        if prime_dual(L, w, p) != L0
+          vain[] += 1
+          continue
+        end
         make_admissible!(w, form0, m, K, a)
         push!(lifts, w)
       elseif even && bo # `w` is admissible so it is good
         push!(lifts, w)
       elseif !even && bo # Another corner case: `w` is admissible but if `L_{w, 2} == L0` then the neighbour is even, and we want an odd one
-        prime_dual(L, w*L0toL, p) != L0 || (vain[] += 1 && continue)
+        if prime_dual(L, w*L0toL, p) != L0
+          vain[] += 1
+          continue
+        end
         push!(lifts, w*L0toL)
       else
         # Here `w` is admissible of square 4 mod 8 so w/2 has odd square. Hence
@@ -414,13 +420,19 @@ function _neighbours_definite_rand(L::ZZLat, p::ZZRingElem; rand_neigh::Int = 10
     if p == 2
       bo = is_divisible_by(a, 8)
       if even && !bo
-        prime_dual(L, w, p) != L0 || (vain[] += 1 && continue)
+        if prime_dual(L, w, p) != L0
+          vain[] += 1
+          continue
+        end
         make_admissible!(w, form0, m, K, a)
         push!(lifts, w)
       elseif even && bo
         push!(lifts, w)
       elseif !even && bo
-        prime_dual(L, w*L0toL, p) != L0 || (vain[] += 1 && continue)
+        if prime_dual(L, w*L0toL, p) != L0
+          vain[] += 1
+          continue
+        end
         push!(lifts, w*L0toL)
       else
         if prime_dual(L, w*L0toL, p) == L0
