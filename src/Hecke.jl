@@ -38,6 +38,7 @@ using Pkg
 
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias
+import AbstractAlgebra: xxgcd, make_exact
 
 import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent, terse, is_terse
 
