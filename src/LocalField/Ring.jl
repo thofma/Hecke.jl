@@ -139,25 +139,55 @@ end
 function canonical_unit(a::QadicRingElem)
   iszero(a.x) && return setprecision(a.P(1), precision(a))
   v = valuation(a.x)
-  return QadicRingElem(a.P, inv(a.x//prime(a.P.Q)^v))
+  return QadicRingElem(a.P, a.x//prime(a.P.Q)^v)
 end
 
 function gcdx(a::QadicRingElem, b::QadicRingElem)
   if iszero(a)
-    c = canonical_unit(b)
+    c = inv(canonical_unit(b))
     return b*c, a, c
   end
   if iszero(b)
-    c = canonical_unit(a)
+    c = inv(canonical_unit(a))
     return a*c, c, b
   end
   if valuation(a.x) < valuation(b.x)
-    c = canonical_unit(a)
+    c = inv(canonical_unit(a))
     return a*c, c, setprecision(a.P(0), precision(a))
   else
-    c = canonical_unit(b)
+    c = inv(canonical_unit(b))
     return b*c, setprecision(b.P(0), precision(b)), c
   end
+end
+
+function xxgcd(a::T, b::T) where T <: QadicRingElem
+  k = parent(a)
+  if iszero(b) || valuation(a) <= valuation(b)
+    c = inv(canonical_unit(a))
+    return uniformizer(k, valuation(a)), c, zero(k), -shift_left(b, valuation(a)), inv(c)
+  else
+    c = inv(canonical_unit(b))
+    return uniformizer(k, valuation(b)), zero(c), c,  -inv(c), shift_left(a, valuation(b))
+  end
+end
+
+function make_exact(a::QadicRingElem)
+  return setprecision(a, valuation(a) + precision(parent(a)))
+end
+
+function shift_left(a::QadicRingElem, i::Int)
+  return parent(a)(shift_left(a.x, i))
+end
+
+function uniformizer(a::QadicRing, i::Int)
+  @assert i >= 0
+  return a(uniformizer(a.Q, i))
+end
+
+function shift_left(a::PadicFieldElem, i::Int)
+  b = deepcopy(a)
+  b.v -= i
+  return b
 end
 
 function mul_red!(a::QadicRingElem, b::QadicRingElem, c::QadicRingElem, f::Bool = false)
