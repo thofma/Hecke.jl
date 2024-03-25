@@ -317,6 +317,7 @@ export embed_in_unimodular
 export embedded_number_field
 export embedding
 export embeddings
+export enumerate_definite_genus
 export equation
 export equation_order
 export euclid
