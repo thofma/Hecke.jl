@@ -163,4 +163,17 @@
   @test dense_row(A, 3) == matrix(FlintZZ, 1, 3, [-5, 0, 2])
   @test dense_row(A, 6) == matrix(FlintZZ, 1, 6, [-5, 0, 2, -10, 1, 0])
   @test sparse_row(dense_row(A, 6)) == A
+
+  #SRow{NCRingElem}
+  R = MatrixAlgebra(QQ,2)
+  a = R([1 2; 3 4])
+  b = R([3 4; 5 6])
+  i = R([1 0; 0 1])
+  A = sparse_row(R,[1],[a])
+  B = sparse_row(R,[1],[b])
+  @test dot(A,B) != dot(B,A)
+  @test A*i == A == i*A
+  @test scale_row!(A,b) != scale_row_right!(A,b)
+  C = add_scaled_row(A,B,i)
+  @test C == A+B
 end
