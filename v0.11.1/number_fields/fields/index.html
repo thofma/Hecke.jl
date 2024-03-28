@@ -1,0 +1,1789 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.1">
+    
+    
+      
+        <title>Number field operations - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.e8d9bf0c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.e6a45f82.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#number-field-operations" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Number field operations
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Number field operations
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Number field operations
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-number-fields" class="md-nav__link">
+    Creation of number fields
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-properties" class="md-nav__link">
+    Basic properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+    <nav class="md-nav" aria-label="Predicates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#subfields" class="md-nav__link">
+    Subfields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversion" class="md-nav__link">
+    Conversion
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#morphisms" class="md-nav__link">
+    Morphisms
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#galois-theory" class="md-nav__link">
+    Galois theory
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#infinite-places" class="md-nav__link">
+    Infinite places
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscellaneous" class="md-nav__link">
+    Miscellaneous
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_2" type="checkbox" id="__nav_2_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Function fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Orders" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4">
+          Quadratic and Hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Quadratic and Hermitian forms" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and Hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/basics/" class="md-nav__link">
+        Quadratic and hermitian spaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/lattices/" class="md-nav__link">
+        Lattices
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_5" type="checkbox" id="__nav_2_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_6" type="checkbox" id="__nav_2_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        Factored Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        Sparse Linear Algebra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_8" type="checkbox" id="__nav_2_8" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_8">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_8">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-number-fields" class="md-nav__link">
+    Creation of number fields
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-properties" class="md-nav__link">
+    Basic properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+    <nav class="md-nav" aria-label="Predicates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#subfields" class="md-nav__link">
+    Subfields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversion" class="md-nav__link">
+    Conversion
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#morphisms" class="md-nav__link">
+    Morphisms
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#galois-theory" class="md-nav__link">
+    Galois theory
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#infinite-places" class="md-nav__link">
+    Infinite places
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscellaneous" class="md-nav__link">
+    Miscellaneous
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/thofma/Hecke.jl/edit/master/docs/number_fields/fields.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+<p><a id='Number-field-operations'></a></p>
+<p><a id='Number-field-operations-1'></a></p>
+<h1 id="number-field-operations">Number field operations</h1>
+<p><a id='Creation-of-number-fields'></a></p>
+<p><a id='Creation-of-number-fields-1'></a></p>
+<h2 id="creation-of-number-fields">Creation of number fields</h2>
+<p>General number fields can be created using the function <code>NumberField</code>, of which <code>number_field</code> is an alias. To create a simple number field given by a defining polynomial or a non-simple number field given by defining polynomials, the following functions can be used.</p>
+<p><a id='NumberField-Tuple{Hecke.DocuDummy}' href='#NumberField-Tuple{Hecke.DocuDummy}'>#</a>
+<strong><code>NumberField</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">NumberField</span><span class="p">(</span><span class="n">f</span><span class="o">::</span><span class="kt">Poly</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">},</span> <span class="n">s</span><span class="o">::</span><span class="kt">String</span><span class="p">;</span>
+            <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">,</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span><span class="p">,</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Given an irreducible polynomial <script type="math/tex">f \in K[x]</script> over some number field <script type="math/tex">K</script>, this function creates the simple number field <script type="math/tex">L = K[x]/(f)</script> and returns <script type="math/tex">(L, b)</script>, where <script type="math/tex">b</script> is the class of <script type="math/tex">x</script> in <script type="math/tex">L</script>. The string <code>s</code> is used only for printing the primitive element <script type="math/tex">b</script>.</p>
+<ul>
+<li><code>check</code>: Controls whether irreducibility of <script type="math/tex">f</script> is checked.</li>
+<li><code>cached</code>: Controls whether the result is cached.</li>
+</ul>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">quadratic_field</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span> <span class="n">L</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L137' class='documenter-source'>source</a><br></p>
+<p><a id='NumberField-Tuple{Hecke.DocuDummy2}' href='#NumberField-Tuple{Hecke.DocuDummy2}'>#</a>
+<strong><code>NumberField</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">NumberField</span><span class="p">(</span><span class="n">f</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">PolyElem</span><span class="p">{</span><span class="o">&lt;:</span><span class="kt">NumFieldElem</span><span class="p">}},</span> <span class="n">s</span><span class="o">::</span><span class="kt">String</span><span class="o">=</span><span class="s">&quot;_</span><span class="se">\$</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">check</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span>
+                                          <span class="o">-&gt;</span> <span class="n">NumField</span><span class="p">,</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a list <script type="math/tex">f_1, \ldots, f_n</script> of univariate polynomials in <script type="math/tex">K[x]</script> over some number field <script type="math/tex">K</script>, constructs the extension <script type="math/tex">K[x_1, \ldots, x_n]/(f_1(x_1), \ldots, f_n(x_n))</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">([</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="p">],</span> <span class="s">&quot;a&quot;</span><span class="p">)</span>
+<span class="go">(Non-simple number field with defining polynomials fmpq_mpoly[x1^2 - 2, x2^2 - 3], NfAbsNSElem[a1, a2])</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NonSimpleNumField/Field.jl#L32' class='documenter-source'>source</a><br></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Many of the constructors have arguments of type <code>Symbol</code> or <code>AbstractString</code>.  If used, they define the appearance in printing, and printing only.  The named parameter <code>check</code> can be <code>true</code> or <code>false</code>, the default being <code>true</code>.  This parameter controls whether the polynomials defining the number field are tested for irreducibility or not. Given that this can be potentially very time consuming if the degree if large, one can disable this test. Note however, that the behaviour of Hecke is undefined if a reducible polynomial is used to define a <em>field</em>.</p>
+<p>The named boolean parameter <code>cached</code> can be used to disable caching. Two number fields defined using the same polynomial from the identical polynomial ring and the same (identical) symbol/string will be identical if <code>cached == true</code> and different if <code>cached == false</code>.</p>
+</div>
+<p>For frequently used number fields like quadratic fields, cyclotomic fields or radical extensions, the following functions are provided:</p>
+<p><a id='cyclotomic_field-Tuple{Int64}' href='#cyclotomic_field-Tuple{Int64}'>#</a>
+<strong><code>cyclotomic_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">cyclotomic_field</span><span class="p">(</span><span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">nf_elem</span>
+</code></pre></div>
+<p>The cyclotomic field defined by the <script type="math/tex">n</script>-th cyclotomic polynomial.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">cyclotomic_field</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">(Cyclotomic field of order 10, z_10)</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L78' class='documenter-source'>source</a><br></p>
+<p><a id='quadratic_field-Tuple{fmpz}' href='#quadratic_field-Tuple{fmpz}'>#</a>
+<strong><code>quadratic_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quadratic_field</span><span class="p">(</span><span class="n">d</span><span class="o">::</span><span class="kt">IntegerUnion</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">nf_elem</span>
+</code></pre></div>
+<p>Returns the field with defining polynomial <script type="math/tex">x^2 - d</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">quadratic_field</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">(Real quadratic field defined by x^2 - 5, sqrt(5))</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L121' class='documenter-source'>source</a><br></p>
+<p><a id='wildanger_field-Tuple{Int64, fmpz}' href='#wildanger_field-Tuple{Int64, fmpz}'>#</a>
+<strong><code>wildanger_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">wildanger_field</span><span class="p">(</span><span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">nf_elem</span>
+</code></pre></div>
+<p>Returns the field with defining polynomial <script type="math/tex">x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i</script>. These fields tend to have non-trivial class groups.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">wildanger_field</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">ZZ</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="s">&quot;a&quot;</span><span class="p">)</span>
+<span class="go">(Number field over Rational Field with defining polynomial x^3 - 10*x^2 + 10*x - 10, a)</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L95' class='documenter-source'>source</a><br></p>
+<p><a id='radical_extension-Tuple{Int64, NumFieldElem}' href='#radical_extension-Tuple{Int64, NumFieldElem}'>#</a>
+<strong><code>radical_extension</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">radical_extension</span><span class="p">(</span><span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="kt">NumFieldElem</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;_$&quot;</span><span class="p">;</span>
+               <span class="n">check</span> <span class="o">=</span> <span class="nb">true</span><span class="p">,</span> <span class="n">cached</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span><span class="p">,</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Given an element <script type="math/tex">a</script> of a number field <script type="math/tex">K</script> and an integer <script type="math/tex">n</script>, create the simple extension of <script type="math/tex">K</script> with the defining polynomial <script type="math/tex">x^n - a</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">radical_extension</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">QQ</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="s">&quot;a&quot;</span><span class="p">)</span>
+<span class="go">(Number field over Rational Field with defining polynomial x^5 - 2, a)</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L53' class='documenter-source'>source</a><br></p>
+<p><a id='rationals_as_number_field-Tuple{}' href='#rationals_as_number_field-Tuple{}'>#</a>
+<strong><code>rationals_as_number_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rationals_as_number_field</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">nf_elem</span>
+</code></pre></div>
+<p>Returns the rational numbers as the number field defined by <script type="math/tex">x - 1</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">rationals_as_number_field</span><span class="p">()</span>
+<span class="go">(Number field over Rational Field with defining polynomial x - 1, 1)</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L163' class='documenter-source'>source</a><br></p>
+<p><a id='Basic-properties'></a></p>
+<p><a id='Basic-properties-1'></a></p>
+<h2 id="basic-properties">Basic properties</h2>
+<p><a id='basis-Tuple{SimpleNumField}' href='#basis-Tuple{SimpleNumField}'>#</a>
+<strong><code>basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">basis</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the canonical basis of a simple extension <script type="math/tex">L/K</script>, that is, the elements <script type="math/tex">1,a,\dotsc,a^{d - 1}</script>, where <script type="math/tex">d</script> is the degree of <script type="math/tex">K</script> and <script type="math/tex">a</script> the primitive element.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">basis</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="go">2-element Vector{nf_elem}:</span>
+<span class="go"> 1</span>
+<span class="go"> a</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L87' class='documenter-source'>source</a><br></p>
+<p><a id='basis-Tuple{NonSimpleNumField}' href='#basis-Tuple{NonSimpleNumField}'>#</a>
+<strong><code>basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">basis</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NonSimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the canonical basis of a non-simple extension <script type="math/tex">L/K</script>. If <script type="math/tex">L = K(a_1,\dotsc,a_n)</script> where each <script type="math/tex">a_i</script> has degree <script type="math/tex">d_i</script>, then the basis will be <script type="math/tex">a_1^{i_1}\dotsm a_d^{i_d}</script> with <script type="math/tex">0 \leq i_j \leq d_j - 1</script> for <script type="math/tex">1 \leq j \leq n</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">)</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">([</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="p">],</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">basis</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="go">4-element Vector{NfAbsNSElem}:</span>
+<span class="go"> 1</span>
+<span class="go"> a1</span>
+<span class="go"> a2</span>
+<span class="go"> a1*a2</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NonSimpleNumField/Field.jl#L44' class='documenter-source'>source</a><br></p>
+<p><a id='absolute_basis-Tuple{NumField}' href='#absolute_basis-Tuple{NumField}'>#</a>
+<strong><code>absolute_basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">absolute_basis</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns an array of elements that form a basis of <script type="math/tex">K</script> (as a vector space) over the rationals.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L342' class='documenter-source'>source</a><br></p>
+<p><a id='defining_polynomial-Tuple{SimpleNumField}' href='#defining_polynomial-Tuple{SimpleNumField}'>#</a>
+<strong><code>defining_polynomial</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">defining_polynomial</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolyElem</span>
+</code></pre></div>
+<p>Given a simple number field <script type="math/tex">L/K</script>, constructed as <script type="math/tex">L = K[x]/(f)</script>, this function returns <script type="math/tex">f</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L117' class='documenter-source'>source</a><br></p>
+<p><a id='defining_polynomials-Tuple{NonSimpleNumField}' href='#defining_polynomials-Tuple{NonSimpleNumField}'>#</a>
+<strong><code>defining_polynomials</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">defining_polynomials</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NonSimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">PolyElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a non-simple number field <script type="math/tex">L/K</script>, constructed as <script type="math/tex">L = K[x]/(f_1,\dotsc,f_r)</script>, return the vector containing the <script type="math/tex">f_i</script>'s.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NonSimpleNumField/Field.jl#L76' class='documenter-source'>source</a><br></p>
+<p><a id='absolute_primitive_element-Tuple{NumField}' href='#absolute_primitive_element-Tuple{NumField}'>#</a>
+<strong><code>absolute_primitive_element</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">absolute_primitive_element</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script>, this function returns an element <script type="math/tex">\gamma \in K</script> such that <script type="math/tex">K = \mathbf{Q}(\gamma)</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfRel/absolute_field.jl#L9' class='documenter-source'>source</a><br></p>
+<p><a id='component-Tuple{NonSimpleNumField, Int64}' href='#component-Tuple{NonSimpleNumField, Int64}'>#</a>
+<strong><code>component</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">component</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NonSimpleNumField</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNumField</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Given a non-simple extension <script type="math/tex">L/K</script>, this function returns the simple number field corresponding to the <script type="math/tex">i</script>-th component of <script type="math/tex">L</script> together with its embedding.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NonSimpleNumField/Field.jl#L146' class='documenter-source'>source</a><br></p>
+<p><a id='base_field-Tuple{NumField}' href='#base_field-Tuple{NumField}'>#</a>
+<strong><code>base_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">base_field</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">L/K</script> this function returns the base field <script type="math/tex">K</script>. For absolute extensions this returns <script type="math/tex">\mathbf{Q}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L9' class='documenter-source'>source</a><br></p>
+<p><a id='Invariants'></a></p>
+<p><a id='Invariants-1'></a></p>
+<h2 id="invariants">Invariants</h2>
+<p><a id='degree-Tuple{NumField}' href='#degree-Tuple{NumField}'>#</a>
+<strong><code>degree</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">degree</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">L/K</script>, this function returns the degree of <script type="math/tex">L</script> over <script type="math/tex">K</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">degree</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="go">2</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L47' class='documenter-source'>source</a><br></p>
+<p><a id='absolute_degree-Tuple{NumField}' href='#absolute_degree-Tuple{NumField}'>#</a>
+<strong><code>absolute_degree</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">absolute_degree</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">L/K</script>, this function returns the degree of <script type="math/tex">L</script> over <script type="math/tex">\mathbf Q</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L73' class='documenter-source'>source</a><br></p>
+<p><a id='signature-Tuple{NumField}' href='#signature-Tuple{NumField}'>#</a>
+<strong><code>signature</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">signature</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the signature of the number field of <script type="math/tex">K</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">signature</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="go">(2, 0)</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L412' class='documenter-source'>source</a><br></p>
+<p><a id='unit_group_rank-Tuple{NumField}' href='#unit_group_rank-Tuple{NumField}'>#</a>
+<strong><code>unit_group_rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">unit_group_rank</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Return the rank of the unit group of any order of <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L396' class='documenter-source'>source</a><br></p>
+<p><a id='class_number-Tuple{AnticNumberField}' href='#class_number-Tuple{AnticNumberField}'>#</a>
+<strong><code>class_number</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">class_number</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Returns the class number of <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L232' class='documenter-source'>source</a><br></p>
+<p><a id='relative_class_number-Tuple{AnticNumberField}' href='#relative_class_number-Tuple{AnticNumberField}'>#</a>
+<strong><code>relative_class_number</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">relative_class_number</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Returns the relative class number of <script type="math/tex">K</script>. The field must be a CM-field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L247' class='documenter-source'>source</a><br></p>
+<p><a id='regulator-Tuple{AnticNumberField}' href='#regulator-Tuple{AnticNumberField}'>#</a>
+<strong><code>regulator</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">regulator</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span>
+</code></pre></div>
+<p>Computes the regulator of <script type="math/tex">K</script>, i.e. the discriminant of the unit lattice for the maximal order of <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/Clgp.jl#L494' class='documenter-source'>source</a><br></p>
+<p><a id='discriminant-Tuple{SimpleNumField}' href='#discriminant-Tuple{SimpleNumField}'>#</a>
+<strong><code>discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>The discriminant of the defining polynomial of <script type="math/tex">L</script>, <em>not</em> the discriminant of the maximal order of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L133' class='documenter-source'>source</a><br></p>
+<p><a id='absolute_discriminant-Tuple{SimpleNumField}' href='#absolute_discriminant-Tuple{SimpleNumField}'>#</a>
+<strong><code>absolute_discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">absolute_discriminant</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">,</span> <span class="n">QQ</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpq</span>
+</code></pre></div>
+<p>The absolute discriminant of the defining polynomial of <script type="math/tex">L</script>, <em>not</em> the discriminant of the maximal order of <script type="math/tex">L</script>. This is the norm of the discriminant times the <script type="math/tex">d</script>-th power of the discriminant of the base field, where <script type="math/tex">d</script> is the degree of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L149' class='documenter-source'>source</a><br></p>
+<p><a id='Predicates'></a></p>
+<p><a id='Predicates-1'></a></p>
+<h2 id="predicates">Predicates</h2>
+<p><a id='issimple-Tuple{NumField}' href='#issimple-Tuple{NumField}'>#</a>
+<strong><code>issimple</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">issimple</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">L/K</script> this function returns whether <script type="math/tex">L</script> is simple, that is, whether <script type="math/tex">L/K</script> is defined by a univariate polynomial.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L95' class='documenter-source'>source</a><br></p>
+<p><a id='isabsolute-Tuple{NumField}' href='#isabsolute-Tuple{NumField}'>#</a>
+<strong><code>isabsolute</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isabsolute</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether <script type="math/tex">L</script> is an absolute extension, that is, whether the base field of <script type="math/tex">L</script> is <script type="math/tex">\mathbf{Q}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L29' class='documenter-source'>source</a><br></p>
+<p><a id='istotally_real-Tuple{NumField}' href='#istotally_real-Tuple{NumField}'>#</a>
+<strong><code>istotally_real</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">istotally_real</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns true if and only if <script type="math/tex">K</script> is totally real, that is, if all roots of the defining polynomial are real.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/Conjugates.jl#L10' class='documenter-source'>source</a><br></p>
+<p><a id='istotally_complex-Tuple{NumField}' href='#istotally_complex-Tuple{NumField}'>#</a>
+<strong><code>istotally_complex</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">istotally_complex</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns true if and only if <script type="math/tex">K</script> is totally complex, that is, if all roots of the defining polynomial are not real.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/Conjugates.jl#L22' class='documenter-source'>source</a><br></p>
+<p><a id='iscm_field-Tuple{NumField}' href='#iscm_field-Tuple{NumField}'>#</a>
+<strong><code>iscm_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">iscm_field</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfToNfMor</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script>, this function returns true and the complex conjugation if the field is CM, false and the identity otherwise.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/Map/NumberField.jl#L173' class='documenter-source'>source</a><br></p>
+<p><a id='iskummer_extension-Tuple{SimpleNumField}' href='#iskummer_extension-Tuple{SimpleNumField}'>#</a>
+<strong><code>iskummer_extension</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">iskummer_extension</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Tests if <script type="math/tex">L/K</script> is a Kummer extension, that is, if the defining polynomial is of the form <script type="math/tex">x^n - b</script> for some <script type="math/tex">b \in K</script> and if <script type="math/tex">K</script> contains the <script type="math/tex">n</script>-th roots of unity.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L20' class='documenter-source'>source</a><br></p>
+<p><a id='isradical_extension-Tuple{SimpleNumField}' href='#isradical_extension-Tuple{SimpleNumField}'>#</a>
+<strong><code>isradical_extension</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isradical_extension</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Tests if <script type="math/tex">L/K</script> is pure, that is, if the defining polynomial is of the form <script type="math/tex">x^n - b</script> for some <script type="math/tex">b \in K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L7' class='documenter-source'>source</a><br></p>
+<p><a id='islinearly_disjoint-Tuple{SimpleNumField, SimpleNumField}' href='#islinearly_disjoint-Tuple{SimpleNumField, SimpleNumField}'>#</a>
+<strong><code>islinearly_disjoint</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">islinearly_disjoint</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">,</span> <span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given two number fields <script type="math/tex">K</script> and <script type="math/tex">L</script> with the same base field <script type="math/tex">k</script>, this function returns whether <script type="math/tex">K</script> and <script type="math/tex">L</script> are linear disjoint over <script type="math/tex">k</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L202' class='documenter-source'>source</a><br></p>
+<p><a id='isweakly_ramified-Tuple{AnticNumberField, NfOrdIdl}' href='#isweakly_ramified-Tuple{AnticNumberField, NfOrdIdl}'>#</a>
+<strong><code>isweakly_ramified</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isweakly_ramified</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a prime ideal <script type="math/tex">P</script> of a number field <script type="math/tex">K</script>, return whether <script type="math/tex">P</script> is weakly ramified, that is, whether the second ramification group is trivial.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/Ideal/Prime.jl#L83' class='documenter-source'>source</a><br></p>
+<p><a id='istamely_ramified-Tuple{AnticNumberField}' href='#istamely_ramified-Tuple{AnticNumberField}'>#</a>
+<strong><code>istamely_ramified</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">istamely_ramified</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the number field <script type="math/tex">K</script> is tamely ramified.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/Ideal/Prime.jl#L67' class='documenter-source'>source</a><br></p>
+<p><a id='istamely_ramified-Tuple{AnticNumberField, Int64}' href='#istamely_ramified-Tuple{AnticNumberField, Int64}'>#</a>
+<strong><code>istamely_ramified</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">istamely_ramified</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the integer <script type="math/tex">p</script> is tamely ramified in <script type="math/tex">\mathcal O</script>. It is assumed that <script type="math/tex">p</script> is prime.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/Ideal/Prime.jl#L51' class='documenter-source'>source</a><br></p>
+<p><a id='isabelian-Tuple{NumField}' href='#isabelian-Tuple{NumField}'>#</a>
+<strong><code>isabelian</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isabelian</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Check if the number field <script type="math/tex">L/K</script> is abelian over <script type="math/tex">K</script>.  The function is probabilistic and assumes GRH.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L479' class='documenter-source'>source</a><br></p>
+<p><a id='Subfields'></a></p>
+<p><a id='Subfields-1'></a></p>
+<h3 id="subfields">Subfields</h3>
+<p><a id='issubfield-Tuple{SimpleNumField, SimpleNumField}' href='#issubfield-Tuple{SimpleNumField, SimpleNumField}'>#</a>
+<strong><code>issubfield</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">issubfield</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">,</span> <span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Returns <code>true</code> and an injection from <script type="math/tex">K</script> to <script type="math/tex">L</script> if <script type="math/tex">K</script> is a subfield of <script type="math/tex">L</script>. Otherwise the function returns <code>false</code> and a morphism mapping everything to <script type="math/tex">0</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L178' class='documenter-source'>source</a><br></p>
+<p><a id='subfields-Tuple{SimpleNumField}' href='#subfields-Tuple{SimpleNumField}'>#</a>
+<strong><code>subfields</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">subfields</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">NumField</span><span class="p">,</span> <span class="kt">Map</span><span class="p">}}</span>
+</code></pre></div>
+<p>Given a simple extension <script type="math/tex">L/K</script>, returns all subfields of <script type="math/tex">L</script> containing <script type="math/tex">K</script> as tuples <script type="math/tex">(k, \iota)</script> consisting of a simple extension <script type="math/tex">k</script> and an embedding <script type="math/tex">\iota k \to K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Subfields.jl#L289' class='documenter-source'>source</a><br></p>
+<p><a id='principal_subfields-Tuple{SimpleNumField}' href='#principal_subfields-Tuple{SimpleNumField}'>#</a>
+<strong><code>principal_subfields</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">principal_subfields</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">NumField</span><span class="p">,</span> <span class="kt">Map</span><span class="p">}}</span>
+</code></pre></div>
+<p>Return the principal subfields of <script type="math/tex">L</script> as pairs consisting of a subfield <script type="math/tex">k</script> and an embedding <script type="math/tex">k \to L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Subfields.jl#L73' class='documenter-source'>source</a><br></p>
+<p><a id='compositum-Tuple{AnticNumberField, AnticNumberField}' href='#compositum-Tuple{AnticNumberField, AnticNumberField}'>#</a>
+<strong><code>compositum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">compositum</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">L</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">Map</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Assuming <script type="math/tex">L</script> is normal (which is not checked), compute the compositum <script type="math/tex">C</script> of the 2 fields together with the embedding of <script type="math/tex">K \to C</script> and <script type="math/tex">L \to C</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L607' class='documenter-source'>source</a><br></p>
+<p><a id='embedding-Tuple{NumField, NumField}' href='#embedding-Tuple{NumField, NumField}'>#</a>
+<strong><code>embedding</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">embedding</span><span class="p">(</span><span class="n">k</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Assuming <script type="math/tex">k</script> is known to be a subfield of <script type="math/tex">K</script>, return the embedding map.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L1253' class='documenter-source'>source</a><br></p>
+<p><a id='normal_closure-Tuple{AnticNumberField}' href='#normal_closure-Tuple{AnticNumberField}'>#</a>
+<strong><code>normal_closure</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">normal_closure</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">NfToNfMor</span>
+</code></pre></div>
+<p>The normal closure of <script type="math/tex">K</script> together with the embedding map.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L922' class='documenter-source'>source</a><br></p>
+<p><a id='relative_simple_extension-Tuple{NumField, NumField}' href='#relative_simple_extension-Tuple{NumField, NumField}'>#</a>
+<strong><code>relative_simple_extension</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">relative_simple_extension</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">k</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfRel</span>
+</code></pre></div>
+<p>Given two fields <script type="math/tex">K\supset k</script>, it returns <script type="math/tex">K</script> as a simple relative extension <script type="math/tex">L</script> of <script type="math/tex">k</script> and an isomorphism <script type="math/tex">L \to K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfRel/relative_extension.jl#L9' class='documenter-source'>source</a><br></p>
+<p><a id='issubfield_normal-Tuple{AnticNumberField, AnticNumberField}' href='#issubfield_normal-Tuple{AnticNumberField, AnticNumberField}'>#</a>
+<strong><code>issubfield_normal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code>  <span class="n">issubfield_normal</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">L</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfToNfMor</span>
+</code></pre></div>
+<p>Returns <code>true</code> and an injection from <script type="math/tex">K</script> to <script type="math/tex">L</script> if <script type="math/tex">K</script> is a subfield of <script type="math/tex">L</script>. Otherwise the function returns "false" and a morphism mapping everything to 0.</p>
+<p>This function assumes that <script type="math/tex">K</script> is normal.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L513' class='documenter-source'>source</a><br></p>
+<p><a id='Conversion'></a></p>
+<p><a id='Conversion-1'></a></p>
+<h2 id="conversion">Conversion</h2>
+<p><a id='simplify-Tuple{AnticNumberField}' href='#simplify-Tuple{AnticNumberField}'>#</a>
+<strong><code>simplify</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">simplify</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">;</span> <span class="n">canonical</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">NfToNfMor</span>
+</code></pre></div>
+<p>Tries to find an isomorphic field <script type="math/tex">L</script> given by a "simpler" defining polynomial. By default, "simple" is defined to be of smaller index, testing is done only using a LLL-basis of the maximal order.</p>
+<p>If <code>canonical</code> is set to <code>true</code>, then a canonical defining polynomial is found, where canonical is using the definition of PARI's <code>polredabs</code>, which is described in http://beta.lmfdb.org/knowledge/show/nf.polredabs.</p>
+<p>Both versions require a LLL reduced basis for the maximal order.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/Simplify.jl#L5' class='documenter-source'>source</a><br></p>
+<p><a id='absolute_simple_field-Tuple{NumField}' href='#absolute_simple_field-Tuple{NumField}'>#</a>
+<strong><code>absolute_simple_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">absolute_simple_field</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script>, this function returns an absolute simple number field <script type="math/tex">M/\mathbf{Q}</script> together with a <script type="math/tex">\mathbf{Q}</script>-linear isomorphism <script type="math/tex">M \to K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfRel/absolute_field.jl#L91' class='documenter-source'>source</a><br></p>
+<p><a id='simple_extension-Tuple{NonSimpleNumField}' href='#simple_extension-Tuple{NonSimpleNumField}'>#</a>
+<strong><code>simple_extension</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">simple_extension</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NonSimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNumField</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Given a non-simple extension <script type="math/tex">L/K</script>, this function computes a simple extension <script type="math/tex">M/K</script> and a <script type="math/tex">K</script>-linear isomorphism <script type="math/tex">M \to L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NonSimpleNumField/Field.jl#L94' class='documenter-source'>source</a><br></p>
+<p><a id='simplified_simple_extension-Tuple{NonSimpleNumField}' href='#simplified_simple_extension-Tuple{NonSimpleNumField}'>#</a>
+<strong><code>simplified_simple_extension</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">simplified_simple_extension</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NonSimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleNumField</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Given a non-simple extension <script type="math/tex">L/K</script>, this function returns an isomorphic simple number field with a "small" defining equation together with the isomorphism.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NonSimpleNumField/Field.jl#L276' class='documenter-source'>source</a><br></p>
+<p><a id='Morphisms'></a></p>
+<p><a id='Morphisms-1'></a></p>
+<h2 id="morphisms">Morphisms</h2>
+<p><a id='isisomorphic-Tuple{SimpleNumField, SimpleNumField}' href='#isisomorphic-Tuple{SimpleNumField, SimpleNumField}'>#</a>
+<strong><code>isisomorphic</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isisomorphic</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">,</span> <span class="n">L</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Returns <code>true</code> and an isomorphism from <script type="math/tex">K</script> to <script type="math/tex">L</script> if <script type="math/tex">K</script> and <script type="math/tex">L</script> are isomorphic. Otherwise the function returns <code>false</code> and a morphism mapping everything to <script type="math/tex">0</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/SimpleNumField/Field.jl#L187' class='documenter-source'>source</a><br></p>
+<p><a id='isinvolution-Tuple{NfToNfMor}' href='#isinvolution-Tuple{NfToNfMor}'>#</a>
+<strong><code>isinvolution</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isinvolution</span><span class="p">(</span><span class="n">f</span><span class="o">::</span><span class="kt">NfToNfMor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns true if <script type="math/tex">f</script> is an involution, i.e. if <script type="math/tex">f^2</script> is the identity, false otherwise.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/Map/NumberField.jl#L437' class='documenter-source'>source</a><br></p>
+<p><a id='fixed_field-Tuple{Hecke.NumFieldMor}' href='#fixed_field-Tuple{Hecke.NumFieldMor}'>#</a>
+<strong><code>fixed_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">fixed_field</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">SimpleNumField</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="o">::</span><span class="kt">Map</span><span class="p">;</span>
+            <span class="n">simplify</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumberField</span><span class="p">,</span> <span class="n">NfToNfMor</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script> and an automorphism <script type="math/tex">\sigma</script> of <script type="math/tex">K</script>, this function returns the fixed field of <script type="math/tex">\sigma</script> as a pair <script type="math/tex">(L, i)</script> consisting of a number field <script type="math/tex">L</script> and an embedding of <script type="math/tex">L</script> into <script type="math/tex">K</script>.</p>
+<p>By default, the function tries to find a small defining polynomial of <script type="math/tex">L</script>. This can be disabled by setting <code>simplify = false</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Subfields.jl#L267' class='documenter-source'>source</a><br></p>
+<p><a id='automorphisms-Tuple{NumField}' href='#automorphisms-Tuple{NumField}'>#</a>
+<strong><code>automorphisms</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">automorphisms</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NumFieldMor</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">L/K</script>, return a list of all <script type="math/tex">K</script>-automorphisms of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L493' class='documenter-source'>source</a><br></p>
+<p><a id='automorphism_group-Tuple{AnticNumberField}' href='#automorphism_group-Tuple{AnticNumberField}'>#</a>
+<strong><code>automorphism_group</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">automorphism_group</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenGrp</span><span class="p">,</span> <span class="n">GrpGenToNfMorSet</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script>, this function returns a group <script type="math/tex">G</script> and a map from <script type="math/tex">G</script> to the automorphisms of <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/Map/automorphisms.jl#L194' class='documenter-source'>source</a><br></p>
+<p><a id='complex_conjugation-Tuple{AnticNumberField}' href='#complex_conjugation-Tuple{AnticNumberField}'>#</a>
+<strong><code>complex_conjugation</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">complex_conjugation</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span>
+</code></pre></div>
+<p>Given a totally complex normal number field, this function returns an automorphism which is the restriction of complex conjugation at one embedding.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/Conjugates.jl#L490' class='documenter-source'>source</a><br></p>
+<p><a id='Galois-theory'></a></p>
+<p><a id='Galois-theory-1'></a></p>
+<h2 id="galois-theory">Galois theory</h2>
+<p><a id='normal_basis-Tuple{NumField}' href='#normal_basis-Tuple{NumField}'>#</a>
+<strong><code>normal_basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">normal_basis</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Given a normal number field <script type="math/tex">L/K</script>, this function returns an element <script type="math/tex">a</script> of <script type="math/tex">L</script>, such that the orbit of <script type="math/tex">a</script> under the Galois group of <script type="math/tex">L/K</script> is an <script type="math/tex">K</script>-basis of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L159' class='documenter-source'>source</a><br></p>
+<p><a id='decomposition_group-Tuple{AnticNumberField, NfOrdIdl, Map}' href='#decomposition_group-Tuple{AnticNumberField, NfOrdIdl, Map}'>#</a>
+<strong><code>decomposition_group</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">decomposition_group</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="n">m</span><span class="o">::</span><span class="kt">Map</span><span class="p">)</span>
+                                              <span class="o">-&gt;</span> <span class="n">Grp</span><span class="p">,</span> <span class="n">GrpToGrp</span>
+</code></pre></div>
+<p>Given a prime ideal <script type="math/tex">P</script> of a number field <script type="math/tex">K</script> and a map <code>m</code> return from <code>automorphism_group(K)</code>, return the decompositon group of <script type="math/tex">P</script> as a subgroup of the domain of <code>m</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/Ideal/Prime.jl#L1697' class='documenter-source'>source</a><br></p>
+<p><a id='ramification_group-Tuple{AnticNumberField, NfOrdIdl, Int64, Map}' href='#ramification_group-Tuple{AnticNumberField, NfOrdIdl, Int64, Map}'>#</a>
+<strong><code>ramification_group</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ramification_group</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="n">m</span><span class="o">::</span><span class="kt">Map</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Grp</span><span class="p">,</span> <span class="n">GrpToGrp</span>
+</code></pre></div>
+<p>Given a prime ideal <script type="math/tex">P</script> of a number field <script type="math/tex">K</script> and a map <code>m</code> return from <code>automorphism_group(K)</code>, return the ramification group of <script type="math/tex">P</script> as a subgroup of the domain of <code>m</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/Ideal/Prime.jl#L1839' class='documenter-source'>source</a><br></p>
+<p><a id='inertia_subgroup-Tuple{AnticNumberField, NfOrdIdl, Map}' href='#inertia_subgroup-Tuple{AnticNumberField, NfOrdIdl, Map}'>#</a>
+<strong><code>inertia_subgroup</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">inertia_subgroup</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="n">m</span><span class="o">::</span><span class="kt">Map</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Grp</span><span class="p">,</span> <span class="n">GrpToGrp</span>
+</code></pre></div>
+<p>Given a prime ideal <script type="math/tex">P</script> of a number field <script type="math/tex">K</script> and a map <code>m</code> return from <code>automorphism_group(K)</code>, return the intertia subgroup of <script type="math/tex">P</script> as a subgroup of the domain of <code>m</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/Ideal/Prime.jl#L1804' class='documenter-source'>source</a><br></p>
+<p><a id='Infinite-places'></a></p>
+<p><a id='Infinite-places-1'></a></p>
+<h2 id="infinite-places">Infinite places</h2>
+<p><a id='infinite_places-Tuple{NumField}' href='#infinite_places-Tuple{NumField}'>#</a>
+<strong><code>infinite_places</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">infinite_places</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Plc</span><span class="p">}</span>
+</code></pre></div>
+<p>This function returns all infinite places of <script type="math/tex">K</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">infinite_places</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="go">2-element Vector{InfPlc}:</span>
+<span class="go"> Real place of</span>
+<span class="go">Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">corresponding to the root [-1.414213562373095049 +/- 3.90e-19]</span>
+<span class="go"> Real place of</span>
+<span class="go">Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">corresponding to the root [1.414213562373095049 +/- 3.90e-19]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L435' class='documenter-source'>source</a><br></p>
+<p><a id='real_places-Tuple{AnticNumberField}' href='#real_places-Tuple{AnticNumberField}'>#</a>
+<strong><code>real_places</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">real_places</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">}</span>
+</code></pre></div>
+<p>This function returns all infinite real places of <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/Misc/Places.jl#L87' class='documenter-source'>source</a><br></p>
+<p><a id='complex_places-Tuple{AnticNumberField}' href='#complex_places-Tuple{AnticNumberField}'>#</a>
+<strong><code>complex_places</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">complex_places</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">}</span>
+</code></pre></div>
+<p>This function returns all infinite complex places of <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/Misc/Places.jl#L97' class='documenter-source'>source</a><br></p>
+<p><a id='isreal-Tuple{Plc}' href='#isreal-Tuple{Plc}'>#</a>
+<strong><code>isreal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isreal</span><span class="p">(</span><span class="n">P</span><span class="o">::</span><span class="kt">Plc</span><span class="p">)</span>
+</code></pre></div>
+<p>Return whether the embedding into <script type="math/tex">\mathbf{C}</script> defined by <script type="math/tex">P</script> is real or not.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L459' class='documenter-source'>source</a><br></p>
+<p><a id='iscomplex-Tuple{Plc}' href='#iscomplex-Tuple{Plc}'>#</a>
+<strong><code>iscomplex</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">iscomplex</span><span class="p">(</span><span class="n">P</span><span class="o">::</span><span class="kt">Plc</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the embedding into <script type="math/tex">\mathbf{C}</script> defined by <script type="math/tex">P</script> is complex or not.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/Field.jl#L466' class='documenter-source'>source</a><br></p>
+<p><a id='infinite_places_uniformizers-Tuple{AnticNumberField}' href='#infinite_places_uniformizers-Tuple{AnticNumberField}'>#</a>
+<strong><code>infinite_places_uniformizers</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">infinite_places_uniformizers</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span>
+</code></pre></div>
+<p>Returns a dictionary having as keys the real places of <script type="math/tex">K</script> and the values are uniformizers for the corresponding real place. A uniformizer of a real place <script type="math/tex">P</script> is an element of the field which is negative at <script type="math/tex">P</script> and positive at all the other real places.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/Misc/Places.jl#L304' class='documenter-source'>source</a><br></p>
+<p><a id='Miscellaneous'></a></p>
+<p><a id='Miscellaneous-1'></a></p>
+<h2 id="miscellaneous">Miscellaneous</h2>
+<p><a id='norm_equation-Tuple{AnticNumberField, Any}' href='#norm_equation-Tuple{AnticNumberField, Any}'>#</a>
+<strong><code>norm_equation</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">norm_equation</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumerField</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nf_elem</span>
+</code></pre></div>
+<p>For <script type="math/tex">a</script> an integer or rational, try to find <script type="math/tex">T \in K</script> s.th. <script type="math/tex">N(T) = a</script>. Raises an error if unsuccessful.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumFieldOrd/NfOrd/norm_eqn.jl#L16' class='documenter-source'>source</a><br></p>
+<p><a id='lorenz_module-Tuple{AnticNumberField, Int64}' href='#lorenz_module-Tuple{AnticNumberField, Int64}'>#</a>
+<strong><code>lorenz_module</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">lorenz_module</span><span class="p">(</span><span class="n">k</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</code></pre></div>
+<p>Finds an ideal <script type="math/tex">A</script> s.th. for all positive units <script type="math/tex">e = 1 \bmod A</script> we have that <script type="math/tex">e</script> is an <script type="math/tex">n</script>-th power. Uses Lorenz, number theory, 9.3.1. If <code>containing</code> is set, it has to be an integral ideal. The resulting ideal will be a multiple of this.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/RCF/conductor.jl#L1312' class='documenter-source'>source</a><br></p>
+<p><a id='kummer_failure-Tuple{nf_elem, Int64, Int64}' href='#kummer_failure-Tuple{nf_elem, Int64, Int64}'>#</a>
+<strong><code>kummer_failure</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">kummer_failure</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">N</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Computes the quotient of <script type="math/tex">N</script> and <script type="math/tex">[K(\zeta_M, \sqrt[N](x))\colon K(\zeta_M)]</script>, where <script type="math/tex">K</script> is the field containing <script type="math/tex">x</script> and <script type="math/tex">N</script> divides <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/RCF/kummer_extensions.jl#L467' class='documenter-source'>source</a><br></p>
+<p><a id='isdefining_polynomial_nice-Tuple{AnticNumberField}' href='#isdefining_polynomial_nice-Tuple{AnticNumberField}'>#</a>
+<strong><code>isdefining_polynomial_nice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isdefining_polynomial_nice</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span>
+</code></pre></div>
+<p>Tests if the defining polynomial of <script type="math/tex">K</script> is integral and monic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/NumField/NfAbs/NfAbs.jl#L186' class='documenter-source'>source</a><br></p>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../intro/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Introduction" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Introduction
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../elements/" class="md-footer__link md-footer__link--next" aria-label="Next: Elements" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Elements
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.8aa65030.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>

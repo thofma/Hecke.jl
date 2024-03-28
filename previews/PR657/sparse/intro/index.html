@@ -1,0 +1,1929 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.11">
+    
+    
+      
+        <title>Sparse Linear Algebra - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8c5ef100.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.9647289d.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sparse-linear-algebra" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Sparse Linear Algebra
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        Number field operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_2" type="checkbox" id="__nav_2_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Function fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Orders" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4">
+          Quadratic and hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Quadratic and hermitian forms" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/basics/" class="md-nav__link">
+        Spaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/lattices/" class="md-nav__link">
+        Lattices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/genusherm/" class="md-nav__link">
+        Genera for hermitian lattices
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_5" type="checkbox" id="__nav_2_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_6" type="checkbox" id="__nav_2_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/Map/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        Factored Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Sparse Linear Algebra
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Sparse Linear Algebra
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    Introduction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sparse-rows" class="md-nav__link">
+    Sparse rows
+  </a>
+  
+    <nav class="md-nav" aria-label="Sparse rows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basic-operations" class="md-nav__link">
+    Basic operations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-of-base-ring" class="md-nav__link">
+    Change of base ring
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maximum-minimum-and-2-norm" class="md-nav__link">
+    Maximum, minimum and 2-norm
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#functionality-for-integral-sparse-rows" class="md-nav__link">
+    Functionality for integral sparse rows
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sparse-matrices" class="md-nav__link">
+    Sparse matrices
+  </a>
+  
+    <nav class="md-nav" aria-label="Sparse matrices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#construction" class="md-nav__link">
+    Construction
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elementary-properties" class="md-nav__link">
+    Elementary Properties
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manipulation-access" class="md-nav__link">
+    Manipulation/ Access
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        References
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_10" type="checkbox" id="__nav_2_10" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_10">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_10">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    Introduction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sparse-rows" class="md-nav__link">
+    Sparse rows
+  </a>
+  
+    <nav class="md-nav" aria-label="Sparse rows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basic-operations" class="md-nav__link">
+    Basic operations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-of-base-ring" class="md-nav__link">
+    Change of base ring
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maximum-minimum-and-2-norm" class="md-nav__link">
+    Maximum, minimum and 2-norm
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#functionality-for-integral-sparse-rows" class="md-nav__link">
+    Functionality for integral sparse rows
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sparse-matrices" class="md-nav__link">
+    Sparse matrices
+  </a>
+  
+    <nav class="md-nav" aria-label="Sparse matrices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#construction" class="md-nav__link">
+    Construction
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elementary-properties" class="md-nav__link">
+    Elementary Properties
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manipulation-access" class="md-nav__link">
+    Manipulation/ Access
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/thofma/Hecke.jl/edit/master/docs/sparse/intro.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<p><a id='Sparse-linear-algebra'></a></p>
+<p><a id='Sparse-linear-algebra-1'></a></p>
+<h1 id="sparse-linear-algebra">Sparse linear algebra</h1>
+<p><a id='Introduction'></a></p>
+<p><a id='Introduction-1'></a></p>
+<h2 id="introduction">Introduction</h2>
+<p>This chapter deals with sparse linear algebra over commutative rings and fields.</p>
+<p>Sparse linear algebra, that is, linear algebra with sparse matrices, plays an important role in various algorithms in algebraic number theory. For example, it is one of the key ingredients in the computation of class groups and discrete logarithms using index calculus methods.</p>
+<p><a id='Sparse-rows'></a></p>
+<p><a id='Sparse-rows-1'></a></p>
+<h2 id="sparse-rows">Sparse rows</h2>
+<p>Building blocks for sparse matrices are sparse rows, which are modelled by objects of type \texttt{SRow}. More precisely, the type is of parametrized form objects of type <code>SRow</code>. More precisely, the type is of parametrized form <code>SRow{T}</code>, where <code>T</code> is the element type of the base ring <script type="math/tex">R</script>. For example, <code>SRow{fmpz}</code> is the type for sparse rows over the integers.</p>
+<p>It is important to note that sparse rows do not have a fixed number of columns, that is, they represent elements of <script type="math/tex">\{ (x_i)_i \in R^{\mathbb{N}} \mid x_i = 0 \text{ for almost all }i\}</script>. In particular any two sparse rows over the same base ring can be added.</p>
+<p><a id='Creation'></a></p>
+<p><a id='Creation-1'></a></p>
+<h3 id="creation">Creation</h3>
+<p><a id='sparse_row-Tuple{FlintIntegerRing, Vector{Tuple{Int64, fmpz}}}' href='#sparse_row-Tuple{FlintIntegerRing, Vector{Tuple{Int64, fmpz}}}'>#</a>
+<strong><code>sparse_row</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse_row</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">J</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">T</span><span class="p">}})</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Constructs the sparse row <script type="math/tex">(a_i)_i</script> with <script type="math/tex">a_{i_j} = x_j</script>, where <script type="math/tex">J = (i_j, x_j)_j</script>. The elements <script type="math/tex">x_i</script> must belong to the ring <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L50' class='documenter-source'>source</a><br></p>
+<p><a id='sparse_row-Tuple{FlintIntegerRing, Vector{Tuple{Int64, Int64}}}' href='#sparse_row-Tuple{FlintIntegerRing, Vector{Tuple{Int64, Int64}}}'>#</a>
+<strong><code>sparse_row</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse_row</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">J</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">T</span><span class="p">}})</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Constructs the sparse row <script type="math/tex">(a_i)_i</script> with <script type="math/tex">a_{i_j} = x_j</script>, where <script type="math/tex">J = (i_j, x_j)_j</script>. The elements <script type="math/tex">x_i</script> must belong to the ring <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L50' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>sparse_row(R::Ring, J::Vector{Tuple{Int, Int}}) -&gt; SRow
+</code></pre></div>
+<p>Constructs the sparse row <script type="math/tex">(a_i)_i</script> over <script type="math/tex">R</script> with <script type="math/tex">a_{i_j} = x_j</script>, where <script type="math/tex">J = (i_j, x_j)_j</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L63' class='documenter-source'>source</a><br></p>
+<p><a id='sparse_row-Tuple{FlintIntegerRing, Vector{Int64}, Vector{fmpz}}' href='#sparse_row-Tuple{FlintIntegerRing, Vector{Int64}, Vector{fmpz}}'>#</a>
+<strong><code>sparse_row</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse_row</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">J</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">},</span> <span class="n">V</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Constructs the sparse row <script type="math/tex">(a_i)_i</script> over <script type="math/tex">R</script> with <script type="math/tex">a_{i_j} = x_j</script>, where <script type="math/tex">J = (i_j)_j</script> and <script type="math/tex">V = (x_j)_j</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L76' class='documenter-source'>source</a><br></p>
+<p><a id='Basic-operations'></a></p>
+<p><a id='Basic-operations-1'></a></p>
+<h3 id="basic-operations">Basic operations</h3>
+<p>Rows support the usual operations:</p>
+<ul>
+<li><code>+</code>, <code>-</code>, <code>==</code></li>
+<li>multiplication by scalars</li>
+<li><code>div</code>, <code>divexact</code></li>
+</ul>
+<p><a id='getindex-Tuple{SRow{fmpz}, Int64}' href='#getindex-Tuple{SRow{fmpz}, Int64}'>#</a>
+<strong><code>getindex</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">getindex</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RingElem</span>
+</code></pre></div>
+<p>Given a sparse row <script type="math/tex">(a_i)_{i}</script> and an index <script type="math/tex">j</script> return <script type="math/tex">a_j</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L294' class='documenter-source'>source</a><br></p>
+<p><a id='add_scaled_row-Tuple{SRow{fmpz}, SRow{fmpz}, fmpz}' href='#add_scaled_row-Tuple{SRow{fmpz}, SRow{fmpz}, fmpz}'>#</a>
+<strong><code>add_scaled_row</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">add_scaled_row</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">B</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">c</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the row <script type="math/tex">c A + B</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L560' class='documenter-source'>source</a><br></p>
+<p><a id='add_scaled_row-Union{Tuple{T}, Tuple{SRow{T}, SRow{T}, T}} where T' href='#add_scaled_row-Union{Tuple{T}, Tuple{SRow{T}, SRow{T}, T}} where T'>#</a>
+<strong><code>add_scaled_row</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">add_scaled_row</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">B</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">c</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the row <script type="math/tex">c A + B</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L560' class='documenter-source'>source</a><br></p>
+<p><a id='transform_row-Union{Tuple{T}, Tuple{SRow{T}, SRow{T}, T, T, T, T}} where T' href='#transform_row-Union{Tuple{T}, Tuple{SRow{T}, SRow{T}, T, T, T, T}} where T'>#</a>
+<strong><code>transform_row</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">transform_row</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">B</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">c</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">d</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span>
+</code></pre></div>
+<p>Returns the tuple <script type="math/tex">(aA + bB, cA + dB)</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L320' class='documenter-source'>source</a><br></p>
+<p><a id='length-Tuple{SRow}' href='#length-Tuple{SRow}'>#</a>
+<strong><code>length</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">length</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">)</span>
+</code></pre></div>
+<p>Returns the number of nonzero entries of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L315' class='documenter-source'>source</a><br></p>
+<p><a id='Change-of-base-ring'></a></p>
+<p><a id='Change-of-base-ring-1'></a></p>
+<h3 id="change-of-base-ring">Change of base ring</h3>
+<p><a id='change_base_ring-Tuple{FlintIntegerRing, SRow{fmpz}}' href='#change_base_ring-Tuple{FlintIntegerRing, SRow{fmpz}}'>#</a>
+<strong><code>change_base_ring</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">change_base_ring</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SRow</span>
+</code></pre></div>
+<p>Create a new sparse row by coercing all elements into the ring <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L267' class='documenter-source'>source</a><br></p>
+<p><a id='Maximum,-minimum-and-2-norm'></a></p>
+<p><a id='Maximum,-minimum-and-2-norm-1'></a></p>
+<h3 id="maximum-minimum-and-2-norm">Maximum, minimum and 2-norm</h3>
+<p><a id='maximum-Tuple{SRow}' href='#maximum-Tuple{SRow}'>#</a>
+<strong><code>maximum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">maximum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Returns the largest entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L759' class='documenter-source'>source</a><br></p>
+<p><a id='maximum-Tuple{SRow{fmpz}}' href='#maximum-Tuple{SRow{fmpz}}'>#</a>
+<strong><code>maximum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">maximum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Returns the largest entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L759' class='documenter-source'>source</a><br></p>
+<p><a id='minimum-Tuple{SRow{fmpz}}' href='#minimum-Tuple{SRow{fmpz}}'>#</a>
+<strong><code>minimum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code>  <span class="n">minimum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">NfRelOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+  <span class="n">minimum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">NfRelOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfRelOrdIdl</span>
+</code></pre></div>
+<p>Returns the ideal <script type="math/tex">A \cap O</script> where <script type="math/tex">O</script> is the maximal order of the coefficient ideals of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/NumFieldOrd/NfRelOrd/Ideal.jl#L1400' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">minimum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Returns the smallest entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L768' class='documenter-source'>source</a><br></p>
+<p><a id='minimum-Tuple{SRow}' href='#minimum-Tuple{SRow}'>#</a>
+<strong><code>minimum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">minimum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Returns the smallest entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L768' class='documenter-source'>source</a><br></p>
+<p><a id='norm2-Tuple{SRow{fmpz}}' href='#norm2-Tuple{SRow{fmpz}}'>#</a>
+<strong><code>norm2</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">norm2</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Returns <script type="math/tex">A \cdot A^t</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L726' class='documenter-source'>source</a><br></p>
+<p><a id='Functionality-for-integral-sparse-rows'></a></p>
+<p><a id='Functionality-for-integral-sparse-rows-1'></a></p>
+<h3 id="functionality-for-integral-sparse-rows">Functionality for integral sparse rows</h3>
+<p><a id='lift-Tuple{SRow{nmod}}' href='#lift-Tuple{SRow{nmod}}'>#</a>
+<strong><code>lift</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">lift</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">nmod</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the sparse row obtained by lifting all entries in <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L706' class='documenter-source'>source</a><br></p>
+<p><a id='mod!-Tuple{SRow{fmpz}, fmpz}' href='#mod!-Tuple{SRow{fmpz}, fmpz}'>#</a>
+<strong><code>mod!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mod!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">n</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Inplace reduction of all entries of <script type="math/tex">A</script> modulo <script type="math/tex">n</script> to the positive residue system.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L194' class='documenter-source'>source</a><br></p>
+<p><a id='mod_sym!-Tuple{SRow{fmpz}, fmpz}' href='#mod_sym!-Tuple{SRow{fmpz}, fmpz}'>#</a>
+<strong><code>mod_sym!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mod_sym!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">n</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Inplace reduction of all entries of <script type="math/tex">A</script> modulo <script type="math/tex">n</script> to the symmetric residue system.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L225' class='documenter-source'>source</a><br></p>
+<p><a id='mod_sym!-Tuple{SRow{fmpz}, Integer}' href='#mod_sym!-Tuple{SRow{fmpz}, Integer}'>#</a>
+<strong><code>mod_sym!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mod_sym!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">n</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Inplace reduction of all entries of <script type="math/tex">A</script> modulo <script type="math/tex">n</script> to the symmetric residue system.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L215' class='documenter-source'>source</a><br></p>
+<p><a id='maximum-Tuple{typeof(abs), SRow{fmpz}}' href='#maximum-Tuple{typeof(abs), SRow{fmpz}}'>#</a>
+<strong><code>maximum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">maximum</span><span class="p">(</span><span class="n">abs</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Returns the largest, in absolute value, entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Row.jl#L741' class='documenter-source'>source</a><br></p>
+<p><a id='Sparse-matrices'></a></p>
+<p><a id='Sparse-matrices-1'></a></p>
+<h2 id="sparse-matrices">Sparse matrices</h2>
+<p>Let <script type="math/tex">R</script> be a commutative ring. Sparse matrices with base ring <script type="math/tex">R</script> are modelled by objects of type <code>SMat</code>. More precisely, the type is of parametrized form <code>SRow{T}</code>, where <code>T</code> is the element type of the base ring. For example, <code>SMat{fmpz}</code> is the type for sparse matrices over the integers.</p>
+<p>In constrast to sparse rows, sparse matrices have a fixed number of rows and columns, that is, they represent elements of the matrices space <script type="math/tex">\mathrm{Mat}_{n\times m}(R)</script>. Internally, sparse matrices are implemented as an array of sparse rows. As a consequence, unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.</p>
+<p><a id='Construction'></a></p>
+<p><a id='Construction-1'></a></p>
+<h3 id="construction">Construction</h3>
+<p><a id='sparse_matrix-Tuple{AbstractAlgebra.Ring}' href='#sparse_matrix-Tuple{AbstractAlgebra.Ring}'>#</a>
+<strong><code>sparse_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse_matrix</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Return an empty sparse matrix with base ring <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L133' class='documenter-source'>source</a><br></p>
+<p>Sparse matrices can also be created from dense matrices as well as from julia arrays:</p>
+<p><a id='sparse_matrix-Tuple{MatElem}' href='#sparse_matrix-Tuple{MatElem}'>#</a>
+<strong><code>sparse_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse_matrix</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">;</span> <span class="n">keepzrows</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span>
+</code></pre></div>
+<p>Constructs the sparse matrix corresponding to the dense matrix <script type="math/tex">A</script>. If <code>keepzrows</code> is false, then the constructor will drop any zero row of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L220' class='documenter-source'>source</a><br></p>
+<p><a id='sparse_matrix-Union{Tuple{Matrix{T}}, Tuple{T}} where T' href='#sparse_matrix-Union{Tuple{Matrix{T}}, Tuple{T}} where T'>#</a>
+<strong><code>sparse_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse_matrix</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">Matrix</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Constructs the sparse matrix over <script type="math/tex">R</script> corresponding to <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L285' class='documenter-source'>source</a><br></p>
+<p><a id='sparse_matrix-Union{Tuple{T}, Tuple{AbstractAlgebra.Ring, Matrix{T}}} where T' href='#sparse_matrix-Union{Tuple{T}, Tuple{AbstractAlgebra.Ring, Matrix{T}}} where T'>#</a>
+<strong><code>sparse_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse_matrix</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">Matrix</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Constructs the sparse matrix over <script type="math/tex">R</script> corresponding to <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L285' class='documenter-source'>source</a><br></p>
+<p>The normal way however, is to add rows:</p>
+<p><a id='push!-Union{Tuple{T}, Tuple{SMat{T}, SRow{T}}} where T' href='#push!-Union{Tuple{T}, Tuple{SMat{T}, SRow{T}}} where T'>#</a>
+<strong><code>push!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">push!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">B</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="k">where</span> <span class="kt">T</span>
+</code></pre></div>
+<p>Appends the sparse row <code>B</code> to <code>A</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L923' class='documenter-source'>source</a><br></p>
+<p>Sparse matrices can also be concatenated to form larger ones:</p>
+<p><a id='vcat!-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T' href='#vcat!-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T'>#</a>
+<strong><code>vcat!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">vcat!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Vertically joins <script type="math/tex">A</script> and <script type="math/tex">B</script> inplace, that is, the rows of <script type="math/tex">B</script> are appended to <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L845' class='documenter-source'>source</a><br></p>
+<p><a id='vcat-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T' href='#vcat-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T'>#</a>
+<strong><code>vcat</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">vcat</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Vertically joins <script type="math/tex">A</script> and <script type="math/tex">B</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L861' class='documenter-source'>source</a><br></p>
+<p><a id='hcat!-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T' href='#hcat!-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T'>#</a>
+<strong><code>hcat!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hcat!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Horizontally concatenates <script type="math/tex">A</script> and <script type="math/tex">B</script>, inplace, changing <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L880' class='documenter-source'>source</a><br></p>
+<p><a id='hcat-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T' href='#hcat-Union{Tuple{T}, Tuple{SMat{T}, SMat{T}}} where T'>#</a>
+<strong><code>hcat</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hcat</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Horizontally concatenates <script type="math/tex">A</script> and <script type="math/tex">B</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L906' class='documenter-source'>source</a><br></p>
+<p>(Normal julia <script type="math/tex">cat</script> is also supported)</p>
+<p>There are special constructors:</p>
+<p><a id='identity_matrix-Tuple{Type{SMat}, AbstractAlgebra.Ring, Int64}' href='#identity_matrix-Tuple{Type{SMat}, AbstractAlgebra.Ring, Int64}'>#</a>
+<strong><code>identity_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">identity_matrix</span><span class="p">(</span><span class="o">::</span><span class="kt">Type</span><span class="p">{</span><span class="kt">SMat</span><span class="p">},</span> <span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Return a sparse <script type="math/tex">n</script> times <script type="math/tex">n</script> identity matrix over <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1136' class='documenter-source'>source</a><br></p>
+<p><a id='zero_matrix-Tuple{Type{SMat}, AbstractAlgebra.Ring, Int64}' href='#zero_matrix-Tuple{Type{SMat}, AbstractAlgebra.Ring, Int64}'>#</a>
+<strong><code>zero_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">zero_matrix</span><span class="p">(</span><span class="o">::</span><span class="kt">Type</span><span class="p">{</span><span class="kt">SMat</span><span class="p">},</span> <span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Return a sparse <script type="math/tex">n</script> times <script type="math/tex">n</script> zero matrix over <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1154' class='documenter-source'>source</a><br></p>
+<p><a id='zero_matrix-Tuple{Type{SMat}, AbstractAlgebra.Ring, Int64, Int64}' href='#zero_matrix-Tuple{Type{SMat}, AbstractAlgebra.Ring, Int64, Int64}'>#</a>
+<strong><code>zero_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">zero_matrix</span><span class="p">(</span><span class="o">::</span><span class="kt">Type</span><span class="p">{</span><span class="kt">SMat</span><span class="p">},</span> <span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">m</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Return a sparse <script type="math/tex">n</script> times <script type="math/tex">m</script> zero matrix over <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1166' class='documenter-source'>source</a><br></p>
+<p>Slices:</p>
+<p><a id='sub-Union{Tuple{T}, Tuple{SMat{T}, UnitRange, UnitRange}} where T' href='#sub-Union{Tuple{T}, Tuple{SMat{T}, UnitRange, UnitRange}} where T'>#</a>
+<strong><code>sub</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sub</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">r</span><span class="o">::</span><span class="kt">UnitRange</span><span class="p">,</span> <span class="n">c</span><span class="o">::</span><span class="kt">UnitRange</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Return the submatrix of <script type="math/tex">A</script>, where the rows correspond to <script type="math/tex">r</script> and the columns correspond to <script type="math/tex">c</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L656' class='documenter-source'>source</a><br></p>
+<p>Transpose:</p>
+<p><a id='transpose-Tuple{SMat}' href='#transpose-Tuple{SMat}'>#</a>
+<strong><code>transpose</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">transpose</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Returns the transpose of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L374' class='documenter-source'>source</a><br></p>
+<p><a id='Elementary-Properties'></a></p>
+<p><a id='Elementary-Properties-1'></a></p>
+<h3 id="elementary-properties">Elementary Properties</h3>
+<p><a id='sparsity-Tuple{SMat}' href='#sparsity-Tuple{SMat}'>#</a>
+<strong><code>sparsity</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparsity</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Float64</span>
+</code></pre></div>
+<p>Return the sparsity of <code>A</code>, that is, the number of zero-valued elements divided by the number of all elements.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L98' class='documenter-source'>source</a><br></p>
+<p><a id='density-Tuple{SMat}' href='#density-Tuple{SMat}'>#</a>
+<strong><code>density</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">density</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Float64</span>
+</code></pre></div>
+<p>Return the density of <code>A</code>, that is, the number of nonzero-valued elements divided by the number of all elements.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L108' class='documenter-source'>source</a><br></p>
+<p><a id='nnz-Tuple{SMat}' href='#nnz-Tuple{SMat}'>#</a>
+<strong><code>nnz</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">nnz</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Return the number of non-zero entries of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L45' class='documenter-source'>source</a><br></p>
+<p><a id='nrows-Tuple{SMat}' href='#nrows-Tuple{SMat}'>#</a>
+<strong><code>nrows</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">nrows</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Return the number of rows of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L26' class='documenter-source'>source</a><br></p>
+<p><a id='ncols-Tuple{SMat}' href='#ncols-Tuple{SMat}'>#</a>
+<strong><code>ncols</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ncols</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Return the number of columns of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L36' class='documenter-source'>source</a><br></p>
+<p><a id='isone-Tuple{SMat}' href='#isone-Tuple{SMat}'>#</a>
+<strong><code>isone</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isone</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span>
+</code></pre></div>
+<p>Tests if <script type="math/tex">A</script> is an identity matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1240' class='documenter-source'>source</a><br></p>
+<p><a id='iszero-Tuple{SMat}' href='#iszero-Tuple{SMat}'>#</a>
+<strong><code>iszero</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">iszero</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span>
+</code></pre></div>
+<p>Tests if <script type="math/tex">A</script> is a zero matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1260' class='documenter-source'>source</a><br></p>
+<p><a id='isupper_triangular-Tuple{SMat}' href='#isupper_triangular-Tuple{SMat}'>#</a>
+<strong><code>isupper_triangular</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isupper_triangular</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span>
+</code></pre></div>
+<p>Returns true if and only if <script type="math/tex">A</script> is upper (right) triangular.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1085' class='documenter-source'>source</a><br></p>
+<p><a id='maximum-Tuple{SMat}' href='#maximum-Tuple{SMat}'>#</a>
+<strong><code>maximum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">maximum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Finds the largest entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1029' class='documenter-source'>source</a><br></p>
+<p><a id='minimum-Tuple{SMat}' href='#minimum-Tuple{SMat}'>#</a>
+<strong><code>minimum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">minimum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Finds the smallest entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1046' class='documenter-source'>source</a><br></p>
+<p><a id='maximum-Tuple{typeof(abs), SMat{fmpz}}' href='#maximum-Tuple{typeof(abs), SMat{fmpz}}'>#</a>
+<strong><code>maximum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">maximum</span><span class="p">(</span><span class="n">abs</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Finds the largest, in absolute value, entry of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1009' class='documenter-source'>source</a><br></p>
+<p><a id='elementary_divisors-Tuple{SMat{fmpz}}' href='#elementary_divisors-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>elementary_divisors</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">elementary_divisors</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>The elementary divisors of <script type="math/tex">A</script>, i.e. the diagonal elements of the Smith normal form of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/UpperTriangular.jl#L74' class='documenter-source'>source</a><br></p>
+<p><a id='solve_dixon_sf-Tuple{SMat{fmpz}, SRow{fmpz}}' href='#solve_dixon_sf-Tuple{SMat{fmpz}, SRow{fmpz}}'>#</a>
+<strong><code>solve_dixon_sf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">solve_dixon_sf</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">b</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">is_int</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">fmpz</span>
+<span class="n">solve_dixon_sf</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">B</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">is_int</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>For a sparse square matrix <script type="math/tex">A</script> of full rank and a sparse matrix (row), find a sparse matrix (row) <script type="math/tex">x</script> and an integer <script type="math/tex">d</script> s.th. <script type="math/tex">x A = bd</script> holds. The algorithm is a Dixon-based linear p-adic lifting method. If \code{is_int} is given, then <script type="math/tex">d</script> is assumed to be <script type="math/tex">1</script>. In this case rational reconstruction is avoided.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Solve.jl#L226' class='documenter-source'>source</a><br></p>
+<p><a id='hadamard_bound2-Tuple{SMat}' href='#hadamard_bound2-Tuple{SMat}'>#</a>
+<strong><code>hadamard_bound2</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hadamard_bound2</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>The square of the product of the norms of the rows of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1000' class='documenter-source'>source</a><br></p>
+<p><a id='echelon_with_transform-Tuple{SMat{nmod}}' href='#echelon_with_transform-Tuple{SMat{nmod}}'>#</a>
+<strong><code>echelon_with_transform</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">echelon_with_transform</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">nmod</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">SMat</span><span class="p">,</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Find a unimodular matrix <script type="math/tex">T</script> and an upper-triangular <script type="math/tex">E</script> s.th. <script type="math/tex">TA = E</script> holds.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Solve.jl#L211' class='documenter-source'>source</a><br></p>
+<p><a id='reduce_full-Tuple{SMat{fmpz}, SRow{fmpz}}' href='#reduce_full-Tuple{SMat{fmpz}, SRow{fmpz}}'>#</a>
+<strong><code>reduce_full</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">reduce_full</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">g</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span>
+                      <span class="n">trafo</span> <span class="o">=</span> <span class="kt">Val</span><span class="p">{</span><span class="kt">false</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Reduces <script type="math/tex">g</script> modulo <script type="math/tex">A</script> and assumes that <script type="math/tex">A</script> is upper triangular.</p>
+<p>The second return value is the array of pivot elements of <script type="math/tex">A</script> that changed.</p>
+<p>If <code>trafo</code> is set to <code>Val{true}</code>, then additionally an array of transformations is returned.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L260' class='documenter-source'>source</a><br></p>
+<p><a id='hnf!-Tuple{SMat{fmpz}}' href='#hnf!-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>hnf!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hnf!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span>
+</code></pre></div>
+<p>Inplace transform of <script type="math/tex">A</script> into upper right Hermite normal form.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L601' class='documenter-source'>source</a><br></p>
+<p><a id='hnf-Tuple{SMat{fmpz}}' href='#hnf-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>hnf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hnf</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the upper right Hermite normal form of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L592' class='documenter-source'>source</a><br></p>
+<p><a id='snf-Tuple{SMat{fmpz}}' href='#snf-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>snf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">snf</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span>
+</code></pre></div>
+<p>The Smith normal form (snf) of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/UpperTriangular.jl#L57' class='documenter-source'>source</a><br></p>
+<p><a id='hnf_extend!-Tuple{SMat{fmpz}, SMat{fmpz}}' href='#hnf_extend!-Tuple{SMat{fmpz}, SMat{fmpz}}'>#</a>
+<strong><code>hnf_extend!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hnf_extend!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">b</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">offset</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a matrix <script type="math/tex">A</script> in HNF, extend this to get the HNF of the concatenation with <script type="math/tex">b</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L431' class='documenter-source'>source</a><br></p>
+<p><a id='isdiagonal-Tuple{SMat}' href='#isdiagonal-Tuple{SMat}'>#</a>
+<strong><code>isdiagonal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isdiagonal</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>True iff only the i-th entry in the i-th row is non-zero.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/UpperTriangular.jl#L35' class='documenter-source'>source</a><br></p>
+<p><a id='det-Tuple{SMat{fmpz}}' href='#det-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>det</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span>
+</code></pre></div>
+<p>The determinant of <script type="math/tex">A</script> using a modular algorithm. Uses the dense (nmod_mat) determinant on <script type="math/tex">A</script> for various primes <script type="math/tex">p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Solve.jl#L183' class='documenter-source'>source</a><br></p>
+<p><a id='det_mc-Tuple{SMat{fmpz}}' href='#det_mc-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>det_mc</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det_mc</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span>
+</code></pre></div>
+<p>Computes the determinant of <script type="math/tex">A</script> using a LasVegas style algorithm, i.e. the result is not proven to be correct. Uses the dense (nmod_mat) determinant on <script type="math/tex">A</script> for various primes <script type="math/tex">p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Solve.jl#L140' class='documenter-source'>source</a><br></p>
+<p><a id='valence_mc-Tuple{SMat}' href='#valence_mc-Tuple{SMat}'>#</a>
+<strong><code>valence_mc</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">valence_mc</span><span class="p">{</span><span class="kt">T</span><span class="p">}(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">};</span> <span class="n">extra_prime</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">trans</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">SMatSLP_add_row</span><span class="p">{</span><span class="kt">T</span><span class="p">}}())</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Uses a Monte-Carlo algorithm to compute the valence of <script type="math/tex">A</script>. The valence is the valence of the minimal polynomial <script type="math/tex">f</script> of <script type="math/tex">transpose(A)*A</script>, thus the last non-zero coefficient, typically <script type="math/tex">f(0)</script>.</p>
+<p>The valence is computed modulo various primes until the computation stabilises for <code>extra_prime</code> many.</p>
+<p><code>trans</code>, if given, is  a SLP (straight-line-program) in GL(n, Z). Then the valence of <code>trans</code> * <script type="math/tex">A</script>  is computed instead.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L688' class='documenter-source'>source</a><br></p>
+<p><a id='saturate-Tuple{SMat{fmpz}}' href='#saturate-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>saturate</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">saturate</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Computes the saturation of <script type="math/tex">A</script>, that is, a basis for <script type="math/tex">\mathbf{Q}\otimes M \meet \mathbf{Z}^n</script>, where <script type="math/tex">M</script> is the row span of <script type="math/tex">A</script> and <script type="math/tex">n</script> the number of rows of <script type="math/tex">A</script>.</p>
+<p>Equivalently, return <script type="math/tex">TA</script> for an invertible rational matrix <script type="math/tex">T</script>, such that <script type="math/tex">TA</script> is integral and the elementary divisors of <script type="math/tex">TA</script> are all trivial.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L180' class='documenter-source'>source</a><br></p>
+<p><a id='hnf_kannan_bachem-Tuple{SMat{fmpz}}' href='#hnf_kannan_bachem-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>hnf_kannan_bachem</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hnf_kannan_bachem</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Compute the Hermite normal form of <script type="math/tex">A</script> using the Kannan-Bachem algorithm.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L517' class='documenter-source'>source</a><br></p>
+<p><a id='diagonal_form-Tuple{SMat{fmpz}}' href='#diagonal_form-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>diagonal_form</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">diagonal_form</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>A matrix <script type="math/tex">D</script> that is diagonal and obtained via unimodular row and column operations. Like a snf without the divisibility condition.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/UpperTriangular.jl#L7' class='documenter-source'>source</a><br></p>
+<p><a id='Manipulation/-Access'></a></p>
+<p><a id='Manipulation/-Access-1'></a></p>
+<h3 id="manipulation-access">Manipulation/ Access</h3>
+<p><a id='getindex-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64}} where T' href='#getindex-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64}} where T'>#</a>
+<strong><code>getindex</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">getindex</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Given a sparse matrix <script type="math/tex">A = (a_{ij})_{i, j}</script>, return the entry <script type="math/tex">a_{ij}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L160' class='documenter-source'>source</a><br></p>
+<p><a id='getindex-Union{Tuple{T}, Tuple{SMat{T}, Int64}} where T' href='#getindex-Union{Tuple{T}, Tuple{SMat{T}, Int64}} where T'>#</a>
+<strong><code>getindex</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">getindex</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SRow</span>
+</code></pre></div>
+<p>Given a sparse matrix <script type="math/tex">A</script> and an index <script type="math/tex">i</script>, return the <script type="math/tex">i</script>-th row of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L176' class='documenter-source'>source</a><br></p>
+<p><a id='setindex!-Union{Tuple{T}, Tuple{SMat{T}, SRow{T}, Int64}} where T' href='#setindex!-Union{Tuple{T}, Tuple{SMat{T}, SRow{T}, Int64}} where T'>#</a>
+<strong><code>setindex!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">setindex!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="kt">SRow</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Given a sparse matrix <script type="math/tex">A</script>, a sparse row <script type="math/tex">b</script> and an index <script type="math/tex">i</script>, set the <script type="math/tex">i</script>-th row of <script type="math/tex">A</script> equal to <script type="math/tex">b</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L186' class='documenter-source'>source</a><br></p>
+<p><a id='swap_rows!-Tuple{SMat, Int64, Int64}' href='#swap_rows!-Tuple{SMat, Int64, Int64}'>#</a>
+<strong><code>swap_rows!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">swap_rows!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Swap the <script type="math/tex">i</script>-th and <script type="math/tex">j</script>-th row of <script type="math/tex">A</script> inplace.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L166' class='documenter-source'>source</a><br></p>
+<p><a id='swap_cols!-Tuple{SMat, Int64, Int64}' href='#swap_cols!-Tuple{SMat, Int64, Int64}'>#</a>
+<strong><code>swap_cols!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">swap_cols!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Swap the <script type="math/tex">i</script>-th and <script type="math/tex">j</script>-th column of <script type="math/tex">A</script> inplace.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L200' class='documenter-source'>source</a><br></p>
+<p><a id='scale_row!-Union{Tuple{T}, Tuple{SMat{T}, Int64, T}} where T' href='#scale_row!-Union{Tuple{T}, Tuple{SMat{T}, Int64, T}} where T'>#</a>
+<strong><code>scale_row!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">scale_row!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">c</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span>
+</code></pre></div>
+<p>Multiply the <script type="math/tex">i</script>-th row of <script type="math/tex">A</script> by <script type="math/tex">c</script> inplace.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L150' class='documenter-source'>source</a><br></p>
+<p><a id='add_scaled_col!-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64, T}} where T' href='#add_scaled_col!-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64, T}} where T'>#</a>
+<strong><code>add_scaled_col!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">add_scaled_col!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">c</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span>
+</code></pre></div>
+<p>Add <script type="math/tex">c</script> times the <script type="math/tex">i</script>-th column to the <script type="math/tex">j</script>-th column of <script type="math/tex">A</script> inplace, that is, <script type="math/tex">A_j \rightarrow A_j + c \cdot A_i</script>, where <script type="math/tex">(A_i)_i</script> denote the columns of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L271' class='documenter-source'>source</a><br></p>
+<p><a id='add_scaled_row!-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64, T}} where T' href='#add_scaled_row!-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64, T}} where T'>#</a>
+<strong><code>add_scaled_row!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">add_scaled_row!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">c</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span>
+</code></pre></div>
+<p>Add <script type="math/tex">c</script> times the <script type="math/tex">i</script>-th row to the <script type="math/tex">j</script>-th row of <script type="math/tex">A</script> inplace, that is, <script type="math/tex">A_j \rightarrow A_j + c \cdot A_i</script>, where <script type="math/tex">(A_i)_i</script> denote the rows of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L252' class='documenter-source'>source</a><br></p>
+<p><a id='transform_row!-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64, T, T, T, T}} where T' href='#transform_row!-Union{Tuple{T}, Tuple{SMat{T}, Int64, Int64, T, T, T, T}} where T'>#</a>
+<strong><code>transform_row!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">transform_row!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">j</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">c</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">d</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span>
+</code></pre></div>
+<p>Applies the transformation <script type="math/tex">(A_i, A_j) \rightarrow (aA_i + bA_j, cA_i + dA_j)</script> to <script type="math/tex">A</script>, where <script type="math/tex">(A_i)_i</script> are the rows of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L307' class='documenter-source'>source</a><br></p>
+<p><a id='diagonal-Tuple{SMat}' href='#diagonal-Tuple{SMat}'>#</a>
+<strong><code>diagonal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">diagonal</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span><span class="p">[]</span>
+</code></pre></div>
+<p>The diagonal elements of <script type="math/tex">A</script> in an array.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/UpperTriangular.jl#L26' class='documenter-source'>source</a><br></p>
+<p><a id='reverse_rows!-Tuple{SMat}' href='#reverse_rows!-Tuple{SMat}'>#</a>
+<strong><code>reverse_rows!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">reverse_rows!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span>
+</code></pre></div>
+<p>Inplace inversion of the rows of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Trafo.jl#L182' class='documenter-source'>source</a><br></p>
+<p><a id='mod_sym!-Tuple{SMat{fmpz}, fmpz}' href='#mod_sym!-Tuple{SMat{fmpz}, fmpz}'>#</a>
+<strong><code>mod_sym!</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mod_sym!</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">n</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span>
+</code></pre></div>
+<p>Inplace reduction of all entries of <script type="math/tex">A</script> modulo <script type="math/tex">n</script> to the symmetric residue system.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L310' class='documenter-source'>source</a><br></p>
+<p><a id='find_row_starting_with-Tuple{SMat, Int64}' href='#find_row_starting_with-Tuple{SMat, Int64}'>#</a>
+<strong><code>find_row_starting_with</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">find_row_starting_with</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Tries to find the index <script type="math/tex">i</script> such that <script type="math/tex">A_{i,p} \neq 0</script> and <script type="math/tex">A_{i, p-j} = 0</script> for all <script type="math/tex">j > 1</script>. It is assumed that <script type="math/tex">A</script> is upper triangular. If such an index does not exist, find the smallest index larger.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L206' class='documenter-source'>source</a><br></p>
+<p><a id='reduce-Tuple{SMat{fmpz}, SRow{fmpz}, fmpz}' href='#reduce-Tuple{SMat{fmpz}, SRow{fmpz}, fmpz}'>#</a>
+<strong><code>reduce</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">reduce</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">g</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">m</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Given an upper triangular matrix <script type="math/tex">A</script> over the integers, a sparse row <script type="math/tex">g</script> and an integer <script type="math/tex">m</script>, this function reduces <script type="math/tex">g</script> modulo <script type="math/tex">A</script> and returns <script type="math/tex">g</script> modulo <script type="math/tex">m</script> with respect to the symmetric residue system.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L108' class='documenter-source'>source</a><br></p>
+<p><a id='reduce-Tuple{SMat{fmpz}, SRow{fmpz}}' href='#reduce-Tuple{SMat{fmpz}, SRow{fmpz}}'>#</a>
+<strong><code>reduce</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">reduce</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">g</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Given an upper triangular matrix <script type="math/tex">A</script> over a field and a sparse row <script type="math/tex">g</script>, this function reduces <script type="math/tex">g</script> modulo <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L52' class='documenter-source'>source</a><br></p>
+<p>&lt;a id='reduce-Union{Tuple{T}, Tuple{SMat{T}, SRow{T}}} where T&lt;:FieldElement' href='#reduce-Union{Tuple{T}, Tuple{SMat{T}, SRow{T}}} where T&lt;:FieldElement'&gt;#</a>
+<strong><code>reduce</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">reduce</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">g</span><span class="o">::</span><span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">SRow</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Given an upper triangular matrix <script type="math/tex">A</script> over a field and a sparse row <script type="math/tex">g</script>, this function reduces <script type="math/tex">g</script> modulo <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/HNF.jl#L7' class='documenter-source'>source</a><br></p>
+<p><a id='rand_row-Union{Tuple{SMat{T}}, Tuple{T}} where T' href='#rand_row-Union{Tuple{SMat{T}}, Tuple{T}} where T'>#</a>
+<strong><code>rand_row</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rand_row</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SRow</span>
+</code></pre></div>
+<p>Return a random row of the sparse matrix <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L205' class='documenter-source'>source</a><br></p>
+<p>Changing of the ring:</p>
+<p><a id='map_entries-Tuple{Any, SMat}' href='#map_entries-Tuple{Any, SMat}'>#</a>
+<strong><code>map_entries</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">map_entries</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SMat</span>
+</code></pre></div>
+<p>Given a sparse matrix <script type="math/tex">A</script> and a callable object <script type="math/tex">f</script>, this function will construct a new sparse matrix by applying <script type="math/tex">f</script> to all elements of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L329' class='documenter-source'>source</a><br></p>
+<p><a id='change_base_ring-Tuple{AbstractAlgebra.Ring, SMat}' href='#change_base_ring-Tuple{AbstractAlgebra.Ring, SMat}'>#</a>
+<strong><code>change_base_ring</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">change_base_ring</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Ring</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span>
+</code></pre></div>
+<p>Create a new sparse matrix by coercing all elements into the ring <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L353' class='documenter-source'>source</a><br></p>
+<p><a id='Arithmetic'></a></p>
+<p><a id='Arithmetic-1'></a></p>
+<h3 id="arithmetic">Arithmetic</h3>
+<p>Matrices support the usual operatation as well</p>
+<ul>
+<li><code>+</code>, <code>-</code>, <code>==</code>, <code>*</code></li>
+<li><code>div</code>, <code>divexact</code> by scalars</li>
+<li>multiplication by scalars</li>
+</ul>
+<p>Various products:</p>
+<p><a id='mul-Union{Tuple{T}, Tuple{SMat{T}, AbstractVector{T}}} where T' href='#mul-Union{Tuple{T}, Tuple{SMat{T}, AbstractVector{T}}} where T'>#</a>
+<strong><code>mul</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mul</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">b</span><span class="o">::</span><span class="kt">AbstractVector</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the product <script type="math/tex">A \cdot b</script> as a dense vector.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L443' class='documenter-source'>source</a><br></p>
+<p><a id='mul-Union{Tuple{T}, Tuple{SMat{T}, AbstractMatrix{T}}} where T' href='#mul-Union{Tuple{T}, Tuple{SMat{T}, AbstractMatrix{T}}} where T'>#</a>
+<strong><code>mul</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mul</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">b</span><span class="o">::</span><span class="kt">AbstractMatrix</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Matrix</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the product <script type="math/tex">A \cdot b</script> as a dense array.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L471' class='documenter-source'>source</a><br></p>
+<p><a id='mul-Union{Tuple{T}, Tuple{SMat{T}, MatElem{T}}} where T' href='#mul-Union{Tuple{T}, Tuple{SMat{T}, MatElem{T}}} where T'>#</a>
+<strong><code>mul</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mul</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="n">b</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Return the product <script type="math/tex">A \cdot b</script> as a dense matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L499' class='documenter-source'>source</a><br></p>
+<p><a id='mul-Union{Tuple{T}, Tuple{SRow{T}, SMat{T}}} where T' href='#mul-Union{Tuple{T}, Tuple{SRow{T}, SMat{T}}} where T'>#</a>
+<strong><code>mul</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mul</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SRow</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SRow</span>
+</code></pre></div>
+<p>Return the product <script type="math/tex">A\cdot B</script> as a sparse row.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L512' class='documenter-source'>source</a><br></p>
+<p>Other:</p>
+<p><a id='sparse-Tuple{SMat}' href='#sparse-Tuple{SMat}'>#</a>
+<strong><code>sparse</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sparse</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SparseMatrixCSC</span>
+</code></pre></div>
+<p>The same matrix, but as a sparse matrix of julia type <code>SparseMatrixCSC</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1318' class='documenter-source'>source</a><br></p>
+<p><a id='fmpz_mat-Tuple{SMat{fmpz}}' href='#fmpz_mat-Tuple{SMat{fmpz}}'>#</a>
+<strong><code>fmpz_mat</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">fmpz_mat</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span>
+</code></pre></div>
+<p>The same matrix <script type="math/tex">A</script>, but as an <code>fmpz_mat</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L978' class='documenter-source'>source</a><br></p>
+<p>&lt;a id='fmpz_mat-Union{Tuple{SMat{T}}, Tuple{T}} where T&lt;:Integer' href='#fmpz_mat-Union{Tuple{SMat{T}}, Tuple{T}} where T&lt;:Integer'&gt;#</a>
+<strong><code>fmpz_mat</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">fmpz_mat</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="k">where</span> <span class="p">{</span><span class="kt">T</span> <span class="o">&lt;:</span> <span class="kt">Integer</span><span class="p">}</span>
+</code></pre></div>
+<p>The same matrix <script type="math/tex">A</script>, but as an <code>fmpz_mat</code>. Requires a conversion from the base ring of <script type="math/tex">A</script> to <script type="math/tex">\mathbb ZZ</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L961' class='documenter-source'>source</a><br></p>
+<p><a id='Array-Union{Tuple{SMat{T}}, Tuple{T}} where T' href='#Array-Union{Tuple{SMat{T}}, Tuple{T}} where T'>#</a>
+<strong><code>Array</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">Array</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Matrix</span><span class="p">{</span><span class="kt">T</span><span class="p">}</span>
+</code></pre></div>
+<p>The same matrix, but as a two-dimensional julia array.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/b8a19369b60f5313a9910ecda42b88ea01a7a66c/src/Sparse/Matrix.jl#L1339' class='documenter-source'>source</a><br></p>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../../FacElem/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Factored Elements" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Factored Elements
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../pmat/introduction/" class="md-footer__link md-footer__link--next" aria-label="Next: Pseudo-Matrices" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Pseudo-Matrices
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2a1c317c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.748e2769.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>

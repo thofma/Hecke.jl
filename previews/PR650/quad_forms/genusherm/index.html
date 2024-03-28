@@ -1,0 +1,2696 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.9">
+    
+    
+      
+        <title>Genera for hermitian lattices - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.120efc48.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.9647289d.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#genera-for-hermitian-lattices" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Genera for hermitian lattices
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        Number field operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_2" type="checkbox" id="__nav_2_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Function fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Orders" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4">
+          Quadratic and hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Quadratic and hermitian forms" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basics/" class="md-nav__link">
+        Spaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lattices/" class="md-nav__link">
+        Lattices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Genera for hermitian lattices
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Genera for hermitian lattices
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#local-genus-symbols" class="md-nav__link">
+    Local genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Local genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation-of-local-genus-symbols" class="md-nav__link">
+    Creation of local genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of local genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_1" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+    <nav class="md-nav" aria-label="Invariants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_2" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+    <nav class="md-nav" aria-label="Predicates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_3" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-uniformizer" class="md-nav__link">
+    Local uniformizer
+  </a>
+  
+    <nav class="md-nav" aria-label="Local uniformizer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#determinant-representatives" class="md-nav__link">
+    Determinant representatives
+  </a>
+  
+    <nav class="md-nav" aria-label="Determinant representatives">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_4" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gram-matrices" class="md-nav__link">
+    Gram matrices
+  </a>
+  
+    <nav class="md-nav" aria-label="Gram matrices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_5" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-genus-symbols" class="md-nav__link">
+    Global genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Global genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation-of-global-genus-symbols" class="md-nav__link">
+    Creation of global genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of global genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_6" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes_1" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_7" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mass" class="md-nav__link">
+    Mass
+  </a>
+  
+    <nav class="md-nav" aria-label="Mass">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example_1" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#representatives-of-a-genus" class="md-nav__link">
+    Representatives of a genus
+  </a>
+  
+    <nav class="md-nav" aria-label="Representatives of a genus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_8" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sum-of-genera" class="md-nav__link">
+    Sum of genera
+  </a>
+  
+    <nav class="md-nav" aria-label="Sum of genera">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_9" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enumeration-of-genera" class="md-nav__link">
+    Enumeration of genera
+  </a>
+  
+    <nav class="md-nav" aria-label="Enumeration of genera">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_10" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_5" type="checkbox" id="__nav_2_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_6" type="checkbox" id="__nav_2_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/Map/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        Factored Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        Sparse Linear Algebra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        References
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_10" type="checkbox" id="__nav_2_10" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_10">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_10">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#local-genus-symbols" class="md-nav__link">
+    Local genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Local genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation-of-local-genus-symbols" class="md-nav__link">
+    Creation of local genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of local genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_1" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+    <nav class="md-nav" aria-label="Invariants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_2" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+    <nav class="md-nav" aria-label="Predicates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_3" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-uniformizer" class="md-nav__link">
+    Local uniformizer
+  </a>
+  
+    <nav class="md-nav" aria-label="Local uniformizer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#determinant-representatives" class="md-nav__link">
+    Determinant representatives
+  </a>
+  
+    <nav class="md-nav" aria-label="Determinant representatives">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_4" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gram-matrices" class="md-nav__link">
+    Gram matrices
+  </a>
+  
+    <nav class="md-nav" aria-label="Gram matrices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_5" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-genus-symbols" class="md-nav__link">
+    Global genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Global genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation-of-global-genus-symbols" class="md-nav__link">
+    Creation of global genus symbols
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of global genus symbols">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_6" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes_1" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_7" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mass" class="md-nav__link">
+    Mass
+  </a>
+  
+    <nav class="md-nav" aria-label="Mass">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example_1" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#representatives-of-a-genus" class="md-nav__link">
+    Representatives of a genus
+  </a>
+  
+    <nav class="md-nav" aria-label="Representatives of a genus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_8" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sum-of-genera" class="md-nav__link">
+    Sum of genera
+  </a>
+  
+    <nav class="md-nav" aria-label="Sum of genera">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_9" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enumeration-of-genera" class="md-nav__link">
+    Enumeration of genera
+  </a>
+  
+    <nav class="md-nav" aria-label="Enumeration of genera">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_10" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/thofma/Hecke.jl/edit/master/docs/quad_forms/genusherm.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<p><a id='Genera-for-hermitian-lattices'></a></p>
+<p><a id='Genera-for-hermitian-lattices-1'></a></p>
+<h1 id="genera-for-hermitian-lattices">Genera for hermitian lattices</h1>
+<p><a id='Local-genus-symbols'></a></p>
+<p><a id='Local-genus-symbols-1'></a></p>
+<h2 id="local-genus-symbols">Local genus symbols</h2>
+<p><em>Definition 8.3.1 ([Kir16])</em> Let <script type="math/tex">L</script> be a hermitian lattice over <script type="math/tex">E/K</script> and let <script type="math/tex">\mathfrak p</script> be a prime ideal of <script type="math/tex">\mathcal O_K</script>. Let <script type="math/tex">\mathfrak P</script> be the largest ideal of <script type="math/tex">\mathcal O_E</script>  over <script type="math/tex">\mathfrak p</script> being invariant under the involution of <script type="math/tex">E</script>. We suppose that </p>
+<p>
+<script type="math/tex; mode=display">
+   L_{\mathfrak p} = \perp_{i=1}^tL_i
+</script>
+</p>
+<p>with for all <script type="math/tex">1 \leq i \leq t</script>, <script type="math/tex">\mathfrak s(L_i) = \mathfrak P^{s_i}</script> for a strictly  increasing sequence of integers <script type="math/tex">s_1 < \ldots < s_t</script>. Then, the <em>local genus symbol</em>  <script type="math/tex">g(L, \mathfrak p)</script> of <script type="math/tex">L_{\mathfrak p}</script> is defined to be:</p>
+<ul>
+<li>if <script type="math/tex">\mathfrak p</script> is <em>good</em>, i.e. non ramified and non dyadic,</li>
+</ul>
+<p>
+<script type="math/tex; mode=display">
+   g(L, \mathfrak p) := [(s_1, r_1, d_1), \ldots, (s_t, r_t, d_t)]
+</script>
+</p>
+<p>where <script type="math/tex">d_i = 1</script> if the determinant (resp. discriminant) of <script type="math/tex">L_i</script> is a norm    in <script type="math/tex">K_{\mathfrak p}^{\times}</script>, and <script type="math/tex">d_i = -1</script> otherwise, and    <script type="math/tex">r_i := \textnormal{rank}(L_i)</script> for all i;</p>
+<ul>
+<li>if <script type="math/tex">\mathfrak p</script> is <em>bad</em>,</li>
+</ul>
+<p>
+<script type="math/tex; mode=display">
+   g(L, \mathfrak p) := [(s_1, r_1, d_1, n_1), \ldots, (s_t, r_t, d_t, n_t)]
+</script>
+</p>
+<p>where for all i, <script type="math/tex">n_i := \textnormal{ord}_{\mathfrak p}(\mathfrak n(L_i))</script>
+</p>
+<p>Note that we define the scale and the norm of the lattice <script type="math/tex">L_i</script> (<script type="math/tex">1 \leq i \leq n</script>) defined over the extension of local fields <script type="math/tex">E_{\mathfrak P}/K_{\mathfrak p}</script>  similarly to the ones of <script type="math/tex">L</script>, by extending by continuity the sesquilinear form  of the ambient space of <script type="math/tex">L</script> to the completion. Regarding the determinant (resp.  discriminant), it is defined as the determinant of the Gram matrix associated  to a basis of <script type="math/tex">L_i</script> relatively to the extension of the sesquilinear form  (resp. <script type="math/tex">(-1)^{(m(m-1)/2}</script> times the determinant, where <script type="math/tex">m</script> is the rank of <script type="math/tex">L_i</script>).</p>
+<p>We call any tuple in <script type="math/tex">g := g(L, \mathfrak p) = [g_1, \ldots, g_t]</script> a <em>Jordan block</em>  of <script type="math/tex">g</script> since it corresponds to invariants of a Jordan block of the completion of  the lattice <script type="math/tex">L</script> at <script type="math/tex">\mathfrak p</script>. For any such block <script type="math/tex">g_i</script>, we call respectively  <script type="math/tex">s_i, r_i, d_i, n_i</script> the <em>scale</em>, the <em>rank</em>, the <em>determinant class</em> (resp.  <em>discriminant class</em>) and the <em>norm</em> of <script type="math/tex">g_i</script>. Note that the norm is necessary  only when the prime ideal is bad.</p>
+<p>We say that two hermitian lattices <script type="math/tex">L</script> and <script type="math/tex">L'</script> over <script type="math/tex">E/K</script> are in the same local  genus at <script type="math/tex">\mathfrak p</script> if <script type="math/tex">g(L, \mathfrak p) = g(L', \mathfrak p)</script>.</p>
+<p><a id='Creation-of-local-genus-symbols'></a></p>
+<p><a id='Creation-of-local-genus-symbols-1'></a></p>
+<h3 id="creation-of-local-genus-symbols">Creation of local genus symbols</h3>
+<p>There are two ways of creating a local genus symbol for hermitian lattices:</p>
+<ul>
+<li>either abstractly, by choosing the extension <script type="math/tex">E/K</script>, the prime ideal <script type="math/tex">\mathfrak p</script>  of <script type="math/tex">\mathcal O_K</script>, the Jordan blocks <code>data</code> and the type of the <script type="math/tex">d_i</script>'s (either  determinant class <code>:det</code> or discriminant class <code>:disc</code>);</li>
+</ul>
+<div class="highlight"><pre><span></span><code>   <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="n">data</span><span class="o">::</span><span class="kt">Vector</span><span class="p">;</span> <span class="n">type</span><span class="o">::</span><span class="kt">Symbol</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">,</span> 
+                                                          <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span>
+                                                             <span class="o">-&gt;</span> <span class="n">LocalGenusHerm</span>
+</code></pre></div>
+<ul>
+<li>or by constructing the local genus symbol of the completion of a hermitian lattice <script type="math/tex">L</script> over <script type="math/tex">E/K</script> at a prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>   <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LocalGenusHerm</span>
+</code></pre></div>
+<p><a id='Examples'></a></p>
+<p><a id='Examples-1'></a></p>
+<h4 id="examples">Examples</h4>
+<p>We will construct two examples for the rest of this section. Note that the prime  chosen here is bad.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">)</span>
+<span class="go">Local genus symbol (scale, rank, det, norm) at &lt;2, a&gt;:</span>
+<span class="go">(0, 1, +, 0)(2, 2, -, 1)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gens</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Hecke</span><span class="o">.</span><span class="kt">NfRelElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}}[</span><span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">])];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">gram</span> <span class="o">=</span> <span class="n">D</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g2</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">Local genus symbol (scale, rank, det, norm) at &lt;2, a&gt;:</span>
+<span class="go">(-2, 1, +, -1)(2, 2, +, 1)</span>
+</code></pre></div>
+<hr />
+<p><a id='Attributes'></a></p>
+<p><a id='Attributes-1'></a></p>
+<h3 id="attributes">Attributes</h3>
+<p><a id='length-Tuple{Hecke.LocalGenusHerm}' href='#length-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>length</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">length</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices, return the number of Jordan blocks  of <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L276' class='documenter-source'>source</a><br></p>
+<p><a id='base_field-Tuple{Hecke.LocalGenusHerm}' href='#base_field-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>base_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">base_field</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script>, return <code>E</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L284' class='documenter-source'>source</a><br></p>
+<p><a id='prime-Tuple{Hecke.LocalGenusHerm}' href='#prime-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>prime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">prime</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal  <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return <script type="math/tex">\mathfrak p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L291' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-2'></a></p>
+<h4 id="examples_1">Examples</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">length</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+<span class="go">2</span>
+
+<span class="gp">julia&gt;</span> <span class="n">base_field</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+<span class="go">Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+
+<span class="gp">julia&gt;</span> <span class="n">prime</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+<span class="go">&lt;2, a&gt;</span>
+<span class="go">Norm: 2</span>
+<span class="go">Minimum: 2</span>
+<span class="go">basis_matrix</span>
+<span class="go">[2 0; 0 1]</span>
+<span class="go">two normal wrt: 2</span>
+</code></pre></div>
+<hr />
+<p><a id='Invariants'></a></p>
+<p><a id='Invariants-1'></a></p>
+<h3 id="invariants">Invariants</h3>
+<p><a id='scale-Tuple{Hecke.LocalGenusHerm, Int64}' href='#scale-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>scale</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">scale</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime <script type="math/tex">\mathfrak  p</script> of <script type="math/tex">\mathcal O_K</script>, return the <script type="math/tex">\mathfrak P</script>-valuation of the scale of the <code>i</code>th  Jordan block of <code>g</code>, where <script type="math/tex">\mathfrak P</script> is a prime ideal of <script type="math/tex">O_E</script> lying over <script type="math/tex">\mathfrak p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L93' class='documenter-source'>source</a><br></p>
+<p><a id='scales-Tuple{Hecke.LocalGenusHerm}' href='#scales-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>scales</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">scales</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime <script type="math/tex">\mathfrak  p</script> of <script type="math/tex">\mathcal O_K</script>, return the <script type="math/tex">\mathfrak P</script>-valuation of the scales of the Jordan  blocks of <code>g</code>, where <script type="math/tex">\mathfrak P</script> is a prime ideal of <script type="math/tex">\mathcal O_E</script> lying over <script type="math/tex">\mathfrak p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L102' class='documenter-source'>source</a><br></p>
+<p><a id='rank-Tuple{Hecke.LocalGenusHerm, Int64}' href='#rank-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices, return the rank of the <code>i</code>th Jordan block of <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L111' class='documenter-source'>source</a><br></p>
+<p><a id='rank-Tuple{Hecke.LocalGenusHerm}' href='#rank-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return the rank of any hermitian lattice whose  <script type="math/tex">\mathfrak p</script>-adic completion has local genus symbol <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L119' class='documenter-source'>source</a><br></p>
+<p><a id='ranks-Tuple{Hecke.LocalGenusHerm}' href='#ranks-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>ranks</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ranks</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices, return the ranks of the Jordan blocks of <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L130' class='documenter-source'>source</a><br></p>
+<p><a id='det-Tuple{Hecke.LocalGenusHerm, Int64}' href='#det-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>det</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script>, return the determinant  of the <code>i</code>th Jordan block of <code>g</code>. </p>
+<p>The returned value is <script type="math/tex">1</script> or <script type="math/tex">-1</script> depending on whether the determinant is a local norm in <code>K</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L138' class='documenter-source'>source</a><br></p>
+<p><a id='det-Tuple{Hecke.LocalGenusHerm}' href='#det-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>det</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return the determinant of a hermitian lattice  whose <script type="math/tex">\mathfrak p</script>-adic completion has local genus symbol <code>g</code>. </p>
+<p>The returned value is <script type="math/tex">1</script> or <script type="math/tex">-1</script> depending on whether the determinant is a local  norm in <code>K</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L148' class='documenter-source'>source</a><br></p>
+<p><a id='dets-Tuple{Hecke.LocalGenusHerm}' href='#dets-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>dets</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">dets</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script>, return the determinants of the Jordan blocks of <code>g</code>. </p>
+<p>The returned values are <script type="math/tex">1</script> or <script type="math/tex">-1</script> depending on whether the respective determinants are are local norms in <code>K</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L162' class='documenter-source'>source</a><br></p>
+<p><a id='discriminant-Tuple{Hecke.LocalGenusHerm, Int64}' href='#discriminant-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script>, return the discriminant of the <code>i</code>th Jordan block of <code>g</code>. </p>
+<p>The returned value is <script type="math/tex">1</script> or <script type="math/tex">-1</script> depending on whether the discriminant is a local norm in <code>K</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L173' class='documenter-source'>source</a><br></p>
+<p><a id='discriminant-Tuple{Hecke.LocalGenusHerm}' href='#discriminant-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return the discriminant of a hermitian lattice  whose <script type="math/tex">\mathfrak p</script>-adic completion has local genus symbol <code>g</code>. </p>
+<p>The returned value is <script type="math/tex">1</script> or <script type="math/tex">-1</script> depending on whether the discriminant is a local  norm in <code>K</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L196' class='documenter-source'>source</a><br></p>
+<p><a id='norm-Tuple{Hecke.LocalGenusHerm, Int64}' href='#norm-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>norm</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a ramified dyadic local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a  prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return the <script type="math/tex">\mathfrak p</script>-valuation of  the norm of the <code>i</code>th Jordan block of <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L222' class='documenter-source'>source</a><br></p>
+<p><a id='norms-Tuple{Hecke.LocalGenusHerm}' href='#norms-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>norms</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">norms</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a ramified dyadic local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a  prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return the <script type="math/tex">\mathfrak p</script>-valuations of the  norms of the Jordan blocks of <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L232' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-3'></a></p>
+<h4 id="examples_2">Examples</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gens</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Hecke</span><span class="o">.</span><span class="kt">NfRelElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}}[</span><span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">])];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">gram</span> <span class="o">=</span> <span class="n">D</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g2</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">scales</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span>
+<span class="go">2-element Vector{Int64}:</span>
+<span class="go"> -2</span>
+<span class="go">  2</span>
+
+<span class="gp">julia&gt;</span> <span class="n">ranks</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span>
+<span class="go">2-element Vector{Int64}:</span>
+<span class="go"> 1</span>
+<span class="go"> 2</span>
+
+<span class="gp">julia&gt;</span> <span class="n">dets</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span>
+<span class="go">2-element Vector{Int64}:</span>
+<span class="go"> 1</span>
+<span class="go"> 1</span>
+
+<span class="gp">julia&gt;</span> <span class="n">norms</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span>
+<span class="go">2-element Vector{Int64}:</span>
+<span class="go"> -1</span>
+<span class="go">  1</span>
+
+<span class="gp">julia&gt;</span> <span class="n">rank</span><span class="p">(</span><span class="n">g2</span><span class="p">),</span> <span class="n">det</span><span class="p">(</span><span class="n">g2</span><span class="p">),</span> <span class="n">discriminant</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span>
+<span class="go">(3, 1, -1)</span>
+</code></pre></div>
+<hr />
+<p><a id='Predicates'></a></p>
+<p><a id='Predicates-1'></a></p>
+<h3 id="predicates">Predicates</h3>
+<p><a id='isramified-Tuple{Hecke.LocalGenusHerm}' href='#isramified-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>isramified</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isramified</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalLenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal  <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return whether <script type="math/tex">\mathfrak p</script> is ramified in  <script type="math/tex">\mathcal O_E</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L241' class='documenter-source'>source</a><br></p>
+<p><a id='issplit-Tuple{Hecke.LocalGenusHerm}' href='#issplit-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>issplit</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">issplit</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return whether <script type="math/tex">\mathfrak p</script> is split in  <script type="math/tex">\mathcal O_E</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L250' class='documenter-source'>source</a><br></p>
+<p><a id='isinert-Tuple{Hecke.LocalGenusHerm}' href='#isinert-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>isinert</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isinert</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal  <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return whether <script type="math/tex">\mathfrak p</script> is inert in  <script type="math/tex">\mathcal O_E</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L259' class='documenter-source'>source</a><br></p>
+<p><a id='isdyadic-Tuple{Hecke.LocalGenusHerm}' href='#isdyadic-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>isdyadic</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isdyadic</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal  <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return whether <script type="math/tex">\mathfrak p</script> is dyadic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L268' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-4'></a></p>
+<h4 id="examples_3">Examples</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">isramified</span><span class="p">(</span><span class="n">g1</span><span class="p">),</span> <span class="n">issplit</span><span class="p">(</span><span class="n">g1</span><span class="p">),</span> <span class="n">isinert</span><span class="p">(</span><span class="n">g1</span><span class="p">),</span> <span class="n">isdyadic</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+<span class="go">(true, false, false, true)</span>
+</code></pre></div>
+<hr />
+<p><a id='Local-uniformizer'></a></p>
+<p><a id='Local-uniformizer-1'></a></p>
+<h3 id="local-uniformizer">Local uniformizer</h3>
+<p><a id='uniformizer-Tuple{Hecke.LocalGenusHerm}' href='#uniformizer-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>uniformizer</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">uniformizer</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal  <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return a generator for the largest ideal of <script type="math/tex">\mathcal O_E</script> containing <script type="math/tex">\mathfrak p</script> and invariant under the action of the non-trivial involution  of <code>E</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L323' class='documenter-source'>source</a><br></p>
+<p><a id='Example'></a></p>
+<p><a id='Example-1'></a></p>
+<h4 id="example">Example</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">uniformizer</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+<span class="go">-a</span>
+</code></pre></div>
+<hr />
+<p><a id='Determinant-representatives'></a></p>
+<p><a id='Determinant-representatives-1'></a></p>
+<h3 id="determinant-representatives">Determinant representatives</h3>
+<p>Let <script type="math/tex">g</script> be a local genus symbol for hermitian lattices. Its determinant class, or the determinant class of its Jordan blocks, are given by <script type="math/tex">\pm 1</script>, depending on whether the  determinants are local norms or not. It is possible to get a representative of this determinant class in terms of powers of the uniformizer of <script type="math/tex">g</script>.</p>
+<p><a id='det_representative-Tuple{Hecke.LocalGenusHerm, Int64}' href='#det_representative-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>det_representative</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det_representative</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script>, return a  representative of the norm class of the determinant of the <code>i</code>th Jordan block of <code>g</code> in <script type="math/tex">K^{\times}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L405' class='documenter-source'>source</a><br></p>
+<p><a id='det_representative-Tuple{Hecke.LocalGenusHerm}' href='#det_representative-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>det_representative</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det_representative</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script>, return a  representative of the norm class of the determinant of <code>g</code> in <script type="math/tex">K^{\times}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L380' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-5'></a></p>
+<h4 id="examples_4">Examples</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">det_representative</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+<span class="go">-8*a + 10</span>
+
+<span class="gp">julia&gt;</span> <span class="n">det_representative</span><span class="p">(</span><span class="n">g1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">-8*a + 10</span>
+</code></pre></div>
+<hr />
+<p><a id='Gram-matrices'></a></p>
+<p><a id='Gram-matrices-1'></a></p>
+<h3 id="gram-matrices">Gram matrices</h3>
+<p><a id='gram_matrix-Tuple{Hecke.LocalGenusHerm, Int64}' href='#gram_matrix-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>gram_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal  <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return a Gram matrix <code>M</code> of the <code>i</code>th Jordan block  of <code>g</code>, with coefficients in <code>E</code>. <code>M</code> is such that any hermitian lattice over <script type="math/tex">E/K</script>  with Gram matrix <code>M</code> satisfies that the local genus symbol of its completion at  <script type="math/tex">\mathfrak p</script> is equal to the <code>i</code>th Jordan block of <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L452' class='documenter-source'>source</a><br></p>
+<p><a id='gram_matrix-Tuple{Hecke.LocalGenusHerm}' href='#gram_matrix-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>gram_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return a Gram matrix <code>M</code> of <code>g</code>, with coefficients  in <code>E</code>.<code>M</code> is such that any hermitian lattice over <script type="math/tex">E/K</script> with Gram matrix <code>M</code> satisfies  that the local genus symbol of its completion at <script type="math/tex">\mathfrak p</script> is <code>g</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L437' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-6'></a></p>
+<h4 id="examples_5">Examples</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gens</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Hecke</span><span class="o">.</span><span class="kt">NfRelElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}}[</span><span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">])];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">gram</span> <span class="o">=</span> <span class="n">D</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g2</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gram_matrix</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span>
+<span class="go">[5//2*a   0      0]</span>
+<span class="go">[     0   a      a]</span>
+<span class="go">[     0   a   -4*a]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">gram_matrix</span><span class="p">(</span><span class="n">g2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">[5//2*a]</span>
+</code></pre></div>
+<hr />
+<hr />
+<p><a id='Global-genus-symbols'></a></p>
+<p><a id='Global-genus-symbols-1'></a></p>
+<h2 id="global-genus-symbols">Global genus symbols</h2>
+<p>Let <script type="math/tex">L</script> be a hermitian lattice over <script type="math/tex">E/K</script>. Let <script type="math/tex">P(L)</script> be the set of all prime  ideals of <script type="math/tex">\mathcal O_K</script> which are bad (ramified or dyadic), which are dividing  the scale of <script type="math/tex">L</script> or which are dividing the volume of <script type="math/tex">L</script>. Let <script type="math/tex">S(E/K)</script> be the  set of real infinite places of <script type="math/tex">K</script> which split into complex places in <script type="math/tex">E</script>. We  define the <em>global genus symbol</em> <script type="math/tex">G(L)</script> of <script type="math/tex">L</script> to be the datum consisting of the  local genus symbols of <script type="math/tex">L</script> at each prime of <script type="math/tex">P(L)</script> and the signatures (i.e. the  negative index of inertia) of the Gram matrix of the rational span of <script type="math/tex">L</script> at  each place in <script type="math/tex">S(E/K)</script>.</p>
+<p>Note that prime ideals in <script type="math/tex">P(L)</script> which don't ramify correspond to those for which  the corresponding completions of <script type="math/tex">L</script> are not unimodular.</p>
+<p>We say that two lattice <script type="math/tex">L</script> and <script type="math/tex">L'</script> over <script type="math/tex">E/K</script> are in the same genus, if  <script type="math/tex">G(L) = G(L')</script>.</p>
+<p><a id='Creation-of-global-genus-symbols'></a></p>
+<p><a id='Creation-of-global-genus-symbols-1'></a></p>
+<h3 id="creation-of-global-genus-symbols">Creation of global genus symbols</h3>
+<p>Similarly, there are two ways of constructing a global genus symbol for hermitian lattices:</p>
+<ul>
+<li>either abstractly, by choosing the extension <script type="math/tex">E/K</script>, the set of local genus  symbols <code>S</code> and the signatures <code>signatures</code> at the places in <script type="math/tex">S(E/K)</script>. Note  that this requires the given invariants to satisfy the product formula for Hilbert  symbols.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>   <span class="n">genus</span><span class="p">(</span><span class="n">S</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">LocalGenusHerm</span><span class="p">},</span> <span class="n">signatures</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenusHerm</span>
+</code></pre></div>
+<p>Here <code>signatures</code> can be a dictionary with keys the infinite places and values    the corresponding signatures, or a collection of tuples of the type    <code>(::InfPlc, ::Int)</code>;</p>
+<ul>
+<li>or by constructing the global genus symbol of a given hermitian lattice <script type="math/tex">L</script>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>   <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenusHerm</span>
+</code></pre></div>
+<p><a id='Examples-7'></a></p>
+<h4 id="examples_6">Examples</h4>
+<p>As before, we will construct two different global genus symbols for hermitian  lattices, which we will use for the rest of this section.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">infp</span> <span class="o">=</span> <span class="n">infinite_places</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+<span class="go">3-element Vector{Hecke.InfPlcNfRel{InfPlc}}:</span>
+<span class="go"> Infinite place of</span>
+<span class="go">Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">extending the place</span>
+<span class="go">Real place of</span>
+<span class="go">Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">corresponding to the root [1.414213562373095049 +/- 3.90e-19]</span>
+<span class="go">with root [-1.189207115003 +/- 3.46e-13]</span>
+<span class="go"> Infinite place of</span>
+<span class="go">Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">extending the place</span>
+<span class="go">Real place of</span>
+<span class="go">Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">corresponding to the root [1.414213562373095049 +/- 3.90e-19]</span>
+<span class="go">with root [1.189207115003 +/- 3.46e-13]</span>
+<span class="go"> Infinite place of</span>
+<span class="go">Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">extending the place</span>
+<span class="go">Real place of</span>
+<span class="go">Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">corresponding to the root [-1.414213562373095049 +/- 3.90e-19]</span>
+<span class="go">with root [+/- 4.78e-14] + [1.189207115003 +/- 3.46e-13]*im</span>
+
+<span class="gp">julia&gt;</span> <span class="n">SEK</span> <span class="o">=</span> <span class="n">unique</span><span class="p">([</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span> <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">infp</span> <span class="k">if</span> <span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="p">)]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">length</span><span class="p">(</span><span class="n">SEK</span><span class="p">)</span>
+<span class="go">1</span>
+
+<span class="gp">julia&gt;</span> <span class="n">G1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">([</span><span class="n">g1</span><span class="p">],</span> <span class="p">[(</span><span class="n">SEK</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="go">Global genus symbol over Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">with local genus symbols</span>
+<span class="go">&lt;2, a&gt; =&gt; (0, 1, +, 0) (2, 2, -, 1)</span>
+<span class="go">and signatures</span>
+<span class="go">-1.414213… =&gt; 1</span>
+
+<span class="gp">julia&gt;</span> <span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gens</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Hecke</span><span class="o">.</span><span class="kt">NfRelElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}}[</span><span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">])];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">gram</span> <span class="o">=</span> <span class="n">D</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">G2</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">Global genus symbol over Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">with local genus symbols</span>
+<span class="go">&lt;2, a&gt; =&gt; (-2, 1, +, -1) (2, 2, +, 1)</span>
+<span class="go">&lt;7, a - 3&gt; =&gt; (0, 1, +) (1, 2, +)</span>
+<span class="go">and signatures</span>
+<span class="go">-1.414213… =&gt; 2</span>
+</code></pre></div>
+<hr />
+<p><a id='Attributes-2'></a></p>
+<h3 id="attributes_1">Attributes</h3>
+<p><a id='base_field-Tuple{Hecke.GenusHerm}' href='#base_field-Tuple{Hecke.GenusHerm}'>#</a>
+<strong><code>base_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">base_field</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Given a global genus symbol <code>G</code> for hermitian lattices over <script type="math/tex">E/K</script>, return <code>E</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1198' class='documenter-source'>source</a><br></p>
+<p><a id='primes-Tuple{Hecke.GenusHerm}' href='#primes-Tuple{Hecke.GenusHerm}'>#</a>
+<strong><code>primes</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">primes</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a global genus symbol <code>G</code> for hermitian lattices over <script type="math/tex">E/K</script>, return the list of prime ideals of <script type="math/tex">\mathcal O_K</script> at which <code>G</code> has a local genus symbol.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1205' class='documenter-source'>source</a><br></p>
+<p><a id='signatures-Tuple{Hecke.GenusHerm}' href='#signatures-Tuple{Hecke.GenusHerm}'>#</a>
+<strong><code>signatures</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">signatures</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a global genus symbol <code>G</code> for hermitian lattices over <script type="math/tex">E/K</script>, return the signatures at the infinite places of <code>K</code>. For each real place, it is given by the negative index of inertia of the Gram matrix of the rational span of a hermitian lattice whose global genus symbol is <code>G</code>. </p>
+<p>The output is given as a dictionary with keys the infinite places of <code>K</code> and value  the corresponding signatures.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1213' class='documenter-source'>source</a><br></p>
+<p><a id='rank-Tuple{Hecke.GenusHerm}' href='#rank-Tuple{Hecke.GenusHerm}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Return the rank of any hermitian lattice with global genus symbol <code>G</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1226' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-8'></a></p>
+<h4 id="examples_7">Examples</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gens</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Hecke</span><span class="o">.</span><span class="kt">NfRelElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}}[</span><span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">])];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">gram</span> <span class="o">=</span> <span class="n">D</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">G2</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">base_field</span><span class="p">(</span><span class="n">G2</span><span class="p">)</span>
+<span class="go">Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+
+<span class="gp">julia&gt;</span> <span class="n">primes</span><span class="p">(</span><span class="n">G2</span><span class="p">)</span>
+<span class="go">2-element Vector{NfOrdIdl}:</span>
+<span class="go"> &lt;2, a&gt;</span>
+<span class="go">Norm: 2</span>
+<span class="go">Minimum: 2</span>
+<span class="go">basis_matrix</span>
+<span class="go">[2 0; 0 1]</span>
+<span class="go">two normal wrt: 2</span>
+<span class="go"> &lt;7, a - 3&gt;</span>
+<span class="go">Norm: 7</span>
+<span class="go">Minimum: 7</span>
+<span class="go">basis_matrix</span>
+<span class="go">[7 0; 4 1]</span>
+<span class="go">two normal wrt: 7</span>
+
+<span class="gp">julia&gt;</span> <span class="n">signatures</span><span class="p">(</span><span class="n">G2</span><span class="p">)</span>
+<span class="go">Dict{InfPlc, Int64} with 1 entry:</span>
+<span class="go">  Real place of …                                                           =&gt; 2</span>
+
+<span class="gp">julia&gt;</span> <span class="n">rank</span><span class="p">(</span><span class="n">G2</span><span class="p">)</span>
+<span class="go">3</span>
+</code></pre></div>
+<hr />
+<p><a id='Mass'></a></p>
+<p><a id='Mass-1'></a></p>
+<h3 id="mass">Mass</h3>
+<p><em>Definition 4.2.1 [Kir16]</em> Let <script type="math/tex">L</script> be a hermitian lattice over <script type="math/tex">E/K</script>, and suppose that <script type="math/tex">L</script> is definite. In particular, the automorphism group of <script type="math/tex">L</script> is finite. Let <script type="math/tex">L_1, \ldots, L_n</script> be  a set of representatives of isometry classes in the genus of <script type="math/tex">L</script>. This means that  if <script type="math/tex">L'</script> is a lattice over <script type="math/tex">E/K</script> in the genus of <script type="math/tex">L</script> (i.e. they are in the same genus),  then <script type="math/tex">L'</script> is isometric to one of the <script type="math/tex">L_i</script>'s, and these representatives are pairwise  non-isometric. Then we define the <em>mass</em> of the genus <script type="math/tex">G(L)</script> of <script type="math/tex">L</script> to be</p>
+<p>
+<script type="math/tex; mode=display">
+   \textnormal{mass}(G(L)) := \sum_{i=1}^n\frac{1}{\#\textnormal{Aut}(L_i)}.
+</script>
+</p>
+<p>Note that since <script type="math/tex">L</script> is definite, any lattice in the genus of <script type="math/tex">L</script> is also definite, and the  definition makes sense.</p>
+<p><a id='mass-Tuple{HermLat}' href='#mass-Tuple{HermLat}'>#</a>
+<strong><code>mass</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mass</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpq</span>
+</code></pre></div>
+<p>Given a definite hermitian lattice <code>L</code>, return the mass of its genus.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Mass.jl#L310' class='documenter-source'>source</a><br></p>
+<p><a id='Example-2'></a></p>
+<h4 id="example_1">Example</h4>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">FlintQQ</span><span class="p">,</span> <span class="s">&quot;x&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">;</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="n">cached</span> <span class="o">=</span> <span class="nb">false</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="s">&quot;t&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">,</span> <span class="n">cached</span> <span class="o">=</span> <span class="nb">false</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gens</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Hecke</span><span class="o">.</span><span class="kt">NfRelElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}}[</span><span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[(</span><span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">-</span> <span class="mi">3</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[(</span><span class="mi">3004</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4197</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">-</span> <span class="mi">3088</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">4348</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1047</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">765</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="mi">5313</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">3780</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[(</span><span class="mi">728381</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">998259</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">+</span> <span class="mi">3345554</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4653462</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1507194</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">2168244</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">-</span> <span class="mi">1507194</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">2168244</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">5917</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">915</span><span class="p">)</span><span class="o">*</span><span class="n">b</span> <span class="o">-</span> <span class="mi">4331</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">488</span><span class="p">])];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">gram</span> <span class="o">=</span> <span class="n">D</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">mass</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">1//1024</span>
+</code></pre></div>
+<hr />
+<hr />
+<p><a id='Representatives-of-a-genus'></a></p>
+<p><a id='Representatives-of-a-genus-1'></a></p>
+<h2 id="representatives-of-a-genus">Representatives of a genus</h2>
+<p><a id='representative-Tuple{Hecke.LocalGenusHerm}' href='#representative-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>representative</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">representative</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HermLat</span>
+</code></pre></div>
+<p>Given a local genus symbol <code>g</code> for hermitian lattices over <script type="math/tex">E/K</script> at a prime ideal  <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return a hermitian lattice over <script type="math/tex">E/K</script> whose  completion at <script type="math/tex">\mathfrak p</script> admits <code>g</code> as local genus symbol.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L551' class='documenter-source'>source</a><br></p>
+<p><a id='in-Tuple{HermLat, Hecke.LocalGenusHerm}' href='#in-Tuple{HermLat, Hecke.LocalGenusHerm}'>#</a>
+<strong><code>in</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">in</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">,</span> <span class="n">g</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether <code>g</code> and the local genus symbol of the completion of the hermitian lattice <code>L</code> at <code>prime(g)</code> agree. Note that <code>L</code> being in <code>g</code> requires both <code>L</code> and  <code>g</code> to be defined over the same extension <script type="math/tex">E/K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L910' class='documenter-source'>source</a><br></p>
+<p><a id='representative-Tuple{Hecke.GenusHerm}' href='#representative-Tuple{Hecke.GenusHerm}'>#</a>
+<strong><code>representative</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">representative</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HermLat</span>
+</code></pre></div>
+<p>Given a global genus symbol <code>G</code> for hermitian lattices over <script type="math/tex">E/K</script>, return a hermitian  lattice over <script type="math/tex">E/K</script> which admits <code>G</code> as global genus symbol.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1532' class='documenter-source'>source</a><br></p>
+<p><a id='in-Tuple{HermLat, Hecke.GenusHerm}' href='#in-Tuple{HermLat, Hecke.GenusHerm}'>#</a>
+<strong><code>in</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">in</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">,</span> <span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether <code>G</code> and the global genus symbol of the hermitian lattice <code>L</code> agree.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1326' class='documenter-source'>source</a><br></p>
+<p><a id='representatives-Tuple{Hecke.GenusHerm}' href='#representatives-Tuple{Hecke.GenusHerm}'>#</a>
+<strong><code>representatives</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">representatives</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">HermLat</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a global genus symbol <code>G</code> for hermitian lattices, return representatives  for the isometry classes of hermitian lattices in <code>G</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/GenusRep.jl#L698' class='documenter-source'>source</a><br></p>
+<p><a id='genus_representatives-Tuple{HermLat}' href='#genus_representatives-Tuple{HermLat}'>#</a>
+<strong><code>genus_representatives</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">genus_representatives</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">;</span> <span class="n">max</span> <span class="o">=</span> <span class="n">inf</span><span class="p">,</span> <span class="n">use_auto</span> <span class="o">=</span> <span class="nb">true</span><span class="p">,</span>
+                                             <span class="n">use_mass</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span>
+                                                      <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">HermLat</span><span class="p">}</span>
+</code></pre></div>
+<p>Return representatives for the isometry classes in the genus of the hermitian lattice <code>L</code>. At most <code>max</code> representatives are returned.</p>
+<p>If <code>L</code> is definite, the use of the automorphism group of <code>L</code> is enabled by default. It can be disabled by <code>use_auto = false</code>. In the case where <code>L</code> is indefinite, the entry  <code>use_auto</code> has no effect. The computation of the mass can be enabled by <code>use_mass = true</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/GenusRep.jl#L637' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-9'></a></p>
+<h3 id="examples_8">Examples</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">infp</span> <span class="o">=</span> <span class="n">infinite_places</span><span class="p">(</span><span class="n">E</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">SEK</span> <span class="o">=</span> <span class="n">unique</span><span class="p">([</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span> <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">infp</span> <span class="k">if</span> <span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="p">)]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">G1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">([</span><span class="n">g1</span><span class="p">],</span> <span class="p">[(</span><span class="n">SEK</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L1</span> <span class="o">=</span> <span class="n">representative</span><span class="p">(</span><span class="n">g1</span><span class="p">)</span>
+<span class="go">Hermitian lattice of rank 3 and degree 3</span>
+<span class="go">over</span>
+<span class="go">Relative maximal order with pseudo-basis (1) * 1//1 * &lt;1, 1&gt;, (b) * 1//1 * &lt;1, 1&gt;</span>
+
+<span class="gp">julia&gt;</span> <span class="n">L1</span> <span class="k">in</span> <span class="n">g1</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span> <span class="n">L2</span> <span class="o">=</span> <span class="n">representative</span><span class="p">(</span><span class="n">G1</span><span class="p">)</span>
+<span class="go">Hermitian lattice of rank 3 and degree 3</span>
+<span class="go">over</span>
+<span class="go">Relative maximal order with pseudo-basis (1) * 1//1 * &lt;1, 1&gt;, (b) * 1//1 * &lt;1, 1&gt;</span>
+
+<span class="gp">julia&gt;</span> <span class="n">L2</span> <span class="k">in</span> <span class="n">G1</span><span class="p">,</span> <span class="n">L2</span> <span class="k">in</span> <span class="n">g1</span>
+<span class="go">(true, true)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">length</span><span class="p">(</span><span class="n">genus_representatives</span><span class="p">(</span><span class="n">L1</span><span class="p">))</span>
+<span class="go">1</span>
+
+<span class="gp">julia&gt;</span> <span class="n">length</span><span class="p">(</span><span class="n">representatives</span><span class="p">(</span><span class="n">G1</span><span class="p">))</span>
+<span class="go">1</span>
+</code></pre></div>
+<hr />
+<p><a id='Sum-of-genera'></a></p>
+<p><a id='Sum-of-genera-1'></a></p>
+<h2 id="sum-of-genera">Sum of genera</h2>
+<p><a id='orthogonal_sum-Tuple{Hecke.LocalGenusHerm, Hecke.LocalGenusHerm}' href='#orthogonal_sum-Tuple{Hecke.LocalGenusHerm, Hecke.LocalGenusHerm}'>#</a>
+<strong><code>orthogonal_sum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">orthogonal_sum</span><span class="p">(</span><span class="n">g1</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">g2</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LocalGenusHerm</span>
+</code></pre></div>
+<p>Given two local genus symbols <code>g1</code> and <code>g2</code> for hermitian lattices over <script type="math/tex">E/K</script>  at the same prime ideal <script type="math/tex">\mathfrak p</script> of <script type="math/tex">\mathcal O_K</script>, return their orthogonal  sum. It corresponds to the local genus symbol of the <script type="math/tex">\mathfrak p</script>-adic completion  of the orthogonal sum of respective representatives of <code>g1</code> and <code>g2</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1054' class='documenter-source'>source</a><br></p>
+<p><a id='orthogonal_sum-Tuple{Hecke.GenusHerm, Hecke.GenusHerm}' href='#orthogonal_sum-Tuple{Hecke.GenusHerm, Hecke.GenusHerm}'>#</a>
+<strong><code>orthogonal_sum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">orthogonal_sum</span><span class="p">(</span><span class="n">G1</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">,</span> <span class="n">G2</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenusHerm</span>
+</code></pre></div>
+<p>Given two global genus symbols <code>G1</code> and <code>G2</code> for hermitian lattices over <script type="math/tex">E/K</script>, return their orthogonal sum. It corresponds to the global genus symbol of the orthogonal sum of respective representatives of <code>G1</code> and <code>G2</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1277' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-10'></a></p>
+<h3 id="examples_9">Examples</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">QQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span>  <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">HermLat</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:det</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">infp</span> <span class="o">=</span> <span class="n">infinite_places</span><span class="p">(</span><span class="n">E</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">SEK</span> <span class="o">=</span> <span class="n">unique</span><span class="p">([</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span> <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">infp</span> <span class="k">if</span> <span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="p">)]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">G1</span> <span class="o">=</span> <span class="n">genus</span><span class="p">([</span><span class="n">g1</span><span class="p">],</span> <span class="p">[(</span><span class="n">SEK</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">D</span> <span class="o">=</span> <span class="n">matrix</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="n">a</span> <span class="o">-</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">a</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gens</span> <span class="o">=</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Hecke</span><span class="o">.</span><span class="kt">NfRelElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}}[</span><span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="p">]),</span> <span class="n">map</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">])];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">L</span> <span class="o">=</span> <span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">gram</span> <span class="o">=</span> <span class="n">D</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">g2</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">G2</span> <span class="o">=</span> <span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">orthogonal_sum</span><span class="p">(</span><span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">)</span>
+<span class="go">Local genus symbol (scale, rank, det, norm) at &lt;2, a&gt;:</span>
+<span class="go">(-2, 1, +, -1)(0, 1, +, 0)(2, 4, -, 1)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">orthogonal_sum</span><span class="p">(</span><span class="n">G1</span><span class="p">,</span> <span class="n">G2</span><span class="p">)</span>
+<span class="go">Global genus symbol over Relative number field over with defining polynomial t^2 - a</span>
+<span class="go"> over Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">with local genus symbols</span>
+<span class="go">&lt;2, a&gt; =&gt; (-2, 1, +, -1) (0, 1, +, 0) (2, 4, -, 1)</span>
+<span class="go">&lt;7, a - 3&gt; =&gt; (0, 4, +) (1, 2, +)</span>
+<span class="go">and signatures</span>
+<span class="go">-1.414213… =&gt; 3</span>
+</code></pre></div>
+<hr />
+<p><a id='Enumeration-of-genera'></a></p>
+<p><a id='Enumeration-of-genera-1'></a></p>
+<h2 id="enumeration-of-genera">Enumeration of genera</h2>
+<p><a id='local_genera_hermitian-Tuple{Any, Any, Int64, Int64, Int64}' href='#local_genera_hermitian-Tuple{Any, Any, Int64, Int64, Int64}'>#</a>
+<strong><code>local_genera_hermitian</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">local_genera_hermitian</span><span class="p">(</span><span class="n">E</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="n">rank</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span>
+                       <span class="n">det_val</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span> <span class="n">max_scale</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">LocalGenusHerm</span><span class="p">}</span>
+</code></pre></div>
+<p>Return all local genus symbols for hermitian lattices over the algebra <code>E</code>, with base field <script type="math/tex">K</script>, at the prime ideal<code>p</code> of <script type="math/tex">\mathcal O_K</script>. Each of them has rank equal to  <code>rank</code>, scale <script type="math/tex">\mathfrak P</script>-valuations bounded by <code>max_scale</code> and determinant  <code>p</code>-valuations equal to <code>det_val</code>, where <script type="math/tex">\mathfrak P</script> is a prime ideal of <script type="math/tex">\mathcal O_E</script>  lying above <code>p</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1562' class='documenter-source'>source</a><br></p>
+<p><a id='genera_hermitian' href='#genera_hermitian'>#</a>
+<strong><code>genera_hermitian</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">genera_hermitian</span><span class="p">(</span><span class="n">E</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">rank</span><span class="o">::</span><span class="kt">Int</span><span class="p">,</span>
+                              <span class="n">signatures</span><span class="o">::</span><span class="kt">Dict</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">Int</span><span class="p">},</span>
+                              <span class="n">determinant</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">,</span>
+                              <span class="n">max_scale</span> <span class="o">=</span> <span class="nb">nothing</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">GenusHerm</span><span class="p">}</span>
+</code></pre></div>
+<p>Return all global genus symbols for hermitian lattices over the algebra<code>E</code> with rank  <code>rank</code>, signatures given by <code>signatures</code>, scale bounded by <code>max_scale</code> and determinant  class equal to <code>determinant</code>.</p>
+<p>If <code>max_scale == nothing</code>, it is set to be equal to <code>determinant</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/38e8ba905a96aa5e2078cae1db6c3925ddf33a33/src/QuadForm/Herm/Genus.jl#L1703' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-11'></a></p>
+<h3 id="examples_10">Examples</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">),</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">local_genera_hermitian</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">15-element Vector{Hecke.LocalGenusHerm{Hecke.NfRel{nf_elem}, NfOrdIdl}}:</span>
+<span class="go"> (0, 3, +, 0) (4, 1, +, 2)</span>
+<span class="go"> (0, 3, -, 0) (4, 1, +, 2)</span>
+<span class="go"> (0, 3, +, 0) (4, 1, -, 2)</span>
+<span class="go"> (0, 3, -, 0) (4, 1, -, 2)</span>
+<span class="go"> (0, 2, +, 0) (2, 2, +, 1)</span>
+<span class="go"> (0, 2, -, 0) (2, 2, +, 1)</span>
+<span class="go"> (0, 2, +, 1) (2, 2, +, 1)</span>
+<span class="go"> (0, 2, +, 1) (2, 2, -, 1)</span>
+<span class="go"> (0, 2, +, 0) (2, 2, +, 2)</span>
+<span class="go"> (0, 2, -, 0) (2, 2, +, 2)</span>
+<span class="go"> (0, 2, +, 1) (2, 2, +, 2)</span>
+<span class="go"> (0, 1, +, 0) (1, 2, +, 1) (2, 1, +, 1)</span>
+<span class="go"> (0, 1, -, 0) (1, 2, +, 1) (2, 1, +, 1)</span>
+<span class="go"> (1, 4, +, 1)</span>
+<span class="go"> (1, 4, -, 1)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">infp</span> <span class="o">=</span> <span class="n">infinite_places</span><span class="p">(</span><span class="n">E</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">SEK</span> <span class="o">=</span> <span class="n">unique</span><span class="p">([</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span> <span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="n">infp</span> <span class="k">if</span> <span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">base_field_place</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isreal</span><span class="p">(</span><span class="n">r</span><span class="p">)]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">genera_hermitian</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="kt">Dict</span><span class="p">(</span><span class="n">SEK</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="n">SEK</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">30</span> <span class="o">*</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">E</span><span class="p">))</span>
+<span class="go">6-element Vector{Hecke.GenusHerm{Hecke.NfRel{nf_elem}, NfOrdIdl, Hecke.LocalGenusHerm{Hecke.NfRel{nf_elem}, NfOrdIdl}, Dict{InfPlc, Int64}}}:</span>
+<span class="go"> Global genus symbol</span>
+<span class="go">&lt;2, a&gt; =&gt; (0, 2, +, 0) (4, 1, +, 2)</span>
+<span class="go">&lt;5, 5&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">&lt;3, 3&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">1.4142135… =&gt; 1</span>
+<span class="go">-1.414213… =&gt; 1</span>
+<span class="go"> Global genus symbol</span>
+<span class="go">&lt;2, a&gt; =&gt; (0, 2, +, 1) (4, 1, +, 2)</span>
+<span class="go">&lt;5, 5&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">&lt;3, 3&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">1.4142135… =&gt; 1</span>
+<span class="go">-1.414213… =&gt; 1</span>
+<span class="go"> Global genus symbol</span>
+<span class="go">&lt;2, a&gt; =&gt; (0, 2, -, 0) (4, 1, -, 2)</span>
+<span class="go">&lt;5, 5&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">&lt;3, 3&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">1.4142135… =&gt; 1</span>
+<span class="go">-1.414213… =&gt; 1</span>
+<span class="go"> Global genus symbol</span>
+<span class="go">&lt;2, a&gt; =&gt; (0, 1, +, 0) (2, 2, +, 1)</span>
+<span class="go">&lt;5, 5&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">&lt;3, 3&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">1.4142135… =&gt; 1</span>
+<span class="go">-1.414213… =&gt; 1</span>
+<span class="go"> Global genus symbol</span>
+<span class="go">&lt;2, a&gt; =&gt; (0, 1, +, 0) (2, 2, +, 2)</span>
+<span class="go">&lt;5, 5&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">&lt;3, 3&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">1.4142135… =&gt; 1</span>
+<span class="go">-1.414213… =&gt; 1</span>
+<span class="go"> Global genus symbol</span>
+<span class="go">&lt;2, a&gt; =&gt; (1, 2, +, 1) (2, 1, +, 1)</span>
+<span class="go">&lt;5, 5&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">&lt;3, 3&gt; =&gt; (0, 2, +) (1, 1, +)</span>
+<span class="go">1.4142135… =&gt; 1</span>
+<span class="go">-1.414213… =&gt; 1</span>
+</code></pre></div>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../lattices/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Lattices" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Lattices
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../abelian/introduction/" class="md-footer__link md-footer__link--next" aria-label="Next: Introduction" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Introduction
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2a1c317c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.6e54b5cd.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2087 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.9">
+    
+    
+      
+        <title>Spaces - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.120efc48.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.9647289d.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#spaces" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Spaces
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        Number field operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_2" type="checkbox" id="__nav_2_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Function fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Orders" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4">
+          Quadratic and hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Quadratic and hermitian forms" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Spaces
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Spaces
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-spaces" class="md-nav__link">
+    Creation of spaces
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of spaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_1" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+    <nav class="md-nav" aria-label="Predicates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_2" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inner-products-and-diagonalization" class="md-nav__link">
+    Inner products and diagonalization
+  </a>
+  
+    <nav class="md-nav" aria-label="Inner products and diagonalization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_3" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#equivalence" class="md-nav__link">
+    Equivalence
+  </a>
+  
+    <nav class="md-nav" aria-label="Equivalence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_4" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embeddings" class="md-nav__link">
+    Embeddings
+  </a>
+  
+    <nav class="md-nav" aria-label="Embeddings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_5" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orthogonality-operations" class="md-nav__link">
+    Orthogonality operations
+  </a>
+  
+    <nav class="md-nav" aria-label="Orthogonality operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isotropic-spaces" class="md-nav__link">
+    Isotropic spaces
+  </a>
+  
+    <nav class="md-nav" aria-label="Isotropic spaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example_1" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hyperbolic-spaces" class="md-nav__link">
+    Hyperbolic spaces
+  </a>
+  
+    <nav class="md-nav" aria-label="Hyperbolic spaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example_2" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lattices/" class="md-nav__link">
+        Lattices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../genusherm/" class="md-nav__link">
+        Genera for hermitian lattices
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_5" type="checkbox" id="__nav_2_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_6" type="checkbox" id="__nav_2_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/Map/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        Factored Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        Sparse Linear Algebra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        References
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_10" type="checkbox" id="__nav_2_10" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_10">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_10">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-spaces" class="md-nav__link">
+    Creation of spaces
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of spaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_1" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+    <nav class="md-nav" aria-label="Predicates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_2" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inner-products-and-diagonalization" class="md-nav__link">
+    Inner products and diagonalization
+  </a>
+  
+    <nav class="md-nav" aria-label="Inner products and diagonalization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_3" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#equivalence" class="md-nav__link">
+    Equivalence
+  </a>
+  
+    <nav class="md-nav" aria-label="Equivalence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_4" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embeddings" class="md-nav__link">
+    Embeddings
+  </a>
+  
+    <nav class="md-nav" aria-label="Embeddings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples_5" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orthogonality-operations" class="md-nav__link">
+    Orthogonality operations
+  </a>
+  
+    <nav class="md-nav" aria-label="Orthogonality operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isotropic-spaces" class="md-nav__link">
+    Isotropic spaces
+  </a>
+  
+    <nav class="md-nav" aria-label="Isotropic spaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example_1" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hyperbolic-spaces" class="md-nav__link">
+    Hyperbolic spaces
+  </a>
+  
+    <nav class="md-nav" aria-label="Hyperbolic spaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example_2" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/thofma/Hecke.jl/edit/master/docs/quad_forms/basics.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<p><a id='Spaces'></a></p>
+<p><a id='Spaces-1'></a></p>
+<h1 id="spaces">Spaces</h1>
+<p><a id='Creation-of-spaces'></a></p>
+<p><a id='Creation-of-spaces-1'></a></p>
+<h2 id="creation-of-spaces">Creation of spaces</h2>
+<p><a id='quadratic_space-Tuple{NumField, Int64}' href='#quadratic_space-Tuple{NumField, Int64}'>#</a>
+<strong><code>quadratic_space</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">;</span> <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuadSpace</span>
+</code></pre></div>
+<p>Create the quadratic space over <code>K</code> with dimension <code>n</code> and Gram matrix equals to the identity matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Quad/Spaces.jl#L18' class='documenter-source'>source</a><br></p>
+<p><a id='hermitian_space-Tuple{NumField, Int64}' href='#hermitian_space-Tuple{NumField, Int64}'>#</a>
+<strong><code>hermitian_space</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">;</span> <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HermSpace</span>
+</code></pre></div>
+<p>Create the hermitian space over <code>E</code> with dimension <code>n</code> and Gram matrix equals to the identity matrix. The number field <code>E</code> must be a quadratic extension, that is, <script type="math/tex">degree(E) == 2</script> must hold.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Herm/Spaces.jl#L9' class='documenter-source'>source</a><br></p>
+<p><a id='quadratic_space-Tuple{NumField, MatElem}' href='#quadratic_space-Tuple{NumField, MatElem}'>#</a>
+<strong><code>quadratic_space</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">G</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">;</span> <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuadSpace</span>
+</code></pre></div>
+<p>Create the quadratic space over <code>K</code> with Gram matrix <code>G</code>. The matrix <code>G</code> must be square and symmetric.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Quad/Spaces.jl#L30' class='documenter-source'>source</a><br></p>
+<p><a id='hermitian_space-Tuple{NumField, MatElem}' href='#hermitian_space-Tuple{NumField, MatElem}'>#</a>
+<strong><code>hermitian_space</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">gram</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">;</span> <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HermSpace</span>
+</code></pre></div>
+<p>Create the hermitian space over <code>E</code> with Gram matrix equals to <code>gram</code>. The matrix <code>gram</code>  must be square and hermitian with respect to the non-trivial automorphism of <code>E</code>.  The number field <code>E</code> must be a quadratic extension, that is, <script type="math/tex">degree(E) == 2</script> must hold.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Herm/Spaces.jl#L21' class='documenter-source'>source</a><br></p>
+<p><a id='Examples'></a></p>
+<p><a id='Examples-1'></a></p>
+<h3 id="examples">Examples</h3>
+<p>Here are easy examples to see how these constructors work. We will keep the two  following spaces for the rest of this section:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="mi">0</span> <span class="mi">1</span><span class="p">;</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">Quadratic space over</span>
+<span class="go">Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[0 1; 1 0]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">Hermitian space over</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[1 0 0; 0 1 0; 0 0 1]</span>
+</code></pre></div>
+<hr />
+<p><a id='Attributes'></a></p>
+<p><a id='Attributes-1'></a></p>
+<h2 id="attributes">Attributes</h2>
+<p>Let <script type="math/tex">(V, \Phi)</script> be a space over <script type="math/tex">E/K</script>. We define its <em>dimension</em> to be its dimension as a vector space over its base ring <script type="math/tex">E</script> and its <em>rank</em> to be the rank of its Gram  matrix. If these two invariants agree, the space is said to be <em>regular</em>. </p>
+<p>While dealing with lattices, one always works with regular ambient spaces.</p>
+<p>The <em>determinant</em> <script type="math/tex">\textnormal{det}(V, \Phi)</script> of <script type="math/tex">(V, \Phi)</script> is defined to be the  class of the determinant of its Gram matrix in <script type="math/tex">K^{\times}/N(E^{\times})</script> (which  is similar to <script type="math/tex">K^{\times}/(K^{\times})^2</script> in the quadratic case).  The <em>discriminant</em> <script type="math/tex">\textnormal{disc}(V, \Phi)</script> of <script type="math/tex">(V, \Phi)</script> is defined to be  <script type="math/tex">(-1)^{(m(m-1)/2)}\textnormal{det}(V, \Phi)</script>, where <script type="math/tex">m</script> is the rank of <script type="math/tex">(V, \Phi)</script>.</p>
+<p><a id='rank-Tuple{Hecke.AbsSpace}' href='#rank-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Return the rank of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L64' class='documenter-source'>source</a><br></p>
+<p><a id='dim-Tuple{Hecke.AbsSpace}' href='#dim-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>dim</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">dim</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Return the dimension of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L71' class='documenter-source'>source</a><br></p>
+<p><a id='gram_matrix-Tuple{Hecke.AbsSpace}' href='#gram_matrix-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>gram_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Return the Gram matrix of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L78' class='documenter-source'>source</a><br></p>
+<p><a id='involution-Tuple{Hecke.AbsSpace}' href='#involution-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>involution</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">involution</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Return the involution of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L101' class='documenter-source'>source</a><br></p>
+<p><a id='base_ring-Tuple{Hecke.AbsSpace}' href='#base_ring-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>base_ring</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">base_ring</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Return the algebra over which the space <code>V</code> is defined.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L87' class='documenter-source'>source</a><br></p>
+<p><a id='fixed_field-Tuple{Hecke.AbsSpace}' href='#fixed_field-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>fixed_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">fixed_field</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Return the fixed field of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L94' class='documenter-source'>source</a><br></p>
+<p><a id='det-Tuple{Hecke.AbsSpace}' href='#det-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>det</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldElem</span>
+</code></pre></div>
+<p>Return the determinant of the space <code>V</code> as an element of its fixed field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L150' class='documenter-source'>source</a><br></p>
+<p><a id='discriminant-Tuple{Hecke.AbsSpace}' href='#discriminant-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldElem</span>
+</code></pre></div>
+<p>Return the discriminant of the space <code>V</code> as an element of its fixed field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L157' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-2'></a></p>
+<h3 id="examples_1">Examples</h3>
+<p>So for instance, one could get the following information about the hermitian  space <script type="math/tex">H</script>: </p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">rank</span><span class="p">(</span><span class="n">H</span><span class="p">),</span> <span class="n">dim</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">(3, 3)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">gram_matrix</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">[1   0   0]</span>
+<span class="go">[0   1   0]</span>
+<span class="go">[0   0   1]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">involution</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">Map with following data</span>
+<span class="go">Domain:</span>
+<span class="go">=======</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">Codomain:</span>
+<span class="go">=========</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+
+<span class="gp">julia&gt;</span> <span class="n">base_ring</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+
+<span class="gp">julia&gt;</span> <span class="n">fixed_field</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">Maximal real subfield of cyclotomic field of order 7</span>
+
+<span class="gp">julia&gt;</span> <span class="n">det</span><span class="p">(</span><span class="n">H</span><span class="p">),</span> <span class="n">discriminant</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">(1, -1)</span>
+</code></pre></div>
+<hr />
+<p><a id='Predicates'></a></p>
+<p><a id='Predicates-1'></a></p>
+<h2 id="predicates">Predicates</h2>
+<p>Let <script type="math/tex">(V, \Phi)</script> be a hermitian space over <script type="math/tex">E/K</script> (resp. quadratic space <script type="math/tex">K</script>).  We say that <script type="math/tex">(V, \Phi)</script> is <em>definite</em> if <script type="math/tex">E/K</script> is CM (resp. <script type="math/tex">K</script> is totally  real) and if there exists an orthogonal basis of <script type="math/tex">V</script> for which the diagonal  elements of the associated Gram matrix of <script type="math/tex">(V, \Phi)</script> are either all totally  positive or all totally negative. In the former case, <script type="math/tex">V</script> is said to be  <em>positive definite</em>, while in the latter case it is <em>negative definite</em>.  In all the other cases, we say that <script type="math/tex">V</script> is <em>indefinite</em>.</p>
+<p><a id='isregular-Tuple{Hecke.AbsSpace}' href='#isregular-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>isregular</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isregular</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the space <code>V</code> is regular, that is, if the Gram matrix has full rank.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L115' class='documenter-source'>source</a><br></p>
+<p><a id='isquadratic-Tuple{Hecke.AbsSpace}' href='#isquadratic-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>isquadratic</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isquadratic</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the space <code>V</code> is quadratic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L125' class='documenter-source'>source</a><br></p>
+<p><a id='ishermitian-Tuple{Hecke.AbsSpace}' href='#ishermitian-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>ishermitian</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ishermitian</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the space <code>V</code> is hermitian..</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L132' class='documenter-source'>source</a><br></p>
+<p><a id='ispositive_definite-Tuple{Hecke.AbsSpace}' href='#ispositive_definite-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>ispositive_definite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ispositive_definite</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the space <code>V</code> is positive definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L394' class='documenter-source'>source</a><br></p>
+<p><a id='isnegative_definite-Tuple{Hecke.AbsSpace}' href='#isnegative_definite-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>isnegative_definite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isnegative_definite</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the space <code>V</code> is negative definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L414' class='documenter-source'>source</a><br></p>
+<p><a id='isdefinite-Tuple{Hecke.AbsSpace}' href='#isdefinite-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>isdefinite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isdefinite</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the space <code>V</code> is definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L434' class='documenter-source'>source</a><br></p>
+<p>Note that the <code>ishermitian</code> function tests whether the space is non-quadratic.</p>
+<p><a id='Examples-3'></a></p>
+<h3 id="examples_2">Examples</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="mi">0</span> <span class="mi">1</span><span class="p">;</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">isregular</span><span class="p">(</span><span class="n">Q</span><span class="p">),</span> <span class="n">isregular</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">(true, true)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">isquadratic</span><span class="p">(</span><span class="n">Q</span><span class="p">),</span> <span class="n">ishermitian</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">(true, true)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">isdefinite</span><span class="p">(</span><span class="n">Q</span><span class="p">),</span> <span class="n">ispositive_definite</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">(false, true)</span>
+</code></pre></div>
+<hr />
+<p><a id='Inner-products-and-diagonalization'></a></p>
+<p><a id='Inner-products-and-diagonalization-1'></a></p>
+<h2 id="inner-products-and-diagonalization">Inner products and diagonalization</h2>
+<p><a id='gram_matrix-Union{Tuple{T}, Tuple{S}, Tuple{Hecke.AbsSpace{T}, MatElem{S}}} where {S, T}' href='#gram_matrix-Union{Tuple{T}, Tuple{S}, Tuple{Hecke.AbsSpace{T}, MatElem{S}}} where {S, T}'>#</a>
+<strong><code>gram_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Return the Gram matrix of the rows of <code>M</code> with respect to the Gram matrix of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L188' class='documenter-source'>source</a><br></p>
+<p><a id='gram_matrix-Union{Tuple{U}, Tuple{T}, Tuple{Hecke.AbsSpace{T}, Array{Vector{U}, 1}}} where {T, U}' href='#gram_matrix-Union{Tuple{U}, Tuple{T}, Tuple{Hecke.AbsSpace{T}, Array{Vector{U}, 1}}} where {T, U}'>#</a>
+<strong><code>gram_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">S</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Vector</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Return the Gram matrix of the sequence <code>S</code> with respect to the Gram matrix of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L203' class='documenter-source'>source</a><br></p>
+<p><a id='inner_product-Tuple{Hecke.AbsSpace, Vector, Vector}' href='#inner_product-Tuple{Hecke.AbsSpace, Vector, Vector}'>#</a>
+<strong><code>inner_product</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">inner_product</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">v</span><span class="o">::</span><span class="kt">Vector</span><span class="p">,</span> <span class="n">w</span><span class="o">::</span><span class="kt">Vector</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldElem</span>
+</code></pre></div>
+<p>Return the inner product of <code>v</code> and <code>w</code> with respect to the bilinear form of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L221' class='documenter-source'>source</a><br></p>
+<p><a id='orthogonal_basis-Tuple{Hecke.AbsSpace}' href='#orthogonal_basis-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>orthogonal_basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">orthogonal_basis</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Return a matrix <code>M</code>, such that the rows of <code>M</code> form an orthgonal basis of the space <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L234' class='documenter-source'>source</a><br></p>
+<p><a id='diagonal-Tuple{Hecke.AbsSpace}' href='#diagonal-Tuple{Hecke.AbsSpace}'>#</a>
+<strong><code>diagonal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">diagonal</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">FieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Return a vector of elements <script type="math/tex">a_1,\dotsc,a_n</script> such that the space <code>V</code> is isometric to the diagonal space <script type="math/tex">\langle a_1,\dotsc,a_n \rangle</script>.</p>
+<p>The elements are contained in the fixed field of <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L244' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-4'></a></p>
+<h3 id="examples_3">Examples</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="mi">0</span> <span class="mi">1</span><span class="p">;</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">gram_matrix</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="mi">1</span> <span class="mi">1</span><span class="p">;</span> <span class="mi">2</span> <span class="mi">0</span><span class="p">])</span>
+<span class="go">[2   2]</span>
+<span class="go">[2   0]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">gram_matrix</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">E</span><span class="p">[</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">])</span>
+<span class="go">[1   0   0]</span>
+<span class="go">[0   1   0]</span>
+<span class="go">[0   0   1]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">inner_product</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="go">2</span>
+
+<span class="gp">julia&gt;</span> <span class="n">orthogonal_basis</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">[1   0   0]</span>
+<span class="go">[0   1   0]</span>
+<span class="go">[0   0   1]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">diagonal</span><span class="p">(</span><span class="n">Q</span><span class="p">),</span> <span class="n">diagonal</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">(nf_elem[1, -1], nf_elem[1, 1, 1])</span>
+</code></pre></div>
+<hr />
+<p><a id='Equivalence'></a></p>
+<p><a id='Equivalence-1'></a></p>
+<h2 id="equivalence">Equivalence</h2>
+<p>Let <script type="math/tex">(V, \Phi)</script> and <script type="math/tex">(V', \Phi')</script> be spaces over the same extension <script type="math/tex">E/K</script>.  A <em>homomorphism of spaces</em> from <script type="math/tex">V</script> to <script type="math/tex">V'</script> is a <script type="math/tex">E</script>-linear mapping  <script type="math/tex">f \colon V \to V'</script> such that for all <script type="math/tex">x,y \in V</script>, one has</p>
+<p>
+<script type="math/tex; mode=display">
+   \Phi'(f(x), f(y)) = \Phi(x,y).
+</script>
+</p>
+<p>An automorphism of spaces is called an <em>isometry</em> and a monomorphism is  called an <em>embedding</em>.</p>
+<p><a id='hasse_invariant-Tuple{Hecke.QuadSpace, Any}' href='#hasse_invariant-Tuple{Hecke.QuadSpace, Any}'>#</a>
+<strong><code>hasse_invariant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hasse_invariant</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">QuadSpace</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">NfOrdIdl</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Returns the Hasse invariant of the quadratic space <code>V</code> at <code>p</code>. This is equal to the product of local Hilbert symbols <script type="math/tex">(a_i, a_j)_p</script>, <script type="math/tex">i < j</script>, where <script type="math/tex">V</script> is isometric to <script type="math/tex">\langle a_1, \dotsc, a_n\rangle</script>. If <code>V</code> is degenerate return the hasse invariant of <code>V/radical(V)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Quad/Spaces.jl#L142' class='documenter-source'>source</a><br></p>
+<p><a id='witt_invariant-Tuple{Hecke.QuadSpace, Any}' href='#witt_invariant-Tuple{Hecke.QuadSpace, Any}'>#</a>
+<strong><code>witt_invariant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">witt_invariant</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">QuadSpace</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">NfOrdIdl</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Returns the Witt invariant of the quadratic space <code>V</code> at <code>p</code>.</p>
+<p>See [Definition 3.2.1, Kir16].</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Quad/Spaces.jl#L262' class='documenter-source'>source</a><br></p>
+<p><a id='isisometric-Tuple{Hecke.AbsSpace, Hecke.AbsSpace}' href='#isisometric-Tuple{Hecke.AbsSpace, Hecke.AbsSpace}'>#</a>
+<strong><code>isisometric</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isisometric</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the spaces <code>L</code> and <code>M</code> are isometric.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L355' class='documenter-source'>source</a><br></p>
+<p><a id='isisometric-Tuple{Hecke.AbsSpace, Hecke.AbsSpace, Any}' href='#isisometric-Tuple{Hecke.AbsSpace, Hecke.AbsSpace, Any}'>#</a>
+<strong><code>isisometric</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isisometric</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">NfOrdIdl</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the spaces <code>L</code> and <code>M</code> are isometric over the completion at <code>p</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L342' class='documenter-source'>source</a><br></p>
+<p><a id='invariants-Tuple{Hecke.QuadSpace}' href='#invariants-Tuple{Hecke.QuadSpace}'>#</a>
+<strong><code>invariants</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">invariants</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">QuadSpace</span><span class="p">)</span>
+      <span class="o">-&gt;</span> <span class="n">FieldElem</span><span class="p">,</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">Int</span><span class="p">},</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}}</span>
+</code></pre></div>
+<p>Returns a tuple <code>(n, k, d, H, I)</code> of invariants of <code>M</code>, which determine the isometry class completely. Here <code>n</code> is the dimension. The dimension of the kernel is <code>k</code>. The element <code>d</code> is the determinant of a Gram matrix of the non-degenerate part, <code>H</code> contains the non-trivial Hasse invariants and <code>I</code> contains for each real place the negative index of inertia.</p>
+<p>Note that <code>d</code> is determined only modulo squares.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Quad/Spaces.jl#L378' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-5'></a></p>
+<h3 id="examples_4">Examples</h3>
+<p>For instance, for the case of <script type="math/tex">Q</script> and the totally ramified prime <script type="math/tex">\mathfrak  p</script> of <script type="math/tex">O_K</script> above <script type="math/tex">7</script>, one can get:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="mi">0</span> <span class="mi">1</span><span class="p">;</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">7</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">hasse_invariant</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span> <span class="n">witt_invariant</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">(1, 1)</span>
+
+<span class="gp">julia&gt;</span> <span class="n">Q2</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">isisometric</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">Q2</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span> <span class="n">isisometric</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">Q2</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span> <span class="n">invariants</span><span class="p">(</span><span class="n">Q2</span><span class="p">)</span>
+<span class="go">(2, 0, -1, Dict{NfOrdIdl, Int64}(), Tuple{InfPlc, Int64}[(Real place of</span>
+<span class="go">Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">corresponding to the root [-1.801937735804838252472204639014890102331838324263714300107124846398864840856 +/- 2.23e-76], 1), (Real place of</span>
+<span class="go">Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">corresponding to the root [-0.4450418679126288085778051289935895189327111375290899106239740317948424640571 +/- 4.42e-77], 1), (Real place of</span>
+<span class="go">Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">corresponding to the root [1.2469796037174670610500097680084796212645494617928042107310988781937073049130 +/- 6.52e-77], 1)])</span>
+</code></pre></div>
+<hr />
+<p><a id='Embeddings'></a></p>
+<p><a id='Embeddings-1'></a></p>
+<h2 id="embeddings">Embeddings</h2>
+<p>Let <script type="math/tex">(V, \Phi)</script> and <script type="math/tex">(V', \Phi')</script> be two spaces over the same extension <script type="math/tex">E/K</script>,  and let <script type="math/tex">\sigma \colon V \to V'</script> be an <script type="math/tex">E</script>-linear morphism. <script type="math/tex">\sigma</script> is called  a <em>representation</em> of <script type="math/tex">V</script> into <script type="math/tex">V'</script> if for all <script type="math/tex">x \in V</script>
+</p>
+<p>
+<script type="math/tex; mode=display">
+   \Phi'(\sigma(x), \sigma(x)) = \Phi(x,x).
+</script>
+</p>
+<p>In such a case, <script type="math/tex">V</script> is said to be <em>represented</em> by <script type="math/tex">V'</script> and <script type="math/tex">\sigma</script> can be seen  as an embedding of <script type="math/tex">V</script> into <script type="math/tex">V'</script>. This representation property can be also tested  locally with respect to the completions at some finite places. Note that in both  quadratic and hermitian cases, completions are taken at finite places of the fixed  field <script type="math/tex">K</script>.</p>
+<p><a id='islocally_represented_by-Tuple{Hecke.AbsSpace, Hecke.AbsSpace, Any}' href='#islocally_represented_by-Tuple{Hecke.AbsSpace, Hecke.AbsSpace, Any}'>#</a>
+<strong><code>islocally_represented_by</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">islocally_represented_by</span><span class="p">(</span><span class="n">U</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">V</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="k">where</span> <span class="kt">T</span> <span class="o">&lt;:</span> <span class="kt">AbsSpace</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given two spaces <code>U</code> and <code>V</code> over the same algebra <code>E</code>, and a prime ideal <code>p</code> in  the maximal order <script type="math/tex">\mathcal O_K</script> of their fixed field <code>K</code>, return whether <code>U</code> is  represented by <code>V</code> locally at <code>p</code>, i.e. whether <script type="math/tex">U_p</script> embeds in <script type="math/tex">V_p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L623' class='documenter-source'>source</a><br></p>
+<p><a id='isrepresented_by-Tuple{Hecke.AbsSpace, Hecke.AbsSpace}' href='#isrepresented_by-Tuple{Hecke.AbsSpace, Hecke.AbsSpace}'>#</a>
+<strong><code>isrepresented_by</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isrepresented_by</span><span class="p">(</span><span class="n">U</span><span class="o">::</span><span class="kt">T</span><span class="p">,</span> <span class="n">V</span><span class="o">::</span><span class="kt">T</span><span class="p">)</span> <span class="k">where</span> <span class="kt">T</span> <span class="o">&lt;:</span> <span class="kt">AbsSpace</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given two spaces <code>U</code> and <code>V</code> over the same algebra <code>E</code>, return whether <code>U</code> is represented by <code>V</code>, i.e. whether <code>U</code> embeds in <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L632' class='documenter-source'>source</a><br></p>
+<p><a id='Examples-6'></a></p>
+<h3 id="examples_5">Examples</h3>
+<p>Still using the spaces <script type="math/tex">Q</script> and <script type="math/tex">H</script>, we can decide whether some other spaces embed respectively locally or globally into <script type="math/tex">Q</script> or <script type="math/tex">H</script>:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="mi">0</span> <span class="mi">1</span><span class="p">;</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">7</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Q2</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H2</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">E</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">islocally_represented_by</span><span class="p">(</span><span class="n">Q2</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span> <span class="n">isrepresented_by</span><span class="p">(</span><span class="n">Q2</span><span class="p">,</span> <span class="n">Q</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span> <span class="n">islocally_represented_by</span><span class="p">(</span><span class="n">H2</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span> <span class="n">isrepresented_by</span><span class="p">(</span><span class="n">H2</span><span class="p">,</span> <span class="n">H</span><span class="p">)</span>
+<span class="go">false</span>
+</code></pre></div>
+<hr />
+<p><a id='Orthogonality-operations'></a></p>
+<p><a id='Orthogonality-operations-1'></a></p>
+<h2 id="orthogonality-operations">Orthogonality operations</h2>
+<p><a id='orthogonal_complement-Tuple{Hecke.AbsSpace, MatElem}' href='#orthogonal_complement-Tuple{Hecke.AbsSpace, MatElem}'>#</a>
+<strong><code>orthogonal_complement</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">orthogonal_complement</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">)</span>
+</code></pre></div>
+<p>Given a space <code>V</code> and a subspace <code>W</code> with basis matrix <code>M</code>, returns a basis matrix of the orthogonal complement of <code>W</code> inside <code>V</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L556' class='documenter-source'>source</a><br></p>
+<p><a id='orthogonal_sum-Tuple{Hecke.AbsSpace, Hecke.AbsSpace}' href='#orthogonal_sum-Tuple{Hecke.AbsSpace, Hecke.AbsSpace}'>#</a>
+<strong><code>orthogonal_sum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">orthogonal_sum</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">W</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsSpace</span><span class="p">,</span> <span class="n">AbsSpaceMor</span><span class="p">,</span> <span class="n">AbsSpaceMor</span>
+</code></pre></div>
+<p>Given two spaces <code>V</code> and <code>W</code> of the same kind (either both hermitian or both quadratic) and defined over the same algebra, return their orthogonal sum <script type="math/tex">V \oplus W</script>. It is given with the two natural embeddings <script type="math/tex">V \to V\oplus W</script> and <script type="math/tex">W \to V\oplus W</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L590' class='documenter-source'>source</a><br></p>
+<p><a id='Example'></a></p>
+<p><a id='Example-1'></a></p>
+<h3 id="example">Example</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Q</span> <span class="o">=</span> <span class="n">quadratic_space</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">K</span><span class="p">[</span><span class="mi">0</span> <span class="mi">1</span><span class="p">;</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H2</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">E</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">;</span> <span class="mi">0</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">orthogonal_complement</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">matrix</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span> <span class="mi">0</span><span class="p">]))</span>
+<span class="go">[1   0]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">H3</span><span class="p">,</span> <span class="n">map1</span><span class="p">,</span> <span class="n">map2</span> <span class="o">=</span> <span class="n">orthogonal_sum</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">H2</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H3</span>
+<span class="go">Hermitian space over</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[1 0 0 0 0 0; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 -1 0 0; 0 0 0 0 1 0; 0 0 0 0 0 -1]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">map1</span>
+<span class="go">Map with following data</span>
+<span class="go">Domain:</span>
+<span class="go">=======</span>
+<span class="go">Hermitian space over</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[1 0 0; 0 1 0; 0 0 1]</span>
+<span class="go">Codomain:</span>
+<span class="go">=========</span>
+<span class="go">Hermitian space over</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[1 0 0 0 0 0; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 -1 0 0; 0 0 0 0 1 0; 0 0 0 0 0 -1]</span>
+
+<span class="gp">julia&gt;</span> <span class="n">map2</span>
+<span class="go">Map with following data</span>
+<span class="go">Domain:</span>
+<span class="go">=======</span>
+<span class="go">Hermitian space over</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[-1 0 0; 0 1 0; 0 0 -1]</span>
+<span class="go">Codomain:</span>
+<span class="go">=========</span>
+<span class="go">Hermitian space over</span>
+<span class="go">Relative number field over with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1</span>
+<span class="go"> over Maximal real subfield of cyclotomic field of order 7</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[1 0 0 0 0 0; 0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 -1 0 0; 0 0 0 0 1 0; 0 0 0 0 0 -1]</span>
+</code></pre></div>
+<hr />
+<p><a id='Isotropic-spaces'></a></p>
+<p><a id='Isotropic-spaces-1'></a></p>
+<h2 id="isotropic-spaces">Isotropic spaces</h2>
+<p>Let <script type="math/tex">(V, \Phi)</script> be a space over <script type="math/tex">E/K</script> and let <script type="math/tex">\mathfrak p</script> be a place in <script type="math/tex">K</script>.  <script type="math/tex">V</script> is said to be <em>isotropic</em> locally at <script type="math/tex">\mathfrak p</script> if there exists an element <script type="math/tex">x \in V_{\mathfrak p}</script> such that  <script type="math/tex">\Phi_{\mathfrak p}(x,x) = 0</script>, where <script type="math/tex">\Phi_{\mathfrak p}</script> is the continuous  extension of <script type="math/tex">\Phi</script> to <script type="math/tex">V_{\mathfrak p} \times V_{\mathfrak p}</script>.</p>
+<p><a id='isisotropic-Tuple{Hecke.AbsSpace, Any}' href='#isisotropic-Tuple{Hecke.AbsSpace, Any}'>#</a>
+<strong><code>isisotropic</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isisotropic</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbsSpace</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">InfPlc</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a space <code>V</code> and a place <code>p</code> in the fixed field <code>K</code> of <code>V</code>, return whether the completion of <code>V</code> at <code>p</code> is isotropic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Spaces.jl#L449' class='documenter-source'>source</a><br></p>
+<p><a id='Example-2'></a></p>
+<h3 id="example_1">Example</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">7</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">isisotropic</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">true</span>
+</code></pre></div>
+<hr />
+<p><a id='Hyperbolic-spaces'></a></p>
+<p><a id='Hyperbolic-spaces-1'></a></p>
+<h2 id="hyperbolic-spaces">Hyperbolic spaces</h2>
+<p>Let <script type="math/tex">(V, \Phi)</script> be a space over <script type="math/tex">E/K</script> and let <script type="math/tex">\mathfrak p</script> be a prime ideal  of <script type="math/tex">\mathcal O_K</script>. <script type="math/tex">V</script> is said to be <em>hyperbolic</em> locally at <script type="math/tex">\mathfrak p</script> if the completion <script type="math/tex">V_{\mathfrak p}</script> of <script type="math/tex">V</script> can be decomposed as an orthogonal sum  of dimension 2 spaces with Gram matrices of the form  <script type="math/tex">
+<script type="math/tex; mode=display">\begin{pmatrix}0&1\\1&0\end{pmatrix}</script>
+</script>.</p>
+<p><a id='islocally_hyperbolic-Tuple{Hecke.HermSpace, NfOrdIdl}' href='#islocally_hyperbolic-Tuple{Hecke.HermSpace, NfOrdIdl}'>#</a>
+<strong><code>islocally_hyperbolic</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">islocally_hyperbolic</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">Hermspace</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the completion of the hermitian space <code>V</code> over <script type="math/tex">E/K</script> at the prime  ideal <code>p</code> of <script type="math/tex">\mathcal O_K</script> is hyperbolic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/94be7bdb7ca7f4c1b59a476383b4a4647a846c36/src/QuadForm/Herm/Spaces.jl#L261' class='documenter-source'>source</a><br></p>
+<p><a id='Example-3'></a></p>
+<h3 id="example_2">Example</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">CyclotomicRealSubfield</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">Kt</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">K</span><span class="p">[</span><span class="s">&quot;t&quot;</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">E</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">number_field</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hermitian_space</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">OK</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">prime_decomposition</span><span class="p">(</span><span class="n">OK</span><span class="p">,</span> <span class="mi">7</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+
+
+<span class="gp">julia&gt;</span> <span class="n">islocally_hyperbolic</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="go">false</span>
+</code></pre></div>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../introduction/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Introduction" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Introduction
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../lattices/" class="md-footer__link md-footer__link--next" aria-label="Next: Lattices" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Lattices
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2a1c317c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.6e54b5cd.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>
