@@ -191,4 +191,14 @@
   @test domain(f) === KK
   @test codomain(f) === K
   @test degree(KK) == 1
+
+  let
+    Qx, x = QQ["x"]
+    K, (sqrt2, sqrt5) = number_field([x^2 - 2, x^2 - 5], ["sqrt2", "sqrt5"])
+    Kt, t = polynomial_ring(K, :t)
+    f = (20*sqrt2*sqrt5 - 70) * (t + 2) * (t - 2) * t^2 * (t - 1) * (t + 1)
+    fa = factor(f)
+    @test length(fa) == 5
+    @test f == unit(fa) * prod(p^e for (p, e) in fa)
+  end
 end
