@@ -114,6 +114,8 @@ end
 
 coordinates(a::PadicFieldElem) = PadicFieldElem[a]
 
+coordinates(Qp::PadicField, a::PadicFieldElem) = PadicFieldElem[_coerce(Qp, a)]
+
 function coordinates(a::QadicFieldElem)
   res = Vector{PadicFieldElem}(undef, degree(parent(a)))
   for i = 0:length(res)-1
@@ -122,7 +124,17 @@ function coordinates(a::QadicFieldElem)
   return res
 end
 
+function coordinates(Qp::PadicField, a::QadicFieldElem)
+  res = Vector{PadicFieldElem}(undef, degree(parent(a)))
+  for i = 0:length(res)-1
+    res[i + 1] = _coerce(Qp, coeff(a, i))
+  end
+  return res
+end
+
 absolute_coordinates(a::Union{PadicFieldElem, QadicFieldElem}) = coordinates(a)
+
+absolute_coordinates(Qp::PadicField, a::Union{PadicFieldElem, QadicFieldElem}) = coordinates(Qp, a)
 
 function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   K = parent(a)
@@ -131,6 +143,21 @@ function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T 
   ind = 1
   for i = 1:length(va)
     vi = absolute_coordinates(va[i])
+    for j = 1:length(vi)
+      v[ind] = vi[j]
+      ind += 1
+    end
+  end
+  return v
+end
+
+function absolute_coordinates(Qp::PadicField, a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  K = parent(a)
+  v = Vector{PadicFieldElem}(undef, absolute_degree(K))
+  va = coordinates(a)
+  ind = 1
+  for i = 1:length(va)
+    vi = absolute_coordinates(Qp, va[i])
     for j = 1:length(vi)
       v[ind] = vi[j]
       ind += 1
