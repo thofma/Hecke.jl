@@ -9,6 +9,13 @@ function _lift(a::PadicFieldElem)
   end
 end
 
+function _coerce(Qp::PadicField, x::PadicFieldElem)
+  @assert prime(Qp) == prime(parent(x))
+  if precision(x) < precision(Qp)
+    error("Precision of field ($(precision(Qp)) larger than precision of element ($(precision(x)))")
+  end
+  return Qp(_lift(x))
+end
 
 """
 The log of `1-x`, x needs to have a valuation >1

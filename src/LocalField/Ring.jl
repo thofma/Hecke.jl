@@ -91,7 +91,10 @@ parent_type(::Type{QadicRingElem{S, T}}) where {S, T} = QadicRing{S, T}
 zero(Q::QadicRing) = QadicRingElem(Q, Q.Q(0))
 one(Q::QadicRing) = QadicRingElem(Q, Q.Q(1))
 
-(Q::QadicRing{S, T})(a::T) where {S, T} = QadicRingElem(Q, a)
+function (Q::QadicRing{S, T})(a::T) where {S, T}
+  @assert parent(a) === Q.Q
+  QadicRingElem(Q, a)
+end
 (Q::QadicRing)(a::QadicRingElem) = QadicRingElem(a.P, a.x)
 (Q::QadicRing)(a::Integer) = QadicRingElem(Q, Q.Q(a))
 (Q::QadicRing)(a::ZZRingElem) = QadicRingElem(Q, Q.Q(a))
@@ -106,20 +109,20 @@ end
 
 (Q::QadicRing)() = QadicRingElem(Q, Q.Q())
 
-
-(Q::LocalField{S, T})(a::QadicRingElem{S, T}) where {S, T} = a.x
-(Q::PadicField)(a::QadicRingElem{PadicField, PadicFieldElem}) = a.x
-(Q::QadicField)(a::QadicRingElem{QadicField, QadicFieldElem}) = a.x
-
+function (Q::Union{PadicField, QadicField, LocalField})(a::QadicRingElem)
+  if parent(a).Q !== Q
+    error("Parent mismatch")
+  end
+  return a.x
+end
 
 valuation(a::QadicRingElem) = valuation(a.x)
 is_unit(a::QadicRingElem) = !iszero(a) && valuation(a) == 0
 (Q::QadicField)(a::PadicFieldElem) =  _map(Q, a) #TODO: do properly
 
-
-
 function _map(Q::QadicField, a::PadicFieldElem)
   K = parent(a)
+  @assert prime(K) == prime(Q)
   v = valuation(a)
   if v >= 0
     q = Q(lift(a))
@@ -205,5 +208,10 @@ coefficient_ring(K::LocalField) = base_field(K)
 function absolute_coordinates(a::QadicRingElem)
   v = absolute_coordinates(a.x)
   Zp = ring_of_integers(prime_field(parent(a.x)))
+  return Zp.(v)
+end
+
+function absolute_coordinates(Zp::QadicRing, a::QadicRingElem)
+  v = absolute_coordinates(Zp.Q, a.x)
   return Zp.(v)
 end
