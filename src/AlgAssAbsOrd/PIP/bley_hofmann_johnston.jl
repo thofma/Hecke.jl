@@ -9,7 +9,7 @@
 # Note that the implementation is for right ideals, while the paper describes
 # it for left ideals.
 
-function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
+function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right, local_freeness::Bool = false)
   # only implemented for right ideals
   @assert side === :right
   if O != right_order(a)
@@ -25,10 +25,12 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
   n = dim(algebra(O))
   aa = denominator(a, O) * a
   aa.order = O
-  for (p, ) in factor(discriminant(O))
-    @vprintln :PIP 1 "Testing local freeness at $p"
-    if !is_locally_free(O, aa, p, side = :right)[1]::Bool
-      return false, zero(algebra(O))
+  if !local_freeness
+    for (p, ) in factor(discriminant(O))
+      @vprintln :PIP 1 "Testing local freeness at $p"
+      if !is_locally_free(O, aa, p, side = :right)[1]::Bool
+        return false, zero(algebra(O))
+      end
     end
   end
 
