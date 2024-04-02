@@ -179,6 +179,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
     img_prim_elem[i] = coeff
   end
   img = Kp(Qqx(img_prim_elem))
+  
   u = uniformizer(P).elem_in_nf
   completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
   completion_map.P = P
@@ -189,6 +190,16 @@ function _solve_internal(gq_in_K, P, precision, Zp, Qq)
   f = inertia_degree(P)
   K = parent(gq_in_K)
   e = ramification_index(P)
+  precision += e - (precision % e)
+  @assert precision % e == 0
+  #problem/ feature:
+  #the lin. alg is done in/over Zp or Qp, thus precision is measured in 
+  #block of length e (power of the prime number p, rather than powers of
+  #pi, the prime element)
+  #so it is a good idea to increase the precision to be divisible by e
+  #thus the solution is valid. Otherwise, some coefficients in the solution
+  #can be "half valid", ie a+O(pi^l) where l is not divisible by e
+  #
   u = uniformizer(P).elem_in_nf
 
   pows_gq = powers(gq_in_K, f-1)
