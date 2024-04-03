@@ -264,3 +264,14 @@ begin
   @test degree(f) == 1 && is_monic(f) && f(1//3) == 0
 end
 
+let
+  NF, sr5 = quadratic_field(5)
+  phi = (1 + sr5)//2
+  NFy, y = NF["y"]
+  MF, srm = number_field(y^2 - (phi - 5//27), "a")
+  MFz, z = MF["z"]
+  LF, lr = number_field(z^3 - (phi + srm)//2, "b")
+  LFw, w = LF["w"]
+  r = roots(w^3 - (phi - srm)//2)
+  @test length(r) == 1
+end

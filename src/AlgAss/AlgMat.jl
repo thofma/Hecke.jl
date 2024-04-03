@@ -56,7 +56,7 @@ function is_commutative(A::MatAlgebra)
   end
   dcr = dim_of_coefficient_ring(A)
   if degree(A) == 1
-    if is_commutative(base_ring(A))
+    if base_ring(A) isa Field || is_commutative(base_ring(A))
       A.is_commutative = 1
       return true
     end

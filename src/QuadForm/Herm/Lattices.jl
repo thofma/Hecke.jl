@@ -587,7 +587,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     end
     # new we look for zeros of ax^2 + by^2
     kk, h = residue_field(R, P)
-    while sum(S[i] * nrows(B[i]) for i in 1:length(B); init = 0) > 1
+    while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]; init = 0) > 1
       k = 0
       for i in 1:(length(S) + 1)
         if S[i] == 1
