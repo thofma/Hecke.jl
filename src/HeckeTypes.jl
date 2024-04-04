@@ -710,7 +710,7 @@ const NfAbsOrdSetID = IdDict()
     r.tcontain_fmpz = ZZRingElem()
     r.tcontain_fmpz2 = ZZRingElem()
     r.tidempotents = zero_matrix(FlintZZ, 1 + 2*degree(a), 1 + 2*degree(a))
-    r.index_div = Dict{ZZRingElem, Any}()
+    r.index_div = Dict{ZZRingElem, Vector}()
     return r
   end
 
