@@ -1155,7 +1155,7 @@ end
 function _pseudo_hnf_kb(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = nrows(H)
-   if trafo == Val{true}
+   if trafo === Val{true}
       U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_kb!(H, U, true)
       return H, U
@@ -1630,26 +1630,24 @@ function simplify_basis(M::ModDed)
    return N
 end
 
-function vcat(P::PMat, Q::PMat)
-   @assert base_ring(P.matrix) == base_ring(Q.matrix)
-   m = vcat(P.matrix, Q.matrix)
-   c = vcat(P.coeffs, Q.coeffs)
-   return pseudo_matrix(m, c)
-end
+#function _vcat(P::PMat, Q::PMat)
+#   @assert base_ring(P.matrix) == base_ring(Q.matrix)
+#   m = vcat(P.matrix, Q.matrix)
+#   c = vcat(P.coeffs, Q.coeffs)
+#   return pseudo_matrix(m, c)
+#end
 
-function vcat(A::Vector{ <: PMat })
-  m = reduce(vcat, [P.matrix for P in A])
-  c = reduce(vcat, [P.coeffs for P in A])
+function vcat(A::Vector{PMat{S, T}}) where {S, T}
+  m = reduce(vcat, dense_matrix_type(S)[P.matrix for P in A])
+  c = reduce(vcat, Vector{T}[P.coeffs for P in A])::Vector{T}
   return pseudo_matrix(m, c)
 end
 
-function vcat(A::PMat...)
-  m = reduce(vcat, [P.matrix for P in A])
-  c = reduce(vcat, [P.coeffs for P in A])
-  return pseudo_matrix(m, c)
+function vcat(A0::PMat, A::PMat...)
+  return vcat(collect((A0, A...)))
 end
 
-function hcat(P::PMat, Q::PMat)
+function _hcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    @assert P.coeffs == Q.coeffs
    m = hcat(P.matrix, Q.matrix)
@@ -1662,10 +1660,8 @@ function hcat(A::Vector{ <: PMat })
   return pseudo_matrix(m, A[1].coeffs)
 end
 
-function hcat(A::PMat...)
-  @assert all( P -> P.coeffs == A[1].coeffs, A)
-  m = reduce(hcat, [P.matrix for P in A])
-  return pseudo_matrix(m, A[1].coeffs)
+function hcat(A0::PMat, A::PMat...)
+  return hcat(collect((A0, A...)))
 end
 
 function +(M::ModDed, N::ModDed)

@@ -561,7 +561,7 @@ equation_order(L::NumField) = EquationOrder(L)
 
 function MaximalOrder(L::NumField)
   return get_attribute!(L, :maximal_order) do
-    O = MaximalOrder(EquationOrder(L))
+    O = MaximalOrder(any_order(L))
     O.is_maximal = 1
     return O
   end::order_type(L)
@@ -807,7 +807,7 @@ function pmaximal_overorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal,
   return OO
 end
 
-function MaximalOrder(O::RelNumFieldOrder)
+function _maximal_order_round2(O::RelNumFieldOrder)
   disc = discriminant(O)
   fac = factor(disc)
   OO = O
@@ -1269,7 +1269,7 @@ function prefactorization(I::RelNumFieldOrderIdeal)
   OK = order(I)
   m = absolute_minimum(I)
   ideals = typeof(I)[]
-  pp, r = Hecke._factors_trial_division(m)
+  pp, r = _factors_trial_division(m)
   for p in pp
     push!(ideals, I + ideal(OK, p))
   end
@@ -1280,7 +1280,19 @@ function prefactorization(I::RelNumFieldOrderIdeal)
   return ideals
 end
 
-function maximal_order(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
+function MaximalOrder(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
+  # If O contains OK[a] with a the generator of nf(O), then we do something
+  # clever as in the absolute case (composite Dedekind test and prefactorization)
+  #
+  # Otherwise, do the Round 2
+  if is_integral(gen(nf(O)))
+    return _maximal_order_rel_nice(O)::typeof(O)
+  else
+    return _maximal_order_round2(O)::typeof(O)
+  end
+end
+
+function _maximal_order_rel_nice(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
   K = nf(O)
   L = base_field(K)
   OL = maximal_order(L)
