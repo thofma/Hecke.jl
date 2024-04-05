@@ -602,12 +602,8 @@ Return the exponent of $A$. It is assumed that $A$ is finite.
 function exponent(A::FinGenAbGroup)
   is_infinite(A) && error("Group must be finite")
   s = elementary_divisors(A)
-  res = length(s)==0 ? ZZ(1) : s[end]
-  if !iszero(res)
-    A.exponent = res  # FIXME: why don't we return this value if it is already set?
-    # FIXME: also store this in the original A?
-  end
-  return res
+  length(s)==0 && return ZZ(1)
+  return s[end]
 end
 
 ################################################################################
