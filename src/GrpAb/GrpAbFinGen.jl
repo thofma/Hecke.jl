@@ -483,16 +483,6 @@ function snf(G::FinGenAbGroup)
   return _reduce_snf(G, S, T, iT)
 end
 
-function _snf(G::FinGenAbGroup)
-  if isdefined(G, :snf_map)
-    return domain(G.snf_map)::FinGenAbGroup
-  end
-  if is_snf(G)
-    return G
-  end
-  return snf(G)[1]
-end
-
 # For S in SNF with G.rels = U*S*T and Ti = inv(T) this removes
 # the ones at the diagonal of S and constructs the homomorphism.
 function _reduce_snf(G::FinGenAbGroup, S::ZZMatrix, T::ZZMatrix, Ti::ZZMatrix)
@@ -530,7 +520,7 @@ end
 
 Return whether $A$ is finite.
 """
-isfinite(A::FinGenAbGroup) = begin A = _snf(A) ; return length(A.snf) == 0 || !iszero(A.snf[end]) end
+isfinite(A::FinGenAbGroup) = all(!iszero, elementary_divisors(A))
 
 ################################################################################
 #
@@ -595,7 +585,7 @@ Return the order of $A$. It is assumed that $A$ is finite.
 """
 function order(A::FinGenAbGroup)
   is_infinite(A) && error("Group must be finite")
-  return prod(_snf(A).snf)
+  return prod(elementary_divisors(A))
 end
 
 ################################################################################
@@ -611,8 +601,8 @@ Return the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::FinGenAbGroup)
   is_infinite(A) && error("Group must be finite")
-  A = _snf(A)
-  res = ngens(A)==0 ? ZZ(1) : A.snf[end]
+  s = elementary_divisors(A)
+  res = length(s)==0 ? ZZ(1) : s[end]
   if !iszero(res)
     A.exponent = res  # FIXME: why don't we return this value if it is already set?
     # FIXME: also store this in the original A?
@@ -645,8 +635,7 @@ is_trivial(A::FinGenAbGroup) = isfinite(A) && isone(order(A))
 Return whether $G$ and $H$ are isomorphic.
 """
 function is_isomorphic(G::FinGenAbGroup, H::FinGenAbGroup)
-  b = filter(x -> x != 1, _snf(G).snf) == filter(x -> x != 1, _snf(H).snf)
-  return b
+  return elementary_divisors(G) == elementary_divisors(H)
 end
 
 ################################################################################
@@ -1569,7 +1558,7 @@ end
 Return whether $G$ is cyclic.
 """
 function is_cyclic(G::FinGenAbGroup)
-  return ngens(_snf(G)) <= 1
+  return length(elementary_divisors(G)) <= 1
 end
 
 ################################################################################
