@@ -162,6 +162,11 @@ local_modification(M::ZZLat, L::ZZLat, p)
 maximal_integral_lattice(L::ZZLat)
 ```
 
+### Canonical sublattices
+```@docs
+even_sublattice(::ZZLat)
+```
+
 ### Sublattices defined by endomorphisms
 ```@docs; canonical=false
 kernel_lattice(L::ZZLat, f::MatElem)

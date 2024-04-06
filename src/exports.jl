@@ -323,6 +323,7 @@ export equation_order
 export euclid
 export euler_phi_inv
 export evaluation_function
+export even_sublattice
 export excess
 export exponent
 export exponential_integral
