@@ -730,7 +730,6 @@ function _central_primitive_idempotents_abelian(A::GroupAlgebra)
   S = subgroups(G, fun = (x, m) -> sub(x, m, false))
   o = one(A)
   idem = elem_type(A)[]
-  push!(idem, 1//order(G) * sum(basis(A)))
   for (s, ms) in S
     Q, mQ = quo(G, ms, false)
     if !is_cyclic(Q)
