@@ -10,7 +10,7 @@ DocTestSetup = quote
 
 ### Inside a given ambient space
 
-```@docs
+```@docs; canonical=false
 lattice(::AbstractSpace)
 lattice(::AbstractSpace, ::PMat)
 lattice(::AbstractSpace, ::MatElem)
@@ -19,7 +19,7 @@ lattice(::AbstractSpace, ::Vector)
 
 ### Quadratic lattice over a number field
 
-```@docs
+```@docs; canonical=false
 quadratic_lattice(::Field)
 quadratic_lattice(::Field, ::PMat)
 quadratic_lattice(::Field, ::MatElem)
@@ -28,7 +28,7 @@ quadratic_lattice(::Field, ::Vector)
 
 ### Hermitian lattice over a degree 2 extension
 
-```@docs
+```@docs; canonical=false
 hermitian_lattice(::NumField)
 hermitian_lattice(::NumField, ::PMat)
 hermitian_lattice(::NumField, ::MatElem)
@@ -83,7 +83,7 @@ lattice(hlb, 426)
 
 ## Ambient space and rational span
 
-```@docs
+```@docs; canonical=false
 ambient_space(::AbstractLat)
 rational_span(::AbstractLat)
 basis_matrix_of_rational_span(::AbstractLat)
@@ -116,7 +116,7 @@ diagonal_of_rational_span(Lquad)
 
 ## Rational equivalence
 
-```@docs
+```@docs; canonical=false
 hasse_invariant(L::QuadLat, p)
 witt_invariant(L::QuadLat, p)
 is_rationally_isometric(::AbstractLat, ::AbstractLat, ::AbsNumFieldOrderIdeal)
@@ -163,7 +163,7 @@ corresponding to the ideals $\mathfrak A_i$'s and a matrix whose _rows_ are the
 coordinates of the $x_i$'s in the canonical basis of the ambient space of $L$
 (conversely, given any such pseudo-matrix, one can define the corresponding pseudo-basis).
 
-```@docs
+```@docs; canonical=false
 rank(L::AbstractLat)
 degree(L::AbstractLat)
 discriminant(::AbstractLat)
@@ -224,7 +224,7 @@ In another flavour, for any non-zero element $a \in K$, one defines the *rescale
 $L^a$ to be the lattice over $E/K$ with the same underlying module as $L$ (i.e. the same
 pseudo-bases) but in space $(V, a\Phi)$.
 
-```@docs
+```@docs; canonical=false
 Base.:(+)(::AbstractLat, ::AbstractLat)
 Base.:(*)(::NumFieldElem, ::AbstractLat)
 Base.:(*)(::NumFieldOrderIdeal, ::AbstractLat)
@@ -261,7 +261,7 @@ Given finite collections of lattices, one can construct their direct sums, which
 are also direct products in this context. They are also sometimes called biproducts.
 Depending on the user usage, it is possible to call one of the following functions.
 
-```@docs
+```@docs; canonical=false
 direct_sum(::Vector{AbstractLat})
 direct_product(::Vector{AbstractLat})
 biproduct(::Vector{AbstractLat})
@@ -281,7 +281,7 @@ Let $L$ be a lattice over $E/K$, in the space $(V, \Phi)$. We define:
    \lbrack L^{\#} \colon L \rbrack_{\mathcal O_E} := \langle \left\{ \sigma \mid \sigma \in \text{Hom}_{\mathcal O_E}(L^{\#}, L) \right\} \rangle_{\mathcal O_E}.
 ```
 
-```@docs
+```@docs; canonical=false
 norm(::AbstractLat)
 scale(L::AbstractLat)
 volume(L::AbstractLat)
@@ -312,7 +312,7 @@ is a prime ideal in $\mathcal O_K$, then $L$ is said to be *modular* (resp.
 of $\mathcal O_E$ (resp. an integer $v$) such that $\mathfrak aL^{\#} = L$ (resp.
 $\mathfrak p^vL_{\mathfrak p}^{\#} = L_{\mathfrak p}$).
 
-```@docs
+```@docs; canonical=false
 is_integral(::AbstractLat)
 is_modular(::AbstractLat)
 is_modular(::AbstractLat, p)
@@ -345,7 +345,7 @@ can_scale_totally_positive(Lherm)
 
 ## Local properties
 
-```@docs
+```@docs; canonical=false
 local_basis_matrix(L::AbstractLat, p; type::Symbol = :any)
 jordan_decomposition(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 is_isotropic(::AbstractLat, p)
@@ -383,7 +383,7 @@ Again, any automorphism of lattices is called an *isometry* and any monomorphism
 called an *embedding*. We refer to the set of isometries from a lattice $L$ to itself
 as the *automorphism group of $L$*.
 
-```@docs
+```@docs; canonical=false
 automorphism_group_order(::AbstractLat)
 automorphism_group_generators(::AbstractLat)
 ```
@@ -408,7 +408,7 @@ automorphism_group_generators(Lquad)
 
 ## Isometry
 
-```@docs
+```@docs; canonical=false
 is_isometric(::AbstractLat, ::AbstractLat)
 is_isometric_with_isometry(::AbstractLat, ::AbstractLat)
 is_locally_isometric(::AbstractLat, ::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
@@ -435,7 +435,7 @@ is_locally_isometric(Lquad, Lquad2, p)
 
 ## Maximal integral lattices
 
-```@docs
+```@docs; canonical=false
 is_maximal_integral(::AbstractLat, p)
 is_maximal_integral(::AbstractLat)
 is_maximal(::AbstractLat, p)

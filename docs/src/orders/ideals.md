@@ -26,7 +26,7 @@ in the ring, of type `AbsNumFieldOrderIdealSet`.
 
 ## Creation
 
-```@docs
+```@docs; canonical=false
 ideal(::AbsSimpleNumFieldOrder, ::ZZRingElem)
 ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix)
 ideal(::AbsSimpleNumFieldOrder, ::AbsSimpleNumFieldOrderElem)
@@ -50,7 +50,7 @@ All the usual operations are supported:
 - `lcm`, `gcd`
 - `in`
 
-```@docs
+```@docs; canonical=false
 intersect(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 colon(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 in(::AbsSimpleNumFieldOrderElem, ::AbsNumFieldOrderIdeal)
@@ -67,7 +67,7 @@ ideals a subgroup.  The finite quotient is called class group for maximal orders
 and Picard group
 or ring class group in general.
 
-```@docs
+```@docs; canonical=false
 class_group(::AbsSimpleNumFieldOrder)
 narrow_class_group(::AbsSimpleNumFieldOrder)
 picard_group(::AbsSimpleNumFieldOrder)
@@ -93,7 +93,7 @@ also allows for principal ideal testing and related tasks.
 In general, due to the size of the objects, the ```fac_elem``` versions are
 more efficient.
 
-```@docs
+```@docs; canonical=false
 is_principal(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 is_principal_with_data(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 is_principal_fac_elem(::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
@@ -116,7 +116,7 @@ is_principal_fac_elem(I)
 
 The computation of $S$-units is also tied to the class group:
 
-```@docs
+```@docs; canonical=false
 torsion_units(::AbsSimpleNumFieldOrder)
 torsion_unit_group(::AbsSimpleNumFieldOrder)
 torsion_units_generator(::AbsSimpleNumFieldOrder)
@@ -143,7 +143,7 @@ factor(numerator(ans))
 
 ## Miscaellenous
 
-```@docs
+```@docs; canonical=false
 order(::AbsNumFieldOrderIdeal)
 order(::AbsNumFieldOrderFractionalIdeal)
 order(::RelNumFieldOrderIdeal)
@@ -179,7 +179,7 @@ idempotents(::AbsNumFieldOrderIdeal, ::AbsNumFieldOrderIdeal)
 
 ## Quotient Rings
 
-```@docs
+```@docs; canonical=false
 quo(::Union{AbsNumFieldOrder, AlgAssAbsOrd}, ::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl})
 residue_ring(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 residue_field(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Bool)

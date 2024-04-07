@@ -40,12 +40,12 @@ negative.
 In general one can define factored elements by giving 2 arrays, the
 base and the exponent, or a dictionary containing the pairs:
 
-```@docs
+```@docs; canonical=false
 FacElem
 FacElem(a::AbsSimpleNumFieldElem)
 ```
 
-```@docs
+```@docs; canonical=false
 ideal(::AbsSimpleNumFieldOrder, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
@@ -55,7 +55,7 @@ The process of computing the value defined by a factored element is
 available as ```evaluate```. Depending on the types involved this
 can be very efficient.
 
-```@docs
+```@docs; canonical=false
 evaluate(::FacElem{ZZRingElem, S}) where S
 evaluate(::FacElem{QQFieldElem, S} where S)
 evaluate(::FacElem{T,S} where S) where T
@@ -67,14 +67,14 @@ evaluate_naive(::FacElem{T,S} where S) where T
 In the case where the parent of the base allows for efficient gcd computation,
 power products can be made unique:
 
-```@docs
+```@docs; canonical=false
 simplify(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 simplify(x::FacElem{QQFieldElem,S} where S)
 ```
 
 The simplified version can then be used further:
 
-```@docs
+```@docs; canonical=false
 isone(x::FacElem{QQFieldElem, S} where S)
 factor_coprime(::FacElem{ZZRingElem, S} where S)
 factor_coprime(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
@@ -87,11 +87,11 @@ factor(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::F
 For factorised algebraic numbers a unique simplification is not possible,
 however, this allows still do obtain partial results:
 
-```@docs
+```@docs; canonical=false
 compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int = 2)
 ```
 
-```@docs
+```@docs; canonical=false
 valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
 valuation(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
 evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsSimpleNumFieldOrderFractionalIdeal)
@@ -107,7 +107,7 @@ Factored elements can be used instead of number field elements for the functions
 
 ## Miscellaneous
 
-```@docs
+```@docs; canonical=false
 max_exp(a::FacElem)
 min_exp(a::FacElem)
 maxabs_exp(a::FacElem)

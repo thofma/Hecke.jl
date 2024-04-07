@@ -23,7 +23,7 @@ and can also be interpreted as a normalization of any other order.
 
 ## Creation and basic properties
 
-```@docs
+```@docs; canonical=false
 Order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
 Order(::AbsSimpleNumField, ::QQMatrix)
 Order(::AbsSimpleNumFieldOrderFractionalIdeal)
@@ -43,7 +43,7 @@ K, a = number_field(x^2 - 2, "a");
 O = EquationOrder(K)
 ```
 
-```@docs
+```@docs; canonical=false
 parent(::AbsSimpleNumFieldOrder)
 signature(::AbsSimpleNumFieldOrder)
 nf(::AbsSimpleNumFieldOrder)
@@ -74,7 +74,7 @@ ring_of_multipliers(::AbsNumFieldOrderIdeal)
 
 ## Invariants
 
-```@docs
+```@docs; canonical=false
 discriminant(::AbsSimpleNumFieldOrder)
 discriminant(::AbsNumFieldOrder)
 reduced_discriminant(::AbsSimpleNumFieldOrder)
@@ -117,13 +117,13 @@ for ideals, [here](@ref NfOrdIdlLink).
 For the processing of units, there are a couple of helper functions
 also available:
 
-```@docs
+```@docs; canonical=false
 is_independent
 ```
 
 ## Predicates
 
-```@docs
+```@docs; canonical=false
 Hecke.is_contained(::AbsNumFieldOrder, ::AbsNumFieldOrder)
 is_maximal(::AbsNumFieldOrder)
 ```

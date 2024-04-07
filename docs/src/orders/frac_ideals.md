@@ -14,7 +14,7 @@ denominator. They are of type `AbsSimpleNumFieldOrderFractionalIdeal`.
 
 ## Creation
 
-```@docs
+```@docs; canonical=false
 fractional_ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix)
 fractional_ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix, ::ZZRingElem)
 fractional_ideal(::AbsSimpleNumFieldOrder, ::QQMatrix)
@@ -29,7 +29,7 @@ inv(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 All the normal operations are provided as well.
 
-```@docs
+```@docs; canonical=false
 inv(::AbsSimpleNumFieldOrderFractionalIdeal)
 integral_split(::AbsSimpleNumFieldOrderFractionalIdeal)
 numerator(::RelNumFieldOrderFractionalIdeal)
@@ -38,7 +38,7 @@ denominator(::RelNumFieldOrderFractionalIdeal)
 
 ## Miscaellenous
 
-```@docs
+```@docs; canonical=false
 order(::AbsSimpleNumFieldOrderFractionalIdeal)
 basis_matrix(::AbsSimpleNumFieldOrderFractionalIdeal)
 basis_mat_inv(::AbsSimpleNumFieldOrderFractionalIdeal)

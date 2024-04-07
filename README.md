@@ -28,6 +28,7 @@ So far, Hecke provides the following features:
   - Associative algebras
   - Ideals and orders in (semsimple) associative algebras
   - Locally free class groups of orders in semisimple algebras
+  - Quadratic and Hermitian forms and lattices
 
 ## Installation
 

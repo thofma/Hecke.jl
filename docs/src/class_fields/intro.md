@@ -28,7 +28,7 @@ This is a finite abelian group. For $m_0 = Z_K$ and $m_\infty = \{\}$ we
 get $C()$ is the class group, if $m_\infty$ contains all real places, we obtain
 the narrow class group, or strict class group.
 
-```@docs
+```@docs; canonical=false
 ray_class_group(m::Hecke.AbsNumFieldOrderIdeal{Nemo.AbsSimpleNumField,Nemo.AbsSimpleNumFieldElem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
 class_group(K::Nemo.AbsSimpleNumField)
 norm_group(f::Nemo.PolyRingElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
@@ -47,7 +47,7 @@ maps.
 
 It should be noted that this is a _lazy_ construction: nothing is computed at this point.
 
-```@docs
+```@docs; canonical=false
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp})
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.FinGenAbGroupHom)
 ray_class_field(I::Hecke.AbsNumFieldOrderIdeal; n_quo, p_part)
@@ -76,7 +76,7 @@ The algorithm employed is based on Kummer-theory and requires the addition of a 
 root of unity. Progress can be monitored by setting `set_verbose_level(:ClassField, n)`
 where $0\le n\le 3$
 
-```@docs
+```@docs; canonical=false
 number_field(C::ClassField)
 ```
 
@@ -91,7 +91,7 @@ ZK = maximal_order(K)
 isone(discriminant(ZK))
 ```
 
-```@docs
+```@docs; canonical=false
 ray_class_field(K::RelSimpleNumField{AbsSimpleNumFieldElem})
 genus_field(A::ClassField, k::AbsSimpleNumField)
 maximal_abelian_subfield(A::ClassField, k::AbsSimpleNumField)
@@ -99,7 +99,7 @@ maximal_abelian_subfield(K::RelSimpleNumField{AbsSimpleNumFieldElem})
 ```
 
 ## Invariants
-```@docs
+```@docs; canonical=false
 degree(C::ClassField)
 base_ring(A::Hecke.ClassField)
 base_field(A::Hecke.ClassField)
@@ -113,7 +113,7 @@ is_central(C::ClassField)
 ```
 
 ## Operations
-```@docs
+```@docs; canonical=false
 *(a::Hecke.ClassField, b::Hecke.ClassField)
 compositum(a::Hecke.ClassField, b::Hecke.ClassField)
 ==(a::Hecke.ClassField, b::Hecke.ClassField)

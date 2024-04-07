@@ -764,7 +764,7 @@ function open_doc()
     end
 end
 
-function build_doc(; doctest=false, strict=false, format=:mkdocs)
+function build_doc(; doctest=false, strict=false, format=:vitepress)
   if !isdefined(Main, :Build)
     doc_init()
   end
@@ -773,7 +773,7 @@ function build_doc(; doctest=false, strict=false, format=:mkdocs)
   end
   if format == :html
     open_doc()
-  elseif format == :mkdocs
+  elseif format == :vitepress
     println("""Run `mkdocs serve` inside `../Hecke/docs/` to view the documentation.
 
             Use `format = :html` for a simplified version of the docs which does
