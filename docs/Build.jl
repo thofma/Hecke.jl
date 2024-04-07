@@ -128,7 +128,7 @@ function make(Hecke::Module; strict = false,
          ),
       warnonly = true,
       plugins=[bib],
-      doctest= false#doctest,
+      doctest= doctest,
       )
     end
   end
