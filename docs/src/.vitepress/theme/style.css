@@ -1,4 +1,3 @@
-@import url(https://fonts.googleapis.com/css?family=Space+Mono:regular,italic,700,700italic);
 @import url(https://fonts.googleapis.com/css?family=Space+Grotesk:regular,italic,700,700italic);
 
 /* Customize default theme styling by overriding CSS variables:
@@ -15,8 +14,13 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
  *
  * So we hack around this
 */
- :root {
+
+:root {
     --vp-layout-max-width: 1440px;
+}
+
+:root {
+  --vp-font-family-mono: "Fira Code", Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 /* black */
