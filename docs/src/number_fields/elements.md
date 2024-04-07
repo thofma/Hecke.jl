@@ -9,7 +9,7 @@ DocTestSetup = quote
 
 ## Creation
 
-```@docs
+```@docs; canonical=false
 gen(::SimpleNumField)
 gens(::NonSimpleNumField)
 ```
@@ -40,7 +40,7 @@ julia> L([a, 1, 1//2])
 ```
 
 
-```@docs
+```@docs; canonical=false
 quadratic_defect(a::NumFieldElem, p)
 hilbert_symbol(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
 representation_matrix(::NumFieldElem)
@@ -58,7 +58,7 @@ algebraic_split(::AbsSimpleNumFieldElem)
 
 ### Conjugates
 
-```@docs
+```@docs; canonical=false
 conjugates(::NumFieldElem, ::AcbField)
 conjugates(::NumFieldElem)
 conjugates_log(::AbsSimpleNumFieldElem, ::Int)
@@ -70,7 +70,7 @@ minkowski_map(::AbsSimpleNumFieldElem)
 
 ### Predicates
 
-```@docs
+```@docs; canonical=false
 is_integral(::NumFieldElem)
 is_torsion_unit(::AbsSimpleNumFieldElem)
 is_local_norm(::NumField, ::NumFieldElem, ::Any)
@@ -80,7 +80,7 @@ is_norm(::AbsSimpleNumField, ::ZZRingElem)
 
 ### Invariants
 
-```@docs
+```@docs; canonical=false
 norm(::NumFieldElem)
 absolute_norm(::NumFieldElem)
 minpoly(::NumFieldElem)

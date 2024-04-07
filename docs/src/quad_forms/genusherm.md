@@ -99,7 +99,7 @@ g2 = genus(L, p)
 
 ### Attributes
 
-```@docs
+```@docs; canonical=false
 length(::HermLocalGenus)
 base_field(::HermLocalGenus)
 prime(::HermLocalGenus)
@@ -125,7 +125,7 @@ prime(g1)
 
 ### Invariants
 
-```@docs
+```@docs; canonical=false
 scale(::HermLocalGenus, ::Int)
 scale(::HermLocalGenus)
 scales(::HermLocalGenus)
@@ -167,7 +167,7 @@ rank(g2), det(g2), discriminant(g2)
 
 ### Predicates
 
-```@docs
+```@docs; canonical=false
 is_ramified(::HermLocalGenus)
 is_split(::HermLocalGenus)
 is_inert(::HermLocalGenus)
@@ -192,7 +192,7 @@ is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
 
 ### Local uniformizer
 
-```@docs
+```@docs; canonical=false
 uniformizer(::HermLocalGenus)
 ```
 
@@ -218,7 +218,7 @@ determinant class of its Jordan blocks, are given by $\pm 1$, depending on wheth
 determinants are local norms or not. It is possible to get a representative of this
 determinant class in terms of powers of the uniformizer of $g$.
 
-```@docs
+```@docs; canonical=false
 det_representative(::HermLocalGenus, ::Int)
 det_representative(::HermLocalGenus)
 ```
@@ -242,7 +242,7 @@ det_representative(g1,2)
 
 ### Gram matrices
 
-```@docs
+```@docs; canonical=false
 gram_matrix(::HermLocalGenus, ::Int)
 gram_matrix(::HermLocalGenus)
 ```
@@ -330,7 +330,7 @@ G2 = genus(L)
 
 ### Attributes
 
-```@docs
+```@docs; canonical=false
 base_field(::HermGenus)
 primes(::HermGenus)
 signatures(::HermGenus)
@@ -377,7 +377,7 @@ non-isometric. Then we define the *mass* of the genus $G(L)$ of $L$ to be
 Note that since $L$ is definite, any lattice in the genus of $L$ is also definite, and the
 definition makes sense.
 
-```@docs
+```@docs; canonical=false
 mass(::HermLat)
 ```
 
@@ -402,7 +402,7 @@ mass(L)
 
 ## Representatives of a genus
 
-```@docs
+```@docs; canonical=false
 representative(::HermLocalGenus)
 Base.in(::HermLat, ::HermLocalGenus)
 representative(::HermGenus)
@@ -436,7 +436,7 @@ length(representatives(G1))
 
 ## Sum of genera
 
-```@docs
+```@docs; canonical=false
 direct_sum(::HermLocalGenus, ::HermLocalGenus)
 direct_sum(::HermGenus, ::HermGenus)
 ```
@@ -467,7 +467,7 @@ direct_sum(G1, G2)
 
 ## Enumeration of genera
 
-```@docs
+```@docs; canonical=false
 hermitian_local_genera(E, p, ::Int, ::Int, ::Int, ::Int)
 hermitian_genera(::Hecke.RelSimpleNumField, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal})
 ```
@@ -487,7 +487,7 @@ hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
 
 ## Rescaling
 
-```@docs
+```@docs; canonical=false
 rescale(g::HermLocalGenus, a::Union{FieldElem, RationalUnion})
 rescale(G::HermGenus, a::Union{FieldElem, RationalUnion})
 ```

@@ -3,7 +3,7 @@ DocTestSetup = quote
     using Hecke
 end
 ```
-# [Abelian Groups](@id AbelianGroupLink)
+# [Abelian Groups](@id AbelianGroupLink2)
 
 Here we describe the interface to abelian groups in Hecke.
 

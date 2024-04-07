@@ -90,7 +90,7 @@ all extensions can be computed as follows:
 extend(::NumFieldEmb, ::NumFieldHom)
 ```
 
-## [Positivity & Signs](@id positivity_and_signs)
+## [Positivity & Signs](@id positivity_and_signs2)
 
 ```@docs
 sign(::NumFieldElem, ::NumFieldEmb)

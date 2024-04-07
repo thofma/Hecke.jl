@@ -1,4 +1,6 @@
-# Spaces
+# [Spaces](@id Spaces2)
+
+
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote

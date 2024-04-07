@@ -16,7 +16,7 @@ Note that genera for non-integral lattices are supported.
 
 The class `ZZGenus` supports genera of $\mathbb{Z}$-lattices.
 
-```@docs
+```@docs; canonical=false
 ZZGenus
 ```
 
@@ -24,29 +24,29 @@ ZZGenus
 
 ### From an integral Lattice
 
-```@docs
+```@docs; canonical=false
 genus(::ZZLat)
 ```
 
 ### From a gram matrix
 
-```@docs
+```@docs; canonical=false
 genus(A::MatElem)
 ```
 
 ### Enumeration of genus symbols
 
-```@docs
+```@docs; canonical=false
 integer_genera(sig_pair::Tuple{Int,Int}, determinant::Union{Int,ZZRingElem})
 ```
 ### From other genus symbols
-```@docs
+```@docs; canonical=false
 direct_sum(G1::ZZGenus, G2::ZZGenus)
 ```
 
 ## Attributes of the genus
 
-```@docs
+```@docs; canonical=false
 dim(G::ZZGenus)
 rank(G::ZZGenus)
 signature(G::ZZGenus)
@@ -64,7 +64,7 @@ is_integral(G::ZZGenus)
 
 ### Primary genera
 
-```@docs
+```@docs; canonical=false
 is_primary_with_prime(G::ZZGenus)
 is_primary(G::ZZGenus, p::Union{Integer, ZZRingElem})
 is_elementary_with_prime(G::ZZGenus)
@@ -72,13 +72,13 @@ is_elementary(G::ZZGenus, p::Union{Integer, ZZRingElem})
 ```
 
 ### local Symbol
-```@docs
+```@docs; canonical=false
 local_symbol(G::ZZGenus, p)
 ```
 
 ## Representative(s)
 
-```@docs
+```@docs; canonical=false
 quadratic_space(G::ZZGenus)
 rational_representative(G::ZZGenus)
 representative(G::ZZGenus)
@@ -88,25 +88,25 @@ rescale(::ZZGenus, ::RationalUnion)
 ```
 
 ## Embeddings and Representations
-```@docs
+```@docs; canonical=false
 represents(G1::ZZGenus, G2::ZZGenus)
 ```
 
 ## Local genus Symbols
 
-```@docs
+```@docs; canonical=false
 ZZLocalGenus
 ```
 
 ### Creation
 
-```@docs
+```@docs; canonical=false
 genus(::ZZLat, ::IntegerUnion)
 genus(::QQMatrix, ::IntegerUnion)
 ```
 
 ### Attributes
-```@docs
+```@docs; canonical=false
 prime(S::ZZLocalGenus)
 iseven(S::ZZLocalGenus)
 symbol(S::ZZLocalGenus, scale::Int)
@@ -122,19 +122,19 @@ norm(S::ZZLocalGenus)
 level(S::ZZLocalGenus)
 ```
 ### Representative
-```@docs
+```@docs; canonical=false
 representative(S::ZZLocalGenus)
 gram_matrix(S::ZZLocalGenus)
 rescale(S::ZZLocalGenus, a::RationalUnion)
 ```
 
 ### Direct sums
-```@docs
+```@docs; canonical=false
 direct_sum(S1::ZZLocalGenus, S2::ZZLocalGenus)
 ```
 
 ### Embeddings/Representations
-```@docs
+```@docs; canonical=false
 represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
 ```
 

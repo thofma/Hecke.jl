@@ -103,7 +103,7 @@ modular_proj(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::Hecke.modular
 
 Factored elements can be used instead of number field elements for the functions
 `sign`, `signs`, `is_positive`, `is_negative` and `is_totally_positive`, see
-[Positivity & Signs](@ref positivity_and_signs)
+[Positivity & Signs](@ref positivity_and_signs2)
 
 ## Miscellaneous
 

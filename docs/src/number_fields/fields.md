@@ -14,7 +14,7 @@ To create a simple number field given by a defining
 polynomial or a non-simple number field given by defining polynomials, the
 following functions can be used.
 
-```@docs
+```@docs; canonical=false
 number_field(::DocuDummy)
 number_field(::DocuDummy2)
 ```
@@ -38,7 +38,7 @@ number_field(::DocuDummy2)
 For frequently used number fields like quadratic fields, cyclotomic fields
 or radical extensions, the following functions are provided:
 
-```@docs
+```@docs; canonical=false
 cyclotomic_field(n::Int)
 quadratic_field(d::ZZRingElem)
 wildanger_field(n::Int, B::ZZRingElem)
@@ -48,7 +48,7 @@ rationals_as_number_field()
 
 ## Basic properties
 
-```@docs
+```@docs; canonical=false
 basis(::SimpleNumField)
 basis(::NonSimpleNumField)
 absolute_basis(::NumField)
@@ -61,7 +61,7 @@ base_field(::NumField)
 
 ## Invariants
 
-```@docs
+```@docs; canonical=false
 degree(::NumField)
 absolute_degree(::NumField)
 signature(::NumField)
@@ -75,7 +75,7 @@ absolute_discriminant(::SimpleNumField)
 
 ## Predicates
 
-```@docs
+```@docs; canonical=false
 is_simple(::NumField)
 is_absolute(::NumField)
 is_totally_real(::NumField)
@@ -92,7 +92,7 @@ is_abelian(::NumField)
 
 ### Subfields
 
-```@docs
+```@docs; canonical=false
 is_subfield(::SimpleNumField, ::SimpleNumField)
 subfields(::SimpleNumField)
 principal_subfields(::SimpleNumField)
@@ -105,7 +105,7 @@ is_subfield_normal(::AbsSimpleNumField, ::AbsSimpleNumField)
 
 ## Conversion
 
-```@docs
+```@docs; canonical=false
 simplify(::AbsSimpleNumField)
 absolute_simple_field(K::NumField)
 simple_extension(::NonSimpleNumField)
@@ -114,7 +114,7 @@ simplified_simple_extension(::NonSimpleNumField)
 
 ## Morphisms
 
-```@docs
+```@docs; canonical=false
 is_isomorphic(::SimpleNumField, ::SimpleNumField)
 is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
 is_involution(::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
@@ -126,7 +126,7 @@ complex_conjugation(::AbsSimpleNumField)
 
 ## Galois theory
 
-```@docs
+```@docs; canonical=false
 normal_basis(::NumField)
 decomposition_group(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Map)
 ramification_group(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int, ::Map)
@@ -135,7 +135,7 @@ inertia_subgroup(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,
 
 ## Infinite places
 
-```@docs
+```@docs; canonical=false
 infinite_places(K::NumField)
 real_places(K::AbsSimpleNumField)
 complex_places(K::AbsSimpleNumField)
@@ -145,7 +145,7 @@ is_complex(::Plc)
 
 ## Miscellaneous
 
-```@docs
+```@docs; canonical=false
 norm_equation(::AbsSimpleNumField, ::Any)
 lorenz_module(::AbsSimpleNumField, ::Int)
 kummer_failure(::AbsSimpleNumFieldElem, ::Int, ::Int)
