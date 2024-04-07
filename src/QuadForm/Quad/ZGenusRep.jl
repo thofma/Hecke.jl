@@ -292,32 +292,36 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
     else
       x = next(P) # Only trigerred for :spinor, where we compute a representative in each spinor genus
     end
-    w = matrix(QQ, 1, rank(L0), ZZRingElem[lift(ZZ, k) for k in x])
-    a = numerator(only(w*form0*transpose(w)))
+    w0 = matrix(QQ, 1, rank(L0), ZZRingElem[lift(ZZ, k) for k in x])
+    a = numerator(only(w0*form0*transpose(w0)))
     if !is_divisible_by(a, mqf)
       vain[] += 1
       continue
     end
 
-    lifts = typeof(w)[]
+    lifts = typeof(w0)[]
     if p == 2
       bo = is_divisible_by(a, 8)
-      if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L0`
-        if prime_dual(L, w, p) == L0
+      if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L`
+        w = w0*basis_matrix(L0)
+        if is_zero(mod(divisibility(L, w), p)) # L_{w, 2} == L iff w lies in 2*L^#
           vain[] += 1
           continue
         end
-        make_admissible!(w, form0, m, K, a)
-        push!(lifts, w)
+        make_admissible!(w0, form0, m, K, a)
+        push!(lifts, w0)
       elseif even && bo # `w` is admissible so it is good
-        push!(lifts, w)
-      elseif !even && bo # Another corner case: `w` is admissible but if `L_{w, 2} == L0` then the neighbour is even, and we want an odd one
-        if prime_dual(L, w*L0toL, p) == L0
+        push!(lifts, w0)
+      elseif !even && bo # Another corner case: `w` is admissible but if `L_{w, 2}` is even then the neighbour is even, and we want an odd one
+        wL = w0*L0toL
+        if is_even(prime_dual(L, wL, p))
           vain[] += 1
           continue
         end
-        push!(lifts, w*L0toL)
+        push!(lifts, wL)
       else
+        w = w0*basis_matrix(L0)
+        wL = w0*L0toL
         # Here `w` is admissible of square 4 mod 8 so w/2 has odd square. Hence
         # `L_{w, 2} == L0` is allowed.
         #
@@ -327,22 +331,21 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
         # obtained via `w`. The existence of such vectors is ensured only if
         # there exists a vector in `L0` with odd product with `w`, i.e. if
         # `L0_{w, 2} != L0`
-        if prime_dual(L, w*L0toL, p) == L0
-          push!(lifts, w*L0toL)
-        elseif prime_dual(L0, w, p) == L0
-          push!(lifts, w*L0toL)
+        if is_zero(mod(divisibility(L0, w), p)) # L0_{w, 2} == L0 iff w lies in 2*L0^#
+          push!(lifts, wL)
         else
-          push!(lifts, w*L0toL)
-          make_admissible!(w, form0, ZZ(8), K, a)
-          push!(lifts, w*L0toL)
+          push!(lifts, wL)
+          make_admissible!(w0, form0, ZZ(8), K, a)
+          push!(lifts, w0*L0toL)
         end
       end
     else
       if !is_divisible_by(a, m)
-        bad && prime_dual(L, w, p) == L && continue # In this case we cannot make w admissible
-        make_admissible!(w, form0, m, K, a)
+        w = w0*basis_matrix(L0)
+        bad && is_zero(mod(divisibility(L, w), p)) && continue # In this case we cannot make w admissible because w lies in p*L^#
+        make_admissible!(w0, form0, m, K, a)
       end
-      push!(lifts, w)
+      push!(lifts, w0)
     end
 
     for v in lifts
@@ -712,7 +715,7 @@ with gram matrix
 [1   2    0]
 [0   0   18]
 
-julia> L1, L2 = spinor_genera_in_genus(L)
+julia> L1, L2 = Hecke.spinor_genera_in_genus(L)
 2-element Vector{ZZLat}:
  Integer lattice of rank 3 and degree 3
  Integer lattice of rank 3 and degree 3
