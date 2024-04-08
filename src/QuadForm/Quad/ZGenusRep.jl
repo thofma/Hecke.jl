@@ -9,14 +9,14 @@
 #
 #  ===========================================================================
 #  Given a genus G of integral lattices and a prime number p, we say that
-#  p is a Kneser prime of G if the neighbour iteration algorithm for
-#  spinor genera at the prime p works. p is Kneser if and only if:
+#  p is a Kneser prime of G if the neighbour iteration algorithm for the
+#  spinor genera in G at the prime p works. p is Kneser if and only if:
 #
 #  - Any lattice in G is isotropic at p;
 #  - p is not an improper genus generator of G;
 #  - Any lattice in G is maximal bilinear integral at p.
 #
-#  These properties does not depend on a choice of a representative in G,
+#  These properties do not depend on a choice of a lattice in G,
 #  and they can be actually checked from the genus symbol directly.
 #
 ###############################################################################
@@ -42,7 +42,7 @@ Input:
   - A vector $v$ of $L$ not lying in $p*L$.
 
 Output:
-  - The sublattice $L_{v, p} := {w in L: b(v, w) in p*ZZ$ of $L$.
+  - The sublattice $L_{v, p} := {w in L: b(v, w) in p*ZZ}$ of $L$.
 """
 function prime_dual(L::ZZLat, v::QQMatrix, p::ZZRingElem)
   M = gram_matrix(L)*transpose(v)
@@ -64,7 +64,7 @@ Input:
 
 Output:
   - The $p$-neighbour of $L$ defined as $L_{v, p} + 1/p*v$ where
-    $L_{v, p} := {w in L: b(v, w) in p*ZZ$.
+    $L_{v, p} := {w in L: b(v, w) in p*ZZ}$.
 """
 function neighbour(L::ZZLat, v::QQMatrix, p::ZZRingElem)
   Lvp = prime_dual(L, v, p)
@@ -75,9 +75,9 @@ end
 @doc raw"""
     make_admissible!(w::ZZMatrix, form::ZZMatrix, m::ZZRingElem, K::FinField) -> Nothing
 
-Modify the coordinates of $w$ by adding an $p*v$ element of $p*L0$ such that
+Modify the coordinates of $w$ by adding an element $p*v$ of $p*L0$ such that
 the square of $w + p*v$ with respect to `form` is divisible by $m$, where
-$(L0, b)$ is an even lattice with Gram matrix $form$.
+$(L0, b)$ is an even lattice with Gram matrix `form`.
 
 The even lattice $(L0, b)$ is the even sublattice of the original integral
 lattice $(L, b)$ from the neighbour algorithm.
@@ -106,8 +106,8 @@ and there exists $v' \in L0$ such that $b(v', w)$ is odd: one finds such a $v'$
 by solving $x+y*b(w, v') == 0 mod 2$ in $(x, y)$. The vector $v = w + 2*v'$
 satisfies the requirement to be admissible.
 
-In the case $p$ odd, given that $p$ was chosen to be Kneser, there exists a
-solution $v'$ to the equation $x + 2*y*b(w, v') == 0 mod p$. The vector
+In the case $p$ odd, given that $p$ was chosen to be Kneser and that $L0_{w, p} != L0$,
+there exists a solution $v'$ to the equation $x + 2*y*b(w, v') == 0 mod p$. The vector
 $v = w + p*v'$ satisfies the requirement to be admissible.
 """
 function make_admissible!(w::QQMatrix, form::QQMatrix, m::ZZRingElem, K::FinField, _a::ZZRingElem)
@@ -215,15 +215,15 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
   # is divisible by `p^2` when `L` is odd, or `2*p^2` when `L` is even.
   # Given that the prime number `p` was chosen to be Kneser, such an admissible
   # vector exists if and only if there exists a vector `w` in `L\p*L` whose
-  # square is divisible by `p`. One can make such a `w` admissible by adding
-  # to it a suitable vector from `p*L`.
+  # square is divisible by `p`. If `w` is not already admissible and `w` does
+  # not lie in p*L^#, then one can make it admissible by adding to it a suitable
+  # vector from `p*L`.
   #
   # In the case where `p == 2`, by [SP91, Chapter 1, condition (v)], a vector
   # `w` in `L\2*L` is admissible if:
   # - `w^2` is disivible by `8` if `L` is even, or
   # - `w^2` is divisible by 4 if `L` odd, with `w^2` divisible by 8 only if the
-  #   prime dual lattice `L_{w, 2}` is not equal to `L0`, the maximal even
-  #   sublattice of `L`.
+  #   prime dual lattice `L_{w, 2}` is odd.
   # Such an admissible vector exists if and only if there exists a vector `w` in
   # `L0\2*L0` whose square is divisible by 4 and either `w` is already admissible,
   # or `L_{w, 2}` must be different from `L0`. In the latter case, one can make
@@ -233,7 +233,6 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
     L0 = L
     L0 = even_sublattice(L)
     L0toL = solve(basis_matrix(L), basis_matrix(L0)) # To change the coordinates of vectors in L0
-    LtoL0 = inv(L0toL)
   else
     L0 = L
   end
@@ -252,10 +251,6 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
     m = p^2
   end
 
-  # Note that since we chose `p` to be such that L_p is maximal integral, we have that for all
-  # `w` in `L\p*L`, the lattice `L_{w, p}` is different from `L`. In particular,
-  # if `w^2` is divisible by `mqf`, the line `[w]` in `L0/p*L0` is (regular) isotropic.
-
   if use_mass
     __mass = missing_mass[]
   end
@@ -266,6 +261,7 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
   if algorithm == :orbit
     G = automorphism_group_generators(L; ambient_representation=false)
     if flag
+      LtoL0 = inv(L0toL)
       gensp = dense_matrix_type(K)[map_entries(K, L0toL*g*LtoL0) for g in G]
     else
       gensp = dense_matrix_type(K)[map_entries(K, g) for g in G]
@@ -310,9 +306,9 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
         end
         make_admissible!(w0, form0, m, K, a)
         push!(lifts, w0)
-      elseif even && bo # `w` is admissible so it is good
+      elseif even && bo # `w0` is admissible so it is good
         push!(lifts, w0)
-      elseif !even && bo # Another corner case: `w` is admissible but if `L_{w, 2}` is even then the neighbour is even, and we want an odd one
+      elseif !even && bo # Another corner case: `wL` is admissible but if `L_{wL, 2}` is even then the neighbour is even, and we want an odd one
         wL = w0*L0toL
         if is_even(prime_dual(L, wL, p))
           vain[] += 1
@@ -328,7 +324,7 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
         # If `L0_{w, 2} != L0`, we could allow another vector congruent to `w`
         # modulo 2*L0 with square divisible by 8. It is going to be another
         # admissible vector, and the neighbour might not be isometric to the one
-        # obtained via `w`. The existence of such vectors is ensured only if
+        # obtained using `w`. The existence of such a vector is ensured only if
         # there exists a vector in `L0` with odd product with `w`, i.e. if
         # `L0_{w, 2} != L0`
         if is_zero(mod(divisibility(L0, w), p)) # L0_{w, 2} == L0 iff w lies in 2*L0^#
@@ -381,7 +377,7 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
 
         length(result) == max && return result
       else
-        return ZZLat[LL] # For :spinor we just want one neighbour because we know we change spinor genus
+        return ZZLat[LL] # For :spinor we just want one neighbour
       end
     end
   end
@@ -410,9 +406,9 @@ function _unique_iso_class!(A::Vector{ZZLat})
   # We keep the first lattice, so we start iterating from the second state
   it = iterate(idxs, 1)
 
-  # Count the number of elements eventually keep
+  # Count the number of elements eventually kept
   # The function will iteratively stack from the start all the new
-  # isometry class
+  # isometry classes to keep
   count = 1
   for x in Iterators.drop(A, 1)
     if all(y -> !is_isometric(x, y), A[1:count])
@@ -455,18 +451,22 @@ end
     is_maximal_integral_bilinear(G::ZZGenus, p::ZZRingElem) -> Bool
 
 Given a genus `G` of integral $\mathbb{Z}$-lattices and a prime number
-`p`, return whether the $L_p$ is maximal integral in $\mathbb{Q}L_p$
-for the bilinear form on $L_p$.
+`p`, return whether the lattice $L_p$ is maximal integral in
+$\mathbb{Q}L_p$, for the bilinear form on $L_p$.
 
-Note this does not depend on a choice of a representative $L$ in $G$,
+Note that this does not depend on a choice of a lattice $L$ in $G$,
 and this property can be directly check from the genus symbol.
 """
 function is_maximal_integral_bilinear(G::ZZGenus, p::ZZRingElem)
   @req is_integral(G) "Lattices in the genus must be globally integral"
   sym = symbol(local_symbol(G, p))
 
-  # If the local lattice is unimodular of of level >= p^2 then the
-  # bilinear form on the discriminant group has an isotropic vector
+  # If the local lattice is unimodular, then the bilinear form on the
+  # discriminant group `q_p` is trivial and it has no isotropic vector.
+  #
+  # If the p-adic level `l = p^k` is greater or equal than p^2, then the
+  # bilinear form on `p^(k-1) * q_p` is totally isotropic, and `q_p` has an
+  # isotropic vector.
   if sym[end][1] == 0
     return true
   elseif sym[end][1] >= 2
@@ -474,22 +474,23 @@ function is_maximal_integral_bilinear(G::ZZGenus, p::ZZRingElem)
   end
 
   # If the Jordan constituent of scale p has rank 1 then there is
-  # no isotropic vector in the bilinear discriminant group/
+  # no isotropic vector for the bilinear form on the discriminant group.
+  #
   # If it has rank 3 then as a consequence of Chevalley's theorem
-  # the bilinear form on the discriminant group has an isotropic vector
+  # the bilinear form on the discriminant group has an isotropic vector.
   if sym[end][2] == 1
     return true
   elseif sym[end][2] >= 3
     return false
   end
 
-  # For the rank 2, there are only two possible forms for the
+  # For the rank 2, there are only two possible normal forms for the
   # bilinear form on the discriminant group.
   # In the case p=2, they both admit an isotropic vector
   p == 2 && return false
 
   # For the odd case, one of them has an isotropic vector but
-  # not the other
+  # not the other one
   sym[end][3] == jacobi_symbol(-1, p) && return false
   return true
 end
@@ -497,8 +498,7 @@ end
 @doc raw"""
     _is_isotropic(G::ZZGenus, p::ZZRingElem) -> Bool
 
-Return whether a lattice in the genus of $G$ is isotropic
-locally at $p$.
+Return whether a lattice in the genus $G$ is isotropic locally at $p$.
 """
 function _is_isotropic(G::ZZGenus, p::ZZRingElem)
   @req is_prime(p) "Number p must be prime"
@@ -528,7 +528,7 @@ smallest Kneser prime $p$ for $G$.
 A prime number $p$ is called Kneser for $G$ if:
 - The lattices in $G$ are isotropic locally at $p$;
 - The lattices in $G$ are maximal bilinear integral locally at $p$;
-- the prime $p$ is not an improper spinor generator of $G$.
+- The prime $p$ is not an improper spinor generator of $G$.
 """
 function smallest_kneser_prime(G::ZZGenus)
   @req is_integral(G) "The lattices in the genus must be integral"
@@ -732,7 +732,7 @@ with gram matrix
 ```
 """
 function spinor_genera_in_genus(L::ZZLat)
-  @req !is_definite(L) || rank(L) >= 3 "Lattice must be indefinite or of rank at least 3"
+  @req !is_definite(L) || rank(L) >= 3 "The lattice must be indefinite or of rank at least 3"
   res = ZZLat[L]
   primes = improper_spinor_generators(genus(L))
   is_empty(primes) && return res
@@ -813,10 +813,10 @@ function enumerate_definite_genus(
   # We enumerate each spinor genus separately.
   for M in spinor_genera
     vain = Ref{Int}(0)
-    # The mass of a genus is "evenly distributed" among the spinor genera
+    # The mass of a genus is "evenly distributed" among its spinor genera.
     # Hence, by dividing the mass of the genus by the number of spinor genera,
-    # we know what portion of the mass the lattices of one spinor genus recovers
-    # and get a termination condition for each spinor genus.
+    # we know what portion of the mass the lattices of one spinor genus recover,
+    # and we get a termination condition for each spinor genus.
     if use_mass
       _missing_mass = mass(M)//length(spinor_genera)
       s = automorphism_group_order(M)
@@ -937,11 +937,11 @@ reconstruct $L$. The lattice $L$ is assumed to be integral
 
 When written on a .txt file, it consists of two lines:
 - One containing an integer representing the rank of $L$;
-- One containing a list of integers representing the half the Gram matrix of
+- One containing a list of integers representing half of the Gram matrix of
   $L$.
 
-In the case the order of the automorphisms group of $L$ is known, the value
-is stored using an integer on a third line.
+In the case where the order of the automorphisms group of $L$ is known, the
+value is stored using an integer on a third line.
 """
 function _storing_data(L::ZZLat)
   M = gram_matrix(L)
@@ -984,10 +984,10 @@ about a representative for each isometry class in the corresponding genus.
 
 Such a file is composed of two lines:
 - One containing an integer $n$ representing the rank of the lattice;
-- One containing a list of $n(n+1)/2$ integers representing half the
+- One containing a list of $n(n+1)/2$ integers representing half of the
   Gram matrix of the correponding lattice.
 
-A third line is allowed a must contained an integer $o$ representing the
+A third line is allowed and must contained an integer $o$ representing the
 order of the isometry group of the corresponding lattice.
 """
 function load_genus(f::String)
@@ -1015,10 +1015,10 @@ The lattice $L$ is assumed to be integral.
 
 Such a file is composed of two lines:
 - One containing an integer $n$ representing the rank of $L$;
-- One containing a list of $n(n+1)/2$ integers representing half the
+- One containing a list of $n(n+1)/2$ integers representing half of the
   Gram matrix of $L$.
 
-If the order $o$ of the isometry group of $L$ has been computed, then the
+If the order $o$ of the isometry group of $L$ has been computed, then
 we had the value $o$ to a third line of the file.
 """
 function save_lattice(L::ZZLat, f::String)
