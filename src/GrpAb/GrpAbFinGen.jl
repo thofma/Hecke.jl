@@ -520,11 +520,7 @@ end
 
 Return whether $A$ is finite.
 """
-isfinite(A::FinGenAbGroup) = is_snf(A) ? is_finite_snf(A) : is_finite_gen(A)
-
-is_finite_snf(A::FinGenAbGroup) = length(A.snf) == 0 || !iszero(A.snf[end])
-
-is_finite_gen(A::FinGenAbGroup) = isfinite(snf(A)[1])
+isfinite(A::FinGenAbGroup) = all(!iszero, elementary_divisors(A))
 
 ################################################################################
 #
@@ -587,14 +583,10 @@ rank(A::FinGenAbGroup) = error("rank(::FinGenAbGroup) has been renamed to torsio
 
 Return the order of $A$. It is assumed that $A$ is finite.
 """
-order(A::FinGenAbGroup) = is_snf(A) ? order_snf(A) : order_gen(A)
-
-function order_snf(A::FinGenAbGroup)
+function order(A::FinGenAbGroup)
   is_infinite(A) && error("Group must be finite")
-  return prod(A.snf)
+  return prod(elementary_divisors(A))
 end
-
-order_gen(A::FinGenAbGroup) = order(snf(A)[1])
 
 ################################################################################
 #
@@ -608,28 +600,11 @@ order_gen(A::FinGenAbGroup) = order(snf(A)[1])
 Return the exponent of $A$. It is assumed that $A$ is finite.
 """
 function exponent(A::FinGenAbGroup)
-  if is_snf(A)
-    res = exponent_snf(A)
-    if !iszero(res)
-      A.exponent = res
-    end
-    return res
-  else
-    res = exponent_gen(A)
-    if !iszero(res)
-      A.exponent = res
-    end
-    return res
-  end
-end
-
-function exponent_snf(A::FinGenAbGroup)
   is_infinite(A) && error("Group must be finite")
-  ngens(A)==0 && return ZZRingElem(1)
-  return A.snf[end]
+  s = elementary_divisors(A)
+  length(s)==0 && return ZZ(1)
+  return s[end]
 end
-
-exponent_gen(A::FinGenAbGroup) = exponent(snf(A)[1])
 
 ################################################################################
 #
@@ -656,8 +631,7 @@ is_trivial(A::FinGenAbGroup) = isfinite(A) && isone(order(A))
 Return whether $G$ and $H$ are isomorphic.
 """
 function is_isomorphic(G::FinGenAbGroup, H::FinGenAbGroup)
-  b = filter(x -> x != 1, snf(G)[1].snf) == filter(x -> x != 1, snf(H)[1].snf)
-  return b
+  return elementary_divisors(G) == elementary_divisors(H)
 end
 
 ################################################################################
@@ -1580,12 +1554,7 @@ end
 Return whether $G$ is cyclic.
 """
 function is_cyclic(G::FinGenAbGroup)
-  if !is_snf(G)
-    S = snf(G)[1]
-    return ngens(S) == 1
-  else
-    return ngens(G) == 1
-  end
+  return length(elementary_divisors(G)) <= 1
 end
 
 ################################################################################
@@ -1992,8 +1961,8 @@ end
 @doc raw"""
     elementary_divisors(G::FinGenAbGroup) -> Vector{ZZRingElem}
 
-Given $G$, return the elementary divisors of $G$, that is, the unique positive
-integers $e_1,\dotsc,e_k$ with $e_i \mid e_{i + 1}$ and
+Given $G$, return the elementary divisors of $G$, that is, the unique non-negative
+integers $e_1,\dotsc,e_k$ with $e_i \mid e_{i + 1}$ and $e_i\neq 1$ such that
 $G \cong \mathbf{Z}/e_1\mathbf{Z} \times \dotsb \times \mathbf{Z}/e_k\mathbf{Z}$.
 """
 function elementary_divisors(G::FinGenAbGroup)
