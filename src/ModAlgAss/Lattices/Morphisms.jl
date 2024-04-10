@@ -215,7 +215,11 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
   fl, alpha = is_locally_free(I, p, side = :right)
   imal = image(f, alpha)
   if !fl
-    return fl, imal
+    if with_iso === Val{true}
+      return fl, imal
+    else
+      return fl
+    end
   end
   mat = matrix(imal)
   # I need to test whether M is a (p-)local isomorphism L -> M
