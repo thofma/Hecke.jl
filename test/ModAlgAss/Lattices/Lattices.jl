@@ -13,3 +13,12 @@ begin
   V, f = galois_module(K); OK = ring_of_integers(K); M = f(OK);
   @test !is_free(M)
 end
+
+let
+  Qx, x = QQ["x"]
+  K, a = number_field(x^8 + 105*x^6 + 3465*x^4 + 44100*x^2 + 176400, "a")
+  V, f = galois_module(K)
+  OK = ring_of_integers(K)
+  M = f(OK)
+  @test !is_free(M)
+end
