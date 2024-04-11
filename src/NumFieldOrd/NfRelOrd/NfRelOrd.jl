@@ -689,7 +689,7 @@ end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: RelSimpleNumFieldElem}
+function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}, ::Val{compute_order} = Val(true)) where {compute_order, U1, V, Z <: RelSimpleNumFieldElem}
   !is_equation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
@@ -717,7 +717,7 @@ function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderI
 
   d = gcd(fmodp, gcd(gmodp, hmodp))
 
-  if compute_order == Val{false}
+  if !compute_order
     return isone(d)
   else
     if isone(d)
@@ -735,7 +735,7 @@ function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderI
   end
 end
 
-dedekind_ispmaximal(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p, Val(false))
 
 dedekind_poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p)[2]
 

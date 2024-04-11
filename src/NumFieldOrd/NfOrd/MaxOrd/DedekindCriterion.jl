@@ -32,11 +32,11 @@
 #
 ################################################################################
 
-function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, compute_order::Type{Val{S}} = Val{true}) where S
+function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, ::Val{compute_order} = Val(true)) where compute_order
   !is_equation_order(O) && error("Order must be an equation order")
 
   if rem(discriminant(O), p^2) != 0
-    if compute_order == Val{true}
+    if compute_order
       return true, O
     else
       return true
@@ -72,7 +72,7 @@ function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, compute_order::
   g1modp = Kx(g1)
   U = gcd(gcd(g, h), g1modp)
 
-  if compute_order == Val{false}
+  if !compute_order
     if isone(U)
       return true
     else
@@ -115,7 +115,7 @@ end
 
 dedekind_test(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_test(O, FlintZZ(p))
 
-dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p, Val(false))
 
 dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_ispmaximal(O, FlintZZ(p))
 
