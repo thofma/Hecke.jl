@@ -60,8 +60,6 @@
 end
 
 @testset "Common eigenspaces" begin
-  K, a = cyclotomic_field(3, "a")
-
   M = [ matrix(QQ, [ 0 1 0 0 0 0;
                     1 0 0 0 0 0;
                     0 0 1 0 0 0;
@@ -93,7 +91,7 @@ end
   @test rref!(V) == 6
 
   Eig = common_eigenspaces(M, side = :left)
-  V = zero_matrix(K, 0, 6)
+  V = zero_matrix(FlintQQ, 0, 6)
   for (e, v) in Eig
     @test length(e) == 3
     for i = 1:3
@@ -118,6 +116,7 @@ end
 
   @test_throws ErrorException Hecke.simultaneous_diagonalization(N)
 
+  K, a = cyclotomic_field(3, "a")
   T, D = Hecke.simultaneous_diagonalization(N, K)
   for i = 1:length(N)
     @test T*N[i]*inv(T) == D[i]
