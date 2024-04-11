@@ -1163,12 +1163,12 @@ function common_super(a::NumFieldElem, b::NumFieldElem)
 end
 
 #tries to find a common parent for all "a" and then calls op on it.
-function force_op(op::T, throw_error::Type{Val{S}}, a::NumFieldElem...) where {T <: Function, S}
+function force_op(op::Function, ::Val{throw_error}, a::NumFieldElem...) where {throw_error}
   C = parent(a[1])
   for b = a
     C = common_super(parent(b), C)
     if C === nothing
-      if throw_error === Val{true}
+      if throw_error
         error("no common parent known")
       else
         return nothing
