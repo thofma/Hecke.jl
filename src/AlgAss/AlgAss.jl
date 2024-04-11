@@ -893,12 +893,12 @@ end
 # We assume ncols(B) == dim(A).
 # A rref of B will be computed IN PLACE! If return_LU is Val{true}, a LU-factorization
 # of transpose(rref(B)) is returned.
-function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatElem{T}, return_LU::Type{Val{S}} = Val{false}; is_commutative = false) where { T, S }
+function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatElem{T}, ::Val{return_LU} = Val(false); is_commutative = false) where { T, return_LU }
   K = base_ring(A)
   n = dim(A)
   r = rref!(B)
   if r == 0
-    if return_LU == Val{true}
+    if return_LU
       return Array{elem_type(K), 3}(undef, 0, 0, 0), solve_init(B)
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
@@ -948,7 +948,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
     end
   end
 
-  if return_LU == Val{true}
+  if return_LU
     return mult_table, LL #p, L, U, LL
   else
     return mult_table
@@ -971,7 +971,7 @@ function subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T,
   n = dim(A)
   # This is the basis of e*A, resp. A*e
   B1 = representation_matrix(e, action)
-  mult_table, LL = _build_subalgebra_mult_table!(A, B1, Val{true})
+  mult_table, LL = _build_subalgebra_mult_table!(A, B1, Val(true))
 
   r = size(mult_table, 1)
 
@@ -1042,7 +1042,7 @@ function subalgebra(A::StructureConstantAlgebra{T}, basis::Vector{AssociativeAlg
   for i = 1:length(basis)
     elem_to_mat_row!(M, i, basis[i])
   end
-  mt = _build_subalgebra_mult_table!(A, M, is_commutative = is_commutative)
+  mt = _build_subalgebra_mult_table!(A, M; is_commutative = is_commutative)
   B = StructureConstantAlgebra(base_ring(A), mt)
   return B, hom(B, A, sub(M, 1:length(basis), 1:dim(A)))
 end
