@@ -921,9 +921,9 @@ end
 #
 ################################################################################
 
-function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}} = Val{true}) where {T, S}
+function force_coerce(a::NumField{T}, b::NumFieldElem, ::Val{throw_error} = Val(true)) where {T, throw_error}
   if Nemo.is_cyclo_type(a) && Nemo.is_cyclo_type(parent(b))
-    return force_coerce_cyclo(a, b, throw_error)::elem_type(a)
+    return force_coerce_cyclo(a, b, Val{throw_error})::elem_type(a)
   end
   if absolute_degree(parent(b)) <= absolute_degree(a)
     c = find_one_chain(parent(b), a)
@@ -936,7 +936,7 @@ function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error::Type{Val{S}}
       return x::elem_type(a)
     end
   end
-  if throw_error === Val{true}
+  if throw_error
     error("no coercion possible")
   else
     return false
