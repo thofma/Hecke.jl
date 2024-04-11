@@ -16,16 +16,14 @@
 #  - The prime p is not improperly automorphous for G;
 #  - For any lattice (L, b) in G, the p-adic lattice L_p is maximal
 #    integral with respect to the bilinear form b_p.
-#  - For any L in G, the quotient L0/p*L must have an isotropic
-#    element, where L0 = L except in the case where L is odd and
-#    p = 2, in which case L0 is the even sublattice of L.
 #
 #  These properties do not depend on a choice of a lattice in G,
-#  and they can actually be checked from the genus symbol directly,
-#  except the last one. However, from the genus symbol we can read
-#  sufficient conditions for the last property to be satisfied for all
-#  lattices in G (this is a real obstruction for rank 3 and 4 genera
-#  mainly)
+#  and they can actually be checked from the genus symbol directly.
+#
+#  TODO: Most of the infrastructure is here for enumeration of odd genera
+#  at the prime p = 2, but one needs to allow to move through the even
+#  genus (is it actually uniquely determined ?).
+#  For now, either the genera are even or the primes are odd.
 #
 ###############################################################################
 
@@ -516,43 +514,18 @@ A prime number ``p`` is called Kneser for ``G`` if:
 - The lattices in ``G`` are maximal integral locally at ``p`` with respect
   to the associated bilinear form;
 - The prime ``p`` is not improperly automorphous for ``G``;
-- For any ``L`` in ``G``, the quotient ``L0/p*L`` must have an isotropic
-  element, where ``L0 = L`` except in the case where ``L`` is odd and
-  ``p = 2`` in which case ``L0`` is the even sublattice of ``L``.
 """
 function smallest_kneser_prime(G::ZZGenus)
   @req is_integral(G) "The lattices in the genus must be integral"
-  r = rank(G)
-  d = det(G)
-  even = is_even(G)
-  bps = bad_primes(G)
-  if r == 3
-    # We need to avoid all the prime numbers dividing the determinant, and 2 in the odd case
-    # Otherwise, L0/p*L modulo its radical could have rank 2 and we
-    # cannot ensure in general that the quadratic form has an isotropic vector
-    bps = ZZRingElem[p for p in bps if isodd(p)]
-    p = even ? ZZ(2) : ZZ(3)
-  elseif r == 4
-    # We need to avoid all the prime numbers whose square divides the determinant, and 2 in the odd case again
-    # Otherwise, L0/p*L modulo its radical could have rank 2 and again we cannot
-    # ensure in general that the quadratic form has an isotropic vector
-    bps = ZZRingElem[p for p in bps if valuation(d, p) > 1]
-    p = even ? ZZ(2) : ZZ(3)
-  else
-    # Here L0/p*L modulo its radical always have rank at least 3, if we assume
-    # that L_p is maximal with respect to the bilinear form
-    bps = ZZRingElem[]
-    p = ZZ(2)
-  end
-
+  p = is_even(G) ? ZZ(2) : ZZ(3)
   VG = rational_isometry_class(G)
   isg, f = _improper_spinor_generators(G)
   if is_empty(isg) # Unique spinor genus
-    while (p in bps) || !is_isotropic(local_symbol(VG, p)) || !is_maximal_integral_bilinear(G, p)
+    while !is_isotropic(local_symbol(VG, p)) || !is_maximal_integral_bilinear(G, p)
       p = next_prime(p)
     end
   else # Happens very rarely
-    union!(bps, bad_primes(G))
+    bps = bad_primes(G)
     while (p in bps) || !is_zero(f(QQ(p))) || !is_isotropic(local_symbol(VG, p)) || !is_maximal_integral_bilinear(G, p)
       p = next_prime(p)
     end
