@@ -324,7 +324,7 @@ function _1_plus_p_mod_1_plus_q_generators(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdId
     l = 2*k
     pl = pl^2
     plq = pl + q
-    append!(g, _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(pkq, plq, Val{true}))
+    append!(g, _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(pkq, plq, Val(true)))
   end
 
   return g
@@ -366,7 +366,7 @@ end
 # Compute the group (1 + puq)/(1 + pvq), where it should hold puq = p^u + q and
 # pvq = p^v + q with v <= 2*u.
 # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.15.
-function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl, only_generators::Type{Val{T}} = Val{false}) where T
+function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl, ::Val{only_generators} = Val(false)) where only_generators
   O = order(puq)
   b = [ O(x) for x in basis(puq, copy = false) ]
 
@@ -388,7 +388,7 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   # We want generators of (1 + p^u + q)/(1 + p^v + q)
   map!(x -> x + one(O), gens, gens)
 
-  if only_generators == Val{true}
+  if only_generators
     return gens
   end
 
