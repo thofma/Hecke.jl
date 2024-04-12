@@ -269,9 +269,9 @@ end
 
 Returns the norm of $a$.
 """
-function norm(a::RelNumFieldOrderFractionalIdeal{S, U, V}, copy::Type{Val{T}} = Val{true}) where {S, T, U, V}
+function norm(a::RelNumFieldOrderFractionalIdeal{S, U, V}, ::Val{copy} = Val(true)) where {S, U, V, copy}
   assure_has_norm(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.norm)::U
   else
     return a.norm::U
