@@ -171,7 +171,7 @@ function is_locally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat,
   @req base_ring(L.base_ring) isa ZZRing "Order must be a Z-order"
 
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
-    fl, t = _is_locl_iso_abs_irred(L, M, p, Val{true})
+    fl, t = _is_loc_iso_abs_irred(L, M, p, Val(true))
   else
     fl, t = _is_loc_iso_gen(L, M, p, Val(true))
   end
@@ -186,11 +186,11 @@ function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion
   @req L.base_ring === M.base_ring "Orders of lattices must agree"
   @req base_ring(L.base_ring) isa ZZRing "Order must be a Z-order"
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
-    fl = _is_loc_iso_abs_irred(L, M, p, Val{false})
+    fl = _is_loc_iso_abs_irred(L, M, p, Val(false))
   else
     fl = _is_loc_iso_gen(L, M, p, Val(false))
     if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
-      @assert _is_loc_iso_gen(L, M, p, Val(false)) == _is_loc_iso_abs_irred(L, M, p, Val{false})
+      @assert _is_loc_iso_gen(L, M, p, Val(false)) == _is_loc_iso_abs_irred(L, M, p, Val(false))
     end
   end
   return fl
@@ -247,13 +247,13 @@ end
 function _is_loc_iso_abs_irred(L::ModAlgAssLat,
                                M::ModAlgAssLat,
                                p::IntegerUnion,
-                               with_iso::Type{Val{S}} = Val{true}) where {S}
+                               ::Val{with_iso} = Val(true)) where {with_iso}
   # We are assuming that L.V === M.V is absolutely irreducible
   # I will not even check this.
   T = basis_matrix(L) * basis_matrix_inverse(M)
   d = denominator(T)
   T = d * T
-  if with_iso === Val{true}
+  if with_iso
     fl = iszero(valuation(det(T), p))
     if fl
       error("Tell the developers to finally do it!")
