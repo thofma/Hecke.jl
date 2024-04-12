@@ -921,9 +921,9 @@ end
 #
 ################################################################################
 
-function force_coerce(a::NumField{T}, b::NumFieldElem, ::Val{throw_error} = Val(true)) where {T, throw_error}
+function force_coerce(a::NumField{T}, b::NumFieldElem, throw_error_val::Val{throw_error} = Val(true)) where {T, throw_error}
   if Nemo.is_cyclo_type(a) && Nemo.is_cyclo_type(parent(b))
-    return force_coerce_cyclo(a, b, Val{throw_error})::elem_type(a)
+    return force_coerce_cyclo(a, b, throw_error_val)::elem_type(a)
   end
   if absolute_degree(parent(b)) <= absolute_degree(a)
     c = find_one_chain(parent(b), a)
@@ -1191,7 +1191,7 @@ function embedding(k::NumField, K::NumField)
   end
 end
 
-function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, throw_error::Type{Val{T}} = Val{true}) where {T}
+function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, ::Val{throw_error} = Val(true)) where {throw_error}
   if iszero(b)
     return a(0)
   end
@@ -1215,7 +1215,7 @@ function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, thro
     # the code below would not work
     if is_rational(b)
       return a(coeff(b, 0))
-    elseif throw_error === Val{true}
+    elseif throw_error
       error("no coercion possible")
     else
       return
@@ -1254,7 +1254,7 @@ function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, thro
     for i=0:length(f)
       c = coeff(f, i)
       if !is_rational(c)
-        if throw_error === Val{true}
+        if throw_error
           error("no coercion possible")
         else
           return

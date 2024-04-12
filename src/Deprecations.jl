@@ -228,4 +228,5 @@
 
 # Deprecated during 0.30.x
 
+@deprecate force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, throw_error::Type{Val{T}}) where {T} force_coerce_cyclo(a, b, Val(T))
 @deprecate reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}}) where {N, T} reduce_full(A, g, Val(N))
