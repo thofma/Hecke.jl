@@ -225,3 +225,7 @@
 @deprecate b_invars b_invariants
 @deprecate c_invars c_invariants
 @deprecate basis_mat_inv(x; copy = true) basis_mat_inv(FakeFmpqMat, x; copy)
+
+# Deprecated during 0.30.x
+
+@deprecate reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}}) where {N, T} reduce_full(A, g, Val(N))

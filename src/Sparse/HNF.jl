@@ -257,21 +257,18 @@ end
 # is returned.
 @doc raw"""
     reduce_full(A::SMat{ZZRingElem}, g::SRow{ZZRingElem},
-                          trafo = Val{false}) -> SRow{ZZRingElem}, Vector{Int}
+                          with_transform = Val(false)) -> SRow{ZZRingElem}, Vector{Int}
 
 Reduces $g$ modulo $A$ and assumes that $A$ is upper triangular.
 
 The second return value is the array of pivot elements of $A$ that changed.
 
-If `trafo` is set to `Val{true}`, then additionally an array of transformations
+If `with_transform` is set to `Val(true)`, then additionally an array of transformations
 is returned.
 """
-function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) where {N, T}
+function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transform} = Val(false)) where {T, with_transform}
 #  @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
-
-  with_transform = (trafo == Val{true})
-  no_trafo = (trafo == Val{false})
 
   if with_transform
     trafos = SparseTrafoElem{T, dense_matrix_type(T)}[]
@@ -305,7 +302,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
 
       _g = g
       if with_transform
-        g, new_trafos  = reduce_right(A, g, 1, trafo())
+        g, new_trafos  = reduce_right(A, g, 1, with_transform_val)
         append!(trafos, new_trafos)
       else
         g = reduce_right(A, g)
@@ -344,7 +341,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
       push!(piv, A[j].pos[1])
       if with_transform
-        A[j], new_trafos = reduce_right(A, A[j], A[j].pos[1]+1, trafo())
+        A[j], new_trafos = reduce_right(A, A[j], A[j].pos[1]+1, with_transform_val)
         # We are updating the jth row
         # Have to adjust the transformations
         for t in new_trafos
@@ -353,7 +350,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
         # Now append
         append!(trafos, new_trafos)
       else
-        A[j] = reduce_right(A, A[j], A[j].pos[1]+1, trafo())
+        A[j] = reduce_right(A, A[j], A[j].pos[1]+1, with_transform_val)
       end
 
       if A.r == A.c
@@ -376,7 +373,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
     new_g = false
   end
   if with_transform
-    g, new_trafos = reduce_right(A, g, 1, trafo())
+    g, new_trafos = reduce_right(A, g, 1, with_transform_val)
     append!(trafos, new_trafos)
   else
     g = reduce_right(A, g)
@@ -460,7 +457,7 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
   nc = 0
   for i=b
     if with_transform
-      q, w, new_trafos = reduce_full(A, i, trafo)
+      q, w, new_trafos = reduce_full(A, i, trafo())
       append!(trafos, new_trafos)
     else
       q, w = reduce_full(A, i)
@@ -545,7 +542,7 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
   nc = 0
   for i=A
     if with_transform
-      q, w, new_trafos = reduce_full(B, i, trafo)
+      q, w, new_trafos = reduce_full(B, i, trafo())
       append!(trafos, new_trafos)
     else
       q, w = reduce_full(B, i)
