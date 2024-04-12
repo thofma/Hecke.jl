@@ -230,3 +230,5 @@
 
 @deprecate force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, throw_error::Type{Val{T}}) where {T} force_coerce_cyclo(a, b, Val(T))
 @deprecate reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}}) where {N, T} reduce_full(A, g, Val(N))
+@deprecate gens(A::GroupAlgebra, return_full_basis::Type{Val{T}}) where T gens(A, Val(T))
+@deprecate gens(A::AbstractAssociativeAlgebra, return_full_basis::Type{Val{T}}; thorough_search::Bool = false) where T gens(A, Val(T); thorough_search)

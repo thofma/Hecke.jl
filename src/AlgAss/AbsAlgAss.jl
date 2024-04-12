@@ -730,13 +730,13 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
 end
 
 @doc raw"""
-    gens(A::AbstractAssociativeAlgebra, return_full_basis::Typel{Val{T}} = Val{false};
+    gens(A::AbstractAssociativeAlgebra, return_full_basis::Val = Val(false);
          thorough_search::Bool = false) where T
       -> Vector{AbstractAssociativeAlgebraElem}
 
 Returns a subset of `basis(A)`, which generates $A$ as an algebra over
 `base_ring(A)`.
-If `return_full_basis` is set to `Val{true}`, the function also returns a
+If `return_full_basis` is set to `Val(true)`, the function also returns a
 `Vector{AbstractAssociativeAlgebraElem}` containing a full basis consisting of monomials in
 the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
 information on how these monomials are built. E. g.: If the function returns
@@ -746,9 +746,9 @@ If `thorough_search` is `true`, the number of returned generators is possibly
 smaller. This will in general increase the runtime. It is not guaranteed that
 the number of generators is minimal in any case.
 """
-function gens(A::AbstractAssociativeAlgebra, return_full_basis::Type{Val{T}} = Val{false}; thorough_search::Bool = false) where T
+function gens(A::AbstractAssociativeAlgebra, ::Val{return_full_basis} = Val(false); thorough_search::Bool = false) where return_full_basis
   d = dim(A)
-  if return_full_basis === Val{false}
+  if !return_full_basis
     if isdefined(A, :gens)
       return A.gens::Vector{elem_type(A)}
     end
@@ -858,7 +858,7 @@ function gens(A::AbstractAssociativeAlgebra, return_full_basis::Type{Val{T}} = V
     A.gens = generators
   end
 
-  if return_full_basis == Val{true}
+  if return_full_basis
     return generators, full_basis, elts_in_gens
   else
     return generators
