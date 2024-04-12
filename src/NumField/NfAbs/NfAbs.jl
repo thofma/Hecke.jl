@@ -774,10 +774,10 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   end
 
   if do_roots
-    K, R = _splitting_field(gl, coprime = true, do_roots = Val{true})
+    K, R = _splitting_field(gl, coprime = true, do_roots = Val(true))
     return K, vcat(r, [K(a)], R)
   else
-    return _splitting_field(gl, coprime = true, do_roots = Val{false})
+    return _splitting_field(gl, coprime = true, do_roots = Val(false))
   end
 end
 
@@ -823,14 +823,14 @@ function splitting_field(fl::Vector{<:PolyRingElem{AbsSimpleNumFieldElem}}; do_r
     R = [K(x) for x = r]
     push!(R, a)
     Kst, t = polynomial_ring(K, cached = false)
-    return _splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = Val{true})
+    return _splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = Val(do_roots))
   else
-    return _splitting_field(ggl, coprime = true, do_roots = Val{false})
+    return _splitting_field(ggl, coprime = true, do_roots = Val(do_roots))
   end
 end
 
 
-function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::Type{Val{T}} = Val{false}, coprime::Bool = false) where T
+function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::Val{do_roots_bool} = Val(false), coprime::Bool = false) where do_roots_bool
   if !coprime
     fl = coprime_base(fl)
   end
@@ -841,12 +841,12 @@ function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::
   fl = ffl
   K = base_ring(fl[1])
   r = elem_type(K)[]
-  if do_roots == Val{true}
+  if do_roots_bool
     r = elem_type(K)[roots(x)[1] for x = fl if degree(x) == 1]
   end
   lg = eltype(fl)[k for k = fl if degree(k) > 1]
   if iszero(length(lg))
-    if do_roots == Val{true}
+    if do_roots_bool
       return K, r
     else
       return K
@@ -854,7 +854,7 @@ function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::
   end
 
   K, a = number_field(lg[1], check = false, cached = false)
-  do_embedding = length(lg) > 1 || degree(K)>2 || (do_roots == Val{true})
+  do_embedding = length(lg) > 1 || degree(K)>2 || do_roots_bool
   Ks, nk, mk = collapse_top_layer(K, do_embedding = do_embedding)
   if !do_embedding
     return Ks
@@ -867,13 +867,13 @@ function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::
   for i = 2:length(lg)
     push!(ggl, map_coefficients(mk, lg[i], parent = parent(ggl[1])))
   end
-  if do_roots == Val{true}
+  if do_roots_bool
     R = [mk(x) for x = r]
     push!(R, preimage(nk, a))
     Kst, t = polynomial_ring(Ks, cached = false)
-    return _splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = Val{true})
+    return _splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = do_roots)
   else
-    return _splitting_field(ggl, coprime = true, do_roots = Val{false})
+    return _splitting_field(ggl, coprime = true, do_roots = do_roots)
   end
 end
 
