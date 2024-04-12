@@ -190,7 +190,7 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
   end
   if isdefined(M, :trafo)
     st = M.done_up_to + 1
-    _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:nrows(M.rel_gens), 1:ncols(M.rel_gens)), Val{true}, offset = st-1, truncate = true)
+    _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:nrows(M.rel_gens), 1:ncols(M.rel_gens)), Val(true), offset = st-1, truncate = true)
     append!(M.trafo, t)
 
   else

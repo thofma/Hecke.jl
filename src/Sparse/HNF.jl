@@ -443,13 +443,12 @@ end
 Given a matrix $A$ in HNF, extend this to get the HNF of the concatenation
 with $b$.
 """
-function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where {N, T}
+function hnf_extend!(A::SMat{T}, b::SMat{T}, with_transform_val::Val{with_transform} = Val(false); truncate::Bool = false, offset::Int = 0) where {T, with_transform}
   rA = nrows(A)
   @vprintln :HNF 1 "Extending HNF by:"
   @vprint :HNF 1 b
   @vprint :HNF 1 "density $(density(A)) $(density(b))"
 
-  with_transform = (trafo == Val{true})
   with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing
 
   A_start_rows = nrows(A)  # for the offset stuff
@@ -457,7 +456,7 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
   nc = 0
   for i=b
     if with_transform
-      q, w, new_trafos = reduce_full(A, i, trafo())
+      q, w, new_trafos = reduce_full(A, i, with_transform_val)
       append!(trafos, new_trafos)
     else
       q, w = reduce_full(A, i)
@@ -491,7 +490,7 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
     end
     if length(w) > 0
       if with_transform
-        new_trafos = reduce_up(A, w, trafo())
+        new_trafos = reduce_up(A, w, with_transform_val)
         append!(trafos, new_trafos)
       else
         reduce_up(A, w)
