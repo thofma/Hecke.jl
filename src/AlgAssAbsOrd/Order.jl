@@ -326,14 +326,14 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, ::Val{short} = Val(false)) where {S, T, short}
   t = zero_matrix(FlintQQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = FakeFmpqMat(t)
   t = t*basis_mat_inv(FakeFmpqMat, O, copy = false)
-  if short == Val{true}
+  if short
     return isone(t.den)
-  elseif short == Val{false}
+  else
     if !isone(t.den)
       return false, Vector{ZZRingElem}()
     else
@@ -352,7 +352,7 @@ end
 Returns `true` if the algebra element $x$ is in $O$ and `false` otherwise.
 """
 function in(x::T, O::AlgAssAbsOrd{S, T}) where {S, T}
-  return _check_elem_in_order(x, O, Val{true})
+  return _check_elem_in_order(x, O, Val(true))
 end
 
 ################################################################################

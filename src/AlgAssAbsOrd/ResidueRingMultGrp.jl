@@ -201,7 +201,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   if qq == q
     # Maybe we are lucky and don't need to search for another generator
     aa = OAtoOAP\GtoOAP(G[1])
-    x = _check_elem_in_order(elem_in_algebra(aa, copy = false), O, Val{true})
+    x = _check_elem_in_order(elem_in_algebra(aa, copy = false), O, Val(true))
     if x
       a = O(aa, false)
     end

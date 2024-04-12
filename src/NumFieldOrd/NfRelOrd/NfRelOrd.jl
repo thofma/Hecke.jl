@@ -431,12 +431,12 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::U, O::RelNumFieldOrder{T, S, U}, short::Type{Val{V}} = Val{false}) where {T, S, U, V}
+function _check_elem_in_order(a::U, O::RelNumFieldOrder{T, S, U}, ::Val{short} = Val(false)) where {T, S, U, short}
   b_pmat = basis_pmatrix(O, copy = false)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
-  if short == Val{true}
+  if short
     for i = 1:degree(O)
       if !(t[1, i] in b_pmat.coeffs[i])
         return false
@@ -458,7 +458,7 @@ function _check_elem_in_order(a::U, O::RelNumFieldOrder{T, S, U}, short::Type{Va
 end
 
 function in(a::U, O::RelNumFieldOrder{T, S, U}) where {T, S, U}
-  return _check_elem_in_order(a, O, Val{true})
+  return _check_elem_in_order(a, O, Val(true))
 end
 
 ################################################################################

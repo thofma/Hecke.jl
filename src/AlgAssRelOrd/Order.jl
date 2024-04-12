@@ -248,12 +248,12 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, V}, short::Type{Val{U}} = Val{false}) where {S, T, U, V}
+function _check_elem_in_order(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, V}, ::Val{short} = Val(false)) where {S, T, V, short}
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
   b_pmat = basis_pmatrix(O, copy = false)
-  if short == Val{true}
+  if short
     for i = 1:degree(O)
       if !(t[1, i] in b_pmat.coeffs[i])
         return false
@@ -280,7 +280,7 @@ end
 Returns `true` if the algebra element $a$ is in $O$ and `false` otherwise.
 """
 function in(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, U}) where {S, T, U}
-  return _check_elem_in_order(a, O, Val{true})
+  return _check_elem_in_order(a, O, Val(true))
 end
 
 ################################################################################
