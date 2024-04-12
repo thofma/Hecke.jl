@@ -296,7 +296,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
     if isdefined(L, :minimal_generators)
       return L.minimal_generators::Vector{Vector{T}}
     end
-    St = _steinitz_form(pseudo_matrix(L), Val{false})
+    St = steinitz_form(pseudo_matrix(L))
     d = nrows(St)
     n = degree(L)
     v = Vector{T}[]

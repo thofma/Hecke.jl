@@ -1898,15 +1898,15 @@ function integral_and_coprime_to(a::Union{ AbsSimpleNumFieldOrderFractionalIdeal
 end
 
 function steinitz_form(P::PMat)
-  return _steinitz_form(P, Val{false})
+  return _steinitz_form(P, Val(false))
 end
 
 function steinitz_form_with_transform(P::PMat)
-  return _steinitz_form(P, Val{true})
+  return _steinitz_form(P, Val(true))
 end
 
-function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
-  if trafo == Val{true}
+function _steinitz_form(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
+  if with_transform
     S, U = pseudo_hnf_with_transform(P, :lowerleft)
   else
     S = pseudo_hnf(P, :lowerleft)
@@ -1923,7 +1923,7 @@ function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
     end
     S.coeffs[i] = oneK*O
   end
-  if trafo == Val{true}
+  if with_transform
     steinitz_form!(S, U, true, start_row)
     return S, U
   else
