@@ -528,12 +528,11 @@ end
 
 Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 """
-function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false) where {N, T}
+function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} = Val(false); truncate::Bool = false) where {T, with_transform}
   @vprintln :HNF 1 "Starting Kannan Bachem HNF on:"
   @vprint :HNF 1 A
   @vprintln :HNF 1 " with density $(density(A)); truncating $truncate"
 
-  with_transform = (trafo == Val{true})
   with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing
 
   B = sparse_matrix(base_ring(A))
@@ -541,7 +540,7 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
   nc = 0
   for i=A
     if with_transform
-      q, w, new_trafos = reduce_full(B, i, trafo())
+      q, w, new_trafos = reduce_full(B, i, with_transform_val)
       append!(trafos, new_trafos)
     else
       q, w = reduce_full(B, i)
@@ -575,7 +574,7 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
     end
     if length(w) > 0
       if with_transform
-        new_trafos = reduce_up(B, w, trafo())
+        new_trafos = reduce_up(B, w, with_transform_val)
         append!(trafos, new_trafos)
       else
         reduce_up(B, w)
@@ -609,7 +608,7 @@ end
 Return the upper right Hermite normal form of $A$.
 """
 function hnf(A::SMat{ZZRingElem}; truncate::Bool = false)
-  return hnf_kannan_bachem(A, truncate = truncate)
+  return hnf_kannan_bachem(A; truncate = truncate)
 end
 
 @doc raw"""
