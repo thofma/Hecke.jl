@@ -228,12 +228,9 @@ function find_row_starting_with(A::SMat, p::Int)
   return stop
 end
 
-# If trafo is set to Val{true}, then additionally an Array of transformations
+# If with_transform is set to true, then additionally an Array of transformations
 # is returned.
-function reduce_up(A::SMat{T}, piv::Vector{Int},
-                                  trafo::Type{Val{N}} = Val{false}) where {N, T}
-
-  with_transform = (trafo == Val{true})
+function reduce_up(A::SMat{T}, piv::Vector{Int}, with_transform_val::Val{with_transform} = Val(false)) where {T, with_transform}
   if with_transform
     trafos = SparseTrafoElem{T, dense_matrix_type(T)}[]
   end
@@ -244,7 +241,7 @@ function reduce_up(A::SMat{T}, piv::Vector{Int},
   for red=p-1:-1:1
     # the last argument should be the smallest pivot larger then pos[1]
     if with_transform
-      A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), trafo)
+      A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), typeof(with_transform_val))
       for t in new_trafos
         t.j = red
       end
@@ -499,7 +496,7 @@ function hnf_extend!(A::SMat{T}, b::SMat{T}, trafo::Type{Val{N}} = Val{false}; t
     end
     if length(w) > 0
       if with_transform
-        new_trafos = reduce_up(A, w, trafo)
+        new_trafos = reduce_up(A, w, trafo())
         append!(trafos, new_trafos)
       else
         reduce_up(A, w)
@@ -584,7 +581,7 @@ function hnf_kannan_bachem(A::SMat{T}, trafo::Type{Val{N}} = Val{false}; truncat
     end
     if length(w) > 0
       if with_transform
-        new_trafos = reduce_up(B, w, trafo)
+        new_trafos = reduce_up(B, w, trafo())
         append!(trafos, new_trafos)
       else
         reduce_up(B, w)
