@@ -967,17 +967,17 @@ function sub(P::PMat, rows::AbstractUnitRange{Int}, cols::AbstractUnitRange{Int}
 end
 
 function pseudo_hnf_cohen(P::PMat)
-   return _pseudo_hnf_cohen(P, Val{false})
+   return _pseudo_hnf_cohen(P, Val(false))
 end
 
 function pseudo_hnf_cohen_with_transform(P::PMat)
-   return _pseudo_hnf_cohen(P, Val{true})
+   return _pseudo_hnf_cohen(P, Val(true))
 end
 
-function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_hnf_cohen(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
    H = deepcopy(P)
    m = nrows(H)
-   if trafo == Val{true}
+   if with_transform
       U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_cohen!(H, U, true)
       return H, U
