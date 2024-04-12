@@ -83,7 +83,7 @@ function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g:
 end
 
 # It is assumed that p is not an index divisor
-function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, degree_one::Type{Val{S}} = Val{false}) where S
+function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, ::Val{degree_one} = Val(false)) where degree_one
   R = Native.GF(p, cached = false, check = false)
 
   Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
@@ -94,7 +94,7 @@ function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRing
 
   h = gcd(gmodp,fmodp)
 
-  if degree_one === Val{true}
+  if degree_one
     return R, h
   else
     if isa(p, Int)
@@ -120,7 +120,7 @@ function _residue_field_nonindex_divisor_fq_default(O, P)
   mF.P = P
 end
 
-function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
+function _residue_field_nonindex_divisor(O, P, ::Val{small} = Val(false), degree_one_val::Val{degree_one} = Val(false)) where {small, degree_one}
   # This code assumes that P comes from prime_decomposition
   @assert has_2_elem(P) && is_prime_known(P) && is_prime(P)
 
@@ -129,18 +129,18 @@ function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false},
   f = nf(O).pol
   g = parent(f)(elem_in_nf(gtwo))
 
-  if small === Val{true}
+  if small
     @assert fits(Int, minimum(P, copy = false))
-    F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)), degree_one)
+    F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)), degree_one_val)
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
-  elseif small === Val{false}
+  else
     F, h = _residue_field_nonindex_divisor_helper_fq_default(f, g, minimum(P))
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
-    #F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one)
+    #F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P), degree_one_val)
     #mF = Mor(O, F, h)
     #mF.P = P
     #return F, mF
@@ -212,7 +212,7 @@ function ResidueFieldSmall(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{A
     return _residue_field_generic(O, P, Val{true})
   end
   if !is_index_divisor(O, minimum(P))
-    return _residue_field_nonindex_divisor(O, P, Val{true})
+    return _residue_field_nonindex_divisor(O, P, Val(true))
   else
     return _residue_field_generic(O, P, Val{true})
   end
@@ -224,7 +224,7 @@ function ResidueFieldDegree1(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal
     return _residue_field_generic(O, P, Val{false}, Val{true})
   end
   if !is_index_divisor(O, minimum(P)) && has_2_elem(P)
-    return _residue_field_nonindex_divisor(O, P, Val{false}, Val{true})
+    return _residue_field_nonindex_divisor(O, P, Val(false), Val(true))
   else
     return _residue_field_generic(O, P, Val{false}, Val{true})
   end
@@ -239,7 +239,7 @@ function ResidueFieldSmallDegree1(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrder
     return _residue_field_generic(O, P, Val{true}, Val{true})
   end
   if !is_index_divisor(O, minimum(P))
-    return _residue_field_nonindex_divisor(O, P, Val{true}, Val{true})
+    return _residue_field_nonindex_divisor(O, P, Val(true), Val(true))
   else
     return _residue_field_generic(O, P, Val{true}, Val{true})
   end
