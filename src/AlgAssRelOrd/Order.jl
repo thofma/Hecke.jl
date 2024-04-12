@@ -709,7 +709,7 @@ is_maximal_known(O::AlgAssRelOrd) = O.is_maximal != 0
 Returns an order $O'$ containing $O$ such that the localization $O'_p$ is
 hereditary where $p$ is a prime ideal of the base ring of $O$.
 """
-function phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; return_pradical::Type{Val{T}} = Val{false}) where T
+function phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; return_pradical::Val{return_pradical_bool} = Val(false)) where return_pradical_bool
   d = discriminant(O)
   prad = pradical(O, p)
   OO = left_order(prad)
@@ -723,7 +723,7 @@ function phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal,
       break
     end
   end
-  if return_pradical == Val{true}
+  if return_pradical_bool
     return OO, prad
   else
     return OO
@@ -760,7 +760,7 @@ order $O''$ containing $O$ is not divisible by $p$ where $p$ is a prime ideal
 of the base ring of $O$.
 """
 function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
-  O, prad = phereditary_overorder(O, p, return_pradical = Val{true})
+  O, prad = phereditary_overorder(O, p; return_pradical = Val(true))
   return _pmaximal_overorder(O, prad, p, strict_containment = true)
 end
 
