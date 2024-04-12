@@ -1449,18 +1449,18 @@ function number_of_columns(m::PMat2)
 end
 
 function pseudo_snf_kb(P::PMat2)
-   return _pseudo_snf_kb(P, Val{false})
+   return _pseudo_snf_kb(P, Val(false))
 end
 
 function pseudo_snf_kb_with_transform(P::PMat2)
-   return _pseudo_snf_kb(P, Val{true})
+   return _pseudo_snf_kb(P, Val(true))
 end
 
-function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_snf_kb(P::PMat2, ::Val{with_transform} = Val(false)) where with_transform
    S = deepcopy(P)
    m = nrows(S)
    n = ncols(S)
-   if trafo == Val{true}
+   if with_transform
       U = identity_matrix(base_ring(S.matrix), m)
       K = identity_matrix(base_ring(S.matrix), m)
       pseudo_snf_kb!(S, U, K, true)
