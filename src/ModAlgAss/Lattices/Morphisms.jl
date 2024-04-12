@@ -159,7 +159,7 @@ function _is_locally_isomorphic_same_ambient_module(L::ModAlgAssLat, M::ModAlgAs
   E, f, O, I = _hom_space_as_ideal(L, M)
 
   for p in ps
-    if !_is_loc_iso_gen(L, M, p, E, f, O, I, Val{false})
+    if !_is_loc_iso_gen(L, M, p, E, f, O, I, Val(false))
       return false
     end
   end
@@ -173,7 +173,7 @@ function is_locally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat,
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
     fl, t = _is_locl_iso_abs_irred(L, M, p, Val{true})
   else
-    fl, t =  _is_loc_iso_gen(L, M, p, Val{true})
+    fl, t = _is_loc_iso_gen(L, M, p, Val(true))
   end
 
   if fl
@@ -188,9 +188,9 @@ function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
     fl = _is_loc_iso_abs_irred(L, M, p, Val{false})
   else
-    fl = _is_loc_iso_gen(L, M, p, Val{false})
+    fl = _is_loc_iso_gen(L, M, p, Val(false))
     if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
-      @assert _is_loc_iso_gen(L, M, p, Val{false}) == _is_loc_iso_abs_irred(L, M, p, Val{false})
+      @assert _is_loc_iso_gen(L, M, p, Val(false)) == _is_loc_iso_abs_irred(L, M, p, Val{false})
     end
   end
   return fl
@@ -199,9 +199,9 @@ end
 function _is_loc_iso_gen(L::ModAlgAssLat,
                          M::ModAlgAssLat,
                          p::IntegerUnion,
-                         with_iso::Type{Val{S}} = Val{true}) where {S}
+                         with_iso_val::Val{with_iso} = Val(true)) where {with_iso}
   E, f, O, I = _hom_space_as_ideal(L, M)
-  return _is_loc_iso_gen(L, M, p, E, f, O, I, with_iso)
+  return _is_loc_iso_gen(L, M, p, E, f, O, I, with_iso_val)
 end
 
 function _is_loc_iso_gen(L::ModAlgAssLat,
@@ -211,7 +211,7 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
                          f,
                          O,
                          I,
-                         with_iso::Type{Val{S}} = Val{true}) where {S}
+                         ::Val{with_iso} = Val(true)) where {with_iso}
   fl, alpha = is_locally_free(I, p, side = :right)
   imal = image(f, alpha)
   if !fl
@@ -227,7 +227,7 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
   for i in 1:nrows(newbasmat)
     for j in 1:ncols(newbasmat)
       if !iszero(newbasmat[i, j]) && valuation(newbasmat[i, j], p) < 0
-        if with_iso === Val{true}
+        if with_iso
           return false, imal
         else
           return false
@@ -237,7 +237,7 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
   end
   # This means (L * mat)_p \subseteq M_p
   # This is an equality if and only if the base change matrix is invertible modulo p.
-  if with_iso === Val{true}
+  if with_iso
     return valuation(det(newbasmat), p) == 0, imal
   else
     return valuation(det(newbasmat), p) == 0
