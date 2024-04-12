@@ -300,14 +300,14 @@ function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M:
 end
 
 function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat)
-  return _is_isomorphic(L, M, Val{true})
+  return _is_isomorphic(L, M, Val(true))
 end
 
 function is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
-  return _is_isomorphic(L, M, Val{false})
+  return _is_isomorphic(L, M, Val(false))
 end
 
-function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}) where {T}
+function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso_val::Val{with_iso}) where {with_iso}
   # the hom_space function wants L and M sitting inside the same ambient space
   # there is some choice we can make
   # we try to choose the order, where we already computed the endomorphism
@@ -321,17 +321,17 @@ function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}
   if endoMVknown || (!endoMVknown && !endoLVknown)
     fl, iso = is_isomorphic_with_isomorphism(L.V, M.V)
     if !fl
-      if with_iso === Val{false}
+      if !with_iso
         return false
       else
         return false, zero_map(L.V, M.V)
       end
     end
     LL = iso(L)
-    if with_iso === Val{false}
-      return _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso())
+    if !with_iso
+      return _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso_val)
     else
-      fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso())
+      fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso_val)
       if fl
         _iso = iso * LLtoM
         @assert _iso(L) == M
@@ -343,17 +343,17 @@ function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}
   else
     fl, iso = is_isomorphic_with_isomorphism(M.V, L.V)
     if !fl
-      if with_iso === Val{false}
+      if !with_iso
         return false
       else
         return false, zero_map(L.V, M.V)
       end
     end
     MM = iso(M)
-    if with_iso === Val{false}
-      return _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso())
+    if !with_iso
+      return _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso_val)
     else
-      fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso())
+      fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso_val)
       if fl
         _iso = LtoMM * inv(iso)
         @assert _iso(L) == M
