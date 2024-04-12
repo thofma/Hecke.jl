@@ -158,18 +158,18 @@ function _residue_field_generic_fq_default(O, P)
  	return codomain(f), f
 end
 
-function _residue_field_generic(O, P, small::Type{Val{T}} = Val{false}, degree_one::Type{Val{S}} = Val{false}) where {S, T}
-  if small == Val{true}
+function _residue_field_generic(O, P, ::Val{small} = Val(false), ::Val{degree_one} = Val(false)) where {small, degree_one}
+  if small
     @assert fits(Int, minimum(P, copy = false))
-    if degree_one === Val{true}
+    if degree_one
 			f1 = NfOrdToGFMor(O, P)
       return codomain(f1), f1
 		else
     	f = NfOrdToFqNmodMor(O, P)
     	return codomain(f), f
     end
-  elseif small === Val{false}
-    if degree_one === Val{true}
+  else
+    if degree_one
     	f3 = NfOrdToGFFmpzMor(O, P)
       return codomain(f3), f3
 		else
@@ -209,24 +209,24 @@ function ResidueFieldSmall(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{A
   p = minimum(P)
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   if !is_maximal_known(O) || !is_maximal(O) || !is_defining_polynomial_nice(nf(O))
-    return _residue_field_generic(O, P, Val{true})
+    return _residue_field_generic(O, P, Val(true))
   end
   if !is_index_divisor(O, minimum(P))
     return _residue_field_nonindex_divisor(O, P, Val(true))
   else
-    return _residue_field_generic(O, P, Val{true})
+    return _residue_field_generic(O, P, Val(true))
   end
 end
 
 function ResidueFieldDegree1(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert degree(P) == 1
   if !is_maximal_known(O) || !is_maximal(O)
-    return _residue_field_generic(O, P, Val{false}, Val{true})
+    return _residue_field_generic(O, P, Val(false), Val(true))
   end
   if !is_index_divisor(O, minimum(P)) && has_2_elem(P)
     return _residue_field_nonindex_divisor(O, P, Val(false), Val(true))
   else
-    return _residue_field_generic(O, P, Val{false}, Val{true})
+    return _residue_field_generic(O, P, Val(false), Val(true))
   end
 end
 
@@ -236,12 +236,12 @@ function ResidueFieldSmallDegree1(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrder
   !fits(Int, p) && error("Minimum of prime ideal must be small (< 64 bits)")
   @assert degree(P) == 1
   if !is_maximal_known(O) || !is_maximal(O) || !is_defining_polynomial_nice(nf(O))
-    return _residue_field_generic(O, P, Val{true}, Val{true})
+    return _residue_field_generic(O, P, Val(true), Val(true))
   end
   if !is_index_divisor(O, minimum(P))
     return _residue_field_nonindex_divisor(O, P, Val(true), Val(true))
   else
-    return _residue_field_generic(O, P, Val{true}, Val{true})
+    return _residue_field_generic(O, P, Val(true), Val(true))
   end
 end
 
