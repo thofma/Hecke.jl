@@ -1105,12 +1105,17 @@ end
 
 Return representatives for the isometry classes in the genus of `L`.
 """
-function genus_representatives(L::ZZLat)
-  if rank(L) == 1
-    return ZZLat[L]
+function genus_representatives(_L::ZZLat)
+  if rank(_L) == 1
+    return ZZLat[_L]
   end
-  s = denominator(scale(L))
-  L = rescale(L, s)
+  s = scale(_L)
+  if s != 1
+    L = rescale(_L, 1//s)
+  else
+    L = _L
+  end
+
   if rank(L) == 2
     LL = _to_number_field_lattice(L)
     G = genus_representatives(LL)
@@ -1123,7 +1128,7 @@ function genus_representatives(L::ZZLat)
   else
     res = spinor_genera_in_genus(L)
   end
-  map!(L -> rescale(L, 1//s), res, res)
+  s != 1 && map!(L -> rescale(L, s), res, res)
   return res
 end
 
@@ -1163,7 +1168,7 @@ julia> index(L, L0)
 function even_sublattice(L::ZZLat)
   @req is_integral(L) "The bilinear form on the lattice must be integral"
   is_even(L) && return L
-  diagL = matrix(GF(2), rank(L), 1, diagonal(gram_matrix(L)))
+  diagL = matrix(GF(2; cached=false), rank(L), 1, diagonal(gram_matrix(L)))
   K2 = kernel(diagL)
   K = matrix(QQ, [lift(ZZ, a) for a in K2])
   return lattice_in_same_ambient_space(L, K*basis_matrix(L)) + 2*L

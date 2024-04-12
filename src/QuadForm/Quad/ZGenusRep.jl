@@ -52,7 +52,7 @@ Output:
 """
 function prime_dual(L::ZZLat, v::QQMatrix, p::ZZRingElem)
   M = gram_matrix(L)*transpose(v)
-  K = kernel(map_entries(GF(p), M))
+  K = kernel(map_entries(GF(p; cached=false), M))
   M = matrix(QQ, nrows(K), ncols(K), ZZRingElem[lift(ZZ, k) for k in K])
   return lattice_in_same_ambient_space(L, M*basis_matrix(L)) + p*L
 end
@@ -213,7 +213,7 @@ function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
   @assert !save_partial || !isnothing(save_path)
   bad = is_divisible_by(numerator(det(L)), p)
   even = is_even(L)
-  K = GF(p)
+  K = GF(p; cached=false)
   @assert algorithm in [:orbit, :random, :spinor]
 
   # A vector in `L\p*L` is called admissible if it gives rise to a neighbour
@@ -458,12 +458,12 @@ end
 @doc raw"""
     is_maximal_integral_bilinear(G::ZZGenus, p::ZZRingElem) -> Bool
 
-Given a genus ``G`` of integral ``\\mathbb{Z}``-lattices and a prime number
+Given a genus ``G`` of integral ``\mathbb{Z}``-lattices and a prime number
 ``p``, return whether the lattice ``L_p`` is maximal integral in
-``\\mathbb{Q}L_p``, for the bilinear form on ``L_p``.
+``\mathbb{Q}L_p``, for the bilinear form on ``L_p``.
 
 Note that this does not depend on a choice of a lattice ``L`` in ``G``,
-and this property can be directly check from the genus symbol.
+and this property can be checked directly from the genus symbol.
 """
 function is_maximal_integral_bilinear(G::ZZGenus, p::ZZRingElem)
   @req is_integral(G) "Lattices in the genus must be globally integral"
@@ -506,7 +506,7 @@ end
 @doc raw"""
     smallest_kneser_prime(G::ZZGenus) -> ZZRingElem
 
-Given a genus ``G`` of integral ``\\mathbb{Z}``-lattice, return the
+Given a genus ``G`` of integral ``\mathbb{Z}``-lattice, return the
 smallest Kneser prime ``p`` for ``G``.
 
 A prime number ``p`` is called Kneser for ``G`` if:
@@ -536,24 +536,20 @@ end
 smallest_kneser_prime(L::ZZLat) = smallest_kneser_prime(genus(L))
 
 @doc raw"""
-    enumerate_definite_genus(known::Vector{ZZLat}, algorithm::Symbol = :default;
-                                                   rand_neigh::Int = 10,
-                                                   distinct::Bool = false,
-                                                   invariant_function::Function = default_invariant_function,
-                                                   save_partial::Bool = false,
-                                                   save_path::String = nothing,
-                                                   use_mass::Bool = true,
-                                                   _missing_mass::QQFieldElem = nothing,
-                                                   stop_after::IntExt = inf,
-                                                   max::IntExt = inf)
-                                                                   -> Vector{ZZLat}, QQFieldElem
+    enumerate_definite_genus(known::Vector{ZZLat}, algorithm::Symbol = :default) -> Vector{ZZLat}, QQFieldElem
+    enumerate_definite_genus(L::ZZLat, algorithm::Symbol = :default) -> Vector{ZZLat}
+    enumerate_definite_genus(G::ZZGenus, algorithm::Symbol = :default) -> Vector{ZZLat}
 
-Given a non-empty list `known` of definite integral lattices which are in the
-same (spinor) genus, compute new representatives of isometry classes of
-lattices which are not represented by the lattices in `known` using Kneser's
-neighbour algorithm. The output consists of a copy of `known` together with new
-lattices (if any found), and a rational number which corresponds to the portion of
-the mass of the (spinor) genus which is missing.
+Enumerate lattices in a given genus of integral definite lattices of rank at
+least `3`, using Kneser's neighbour algorithm.
+
+The output consists of a list of lattices representing the isometry classes
+in the given genus.
+
+For the first argument, one can choose to give directly a genus symbol ``G`` or
+a lattice ``L`` in ``G``. Otherwise, one can give a list of known lattices
+``G`` to continue an incomplete enumeration (in which case the lattices are
+assumed to be in the same spinor genus).
 
 The second argument gives the choice to which algorithm to use for the enumeration.
 We currently support two algorithms:
@@ -562,17 +558,23 @@ We currently support two algorithms:
 If `algorithm = :default`, the function chooses the most appropriate algorithm
 depending on the rank and determinant of the genus to be enumerated.
 
-The possible extra arguments are as follows:
-- `rand_neigh` -> for random enumeration, how many random neighbours are computed at each iteration;
-- `distinct` -> whether the lattices in `known` are known to be pairwise non-isometric;
-- `invariant_function` -> a function to compute isometry invariants in order to avoid unnecessary isometry tests;
-- `save_partial` -> whether one wants to save iteratively new isometry classes (for instance for large genera);
-- `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
-- `use_mass` -> whether to use the mass formula as termination condition;
-- `missing_mass` -> if `use_mass` and `distinct` are true, and the partial mass of `known` is known, gives what is the part of the mass which is missing;
-- `stop_after` -> the algorithm stops after the specified amount of vain iterations without finding a new isometry class is reached;
-- `max` -> the algorithm stops after finding `max` new isometry classes.
+There are possible extra optional arguments:
+- `rand_neigh::Int` (default = `10`) -> for random enumeration, how many random neighbours are computed at each iteration;
+- `invariant_function::Function` (default = `default_invariant_function`) -> a function to compute isometry invariants in order to avoid unnecessary isometry tests;
+- `save_partial::Bool` (default = `false`) -> whether one wants to save iteratively new isometry classes (for instance for large genera);
+- `save_path::String` (default = `nothing`) -> a path to a folder where to save new lattices in the case where `save_partial` is true;
+- `use_mass::Bool` (default = `true`) -> whether to use the mass formula as termination condition;
+- `stop_after::IntExt` (default = `inf`) -> the algorithm stops after the specified amount of vain iterations without finding a new isometry class is reached;
+- `max::IntExt` (default = `inf`) -> the algorithm stops after finding `max` new isometry classes.
 
+In the case where one gives a list of `known` lattices in input, the output list
+contains a copy of `known` together with any new lattice computed. The extra
+output of the function is a rational number giving the portion of the mass of
+the (spinor) genus which is missing. It is set to be `0` whenever the mass is not
+used (`use_mass = false`).
+Moreover, there are two other possible extra optional arguments:
+- `distinct::Bool` (default = `false`) -> whether the lattices in `known` are known to be pairwise non-isometric;
+- `missing_mass::QQFieldElem` (default = `nothing`) -> if `use_mass` and `distinct` are true, and the partial mass of `known` is known, gives what is the part of the mass which is missing;
 If `distinct == false`, the function first compares all the lattices in `known`
 to only keep one representative for each isometry class represented.
 
@@ -581,12 +583,14 @@ file. The storing only remembers the rank of a lattice, half of its Gram matrix
 (which is enough to reconstruct the lattice as a standalone object) and the order
 of the isometry group of the lattice if it has been computed.
 
-The default function for `invariant_function` currently computes:
+The `default_invariant_function` currently computes:
 - the absolute length of a shortest vector in the given lattice (also known as [`minimum`](@ref));
 - an ordered list of tuples consisting of the decomposition of the root sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
 - the kissing number of the given lattice, which is proportional to the number of vectors of shortest length;
 - the order of the isometry group of the given lattice.
 """
+enumerate_definite_genus(::Union{ZZLat, ZZGenus, Vector{ZZLat}}, ::Symbol)
+
 function enumerate_definite_genus(
     known::Vector{ZZLat},
     algorithm::Symbol = :default;
@@ -694,7 +698,7 @@ end
 @doc raw"""
     spinor_genera_in_genus(L::ZZLat) -> ZZLat
 
-Given an integral ``\\mathbb{Z}``-lattice ``L`` of rank at least 3,
+Given an integral ``\mathbb{Z}``-lattice ``L`` of rank at least 3,
 return a list of representatives of the spinor genera in the
 genus of ``L``.
 
@@ -740,52 +744,8 @@ function spinor_genera_in_genus(L::ZZLat)
   return res
 end
 
-@doc raw"""
-    enumerate_definite_genus(L::ZZLat, algorithm::Symbol = :default;
-                                       rand_neigh::Int = 10,
-                                       invariant_function::Function = default_invariant_function,
-                                       save_partial::Bool = false,
-                                       save_path::String = nothing,
-                                       use_mass::Bool = true,
-                                       stop_after::IntExt = inf,
-                                       max::IntExt = inf)      -> Vector{ZZLat}
-
-Given a definite integral lattice ``L``, compute representatives for the isometry
-classes of lattices in the genus of ``L`` using Kneser's neighbour algorithm.
-
-The second argument gives the choice to which algorithm to use for the enumeration.
-We currently support two algorithms:
-- `:random` which finds new isometry classes by constructing neighbours from random isotropic lines;
-- `:orbit` which computes orbits of isotropic lines before constructing neighbours.
-If `algorithm = :default`, the function chooses the most appropriate algorithm
-depending on the rank and determinant of the genus to be enumerated.
-
-The possible extra arguments are as follows:
-- `rand_neigh` -> for random enumeration, how many random neighbours are computed at each iteration;
-- `invariant_function` -> a function to compute isometry invariants in order to avoid unnecessary isometry tests;
-- `save_partial` -> whether one wants to save iteratively new isometry classes (for instance for large genera);
-- `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
-- `use_mass` -> whether to use the mass formula as termination condition;
-- `stop_after` -> the algorithm stops after the specified amount of vain iterations without finding a new isometry class is reached;
-- `max` -> the algorithm stops after finding `max` new isometry classes.
-
-If `save_partial == true`, the lattices are stored in a compact way in a `.txt`
-file. The storing only remembers the rank of a lattice, half of its Gram matrix
-(which is enough to reconstruct the lattice as a standalone object) and the order
-of the isometry group of the lattice if it has been computed.
-
-The default function for `invariant_function` currently computes:
-- the absolute length of a shortest vector in the given lattice (also known as [`minimum`](@ref));
-- an ordered list of tuples consisting of the decomposition of the root sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
-- the kissing number of the given lattice, which is proportional to the number of vectors of shortest length;
-- the order of the isometry group of the given lattice.
-
-Note: since we first compute a representative of an isometry class for each spinor
-genus in the genus of ``L``, the lattice ``L`` must have rank at least 3. For rank
-1 and 2 lattices, please use the function [`genus_representatives`](@ref).
-"""
 function enumerate_definite_genus(
-    L::ZZLat,
+    _L::ZZLat,
     algorithm::Symbol = :default;
     rand_neigh::Int = 10,
     invariant_function::Function = default_invariant_function,
@@ -799,6 +759,12 @@ function enumerate_definite_genus(
 
   edg = ZZLat[]
 
+  sc = scale(_L)
+  if sc != 1
+    L = rescale(_L, 1//sc)
+  else
+    L = _L
+  end
   # We first compute representatives for each spinor genus
   spinor_genera = spinor_genera_in_genus(L)
   @vprintln :ZGenRep 1 "$(length(spinor_genera)) spinor genera to enumerate"
@@ -847,53 +813,10 @@ function enumerate_definite_genus(
     append!(edg, _edg)
     length(edg) >= max && return edg
   end
+  sc != 1 && map!(L -> rescale(L, sc), edg, edg)
   return edg
 end
 
-@doc raw"""
-    enumerate_definite_genus(G::ZZGenus, algorithm::Symbol = :default;
-                                         rand_neigh::Int = 10,
-                                         invariant_function::Function = default_invariant_function,
-                                         save_partial::Bool = false,
-                                         save_path::String = nothing,
-                                         use_mass::Bool = true,
-                                         stop_after::IntExt = inf,
-                                         max::IntExt = inf)    -> Vector{ZZLat}
-
-Given a genus ``G`` of definite integral lattices, compute representatives for the
-isometry classes of lattices in ``G`` using Kneser's neighbour algorithm.
-
-The second argument gives the choice to which algorithm to use for the enumeration.
-We currently support two algorithms:
-- `:random` which finds new isometry classes by constructing neighbours from random isotropic lines;
-- `:orbit` which computes orbits of isotropic lines before constructing neighbours.
-If `algorithm = :default`, the function chooses the most appropriate algorithm
-depending on the rank and determinant of the genus to be enumerated.
-
-The possible extra arguments are as follows:
-- `rand_neigh` -> for random enumeration, how many random neighbours are computed at each iteration;
-- `invariant_function` -> a function to compute isometry invariants in order to avoid unnecessary isometry tests;
-- `save_partial` -> whether one wants to save iteratively new isometry classes (for instance for large genera);
-- `save_path` -> a path to a folder where to save new lattices in the case where `save_partial` is true;
-- `use_mass` -> whether to use the mass formula as termination condition;
-- `stop_after` -> the algorithm stops after the specified amount of vain iterations without finding a new isometry class is reached;
-- `max` -> the algorithm stops after finding `max` new isometry classes.
-
-If `save_partial == true`, the lattices are stored in a compact way in a `.txt`
-file. The storing only remembers the rank of a lattice, half of its Gram matrix
-(which is enough to reconstruct the lattice as a standalone object) and the order
-of the isometry group of the lattice if it has been computed.
-
-The default function for `invariant_function` currently computes:
-- the absolute length of a shortest vector in the given lattice (also known as [`minimum`](@ref));
-- an ordered list of tuples consisting of the decomposition of the root sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
-- the kissing number of the given lattice, which is proportional to the number of vectors of shortest length;
-- the order of the isometry group of the given lattice.
-
-Note: since we first compute a representatives of an isometry for each spinor
-genus in ``G``, the genus ``G`` must have rank at least 3. For rank
-1 and 2 lattices, please use the function [`representatives`](@ref).
-"""
 function enumerate_definite_genus(
     G::ZZGenus,
     algorithm::Symbol = :default;
@@ -953,7 +876,7 @@ end
     _lattice_from_half_gram_and_rank(V::Vector{QQFieldElem}, n::Int) -> ZZLat
 
 Given an integer ``n`` and a list ``V`` consisting of ``n(n+1)/2`` elements,
-return the ``\\mathbb{Z}``-lattice of rank ``n`` and half Gram matrix given
+return the ``\mathbb{Z}``-lattice of rank ``n`` and half Gram matrix given
 by the elements in ``V``.
 """
 function _lattice_from_half_gram_and_rank(V::Vector{QQFieldElem}, n::Int)
