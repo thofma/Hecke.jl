@@ -934,7 +934,7 @@ end
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
-function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, with_trafo::Type{Val{T}} = Val{false}) where { S1 <: MatAlgebra, S2, T }
+function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = Val(false)) where { S1 <: MatAlgebra, S2, with_transform }
   A = algebra(O)
 
   if !(A isa MatAlgebra)
@@ -966,7 +966,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, with_trafo::Type{Val{T}}
 
   @assert basis_matrix(FakeFmpqMat, simpleOrder) == FakeFmpqMat(identity_matrix(FlintQQ, n^2))
 
-  if with_trafo == Val{true}
+  if with_transform
     return simpleOrder, A(M)
   else
     return simpleOrder
@@ -987,7 +987,7 @@ function nice_order(O::AlgAssAbsOrd{S, T}) where {S, T}
   if isdefined(O, :nice_order)
     return O.nice_order::Tuple{typeof(O), T}
   else
-    sO, A = _simple_maximal_order(O, Val{true})
+    sO, A = _simple_maximal_order(O, Val(true))
     O.nice_order = sO, A
     return sO, A
   end

@@ -565,7 +565,7 @@ _denominator_of_mult_table(A::GroupAlgebra{T}, R::Union{ AbsNumFieldOrder, RelNu
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
-function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_trafo::Type{Val{T}} = Val{false}) where T
+function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, ::Val{with_transform} = Val(false)) where {with_transform}
   A = algebra(O)
   @assert A isa MatAlgebra
   n = degree(A)
@@ -621,7 +621,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
   niceorder.isnice = true
   niceorder.nice_order_ideal = a
 
-  if with_trafo == Val{true}
+  if with_transform
     return niceorder, A(iM)
   else
     return niceorder
@@ -638,7 +638,7 @@ function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, 
   if cached && isdefined(O, :nice_order)
     return O.nice_order::Tuple{typeof(O), elem_type(U)}
   else
-    sO, A = _simple_maximal_order(O, true, Val{true})
+    sO, A = _simple_maximal_order(O, true, Val(true))
     if cached
       O.nice_order = sO, A
     end
