@@ -271,7 +271,7 @@ end
 #
 ################################################################################
 
-function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}} = Val{true}) where {T}
+function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat, ::Val{with_iso} = Val(true)) where {with_iso}
   @vprintln :PIP 1 "is_isomorphic: computing hom space as ideal"
   E, f, O, I = _hom_space_as_ideal(L, M)
   # This is BHJ, 2022, Prop. 3.3
@@ -281,8 +281,8 @@ function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M:
     @vprintln :PIP 1 "is_isomorphic: not locally isomorphic"
     return false
   end
-    @vprintln :PIP 1 "is_isomorphic: locally isomorphic"
-  if with_iso === Val{true}
+  @vprintln :PIP 1 "is_isomorphic: locally isomorphic"
+  if with_iso
     @vprintln :PIP 1 "is_isomorphic: doing pip test"
     # Not that at this point, we know what L and M are locally isomorphic.
     # In particular, I is locally free
@@ -329,9 +329,9 @@ function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}
     end
     LL = iso(L)
     if with_iso === Val{false}
-      return _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso)
+      return _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso())
     else
-      fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso)
+      fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso())
       if fl
         _iso = iso * LLtoM
         @assert _iso(L) == M
@@ -351,9 +351,9 @@ function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}
     end
     MM = iso(M)
     if with_iso === Val{false}
-      return _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso)
+      return _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso())
     else
-      fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso)
+      fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso())
       if fl
         _iso = LtoMM * inv(iso)
         @assert _iso(L) == M
