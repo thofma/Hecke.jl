@@ -241,7 +241,7 @@ function reduce_up(A::SMat{T}, piv::Vector{Int}, with_transform_val::Val{with_tr
   for red=p-1:-1:1
     # the last argument should be the smallest pivot larger then pos[1]
     if with_transform
-      A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), typeof(with_transform_val))
+      A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), with_transform_val)
       for t in new_trafos
         t.j = red
       end
@@ -305,7 +305,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
 
       _g = g
       if with_transform
-        g, new_trafos  = reduce_right(A, g, 1, trafo)
+        g, new_trafos  = reduce_right(A, g, 1, trafo())
         append!(trafos, new_trafos)
       else
         g = reduce_right(A, g)
@@ -344,7 +344,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
       push!(piv, A[j].pos[1])
       if with_transform
-        A[j], new_trafos = reduce_right(A, A[j], A[j].pos[1]+1, trafo)
+        A[j], new_trafos = reduce_right(A, A[j], A[j].pos[1]+1, trafo())
         # We are updating the jth row
         # Have to adjust the transformations
         for t in new_trafos
@@ -353,7 +353,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
         # Now append
         append!(trafos, new_trafos)
       else
-        A[j] = reduce_right(A, A[j], A[j].pos[1]+1, trafo)
+        A[j] = reduce_right(A, A[j], A[j].pos[1]+1, trafo())
       end
 
       if A.r == A.c
@@ -376,7 +376,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
     new_g = false
   end
   if with_transform
-    g, new_trafos = reduce_right(A, g, 1, trafo)
+    g, new_trafos = reduce_right(A, g, 1, trafo())
     append!(trafos, new_trafos)
   else
     g = reduce_right(A, g)
@@ -389,9 +389,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, trafo::Type{Val{N}} = Val{false}) w
   with_transform ? (return g, piv, trafos) : (return g, piv)
 end
 
-function reduce_right(A::SMat{T}, b::SRow{T},
-                      start::Int = 1, trafo::Type{Val{N}} = Val{false}) where {N, T}
-  with_transform = (trafo == Val{true})
+function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, ::Val{with_transform} = Val(false)) where {T, with_transform}
   with_transform ? trafos = [] : nothing
   new = true
   if length(b.pos) == 0
