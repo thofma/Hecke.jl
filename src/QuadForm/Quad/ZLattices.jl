@@ -1105,17 +1105,30 @@ end
 
 Return representatives for the isometry classes in the genus of `L`.
 """
-function genus_representatives(L::ZZLat)
-  s = denominator(scale(L))
-  L = rescale(L, s)
-  LL = _to_number_field_lattice(L)
-  K = base_field(L)
-  G = genus_representatives(LL)
-  res = ZZLat[]
-  for N in G
-    push!(res, _to_ZLat(N; K))
+function genus_representatives(_L::ZZLat)
+  if rank(_L) == 1
+    return ZZLat[_L]
   end
-  map!(L -> rescale(L, 1//s), res, res)
+  s = scale(_L)
+  if s != 1
+    L = rescale(_L, 1//s)
+  else
+    L = _L
+  end
+
+  if rank(L) == 2
+    LL = _to_number_field_lattice(L)
+    G = genus_representatives(LL)
+    res = ZZLat[]
+    for N in G
+      push!(res, _to_ZLat(N; K=QQ))
+    end
+  elseif is_definite(L)
+    res = enumerate_definite_genus(L)
+  else
+    res = spinor_genera_in_genus(L)
+  end
+  s != 1 && map!(L -> rescale(L, s), res, res)
   return res
 end
 
@@ -1124,6 +1137,42 @@ end
 #  Maximal integral lattice
 #
 ################################################################################
+
+@doc raw"""
+    even_sublattice(L::ZZLat) -> ZZLat
+
+Given an integral $\mathbb{Z}$-lattice `L`, i.e. such that the bilinear form
+on `L` is integral, return the largest even sublattice `L0` of `L`.
+
+If `L` is already even, then $L0 = L$.
+
+# Examples
+
+```jldoctest
+julia> L = integer_lattice(; gram=QQ[3 0; 0 16])
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[3    0]
+[0   16]
+
+julia> L0 = even_sublattice(L)
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[12    0]
+[ 0   16]
+
+julia> index(L, L0)
+2
+```
+"""
+function even_sublattice(L::ZZLat)
+  @req is_integral(L) "The bilinear form on the lattice must be integral"
+  is_even(L) && return L
+  diagL = matrix(GF(2; cached=false), rank(L), 1, diagonal(gram_matrix(L)))
+  K2 = kernel(diagL)
+  K = matrix(QQ, [lift(ZZ, a) for a in K2])
+  return lattice_in_same_ambient_space(L, K*basis_matrix(L)) + 2*L
+end
 
 # kept for testing
 function _maximal_integral_lattice(L::ZZLat)
