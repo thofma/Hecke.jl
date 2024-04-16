@@ -1200,11 +1200,20 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
       for j in 1:length(dp)
         C, mC = completion(K, dp[j], working_prec)
         for i in 1:(rK+1)
-          el = _evaluate_log_of_fac_elem(mC, dp[j], EK[i])
-          if is_zero(el)
+          try
+            # the evaluation of the logarithm may fail, if the precision
+            # is not high enough
+            el = _evaluate_log_of_fac_elem(mC, dp[j], EK[i])
+            if is_zero(el)
+              @goto bad_working_prec
+            end
+            push!(ims[i], el)
+          catch e
+            if !(e isa ErrorException && e.msg == "precision too low")
+              rethrow()
+            end
             @goto bad_working_prec
           end
-          push!(ims[i], el)
         end
       end
       working_prec = 2 * working_prec
@@ -1290,6 +1299,7 @@ function _p_adic_regulator_normal(K, p, fast::Bool = false)
         try
           Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1])), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
         catch e
+          @show "asds"
           if !(e isa ErrorException && e.msg == "precision too low")
             rethrow()
           end
