@@ -100,4 +100,13 @@ end
       @test w1 == v && w2 == v
     end
   end
+
+  let
+    Qx, x = QQ["x"]
+    f = x^3 - x^2 - 115*x + 279
+    for i in 1:100
+      K, = number_field(f, "a", cached = false)
+      @test Hecke._p_adic_regulator(K, 2) == 9//2
+    end
+  end
 end
