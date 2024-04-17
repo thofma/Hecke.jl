@@ -29,6 +29,8 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor
   end
 end
 
+parent(f::LocalFieldMor) = NfMorSet(domain(f))
+
 ################################################################################
 #
 #   Identity

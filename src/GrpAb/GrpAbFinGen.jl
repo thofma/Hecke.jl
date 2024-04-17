@@ -84,6 +84,36 @@ function abelian_group(M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(FinGenAbGroup, M, name=name)
 end
 
+function abelian_group(M::Generic.FreeModule{ZZRingElem})
+  A = free_abelian_group(rank(M))
+  return A, MapFromFunc(A, M, x->M(x.coeff), y->A(y.v))
+end
+
+#TODO: for modern fin. fields as well
+function abelian_group(M::AbstractAlgebra.FPModule{fqPolyRepFieldElem})
+  k = base_ring(M)
+  A = abelian_group([characteristic(k) for i = 1:dim(M)*degree(k)])
+  n = degree(k)
+  function to_A(m::AbstractAlgebra.FPModuleElem{fqPolyRepFieldElem})
+    a = ZZRingElem[]
+    for i=1:dim(M)
+      c = m[i]
+      for j=0:n-1
+        push!(a, coeff(c, j))
+      end
+    end
+    return A(a)
+  end
+  function to_M(a::FinGenAbGroupElem)
+    m = fqPolyRepFieldElem[]
+    for i=1:dim(M)
+      push!(m, k([a[j] for j=(i-1)*n+1:i*n]))
+    end
+    return M(m)
+  end
+  return A, MapFromFunc(A, M, to_M, to_A)
+end
+
 function abelian_group(::Type{FinGenAbGroup}, M::AbstractMatrix{<:IntegerUnion}; name::String = "")
   return abelian_group(matrix(FlintZZ, M), name=name)
 end
@@ -689,6 +719,27 @@ function direct_sum(G::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
 end
 
 @doc raw"""
+    direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinGenAbGroup, FinGenAbGroup}})
+
+For groups `G = prod G_i` and `H = prod H_i` as well as maps `V_i: G_i -> H_i`,
+build the induced map from `G -> H`.
+"""
+function direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinGenAbGroup, FinGenAbGroup}})
+  dG = get_attribute(G, :direct_product)
+  dH = get_attribute(H, :direct_product)
+
+  if dG === nothing || dH === nothing
+    error("both groups need to be direct products")
+  end
+  @assert length(V) == length(dG) == length(dH)
+
+  @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
+  h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
+  return h
+end
+
+
+@doc raw"""
     direct_product(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
@@ -863,6 +914,13 @@ end
 
 function matrix(M::Generic.IdentityMap{FinGenAbGroup})
   return identity_matrix(FlintZZ, ngens(domain(M)))
+end
+
+function dual(h::Map{FinGenAbGroup, FinGenAbGroup})
+  A = domain(h)
+  B = codomain(h)
+  @assert is_free(A) && is_free(B)
+  return hom(B, A, transpose(h.map))
 end
 
 @doc raw"""
@@ -1532,6 +1590,7 @@ end
 
 #checks if the image of mG contains the image of mH
 
+is_sub_with_data(M::FinGenAbGroup, N::FinGenAbGroup) = is_subgroup(M, N)
 
 #cannot define == as this produces problems elsewhere... need some thought
 function is_eq(G::FinGenAbGroup, H::FinGenAbGroup, L::GrpAbLattice = GroupLattice)

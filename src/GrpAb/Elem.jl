@@ -100,7 +100,7 @@ The sequence of generators of $G$.
 gens(G::FinGenAbGroup) = FinGenAbGroupElem[G[i] for i = 1:ngens(G)]
 
 @doc raw"""
-    gen(G::FinGenAbGroup, i::Int) -> Vector{FinGenAbGroupElem}
+    gen(G::FinGenAbGroup, i::Int) -> FinGenAbGroupElem
 
 The $i$-th generator of $G$.
 """
@@ -291,6 +291,12 @@ function (A::FinGenAbGroup)(x::ZZMatrix)
   ngens(A) != ncols(x) && error("Lengths do not coincide")
   z = FinGenAbGroupElem(A, Base.deepcopy(x))
   return z
+end
+
+function (A::FinGenAbGroup)(x::FinGenAbGroupElem)
+  fl, m = is_subgroup(parent(x), A)
+  @assert fl
+  return m(x)
 end
 
 function (A::FinGenAbGroup)()

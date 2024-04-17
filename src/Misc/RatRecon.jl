@@ -110,6 +110,18 @@ function rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D:
   return fl!=0, numerator(res), denominator(res)
 end
 
+function induce_rational_reconstruction(a::ZZMatrix, pg::ZZRingElem; ErrorTolerant::Bool = false)
+  c = zero_matrix(QQ, nrows(a), ncols(a))
+  for i=1:nrows(a)
+    for j=1:ncols(a)
+      fl, n, d = rational_reconstruction(a[i,j], pg, ErrorTolerant = ErrorTolerant)
+      fl || return fl, c
+      c[i,j] = n//d
+    end
+  end
+  return true, c
+end
+
 #Note: the vector version might be useful - or the mult by previous den version
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
@@ -135,6 +147,17 @@ function rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem; ErrorT
     setcoeff!(res, i, x//y)
   end
   return true, K(res)
+end
+
+function induce_rational_reconstruction(a::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, pg::ZZRingElem; ErrorTolerant::Bool = false)
+  c = parent(a)()
+  for i=1:nrows(a)
+    for j=1:ncols(a)
+      fl, c[i,j] = rational_reconstruction(a[i,j], pg)#, ErrorTolerant = ErrorTolerant)
+      fl || return fl, c
+    end
+  end
+  return true, c
 end
 
 # to appease the Singular crowd...

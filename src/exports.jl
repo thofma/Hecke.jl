@@ -781,6 +781,7 @@ export reduction_type
 export refine_alpha_bound
 export regulator
 export relations
+export relative_field
 export relative_residue_field
 export relative_simple_extension
 export rels

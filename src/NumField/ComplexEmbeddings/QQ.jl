@@ -25,6 +25,8 @@ complex_embeddings(::QQField) = [QQEmb()]
 
 is_real(::QQEmb) = true
 
+extend(::QQEmb, mp::MapFromFunc{QQField, AbsSimpleNumField}) = complex_embeddings(codomain(mp))
+
 restrict(::NumFieldEmb, ::QQField) = QQEmb()
 
 restrict(e::NumFieldEmb, f::NumFieldHom{QQField}) = QQEmb()

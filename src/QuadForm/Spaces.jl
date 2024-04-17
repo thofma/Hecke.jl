@@ -21,6 +21,26 @@ function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false
   return AbstractSpaceMor(V, W, B)
 end
 
+function hom(F::AbstractAlgebra.FPModule{T}, G::AbstractAlgebra.FPModule{T}) where T
+  k = base_ring(F)
+  @assert base_ring(G) == k
+  H = free_module(k, dim(F)*dim(G))
+  return H, MapFromFunc(H, Hecke.MapParent(F, G, "homomorphisms"), x->hom(F, G, matrix(k, dim(F), dim(G), vec(collect(x.v)))), y->H(vec(collect(transpose(matrix(y))))))
+end
+
+function id_hom(A::AbstractAlgebra.FPModule)
+  return Generic.ModuleHomomorphism(A, A, identity_matrix(base_ring(A), ngens(A)))
+end
+
+function dual(h::Map{<:AbstractAlgebra.FPModule{ZZRingElem}, <:AbstractAlgebra.FPModule{ZZRingElem}})
+  A = domain(h)
+  B = codomain(h)
+  @assert is_free(A) && is_free(B)
+  return hom(B, A, transpose(matrix(h)))
+end
+
+parent(H::AbstractAlgebra.Generic.ModuleHomomorphism{<:FieldElem}) = Hecke.MapParent(domain(H), codomain(H), "homomorphisms")
+
 matrix(f::AbstractSpaceMor) = f.matrix
 
 function image(f::AbstractSpaceMor, v::Vector)
@@ -754,6 +774,20 @@ function direct_product(x::Vector{T}) where T <: AbstractSpace
 end
 
 direct_product(x::Vararg{AbstractSpace}) = direct_product(collect(x))
+
+function direct_product(M::AbstractAlgebra.Module...; task::Symbol = :none)
+  D, inj, pro = direct_sum(M...)
+  if task == :none
+    return D
+  elseif task == :both
+    return D, pro, inj
+  elseif task == :sum
+    return D, inj
+  elseif task == :prod
+    return D, pro
+  end
+  error("illegal task")
+end
 
 @doc raw"""
     biproduct(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}

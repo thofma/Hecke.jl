@@ -342,6 +342,9 @@ function cokernel(h::FinGenAbGroupHom, add_to_lattice::Bool = true)
   return quo(codomain(h), FinGenAbGroupElem[mS(g) for g in gens(S)], add_to_lattice)
 end
 
+cokernel(h::Map) = quo(codomain(h), image(h)[1])
+
+
 ################################################################################
 #
 #  Surjectivity
