@@ -1186,7 +1186,7 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
   # There are some gotos, because we need to distinguish low prec and low
   # working_prec.
   while true
-    (prec > 2^10 || working_prec > 2^10) && error("Something wrong")
+    (prec > 2^12 || working_prec > 2^12) && error("Something wrong")
     imK =[QadicRingElem{PadicField, PadicFieldElem}[] for i in 1:degK]
     Qp = PadicField(p, prec, cached = false)
     Zp = ring_of_integers(Qp)
@@ -1216,7 +1216,6 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
           end
         end
       end
-      working_prec = 2 * working_prec
     end
 
     m = 0
@@ -1254,7 +1253,7 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
     @label bad_prec
     prec = 2 * prec
     #@info "Increasing prec to $(prec)"
-    working_prec = prec + 20
+    working_prec = max(working_prec, prec + 20)
     continue
 
     @label bad_working_prec
