@@ -1,3 +1,53 @@
+###############################################################################
+#
+#   Aliases
+#
+###############################################################################
+
+# ALL aliases here are only a temporary measure to allow for a smooth transition downstream.
+# they will be replaced by deprecations eventually
+
+#= currently none =#
+
+###############################################################################
+#
+#   Deprecated bindings
+#
+###############################################################################
+
+# Deprecated bindings don't get reexported automatically in Oscar/etc.
+# By calling this macro from the respective packages, we can ensure that the deprecated bindings are available there.
+macro include_deprecated_bindings()
+  return esc(quote
+      # Deprecated during 0.24.*
+      Base.@deprecate_binding TorQuadModuleMor TorQuadModuleMap
+
+      # deprecated for 0.28
+      Base.@deprecate_binding AbsLat AbstractLat
+      Base.@deprecate_binding AbsSpace AbstractSpace
+      Base.@deprecate_binding AbsSpaceMor AbstractSpaceMor
+      Base.@deprecate_binding GenusHerm HermGenus
+      Base.@deprecate_binding GenusQuad QuadGenus
+      Base.@deprecate_binding LocalGenusHerm HermLocalGenus
+      Base.@deprecate_binding LocalGenusQuad QuadLocalGenus
+      Base.@deprecate_binding TorQuadMod TorQuadModule
+      Base.@deprecate_binding TorQuadModElem TorQuadModuleElem
+      Base.@deprecate_binding TorQuadModMor TorQuadModuleMap
+      Base.@deprecate_binding ZGenus ZZGenus
+      Base.@deprecate_binding ZLat ZZLat
+      Base.@deprecate_binding ZpGenus ZZLocalGenus
+
+  end)
+end
+
+@include_deprecated_bindings()
+
+###############################################################################
+#
+#   Deprecations
+#
+###############################################################################
+
 # Deprecated during 0.24.*
 
 @deprecate hasimage has_image_with_image
@@ -6,15 +56,10 @@
 @deprecate haspreimage has_preimage_with_preimage
 @deprecate has_preimage has_preimage_with_preimage
 
-@deprecate TorQuadModuleMor TorQuadModuleMap
-
 @deprecate psylow_subgroup sylow_subgroup
 
-# Deprecated during 0.27
+# deprecated for 0.28
 
-@deprecate AbsLat AbstractLat
-@deprecate AbsSpace AbstractSpace
-@deprecate AbsSpaceMor AbstractSpaceMor
 @deprecate add_assert_scope add_assertion_scope
 @deprecate add_verbose_scope add_verbosity_scope
 
@@ -23,8 +68,6 @@
 @deprecate genera integer_genera
 @deprecate genera_hermitian hermitian_genera
 @deprecate genera_quadratic quadratic_genera
-@deprecate GenusHerm HermGenus
-@deprecate GenusQuad QuadGenus
 
 @deprecate hasalgebra has_algebra
 @deprecate hasembedding has_embedding
@@ -198,28 +241,19 @@
 
 @deprecate local_genera_hermitian hermitian_local_genera
 @deprecate local_genera_quadratic quadratic_local_genera
-@deprecate LocalGenusHerm HermLocalGenus
-@deprecate LocalGenusQuad QuadLocalGenus
 
 @deprecate set_assert_level set_assertion_level
 @deprecate set_verbose_level set_verbosity_level
 
-@deprecate TorQuadMod TorQuadModule
-@deprecate TorQuadModElem TorQuadModuleElem
-@deprecate TorQuadModMor TorQuadModuleMap
-
-@deprecate ZGenus ZZGenus
-@deprecate ZLat ZZLat
 @deprecate Zgenera integer_genera
 @deprecate Zlattice integer_lattice
-@deprecate ZpGenus ZZLocalGenus
 
 @deprecate real_field real_number_field
 
 @deprecate points_with_x points_with_x_coordinate
 
 
-# Deprecated during 0.27
+# Deprecated for 0.29
 
 @deprecate a_invars a_invariants
 @deprecate b_invars b_invariants
