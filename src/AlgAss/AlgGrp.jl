@@ -312,23 +312,23 @@ function _merge_elts_in_gens!(left::Vector{Tuple{Int, Int}}, mid::Vector{Tuple{I
 end
 
 @doc raw"""
-    gens(A::GroupAlgebra, return_full_basis::Type{Val{T}} = Val{false})
+    gens(A::GroupAlgebra, return_full_basis::Val = Val(false))
       -> Vector{GroupAlgebraElem}
 
 Returns a subset of `basis(A)`, which generates $A$ as an algebra over
 `base_ring(A)`.
-If `return_full_basis` is set to `Val{true}`, the function also returns a
+If `return_full_basis` is set to `Val(true)`, the function also returns a
 `Vector{AbstractAssociativeAlgebraElem}` containing a full basis consisting of monomials in
 the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
 information on how these monomials are built. E. g.: If the function returns
 `g`, `full_basis` and `v`, then we have
 `full_basis[i] = prod( g[j]^k for (j, k) in v[i] )`.
 """
-function gens(A::GroupAlgebra, return_full_basis::Type{Val{T}} = Val{false}) where T
+function gens(A::GroupAlgebra, ::Val{return_full_basis} = Val(false)) where return_full_basis
   G = group(A)
   group_gens = gens(G)
 
-  return_full_basis == Val{true} ? nothing : return map(A, group_gens)
+  !return_full_basis && return map(A, group_gens)
 
   full_group = elem_type(G)[ id(G) ]
   elts_in_gens = Vector{Tuple{Int, Int}}[ Tuple{Int, Int}[] ]

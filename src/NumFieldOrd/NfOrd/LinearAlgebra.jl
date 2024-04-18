@@ -967,17 +967,17 @@ function sub(P::PMat, rows::AbstractUnitRange{Int}, cols::AbstractUnitRange{Int}
 end
 
 function pseudo_hnf_cohen(P::PMat)
-   return _pseudo_hnf_cohen(P, Val{false})
+   return _pseudo_hnf_cohen(P, Val(false))
 end
 
 function pseudo_hnf_cohen_with_transform(P::PMat)
-   return _pseudo_hnf_cohen(P, Val{true})
+   return _pseudo_hnf_cohen(P, Val(true))
 end
 
-function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_hnf_cohen(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
    H = deepcopy(P)
    m = nrows(H)
-   if trafo == Val{true}
+   if with_transform
       U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_cohen!(H, U, true)
       return H, U
@@ -1125,13 +1125,13 @@ end
 
 function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val{false})
+    H = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val(false))
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
     return H
   elseif shape == :upperright
-    return _pseudo_hnf_kb(P, Val{false})
+    return _pseudo_hnf_kb(P, Val(false))
   else
     error("Not yet implemented")
   end
@@ -1139,23 +1139,23 @@ end
 
 function pseudo_hnf_kb_with_transform(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H, U = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val{true})
+    H, U = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val(true))
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
     reverse_rows!(U)
     return H, U
   elseif shape == :upperright
-    return _pseudo_hnf_kb(P, Val{true})
+    return _pseudo_hnf_kb(P, Val(true))
   else
     error("Not yet implemented")
   end
 end
 
-function _pseudo_hnf_kb(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_hnf_kb(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
    H = deepcopy(P)
    m = nrows(H)
-   if trafo === Val{true}
+   if with_transform
       U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_kb!(H, U, true)
       return H, U
@@ -1449,18 +1449,18 @@ function number_of_columns(m::PMat2)
 end
 
 function pseudo_snf_kb(P::PMat2)
-   return _pseudo_snf_kb(P, Val{false})
+   return _pseudo_snf_kb(P, Val(false))
 end
 
 function pseudo_snf_kb_with_transform(P::PMat2)
-   return _pseudo_snf_kb(P, Val{true})
+   return _pseudo_snf_kb(P, Val(true))
 end
 
-function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_snf_kb(P::PMat2, ::Val{with_transform} = Val(false)) where with_transform
    S = deepcopy(P)
    m = nrows(S)
    n = ncols(S)
-   if trafo == Val{true}
+   if with_transform
       U = identity_matrix(base_ring(S.matrix), m)
       K = identity_matrix(base_ring(S.matrix), m)
       pseudo_snf_kb!(S, U, K, true)
@@ -1898,15 +1898,15 @@ function integral_and_coprime_to(a::Union{ AbsSimpleNumFieldOrderFractionalIdeal
 end
 
 function steinitz_form(P::PMat)
-  return _steinitz_form(P, Val{false})
+  return _steinitz_form(P, Val(false))
 end
 
 function steinitz_form_with_transform(P::PMat)
-  return _steinitz_form(P, Val{true})
+  return _steinitz_form(P, Val(true))
 end
 
-function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
-  if trafo == Val{true}
+function _steinitz_form(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
+  if with_transform
     S, U = pseudo_hnf_with_transform(P, :lowerleft)
   else
     S = pseudo_hnf(P, :lowerleft)
@@ -1923,7 +1923,7 @@ function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
     end
     S.coeffs[i] = oneK*O
   end
-  if trafo == Val{true}
+  if with_transform
     steinitz_form!(S, U, true, start_row)
     return S, U
   else

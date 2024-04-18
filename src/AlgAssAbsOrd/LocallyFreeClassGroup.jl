@@ -16,7 +16,7 @@ add_verbosity_scope(:LocallyFreeClassGroup)
 Given an order $O$ in a semisimple algebra over $\mathbb Q$, this function
 returns the locally free class group of $O$.
 """
-function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, return_disc_log_data::Type{Val{T}} = Val{false}) where T
+function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, ::Val{return_disc_log_data} = Val(false)) where return_disc_log_data
   A = algebra(O)
   OA = maximal_order(O)
   Z, ZtoA = center(A)
@@ -101,7 +101,7 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
 
   S, StoCl = snf(Cl)
 
-  if return_disc_log_data == Val{true}
+  if return_disc_log_data
     return S, compose(RtoCl, inv(StoCl)), mR, FinZ
   else
     return S
@@ -128,7 +128,7 @@ function locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = t
     end
   end
 
-  Cl, RtoCl, mR, FinZ = locally_free_class_group(O, :left, Val{true})
+  Cl, RtoCl, mR, FinZ = locally_free_class_group(O, :left, Val(true))
 
   IdlSet = IdealSet(O)
   disc_log = DiscLogLocallyFreeClassGroup{typeof(IdlSet), typeof(Cl)}(IdlSet, Cl, RtoCl, mR, FinZ)

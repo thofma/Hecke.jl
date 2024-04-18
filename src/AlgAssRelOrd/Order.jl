@@ -248,12 +248,12 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, V}, short::Type{Val{U}} = Val{false}) where {S, T, U, V}
+function _check_elem_in_order(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, V}, ::Val{short} = Val(false)) where {S, T, V, short}
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
   b_pmat = basis_pmatrix(O, copy = false)
-  if short == Val{true}
+  if short
     for i = 1:degree(O)
       if !(t[1, i] in b_pmat.coeffs[i])
         return false
@@ -280,7 +280,7 @@ end
 Returns `true` if the algebra element $a$ is in $O$ and `false` otherwise.
 """
 function in(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, U}) where {S, T, U}
-  return _check_elem_in_order(a, O, Val{true})
+  return _check_elem_in_order(a, O, Val(true))
 end
 
 ################################################################################
@@ -565,7 +565,7 @@ _denominator_of_mult_table(A::GroupAlgebra{T}, R::Union{ AbsNumFieldOrder, RelNu
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
-function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_trafo::Type{Val{T}} = Val{false}) where T
+function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, ::Val{with_transform} = Val(false)) where {with_transform}
   A = algebra(O)
   @assert A isa MatAlgebra
   n = degree(A)
@@ -621,7 +621,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
   niceorder.isnice = true
   niceorder.nice_order_ideal = a
 
-  if with_trafo == Val{true}
+  if with_transform
     return niceorder, A(iM)
   else
     return niceorder
@@ -638,7 +638,7 @@ function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, 
   if cached && isdefined(O, :nice_order)
     return O.nice_order::Tuple{typeof(O), elem_type(U)}
   else
-    sO, A = _simple_maximal_order(O, true, Val{true})
+    sO, A = _simple_maximal_order(O, true, Val(true))
     if cached
       O.nice_order = sO, A
     end
@@ -709,7 +709,7 @@ is_maximal_known(O::AlgAssRelOrd) = O.is_maximal != 0
 Returns an order $O'$ containing $O$ such that the localization $O'_p$ is
 hereditary where $p$ is a prime ideal of the base ring of $O$.
 """
-function phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; return_pradical::Type{Val{T}} = Val{false}) where T
+function phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; return_pradical::Val{return_pradical_bool} = Val(false)) where return_pradical_bool
   d = discriminant(O)
   prad = pradical(O, p)
   OO = left_order(prad)
@@ -723,7 +723,7 @@ function phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal,
       break
     end
   end
-  if return_pradical == Val{true}
+  if return_pradical_bool
     return OO, prad
   else
     return OO
@@ -760,7 +760,7 @@ order $O''$ containing $O$ is not divisible by $p$ where $p$ is a prime ideal
 of the base ring of $O$.
 """
 function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
-  O, prad = phereditary_overorder(O, p, return_pradical = Val{true})
+  O, prad = phereditary_overorder(O, p; return_pradical = Val(true))
   return _pmaximal_overorder(O, prad, p, strict_containment = true)
 end
 

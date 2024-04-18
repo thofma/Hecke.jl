@@ -26,7 +26,7 @@ function multiplicative_group_mod_units_fac_elem(A::Vector{AbsSimpleNumFieldElem
     end
     push!(M, sparse_row(FlintZZ, T))
   end
-  h, t = Hecke.hnf_kannan_bachem(M, Val{true}, truncate = true)
+  h, t = Hecke.hnf_kannan_bachem(M, Val(true), truncate = true)
   return h, t, cp
 end
 

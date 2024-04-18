@@ -547,9 +547,9 @@ function _matrix_in_algebra(M::S, A::MatAlgebra{T, S}) where {T, S<:MatElem}
   return t*U
 end
 
-function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, ::Val{short} = Val(false)) where {S, T, short}
   if nrows(M) != degree(A) || ncols(M) != degree(A)
-    if short == Val{true}
+    if short
       return false
     end
     return false, zeros(base_ring(A), dim(A))
@@ -580,7 +580,7 @@ function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, short::Type{Val{U}}
   end
   C = basis_matrix_solve_context(A)
   b, N = can_solve_with_solution(C, t, side = :left)
-  if short == Val{true}
+  if short
     return b
   end
   s = N #[N[1, i] for i in 1:length(N)]
