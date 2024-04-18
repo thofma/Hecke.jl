@@ -219,6 +219,14 @@ end
 
   fa = factor(QQ, 6*x)
   @test length(fa) == 1
+
+  # 
+  let
+    K, = rationals_as_number_field()
+    Ky, y = K["y"]
+    f = y^4 - 46720785304//289510225*y^3 + 11506176//289510225*y^2 + 20030976//1412245*y - 2985984//289510225
+    @test Hecke.n_positive_roots(f, real_embeddings(K)[1]) == 3
+  end
 end
 
 
