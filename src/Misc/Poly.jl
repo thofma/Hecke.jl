@@ -511,6 +511,7 @@ function _n_positive_roots_sqf(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFie
   # We could just use the Sturm sequence as before.
   prec = start_prec
   while true
+    prec > 2^10 && error("Something wrong here")
     coeffs = Vector{AcbFieldElem}(undef, length(f))
     c = evaluate(coeff(f, 0), P, prec)
     coeffs[1] = c
@@ -521,7 +522,7 @@ function _n_positive_roots_sqf(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFie
     end
     g = Cx(coeffs)
     try
-      rts = roots(g)
+      rts = roots(g, initial_prec = prec)
     catch e
       e isa ErrorException && startswith(e.msg, "unable to isolate all roots") || rethrow()
       prec *= 2
