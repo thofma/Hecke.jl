@@ -14,4 +14,5 @@
   include("Misc/Matrix.jl")
   include("Misc/PIDIdeal.jl")
   include("Misc/MSet.jl")
+  include("Misc/AVLTrees.jl")
 end
