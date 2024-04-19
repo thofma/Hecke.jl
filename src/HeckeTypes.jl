@@ -644,7 +644,7 @@ mutable struct AbsNumFieldOrderSet{T}
   nf::T
 
   function AbsNumFieldOrderSet{T}(a::T, cached::Bool = false) where {T}
-    return get_cached!(NfAbsOrdSetID, a, cached) do
+    return get_cached!(AbsNumFieldOrderSetID, a, cached) do
       return new{T}(a)::AbsNumFieldOrderSet{T}
     end::AbsNumFieldOrderSet{T}
   end
@@ -652,7 +652,7 @@ end
 
 AbsNumFieldOrderSet(a::T, cached::Bool = false) where {T} = AbsNumFieldOrderSet{T}(a, cached)
 
-const NfAbsOrdSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFieldOrderSet}()
+const AbsNumFieldOrderSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFieldOrderSet}()
 
 @attributes mutable struct AbsNumFieldOrder{S, T} <: NumFieldOrder
   nf::S
@@ -716,7 +716,7 @@ const NfAbsOrdSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFieldOrderSe
   end
 
   function AbsNumFieldOrder{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    return get_cached!(NfAbsOrdID, (K, x), cached) do
+    return get_cached!(AbsNumFieldOrderID, (K, x), cached) do
       z = AbsNumFieldOrder{S, T}(K)
       n = degree(K)
       z.basis_nf = B
@@ -727,7 +727,7 @@ const NfAbsOrdSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFieldOrderSe
   end
 
   function AbsNumFieldOrder{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    return get_cached!(NfAbsOrdID, (K, x), cached) do
+    return get_cached!(AbsNumFieldOrderID, (K, x), cached) do
       z = AbsNumFieldOrder{S, T}(K)
       n = degree(K)
       B_K = basis(K)
@@ -744,7 +744,7 @@ const NfAbsOrdSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFieldOrderSe
   function AbsNumFieldOrder{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
-    return get_cached!(NfAbsOrdID, (K, A), cached) do
+    return get_cached!(AbsNumFieldOrderID, (K, A), cached) do
       z = AbsNumFieldOrder{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_matrix = A
@@ -759,7 +759,7 @@ AbsNumFieldOrder(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = AbsNumF
 
 AbsNumFieldOrder(b::Vector{T}, cached::Bool = false) where {T} = AbsNumFieldOrder{parent_type(T), T}(b, cached)
 
-const NfAbsOrdID = AbstractAlgebra.CacheDictType{Tuple{Any, FakeFmpqMat}, AbsNumFieldOrder}()
+const AbsNumFieldOrderID = AbstractAlgebra.CacheDictType{Tuple{Any, FakeFmpqMat}, AbsNumFieldOrder}()
 
 const AbsSimpleNumFieldOrder = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
@@ -875,7 +875,7 @@ struct AbsNumFieldOrderIdealSet{S, T}
   order::AbsNumFieldOrder{S, T}
 
   function AbsNumFieldOrderIdealSet{S, T}(O::AbsNumFieldOrder{S, T}, cached::Bool = false) where {S, T}
-    return get_cached!(NfAbsOrdIdlSetID, O, cached) do
+    return get_cached!(AbsNumFieldOrderIdealSetID, O, cached) do
       return new{S, T}(O)
     end::AbsNumFieldOrderIdealSet{S, T}
   end
@@ -885,7 +885,7 @@ function AbsNumFieldOrderIdealSet(O::AbsNumFieldOrder{S, T}, cached::Bool = fals
   return AbsNumFieldOrderIdealSet{S, T}(O, cached)
 end
 
-const NfAbsOrdIdlSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrder, AbsNumFieldOrderIdealSet}()
+const AbsNumFieldOrderIdealSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrder, AbsNumFieldOrderIdealSet}()
 
 @doc raw"""
     AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsSimpleNumFieldOrder, a::ZZMatrix) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
@@ -1076,13 +1076,13 @@ mutable struct AbsNumFieldOrderFractionalIdealSet{S, T}
   order::AbsNumFieldOrder{S, T}
 
   function AbsNumFieldOrderFractionalIdealSet{S, T}(O::AbsNumFieldOrder{S, T}, cached::Bool=false) where {S, T}
-    return get_cached!(NfAbsOrdFracIdlSetID, O, cached) do
+    return get_cached!(AbsNumFieldOrderFractionalIdealSetID, O, cached) do
       return new{S, T}(O)
     end::AbsNumFieldOrderFractionalIdealSet{S, T}
   end
 end
 
-const NfAbsOrdFracIdlSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrder, AbsNumFieldOrderFractionalIdealSet}()
+const AbsNumFieldOrderFractionalIdealSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrder, AbsNumFieldOrderFractionalIdealSet}()
 
 mutable struct AbsNumFieldOrderFractionalIdeal{S, T} <: NumFieldOrderFractionalIdeal
   order::AbsNumFieldOrder{S, T}
@@ -1939,7 +1939,7 @@ end
   trace_basis::Vector{T}
 
   function RelSimpleNumField{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
-    return get_cached!(NfRelID, (parent(f), f, s), cached) do
+    return get_cached!(RelSimpleNumFieldID, (parent(f), f, s), cached) do
       z = new{T}()
       z.base_ring = base_ring(parent(f))
       z.pol = f
@@ -1949,7 +1949,7 @@ end
   end
 end
 
-const NfRelID = AbstractAlgebra.CacheDictType{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
+const RelSimpleNumFieldID = AbstractAlgebra.CacheDictType{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      RelSimpleNumField}()
 
 
