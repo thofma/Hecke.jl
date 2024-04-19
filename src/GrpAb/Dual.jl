@@ -5,7 +5,7 @@
 #
 ######################################################################
 
-struct QmodnZ <: GrpAb
+mutable struct QmodnZ <: GrpAb
   trivialmodulus::Bool
   n::ZZRingElem
   d::ZZRingElem
