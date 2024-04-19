@@ -279,7 +279,6 @@ end
 #
 ################################################################################
 
-const SRowSpaceDict = IdDict()
 """
     SRowSpace
 
@@ -288,12 +287,14 @@ Parent type for rows of sparse matrices.
 mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
-  function SrowSpace(R::Ring, cached::Bool = false)
+  function SRowSpace{T}(R::Ring, cached::Bool = false) where {T<:RingElem}
     return get_cached!(SRowSpaceDict, R, cached) do
       return new{T}(R)
     end::SRowSpace{T}
   end
 end
+
+const SRowSpaceDict = AbstractAlgebra.CacheDictType{Ring, SRowSpace}()
 
 """
     SRow{T, S}
@@ -651,7 +652,7 @@ end
 
 AbsNumFieldOrderSet(a::T, cached::Bool = false) where {T} = AbsNumFieldOrderSet{T}(a, cached)
 
-const NfAbsOrdSetID = IdDict()
+const NfAbsOrdSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFieldOrderSet}()
 
 @attributes mutable struct AbsNumFieldOrder{S, T} <: NumFieldOrder
   nf::S
@@ -758,7 +759,7 @@ AbsNumFieldOrder(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = AbsNumF
 
 AbsNumFieldOrder(b::Vector{T}, cached::Bool = false) where {T} = AbsNumFieldOrder{parent_type(T), T}(b, cached)
 
-const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, AbsNumFieldOrder}()
+const NfAbsOrdID = AbstractAlgebra.CacheDictType{Tuple{Any, FakeFmpqMat}, AbsNumFieldOrder}()
 
 const AbsSimpleNumFieldOrder = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
@@ -884,7 +885,7 @@ function AbsNumFieldOrderIdealSet(O::AbsNumFieldOrder{S, T}, cached::Bool = fals
   return AbsNumFieldOrderIdealSet{S, T}(O, cached)
 end
 
-const NfAbsOrdIdlSetID = Dict{AbsNumFieldOrder, AbsNumFieldOrderIdealSet}()
+const NfAbsOrdIdlSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrder, AbsNumFieldOrderIdealSet}()
 
 @doc raw"""
     AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(O::AbsSimpleNumFieldOrder, a::ZZMatrix) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
@@ -1081,7 +1082,7 @@ mutable struct AbsNumFieldOrderFractionalIdealSet{S, T}
   end
 end
 
-const NfAbsOrdFracIdlSetID = Dict{AbsNumFieldOrder, AbsNumFieldOrderFractionalIdealSet}()
+const NfAbsOrdFracIdlSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrder, AbsNumFieldOrderFractionalIdealSet}()
 
 mutable struct AbsNumFieldOrderFractionalIdeal{S, T} <: NumFieldOrderFractionalIdeal
   order::AbsNumFieldOrder{S, T}
@@ -1948,7 +1949,7 @@ end
   end
 end
 
-const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
+const NfRelID = AbstractAlgebra.CacheDictType{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      RelSimpleNumField}()
 
 
@@ -2268,7 +2269,7 @@ mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
   end
 end
 
-const KInftyID = Dict{Generic.RationalFunctionField, Hecke.Ring}()
+const KInftyID = AbstractAlgebra.CacheDictType{Generic.RationalFunctionField, Hecke.Ring}()
 
 mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
   d::Generic.RationalFunctionFieldElem{T}

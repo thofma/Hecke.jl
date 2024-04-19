@@ -8,7 +8,7 @@ import Base.Vector
 
 function SRowSpace(R::Ring; cached = true)
   T = elem_type(R)
-  return SRowSpace{T}(R)
+  return SRowSpace{T}(R, cached)
 end
 
 base_ring(A::SRow{ZZRingElem}) = FlintZZ

@@ -37,7 +37,7 @@ struct QmodnZ <: GrpAb
   end
 end
 
-const QmodnZID = Dict{Tuple{Bool, ZZRingElem, ZZRingElem}, QmodnZ}()
+const QmodnZID = AbstractAlgebra.CacheDictType{Tuple{Bool, ZZRingElem, ZZRingElem}, QmodnZ}()
 
 function show(io::IO, G::QmodnZ)
   if G.trivialmodulus

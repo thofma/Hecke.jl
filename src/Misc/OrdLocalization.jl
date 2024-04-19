@@ -65,7 +65,7 @@ some more detail in divrem
 
 =#
 
-OrdLocDict = Dict{Tuple{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, Bool}, Hecke.Ring}()
+OrdLocDict = AbstractAlgebra.CacheDictType{Tuple{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, Bool}, Hecke.Ring}()
 
 mutable struct OrdLocElem{T<:AbsSimpleNumFieldElem} <: RingElem
    data::T
