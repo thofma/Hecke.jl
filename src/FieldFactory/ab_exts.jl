@@ -326,7 +326,7 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     if i % 10000 == 0
-      @vprintln :AbExt 1 "Left: $(length(l_conductors) - i)"
+      @vprintln :AbExt 1 "Left: $(length(l_conductors) - i) (fields so far: $(length(fields)))"
     end
     r, mr = ray_class_group_quo(OK, k, inf_plc, ctx)
     if !has_quotient(r, gtype)
@@ -368,7 +368,6 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
         end
       end
       if cC[1] == mr.defining_modulus[1] && norm(discriminant(C)) <= bound
-        @vprintln :AbExt 1 "New Field"
         push!(new_fields, C)
       end
     end
