@@ -128,7 +128,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension
   # Then translating them is straightforward.
-  autK = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
+  autK = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
   el = image_primitive_element(mK)
   for i = 1:length(x.generators_of_automorphisms)
     ima = mx(image_primitive_element(x.generators_of_automorphisms[i]))
@@ -158,7 +158,7 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
   lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
   Seemb, mSeemb = simple_extension(lsub, check = false)
   ev = AbsSimpleNumFieldElem[mK\(mx(image_primitive_element(emb_subx))), mK\(my(image_primitive_element(emb_suby)))]
-  embs = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
+  embs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
   for j = 1:length(x.subfields)
     if codomain(x.subfields[j]) != domain(emb_subx)
       push!(embs, x.subfields[j])
