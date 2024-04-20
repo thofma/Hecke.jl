@@ -75,4 +75,15 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
       @test denominator(I) == ZZRingElem(2)
     end
   end
+
+  let
+    K, = quadratic_field(-1, cached = false)
+    OK = maximal_order(K)
+    I = zero(K) * OK
+    @test basis_matrix(I) == zero_matrix(ZZ, 0, 2)
+    @test basis(I) == elem_type(K)[]
+    @test is_zero(I)
+    I = one(K) * OK
+    @test !is_zero(K)
+  end
 end

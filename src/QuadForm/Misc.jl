@@ -542,7 +542,7 @@ function image(f::NumFieldHom, I::RelNumFieldOrderFractionalIdeal{T, S}; order =
 
   pb = pseudo_basis(I)
 
-  z = sum(b * (f(a) * O) for (a, b) in pb)
+  z = sum(b * (f(a) * O) for (a, b) in pb; init = zero(K) * O)
   return z
 end
 

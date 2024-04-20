@@ -280,6 +280,26 @@
   K, a = quadratic_field(-1)
   O = maximal_order(K)
   @test basis_matrix(ideal(O, representation_matrix(O(a)))) == identity_matrix(ZZ, 2)
+
+  # zero ideals, #1330
+  let
+    OK = maximal_order(quadratic_field(-1, cached = false)[1])
+    I = 0 * OK
+    @test basis_matrix(I) == zero_matrix(ZZ, 0, 2)
+    @test basis(I) == elem_type(OK)[]
+    @test is_zero(I)
+    @test !is_zero(1 * OK)
+    I = ideal(OK, zero_matrix(ZZ, 0, 2))
+    @test is_zero(I)
+    @test is_zero(I)
+    @test minimum(I) == 0
+    @test idempotents(I, 2*OK + 3 * OK) == (0, 1)
+    @test idempotents(2*OK + 3 * OK, I) == (1, 0)
+    @test is_coprime(2*OK + 3 * OK, I)
+    I = ideal(OK, identity_matrix(ZZ, 2))
+    @test !is_zero(I)
+    @test !is_zero(I)
+  end
   
   include("Ideal/Prime.jl")
 

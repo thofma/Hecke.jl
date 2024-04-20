@@ -380,11 +380,11 @@ function assure_has_basis(A::AbsNumFieldOrderIdeal)
   else
     assure_has_basis_matrix(A)
     O = order(A)
-    M = A.basis_matrix
+    M = basis_matrix(A, copy = false)
     Ob = basis(O, copy = false)
-    B = Vector{elem_type(O)}(undef, degree(O))
+    B = Vector{elem_type(O)}(undef, nrows(M))
     y = O()
-    for i in 1:degree(O)
+    for i in 1:nrows(M)
       z = O()
       for k in 1:degree(O)
         mul!(y, M[i, k], Ob[k])
@@ -445,13 +445,12 @@ function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
   OK = order(A)
   n = degree(OK)
 
-  if iszero(A)
-    A.basis_matrix = zero_matrix(FlintZZ, n, n)
-    return nothing
-  end
-
   if has_princ_gen_special(A)
-    A.basis_matrix = scalar_matrix(FlintZZ, n, princ_gen_special(A))
+    if is_zero(princ_gen_special(A))
+      A.basis_matrix = zero_matrix(ZZ, 0, n)
+    else
+      A.basis_matrix = scalar_matrix(FlintZZ, n, princ_gen_special(A))
+    end
     return nothing
   end
 
@@ -469,7 +468,11 @@ function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
   end
 
   if has_princ_gen(A)
-    A.basis_matrix = hnf_modular_eldiv!(representation_matrix_mod(A.princ_gen, minimum(A)), minimum(A), :lowerleft)
+    if is_zero(A.princ_gen)
+      A.basis_matrix = zero_matrix(ZZ, 0, n)
+    else
+      A.basis_matrix = hnf_modular_eldiv!(representation_matrix_mod(A.princ_gen, minimum(A)), minimum(A), :lowerleft)
+    end
     return nothing
   end
 
@@ -609,7 +612,11 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
   end
 
   if isdefined(A, :basis_matrix) && isone(basis(order(A), copy = false)[1])
-    A.minimum = basis_matrix(A, copy = false)[1, 1]
+    if is_zero(A)
+      A.minimum = zero(ZZ)
+    else
+      A.minimum = basis_matrix(A, copy = false)[1, 1]
+    end
     return nothing
   end
 
@@ -1572,7 +1579,23 @@ end
 
 is_unit(I::AbsNumFieldOrderIdeal) = isone(I)
 
-iszero(I::AbsNumFieldOrderIdeal) = (I.iszero == 1)
+function iszero(I::AbsNumFieldOrderIdeal)
+  if I.iszero != 0
+    return I.iszero == 1
+  else
+    if has_princ_gen(I)
+      fl = is_zero(I.princ_gen)
+    else
+      fl = nrows(basis_matrix(I, copy = false)) == 0
+    end
+    if fl
+      I.iszero = 1
+    else
+      I.iszero = 2
+    end
+    return fl
+  end
+end
 
 ################################################################################
 #
