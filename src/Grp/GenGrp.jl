@@ -203,8 +203,6 @@ elem_type(::Type{MultTableGroup}) = MultTableGroupElem
 
 Base.hash(G::MultTableGroupElem, h::UInt) = Base.hash(G.i, h)
 
-Base.hash(G::MultTableGroup, h::UInt) = UInt(0)
-
 Base.hash(G::MultTableGroupHom, h::UInt) = UInt(0)
 
 function Base.deepcopy_internal(g::MultTableGroupElem, dict::IdDict)
@@ -757,19 +755,13 @@ function derived_series(G::MultTableGroup, n::Int64 = 2 * order(G))
   indx = 1
   while true
     Gtemp, GtempToGtemp = commutator_subgroup(Gtemp)
-    if Gtemp == ResidueRingElem[indx][1]
+    if order(Gtemp) == order(ResidueRingElem[indx][1])
       break
     end
     push!(ResidueRingElem,(Gtemp, GtempToGtemp))
     indx += 1
   end
   return ResidueRingElem
-end
-
-function ==(G::MultTableGroup, H::MultTableGroup)
-  # TODO: Understand why the following makes the tests not pass
-  #return G === H
-  return G.mult_table == H.mult_table
 end
 
 elements(G::MultTableGroup) = collect(G)
