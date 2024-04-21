@@ -153,7 +153,7 @@ end
   end
 
   function GroupAlgebra(K::Ring, G; op = *, cached = true)
-    return get_cached!(AlgGrpDict, (K, G, op), cached) do
+    return get_cached!(GroupAlgebraID, (K, G, op), cached) do
       A = new{elem_type(K), typeof(G), elem_type(G)}()
       A.is_commutative = 0
       A.is_simple = 0
@@ -199,7 +199,7 @@ end
   end
 end
 
-const AlgGrpDict = IdDict()
+const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring, Any, Any}, GroupAlgebra}()
 
 mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   parent::S

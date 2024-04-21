@@ -16,7 +16,7 @@
   index::ZZRingElem                      # The det of basis_mat_inv
                                    # (this is the index of the equation order
                                    #  in the given order)
-  det_basis_matrix::QQFieldElem           
+  det_basis_matrix::QQFieldElem
   disc::ZZRingElem                       # Discriminant
 
   is_maximal::Int                   # 0 Not known
@@ -77,7 +77,7 @@
   end
 end
 
-const AlgAssAbsOrdID = Dict{Tuple{AbstractAssociativeAlgebra, FakeFmpqMat}, AlgAssAbsOrd}()
+const AlgAssAbsOrdID = AbstractAlgebra.CacheDictType{Tuple{AbstractAssociativeAlgebra, FakeFmpqMat}, AlgAssAbsOrd}()
 
 @attributes mutable struct AlgAssAbsOrdElem{S, T} <: NCRingElem
   elem_in_algebra::T
