@@ -159,7 +159,7 @@ end
 
 function fractional_ideal(O::AbsNumFieldOrder{S, T}, v::Vector{T}) where {S, T}
   if isempty(v)
-    return ideal(O, one(nf(O)))
+    return ideal(O, zero(nf(O)))
   end
   I = ideal(O, v[1])
   for i = 2:length(v)
@@ -254,8 +254,8 @@ function basis(a::AbsNumFieldOrderFractionalIdeal{S, T}) where {S, T}
   O = order(a)
   K = nf(O)
   Oba = O.basis_nf
-  res = Array{T}(undef, d)
-  for i in 1:d
+  res = Array{T}(undef, nrows(B))
+  for i in 1:nrows(B)
     z = K()
     for j in 1:d
       z = z + B.num[i, j]*Oba[j]

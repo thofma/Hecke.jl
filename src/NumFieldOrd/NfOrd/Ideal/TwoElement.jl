@@ -57,7 +57,7 @@ function is_consistent(A::AbsNumFieldOrderIdeal)
   end
   if has_norm(A)
     b = basis_matrix(A, copy = false)
-    if det(b) != A.norm
+    if !((nrows(b) == 0 && is_zero(A.norm)) || (det(b) == A.norm))
       @show "Norm wrong"
       vshow(A)
       return false
