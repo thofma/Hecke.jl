@@ -100,8 +100,8 @@ exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue
-  eval(Meta.parse("import Nemo." * string(i)))
-  eval(Expr(:export, i))
+  @eval import Nemo: $i
+  @eval export $i
 end
 
 import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struct,
@@ -828,7 +828,7 @@ varinfo(pat::Regex) = varinfo(Main, pat)
 
 
 function print_cache(sym::Vector{Any})
-  for f in sym;
+  for f in sym
     #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
@@ -846,11 +846,10 @@ end
 function find_cache(M::Module)
   sym = []
   for a in collect(names(M, all = true))
-    d = Meta.parse("$M.$a")
       try
-        z = eval(d);
+        z = getproperty(M, a)
         if isa(z, AbstractArray) || isa(z, AbstractDict)
-          push!(sym, (d, z))
+          push!(sym, ((M,a), z))
         end
     catch e
     end
@@ -858,19 +857,25 @@ function find_cache(M::Module)
   return sym
 end
 
-protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
-           :(Hecke.ASSERT_SCOPE), :(Hecke.VERBOSE_SCOPE),
-           :(Hecke._euler_phi_inverse_maximum),
-           :(Hecke.odlyzko_bound_grh),
-           :(Hecke.nC), :(Hecke.B1), #part of ECM
-           :(Hecke.VERBOSE_PRINT_INDENT),
-           :(Hecke._RealRings),
-           :(Hecke.protect)] # We need to protect protect itself :)
-                             # Otherwise it might emptied and then everything
-                             # is emptied.
+const protect = [
+  # We need to protect protect itself :)
+  # Otherwise it might emptied and then everything
+  # is emptied.
+  (Hecke, :protect),
+
+  (Hecke, :ASSERT_LOOKUP),
+  (Hecke, :VERBOSE_LOOKUP),
+  (Hecke, :ASSERT_SCOPE),
+  (Hecke, :VERBOSE_SCOPE),
+  (Hecke, :_euler_phi_inverse_maximum),
+  (Hecke, :odlyzko_bound_grh),
+  (Hecke, :nC), (Hecke, :B1), #part of ECM
+  (Hecke, :VERBOSE_PRINT_INDENT),
+  (Hecke, :_RealRings),
+]
 
 function clear_cache(sym::Vector{Any})
-  for f in sym;
+  for f in sym
     if f[1] in protect
       continue
     end

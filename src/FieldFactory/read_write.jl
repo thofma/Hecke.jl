@@ -47,8 +47,6 @@ function _read_from_file(f::IOStream)
   QQ = number_field(x-1, "b", cached = false, check = false)[1]
   for (k, l) in enumerate(eachline(f))
     a = _parse_fields_tower_blurb(l)
-    #a = eval(Meta.parse(replace(l, '#' => ',')))
-    #@assert a == olda
     K = number_field(Qx(a[1]), "a", cached = false, check = false)[1]
     auts = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(a[2]))
     for i = 1:length(auts)
