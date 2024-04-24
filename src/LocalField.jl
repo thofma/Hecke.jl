@@ -1,4 +1,3 @@
-include("LocalField/PadicTypes.jl")
 include("LocalField/Elem.jl")
 include("LocalField/map.jl")
 include("LocalField/automorphisms.jl")

@@ -97,6 +97,7 @@ export NumFieldOrderIdeal
 export OrdLoc
 export OrdLocElem
 export Order
+export PadicField
 export Plc
 export Polygon
 export PrimeIdealsSet
