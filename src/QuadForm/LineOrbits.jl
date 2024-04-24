@@ -45,12 +45,12 @@ function Base.show(io::IO, ::MIME"text/plain", P::LineEnumCtx)
 end
 
 function Base.show(io::IO, P::LineEnumCtx)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Iterator for vector lines")
   else
     io = pretty(io)
     print(io, "Iterator for Gr(1, $(dim(P))) over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), P.K)
+    print(terse(io), Lowercase(), P.K)
   end
 end
 

@@ -61,7 +61,7 @@ end
 
 function Base.show(io::IO, J::JorDec)
   p = J.p
-  if get(io, :supercompact, false)
+  if is_terse(io)
     if length(J) == 0
       print(io, "Empty Jordan decomposition")
     else
@@ -661,7 +661,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadLocalGenus)
 end
 
 function Base.show(io::IO, G::QuadLocalGenus)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     if length(G) == 0
       print(io, "Empty local quadratic genus")
     elseif !is_dyadic(G)
@@ -1613,7 +1613,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadGenus)
   print(io, Indent())
   for (pl, v) in sig
     println(io)
-    Base.show(IOContext(io, :supercompact => true), Lowercase(), pl)
+    Base.show(terse(io), Lowercase(), pl)
     print(io, " => ", v)
   end
   print(io, Dedent())
@@ -1626,18 +1626,18 @@ function show(io::IO, ::MIME"text/plain", G::QuadGenus)
   for g in lgs
     println(io)
     print(IOContext(io, :compact => true), prime(g), " => ")
-    print(IOContext(io, :supercompact => true), Lowercase(), g)
+    print(terse(io), Lowercase(), g)
   end
   print(io, Dedent())
 end
 
 function show(io::IO, G::QuadGenus)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Genus symbol for quadratic lattices")
   else
     io = pretty(io)
     print(io, "Genus symbol for quadratic lattices of rank $(G.rank) over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), maximal_order(G.K))
+    print(terse(io), Lowercase(), maximal_order(G.K))
   end
 end
 

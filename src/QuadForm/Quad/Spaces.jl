@@ -101,7 +101,7 @@ function Base.show(io::IO, ::MIME"text/plain", V::QuadSpace)
 end
 
 function show(io::IO, V::QuadSpace)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Quadratic space")
   else
     print(io, "Quadratic space of dimension $(dim(V))")
@@ -2134,7 +2134,7 @@ function show(io::IO, ::MIME"text/plain", G::LocalQuadSpaceCls)
 end
 
 function show(io::IO, G::LocalQuadSpaceCls)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Local isometry class of quadratic space")
   else
     print(io, "Isometry class of quadratic space over the ", absolute_minimum(prime(G)), "-adic integers")
@@ -2328,12 +2328,12 @@ function show(io::IO, ::MIME"text/plain", G::QuadSpaceCls)
 end
 
 function show(io::IO, G::QuadSpaceCls)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Isometry class of quadratic space")
   else
     io = pretty(io)
     print(io, "Isometry class of quadratic space over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), base_ring(G))
+    print(terse(io), Lowercase(), base_ring(G))
   end
 end
 

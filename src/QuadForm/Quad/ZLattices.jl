@@ -350,7 +350,7 @@ function show(io::IO, ::MIME"text/plain", L::ZZLat)
 end
 
 function show(io::IO, L::ZZLat)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Integer lattice")
   else
     print(io, "Integer lattice of rank $(rank(L)) and degree $(degree(L))")

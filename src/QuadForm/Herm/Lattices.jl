@@ -12,7 +12,7 @@ function Base.show(io::IO, ::MIME"text/plain", L::HermLat)
 end
 
 function show(io::IO, L::HermLat)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Hermitian lattice")
   else
     print(io, "Hermitian lattice of rank $(rank(L)) and degree $(degree(L))")

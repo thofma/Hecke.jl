@@ -84,13 +84,13 @@ function Base.show(io::IO, ::MIME"text/plain", f::AbsSimpleNumFieldEmbedding)
 end
 
 function Base.show(io::IO, f::AbsSimpleNumFieldEmbedding)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Complex embedding of number field")
   else
     print(io, "Complex embedding corresponding to ")
     _print_acb_neatly(io, f.r)
     io = pretty(io)
-    print(IOContext(io, :supercompact => true), " of ", Lowercase(), number_field(f))
+    print(terse(io), " of ", Lowercase(), number_field(f))
   end
 end
 

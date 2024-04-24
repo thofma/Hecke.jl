@@ -54,7 +54,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermLocalGenus)
 end
 
 function Base.show(io::IO, G::HermLocalGenus)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     if length(G) == 0
       print(io, "Empty local hermitian genus")
     elseif is_dyadic(G) && is_ramified(G)
@@ -265,7 +265,7 @@ norms(G::HermLocalGenus) = map(i -> norm(G, i), 1:length(G))::Vector{Int}
 @doc raw"""
     norm(g::HermLocalGenus) -> AbsSimpleNumFieldOrderFractionalIdeal
 
-Return the norm of `g`, i.e. the norm of any of its representatives.  
+Return the norm of `g`, i.e. the norm of any of its representatives.
 
 Given a local genus symbol `g` of hermitian lattices over $E/K$ at a prime ideal
 $\mathfrak p$ of $\mathcal O_K$, it norm is computed as the norm of the Jordan block of minimum
@@ -1203,7 +1203,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermGenus)
   print(io, Indent())
   for (pl, v) in sig
     println(io)
-    print(IOContext(io, :supercompact =>true), Lowercase(), pl)
+    print(terse(io), Lowercase(), pl)
     print(io, " => ")
     print(io, v)
   end
@@ -1217,18 +1217,18 @@ function Base.show(io::IO, ::MIME"text/plain", G::HermGenus)
   for g in G.LGS
     println(io)
     print(IOContext(io, :compact => true), prime(g), " => ")
-    print(IOContext(io, :supercompact => true), Lowercase(), g)
+    print(terse(io), Lowercase(), g)
   end
   print(io, Dedent())
 end
 
 function show(io::IO, G::HermGenus)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Genus symbol for hermitian lattices")
   else
     io = pretty(io)
     print(io, "Genus symbol for hermitian lattices of rank $(rank(G)) over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), maximal_order(G.E))
+    print(terse(io), Lowercase(), maximal_order(G.E))
   end
 end
 

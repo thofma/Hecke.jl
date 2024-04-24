@@ -6,7 +6,7 @@
   @test length(String(take!(io))) == 92
   show(io, m)
   @test length(String(take!(io))) == 44
-  print(IOContext(io, :supercompact => true), m)
+  print(terse(io), m)
   @test length(String(take!(io))) == 39
 
   M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
@@ -94,7 +94,7 @@ end
   @test length(String(take!(io))) == 61
   show(io, M)
   @test length(String(take!(io))) == 64
-  print(IOContext(io, :supercompact => true), M)
+  print(terse(io), M)
   @test length(String(take!(io))) == 35
   @test eltype(M) == typeof(m)
   @test length(collect(M)) == length(M)
@@ -112,7 +112,7 @@ end
   @test length(String(take!(io))) == 58
   show(io, S)
   @test length(String(take!(io))) == 58
-  print(IOContext(io, :supercompact => true), S)
+  print(terse(io), S)
   @test length(String(take!(io))) == 29
   @test eltype(S) == typeof(s)
   @test length(collect(S)) == length(S)
@@ -123,7 +123,7 @@ end
   @test length(String(take!(io))) == 68
   show(io, S)
   @test length(String(take!(io))) == 68
-  print(IOContext(io, :supercompact => true), S)
+  print(terse(io), S)
   @test length(String(take!(io))) == 39
   @test eltype(S) == typeof(s)
   @test length(collect(S)) == length(S)
