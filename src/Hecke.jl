@@ -96,7 +96,8 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :set_entry!, :PadicField, :PadicFieldElem]
+           :set_entry!, :PadicField, :PadicFieldElem, :QadicField,
+           :QadicFieldElem]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue

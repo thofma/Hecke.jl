@@ -62,7 +62,7 @@ end
 
 ################################################################################
 #
-#  Precision management
+#  Precision management for p-adics
 #
 ################################################################################
 
@@ -106,3 +106,128 @@ function set_precision!(f, ::Type{PadicField}, n::Int)
 end
 
 set_precision!(f, ::PadicField, n::Int) = set_precision!(f, PadicField, n)
+
+# For compatibility
+setprecision(f, ::PadicField, n::Int) = set_precision!(f, PadicField, n)
+
+###############################################################################
+#
+#   QadicField / QadicFieldElem
+#
+###############################################################################
+
+@doc raw"""
+    QadicField <: FlintLocalField <: NonArchLocalField <: Field
+
+A $p^n$-adic field for some prime power $p^n$.
+"""
+@attributes mutable struct QadicField <: FlintLocalField
+   p::Int
+   pinv::Float64
+   pow::Ptr{Nothing}
+   minpre::Int
+   maxpre::Int
+   mode::Cint
+   a::Int         # ZZRingElem
+   j::Ptr{Nothing}   # slong*
+   len::Int
+   var::Cstring   # char*
+
+   function QadicField(p::ZZRingElem, d::Int, var::String = "a"; cached::Bool = true, check::Bool = true)
+
+      check && !is_probable_prime(p) && throw(DomainError(p, "Characteristic must be prime"))
+
+      z = get_cached!(QadicBase, (p, d, prec), cached) do
+         zz = new()
+         ccall((:qadic_ctx_init, libflint), Nothing,
+              (Ref{QadicField}, Ref{ZZRingElem}, Int, Int, Int, Cstring, Cint),
+                                        zz, p, d, 0, 0, var, 0)
+         finalizer(Nemo._qadic_ctx_clear_fn, zz)
+         return zz
+      end
+
+      return z, gen(z)
+   end
+end
+
+const QadicBase = AbstractAlgebra.CacheDictType{Tuple{ZZRingElem, Int, Int}, QadicField}()
+
+function Nemo._qadic_ctx_clear_fn(a::QadicField)
+   ccall((:qadic_ctx_clear, libflint), Nothing, (Ref{QadicField},), a)
+end
+
+@doc raw"""
+    QadicFieldElem <: FlintLocalFieldElem <: NonArchLocalFieldElem <: FieldElem
+
+An element of a $q$-adic field. See [`QadicField`](@ref).
+"""
+mutable struct QadicFieldElem <: FlintLocalFieldElem
+   coeffs::Int
+   alloc::Int
+   length::Int
+   val::Int
+   N::Int
+   parent::QadicField
+
+   function QadicFieldElem(prec::Int)
+      z = new()
+      ccall((:qadic_init2, libflint), Nothing, (Ref{QadicFieldElem}, Int), z, prec)
+      finalizer(Nemo._qadic_clear_fn, z)
+      return z
+   end
+end
+
+function Nemo._qadic_clear_fn(a::QadicFieldElem)
+   ccall((:qadic_clear, libflint), Nothing, (Ref{QadicFieldElem},), a)
+end
+
+################################################################################
+#
+#  Precision management for q-adics
+#
+################################################################################
+
+# TODO: Should this just be shared with PADIC_DEFAULT_PRECISION?
+const QADIC_DEFAULT_PRECISION = Ref{Int}(64)
+
+@doc raw"""
+    set_precision!(::Type{QadicField}, n::Int)
+
+Set the precision for all $q$-adic arithmetic to be `n`.
+"""
+function set_precision!(::Type{QadicField}, n::Int)
+  @assert n > 0
+  QADIC_DEFAULT_PRECISION[] = n
+end
+
+set_precision!(::QadicField, n::Int) = set_precision!(QadicField, n)
+
+@doc raw"""
+    precision(::Type{QadicField})
+
+Return the precision for $q$-adic arithmetic.
+"""
+function Base.precision(::Type{QadicField})
+  return QADIC_DEFAULT_PRECISION[]
+end
+
+precision(::QadicField) = precision(QadicField)
+
+@doc raw"""
+    set_precision!(f, ::Type{QadicField}, n::Int)
+
+Change $q$-adic arithmetic precision to `n` for the duration of `f`.
+"""
+function set_precision!(f, ::Type{QadicField}, n::Int)
+  @assert n > 0
+  old = precision(QadicField)
+  set_precision!(QadicField, n)
+  x = f()
+  set_precision!(QadicField, old)
+  return x
+end
+
+set_precision!(f, ::QadicField, n::Int) = set_precision!(f, QadicField, n)
+
+# For compatibility
+setprecision(f, ::QadicField, n::Int) = set_precision!(f, QadicField, n)

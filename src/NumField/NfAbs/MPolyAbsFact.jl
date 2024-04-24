@@ -2,7 +2,7 @@ module MPolyFact
 
 using ..Hecke
 using ..Hecke: Nemo, find_morphism, rational_reconstruction
-import ..Hecke: set_precision!, set_precision, is_absolutely_irreducible
+import ..Hecke: set_precision!, set_precision, is_absolutely_irreducible, QadicFieldElem
 
 import Nemo: shift_left, shift_right
 import Base: *
