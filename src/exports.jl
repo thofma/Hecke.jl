@@ -102,6 +102,7 @@ export Plc
 export Polygon
 export PrimeIdealsSet
 export PrimesSet
+export QadicField
 export QuadBin
 export QuadGenus
 export QuadLat

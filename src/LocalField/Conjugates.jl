@@ -1,5 +1,5 @@
 #XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision(QadicField), starting_prec::Int = 2)
   Q = parent(r)
   n = prec
   i = n
@@ -19,14 +19,16 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = parent(r)
   for p = reverse(chain)
     setprecision!(r, p)
     setprecision!(o, p)
-    Q.prec_max = r.N
+    # Why does one need to set the precision of the field here?
+    set_precision!(QadicField, r.N)
     if r.N > precision(Q)
+      # How can this be reached, if we just adjusted the precision of Q?
       setprecision!(qf, r.N)
       setprecision!(qfs, r.N)
     end
     r = r - qf(r)*o
     if r.N >= n
-      Q.prec_max = n
+      set_precision!(QadicField, n)
       return r
     end
     o = o*(2-qfs(r)*o)
@@ -34,7 +36,7 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = parent(r)
   return r
 end
 
-function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = precision(parent(r)), starting_prec::Int = 2)
   Q = parent(r)
   n = precision
   i = n
@@ -93,10 +95,11 @@ function roots(C::qAdicRootCtx, n::Int = 10)
   lf = factor_mod_pk(Array, C.H, n)
   rt = QadicFieldElem[]
   for Q = C.Q
-    Q.prec_max = n
-    for x = lf
-      if is_splitting(C) || degree(x[1]) == degree(Q)
-        append!(rt, roots(Q, x[1], max_roots = 1))
+    set_precision!(QadicField, n) do
+      for x = lf
+        if is_splitting(C) || degree(x[1]) == degree(Q)
+          append!(rt, roots(Q, x[1], max_roots = 1))
+        end
       end
     end
   end

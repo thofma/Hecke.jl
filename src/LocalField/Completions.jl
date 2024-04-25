@@ -10,7 +10,7 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
   end
   Qx = parent(parent(a).pol)
   z = evaluate(Qx(a), f.prim_img)
-  if !is_unit(z) 
+  if !is_unit(z)
     v = valuation(a, f.P)
     a = a*uniformizer(f.P).elem_in_nf^-v
     z = evaluate(Qx(a), f.prim_img)
@@ -131,7 +131,7 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift. Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 
-The map is guaranteed to yield a relative precision of at least `preciscion`. 
+The map is guaranteed to yield a relative precision of at least `preciscion`.
 """
 function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64)
   #to guarantee a rel_prec we need to account for the index (or the
@@ -147,9 +147,11 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   f = degree(P)
   e = ramification_index(P)
   prec_padics = div(precision+e-1, e)
-  Qp = PadicField(minimum(P), prec_padics, cached = false)
+  set_precision!(PadicField, prec_padics)
+  Qp = PadicField(minimum(P), cached = false)
   Zp = maximal_order(Qp)
-  Qq, gQq = QadicField(minimum(P), f, prec_padics, cached = false)
+  set_precision!(QadicField, prec_padics)
+  Qq, gQq = QadicField(minimum(P), f, cached = false)
   Qqx, gQqx = polynomial_ring(Qq, "x")
   q, mq = residue_field(Qq)
   #F, mF = ResidueFieldSmall(OK, P)
@@ -179,7 +181,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
     img_prim_elem[i] = coeff
   end
   img = Kp(Qqx(img_prim_elem))
-  
+
   u = uniformizer(P).elem_in_nf
   completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
   completion_map.P = P
@@ -193,7 +195,7 @@ function _solve_internal(gq_in_K, P, precision, Zp, Qq)
   precision += e - (precision % e)
   @assert precision % e == 0
   #problem/ feature:
-  #the lin. alg is done in/over Zp or Qp, thus precision is measured in 
+  #the lin. alg is done in/over Zp or Qp, thus precision is measured in
   #block of length e (power of the prime number p, rather than powers of
   #pi, the prime element)
   #so it is a good idea to increase the precision to be divisible by e
@@ -231,7 +233,7 @@ if true
   # the can_solve... returns a precision of just 6 p-adic digits
   # the snf gets 16 (both for the default precision)
   # the det(M) has valuation 12, but the elem. divisors only 3
-  #TODO: rewrite can_solve? look at Avi's stuff? 
+  #TODO: rewrite can_solve? look at Avi's stuff?
   # x M = b
   # u*M*v = s
   # x inv(u) u M v = b v
@@ -251,7 +253,7 @@ else
   bZp = map_entries(Zp, bK.num)
   fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
   @assert fl
-end 
+end
   coeffs_eisenstein = Vector{QadicFieldElem}(undef, e+1)
   gQq = gen(Qq)
   for i = 1:e
@@ -296,7 +298,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
 
     Zp = maximal_order(prime_field(Kp))
     Qq = base_field(Kp)
-    
+
     setprecision!(Qq, ex)
     setprecision!(Zp, ex)
     gQq = gen(Qq)
@@ -342,7 +344,8 @@ function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderId
   @assert nf(OK) == K
   @assert isone(degree(P))
   e = ramification_index(P)
-  Qp = PadicField(minimum(P), precision)
+  set_precision!(PadicField, precision)
+  Qp = PadicField(minimum(P))
   Zp = maximal_order(Qp)
   Zx = FlintZZ["x"][1]
   Qpx = polynomial_ring(Qp, "x")[1]
@@ -400,7 +403,8 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     if r > 0
       ex += 1
     end
-    Qp = PadicField(prime(Kp), div(new_prec, e)+1)
+    set_precision!(PadicField, div(new_prec, e) + 1)
+    Qp = PadicField(prime(Kp))
     Zp = maximal_order(Qp)
     Qpx = polynomial_ring(Qp, "x")
     pows_u = powers(u, e-1)
@@ -452,8 +456,10 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
   @assert isone(ramification_index(P))
   f = degree(P)
   p = minimum(P)
-  Qq, gQq = QadicField(p, f, precision)
-  Qp = PadicField(p, precision)
+  set_precision!(PadicField, precision)
+  set_precision!(QadicField, precision)
+  Qq, gQq = QadicField(p, f)
+  Qp = PadicField(p)
   Zp = maximal_order(Qp)
   q, mq = residue_field(Qq)
   F, mF = residue_field(OK, P)

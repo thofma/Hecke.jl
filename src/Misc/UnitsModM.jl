@@ -280,8 +280,10 @@ function disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
       @assert (b-1) % 8 == 0
       @assert (a^2-1) % 8 == 0
       if fM[p] > 3
-        F = PadicField(p, fM[p], cached = false)
-        g += 2*lift(divexact(log(F(b)), log(F(a^2))))
+        set_precision!(PadicField, fM[p]) do
+          F = PadicField(p, cached = false)
+          g += 2*lift(divexact(log(F(b)), log(F(a^2))))
+        end
       end
       return g
     else

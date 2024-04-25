@@ -358,9 +358,9 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalFiel
   return K, gen(K)
 end
 
-function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
+function local_field(f::QQPolyRingElem, p::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
-  K = PadicField(p, precision)
+  K = PadicField(p)
   fK = map_coefficients(K, f, cached = false)
   return local_field(fK, s, T, cached = cached, check = check)
 end
@@ -381,7 +381,7 @@ function setprecision!(K::LocalField, n::Int)
   return nothing
 end
 
-function setprecision(f::Function, K::Union{LocalField, PadicField, QadicField}, n::Int)
+function setprecision(f::Function, K::LocalField, n::Int)
   old = precision(K)
 #  @assert n>=0
   setprecision!(K, n)

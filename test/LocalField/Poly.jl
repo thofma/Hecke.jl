@@ -1,6 +1,7 @@
 @testset "Poly" begin
 
-  K = PadicField(2, 100)
+  set_precision!(PadicField, 100)
+  K = PadicField(2)
   Kx, x = polynomial_ring(K, "x")
   L, gL = eisenstein_extension(x^2+2, "a")
 
@@ -80,7 +81,8 @@
   end
 
   @testset "Roots" begin
-    _, t = PadicField(3, 10)["t"]
+    set_precision!(PadicField, 10)
+    _, t = PadicField(3)["t"]
     f = ((t-1+81)*(t-1+2*81))
     rt = roots(f)
     @test length(rt) == 2
@@ -89,7 +91,8 @@
   end
 
   @testset "Resultant" begin
-    R, x = polynomial_ring(PadicField(853, 2), "x")
+    set_precision!(PadicField, 2)
+    R, x = polynomial_ring(PadicField(853), "x")
     a = 4*x^5 + x^4 + 256*x^3 + 192*x^2 + 48*x + 4
     b = derivative(a)
     rab = @inferred resultant(a, b)

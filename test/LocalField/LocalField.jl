@@ -3,7 +3,8 @@
   @testset "Creation" begin
     Qx, x = FlintQQ["x"]
     f = x^2-2*x+2
-    K, a = local_field(f, 2, 10, "a", Hecke.EisensteinLocalField, check = false)
+    set_precision!(PadicField, 10)
+    K, a = local_field(f, 2, "a", Hecke.EisensteinLocalField, check = false)
     @test precision(K) == 20
     @test characteristic(K) == 0
     @test prime(K) == 2
@@ -17,7 +18,8 @@
     @test absolute_degree(L) == 4
     @test prime(L) == 2
 
-    Q2 = PadicField(2, 10)
+    set_precision!(PadicField, 10)
+    Q2 = PadicField(2)
     Q2s, s = polynomial_ring(Q2, "s")
     f = s^2+s+1
     Ku, c = local_field(f, "s", Hecke.UnramifiedLocalField, check = false)
@@ -39,7 +41,8 @@
   end
 
   @testset "Norm" begin
-    K = QadicField(3, 4, 10)[1]
+    set_precision!(QadicField, 10)
+    K = QadicField(3, 4)[1]
     Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
     b = @inferred basis(L)
@@ -125,7 +128,8 @@
 
 
   @testset "Exp and Log" begin
-    K = PadicField(2, 100)
+    set_precision!(PadicField, 100)
+    K = PadicField(2)
     Kx, x = polynomial_ring(K, "x", cached = false)
     L, b = Hecke.eisenstein_extension(x^7+2, "a")
     pi = uniformizer(L)
@@ -140,7 +144,8 @@
       @test iszero(logexp - el) || valuation(logexp - el) > 80 #need improving
     end
 
-    KK, a = QadicField(2, 2, 16)
+    set_precision!(QadicField, 16)
+    KK, a = QadicField(2, 2)
     KKx, x = KK["x"]
     f = x + 2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15
     L, b = Hecke.eisenstein_extension(f, "b");
@@ -150,7 +155,8 @@
 
   @testset "Maps" begin
     # QadicField -> QadicField
-    Qq, a = QadicField(2, 3, 100)
+    set_precision!(QadicField, 100)
+    Qq, a = QadicField(2, 3)
     rt = roots(map_coefficients(Qq, defining_polynomial(Qq)))
 
     i = findfirst(x -> x == a, rt)
@@ -200,10 +206,12 @@
     @test f(z) == L(-2)
 
     # LocalField -> QadicField
-    Qp = PadicField(2, 100)
+    set_precision!(PadicField, 100)
+    Qp = PadicField(2)
     Qpx, x = polynomial_ring(Qp)
     K, a = Hecke.unramified_extension(x^2+x+1)
-    Qq, gQq = QadicField(2, 2, 100)
+    set_precision!(QadicField, 100)
+    Qq, gQq = QadicField(2, 2)
     rt = roots(map_coefficients(Qq, defining_polynomial(K)))
 
     f = @inferred hom(K, Qq, rt[1])
@@ -216,11 +224,14 @@
   end
 
   @testset "Automorphisms" begin
-    K = PadicField(2, 200)
+    set_precision!(PadicField, 200)
+    K = PadicField(2)
     Kt, t = polynomial_ring(K)
     L, b = Hecke.eisenstein_extension(t^2+2, "a")
     @test length(automorphism_list(L)) == 2
-    Qq, a = QadicField(2, 2, 100)
+    set_precision!(PadicField, 100)
+    set_precision!(QadicField, 100)
+    Qq, a = QadicField(2, 2)
     @test length(automorphism_list(Qq)) == 2
     Qqx, x = polynomial_ring(Qq)
     L, b = Hecke.eisenstein_extension(x^3+2, "a")
@@ -260,7 +271,8 @@
   end
 
   @testset "extend extend extend" begin
-    K, = QadicField(5, 2, 10)
+    set_precision!(QadicField, 10)
+    K, = QadicField(5, 2)
     L, = unramified_extension(K, 3)
     M, = unramified_extension(L, 3)
   end
@@ -274,7 +286,8 @@
   @test length(automorphism_list(k3)) == 3
 
   @testset "image of one units under log" begin
-    Qp = PadicField(3, 10)
+    set_precision!(PadicField, 10)
+    Qp = PadicField(3)
     Qpt, t = Qp["t"]
     E, a = eisenstein_extension(t^2 - 3)
     n, x = Hecke.image_of_logarithm_one_units(E)

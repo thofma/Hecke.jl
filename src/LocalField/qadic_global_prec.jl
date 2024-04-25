@@ -212,7 +212,7 @@ function var(Q::QadicField)
 end
 
 function expressify(b::QadicFieldElem, x = var(parent(b)); context = nothing)
-   R = PadicField(prime(parent(b)), precision(QadicField))
+   R = PadicField(prime(parent(b)))
    if iszero(b)
       return 0
    end
@@ -639,15 +639,15 @@ end
 #
 ###############################################################################
 
-promote_rule(::Type{QadicFieldElem}, ::Type{T}) where {T <: Integer} = QadicFieldElem
+AbstractAlgebra.promote_rule(::Type{QadicFieldElem}, ::Type{T}) where {T <: Integer} = QadicFieldElem
 
-promote_rule(::Type{QadicFieldElem}, ::Type{Rational{V}}) where {V <: Integer} = QadicFieldElem
+AbstractAlgebra.promote_rule(::Type{QadicFieldElem}, ::Type{Rational{V}}) where {V <: Integer} = QadicFieldElem
 
-promote_rule(::Type{QadicFieldElem}, ::Type{ZZRingElem}) = QadicFieldElem
+AbstractAlgebra.promote_rule(::Type{QadicFieldElem}, ::Type{ZZRingElem}) = QadicFieldElem
 
-promote_rule(::Type{QadicFieldElem}, ::Type{QQFieldElem}) = QadicFieldElem
+AbstractAlgebra.promote_rule(::Type{QadicFieldElem}, ::Type{QQFieldElem}) = QadicFieldElem
 
-promote_rule(::Type{QadicFieldElem}, ::Type{PadicFieldElem}) = QadicFieldElem
+AbstractAlgebra.promote_rule(::Type{QadicFieldElem}, ::Type{PadicFieldElem}) = QadicFieldElem
 
 ###############################################################################
 #

@@ -172,7 +172,7 @@ function lift(C::HenselCtxFqRelSeries{<:SeriesElem})
   pr = precision(coeff(C.lf[1], 0))
   N2 = 2*pr
 
-  S.prec_max = N2+1
+  set_precision!(S, N2 + 1)
 
   i = length(C.lf)
   if i == 1
@@ -505,9 +505,11 @@ function lift(R::RootCtxSingle)
   pr = precision(R.R)
   set_precision!(R.o, 2*pr)
   set_precision!(R.R, 2*pr)
-  parent(R.R).prec_max = 2*pr+1
-  R.o = R.o*(2-R.o*derivative(R.f)(R.R))
-  R.R = R.R - R.f(R.R)*R.o
+  set_precision!(parent(R.R), 2*pr + 1) do
+    R.o = R.o*(2-R.o*derivative(R.f)(R.R))
+    R.R = R.R - R.f(R.R)*R.o
+  end
+  return R.R
 end
 
 mutable struct RootCtx
@@ -633,7 +635,7 @@ end
 function more_precision(R::RootCtx)
   lift(R.H)
   S = base_ring(R.R[1].f)
-  S.prec_max = 2*S.prec_max + 1
+  set_precision!(S, 2*precision(S) + 1)
   T = parent(R.R[1].f)
   K = base_ring(S)
   for i=1:R.H.n
@@ -865,7 +867,7 @@ function field(RC::RootCtx, m::MatElem)
 
   @vprintln :AbsFact 1 "target field has (local) degree $k"
 
-  Qq = QadicField(characteristic(F), k, 1, cached = false)[1]
+  Qq = QadicField(characteristic(F), k, cached = false)[1]
   Qqt = polynomial_ring(Qq, cached = false)[1]
   k, mk = residue_field(Qq)
 

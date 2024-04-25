@@ -109,6 +109,7 @@ set_precision!(f, ::PadicField, n::Int) = set_precision!(f, PadicField, n)
 
 # For compatibility
 setprecision(f, ::PadicField, n::Int) = set_precision!(f, PadicField, n)
+setprecision!(::PadicField, n::Int) = set_precision!(PadicField, n)
 
 ###############################################################################
 #
@@ -137,7 +138,7 @@ A $p^n$-adic field for some prime power $p^n$.
 
       check && !is_probable_prime(p) && throw(DomainError(p, "Characteristic must be prime"))
 
-      z = get_cached!(QadicBase, (p, d, prec), cached) do
+      z = get_cached!(QadicFieldID, (p, d), cached) do
          zz = new()
          ccall((:qadic_ctx_init, libflint), Nothing,
               (Ref{QadicField}, Ref{ZZRingElem}, Int, Int, Int, Cstring, Cint),
@@ -150,7 +151,7 @@ A $p^n$-adic field for some prime power $p^n$.
    end
 end
 
-const QadicBase = AbstractAlgebra.CacheDictType{Tuple{ZZRingElem, Int, Int}, QadicField}()
+const QadicFieldID = AbstractAlgebra.CacheDictType{Tuple{ZZRingElem, Int}, QadicField}()
 
 function Nemo._qadic_ctx_clear_fn(a::QadicField)
    ccall((:qadic_ctx_clear, libflint), Nothing, (Ref{QadicField},), a)
@@ -231,3 +232,4 @@ set_precision!(f, ::QadicField, n::Int) = set_precision!(f, QadicField, n)
 
 # For compatibility
 setprecision(f, ::QadicField, n::Int) = set_precision!(f, QadicField, n)
+setprecision!(::QadicField, n::Int) = set_precision!(QadicField, n)
