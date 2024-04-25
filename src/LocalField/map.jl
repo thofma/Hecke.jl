@@ -10,7 +10,7 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor
   inverse_data::V
   absolute_basis::Vector{W}
   absolute_basis_matrix_image::Generic.MatSpaceElem{PadicFieldElem}
-  solve_context::Solve.SolveCtx{PadicFieldElem, Generic.MatSpaceElem{PadicFieldElem}, Solve.LazyTransposeMatElem{PadicFieldElem, Generic.MatSpaceElem{PadicFieldElem}}}
+  solve_context::Solve.SolveCtx{PadicFieldElem, Generic.MatSpaceElem{PadicFieldElem}, Generic.MatSpaceElem{PadicFieldElem}, Solve.LazyTransposeMatElem{PadicFieldElem, Generic.MatSpaceElem{PadicFieldElem}}}
 
   function LocalFieldMor{S, T, U, V}() where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}()
