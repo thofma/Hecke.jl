@@ -1,11 +1,11 @@
 
 function _reduce(a::fqPolyRepFieldElem)
   A = parent(a)
-  #if a.length < 2*degree(A)
+  if a.length < 2*degree(A)
     ccall((:fq_nmod_reduce, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), a, A)
-  #else
-  #  ccall((:nmod_poly_rem, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{Nothing}, Ref{Nothing}), a, a, pointer_from_objref(A)+6*sizeof(Int) + 2*sizeof(Ptr{Nothing}), pointer_from_objref(A)+sizeof(ZZRingElem))
-  #end
+  else
+    ccall((:nmod_poly_rem, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{Nothing}, Ref{Nothing}), a, a, pointer_from_objref(A)+6*sizeof(Int) + sizeof(Ptr{Nothing}), pointer_from_objref(A)+sizeof(ZZRingElem))
+  end
 end
 
 function _reduce(a::FqPolyRepFieldElem)

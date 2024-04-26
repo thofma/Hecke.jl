@@ -1176,11 +1176,9 @@ function powermod(f::Zmodn_poly, e::ZZRingElem, g::Zmodn_poly)
   if fits(Int, e)
     return powermod(f, Int(e), g)
   else
-    _e = BigInt()
     z = parent(f)()
-    ccall((:fmpz_get_mpz, libflint), Nothing, (Ref{BigInt}, Ref{ZZRingElem}), _e, e)
-    ccall((:nmod_poly_powmod_mpz_binexp, libflint), Nothing,
-          (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{BigInt}, Ref{Zmodn_poly}),
+    ccall((:nmod_poly_powmod_fmpz_binexp, libflint), Nothing,
+          (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{ZZRingElem}, Ref{Zmodn_poly}),
            z, f, e, g)
     return z
   end
