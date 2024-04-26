@@ -62,7 +62,7 @@ function abs_upper_bound(::Type{ZZRingElem}, x::ArbFieldElem)
   ccall((:arb_get_abs_ubound_arf, libarb), Nothing,
         (Ref{arf_struct}, Ref{ArbFieldElem}, Int), tarf, x, 64)
 
-  if ccall((:arf_is_nan, Nemo.libarb), Bool, (Ref{arf_struct}, ), tarf)
+  if ccall((:arf_is_nan, libarb), Bool, (Ref{arf_struct}, ), tarf)
     throw(Base.InexactError(:abs_upper_bound, x, ZZRingElem))
   end
 
