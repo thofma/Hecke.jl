@@ -982,7 +982,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     for i = 1:nrows(M)
       S[i, i+nrows(M)] = 1
     end
-    ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{ZZModMatrix}, ), S)
+    ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{ZZModMatrix}, Ref{Nemo.fmpz_mod_ctx_struct}), S, R.ninv)
     iM = S[1:nrows(M), nrows(M)+1:ncols(S)]
     #@assert iM*MR == identity_matrix(R, nrows(M))
     return lift(iM)
