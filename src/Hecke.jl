@@ -109,7 +109,12 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
-             valuation!
+             valuation!, is_cyclo_type, is_embedded, is_maxreal_type
+
+AbstractAlgebra.@include_deprecated_bindings()
+Nemo.@include_deprecated_bindings()
+
+include("exports.jl")
 
 const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
@@ -182,14 +187,7 @@ using .Globals
 #
 ################################################################################
 
-# to make the alias of a function introduced in Hecke already available,
-# one needs to create a function stub, export it, and then do the alias
-function number_of_lattices end
-function number_of_relations end
-export number_of_lattices
-export number_of_relations
-@alias nlattices number_of_lattices
-@alias nrels number_of_relations
+include("Aliases.jl")
 
 ################################################################################
 #
@@ -554,7 +552,6 @@ function is_absolutely_irreducible end
 #
 ################################################################################
 
-include("exports.jl")
 include("HeckeTypes.jl")
 include("Sparse.jl")
 include("NumField/NfRel/Types.jl")
@@ -654,8 +651,7 @@ has_root(a...) = is_power(a...)  # catch all... needs revisiting:
 Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
 Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
 
-include("Aliases.jl")
-#
+
 ################################################################################
 #
 #  Deprecations
