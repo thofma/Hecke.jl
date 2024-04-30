@@ -399,7 +399,7 @@ function assure_isomorphism(F::FieldsTower, G)
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   iso = GAP.Globals.IsomorphismGroups(Gperm, G)
-  D = Dict{morphism_type(AbsSimpleNumField, AbsSimpleNumField), GAP.GapObj}()
+  D = Dict{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField), GAP.GapObj}()
   for i = 1:length(autsK)
     permgap = _perm_to_gap_perm(permGC[i])
     k = GAP.Globals.Image(iso, permgap)
@@ -590,7 +590,7 @@ function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{<:NumF
   end
   H = GAP.Globals.SylowSubgroup(Gperm, p)
   lGp = GAP.Globals.Size(H)
-  Gp = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, lGp)
+  Gp = Vector{Hecke.Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, lGp)
   j = 1
   for ind = 1:length(G)
     if j > lGp
@@ -694,7 +694,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   for i = 1:length(obstruction)
     if isdefined(cocycles[i], :inclusion_of_pSylow)
       #I need to assert that I took the right pSylow.
-      Gp1 = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
+      Gp1 = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
       for g in GC
         el = D1[Rx(image_primitive_element(g))]
         if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
@@ -945,7 +945,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   for i = 1:length(obstruction)
     #I create the cocycle
     if isdefined(cocycles[i], :inclusion_of_pSylow)
-      Gp1 = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
+      Gp1 = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
       for g in autsK1
         el = D1[Rx(image_primitive_element(g))]
         if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
@@ -969,7 +969,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
     end
     #I have to find the subgroup of Gp such that the action of Gp on the roots of unity
     #coincides with the action on the kernel
-    Stab = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
+    Stab = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
     inclusion = cocycles[i].inclusion
     projection = cocycles[i].projection
     inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
@@ -1041,7 +1041,7 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
     end
     #I have to find the subgroup of Gp such that the action of Gp on the roots of unity
     #coincides with the action on the kernel
-    Stab = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
+    Stab = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
     inclusion = cocycles[i].inclusion
     projection = cocycles[i].projection
     inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
@@ -1287,7 +1287,7 @@ function issplit_at_P(O::AbsSimpleNumFieldOrder, G::Vector{<: NumFieldHom{AbsSim
   theta1 = _find_theta(InGrp, F, mF, e)
 
   theta = Rx(image_primitive_element(theta1))
-  fmod = Rx(nf(O).pol)
+  fmod = Rx(Hecke.nf(O).pol)
   #I have found my generators. Now, we find the elements to test if it splits.
   if !iszero(mod(c, n))
     powtheta = theta

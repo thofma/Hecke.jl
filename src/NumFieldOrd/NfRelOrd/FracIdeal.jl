@@ -34,7 +34,7 @@ parent(a::RelNumFieldOrderFractionalIdeal) = a.parent
 #
 ################################################################################
 
-iszero(a::RelNumFieldOrderFractionalIdeal) = iszero(basis_matrix(a, copy = false)[1, 1])
+iszero(a::RelNumFieldOrderFractionalIdeal) = nrows(basis_matrix(a, copy = false)) == 0
 
 function isone(a::RelNumFieldOrderFractionalIdeal)
   if denominator(a) != 1
@@ -162,9 +162,9 @@ end
 
 function fractional_ideal(O::RelNumFieldOrder{T, S, U}, A::Vector{U}) where {T, S, U}
   if all(iszero, A)
-    M = zero_matrix(base_field(nf(O)), degree(O), degree(O))
+    M = zero_matrix(base_field(nf(O)), 0, degree(O))
     pb = pseudo_basis(O)
-    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
+    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(M, S[]))
   end
 
   return sum(fractional_ideal(O, a) for a in A if !iszero(a))
@@ -173,10 +173,11 @@ end
 function fractional_ideal(O::RelNumFieldOrder{T, S, U}, x::U) where {T, S, U}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
-  M = zero_matrix(base_field(nf(O)), d, d)
+  K = base_field(nf(O))
   if iszero(x)
-    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
+    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(zero_matrix(K, 0, d), S[]))
   end
+  M = zero_matrix(K, d, d)
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
   end
@@ -269,9 +270,9 @@ end
 
 Returns the norm of $a$.
 """
-function norm(a::RelNumFieldOrderFractionalIdeal{S, U, V}, copy::Type{Val{T}} = Val{true}) where {S, T, U, V}
+function norm(a::RelNumFieldOrderFractionalIdeal{S, U, V}, ::Val{copy} = Val(true)) where {S, U, V, copy}
   assure_has_norm(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.norm)::U
   else
     return a.norm::U

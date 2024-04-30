@@ -44,7 +44,7 @@
       if n % m != 0 && ! (isodd(n) && (2*n) % m == 0)
         Fm, zm = cyclotomic_field(m)
         @test_throws ErrorException Hecke.force_coerce_cyclo(Fn, zm)
-        @test Hecke.force_coerce_cyclo(Fn, zm, Val{false}) === nothing
+        @test Hecke.force_coerce_cyclo(Fn, zm, Val(false)) === nothing
       end
     end
   end

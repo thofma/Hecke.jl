@@ -16,7 +16,7 @@
   end
 
   @testset "Generators" begin
-    g, full_basis, v = gens(A, Val{true})
+    g, full_basis, v = gens(A, Val(true))
 
     @test length(full_basis) == dim(A)
 

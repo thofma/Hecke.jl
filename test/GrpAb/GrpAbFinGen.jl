@@ -305,6 +305,9 @@
     G = abelian_group([3, 5])
     @test @inferred is_cyclic(G)
 
+    G = abelian_group([1])
+    @test @inferred is_cyclic(G)
+
     G = abelian_group([3, 15])
     @test @inferred !is_cyclic(G)
   end

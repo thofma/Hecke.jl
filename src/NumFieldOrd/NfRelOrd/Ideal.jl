@@ -31,7 +31,7 @@ function assure_has_pseudo_basis(a::Union{RelNumFieldOrderIdeal, RelNumFieldOrde
   L = nf(order(a))
   K = base_field(L)
   pseudo_basis = Vector{Tuple{elem_type(L), fractional_ideal_type(order_type(K))}}()
-  for i = 1:degree(L)
+  for i = 1:nrows(P)
     t = L()
     for j = 1:degree(L)
       t += P.matrix[i, j]*B[j]
@@ -247,12 +247,13 @@ Creates the ideal $x\cdot \mathcal O$ of $\mathcal O$.
 """
 function ideal(O::RelNumFieldOrder{T, S, U}, x::RelNumFieldOrderElem{T, U}) where {T, S, U}
   x = O(x)
+  K = base_field(nf(O))
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
-  M = zero_matrix(base_field(nf(O)), d, d)
   if iszero(x)
-    return RelNumFieldOrderIdeal{T, S, U}(O, pseudo_matrix(M, S[ deepcopy(pb[i][2]) for i = 1:d ]))
+    return RelNumFieldOrderIdeal{T, S, U}(O, pseudo_matrix(zero_matrix(K, 0, d), S[]))
   end
+  M = zero_matrix(K, d, d)
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*nf(O)(x))
   end
@@ -318,8 +319,8 @@ function fractional_ideal(O::RelNumFieldOrder{T, S, U}, a::S) where {T, S, U}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   if iszero(a)
-    M = zero_matrix(base_field(nf(O)), d, d)
-    PM = pseudo_matrix(M, S[ a*pb[i][2] for i = 1:d ])
+    M = zero_matrix(base_field(nf(O)), 0, d)
+    PM = pseudo_matrix(M, S[])
     return RelNumFieldOrderFractionalIdeal{T, S, U}(O, PM)
   end
 
@@ -436,7 +437,7 @@ end
 #
 ################################################################################
 
-iszero(a::RelNumFieldOrderIdeal) = iszero(basis_matrix(a, copy = false)[1, 1])
+iszero(a::RelNumFieldOrderIdeal) = nrows(basis_matrix(a, copy = false)) == 0
 
 isone(a::RelNumFieldOrderIdeal) = isone(minimum(a))
 
@@ -452,7 +453,7 @@ function assure_has_norm(a::RelNumFieldOrderIdeal{T, S}) where {T, S}
     return nothing
   end
   if iszero(a)
-    O = order(basis_pmatrix(a, copy = false).coeffs[1])
+    O = base_ring(order(a))
     a.norm = O()*O
     a.has_norm = true
     return nothing
@@ -509,8 +510,18 @@ end
 
 function +(a::RelNumFieldOrderIdeal{T, S}, b::RelNumFieldOrderIdeal{T, S}) where {T, S}
   check_parent(a, b)
+
+  if is_zero(a)
+    return b
+  end
+
+  if is_zero(b)
+    return a
+  end
+
   d = degree(order(a))
   H = vcat(basis_pmatrix(a, copy = false), basis_pmatrix(b, copy = false))
+
   if T === AbsSimpleNumFieldElem
     m = (norm(a) + norm(b)) * _modulus(order(a))
     H = sub(pseudo_hnf_full_rank_with_modulus!(H, m, :lowerleft), (d + 1):2*d, 1:d)
@@ -1415,6 +1426,11 @@ end
 
 function assure_has_minimum(A::RelNumFieldOrderIdeal)
   if isdefined(A, :minimum)
+    return nothing
+  end
+  if is_zero(A)
+    O = base_ring(order(A))
+    A.minimum = zero(O) * O
     return nothing
   end
   @assert isone(basis_pmatrix(A, copy = false).matrix[1, 1])

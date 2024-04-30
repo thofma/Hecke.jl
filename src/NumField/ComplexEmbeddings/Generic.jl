@@ -490,3 +490,16 @@ function _log_evaluate_fac_elem(e, x, prec)
   end
   return z
 end
+
+################################################################################
+#
+#  Complex conjugation
+#
+################################################################################
+
+function complex_conjugation(K::NumField)
+  L, f = absolute_simple_field(K)
+  g = inv(f)
+  conj = complex_conjugation(L)
+  return compose(compose(g, conj), f)
+end

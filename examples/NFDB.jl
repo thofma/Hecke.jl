@@ -1156,17 +1156,121 @@ end
 #
 ################################################################################
 
-function _p_adic_regulator(K, p, fast::Bool = false)
-  if !is_normal(K)
-    return _padic_regulator_non_normal(K, p)
+function _p_adic_regulator(K::AbsSimpleNumField, p::IntegerUnion)
+  return _p_adic_regulator_coates(K, p)
+end
+
+function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
+  # Implementation due to Scheima Obeidi, 2024
+  degK = degree(K)
+  if degK == 1 # rationals
+    return zero(QQ)
   end
+  @req is_totally_real(K) "Field must be totally real"
+  OK = ring_of_integers(K)
+  dp = prime_ideals_over(OK, p)
+  U, mU = unit_group_fac_elem(OK)
+  rK = torsion_free_rank(U)
+  EK = [mU(U[j]) for j in 2:(rK + 1)]
+  push!(EK, FacElem(K(1+p))) # put 1+p in list with fundamental units
+  prec = degK + 20 # precision for working Qp
+  working_prec = prec + 20
+  # The precision management:
+  #
+  # prec = precision of Qp/Zp, this is where the determinant of the matrix
+  #        eventually resides. Might be zero, if prec < v(reg_p(K))
+  #
+  # working_prec = precision for the completion map (this does not guarentee
+  #                the precision of the output)
+  #
+  # There are some gotos, because we need to distinguish low prec and low
+  # working_prec.
+  while true
+    (prec > 2^12 || working_prec > 2^12) && error("Something wrong")
+    imK =[QadicRingElem{PadicField, PadicFieldElem}[] for i in 1:degK]
+    Qp = PadicField(p, prec, cached = false)
+    Zp = ring_of_integers(Qp)
+    dK = discriminant(OK)
+    r = maximum([ramification_index(P) for P in dp])
+    ims = [LocalFieldElem{QadicFieldElem, EisensteinLocalField}[] for i in 1:degK]
+    # Compute the logarithm of all elements under all embeddings
+    # We need a working precision independent of prec
+    while length(ims[rK + 1]) < length(dp) # while not everything is filled
+      empty!.(ims)
+      for j in 1:length(dp)
+        C, mC = completion(K, dp[j], working_prec)
+        for i in 1:(rK+1)
+          try
+            # the evaluation of the logarithm may fail, if the precision
+            # is not high enough
+            el = _evaluate_log_of_fac_elem(mC, dp[j], EK[i])
+            if is_zero(el)
+              @goto bad_working_prec
+            end
+            push!(ims[i], el)
+          catch e
+            if !(e isa ErrorException && e.msg == "precision too low")
+              rethrow()
+            end
+            @goto bad_working_prec
+          end
+        end
+      end
+    end
+
+    m = 0
+    mj = minimum(QQFieldElem[valuation(ims[i][j]) for i in 1:length(ims) for j in 1:length(dp)])
+    if mj >= 0
+      m = zero(QQ)
+    else
+      m = mj
+    end
+
+    for i in 1:(rK+1)
+      for j in 1:length(ims[i])
+        OC = ring_of_integers(parent(ims[i][j]))
+        try
+          w = absolute_coordinates(Zp, OC(ims[i][j]*p^(Int(-m*r)))) #coates
+          append!(imK[i], w)
+        catch e
+          if e isa ErrorException && startswith(e.msg, "Precision of field")
+            @goto bad_working_prec
+          else
+            rethrow(e)
+          end
+        end
+      end
+    end
+    X = matrix(Zp, imK)
+    dX = AbstractAlgebra.det_df(X)
+    if is_zero(dX)
+      @goto bad_prec
+    end
+    vp = valuation(AbstractAlgebra.det_df(X))
+    vp = vp +  m*r*degK + valuation(dK, p)//2 - 1
+    return vp
+
+    @label bad_prec
+    prec = 2 * prec
+    #@info "Increasing prec to $(prec)"
+    working_prec = max(working_prec, prec + 20)
+    continue
+
+    @label bad_working_prec
+    working_prec = 2 * working_prec
+    #@info "Increasing working_prec to $(working_prec)"
+    continue
+  end
+end
+
+function _p_adic_regulator_normal(K, p, fast::Bool = false)
   OK = maximal_order(K)
   P = prime_ideals_over(OK, p)[1]
   U, mU = unit_group_fac_elem(OK)
   A, mA = automorphism_group(K)
   @req order(A) == degree(K) "Field must be normal"
   @req is_totally_real(K) "Field must be totally real"
-  r = rank(U)
+  r = torsion_free_rank(U)
   prec = degree(K) + 10
   _det = Hecke.AbstractAlgebra.det_df
   while true
@@ -1194,6 +1298,7 @@ function _p_adic_regulator(K, p, fast::Bool = false)
         try
           Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1])), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
         catch e
+          @show "asds"
           if !(e isa ErrorException && e.msg == "precision too low")
             rethrow()
           end
@@ -1250,7 +1355,7 @@ function _evaluate_log_of_fac_elem(mC, P, e::FacElem{AbsSimpleNumFieldElem, AbsS
   return res
 end
 
-function _padic_regulator_non_normal(K, p)
+function _p_adic_regulator_non_normal(K, p)
   @req is_totally_real(K) "Field must be totally real"
   a = gen(K)
   N, KtoN = normal_closure(K)
@@ -1282,7 +1387,7 @@ function _padic_regulator_non_normal(K, p)
 
   OK = ring_of_integers(K)
   U, mU = unit_group_fac_elem(OK)
-  r = rank(U)
+  r = torsion_free_rank(U)
   prec = 64
   _det = Hecke.AbstractAlgebra.det_df
   while true

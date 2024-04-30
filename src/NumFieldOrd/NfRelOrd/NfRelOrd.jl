@@ -20,6 +20,8 @@ parent(O::RelNumFieldOrder) = O.parent
 
 base_ring(O::RelNumFieldOrder) = order(pseudo_basis(O, copy = false)[1][2])
 
+base_ring_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = order_type(base_ring_type(NumField{T}))
+
 elem_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderElem{T, U}
 
 ideal_type(::RelNumFieldOrder{T, S, U}) where {T, S, U} = RelNumFieldOrderIdeal{T, S, U}
@@ -431,12 +433,12 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::U, O::RelNumFieldOrder{T, S, U}, short::Type{Val{V}} = Val{false}) where {T, S, U, V}
+function _check_elem_in_order(a::U, O::RelNumFieldOrder{T, S, U}, ::Val{short} = Val(false)) where {T, S, U, short}
   b_pmat = basis_pmatrix(O, copy = false)
   t = zero_matrix(base_field(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
-  if short == Val{true}
+  if short
     for i = 1:degree(O)
       if !(t[1, i] in b_pmat.coeffs[i])
         return false
@@ -458,7 +460,7 @@ function _check_elem_in_order(a::U, O::RelNumFieldOrder{T, S, U}, short::Type{Va
 end
 
 function in(a::U, O::RelNumFieldOrder{T, S, U}) where {T, S, U}
-  return _check_elem_in_order(a, O, Val{true})
+  return _check_elem_in_order(a, O, Val(true))
 end
 
 ################################################################################
@@ -561,7 +563,7 @@ equation_order(L::NumField) = EquationOrder(L)
 
 function MaximalOrder(L::NumField)
   return get_attribute!(L, :maximal_order) do
-    O = MaximalOrder(EquationOrder(L))
+    O = MaximalOrder(any_order(L))
     O.is_maximal = 1
     return O
   end::order_type(L)
@@ -689,7 +691,7 @@ end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}, compute_order::Type{Val{S}} = Val{true}) where {S, U1, V, Z <: RelSimpleNumFieldElem}
+function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}, ::Val{compute_order} = Val(true)) where {compute_order, U1, V, Z <: RelSimpleNumFieldElem}
   !is_equation_order(O) && error("Order must be an equation order")
 
   L = nf(O)
@@ -717,7 +719,7 @@ function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderI
 
   d = gcd(fmodp, gcd(gmodp, hmodp))
 
-  if compute_order == Val{false}
+  if !compute_order
     return isone(d)
   else
     if isone(d)
@@ -735,7 +737,7 @@ function dedekind_test(O::RelNumFieldOrder{U1, V, Z}, p::Union{AbsNumFieldOrderI
   end
 end
 
-dedekind_ispmaximal(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p, Val(false))
 
 dedekind_poverorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}) = dedekind_test(O, p)[2]
 
@@ -807,7 +809,7 @@ function pmaximal_overorder(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal,
   return OO
 end
 
-function MaximalOrder(O::RelNumFieldOrder)
+function _maximal_order_round2(O::RelNumFieldOrder)
   disc = discriminant(O)
   fac = factor(disc)
   OO = O
@@ -1269,7 +1271,7 @@ function prefactorization(I::RelNumFieldOrderIdeal)
   OK = order(I)
   m = absolute_minimum(I)
   ideals = typeof(I)[]
-  pp, r = Hecke._factors_trial_division(m)
+  pp, r = _factors_trial_division(m)
   for p in pp
     push!(ideals, I + ideal(OK, p))
   end
@@ -1280,7 +1282,19 @@ function prefactorization(I::RelNumFieldOrderIdeal)
   return ideals
 end
 
-function maximal_order(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
+function MaximalOrder(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
+  # If O contains OK[a] with a the generator of nf(O), then we do something
+  # clever as in the absolute case (composite Dedekind test and prefactorization)
+  #
+  # Otherwise, do the Round 2
+  if is_integral(gen(nf(O)))
+    return _maximal_order_rel_nice(O)::typeof(O)
+  else
+    return _maximal_order_round2(O)::typeof(O)
+  end
+end
+
+function _maximal_order_rel_nice(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
   K = nf(O)
   L = base_field(K)
   OL = maximal_order(L)

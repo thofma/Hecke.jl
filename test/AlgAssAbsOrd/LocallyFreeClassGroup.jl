@@ -99,3 +99,21 @@ end
   @test S.snf == ZZRingElem[ 2 ]
   @test mS(I) == S[1]
 end
+
+@testset "Kernel group" begin
+  test_data = [
+     (8, 3) => [1],   # D_8
+     (8, 4) => [2],   # Q_8
+     (12, 1) => [2],  # Q_12
+     (16, 9) => [2],  # Q_16
+     (32, 1) => [2, 4, 4], # C_32
+     (12, 3) => [1],  # A_4
+     (24, 12) => [1], # S_4
+  ]
+  for (grpid, o) in test_data
+    G = small_group(grpid...)
+    QG = QQ[G]
+    ZG = integral_group_ring(QG)
+    @test is_isomorphic(kernel_group(ZG), abelian_group(o))[1]
+  end
+end

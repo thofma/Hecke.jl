@@ -114,6 +114,8 @@ end
 
 coordinates(a::PadicFieldElem) = PadicFieldElem[a]
 
+coordinates(Qp::PadicField, a::PadicFieldElem) = PadicFieldElem[_coerce(Qp, a)]
+
 function coordinates(a::QadicFieldElem)
   res = Vector{PadicFieldElem}(undef, degree(parent(a)))
   for i = 0:length(res)-1
@@ -122,7 +124,17 @@ function coordinates(a::QadicFieldElem)
   return res
 end
 
+function coordinates(Qp::PadicField, a::QadicFieldElem)
+  res = Vector{PadicFieldElem}(undef, degree(parent(a)))
+  for i = 0:length(res)-1
+    res[i + 1] = _coerce(Qp, coeff(a, i))
+  end
+  return res
+end
+
 absolute_coordinates(a::Union{PadicFieldElem, QadicFieldElem}) = coordinates(a)
+
+absolute_coordinates(Qp::PadicField, a::Union{PadicFieldElem, QadicFieldElem}) = coordinates(Qp, a)
 
 function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   K = parent(a)
@@ -131,6 +143,21 @@ function absolute_coordinates(a::LocalFieldElem{S, T}) where {S <: FieldElem, T 
   ind = 1
   for i = 1:length(va)
     vi = absolute_coordinates(va[i])
+    for j = 1:length(vi)
+      v[ind] = vi[j]
+      ind += 1
+    end
+  end
+  return v
+end
+
+function absolute_coordinates(Qp::PadicField, a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
+  K = parent(a)
+  v = Vector{PadicFieldElem}(undef, absolute_degree(K))
+  va = coordinates(a)
+  ind = 1
+  for i = 1:length(va)
+    vi = absolute_coordinates(Qp, va[i])
     for j = 1:length(vi)
       v[ind] = vi[j]
       ind += 1
@@ -562,12 +589,7 @@ end
 function Base.:(//)(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   ib = inv(b)
-  n = max(precision(a.data), precision(b.data))
-  pol = setprecision(base_ring(a.data), n) do
-    mod(a.data*ib.data, defining_polynomial(parent(a), n))
-  end
-  res =  LocalFieldElem{S, T}(parent(a), pol, compute_precision(parent(a), pol))
-  return res
+  return a*ib
 end
 
 function Base.:(//)(a::LocalFieldElem{S, T}, b::Union{PadicFieldElem, QadicFieldElem}) where {S <: FieldElem, T <: LocalFieldParameter}
@@ -837,12 +859,13 @@ function _log_one_units(a::LocalFieldElem)
 end
 
 function divexact(a::LocalFieldElem, b::Union{Integer, ZZRingElem}; check::Bool=true)
-  iszero(a) && return a
-  p = prime(parent(a))
+  K = parent(a)
+  p = prime(K)
+  e = absolute_ramification_index(K)
   v = valuation(b, p)
-  Qp = prime_field(parent(a))
+  iszero(a) && return setprecision(a, precision(a) - v*e)
+  Qp = prime_field(K)
   old = precision(Qp)
-  e = absolute_ramification_index(parent(a))
   setprecision!(Qp, e*precision(a)+round(Int, e*valuation(a)) + v)
   bb = inv(Qp(b))
   setprecision!(Qp, old)
@@ -858,26 +881,47 @@ function _log_one_units_fast(a::LocalFieldElem)
     false, a - 1
   end
   fl && return b
+  #= Plan:
+    log(1+b) = log(a) = sum (-b)^i/i
+    up to precision pr(a)
+    val(b^i / i) = i val(b) - val(i) and val(i) <= flog(i, p)
+    as a function in i, this is increasing past the min at i=val(a)
+    thus we need at least pr/val(b) many summands (since up to then
+    val(b^i / i) <= val(b^i) = i val(b) <= thus non-zero
+    For i sth. val(i) == 0, this is sharp.
+    For i = mult. of p, we need more terms, the largest possibility
+    i = p^r gets val(b^i / i) = p^r val(b) - r
+    again, this as a min and is growing otherwise.
+
+    Careful: valuation is extending from Q and might be fractional
+             precision is in pi, not p
+  =#
   vb = valuation(b)
   p = prime(K)
   N = precision(a)
   res = zero(K)
   e = absolute_ramification_index(K)
   res = setprecision!(res, N + e*flog(ZZRingElem(N), p))
-  bound1 = div(N, numerator(vb*e))
+  bound1 = div(N, numerator(vb*e)) #num(vb*e) = val(b) above
 
   l = 1
-  left = p*vb*e
-  right = N + e
+  left = p*vb*e  #val(b^p)
+  right = N + e  #powering will increase prec by e
+  #need p^i*val(b) - i >= pr, so p^i *val(b) >= pr + i is what we test
   while left < right
     left *= p
     right += e
     l += 1
   end
-  bound2 = p^l
+  bound2 = p^l #definitely an upper bound on terms
   el = one(K)
-  el = setprecision!(el, N+l)
-  b = setprecision(a, N+l) - el
+  el = setprecision!(el, N) #necc. if prec(K) < prec(a)
+  #prec here means rel. prec. Each mult. by el of valuation vb above
+  #will increase the abs. prec. The division by i will then reduce the abs. prec
+  # (and the rel prec), but the abs prec will be larger than the abs prec in el.
+  #
+  b = a - el
+  #sum (-b)^i/i for 1st step: crude estimate without val(den)
   for i = 1:bound1
     el *= b
     to_add = divexact(el, i)
@@ -888,7 +932,8 @@ function _log_one_units_fast(a::LocalFieldElem)
     end
   end
   leftlim = bound1 + p - mod(ZZRingElem(bound1), p)
-  if leftlim < bound2
+  #smallest expo (i) > bound so far
+  if leftlim <= bound2
     el *= b^(leftlim-bound1)
     if isodd(leftlim)
       res += divexact(el, leftlim)

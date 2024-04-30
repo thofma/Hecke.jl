@@ -34,6 +34,8 @@
 
 @inline base_ring(K::AbsNonSimpleNumField) = FlintQQ
 
+@inline base_ring_type(K::AbsNonSimpleNumField) = QQField
+
 @inline base_field(K::AbsNonSimpleNumField) = FlintQQ
 
 @inline degree(K::AbsNonSimpleNumField) = K.degree
@@ -1144,26 +1146,30 @@ function primitive_element(K::AbsNonSimpleNumField)
   return pe
 end
 
-@doc raw"""
-    factor(f::PolyRingElem{AbsNonSimpleNumFieldElem}) -> Fac{Generic.Poly{AbsNonSimpleNumFieldElem}}
-
-The factorisation of $f$ (using Trager's method).
-"""
 function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(f)
 
   iszero(f) && error("poly is zero")
 
+  val = valuation(f, gen(Kx))
+  if val > 0
+    f = shift_right(f, val)
+  end
+
   if degree(f) == 0
     r = Fac{typeof(f)}()
     r.fac = Dict{typeof(f), Int}()
     r.unit = Kx(leading_coefficient(f))
+    if val > 0
+      r.fac[gen(Kx)] = val
+    end
     return r
   end
 
   f_orig = deepcopy(f)
   @vprintln :PolyFactor 1 "Factoring $f"
+
   @vtime :PolyFactor 2 g = gcd(f, derivative(f))
   if degree(g) > 0
     f = div(f, g)
@@ -1175,6 +1181,9 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
     r = Fac{typeof(f)}()
     r.fac = Dict{typeof(f), Int}(f*(1//leading_coefficient(f)) => multip)
     r.unit = one(Kx) * leading_coefficient(f_orig)
+    if val > 0
+      r.fac[gen(Kx)] = val
+    end
     return r
   end
 
@@ -1201,16 +1210,16 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
     t = change_base_ring(K, i, parent = Kx)
     t = compose(t, gen(Kx) + k*pe, inner = :second)
     @vtime :PolyFactor 2 t = gcd(f, t)
-    res[t] = 1
+    res[t] = valuation(f_orig, t)
   end
 
   r = Fac{typeof(f)}()
   r.fac = res
   r.unit = Kx(1)
-
-  if f != f_orig
-    error("factoring with mult not implemented")
+  if val > 0
+    r.fac[gen(Kx)] = val
   end
+
   r.unit = one(Kx)* leading_coefficient(f_orig)//prod((leading_coefficient(p) for (p, e) in r))
   return r
 end

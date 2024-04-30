@@ -48,8 +48,8 @@ end
 
 # For convenience, there is a quotient constructor for an extension of orders.
 # The quotient will be represented as an abelian group.
-mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <:
-              Map{FinGenAbGroup, T1, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
+mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <: Map{FinGenAbGroup, T2, HeckeMap, HeckeMap}
+              #Map{FinGenAbGroup, T2, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
   domain::FinGenAbGroup
   codomain::T1
   bottom::T2
@@ -393,7 +393,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
           excess[] = excess[] + 1
           continue
         end
-        L = Order(K, bL, check = false, cached = false)
+        L = Order(K, hnf!(bL, :lowerleft), check = false, cached = false)
         lQL = prime_ideals_over(L, P)
         if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
           push!(orders, L)
@@ -521,6 +521,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
           excess[] = excess[] + 1
           continue
         end
+        hnf!(bL, :lowerleft)
         L = Order(K, bL, check = false, cached = false)
         lQL = prime_ideals_over(L, P)
         if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
@@ -682,6 +683,7 @@ function pprimary_overorders(O, P)
         new = pprimary_overorders_bass(N, Q)
         for S in new
           H = basis_matrix(FakeFmpqMat, S, copy = false)
+          @hassert :AbsNumFieldOrder is_hnf(H.num, :lowerleft)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
             c = current[ind]
@@ -698,7 +700,7 @@ function pprimary_overorders(O, P)
         new = _minimal_poverorders_in_ring_of_multipliers(N, Q, excess)
         for S in new
           H = basis_matrix(FakeFmpqMat, S, copy = false)
-          #@assert is_hnf(H.num, :lowerleft)
+          @hassert :AbsNumFieldOrder is_hnf(H.num, :lowerleft)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
             c = current[ind]

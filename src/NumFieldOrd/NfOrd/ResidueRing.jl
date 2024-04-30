@@ -53,6 +53,8 @@ end
 
 base_ring(Q::AbsOrdQuoRing) = Q.base_ring
 
+base_ring_type(::Type{AbsOrdQuoRing{S, T}}) where {S, T} = S
+
 ideal(Q::AbsOrdQuoRing) = Q.ideal
 
 basis_matrix(Q::AbsOrdQuoRing) = Q.basis_matrix

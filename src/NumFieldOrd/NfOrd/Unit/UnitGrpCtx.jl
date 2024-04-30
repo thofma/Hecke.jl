@@ -79,7 +79,7 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::ZZRingElem) wh
   return rel, p
 end
 
-function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = Val{false}; post_reduction::Bool = true) where {S <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, T}
+function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, ::Val{rel_only} = Val(false); post_reduction::Bool = true) where {S <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, rel_only}
   @assert has_full_rank(U)
 
   K = nf(order(U))
@@ -117,7 +117,7 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
     @vprintln :UnitGroup 3 "For $p rel: $rel"
   end
 
-  if rel_only === Val{true}
+  if rel_only
     return rel
   end
 

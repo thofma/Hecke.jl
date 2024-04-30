@@ -10,6 +10,8 @@ dim(A::MatAlgebra) = A.dim
 
 base_ring(A::MatAlgebra{T, S}) where {T, S} = A.base_ring::parent_type(T)
 
+base_ring_type(::Type{MatAlgebra{T, S}}) where {T, S} = parent_type(T)
+
 coefficient_ring(A::MatAlgebra) = A.coefficient_ring
 
 basis(A::MatAlgebra) = A.basis
@@ -56,7 +58,7 @@ function is_commutative(A::MatAlgebra)
   end
   dcr = dim_of_coefficient_ring(A)
   if degree(A) == 1
-    if is_commutative(base_ring(A))
+    if base_ring(A) isa Field || is_commutative(base_ring(A))
       A.is_commutative = 1
       return true
     end
@@ -547,9 +549,9 @@ function _matrix_in_algebra(M::S, A::MatAlgebra{T, S}) where {T, S<:MatElem}
   return t*U
 end
 
-function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, ::Val{short} = Val(false)) where {S, T, short}
   if nrows(M) != degree(A) || ncols(M) != degree(A)
-    if short == Val{true}
+    if short
       return false
     end
     return false, zeros(base_ring(A), dim(A))
@@ -580,7 +582,7 @@ function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, short::Type{Val{U}}
   end
   C = basis_matrix_solve_context(A)
   b, N = can_solve_with_solution(C, t, side = :left)
-  if short == Val{true}
+  if short
     return b
   end
   s = N #[N[1, i] for i in 1:length(N)]
@@ -709,9 +711,11 @@ end
 #
 ################################################################################
 
-function opposite_algebra(A::MatAlgebra)
-  B, BtoA = StructureConstantAlgebra(A)
-  O, BtoO = opposite_algebra(B)
-  return O, compose_and_squash(BtoO, inv(BtoA))
+@attr Tuple{typeof(A), morphism_type(typeof(A), typeof(A))} function opposite_algebra(A::MatAlgebra)
+  BA = basis(A)
+  d = dim(A)
+  K = coefficient_ring(A)
+  BAt = [transpose(matrix(a, copy = false)) for a in BA]
+  Aop = matrix_algebra(coefficient_ring(A), BAt, isbasis = true)
+  return Aop, hom(A, Aop, identity_matrix(K, d), identity_matrix(K, d))
 end
-

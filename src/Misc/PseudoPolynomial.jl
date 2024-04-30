@@ -15,6 +15,8 @@ iszero(f::PseudoPoly) = iszero(polynomial(f))
 
 base_ring(f::PseudoPoly) = parent(polynomial(f))
 
+base_ring_type(::Type{PseudoPoly{S, T}}) where {S, T} = parent_type(S)
+
 pseudo_polynomial(f, A) = PseudoPoly(f, A)
 
 polynomial(f::PseudoPoly) = f.poly

@@ -229,7 +229,7 @@ function norm(L::HermLat)
   to_sum = reduce(+, tr(C[i] * G[i, j] * v(C[j]))*R for j in 1:length(C) for i in 1:(j-1); init = to_sum)
   n = minimum(numerator(to_sum))//denominator(to_sum)
   L.norm = n
-  return n
+  return n::fractional_ideal_type(base_ring(base_ring(L)))
 end
 
 ################################################################################
@@ -587,7 +587,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     end
     # new we look for zeros of ax^2 + by^2
     kk, h = residue_field(R, P)
-    while sum(S[i] * nrows(B[i]) for i in 1:length(B); init = 0) > 1
+    while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]; init = 0) > 1
       k = 0
       for i in 1:(length(S) + 1)
         if S[i] == 1

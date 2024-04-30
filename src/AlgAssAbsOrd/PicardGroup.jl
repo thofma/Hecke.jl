@@ -19,8 +19,6 @@ function modulus(f::MapRayClassGroupAlg{S, T}) where {S, T}
   return f.modulus::elem_type(base_ring_type(T))
 end
 
-base_ring_type(::Type{FacElemMon{S}}) where {S} = S
-
 mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
   header::MapHeader{S, T}
 
@@ -477,8 +475,10 @@ function _principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
   return g
 end
 
-function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl)
+function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl; local_freeness::Bool = false)
   # all the internal functions assume that the ideal is an ideal of the order
+  #
+  # support the keyword argument, since the "generic" interface requires it
   O = order(a)
   d = denominator(a, O)
   b = d * a
@@ -804,14 +804,15 @@ end
 ################################################################################
 
 @doc raw"""
-    kernel_group(O::AlgAssAbsOrd) -> FinGenAbGroup, MapPicardGroup
+    kernel_group_with_disc_log(O::AlgAssAbsOrd) -> FinGenAbGroup, MapPicardGroup
 
 Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
 returns the group $D$ in the exact sequence $0 \to D \to Pic(O) \to Pic(O')$
 where $O'$ is a maximal order containing $O$.
 """
-function kernel_group(O::AlgAssAbsOrd)
+function kernel_group_with_disc_log(O::AlgAssAbsOrd)
   A = algebra(O)
+  @req is_commutative(O) "Order must be commutative"
   OO = maximal_order(A)
 
   # We use the short exact sequence

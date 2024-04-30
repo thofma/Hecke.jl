@@ -69,7 +69,7 @@ end
 
 # abstract nonsense
 
-const FacElemMonDict = IdDict()
+const FacElemMonDict = AbstractAlgebra.CacheDictType{Ring, FacElemMon}()
 
 function (x::FacElemMon{S})() where S
   z = FacElem{elem_type(S), S}()
@@ -177,6 +177,8 @@ end
 parent(x::FacElem) = x.parent
 
 base_ring(x::FacElemMon) = x.base_ring
+
+base_ring_type(::Type{FacElemMon{S}}) where {S} = S
 
 base_ring(x::FacElem) = base_ring(parent(x))
 

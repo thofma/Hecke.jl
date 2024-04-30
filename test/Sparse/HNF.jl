@@ -6,7 +6,7 @@
     As = sparse_matrix(A)
     @test hnf(A) == ZZMatrix(hnf(As))
 
-    H, T = Hecke.hnf_kannan_bachem(As, Val{true})
+    H, T = Hecke.hnf_kannan_bachem(As, Val(true))
     B = deepcopy(As)
 
     for t in T

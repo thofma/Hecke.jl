@@ -50,7 +50,9 @@ fractional_ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsSimpleNumField
 
 fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
 
-Nemo.base_ring(::AbsNumFieldOrder) = FlintZZ
+base_ring(::AbsNumFieldOrder) = FlintZZ
+
+base_ring_type(::Type{<:AbsNumFieldOrder}) = ZZRing
 
 @doc raw"""
     parent(O::AbsNumFieldOrder) -> AbsNumFieldOrderSet
@@ -491,15 +493,14 @@ end
 # Check if a number field element is contained in O
 # In this case, the second return value is the coefficient vector with respect
 # to the basis of O
-function _check_elem_in_order(a::T, O::AbsNumFieldOrder{S, T},
-                              short::Type{Val{U}} = Val{false}) where {S, T, U}
+function _check_elem_in_order(a::T, O::AbsNumFieldOrder{S, T}, ::Val{short} = Val(false)) where {S, T, short}
   assure_has_basis_mat_inv(O)
   t = O.tcontain
   elem_to_mat_row!(t.num, 1, t.den, a)
   t = mul!(t, t, O.basis_mat_inv)
-  if short == Val{true}
+  if short
     return isone(t.den)
-  elseif short == Val{false}
+  else
     if !isone(t.den)
       return false, Vector{ZZRingElem}()
     else
@@ -515,7 +516,7 @@ end
 
 function in(a::AbsNonSimpleNumFieldElem, O::AbsNumFieldOrder)
   @assert parent(a) == nf(O)
-  return _check_elem_in_order(a, O, Val{true})
+  return _check_elem_in_order(a, O, Val(true))
 end
 
 @doc raw"""
@@ -547,7 +548,7 @@ function in(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
       return _check_containment(R1, M.num, t.num)
     end
   end
-  return _check_elem_in_order(a, O, Val{true})
+  return _check_elem_in_order(a, O, Val(true))
 end
 
 function _check_containment(R, M, t)

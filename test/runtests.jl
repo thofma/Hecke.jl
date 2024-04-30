@@ -81,24 +81,18 @@ end
 isparallel = false
 n_procs = 0
 
-fl = get(ENV, "HECKE_TEST_PARALLEL", "false")
-if fl != "false"
-  isparallel = true
-  n_procs = parse(Int, fl)
-else
-  for a in ARGS
-    r = match(r"j([0-9])*", a)
-    if r === nothing
-      continue
+for a in ARGS
+  r = match(r"j([0-9])*", a)
+  if r === nothing
+    continue
+  else
+    global isparallel = true
+    if r.captures[1] === nothing
+      global n_procs = DEFAULT_NPROCS
     else
-      global isparallel = true
-      if r.captures[1] === nothing
-        global n_procs = DEFAULT_NPROCS
-      else
-        global n_procs = parse(Int, r.captures[1])
-      end
-      @assert n_procs > 0 "Number of processes ($(n_procs)) must be > 0"
+      global n_procs = parse(Int, r.captures[1])
     end
+    @assert n_procs > 0 "Number of processes ($(n_procs)) must be > 0"
   end
 end
 
@@ -116,16 +110,18 @@ fl = get(ENV, "CI", "false")
 
 if fl === "true"
   @info "Running on CI"
+  @info "Sys.CPU_THREADS: $(Sys.CPU_THREADS)"
 end
 
-if fl === "true" && !no_parallel && !Sys.iswindows()
+if fl === "true" && !no_parallel && !Sys.iswindows() && VERSION < v"1.11"
+  @info "On CI, !no_parallel and not Windows"
   isparallel = true
   # CPU_THREADS reports number of logical cores (including hyperthreading)
   # So be pessimistic and divide by 2
-  n_procs = min(div(Sys.CPU_THREADS, 2), 1)
+  n_procs = max(ceil(Int, Sys.CPU_THREADS/2), 1)
   if Sys.islinux()
     # there is not enough memory to support >= 2 jobs
-    isparallel = false
+    # isparallel = false
   end
 end
 

@@ -59,6 +59,10 @@ elem_type(::Type{EmbeddedNumField{S, E}}) where {S, E} = EmbeddedNumFieldElem{el
 
 parent_type(::Type{EmbeddedNumFieldElem{T}}) where {T} = EmbeddedNumField{parent_type(T), embedding_type(parent_type(T))}
 
+base_ring(::EmbeddedNumField) = FlintQQ
+
+base_ring_type(::Type{<:EmbeddedNumField}) = QQField
+
 data(x::EmbeddedNumFieldElem) = x.element
 
 function embedded_field(K::SimpleNumField, i::NumFieldEmb)
@@ -203,6 +207,35 @@ function isless(y::AbstractFloat, x::EmbeddedNumFieldElem)
   end
 end
 
+is_positive(x::EmbeddedNumFieldElem) = x > 0
+
+is_negative(x::EmbeddedNumFieldElem) = x < 0
+
+################################################################################
+#
+#  Sign
+#
+################################################################################
+
+function sign(x::EmbeddedNumFieldElem)
+  if is_zero(x)
+    return x
+  end
+  if x > 0
+    return one(parent(x))
+  else
+    return -one(parent(x))
+  end
+end
+
+################################################################################
+#
+#  Abs
+#
+################################################################################
+
+abs(x::EmbeddedNumFieldElem) = sign(x) * x
+
 ################################################################################
 #
 #  String I/O
@@ -313,3 +346,75 @@ function factor(f::PolyRingElem{<:EmbeddedNumFieldElem})
              Dict{typeof(f), Int}(
                (map_coefficients(E, g, parent = Ex), e) for (g, e) in fa))
 end
+
+################################################################################
+#
+#  Rounding
+#
+################################################################################
+
+function floor(::Type{ZZRingElem}, a::EmbeddedNumFieldElem)
+  i = embedding(parent(a))
+  p = 32
+  fl, b = unique_integer(floor(real(i(data(a), p))))
+  while !fl
+    p = Int(floor(p * 1.42))
+    fl, b = unique_integer(real(i(data(a), p)))
+  end
+  return b
+end
+
+function floor(a::EmbeddedNumFieldElem)
+  return parent(a)(floor(ZZRingElem, a))
+end
+
+function ceil(::Type{ZZRingElem}, a::EmbeddedNumFieldElem)
+  i = embedding(parent(a))
+  p = 32
+  fl, b = unique_integer(ceil(real(i(data(a), p))))
+  while !fl
+    p = Int(ceil(p * 1.42))
+    fl, b = unique_integer(real(i(data(a), p)))
+  end
+  return b
+end
+
+function ceil(a::EmbeddedNumFieldElem)
+  return parent(a)(ceil(ZZRingElem, a))
+end
+
+# rounding
+function round(::Type{ZZRingElem}, a::EmbeddedNumFieldElem, ::RoundingMode{:Nearest})
+  if is_zero(a)
+    return zero(ZZ)
+  end
+
+  ca = floor(ZZRingElem, a)
+  if a < ca + QQ(1//2)
+    return ca
+  elseif a > ca + QQ(1//2)
+    return ca + 1
+  else
+    return is_even(ca) ? ca : ca + 1
+  end
+end
+
+function round(a::EmbeddedNumFieldElem, ::RoundingMode{:Nearest})
+  return parent(a)(round(ZZRingElem, a, RoundNearest))
+end
+
+round(x::EmbeddedNumFieldElem, ::RoundingMode{:Up}) = ceil(x)
+round(::Type{ZZRingElem}, x::EmbeddedNumFieldElem, ::RoundingMode{:Up})= ceil(ZZRingElem, x)
+
+round(x::EmbeddedNumFieldElem, ::RoundingMode{:Down}) = floor(x)
+round(::Type{ZZRingElem}, x::EmbeddedNumFieldElem, ::RoundingMode{:Down}) = floor(ZZRingElem, x)
+
+round(x::EmbeddedNumFieldElem, ::RoundingMode{:NearestTiesAway}) = sign(x) * floor(abs(x) + 1 // 2)
+function round(::Type{ZZRingElem}, x::EmbeddedNumFieldElem, ::RoundingMode{:NearestTiesAway})
+    tmp = floor(ZZRingElem, abs(x) + 1 // 2)
+    return is_positive(x) ? tmp : -tmp
+end
+
+# default
+round(a::EmbeddedNumFieldElem) = round(a, RoundNearestTiesAway)
+round(::Type{ZZRingElem}, a::EmbeddedNumFieldElem) = round(ZZRingElem, a, RoundNearestTiesAway)

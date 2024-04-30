@@ -317,11 +317,13 @@ export embed_in_unimodular
 export embedded_number_field
 export embedding
 export embeddings
+export enumerate_definite_genus
 export equation
 export equation_order
 export euclid
 export euler_phi_inv
 export evaluation_function
+export even_sublattice
 export excess
 export exponent
 export exponential_integral
@@ -685,9 +687,9 @@ export normal_form
 export normic_defect
 export normred
 export norms
-export nrels
 export number_field
 export number_of_lattices
+export number_of_relations
 #export number_of_small_groups #(conflict with Oscar?)
 export obj
 export oddity

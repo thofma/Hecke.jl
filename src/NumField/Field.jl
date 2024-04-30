@@ -216,8 +216,8 @@ function is_cached(L::AbsSimpleNumField)
 end
 
 function is_cached(L::RelSimpleNumField)
-  if haskey(NfRelID, (parent(L.pol), L.pol, L.S))
-    return NfRelID[parent(L.pol), L.pol, L.S] === L
+  if haskey(RelSimpleNumFieldID, (parent(L.pol), L.pol, L.S))
+    return RelSimpleNumFieldID[parent(L.pol), L.pol, L.S] === L
   end
   return false
 end

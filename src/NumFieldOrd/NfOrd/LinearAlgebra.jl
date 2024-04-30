@@ -268,6 +268,8 @@ This function returns the $R$ that was used to defined $M$.
 """
 base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.base_ring::order_type(parent_type(T))
 
+base_ring_type(::Type{PMat{T, S}}) where {T, S} = order_type(parent_type(T))
+
 function pseudo_matrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
@@ -967,17 +969,17 @@ function sub(P::PMat, rows::AbstractUnitRange{Int}, cols::AbstractUnitRange{Int}
 end
 
 function pseudo_hnf_cohen(P::PMat)
-   return _pseudo_hnf_cohen(P, Val{false})
+   return _pseudo_hnf_cohen(P, Val(false))
 end
 
 function pseudo_hnf_cohen_with_transform(P::PMat)
-   return _pseudo_hnf_cohen(P, Val{true})
+   return _pseudo_hnf_cohen(P, Val(true))
 end
 
-function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_hnf_cohen(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
    H = deepcopy(P)
    m = nrows(H)
-   if trafo == Val{true}
+   if with_transform
       U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_cohen!(H, U, true)
       return H, U
@@ -1125,13 +1127,13 @@ end
 
 function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val{false})
+    H = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val(false))
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
     return H
   elseif shape == :upperright
-    return _pseudo_hnf_kb(P, Val{false})
+    return _pseudo_hnf_kb(P, Val(false))
   else
     error("Not yet implemented")
   end
@@ -1139,23 +1141,23 @@ end
 
 function pseudo_hnf_kb_with_transform(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H, U = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val{true})
+    H, U = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val(true))
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
     reverse_rows!(U)
     return H, U
   elseif shape == :upperright
-    return _pseudo_hnf_kb(P, Val{true})
+    return _pseudo_hnf_kb(P, Val(true))
   else
     error("Not yet implemented")
   end
 end
 
-function _pseudo_hnf_kb(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_hnf_kb(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
    H = deepcopy(P)
    m = nrows(H)
-   if trafo == Val{true}
+   if with_transform
       U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_kb!(H, U, true)
       return H, U
@@ -1449,18 +1451,18 @@ function number_of_columns(m::PMat2)
 end
 
 function pseudo_snf_kb(P::PMat2)
-   return _pseudo_snf_kb(P, Val{false})
+   return _pseudo_snf_kb(P, Val(false))
 end
 
 function pseudo_snf_kb_with_transform(P::PMat2)
-   return _pseudo_snf_kb(P, Val{true})
+   return _pseudo_snf_kb(P, Val(true))
 end
 
-function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
+function _pseudo_snf_kb(P::PMat2, ::Val{with_transform} = Val(false)) where with_transform
    S = deepcopy(P)
    m = nrows(S)
    n = ncols(S)
-   if trafo == Val{true}
+   if with_transform
       U = identity_matrix(base_ring(S.matrix), m)
       K = identity_matrix(base_ring(S.matrix), m)
       pseudo_snf_kb!(S, U, K, true)
@@ -1577,6 +1579,8 @@ end
 
 base_ring(M::ModDed) = M.base_ring
 
+base_ring_type(::Type{ModDed}) = AbsSimpleNumFieldOrder
+
 function show(io::IO, M::ModDed)
    print(io, "Module over $(M.base_ring) with defining pseudo-matrix")
    for i in 1:nrows(M.pmatrix.matrix)
@@ -1630,26 +1634,24 @@ function simplify_basis(M::ModDed)
    return N
 end
 
-function vcat(P::PMat, Q::PMat)
-   @assert base_ring(P.matrix) == base_ring(Q.matrix)
-   m = vcat(P.matrix, Q.matrix)
-   c = vcat(P.coeffs, Q.coeffs)
-   return pseudo_matrix(m, c)
-end
+#function _vcat(P::PMat, Q::PMat)
+#   @assert base_ring(P.matrix) == base_ring(Q.matrix)
+#   m = vcat(P.matrix, Q.matrix)
+#   c = vcat(P.coeffs, Q.coeffs)
+#   return pseudo_matrix(m, c)
+#end
 
-function vcat(A::Vector{ <: PMat })
-  m = reduce(vcat, [P.matrix for P in A])
-  c = reduce(vcat, [P.coeffs for P in A])
+function vcat(A::Vector{PMat{S, T}}) where {S, T}
+  m = reduce(vcat, dense_matrix_type(S)[P.matrix for P in A])
+  c = reduce(vcat, Vector{T}[P.coeffs for P in A])::Vector{T}
   return pseudo_matrix(m, c)
 end
 
-function vcat(A::PMat...)
-  m = reduce(vcat, [P.matrix for P in A])
-  c = reduce(vcat, [P.coeffs for P in A])
-  return pseudo_matrix(m, c)
+function vcat(A0::PMat, A::PMat...)
+  return vcat(collect((A0, A...)))
 end
 
-function hcat(P::PMat, Q::PMat)
+function _hcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    @assert P.coeffs == Q.coeffs
    m = hcat(P.matrix, Q.matrix)
@@ -1662,10 +1664,8 @@ function hcat(A::Vector{ <: PMat })
   return pseudo_matrix(m, A[1].coeffs)
 end
 
-function hcat(A::PMat...)
-  @assert all( P -> P.coeffs == A[1].coeffs, A)
-  m = reduce(hcat, [P.matrix for P in A])
-  return pseudo_matrix(m, A[1].coeffs)
+function hcat(A0::PMat, A::PMat...)
+  return hcat(collect((A0, A...)))
 end
 
 function +(M::ModDed, N::ModDed)
@@ -1902,15 +1902,15 @@ function integral_and_coprime_to(a::Union{ AbsSimpleNumFieldOrderFractionalIdeal
 end
 
 function steinitz_form(P::PMat)
-  return _steinitz_form(P, Val{false})
+  return _steinitz_form(P, Val(false))
 end
 
 function steinitz_form_with_transform(P::PMat)
-  return _steinitz_form(P, Val{true})
+  return _steinitz_form(P, Val(true))
 end
 
-function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
-  if trafo == Val{true}
+function _steinitz_form(P::PMat, ::Val{with_transform} = Val(false)) where with_transform
+  if with_transform
     S, U = pseudo_hnf_with_transform(P, :lowerleft)
   else
     S = pseudo_hnf(P, :lowerleft)
@@ -1927,7 +1927,7 @@ function _steinitz_form(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
     end
     S.coeffs[i] = oneK*O
   end
-  if trafo == Val{true}
+  if with_transform
     steinitz_form!(S, U, true, start_row)
     return S, U
   else

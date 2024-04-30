@@ -50,7 +50,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
       E.gen_index = QQFieldElem(1)
       E.disc = discriminant(E)
       set_attribute!(x[1], :maximal_order => E)
-      auts = Vector{automorphism_type(x[1])}(undef, 2)
+      auts = Vector{Hecke.automorphism_type(x[1])}(undef, 2)
       auts[1] = hom(x[1], x[1], gen(x[1]), check = false)
       auts[2] = x[2][1]
       Hecke.set_automorphisms(x[1], auts)
@@ -81,7 +81,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
     K, auts = _relative_to_absoluteQQ(x[1], x[2])
     if length(gtype) == 1
       #If the group is cyclic, I prefer to have a generator!
-      new_auts = Vector{automorphism_type(K)}(undef, 1)
+      new_auts = Vector{Hecke.automorphism_type(K)}(undef, 1)
       new_auts[1] = auts[1]
       for j = 2:length(auts)
         new_auts[1] *= auts[j]
@@ -344,7 +344,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
     return Vector{Tuple{RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}()
   end
   if length(divisors_of_n) == 1 || is_coprime(degree(class_fields[it[1]]), degree(K))
-    fields = Vector{Tuple{RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{morpism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}(undef, length(it))
+    fields = Vector{Tuple{RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}(undef, length(it))
     ind = 1
     for i in it
       res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))

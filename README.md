@@ -26,8 +26,9 @@ So far, Hecke provides the following features:
   - Class field theory
   - Abelian groups
   - Associative algebras
-  - Ideals and orders in (semsimple) associative algebras
+  - Ideals and orders in (semisimple) associative algebras
   - Locally free class groups of orders in semisimple algebras
+  - Quadratic and Hermitian forms and lattices
 
 ## Installation
 
@@ -81,7 +82,7 @@ Welcome to
 
 Version 0.22.8...
  ... which comes with absolutely no warranty whatsoever
-(c) 2015-2023 by Claus Fieker, Tommy Hofmann and Carlo Sircana
+(c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
 
 julia> Qx, x = polynomial_ring(FlintQQ, "x");

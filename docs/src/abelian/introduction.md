@@ -24,14 +24,14 @@ a group with $m$ generators $e_j$ and relations
    \sum_{i=1}^n m_{i,j} e_j = 0.
 ```
 
-```@docs
+```@docs; canonical=false
 abelian_group(M::ZZMatrix)
 abelian_group(M::Matrix{ZZRingElem})
 abelian_group(M::Matrix{Integer})
 ```
 
 Alternatively, there are shortcuts to create products of cyclic groups:
-```@docs
+```@docs; canonical=false
 abelian_group(M::Vector{Union{ZZRingElem, Integer}})
 ```
 ```@repl
@@ -41,7 +41,7 @@ G = abelian_group(2, 2, 6)
 
 or even
 
-```@docs
+```@docs; canonical=false
 free_abelian_group(::Int)
 abelian_groups(n::Int)
 ```
@@ -51,7 +51,7 @@ abelian_groups(8)
 ```
 
 ### Invariants
-```@docs
+```@docs; canonical=false
 is_snf(A::FinGenAbGroup)
 number_of_generators(A::FinGenAbGroup)
 nrels(G::FinGenAbGroup)

@@ -158,7 +158,8 @@ function __unit_reps(M, F)
   return unit_reps
 end
 
-function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
+function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local_freeness::Bool = false)
+  # local_freeness needs to be accepted since the generic interface uses it
   A = algebra(O)
   if _alpha === nothing
     _assert_has_refined_wedderburn_decomposition(A)

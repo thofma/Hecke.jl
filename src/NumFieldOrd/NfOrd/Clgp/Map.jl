@@ -384,15 +384,15 @@ Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 The generator will be in factored form.
 """
 function is_principal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Val{false})
+  return _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Val(false))
 end
 
-function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, support::Type{Val{U}} = Val{false}) where {U}
-  # If support === Val{true}, also compute the support of the factored element.
+function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Val{support} = Val(false)) where {support}
+  # If `support`, also compute the support of the factored element.
   # (This is not the same as the support of the ideal A!)
   if A.is_principal == 1
     if isdefined(A, :princ_gen_fac_elem)
-      if support === Val{false}
+      if !support
         return true, A.princ_gen_fac_elem
       else
         #a = A.princ_gen_fac_elem
@@ -403,7 +403,7 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
         A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
       end
       a = A.princ_gen_fac_elem
-      if support === Val{false}
+      if !support
         return true, a
       else
         #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
@@ -413,7 +413,7 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   O = order(A)
   @assert is_maximal_known_and_maximal(O)
   if A.is_principal == 2
-    if support === Val{false}
+    if !support
       return false, FacElem(one(nf(O)))
     else
       return false, FacElem(one(nf(O))), Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
@@ -465,7 +465,7 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   A.princ_gen_fac_elem = e
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
 
-  if support === Val{false}
+  if !support
     return true, e
   else
     prime_exponents = sparse_row(FlintZZ, collect(1:length(base)), rs) * vcat(c.M.bas_gens, c.M.rel_gens)

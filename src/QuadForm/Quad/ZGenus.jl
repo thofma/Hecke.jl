@@ -2458,6 +2458,7 @@ function rational_isometry_class(g::ZZGenus)
     p = prime(s)
     d = det(s)
     gp = local_quad_space_class(QQ, ZZIdl(p), n, d, h, 0)
+    LGS[ideal(ZZ, p)] = gp
   end
   G.LGS = LGS
   G.dim = dim(g)

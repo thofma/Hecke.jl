@@ -8,7 +8,7 @@ import Base.Vector
 
 function SRowSpace(R::Ring; cached = true)
   T = elem_type(R)
-  return SRowSpace{T}(R)
+  return SRowSpace{T}(R, cached)
 end
 
 base_ring(A::SRow{ZZRingElem}) = FlintZZ
@@ -24,6 +24,8 @@ function base_ring(A::SRow{T}) where {T}
     error("Base ring of empty row not defined")
   end
 end
+
+base_ring_type(::Type{SRow{T}}) where {T} = parent_type(T)
 
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 

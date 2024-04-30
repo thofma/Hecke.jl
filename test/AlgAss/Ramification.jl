@@ -148,4 +148,15 @@
   @test is_eichler(QG)
   QG = QQ[small_group(8, 4)]
   @test !is_eichler(QG)
+
+  # bug in positive root calculation
+  m = Array{Rational{Int}, 3}(undef, 4, 4, 4)
+  m[1, :, :] = [346//83 0 0 0; 0 346//83 0 0; 6//205 0 0 0; 0 2//83 0 0]
+  m[2, :, :] = [-12 0 0 0; 0 -12 0 0; 0 0 0 0; 0 0 0 0]
+  m[3, :, :] = [0 0 346//83 0; 0 0 0 1038//205; 0 0 6//205 0; 0 0 0 6//205]
+  m[4, :, :] = [0 0 -820//83 0; 0 0 0 -12; 0 0 0 0; 0 0 0 0]
+  K, = rationals_as_number_field()
+  A = StructureConstantAlgebra(K, K.(m))
+  @test is_split(A, real_places(K)[1])
+  @test is_split(A)
 end

@@ -4,7 +4,7 @@ By an absolute number field we mean finite extensions of $\mathbf Q$, which is
 of type `AbsSimpleNumField` and whose elements are of type `AbsSimpleNumFieldElem`. Such an
 absolute number field $K$ is always given in the form $K = \mathbf Q(\alpha) =
 \mathbf Q[X]/(f)$, where $f \in \mathbf Q[X]$ is an irreducible polynomial.
-See [here](@ref NumberFieldsLink) for more information on the different
+See [here](@ref NumberFieldsLink2) for more information on the different
 types of fields supported.
 
 We

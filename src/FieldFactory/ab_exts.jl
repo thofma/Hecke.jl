@@ -520,7 +520,7 @@ end
 #
 ###############################################################################
 
-function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Type{Val{T}}=Val{false}) where T
+function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Val{unused}=Val(false)) where unused
 
   @assert !(real && complex)
   Qx,x=polynomial_ring(FlintQQ, "x")

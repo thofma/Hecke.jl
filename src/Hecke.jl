@@ -27,7 +27,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020-2022 Claus Fieker, Tommy Hofmann, Carlo Sircana
+# (C) 2020-2024 Claus Fieker, Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
 
@@ -100,8 +100,8 @@ exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue
-  eval(Meta.parse("import Nemo." * string(i)))
-  eval(Expr(:export, i))
+  @eval import Nemo: $i
+  @eval export $i
 end
 
 import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struct,
@@ -109,7 +109,12 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
-             valuation!
+             valuation!, is_cyclo_type, is_embedded, is_maxreal_type
+
+AbstractAlgebra.@include_deprecated_bindings()
+Nemo.@include_deprecated_bindings()
+
+include("exports.jl")
 
 const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
@@ -131,29 +136,7 @@ function __init__()
   @assert base_ring(Hecke.Globals.Zx) === FlintZZ
   @assert base_ring(Hecke.Globals.Qx) === FlintQQ
 
-  # Check if were loaded from another package
-  # if VERSION < 1.7.*, only the "other" package will have the
-  # _tryrequire_from_serialized in the backtrace.
-  # if VERSION >= 1.8, also doing 'using Package' will have
-  # _tryrequire_from_serialized the backtrace.
-  #
-  # To still distinguish both scenarios, notice that
-  # 'using OtherPackage' will either have _tryrequire_from_serialized at least twice,
-  # or one with four arguments (hence five as the function name is the first argument)
-  # 'using Package' serialized will have a version with less arguments
-  bt = Base.process_backtrace(Base.backtrace())
-  filter!(sf -> sf[1].func === :_tryrequire_from_serialized, bt)
-  isinteractive_manual =
-    length(bt) == 0 || (length(bt) == 1 && length(only(bt)[1].linfo.specTypes.parameters) < 4)
-
-  # Respect the -q and --banner flag
-  allowbanner = Base.JLOptions().banner != 0
-
-  show_banner = allowbanner && isinteractive_manual && isinteractive() &&
-                !any(x->x.name in ["Oscar"], keys(Base.package_locks)) &&
-                get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
-
-  if show_banner
+  if AbstractAlgebra.should_show_banner() && get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
     println("")
     print("Welcome to \n")
     printstyled("
@@ -170,7 +153,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2023 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   end
 
@@ -204,14 +187,7 @@ using .Globals
 #
 ################################################################################
 
-# to make the alias of a function introduced in Hecke already available,
-# one needs to create a function stub, export it, and then do the alias
-function number_of_lattices end
-function number_of_relations end
-export number_of_lattices
-export number_of_relations
-@alias nlattices number_of_lattices
-@alias nrels number_of_relations
+include("Aliases.jl")
 
 ################################################################################
 #
@@ -561,11 +537,21 @@ add_assertion_scope(:PID_Test)
 
 ################################################################################
 #
+#  Function stub
+#
+################################################################################
+
+# - The following function is introduced in src/ModAlgAss/*
+# - The Hecke.MPolyFactor submodule wants to extend it, but is loaded earlier
+# - Introduce the function here, to make everyone happy
+function is_absolutely_irreducible end
+
+################################################################################
+#
 #  "Submodules"
 #
 ################################################################################
 
-include("exports.jl")
 include("HeckeTypes.jl")
 include("Sparse.jl")
 include("NumField/NfRel/Types.jl")
@@ -665,8 +651,7 @@ has_root(a...) = is_power(a...)  # catch all... needs revisiting:
 Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
 Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
 
-include("Aliases.jl")
-#
+
 ################################################################################
 #
 #  Deprecations
@@ -753,7 +738,7 @@ function open_doc()
     end
 end
 
-function build_doc(; doctest=false, strict=false, format=:mkdocs)
+function build_doc(; doctest=false, strict=false, format=:vitepress)
   if !isdefined(Main, :Build)
     doc_init()
   end
@@ -762,7 +747,7 @@ function build_doc(; doctest=false, strict=false, format=:mkdocs)
   end
   if format == :html
     open_doc()
-  elseif format == :mkdocs
+  elseif format == :vitepress
     println("""Run `mkdocs serve` inside `../Hecke/docs/` to view the documentation.
 
             Use `format = :html` for a simplified version of the docs which does
@@ -817,7 +802,7 @@ varinfo(pat::Regex) = varinfo(Main, pat)
 
 
 function print_cache(sym::Vector{Any})
-  for f in sym;
+  for f in sym
     #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
@@ -835,11 +820,10 @@ end
 function find_cache(M::Module)
   sym = []
   for a in collect(names(M, all = true))
-    d = Meta.parse("$M.$a")
       try
-        z = eval(d);
+        z = getproperty(M, a)
         if isa(z, AbstractArray) || isa(z, AbstractDict)
-          push!(sym, (d, z))
+          push!(sym, ((M,a), z))
         end
     catch e
     end
@@ -847,19 +831,25 @@ function find_cache(M::Module)
   return sym
 end
 
-protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
-           :(Hecke.ASSERT_SCOPE), :(Hecke.VERBOSE_SCOPE),
-           :(Hecke._euler_phi_inverse_maximum),
-           :(Hecke.odlyzko_bound_grh),
-           :(Hecke.nC), :(Hecke.B1), #part of ECM
-           :(Hecke.VERBOSE_PRINT_INDENT),
-           :(Hecke._RealRings),
-           :(Hecke.protect)] # We need to protect protect itself :)
-                             # Otherwise it might emptied and then everything
-                             # is emptied.
+const protect = [
+  # We need to protect protect itself :)
+  # Otherwise it might emptied and then everything
+  # is emptied.
+  (Hecke, :protect),
+
+  (Hecke, :ASSERT_LOOKUP),
+  (Hecke, :VERBOSE_LOOKUP),
+  (Hecke, :ASSERT_SCOPE),
+  (Hecke, :VERBOSE_SCOPE),
+  (Hecke, :_euler_phi_inverse_maximum),
+  (Hecke, :odlyzko_bound_grh),
+  (Hecke, :nC), (Hecke, :B1), #part of ECM
+  (Hecke, :VERBOSE_PRINT_INDENT),
+  (Hecke, :_RealRings),
+]
 
 function clear_cache(sym::Vector{Any})
-  for f in sym;
+  for f in sym
     if f[1] in protect
       continue
     end

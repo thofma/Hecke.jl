@@ -22,13 +22,13 @@ order of an absolute simple field will be
 `AbsSimpleNumFieldOrderElem`
 
 
-```@docs
+```@docs; canonical=false
 AbsNumFieldOrder
 ```
 
 ## Basic properties
 
-```@docs
+```@docs; canonical=false
 parent(::AbsSimpleNumFieldOrderElem)
 elem_in_nf(::AbsSimpleNumFieldOrderElem)
 coordinates(::AbsSimpleNumFieldOrderElem)
@@ -51,7 +51,7 @@ All the usual arithmetic operatinos are defined:
 
 ## Miscellaneous
 
-```@docs
+```@docs; canonical=false
 representation_matrix(::AbsNumFieldOrderElem)
 representation_matrix(::AbsSimpleNumFieldOrderElem, ::AbsSimpleNumField)
 tr(::NumFieldOrderElem)

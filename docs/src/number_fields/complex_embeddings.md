@@ -13,14 +13,14 @@ Such an embedding is called *real* if $\operatorname{im}(\iota) \subseteq \mathb
 
 ## Construction of complex embeddings
 
-```@docs
+```@docs; canonical=false
 complex_embeddings(::NumField)
 real_embeddings(::NumField)
 ```
 
 ## Properties
 
-```@docs
+```@docs; canonical=false
 number_field(::NumFieldEmb)
 is_real(::NumFieldEmb)
 is_imaginary(::NumFieldEmb)
@@ -28,7 +28,7 @@ is_imaginary(::NumFieldEmb)
 
 ## Conjugated embedding
 
-```@docs
+```@docs; canonical=false
 conj(::NumFieldEmb)
 ```
 
@@ -47,7 +47,7 @@ the image $f(x)$ of $x$ under $f$ can be constructed as follows.
 For convenience, we also provide the following function to quickly create a corresponding
 anonymous function:
 
-```@docs
+```@docs; canonical=false
 evaluation_function(e::NumFieldEmb, prec::Int)
 ```
 
@@ -76,7 +76,7 @@ Given a subfield $\iota \colon k \to K$, any embedding
 $f \colon K \to \mathbf{C}$ naturally restricts to a complex embedding of $K$. Computing this restriction is supported in case $k$ appears
 as a base field of (a base field) of $K$ or $\iota$ is provided:
 
-```@docs
+```@docs; canonical=false
 restrict(::NumFieldEmb, ::NumField)
 restrict(::NumFieldEmb, ::NumFieldHom)
 ```
@@ -86,13 +86,13 @@ restrict(::NumFieldEmb, ::NumFieldHom)
 Given a complex embedding $f \colon k \to \mathbf{C}$ and a morphism $\iota \colon k \to K$, an embedding $g \colon K \to \mathbf{C}$ is extension of $f$, if $g$ restricts to $f$. Given an embedding and a morphism,
 all extensions can be computed as follows:
 
-```@docs
+```@docs; canonical=false
 extend(::NumFieldEmb, ::NumFieldHom)
 ```
 
 ## [Positivity & Signs](@id positivity_and_signs)
 
-```@docs
+```@docs; canonical=false
 sign(::NumFieldElem, ::NumFieldEmb)
 signs(::NumFieldElem, ::Vector{NumFieldEmb})
 is_positive(::NumFieldElem, ::NumFieldEmb)

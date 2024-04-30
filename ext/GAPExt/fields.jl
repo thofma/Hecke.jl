@@ -72,24 +72,24 @@ end
 ################################################################################
 
 function Hecke.field_context(K::AbsSimpleNumField)
-  layers = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}[]
+  layers = Vector{Hecke.Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}[]
   autsK = automorphism_list(K, copy = false)
   lll(maximal_order(K))
   permGC = _from_autos_to_perm(autsK)
   G = _perm_to_gap_grp(permGC)
-  D2 = Vector{Tuple{GAP.GapObj, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(autsK))
+  D2 = Vector{Tuple{GAP.GapObj, Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(autsK))
   for i = 1:length(autsK)
     p =  _perm_to_gap_perm(permGC[i])
     D2[i] = (p, autsK[i])
   end
   @assert GAP.Globals.IsSolvable(G)
   L = GAP.Globals.DerivedSeries(G)
-  embs = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(L)-1)
+  embs = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(L)-1)
   F = K
   for i = length(L)-1:-1:2
     H = L[i]
     gensGAP = GAP.Globals.GeneratorsOfGroup(H)
-    ggs = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+    ggs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
     push!(layers, closure(ggs))
     Fnew, mF = fixed_field(K, ggs)
     Fnew, mS = simplify(Fnew, cached = false, save_LLL_basis = false)
@@ -100,11 +100,11 @@ function Hecke.field_context(K::AbsSimpleNumField)
   end
   H = L[1]
   gensGAP = GAP.Globals.GeneratorsOfGroup(H)
-  ggs = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+  ggs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
   push!(layers, closure(ggs))
   auts = small_generating_set(layers[1])
   for i = 2:length(layers)
-    auts_layers = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[x for x in layers[i] if !(x in layers[i-1])]
+    auts_layers = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[x for x in layers[i] if !(x in layers[i-1])]
     append!(auts, small_generating_set(auts_layers))
   end
   KQ = rationals_as_number_field()[1]
@@ -445,7 +445,7 @@ function field_extensions(x::FieldsTower, bound::ZZRingElem, IsoE1::GAP.GapObj, 
   for j = 1:length(list)
     @vtime :Fields 4 maximal_order(list[j][1])
     fld, autos, embed = _relative_to_absolute(list[j][1], list[j][2])
-    previous_fields = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(x.subfields)+1)
+    previous_fields = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
     end
@@ -538,7 +538,7 @@ function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_p
     @assert b == 1
     K = rationals_as_number_field()[1]
     g = hom(K, K, K(1))
-    return FieldsTower[FieldsTower(K, morphism_type(AbsSimpleNumField, AbsSimpleNumField)[g], Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}())]
+    return FieldsTower[FieldsTower(K, Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[g], Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}())]
   end
   G = GAP.Globals.SmallGroup(a, b)
   if using_direct_product
