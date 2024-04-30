@@ -24,6 +24,8 @@ end
 
 base_ring(A::StructureConstantAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
+base_ring_type(::Type{StructureConstantAlgebra{T}}) where {T} = parent_type(T)
+
 has_one(A::StructureConstantAlgebra) = A.has_one
 
 iszero(A::StructureConstantAlgebra) = A.iszero

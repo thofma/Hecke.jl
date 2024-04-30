@@ -325,6 +325,8 @@ map_type(C::ComplexOfMorphisms) = valtype(C.maps)
 
 Hecke.base_ring(::FinGenAbGroup) = ZZ
 
+Hecke.base_ring_type(::Type{FinGenAbGroup}) = ZZRing
+
 function pres_show(io::IO, C::ComplexOfMorphisms)
   name_mod = String[]
   rank_mod = Int[]

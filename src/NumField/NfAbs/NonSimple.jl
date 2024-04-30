@@ -34,6 +34,8 @@
 
 @inline base_ring(K::AbsNonSimpleNumField) = FlintQQ
 
+@inline base_ring_type(K::AbsNonSimpleNumField) = QQField
+
 @inline base_field(K::AbsNonSimpleNumField) = FlintQQ
 
 @inline degree(K::AbsNonSimpleNumField) = K.degree

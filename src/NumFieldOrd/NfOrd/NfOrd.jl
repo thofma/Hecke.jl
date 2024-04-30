@@ -50,7 +50,9 @@ fractional_ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsSimpleNumField
 
 fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
 
-Nemo.base_ring(::AbsNumFieldOrder) = FlintZZ
+base_ring(::AbsNumFieldOrder) = FlintZZ
+
+base_ring_type(::Type{<:AbsNumFieldOrder}) = ZZRing
 
 @doc raw"""
     parent(O::AbsNumFieldOrder) -> AbsNumFieldOrderSet

@@ -25,6 +25,8 @@ function base_ring(A::SRow{T}) where {T}
   end
 end
 
+base_ring_type(::Type{SRow{T}}) where {T} = parent_type(T)
+
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################

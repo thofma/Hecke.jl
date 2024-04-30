@@ -76,6 +76,8 @@ end
 
 base_ring(O::GenOrd) = O.R
 
+base_ring_type(::Type{GenOrd{S, T}}) where {S, T} = T
+
 coefficient_ring(O::GenOrd) = O.R
 
 field(O::GenOrd) = O.F

@@ -19,8 +19,6 @@ function modulus(f::MapRayClassGroupAlg{S, T}) where {S, T}
   return f.modulus::elem_type(base_ring_type(T))
 end
 
-base_ring_type(::Type{FacElemMon{S}}) where {S} = S
-
 mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
   header::MapHeader{S, T}
 

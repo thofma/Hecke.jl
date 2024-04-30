@@ -11,6 +11,8 @@ end
 
 base_ring(Q::RelOrdQuoRing) = Q.base_ring
 
+base_ring_type(::Type{RelOrdQuoRing{T1, T2, T3}}) where {T1, T2, T3} = T1
+
 ideal(Q::RelOrdQuoRing) = Q.ideal
 
 basis_pmatrix(Q::RelOrdQuoRing) = Q.basis_pmatrix

@@ -10,6 +10,8 @@ dim(A::MatAlgebra) = A.dim
 
 base_ring(A::MatAlgebra{T, S}) where {T, S} = A.base_ring::parent_type(T)
 
+base_ring_type(::Type{MatAlgebra{T, S}}) where {T, S} = parent_type(T)
+
 coefficient_ring(A::MatAlgebra) = A.coefficient_ring
 
 basis(A::MatAlgebra) = A.basis

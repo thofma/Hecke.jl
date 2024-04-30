@@ -23,6 +23,8 @@ _algebra(O::AlgAssAbsOrd) = algebra(O)
 
 base_ring(O::AlgAssAbsOrd) = FlintZZ
 
+base_ring_type(::Type{AlgAssAbsOrd}) = ZZRing
+
 @doc raw"""
     is_commutative(O::AlgAssAbsOrd) -> Bool
 

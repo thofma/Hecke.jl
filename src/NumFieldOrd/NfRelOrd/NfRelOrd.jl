@@ -20,6 +20,8 @@ parent(O::RelNumFieldOrder) = O.parent
 
 base_ring(O::RelNumFieldOrder) = order(pseudo_basis(O, copy = false)[1][2])
 
+base_ring_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = order_type(base_ring_type(NumField{T}))
+
 elem_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderElem{T, U}
 
 ideal_type(::RelNumFieldOrder{T, S, U}) where {T, S, U} = RelNumFieldOrderIdeal{T, S, U}

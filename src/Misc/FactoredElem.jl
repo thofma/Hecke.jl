@@ -178,6 +178,8 @@ parent(x::FacElem) = x.parent
 
 base_ring(x::FacElemMon) = x.base_ring
 
+base_ring_type(::Type{FacElemMon{S}}) where {S} = S
+
 base_ring(x::FacElem) = base_ring(parent(x))
 
 base(x::FacElem) = keys(x.fac)

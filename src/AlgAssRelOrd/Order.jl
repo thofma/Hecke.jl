@@ -20,6 +20,8 @@ Returns an order $R$ in the base ring of the algebra of $O$, such that $O$ is an
 """
 base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
 
+base_ring_type(::Type{<:AlgAssRelOrd{S, T, U}}) where {S, T, U} = order_type(base_ring_type(U))
+
 @doc raw"""
     is_commutative(O::AlgAssRelOrd) -> Bool
 

@@ -13,6 +13,8 @@ ambient_space(L::ZZLat) = L.space
 
 base_ring(L::ZZLat) = FlintZZ
 
+base_ring_type(::Type{ZZLat}) = ZZRing
+
 base_field(L::ZZLat) = base_ring(gram_matrix(ambient_space(L)))
 
 ################################################################################

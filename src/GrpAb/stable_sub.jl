@@ -11,6 +11,10 @@ function base_ring(M::ZpnGModule)
   return M.R
 end
 
+function base_ring_type(::Type{ZpnGModule})
+  return Nemo.zzModRing
+end
+
 function show(io::IO, M::ZpnGModule)
   print(io, "Module over Z/", M.R.n, "Z with structure ", M.V)
 end
