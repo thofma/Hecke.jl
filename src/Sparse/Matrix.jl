@@ -17,6 +17,8 @@ end
 
 base_ring(A::SMatSpace{T}) where {T} = A.base_ring::parent_type(T)
 
+base_ring_type(::Type{SMatSpace{T}}) where {T} = parent_type(T)
+
 parent(A::SMat) = SMatSpace(base_ring(A), A.r, A.c)
 
 base_ring(A::SMat{T}) where {T} = A.base_ring::parent_type(T)

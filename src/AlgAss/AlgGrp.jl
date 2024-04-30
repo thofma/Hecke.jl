@@ -8,6 +8,8 @@ denominator_of_multiplication_table(A::GroupAlgebra{QQFieldElem}) = one(ZZ)
 
 base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
+base_ring_type(::Type{GroupAlgebra{T}}) where {T} = parent_type(T)
+
 Generic.dim(A::GroupAlgebra) = size(multiplication_table(A, copy = false), 1)
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
@@ -16,8 +18,8 @@ order_type(::GroupAlgebra{QQFieldElem, S, R}) where { S, R } = AlgAssAbsOrd{Grou
 
 order_type(::Type{GroupAlgebra{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{GroupAlgebra{QQFieldElem, S, R}, elem_type(GroupAlgebra{QQFieldElem, S, R})}
 
-order_type(::GroupAlgebra{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
-order_type(::Type{GroupAlgebra{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::GroupAlgebra{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), GroupAlgebra{T, S, R}}
+order_type(::Type{GroupAlgebra{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), GroupAlgebra{T, S, R}}
 
 @doc raw"""
     group(A::GroupAlgebra) -> Group

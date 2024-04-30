@@ -59,6 +59,10 @@ elem_type(::Type{EmbeddedNumField{S, E}}) where {S, E} = EmbeddedNumFieldElem{el
 
 parent_type(::Type{EmbeddedNumFieldElem{T}}) where {T} = EmbeddedNumField{parent_type(T), embedding_type(parent_type(T))}
 
+base_ring(::EmbeddedNumField) = FlintQQ
+
+base_ring_type(::Type{<:EmbeddedNumField}) = QQField
+
 data(x::EmbeddedNumFieldElem) = x.element
 
 function embedded_field(K::SimpleNumField, i::NumFieldEmb)
@@ -213,8 +217,8 @@ is_negative(x::EmbeddedNumFieldElem) = x < 0
 #
 ################################################################################
 
-function sign(x::EmbeddedNumFieldElem) 
-  if is_zero(x) 
+function sign(x::EmbeddedNumFieldElem)
+  if is_zero(x)
     return x
   end
   if x > 0

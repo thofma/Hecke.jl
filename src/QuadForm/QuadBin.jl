@@ -92,6 +92,8 @@ end
 
 base_ring(f::QuadBin{T}) where {T} = f.base_ring::parent_type(T)
 
+base_ring_type(::Type{QuadBin{T}}) where {T} = parent_type(T)
+
 ###############################################################################
 #
 #   Coefficients

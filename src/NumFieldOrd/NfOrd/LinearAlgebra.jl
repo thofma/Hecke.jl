@@ -268,6 +268,8 @@ This function returns the $R$ that was used to defined $M$.
 """
 base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.base_ring::order_type(parent_type(T))
 
+base_ring_type(::Type{PMat{T, S}}) where {T, S} = order_type(parent_type(T))
+
 function pseudo_matrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)
@@ -1576,6 +1578,8 @@ mutable struct ModDed
 end
 
 base_ring(M::ModDed) = M.base_ring
+
+base_ring_type(::Type{ModDed}) = AbsSimpleNumFieldOrder
 
 function show(io::IO, M::ModDed)
    print(io, "Module over $(M.base_ring) with defining pseudo-matrix")

@@ -2068,6 +2068,7 @@ end
 local_quad_space_class(K, prime::IntegerUnion, n, d, hasse_inv, k)=local_quad_space_class(K,ideal(ZZ,prime),n,d,hasse_inv,k)
 
 base_ring(G::LocalQuadSpaceCls) = G.K
+base_ring_type(::Type{LocalQuadSpaceCls{S, T, U}}) where {S, T, U} = S
 prime(G::LocalQuadSpaceCls) = G.p
 
 @doc raw"""
@@ -2405,6 +2406,8 @@ det_nondegenerate_part(g::QuadSpaceCls) = g.det
 det_ndeg(g::QuadSpaceCls) = det_nondegenerate_part(g)
 
 base_ring(g::QuadSpaceCls) = g.K
+
+base_ring_type(::Type{QuadSpaceCls{S, T, U, V}}) where {S, T, U, V} = S
 
 @doc raw"""
     dim_radical(g::QuadSpaceCls) -> Int

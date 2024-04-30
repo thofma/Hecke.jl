@@ -47,6 +47,8 @@ dim(A::QuaternionAlgebra) = 4
 
 base_ring(A::QuaternionAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
+base_ring_type(::Type{QuaternionAlgebra{T}}) where {T} = parent_type(T)
+
 multiplication_table(A::QuaternionAlgebra; copy = false) = A.mult_table
 
 standard_form(A::QuaternionAlgebra) = A.std
