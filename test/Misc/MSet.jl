@@ -81,8 +81,8 @@
   m2 = multiset(fill(2,6))
   m3 = multiset(Int[2,2,3,3,4,4])
   m4 = multiset(Int[3,4,4])
-  @test isempty(inHecke.AbstractAlgebra.tersect(m1, m2, m3))
-  inHecke.AbstractAlgebra.tersect!(m3, m1, m4)
+  @test isempty(intersect(m1, m2, m3))
+  intersect!(m3, m1, m4)
   @test length(m3) == 1
 end
 
@@ -101,7 +101,7 @@ end
 
   n = collect(M)[end]
   @test union(m, n) == m
-  @test inHecke.AbstractAlgebra.tersect(m, n) == n
+  @test intersect(m, n) == n
 end
 
 @testset "Sub-set iterators" begin
