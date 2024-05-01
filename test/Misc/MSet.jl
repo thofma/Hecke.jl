@@ -6,7 +6,7 @@
   @test length(String(take!(io))) == 92
   show(io, m)
   @test length(String(take!(io))) == 44
-  print(terse(io), m)
+  print(Hecke.AbstractAlgebra.terse(io), m)
   @test length(String(take!(io))) == 39
 
   M = MSet(root_lattice(:A, i) for j in 1:10 for i in 1:100)
@@ -81,8 +81,8 @@
   m2 = multiset(fill(2,6))
   m3 = multiset(Int[2,2,3,3,4,4])
   m4 = multiset(Int[3,4,4])
-  @test isempty(intersect(m1, m2, m3))
-  intersect!(m3, m1, m4)
+  @test isempty(inHecke.AbstractAlgebra.tersect(m1, m2, m3))
+  inHecke.AbstractAlgebra.tersect!(m3, m1, m4)
   @test length(m3) == 1
 end
 
@@ -94,14 +94,14 @@ end
   @test length(String(take!(io))) == 61
   show(io, M)
   @test length(String(take!(io))) == 64
-  print(terse(io), M)
+  print(Hecke.AbstractAlgebra.terse(io), M)
   @test length(String(take!(io))) == 35
   @test eltype(M) == typeof(m)
   @test length(collect(M)) == length(M)
 
   n = collect(M)[end]
   @test union(m, n) == m
-  @test intersect(m, n) == n
+  @test inHecke.AbstractAlgebra.tersect(m, n) == n
 end
 
 @testset "Sub-set iterators" begin
@@ -112,7 +112,7 @@ end
   @test length(String(take!(io))) == 58
   show(io, S)
   @test length(String(take!(io))) == 58
-  print(terse(io), S)
+  print(Hecke.AbstractAlgebra.terse(io), S)
   @test length(String(take!(io))) == 29
   @test eltype(S) == typeof(s)
   @test length(collect(S)) == length(S)
@@ -123,7 +123,7 @@ end
   @test length(String(take!(io))) == 68
   show(io, S)
   @test length(String(take!(io))) == 68
-  print(terse(io), S)
+  print(Hecke.AbstractAlgebra.terse(io), S)
   @test length(String(take!(io))) == 39
   @test eltype(S) == typeof(s)
   @test length(collect(S)) == length(S)
