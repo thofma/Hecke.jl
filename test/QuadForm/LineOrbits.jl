@@ -2,7 +2,7 @@
   P = Hecke.enumerate_lines(GF(5), 20)
   io = IOBuffer()
   show(io, MIME"text/plain"(), P)
-  show(terse(io), P)
+  show(Hecke.AbstractAlgekra.terse(io), P)
   show(io, P)
   for i in 1:100
     v = rand(P)
