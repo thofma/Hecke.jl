@@ -425,8 +425,15 @@ function scale_row!(a::SRow{T}, b::T) where T
   if isone(b)
     return
   end
-  for i=1:length(a.pos)
+  i = 1
+  while i <= length(a)
     a.values[i] *= b
+    if iszero(a.values[i])
+      deleteat!(a.values, i)
+      deleteat!(a.pos, i)
+    else
+     i += 1
+    end
   end
 end
 

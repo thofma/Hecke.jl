@@ -1,5 +1,6 @@
 @testset "Row" begin
   R = FlintZZ
+  S, _ = residue_ring(ZZ, 4)
 
   # Construction
 
@@ -82,7 +83,10 @@
 
   A = sparse_row(FlintZZ, [1, 2, 4], ZZRingElem[1, 2, 3])
   scale_row!(A, ZZRingElem(2))
+  B = sparse_row(S, [1, 3, 4], [1, 2, 3])
+  scale_row!(B, S(2))
   @test A == sparse_row(FlintZZ, [1, 2, 4], ZZRingElem[2, 4, 6])
+  @test B == sparse_row(S, [1, 4], [2, 2])
 
   # Addition
   A = sparse_row(FlintZZ, [1, 2, 3, 5], ZZRingElem[1, 2, 3, 5])
