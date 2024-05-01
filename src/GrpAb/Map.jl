@@ -571,9 +571,9 @@ elem_type(::Type{MapParent}) = Map
 function show(io::IO, MP::MapParent)
   io = pretty(io)
   print(io, "Set of all $(MP.typ) from ")
-  print(IOContext(io, :supercompact => true), Lowercase(), MP.dom)
+  print(terse(io), Lowercase(), MP.dom)
   print(io, " to ")
-  print(IOContext(io, :supercompact => true), Lowercase(), MP.codom)
+  print(terse(io), Lowercase(), MP.codom)
 end
 
 parent(f::FinGenAbGroupHom) = MapParent(domain(f), codomain(f), "homomorphisms")

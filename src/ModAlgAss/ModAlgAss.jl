@@ -137,8 +137,7 @@ end
 
 function Base.show(io::IO, V::ModAlgAss)
   io = pretty(io)
-  if get(io, :supercompact, false)
-    # supercompact
+  if is_terse(io)
     print(io, LowercaseOff(), "Amodule of dimension ", dim(V))
   else
     print(io, LowercaseOff(), "Amodule of dimension ", dim(V))
@@ -548,15 +547,13 @@ mutable struct NfToModAlgAssMor{S, T, U} <: Map{AbsSimpleNumField, ModAlgAss{S, 
 end
 
 function Base.show(io::IO, M::NfToModAlgAssMor)
-   if get(io, :supercompact, false)
-      # no nested printing
+   if is_terse(io)
       print(io, "Galois module map")
    else
-      # nested printing allowed, preferably supercompact
       io = pretty(io)
       print(io, "Galois module map: ")
-      print(IOContext(io, :supercompact => true), Lowercase(), domain(M), " -> ")
-      print(IOContext(io, :supercompact => true), Lowercase(), codomain(M))
+      print(terse(io), Lowercase(), domain(M), " -> ")
+      print(terse(io), Lowercase(), codomain(M))
    end
 end
 

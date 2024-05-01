@@ -131,7 +131,7 @@ end
 function show(io::IO, a::FinGenAbGroupElem)
   @show_special_elem(io, a)
 
-  if get(io, :compact, false) || get(io, :supercompact, false) || (get(io, :typeinfo, Any)) == typeof(a)
+  if get(io, :compact, false) || is_terse(io) || (get(io, :typeinfo, Any)) == typeof(a)
     print(io, "[", join(a.coeff, ", "), "]")
     return
   end

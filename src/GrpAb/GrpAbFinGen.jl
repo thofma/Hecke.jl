@@ -190,13 +190,13 @@ function show_hom(io::IO, G::FinGenAbGroup)
   D = get_attribute(G, :hom)
   D === nothing && error("only for hom")
   io = pretty(io)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, LowercaseOff(), "Hom of abelian groups")
   else
     print(io, LowercaseOff(), "Hom(")
-    print(IOContext(io, :supercompact => true), D[1])
+    print(terse(io), D[1])
     print(io, ", ")
-    print(IOContext(io, :supercompact => true), D[2])
+    print(terse(io), D[2])
     print(io, ")")
   end
 end
@@ -206,7 +206,7 @@ show_hom(io::IO, ::MIME"text/plain", G::FinGenAbGroup) = show_hom(io, G)
 function show_direct_product(io::IO, G::FinGenAbGroup)
   D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct products")
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Direct product of abelian groups")
   else
     print(io, "Direct product of ", ItemQuantity(length(D), "abelian group"))
@@ -226,7 +226,7 @@ end
 function show_direct_sum(io::IO, G::FinGenAbGroup)
   D = get_attribute(G, :direct_product)
   D === nothing && error("only for direct sums")
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Direct sum of abelian groups")
   else
     print(io, "Direct sum of ", ItemQuantity(length(D), "abelian group"))
@@ -246,7 +246,7 @@ end
 function show_tensor_product(io::IO, G::FinGenAbGroup)
   D = get_attribute(G, :tensor_product)
   D === nothing && error("only for tensor products")
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Tensor product of abelian groups")
   else
     print(io, "Tensor product of ", ItemQuantity(length(D), "abelian group"))
@@ -275,7 +275,7 @@ function show_gen(io::IO, ::MIME"text/plain", A::FinGenAbGroup)
 end
 
 function show_gen(io::IO, A::FinGenAbGroup)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Finitely generated abelian group")
   else
     print(io, "Finitely generated abelian group with ", ItemQuantity(ncols(rels(A)), "generator"), " and ", ItemQuantity(nrows(rels(A)), "relation"))

@@ -1386,7 +1386,7 @@ function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
 end
 
 function show(io::IO, f::LocMultGrpModSquMap)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Map for local unit group modulo squares")
   else
     print(io, "Map for local unit group modulo squares at the prime ideal ")

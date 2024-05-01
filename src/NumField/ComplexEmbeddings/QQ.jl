@@ -8,7 +8,7 @@ struct QQEmb <: NumFieldEmb{QQField}
 end
 
 function Base.show(io::IO, ::QQEmb)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Complex embedding of QQ")
   else
     print(io, "Complex embedding of rational numbers")

@@ -933,7 +933,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZZGenus)
 end
 
 function Base.show(io::IO, G::ZZGenus)
-  if !get(io, :supercompact, false)
+  if !is_terse(io)
     print(io, "Genus symbol: ")
   end
   print(io, iseven(G) ? "II" : "I")
@@ -972,7 +972,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZZLocalGenus)
 end
 
 function Base.show(io::IO, G::ZZLocalGenus)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     if length(symbol(G)) == 0
       print(io, "Empty local integer genus")
     else

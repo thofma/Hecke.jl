@@ -18,7 +18,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::VecSpaceRes)
 end
 
 function Base.show(io::IO, f::VecSpaceRes)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Map of change of scalars")
   else
     print(io, "Map of change of scalars between vector spaces")
@@ -34,7 +34,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::AbstractSpaceRes)
 end
 
 function Base.show(io::IO, f::AbstractSpaceRes)
- if get(io, :supercompact, false)
+ if is_terse(io)
     print(io, "Map of change of scalars")
   else
     print(io, "Map of change of scalars between hermitian spaces")

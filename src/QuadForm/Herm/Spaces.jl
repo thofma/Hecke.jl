@@ -75,7 +75,7 @@ function Base.show(io::IO, ::MIME"text/plain", V::HermSpace)
 end
 
 function show(io::IO, V::HermSpace)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Hermitian space")
   else
     print(io, "Hermitian space of dimension $(dim(V))")

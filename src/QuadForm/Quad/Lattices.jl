@@ -13,7 +13,7 @@ function Base.show(io::IO, ::MIME"text/plain", L::QuadLat)
 end
 
 function Base.show(io::IO, L::QuadLat)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Quadratic lattice")
   else
     print(io, "Quadratic lattice of rank $(rank(L)) and degree $(degree(L))")

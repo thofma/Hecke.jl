@@ -141,12 +141,12 @@ end
 function Base.show(io::IO, a::RelNonSimpleNumField)
   @show_name(io, a)
   @show_special(io, a)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Non-simple number field")
   else
     io = pretty(io)
     print(io, "Non-simple number field of degree ", degree(a))
-    print(IOContext(io, :supercompact => true), " over ", Lowercase(), base_field(a))
+    print(terse(io), " over ", Lowercase(), base_field(a))
   end
 end
 

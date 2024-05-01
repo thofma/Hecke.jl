@@ -123,7 +123,7 @@ end
 
 function show_quad(io::IO, q::AbsSimpleNumField)
   d = trailing_coefficient(q.pol)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     if d < 0
       print(io, "Real quadratic field")
     else

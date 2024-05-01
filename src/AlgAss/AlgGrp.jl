@@ -136,11 +136,11 @@ function show(io::IO, ::MIME"text/plain", A::GroupAlgebra)
 end
 
 function show(io::IO, A::GroupAlgebra)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Group algebra of dimension ", dim(A), " over ", base_ring(A))
   else
     print(io, "Group algebra of group of order ", order(group(A)), " over ")
-    print(IOContext(io, :supercompact => true), base_ring(A))
+    print(terse(io), base_ring(A))
   end
 end
 

@@ -161,12 +161,12 @@ function Base.show(io::IO, ::MIME"text/plain", a::RelSimpleNumField)
 end
 
 function Base.show(io::IO, a::RelSimpleNumField)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Relative number field")
   else
     io = pretty(io)
     print(io, "Relative number field of degree ", degree(a), " over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), base_field(a))
+    print(terse(io), Lowercase(), base_field(a))
   end
 end
 
