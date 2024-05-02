@@ -236,13 +236,15 @@ function abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
                             absolutely_distinct::Bool = false,
                             ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]),
                             only_tame::Bool = false,
-                            signatures::Vector{Tuple{Int, Int}} = Tuple{Int, Int}[])
+                            signatures::Vector{Tuple{Int, Int}} = Tuple{Int, Int}[],
+                            conductors = nothing)
 
   if length(signatures) == 0
     return _abelian_extensions(K, gtype, absolute_discriminant_bound,
                                absolutely_distinct = absolutely_distinct,
                                ramified_at_inf_plc = ramified_at_inf_plc,
-                               only_tame = only_tame)
+                               only_tame = only_tame,
+                               conductors = conductors)
   else
     if ramified_at_inf_plc[1]
       error("Cannot specify ramified place and target signatures simultaneously")
@@ -270,7 +272,8 @@ function abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
         more_fields =  _abelian_extensions(K, gtype, absolute_discriminant_bound,
                                absolutely_distinct = absolutely_distinct,
                                ramified_at_inf_plc = (true, rlp_ramify),
-                               only_tame = only_tame)
+                               only_tame = only_tame,
+                               conductors = conductors)
         for L in more_fields
           @assert signature(L) == (R, S)
         end
@@ -285,17 +288,37 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
                             absolute_discriminant_bound::ZZRingElem;
                             absolutely_distinct::Bool = false,
                             ramified_at_inf_plc::Tuple{Bool, Vector{<: InfPlc}} = (false, InfPlc[]),
-                            only_tame::Bool = false)
+                            only_tame::Bool = false,
+                            conductors = nothing)
 
-  OK = maximal_order(K)
+  # quick check
+  OK = lll(maximal_order(K))
   gtype = map(Int, snf(abelian_group(gtype))[1].snf)
   n = prod(gtype)
-  inf_plc = InfPlc[]
-
   fields = ClassField{MapRayClassGrp, FinGenAbGroupHom}[]
   bound = div(absolute_discriminant_bound, abs(discriminant(OK))^n)
   if iszero(bound)
     return fields
+  end
+
+  # TODO: better preprocessing of custom conductors
+  # what to allow? lists of ideals, lists of factorizations, ...
+  #
+  # #Getting conductors first, because we also extrat the maximal order
+  if conductors === nothing
+    @vprintln :AbExt 1 "Computing conductors"
+    l_conductors = conductors_generic(K, gtype, absolute_discriminant_bound, only_tame = only_tame)
+  else
+    @vprintln :AbExt 1 "Conductors provided"
+    if conductors isa Vector{<:Dict}
+      l_conductors = conductors
+    else
+      @assert conductors isa Vector{ideal_type(OK)}
+      l_conductors = [factor(I) for I in conductors]
+    end
+    if !isempty(first(l_conductors))
+      OK = order(first(keys(first(l_conductors))))
+    end
   end
 
   inf_plc = real_places(K)
@@ -313,8 +336,7 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
   cgrp = !is_coprime(n, order(Cl))
   allow_cache!(mCl)
 
-  #Getting conductors
-  l_conductors = conductors_generic(K, gtype, absolute_discriminant_bound, only_tame = only_tame)
+
   if absolutely_distinct
     l_conductors = _sieve_conjugates(auts, l_conductors)
   end
@@ -326,7 +348,7 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     if i % 10000 == 0
-      @vprintln :AbExt 1 "Left: $(length(l_conductors) - i)"
+      @vprintln :AbExt 1 "Conductors left: $(length(l_conductors) - i) (fields found: $(length(fields)))"
     end
     r, mr = ray_class_group_quo(OK, k, inf_plc, ctx)
     if !has_quotient(r, gtype)
@@ -368,7 +390,6 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
         end
       end
       if cC[1] == mr.defining_modulus[1] && norm(discriminant(C)) <= bound
-        @vprintln :AbExt 1 "New Field"
         push!(new_fields, C)
       end
     end
