@@ -983,22 +983,37 @@ end
 @doc raw"""
     hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}}) -> Map
 
-Given groups $G = G_1 \otimes \cdots \otimes G_n$ and
+For groups $G = G_1 \otimes \cdots \otimes G_n$ and
 $H = H_1 \otimes \cdot \otimes H_n$ as well as maps
 $\phi_i: G_i\to H_i$, compute the tensor product of the maps.
+
+For groups `G = prod G_i` and `H = prod H_i` as well as maps `V_i: G_i -> H_i`,
+build the induced map from `G -> H`.
 """
 function hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}})
   tG = get_attribute(G, :tensor_product)
-  tG === nothing && error("both groups must be tensor products")
-  tH = get_attribute(H, :tensor_product)
-  tH === nothing && error("both groups must be tensor products")
-  @assert length(tG) == length(tH) == length(A)
-  @assert all(i-> domain(A[i]) == tG[i] && codomain(A[i]) == tH[i], 1:length(A))
-  M = transpose(matrix(A[1]))
-  for i=2:length(A)
-    M = kronecker_product(transpose(matrix(A[i])), M)
+  if tG !== nothing
+    tH = get_attribute(H, :tensor_product)
+    tH === nothing && error("both groups must be tensor products")
+    @assert length(tG) == length(tH) == length(A)
+    @assert all(i-> domain(A[i]) == tG[i] && codomain(A[i]) == tH[i], 1:length(A))
+    M = transpose(matrix(A[1]))
+    for i=2:length(A)
+      M = kronecker_product(transpose(matrix(A[i])), M)
+    end
+    return hom(G, H, transpose(M))
   end
-  return hom(G, H, transpose(M))
+  dG = get_attribute(G, :direct_product)
+  if dG !== nothing
+    dH = get_attribute(H, :direct_product)
+    dH === nothing && error("both groups must be direct products")
+    @assert length(V) == length(dG) == length(dH)
+
+    @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
+    h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
+    return h
+  end
+  error("both groups must both be tensor products or direct products")
 end
 
 ################################################################################
