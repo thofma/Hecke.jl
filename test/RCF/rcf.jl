@@ -348,3 +348,24 @@ end
   l = abelian_extensions([2], collect(1:10^3))
   @test length(l) == 607
 end
+
+let
+  Qx, x = QQ["x"]
+  K, a = rationals_as_number_field()
+  all_fields = abelian_extensions(K, [2], ZZRingElem(10)^3, absolutely_distinct = true)
+  OK = maximal_order(K)
+  lp = prime_ideals_up_to(OK, 10^3)
+  prime_cond = abelian_extensions(K, [2], ZZRingElem(10)^3, absolutely_distinct = true, conductors = lp)
+  @test length(prime_cond) == count(is_prime.(first.(conductor.(all_fields))))
+
+  # with target signatures
+  K, a = number_field(x^3 - x^2 - 2*x + 1, cached = false)
+  l = abelian_extensions(K, [2, 2], ZZRingElem(10)^12)
+  conds = Hecke.conductors_generic(K, [2, 2], ZZ(10)^12)
+  l = abelian_extensions(K, [2, 2], ZZRingElem(10)^12)
+  ll = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, conductors = conds)
+  @test length(l) == length(ll)
+  l1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)])
+  ll1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)], conductors = conds)
+  @test length(l1) == length(ll1)
+end
