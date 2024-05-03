@@ -49,7 +49,7 @@ function nf(c::ClassGrpCtx)
   return nf(order(c))
 end
 
-function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}; add_rels::Bool = true, use_aut::Bool = false)
+function class_group_init(FB::NfFactorBase, T::DataType = sparse_matrix_type(ZZ); add_rels::Bool = true, use_aut::Bool = false)
   O = order(FB.ideals[1])
   n = degree(O)
   clg = ClassGrpCtx{T}()
@@ -116,7 +116,7 @@ end
 
 function class_group_init(O::AbsSimpleNumFieldOrder, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           use_aut::Bool = false,
-                          complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array})
+                          complete::Bool = true, degree_limit::Int = 0, T::DataType = sparse_matrix_type(ZZ))
   @vprintln :ClassGroup 2 "Computing factor base ..."
 
   @assert B > 0

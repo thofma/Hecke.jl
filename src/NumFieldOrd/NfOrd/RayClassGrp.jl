@@ -40,7 +40,7 @@ defining_modulus(mR) = mR.defining_modulus
 #
 ################################################################################
 
-function __assure_princ_gen(c::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}, nquo::Int)
+function __assure_princ_gen(c::Hecke.ClassGrpCtx{sparse_matrix_type(ZZ)}, nquo::Int)
   module_trafo_assure(c.M)
   C = c.dl_data[3]
   OK = order(c)

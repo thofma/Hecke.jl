@@ -97,7 +97,7 @@ function class_group_ctx(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int
   if !redo
     c = get_attribute(O, :ClassGrpCtx)
     if c !== nothing
-      return c::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
+      return c::ClassGrpCtx{sparse_matrix_type(ZZ)}
     end
   end
 
@@ -106,7 +106,7 @@ function class_group_ctx(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
+  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{sparse_matrix_type(ZZ)}
   @assert order(c) === O
 
   set_attribute!(O, :ClassGrpCtx, c)

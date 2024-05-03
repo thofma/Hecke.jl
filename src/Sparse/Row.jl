@@ -27,6 +27,35 @@ end
 
 base_ring_type(::Type{SRow{T}}) where {T} = parent_type(T)
 
+
+@doc raw"""
+    sparse_row_type(a)
+
+Return the type of the sparse row type of the given element, element type, parent or parent type $a$.
+
+# Examples
+```jldoctest
+julia> x = sparse_row(QQ)
+Sparse row with positions Int64[] and values QQFieldElem[]
+
+julia> sparse_row_type(QQ) == typeof(x)
+true
+
+julia> sparse_row_type(zero(QQ)) == typeof(x)
+true
+
+julia> sparse_row_type(typeof(QQ)) == typeof(x)
+true
+
+julia> sparse_row_type(typeof(zero(QQ))) == typeof(x)
+true
+```
+"""
+sparse_row_type(::T) where {T <: Union{Ring, RingElem}} = sparse_row_type(T)
+sparse_row_type(::Type{T}) where {T <: Ring} = sparse_row_type(elem_type(T))
+sparse_row_type(::Type{T}) where {T <: RingElem} = SRow{T, sparse_inner_type(T)}
+
+
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################

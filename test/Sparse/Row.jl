@@ -6,18 +6,23 @@
 
   A = @inferred sparse_row(FlintZZ)
   @test A isa SRow{ZZRingElem}
+  @test A isa sparse_row_type(ZZRing)
 
   C = @inferred sparse_row(R)
   @test C isa SRow{ZZRingElem}
+  @test C isa sparse_row_type(R)
 
   D = @inferred sparse_row(R, [(1, ZZRingElem(1)), (2, ZZRingElem(2))])
   @test D isa SRow{ZZRingElem}
+  @test D isa sparse_row_type(R)
 
   E = @inferred sparse_row(R, [(1, 1), (2, 2)])
   @test E isa SRow{ZZRingElem}
+  @test E isa sparse_row_type(R)
 
   F = @inferred sparse_row(R, [1, 2], [ZZRingElem(1), ZZRingElem(2)])
   @test F isa SRow{ZZRingElem}
+  @test F isa sparse_row_type(R)
 
   # Equality
 
@@ -67,6 +72,7 @@
   Rx, x = polynomial_ring(R, "x", cached = false)
   H = @inferred change_base_ring(Rx, G)
   @test H == sparse_row(Rx, collect(1:5), map(Rx, collect(1:5)))
+  @test typeof(H) == sparse_row_type(Rx)
 
   # Iterator interface
 

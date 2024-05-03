@@ -104,7 +104,7 @@ function create_ctx(OK::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3
   if !redo
     c = get_attribute(OK, :ClassGrpCtx)
     if c !== nothing
-      return c::ClassGrpCtx{SMat{ZZRingElem}}
+      return c::ClassGrpCtx{sparse_matrix_type(ZZ)}
     end
   end
 
@@ -113,7 +113,7 @@ function create_ctx(OK::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(OK, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem}}
+  c = class_group_init(OK, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{sparse_matrix_type(ZZ)}
   @assert order(c) === OK
   return c
 end

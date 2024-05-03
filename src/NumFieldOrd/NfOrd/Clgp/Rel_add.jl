@@ -148,7 +148,7 @@ end
 
 
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem, Hecke.ZZRingElem_Array_Mod.ZZRingElem_Array}}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+function class_group_add_relation(clg::ClassGrpCtx{<:SMat{ZZRingElem}}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
   R = sparse_row(FlintZZ)
   for i = 1:length(clg.FB.ideals)
     p = clg.FB.ideals[i]
@@ -161,7 +161,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem, Hecke.ZZRing
   return class_group_add_relation(clg, a, R)
 end
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem, Hecke.ZZRingElem_Array_Mod.ZZRingElem_Array}}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, R::SRow{ZZRingElem}; always::Bool = true, add_orbit = true)
+function class_group_add_relation(clg::ClassGrpCtx{<:SMat{ZZRingElem}}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, R::SRow{ZZRingElem}; always::Bool = true, add_orbit = true)
 
   if hash(a) in clg.RS
     return false

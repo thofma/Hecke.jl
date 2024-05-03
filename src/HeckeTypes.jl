@@ -312,7 +312,8 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
   function SRow(R::Ring)
     @assert R != ZZ
-    r = new{elem_type(R), Vector{elem_type(R)}}(R, Vector{elem_type(R)}(), Vector{Int}())
+    S = sparse_inner_type(R)
+    r = new{elem_type(R), S}(R, S(), Vector{Int}())
     return r
   end
 
@@ -331,6 +332,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
       end
     end
     r = new{elem_type(R), typeof(S)}(R, S, p)
+    @assert r isa sparse_row_type(R)
     return r
   end
 
@@ -359,6 +361,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
   function SRow{T, S}(A::SRow{T, S}; copy::Bool = false) where {T, S}
     copy || return A
+    @assert Vector{T} == S
     r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
     for i=1:length(r.values)
       r.values[i] = A.values[i]
@@ -383,6 +386,13 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
 
 end
+
+
+# helper function used by SRow construct and also by the default
+# methods for `sparse_matrix_type` and `sparse_row_type`.
+sparse_inner_type(::T) where {T <: Union{Ring, RingElem}} = sparse_inner_type(T)
+sparse_inner_type(::Type{T}) where {T <: Ring} = sparse_inner_type(elem_type(T))
+sparse_inner_type(::Type{T}) where {T <: RingElem} = Vector{T}
 
 ################################################################################
 #

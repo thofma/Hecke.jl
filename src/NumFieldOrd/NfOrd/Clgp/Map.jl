@@ -423,7 +423,7 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   if c === nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
+    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{sparse_matrix_type(ZZ)}
     A = IdealSet(L)(A)
   else
     L = O
@@ -431,7 +431,7 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis::SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}
+  H = c.M.basis::sparse_matrix_type(ZZ)
   T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)
