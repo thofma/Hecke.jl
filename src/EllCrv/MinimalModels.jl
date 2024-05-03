@@ -727,7 +727,7 @@ function _factor_rational_function_field(p)
   for (p, e) in facpn
     uu, pp = _make_primitive(p)
     D[Kt(pp)] = e
-    u = u/uu
+    u = u/uu^e
   end
   new_unit = new_unit * u
   @assert is_unit(u)
@@ -736,7 +736,7 @@ function _factor_rational_function_field(p)
   for (p, e) in facpd
     uu, pp = _make_primitive(p)
     p = Kt(pp)
-    u = u/uu
+    u = u/uu^e
     if !haskey(D, p)
       D[p] = -e
     else
