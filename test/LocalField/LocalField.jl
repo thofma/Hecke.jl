@@ -297,4 +297,15 @@
     C, mC = completion(K, P)
     @test valuation(log(mC(u))) == 1//2
   end
+
+  let
+    # missing canonical unit
+    K, a = quadratic_field(5);
+    OK = maximal_order(K)
+    lp = prime_decomposition(OK, 7)
+    C, mC = completion(K, lp[1][1], 20)
+    Ct, t = C["t"];
+    s = sprint(show, "text/plain", t//(1 + t))
+    @test s isa String
+  end
 end
