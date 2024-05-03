@@ -400,6 +400,8 @@ export hnf
 export hnf!
 export hnf_extend!
 export hom
+export hom_direct_sum
+export hom_tensor
 export homogeneous_equation
 export howell_form
 export hyperbolic_plane_lattice

@@ -840,13 +840,13 @@ function matrix(M::Generic.IdentityMap{FinGenAbGroup})
 end
 
 @doc raw"""
-    hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}}) -> Map
+    hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}}) -> Map
 
 Given groups $G$ and $H$ that are created as direct products as well
 as a matrix $A$ containing maps $A[i,j] : G_i \to H_j$, return
 the induced homomorphism.
 """
-function hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}})
+function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}})
   r, c = size(A)
   if c == 1
     dG = [G]
@@ -863,6 +863,26 @@ function hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup
   end
   @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
   h = hom(G, H, reduce(vcat, [reduce(hcat, [matrix(A[i,j]) for j=1:c]) for i=1:r]))
+  return h
+end
+
+"""
+    hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinGenAbGroup, FinGenAbGroup}})
+
+For groups `G = prod G_i` and `H = prod H_i` as well as maps `V_i: G_i -> H_i`,
+build the induced map from `G -> H`.
+"""
+function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinGenAbGroup, FinGenAbGroup}})
+  dG = get_attribute(G, :direct_product)
+  dH = get_attribute(H, :direct_product)
+
+  if dG === nothing || dH === nothing
+    error("both groups need to be direct products")
+  end
+  @assert length(V) == length(dG) == length(dH)
+
+  @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
+  h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
   return h
 end
 
@@ -981,13 +1001,13 @@ end
 ⊗(G::FinGenAbGroup...) = tensor_product(G..., task = :none)
 
 @doc raw"""
-    hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}}) -> Map
+    hom_tensor(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}}) -> Map
 
 Given groups $G = G_1 \otimes \cdots \otimes G_n$ and
 $H = H_1 \otimes \cdot \otimes H_n$ as well as maps
 $\phi_i: G_i\to H_i$, compute the tensor product of the maps.
 """
-function hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}})
+function hom_tensor(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}})
   tG = get_attribute(G, :tensor_product)
   tG === nothing && error("both groups must be tensor products")
   tH = get_attribute(H, :tensor_product)
