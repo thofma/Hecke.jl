@@ -3,7 +3,8 @@ name: OscarCI
 on:
    pull_request:
      branches:
-       - master
+       - 'master'
+       - 'release-*'
 
 concurrency:
   # group by workflow and ref; the last slightly strange component ensures that for pull
