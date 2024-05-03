@@ -429,6 +429,14 @@ _stringify(x) = string(x)
 
 _stringify(x::ArbFieldElem) = _string(x)
 
+function _stringify(x::NumFieldElem)
+  return _stringify.(coordinates(x))
+end
+
+function _stringify(x::PolyRingElem)
+  return _stringify([_stringify(coeff(x, i)) for i in 0:degree(x)])
+end
+
 function get_record(io::IO)
   data = Dict{Symbol, Any}()
   b, v  = _parse(UInt, io)
@@ -1409,3 +1417,166 @@ function _p_adic_regulator_non_normal(K, p)
     end
   end
 end
+
+# Hack in some tables of relative fields
+
+mutable struct NFDBRecordGeneric{T, S}
+  data::Dict{Symbol, Any}
+  K::S
+
+  function NFDBRecordGeneric{T, S}(data) where {T, S}
+    z = new{T, S}()
+    z.data = data
+    return z
+  end
+end
+
+mutable struct NFDBGeneric{T, S}
+  meta::Dict{Symbol, Any}
+  fields::Vector{NFDBRecordGeneric{T, S}}
+  prop::Vector{Tuple{Symbol, Int}} # 0 not, 1 there, 2 partial
+
+   function NFDBGeneric{T, S}() where {T, S}
+    z = new{T, S}()
+    z.meta = Dict{Symbol, Any}()
+    z.fields = NFDBRecordGeneric{T, S}[]
+    return z
+  end
+end
+   
+function NFDBGeneric(L::Vector{RelSimpleNumField{AbsSimpleNumFieldElem}})
+  res = NFDBGeneric{1, eltype(L)}()
+  for K in L
+    D = _create_record(K)
+    push!(res.fields, D)
+  end
+  return res
+end
+
+function _create_record(K::RelSimpleNumField{AbsSimpleNumFieldElem}; keep_field = true)
+  f = defining_polynomial(K)
+  data = Dict{Symbol, Any}()
+  data[:base_field_poly] = defining_polynomial(base_field(K))
+  data[:poly] = f
+  data[:deg] = degree(f)
+  data[:absolute_discriminant] = norm(discriminant(maximal_order(K)))
+  D = NFDBRecordGeneric{1, typeof(K)}(data)
+  if keep_field
+    D.K = K
+  end
+  return D
+end
+
+function Base.write(io::IO, D::NFDBRecordGeneric{1, RelSimpleNumField{AbsSimpleNumFieldElem}})
+  m = 0
+  prop = [:base_field_poly, :poly, :deg, :absolute_discriminant]
+  j = length(prop)
+  for d in prop
+    if haskey(D.data, d)
+      m += 1
+      print(io, _stringify(D.data[d]))
+      if m < j
+        print(io, ",")
+      end
+    end
+  end
+  return nothing
+end
+
+function get_record_generic(io::IO)
+  data = Dict{Symbol, Any}()
+  b, v  = _parse(Vector{QQFieldElem}, io)
+  @assert b == UInt8(',')
+  f = Hecke.Globals.Qx(v)
+  data[:base_field_poly] = f
+  K, = number_field(f; cached = true)
+  Kt, = polynomial_ring(K, "t", cached = false)
+  b, v = _parse(Vector{Vector{QQFieldElem}}, io)
+  poly = Kt([K(w) for w in v])
+  data[:poly] = poly
+  return NFDBRecordGeneric{1, RelSimpleNumField{AbsSimpleNumFieldElem}}(data)
+end
+
+function Base.write(io::IO, D::NFDBGeneric)
+  for (p, e) in D.meta
+    print(io, "# ", p, ":", e, "\n")
+  end
+  for i in 1:length(D.fields)
+    Base.write(io, D.fields[i])
+    print(io, "\n")
+  end
+end
+
+function Base.show(io::IO, D::NFDBGeneric)
+  k = length(D.meta)
+  if k == 0
+    println(io, "Number field table no metadata")
+  else
+    println(io, "Number field table with metadata:")
+  end
+
+  for (i, (p, e)) in enumerate(D.meta)
+    print(io, p, ": ", e)
+    print(io, "\n")
+  end
+
+  print(io, "No. fields: ", length(D.fields))
+end
+
+function Base.read(file::String, ::Type{NFDBGeneric})
+  metadata = Dict()
+  f = open(file)
+  head = 0
+  local line
+  while !eof(f)
+    line = readline(f)
+    if line[1] == '#'
+      head += 1
+      if !(':' in line)
+        continue
+      end
+      i = 2
+      while line[i] != ':'
+        i += 1
+      end
+      key = Symbol(strip(line[2:i-1]))
+      val = strip(line[i+1:end])
+      metadata[key] = val
+    else
+      break
+    end
+  end
+  DB = NFDBGeneric{1, RelSimpleNumField{AbsSimpleNumFieldElem}}()
+  if line[1] != '#'
+    D = get_record_generic(IOBuffer(line))
+    push!(DB.fields, D)
+    while !eof(f)
+      line = readline(f)
+      D = get_record_generic(IOBuffer(line))
+      push!(DB.fields, D)
+    end
+  end
+  close(f)
+  DB.meta = metadata
+  return DB
+end
+
+function unsafe_add!(DB::NFDBGeneric, K)
+  D = _create_record(K, keep_field = false)
+  push!(DB.fields, D)
+  return D
+end
+
+function add_meta!(D::NFDBGeneric, p::Pair)
+  D.meta[p[1]] = p[2]
+  return D
+end
+
+function get_meta!(D::NFDBGeneric, p::Symbol)
+  if haskey(D.meta, p)
+    return D.meta[p]
+  else
+    error("Information $p not found in metadata")
+  end
+end
+
