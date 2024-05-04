@@ -87,7 +87,8 @@ remotes = Dict(pkgdir(Nemo) => (gh_moi, version))
 function make(Hecke::Module; strict = false,
                              local_build::Bool = false,
                              doctest = true,
-                             format::Symbol = :vitepress)
+                             format::Symbol = :vitepress,
+                             warnonly = false)
 
   # Load the bibliography
   bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"))
@@ -106,7 +107,7 @@ function make(Hecke::Module; strict = false,
         sitename="Hecke",
         checkdocs = :none,
         format = Documenter.HTML(prettyurls = !local_build, collapselevel = 1),
-        warnonly = true,
+        warnonly = warnonly,
         plugins=[bib],
         doctest = doctest,
         remotes = remotes,
@@ -126,7 +127,7 @@ function make(Hecke::Module; strict = false,
           #deploy_url = "https://thofma.com/Hecke.jl",
           build_vitepress = !local_build,
          ),
-      warnonly = true,
+      warnonly = warnonly,
       plugins=[bib],
       doctest= doctest,
       )

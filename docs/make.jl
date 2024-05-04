@@ -4,7 +4,7 @@ using Pkg
 
 include(normpath(joinpath(Hecke.pkgdir, "docs", "Build.jl")))
 
-Build.make(Hecke; strict = Documenter.except(:missing_docs), local_build=false, doctest=true, format = :vitepress)
+Build.make(Hecke; strict = Documenter.except(:missing_docs), local_build=false, doctest=true, format = :vitepress, warnonly = false)
 
 deploydocs(
   repo = "github.com/thofma/Hecke.jl.git",
