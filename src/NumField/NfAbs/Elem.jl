@@ -231,6 +231,21 @@ function induce_inner_crt(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, pi
   return c
 end
 
+function induce_crt(a::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, b::Generic.MatSpaceElem{AbsSimpleNumFieldElem}, p::ZZRingElem, q::ZZRingElem)
+  c = parent(a)()
+  pi = invmod(p, q)
+  mul!(pi, pi, p)
+  pq = p*q
+  z = ZZRingElem(0)
+
+  for i=1:nrows(a)
+    for j=1:ncols(a)
+      c[i,j] = induce_inner_crt(a[i,j], b[i,j], pi, pq, z)
+    end
+  end
+  return c
+end
+
 ################################################################################
 #
 #  Norm

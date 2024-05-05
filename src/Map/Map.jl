@@ -18,6 +18,10 @@ function pseudo_inv(a::Map)
   return InverseMap(a)
 end
 
+function pseudo_inv(h::Generic.ModuleHomomorphism)
+  return MapFromFunc(codomain(h), domain(h), x -> preimage(h, x))
+end
+
 #function show(io::IO, M::CoerceMap)
 #  println(io, "Coerce: $(domain(M)) -> $(codomain(M))")
 #end

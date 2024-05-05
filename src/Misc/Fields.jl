@@ -177,3 +177,37 @@ function preimage(f::FldToVecMor{FqField}, v::Vector)
   return dot(f.B, (f.L).(map(f.f, v)))::elem_type(f.L)
 end
 
+#XXX: have a type for an implicit field - in Hecke?
+#     add all(?) the other functions to it
+function relative_field(m::Map{<:AbstractAlgebra.Field, <:AbstractAlgebra.Field})
+  k = domain(m)
+  K = codomain(m)
+  @assert base_field(k) == base_field(K)
+  kt, t = polynomial_ring(k, cached = false)
+  f = defining_polynomial(K)
+  Qt = parent(f)
+  #the Trager construction, works for extensions of the same field given
+  #via primitive elements
+  h = gcd(gen(k) - map_coefficients(k, Qt(m(gen(k))), parent = kt), map_coefficients(k, f, parent = kt))
+  coordinates = function(x::FieldElem)
+    @assert parent(x) == K
+    c = collect(Hecke.coefficients(map_coefficients(k, Qt(x), parent = kt) % h))
+    c = vcat(c, zeros(k, degree(h)-length(c)))
+    return c
+  end
+  rep_mat = function(x::FieldElem)
+    @assert parent(x) == K
+    c = map_coefficients(k, Qt(x), parent = kt) % h
+    m = collect(Hecke.coefficients(c))
+    m = vcat(m, zeros(k, degree(h) - length(m)))
+    r = m
+    for i in 2:degree(h)
+      c = shift_left(c, 1) % h
+      m = collect(Hecke.coefficients(c))
+      m = vcat(m, zeros(k, degree(h) - length(m)))
+      r = hcat(r, m)
+    end
+    return transpose(matrix(r))
+  end
+  return h, coordinates, rep_mat
+end

@@ -97,6 +97,7 @@ function minimum(m::T, I::AbsSimpleNumFieldOrderFractionalIdeal) where T <: Map{
   return minimum(m, numerator(I))//denominator(I)
 end
 
+Base.minimum(::Map{QQField, AbsSimpleNumField}, I::Union{Hecke.AbsNumFieldOrderIdeal, Hecke.AbsNumFieldOrderFractionalIdeal}) = minimum(I)*ZZ
 
 ################################################################################
 #

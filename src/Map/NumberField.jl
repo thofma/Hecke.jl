@@ -6,6 +6,8 @@ function elem_type(::Type{NfMorSet{T}}) where {T}
   return morphism_type(T, T)
 end
 
+elem_type(::Type{NfMorSet{T}}) where {T <: LocalField} = LocalFieldMor{T, T}
+
 function show(io::IO, S::NfMorSet{T}) where {T}
   print(io, "Set of automorphisms of ", S.field)
 end

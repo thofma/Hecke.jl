@@ -157,6 +157,8 @@ Complex embedding corresponding to 0.62
 """
 restrict(f::NumFieldEmb, K::NumFieldHom)
 
+restrict(::Hecke.NumFieldEmb, ::Map{QQField, AbsSimpleNumField}) = complex_embeddings(QQ)[1]
+
 ################################################################################
 #
 #  Extension
