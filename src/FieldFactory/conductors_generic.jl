@@ -579,12 +579,15 @@ end
 
 
 function conductors_generic(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
+  return conductors_generic(lll(maximal_order(K)), gtype, absolute_bound; only_tame = only_tame)
+end
+
+function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
   #I am assuming that gtype is in "SNF"
-  conds_tame = conductors_generic_tame(K, gtype, absolute_bound)
+  conds_tame = conductors_generic_tame(OK, gtype, absolute_bound)
   if only_tame
     return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in conds_tame]
   end
-  OK = maximal_order(K)
   wild = collect(keys(factor(gtype[end]).fac))
   n = prod(gtype)
   bound = div(absolute_bound, abs(discriminant(OK))^n)
@@ -670,7 +673,10 @@ function conductors_generic(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_b
 end
 
 function conductors_generic_tame(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem)
-  OK = maximal_order(K)
+  return conductors_generic_tame(lll(maximal_order(K), gtype, absolute_bound))
+end
+
+function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem)
   n = prod(gtype)
   wild = collect(keys(factor(n).fac))
   pmin = Int(minimum(wild))

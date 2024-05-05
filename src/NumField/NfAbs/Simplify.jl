@@ -64,7 +64,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
     OK.lllO = ZK
   end
   @vtime :Simplify 3 a = _simplify(ZK)
-  if a == gen(K)
+  if a == gen(K) && is_monic(K.pol) # K.pol is minpoly of a
     f = K.pol
   else
     @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))

@@ -348,8 +348,8 @@
     T, p = tensor_product(G, G)
     D = direct_product(G, G, task = :none)
     for i=1:5
-      Th = hom(T, T, map(mH, [rand(H) for x = 1:2])) #induced map in tensor product
-      Dh = hom(D, D, map(mH, rand(H, (2,2)))) #induced map on direct prod
+      Th = hom_tensor(T, T, map(mH, [rand(H) for x = 1:2])) #induced map in tensor product
+      Dh = hom_direct_sum(D, D, map(mH, rand(H, (2,2)))) #induced map on direct prod
     end
     #=
 

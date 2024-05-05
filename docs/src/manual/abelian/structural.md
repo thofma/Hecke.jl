@@ -86,7 +86,7 @@ flat(G::FinGenAbGroup)
 ### Tensor Producs
 ```@docs
 tensor_product(G::FinGenAbGroup...)
-hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}})
+hom_tensor(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}})
 ```
 
 ### Hom-Group
