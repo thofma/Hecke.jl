@@ -48,7 +48,7 @@ end
 
 function _inv_compose_mod(z::ZZModPolyRingElem)
   r = reverse(z)
-  ccall((:fmpz_mod_poly_inv_series_newton, libflint), Nothing,
+  ccall((:fmpz_mod_poly_inv_series, libflint), Nothing,
         (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), r, r, length(r), z.parent.base_ring.ninv)
   return r
 end

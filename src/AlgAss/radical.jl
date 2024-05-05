@@ -366,7 +366,7 @@ function _lift!(A::zzModMatrix, B::fpMatrix, Mtemp)
 end
 
 function _lift!(A::zzModMatrix, B::FpMatrix, Mtemp::ZZMatrix)
-  ccall((:fmpz_mod_mat_get_fmpz_mat, libflint), Cvoid, (Ref{ZZMatrix}, Ref{FpMatrix}), Mtemp, B)
+  ccall((:fmpz_mod_mat_get_fmpz_mat, libflint), Cvoid, (Ref{ZZMatrix}, Ref{FpMatrix}, Ref{Nemo.fmpz_mod_ctx_struct}), Mtemp, B, base_ring(B).ninv)
   ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{zzModMatrix}, Ref{ZZMatrix}), A, Mtemp)
   return A
 end
