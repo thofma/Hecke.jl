@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc raw"""
-    number_field(f::Vector{PolyRingElem{<:NumFieldElem}}, s::String="_\$", check = true)
+    number_field(f::Vector{PolyRingElem{<:NumFieldElem}}, s::VarName="_\$", check = true)
                                               -> NumField, Vector{NumFieldElem}
 
 Given a list $f_1, \ldots, f_n$ of univariate polynomials in $K[x]$ over
@@ -31,7 +31,7 @@ abstract type DocuDummy2 end
 number_field(::DocuDummy2)
 
 @doc (@doc _doc_stub_nf2)
-number_field(::Vector{<:PolyRingElem{<:Union{NumFieldElem, QQFieldElem}}}, ::String, check::Bool = true)
+number_field(::Vector{<:PolyRingElem{<:Union{NumFieldElem, QQFieldElem}}}, ::VarName, check::Bool = true)
 
 ################################################################################
 #

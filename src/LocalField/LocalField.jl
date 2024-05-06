@@ -311,7 +311,7 @@ function find_irreducible_polynomial(K, n::Int)
   return first(keys(lf[1]))
 end
 
-function unramified_extension(L::LocalField, n::Int, prec::Int, s::String = "z")
+function unramified_extension(L::LocalField, n::Int, prec::Int, s::VarName = :z)
   K, mK = residue_field(L)
   f = find_irreducible_polynomial(K, n)
   coeffs =
@@ -319,19 +319,19 @@ function unramified_extension(L::LocalField, n::Int, prec::Int, s::String = "z")
 end
 =#
 
-function eisenstein_extension(f::Generic.Poly{S}, s::String = "a"; check::Bool = true, cached::Bool = true) where S
+function eisenstein_extension(f::Generic.Poly{S}, s::VarName = :a; check::Bool = true, cached::Bool = true) where S
   return local_field(f, s, EisensteinLocalField, check = check, cached = cached)
 end
 
-function unramified_extension(f::Generic.Poly{S}, s::String = "a"; check::Bool = true, cached::Bool = true) where S
+function unramified_extension(f::Generic.Poly{S}, s::VarName = :a; check::Bool = true, cached::Bool = true) where S
   return local_field(f, s, UnramifiedLocalField, check = check, cached = cached)
 end
 
 function local_field(f::Generic.Poly{S},::Type{T}; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
-  return local_field(f, "a", T, check = check, cached = cached)
+  return local_field(f, :a, T, check = check, cached = cached)
 end
 
-function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
+function local_field(f::Generic.Poly{S}, s::VarName, ::Type{EisensteinLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
   symb = Symbol(s)
   if check && !is_eisenstein_polynomial(f)
     error("Defining polynomial is not Eisenstein")
@@ -340,7 +340,7 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{EisensteinLocalField}
   return K, gen(K)
 end
 
-function local_field(f::Generic.Poly{S}, s::String, ::Type{UnramifiedLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
+function local_field(f::Generic.Poly{S}, s::VarName, ::Type{UnramifiedLocalField}; check::Bool = true, cached::Bool = true) where {S <: FieldElem}
   symb = Symbol(s)
   if check && !_generates_unramified_extension(f)
     error("Defining polynomial is not irreducible over the residue field!")
@@ -349,7 +349,7 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{UnramifiedLocalField}
   return K, gen(K)
 end
 
-function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
+function local_field(f::Generic.Poly{S}, s::VarName, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where {S <: FieldElem, T <: LocalFieldParameter}
   symb = Symbol(s)
   if check && !is_irreducible(f)
     error("Defining polynomial is not irreducible")
@@ -358,7 +358,7 @@ function local_field(f::Generic.Poly{S}, s::String, ::Type{T} = GenericLocalFiel
   return K, gen(K)
 end
 
-function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::String, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
+function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::VarName, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
   K = PadicField(p, precision)
   fK = map_coefficients(K, f, cached = false)

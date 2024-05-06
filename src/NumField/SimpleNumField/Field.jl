@@ -45,7 +45,7 @@ function is_kummer_extension(K::AbsSimpleNumField)
   return is_radical_extension(K)
 end
 
-function radical_extension(n::Int, a::FacElem, s::String = "_\$";
+function radical_extension(n::Int, a::FacElem, s::VarName = "_\$";
                         cached::Bool = true, check::Bool = true)
   return radical_extension(n, evaluate(a), s, cached = cached, check = check)
 end
@@ -64,14 +64,14 @@ julia> radical_extension(5, QQ(2), "a")
 (Number field of degree 5 over QQ, a)
 ```
 """
-function radical_extension(n::Int, a::NumFieldElem, s::String = "_\$";
+function radical_extension(n::Int, a::NumFieldElem, s::VarName = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = polynomial_ring(k, cached = false)
   return number_field(x^n - a, s, check = check, cached = cached)
 end
 
-function radical_extension(n::Int, a::QQFieldElem, s::String = "_\$";
+function radical_extension(n::Int, a::QQFieldElem, s::VarName = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = polynomial_ring(k, cached = false)
