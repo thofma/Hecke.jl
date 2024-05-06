@@ -712,8 +712,6 @@ function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFie
   return res*res1
 end
 
-base_field(Q::QadicField) = base_ring(defining_polynomial(Q))
-
 function norm(f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   Kx = parent(f)
   K = base_ring(f)
@@ -929,7 +927,7 @@ function lift(C::HenselCtxdr, mx::Int)
   N = minimum([precision(x) for x in C.lf])
   N = min(N, minimum([precision(x) for x in C.la]))
   #have: N need mx
-  one = setprecision(parent(p), mx) do
+  one = with_precision(parent(p), mx) do
     Base.one(parent(p))
   end
   ch = Int[mx]

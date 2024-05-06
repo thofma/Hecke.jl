@@ -10,7 +10,7 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
   end
   Qx = parent(parent(a).pol)
   z = evaluate(Qx(a), f.prim_img)
-  if !is_unit(z) 
+  if !is_unit(z)
     v = valuation(a, f.P)
     a = a*uniformizer(f.P).elem_in_nf^-v
     z = evaluate(Qx(a), f.prim_img)
@@ -131,9 +131,9 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift. Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 
-The map is guaranteed to yield a relative precision of at least `preciscion`. 
+The map is guaranteed to yield a relative precision of at least `precision`.
 """
-function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64)
+function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64, Qp::Union{PadicField,Nothing} = nothing)
   #to guarantee a rel_prec we need to account for the index (or the
   #elementary divisor of the trace mat): the map
   #is for the field (equation order), the precision is measured in the
@@ -147,9 +147,11 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   f = degree(P)
   e = ramification_index(P)
   prec_padics = div(precision+e-1, e)
-  Qp = PadicField(minimum(P), prec_padics, cached = false)
+  if isnothing(Qp)
+    Qp = PadicField(minimum(P), prec_padics, cached = false)
+  end
   Zp = maximal_order(Qp)
-  Qq, gQq = QadicField(minimum(P), f, prec_padics, cached = false)
+  Qq, gQq = unramified_extension(Qp, f, prec_padics, cached = false)
   Qqx, gQqx = polynomial_ring(Qq, "x")
   q, mq = residue_field(Qq)
   #F, mF = ResidueFieldSmall(OK, P)
@@ -179,7 +181,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
     img_prim_elem[i] = coeff
   end
   img = Kp(Qqx(img_prim_elem))
-  
+
   u = uniformizer(P).elem_in_nf
   completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
   completion_map.P = P
@@ -193,7 +195,7 @@ function _solve_internal(gq_in_K, P, precision, Zp, Qq)
   precision += e - (precision % e)
   @assert precision % e == 0
   #problem/ feature:
-  #the lin. alg is done in/over Zp or Qp, thus precision is measured in 
+  #the lin. alg is done in/over Zp or Qp, thus precision is measured in
   #block of length e (power of the prime number p, rather than powers of
   #pi, the prime element)
   #so it is a good idea to increase the precision to be divisible by e
@@ -222,53 +224,51 @@ function _solve_internal(gq_in_K, P, precision, Zp, Qq)
     mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))
   end
 
-  setprecision!(Zp, Hecke.precision(Zp) + valuation(Zp(denominator(MK))))
-
-if true
-  #snf is slower (possibly) but has optimal precision loss.
-  #bad example is completion at prime over 2 in
-  # x^8 - 12*x^7 + 44*x^6 - 24*x^5 - 132*x^4 + 120*x^3 + 208*x^2 - 528*x + 724
-  # the can_solve... returns a precision of just 6 p-adic digits
-  # the snf gets 16 (both for the default precision)
-  # the det(M) has valuation 12, but the elem. divisors only 3
-  #TODO: rewrite can_solve? look at Avi's stuff? 
-  # x M = b
-  # u*M*v = s
-  # x inv(u) u M v = b v
-  # x inv(u)   s   = b v
-  # x = b v inv(s) u
-  #lets try:
-  s, _u, v = snf_with_transform(MK.num)
-  bv = bK.num * v
-  bv = map_entries(Zp, bv)
-  for i=1:ncols(s)
-    bv[1, i] = divexact(bv[1, i], Zp(s[i,i]))
-    bv[2, i] = divexact(bv[2, i], Zp(s[i,i]))
-  end
-  xZp = bv * map_entries(Zp, _u[1:ncols(s), 1:ncols(s)])
-else
-  MZp = map_entries(Zp, MK.num)
-  bZp = map_entries(Zp, bK.num)
-  fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
-  @assert fl
-end 
-  coeffs_eisenstein = Vector{QadicFieldElem}(undef, e+1)
-  gQq = gen(Qq)
-  for i = 1:e
-    coeff = zero(Qq)
-    for j = 0:f-1
-      coeff += (gQq^j)*xZp[1, j+1+(i-1)*f].x
+  return with_precision(Zp, Hecke.precision(Zp) + valuation(Zp(denominator(MK)))) do
+    if true
+      #snf is slower (possibly) but has optimal precision loss.
+      #bad example is completion at prime over 2 in
+      # x^8 - 12*x^7 + 44*x^6 - 24*x^5 - 132*x^4 + 120*x^3 + 208*x^2 - 528*x + 724
+      # the can_solve... returns a precision of just 6 p-adic digits
+      # the snf gets 16 (both for the default precision)
+      # the det(M) has valuation 12, but the elem. divisors only 3
+      #TODO: rewrite can_solve? look at Avi's stuff?
+      # x M = b
+      # u*M*v = s
+      # x inv(u) u M v = b v
+      # x inv(u)   s   = b v
+      # x = b v inv(s) u
+      #lets try:
+      s, _u, v = snf_with_transform(MK.num)
+      bv = bK.num * v
+      bv = map_entries(Zp, bv)
+      for i=1:ncols(s)
+        bv[1, i] = divexact(bv[1, i], Zp(s[i,i]))
+        bv[2, i] = divexact(bv[2, i], Zp(s[i,i]))
+      end
+      xZp = bv * map_entries(Zp, _u[1:ncols(s), 1:ncols(s)])
+    else
+      MZp = map_entries(Zp, MK.num)
+      bZp = map_entries(Zp, bK.num)
+      fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+      @assert fl
     end
-    coeffs_eisenstein[i] = -coeff
-  end
-  coeffs_eisenstein[e+1] = one(Qq)
-  if iszero(coeffs_eisenstein[1])
-    error("precision not high enough to obtain Esenstein polynomial")
-  end
-  return coeffs_eisenstein, xZp
+    coeffs_eisenstein = Vector{QadicFieldElem}(undef, e+1)
+    gQq = gen(Qq)
+    for i = 1:e
+      coeff = zero(Qq)
+      for j = 0:f-1
+        coeff += (gQq^j)*xZp[1, j+1+(i-1)*f].x
+      end
+      coeffs_eisenstein[i] = -coeff
+    end
+    coeffs_eisenstein[e+1] = one(Qq)
+    if iszero(coeffs_eisenstein[1])
+      error("precision not high enough to obtain Esenstein polynomial")
+    end
+    return coeffs_eisenstein, xZp
+  end # with_precision
 end
-
-
 
 function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalField}, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}, new_prec::Int)
   P = prime(f)
@@ -296,7 +296,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
 
     Zp = maximal_order(prime_field(Kp))
     Qq = base_field(Kp)
-    
+
     setprecision!(Qq, ex)
     setprecision!(Zp, ex)
     gQq = gen(Qq)

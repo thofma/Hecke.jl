@@ -442,7 +442,7 @@ function norm(a::LocalFieldElem)
   return AbstractAlgebra.det_df(representation_matrix(a))
   #the resultant is not quite stable (yet), it is not using the
   #fun factor stuff...
-  res = setprecision(base_ring(a.data), precision(a.data)) do
+  res = with_precision(base_ring(a.data), precision(a.data)) do
     resultant(defining_polynomial(K, precision(a.data)), a.data)
   end
   return res
@@ -567,7 +567,7 @@ end
 function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   K = parent(a)
-  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
+  c = with_precision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
     a.data + b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
@@ -576,7 +576,7 @@ end
 function Base.:-(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   K = parent(a)
-  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
+  c = with_precision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
     a.data - b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
@@ -651,14 +651,14 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
 end
 
 function uniformizer(L::Union{PadicField, QadicField}, v::Int; prec::Int = 20)  #precision????
-  return setprecision(L, prec) do
+  return with_precision(L, prec) do
     uniformizer(L)^v
   end
 end
 
 function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
   if v > 0
-    return setprecision(L, prec) do
+    return with_precision(L, prec) do
       uniformizer(L)^v
     end
   end
@@ -674,7 +674,7 @@ function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
   pr = ceil(Int, (prec-v)/e)+2
   f = defining_polynomial(L, pr)
   local pi_inv
-  setprecision(L, pr*e) do
+  with_precision(L, pr*e) do
     g = parent(f)([coeff(f, i) for i=1:degree(f)])
     pi_inv = g(uniformizer(L))
     pi_inv *= -inv(coeff(f, 0))
@@ -716,13 +716,11 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   e = absolute_ramification_index(parent(a))
   v = valuation(n, prime(parent(a)))
   if v > 0
-    b = setprecision(base_ring(a.data), precision(a.data)+v) do
-            setprecision(a.data, precision(a.data)+v)
-        end
+    b = setprecision(a.data, precision(a.data)+v)
   else
     b = a.data
   end
-  b = setprecision(base_ring(b), precision(b)) do
+  b = with_precision(base_ring(b), precision(b)) do
     powermod(b, n, defining_polynomial(K, precision(b)))
   end
   return K(b)
@@ -758,22 +756,22 @@ function exp(a::LocalFieldElem)
   N = N_orig + clog(ZZRingElem(N_orig), p)
   a = setprecision(a, N)
   oN = precision(parent(a))
-  setprecision!(parent(a), max(oN, N))
-  res = one(K)
-  res = setprecision(res, N)
-  el = one(K)
-  res = res
-  den = setprecision!(one(Qp), N)
-  #precision is suboptimal, its truncated badly, thus losing it
-  max_i = QQFieldElem(N)//(valuation(a) - QQFieldElem(1, p-1)) + 1
-  bound = Int(floor(ZZRingElem, max_i))
-  for i = 1:bound
-    el *= a//i
-    res += el
-  end
-  setprecision!(res, N_orig)
-  setprecision!(parent(a), oN)
-  return res
+  return with_precision(parent(a), max(oN, N)) do
+    res = one(K)
+    res = setprecision(res, N)
+    el = one(K)
+    res = res
+    den = setprecision!(one(Qp), N)
+    #precision is suboptimal, its truncated badly, thus losing it
+    max_i = QQFieldElem(N)//(valuation(a) - QQFieldElem(1, p-1)) + 1
+    bound = Int(floor(ZZRingElem, max_i))
+    for i = 1:bound
+      el *= a//i
+      res += el
+    end
+    setprecision!(res, N_orig)
+    return res
+  end # with_precision
 end
 
 ################################################################################
@@ -867,16 +865,15 @@ function divexact(a::LocalFieldElem, b::Union{Integer, ZZRingElem}; check::Bool=
   v = valuation(b, p)
   iszero(a) && return setprecision(a, precision(a) - v*e)
   Qp = prime_field(K)
-  old = precision(Qp)
-  setprecision!(Qp, e*precision(a)+round(Int, e*valuation(a)) + v)
-  bb = inv(Qp(b))
-  setprecision!(Qp, old)
+  bb = with_precision(Qp, e*precision(a)+round(Int, e*valuation(a)) + v) do
+    return inv(Qp(b))
+  end
   return a*bb
 end
 
 function _log_one_units_fast(a::LocalFieldElem)
   K = parent(a)
-  fl, b = setprecision(K, precision(a)) do
+  fl, b = with_precision(K, precision(a)) do
     if isone(a) || iszero(a - 1)
       return true, zero(K)
     end

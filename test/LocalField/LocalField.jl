@@ -203,7 +203,7 @@
     Qp = PadicField(2, 100)
     Qpx, x = polynomial_ring(Qp)
     K, a = unramified_extension(x^2+x+1)
-    Qq, gQq = QadicField(2, 2, 100)
+    Qq, gQq = unramified_extension(Qp, 2, 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(K)))
 
     f = @inferred hom(K, Qq, rt[1])

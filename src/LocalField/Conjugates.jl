@@ -53,15 +53,17 @@ function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = pare
   for p = reverse(chain)
     r = setprecision!(r, p)
     o = setprecision!(o, p)
-    setprecision!(Q, p)
     setprecision!(qf, p)
     setprecision!(qfs, p)
-    r = r - qf(r)*o
+    r = with_precision(Q, p) do
+      return r - qf(r)*o
+    end
     if Nemo.precision(r) >= n
-      setprecision!(Q, n)
       return r
     end
-    o = o*(2-qfs(r)*o)
+    o = with_precision(Q, p) do
+      return o*(2-qfs(r)*o)
+    end
   end
   return r
 end

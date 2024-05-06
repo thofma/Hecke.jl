@@ -57,7 +57,7 @@ function residue_field(Q::PadicField)
   return k, mp
 end
 
-coefficient_field(Q::QadicField) = coefficient_ring(Q)
+coefficient_field(Q::QadicField) = base_field(Q)
 
 function getUnit(a::PadicFieldElem)
   u = ZZRingElem()
@@ -88,14 +88,20 @@ uniformizer(Q::QadicField) = Q(prime(Q))
 
 uniformizer(Q::PadicField) = Q(prime(Q))
 
-function defining_polynomial(Q::QadicField, P::Ring = coefficient_ring(Q))
+function defining_polynomial(Q::QadicField, P::Ring = base_field(Q))
   Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
-  for i=0:Q.len-1
+  for i in 0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
     a = ZZRingElem()
-    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a+i*sizeof(Ptr))
+    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a + i*sizeof(Ptr))
     setcoeff!(f, j, P(a))
   end
   return f
+end
+
+function unramified_extension(K::PadicField, d::Int, prec::Int = 64, var::String = "a"; cached::Bool = true)
+  L, a = QadicField(prime(K), d, prec, var, cached = cached)
+  set_attribute!(L, :base_field, K)
+  return L, a
 end

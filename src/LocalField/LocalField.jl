@@ -381,9 +381,9 @@ function setprecision!(K::LocalField, n::Int)
   return nothing
 end
 
-function setprecision(f::Function, K::Union{LocalField, PadicField, QadicField}, n::Int)
+function with_precision(f, K::LocalField, n::Int)
+  @assert n >= 0
   old = precision(K)
-#  @assert n>=0
   setprecision!(K, n)
   v = try
         setprecision(f, base_field(K), ceil(Int, n/ramification_index(K)))
@@ -393,6 +393,7 @@ function setprecision(f::Function, K::Union{LocalField, PadicField, QadicField},
   return v
 end
 
+setprecision(f, K::LocalField, n::Int) = with_precision(f, K, n)
 
 ################################################################################
 #
@@ -485,7 +486,7 @@ end
 
  ################### unramified extension over local field L of a given degree n ####################
 
- function unramified_extension(L::Union{PadicField, QadicField, LocalField}, n::Int)
+ function unramified_extension(L::Union{QadicField, LocalField}, n::Int)
    R, mR = residue_field(L)
    Rt, t = polynomial_ring(R, "t", cached = false)
    f = Rt(push!([rand(R) for i = 0:n-1], one(R)))
