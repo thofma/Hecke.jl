@@ -58,9 +58,9 @@ is_abelian(::FinGenAbGroup) = true
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-abelian_group(M::ZZMatrix; name::String = "") = abelian_group(FinGenAbGroup, M, name=name)
+abelian_group(M::ZZMatrix) = abelian_group(FinGenAbGroup, M)
 
-function abelian_group(::Type{FinGenAbGroup}, M::ZZMatrix; name::String = "")
+function abelian_group(::Type{FinGenAbGroup}, M::ZZMatrix)
    if is_snf(M) && nrows(M) > 0  && ncols(M) > 0 && !isone(M[1, 1])
     N = ZZRingElem[M[i, i] for i = 1:min(nrows(M), ncols(M))]
     if ncols(M) > nrows(M)
@@ -70,7 +70,6 @@ function abelian_group(::Type{FinGenAbGroup}, M::ZZMatrix; name::String = "")
   else
     G = FinGenAbGroup(M)
   end
-  name == "" || set_name!(G, name)
   return G
 end
 
@@ -80,12 +79,12 @@ end
 Creates the abelian group with relation matrix `M`. That is, the group will
 have `ncols(M)` generators and each row of `M` describes one relation.
 """
-function abelian_group(M::AbstractMatrix{<:IntegerUnion}; name::String = "")
-  return abelian_group(FinGenAbGroup, M, name=name)
+function abelian_group(M::AbstractMatrix{<:IntegerUnion})
+  return abelian_group(FinGenAbGroup, M)
 end
 
-function abelian_group(::Type{FinGenAbGroup}, M::AbstractMatrix{<:IntegerUnion}; name::String = "")
-  return abelian_group(matrix(FlintZZ, M), name=name)
+function abelian_group(::Type{FinGenAbGroup}, M::AbstractMatrix{<:IntegerUnion})
+  return abelian_group(matrix(FlintZZ, M))
 end
 
 function _issnf(N::Vector{T}) where T <: IntegerUnion
@@ -114,16 +113,16 @@ end
 Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
-function abelian_group(M::AbstractVector{<:Union{Any, IntegerUnion}}; name::String = "")
+function abelian_group(M::AbstractVector{<:Union{Any, IntegerUnion}})
   if eltype(M) === Any
     _M = convert(Vector{ZZRingElem}, (ZZ.(M)))::Vector{ZZRingElem}
-    return abelian_group(FinGenAbGroup, _M, name=name)
+    return abelian_group(FinGenAbGroup, _M)
   else
-    return abelian_group(FinGenAbGroup, M, name=name)
+    return abelian_group(FinGenAbGroup, M)
   end
 end
 
-function abelian_group(::Type{FinGenAbGroup}, M::AbstractVector{<:IntegerUnion}; name::String = "")
+function abelian_group(::Type{FinGenAbGroup}, M::AbstractVector{<:IntegerUnion})
   if _issnf(M)
     G = FinGenAbGroup(M)
   else
@@ -139,12 +138,11 @@ function abelian_group(::Type{FinGenAbGroup}, M::AbstractVector{<:IntegerUnion};
       G.exponent = res
     end
   end
-  name == "" || set_name!(G, name)
   return G
 end
 
-function abelian_group(M::IntegerUnion...; name::String = "")
-  return abelian_group(collect(M), name=name)
+function abelian_group(M::IntegerUnion...)
+  return abelian_group(collect(M))
 end
 
 @doc raw"""
