@@ -100,6 +100,7 @@ julia> quadratic_field(5)
 ```
 """
 function quadratic_field(d::IntegerUnion; cached::Bool = true, check::Bool = true)
+  return quadratic_field(ZZRingElem(d), cached = cached, check = check)
 end
 
 function quadratic_field(d::ZZRingElem; cached::Bool = true, check::Bool = true)
@@ -136,10 +137,6 @@ function show_quad(io::IO, q::AbsSimpleNumField)
       print(io, "Imaginary quadratic field defined by ", q.pol)
     end
   end
-end
-
-function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
-  return quadratic_field(ZZRingElem(d), cached = cached, check = check)
 end
 
 @doc doc"""
