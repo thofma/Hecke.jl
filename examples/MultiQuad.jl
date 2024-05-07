@@ -498,7 +498,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   R = vcat(R, n_gen)
   @assert ncols(Ti) == length(R)
 
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
+  d = Hecke.class_group_init(c.FB; add_rels = false)
 
   for i=1:nrows(Ti)
     a = FacElem(K(1))
@@ -529,7 +529,7 @@ function sunits_mod_units(c::Hecke.ClassGrpCtx)
 end
 
 function simplify(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
+  d = Hecke.class_group_init(c.FB; add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
@@ -557,7 +557,7 @@ function simplify(c::Hecke.ClassGrpCtx)
 end
 
 function units(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
+  d = Hecke.class_group_init(c.FB; add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)

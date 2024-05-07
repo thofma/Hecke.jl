@@ -344,7 +344,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
   S = FB.ideals
   ZK = order(S[1])
 
-  z = SMat{ZZRingElem}[zero_matrix(SMat, FlintZZ, 0, length(S)) for i in 1:degree(field(N))]
+  z = sparse_matrix_type(ZZ)[zero_matrix(SMat, FlintZZ, 0, length(S)) for i in 1:degree(field(N))]
 
   mk = embedding(N, i)
   zk = order(s[1])
@@ -539,7 +539,7 @@ end
 one(T::FacElemMon{AbsSimpleNumField}) = T()
 
 function Hecke.simplify(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
+  d = Hecke.class_group_init(c.FB; add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
@@ -567,7 +567,7 @@ function Hecke.simplify(c::Hecke.ClassGrpCtx)
 end
 
 function units(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
+  d = Hecke.class_group_init(c.FB; add_rels = false)
   U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)

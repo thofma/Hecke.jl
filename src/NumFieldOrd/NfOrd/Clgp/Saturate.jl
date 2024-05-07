@@ -502,7 +502,7 @@ end
 
 function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LLL::Bool = false)
 
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem, Hecke.ZZRingElem_Array_Mod.ZZRingElem_Array}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, sparse_matrix_type(ZZ), add_rels = false)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
   R = relations(c)

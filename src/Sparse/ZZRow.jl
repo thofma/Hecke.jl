@@ -189,6 +189,8 @@ end # module
 
 using .ZZRingElem_Array_Mod
 
+sparse_inner_type(::Type{ZZRingElem}) = ZZRingElem_Array
+
 function sparse_row(R::ZZRing)
   return SRow(R, Int[], ZZRingElem_Array())
 end
@@ -249,7 +251,7 @@ function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, ZZRingElem}}; sort::Bool =
   return SRow(R, l, a)
 end
 
-function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{ZZRingElem}; sort::Bool = true)
+function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{T}; sort::Bool = true) where T
   if sort
     p = sortperm(pos)
     pos = pos[p]
@@ -351,7 +353,7 @@ function get_tmp(A::SMat{ZZRingElem})
 end
 
 
-function transform_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, sr::SRow{ZZRingElem}, tr::SRow{ZZRingElem}) 
+function transform_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, sr::SRow{ZZRingElem}, tr::SRow{ZZRingElem})
   empty!(sr)
   empty!(tr)
   pi = 1
@@ -447,7 +449,7 @@ function transform_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem
 end
 
 
-function transform_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, sr::SRow{ZZRingElem}, tr::SRow{ZZRingElem}) 
+function transform_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, sr::SRow{ZZRingElem}, tr::SRow{ZZRingElem})
   q, w = transform_row(Ai, Aj, a, b, c, d, sr, tr)
   @assert q === sr
   @assert w === tr
