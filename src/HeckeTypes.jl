@@ -361,7 +361,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
   function SRow{T, S}(A::SRow{T, S}; copy::Bool = false) where {T, S}
     copy || return A
-    @assert Vector{T} == S
+    @assert Vector{T} === S
     r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
     for i=1:length(r.values)
       r.values[i] = A.values[i]
