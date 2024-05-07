@@ -220,8 +220,8 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
 end
 
 function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, Int64}}; sort::Bool = true)
-  if sort
-    A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
+  if sort && length(A) > 1
+    A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
   a = ZZRingElem_Array()
   sizehint!(a, length(A))
@@ -236,8 +236,8 @@ function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, Int64}}; sort::Bool = true
 end
 
 function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, ZZRingElem}}; sort::Bool = true)
-  if sort
-    A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
+  if sort && length(A) > 1
+    A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
   a = ZZRingElem_Array()
   sizehint!(a, length(A))
@@ -252,7 +252,7 @@ function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, ZZRingElem}}; sort::Bool =
 end
 
 function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{T}; sort::Bool = true) where T
-  if sort
+  if sort && length(pos) > 1
     p = sortperm(pos)
     pos = pos[p]
     val = val[p]

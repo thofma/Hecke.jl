@@ -73,7 +73,6 @@ function sparse_row(R::Ring)
   return SRow(R)
 end
 
-const _sort = sort
 @doc raw"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
 
@@ -81,8 +80,8 @@ Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_
 The elements $x_i$ must belong to the ring $R$.
 """
 function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
-  if sort
-    A = _sort(A, lt=(a,b) -> isless(a[1], b[1]))
+  if sort && length(A) > 1
+    A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
   return SRow(R, A)
 end
@@ -94,8 +93,8 @@ Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
 where $J = (i_j, x_j)_j$.
 """
 function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
-  if sort
-    A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
+  if sort && length(A) > 1
+    A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
   return SRow(R, A)
 end
@@ -119,7 +118,7 @@ Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
 $J = (i_j)_j$ and $V = (x_j)_j$.
 """
 function sparse_row(R::Ring, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
-  if sort
+  if sort && length(pos) > 1
     p = sortperm(pos)
     pos = pos[p]
     val = val[p]
