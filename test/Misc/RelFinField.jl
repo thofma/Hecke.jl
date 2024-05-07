@@ -3,7 +3,7 @@
   @testset "Basic properties" begin
     F = Native.finite_field(3, 3, cached = false)[1]
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = @inferred Native.finite_field(x^2+1, "a")
+    K, gK = @inferred Native.finite_field(x^2+1, :a)
     dp = @inferred defining_polynomial(K)
     @test dp == x^2+1
     @test degree(K) == 2

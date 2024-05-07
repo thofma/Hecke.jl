@@ -177,8 +177,7 @@ function number_field(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Boo
   return K, gens(K)::Vector{elem_type(K)}
 end
 
-function number_field(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
-  sym = Symbol(s)
+function number_field(f::Vector{Generic.Poly{T}}, s::VarName="_\$"; cached::Bool = false, check::Bool = true) where T
   S = [Symbol("$s$i") for i=1:length(f)]
   return number_field(f, S, cached = cached, check = check)
 end

@@ -554,7 +554,7 @@ end
 #
 ################################################################################
 
-function Native.finite_field(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
+function Native.finite_field(f::T, s::VarName = :a; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
   if check
     @assert is_irreducible(f)
   end
@@ -563,7 +563,7 @@ function Native.finite_field(f::T, s::String = "a" ; cached::Bool = true, check:
   return F, gen(F)
 end
 
-function Native.finite_field(f::PolyRingElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
+function Native.finite_field(f::PolyRingElem{T}, s::VarName = :a; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
   if check
     @assert is_irreducible(f)
   end

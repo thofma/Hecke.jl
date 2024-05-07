@@ -103,7 +103,7 @@ is_simple(a::NumField)
 ################################################################################
 
 @doc doc"""
-    number_field(f::Poly{NumFieldElem}, s::String;
+    number_field(f::Poly{NumFieldElem}, s::VarName;
                 cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
 
 Given an irreducible polynomial $f \in K[x]$ over some number field $K$, this
@@ -134,7 +134,7 @@ abstract type DocuDummy end
 number_field(::DocuDummy)
 
 @doc (@doc _doc_stub_nf)
-number_field(f::PolyRingElem{<: NumFieldElem}, s::String;
+number_field(f::PolyRingElem{<: NumFieldElem}, s::VarName;
             cached::Bool = false, check::Bool = false)
 
 ################################################################################
@@ -226,34 +226,26 @@ is_cached(L::NonSimpleNumField) = false
 
 #the Symbol is part of the key for caching, hence it should be be changed
 @doc doc"""
-    set_var!(L::SimpleNumField, s::String)
-    set_var!(L::SimpleNumField, s::Symbol)
+    set_var!(L::SimpleNumField, s::VarName)
 
 Sets the name used when printing the primitive element of $L$.
 This can only be set on fields constructed using `cached = false`.
 """
-function set_var!(L::SimpleNumField{T}, s::String) where {T}
+function set_var!(L::SimpleNumField{T}, s::VarName) where {T}
   is_cached(L) && error("cannot set the name in a cached field")
   L.S = Symbol(s)
   nothing
 end
 
-function set_var!(L::SimpleNumField{T}, s::Symbol) where {T}
-  is_cached(L) && error("cannot set the name in a cached field")
-  L.S = s
-  nothing
-end
-
 @doc doc"""
-    set_vars!(L::NonSimpleNumField{T}, a::String)
-    set_vars!(L::NonSimpleNumField{T}, a::Symbol)
+    set_vars!(L::NonSimpleNumField{T}, a::VarName)
 
 Sets the string printed for each generator of the field. If the string contains
 '#', then the hash-character is replaced by the index, otherwise, the index is
 appended to the string.  Eg. `set_vars!(L, "g[#]")` will make the generators
 print like array elements.
 """
-function set_vars!(L::NonSimpleNumField{T}, a::Symbol) where {T}
+function set_vars!(L::NonSimpleNumField{T}, a::VarName) where {T}
   return set_vars!(L, String(a))
 end
 
@@ -268,13 +260,12 @@ function set_vars!(L::NonSimpleNumField{T}, a::String) where {T}
 end
 
 @doc doc"""
-    set_vars!(L::NonSimpleNumField{T}, a::Vector{String})
-    set_vars!(L::NonSimpleNumField{T}, a::Vector{Symbol})
+    set_vars!(L::NonSimpleNumField{T}, a::Vector{<:VarName})
 
 Set the printing names for the generators to the string specified in
 the array. The length has to be exactly `ngens(L)`.
 """
-function set_vars!(L::NonSimpleNumField{T}, a::Vector{String}) where {T}
+function set_vars!(L::NonSimpleNumField{T}, a::Vector{<:VarName}) where {T}
   length(a) == ngens(L) || error("need to have as many strings as generators")
   L.S = [Symbol(s) for s = a]
   nothing
