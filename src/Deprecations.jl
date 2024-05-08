@@ -269,3 +269,6 @@ end
 
 @deprecate hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}}) hom_direct_sum(G, H, A)
 @deprecate hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}}) hom_tensor(G, H, A)
+
+@deprecate lift(a::QadicRingElem) lift(ZZ, a)
+@deprecate prime_field(L::Union{QadicField, LocalField}) absolute_base_field(L)

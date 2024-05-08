@@ -864,7 +864,7 @@ function divexact(a::LocalFieldElem, b::Union{Integer, ZZRingElem}; check::Bool=
   e = absolute_ramification_index(K)
   v = valuation(b, p)
   iszero(a) && return setprecision(a, precision(a) - v*e)
-  Qp = prime_field(K)
+  Qp = absolute_base_field(K)
   bb = with_precision(Qp, e*precision(a)+round(Int, e*valuation(a)) + v) do
     return inv(Qp(b))
   end
