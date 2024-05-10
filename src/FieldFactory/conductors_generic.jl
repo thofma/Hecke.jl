@@ -578,11 +578,11 @@ end
 
 
 
-function conductors_generic(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
-  return conductors_generic(lll(maximal_order(K)), gtype, absolute_bound; only_tame = only_tame)
+function conductors_generic(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false, filter = k -> true)
+  return conductors_generic(lll(maximal_order(K)), gtype, absolute_bound; only_tame = only_tame, filter = filter)
 end
 
-function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
+function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false, filter = k -> true)
   #I am assuming that gtype is in "SNF"
   conds_tame = conductors_generic_tame(OK, gtype, absolute_bound)
   if only_tame
@@ -661,10 +661,13 @@ function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, abso
   @vprintln :AbExt 1 "Merging tame and wild conductors ..."
   #Now, the final merge.
   conds = Vector{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}()
-  for i in 1:length(conds_wild)
-    for j in 1:length(conds_tame)
+  for j in 1:length(conds_tame)
+    for i in 1:length(conds_wild)
       if conds_wild[i][2]*conds_tame[j][2] <= bound
-        push!(conds, merge(conds_wild[i][1], conds_tame[j][1]))
+        m = merge(conds_wild[i][1], conds_tame[j][1])
+        if filter(m)
+          push!(conds, m)
+        end
       end
     end
   end
@@ -676,14 +679,144 @@ function conductors_generic_tame(K::AbsSimpleNumField, gtype::Vector{Int}, absol
   return conductors_generic_tame(lll(maximal_order(K), gtype, absolute_bound))
 end
 
+mutable struct TameConductorsSet{T}
+  OK::AbsSimpleNumFieldOrder
+  lf::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}
+  gtype::Vector{Int}
+  absolute_bound::ZZRingElem
+  A::T
+  conds::Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}
+  new_conds::Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}
+  bound::ZZRingElem
+  dummy::Vector{Int}
+  very_large::Bool
+end
+
+Base.eltype(::TameConductorsSet) = Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}
+
+Base.IteratorSize(::Type{<:TameConductorsSet}) = Base.SizeUnknown()
+
+function conductors_generic_tame_iterate(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem)
+  n = prod(gtype)
+  wild = collect(keys(factor(n).fac))
+  pmin = Int(minimum(wild))
+  bound = div(absolute_bound, abs(discriminant(OK))^n)
+  @vprintln :AbExt 1 "Tame conductors: Computing prime ideals up to $bound ... "
+  lp = prime_ideals_up_to(OK, Int(iroot(bound, pmin-1)))
+  @vprintln :AbExt 1 "Tame conductors: found before sieving $(length(lp)) "
+  filter!(x -> !(minimum(x, copy = false) in wild), lp)
+  lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
+  sort!(lp, by = x -> norm(x, copy = false))
+  dummy = Int[]
+  for P in lp
+    nP = norm(P)
+    gn = gcd(nP-1, gtype[end])
+    if isone(gn)
+      continue
+    end
+    fgn = factor(gn)
+    k = minimum(keys(fgn.fac))
+    kp, cpk = ppio(gtype[end], Int(k))
+    dP = nP^(div(n, gtype[end])*(k-1)*cpk)
+    if dP > bound
+      continue
+    end
+    push!(lf, (P, dP))
+  end
+  @vprintln :AbExt 1 "Tame conductors: after sieving $(length(lp)) "
+  #Now, I have to merge them.
+  A = AVLTree{Tuple{Vector{Int}, ZZRingElem}}((i, j) -> i[2] < j[2], (i, j) -> i[2] == j[2])
+  new_conds = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
+  conds = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
+  push!(new_conds, (Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1)))
+  push!(conds, (Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1)))
+  push!(A, ([1], ZZ(1)))
+  dummy = Int[]
+  return TameConductorsSet{typeof(A)}(OK, lf, gtype, absolute_bound, A, conds, new_conds, bound, dummy, false)
+end
+
+function Base.iterate(T::TameConductorsSet, state = 0)
+  OK = T.OK
+  lf = T.lf
+  gtype = T.gtype
+  absolute_bound = T.absolute_bound
+  A = T.A
+  conds = T.conds
+  new_conds = T.new_conds
+
+  @vprintln :AbExt 1 "Tame conductors: Computing all tame conductors ..."
+
+  if !isempty(new_conds)
+    return pop!(new_conds), state
+  end
+
+  while isempty(new_conds) && state < length(lf)
+    state += 1
+    _add_to_conductors(T, state)
+  end
+
+  if state >= length(lf) && isempty(new_conds)
+    return nothing
+  end
+
+  return pop!(new_conds), state
+end
+
+function _add_to_conductors(T, i)
+  dummy = Int[]
+  lf = T.lf
+  A = T.A
+  bound = T.bound
+  conds = T.conds
+  new_conds = T.new_conds
+  @assert isempty(new_conds)
+  P = lf[i][1]
+  dP = lf[i][2]
+
+  if T.very_large
+    # smallest_prime * P is alreay too large
+    push!(new_conds, (Dict(P => 1), dP))
+    return 
+  end
+
+  for (jindex, j) in enumerate(A)
+    Dd = dP*j[2]
+    if Dd > bound
+      if jindex == 2
+        # This means from now on primes are very large
+        # and there are only singleton conductors
+        T.very_large = true
+      end
+      break
+    end
+    for k in j[1]
+      D = copy(conds[k][1])
+      D[P] = 1
+      push!(new_conds, (D, Dd))
+    end
+  end
+
+  for j in 1:length(new_conds)
+    newnorm = !haskey(A, (dummy, new_conds[j][2]))
+    push!(conds, new_conds[j])
+    if newnorm
+      push!(A, ([length(conds)], new_conds[j][2]))
+    else
+      node = search_node(A, (dummy, new_conds[j][2]))
+      @assert node.data[2] == new_conds[j][2]
+      push!(node.data[1], length(conds))
+    end
+  end
+end
+
 function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem)
   n = prod(gtype)
   wild = collect(keys(factor(n).fac))
   pmin = Int(minimum(wild))
   bound = div(absolute_bound, abs(discriminant(OK))^n)
-  @vprintln :AbExt 1 "Tame conductors: Computing prime ideals ... "
+  @vprintln :AbExt 1 "Tame conductors: Computing prime ideals up to $bound ... "
   lp = prime_ideals_up_to(OK, Int(iroot(bound, pmin-1)))
-  @vprintln :AbExt 1 "Tame conductors: found $(length(lp)) "
+  @vprintln :AbExt 1 "Tame conductors: found before sieving $(length(lp)) "
   filter!(x -> !(minimum(x, copy = false) in wild), lp)
   lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
   dummy = Int[]
@@ -702,6 +835,7 @@ function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int},
     end
     push!(lf, (P, dP))
   end
+  @vprintln :AbExt 1 "Tame conductors: after sieving $(length(lp)) "
   #Now, I have to merge them.
   new_conds = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
 

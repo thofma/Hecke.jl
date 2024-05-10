@@ -301,6 +301,20 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
     return fields
   end
 
+  inf_plc = real_places(K)
+  if ramified_at_inf_plc[1]
+    inf_plc = ramified_at_inf_plc[2]
+  end
+
+  expo = gtype[end]
+  ctx = rayclassgrp_ctx(OK, expo)
+
+  filter = k -> begin
+    r, mr = ray_class_group_quo(OK, k, inf_plc, ctx)
+    has_quotient(r, gtype)
+  end
+
+
   # TODO: better preprocessing of custom conductors
   # what to allow? lists of ideals, lists of factorizations, ...
   #
@@ -321,11 +335,6 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
     end
   end
 
-  inf_plc = real_places(K)
-  if ramified_at_inf_plc[1]
-    inf_plc = ramified_at_inf_plc[2]
-  end
-
   expo = gtype[end]
   auts = automorphism_list(K)
   gens_auts = small_generating_set(auts)
@@ -342,7 +351,6 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
   end
   @vprintln :AbExt 1 "Number of conductors: $(length(l_conductors))"
 
-  ctx = rayclassgrp_ctx(OK, expo)
   fsub = (x, y) -> quo(x, y, false)[2]
   fsub_distinct = (x, y) -> (quo(x, y, false)[2], sub(x, y, false)[2])
   #Now, the big loop

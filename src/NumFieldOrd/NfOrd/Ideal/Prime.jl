@@ -1217,12 +1217,6 @@ function Base.iterate(S::PrimeIdealsSet, x)
   end
 end
 
-#function Base.done(S::PrimeIdealsSet, x)
-#  pstate = x[1]
-#  index = x[2]
-#  return !S.unbound && pstate > S.to
-#end
-
 Base.eltype(::PrimeIdealsSet) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
