@@ -749,7 +749,7 @@ function Hecke.StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem)
   FQ, phi = residue_field(O.R,p)
 
   if r == 0
-    A = _zero_algebra(FQ)
+    A = zero_algebra(FQ)
 
     local _image_zero
 
