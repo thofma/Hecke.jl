@@ -217,12 +217,11 @@ function _torsion_units_lattice_enum(O::AbsSimpleNumFieldOrder)
 
   could_enumerate = false
 
-  A = ArbField(p, false)
-  M = ArbMatSpace(A, n, n,false)()
+  local A, M
 
   while true
-    A = ArbField(p, false)
-    M = ArbMatSpace(A, n, n, false)()
+    A = ArbField(p; cached=false)
+    M = zero_matrix(A, n, n)
 
     gram_found = true
 
