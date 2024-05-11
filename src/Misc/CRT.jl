@@ -552,6 +552,8 @@ mutable struct modular_env
   Kxy::Generic.MPolyRing{AbsSimpleNumFieldElem}
   Kpxy::zzModMPolyRing
 
+  lazy::Bool
+
   function modular_env()
     return new()
   end
@@ -576,26 +578,34 @@ Given a number field $K$ and an ``easy'' prime $p$ (i.e. fits into an
 the residue class fields of the associated prime ideals above $p$.
 Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
-function modular_init(K::AbsSimpleNumField, p::ZZRingElem; deg_limit::Int=0, max_split::Int = 0)
+function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, deg_limit::Int=0, max_split::Int = 0)
   @hassert :AbsNumFieldOrder 1 is_prime(p)
   me = modular_env()
   me.Fpx = polynomial_ring(residue_ring(FlintZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
-  lp = factor(fp)
-  if Set(values(lp.fac)) != Set([1])
-    throw(BadPrime(p))
-  end
-  pols = collect(keys(lp.fac))
-  if deg_limit > 0
-    pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
+  if lazy
+    if !is_squarefree(fp)
+      throw(BadPrime(p))
+    end
+    pols = [fp]
+  else
+    lp = factor(fp)
+    if any(!isequal(1), values(lp.fac))
+      throw(BadPrime(p))
+    end
+    pols = collect(keys(lp.fac))
+    if deg_limit > 0
+      pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
+    end
+
+    if max_split > 0
+      pols = pols[1:min(length(pols), max_split)]
+    end
+    if length(pols) == 0
+      return me
+    end
   end
 
-  if max_split > 0
-    pols = pols[1:min(length(pols), max_split)]
-  end
-  if length(pols) == 0
-    return me
-  end
   me.ce = crt_env(pols)
   me.fld = [fqPolyRepField(x, :$, false) for x = pols]  #think about F_p!!!
                                    # and chacheing
@@ -609,8 +619,8 @@ function modular_init(K::AbsSimpleNumField, p::ZZRingElem; deg_limit::Int=0, max
   return me
 end
 
-function modular_init(K::AbsSimpleNumField, p::Integer; deg_limit::Int=0, max_split::Int = 0)
-  return modular_init(K, ZZRingElem(p), deg_limit = deg_limit, max_split = max_split)
+function modular_init(K::AbsSimpleNumField, p::Integer; lazy::Bool = false, deg_limit::Int=0, max_split::Int = 0)
+  return modular_init(K, ZZRingElem(p); lazy = lazy, deg_limit = deg_limit, max_split = max_split)
 end
 
 @doc raw"""

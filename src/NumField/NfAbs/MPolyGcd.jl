@@ -281,7 +281,7 @@ function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MP
   while true
     p = iterate(ps, p)[1]
     @vprintln :MPolyGcd 2 "Main loop: using $p"
-    @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, deg_limit = 1)
+    @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, lazy = true)
     if isempty(me)
       continue
     end
@@ -291,6 +291,7 @@ function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MP
     glp = Hecke.modular_proj(gl, me)
     gcd_p = zzModMPolyRingElem[]
     @vtime :MPolyGcd 3 for i=1:length(fp)
+      # TODO: try here
       _g = gcd(fp[i], gp[i])
       if length(_g) == 1 && iszero(exponent_vector(_g, 1))
         return inflate(one(parent(f)), shiftr, deflr)
