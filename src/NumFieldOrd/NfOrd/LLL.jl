@@ -753,8 +753,25 @@ function short_elem(A::AbsSimpleNumFieldOrderFractionalIdeal,
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
-
 function short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
+                v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
+  # If A == 1, we cache the short element on the order and retrieve (as ong as
+  # the precision fits)
+  if is_one(A)
+    O = order(A)
+    r = get_attribute(O, :short_elem_trivial_ideal)
+    if r !== nothing && r[1]::Int >= prec
+      return r[2]::AbsSimpleNumFieldElem
+    else
+      q = _short_elem(A, v; prec = prec)
+      set_attribute!(O, :short_elem_trivial_ideal, (prec, q))
+      return q
+    end
+  end
+  return _short_elem(A, v; prec = prec)
+end
+
+function _short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
                 v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
   t = lll(A, v, prec = prec)[2]
@@ -785,7 +802,10 @@ function reduce_product(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNum
   J = inv(B)
   @vtime :LLL 3 bIJ = _lll_product_basis(I.num, J.num)
   pp = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(order(A), bIJ)
-  @vtime :LLL 3 b = divexact(short_elem(pp), I.den * J.den)
+  # TODO: this ideal is illegal (because basis matrix is not an HNF), do this properly
+  # We cannot use short_elem(pp), because it checks for is_one(pp),
+  # but this is a nono for this illegal ideal
+  @vtime :LLL 3 b = divexact(_short_elem(pp), I.den * J.den)
   AB = A*B
   C = b*AB
   simplify(C)

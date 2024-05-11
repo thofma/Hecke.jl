@@ -74,7 +74,7 @@ function defines_2_normal(A::AbsNumFieldOrderIdeal)
   if iszero(m) || iszero(gen)
     return false
   end
-  if is_simple(nf(A)) && is_defining_polynomial_nice(nf(A)) && contains_equation_order(order(A))
+  if is_simple(nf(A)) && is_defining_polynomial_nice(nf(A)) && contains_equation_order(order(A)) && isdefined(A, :minimum)
     mg = _minmod(minimum(A, copy = false)^2, gen)
   else
     mg = denominator(inv(gen.elem_in_nf), order(A))
