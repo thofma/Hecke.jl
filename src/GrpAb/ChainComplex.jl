@@ -307,9 +307,9 @@ end
 
 function shift(C::ComplexOfMorphisms{T}, n::Int) where T
   if iseven(n)
-    ComplexOfMorphisms(T, copy(C.maps), seed = C.seed+n, typ = C.typ)
+    ComplexOfMorphisms(T, copy(C.maps), check = false, seed = C.seed+n, typ = C.typ)
   else
-    ComplexOfMorphisms(T, [-f for f = C.maps], seed = C.seed+n, typ = C.typ)
+    ComplexOfMorphisms(T, [-f for f = C.maps], check = false, seed = C.seed+n, typ = C.typ)
   end
 end
 
@@ -500,15 +500,15 @@ end
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the chain complex.
 """
-function chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0)
-  return ComplexOfMorphisms(collect(A), seed = seed, typ = :chain)
+function chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(collect(A), seed = seed, typ = :chain, check = check)
 end
 
-function chain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0)
-  return ComplexOfMorphisms(A, seed = seed, typ = :chain)
+function chain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(A, seed = seed, typ = :chain, check = check)
 end
-function cochain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0)
-  return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain)
+function cochain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain, check = check)
 end
 
 @doc raw"""
@@ -518,41 +518,41 @@ the cochain complex.
 The logical indexing and the printing for chain and cochain complexes differs.
 See `Hecke.ComplexOfMorphisms` for details.
 """
-function cochain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0)
-  return ComplexOfMorphisms(A, seed = seed, typ = :cochain)
+function cochain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(A, seed = seed, typ = :cochain, check = check)
 end
 
 Base.lastindex(C::ComplexOfMorphisms) = lastindex(range(C))
 function getindex(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i = u])
+  return ComplexOfMorphisms(T, [map(C, i) for i = u], check = false)
 end
 
 function getindex(C::ComplexOfMorphisms{T}, u::StepRange) where {T}
   @assert is_chain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i = u])
+  return ComplexOfMorphisms(T, [map(C, i) for i = u], check = false)
 end
 
 #TODO: Why?
 # what is the intend, the specs? In particular: seed/ start?
 function extract_map_range(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start, direction=:right)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start, direction=:right, check = false)
 end
 
 function extract_map_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   @assert is_chain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start-length(C)-1)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start-length(C)-1, check = false)
 end
 
 function extract_object_range(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right, check = false)
 end
 
 function extract_object_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   @assert is_chain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1, check = false)
 end
 
 @doc raw"""
