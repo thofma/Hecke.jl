@@ -19,7 +19,29 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
   return z
 end
 
-function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalField}, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}, a::LocalFieldElem{QadicFieldElem, EisensteinLocalField})
+function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool)
+  if !isdefined(f, :lift_data) || f.lift_data[1] != f.precision
+    l = lll(basis_matrix(f.P^f.precision))
+    f.lift_data = (f.precision, l, solve_init(map_entries(QQ, l)))
+  end
+  n = degree(domain(f))
+  @assert denominator(a) == 1
+  zk = order(f.P)
+  cc = matrix(ZZ, 1, n, coordinates(zk(a)))
+  l = f.lift_data[2]
+  if integral
+    s = solve(f.lift_data[3], QQ.(cc))
+    r = round.(ZZRingElem, s)
+    cc -= r*l
+    return domain(f)(order(f.P)(cc))
+  end
+  m = [ identity_matrix(ZZ, 1) cc; zero_matrix(ZZ, n, 1) l ]
+  lll!(m)
+  return domain(f)(order(f.P)(view(m, 1:1, 2:n+1))//m[1,1])
+end
+
+function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalField}, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}, a::LocalFieldElem{QadicFieldElem, EisensteinLocalField}; small_lift::Bool = false, integral::Bool = false)
+  #Eisenstein/ qadic
   Kp = codomain(f)
   @assert Kp === parent(a)
   Qq = base_field(Kp)
@@ -27,6 +49,9 @@ function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalFie
   coeffs = Vector{AbsSimpleNumFieldElem}()
   #careful: we're working in a limited precision world and the lift
   #can be waaaay to large
+  if iszero(a)
+    return zero(domain(f))
+  end
   if abs(valuation(a)) > 100
     global last_a = a
     error("elem too large")
@@ -40,21 +65,38 @@ function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalFie
   K = domain(f)
   Kx = polynomial_ring(K, "x")[1]
   r = Kx(coeffs)
-  return evaluate(r, f.inv_img[2])
+  s = evaluate(r, f.inv_img[2])
+  if small_lift
+    return _small_lift(f, s, integral)
+  else
+    return s
+  end
 end
 
-function preimage(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, a::LocalFieldElem{PadicFieldElem, EisensteinLocalField})
+function preimage(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, a::LocalFieldElem{PadicFieldElem, EisensteinLocalField}; small_lift::Bool = false, integral::Bool = false)
+  #Eisenstein/ padic
   @assert codomain(f) === parent(a)
-  return evaluate(map_coefficients(lift, a.data, cached = false), f.inv_img[2])
+  s = evaluate(map_coefficients(lift, a.data, cached = false), f.inv_img[2])
+  if small_lift
+    return _small_lift(f, s, integral)
+  else
+    return s
+  end
 end
 
-function preimage(f::CompletionMap{QadicField, QadicFieldElem}, a::QadicFieldElem)
+function preimage(f::CompletionMap{QadicField, QadicFieldElem}, a::QadicFieldElem; small_lift::Bool = false, integral::Bool = false)
+  #qadic only
   Kp = codomain(f)
   @assert Kp == parent(a)
   Qpx = parent(defining_polynomial(Kp))
   as_pol = Qpx(a)
   as_fmpq_poly = map_coefficients(lift, as_pol, cached = false)
-  return evaluate(as_fmpq_poly, f.inv_img[1])
+  r = evaluate(as_fmpq_poly, f.inv_img[1])
+  if small_lift
+    return _small_lift(f, r, integral)
+  else
+    return r
+  end
 end
 
 function prime(f::CompletionMap)
