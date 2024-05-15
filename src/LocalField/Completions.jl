@@ -10,7 +10,7 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
   end
   Qx = parent(parent(a).pol)
   z = evaluate(Qx(a), f.prim_img)
-  if !is_unit(z) 
+  if !is_unit(z)
     v = valuation(a, f.P)
     a = a*uniformizer(f.P).elem_in_nf^-v
     z = evaluate(Qx(a), f.prim_img)
@@ -131,7 +131,7 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift. Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 
-The map is guaranteed to yield a relative precision of at least `preciscion`. 
+The map is guaranteed to yield a relative precision of at least `preciscion`.
 """
 function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64)
   #to guarantee a rel_prec we need to account for the index (or the
@@ -179,7 +179,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
     img_prim_elem[i] = coeff
   end
   img = Kp(Qqx(img_prim_elem))
-  
+
   u = uniformizer(P).elem_in_nf
   completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
   completion_map.P = P
@@ -193,7 +193,7 @@ function _solve_internal(gq_in_K, P, precision, Zp, Qq)
   precision += e - (precision % e)
   @assert precision % e == 0
   #problem/ feature:
-  #the lin. alg is done in/over Zp or Qp, thus precision is measured in 
+  #the lin. alg is done in/over Zp or Qp, thus precision is measured in
   #block of length e (power of the prime number p, rather than powers of
   #pi, the prime element)
   #so it is a good idea to increase the precision to be divisible by e
@@ -231,7 +231,7 @@ if true
   # the can_solve... returns a precision of just 6 p-adic digits
   # the snf gets 16 (both for the default precision)
   # the det(M) has valuation 12, but the elem. divisors only 3
-  #TODO: rewrite can_solve? look at Avi's stuff? 
+  #TODO: rewrite can_solve? look at Avi's stuff?
   # x M = b
   # u*M*v = s
   # x inv(u) u M v = b v
@@ -251,7 +251,7 @@ else
   bZp = map_entries(Zp, bK.num)
   fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
   @assert fl
-end 
+end
   coeffs_eisenstein = Vector{QadicFieldElem}(undef, e+1)
   gQq = gen(Qq)
   for i = 1:e
@@ -276,7 +276,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
   new_prec += valuation(denominator(basis_matrix(OK, copy = false)), P)
 
   if new_prec < f.precision
-    K = domain(f)
+    K = codomain(f)
     setprecision!(K, new_prec)
     e = ramification_index(P)
     setprecision!(base_field(K), div(new_prec+e-1, e))
@@ -296,7 +296,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
 
     Zp = maximal_order(prime_field(Kp))
     Qq = base_field(Kp)
-    
+
     setprecision!(Qq, ex)
     setprecision!(Zp, ex)
     gQq = gen(Qq)
@@ -385,7 +385,7 @@ end
 
 function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, new_prec::Int)
   if new_prec < f.precision
-    K = domain(f)
+    K = codomain(f)
     setprecision!(K, new_prec)
     setprecision!(base_field(K), new_prec)
     setprecision!(f.prim_img, new_prec)
