@@ -39,6 +39,14 @@ end
   @test precision(bb) >= 20
 end
 
+@testset "Issue 1509" begin
+  F, _ = cyclotomic_field(3)
+  OF = maximal_order(F);
+  K, toK = completion(F, 2*OF);
+  setprecision!(toK, 100)
+  @test precision(toK(F(1))) == 100
+end
+
 @testset "another issue" begin
   Qx, x = QQ["x"]
   K, a = number_field(Qx([-881539931206823616,457325902411822080,16029750347584272,-124243211029392,-1536813216432,10162275552,33311655,-246753,0,1]), "a", cached = false)
@@ -71,7 +79,7 @@ end
     end
   end
 
-  let 
+  let
     Qx, x = QQ["x"]
     t = [
          (x^2 - 3, 3, 1//2), # C2
