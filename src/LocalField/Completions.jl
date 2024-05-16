@@ -27,7 +27,7 @@ function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalFie
   coeffs = Vector{AbsSimpleNumFieldElem}()
   #careful: we're working in a limited precision world and the lift
   #can be waaaay to large
-  if abs(valuation(a)) > 100
+  if !iszero(a) && abs(valuation(a)) > 100
     global last_a = a
     error("elem too large")
   end

@@ -43,6 +43,7 @@ end
   F, _ = cyclotomic_field(3)
   OF = maximal_order(F);
   K, toK = completion(F, 2*OF);
+  @test iszero(preimage(toK, toK(F(0))))
   setprecision!(toK, 10)
   @test precision(toK(F(1))) == 10
   setprecision!(toK, 70)
