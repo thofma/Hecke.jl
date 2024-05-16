@@ -43,8 +43,10 @@ end
   F, _ = cyclotomic_field(3)
   OF = maximal_order(F);
   K, toK = completion(F, 2*OF);
-  setprecision!(toK, 100)
-  @test precision(toK(F(1))) == 100
+  setprecision!(toK, 10)
+  @test precision(toK(F(1))) == 10
+  setprecision!(toK, 70)
+  @test precision(toK(F(1))) == 70
 end
 
 @testset "another issue" begin
