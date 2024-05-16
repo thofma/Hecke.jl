@@ -385,11 +385,12 @@ end
 
 function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, new_prec::Int)
   if new_prec < f.precision
-    K = codomain(f)
-    setprecision!(K, new_prec)
-    setprecision!(base_field(K), new_prec)
+    Kp = codomain(f)
+    setprecision!(Kp, new_prec)
+    setprecision!(base_field(Kp), new_prec)
     setprecision!(f.prim_img, new_prec)
   else
+    K = domain(f)
     #I need to increase the precision of the data
     P = prime(f)
     e = ramification_index(P)
@@ -402,13 +403,13 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     end
     Qp = PadicField(prime(Kp), div(new_prec, e)+1)
     Zp = maximal_order(Qp)
-    Qpx = polynomial_ring(Qp, "x")
+    Qpx, _ = polynomial_ring(Qp, "x")
     pows_u = powers(u, e-1)
     bK = basis_matrix(AbsSimpleNumFieldElem[u*pows_u[end], gen(K)])
     append!(pows_u, map(elem_in_nf, basis(P^new_prec, copy = false)))
     MK = basis_matrix(pows_u)
-    MQp = map_entries(Zp, MK)
-    bQp = map_entries(Zp, bK)
+    MZp = map_entries(Zp, MK)
+    bZp = map_entries(Zp, bK)
     fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
     @assert fl
     coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
@@ -501,14 +502,13 @@ function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::I
     setprecision!(f.prim_img, new_prec)
   else
     P = prime(f)
-    f = inertia_degree(P)
     gq, u = f.inv_img
     Zx = polynomial_ring(FlintZZ, "x")[1]
     q, mq = residue_field(Kp)
     pol_gq = lift(Zx, defining_polynomial(q))
     gq = _increase_precision(gq, pol_gq, f.precision, new_prec, P)
-    f.inv_img[1] = gq
-    setprecision!(Qq, new_prec)
+    f.inv_img = (gq, u)
+    setprecision!(Kp, new_prec)
     #To increase the precision of the image of the primitive element, I use Hensel lifting
     f.prim_img = newton_lift(Zx(defining_polynomial(domain(f))), f.prim_img, new_prec, f.precision)
   end
