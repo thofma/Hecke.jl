@@ -879,8 +879,7 @@ function _find_quaternion_algebra(b, P, I)
     end
     M = vcat(M, v)
     push!(elts, f(L[i])) # cache
-    fl, _ = can_solve_with_solution(M, target, side = :left)
-    if fl
+    if can_solve(M, target, side = :left)
       found = true
       break
     end
