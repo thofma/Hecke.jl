@@ -1,4 +1,4 @@
-parent_type(::Type{MatAlgebraElem{T, S, Mat}}) where {T, S, Mat} = S
+parent_type(::Type{MatAlgebraElem{T, S}}) where {T, S} = MatAlgebra{T, S}
 
 @doc raw"""
     matrix(a::MatAlgebraElem; copy::Bool = true) -> MatElem
@@ -80,7 +80,7 @@ end
 #
 ################################################################################
 
-function +(a::MatAlgebraElem{T, S, V}, b::MatAlgebraElem{T, S, V}) where {T, S, V}
+function +(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false), check = false)
   if a.has_coeffs && b.has_coeffs
@@ -90,7 +90,7 @@ function +(a::MatAlgebraElem{T, S, V}, b::MatAlgebraElem{T, S, V}) where {T, S, 
   return c
 end
 
-function -(a::MatAlgebraElem{T, S, V}, b::MatAlgebraElem{T, S, V}) where {T, S, V}
+function -(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false))
   if a.has_coeffs && b.has_coeffs
@@ -116,7 +116,7 @@ function zero!(a::MatAlgebraElem)
   return a
 end
 
-function add!(c::MatAlgebraElem{T, S, V}, a::MatAlgebraElem{T, S, V}, b::MatAlgebraElem{T, S, V}) where {T, S, V}
+function add!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   parent(c) != parent(b) && error("Parents don't match.")
   A = parent(a)
@@ -133,7 +133,7 @@ function add!(c::MatAlgebraElem{T, S, V}, a::MatAlgebraElem{T, S, V}, b::MatAlge
   return c
 end
 
-function mul!(c::MatAlgebraElem{T, S, V}, a::MatAlgebraElem{T, S, V}, b::MatAlgebraElem{T, S, V}) where {T, S, V}
+function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
 
@@ -171,12 +171,12 @@ function *(b::T, a::MatAlgebraElem) where {T <: RingElem}
   return A(b*matrix(a, copy = false), check = false)::elem_type(A)
 end
 
-function *(a::MatAlgebraElem{S, T, U}, b::U) where { S, T, U <: MatElem }
+function *(a::MatAlgebraElem{T,S}, b::S) where { T, S <: MatElem }
   A = parent(a)
   return A(matrix(a, copy = false)*b, check = false)
 end
 
-function *(b::U, a::MatAlgebraElem{S, T, U}) where { S, T, U <: MatElem }
+function *(b::S, a::MatAlgebraElem{T,S}) where { T, S <: MatElem }
   A = parent(a)
   return A(b*matrix(a, copy = false), check = false)
 end
@@ -242,12 +242,12 @@ function (A::MatAlgebra{T, S})(M::S; check::Bool = true, deepcopy::Bool = true) 
   if check
     b, c = _check_matrix_in_algebra(M, A)
     @req b "Matrix not an element of the matrix algebra"
-    z = MatAlgebraElem{T, typeof(A), S}(A, deepcopy ? Base.deepcopy(M) : M)
+    z = MatAlgebraElem{T, S}(A, deepcopy ? Base.deepcopy(M) : M)
     z.coeffs = c
     z.has_coeffs = true
     return z
   else
-    return MatAlgebraElem{T, typeof(A), S}(A, deepcopy ? Base.deepcopy(M) : M)
+    return MatAlgebraElem{T, S}(A, deepcopy ? Base.deepcopy(M) : M)
   end
 end
 
@@ -294,7 +294,7 @@ end
 
 Returns `true` if $a$ and $b$ are equal and `false` otherwise.
 """
-function ==(a::MatAlgebraElem{T, S, V}, b::MatAlgebraElem{T, S, V}) where {T, S, V}
+function ==(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && return false
   return matrix(a, copy = false) == matrix(b, copy = false)
 end

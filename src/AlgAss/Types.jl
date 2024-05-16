@@ -275,7 +275,7 @@ end
 ################################################################################
 
 # T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
-@attributes mutable struct MatAlgebra{T, S} <: AbstractAssociativeAlgebra{T}
+@attributes mutable struct MatAlgebra{T, S <: MatElem} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   coefficient_ring::NCRing
   one::S
@@ -322,22 +322,22 @@ end
   end
 end
 
-mutable struct MatAlgebraElem{T, S, Mat} <: AbstractAssociativeAlgebraElem{T}
-  parent::S
-  matrix::Mat # over the coefficient ring of the parent
+mutable struct MatAlgebraElem{T, S <: MatElem} <: AbstractAssociativeAlgebraElem{T}
+  parent::MatAlgebra{T, S}
+  matrix::S # over the coefficient ring of the parent
   coeffs::Vector{T} # over the base ring of the parent
   has_coeffs::Bool
 
-  function MatAlgebraElem{T, S, Mat}(A::S) where {T, S, Mat}
-    z = new{T, S, Mat}()
+  function MatAlgebraElem{T, S}(A::MatAlgebra{T, S}) where {T, S}
+    z = new{T, S}()
     z.parent = A
     z.matrix = zero_matrix(base_ring(A), degree(A), degree(A))
     z.has_coeffs = false
     return z
   end
 
-  function MatAlgebraElem{T, S, Mat}(A::S, M::Mat) where {T, S, Mat}
-    z = new{T, S, Mat}()
+  function MatAlgebraElem{T, S}(A::MatAlgebra{T, S}, M::S) where {T, S}
+    z = new{T, S}()
     z.parent = A
     z.matrix = M
     z.has_coeffs = false
