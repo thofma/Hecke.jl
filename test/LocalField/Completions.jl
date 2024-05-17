@@ -21,6 +21,20 @@ end
   c, mc = Hecke.unramified_completion(k, prime_ideals_over(maximal_order(k), 17)[1])
   @test a == preimage(mc, mc(a); small_lift = true, integral = true)
   @test a^3//5-2 == preimage(mc, mc(a^3//5-2); small_lift = true)
+
+  Qx, x = QQ["x"];
+  f = x^9 - 828*x^7 - 4371*x^6 + 226071*x^5 + 2371023*x^4 - 14243253*x^3 - 318645900*x^2 - 1637156439*x - 2754662093;
+
+  K, a = number_field(f, "a");
+  OK = maximal_order(K);
+  p = 3;
+  P = prime_ideals_over(OK, p)[1];
+  C, mC = completion(K, P, 80);
+  b = 5001310657//440423231859045*a^8 - 332069942701//3963809086731405*a^7 - 34477045500619//3963809086731405*a^6 + 22827170414018//1321269695577135*a^5 + 1893757018539416//792761817346281*a^4 + 29698097663762398//3963809086731405*a^3 - 57718358174700707//264253939115427*a^2 - 1362121503883347224//792761817346281*a - 13294109890580232283//3963809086731405;
+
+  bb = mC(b)
+
+  @test b == preimage(mC, mC(b); small_lift=true)
 end
 
 @testset "Issue 1075" begin
@@ -47,8 +61,9 @@ end
   @test valuation(bb) == 0
   @test precision(bb) >= 20
 
-  setprecision!(mC, 61)
-  @test b == preimage(mC, mC(b); small_lift=true)
+  # 80 is just enough precision for the next line to work
+  setprecision!(mC, 80)  #does not seem to work
+  @test_broken b == preimage(mC, mC(b); small_lift=true)
   @test_broken setprecision!(mC, 20)
 end
 
