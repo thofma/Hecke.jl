@@ -47,8 +47,8 @@ end
   @test valuation(bb) == 0
   @test precision(bb) >= 20
 
-  @test bb == preimage(mC, bb; small_lift=true)
-  setprecision!(mC, 21)
+  setprecision!(mC, 61)
+  @test b == preimage(mC, mC(b); small_lift=true)
   @test_broken setprecision!(mC, 20)
 end
 
