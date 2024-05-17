@@ -18,7 +18,7 @@ basis(A::MatAlgebra) = A.basis
 
 has_one(A::MatAlgebra) = true
 
-elem_type(::Type{MatAlgebra{T, S}}) where { T, S } = MatAlgebraElem{T, MatAlgebra{T, S}, S}
+elem_type(::Type{MatAlgebra{T, S}}) where { T, S } = MatAlgebraElem{T, S}
 
 order_type(::MatAlgebra{QQFieldElem, S}) where { S } = AlgAssAbsOrd{MatAlgebra{QQFieldElem, S}, elem_type(MatAlgebra{QQFieldElem, S})}
 order_type(::Type{MatAlgebra{QQFieldElem, S}}) where { S } = AlgAssAbsOrd{MatAlgebra{QQFieldElem, S}, elem_type(MatAlgebra{QQFieldElem, S})}
