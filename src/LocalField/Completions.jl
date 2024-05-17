@@ -25,8 +25,8 @@ function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool)
     f.lift_data = (f.precision, l, solve_init(map_entries(QQ, l)))
   end
   n = degree(domain(f))
-  @assert denominator(a) == 1
   zk = order(f.P)
+  @assert denominator(a, zk) == 1
   cc = matrix(ZZ, 1, n, coordinates(zk(a)))
   l = f.lift_data[2]
   if integral
