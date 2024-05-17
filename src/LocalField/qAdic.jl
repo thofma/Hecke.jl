@@ -11,7 +11,7 @@ function residue_field(Q::QadicField)
   Fp = finite_field(prime(Q), 1, :o, cached = false, check = false)[1]
   Fpt = polynomial_ring(Fp, cached = false)[1]
   g = defining_polynomial(Q) #no Conway if parameters are too large!
-  f = Fpt([Fp(lift(coeff(g, i))) for i=0:degree(Q)])
+  f = Fpt([Fp(lift(ZZ, coeff(g, i))) for i=0:degree(Q)])
   k, = Nemo._residue_field(f, "o")
   pro = function(x::QadicFieldElem)
     v = valuation(x)
@@ -19,7 +19,7 @@ function residue_field(Q::QadicField)
     v > 0 && return k(0)
     _z = Fpt()
     for i=0:degree(Q)
-      setcoeff!(_z, i, Fp(lift(coeff(x, i))))
+      setcoeff!(_z, i, Fp(lift(ZZ, coeff(x, i))))
     end
     return k(_z)
   end
@@ -45,7 +45,7 @@ function residue_field(Q::PadicField)
     v = valuation(x)
     v < 0 && error("elt non integral")
     v > 0 && return k(0)
-    z = k(lift(x))
+    z = k(lift(ZZ, x))
     return z
   end
   lif = function(x::FqFieldElem)

@@ -240,7 +240,7 @@ function rational_reconstruction(a::SeriesElem; parent::PolyRing = polynomial_ri
 end
 
 function rational_reconstruction(a::PadicFieldElem)
-  return rational_reconstruction(Hecke.lift(a), prime(parent(a), precision(a)))
+  return rational_reconstruction(Hecke.lift(ZZ, a), prime(parent(a), precision(a)))
 end
 
 Hecke.gcd_into!(a::PolyRingElem, b::PolyRingElem, c::PolyRingElem) = gcd(b, c)

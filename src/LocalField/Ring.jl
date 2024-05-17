@@ -125,12 +125,12 @@ function _map(Q::QadicField, a::PadicFieldElem)
   @assert prime(K) == prime(Q)
   v = valuation(a)
   if v >= 0
-    q = Q(lift(a))
+    q = Q(lift(ZZ, a))
     return setprecision(q, a.N)
   else
     d = uniformizer(K)^-v
     n = a*d
-    n1 = divexact(Q(lift(n)), Q(lift(d)))
+    n1 = divexact(Q(lift(ZZ, n)), Q(lift(ZZ, d)))
     return n1
   end
 end

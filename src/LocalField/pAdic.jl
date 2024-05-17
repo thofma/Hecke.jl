@@ -2,10 +2,10 @@ function _lift(a::PadicFieldElem)
   R = parent(a)
   v = valuation(a)
   if v >= 0
-    return QQFieldElem(lift(a))
+    return QQFieldElem(lift(ZZ, a))
   else
     m = prime(R)^-v
-    return QQFieldElem(lift(m * a))//m
+    return QQFieldElem(lift(ZZ, m * a))//m
   end
 end
 

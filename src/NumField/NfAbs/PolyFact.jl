@@ -120,7 +120,7 @@ mutable struct HenselCtxPadic <: Hensel
     Zx = polynomial_ring(FlintZZ, cached = false)[1]
     ff = Zx()
     for i=0:degree(f)
-      setcoeff!(ff, i, lift(coeff(f, i)))
+      setcoeff!(ff, i, lift(ZZ, coeff(f, i)))
     end
     r.X = HenselCtx(ff, prime(base_ring(f)))
     start_lift(r.X, 1)
@@ -130,7 +130,7 @@ end
 
 function lift(C::HenselCtxPadic, mx::Int)
   for i=0:degree(C.f)
-    setcoeff!(C.X.f, i, lift(coeff(C.f, i)))
+    setcoeff!(C.X.f, i, lift(ZZ, coeff(C.f, i)))
   end
   continue_lift(C.X, mx)
 end
@@ -379,7 +379,7 @@ function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderI
   zk = order(P)
 
   if degree(P) == 1
-    S = Set(map(x -> map_coefficients(y -> lift(y), x, parent = parent(f)), lf))
+    S = Set(map(x -> map_coefficients(y -> lift(ZZ, y), x, parent = parent(f)), lf))
   else
     S = Set(map(x -> map_coefficients(y -> preimage(mC, y), x, parent = parent(f)), lf))
   end
@@ -644,7 +644,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
     have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
 
     if degree(P) == 1
-      mD = MapFromFunc(K, base_ring(vH.H.f), x->coeff(mC(x),0), y->K(lift(y)))
+      mD = MapFromFunc(K, base_ring(vH.H.f), x->coeff(mC(x),0), y->K(lift(ZZ, y)))
       @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f))
     else
       @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f))
@@ -783,7 +783,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
           if isone(den) && is_monic(f) #don't know what to do for non-monics
             a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
-              A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
+              A = K(reco(order(P)(lift(ZZ, a)), vH.Ml, vH.pMr))
             else
               A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
             end
@@ -798,7 +798,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
           end
           @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
           if degree(P) == 1
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(ZZ, coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else
             @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*leading_coefficient(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           end

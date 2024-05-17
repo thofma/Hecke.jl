@@ -47,9 +47,9 @@ end
   l2 = prime_decomposition(maximal_order(k), 2)
   k2, _ = Hecke.completion(k, l2[1][1], 120)
 
-  G, mG = automorphism_group(k2, prime_field(k2))
+  G, mG = automorphism_group(k2, Hecke.absolute_base_field((k2)))
 
-  z = Hecke.local_fundamental_class_serre(k2, prime_field(k2))
+  z = Hecke.local_fundamental_class_serre(k2, Hecke.absolute_base_field((k2)))
   for g = G 
     for h = G 
       for k = G 
