@@ -12,9 +12,9 @@ base_ring(A::MatAlgebra{T, S}) where {T, S} = A.base_ring::parent_type(T)
 
 base_ring_type(::Type{MatAlgebra{T, S}}) where {T, S} = parent_type(T)
 
-coefficient_ring(A::MatAlgebra) = A.coefficient_ring
+coefficient_ring(A::MatAlgebra{T, S}) where {T, S} = A.coefficient_ring::base_ring_type(S)
 
-basis(A::MatAlgebra) = A.basis
+basis(A::MatAlgebra) = A.basis::Vector{elem_type(A)}
 
 has_one(A::MatAlgebra) = true
 

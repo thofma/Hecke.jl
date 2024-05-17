@@ -862,9 +862,9 @@ function _find_quaternion_algebra(b, P, I)
 
   found = false
   U, h = unit_group(R)
-  sign_vector = g -> begin
+  function sign_vector(g)
     return matrix(F, 1, length(__P) + length(I),
-                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(g, p), 2) for p in I]))
+                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(g, p), 2) for p in I]))::typeof(target)
   end
 
 
@@ -879,8 +879,7 @@ function _find_quaternion_algebra(b, P, I)
     end
     M = vcat(M, v)
     push!(elts, f(L[i])) # cache
-    fl, w = can_solve_with_solution(M, target, side = :left)
-    if fl
+    if can_solve(M, target, side = :left)
       found = true
       break
     end
@@ -914,9 +913,9 @@ function _find_quaternion_algebra(b, P, I)
       end
     end
   end
-  fl, v = can_solve_with_solution(M, target, side = :left)
+  fl, w = can_solve_with_solution(M, target, side = :left)
   @assert fl
-  z = evaluate(FacElem(Dict(elts[i] => Int(lift(v[1, i])) for i in 1:ncols(v))))
+  z = evaluate(FacElem(Dict(elts[i] => Int(lift(w[1, i])) for i in 1:ncols(w))))
   @assert sign_vector(z) == target
   return z
 end
