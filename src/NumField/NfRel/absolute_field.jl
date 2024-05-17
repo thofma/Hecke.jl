@@ -98,6 +98,11 @@ function absolute_simple_field(K::AbsSimpleNumField)
   return K, id_hom(K)
 end
 
+@attr Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, typeof(K)), morphism_type(typeof(K), AbsSimpleNumField)} function _absolute_simple_field_internal(K::NumField)
+  Kabs, KabstoK = absolute_simple_field(K)
+  return Kabs, KabstoK, inv(KabstoK)
+end
+
 function absolute_simple_field(K::AbsNonSimpleNumField; cached::Bool = true, simplify::Bool = false)
   abs = get_attribute(K, :abs_simple_field)
   MT = morphism_type(AbsSimpleNumField, AbsNonSimpleNumField)
