@@ -759,8 +759,8 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
   d = divexact(absolute_inertia_degree(L), absolute_inertia_degree(K))
   E = unramified_extension(L, e)[1]
-  G = automorphism_list(L, prime_field(L))
-  gK = map(mKL, gens(K, prime_field(K)))
+  G = automorphism_list(L, absolute_base_field(L))
+  gK = map(mKL, gens(K, absolute_base_field(K)))
   G = [g for g = G if map(g, gK) == gK]
   @assert Base.length(G) == absolute_degree(L)/absolute_degree(K)
 

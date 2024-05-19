@@ -607,11 +607,11 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
       d = c
     end
     n = x.length
-    r = K(lift(coeff(x, n-1)))
+    r = K(lift(ZZ, coeff(x, n-1)))
     pk = p^precision(x)
     while n > 1
       n -= 1
-      r = mod_sym(r*d, pk) + lift(coeff(x, n-1))
+      r = mod_sym(r*d, pk) + lift(ZZ, coeff(x, n-1))
     end
     return r#*K(p)^valuation(x)
   end
