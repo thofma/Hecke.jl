@@ -28,13 +28,13 @@ Return the real embeddings of $K$.
 
 # Examples
 
-```jldoctst
+```jldoctest
 julia> K, a = quadratic_field(3);
 
 julia> real_embeddings(K)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Embedding corresponding to ≈ -1.73
- Embedding corresponding to ≈ 1.73
+ Complex embedding corresponding to -1.73 of real quadratic field
+ Complex embedding corresponding to 1.73 of real quadratic field
 ```
 """
 function real_embeddings(K::NumField)
@@ -51,7 +51,7 @@ Return the corresponding number field of the embedding $f$.
 
 # Examples
 
-```jldoctet
+```jldoctest
 julia> K, a = quadratic_field(-3); e = complex_embeddings(K)[1];
 
 julia> number_field(e)
