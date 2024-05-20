@@ -1,5 +1,15 @@
 add_verbosity_scope(:MPolyGcd)
 
+function gcd(f::Hecke.Generic.MPoly{<:NumFieldElem}, g::Hecke.Generic.MPoly{<:NumFieldElem})
+  R = parent(f)
+  K = coefficient_ring(f)
+  Kabs, KabstoK, KtoKabs = _absolute_simple_field_internal(K)
+  fabs = map_coefficients(KtoKabs, f; cached = false)
+  S = parent(fabs)
+  gabs = map_coefficients(KtoKabs, g, parent = S)
+  return map_coefficients(KabstoK, gcd(fabs, gabs), parent = R)
+end
+
 ####################################################
 # exported is the RecoCtx (and thus the rational_reconstruction functions)
 # not exported are the helpers...
@@ -186,7 +196,7 @@ function Hecke.rational_reconstruction(a::AbsSimpleNumFieldElem, R::RecoCtx; int
     for i=1:degree(R.k)
       s[1, i] = round(ZZRingElem, s[1, i], R.d)
     end
-    tt = s*R.L
+    tt = mul!(s, s, R.L)
     b = parent(a)()
     nb = div(3*nbits(R.d), 2)
     for i=1:degree(R.k)
@@ -221,6 +231,24 @@ import AbstractAlgebra
 import Hecke.RecoCtx
 
 function Hecke.gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MPoly{AbsSimpleNumFieldElem})
+  # Recognize rational polynomials
+  K = coefficient_ring(f)
+  if all(is_rational, coefficients(f)) && all(is_rational, coefficients(g))
+    fQQ = map_coefficients(QQ, f, cached = false)
+    S = parent(fQQ)
+    gQQ = map_coefficients(QQ, g, parent = S)
+    gcdQQ = gcd(fQQ, gQQ)
+    if is_one(gcdQQ)
+      return one(parent(f))
+    end
+    return map_coefficients(K, gcdQQ, parent = parent(f))
+  end
+
+  return _gcd(f, g, :degree_one)
+end
+
+function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, strategy::Symbol = :degree_one)
+  # use :degree_one or :lazy
   Hecke.check_parent(f, g)
   @vprintln :MPolyGcd 1 "multivariate gcd of f with $(length(f)) and g with $(length(g)) terms over $(base_ring(f))"
 
@@ -236,11 +264,12 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Gener
     @vprintln :MPolyGcd 2 "field is quadratic, using conductor $(4*c)"
     ps = PrimesSet(Hecke.p_start, -1, Int(4*c), 1)
   end
-  return _gcd(f, g, ps)
+  return __gcd(f, g, ps, strategy)
 end
 
-function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, ps::PrimesSet{Int})
+function __gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, ps::PrimesSet{Int}, strategy = :degree_one)
 #  @show "gcd start"
+  lazy = strategy == :lazy
   p = iterate(ps)[1]
   K = base_ring(f)
   max_stable = 2
@@ -278,28 +307,58 @@ function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MP
   gl *= evaluate(derivative(K.pol), gen(K))  # use Kronnecker basis
 
   fl = true
+  cnt = 0
   while true
     p = iterate(ps, p)[1]
+    cnt += 1
+    if cnt > 1000
+      error("ASDA")
+    end
     @vprintln :MPolyGcd 2 "Main loop: using $p"
-    @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, deg_limit = 1)
+    if lazy
+      @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, lazy = lazy)
+    else
+      @vtime :MPolyGcd 3 me = Hecke.modular_init(K, p, deg_limit = 1)
+    end
     if isempty(me)
       continue
     end
 
-    @vtime :MPolyGcd 3 fp = Hecke.modular_proj(f, me)
-    @vtime :MPolyGcd 3 gp = Hecke.modular_proj(g, me)
-    glp = Hecke.modular_proj(gl, me)
-    gcd_p = zzModMPolyRingElem[]
-    @vtime :MPolyGcd 3 for i=1:length(fp)
-      _g = gcd(fp[i], gp[i])
-      if length(_g) == 1 && iszero(exponent_vector(_g, 1))
+    if lazy
+      @vtime :MPolyGcd 3 fp = Hecke.modular_proj(fqPolyRepFieldElem, f, me)
+      @vtime :MPolyGcd 3 gp = Hecke.modular_proj(fqPolyRepFieldElem, g, me)
+      glp = Hecke.modular_proj(gl, me)
+      _gcd_p = fqPolyRepMPolyRingElem[]
+      local __g::fqPolyRepMPolyRingElem
+      try
+        __g = gcd(fp[1], gp[1])
+      catch e
+        if !(e isa ErrorException) || e.msg != "Problem in the Flint-Subsystem"
+          rethrow(e)
+        end
+        continue
+      end
+      if length(__g) == 1 && iszero(exponent_vector(_g, 1))
         return inflate(one(parent(f)), shiftr, deflr)
       end
-      push!(gcd_p, coeff(glp[i], 0)*_g)
+      push!(_gcd_p, glp[1]*__g)
+      @vtime :MPolyGcd 3 tp = Hecke.modular_lift(_gcd_p, me)
+    else
+      @vtime :MPolyGcd 3 fp = Hecke.modular_proj(f, me)
+      @vtime :MPolyGcd 3 gp = Hecke.modular_proj(g, me)
+      glp = Hecke.modular_proj(gl, me)
+      gcd_p = zzModMPolyRingElem[]
+      @vtime :MPolyGcd 3 for i=1:length(fp)
+        _g = gcd(fp[i], gp[i])
+        if length(_g) == 1 && iszero(exponent_vector(_g, 1))
+          return inflate(one(parent(f)), shiftr, deflr)
+        end
+        push!(gcd_p, coeff(glp[i], 0)*_g)
+      end
+      @vtime :MPolyGcd 3 tp = Hecke.modular_lift(gcd_p, me)
     end
     #gcd_p = [coeff(glp[i], 0)*gcd(fp[i], gp[i]) for i=1:length(fp)]
-    @vtime :MPolyGcd 3 tp = Hecke.modular_lift(gcd_p, me)
-    if d==1
+    if isone(d)
       d = ZZRingElem(p)
       gc = tp
       idl = lift(Zx, me.ce.pr[end])
@@ -323,7 +382,9 @@ function _gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MP
 #TODO: deal with bad primes...
 
       push!(R, ZZRingElem(p), lift(Zx, me.ce.pr[end]))
-      if (!fl) || any(i->(parent(me.ce.pr[end])(coeff(tp, i) - coeff(gd, i))) % me.ce.pr[end] != 0, 1:length(tp))
+      _check = any(let me = me, gd = gd, tp = tp; i -> (parent(me.ce.pr[end])(coeff(tp, i) - coeff(gd, i))) % me.ce.pr[end] != 0 end, 1:length(tp))
+
+      if (!fl) || _check
         gc, d = induce_crt(gc, d, tp, ZZRingElem(p), true)
         fl, gd = induce_rational_reconstruction(gc, R, integral = true)
         stable = max_stable
@@ -448,11 +509,9 @@ function Hecke.modular_proj(f::Generic.MPoly{AbsSimpleNumFieldElem}, me::Hecke.m
   end
   fp = [MPolyBuildCtx(me.Kpxy) for x = me.fld]
   s = length(me.fld)
-  for i=1:length(f)
-    c = coeff(f, i)
-    e = exponent_vector(f, i)
+  R = base_ring(me.Fpx)
+  for (c, e) in zip(coefficients(f), exponent_vectors(f))
     cp = Hecke.modular_proj(c, me)
-    R = base_ring(me.Fpx)
     for x = 1:s
       push_term!(fp[x], Hecke.zzModRingElem(coeff(cp[x], 0), R), e)
     end
@@ -484,9 +543,9 @@ end
 function Hecke.modular_lift(g::Vector{zzModMPolyRingElem}, me::Hecke.modular_env)
 
   #TODO: no dict, but do s.th. similar to induce_crt
-  d = Dict{Vector{Int}, Vector{Tuple{Int, Hecke.zzModRingElem}}}()
+  d = Dict{Vector{Int}, Vector{Tuple{Int, zzModRingElem}}}()
   for i=1:length(g)
-    for (c, e) = Base.Iterators.zip(Generic.MPolyCoeffs(g[i]), Generic.MPolyExponentVectors(g[i]))
+    for (c, e) = zip(coefficients(g[i]), exponent_vectors(g[i]))
       if Base.haskey(d, e)
         push!(d[e], (i, c))
       else

@@ -29,7 +29,7 @@ end
   OK = maximal_order(K);
   p = 3;
   P = prime_ideals_over(OK, p)[1];
-  C, mC = completion(K, P, 80);
+  C, mC = completion(K, P, 100);
   b = 5001310657//440423231859045*a^8 - 332069942701//3963809086731405*a^7 - 34477045500619//3963809086731405*a^6 + 22827170414018//1321269695577135*a^5 + 1893757018539416//792761817346281*a^4 + 29698097663762398//3963809086731405*a^3 - 57718358174700707//264253939115427*a^2 - 1362121503883347224//792761817346281*a - 13294109890580232283//3963809086731405;
 
   bb = mC(b)
@@ -61,8 +61,7 @@ end
   @test valuation(bb) == 0
   @test precision(bb) >= 20
 
-  # 80 is just enough precision for the next line to work
-  setprecision!(mC, 80)  #does not seem to work
+  setprecision!(mC, 100)  #does not seem to work
   @test_broken b == preimage(mC, mC(b); small_lift=true)
   @test_broken setprecision!(mC, 20)
 end

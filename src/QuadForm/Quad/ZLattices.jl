@@ -1892,7 +1892,7 @@ function _irreducible_components_short_vectors(L, ub)
       end
     end
 
-    if (B*G*s[1])[1] == 0
+    if iszero(B*G*s[1])
       continue
     end
     v = matrix(ZZ, 1, rank(L), s[1])

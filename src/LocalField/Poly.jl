@@ -168,7 +168,7 @@ function fun_factor(g::Generic.Poly{PadicFieldElem})
   pv = prime(K)^v
   R = residue_ring(FlintZZ, pv, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
-  fR = Rt([R(Hecke.lift(coeff(g, i))) for i = 0:degree(g)])
+  fR = Rt([R(Hecke.lift(ZZ, coeff(g, i))) for i = 0:degree(g)])
   u, g1 = Hecke.fun_factor(fR)
   liftu = Kt(elem_type(K)[lift(coeff(u, i), K) for i in 0:degree(u)])
   liftg1 = Kt(elem_type(K)[lift(coeff(g1, i), K) for i in 0:degree(g1)])
@@ -321,8 +321,8 @@ function invmod(u::Generic.Poly{PadicFieldElem}, f::Generic.Poly{PadicFieldElem}
     pv = prime(K)^v
     R = residue_ring(FlintZZ, pv, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
-    fR = Rt(elem_type(R)[R(Hecke.lift(coeff(f, i))) for i = 0:degree(f)])
-    uR = Rt(elem_type(R)[R(Hecke.lift(coeff(u, i))) for i = 0:degree(u)])
+    fR = Rt(elem_type(R)[R(Hecke.lift(ZZ, coeff(f, i))) for i = 0:degree(f)])
+    uR = Rt(elem_type(R)[R(Hecke.lift(ZZ, coeff(u, i))) for i = 0:degree(u)])
     iuR = invmod(uR, fR)
     s = map_coefficients(x -> lift(x, K), iuR, parent = Kt)
     if maximum(valuation, coefficients(s)) + vu < v
@@ -525,11 +525,11 @@ function rres(f::Generic.Poly{PadicFieldElem}, g::Generic.Poly{PadicFieldElem})
   R = residue_ring(FlintZZ, p^v, cached = false)[1]
   cf = Vector{elem_type(R)}(undef, degree(f)+1)
   for i = 1:length(cf)
-    cf[i] = R(Hecke.lift(coeff(f, i-1)))
+    cf[i] = R(Hecke.lift(ZZ, coeff(f, i-1)))
   end
   cg = Vector{elem_type(R)}(undef, degree(g)+1)
   for i = 1:length(cg)
-    cg[i] = R(Hecke.lift(coeff(g, i-1)))
+    cg[i] = R(Hecke.lift(ZZ, coeff(g, i-1)))
   end
   Rt = polynomial_ring(R, "t", cached = false)[1]
   r = Hecke.rres_sircana_pp(Rt(cf), Rt(cg))
