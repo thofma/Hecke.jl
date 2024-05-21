@@ -915,7 +915,7 @@ function load_genus(f::String)
     _, V = _parse(Vector{QQFieldElem}, IOBuffer(rl[2]))
     L = _lattice_from_half_gram_and_rank(V, n)
     if length(rl) == 3
-      L.automorphism_group_order = Hecke._parse(ZZRingElem, IOBuffer(rl[3]))[1]
+      L.automorphism_group_order = Hecke._parse(ZZRingElem, IOBuffer(rl[3]))[2]
     end
     push!(gg, L)
   end

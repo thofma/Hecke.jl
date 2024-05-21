@@ -1548,7 +1548,7 @@ automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = tru
 
 function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = -1, bacher_depth::Int = 0)
 
-  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
+  assert_has_automorphisms(L; depth, bacher_depth)
 
   gens = L.automorphism_group_generators
 
@@ -1599,7 +1599,12 @@ heuristically depending on the rank of `L`. By default, `bacher_depth` is set to
 automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
 
 function automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
-  assert_has_automorphisms(L; redo, depth = depth, bacher_depth = bacher_depth)
+  # In case one sets up the automorphism group order, from external knowledge
+  if isdefined(L, :automorphism_group_order)
+    return L.automorphism_group_order
+  end
+
+  assert_has_automorphisms(L; redo, depth, bacher_depth)
   return L.automorphism_group_order
 end
 
