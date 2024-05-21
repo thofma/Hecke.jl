@@ -15,28 +15,26 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision
   o = Q(r)
   s = qf(r)
   o = inv(setprecision(qfs, 1)(o))
-  @assert r.N == 1
+  @assert precision(r) == 1
   for p = reverse(chain)
     setprecision!(r, p)
     setprecision!(o, p)
-    setprecision!(Q, r.N)
-    if r.N > precision(Q)
-      setprecision!(qf, r.N)
-      setprecision!(qfs, r.N)
+    r = with_precision(Q, p) do
+      r - qf(r)*o
     end
-    r = r - qf(r)*o
-    if r.N >= n
-      setprecision!(Q, n)
+    if precision(r) >= n
       return r
     end
-    o = o*(2-qfs(r)*o)
+    o = with_precision(Q, p) do
+      o*(2-qfs(r)*o)
+    end
   end
   return r
 end
 
-function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = precision(parent(r)), starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, prec::Int = precision(parent(r)), starting_prec::Int = 2)
   Q = parent(r)
-  n = precision
+  n = prec
   i = n
   chain = [n]
   while i > starting_prec
@@ -53,15 +51,17 @@ function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = prec
   for p = reverse(chain)
     r = setprecision!(r, p)
     o = setprecision!(o, p)
-    setprecision!(Q, p)
     setprecision!(qf, p)
     setprecision!(qfs, p)
-    r = r - qf(r)*o
-    if Nemo.precision(r) >= n
-      setprecision!(Q, n)
+    r = with_precision(Q, p) do
+      return r - qf(r)*o
+    end
+    if precision(r) >= n
       return r
     end
-    o = o*(2-qfs(r)*o)
+    o = with_precision(Q, p) do
+      return o*(2-qfs(r)*o)
+    end
   end
   return r
 end
@@ -93,10 +93,11 @@ function roots(C::qAdicRootCtx, n::Int = 10)
   lf = factor_mod_pk(Array, C.H, n)
   rt = QadicFieldElem[]
   for Q = C.Q
-    setprecision!(Q, n)
     for x = lf
       if is_splitting(C) || degree(x[1]) == degree(Q)
-        append!(rt, roots(Q, x[1], max_roots = 1))
+        with_precision(Q, n) do
+          append!(rt, roots(Q, x[1], max_roots = 1))
+        end
       end
     end
   end
@@ -222,12 +223,14 @@ end
 function _conjugates(a::AbsSimpleNumFieldElem, C::qAdicConj, n::Int, op::Function)
   R = roots(C.C, n)
   @assert parent(a) == C.K
-  Zx = polynomial_ring(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(ZZ, cached = false)[1]
   d = denominator(a)
   f = Zx(d*a)
   res = QadicFieldElem[]
   for x = R
-    a = op(inv(parent(x)(d))*f(x))::QadicFieldElem
+    a = with_precision(parent(x), n) do
+      op(inv(parent(x)(d))*f(x))::QadicFieldElem
+    end
     push!(res, a)
   end
   return res
@@ -272,11 +275,13 @@ function conjugates_log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, C:
   for (k, v) = a.fac
     try
       y = conjugates_log(k, C, n, flat = false, all = false)
+      # vy = v .* y but we need to be careful with the precision of v
+      vy = QadicFieldElem[parent(yy)(v, precision = n) * yy for yy in y]
       if first
-        res = v .* y
+        res = vy
         first = false
       else
-        res += v .* y
+        res += vy
       end
     catch e
       if isa(e, DivideError) || isa(e, DomainError)
@@ -286,11 +291,13 @@ function conjugates_log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, C:
         pe = prod(lp[i][1].gen_two^val[i] for i = 1:length(lp) if val[i] != 0)
         aa = k//pe
         y = conjugates_log(aa, C, n, all = false, flat = false)
+        # vy = v .* y but we need to be careful with the precision of v
+        vy = QadicFieldElem[parent(yy)(v, precision = n) * yy for yy in y]
         if first
-          res = v .* y
+          res = vy
           first = false
         else
-          res += v .* y
+          res += vy
         end
       else
         rethrow(e)
@@ -308,18 +315,22 @@ end
 
 function special_gram(m::Vector{Vector{QadicFieldElem}})
   g = Vector{PadicFieldElem}[]
+  if isempty(m)
+    return g
+  end
+  K = base_field(parent(m[1][1]))
   for i = m
     r = PadicFieldElem[]
     for j = m
       k = 1
-      S = 0
+      S = K()
       while k <= length(i)
         s = i[k] * j[k]
         for l = 1:degree(parent(s))-1
           s += i[k+l] * j[k+l]
         end
         S += coeff(s, 0)
-        @assert s == coeff(s, 0)
+        @assert length(s) == 1
         k += degree(parent(s))
       end
       push!(r, S)
@@ -347,7 +358,11 @@ In either case, Leopold's conjecture states that the regulator is zero iff the u
 """
 function regulator(u::Vector{T}, C::qAdicConj, n::Int = 10; flat::Bool = true) where {T<: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}
   c = map(x -> conjugates_log(x, C, n, all = !flat, flat = flat), u)
-  return det(transpose(matrix(special_gram(c))))
+  K = base_field(parent(c[1][1]))
+  sg = with_precision(K, n) do
+    special_gram(c)
+  end
+  return det(transpose(matrix(sg)))
 end
 
 function regulator(K::AbsSimpleNumField, C::qAdicConj, n::Int = 10; flat::Bool = false)
@@ -529,6 +544,8 @@ function completion(K::AbsSimpleNumField, p::ZZRingElem, i::Int, n = 64)
   @assert 0<i<= degree(K)
 
   ca = conjugates(gen(K), C, n, all = true, flat = false)[i]
+  setprecision!(parent(ca), n)
+  setprecision!(base_field(parent(ca)), n)
   return completion(K, ca)
 end
 
@@ -537,7 +554,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
   C = qAdicConj(K, Int(p))
   r = roots(C.C, precision(ca))
   i = findfirst(x->parent(r[x]) == parent(ca) && r[x] == ca, 1:length(r))
-  Zx = polynomial_ring(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(ZZ, cached = false)[1]
   function inj(a::AbsSimpleNumFieldElem)
     d = denominator(a)
     pr = precision(parent(ca))
@@ -564,7 +581,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
   for i=1:d
     _num_setcoeff!(a, i-1, lift(ZZ, s[i, 1]))
   end
-  f = defining_polynomial(parent(ca), FlintZZ)
+  f = defining_polynomial(parent(ca), ZZ)
   fso = inv(derivative(f)(gen(R)))
   o = matrix(GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
   s = solve(m, o; side = :right)

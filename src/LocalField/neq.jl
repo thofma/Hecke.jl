@@ -109,7 +109,7 @@ function h2_is_iso(K::Hecke.LocalField)
   k, mk = residue_field(K)
   pi = uniformizer(K)
   pi = setprecision(pi, 2*e)
-  eps = setprecision(K, precision(K)+e) do
+  eps = with_precision(K, precision(K)+e) do
     -inv(divexact(pi^e, p))
   end
   #assert valuation(eps) == 0
@@ -147,7 +147,7 @@ function _unit_group_gens_case2(K::Union{QadicField, Hecke.LocalField})
   #we need p/pi^e, the unit, with enough precision,
   #precision(eps) = k -> p, pi needs 2k
   pi = setprecision(pi, precision(K)+2*e)
-  eps = setprecision(K, precision(K)+e) do
+  eps = with_precision(K, precision(K)+e) do
     -inv(divexact(pi^e, p))
   end
   #  @assert precision(eps) >= precision(K) # does not (quite) work
@@ -232,92 +232,90 @@ function solve_1_units(a::Vector{T}, b::T) where T
   #Z_p (and Z) operates on the 1-units...
   k = precision(b)
   K = parent(b)
-  old = precision(K)
-  setprecision!(K, k)
-  one = K(1)
-  if iszero(b-one)
-    setprecision!(K, old)
-    return ZZRingElem[0 for i=a], ZZRingElem(1)
-  end
-  @assert valuation(b-one) > 0
-  @assert all(x->parent(x) == K , a)
-  #plan:
-  # (1+p^k/1+p^l, *) = (p^k/p^l, +) for k<=l<=2k
-  #so we start with k=1, l=2 to find the exponents mod p
-  #remove this from b
-  #try to find the next part (mod p^2), ...
-  #
-  e = absolute_ramification_index(K)
-  f = absolute_inertia_degree(K)
-  pi = uniformizer(K)
-  p = prime(K)
-  l = 1
-  cur_a = copy(a)
-  cur_b = b
-#  @assert degree(K) == e
-  Qp = absolute_base_field(K)
-  Zp = ring_of_integers(Qp)
-  expo_mult = identity_matrix(ZZ, length(cur_a))
-  #transformation of cur_a to a
-  expo = zero_matrix(ZZ, 1, length(cur_a))
-  pk = ZZRingElem(p)
+  return with_precision(K, k) do
+    one = K(1)
+    if iszero(b-one)
+      return ZZRingElem[0 for i=a], ZZRingElem(1)
+    end
+    @assert valuation(b-one) > 0
+    @assert all(x->parent(x) == K , a)
+    #plan:
+    # (1+p^k/1+p^l, *) = (p^k/p^l, +) for k<=l<=2k
+    #so we start with k=1, l=2 to find the exponents mod p
+    #remove this from b
+    #try to find the next part (mod p^2), ...
+    #
+    e = absolute_ramification_index(K)
+    f = absolute_inertia_degree(K)
+    pi = uniformizer(K)
+    p = prime(K)
+    l = 1
+    cur_a = copy(a)
+    cur_b = b
+#    @assert degree(K) == e
+    Qp = absolute_base_field(K)
+    Zp = ring_of_integers(Qp)
+    expo_mult = identity_matrix(ZZ, length(cur_a))
+    #transformation of cur_a to a
+    expo = zero_matrix(ZZ, 1, length(cur_a))
+    pk = ZZRingElem(p)
 
-  val_offset = e .* map(valuation, absolute_basis(K))
-  pow_b = ZZRingElem(1)
+    val_offset = e .* map(valuation, absolute_basis(K))
+    pow_b = ZZRingElem(1)
 
-  while l <= k
-#    @show 1, l, pow_b, k, expo
-    last_val = e*valuation(cur_b-one)
-#    @show expo_mult
-    @assert e*valuation(cur_b-one) >= l
-    @assert all(x->isone(x) || e*valuation(x-one) >= l, cur_a)
+    while l <= k
+#      @show 1, l, pow_b, k, expo
+      last_val = e*valuation(cur_b-one)
+#      @show expo_mult
+      @assert e*valuation(cur_b-one) >= l
+      @assert all(x->isone(x) || e*valuation(x-one) >= l, cur_a)
 
-    A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
-    h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
-    lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
-    fl, s = has_preimage_with_preimage(h, lhs)
-    _k, _mk = kernel(h)
-    #if kernel has HNF, the next step is cheaper...
-    _mk.map = hnf(_mk.map)
-    #to find a nice preimage
-    reduce_mod_hnf_ur!(s.coeff, _mk.map)
-#    @show s
-    # to verify that this is a "legal" operation... the hom constructor
-    # will verify that this is legal
-    # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
+      A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
+      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
+      lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
+      fl, s = has_preimage_with_preimage(h, lhs)
+      _k, _mk = kernel(h)
+      #if kernel has HNF, the next step is cheaper...
+      _mk.map = hnf(_mk.map)
+      #to find a nice preimage
+      reduce_mod_hnf_ur!(s.coeff, _mk.map)
+#      @show s
+      # to verify that this is a "legal" operation... the hom constructor
+      # will verify that this is legal
+      # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
 
-    if !fl
-      pow_b *= p
-      cur_b = cur_b^p
-      expo = expo * p
-      if iszero(cur_b-one)
+      if !fl
+        pow_b *= p
+        cur_b = cur_b^p
+        expo = expo * p
+        if iszero(cur_b-one)
+          break
+        end
+        last_val = e*valuation(cur_b-one)
+        continue
+      end
+
+      expo += s.coeff * expo_mult
+      expo_mult = reduce(vcat, [_mk(x).coeff for x = gens(_k)])*expo_mult
+      cur_a = [prod(cur_a[i]^_mk(x)[i] for i=1:length(cur_a)) for x = gens(_k)]
+#      @show [e*valuation(x-1) for x = cur_a]
+
+      cur_b = divexact(b^pow_b, prod(a[i]^expo[i] for i=1:length(a)))
+      if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
         break
       end
+#      @show e*valuation(cur_b-one), 2l-1, last_val, k
+      @assert e*valuation(cur_b-one) >= min(2*l-1, last_val)
       last_val = e*valuation(cur_b-one)
-      continue
-    end
 
-    expo += s.coeff * expo_mult
-    expo_mult = reduce(vcat, [_mk(x).coeff for x = gens(_k)])*expo_mult
-    cur_a = [prod(cur_a[i]^_mk(x)[i] for i=1:length(cur_a)) for x = gens(_k)]
-#    @show [e*valuation(x-1) for x = cur_a]
-
-    cur_b = divexact(b^pow_b, prod(a[i]^expo[i] for i=1:length(a)))
-    if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
-      break
+      if l == k
+        break
+      end
+      l *= 2
+      l = min(l, k)
     end
-#    @show e*valuation(cur_b-one), 2l-1, last_val, k
-    @assert e*valuation(cur_b-one) >= min(2*l-1, last_val)
-    last_val = e*valuation(cur_b-one)
-
-    if l == k
-      break
-    end
-    l *= 2
-    l = min(l, k)
-  end
-  setprecision!(K, old)
-  return [expo[1, i] for i=1:length(cur_a)], pow_b
+    return [expo[1, i] for i=1:length(cur_a)], pow_b
+  end # with_precision
 end
 
 function is_norm(K::Hecke.LocalField, b::Union{QadicFieldElem,PadicFieldElem,Hecke.LocalFieldElem})
@@ -368,7 +366,7 @@ function _norm_equation(K:: Hecke.LocalField, b::Union{QadicFieldElem,PadicField
   # - if v(b-1) > 1/(p-1), then exp/log work and we can reduce
   #   to trace equation..
   bb = setprecision(b, ceil(Int, e//(p-1)))
-  g = setprecision(K, precision(bb)*ramification_index(K)) do
+  g = with_precision(K, precision(bb)*ramification_index(K)) do
     one_unit_group_gens(K)
   end
   ng = map(norm, g)
@@ -617,7 +615,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicF
   end
 
   v_deg = valuation(absolute_degree(E), prime(E))
-  setprecision(E, precision(E) + v_deg) do
+  with_precision(E, precision(E) + v_deg) do
     c = setprecision(c, precision(E))
     cnt = 0
     while true
@@ -649,7 +647,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicF
         return frobenius_equation2(c, F, frobenius = fr)
       end
     end
-  end #setprecision
+  end # with_precision
 end
 
 #solve the same as above, but pi-adic digit by pi-adic digit, thus

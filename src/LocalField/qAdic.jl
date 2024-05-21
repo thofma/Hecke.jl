@@ -81,7 +81,6 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
   end
 end
 
-
 uniformizer(Q::QadicField) = Q(prime(Q))
 
 uniformizer(Q::PadicField) = Q(prime(Q))
@@ -89,10 +88,10 @@ uniformizer(Q::PadicField) = Q(prime(Q))
 function defining_polynomial(Q::QadicField, P::Ring = base_field(Q))
   Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
-  for i=0:Q.len-1
+  for i in 0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
     a = ZZRingElem()
-    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a+i*sizeof(Ptr))
+    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a + i*sizeof(Ptr))
     setcoeff!(f, j, P(a))
   end
   return f

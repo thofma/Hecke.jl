@@ -926,7 +926,7 @@ function lift(C::HenselCtxdr, mx::Int)
   N = minimum([precision(x) for x in C.lf])
   N = min(N, minimum([precision(x) for x in C.la]))
   #have: N need mx
-  one = setprecision(parent(p), mx) do
+  one = with_precision(parent(p), mx) do
     Base.one(parent(p))
   end
   ch = Int[mx]
