@@ -79,7 +79,7 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
       return x*prime(R, v)
     end
   else
-    return lift(FlintQQ, a)
+    return lift(QQ, a)
   end
 end
 

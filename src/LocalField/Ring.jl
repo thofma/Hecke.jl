@@ -207,7 +207,7 @@ coefficient_ring(K::LocalField) = base_field(K)
 
 function absolute_coordinates(a::QadicRingElem)
   v = absolute_coordinates(a.x)
-  Zp = ring_of_integers(prime_field(parent(a.x)))
+  Zp = ring_of_integers(absolute_base_field(parent(a.x)))
   return Zp.(v)
 end
 

@@ -336,7 +336,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
     gq = _increase_precision(gq, pol_gq, div(f.precision+e-1, e), ex, P)
     f.inv_img = (gq, f.inv_img[2])
 
-    Zp = maximal_order(prime_field(Kp))
+    Zp = maximal_order(absolute_base_field(Kp))
     Qq = base_field(Kp)
 
     setprecision!(Qq, ex)
