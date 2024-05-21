@@ -59,8 +59,9 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
   @vprintln :PolyFactor 1 "using lifting chain $ch"
   for k=length(ch)-1:-1:1
     N2 = ch[k]
-    setprecision!(Q, N2+1)
-    p = Q(prime(Q))^ch[k+1]
+    p = with_precision(Q, N2 + 1) do
+      Q(prime(Q))^ch[k+1]
+    end
     i = length(C.lf)
     j = i-1
     p = setprecision(p, N2)
@@ -84,7 +85,9 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
       fgh = (f-g*h)*inv(p)
       G = rem(fgh*b, g)*p+g
       H = rem(fgh*a, h)*p+h
-      t = (1-a*G-b*H)*inv(p)
+      t = with_precision(Q, N2 + 1) do
+        (1-a*G-b*H)*inv(p)
+      end
       B = rem(t*b, g)*p+b
       A = rem(t*a, h)*p+a
       if i < length(C.lf)
@@ -98,7 +101,10 @@ function lift(C::HenselCtxQadic, mx::Int = minimum(precision, coefficients(C.f))
       j -= 2
     end
   end
-  C.p = Q(prime(Q))^ch[1]
+  C.p = with_precision(Q, ch[1] + 1) do
+    Q(prime(Q))^ch[1]
+  end
+  return C.p
 end
 
 function factor(C::HenselCtxQadic)
@@ -357,32 +363,34 @@ function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderI
   N = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(b)))
   @vprintln :PolyFactor 1 "using a precision of $N"
 
-  setprecision!(C, N)
+  S, M, pM = with_precision(C, N) do
+    vH = vanHoeijCtx()
+    if degree(P) == 1
+      vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f, cached = false))
+    else
+      vH.H = HenselCtxQadic(map_coefficients(mC, f, cached = false))
+    end
+    vH.C = C
+    vH.P = P
 
-  vH = vanHoeijCtx()
-  if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f, cached = false))
-  else
-    vH.H = HenselCtxQadic(map_coefficients(mC, f, cached = false))
-  end
-  vH.C = C
-  vH.P = P
+    @vtime :PolyFactor 1 grow_prec!(vH, N)
 
-  @vtime :PolyFactor 1 grow_prec!(vH, N)
+    H = vH.H
 
-  H = vH.H
+    M = vH.Ml
+    pM = vH.pMr
 
-  M = vH.Ml
-  pM = vH.pMr
+    lf = factor(H)
 
-  lf = factor(H)
+    if degree(P) == 1
+      S = Set(map(x -> map_coefficients(y -> lift(ZZ, y), x, parent = parent(f)), lf))
+    else
+      S = Set(map(x -> map_coefficients(y -> preimage(mC, y), x, parent = parent(f)), lf))
+    end
+    return S, M, pM
+  end # with_precision C
+
   zk = order(P)
-
-  if degree(P) == 1
-    S = Set(map(x -> map_coefficients(y -> lift(ZZ, y), x, parent = parent(f)), lf))
-  else
-    S = Set(map(x -> map_coefficients(y -> preimage(mC, y), x, parent = parent(f)), lf))
-  end
   #TODO: test reco result for being small, do early abort
   #TODO: test selected coefficients first without computing the product
   #TODO: once a factor is found (need to enumerate by size!!!), remove stuff...
@@ -561,14 +569,14 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   N = degree(f)
   @vprintln :PolyFactor 1  "Having $r local factors for degree $N"
 
-  setprecision!(C, 5)
-
   vH = vanHoeijCtx()
-  if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f, cached = false))
-  else
-    vH.H = HenselCtxQadic(map_coefficients(mC, f, cached = false))
-  end
+  with_precision(C, 5) do
+    if degree(P) == 1
+      vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f, cached = false))
+    else
+      vH.H = HenselCtxQadic(map_coefficients(mC, f, cached = false))
+    end
+  end # with_precision C
   vH.C = C
   vH.P = P
 
@@ -619,16 +627,16 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
     else
       i= sort(b)[div(length(b)+1, 2)]
     end
-    i = max(i, kk) #this seems to suggest, that prec is large enough to find factors! So the fail-2 works
-    @vprintln :PolyFactor 1 "setting prec to $i, and lifting the info ..."
-    setprecision!(codomain(mC), i)
-    if degree(P) == 1
-      vH.H.f = map_coefficients(x->coeff(mC(x), 0), f, cached = false)
-    else
-      vH.H.f = map_coefficients(mC, f, cached = false)
-    end
-    @vtime :PolyFactor 1 grow_prec!(vH, i)
-
+    working_prec = max(i, kk) #this seems to suggest, that prec is large enough to find factors! So the fail-2 works
+    @vprintln :PolyFactor 1 "setting prec to $working_prec, and lifting the info ..."
+    with_precision(codomain(mC), working_prec) do
+      if degree(P) == 1
+        vH.H.f = map_coefficients(x->coeff(mC(x), 0), f, cached = false)
+      else
+        vH.H.f = map_coefficients(mC, f, cached = false)
+      end
+      @vtime :PolyFactor 1 grow_prec!(vH, i)
+    end # with_precision codomain(mC)
 
     av_bits = sum(nbits, vH.Ml)/degree(K)^2 #Ml: lll basis of P^i?
     @vprintln :PolyFactor 1 "obtaining CLDs..."
@@ -643,12 +651,15 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
     b = b[vcat(1:up_to, length(b)-(N-from-1):length(b))]
     have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
 
-    if degree(P) == 1
-      mD = MapFromFunc(K, base_ring(vH.H.f), x->coeff(mC(x),0), y->K(lift(ZZ, y)))
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f))
-    else
-      @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f))
-    end
+    C = with_precision(codomain(mC), working_prec) do
+      if degree(P) == 1
+        mD = MapFromFunc(K, base_ring(vH.H.f), x->coeff(mC(x),0), y->K(lift(ZZ, y)))
+        @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f))
+      else
+        @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f))
+      end
+      return C
+    end # with_precision codomain(mC)
 
     # In the end, p-adic precision needs to be large enough to
     # cover some CLDs. If you want the factors, it also has to
@@ -717,7 +728,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
 
       i = findfirst(x->x == n, have) #new data will be in block i of C
       @vprintln :PolyFactor 2 "trying to use coeff $n which is $i"
-      if b[i] > precision(codomain(mC))
+      if b[i] > working_prec
         @vprintln :PolyFactor 2 "not enough precision for CLD $i, $b, $(precision(codomain(mC))), skipping"
 
 #        error()
@@ -781,12 +792,15 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
         for v = values(d)
           #trivial test:
           if isone(den) && is_monic(f) #don't know what to do for non-monics
-            a = prod(map(constant_coefficient, factor(vH.H)[v]))
-            if degree(P) == 1
-              A = K(reco(order(P)(lift(ZZ, a)), vH.Ml, vH.pMr))
-            else
-              A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
-            end
+            A = with_precision(codomain(mC), working_prec) do
+              a = prod(map(constant_coefficient, factor(vH.H)[v]))
+              if degree(P) == 1
+                A = K(reco(order(P)(lift(ZZ, a)), vH.Ml, vH.pMr))
+              else
+                A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
+              end
+              return A
+            end # with_precision codomain(mC)
             if denominator(divexact(constant_coefficient(f), A), order(P)) != 1
               @vprintln :PolyFactor 2 "Fail: const coeffs do not divide"
               push!(fail, v)
@@ -796,12 +810,15 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
               continue
             end
           end
-          @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
-          if degree(P) == 1
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(ZZ, coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
-          else
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*leading_coefficient(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
-          end
+          G = with_precision(codomain(mC), working_prec) do
+            @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
+            if degree(P) == 1
+              @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(ZZ, coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
+            else
+              @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*leading_coefficient(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
+            end
+            return G
+          end # with_precision codomain(mC)
           G *= 1//(den*leading_coefficient(f))
 
           if !iszero(rem(f, G))
