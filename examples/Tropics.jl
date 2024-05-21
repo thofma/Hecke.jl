@@ -84,7 +84,7 @@ lp[1].gen_two*lp[2].gen_two^2
 ma = representation_matrix(a)
 mb = representation_matrix(k(ans))
 @assert iszero(ma*mb - mb*ma)
-Qp = PadicField(7, 10)
+Qp = padic_field(7, precision = 10)
 Main.TropicalModule.simultaneous_diagonalization([map_entries(Qp, ma), map_entries(Qp, mb)])
 
 =#

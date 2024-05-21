@@ -183,7 +183,7 @@ function primitive_root_r_div_qm1(R, r::Int)
 end
 
 function get_f(r::Int, p::ZZRingElem, s::Int)
-  R = PadicField(r, s)
+  R = padic_field(r, precision = s)
   return lift(teichmuller(R(p)))
 end
 # plan

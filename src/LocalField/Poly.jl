@@ -49,7 +49,7 @@ function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{PadicFiel
 end
 
 #TODO: find better crossover points
-#  qp = PadicField(3, 10);
+#  qp = padic_field(3, precision = 10);
 #  qpt, t = qp["t"]
 #  E = eisenstein_extension(cyclotomic(3, gen(Hecke.Globals.Zx))(t+1))[1]
 #  Es, s = E["s"]
@@ -748,7 +748,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
       error("Not yet implemented")
     end
     d1 = clog(ZZRingElem(degree(f)+1), p)
-    L = QadicField(p, d1, min(precision(f), precision(g)))
+    L = qadic_field(p, d1, precision = min(precision(f), precision(g)))
     Lt = polynomial_ring(L, "t")[1]
     fL = change_base_ring(f, L, Lt)
     gL = change_base_ring(g, L, Lt)

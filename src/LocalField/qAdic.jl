@@ -101,5 +101,5 @@ end
 
 # TODO: this should be in Nemo
 @attr PadicField function base_field(K::QadicField)
-  return PadicField(prime(K), precision(K), cached = false)
+  return padic_field(prime(K), precision = precision(K), cached = false)
 end
