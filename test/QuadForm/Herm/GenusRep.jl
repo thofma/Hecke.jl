@@ -149,4 +149,24 @@
   H = lattice(hermitian_space(E, 1))
   @test length(genus_representatives(H)) == 1
 
+  let
+    # 1512
+    Qx, x = polynomial_ring(FlintQQ, "x")
+    f = x^3 - 6*x^2 - 4*x + 23
+    K, a = number_field(f, "a", cached = false)
+    Kt, t = polynomial_ring(K, "t")
+    g = t^2 - a*t + 1
+    E, b = number_field(g, "b", cached = false);
+    S = unique([restrict(r, K) for r in filter(!is_real, infinite_places(E)) if is_real(restrict(r, K))]);
+    sort!(S, lt=(p,q) -> isless(real(embedding(p).r), real(embedding(q).r)));
+    vals = Int[1, 1];
+    sig = Dict(S[i] => vals[i] for i in 1:2);
+    OK = maximal_order(K);
+    ps = AbsSimpleNumFieldOrderIdeal[ideal(OK, v) for v in Vector{AbsSimpleNumFieldOrderElem}[map(OK, [2, a^2 + a + 1]), map(OK, [2, a + 3]), map(OK, [11, a + 6]), map(OK, [239, a + 174]), map(OK, [1487, a + 881])]];
+    datas = [[(0, 1, 1)], [(0, 1, 1)], [(-1, 1, -1)], [(3, 1, -1)], [(-1, 1, 1)]];
+    lgs = HermLocalGenus{typeof(E), AbsSimpleNumFieldOrderIdeal}[genus(HermLat, E, ps[i], datas[i]) for i in 1:5];
+    G = HermGenus(E, 1, lgs, sig)
+    GG = representative(G)
+    @test GG in G
+  end
 end
