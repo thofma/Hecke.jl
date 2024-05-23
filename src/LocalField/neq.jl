@@ -1271,7 +1271,7 @@ function is_local_norm(mkK::Map{AbsSimpleNumField, AbsSimpleNumField}, a::AbsSim
     end
     F = free_abelian_group(length(imgs))
     h = hom(F, U, imgs)
-    if ! has_preimage(h, preimage(mU, mc(a)))[1]
+    if ! has_preimage_with_preimage(h, preimage(mU, mc(a)))[1]
       return false
     end
   end
@@ -1403,7 +1403,7 @@ function is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem)
     end
     F = free_abelian_group(length(imgs))
     h = hom(F, U, imgs)
-    if ! has_preimage(h, preimage(mU, Qp(a)))[1]
+    if ! has_preimage_with_preimage(h, preimage(mU, Qp(a)))[1]
       return false
     end
   end
