@@ -1057,6 +1057,9 @@ function one_unit_group(K::LocalField)
     #torsion kan only happen in small precision k*e < e/(p-1) I think
     e = absolute_ramification_index(K)
     pr = e*ceil(Int, ZZRingElem(e)//(prime(K)-1))
+    if pr < 2 && prime(K) == 2
+      pr = 2 #to see different signs
+    end
 
     tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
     while length(tor) < h[1,1]
