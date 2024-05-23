@@ -650,11 +650,11 @@ end
 #
 ################################################################################
 
-function _char(F::FqPolyRepField)
+function _char(F::Union{FqPolyRepField, FqField, FpField})
   return characteristic(F)
 end
 
-function _char(F::fqPolyRepField)
+function _char(F::Union{fpField, fqPolyRepField})
   return Int(characteristic(F))
 end
 
