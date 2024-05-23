@@ -86,7 +86,6 @@ function Nemo.basis(K::FinField, k::FinField)
     b = [x*y for x = basis(K) for y = b]
     K = base_field(K)
   end
-  @show K, k
   if K != k
     error("subfield not in tower")
   end
@@ -1058,6 +1057,9 @@ function one_unit_group(K::LocalField)
     #torsion kan only happen in small precision k*e < e/(p-1) I think
     e = absolute_ramification_index(K)
     pr = e*ceil(Int, ZZRingElem(e)//(prime(K)-1))
+    if pr < 2 && prime(K) == 2
+      pr = 2 #to see different signs
+    end
 
     tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
     while length(tor) < h[1,1]
@@ -1169,3 +1171,329 @@ function unit_group(R::QadicRing)
 end
 
 =#
+
+@doc raw"""
+    is_local_norm(mkK::Map, a::AbsSimpleNumFieldElem) -> Bool
+
+Let    
+    ```mkK : k \to K```
+be a map (embedding) of number fields.    
+
+Tests if ``a`` is a local norm for the relative extension implicit in the map.
+That is for a prime ideal ``p`` in ``k`` let ``Q_i`` the primes above.
+``a`` is a local norm if there are ``b_i`` in the completions at ``Q_i`` s.th. the 
+    ```\prod N(b_i) = q```
+where the norm ``N`` is form the completion at ``Q_i`` down to the completion
+at ``p``.  
+"""
+function is_local_norm(mkK::Map{AbsSimpleNumField, AbsSimpleNumField}, a::AbsSimpleNumFieldElem)
+
+  k = domain(mkK)
+  K = codomain(mkK)
+  @assert parent(a) == k
+
+  ZK = maximal_order(K)
+  zk = maximal_order(k)
+
+  #need al (relative) ramified primes, so the relative
+  #disc. but it should hold that
+  #d_K/k = norm (D_K/k)
+  #D_K/q = D_K/k * D_k/q, so
+  #norm(D_K/k) = norm(D_K/q / D_k/q) = norm(D_K/q) / D_k/q^degree(K/k)
+  #
+  # D : different, d : discriminant
+
+  D = divexact(norm(mkK, different(ZK); order = zk), different(zk)^divexact(degree(K), degree(k)))
+
+  #need to test local norm at all primes dividing RHS + primes in D
+  #well, at the prime in K above...
+
+  #for unram. primes, only the valuation counts: the local norm is surjective
+  #on units
+  #inf. places
+  if signature(k)[1] > 0 
+    for i = complex_places(K)
+      ki = restrict(embeddings(i)[1], mkK)
+      if isreal(ki) && real(evaluate(a, ki)) < 0
+        return false
+      end
+    end
+  end
+
+  S = collect(keys(factor(D)))
+  for p = keys(factor(a*zk))
+    p in S && continue
+    push!(S, p)
+  end
+
+  for p = S
+    allQ = collect(keys(factor(Hecke.induce_image(mkK, p; target = ZK))))
+    v = valuation(D, p)
+    if v == 0
+      d = mapreduce(inertia_degree, gcd, allQ; init = 0)
+      d = divexact(d, inertia_degree(p))
+      if valuation(a, p) % d != 0
+        return false
+      end
+      continue
+    end
+    #the norm_cts needs to invert a matrix and this seems to loose
+    #precision proportional to the valuation 
+    #times ram_index: due to the different ways to measure precision
+    c, mc = completion(k, p, (20+v)*ramification_index(p))
+
+    b = mc(a)
+    gens = []
+    imgs = FinGenAbGroupElem[]
+    U, mU = unit_group(c)#, n_quo = divexact(degree(K), degree(k)))
+    for Q = allQ
+      C, mC = completion(K, Q, (20+v)*ramification_index(Q))
+      t = norm_ctx(mc, mC, mkK)
+
+      R, mR = residue_field(C)
+      u, mu = unit_group(R)#, n_quo = divexact(degree(K), degree(k)))
+      g = preimage(mR, mu(u[1]))
+      pr = precision(g)
+      gkk = setprecision(g^order(R), pr)
+      while !iszero(gkk - g)
+        g = gkk
+        gkk = setprecision(g^order(R), pr)
+      end
+      gs = Hecke.one_unit_group_gens(C)
+      push!(gs, g)
+      push!(gs, uniformizer(C))
+      no = FinGenAbGroupElem[]
+      for g = gs
+        n = t(g)
+        push!(no, preimage(mU, n))
+      end
+      append!(imgs, no)
+    end
+    F = free_abelian_group(length(imgs))
+    h = hom(F, U, imgs)
+    if ! has_preimage_with_preimage(h, preimage(mU, mc(a)))[1]
+      return false
+    end
+  end
+  return true
+end
+#= TODO
+ - implement n_quo properly
+ - re-organize: write a function for norm_group and use it
+ - think: in many cases this should be trivial due to degrees
+=#
+
+@doc raw"""
+    function is_local_norm(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem) -> Bool
+
+Tests if `a`, an element in the coefficient field of `K` is a local norm in
+the idel sense, i.e. a product of norms of the completions extending
+a completions of the base field.
+"""
+function is_local_norm(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
+  k = base_field(K)
+  @req parent(a) == k "element must be in the base field of the 1st argument"
+
+  Ka, mkK = absolute_simple_field(K)
+  return is_local_norm(hom(k, Ka, preimage(mkK, K(gen(k)))), a)
+end
+
+#TODO: qadic is also missing
+#TODO: extend the n_quo to actually compute K^*/()^n_quo
+
+@doc raw"""
+    unit_group(K::PadicField; n_quo::Int = -1) -> FinGenAbGroup, Map
+
+Returns a group ``U`` and a map ``f: U \to\K^*``. ``U`` is an approximation
+to the unit group up to the precision of ``K``. More precisely, if
+```K^* = \langle p\rangle  \times \mathbbb F_p^* \times 1+p\mathbbb Z_p```
+Then ``U`` will be isomorphic to ``\mathbbb Z \times \mathbbb Z/(p-1) \times \mathbbb Z/p^(k-1)``.
+
+If `n_quo` is given and positive, then ``\mathbbb F_p^*`` will be replaced
+by the quotient modulo `n_quo`-th powers. (To avoid the costly discrete
+logarithm in the finite field)
+"""
+function Hecke.unit_group(K::PadicField; n_quo::Int = -1)
+  p = prime(K)
+  r, mr = residue_field(K)
+  u, mu = unit_group(r; n_quo)
+  g = teichmuller(preimage(mr, mu(u[1])))
+  A = abelian_group([0, order(u), p^(precision(K)-2)])
+  function fl(y::PadicFieldElem)
+    v = valuation(y)
+    y *= K(p)^-v
+    @assert valuation(y) == 0
+    @assert mr(y) != 0
+    f = preimage(mu, mr(y))
+    if n_quo > -1
+      y *= inv(teichmuller(y))
+    else
+      y *= g^-f[1]
+    end
+    return A(ZZRingElem[v, f[1], lift(ZZ, divexact(y-1, p))])
+  end  
+  return A, MapFromFunc(A, K, x-> p^x[1]*g^x[2]*(1+p*x[3]), fl)
+end
+
+@doc raw"""
+    is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem) -> Bool
+
+Tests if `a` is a local norm in `k`.    
+"""
+function is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem)
+  #need to test local norm at all primes dividing RHS + primes in D
+  #well, at the prime in K above...
+  if signature(k)[1] == 0  && #totally complex 
+     a < 0
+    return false
+  end
+  #for unram. primes, only the valuation counts: the local norm is surjective
+  #on units
+
+  zk = maximal_order(k)
+  S = ramified_primes(zk)
+  for p = keys(factor(a).fac)
+    p in S && continue
+    push!(S, p)
+  end
+
+  prec = 20
+  for p = S
+    P = prime_ideals_over(zk, p)
+    if valuation(discriminant(zk), p) == 0
+      d = mapreduce(inertia_degree, gcd, P; init = 0)
+      if valuation(a, p) % d != 0
+        return false
+      end
+      continue
+    end
+    Qp = PadicField(p, prec)
+    #for each P we need
+    # - a gen (pi) for the valuation
+    # - a gen for the residue field
+    # - the one-unit gens
+    gens = []
+    imgs = FinGenAbGroupElem[]
+    U, mU = unit_group(Qp; n_quo = degree(k))
+    for Q = P
+      c, mc = completion(k, Q, prec)
+      r, mr = residue_field(c)
+      u, mu = unit_group(r)
+      @assert ngens(u) == 1
+      g = preimage(mr, mu(u[1]))
+      pr = precision(g)
+      gkk = setprecision(g^order(r), pr)
+      while !iszero(gkk - g)
+        g = gkk
+        gkk = setprecision(g^order(r), pr)
+      end
+      gs = [uniformizer(c), g]
+      append!(gs, Hecke.one_unit_group_gens(c))
+#      push!(gens, gs)
+      no = FinGenAbGroupElem[]
+      for g = gs
+        n = absolute_norm(g)
+        v = n.v
+        n.v = 0
+        n = Qp(lift(ZZ, n))
+        n.v = v
+        push!(no, preimage(mU, n))
+      end
+      append!(imgs, no)
+    end
+    F = free_abelian_group(length(imgs))
+    h = hom(F, U, imgs)
+    if ! has_preimage_with_preimage(h, preimage(mU, Qp(a)))[1]
+      return false
+    end
+  end
+  return true
+end
+
+function is_local_norm(k::Hecke.AbsSimpleNumField, a::Integer)
+  return is_local_norm(k, ZZ(a))
+end
+
+function is_local_norm(k::Hecke.AbsSimpleNumField, a::QQFieldElem)
+  return is_local_norm(k, numerator(a)*denominator(a)^degree(k))
+end
+
+function is_local_norm(k::Hecke.AbsSimpleNumField, a::Rational)
+  return is_local_norm(k, QQ(a))
+end
+
+@doc raw"""
+Given number fields ``k`` and ``K`` as well as a prime ``p`` in ``k`` and
+``Q`` above ``p`` in ``K`` via maps:
+```mkK: k \to K```
+```mc: k \to k_p```
+```mC: K \to K_Q```
+this function returns a function 
+    ```N: K_Q \to k_p```
+implementing the norm of this extension.
+(In particular the extension ``K_Q/k_p`` is not explicit here)
+"""
+function norm_ctx(mc::Map{AbsSimpleNumField, <:Hecke.LocalField}, mC::Map{AbsSimpleNumField, <: Hecke.LocalField}, mkK::Map{AbsSimpleNumField, AbsSimpleNumField})
+  #we have k -> K two number fields
+  #        k -> c a completion
+  #        K -> C a completion
+  #this produces data to compute a norm from C to c
+  #
+  #c (and C) are completions, hence Eisenstein oder Unramifield
+  #with basis the product basis pi^i and rho^j, pi for the ramified and rho
+  #for the unram.
+  #Thus a basis for C/c is given by the pi and rho from C but the
+  #exponents for rho up to f(C)/f(c) and for pi: e(C)/e(c)
+  #Thus we get a different basis for C via the image the basis of
+  #c, transported to k, then to K then to C and the powers.
+  #writing elements in this basis we can compute norms via rep. mat.
+  #possible in 2 steps: C down to U*c, then U*c -> c
+
+  c = codomain(mc)
+  C = codomain(mC)
+  k = domain(mc)
+  @assert k == domain(mkK)
+  K = domain(mC)
+  @assert K == codomain(mkK)
+  fc = absolute_inertia_degree(c)
+  fC = absolute_inertia_degree(C)
+  ec = absolute_ramification_index(c)
+  eC = absolute_ramification_index(C)
+
+  pi_C = uniformizer(C)
+  rho_C = gen(base_field(C))
+
+  pow_pi = [one(C)]
+  while length(pow_pi) < eC/ec
+    push!(pow_pi, pow_pi[end]*pi_C)
+  end
+
+  pow_rho = [one(base_field(C))]
+  while length(pow_rho) < fC/fc
+    push!(pow_rho, pow_rho[end]*rho_C)
+  end
+  pow_rho = map(C, pow_rho)
+
+  b_k = absolute_basis(c)
+  b_kK = [mC(mkK(preimage(mc, x))) for x = b_k]
+ 
+  #now the product basis of b_kK, pow_rho and pow_pi
+  b_K = [x*y*z for x = pow_pi for y = pow_rho for z = b_kK]
+  T = matrix(hcat([absolute_coordinates(x) for x = b_K]...))
+
+  S = inv(T)
+  
+  function norm(x)
+    e = divexact(eC, ec)
+    f = divexact(fC, fc)
+    n = length(b_k)
+    img = S*matrix(hcat([absolute_coordinates(x*t) for t = pow_pi]...))
+    m = matrix(C, length(pow_pi), length(pow_pi), [sum(img[(i-1)*f*n+j, k]*b_K[j] for j=1:f*n) for i=1:e for k=1:e])
+    d = det(m)
+    img = S*matrix(hcat([absolute_coordinates(d*t) for t = pow_rho]...))
+    m = matrix(c, length(pow_rho), length(pow_rho), [sum(img[j+(i-1)*n, k]*b_k[j] for j=1:n) for i=1:f for k=1:f])
+    return det(m)
+  end
+  return norm
+end
+
