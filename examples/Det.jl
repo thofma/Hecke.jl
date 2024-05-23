@@ -1,12 +1,13 @@
 #=
-    Copyright (C) 2023, Claus Fieker, John Abbott
+    Copyright (C) 2023-24, Claus Fieker, John Abbott
 =#
 
 module Det
 using Hecke
 import AbstractAlgebra, Nemo
 using LinearAlgebra, Profile, Base.Intrinsics
-import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_triu!, AbstractAlgebra._solve_tril!
+import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_tril!
+import Hecke: mod_sym!
 
 #creates an unimodular n x n matrix where the inverse is much larger
 #than the original matrix. Entries are chosen in U
@@ -25,14 +26,55 @@ function rand_mat(n::Int, U::AbstractArray=1:10)
   return C
 end
 
-#applies n unimodular transformations (add scaled row/col)
-function perturb!(A, n::Int = 100, c::AbstractRange = -10:10)
+function rand_hnf(n::Int, U::AbstractArray=1:10)
+  C = zero_matrix(ZZ, n, n)
   for i=1:n
+    d = rand(U)
+    C[i,i] = d
+    for j=1:i-1
+      if iszero(d)
+        C[j,i] = rand(U)
+      else
+        C[j,i] = rand(0:d-1)
+      end
+    end
+  end
+  return C
+end
+
+function graeffe(f::PolyRingElem)
+#  f = f*f(-gen(parent(f)))
+#  return parent(f)([coeff(f, 2*i) for i=0:div(degree(f), 2)])
+   f_e = parent(f)([coeff(f, 2*i) for i=0:div(degree(f), 2)])
+   f_o = parent(f)([coeff(f, 2*i+1) for i=0:div(degree(f), 2)])
+   return (-1)^degree(f)*(f_e^2-shift_left(f_o^2, 1))
+end
+
+
+#applies n unimodular transformations (add scaled row/col)
+function perturb!(A, n::Int = 100, c::AbstractRange = -10:10; side::Symbol = :both)
+  local rnd::Function
+  if side == :left
+    rnd = function()
+      true
+    end
+  elseif side == :right
+    rnd = function()
+      false
+    end
+  elseif side == :both
+    rnd = function()
+      rand(0:1) == 1
+    end
+  else
+    error("side has to be :right, :left or :both")
+  end
+  for i=1:n 
     x = rand(c)
     while iszero(x)
       x = rand(c)
     end
-    if rand(0:1) == 1
+    if rnd() 
       k = rand(1:nrows(A))
       l = rand(1:nrows(A))
       while l == k
@@ -235,12 +277,90 @@ function mod!(A::AbstractArray{Float64}, pf::Float64, pfi::Float64)
     a = Base.Intrinsics.pointerref(Ap, 1, 1)
 #    a = unsafe_load(Ap)
     a -= pf*Base.rint_llvm(a*pfi)
+#    a -= pf*Base.trunc(a*pfi)
+#    if a < 0
+#      a += pf
+#    end
+
 #     a = Base.modf(a, pf)
     Base.Intrinsics.pointerset(Ap, a, 1, 1)
 #    unsafe_store!(Ap, a)
     Ap += sizeof(Float64)
   end
 end
+
+mutable struct CrtCtx_Mat
+  c::Int #how many primes before tree
+
+  d::Vector{ZZRingElem} #the product tree so far
+  M::Vector{ZZMatrix}
+
+  pos::Int
+  cc::Int
+
+  function CrtCtx_Mat(c::Int = 1)
+    return new(c, ZZRingElem[], ZZMatrix[], 0, 0)
+  end
+end
+
+function Base.push!(C::CrtCtx_Mat, a::fpMatrix)
+  if C.pos == 0
+    push!(C.M, lift(a))
+    push!(C.d, ZZ(a.n))
+    C.cc = 1
+    C.pos += 1
+    return
+  end
+  pos = C.pos
+  if C.cc == 0
+    if pos > length(C.M)
+      push!(C.M, lift(a))
+      push!(C.d, ZZ(a.n))
+    else
+      C.M[pos] = lift(a)
+      C.d[pos] = ZZ(a.n)
+    end
+    C.cc = 1
+  else
+    induce_crt!(C.M[C.pos], C.d[C.pos], a, 1; signed = true)
+    C.cc += 1
+  end
+  if C.cc >= C.c #full...
+    while pos > 1 && C.d[pos-1] < C.d[pos] #assuming primes are in order
+      g, e, f = gcdx(C.d[pos-1], C.d[pos])
+      @assert isone(g)
+      mul!(C.M[pos-1], f*C.d[pos])
+      mul!(C.M[pos], e*C.d[pos-1])
+      add!(C.M[pos-1], C.M[pos-1], C.M[pos])
+      C.d[pos-1] *= C.d[pos]
+      #@show maximum(nbits, C.M[pos-1])
+      mod_sym!(C.M[pos-1], C.d[pos-1])
+      pos -= 1
+    end
+    C.pos = pos + 1
+    C.cc = 0
+  end
+end
+
+function finish(C::CrtCtx_Mat)
+  pos = C.pos
+  if C.cc == 0
+    pos -= 1
+  end
+  while pos > 1
+    g, e, f = gcdx(C.d[pos-1], C.d[pos])
+    @assert isone(g)
+    mul!(C.M[pos-1], f*C.d[pos])
+    mul!(C.M[pos], e*C.d[pos-1])
+    add!(C.M[pos-1], C.M[pos-1], C.M[pos])
+    C.d[pos-1] *= C.d[pos]
+#    @show maximum(nbits, C.M[pos-1]), nbits(C.d[pos-1])
+    mod_sym!(C.M[pos-1], C.d[pos-1])
+    pos -= 1
+  end
+  return C.M[1]
+end
+
 
 # Input: B vector of matrices as Double64 meant to be mod q[i]
 # Output: RE vector of matrices ...                       p[i]
@@ -258,16 +378,20 @@ function change_rns!(RE::Vector{Matrix{Float64}}, p::Vector{Int}, q::Vector{Int}
           # or just not use the UniCert_rns ...
           # actually: if entries are large enough this is winning!q
           # possibly: do an induce_crt_env where one can push data in
-    x = matrix(ZZ, map(x->ZZ(Int(x)), B[1]))
-    P = ZZ(q[1])
-    y = _map_entries(GF(3, cached = false), size(B[1], 1), size(B[1], 2))
-    for i=2:length(B)
+#    x = matrix(ZZ, map(x->ZZ(Int(x)), B[1]))
+#    P = ZZ(q[1])
+    C = CrtCtx_Mat(2)
+
+    y = _map_entries(Native.GF(3, cached = false), size(B[1], 1), size(B[1], 2))
+    for i=1:length(B)
       y.view_parent[1] .= map(Base.rint_llvm, reshape(B[i], :))
       change_prime(y, UInt(q[i]))
-      induce_crt!(x::ZZMatrix, P::ZZRingElem, y::fpMatrix, 1; signed = true)
+      push!(C, y)
+#      induce_crt!(x::ZZMatrix, P::ZZRingElem, y::fpMatrix, 1; signed = true)
     end
+    x = finish(C)
     for i=1:length(p)
-      map_entries!(y, GF(p[i], cached = false), x)
+      map_entries!(y, Native.GF(p[i], cached = false), x)
       if length(RE) < i
         push!(RE, reshape(map(Float64, y.view_parent[1]), size(B[1])))
       else
@@ -359,7 +483,7 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   Xp = Int[]
   @time while nbits(m) < e
     p = next_prime(p);
-    ZZmodP = GF(p, cached = false);
+    ZZmodP = Native.GF(p, cached = false);
     MatModP = map_entries(ZZmodP, A)
     B00 = inv_strassen(MatModP)
     push!(Xp, p)
@@ -376,7 +500,7 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   while nbits(Y) < Int(1+ceil(log2(n)+EntrySize))
     p = next_prime(p)
     push!(Yp, p)
-    k = GF(p, cached = false)
+    k = Native.GF(p, cached = false)
     push!(Ap, map(Float64, lift(map_entries(k, A))).entries)
     push!(m_inv, inv(k(m)))
     Nemo.mul!(Y, Y, p)
@@ -451,6 +575,58 @@ function UniCertZ_CRT_rns(A::ZZMatrix)
   return false
 end
 
+#naive, vanilla UniSolve, terrible...
+function UniSolve(A::ZZMatrix, bb::ZZMatrix)
+  n = nrows(A);
+  #assume ncols == n
+  H = hadamard_bound2(A)
+  EntrySize = maximum(abs, A)
+  e = max(16, Int(2+ceil(2*log2(n)+log2(EntrySize))));
+  println("Modulus has  $e bits");
+  
+  B0 = zero_matrix(ZZ,n,n) ## will be computed by crt in loop below
+  m = ZZ(1); p = 2^29;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
+  @time while (nbits(m) < e)
+    p = next_prime(p);
+    ZZmodP = Native.GF(p, cached = false);
+    MatModP = map_entries(ZZmodP, A)
+    B00 = inv_strassen(MatModP)
+    induce_crt!(B0,m, B00,p, signed = true);  #  also updates:  m = m*p;
+  end
+  println("Got modular inverse");
+
+  # Compute max num iters in k
+  k = (n-1)*(log2(EntrySize)+log2(n)/2) - (2*log2(n) + log2(EntrySize));
+  k = max(k, 1)
+  k = k/log2(m);
+
+  k = max(k, 1)
+  k = 2+Int(ceil(log2(k)));
+  println("Max num iters is k=$(k)");
+
+  ZZmodM = residue_ring(ZZ,m);
+  B0_modm = map_entries(ZZmodM, B0);
+  I = identity_matrix(ZZ,n)
+  S0 = bb*B0  #sol mod X
+  R = (I-A*B0)/m
+  X = ZZ(p)
+  XX = X
+  for i in 0:k+1
+    println("UniCertZ: loop: i=$(i)");
+    @time R_bar = R^2;
+    @time M = lift(B0_modm*map_entries(ZZmodM, R_bar));
+    Hecke.mod_sym!(M, m)
+    S0 = S0 + S0*R*XX + bb*M*XX^2
+    XX = XX^2*X
+    fl, r, d = induce_rational_reconstruction(S0, XX)
+    if fl && r*A == d*bb
+      return r, d
+    end
+    Hecke.mod_sym!(S0, XX)
+    @time R = (R_bar - A*M)/m;
+  end #for
+  return S0, XX
+end
 
 # Storjohann's unimodular certification
 # We use CRT to obtain the modular inverse B0
@@ -467,9 +643,9 @@ function UniCertZ_CRT(A::ZZMatrix)
   m = ZZ(1); p = 2^29;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
   @time while (nbits(m) < e)
     p = next_prime(p);
-    ZZmodP = GF(p, cached = false);
+    ZZmodP = Native.GF(p, cached = false);
     MatModP = map_entries(ZZmodP, A)
-    B00 = inv_strassen(MatModP)
+    B00 = inv(MatModP)
     induce_crt!(B0,m, B00,p, signed = true);  #  also updates:  m = m*p;
   end
   println("Got modular inverse");
@@ -498,6 +674,186 @@ function UniCertZ_CRT(A::ZZMatrix)
     end
   end #for
   return false
+end
+
+function mod_sym!(a::Ptr{ZZRingElem}, b::Ptr{ZZRingElem}, c::ZZRingElem, t::ZZRingElem = ZZ(0))
+  ccall((:fmpz_ndiv_qr, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), t, a, b, c)
+end
+
+function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U))
+  i = start
+  R = zero_matrix(ZZ, 1, ncols(U))
+  t = ZZ(0)
+  while true
+    R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
+    U_ptr = Nemo.mat_entry_ptr(U, i, 1)
+    for j=1:ncols(U)
+      ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), R_ptr, R_ptr, U_ptr)
+      mod_sym!(U_ptr, R_ptr, m, t)
+      ccall((:fmpz_sub, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), R_ptr, R_ptr, U_ptr)
+      ccall((:fmpz_divexact, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), R_ptr, R_ptr, m)
+      R_ptr += sizeof(Clong)
+      U_ptr += sizeof(Clong)
+    end
+    i += 1
+    if i > nrows(U)
+      if i > last || is_zero(R)
+        return U
+      end
+      U.r += 1
+      @assert U.r <= last
+      U_ptr = Nemo.mat_entry_ptr(U, i, 1)
+      R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
+      for j=1:ncols(U)
+        ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), U_ptr, R_ptr)
+        ccall((:fmpz_zero, Nemo.libflint), Cvoid, (Ptr{ZZRingElem},), R_ptr)
+        R_ptr += sizeof(Clong)
+        U_ptr += sizeof(Clong)
+      end
+    end
+  end
+end
+
+function add_into!(A::ZZMatrix, C::ZZMatrix, c::Int)
+  A.r = max(A.r, C.r+c)
+  for i=1:nrows(C)
+    A_ptr = Nemo.mat_entry_ptr(A, i+c, 1)
+    C_ptr = Nemo.mat_entry_ptr(C, i, 1)
+    for j=1:ncols(A)
+      ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), A_ptr, A_ptr, C_ptr)
+      A_ptr += sizeof(Clong)
+      C_ptr += sizeof(Clong)
+    end
+  end
+end
+
+# "solves" xA = U using the double + 1 method
+# pr_max is the bit size (num + den) of the solution
+# the functions returns
+# - a matrix X
+# - an integer m
+# the rows of X are the base-m expansion of the solution
+# use e.g. to_base(X, m) to destructively get the solution
+# followed by induce_rational_reconstruction(xx, m^(nrows(X)-1))
+#
+function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
+  n = nrows(A);
+  #assume ncols == n
+  H = hadamard_bound2(A)
+  EntrySize = maximum(abs, A)
+  e = max(16, Int(2+ceil(2*log2(n)+log2(EntrySize))));
+  println("Modulus has  $e bits");
+
+  B0 = zero_matrix(ZZ,n,n) ## will be computed by crt in loop below
+  m = ZZ(1); p = 2^29;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
+  @time while (nbits(m) < e)
+    p = next_prime(p);
+    ZZmodP = Native.GF(p, cached = false);
+    MatModP = map_entries(ZZmodP, A)
+    B00 = inv(MatModP)
+    induce_crt!(B0,m, B00,p, signed = true);  #  also updates:  m = m*p;
+  end
+  println("Got modular inverse");
+
+  # Compute max num iters in k
+  k = (n-1)*(log2(EntrySize)+log2(n)/2) - (2*log2(n) + log2(EntrySize));
+  k = k/log2(m);
+  k = 2+Int(ceil(log2(k)));
+  println("Max num iters is k=$(k)");
+
+  ZZmodM, = residue_ring(ZZ,m);
+  B0_modm = map_entries(ZZmodM, B0);
+
+  @show size(U)
+  @assert nrows(U) == 1
+  @show pr = 2^(k+2)-1
+  V = zero_matrix(ZZ, pr, ncols(U))
+  V[1, :] = U
+  U = V
+  U.r = 1
+  @assert maximum(abs, U) <= m
+
+  I = identity_matrix(ZZ,n)
+  R = (I-A*B0)/m
+  V = zero_matrix(ZZ, pr, ncols(U))
+  V[1, :] = U*B0 #sol mod m
+  V.r = 1
+  renorm(V, m, last = 2)
+  add_into!(V, V*R, 1) #sol mod m^2
+  renorm(V, m, last = 3)
+
+  if is_zero(R)
+    return true;
+  end
+  ex = 1
+  for i in 0:k-1
+    println("UniCertZ: loop: i=$(i)");
+    @time R_bar = R^2;
+    @time M = lift(B0_modm*map_entries(ZZmodM, R_bar));
+    Hecke.mod_sym!(M, m)
+    @time R = (R_bar - A*M)/m;
+
+    @assert nrows(U) == 1
+
+    add_into!(V, U*M, 2*ex)  #sol mod 2ex+1
+    renorm(V, m, start = 2*ex, last = pr)
+    @show 2*ex+1
+
+
+    ex = 2*ex + 1
+
+    if nrows(V) > nrows(R)
+      n = nrows(R)
+      e = div(nrows(V), n)
+      for j=1:e
+        add_into!(V, V[(j-1)*n+1:j*n, :]*R, ex+(j-1)*n)
+        renorm(V, m, start = ex+(j-1)*n-1, last = pr)
+        if nrows(V)*nbits(m) >= pr_max
+          @show "abort at j", j, e, nrows(V), nrows(V)*nbits(m), pr_max
+          return V, m
+        end
+      end
+      add_into!(V, V[e*n+1:end, :]*R, ex+e*n)
+      renorm(V, m, start = ex+e*n-1, last = pr)
+    else
+      add_into!(V, V*R, ex) #sol mod 2(2ex+1)
+      renorm(V, m, start = ex-1, last = pr)
+    end
+
+
+    @show 2*ex
+    if 2*ex*nbits(m) >= pr_max
+      @show "done"
+      return V, m
+    end
+
+    if is_zero(R)
+      return V, m
+    end
+  end #for
+  return V, m
+end
+
+function to_base(a::ZZMatrix, b::ZZRingElem, nr::Int = nrows(a))
+  while nr > 1
+    for i=1:div(nr, 2)
+      add_row!(a, b, 2*i-1, 2*i)
+    end
+    if is_odd(nr)
+      add_row(a, b^2, nr-1, nr)
+    end
+    nr = div(nr, 2)
+  end
+  return a[1:1, :]
+end
+
+function in_base(a::ZZRingElem, b::ZZRingElem)
+  di = ZZRingElem[]
+  while !iszero(a)
+    push!(di, mod_sym(a, b))
+    a = divexact(a-di[end], b)
+  end
+  return di
 end
 
 function _det(a::fpMatrix)
@@ -587,7 +943,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     end
     @show :solving
     @time TS, d = dixon_solve(D, b)
-    @assert D*TS == d*b
+    @assert A*TS == d*b
     for i=1:length(T)
       TS = T[i]*TS
     end
@@ -601,6 +957,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     isone(d) && break
     d1 *= d
     @show  (Had - nbits(d1) - nbits(prod_p))/60
+    @show mod_sym(d1, prod_p) , det_p 
     if Had - nbits(d1) < nbits(prod_p)
       @show "at H-bound",  (Had - nbits(d1) - nbits(prod_p))/60
       return d1
@@ -620,7 +977,10 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     @time T1 = hcol(TS, d)
     push!(T, T1)
     @show :solve
-    @time AT = Strassen.AbstractAlgebra._solve_triu(T1, AT)
+    @time AT = AbstractAlgebra.Strassen._solve_triu(T1, AT)
+    @assert _AT*T1 == AT
+    @show maximum(nbits, _AT), maximum(nbits, T1), maximum(nbits, AT)
+    AT = _AT
 #    @show nbits(prod_p), nbits(d1)
 #    @show nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p)))
     if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
@@ -632,7 +992,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
     @show Had / nbits(d1)
-      AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
+      AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
       if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
@@ -640,13 +1000,14 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   end
   det_p = invmod(d1, prod_p)*det_p
   @show det_p = mod_sym(det_p, prod_p)
+  @assert !is_zero(det_p)
   @assert nbits(abs(det_p)) < small
   @show :hnf
   @time h = hnf_modular_eldiv(AT, det_p)
   @show t_det(h) // det_p, det(h)
   d1 *= t_det(h)
 
-  @time AT = Nemo.AbstractAlgebra._solve_triu_left(h, AT)
+  @time AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)
@@ -756,27 +1117,30 @@ function lift!(A::ZZMatrix, a::fpMatrix)
   ccall((:fmpz_mat_set_nmod_mat, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}), A, a)
 end
 
-mutable struct DixonCtx
+mutable struct DixonCtx{T}
   bound::ZZRingElem
-  Ainv::fpMatrix
+  Ainv::T
   p::UInt
   crt_primes::Vector{UInt}
-  A_mod::Vector{fpMatrix}
-  d_mod::fpMatrix
-  y_mod::fpMatrix
-  Ay_mod::fpMatrix
+  A_mod::Vector{T}
+  d_mod::T
+  y_mod::T
+  Ay_mod::T
   Ay::ZZMatrix
   x::ZZMatrix
   d::ZZMatrix
   A::ZZMatrix
-  function DixonCtx()
-    return new()
+  function DixonCtx(T::DataType)
+    return new{T}()
   end
 end
 #copied from flint to allow the use of adaptive reconstruction,
 #support cases with small primes and Float64
-function dixon_init(A::ZZMatrix, B::ZZMatrix)
-  D = DixonCtx()
+function dixon_init(A::ZZMatrix, B::ZZMatrix, T::DataType = fpMatrix)
+  #solves, in the end, Ax = B
+  #NOT xA = B
+  @assert nrows(B) == ncols(A)
+  D = DixonCtx(T)
   D.A = A
 
   n = nrows(A)
@@ -785,23 +1149,48 @@ function dixon_init(A::ZZMatrix, B::ZZMatrix)
   _N = ZZ()
   _D = ZZ()
   ccall((:fmpz_mat_solve_bound, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZMatrix}, Ref{ZZMatrix}), _N, _D, A, B)
-  Ainv = zero_matrix(GF(2, cached = false), n, n)
-  p = ccall((:fmpz_mat_find_good_prime_and_invert, Nemo.libflint), UInt, (Ref{fpMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}), Ainv, A, _D)
+  local Ainv_t
+  if T == fpMatrix
+    p = next_prime(2^59)
+  else
+    p = next_prime(2^20)
+  end
+  while true
+    Ainv_t = map_entries(Native.GF(p, cached = false), A)
+    try
+      Ainv_t = inv(Ainv_t)
+      break
+    catch e
+      if e != ErrorException || e.msg != "Matrix not invertible"
+        rethrow(e)
+      end
+    end
+    p = next_prime(p)
+  end
+  if T == fpMatrix
+    Ainv = Ainv_t
+  else
+    Ainv = map_entries(Float64, lift(Ainv_t)).entries
+  end
   @assert p != 0
   D.p = p
   D.Ainv = Ainv
 
   D.bound = 2*maximum(abs, [_D, _N])^2 * 2^30
   D.crt_primes = UInt[]
-  D.A_mod = fpMatrix[]
-
+  D.A_mod = T[]
+ 
   pr = ZZ(1)
-  xp = p
+  xp = next_prime(p)
   maxA = maximum(abs, A) *(p-1)*n*2
 
   while true
     push!(D.crt_primes, xp)
-    push!(D.A_mod, map_entries(Nemo.fpField(xp, false), A))
+    if T == fpMatrix
+      push!(D.A_mod, map_entries(Nemo.fpField(UInt(xp), false), A))
+    else
+      push!(D.A_mod, map_entries(Float64, lift(map_entries(Nemo.fpField(UInt(xp), false), A))).entries)
+    end
     pr *= xp
     if pr > maxA
       break
@@ -809,17 +1198,38 @@ function dixon_init(A::ZZMatrix, B::ZZMatrix)
     xp = next_prime(xp)
   end
 
-  k = Nemo.fpField(p, false)
-  D.d_mod = zero_matrix(k, nrows(B), ncols(B))
-  D.y_mod = zero_matrix(k, nrows(B), ncols(B))
-  D.Ay_mod = zero_matrix(k, nrows(B), ncols(B))
+  k = Nemo.fpField(UInt(p), false)
+  if T == fpMatrix
+    D.d_mod = zero_matrix(k, nrows(B), ncols(B))
+    D.y_mod = zero_matrix(k, nrows(B), ncols(B))
+    D.Ay_mod = zero_matrix(k, nrows(B), ncols(B))
+  else
+    D.d_mod = zeros(Float64, nrows(B), ncols(B))
+    D.y_mod = zeros(Float64, nrows(B), ncols(B))
+    D.Ay_mod = zeros(Float64, nrows(B), ncols(B))
+  end
   D.Ay = zero_matrix(ZZ, nrows(B), ncols(B))
   D.x = zero_matrix(ZZ, nrows(B), ncols(B))
 
   return D
 end
 
-function dixon_solve(D::DixonCtx, B::ZZMatrix)
+function map_entries!(A::Matrix{Float64}, k::Nemo.fpField, d::ZZMatrix)
+  @assert size(A) == size(d)
+  p = characteristic(k)
+  t = ZZ()
+  for i=1:nrows(d)
+    d_ptr = Nemo.mat_entry_ptr(d, i, 1)
+    for j=1:ncols(d)
+      A[i,j] = ccall((:fmpz_mod_ui, Nemo.libflint), UInt, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Int), t, d_ptr, p)
+      d_ptr += 8
+    end
+  end
+end
+
+function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
+  @assert ncols(D.A) == nrows(B)
+  #we're solveing Ax=B
   zero!(D.x)
   d = deepcopy(B)
   ppow = ZZ(1)
@@ -827,9 +1237,21 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
   nexti = 1
   while ppow <= D.bound
     map_entries!(D.d_mod, Nemo.fpField(D.p, false), d)
-    Nemo.mul!(D.y_mod, D.Ainv, D.d_mod)
 
-    ccall((:fmpz_mat_scalar_addmul_nmod_mat_fmpz, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}, Ref{ZZRingElem}), D.x, D.y_mod, ppow)
+    if T == fpMatrix
+      Nemo.mul!(D.y_mod, D.Ainv, D.d_mod)
+      ccall((:fmpz_mat_scalar_addmul_nmod_mat_fmpz, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}, Ref{ZZRingElem}), D.x, D.y_mod, ppow)
+    else
+      BLAS.gemm!('N', 'N', 1.0, D.Ainv, D.d_mod, 0.0, D.y_mod)
+      mod!(D.y_mod, Int(D.p))
+      for i=1:nrows(D.x)
+        x_ptr = Nemo.mat_entry_ptr(D.x, i, 1)
+        for j=1:ncols(D.x)
+          ccall((:fmpz_addmul_si, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ref{ZZRingElem}, Int), x_ptr, ppow, Int(D.y_mod[i, j]))
+          x_ptr += 8
+        end
+      end
+    end
 
     Nemo.mul!(ppow, ppow, D.p)
     if ppow > D.bound
@@ -873,26 +1295,55 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
 
     prod = ZZ(1)
     if false
-      Nemo.mul!(D.Ay, D.A, lift(D.y_mod))
+       n = nrows(D.A)
+       for i=1:n
+         Ay_ptr = Nemo.mat_entry_ptr(D.Ay, i, 1)
+         A_ptr = Nemo.mat_entry_ptr(D.A, i, 1)
+         ccall((:fmpz_zero, Nemo.libflint), Cvoid, (Ptr{ZZRingElem},), Ay_ptr)
+         for j=1:n
+           y_ptr = Nemo.mat_entry_ptr(D.y_mod, j, 1)
+           ccall((:fmpz_addmul_ui, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, UInt), Ay_ptr, A_ptr, unsafe_load(y_ptr))
+           A_ptr += sizeof(ZZRingElem)
+         end
+       end
+#       @assert is_zero(map_entries(base_ring(D.y_mod), D.Ay - D.A * lift(D.y_mod)))
+#      Nemo.mul!(D.Ay, D.A, lift(D.y_mod))
     else
+      C = CrtCtx_Mat(block)
+      local mu
+      if T == fpMatrix
+      else
+        mu = _map_entries(Native.GF(3), nrows(D.y_mod), ncols(D.y_mod))
+      end
       for j=1:length(D.crt_primes)
         change_prime(D.y_mod, D.crt_primes[j])
         change_prime(D.Ay_mod, D.crt_primes[j])
 
-        Nemo.mul!(D.Ay_mod, D.A_mod[j], D.y_mod)
-        if j == 1
-          lift!(D.Ay, D.Ay_mod)
-          prod = ZZ(D.crt_primes[j])
+        if T == fpMatrix
+          Nemo.mul!(D.Ay_mod, D.A_mod[j], D.y_mod)
+          push!(C, D.Ay_mod)
         else
-          induce_crt!(D.Ay, prod, D.Ay_mod, D.crt_primes[j], signed = true)
+          BLAS.gemm!('N', 'N', 1.0, D.A_mod[j], D.y_mod, 0.0, D.Ay_mod)
+          mod!(D.Ay_mod, Int(D.crt_primes[j]))
+          change_prime(mu, D.crt_primes[j])
+          mu.view_parent[1] .=  D.Ay_mod
+          push!(C, mu)
         end
+#        if j == 1
+#          lift!(D.Ay, D.Ay_mod)
+#          prod = ZZ(D.crt_primes[j])
+#        else
+#          induce_crt!(D.Ay, prod, D.Ay_mod, D.crt_primes[j], signed = true)
+#        end
       end
       change_prime(D.y_mod, D.p)
+      finish(C)
     end
-    sub!(d, d, D.Ay)
+#    sub!(d, d, D.Ay)
+    Nemo.sub!(d, d, C.M[1])
     divexact!(d, d, ZZ(D.p))
   end
-  fl, num, den = ratrec(D.x, ppow)
+  fl, num, den = induce_rational_reconstruction(D.x, ppow)
 
   @assert fl
 #  @time @assert D.A*num == den*B
@@ -900,3 +1351,27 @@ function dixon_solve(D::DixonCtx, B::ZZMatrix)
 end
 
 end # module
+
+#= test:
+for i = 1:20
+   n = 100*i
+   for di = 1:10:101
+     N = matrix(ZZ, rand(-ZZ(10)^di:ZZ(10)^di, n, n))
+     V = matrix(ZZ, rand(-ZZ(10)^di:ZZ(10)^di, n, 1))
+     rt = time_ns()
+     d = Det.dixon_init(N, V)
+     s = Det.dixon_solve(d, V)
+     st = time_ns()
+     x = Det.UniCertZ_CRT(transpose(N), transpose(V), pr_max = 2*nbits(s[2]))
+     f = open("/tmp/res", "a")
+     println(f, "$i: n=$n : $di : $((st-rt)*1e-9) : $((time_ns() -st)*1e-9)")
+     close(f)
+     z = (time_ns() -st)*1e-9
+     if z > 500
+       break
+     end
+     @time Base.GC.gc()
+   end
+end
+=#
+
