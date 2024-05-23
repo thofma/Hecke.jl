@@ -73,9 +73,57 @@ end
     u = sum(rand(-10:10)*x for x = gens(U)[2:end]) 
     @test u == preimage(mU, mU(u))  
   end
+
+  l5 = prime_decomposition(maximal_order(k), 5)
+  k2, _ = Hecke.completion(k, l5[1][1], 12)
+
+  U, mU = unit_group(k2)
+
+  for i=1:10
+    #numerical problems with gen[1] : there is valuation...
+    u = sum(rand(-10:10)*x for x = gens(U)[2:end]) 
+    @test u == preimage(mU, mU(u))  
+  end
+
 end
 
 
+@testset "Misc FinField" begin
+  k = GF(3)
+  kt, t = k["t"]
+  K = GF(3, 2)
+  @test length(roots(K, t^2+t+2)) == 2
+  @test length(basis(K, k)) == 2
 
+  #= RelFinField seems to be a tad broken...
+  E = Hecke.RelFinField(t^2+t+2, :a)
+  @test length(roots(E, t^2+2*t+2)) == 2
 
+  any_root(E, t^2+2*t+2)
+  =#
+
+  Hecke.frobenius_equation(1, gen(K)^2)
+  Hecke.frobenius_equation(Hecke.ArtinSchreierSolveCtx(K, 1), gen(K)^2)
+  c = gen(K)
+  c = frobenius(c)-c
+  Hecke.artin_schreier_equation(1, c)
+  Hecke.artin_schreier_equation(Hecke.ArtinSchreierSolveCtx(K, 1), c)
+end
+
+@testset "Misc LocalField" begin
+  K = QadicField(3, 5, 10)[1]
+  k = PadicField(3, 10)
+  @test is_norm(K, k(3)) == false
+  @test is_norm(K, k(3)^5) == true
+
+  @test length(coordinates(gen(K)^10, k)) == 5
+end
+
+@testset "LocalNorm" begin
+  k, a = wildanger_field(3, 13)
+  @test is_local_norm(k, norm(a+1)) == true
+
+  K, b = radical_extension(2, a+1)
+  @test is_local_norm(K, norm(b+a)) == true
+end
 
