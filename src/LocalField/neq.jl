@@ -1291,7 +1291,8 @@ the idel sense, i.e. a product of norms of the completions extending
 a completions of the base field.
 """
 function is_local_norm(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSimpleNumFieldElem)
-  @req parent(a) == base_field(K) "element must be in the base field of the 1st argument"
+  k = base_field(K)
+  @req parent(a) == k "element must be in the base field of the 1st argument"
 
   Ka, mkK = absolute_simple_field(K)
   return is_local_norm(hom(k, Ka, preimage(mkK, K(gen(k)))), a)
