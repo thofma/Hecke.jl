@@ -444,8 +444,9 @@ function _class_group_modulo_invariant_classes(EabstoE, R)
   C0 = support(D)::Vector{ideal_type(R)}
   CC, hh = class_group(RR)
   for p in find_gens(pseudo_inv(hh), PrimesSet(2, -1))[1]
-    if !(p in C0)
-      push!(C0, sum(R * R(EabstoE(elem_in_nf(b))) for b in basis(p)))
+    P = sum(R * R(b) for b in basis(p); init=0*R)
+    if !(P in C0)
+      push!(C0, P)
     end
   end
   Q0, q0 = quo(C, elem_type(C)[ h\ideal(Rabs, [Rabs(EabstoE\b) for b in absolute_basis(i)]) for i in C0])
@@ -686,7 +687,7 @@ function genus_representatives(L::HermLat; max=inf, use_auto::Bool = true,
     R = base_ring(L)
     Eabs, EabstoE = absolute_simple_field(E)
     class_number(Eabs) == 1 && return typeof(L)[L] # C is trivial so there is only 1 class
-    is_cm_field(Eabs)[1] && relative_class_number(Eabs) == 1 && typeof(L)[L] # #(J/J_0) = h^-(E)
+    is_cm_field(Eabs)[1] && relative_class_number(Eabs) == 1 && return typeof(L)[L] # #(J/J_0) = h^-(E)
     Q0, q00 = _class_group_modulo_invariant_classes(EabstoE, R)
     CmodC0 = Hecke.ideal_type(R)[EabstoE(I) for I in q00.(collect(Q0))]
     s = involution(L)

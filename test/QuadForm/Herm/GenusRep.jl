@@ -149,6 +149,18 @@
   H = lattice(hermitian_space(E, 1))
   @test length(genus_representatives(H)) == 1
 
+  # Non-CM and class number 69; Salem polynomial
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  f = x^3 - 44*x^2 - 4*x + 175
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  g = t^2 - a*t + 1
+  E, b = number_field(g, "b", cached = false)
+  D = matrix(E, 1, 1, [-573233//59387557*a^2 + 26558651//59387557*a - 1641753//1448477])
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [59387557]), map(E, [41//64*a + 773652247//64]), map(E, [1//222784*a^2 + 453//222784*a + 6337027807197//111392]), map(E, [b + 23*a + 53784681]), map(E, [(1//64*a + 63//64)*b + 23//64*a^2 + 26893065//32*a + 3388434903//64]), map(E, [(1//222784*a^2 + 453//222784*a + 86461//111392)*b + 3362257//13924*a^2 + 24368437791//222784*a + 9300554603857//222784])]
+  L = hermitian_lattice(E, gens, gram = D)
+  @test length(genus_representatives(L)) == 69
+
   let
     # 1512
     Qx, x = polynomial_ring(FlintQQ, "x")
