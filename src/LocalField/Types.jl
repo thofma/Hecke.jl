@@ -74,3 +74,23 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
     return z
   end
 end
+
+# Type for O/m^k where O is the valuation ring of the field F and m the maximal
+# ideal
+@attributes mutable struct PadicResidueRing{T <: NonArchLocalField} <: Ring
+  F::T
+  k::Int
+
+  function PadicResidueRing(F::T, k::Int) where {T <: NonArchLocalField}
+    return new{T}(F, k)
+  end
+end
+
+mutable struct PadicResidueRingElem{S <: NonArchLocalFieldElem, T <: NonArchLocalField} <: RingElem
+  a::S
+  parent::PadicResidueRing{T}
+
+  function PadicResidueRingElem(a::S, R::PadicResidueRing{T}) where {S <: NonArchLocalFieldElem, T <: NonArchLocalField}
+    return new{S, T}(a, R)
+  end
+end
