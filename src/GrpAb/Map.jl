@@ -51,7 +51,7 @@ function has_preimage_with_preimage(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
     return true, preimage(M, a)
   end
 
-  m = vcat(M.map, rels(codomain(M)))
+  m = _preimage_ctx(M)
   fl, p = can_solve_with_solution(m, a.coeff, side = :left)
 
   if fl
@@ -59,6 +59,10 @@ function has_preimage_with_preimage(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
   else
     return false, id(domain(M))
   end
+end
+
+@attr AbstractAlgebra.Solve.SolveCtx{ZZRingElem, ZZMatrix, ZZMatrix, ZZMatrix} function _preimage_ctx(M::FinGenAbGroupHom)
+  return solve_init(vcat(M.map, rels(codomain(M))))
 end
 
 function has_preimage_with_preimage(M::FinGenAbGroupHom, a::Vector{FinGenAbGroupElem})
