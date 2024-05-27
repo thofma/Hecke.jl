@@ -1200,13 +1200,24 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
     Zp = ring_of_integers(Qp)
     dK = discriminant(OK)
     r = maximum([ramification_index(P) for P in dp])
-    ims = [LocalFieldElem{QadicFieldElem, EisensteinLocalField}[] for i in 1:degK]
+    ims = [[] for i in 1:degK]
+    # In general  [LocalFieldElem{QadicFieldElem, EisensteinLocalField}[] for i in 1:degK]
+    # In the easy case [QadicFieldElem[] for i in 1:degK]
+    #
     # Compute the logarithm of all elements under all embeddings
     # We need a working precision independent of prec
     while length(ims[rK + 1]) < length(dp) # while not everything is filled
       empty!.(ims)
       for j in 1:length(dp)
-        C, mC = completion(K, dp[j], working_prec)
+        local C, mC
+        try
+          C, mC = completion_easy(K, dp[j], working_prec)
+        catch e
+          if !(e isa ErrorException && e.msg == "cannot deal with difficult primes yet")
+            rethrow()
+          end
+          C, mC = completion(K, dp[j], working_prec)
+        end
         for i in 1:(rK+1)
           try
             # the evaluation of the logarithm may fail, if the precision
