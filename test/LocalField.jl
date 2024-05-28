@@ -4,5 +4,5 @@
   include("LocalField/LocalField.jl")
   include("LocalField/neq.jl")
   include("LocalField/Completions.jl")
-  include("LocalField/ResidueRing.l")
+  include("LocalField/ResidueRing.jl")
 end
