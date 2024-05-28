@@ -235,22 +235,21 @@ function O(K::LocalField, prec::T) where T <: IntegerUnion
   return K(O(base_field(K), d))
 end
 
-function zero(K::LocalField)
+function zero(K::LocalField; precision=precision(K))
   a = zero(parent(defining_polynomial(K)))
-  return setprecision(K(a), precision(K))
+  return setprecision(K(a), precision)
 end
 
 (K::LocalField)() = zero(K)
 
-function one(K::LocalField)
+function one(K::LocalField; precision=precision(K))
   a = one(parent(defining_polynomial(K)))
-  return setprecision(K(a), precision(K))
+  return setprecision(K(a), precision)
 end
 
-function zero!(a::LocalFieldElem)
-  K = parent(a)
+function zero!(a::LocalFieldElem; precision=precision(parent(a)))
   zero!(a.data)
-  a.data = setprecision(a.data, precision(K))
+  a.data = setprecision(a.data, precision)
   return a
 end
 
@@ -283,14 +282,14 @@ end
 #
 ################################################################################
 
-function (K::LocalField{S, T})(a::Integer) where {S <: FieldElem, T <: LocalFieldParameter}
+function (K::LocalField{S, T})(a::Integer; precision=precision(K)) where {S <: FieldElem, T <: LocalFieldParameter}
   el =  K(parent(defining_polynomial(K))(a))
-  return setprecision!(el, precision(K))
+  return setprecision!(el, precision)
 end
 
-function (K::LocalField{S, T})(a::Union{ZZRingElem, QQFieldElem}) where {S <: FieldElem, T <: LocalFieldParameter}
+function (K::LocalField{S, T})(a::Union{ZZRingElem, QQFieldElem}; precision=precision(K)) where {S <: FieldElem, T <: LocalFieldParameter}
   el =  K(parent(defining_polynomial(K))(a))
-  return setprecision!(el, precision(K))
+  return setprecision!(el, precision)
 end
 
 function (K::LocalField{S, T})(a::U) where {U <: Union{PadicFieldElem, QadicFieldElem}, S <: FieldElem, T <: LocalFieldParameter}

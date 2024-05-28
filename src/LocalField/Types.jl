@@ -1,3 +1,9 @@
+################################################################################
+#
+#  LocalField
+#
+################################################################################
+
 abstract type LocalFieldParameter end
 abstract type EisensteinLocalField <: LocalFieldParameter end
 abstract type UnramifiedLocalField <: LocalFieldParameter end
@@ -32,6 +38,12 @@ mutable struct LocalFieldElem{S, T} <: NonArchLocalFieldElem
   data::Generic.Poly{S}
   precision::Int
 end
+
+################################################################################
+#
+#  CompletionMap
+#
+################################################################################
 
 mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, CompletionMap{S, T}}
   header::MapHeader{AbsSimpleNumField, S}
@@ -75,22 +87,54 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
   end
 end
 
-# Type for O/m^k where O is the valuation ring of the field F and m the maximal
-# ideal
-@attributes mutable struct LocalFieldValuationRingResidueRing{T <: NonArchLocalField} <: Ring
-  F::T
-  k::Int
+################################################################################
+#
+#  Valuation ring
+#
+################################################################################
 
-  function LocalFieldValuationRingResidueRing(F::T, k::Int) where {T <: NonArchLocalField}
-    return new{T}(F, k)
+mutable struct LocalFieldValuationRing{S, T} <: Generic.Ring
+  Q::S #The corresponding local field
+  basis::Vector{T} #The OK-basis of the ring, where OK is
+                   #the maximal order of the base field of Q
+  function LocalFieldValuationRing{S, T}(x::S) where {S <: Union{LocalField, QadicField, PadicField}, T}
+    z = new{S, T}()
+    z.Q = x
+    return z
+  end
+
+end
+
+mutable struct LocalFieldValuationRingElem{S, T} <: RingElem
+  P::LocalFieldValuationRing{S, T}
+  x::T
+  function LocalFieldValuationRingElem(P::LocalFieldValuationRing{S, T}, a::T) where {S, T}
+    r = new{S, T}(P, a)
   end
 end
 
-mutable struct LocalFieldValuationRingResidueRingElem{S <: NonArchLocalFieldElem, T <: NonArchLocalField} <: RingElem
-  a::S
-  parent::LocalFieldValuationRingResidueRing{T}
+################################################################################
+#
+#  Residue ring
+#
+################################################################################
 
-  function LocalFieldValuationRingResidueRingElem(a::S, R::LocalFieldValuationRingResidueRing{T}) where {S <: NonArchLocalFieldElem, T <: NonArchLocalField}
+# Type for O/m^k where O is the valuation ring of the field F and m the maximal
+# ideal
+@attributes mutable struct LocalFieldValuationRingResidueRing{S <: NonArchLocalField, T <: NonArchLocalFieldElem} <: Ring
+  R::LocalFieldValuationRing{S, T}
+  k::Int
+
+  function LocalFieldValuationRingResidueRing(R::LocalFieldValuationRing{S, T}, k::Int) where {S, T}
+    return new{S, T}(R, k)
+  end
+end
+
+mutable struct LocalFieldValuationRingResidueRingElem{S <: NonArchLocalField, T <: NonArchLocalFieldElem} <: RingElem
+  a::T
+  parent::LocalFieldValuationRingResidueRing{S, T}
+
+  function LocalFieldValuationRingResidueRingElem(a::T, R::LocalFieldValuationRingResidueRing{S, T}) where {S, T}
     return new{S, T}(a, R)
   end
 end

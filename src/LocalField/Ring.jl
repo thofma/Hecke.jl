@@ -6,20 +6,8 @@
 ################################################################################
 # CHECK precision!!!
 
-mutable struct LocalFieldValuationRing{S, T} <: Generic.Ring
-  Q::S #The corresponding local field
-  basis::Vector{T} #The OK-basis of the ring, where OK is
-                   #the maximal order of the base field of Q
-  function LocalFieldValuationRing{S, T}(x::S) where {S <: Union{LocalField, QadicField, PadicField}, T}
-    z = new{S, T}()
-    z.Q = x
-    return z
-  end
-
-end
-
 function Base.show(io::IO, Q::LocalFieldValuationRing)
-  println("Integers of ", Q.Q)
+  print("Integers of ", Q.Q)
 end
 
 function MaximalOrder(Q::QadicField)
@@ -35,13 +23,9 @@ function MaximalOrder(Q::LocalField{S, T}) where {S, T <: Union{EisensteinLocalF
 end
 #integers(Q::PadicField) = ring_of_integers(Q)
 
-mutable struct LocalFieldValuationRingElem{S, T} <: RingElem
-  P::LocalFieldValuationRing{S, T}
-  x::T
-  function LocalFieldValuationRingElem(P::LocalFieldValuationRing{S, T}, a::T) where {S, T}
-    r = new{S, T}(P, a)
-  end
-end
+valuation_ring(K::NonArchLocalField) = MaximalOrder(K)
+
+uniformizer(R::LocalFieldValuationRing) = R(uniformizer(R.Q))
 
 function Base.show(io::IO, a::LocalFieldValuationRingElem)
   print(io, a.x)
@@ -88,23 +72,34 @@ parent(a::LocalFieldValuationRingElem) = a.P
 elem_type(::Type{LocalFieldValuationRing{S, T}}) where {S, T} = LocalFieldValuationRingElem{S, T}
 parent_type(::Type{LocalFieldValuationRingElem{S, T}}) where {S, T} = LocalFieldValuationRing{S, T}
 
-zero(Q::LocalFieldValuationRing) = LocalFieldValuationRingElem(Q, Q.Q(0))
-one(Q::LocalFieldValuationRing) = LocalFieldValuationRingElem(Q, Q.Q(1))
+function zero(Q::LocalFieldValuationRing; precision::Int=precision(Q))
+  return LocalFieldValuationRingElem(Q, zero(Q.Q, precision = precision))
+end
+
+function one(Q::LocalFieldValuationRing; precision::Int=precision(Q))
+  return LocalFieldValuationRingElem(Q, one(Q.Q, precision = precision))
+end
 
 function (Q::LocalFieldValuationRing{S, T})(a::T) where {S, T}
   @assert parent(a) === Q.Q
   LocalFieldValuationRingElem(Q, a)
 end
 (Q::LocalFieldValuationRing)(a::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x)
-(Q::LocalFieldValuationRing)(a::Integer) = LocalFieldValuationRingElem(Q, Q.Q(a))
-(Q::LocalFieldValuationRing)(a::ZZRingElem) = LocalFieldValuationRingElem(Q, Q.Q(a))
 
-function (Q::LocalFieldValuationRing)(a::QQFieldElem)
+function (Q::LocalFieldValuationRing)(a::Integer; precision::Int=precision(Q))
+  return LocalFieldValuationRingElem(Q, Q.Q(a, precision = precision))
+end
+
+function (Q::LocalFieldValuationRing)(a::ZZRingElem; precision::Int=precision(Q))
+  return LocalFieldValuationRingElem(Q, Q.Q(a, precision = precision))
+end
+
+function (Q::LocalFieldValuationRing)(a::QQFieldElem; precision::Int=precision(Q))
   p = prime(Q.Q)
   if iszero(mod(denominator(a), p))
     error("The element is not in the ring!")
   end
-  return LocalFieldValuationRingElem(Q, Q.Q(a))
+  return LocalFieldValuationRingElem(Q, Q.Q(a, precision = precision))
 end
 
 (Q::LocalFieldValuationRing)() = LocalFieldValuationRingElem(Q, Q.Q())
@@ -214,4 +209,10 @@ end
 function absolute_coordinates(Zp::LocalFieldValuationRing, a::LocalFieldValuationRingElem)
   v = absolute_coordinates(Zp.Q, a.x)
   return Zp.(v)
+end
+
+AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingElem{S, T}}, ::Type{LocalFieldValuationRingElem{S, T}}) where {S, T} = LocalFieldValuationRingElem{S, T}
+
+function AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingElem{S, T}}, ::Type{U}) where {S, T, U <: RingElement}
+  AbstractAlgebra.promote_rule(T, U) == T ? LocalFieldValuationRingElem{S, T} : Union{}
 end

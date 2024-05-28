@@ -911,6 +911,7 @@ export unit_group
 export unit_group_fac_elem
 export unramified_extension
 export valuation
+export valuation_ring
 export value_module
 export value_module_quadratic_form
 export vcat
