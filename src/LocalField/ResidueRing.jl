@@ -4,10 +4,10 @@
 #
 ################################################################################
 
-parent_type(::Type{PadicResidueRingElem{S, T}}) where {S, T} = PadicResidueRing{T}
-elem_type(::Type{PadicResidueRing{T}}) where {T} = PadicResidueRingElem{elem_type(T), T}
-is_domain_type(::Type{<: PadicResidueRing}) = false
-is_exact_type(::Type{<: PadicResidueRing}) = true
+parent_type(::Type{LocalFieldValuationRingResidueRingElem{S, T}}) where {S, T} = LocalFieldValuationRingResidueRing{T}
+elem_type(::Type{LocalFieldValuationRingResidueRing{T}}) where {T} = LocalFieldValuationRingResidueRingElem{elem_type(T), T}
+is_domain_type(::Type{<: LocalFieldValuationRingResidueRing}) = false
+is_exact_type(::Type{<: LocalFieldValuationRingResidueRing}) = true
 
 ################################################################################
 #
@@ -15,15 +15,15 @@ is_exact_type(::Type{<: PadicResidueRing}) = true
 #
 ################################################################################
 
-_field(R::PadicResidueRing) = R.F # TODO: how to call this?
-_exponent(R::PadicResidueRing) = R.k
+_field(R::LocalFieldValuationRingResidueRing) = R.F # TODO: how to call this?
+_exponent(R::LocalFieldValuationRingResidueRing) = R.k
 
-# TODO: implement base_ring(::PadicResidueRing)? Should this return the field or the valuation ring?
-base_ring(R::PadicResidueRing) = Union{}
-base_ring_type(::Type{<: PadicResidueRing}) = typeof(Union{})
+# TODO: implement base_ring(::LocalFieldValuationRingResidueRing)? Should this return the field or the valuation ring?
+base_ring(R::LocalFieldValuationRingResidueRing) = Union{}
+base_ring_type(::Type{<: LocalFieldValuationRingResidueRing}) = typeof(Union{})
 
-parent(a::PadicResidueRingElem) = a.parent
-data(a::PadicResidueRingElem) = a.a
+parent(a::LocalFieldValuationRingResidueRingElem) = a.parent
+data(a::LocalFieldValuationRingResidueRingElem) = a.a
 
 ################################################################################
 #
@@ -31,21 +31,21 @@ data(a::PadicResidueRingElem) = a.a
 #
 ################################################################################
 
-characteristic(R::PadicResidueRing) = prime(_field(R))^_exponent(R)
+characteristic(R::LocalFieldValuationRingResidueRing) = prime(_field(R))^_exponent(R)
 
-zero(R::PadicResidueRing) = R()
-one(R::PadicResidueRing) = R(one(_field(R), precision = _exponent(R)), copy = false)
+zero(R::LocalFieldValuationRingResidueRing) = R()
+one(R::LocalFieldValuationRingResidueRing) = R(one(_field(R), precision = _exponent(R)), copy = false)
 
-is_zero(a::PadicResidueRingElem) = is_zero(data(a))
-is_one(a::PadicResidueRingElem) = is_one(data(a))
+is_zero(a::LocalFieldValuationRingResidueRingElem) = is_zero(data(a))
+is_one(a::LocalFieldValuationRingResidueRingElem) = is_one(data(a))
 
-function is_unit(a::PadicResidueRingElem)
+function is_unit(a::LocalFieldValuationRingResidueRingElem)
   is_zero(a) && return false
   return is_zero(valuation(data(a)))
 end
-is_zero_divisor(a::PadicResidueRingElem) = !is_unit(a)
+is_zero_divisor(a::LocalFieldValuationRingResidueRingElem) = !is_unit(a)
 
-function canonical_unit(a::PadicResidueRingElem)
+function canonical_unit(a::LocalFieldValuationRingResidueRingElem)
   if is_unit(a)
     return a
   end
@@ -58,19 +58,19 @@ end
 #
 ################################################################################
 
-(R::PadicResidueRing)() = R(zero(_field(R), precision = _exponent(R)), copy = false)
+(R::LocalFieldValuationRingResidueRing)() = R(zero(_field(R), precision = _exponent(R)), copy = false)
 
-function (R::PadicResidueRing)(a::Union{Integer, ZZRingElem, QQFieldElem, Rational})
+function (R::LocalFieldValuationRingResidueRing)(a::Union{Integer, ZZRingElem, QQFieldElem, Rational})
   @req is_zero(a) || valuation(a, prime(_field(R))) >= 0 "Not an element of the valuation ring"
   return R(_field(R)(a, precision = _exponent(R)), copy = false)
 end
 
-function (R::PadicResidueRing)(a::PadicResidueRingElem)
+function (R::LocalFieldValuationRingResidueRing)(a::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === R "The given element is not an element of the ring"
   return a
 end
 
-function (R::PadicResidueRing)(a::NonArchLocalFieldElem; copy::Bool = true)
+function (R::LocalFieldValuationRingResidueRing)(a::NonArchLocalFieldElem; copy::Bool = true)
   @req parent(a) === _field(R) "Local fields don't match"
   @req precision(a) >= _exponent(R) "Insufficient precision"
   # Make sure that we have unique representatives
@@ -79,7 +79,7 @@ function (R::PadicResidueRing)(a::NonArchLocalFieldElem; copy::Bool = true)
   else
     b = setprecision!(a, _exponent(R))
   end
-  return PadicResidueRingElem(b, R)
+  return LocalFieldValuationRingResidueRingElem(b, R)
 end
 
 ################################################################################
@@ -88,7 +88,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, mime::MIME"text/plain", R::PadicResidueRing)
+function Base.show(io::IO, mime::MIME"text/plain", R::LocalFieldValuationRingResidueRing)
   @show_name(io, R)
   @show_special(io, mime, R)
 
@@ -98,7 +98,7 @@ function Base.show(io::IO, mime::MIME"text/plain", R::PadicResidueRing)
   print(io, "modulo the maximal ideal to the power ", _exponent(R))
 end
 
-function Base.show(io::IO, R::PadicResidueRing)
+function Base.show(io::IO, R::LocalFieldValuationRingResidueRing)
   @show_name(io, R)
   @show_special(io, R)
 
@@ -112,8 +112,8 @@ function Base.show(io::IO, R::PadicResidueRing)
 end
 
 # TODO: Improve
-Base.show(io::IO, a::PadicResidueRingElem) = show(io, data(a))
-Base.show(io::IO, a::PadicResidueRingElem{PadicFieldElem}) = show(io, lift(ZZ, data(a)))
+Base.show(io::IO, a::LocalFieldValuationRingResidueRingElem) = show(io, data(a))
+Base.show(io::IO, a::LocalFieldValuationRingResidueRingElem{PadicFieldElem}) = show(io, lift(ZZ, data(a)))
 
 ################################################################################
 #
@@ -121,11 +121,11 @@ Base.show(io::IO, a::PadicResidueRingElem{PadicFieldElem}) = show(io, lift(ZZ, d
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::PadicResidueRingElem{S, T}, dict::IdDict) where {S, T}
-  return PadicResidueRingElem(Base.deepcopy_internal(data(a), dict), parent(a))
+function Base.deepcopy_internal(a::LocalFieldValuationRingResidueRingElem{S, T}, dict::IdDict) where {S, T}
+  return LocalFieldValuationRingResidueRingElem(Base.deepcopy_internal(data(a), dict), parent(a))
 end
 
-function Base.hash(a::PadicResidueRingElem, h::UInt)
+function Base.hash(a::LocalFieldValuationRingResidueRingElem, h::UInt)
   return hash(data(a), h)
 end
 
@@ -135,7 +135,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(a::PadicResidueRingElem, b::PadicResidueRingElem)
+function Base.:(==)(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
   return data(a) == data(b)
 end
@@ -146,7 +146,7 @@ end
 #
 ################################################################################
 
-function Base.:(-)(a::PadicResidueRingElem)
+function Base.:(-)(a::LocalFieldValuationRingResidueRingElem)
   return parent(a)(-data(a), copy = false)
 end
 
@@ -156,17 +156,17 @@ end
 #
 ################################################################################
 
-function Base.:(+)(a::PadicResidueRingElem, b::PadicResidueRingElem)
+function Base.:(+)(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
   return parent(a)(data(a) + data(b), copy = false)
 end
 
-function Base.:(-)(a::PadicResidueRingElem, b::PadicResidueRingElem)
+function Base.:(-)(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
   return parent(a)(data(a) - data(b), copy = false)
 end
 
-function Base.:(*)(a::PadicResidueRingElem, b::PadicResidueRingElem)
+function Base.:(*)(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
   return parent(a)(data(a) * data(b), copy = false)
 end
@@ -177,7 +177,7 @@ end
 #
 ################################################################################
 
-function Base.:(^)(a::PadicResidueRingElem, e::Int)
+function Base.:(^)(a::LocalFieldValuationRingResidueRingElem, e::Int)
   @req is_unit(a) || e >= 0 "Element is not invertible"
   return parent(a)(data(a)^e, copy = false)
 end
@@ -188,7 +188,7 @@ end
 #
 ################################################################################
 
-function divexact(a::PadicResidueRingElem, b::PadicResidueRingElem)
+function divexact(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
   @req valuation(data(a)) >= valuation(data(b)) "Division not possible"
   c = divexact(data(a), data(b))
@@ -202,7 +202,7 @@ end
 #
 ################################################################################
 
-function Base.divrem(a::PadicResidueRingElem, b::PadicResidueRingElem)
+function Base.divrem(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
   @req !is_zero(b) "Division by 0"
   if valuation(data(a)) >= valuation(data(b))
@@ -217,7 +217,7 @@ end
 #
 ################################################################################
 
-function inv(a::PadicResidueRingElem)
+function inv(a::LocalFieldValuationRingResidueRingElem)
   @req is_unit(a) "Element is not invertible"
   return parent(a)(inv(data(a)), copy = false)
 end
@@ -228,24 +228,24 @@ end
 #
 ################################################################################
 
-function zero!(a::PadicResidueRingElem)
+function zero!(a::LocalFieldValuationRingResidueRingElem)
   a.a = zero!(data(a))
   return a
 end
 
-function mul!(c::PadicResidueRingElem, a::PadicResidueRingElem, b::PadicResidueRingElem)
+function mul!(c::LocalFieldValuationRingResidueRingElem, a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) === parent(c) "Parents do not match"
   c.a = mul!(data(c), data(a), data(b))
   return c
 end
 
-function add!(c::PadicResidueRingElem, a::PadicResidueRingElem, b::PadicResidueRingElem)
+function add!(c::LocalFieldValuationRingResidueRingElem, a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) === parent(c) "Parents do not match"
   c.a = add!(data(c), data(a), data(b))
   return c
 end
 
-function addeq!(a::PadicResidueRingElem, b::PadicResidueRingElem)
+function addeq!(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
   a.a = addeq!(data(a), data(b))
   return a
@@ -257,10 +257,10 @@ end
 #
 ################################################################################
 
-AbstractAlgebra.promote_rule(::Type{PadicResidueRingElem{S, T}}, ::Type{PadicResidueRingElem{S, T}}) where {S, T} = PadicResidueRingElem{S, T}
+AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingResidueRingElem{S, T}}, ::Type{LocalFieldValuationRingResidueRingElem{S, T}}) where {S, T} = LocalFieldValuationRingResidueRingElem{S, T}
 
-function AbstractAlgebra.promote_rule(::Type{PadicResidueRingElem{S, T}}, ::Type{U}) where {S, T, U <: RingElement}
-  AbstractAlgebra.promote_rule(S, U) == S ? PadicResidueRingElem{S, T} : Union{}
+function AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingResidueRingElem{S, T}}, ::Type{U}) where {S, T, U <: RingElement}
+  AbstractAlgebra.promote_rule(S, U) == S ? LocalFieldValuationRingResidueRingElem{S, T} : Union{}
 end
 
 ################################################################################

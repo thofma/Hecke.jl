@@ -77,20 +77,20 @@ end
 
 # Type for O/m^k where O is the valuation ring of the field F and m the maximal
 # ideal
-@attributes mutable struct PadicResidueRing{T <: NonArchLocalField} <: Ring
+@attributes mutable struct LocalFieldValuationRingResidueRing{T <: NonArchLocalField} <: Ring
   F::T
   k::Int
 
-  function PadicResidueRing(F::T, k::Int) where {T <: NonArchLocalField}
+  function LocalFieldValuationRingResidueRing(F::T, k::Int) where {T <: NonArchLocalField}
     return new{T}(F, k)
   end
 end
 
-mutable struct PadicResidueRingElem{S <: NonArchLocalFieldElem, T <: NonArchLocalField} <: RingElem
+mutable struct LocalFieldValuationRingResidueRingElem{S <: NonArchLocalFieldElem, T <: NonArchLocalField} <: RingElem
   a::S
-  parent::PadicResidueRing{T}
+  parent::LocalFieldValuationRingResidueRing{T}
 
-  function PadicResidueRingElem(a::S, R::PadicResidueRing{T}) where {S <: NonArchLocalFieldElem, T <: NonArchLocalField}
+  function LocalFieldValuationRingResidueRingElem(a::S, R::LocalFieldValuationRingResidueRing{T}) where {S <: NonArchLocalFieldElem, T <: NonArchLocalField}
     return new{S, T}(a, R)
   end
 end
