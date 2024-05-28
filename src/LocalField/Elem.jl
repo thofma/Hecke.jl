@@ -25,6 +25,10 @@ function Base.deepcopy_internal(x::LocalFieldElem{S, T}, dict::IdDict) where {S,
   return LocalFieldElem{S, T}(parent(x), Base.deepcopy_internal(x.data, dict), precision(x))
 end
 
+function Base.hash(a::LocalFieldElem, h::UInt)
+  return hash(a.data, h)
+end
+
 ################################################################################
 #
 #  Precision
