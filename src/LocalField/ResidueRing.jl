@@ -103,9 +103,67 @@ function Base.show(io::IO, R::LocalFieldValuationRingResidueRing)
   print(io, _valuation_ring(R), " modulo ", uniformizer(_field(R)), "^", _exponent(R))
 end
 
-# TODO: Improve
+function AbstractAlgebra.expressify(x::LocalFieldValuationRingResidueRingElem{PadicField}; context = nothing)
+  p = BigInt(prime(_field(parent(x))))
+  sum = Expr(:call, :+)
+  v = valuation(data(x))
+  u = BigInt(lift(ZZ, data(x)))
+  if v > 0
+    u = div(u, p^v)
+  end
+  d = digits(u, base=p)
+  for i in 0:length(d)-1
+    ppower = Expr(:call, :^, p, i + v)
+    push!(sum.args, Expr(:call, :*, d[i + 1], ppower))
+  end
+  return sum
+end
+
+function AbstractAlgebra.expressify(a::LocalFieldValuationRingResidueRingElem{QadicField}, x = var(_field(parent(a))); context = nothing)
+  b = data(a)
+  K = base_field(parent(b))
+  if iszero(b)
+    return 0
+  end
+  p = BigInt(prime(K))
+  sum = Expr(:call, :+)
+  c = K(precision = precision(parent(b)))
+  for i in degree(parent(b)):-1:0
+    ccall((:padic_poly_get_coeff_padic, libflint), Nothing,
+          (Ref{PadicFieldElem}, Ref{QadicFieldElem}, Int, Ref{QadicField}),
+          c, b, i, parent(b))
+
+    # expressify c (without + O(...))
+    ec = Expr(:call, :+)
+    v = valuation(c)
+    u = BigInt(lift(ZZ, c))
+    if v > 0
+      u = div(u, p^v)
+    end
+    d = digits(u, base=p)
+    for i in 0:length(d)-1
+      ppower = Expr(:call, :^, p, i + v)
+      push!(ec.args, Expr(:call, :*, d[i + 1], ppower))
+    end
+
+    if !iszero(c)
+      if iszero(i)
+        push!(sum.args, ec)
+      elseif isone(i)
+        push!(sum.args, Expr(:call, :*, ec, x))
+      else
+        push!(sum.args, Expr(:call, :*, ec, Expr(:call, :^, x, i)))
+      end
+    end
+  end
+  return sum
+end
+
+function show(io::IO, a::LocalFieldValuationRingResidueRingElem{<:Union{PadicField, QadicField}})
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
+end
+
 Base.show(io::IO, a::LocalFieldValuationRingResidueRingElem) = show(io, data(a))
-#Base.show(io::IO, a::LocalFieldValuationRingResidueRingElem{PadicFieldElem}) = show(io, lift(ZZ, data(a)))
 
 ################################################################################
 #
