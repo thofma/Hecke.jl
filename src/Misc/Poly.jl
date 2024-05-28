@@ -522,7 +522,7 @@ function _n_positive_roots_sqf(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFie
     end
     g = Cx(coeffs)
     try
-      rts = roots(g, initial_prec = prec)
+      rts = roots(g, initial_prec = div(prec, 2))
     catch e
       e isa ErrorException && startswith(e.msg, "unable to isolate all roots") || rethrow()
       prec *= 2
@@ -536,7 +536,6 @@ function _n_positive_roots_sqf(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFie
     end
   end
 end
-
 
 ################################################################################
 #
