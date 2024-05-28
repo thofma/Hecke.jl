@@ -57,7 +57,7 @@ function strong_echelon_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem}, 
   end
 end
 
-function triangularize!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
+function triangularize!(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   n = nrows(A)
   m = ncols(A)
   d = one(base_ring(A))
@@ -82,7 +82,7 @@ function triangularize!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
         continue
       end
 
-      t_isdiv += @elapsed b, q = is_divisible(A[i, col], A[row, col])
+      t_isdiv += @elapsed b, q = divides(A[i, col], A[row, col])
 
       if b
         for k in col:m
@@ -112,7 +112,7 @@ function triangularize!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   return d
 end
 
-function triangularize(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
+function triangularize(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   #println("copying ...")
   B = deepcopy(A)
   #println("done")
@@ -128,7 +128,7 @@ end
 
 # Naive version of inplace strong echelon form
 # It is assumed that A has more rows then columns.
-function strong_echelon_form_naive!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
+function strong_echelon_form_naive!(A::Generic.Mat{S}) where {S <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   #A = deepcopy(B)
   n = nrows(A)
   m = ncols(A)
@@ -177,7 +177,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRing
           T[1, k], A[i, k] = A[i, k], T[1, k]
         end
       else
-        b, q = is_divisible(T[1, i], A[i, i])
+        b, q = divides(T[1, i], A[i, i])
         if b
           for k in i:m
             T[1, k] = T[1, k] - q*A[i, k]
@@ -204,7 +204,7 @@ end
 #
 ################################################################################
 
-function howell_form!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
+function howell_form!(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   @assert nrows(A) >= ncols(A)
 
   k = nrows(A)
@@ -227,7 +227,7 @@ function howell_form!(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   return k
 end
 
-function howell_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
+function howell_form(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   B = deepcopy(A)
 
   if nrows(B) < ncols(B)

@@ -464,6 +464,8 @@ function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   return true, z
 end
 
+divides(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = is_divisible(x, y)
+
 function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   check_parent(x, y)
 

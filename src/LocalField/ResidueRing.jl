@@ -265,6 +265,31 @@ function Base.divrem(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldVal
   return zero(parent(a)), a
 end
 
+function xxgcd(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
+  @req parent(a) === parent(b) "Parents do not match"
+
+  R = parent(a)
+  if is_zero(b)
+    return a, one(R), zero(R), zero(R), one(R)
+  end
+  if is_zero(a)
+    return b, zero(R), one(R), one(R), zero(R)
+  end
+
+  if valuation(data(a)) > valuation(data(b))
+    return b, zero(R), one(R), one(R), -divexact(a, b)
+  end
+  return a, one(R), zero(R), -divexact(b, a), one(R)
+end
+
+function annihilator(a::LocalFieldValuationRingResidueRingElem)
+  if is_zero(a)
+    return one(parent(a))
+  end
+  pi = uniformizer(_valuation_ring(parent(a)))
+  return parent(a)(pi)^(_exponent(parent(a)) - valuation(data(a)))
+end
+
 ################################################################################
 #
 #  Inverse
