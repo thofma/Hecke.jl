@@ -19,7 +19,7 @@ mutable struct QadicRing{S, T} <: Generic.Ring
 end
 
 function Base.show(io::IO, Q::QadicRing)
-  println("Integers of ", Q.Q)
+  print("Integers of ", Q.Q)
 end
 
 function MaximalOrder(Q::QadicField)
@@ -189,6 +189,10 @@ function setprecision!(Q::QadicRing, n::Int)
   setprecision!(Q.Q, n)
 end
 
+function with_precision(f, Q::QadicRing, n::Int)
+  return with_precision(f, Q.Q, n)
+end
+
 function Base.setprecision(a::QadicRingElem, n::Int)
   return a.P(setprecision(a.x, n))
 end
@@ -207,7 +211,7 @@ coefficient_ring(K::LocalField) = base_field(K)
 
 function absolute_coordinates(a::QadicRingElem)
   v = absolute_coordinates(a.x)
-  Zp = ring_of_integers(prime_field(parent(a.x)))
+  Zp = ring_of_integers(absolute_base_field(parent(a.x)))
   return Zp.(v)
 end
 

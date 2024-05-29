@@ -333,61 +333,61 @@ function lift_q(C::HenselCtxFqRelSeries{<:SeriesElem{QadicFieldElem}})
   pr = precision(coeff(coeff(C.lf[1], 0), 0))
   N2 = 2*pr
 
-  setprecision!(Q, N2)
+  return with_precision(Q, N2) do
+    i = length(C.lf)
+    @assert i > 1
+    @assert all(is_monic, C.lf[1:end-1])
+    j = i-1
+    while j > 0
+      if i==length(C.lf)
+        f = evaluate(map_coefficients(Q, C.f, cached = false), [gen(St), St(gen(S))])
+        f *= inv(leading_coefficient(f))
+      else
+#        f = _set_precision(C.lf[i], N2)
+        f = C.lf[i]
+        @assert precision(coeff(coeff(f, 0), 0)) >= N2
+        @assert is_monic(C.lf[i])
+      end
+      @assert is_monic(f)
+      #formulae and names from the Flint doc
+      h = C.lf[j]
+      g = C.lf[j-1]
+      b = C.cf[j]
+      a = C.cf[j-1]
+      h = _set_precision(h, N2)
+      g = _set_precision(g, N2)
+      a = _set_precision(a, N2)
+      b = _set_precision(b, N2)
 
-  i = length(C.lf)
-  @assert i > 1
-  @assert all(is_monic, C.lf[1:end-1])
-  j = i-1
-  while j > 0
-    if i==length(C.lf)
-      f = evaluate(map_coefficients(Q, C.f, cached = false), [gen(St), St(gen(S))])
-      f *= inv(leading_coefficient(f))
-    else
-#      f = _set_precision(C.lf[i], N2)
-      f = C.lf[i]
-      @assert precision(coeff(coeff(f, 0), 0)) >= N2
-      @assert is_monic(C.lf[i])
+      fgh = _shift_coeff_right(f-g*h, pr)
+
+      @assert is_monic(g)
+      @assert !iszero(constant_coefficient(g))
+      @assert is_monic(h)
+      @assert !iszero(constant_coefficient(h))
+      gi = preinv(g)
+      hi = preinv(h)
+
+      G = _shift_coeff_left(rem(fgh*b, gi), pr)+g
+      @assert is_monic(G)
+      H = _shift_coeff_left(rem(fgh*a, hi), pr)+h
+      @assert is_monic(H)
+
+      t = _shift_coeff_right(1-a*G-b*H, pr)
+
+      B = _shift_coeff_left(rem(t*b, gi), pr)+b
+      A = _shift_coeff_left(rem(t*a, hi), pr)+a
+#      check_data(A)
+#      check_data(B)
+
+      C.lf[j-1] = G
+      C.lf[j] = H
+      C.cf[j-1] = A
+      C.cf[j] = B
+      i -= 1
+      j -= 2
     end
-    @assert is_monic(f)
-    #formulae and names from the Flint doc
-    h = C.lf[j]
-    g = C.lf[j-1]
-    b = C.cf[j]
-    a = C.cf[j-1]
-    h = _set_precision(h, N2)
-    g = _set_precision(g, N2)
-    a = _set_precision(a, N2)
-    b = _set_precision(b, N2)
-
-    fgh = _shift_coeff_right(f-g*h, pr)
-
-    @assert is_monic(g)
-    @assert !iszero(constant_coefficient(g))
-    @assert is_monic(h)
-    @assert !iszero(constant_coefficient(h))
-    gi = preinv(g)
-    hi = preinv(h)
-
-    G = _shift_coeff_left(rem(fgh*b, gi), pr)+g
-    @assert is_monic(G)
-    H = _shift_coeff_left(rem(fgh*a, hi), pr)+h
-    @assert is_monic(H)
-
-    t = _shift_coeff_right(1-a*G-b*H, pr)
-
-    B = _shift_coeff_left(rem(t*b, gi), pr)+b
-    A = _shift_coeff_left(rem(t*a, hi), pr)+a
-#    check_data(A)
-#    check_data(B)
-
-    C.lf[j-1] = G
-    C.lf[j] = H
-    C.cf[j-1] = A
-    C.cf[j] = B
-    i -= 1
-    j -= 2
-  end
+  end # with_precision
 end
 
 mutable struct RootCtxSingle{T}
@@ -865,7 +865,7 @@ function field(RC::RootCtx, m::MatElem)
 
   @vprintln :AbsFact 1 "target field has (local) degree $k"
 
-  Qq = QadicField(characteristic(F), k, 1, cached = false)[1]
+  Qq = qadic_field(characteristic(F), k, precision = 1, cached = false)[1]
   Qqt = polynomial_ring(Qq, cached = false)[1]
   k, mk = residue_field(Qq)
 
@@ -1025,42 +1025,43 @@ function field(RC::RootCtx, m::MatElem)
     end
     @vprintln :AbsFact 1  "using p-adic precision of $pr"
 
-    setprecision!(Qq, pr+1)
-    if length(fa) > 0
-      H.f = map_coefficients(Qq, _lc, parent = Qqt)
-      @vprintln :AbsFact 2 "lifting leading coeff factorisation"
-      @vtime :AbsFact 2 Hecke.lift(H, pr+1)
-      fH = factor(H)
-      lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
-    end
+    p, el, fl = with_precision(Qq, pr + 1) do
+      if length(fa) > 0
+        H.f = map_coefficients(Qq, _lc, parent = Qqt)
+        @vprintln :AbsFact 2 "lifting leading coeff factorisation"
+        @vtime :AbsFact 2 Hecke.lift(H, pr+1)
+        fH = factor(H)
+        lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
+      end
 
-    @vprintln :AbsFact 1 "lifting factors"
-    @vtime :AbsFact 2 while precision(coeff(coeff(HQ.lf[1], 0), 0)) < pr+1
-      lift_q(HQ)
-    end
+      @vprintln :AbsFact 1 "lifting factors"
+      @vtime :AbsFact 2 while precision(coeff(coeff(HQ.lf[1], 0), 0)) < pr+1
+        lift_q(HQ)
+      end
 
-    if length(fa) > 0
-      z = [lc[i](gen(SQq)) * HQ.lf[i] for i=1:HQ.n]
-    else
-      z = HQ.lf[1:HQ.n]
-    end
+      if length(fa) > 0
+        z = [lc[i](gen(SQq)) * HQ.lf[i] for i=1:HQ.n]
+      else
+        z = HQ.lf[1:HQ.n]
+      end
 
-    setprecision!(coeff(X, 1), pr+2)
-    setprecision!(coeff(Y, 1), pr+2)
-    el = [map_coefficients(q -> lift(Qqt, q)(Y), f, cached = false)(X) for f = z]
+      setprecision!(coeff(X, 1), pr+2)
+      setprecision!(coeff(Y, 1), pr+2)
+      el = [map_coefficients(q -> lift(Qqt, q)(Y), f, cached = false)(X) for f = z]
 
-#    # lift mod p^1 -> p^pr x^2+y^2+px+1 was bad I think
-#    @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
-#    ok || @vprintln :AbsFact 1 "bad prime found, q-adic lifting failed"
-#    ok || return nothing
-#    @assert ok  # can fail but should fail for only finitely many p
+#      # lift mod p^1 -> p^pr x^2+y^2+px+1 was bad I think
+#      @vtime :AbsFact 1 ok, el = lift_prime_power(P*inv(coeff(P, 1)), el, [0], 1, pr)
+#      ok || @vprintln :AbsFact 1 "bad prime found, q-adic lifting failed"
+#      ok || return nothing
+#      @assert ok  # can fail but should fail for only finitely many p
 
 
-    #to make things integral...
-    fl = Qq(llc) .* el
+      #to make things integral...
+      fl = Qq(llc) .* el
 
-    p = [coeff(sum(pe(x)^l for x = fl), 0) for l=1:length(el)]
-    p = map(rational_reconstruction, p)
+      p = [coeff(sum(pe(x)^l for x = fl), 0) for l=1:length(el)]
+      return map(rational_reconstruction, p), el, fl
+    end # with_precision
 
     if !all(x->x[1], p)
       @vprintln :AbsFact 2 "reco failed (for poly), increasing p-adic precision"
@@ -1083,25 +1084,27 @@ function field(RC::RootCtx, m::MatElem)
 
     @vprintln :AbsFact 1  "using as number field: $k"
 
-    m = transpose(matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1]))
-    kx, x = polynomial_ring(k, "x", cached = false)
-    kX, _ = polynomial_ring(k, ["X", "Y"], cached = false)
-    B = MPolyBuildCtx(kX)
-    for j=1:length(el[1])
-      n = transpose(matrix([[coeff(x, j)] for x = fl]))
-      s = Hecke.solve(m, transpose(n); side = :right)
-      @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
-      s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
-      if !all(x->x[1], s)
-        break
+    q = with_precision(Qq, pr+1) do
+      m = transpose(matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1]))
+      kx, x = polynomial_ring(k, "x", cached = false)
+      kX, _ = polynomial_ring(k, ["X", "Y"], cached = false)
+      B = MPolyBuildCtx(kX)
+      for j=1:length(el[1])
+        n = transpose(matrix([[coeff(x, j)] for x = fl]))
+        s = Hecke.solve(m, transpose(n); side = :right)
+        @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
+        s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
+        if !all(x->x[1], s)
+          break
+        end
+        push_term!(B, k([x[2]//x[3] for x = s]), exponent_vector(el[1], j))
       end
-      push_term!(B, k([x[2]//x[3] for x = s]), exponent_vector(el[1], j))
-    end
-    q = finish(B)
+      return finish(B)
+    end # with_precision
     if length(q) < length(el[1])
       continue
     end
-    b, r = divrem(map_coefficients(k, P, parent = kX), [q])
+    b, r = divrem(map_coefficients(k, P, parent = parent(q)), [q])
     if iszero(r)
       return q, b[1]
     end
