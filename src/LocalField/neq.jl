@@ -214,9 +214,9 @@ function coordinates(a::Union{QadicFieldElem, LocalFieldElem}, k)
   return c
 end
 coordinates(a::PadicFieldElem, ::PadicField) = [a]
-lift(a::Hecke.QadicRingElem{PadicField, PadicFieldElem}) = lift(a.x)
+lift(a::Hecke.LocalFieldValuationRingElem{PadicField, PadicFieldElem}) = lift(a.x)
 
-function setprecision!(A::Generic.MatSpaceElem{Hecke.QadicRingElem{PadicField, PadicFieldElem}}, n::Int)
+function setprecision!(A::Generic.MatSpaceElem{Hecke.LocalFieldValuationRingElem{PadicField, PadicFieldElem}}, n::Int)
   for i=1:nrows(A)
     for j=1:ncols(A)
       setprecision!(A[i,j], n)
@@ -1147,7 +1147,7 @@ function unit_group(K::LocalField)
 end
 
 #=
-function unit_group(R::QadicRing)
+function unit_group(R::LocalFieldValuationRing)
   K = R.Q
   U, mU = one_unit_group(K)
   k, mk = residue_field(K)

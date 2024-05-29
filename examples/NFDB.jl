@@ -1195,7 +1195,7 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
   # working_prec.
   while true
     (prec > 2^12 || working_prec > 2^12) && error("Something wrong")
-    imK =[QadicRingElem{PadicField, PadicFieldElem}[] for i in 1:degK]
+    imK =[LocalFieldValuationRingElem{PadicField, PadicFieldElem}[] for i in 1:degK]
     Qp = PadicField(p, prec, cached = false)
     Zp = ring_of_integers(Qp)
     dK = discriminant(OK)
