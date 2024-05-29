@@ -19,7 +19,7 @@ function _pivot(A, start_row, col)
   return 0
 end
 
-function _strong_echelon_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem}, strategy)
+function _strong_echelon_form(A::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, strategy)
   B = deepcopy(A)
 
   if nrows(B) < ncols(B)
@@ -43,7 +43,7 @@ function _strong_echelon_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem},
   end
 end
 
-function strong_echelon_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
+function strong_echelon_form(A::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
   if shape == :lowerleft
     h = _strong_echelon_form(reverse_cols(A), strategy)
     reverse_cols!(h)
@@ -57,7 +57,7 @@ function strong_echelon_form(A::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem}, 
   end
 end
 
-function triangularize!(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+function triangularize!(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   n = nrows(A)
   m = ncols(A)
   d = one(base_ring(A))
@@ -112,7 +112,7 @@ function triangularize!(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOr
   return d
 end
 
-function triangularize(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+function triangularize(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   #println("copying ...")
   B = deepcopy(A)
   #println("done")
@@ -128,7 +128,7 @@ end
 
 # Naive version of inplace strong echelon form
 # It is assumed that A has more rows then columns.
-function strong_echelon_form_naive!(A::Generic.Mat{S}) where {S <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+function strong_echelon_form_naive!(A::MatElem{S}) where {S <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   #A = deepcopy(B)
   n = nrows(A)
   m = ncols(A)
@@ -204,30 +204,28 @@ end
 #
 ################################################################################
 
-function howell_form!(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+function howell_form!(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   @assert nrows(A) >= ncols(A)
-
-  k = nrows(A)
 
   strong_echelon_form_naive!(A)
 
+  k = 1
   for i in 1:nrows(A)
-    if is_zero_row(A, i)
-      k = k - 1
-
-      for j in (i + 1):nrows(A)
-        if !is_zero_row(A, j)
-          swap_rows!(A, i, j)
-          j = nrows(A)
-          k = k + 1
-        end
-      end
+    if !is_zero_row(A, i)
+      k += 1
+      continue
     end
+
+    j = findfirst(l -> !is_zero_row(A, l), i + 1:nrows(A))
+    if isnothing(j)
+      break
+    end
+    swap_rows!(A, i, i + j)
   end
   return k
 end
 
-function howell_form(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+function howell_form(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
   B = deepcopy(A)
 
   if nrows(B) < ncols(B)
@@ -237,6 +235,94 @@ function howell_form(A::Generic.Mat{T}) where {T <: Union{AbsSimpleNumFieldOrder
   howell_form!(B)
 
   return B
+end
+
+################################################################################
+#
+#  Linear solving
+#
+################################################################################
+
+function Solve._can_solve_internal_no_check(A::MatElem{T}, b::MatElem{T},
+           task::Symbol; side::Symbol = :left) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem,
+                                                                 LocalFieldValuationRingResidueRingElem}}
+  R = base_ring(A)
+
+  if side === :left
+    # For side == :left, we pretend that A and b are transposed
+    fl, _sol, _K = Solve._can_solve_internal_no_check(Solve.lazy_transpose(A), Solve.lazy_transpose(b), task, side = :right)
+    return fl, Solve.data(_sol), Solve.data(_K)
+  end
+
+  AT = Solve.lazy_transpose(A)
+  B = hcat(AT, identity_matrix(AT, nrows(AT)))
+  if nrows(B) < ncols(B)
+    B = vcat(B, zero(AT, ncols(B) - nrows(B), ncols(B)))
+  end
+
+  howell_form!(B)
+
+  if nrows(AT) < ncols(AT)
+    H = view(B, 1:ncols(AT), 1:ncols(AT))
+    U = view(B, 1:ncols(AT), ncols(AT) + 1:ncols(B))
+  else
+    H = view(B, 1:nrows(AT), 1:ncols(AT))
+    U = view(B, 1:nrows(AT), ncols(AT) + 1:ncols(B))
+  end
+
+  @hassert :AbsOrdQuoRing 1 H == U*AT
+
+  fl, sol = Solve._can_solve_with_hnf(b, H, U, task)
+  if !fl || task !== :with_kernel
+    return fl, sol, zero(A, 0, 0)
+  end
+
+  N = _kernel_of_howell_form(A, B)
+  return true, sol, N
+end
+
+# Compute a matrix N with AN == 0 where the columns of N generate the kernel
+# and H is the Howell form of
+# (A^t | I_n)
+# ( 0  |  0 ).
+function _kernel_of_howell_form(A::MatElem{T}, H::MatElem{T}) where T <: RingElement
+  r = 1
+  while r <= nrows(H) && !is_zero_row(H, r)
+    r += 1
+  end
+  r -= 1
+  h = view(H, 1:r, 1:nrows(A))
+  s = findfirst(i -> is_zero_row(h, i), 1:nrows(h))
+  if isnothing(s)
+    s = nrows(h)
+  else
+    s -= 1
+  end
+  N = zero(A, ncols(A), nrows(h) - s)
+  for i in 1:nrows(N)
+    for j in 1:ncols(N)
+      N[i, j] = H[s + j, nrows(A) + i]
+    end
+  end
+  return N
+end
+
+function kernel(A::MatElem{T}; side::Symbol = :left) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  Solve.check_option(side, [:right, :left], "side")
+
+  if side === :left
+    KK = kernel(Solve.lazy_transpose(A), side = :right)
+    return Solve.data(KK)
+  end
+
+  AT = Solve.lazy_transpose(A)
+  B = hcat(AT, identity_matrix(AT, nrows(AT)))
+  if nrows(B) < ncols(B)
+    B = vcat(B, zero(AT, ncols(B) - nrows(B), ncols(B)))
+  end
+
+  howell_form!(B)
+  return _kernel_of_howell_form(A, B)
 end
 
 ################################################################################

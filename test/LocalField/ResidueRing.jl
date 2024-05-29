@@ -52,16 +52,86 @@ end
   test_Ring_interface(S)
 end
 
-
-@testset "Howell form" begin
-  K = padic_field(5)
+@testset "Linear algebra" begin
+  K, _ = qadic_field(2, 2)
   R = valuation_ring(K)
   pi = uniformizer(R)
-  S, RtoS = residue_ring(R, pi^3)
+  S, RtoS = residue_ring(R, pi^4)
 
-  M = matrix(S, [5 1; 0 0])
-  @test howell_form(M) == matrix(S, [5 1; 0 5^2])
+  M = matrix(S, [1 2 3 4 5; 0 0 8 9 10; 0 0 0 14 15])
 
-  M = matrix(S, [10 1; 12 0])
-  @test howell_form(M) == matrix(S, [12 0; 0 -1])
+  for b in [ [ S(1), S(2), S(3) ],
+            matrix(S, 3, 1, [ S(1), S(2), S(3) ]),
+            matrix(S, 3, 2, [ S(1), S(2), S(3), S(4), S(5), S(6) ]) ]
+    @test @inferred can_solve(M, b, side = :right)
+    x = @inferred solve(M, b, side = :right)
+    @test M*x == b
+    fl, x = @inferred can_solve_with_solution(M, b, side = :right)
+    @test fl
+    @test M*x == b
+    fl, x, K = @inferred can_solve_with_solution_and_kernel(M, b, side = :right)
+    @test fl
+    @test M*x == b
+    @test is_zero(M*K)
+    @test ncols(K) == 2
+    K = @inferred kernel(M, side = :right)
+    @test is_zero(M*K)
+    @test ncols(K) == 2
+  end
+
+  for b in [ [ S(1), S(1), S(1), S(1), S(1) ],
+            matrix(S, 1, 5, [ S(1), S(1), S(1), S(1), S(1) ]),
+            matrix(S, 2, 5, [ S(1), S(1), S(1), S(1), S(1),
+                             S(1), S(1), S(1), S(1), S(1) ]) ]
+    @test_throws ArgumentError solve(M, b)
+    @test @inferred !can_solve(M, b)
+    fl, x = @inferred can_solve_with_solution(M, b)
+    @test !fl
+    fl, x, K = @inferred can_solve_with_solution_and_kernel(M, b)
+    @test !fl
+  end
+
+  for b in [ [ S(1), S(2), S(3), S(4), S(5) ],
+            matrix(S, 1, 5, [ S(1), S(2), S(3), S(4), S(5)]),
+            matrix(S, 2, 5, [ S(1), S(2), S(3), S(4), S(5),
+                             S(0), S(0), S(8), S(9), S(10) ]) ]
+    @test @inferred can_solve(M, b)
+    x = @inferred solve(M, b)
+    @test x*M == b
+    fl, x = @inferred can_solve_with_solution(M, b)
+    @test fl
+    @test x*M == b
+    fl, x, K = @inferred can_solve_with_solution_and_kernel(M, b)
+    @test fl
+    @test x*M == b
+    @test is_zero(K*M)
+    @test nrows(K) == 0
+    K = @inferred kernel(M)
+    @test is_zero(K*M)
+    @test nrows(K) == 0
+  end
+
+  N = zero_matrix(S, 2, 1)
+  b = zeros(S, 2)
+  fl, x, K = @inferred can_solve_with_solution_and_kernel(N, b, side = :right)
+  @test fl
+  @test N*x == b
+  @test K == identity_matrix(S, 1)
+  K = @inferred kernel(N, side = :right)
+  @test K == identity_matrix(S, 1)
+
+  N = zero_matrix(S, 1, 2)
+  b = zeros(S, 1)
+  fl, x, K = @inferred can_solve_with_solution_and_kernel(N, b, side = :right)
+  @test fl
+  @test N*x == b
+  @test K == identity_matrix(S, 2) || K == swap_cols!(identity_matrix(S, 2), 1, 2)
+  K = @inferred kernel(N, side = :right)
+  @test K == identity_matrix(S, 2) || K == swap_cols!(identity_matrix(S, 2), 1, 2)
+
+  N = matrix(S, 1, 1, [2])
+  K = @inferred kernel(N)
+  @test K == matrix(S, 1, 1, [8])
+  K = @inferred kernel(N, side = :right)
+  @test K == matrix(S, 1, 1, [8])
 end
