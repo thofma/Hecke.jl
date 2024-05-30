@@ -1835,7 +1835,8 @@ function hermitian_genera(E::Hecke.RelSimpleNumField, rank::Int, signatures::Dic
   @req rank >= 0 "Rank must be a non-negative integer"
   K = base_field(E)
   OE = maximal_order(E)
-  bd = union!(support(2*maximal_order(K)), support(discriminant(OE)))
+  bds = union!(support(2*maximal_order(K)), support(discriminant(OE)))
+  bd = deepcopy(bds)
   @req !iszero(max_scale) "max_scale must be a non-zero fractional ideal"
   @req !iszero(min_scale) "min_scale must be a non-zero fractional ideal"
   @req all(v -> 0 <= v <= rank, values(signatures)) "Incompatible signatures and rank"
@@ -1844,6 +1845,7 @@ function hermitian_genera(E::Hecke.RelSimpleNumField, rank::Int, signatures::Dic
   union!(bd, support(norm(determinant)))
   sort!(bd; by = (x -> minimum(x)))
   local_symbols = Vector{local_genus_herm_type(E)}[]
+  res = genus_herm_type(E)[]
 
   mins = norm(min_scale)
   maxs = norm(max_scale)
@@ -1858,16 +1860,15 @@ function hermitian_genera(E::Hecke.RelSimpleNumField, rank::Int, signatures::Dic
       maxscale_p = div(maxscale_p, 2)
     end
     lgh = hermitian_local_genera(E, p, rank, det_val, minscale_p, maxscale_p)
-    !isempty(lgh) && push!(local_symbols, lgh)
+    isempty(lgh) && return res
+    push!(local_symbols, lgh)
   end
-
-  res = genus_herm_type(E)[]
   it = cartesian_product_iterator(local_symbols)
   for gs in it
     c = copy(gs)
     b = _check_global_genus(c, signatures)
     if b
-      filter!(g -> (prime(g) in bd) || (scales(g) != Int[0]), c)
+      filter!(g -> (prime(g) in bds) || (scales(g) != Int[0]), c)
       push!(res, HermGenus(E, rank, c, signatures))
     end
   end
