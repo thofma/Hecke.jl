@@ -449,6 +449,63 @@ function free_show(io::IO, C::ComplexOfMorphisms)
 #  print(io, "\n")
 end
 
+function free_show(io::IO, C::ComplexOfMorphisms{<:FinGenAbGroup})
+  name_mod = String[]
+  rank_mod = Int[]
+
+  rng = range(C)
+  rng = first(rng)-1:-1:0
+  arr = ("<--", "--")
+
+  R = Nemo.base_ring(C[first(rng)])
+  R_name = get_name(R)
+  if R_name === nothing
+    R_name = "($R)"
+  end
+
+  for i=reverse(rng)
+    M = C[i]
+    M_name = get_name(M)
+    if M_name === nothing
+      M_name = "$R_name^$(torsion_free_rank(M))"
+    end
+    push!(name_mod, M_name)
+    push!(rank_mod, torsion_free_rank(M))
+  end
+
+  io = IOContext(io, :compact => true)
+  print(io, "Free resolution")
+  N = get_attribute(C, :free_res)
+  if N !== nothing
+    print(io, " of ", N)
+  end
+  print(io, "\n")
+
+  pos = 0
+  pos_mod = Int[]
+
+  for i=1:length(name_mod)
+    print(io, name_mod[i])
+    push!(pos_mod, pos)
+    pos += length(name_mod[i])
+    if i < length(name_mod)
+      print(io, " ", arr[1], arr[2], " ")
+      pos += length(arr[1]) + length(arr[2]) + 2
+    end
+  end
+
+  print(io, "\n")
+  len = 0
+  for i=1:length(name_mod)
+    if i>1
+      print(io, " "^(pos_mod[i] - pos_mod[i-1]-len))
+    end
+    print(io, reverse(rng)[i])
+    len = length("$(reverse(rng)[i])")
+  end
+#  print(io, "\n")
+end
+
 function show(io::IO, C::ComplexOfMorphisms)
   @show_name(io, C)
   @show_special(io, C)
@@ -575,7 +632,7 @@ function free_resolution(G::FinGenAbGroup)
   R = rels(G)
   B = free_abelian_group(nrows(R))
   h_A_G = hom(A, G, gens(G))
-  h_B_A = hom(B, A, [FinGenAbGroupElem(A, R[i, :]) for i=1:ngens(B)])
+  h_B_A = hom(B, A, [FinGenAbGroupElem(A, R[i:i, :]) for i=1:ngens(B)])
   Z = zero_obj(G)
   C = chain_complex(hom(Z, B, [B[0]]), h_B_A)
   set_attribute!(C, :show => free_show, :free_res => G)
