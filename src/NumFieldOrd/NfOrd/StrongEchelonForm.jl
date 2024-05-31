@@ -262,13 +262,9 @@ function Solve._can_solve_internal_no_check(A::MatElem{T}, b::MatElem{T},
 
   howell_form!(B)
 
-  if nrows(AT) < ncols(AT)
-    H = view(B, 1:ncols(AT), 1:ncols(AT))
-    U = view(B, 1:ncols(AT), ncols(AT) + 1:ncols(B))
-  else
-    H = view(B, 1:nrows(AT), 1:ncols(AT))
-    U = view(B, 1:nrows(AT), ncols(AT) + 1:ncols(B))
-  end
+  m = max(nrows(AT), ncols(AT))
+  H = view(B, 1:m, 1:ncols(AT))
+  U = view(B, 1:m, ncols(AT) + 1:ncols(B))
 
   @hassert :AbsOrdQuoRing 1 H == U*AT
 
@@ -285,6 +281,7 @@ end
 # and H is the Howell form of
 # (A^t | I_n)
 # ( 0  |  0 ).
+# The matrix A is only used to get the return type right.
 function _kernel_of_howell_form(A::MatElem{T}, H::MatElem{T}) where T <: RingElement
   r = 1
   while r <= nrows(H) && !is_zero_row(H, r)
@@ -323,6 +320,104 @@ function kernel(A::MatElem{T}; side::Symbol = :left) where {T <: Union{AbsSimple
 
   howell_form!(B)
   return _kernel_of_howell_form(A, B)
+end
+
+# For this type, we story the Howell form of
+#   ( A | I_n)
+#   ( 0  |  0 )
+# in C.red. From this one can recover the Howell form of A with transformation,
+# but also additional information for the kernel.
+function Solve._init_reduce(C::Solve.SolveCtx{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  if isdefined(C, :red)
+    return nothing
+  end
+  A = matrix(C)
+
+  B = hcat(A, identity_matrix(A, nrows(A)))
+  if nrows(B) < ncols(B)
+    B = vcat(B, zero(A, ncols(B) - nrows(B), ncols(B)))
+  end
+
+  howell_form!(B)
+  C.red = B
+  return nothing
+end
+
+function Solve.reduced_matrix(C::Solve.SolveCtx{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  Solve._init_reduce(C)
+  return C.red
+end
+
+function Solve._init_reduce_transpose(C::Solve.SolveCtx{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  if isdefined(C, :red_transp)
+    return nothing
+  end
+  A = matrix(C)
+
+  AT = Solve.lazy_transpose(A)
+  B = hcat(AT, identity_matrix(AT, nrows(AT)))
+  if nrows(B) < ncols(B)
+    B = vcat(B, zero(AT, ncols(B) - nrows(B), ncols(B)))
+  end
+
+  howell_form!(B)
+  C.red_transp = B
+  return nothing
+end
+
+function Solve.reduced_matrix_of_transpose(C::Solve.SolveCtx{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  Solve._init_reduce_transpose(C)
+  return C.red_transp
+end
+
+function Solve._can_solve_internal_no_check(C::Solve.SolveCtx{T}, b::MatElem{T}, task::Symbol; side::Symbol = :left) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  if side === :right
+    A = matrix(C)
+    B = Solve.reduced_matrix_of_transpose(C)
+    m = max(ncols(A), nrows(A))
+    H = view(B, 1:m, 1:nrows(A))
+    U = view(B, 1:m, nrows(A) + 1:ncols(B))
+
+    fl, sol = Solve._can_solve_with_hnf(b, H, U, task)
+    if !fl || task !== :with_kernel
+      return fl, sol, zero(b, 0, 0)
+    end
+
+    return fl, sol, kernel(C, side = :right)
+  else# side === :left
+    A = matrix(C)
+    B = Solve.reduced_matrix(C)
+    m = max(ncols(A), nrows(A))
+    H = view(B, 1:m, 1:ncols(A))
+    U = view(B, 1:m, ncols(A) + 1:ncols(B))
+
+    fl, sol_transp = Solve._can_solve_with_hnf(Solve.lazy_transpose(b), H, U, task)
+    sol = Solve.data(sol_transp)
+    if !fl || task !== :with_kernel
+      return fl, sol, zero(b, 0, 0)
+    end
+
+    return fl, sol, kernel(C, side = :left)
+  end
+end
+
+function kernel(C::Solve.SolveCtx{T}; side::Symbol = :left) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  Solve.check_option(side, [:right, :left], "side")
+
+  if side === :right
+    if !isdefined(C, :kernel_right)
+      B = Solve.reduced_matrix_of_transpose(C)
+      C.kernel_right = _kernel_of_howell_form(matrix(C), B)
+    end
+    return C.kernel_right
+  else
+    if !isdefined(C, :kernel_left)
+      B = Solve.reduced_matrix(C)
+      X = _kernel_of_howell_form(Solve.lazy_transpose(matrix(C)), B)
+      C.kernel_left = Solve.data(X)
+    end
+    return C.kernel_left
+  end
 end
 
 ################################################################################
