@@ -337,7 +337,7 @@ function pres_show(io::IO, C::ComplexOfMorphisms)
   R = Nemo.base_ring(C[first(rng)])
   R_name = get_name(R)
   if isnothing(R_name)
-    R_name = "$R"
+    R_name = "($R)"
   end
 
   for i=reverse(rng)
@@ -403,7 +403,7 @@ function free_show(io::IO, C::ComplexOfMorphisms)
   R = Nemo.base_ring(C[first(rng)])
   R_name = get_name(R)
   if R_name === nothing
-    R_name = "$R"
+    R_name = "($R)"
   end
 
   for i=reverse(rng)
