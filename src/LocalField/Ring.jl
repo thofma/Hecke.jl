@@ -190,6 +190,7 @@ end
 
 function setprecision!(a::LocalFieldValuationRingElem, n::Int)
   a.x = setprecision!(a.x, n)
+  return a
 end
 
 function Base.setprecision(a::Generic.MatSpaceElem{LocalFieldValuationRingElem{QadicFieldElem}}, n::Int)

@@ -1,11 +1,11 @@
-function _test_elem(R::PadicField)
+function _integral_test_elem(R::PadicField)
   p = prime(R)
   prec = rand(1:R.prec_max)
   r = ZZRingElem(0):p-1
   return R(sum(rand(r)*p^i for i in 0:prec))
 end
 
-function _test_elem(R::NonArchLocalField)
+function _integral_test_elem(R::NonArchLocalField)
   d = degree(R)
   a = gen(R)
   x = R()
@@ -14,13 +14,13 @@ function _test_elem(R::NonArchLocalField)
       # Only fill every second coefficient
       continue
     end
-    x += _test_elem(base_field(R))*a^i
+    x += _integral_test_elem(base_field(R))*a^i
   end
   return x
 end
 
 function test_elem(R::Hecke.LocalFieldValuationRingResidueRing)
-  return R(_test_elem(Hecke._field(R)))
+  return R(_integral_test_elem(Hecke._field(R)))
 end
 
 @testset "Conformance tests" begin
@@ -29,6 +29,8 @@ end
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
+  @test !is_domain_type(typeof(S))
+  @test is_exact_type(typeof(S))
   test_Ring_interface(S)
 
   # the euclidean conformance test seems to assume that the ring is a domain
@@ -40,6 +42,8 @@ end
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
+  @test !is_domain_type(typeof(S))
+  @test is_exact_type(typeof(S))
   test_Ring_interface(S)
 
   # LocalField
@@ -49,7 +53,54 @@ end
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
+  @test !is_domain_type(typeof(S))
+  @test is_exact_type(typeof(S))
   test_Ring_interface(S)
+end
+
+@testset "Map" begin
+  K, a = qadic_field(17, 2)
+  R = valuation_ring(K)
+  pi = uniformizer(R)
+  S, RtoS = residue_ring(R, pi^3)
+
+  @test is_zero(RtoS(R()))
+  @test is_one(RtoS(R(1)))
+  @test_throws ArgumentError RtoS(setprecision!(R(1), 1))
+
+  for a in [R(_integral_test_elem(K)) for i in 1:10]
+    @test RtoS\RtoS(a) == a
+    for b in [R(_integral_test_elem(K)) for i in 1:10]
+      @test RtoS\RtoS(b) == b
+      @test RtoS(a + b) == RtoS(a) + RtoS(b)
+      @test RtoS(a * b) == RtoS(a) * RtoS(b)
+    end
+  end
+end
+
+@testset "xxgcd" begin
+  K = padic_field(17)
+  R = valuation_ring(K)
+  pi = uniformizer(R)
+  S, RtoS = residue_ring(R, pi^3)
+
+  for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 2)*S(pi^2)]
+    for b in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 2)*S(pi^2)]
+      g, u, v, s, t = Hecke.xxgcd(a, b)
+      @test g == gcd(a, b)
+      @test g == u*a + v*b
+      @test is_zero(s*a + t*b)
+      @test is_one(u*t - v*s)
+    end
+  end
+
+  for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 2)*S(pi^2)]
+    b = annihilator(a)
+    @test is_zero(b*a)
+    va = is_zero(a) ? Hecke._exponent(S) : valuation(lift(a))
+    vb = is_zero(b) ? Hecke._exponent(S) : valuation(lift(b))
+    @test va + vb == Hecke._exponent(S)
+  end
 end
 
 @testset "Linear algebra" begin

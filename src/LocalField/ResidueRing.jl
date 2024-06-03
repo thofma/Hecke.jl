@@ -265,22 +265,33 @@ function Base.divrem(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldVal
   return zero(parent(a)), a
 end
 
+function _canonicalize_xxgcd(g::T, u::T, v::T, s::T, t::T) where {T <: LocalFieldValuationRingResidueRingElem}
+  e = canonical_unit(g)
+  is_one(e) && return g, u, v, s, t
+  g = divexact(g, e)
+  u = divexact(u, e)
+  v = divexact(v, e)
+  s *= e
+  t *= e
+  return g, u, v, s, t
+end
+
 # Return g, u, v, s, t with g = gcd(a, b), g = u*a + v*b, 0 = s*a + t*b and u*t - v*s = 1
 function xxgcd(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
   @req parent(a) === parent(b) "Parents do not match"
 
   R = parent(a)
   if is_zero(b)
-    return a, one(R), zero(R), zero(R), one(R)
+    return _canonicalize_xxgcd(a, one(R), zero(R), zero(R), one(R))
   end
   if is_zero(a)
-    return b, zero(R), one(R), -one(R), zero(R)
+    return _canonicalize_xxgcd(b, zero(R), one(R), -one(R), zero(R))
   end
 
   if valuation(data(a)) > valuation(data(b))
-    return b, zero(R), one(R), -one(R), divexact(a, b)
+    return _canonicalize_xxgcd(b, zero(R), one(R), -one(R), divexact(a, b))
   end
-  return a, one(R), zero(R), -divexact(b, a), one(R)
+  return _canonicalize_xxgcd(a, one(R), zero(R), -divexact(b, a), one(R))
 end
 
 function annihilator(a::LocalFieldValuationRingResidueRingElem)
