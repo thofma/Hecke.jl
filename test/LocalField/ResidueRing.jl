@@ -47,12 +47,15 @@ end
   test_Ring_interface(S)
 
   # LocalField
-  F, _ = cyclotomic_field(3)
-  OF = maximal_order(F);
-  K, toK = completion(F, 2*OF);
+  F, _ = cyclotomic_field(20)
+  OF = maximal_order(F)
+  P = prime_decomposition(OF, 2)[1][1]
+  K, toK = completion(F, P)
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
+  # In this case, valuation(pi) == 1//2
+  @test Hecke._exponent(S) == 3
   @test !is_domain_type(typeof(S))
   @test is_exact_type(typeof(S))
   test_Ring_interface(S)
@@ -79,13 +82,16 @@ end
 end
 
 @testset "xxgcd" begin
-  K = padic_field(17)
+  F, _ = cyclotomic_field(20)
+  OF = maximal_order(F)
+  P = prime_decomposition(OF, 2)[1][1]
+  K, toK = completion(F, P)
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
 
-  for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 2)*S(pi^2)]
-    for b in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 2)*S(pi^2)]
+  for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 3)*S(pi^2)]
+    for b in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 3)*S(pi^2)]
       g, u, v, s, t = Hecke.xxgcd(a, b)
       @test g == gcd(a, b)
       @test g == u*a + v*b
@@ -94,20 +100,24 @@ end
     end
   end
 
-  for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 2)*S(pi^2)]
+  for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 3)*S(pi^2)]
     b = annihilator(a)
     @test is_zero(b*a)
-    va = is_zero(a) ? Hecke._exponent(S) : valuation(lift(a))
-    vb = is_zero(b) ? Hecke._exponent(S) : valuation(lift(b))
-    @test va + vb == Hecke._exponent(S)
+    r = absolute_ramification_index(K)
+    va = is_zero(a) ? Hecke._exponent(S) : r * valuation(lift(a))
+    vb = is_zero(b) ? Hecke._exponent(S) : r * valuation(lift(b))
+    @test (va + vb) == Hecke._exponent(S)
   end
 end
 
 @testset "Linear algebra" begin
-  K, _ = qadic_field(2, 2)
+  F, _ = cyclotomic_field(20)
+  OF = maximal_order(F)
+  P = prime_decomposition(OF, 2)[1][1]
+  K, toK = completion(F, P)
   R = valuation_ring(K)
   pi = uniformizer(R)
-  S, RtoS = residue_ring(R, pi^4)
+  S, RtoS = residue_ring(R, pi^8)
 
   M = matrix(S, [1 2 3 4 5; 0 0 8 9 10; 0 0 0 14 15])
 
@@ -182,16 +192,21 @@ end
 
   N = matrix(S, 1, 1, [2])
   K = @inferred kernel(N)
-  @test K == matrix(S, 1, 1, [8])
+  @test is_zero(K*N)
+  @test nrows(K) == 1
   K = @inferred kernel(N, side = :right)
-  @test K == matrix(S, 1, 1, [8])
+  @test is_zero(N*K)
+  @test ncols(K) == 1
 end
 
 @testset "Linear solving context" begin
-  K, _ = qadic_field(2, 2)
+  F, _ = cyclotomic_field(20)
+  OF = maximal_order(F)
+  P = prime_decomposition(OF, 2)[1][1]
+  K, toK = completion(F, P)
   R = valuation_ring(K)
   pi = uniformizer(R)
-  S, RtoS = residue_ring(R, pi^4)
+  S, RtoS = residue_ring(R, pi^8)
 
   M = matrix(S, [1 2 3 4 5; 0 0 8 9 10; 0 0 0 14 15])
   C = solve_init(M)
