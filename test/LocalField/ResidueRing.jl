@@ -296,3 +296,23 @@ end
   K = @inferred kernel(C, side = :right)
   @test K == identity_matrix(S, 2) || K == swap_cols!(identity_matrix(S, 2), 1, 2)
 end
+
+@testset "Matrix inversion" begin
+  F, _ = cyclotomic_field(20)
+  OF = maximal_order(F)
+  P = prime_decomposition(OF, 2)[1][1]
+  K, toK = completion(F, P)
+  R = valuation_ring(K)
+  pi = uniformizer(R)
+  S, RtoS = residue_ring(R, pi^8)
+
+  M = matrix(S, [1 2 3 4 5; 0 0 8 9 10; 0 0 0 14 15])
+  @test_throws ErrorException inv(M)
+
+  M = matrix(S, [2 0; 0 1])
+  @test_throws ErrorException inv(M)
+  M = matrix(S, [1 4; 0 1])
+  N = inv(M)
+  @test M * N == identity_matrix(S, 2)
+  @test N * M == identity_matrix(S, 2)
+end

@@ -237,6 +237,36 @@ function howell_form(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoR
   return B
 end
 
+function howell_form_with_transformation(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  B = hcat(A, identity_matrix(A, nrows(A)))
+  if nrows(B) < ncols(B)
+    B = vcat(B, zero(A, ncols(B) - nrows(B), ncols(B)))
+  end
+
+  howell_form!(B)
+
+  m = max(nrows(A), ncols(A))
+  H = sub(B, 1:m, 1:ncols(A))
+  U = sub(B, 1:m, ncols(A) + 1:ncols(B))
+
+  @hassert :AbsOrdQuoRing 1 H == U*A
+
+  return H, U
+end
+
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+function inv(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  !is_square(A) && error("Matrix not invertible")
+  H, U = howell_form_with_transformation(A)
+  !is_one(H) && error("Matrix not invertible")
+  return U
+end
+
 ################################################################################
 #
 #  Linear solving
