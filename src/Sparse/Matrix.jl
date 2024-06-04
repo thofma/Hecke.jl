@@ -299,8 +299,7 @@ end
 # GC.@preserve A block
 
 @inline function _is_zero_entry(A::ZZMatrix, i, j)
-  x = ccall((:fmpz_mat_entry, libflint),
-            Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), A, i - 1, j - 1)
+  x = mat_entry_ptr(A, i, j)
   return ccall((:fmpz_is_zero, libflint), Bool, (Ptr{ZZRingElem},), x), x
 end
 

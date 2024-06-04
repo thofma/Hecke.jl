@@ -837,15 +837,13 @@ function Hecke.coeff(M::NfMatElem, i::Int)
   return map(x->coeff(x, i), M)
 end
 
-function getindex_raw(M::QQMatrix, i::Int, j::Int)
-  return ccall((:fmpq_mat_entry, Nemo.libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), M, i-1, j-1)
-end
+getindex_raw(M::QQMatrix, i::Int, j::Int) = mat_entry_ptr(M, i, j)
 
 function coeff!(m::QQMatrix, M::NfMatElem, n::Int)
   K = base_ring(M)
   for i=1:nrows(M)
     for j=1:ncols(M)
-      ccall((:nf_elem_get_coeff_fmpq, Nemo.libantic), Cvoid, (Ptr{QQFieldElem}, Ptr{nf_elem_raw}, Int, Ref{AbsSimpleNumField}), getindex_raw(m, i, j), getindex_raw(M, i, j), n, K)
+      ccall((:nf_elem_get_coeff_fmpq, Nemo.libantic), Cvoid, (Ptr{QQFieldElem}, Ptr{nf_elem_raw}, Int, Ref{AbsSimpleNumField}), mat_entry_ptr(m, i, j), mat_entry_ptr(M, i, j), n, K)
     end
   end
 end
@@ -865,7 +863,7 @@ function setcoeff!(M::NfMatElem, n::Int, m::QQMatrix)
   @assert degree(K) > 2 #for now
   for i=1:nrows(M)
     for j=1:ncols(M)
-      ccall((:fmpq_poly_set_coeff_fmpq, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Int, Ptr{QQFieldElem}), getindex_raw(M, i, j), n, getindex_raw(m, i, j))
+      ccall((:fmpq_poly_set_coeff_fmpq, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Int, Ptr{QQFieldElem}), mat_entry_ptr(M, i, j), n, mat_entry_ptr(m, i, j))
     end
   end
 end
@@ -874,7 +872,7 @@ function reduce!(M::NfMatElem)
   K = base_ring(M)
   for i=1:nrows(M)
     for j=1:ncols(M)
-      reduce!(getindex_raw(M, i, j), K)
+      reduce!(mat_entry_ptr(M, i, j), K)
     end
   end
 end
@@ -969,7 +967,7 @@ Hecke.number_of_columns(M::fmpz_poly_mat) = M.c
 
 function Base.getindex(M::fmpz_poly_mat, i::Int, j::Int)
   f = Hecke.Globals.Zx()
-  ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{fmpz_poly_raw}), f, getindex_raw(M, i, j))
+  ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{fmpz_poly_raw}), f, mat_entry_ptr(M, i, j))
   return f
 end
 

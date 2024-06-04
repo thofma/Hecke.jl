@@ -191,7 +191,7 @@ function _assure_weakly_normal_presentation(A::AbsNumFieldOrderIdeal)
 
     # Put the entries of B into the (1 x d)-Matrix m
     for i in 1:degree(O)
-      s = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), m, 0, i - 1)
+      s = mat_entry_ptr(m, 1, i)
       ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), s, B[i])
     end
 
