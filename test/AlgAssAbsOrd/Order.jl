@@ -29,8 +29,8 @@
     for b in Hecke.squarefree_up_to(100)[2:end]
       K, a = number_field(x^2-b, check = false, cached = false)
       O = maximal_order(K);
-      cocval = Matrix{nf_elem}(undef, 2, 2)
-      G = NfToNfMor[hom(K,K,a),hom(K,K,-a)]
+      cocval = Matrix{AbsSimpleNumFieldElem}(undef, 2, 2)
+      G = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(K,K,a),hom(K,K,-a)]
       cocval[1,1] = K(1)
       cocval[1,2] = K(1)
       cocval[2,1] = K(1)
@@ -62,13 +62,13 @@
 
     K, a = number_field(x^4-4*x^2+1)
     O = maximal_order(K)
-    Autos = Vector{NfToNfMor}(undef, 4)
+    Autos = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, 4)
     Autos[1] = hom(K, K, a)
     Autos[2] = hom(K, K, -a)
     Autos[3] = hom(K, K, a^3 - 4*a)
     Autos[4] = hom(K, K, -a^3 + 4*a)
     MatCoc = [0 0 0 0; 0 1 0 1; 0 1 1 0; 0 0 1 1]
-    Coc = Matrix{nf_elem}(undef, 4, 4)
+    Coc = Matrix{AbsSimpleNumFieldElem}(undef, 4, 4)
     for i = 1:4
       for j = 1:4
         Coc[i, j] = K(-1)^MatCoc[i, j]
@@ -88,7 +88,7 @@
   end
 
   @testset "Any order" begin
-    A = AlgAss(x^2 - QQFieldElem(1, 5))
+    A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
 
     O = any_order(A)
 
@@ -111,8 +111,8 @@
   end
 
   @testset "Maximal Order" begin
-    A = AlgAss(x^2 + 10x + 7)
-    AA = deepcopy(A) # avoid caching
+    A = StructureConstantAlgebra(x^2 + 10x + 7)
+    AA = StructureConstantAlgebra(x^2 + 10x + 7)
     O1 = maximal_order(A)
     O2 = Hecke.maximal_order_via_decomposition(AA)
     @test discriminant(O1) == discriminant(O2)
@@ -128,7 +128,7 @@
     # large one, triggers splitting
     Qx, x = QQ["x"]
     f = prod(x - i for i in 1:30)
-    A = AlgAss(f)
+    A = StructureConstantAlgebra(f)
     R = any_order(A)
     M = MaximalOrder(R)
     @test isone(abs(discriminant(M)))
@@ -152,8 +152,8 @@
     end
     @test count(is_maximal, S) == 2
 
-    # Trigger multiple maximal orders in the AlgAss case
-    A, AtoQG = AlgAss(QG)
+    # Trigger multiple maximal orders in the StructureConstantAlgebra case
+    A, AtoQG = StructureConstantAlgebra(QG)
     ZG = Order(A, basis(A))
     @test !is_maximal(ZG)
 
@@ -185,7 +185,7 @@
 
   @testset "rand" begin
     Qx, x = FlintQQ["x"]
-    A = AlgAss(x^2 - QQFieldElem(1, 5))
+    A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
 
     for n = (3, ZZRingElem(3), big(3), 1:3, big(1):3)
@@ -257,9 +257,9 @@
   end
 
   # zero algebra
-  
+
   A = zero_algebra(QQ)
-  B = basis_matrix(elem_type(A)[], FakeFmpqMat)
+  B = basis_matrix(elem_type(A)[], Hecke.FakeFmpqMat)
   @test (nrows(B), ncols(B)) == (0, 0)
   M = maximal_order(A)
   @test is_maximal(M)

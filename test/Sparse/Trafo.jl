@@ -9,7 +9,7 @@
   v = ZZRingElem[1, 2, 3, 4, 5]
 
 
-  T = @inferred sparse_trafo_scale(2, ZZRingElem(-1))
+  T = @inferred Hecke.sparse_trafo_scale(2, ZZRingElem(-1))
   @inferred Hecke.apply_left!(Asparse, T)
   @test Asparse == sparse_matrix(FlintZZ, [0 1 0 0 0;
                                            0 0 -4 0 0;
@@ -25,7 +25,7 @@
 
   v = ZZRingElem[1, -4, 3, 4, 5]
 
-  T = @inferred sparse_trafo_swap(ZZRingElem, 5, 4)
+  T = @inferred Hecke.sparse_trafo_swap(ZZRingElem, 5, 4)
   @inferred Hecke.apply_left!(Asparse, T)
   @test Asparse == sparse_matrix(FlintZZ, [0 1 0 0 0;
                                            0 0 -4 0 0;
@@ -41,7 +41,7 @@
 
   v = ZZRingElem[1, -4, 3, 5, 4]
 
-  T = @inferred sparse_trafo_add_scaled(3, 2, ZZRingElem(2))
+  T = @inferred Hecke.sparse_trafo_add_scaled(3, 2, ZZRingElem(2))
   @inferred Hecke.apply_left!(Asparse, T)
   @test Asparse == sparse_matrix(FlintZZ, [0 1 0 0 0;
                                            0 0 2 0 0;
@@ -58,7 +58,7 @@
   v = ZZRingElem[1, -4, -5, 5, 4]
 
 
-  T = @inferred sparse_trafo_para_add_scaled(2, 3, ZZRingElem(2), ZZRingElem(-1), ZZRingElem(3), ZZRingElem(-2))
+  T = @inferred Hecke.sparse_trafo_para_add_scaled(2, 3, ZZRingElem(2), ZZRingElem(-1), ZZRingElem(3), ZZRingElem(-2))
   @inferred Hecke.apply_left!(Asparse, T)
   @test Asparse == sparse_matrix(FlintZZ, [0 1 0 0 0;
                                            0 0 1 0 0;
@@ -82,7 +82,7 @@
   Asparsec = copy(Asparse)
 
   B = matrix(FlintZZ, [1 2 5; 0 1 10; 0 0 -1])
-  T = @inferred sparse_trafo_partial_dense(3, 3:5, 3:5, B)
+  T = @inferred Hecke.sparse_trafo_partial_dense(3, 3:5, 3:5, B)
   @inferred Hecke.apply_left!(Asparse, T)
 
   @test Asparse == sparse_matrix(FlintZZ, [1 1 0 0 0;
@@ -116,7 +116,7 @@
 
   Asparsec = copy(Asparse)
 
-  T = @inferred sparse_trafo_move_row(ZZRingElem, 2, 5)
+  T = @inferred Hecke.sparse_trafo_move_row(ZZRingElem, 2, 5)
   @inferred Hecke.apply_left!(Asparse, T)
   @test Asparse == sparse_matrix(FlintZZ, [1 1 0 0 0;
                                            0 0 1 10 4;

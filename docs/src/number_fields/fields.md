@@ -14,7 +14,7 @@ To create a simple number field given by a defining
 polynomial or a non-simple number field given by defining polynomials, the
 following functions can be used.
 
-```@docs
+```@docs; canonical=false
 number_field(::DocuDummy)
 number_field(::DocuDummy2)
 ```
@@ -38,7 +38,7 @@ number_field(::DocuDummy2)
 For frequently used number fields like quadratic fields, cyclotomic fields
 or radical extensions, the following functions are provided:
 
-```@docs
+```@docs; canonical=false
 cyclotomic_field(n::Int)
 quadratic_field(d::ZZRingElem)
 wildanger_field(n::Int, B::ZZRingElem)
@@ -48,7 +48,7 @@ rationals_as_number_field()
 
 ## Basic properties
 
-```@docs
+```@docs; canonical=false
 basis(::SimpleNumField)
 basis(::NonSimpleNumField)
 absolute_basis(::NumField)
@@ -61,21 +61,21 @@ base_field(::NumField)
 
 ## Invariants
 
-```@docs
+```@docs; canonical=false
 degree(::NumField)
 absolute_degree(::NumField)
 signature(::NumField)
 unit_group_rank(::NumField)
-class_number(::AnticNumberField)
-relative_class_number(::AnticNumberField)
-regulator(::AnticNumberField)
+class_number(::AbsSimpleNumField)
+relative_class_number(::AbsSimpleNumField)
+regulator(::AbsSimpleNumField)
 discriminant(::SimpleNumField)
 absolute_discriminant(::SimpleNumField)
 ```
 
 ## Predicates
 
-```@docs
+```@docs; canonical=false
 is_simple(::NumField)
 is_absolute(::NumField)
 is_totally_real(::NumField)
@@ -84,29 +84,29 @@ is_cm_field(::NumField)
 is_kummer_extension(::SimpleNumField)
 is_radical_extension(::SimpleNumField)
 is_linearly_disjoint(::SimpleNumField, ::SimpleNumField)
-is_weakly_ramified(::AnticNumberField, ::NfOrdIdl)
-is_tamely_ramified(::AnticNumberField)
-is_tamely_ramified(::AnticNumberField, p::Int)
+is_weakly_ramified(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+is_tamely_ramified(::AbsSimpleNumField)
+is_tamely_ramified(::AbsSimpleNumField, p::Int)
 is_abelian(::NumField)
 ```
 
 ### Subfields
 
-```@docs
+```@docs; canonical=false
 is_subfield(::SimpleNumField, ::SimpleNumField)
 subfields(::SimpleNumField)
 principal_subfields(::SimpleNumField)
-compositum(::AnticNumberField, ::AnticNumberField)
+compositum(::AbsSimpleNumField, ::AbsSimpleNumField)
 embedding(::NumField, ::NumField)
-normal_closure(::AnticNumberField)
+normal_closure(::AbsSimpleNumField)
 relative_simple_extension(::NumField, ::NumField)
-is_subfield_normal(::AnticNumberField, ::AnticNumberField)
+is_subfield_normal(::AbsSimpleNumField, ::AbsSimpleNumField)
 ```
 
 ## Conversion
 
-```@docs
-simplify(::AnticNumberField)
+```@docs; canonical=false
+simplify(::AbsSimpleNumField)
 absolute_simple_field(K::NumField)
 simple_extension(::NonSimpleNumField)
 simplified_simple_extension(::NonSimpleNumField)
@@ -114,40 +114,40 @@ simplified_simple_extension(::NonSimpleNumField)
 
 ## Morphisms
 
-```@docs
+```@docs; canonical=false
 is_isomorphic(::SimpleNumField, ::SimpleNumField)
 is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
-is_involution(::NfToNfMor)
-fixed_field(::NumFieldMor)
+is_involution(::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
+fixed_field(::NumFieldHom)
 automorphism_list(::NumField)
-automorphism_group(::AnticNumberField)
-complex_conjugation(::AnticNumberField)
+automorphism_group(::AbsSimpleNumField)
+complex_conjugation(::AbsSimpleNumField)
 ```
 
 ## Galois theory
 
-```@docs
+```@docs; canonical=false
 normal_basis(::NumField)
-decomposition_group(::AnticNumberField, ::NfOrdIdl, ::Map)
-ramification_group(::AnticNumberField, ::NfOrdIdl, ::Int, ::Map)
-inertia_subgroup(::AnticNumberField, ::NfOrdIdl, ::Map)
+decomposition_group(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Map)
+ramification_group(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int, ::Map)
+inertia_subgroup(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Map)
 ```
 
 ## Infinite places
 
-```@docs
+```@docs; canonical=false
 infinite_places(K::NumField)
-real_places(K::AnticNumberField)
-complex_places(K::AnticNumberField)
+real_places(K::AbsSimpleNumField)
+complex_places(K::AbsSimpleNumField)
 isreal(::Plc)
 is_complex(::Plc)
 ```
 
 ## Miscellaneous
 
-```@docs
-norm_equation(::AnticNumberField, ::Any)
-lorenz_module(::AnticNumberField, ::Int)
-kummer_failure(::nf_elem, ::Int, ::Int)
-is_defining_polynomial_nice(::AnticNumberField)
+```@docs; canonical=false
+norm_equation(::AbsSimpleNumField, ::Any)
+lorenz_module(::AbsSimpleNumField, ::Int)
+kummer_failure(::AbsSimpleNumFieldElem, ::Int, ::Int)
+is_defining_polynomial_nice(::AbsSimpleNumField)
 ```

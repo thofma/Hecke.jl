@@ -10,39 +10,39 @@ in $Z_K$. Due to the Dedekind property of $Z_K$, the ideals for a
 multiplicative group.
 
 Fractional ideals are represented as an integral ideal and an additional
-denominator. They are of type `NfOrdFracIdl`.
+denominator. They are of type `AbsSimpleNumFieldOrderFractionalIdeal`.
 
 ## Creation
 
-```@docs
-fractional_ideal(::NfOrd, ::ZZMatrix)
-fractional_ideal(::NfOrd, ::ZZMatrix, ::ZZRingElem)
-fractional_ideal(::NfOrd, ::FakeFmpqMat)
-fractional_ideal(::NfOrd, ::NfOrdIdl)
-fractional_ideal(::NfOrd, ::NfOrdIdl, ::ZZRingElem)
-fractional_ideal(::NfOrd, ::nf_elem)
-fractional_ideal(::NfOrd, ::NfOrdElem)
-inv(::NfOrdIdl)
+```@docs; canonical=false
+fractional_ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix)
+fractional_ideal(::AbsSimpleNumFieldOrder, ::ZZMatrix, ::ZZRingElem)
+fractional_ideal(::AbsSimpleNumFieldOrder, ::QQMatrix)
+fractional_ideal(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+fractional_ideal(::AbsSimpleNumFieldOrder, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::ZZRingElem)
+fractional_ideal(::AbsSimpleNumFieldOrder, ::AbsSimpleNumFieldElem)
+fractional_ideal(::AbsSimpleNumFieldOrder, ::AbsSimpleNumFieldOrderElem)
+inv(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
 ## Arithmetic
 
 All the normal operations are provided as well.
 
-```@docs
-inv(::NfOrdFracIdl)
-integral_split(::NfOrdFracIdl)
-numerator(::NfRelOrdFracIdl)
-denominator(::NfRelOrdFracIdl)
+```@docs; canonical=false
+inv(::AbsSimpleNumFieldOrderFractionalIdeal)
+integral_split(::AbsSimpleNumFieldOrderFractionalIdeal)
+numerator(::RelNumFieldOrderFractionalIdeal)
+denominator(::RelNumFieldOrderFractionalIdeal)
 ```
 
 ## Miscaellenous
 
-```@docs
-order(::NfOrdFracIdl)
-basis_matrix(::NfOrdFracIdl)
-basis_mat_inv(::NfOrdFracIdl)
-basis(::NfOrdFracIdl)
-norm(::NfOrdFracIdl)
+```@docs; canonical=false
+order(::AbsSimpleNumFieldOrderFractionalIdeal)
+basis_matrix(::AbsSimpleNumFieldOrderFractionalIdeal)
+basis_mat_inv(::AbsSimpleNumFieldOrderFractionalIdeal)
+basis(::AbsSimpleNumFieldOrderFractionalIdeal)
+norm(::AbsSimpleNumFieldOrderFractionalIdeal)
 ```
 

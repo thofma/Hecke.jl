@@ -278,7 +278,7 @@
   @test !is_inert(g)
   @test is_split(g)
   @test !is_dyadic(g)
-  @test_throws AssertionError norms(g)
+  @test isone(inv(norm(g))*scale(g))
   @test discriminant(g) == 1
   @test g == g
   @test sprint(show, "text/plain", g) isa String
@@ -415,10 +415,32 @@
   g = t^2 - a*t + 1;
   E, b = number_field(g, "b", cached = false);
   D = matrix(E, 1, 1, [-a + 2]);
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1]), map(E, [a]), map(E, [b]), map(E, [a*b])];
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1]), map(E, [a]), map(E, [b]), map(E, [a*b])];
   LM = hermitian_lattice(E, gens, gram = D);
   L2 = @inferred representative(genus(LM))
   @test is_isometric_with_isometry(LM, L2)[1]
+
+  # Fix norm in non-dyadic ramified case
+
+  # Rank 1 example
+  Qx, x = polynomial_ring(FlintQQ, "x")
+  f = x^10 - 10*x^8 + 35*x^6 + x^5 - 50*x^4 - 5*x^3 + 25*x^2 + 5*x - 1
+  K, a = number_field(f, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  g = t^2 - a*t + 1
+  E, b = number_field(g, "b", cached = false)
+  D = matrix(E, 1, 1, [1])
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [5]), map(E, [a + 3]), map(E, [a^2 + 1]), map(E, [a^3 + 2]), map(E, [a^4 + 4]), map(E, [a^5 + 3]), map(E, [a^6 + 1]), map(E, [a^7 + 2]), map(E, [a^8 + 4]), map(E, [a^9 + 3]), map(E, [b + 4]), map(E, [a*b + 4*a]), map(E, [a^2*b + 4*a^2]), map(E, [a^3*b + 4*a^3]), map(E, [a^4*b + 4*a^4]), map(E, [a^5*b + 4*a^5]), map(E, [a^6*b + 4*a^6]), map(E, [a^7*b + 4*a^7]), map(E, [a^8*b + 4*a^8]), map(E, [a^9*b + 4*a^9])]
+  L = hermitian_lattice(E, gens, gram = D)
+
+  @test norm(L) == norm(genus(L))
+
+  # Hyperbolic plane of scale P^3, and norm p^2
+  E,b = cyclotomic_field_as_cm_extension(3)
+  M = matrix(E, 2, 2, [           0  (1-b)^3;
+                       (1-inv(b))^3        0])
+  L = lattice(hermitian_space(E, M))
+  @test norm(L) == norm(genus(L))
 
   ##############################################################################
   #
@@ -515,7 +537,7 @@ end
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 1, 0]), map(E, [0, 0, -1]), map(E, [(1//2*a + 1//2)*b + 1//2*a - 1//2, 0, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 1, 0]), map(E, [0, 0, -1]), map(E, [(1//2*a + 1//2)*b + 1//2*a - 1//2, 0, 0])]
   L = hermitian_lattice(E, gens, gram = D)
   G = genus(L)
   G2 = @inferred rescale(G, -1//(a^2+5))
@@ -577,9 +599,9 @@ end
   vals = Int[2, 2, 2, 2, 0, 2];
   sig = Dict(S[i] => vals[i] for i in 1:6);
   OK = maximal_order(K);
-  ps = NfOrdIdl[ideal(OK, v) for v in Vector{NfOrdElem}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
+  ps = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, v) for v in Vector{AbsSimpleNumFieldOrderElem}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
   datas = [[(0, 2, 1)], [(-11, 2, 1)]];
-  lgs = Hecke.HermLocalGenus{typeof(E), NfOrdIdl}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
+  lgs = Hecke.HermLocalGenus{typeof(E), AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
   G = Hecke.HermGenus(E, 2, lgs, sig)
   h = Hecke._hermitian_form_with_invariants(E, 2, Hecke._non_norm_primes(local_symbols(G)), sig)
   L = lattice(hermitian_space(E, h))
@@ -595,7 +617,7 @@ end
   g = t^2 + 3
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [11//2*b + 41//2, b - 5, 0]), map(E, [-107//2*b + 189//2, 18*b, -b - 9]), map(E, [-29*b + 105, 15*b - 9, -2*b - 6])]
   L = hermitian_lattice(E, gens, gram = D)
   p1 = minimum(support(3*maximal_order(E))[1])
   p2 = minimum(support(2*maximal_order(E))[1])

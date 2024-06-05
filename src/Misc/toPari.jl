@@ -1,4 +1,4 @@
-function to_pari(io::IO, f::Generic.Poly{nf_elem})
+function to_pari(io::IO, f::Generic.Poly{AbsSimpleNumFieldElem})
   Zy, y = polynomial_ring(FlintQQ, "y", cached = false)
   k = base_ring(f)
   kt = parent(f)
@@ -17,7 +17,7 @@ function to_pari(io::IO, f::Generic.Poly{nf_elem})
   nothing
 end
 
-function to_pari(s::String, f::Generic.Poly{nf_elem})
+function to_pari(s::String, f::Generic.Poly{AbsSimpleNumFieldElem})
   g = open(s, "w")
   to_pari(g, f)
   close(g)

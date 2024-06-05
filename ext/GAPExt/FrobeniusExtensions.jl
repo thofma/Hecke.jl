@@ -107,13 +107,13 @@ function Hecke.primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B:
   @req !(only_real && only_non_real) "Either \"only_real\" or \"only_non_real\" must be set"
   sid, invfac = _frobenius_groups[id]
   R = ArbField(64, cached = false)
-  res = AnticNumberField[]
+  res = AbsSimpleNumField[]
   maxB = ZZRingElem(1)
   reldeg = prod(invfac)
   k = 1
   s = (reldeg - 1)//sid[1] # (|F| - 1)/|H|
   #Ms = abelian_fields(QQ, [l], max(ZZRingElem(1), upper_bound(ZZRingElem, R(B)^(1//s))))
-  Ms = Hecke.fields(sid[1], sid[2], max(ZZRingElem(1), upper_bound(ZZRingElem, R(B)^(1//s))))
+  Ms = Hecke.fields(sid[1], sid[2], max(ZZRingElem(1), Hecke.upper_bound(ZZRingElem, R(B)^(1//s))))
   ll = length(Ms)
   target_id = id
 
@@ -123,7 +123,7 @@ function Hecke.primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B:
     Mabs = Mnf
     dM = abs(discriminant(maximal_order(Mabs)))
 
-    newB = upper_bound(ZZRingElem, (B//R(dM)^s)^sid[1] * dM^reldeg)
+    newB = Hecke.upper_bound(ZZRingElem, (B//R(dM)^s)^sid[1] * dM^reldeg)
 
     # If I want only real degree l fields, then the normal closure N can be anything
     #
@@ -137,7 +137,7 @@ function Hecke.primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B:
       Nabs, = absolute_simple_field(number_field(N, using_norm_relation = true))
       _A = absolute_automorphism_group(N)
       _A = closure(_A, *)
-      id, = find_small_group(generic_group(_A, *)[1])
+      id, = Hecke.find_small_group(generic_group(_A, *)[1])
       if id != target_id
         continue
       end
@@ -148,7 +148,7 @@ function Hecke.primitive_frobenius_extensions(::QQField, id::Tuple{Int, Int}, B:
       cur = nothing
 
       for (K, KtoN) in subgroups(N, normal = true)
-        _,KK, = find_small_group(K)
+        _,KK, = Hecke.find_small_group(K)
         if KK.is_nilpotent == 1 && (cur === nothing || order(KK) > order(cur[1]))
           cur = K, KtoN
         end

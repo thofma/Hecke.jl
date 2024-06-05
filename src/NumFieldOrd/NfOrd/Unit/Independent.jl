@@ -5,12 +5,12 @@
 ################################################################################
 
 @doc raw"""
-    unit_group_rank(O::NfOrd) -> Int
+    unit_group_rank(O::AbsSimpleNumFieldOrder) -> Int
 
 Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
 $\mathcal O^\times$.
 """
-function unit_group_rank(O::NfOrd)
+function unit_group_rank(O::AbsSimpleNumFieldOrder)
   return unit_group_rank(nf(O))
 end
 
@@ -38,7 +38,7 @@ function _isindependent(x::Vector{T}, p::Int = 32) where T
   rr = r1 + r2
   r = rr - 1 # unit rank
 
-  conlog = Vector{Vector{arb}}(undef, length(x))
+  conlog = Vector{Vector{ArbFieldElem}}(undef, length(x))
 
   # This can be made more memory friendly
   while true

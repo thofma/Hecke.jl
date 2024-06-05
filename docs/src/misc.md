@@ -17,24 +17,6 @@ Hecke.psi_guess
 Hecke.psi_lower
 ```
 
-
-## Linear Algebra
-
-```@docs
-Hecke.largest_elementary_divisor
-Hecke.maximal_elementary_divisor(::ZZMatrix)
-Hecke.mod_sym(::ZZMatrix, ::ZZRingElem)
-Hecke.mod_sym!(::ZZMatrix, ::ZZRingElem)
-Hecke.mod!(::ZZMatrix, ::ZZRingElem)
-Hecke.saturate(::ZZMatrix)
-Hecke.elementary_divisors(::ZZMatrix)
-Hecke.jordan_normal_form
-Hecke.divisors(::ZZMatrix, ::ZZRingElem)
-Hecke.snf_with_transform(::ZZMatrix)
-```
-
-## Polynomials
-
 ## CRT
 ```@docs
 induce_crt

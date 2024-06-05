@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  Map/NfRel.jl : Types for maps with domains of type NfRel
+#  Map/RelSimpleNumField.jl : Types for maps with domains of type RelSimpleNumField
 #
 # This file is part of Hecke.
 #
@@ -32,17 +32,17 @@
 #
 ################################################################################
 
-mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqField, HeckeMap, NfRelToFqMor}
-  header::MapHeader{NfRel{T}, FqField}
+mutable struct NfRelToFqMor{T} <: Map{RelSimpleNumField{T}, FqField, HeckeMap, NfRelToFqMor}
+  header::MapHeader{RelSimpleNumField{T}, FqField}
 
   function NfRelToFqMor{T}() where {T}
     z = new{T}()
-    z.header = MapHeader{NfRel{T}, FqField}()
+    z.header = MapHeader{RelSimpleNumField{T}, FqField}()
     return z
   end
 end
 
-function _automorphisms(L::NfRel{T}) where T
+function _automorphisms(L::RelSimpleNumField{T}) where T
   if degree(L) == 1
     return morphism_type(L)[id_hom(L)]
   end
@@ -60,7 +60,7 @@ function _automorphisms(L::NfRel{T}) where T
   return auts
 end
 
-function automorphism_list(L::T; copy::Bool = true) where {T <: NfRel}
+function automorphism_list(L::T; copy::Bool = true) where {T <: RelSimpleNumField}
   auts = get_attribute!(L, :automorphisms) do
     return _automorphisms(L)
   end::Vector{morphism_type(T, T)}
@@ -84,13 +84,13 @@ mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsA
   mat::Mat
   t::Mat
 
-  function NfRelToAbsAlgAssMor{S, T, Mat}(K::S, A::T, M::Mat) where { S <: NfRel, T <: AbsAlgAss, Mat <: MatElem }
+  function NfRelToAbsAlgAssMor{S, T, Mat}(K::S, A::T, M::Mat) where { S <: RelSimpleNumField, T <: AbstractAssociativeAlgebra, Mat <: MatElem }
     @assert base_ring(A) == base_field(K)
     z = new{S, T, Mat}()
     z.mat = M
     z.t = zero_matrix(base_field(K), 1, degree(K))
 
-    function _image(x::NfRelElem)
+    function _image(x::RelSimpleNumFieldElem)
       for i = 1:degree(K)
         z.t[1, i] = coeff(x, i - 1)
       end
@@ -103,11 +103,11 @@ mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsA
   end
 end
 
-function NfRelToAbsAlgAssMor(K::S, A::T, M::Mat) where { S <: NfRel, T <: AbsAlgAss, Mat <: MatElem }
+function NfRelToAbsAlgAssMor(K::S, A::T, M::Mat) where { S <: RelSimpleNumField, T <: AbstractAssociativeAlgebra, Mat <: MatElem }
   return NfRelToAbsAlgAssMor{S, T, Mat}(K, A, M)
 end
 
-function haspreimage(m::NfRelToAbsAlgAssMor, a::AbsAlgAssElem)
+function has_preimage_with_preimage(m::NfRelToAbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
   A = parent(a)
   t = matrix(base_ring(A), 1, dim(A), coefficients(a))
   b, p = can_solve_with_solution(m.mat, t, side = :left)

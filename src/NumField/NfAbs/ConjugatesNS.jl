@@ -1,4 +1,4 @@
-function conjugates_data_roots(K::NfAbsNS)
+function conjugates_data_roots(K::AbsNonSimpleNumField)
   cache = get_attribute(K, :conjugates_data_roots)
   if cache !== nothing
     return cache
@@ -9,7 +9,7 @@ function conjugates_data_roots(K::NfAbsNS)
   return ctxs
 end
 
-function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
+function conjugate_data_arb_roots(K::AbsNonSimpleNumField, p::Int; copy = true)
   cache = get_attribute(K, :conjugates_data)
   if cache !== nothing
     if haskey(cache, p)
@@ -32,7 +32,7 @@ function conjugate_data_arb_roots(K::NfAbsNS, p::Int; copy = true)
       expand!(z, -p)
     end
     CC = parent(c.roots[1])
-    all_roots = Vector{acb}(undef, length(c.roots))
+    all_roots = Vector{AcbFieldElem}(undef, length(c.roots))
     for i = 1:length(real_roots)
       all_roots[i] = CC(real_roots[i])
     end
@@ -118,21 +118,21 @@ function _is_complex_conj(v::Vector, w::Vector, pos::Vector, roots::Vector)
 end
 
 
-function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
+function conjugates_arb(a::AbsNonSimpleNumFieldElem, p::Int, work_tol::Int = p)
   K = parent(a)
   conjs, ind_real, ind_complex = conjugate_data_arb_roots(K, work_tol)
-  res = Vector{acb}(undef, degree(K))
+  res = Vector{AcbFieldElem}(undef, degree(K))
   pol_a = data(a)
   r, s = signature(K)
   for i = 1:r
-    res[i] = _evaluate(pol_a, acb[conjs[j].roots[ind_real[i][j]] for j = 1:ngens(K)])
+    res[i] = _evaluate(pol_a, AcbFieldElem[conjs[j].roots[ind_real[i][j]] for j = 1:ngens(K)])
     if !isfinite(res[i]) || !radiuslttwopower(res[i], -p)
       return conjugates_arb(a, p, 2*work_tol)
     end
   end
   ind = r+1
   for i = 1:length(ind_complex)
-    ev = acb[conjs[j].roots[ind_complex[i][j]] for j = 1:ngens(K)]
+    ev = AcbFieldElem[conjs[j].roots[ind_complex[i][j]] for j = 1:ngens(K)]
     res[ind] = _evaluate(pol_a, ev)
     if !isfinite(res[ind]) || !radiuslttwopower(res[ind], -p)
       return conjugates_arb(a, p, 2*work_tol)
@@ -143,10 +143,10 @@ function conjugates_arb(a::NfAbsNSElem, p::Int, work_tol::Int = p)
   return res
 end
 
-function _evaluate(f::QQMPolyRingElem, vals::Vector{acb})
+function _evaluate(f::QQMPolyRingElem, vals::Vector{AcbFieldElem})
   S = parent(vals[1])
-  powers = [Dict{Int, acb}() for i in 1:length(vals)]
-  r = acb[zero(S)]
+  powers = [Dict{Int, AcbFieldElem}() for i in 1:length(vals)]
+  r = AcbFieldElem[zero(S)]
   i = UInt(1)
   cvzip = zip(coefficients(f), exponent_vectors(f))
   for (c, v) in cvzip
@@ -177,7 +177,7 @@ function _evaluate(f::QQMPolyRingElem, vals::Vector{acb})
   return r[1]
 end
 
-function signature(K::NfAbsNS)
+function signature(K::AbsNonSimpleNumField)
   if K.signature[1] != -1
     return K.signature
   end

@@ -5,52 +5,52 @@
 ################################################################################
 
 @doc raw"""
-    restrict_scalars(A::AlgAss{nf_elem}, Q::QQField)
-    restrict_scalars(A::AlgAss{fqPolyRepFieldElem}, Fp::fpField)
-    restrict_scalars(A::AlgAss{FqPolyRepFieldElem}, Fp::Generic.ResidueField{ZZRingElem})
-      -> AlgAss, Map
+    restrict_scalars(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}, Q::QQField)
+    restrict_scalars(A::StructureConstantAlgebra{fqPolyRepFieldElem}, Fp::fpField)
+    restrict_scalars(A::StructureConstantAlgebra{FqPolyRepFieldElem}, Fp::EuclideanRingResidueField{ZZRingElem})
+      -> StructureConstantAlgebra, Map
 
 Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
 function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
 """
-# Top level functions to avoid "type mix-ups" (like AlgAss{fqPolyRepFieldElem} with FlintQQ)
-function restrict_scalars(A::AbsAlgAss{nf_elem}, Q::QQField)
+# Top level functions to avoid "type mix-ups" (like StructureConstantAlgebra{fqPolyRepFieldElem} with FlintQQ)
+function restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, Q::QQField)
   return _restrict_scalars(A, Q)
 end
 
-function restrict_scalars(A::AbsAlgAss{fqPolyRepFieldElem}, Fp::fpField)
+function restrict_scalars(A::AbstractAssociativeAlgebra{fqPolyRepFieldElem}, Fp::fpField)
   return _restrict_scalars(A, Fp)
 end
 
-function restrict_scalars(A::AbsAlgAss{FqPolyRepFieldElem}, Fp::FpField)
+function restrict_scalars(A::AbstractAssociativeAlgebra{FqPolyRepFieldElem}, Fp::FpField)
   return _restrict_scalars(A, Fp)
 end
 
-function restrict_scalars(A::AbsAlgAss{FqFieldElem}, Fp::FqField)
+function restrict_scalars(A::AbstractAssociativeAlgebra{FqFieldElem}, Fp::FqField)
   return _restrict_scalars(A, Fp)
 end
 
-#function restrict_scalars(A::AbsAlgAss{fpFieldElem}, Fp::fpField)
-#  function AtoA(x::AlgAssElem)
+#function restrict_scalars(A::AbstractAssociativeAlgebra{fpFieldElem}, Fp::fpField)
+#  function AtoA(x::AssociativeAlgebraElem)
 #    return x
 #  end
 #  return A, AtoA, AtoA
 #end
 
 @doc raw"""
-    restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
-      -> AlgAss, Map
+    restrict_scalars(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}, KtoL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
+      -> StructureConstantAlgebra, Map
 
 Given an algebra $A$ over a number field $L$ and an inclusion map `KtoL` from
 a number field $K$ to $L$, this function returns the restriction $B$ of $A$
 to $K$ and the morphism $B \to A$.
 """
-function restrict_scalars(A::AbsAlgAss{nf_elem}, KtoL::NfToNfMor)
+function restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, KtoL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   return _restrict_scalars(A, KtoL)
 end
 
-#function restrict_scalars(A::AbsAlgAss{Nemo.FpFieldElem}, Fp::Nemo.FpField)
-#  function AtoA(x::AlgAssElem)
+#function restrict_scalars(A::AbstractAssociativeAlgebra{Nemo.FpFieldElem}, Fp::Nemo.FpField)
+#  function AtoA(x::AssociativeAlgebraElem)
 #    return x
 #  end
 #  return A, AtoA, AtoA
@@ -107,9 +107,9 @@ function image(f::AlgAssResMor, a)
   return A(yy)
 end
 
-#function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{QQField, fpField, Generic.ResidueField{ZZRingElem}}) where { T <: Union{nf_elem, fqPolyRepFieldElem, FqPolyRepFieldElem} }
+#function _restrict_scalars_to_prime_field(A::StructureConstantAlgebra{T}, prime_field::Union{QQField, fpField, EuclideanRingResidueField{ZZRingElem}}) where { T <: Union{AbsSimpleNumFieldElem, fqPolyRepFieldElem, FqPolyRepFieldElem} }
 # TODO: fix the type
-function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
+function _restrict_scalars(A::AbstractAssociativeAlgebra{T}, prime_field) where { T }
   K = base_ring(A)
   n = dim(A)
   # We use b * A[i], b running through a basis of A over prime_field
@@ -177,7 +177,7 @@ function _restrict_scalars(A::AbsAlgAss{T}, prime_field) where { T }
     end
   end
 
-  B = AlgAss(F, mult_table, y)
+  B = StructureConstantAlgebra(F, mult_table, y)
   B.is_commutative = is_commutative(A)
 
   return B, AlgAssResMor(B, A, f, absbasis)
@@ -238,14 +238,14 @@ function preimage(f::AlgAssExtMor, a)
   return B(yy)
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, QQFieldElem}}
+function _as_algebra_over_center(A::StructureConstantAlgebra{T}) where { T <: Union{AbsSimpleNumFieldElem, QQFieldElem}}
   extpT = _ext_type(T)
   extT = elem_type(extpT)
   eltA = elem_type(A)
   matT = dense_matrix_type(T)
-  algtype = AlgAss{extT}
-  mortype = AlgAssExtMor{algtype, AlgAss{T},
-                         AbsAlgAssToNfAbsMor{AlgAss{T}, eltA, extpT, matT},
+  algtype = StructureConstantAlgebra{extT}
+  mortype = AlgAssExtMor{algtype, StructureConstantAlgebra{T},
+                         AbsAlgAssToNfAbsMor{StructureConstantAlgebra{T}, eltA, extpT, matT},
                          Vector{eltA}, Vector{extT}, matT, Vector{eltA}}
   get_attribute!(A, :_as_algebra_over_center) do
     @assert !iszero(A)
@@ -259,7 +259,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{nf_elem, QQFie
   end::Tuple{algtype, mortype}
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T } #<: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _as_algebra_over_center(A::StructureConstantAlgebra{T}) where { T } #<: Union{QQFieldElem, fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   @assert !iszero(A)
 
   K = base_ring(A)
@@ -358,7 +358,7 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
   end
 
 
-  B = AlgAss(L, mult_table, y)
+  B = StructureConstantAlgebra(L, mult_table, y)
   B.is_commutative = A.is_commutative
 
   BtoA = AlgAssExtMor(B, A, CtoL, basisCinA, basisCinL, iMM, elem_type(A)[A[i] for i in AoverC])
@@ -377,19 +377,19 @@ function FldToVecMor(f::PrimeFieldEmbedStub)
   return FldToVecMor(L, K)
 end
 
-function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}})
+function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 
-function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{AlgAss{nf_elem}})
+function _embed_center_into_field(m::AbsAlgAssToNfAbsMor{StructureConstantAlgebra{AbsSimpleNumFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 
-function _embed_center_into_field(m::AbsAlgAssToFqMor{AlgAss{fpFieldElem}})
+function _embed_center_into_field(m::AbsAlgAssToFqMor{StructureConstantAlgebra{fpFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 
-function _embed_center_into_field(m::AbsAlgAssToFqMor{AlgAss{FpFieldElem}})
+function _embed_center_into_field(m::AbsAlgAssToFqMor{StructureConstantAlgebra{FpFieldElem}})
   return PrimeFieldEmbedStub(base_ring(domain(m)), codomain(m))
 end
 

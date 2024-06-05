@@ -3,19 +3,19 @@ module module_RelNeq
 using Hecke
 
 struct RelNeq
-  k::AnticNumberField
-  K::AnticNumberField
-  Kk::Hecke.NfRel{nf_elem}
+  k::AbsSimpleNumField
+  K::AbsSimpleNumField
+  Kk::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   m_k_K::Map
   m_Kk_K::Map
-  function RelNeq(k::AnticNumberField, Kk::Hecke.NfRel{nf_elem})
+  function RelNeq(k::AbsSimpleNumField, Kk::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem})
     k = base_ring(Kk)
     K, m_K_Kk = absolute_simple_field(Kk)
     m1 = inv(m_K_Kk)
     return new(k, K, Kk, m1, restrict(m1, k))
   end
 
-  function RelNeq(k::AnticNumberField, K::AnticNumberField)
+  function RelNeq(k::AbsSimpleNumField, K::AbsSimpleNumField)
     kt, t = polynomial_ring(k, cached = false)
     fl, mp = Hecke.is_subfield(k, K)
     Qt = parent(K.pol)
@@ -98,7 +98,7 @@ function norm_1_subgroup(A::RelNeq)
   q, mq = quo(r, elem_type(r)[])
 
   S = PrimesSet(1, -1)
-  gens = Set{NfOrdIdl}()
+  gens = Set{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
   gg = []
 
   max_stable = 15*ngens(r)
@@ -123,7 +123,8 @@ function norm_1_subgroup(A::RelNeq)
       end
       f = [ZZRingElem(div(degree(Q[1]), degree(P[1]))) for Q = lP]
       m = matrix(FlintZZ, 1, length(f), f)
-      r, n = nullspace(m)
+      n = kernel(m, side = :right)
+      r = ncols(n)
 
       decom = [mq(mr\Q[1]) for Q = lP]
       for i=1:r
@@ -151,11 +152,11 @@ function norm_1_subgroup(A::RelNeq)
 end
 
 
-function knot(K::AnticNumberField)
+function knot(K::AbsSimpleNumField)
   return knot(rationals_as_number_field()[1], K)
 end
 
-function knot(k::AnticNumberField, K::AnticNumberField)
+function knot(k::AbsSimpleNumField, K::AbsSimpleNumField)
   R = RelNeq(k, K)
   #TODO: is this better than using implicit extensions?
   mr, mq, gens, gg = norm_1_subgroup(R)
@@ -205,13 +206,13 @@ end
 
 =#
 mutable struct Norm1Group
-  gens::Vector{Hecke.NfOrdFracIdl}
+  gens::Vector{Hecke.AbsSimpleNumFieldOrderFractionalIdeal}
   rels
   A::RelNeq
-  gC::Vector{Tuple{Hecke.NfOrdFracIdl, GrpAbFinGenElem}}
-  sC::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
-  gU::Vector{Tuple{FacElem{nf_elem, AnticNumberField}, GrpAbFinGenElem}}
-  sU::Tuple{GrpAbFinGen, Hecke.GrpAbFinGenMap}
+  gC::Vector{Tuple{Hecke.AbsSimpleNumFieldOrderFractionalIdeal, FinGenAbGroupElem}}
+  sC::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
+  gU::Vector{Tuple{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, FinGenAbGroupElem}}
+  sU::Tuple{FinGenAbGroup, Hecke.FinGenAbGroupHom}
   C::Any
   U::Any
 
@@ -239,7 +240,7 @@ function Base.show(io::IO, N::Norm1Group)
   println(io, "currently, using $(length(N.gens)) generators")
 end
 
-function is_principal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
+function is_principal_fac_elem(A::FacElem{<:AbsNumFieldOrderIdeal})
   a,b = Hecke.reduce_ideal(A)
   # a*b == A
   fl, c = is_principal_fac_elem(a)
@@ -249,10 +250,10 @@ function is_principal_fac_elem(A::FacElem{<:NfAbsOrdIdl})
   return fl, c*b
 end
 
-function is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
+function is_principal_fac_elem(A::FacElem{<:Hecke.AbsSimpleNumFieldOrderFractionalIdeal})
   zk = order(base_ring(A))
   B = FacElem(Dict((numerator(x), v) for (x,v) = A.fac))
-  den = Dict{nf_elem, ZZRingElem}()
+  den = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
   for (x,v) = A.fac
     k = nf(zk)(denominator(x))
     if haskey(den, k)
@@ -272,13 +273,13 @@ function is_principal_fac_elem(A::FacElem{<:Hecke.NfOrdFracIdl})
 end
 
 
-function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
+function Base.push!(N::Norm1Group, I::Hecke.AbsSimpleNumFieldOrderFractionalIdeal)
   A = N.A
   @assert isone(norm(A.m_k_K, I))
   c, mc = N.C
   u, mu = N.U
   r = mc\numerator(I)
-  fl, s = haspreimage(N.sC[2], r)
+  fl, s = has_preimage_with_preimage(N.sC[2], r)
   if fl # found new relation
     J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
     J = I*inv(J)
@@ -287,7 +288,7 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
     ng = norm(A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = mu\ng
-    fl, _ = haspreimage(N.sU[2], r)
+    fl, _ = has_preimage_with_preimage(N.sU[2], r)
     if fl
       return false # nothing new
     end
@@ -311,7 +312,7 @@ function order_bound(N::Norm1Group)
   return order(N.U[1]) * order(N.C[1])
 end
 
-Hecke.elem_type(::Type{Hecke.NfOrdFracIdlSet}) = Hecke.NfOrdFracIdl
+Hecke.elem_type(::Type{Hecke.AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = Hecke.AbsSimpleNumFieldOrderFractionalIdeal
 
 function Hecke.evaluate(N::Norm1Group)
   # want the group extension (and the disc log and such)
@@ -329,14 +330,14 @@ function Hecke.evaluate(N::Norm1Group)
     ng = norm(N.A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = N.U[2]\ng
-    fl, x = haspreimage(N.sU[2], r)
+    fl, x = has_preimage_with_preimage(N.sU[2], r)
     for j=1:ngens(s2)
       R[ngens(s2) + i, j] = -x[j]
     end
   end
   A = abelian_group(R)
   ZK = maximal_order(N.A.K)
-  function exp(a::GrpAbFinGenElem)
+  function exp(a::FinGenAbGroupElem)
     a1 = sub(a.coeff, 1:1, 1:ngens(s2))
     a2 = sub(a.coeff, 1:1, ngens(s2)+(1:ngens(s1)))
     b1 = ms2(s2(a1))
@@ -346,10 +347,10 @@ function Hecke.evaluate(N::Norm1Group)
     return I1*I2
   end
 
-  function log(I::Hecke.NfOrdFracIdl)
+  function log(I::Hecke.AbsSimpleNumFieldOrderFractionalIdeal)
     @assert isone(norm(N.A.m_k_K, I))
     r = N.C[2]\numerator(I)
-    fl, s = haspreimage(N.sC[2], r)
+    fl, s = has_preimage_with_preimage(N.sC[2], r)
     @assert fl
     J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
     J = I*inv(J)
@@ -358,7 +359,7 @@ function Hecke.evaluate(N::Norm1Group)
     ng = norm(N.A.m_k_K, g)
     @assert is_unit(maximal_order(N.A.k)(evaluate(ng)))
     r = N.U[2]\ng
-    fl, r = haspreimage(N.sU[2], r)
+    fl, r = has_preimage_with_preimage(N.sU[2], r)
     @assert fl
     return A(hcat((ms2\r).coeff, (ms1\s).coeff))
   end
@@ -377,7 +378,7 @@ function n1group(A::RelNeq, B::Int)
   ZK = maximal_order(K)
   N = Norm1Group(A)
 
-  function single_prime(P::NfAbsOrdIdl)
+  function single_prime(P::AbsNumFieldOrderIdeal)
     p = minimum(P)
     if numerator(discriminant(K)) % p == 0 ||
        numerator(discriminant(k)) % p == 0
@@ -387,7 +388,8 @@ function n1group(A::RelNeq, B::Int)
       lq = Hecke.prime_decomposition_nonindex(A.m_k_K, P)
     end
     f = matrix(FlintZZ, 1, length(lq), ZZRingElem[div(degree(Q[1]), degree(P)) for Q = lq])
-    r, n = nullspace(f)
+    n = kernel(f, side = :right)
+    r = ncols(n)
     res = false
     for i = 1:r
       I = evaluate(FacElem(Dict((lq[j][1], n[j,i]) for j = 1:length(lq))), coprime = true)

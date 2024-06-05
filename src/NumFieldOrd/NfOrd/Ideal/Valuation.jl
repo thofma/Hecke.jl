@@ -11,7 +11,7 @@
 # at small precision and can thus compute (small) valuation at the effective
 # cost of an mod(zzModPolyRingElem, zzModPolyRingElem) operation.
 # Isn't it nice?
-function val_func_no_index_small(p::NfOrdIdl)
+function val_func_no_index_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   P = p.gen_one
   @assert P <= typemax(UInt)
   K = nf(order(p))
@@ -23,13 +23,13 @@ function val_func_no_index_small(p::NfOrdIdl)
   g = lift(Zx, gR)
   k = flog(ZZRingElem(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
-  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, UInt(P)^k, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
   uP = UInt(P)
   local vfunc
   let h = h, g = g, P = P, uP = uP
-    function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function vfunc(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       Nemo.nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
@@ -45,7 +45,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   return vfunc
 end
 
-function val_func_no_index(p::NfOrdIdl)
+function val_func_no_index(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   P = p.gen_one
   K = nf(order(p))
   # TODO (GF): Change to proper GF to use nmod if possible
@@ -56,13 +56,13 @@ function val_func_no_index(p::NfOrdIdl)
   g = gcd(g, f)
   g = lift(Zx, g)
   g = hensel_lift(Zx(K.pol), g, P, 10)
-  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false), cached=false)[1]
+  Sx = polynomial_ring(residue_ring(FlintZZ, P^5, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
   c = ZZRingElem()
   local vfunc
   let h = h, g = g, P = P
-    function vfunc(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function vfunc(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       Nemo.nf_elem_to_fmpz_mod_poly!(h, x, false) # ignores the denominator
       h = rem!(h, h, g)
@@ -85,7 +85,7 @@ function _coeff_as_fmpz!(c::ZZRingElem, f::ZZModPolyRingElem, i::Int)
 end
 
 
-function val_func_index(p::NfOrdIdl)
+function val_func_index(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   # We are in the index divisor case. In larger examples, a lot of
   # time is spent computing denominators of order elements.
   # By using the representation matrix to multiply, we can stay in the order
@@ -99,7 +99,7 @@ function val_func_index(p::NfOrdIdl)
 
   local val
   let P = P, O = O, M = M, p = p
-    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function val(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       v = 0
       d, x_mat = integral_split(x, O)
       Nemo.mul!(x_mat, x_mat, M)
@@ -124,14 +124,14 @@ end
 # coefficients. Core idea is that the valuation element is, originally, den*gen_two(p)^-1
 # where gen_two(p) is "small". Actually, we don't care about gen_two, we
 # need gen_two^-1 to be small, hence this version.
-function val_fun_generic_small(p::NfOrdIdl)
+function val_fun_generic_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   P = p.gen_one
   K = nf(order(p))
   O = order(p)
   e = anti_uniformizer(p)
   local val
   let e = e, P = P, p = p, O = O
-    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function val(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       nn = ZZRingElem(0)
       v = 0
       p_mod = ZZRingElem(0)
@@ -150,7 +150,7 @@ function val_fun_generic_small(p::NfOrdIdl)
         v += 1
         if !iszero(no)
           nn = divexact(nn, norm(p))
-          if !divisible(nn, norm(p))
+          if !is_divisible_by(nn, norm(p))
             break
           end
         end
@@ -166,15 +166,15 @@ function val_fun_generic_small(p::NfOrdIdl)
   return val
 end
 
-function val_func_generic(p::NfOrdIdl)
-  @hassert :NfOrd 1 is_prime(p)
+function val_func_generic(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  @hassert :AbsNumFieldOrder 1 is_prime(p)
   P = p.gen_one
   K = nf(order(p))
   O = order(p)
   e = anti_uniformizer(p)
   local val
   let e = e, P = P, p = p, O = O
-    function val(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+    function val(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       nn = ZZRingElem(0)
       v = 0
       p_mod = ZZRingElem(0)
@@ -190,7 +190,7 @@ function val_func_generic(p::NfOrdIdl)
         v += 1
         if !iszero(no)
           nn = divexact(nn, norm(p))
-          if !divisible(nn, norm(p))
+          if !is_divisible_by(nn, norm(p))
             break
           end
           x = mod(x, p_mod)
@@ -203,7 +203,7 @@ function val_func_generic(p::NfOrdIdl)
   return val
 end
 
-function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
+function valuation_with_anti_uni(a::AbsSimpleNumFieldElem, anti_uni::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   O = order(I)
   b = a*anti_uni
   if !(b in O)
@@ -218,7 +218,7 @@ function valuation_with_anti_uni(a::nf_elem, anti_uni::nf_elem, I::NfOrdIdl)
   return v
 end
 
-function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
+function _isindex_divisor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert is_prime_known(P) && is_prime(P)
   if !isone(denominator(P.gen_two.elem_in_nf))
     return true
@@ -236,7 +236,7 @@ function _isindex_divisor(O::NfOrd, P::NfOrdIdl)
 end
 
 #Function that chooses the valuation depending on the properties of the ideal
-function assure_valuation_function(p::NfOrdIdl)
+function assure_valuation_function(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if isdefined(p, :valuation)
     return nothing
   end
@@ -248,7 +248,7 @@ function assure_valuation_function(p::NfOrdIdl)
     anti_uni = anti_uniformizer(p)
     local val2
     let O = O, p = p, anti_uni = anti_uni, K = K
-      function val2(s::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      function val2(s::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
         d = denominator(s, O)
         x = d*s
         if gcd(d, minimum(p, copy = false)) == 1
@@ -265,7 +265,7 @@ function assure_valuation_function(p::NfOrdIdl)
   if degree(O) < 40 && p.splitting_type[1]*p.splitting_type[2] == degree(O)
     local val3
     let P = P, p = p
-      function val3(s::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      function val3(s::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
         return divexact(valuation(iszero(no) ? norm(s) : no, P)[1], p.splitting_type[2])::Int
       end
     end
@@ -276,7 +276,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f2 = val_func_generic(p)
       local val1
       let f1 = f1, f2 = f2
-        function val1(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val1(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f1(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -292,7 +292,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f9 = val_func_generic(p)
       local val1
       let f8 = f8, f9 = f9
-        function val_large_non_index(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val_large_non_index(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f8(x, no)
           if v > 10  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -310,7 +310,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f5 = val_func_generic(p)
       local val5
       let f3 = f3, f5 = f5
-        function val5(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val5(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f3(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -325,7 +325,7 @@ function assure_valuation_function(p::NfOrdIdl)
       f4 = val_func_index(p)
       local val4
       let f3 = f3, f4 = f4
-        function val4(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+        function val4(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
           v = f3(x, no)
           if v > 100  # can happen ONLY if the precision in the .._small function
                       # was too small.
@@ -342,7 +342,7 @@ function assure_valuation_function(p::NfOrdIdl)
     f7 = val_fun_generic_small(p)
     local val_gen
     let f7 = f7, f6 = f6
-      function val_gen(x::nf_elem, no::QQFieldElem = QQFieldElem(0))
+      function val_gen(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
         vv = f7(x, no)
         if vv == 100
           return f6(x, no)
@@ -359,11 +359,11 @@ function assure_valuation_function(p::NfOrdIdl)
 end
 
 
-function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl, n::QQFieldElem = QQFieldElem(0))
+function valuation(a::AbsNonSimpleNumFieldElem, p::AbsNumFieldOrderIdeal, n::QQFieldElem = QQFieldElem(0))
   return valuation_naive(a, p)
 end
 
-function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
+function valuation(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, no::QQFieldElem = QQFieldElem(0))
   if is_zero(a)
     error("element is zero")
   end
@@ -373,7 +373,7 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
   if !is_defining_polynomial_nice(parent(a)) || order(p).is_maximal != 1
     return valuation_naive(a, p)::Int
   end
-  @hassert :NfOrd 0 !iszero(a)
+  @hassert :AbsNumFieldOrder 0 !iszero(a)
   assure_valuation_function(p)
   if p.is_prime != 1
     return Int(p.valuation(a, no))::Int
@@ -399,24 +399,24 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::QQFieldElem = QQFieldElem(0))
 end
 
 @doc raw"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
-    valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
-    valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldOrderElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    valuation(a::ZZRingElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
+valuation(a::AbsSimpleNumFieldOrderElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = valuation(a.elem_in_nf, p)
 
 @doc raw"""
-    valuation(a::nf_elem, p::NfOrdIdl) -> ZZRingElem
-    valuation(a::NfOrdElem, p::NfOrdIdl) -> ZZRingElem
-    valuation(a::ZZRingElem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    valuation(a::AbsSimpleNumFieldOrderElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    valuation(a::ZZRingElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-function valuation(a::ZZRingElem, p::NfAbsOrdIdl)
+function valuation(a::ZZRingElem, p::AbsNumFieldOrderIdeal)
   if p.splitting_type[1] == 0
     return valuation_naive(order(p)(a), p)
   end
@@ -424,14 +424,14 @@ function valuation(a::ZZRingElem, p::NfAbsOrdIdl)
   return valuation(a, P)* p.splitting_type[1]
 end
 @doc raw"""
-    valuation(a::Integer, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::Integer, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-valuation(a::Integer, p::NfAbsOrdIdl) = valuation(ZZRingElem(a), p)
+valuation(a::Integer, p::AbsNumFieldOrderIdeal) = valuation(ZZRingElem(a), p)
 
 #TODO: some more intelligence here...
-function valuation_naive(A::NfAbsOrdIdl, B::NfAbsOrdIdl)
+function valuation_naive(A::AbsNumFieldOrderIdeal, B::AbsNumFieldOrderIdeal)
   @assert !isone(B)
   Bi = inv(B)
   i = 0
@@ -446,7 +446,7 @@ end
 #TODO: some more intelligence here...
 #      in non-maximal orders, interesting ideals cannot be inverted
 #      maybe this needs to be checked...
-function valuation_naive(x::NfAbsOrdElem, B::NfAbsOrdIdl)
+function valuation_naive(x::AbsNumFieldOrderElem, B::AbsNumFieldOrderIdeal)
   @assert !isone(B)
   i = 0
   C = B
@@ -457,7 +457,7 @@ function valuation_naive(x::NfAbsOrdElem, B::NfAbsOrdIdl)
   return i
 end
 
-function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNSElem}
+function valuation_naive(x::T, B::AbsNumFieldOrderIdeal) where T <: Union{AbsSimpleNumFieldElem, AbsNonSimpleNumFieldElem}
   @assert !isone(B)
   i = 0
   C = B
@@ -467,13 +467,13 @@ function valuation_naive(x::T, B::NfAbsOrdIdl) where T <: Union{nf_elem, NfAbsNS
 end
 
 @doc raw"""
-    valuation(A::NfOrdIdl, p::NfOrdIdl) -> ZZRingElem
+    valuation(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 such that $A$ is contained in $\mathfrak p^i$.
 """
-function valuation(A::NfAbsOrdIdl, p::NfAbsOrdIdl)
-  if has_minimum(A) && has_minimum(p) && !divisible(minimum(A, copy = false), minimum(p, copy = false))
+function valuation(A::AbsNumFieldOrderIdeal, p::AbsNumFieldOrderIdeal)
+  if has_minimum(A) && has_minimum(p) && !is_divisible_by(minimum(A, copy = false), minimum(p, copy = false))
     return 0
   end
   if has_princ_gen_special(A)

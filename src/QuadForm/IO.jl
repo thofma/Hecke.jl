@@ -218,7 +218,7 @@ function to_magma(io::IO, L::QuadLat; target = "L")
   println(io, "$target := LatticeModule(M, F);")
 end
 
-function var(E::NfRel)
+function var(E::RelSimpleNumField)
   return E.S
 end
 

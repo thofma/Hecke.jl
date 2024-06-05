@@ -1,10 +1,18 @@
-test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
+test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
 
 @testset "Embedded number field" begin
   Qx, x = QQ["x"]
   K, _a = number_field(x^2 - 2, "a")
   i = Hecke.real_embedding(K, 1.41)
   E, a = Hecke.embedded_field(K, i)
+  @test is_positive(a)
+  @test !is_negative(a)
+  @test sign(a) == one(E)
+  @test sign(-a) == -one(E)
+  @test sign(zero(E)) == zero(E)
+  @test abs(a) == a
+  @test abs(-a) == a
+  @test abs(zero(E)) == zero(E)
   @test a > 0
   @test a >= 0
   @test !(a > a)
@@ -92,7 +100,7 @@ test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
   @test (@inferred QQ(2*a^0)) == 2 * one(QQ)
 
   # roots and factor
-  begin
+  let
     Qx, x = QQ["x"]
     K, _a = number_field(x^2 - 2, "a")
     i = Hecke.real_embedding(K, 1.41)
@@ -104,5 +112,26 @@ test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
     fa = factor(t^2 - a)
     @test unit(fa) * prod(g^e for (g, e) in fa) == t^2 - a
   end
-end
 
+  # floor, ceil, round
+  let
+    Qx, x = QQ["x"]
+    K, a = embedded_number_field(x^2 - 2, 1.4)
+    # element, floor, ceiling, round, rounddown, roundup, roundnear
+    test_data = [(a, 1, 2, 1, 1, 2, 1), (K(1), 1, 1, 1, 1, 1, 1), (K(0), 0, 0, 0, 0, 0, 0), (K(1//2), 0, 1, 1, 0, 1, 0), (K(3//2), 1, 2, 2, 1, 2, 2), (K(-1//2), -1, 0, -1, -1, 0, 0)]
+    for (e, f, c, r, rd, ru, rn) in test_data
+      @test floor(e) == f && parent(floor(e)) === K
+      @test floor(ZZRingElem, e) == f && floor(ZZRingElem, e) isa ZZRingElem
+      @test ceil(e) == K(c) && parent(ceil(e)) === K
+      @test ceil(ZZRingElem, e) == c && ceil(ZZRingElem, e) isa ZZRingElem
+      @test round(e) == r && parent(round(e)) === K
+      @test round(ZZRingElem, e) == r && round(ZZRingElem, e) isa ZZRingElem
+      @test round(e, RoundDown) == rd && parent(round(e, RoundDown)) === K
+      @test round(ZZRingElem, e, RoundDown) == rd && round(ZZRingElem, e, RoundDown) isa ZZRingElem
+      @test round(e, RoundUp) == ru && parent(round(e, RoundUp)) === K
+      @test round(ZZRingElem, e, RoundUp) == ru && round(ZZRingElem, e, RoundUp) isa ZZRingElem
+      @test round(e, RoundNearest) == rn && parent(round(e, RoundNearest)) === K
+      @test round(ZZRingElem, e, RoundNearest) == rn && round(ZZRingElem, e, RoundNearest) isa ZZRingElem
+    end
+  end
+end

@@ -32,11 +32,11 @@
 #
 ################################################################################
 
-function dedekind_test(O::NfOrd, p::ZZRingElem, compute_order::Type{Val{S}} = Val{true}) where S
+function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, ::Val{compute_order} = Val(true)) where compute_order
   !is_equation_order(O) && error("Order must be an equation order")
 
   if rem(discriminant(O), p^2) != 0
-    if compute_order == Val{true}
+    if compute_order
       return true, O
     else
       return true
@@ -72,7 +72,7 @@ function dedekind_test(O::NfOrd, p::ZZRingElem, compute_order::Type{Val{S}} = Va
   g1modp = Kx(g1)
   U = gcd(gcd(g, h), g1modp)
 
-  if compute_order == Val{false}
+  if !compute_order
     if isone(U)
       return true
     else
@@ -86,10 +86,10 @@ function dedekind_test(O::NfOrd, p::ZZRingElem, compute_order::Type{Val{S}} = Va
       return true, O
     end
 
-    @hassert :NfOrd 1 rem(fmodp, U) == zero(Kx)
+    @hassert :AbsNumFieldOrder 1 rem(fmodp, U) == zero(Kx)
     U = divexact(fmodp, U)
 
-    @hassert :NfOrd 1 rem(O.disc, p^2) == 0
+    @hassert :AbsNumFieldOrder 1 rem(O.disc, p^2) == 0
 
     alpha = nf(O)(parent(f)(lift(Zy,U)))
 
@@ -100,7 +100,7 @@ function dedekind_test(O::NfOrd, p::ZZRingElem, compute_order::Type{Val{S}} = Va
     @assert isone(d)
     n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
     b = FakeFmpqMat(n, p)
-    @hassert :NfOrd 1 defines_order(nf(O), b)[1]
+    @hassert :AbsNumFieldOrder 1 defines_order(nf(O), b)[1]
     OO = Order(nf(O), b, check = false)
 
     OO.is_equation_order = false
@@ -113,15 +113,15 @@ end
 
 
 
-dedekind_test(O::NfOrd, p::Integer) = dedekind_test(O, FlintZZ(p))
+dedekind_test(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_test(O, FlintZZ(p))
 
-dedekind_ispmaximal(O::NfOrd, p::ZZRingElem) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p, Val(false))
 
-dedekind_ispmaximal(O::NfOrd, p::Integer) = dedekind_ispmaximal(O, FlintZZ(p))
+dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_ispmaximal(O, FlintZZ(p))
 
-dedekind_poverorder(O::NfOrd, p::ZZRingElem) = dedekind_test(O, p)[2]
+dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p)[2]
 
-dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
+dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 
 
 ###############################################################################
@@ -130,11 +130,11 @@ dedekind_poverorder(O::NfOrd, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
 #
 ###############################################################################
 
-function dedekind_test_composite(O::NfOrd, p::ZZRingElem)
+function dedekind_test_composite(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   @assert is_equation_order(O)
 
   Zy = polynomial_ring(FlintZZ, "y")[1]
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached=false)[1]
 
   f = Zy(nf(O).pol)
@@ -182,13 +182,13 @@ function dedekind_test_composite(O::NfOrd, p::ZZRingElem)
   hnf_modular_eldiv!(Malpha, p, :lowerleft)
   b = FakeFmpqMat(Malpha, p)
 
-  @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-  OO = NfOrd(nf(O), b)
+  @hassert :AbsNumFieldOrder 1 defines_order(nf(O), b)[1]
+  OO = AbsSimpleNumFieldOrder(nf(O), b)
   temp = divexact(b.den^degree(O), prod_diagonal(b.num))
   fl, qq = divides(discriminant(O), temp^2)
   @assert fl
   OO.disc = qq
-  @hassert :NfOrd 1 discriminant(basis(OO)) == OO.disc
+  @hassert :AbsNumFieldOrder 1 discriminant(basis(OO)) == OO.disc
   OO.index = temp
 
   return ZZRingElem(1), OO

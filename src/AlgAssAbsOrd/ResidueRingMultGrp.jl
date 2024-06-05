@@ -6,8 +6,8 @@
 
 @doc raw"""
     multiplicative_group(Q::AlgAssAbsOrdQuoRing)
-      -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
-    unit_group(Q::AlgAssAbsOrdQuoRing) -> GrpAbFinGen, GrpAbFinGenToAbsOrdMap
+      -> FinGenAbGroup, GrpAbFinGenToAbsOrdMap
+    unit_group(Q::AlgAssAbsOrdQuoRing) -> FinGenAbGroup, GrpAbFinGenToAbsOrdMap
 
 Returns the group $Q^\times$ and the injection $Q^\times -> Q$.
 """
@@ -35,7 +35,7 @@ function _multgrp_non_maximal(Q::AbsOrdQuoRing{U, T}) where {U, T}
   OO = maximal_order(A)
 
   primary_ideals = primary_decomposition(a, O)
-  groups = Vector{GrpAbFinGen}()
+  groups = Vector{FinGenAbGroup}()
   maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap{U, T, elem_type(OO)}}()
   ideals = Vector{ideal_type(O)}() # values of primary_ideals, but in the "right" order
   for (q, p) in primary_ideals
@@ -56,7 +56,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
   a = ideal(Q)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap{NfOrd, NfOrdIdl, NfOrdElem}}}()
+  groups = Vector{Tuple{FinGenAbGroup, GrpAbFinGenToAbsOrdQuoRingMultMap{AbsSimpleNumFieldOrder, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderElem}}}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     ai = _as_ideal_of_number_field(a, AtoK)
@@ -65,7 +65,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
 
   G = groups[1][1]
   for i = 2:length(groups)
-    G = direct_product(G, groups[i][1]; task = :none)::GrpAbFinGen
+    G = direct_product(G, groups[i][1]; task = :none)::FinGenAbGroup
   end
   S, StoG = snf(G)
 
@@ -183,7 +183,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   q = numerator(q)
   q = q - 1 # the cardinality of (O/p)^\times
   if isone(q)
-    G = GrpAbFinGen(ZZRingElem[])
+    G = FinGenAbGroup(ZZRingElem[])
     function disc_log2(x::AlgAssAbsOrdElem)
       return ZZRingElem[]
     end
@@ -201,7 +201,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   if qq == q
     # Maybe we are lucky and don't need to search for another generator
     aa = OAtoOAP\GtoOAP(G[1])
-    x = _check_elem_in_order(elem_in_algebra(aa, copy = false), O, Val{true})
+    x = _check_elem_in_order(elem_in_algebra(aa, copy = false), O, Val(true))
     if x
       a = O(aa, false)
     end
@@ -242,9 +242,9 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   function disc_log(x::AlgAssAbsOrdElem)
     xx = OAtoOAP(OA(x))
     g = GtoOAP\xx
-    b, h = haspreimage(HtoG, g)
+    b, h = has_preimage_with_preimage(HtoG, g)
     @assert b
-    b, s = haspreimage(StoH, h)
+    b, s = has_preimage_with_preimage(StoH, h)
     @assert b
     return [ s.coeff[1, i] for i = 1:ngens(S) ]
   end
@@ -258,7 +258,7 @@ end
 #
 ################################################################################
 
-# Much of this is taken from the implementation in NfOrd/ResidueRingMultGrp.jl
+# Much of this is taken from the implementation in AbsSimpleNumFieldOrder/ResidueRingMultGrp.jl
 
 # Computes (1 + p)/(1 + q) where q is a p-primary ideal (in a non-maximal order)
 function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
@@ -324,7 +324,7 @@ function _1_plus_p_mod_1_plus_q_generators(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdId
     l = 2*k
     pl = pl^2
     plq = pl + q
-    append!(g, _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(pkq, plq, Val{true}))
+    append!(g, _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(pkq, plq, Val(true)))
   end
 
   return g
@@ -366,7 +366,7 @@ end
 # Compute the group (1 + puq)/(1 + pvq), where it should hold puq = p^u + q and
 # pvq = p^v + q with v <= 2*u.
 # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.15.
-function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl, only_generators::Type{Val{T}} = Val{false}) where T
+function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl, ::Val{only_generators} = Val(false)) where only_generators
   O = order(puq)
   b = [ O(x) for x in basis(puq, copy = false) ]
 
@@ -388,12 +388,12 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   # We want generators of (1 + p^u + q)/(1 + p^v + q)
   map!(x -> x + one(O), gens, gens)
 
-  if only_generators == Val{true}
+  if only_generators
     return gens
   end
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
-  M = basis_matrix(O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
+  M = basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
   y_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)

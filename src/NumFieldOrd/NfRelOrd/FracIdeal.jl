@@ -1,4 +1,4 @@
-# for pseudo_basis, basis_pmatrix, etc. see NfRel/NfRelOrdIdl.jl
+# for pseudo_basis, basis_pmatrix, etc. see RelSimpleNumField/RelNumFieldOrderIdeal.jl
 
 ################################################################################
 #
@@ -7,18 +7,18 @@
 ################################################################################
 
 @doc raw"""
-    order(a::NfRelOrdFracIdl) -> NfRelOrd
+    order(a::RelNumFieldOrderFractionalIdeal) -> RelNumFieldOrder
 
 Returns the order of $a$.
 """
-order(a::NfRelOrdFracIdl) = a.order
+order(a::RelNumFieldOrderFractionalIdeal) = a.order
 
 @doc raw"""
-    nf(a::NfRelOrdFracIdl) -> NumField
+    nf(a::RelNumFieldOrderFractionalIdeal) -> NumField
 
 Returns the number field, of which $a$ is a fractional ideal.
 """
-nf(a::NfRelOrdFracIdl) = nf(order(a))
+nf(a::RelNumFieldOrderFractionalIdeal) = nf(order(a))
 
 ################################################################################
 #
@@ -26,7 +26,7 @@ nf(a::NfRelOrdFracIdl) = nf(order(a))
 #
 ################################################################################
 
-parent(a::NfRelOrdFracIdl) = a.parent
+parent(a::RelNumFieldOrderFractionalIdeal) = a.parent
 
 ################################################################################
 #
@@ -34,9 +34,9 @@ parent(a::NfRelOrdFracIdl) = a.parent
 #
 ################################################################################
 
-iszero(a::NfRelOrdFracIdl) = iszero(basis_matrix(a, copy = false)[1, 1])
+iszero(a::RelNumFieldOrderFractionalIdeal) = nrows(basis_matrix(a, copy = false)) == 0
 
-function isone(a::NfRelOrdFracIdl)
+function isone(a::RelNumFieldOrderFractionalIdeal)
   if denominator(a) != 1
     return false
   end
@@ -52,7 +52,7 @@ end
 #
 ################################################################################
 
-function assure_has_denominator(a::NfRelOrdFracIdl)
+function assure_has_denominator(a::RelNumFieldOrderFractionalIdeal)
   if isdefined(a, :den)
     return nothing
   end
@@ -76,12 +76,12 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
 end
 
 @doc raw"""
-    denominator(a::NfRelOrdFracIdl) -> ZZRingElem
+    denominator(a::RelNumFieldOrderFractionalIdeal) -> ZZRingElem
 
 Returns the smallest positive integer $d$ such that $da$ is contained in
 the order of $a$.
 """
-function denominator(a::NfRelOrdFracIdl; copy::Bool = true)
+function denominator(a::RelNumFieldOrderFractionalIdeal; copy::Bool = true)
   assure_has_denominator(a)
   if copy
     return deepcopy(a.den)
@@ -91,11 +91,11 @@ function denominator(a::NfRelOrdFracIdl; copy::Bool = true)
 end
 
 @doc raw"""
-    numerator(a::NfRelOrdFracIdl) -> NfRelOrdIdl
+    numerator(a::RelNumFieldOrderFractionalIdeal) -> RelNumFieldOrderIdeal
 
 Returns the ideal $d*a$ where $d$ is the denominator of $a$.
 """
-function numerator(a::NfRelOrdFracIdl; copy::Bool = true) # copy for compatibility with NfOrdFracIdl (it only does something if isone(denominator(a)) here)
+function numerator(a::RelNumFieldOrderFractionalIdeal; copy::Bool = true) # copy for compatibility with AbsSimpleNumFieldOrderFractionalIdeal (it only does something if isone(denominator(a)) here)
   d = denominator(a)
   if isone(d)
     return ideal_type(order(a))(order(a), basis_pmatrix(a, copy = copy))
@@ -119,7 +119,7 @@ function show(io::IO, s::NfRelOrdFracIdlSet)
   print(io, s.order)
 end
 
-function show(io::IO, a::NfRelOrdFracIdl)
+function show(io::IO, a::RelNumFieldOrderFractionalIdeal)
   compact = get(io, :compact, false)
   if compact
     print(io, "Fractional ideal")
@@ -139,62 +139,63 @@ end
 ################################################################################
 
 @doc raw"""
-    fractional_ideal(O::NfRelOrd, M::PMat; M_in_hnf::Bool = false) -> NfRelOrdFracIdl
+    fractional_ideal(O::RelNumFieldOrder, M::PMat; M_in_hnf::Bool = false) -> RelNumFieldOrderFractionalIdeal
 
 Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
 `M_in_hnf` is set, then it is assumed that $M$ is already in lower left pseudo
 HNF.
 """
-function fractional_ideal(O::NfRelOrd{T, S, U}, M::PMat{T, S}; M_in_hnf::Bool = false) where {T, S, U}
+function fractional_ideal(O::RelNumFieldOrder{T, S, U}, M::PMat{T, S}; M_in_hnf::Bool = false) where {T, S, U}
   !M_in_hnf && !iszero(matrix(M)) ? M = pseudo_hnf(M, :lowerleft, true) : nothing
-  return NfRelOrdFracIdl{T, S, U}(O, M)
+  return RelNumFieldOrderFractionalIdeal{T, S, U}(O, M)
 end
 
 @doc raw"""
-    fractional_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
+    fractional_ideal(O::RelNumFieldOrder, M::Generic.Mat) -> RelNumFieldOrderFractionalIdeal
 
 Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
 """
-function fractional_ideal(O::NfRelOrd{T, S, U}, M::Generic.Mat{T}) where {T, S, U}
+function fractional_ideal(O::RelNumFieldOrder{T, S, U}, M::Generic.Mat{T}) where {T, S, U}
   coeffs = deepcopy(basis_pmatrix(O, copy = false)).coeffs
   return fractional_ideal(O, pseudo_matrix(M, coeffs))
 end
 
-function fractional_ideal(O::NfRelOrd{T, S, U}, A::Vector{U}) where {T, S, U}
+function fractional_ideal(O::RelNumFieldOrder{T, S, U}, A::Vector{U}) where {T, S, U}
   if all(iszero, A)
-    M = zero_matrix(base_field(nf(O)), degree(O), degree(O))
+    M = zero_matrix(base_field(nf(O)), 0, degree(O))
     pb = pseudo_basis(O)
-    return NfRelOrdFracIdl{T, S, U}(O, pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:degree(O)]))
+    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(M, S[]))
   end
 
   return sum(fractional_ideal(O, a) for a in A if !iszero(a))
 end
 
-function fractional_ideal(O::NfRelOrd{T, S, U}, x::U) where {T, S, U}
+function fractional_ideal(O::RelNumFieldOrder{T, S, U}, x::U) where {T, S, U}
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
-  M = zero_matrix(base_field(nf(O)), d, d)
+  K = base_field(nf(O))
   if iszero(x)
-    return NfRelOrdFracIdl{T, S, U}(O, pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
+    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(zero_matrix(K, 0, d), S[]))
   end
+  M = zero_matrix(K, d, d)
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
   end
   M = M*basis_mat_inv(O, copy = false)
   PM = pseudo_matrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
-  return NfRelOrdFracIdl{T, S, U}(O, PM)
+  return RelNumFieldOrderFractionalIdeal{T, S, U}(O, PM)
 end
 
-*(O::NfRelOrd{T, S, U}, x::U) where {T, S, U <: NumFieldElem} = fractional_ideal(O, x)
+*(O::RelNumFieldOrder{T, S, U}, x::U) where {T, S, U <: NumFieldElem} = fractional_ideal(O, x)
 
-*(x::U, O::NfRelOrd{T, S, U}) where {T, S, U <: NumFieldElem} = fractional_ideal(O, x)
+*(x::U, O::RelNumFieldOrder{T, S, U}) where {T, S, U <: NumFieldElem} = fractional_ideal(O, x)
 
-function fractional_ideal(O::NfRelOrd{T, S, U}, a::NfRelOrdIdl{T, S, U}) where {T, S, U <: NumFieldElem}
+function fractional_ideal(O::RelNumFieldOrder{T, S, U}, a::RelNumFieldOrderIdeal{T, S, U}) where {T, S, U <: NumFieldElem}
   return fractional_ideal(O, basis_pmatrix(a); M_in_hnf=true)
 end
 
-function fractional_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::U) where { T, S, U <: Union{ ZZRingElem, NfAbsOrdElem, NfRelOrdElem } }
+function fractional_ideal(O::RelNumFieldOrder{T, S}, a::RelNumFieldOrderIdeal{T, S}, d::U) where { T, S, U <: Union{ ZZRingElem, AbsNumFieldOrderElem, RelNumFieldOrderElem } }
   K = base_field(nf(O))
   dd = inv(K(d))
   return fractional_ideal(O, dd*basis_pmatrix(a); M_in_hnf=true)
@@ -206,8 +207,8 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S, U}, dict::IdDict) where {T, S, U <: NumFieldElem}
-  z = NfRelOrdFracIdl{T, S, U}(a.order)
+function Base.deepcopy_internal(a::RelNumFieldOrderFractionalIdeal{T, S, U}, dict::IdDict) where {T, S, U <: NumFieldElem}
+  z = RelNumFieldOrderFractionalIdeal{T, S, U}(a.order)
   for x in fieldnames(typeof(a))
     if x != :order && x != :parent && isdefined(a, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
@@ -224,16 +225,16 @@ end
 #
 ################################################################################
 
-function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
+function ==(a::RelNumFieldOrderFractionalIdeal, b::RelNumFieldOrderFractionalIdeal)
   order(a) !== order(b) && return false
   return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
 end
 
-function ==(a::NfRelOrdIdl, b::NfRelOrdFracIdl)
+function ==(a::RelNumFieldOrderIdeal, b::RelNumFieldOrderFractionalIdeal)
   order(a) !== order(b) && return false
   return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
 end
-==(a::NfRelOrdFracIdl, b::NfRelOrdIdl) = b == a
+==(a::RelNumFieldOrderFractionalIdeal, b::RelNumFieldOrderIdeal) = b == a
 
 ################################################################################
 #
@@ -242,7 +243,7 @@ end
 ################################################################################
 
 # Assumes, that det(basis_matrix(a)) == 1
-function assure_has_norm(a::NfRelOrdFracIdl)
+function assure_has_norm(a::RelNumFieldOrderFractionalIdeal)
   if a.has_norm
     return nothing
   end
@@ -265,20 +266,20 @@ function assure_has_norm(a::NfRelOrdFracIdl)
 end
 
 @doc raw"""
-    norm(a::NfRelOrdFracIdl{T, S}) -> S
+    norm(a::RelNumFieldOrderFractionalIdeal{T, S}) -> S
 
 Returns the norm of $a$.
 """
-function norm(a::NfRelOrdFracIdl{S, U, V}, copy::Type{Val{T}} = Val{true}) where {S, T, U, V}
+function norm(a::RelNumFieldOrderFractionalIdeal{S, U, V}, ::Val{copy} = Val(true)) where {S, U, V, copy}
   assure_has_norm(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.norm)::U
   else
     return a.norm::U
   end
 end
 
-function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
+function norm(a::RelNumFieldOrderFractionalIdeal, k::Union{ RelSimpleNumField, AbsSimpleNumField, RelNonSimpleNumField })
   n = norm(a)
   while nf(order(n)) != k
     n = norm(n)
@@ -286,7 +287,7 @@ function norm(a::NfRelOrdFracIdl, k::Union{ NfRel, AnticNumberField, NfRelNS })
   return n
 end
 
-function norm(a::NfRelOrdFracIdl, k::QQField)
+function norm(a::RelNumFieldOrderFractionalIdeal, k::QQField)
   n = norm(a)
   while !(n isa QQFieldElem)
     n = norm(n)
@@ -294,7 +295,7 @@ function norm(a::NfRelOrdFracIdl, k::QQField)
   return n
 end
 
-function absolute_norm(a::NfRelOrdFracIdl)
+function absolute_norm(a::RelNumFieldOrderFractionalIdeal)
   return norm(a, FlintQQ)
 end
 
@@ -304,7 +305,7 @@ end
 #
 ################################################################################
 
-function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+function +(a::RelNumFieldOrderFractionalIdeal{T, S}, b::RelNumFieldOrderFractionalIdeal{T, S}) where {T, S}
   if iszero(a)
     return b
   end
@@ -313,7 +314,7 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   end
   d = degree(order(a))
   H = vcat(basis_pmatrix(a), basis_pmatrix(b))
-  if T != nf_elem
+  if T != AbsSimpleNumFieldElem
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
     return fractional_ideal(order(a), H; M_in_hnf=true)
   end
@@ -335,9 +336,9 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   return fractional_ideal(order(a), H; M_in_hnf=true)
 end
 
-+(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = fractional_ideal(order(a), a) + b
++(a::RelNumFieldOrderIdeal{T, S}, b::RelNumFieldOrderFractionalIdeal{T, S}) where {T, S} = fractional_ideal(order(a), a) + b
 
-+(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a + fractional_ideal(order(b), b)
++(a::RelNumFieldOrderFractionalIdeal{T, S}, b::RelNumFieldOrderIdeal{T, S}) where {T, S} = a + fractional_ideal(order(b), b)
 
 ################################################################################
 #
@@ -345,7 +346,7 @@ end
 #
 ################################################################################
 
-function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S, U}
+function *(a::RelNumFieldOrderFractionalIdeal{T, S, U}, b::RelNumFieldOrderFractionalIdeal{T, S, U}) where {T, S, U}
   if iszero(a) || iszero(b)
     return nf(order(a))()*order(a)
   end
@@ -363,14 +364,14 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
   for i = 1:d
     for j = 1:d
       mul!(t, pba[i][1], pbb[j][1])
-      T == nf_elem ? t = t*den : nothing
+      T == AbsSimpleNumFieldElem ? t = t*den : nothing
       elem_to_mat_row!(M, (i - 1)*d + j, t)
       C[(i - 1)*d + j] = pba[i][2]*pbb[j][2]
     end
   end
   PM = pseudo_matrix(M, C)
   PM.matrix = PM.matrix*basis_mat_inv(order(a), copy = false)
-  if T != nf_elem
+  if T != AbsSimpleNumFieldElem
     H = sub(pseudo_hnf(PM, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
     return fractional_ideal(order(a), H; M_in_hnf=true)
   end
@@ -384,9 +385,9 @@ function *(a::NfRelOrdFracIdl{T, S, U}, b::NfRelOrdFracIdl{T, S, U}) where {T, S
   return fractional_ideal(order(a), H; M_in_hnf=true)
 end
 
-*(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = fractional_ideal(order(a), a)*b
+*(a::RelNumFieldOrderIdeal{T, S}, b::RelNumFieldOrderFractionalIdeal{T, S}) where {T, S} = fractional_ideal(order(a), a)*b
 
-*(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*fractional_ideal(order(b), b)
+*(a::RelNumFieldOrderFractionalIdeal{T, S}, b::RelNumFieldOrderIdeal{T, S}) where {T, S} = a*fractional_ideal(order(b), b)
 
 ################################################################################
 #
@@ -394,20 +395,20 @@ end
 #
 ################################################################################
 
-divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}; check::Bool=true) where {T, S} = a*inv(b)
+divexact(a::RelNumFieldOrderFractionalIdeal{T, S}, b::RelNumFieldOrderFractionalIdeal{T, S}; check::Bool=true) where {T, S} = a*inv(b)
 
-divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}; check::Bool=true) where {T, S} = a*inv(b)
+divexact(a::RelNumFieldOrderFractionalIdeal{T, S}, b::RelNumFieldOrderIdeal{T, S}; check::Bool=true) where {T, S} = a*inv(b)
 
-function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}; check::Bool=true) where {T, S}
+function divexact(a::RelNumFieldOrderIdeal{T, S}, b::RelNumFieldOrderFractionalIdeal{T, S}; check::Bool=true) where {T, S}
   O = order(a)
   return fractional_ideal(O, basis_pmatrix(a, copy = false); M_in_hnf=true)*inv(b)
 end
 
-//(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)
+//(a::RelNumFieldOrderFractionalIdeal{T, S}, b::RelNumFieldOrderFractionalIdeal{T, S}) where {T, S} = divexact(a, b)
 
-//(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
+//(a::RelNumFieldOrderFractionalIdeal{T, S}, b::RelNumFieldOrderIdeal{T, S}) where {T, S} = divexact(a, b)
 
-//(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)
+//(a::RelNumFieldOrderIdeal{T, S}, b::RelNumFieldOrderFractionalIdeal{T, S}) where {T, S} = divexact(a, b)
 
 ################################################################################
 #
@@ -415,7 +416,7 @@ end
 #
 ################################################################################
 
-function *(a::NfRelOrdFracIdl{T, S}, b::NumFieldElem{T}) where {T, S}
+function *(a::RelNumFieldOrderFractionalIdeal{T, S}, b::NumFieldElem{T}) where {T, S}
   if iszero(b)
     return b*order(a)
   end
@@ -423,15 +424,15 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NumFieldElem{T}) where {T, S}
   return c*a
 end
 
-*(b::NumFieldElem{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
+*(b::NumFieldElem{T}, a::RelNumFieldOrderFractionalIdeal{T, S}) where {T, S} = a*b
 
-function *(a::NfRelOrdFracIdl{T, S}, b::S) where {T, S <: Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}}
+function *(a::RelNumFieldOrderFractionalIdeal{T, S}, b::S) where {T, S <: Union{RelNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdeal}}
   pm = basis_pmatrix(a)
   pmnew = pseudo_matrix(matrix(pm), map(z -> b * z, coefficient_ideals(pm)))
   return fractional_ideal(order(a), pmnew)
 end
 
-*(a::S, b::NfRelOrdFracIdl{T, S}) where {T, S <: Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}} = b * a
+*(a::S, b::RelNumFieldOrderFractionalIdeal{T, S}) where {T, S <: Union{RelNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdeal}} = b * a
 
 ################################################################################
 #
@@ -439,9 +440,9 @@ end
 #
 ################################################################################
 
-# The basis_pmatrix of a NfRelOrdFracIdl should be in pseudo hnf, so it should already
+# The basis_pmatrix of a RelNumFieldOrderFractionalIdeal should be in pseudo hnf, so it should already
 # be "simple". Maybe we could simplify the coefficient ideals?
-simplify(a::NfRelOrdFracIdl) = a
+simplify(a::RelNumFieldOrderFractionalIdeal) = a
 
 ################################################################################
 #
@@ -449,13 +450,13 @@ simplify(a::NfRelOrdFracIdl) = a
 #
 ################################################################################
 
-function mod(x::S, y::T) where {S <: Union{nf_elem, NumFieldElem}, T <: Union{NfOrdFracIdl, NfRelOrdFracIdl}}
+function mod(x::S, y::T) where {S <: Union{AbsSimpleNumFieldElem, NumFieldElem}, T <: Union{AbsSimpleNumFieldOrderFractionalIdeal, RelNumFieldOrderFractionalIdeal}}
   K = parent(x)
   O = order(y)
   d = K(lcm(denominator(x, O), denominator(y)))
   dx = d*x
   dy = d*y
-  if T == NfOrdFracIdl
+  if T == AbsSimpleNumFieldOrderFractionalIdeal
     dy = simplify(dy)
     dynum = numerator(dy)
   else
@@ -473,11 +474,11 @@ end
 ################################################################################
 
 @doc raw"""
-    in(x::NumFieldElem, y::NfRelOrdFracIdl)
+    in(x::NumFieldElem, y::RelNumFieldOrderFractionalIdeal)
 
 Returns whether $x$ is contained in $y$.
 """
-function in(x::NumFieldElem, y::NfRelOrdFracIdl)
+function in(x::NumFieldElem, y::RelNumFieldOrderFractionalIdeal)
   parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
   O = order(y)
   b_pmat = basis_pmatrix(y, copy = false)
@@ -499,18 +500,18 @@ end
 #
 ################################################################################
 
-function valuation(A::NfRelOrdFracIdl, P::NfRelOrdIdl)
+function valuation(A::RelNumFieldOrderFractionalIdeal, P::RelNumFieldOrderIdeal)
   return valuation(numerator(A), P) - valuation(denominator(A), P)
 end
 
-function valuation_naive(a::NumFieldElem, P::NfRelOrdIdl)
+function valuation_naive(a::NumFieldElem, P::RelNumFieldOrderIdeal)
   @assert !iszero(a)
   #return valuation(a*order(P), P)
   d = denominator(a, order(P))
   return valuation(order(P)(d * a), P) - valuation(d, P)
 end
 
-valuation(a::NumFieldElem, P::NfRelOrdIdl) = valuation_naive(a, P)
+valuation(a::NumFieldElem, P::RelNumFieldOrderIdeal) = valuation_naive(a, P)
 
 ################################################################################
 #
@@ -518,7 +519,7 @@ valuation(a::NumFieldElem, P::NfRelOrdIdl) = valuation_naive(a, P)
 #
 ################################################################################
 
-function rand(a::NfRelOrdFracIdl, B::Int)
+function rand(a::RelNumFieldOrderFractionalIdeal, B::Int)
   pb = pseudo_basis(a, copy = false)
   z = nf(order(a))()
   for i = 1:degree(order(a))
@@ -534,7 +535,7 @@ end
 #
 ################################################################################
 
-function integral_split(a::NfRelOrdFracIdl)
+function integral_split(a::RelNumFieldOrderFractionalIdeal)
   O = order(a)
   K = nf(O)
   d = inv(a + K(1)*O)
@@ -544,7 +545,7 @@ function integral_split(a::NfRelOrdFracIdl)
   return numerator(n), numerator(d)
 end
 
-function factor(I::NfRelOrdFracIdl)
+function factor(I::RelNumFieldOrderFractionalIdeal)
   if iszero(I)
     error("Cannot factor zero ideal")
   end
@@ -567,7 +568,7 @@ end
 #
 ################################################################################
 
-function Base.hash(A::NfRelOrdFracIdl, h::UInt)
+function Base.hash(A::RelNumFieldOrderFractionalIdeal, h::UInt)
   return Base.hash(basis_pmatrix(A, copy = false), h)
 end
 
@@ -577,7 +578,7 @@ end
 #
 ################################################################################
 
-function ^(A::NfRelOrdFracIdl, a::Int)
+function ^(A::RelNumFieldOrderFractionalIdeal, a::Int)
   if a == 0
     B = one(nf(order(A))) * order(A)
     return B

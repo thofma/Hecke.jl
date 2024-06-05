@@ -14,13 +14,13 @@
 ###############################################################################
 
 
-mutable struct EllCrvIso{T} <: Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<:RingElem
-  header::MapHeader{EllCrv{T}, EllCrv{T}}
-  domain::EllCrv{T}
-  codomain::EllCrv{T}
+mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCrvIso} where T<:RingElem
+  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
+  domain::EllipticCurve{T}
+  codomain::EllipticCurve{T}
   data::Tuple{T, T, T, T}
 
-  function EllCrvIso(E::EllCrv{T}, data::Vector{T}) where T <:RingElem
+  function EllCrvIso(E::EllipticCurve{T}, data::Vector{T}) where T <:RingElem
     f = new{T}()
     f.domain = E
 
@@ -29,7 +29,7 @@ mutable struct EllCrvIso{T} <: Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<
     end
     r, s, t, u = data[1], data[2], data[3], data[4]
     f.data = (r, s, t, u)
-    a1, a2, a3, a4, a6 = a_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
 
     a1new = divexact(a1 + 2*s, u)
     a2new = divexact(a2 - s*a1 + 3*r - s^2, u^2)
@@ -46,21 +46,21 @@ mutable struct EllCrvIso{T} <: Map{EllCrv, EllCrv, HeckeMap, EllCrvIso} where T<
 end
 
 @doc raw"""
-    identity_map(E::EllCrv) -> EllCrvIso
+    identity_map(E::EllipticCurve) -> EllCrvIso
 
 Return the identity isomorphism on the elliptic curve $E$.
 """
-function identity_map(E::EllCrv)
+function identity_map(E::EllipticCurve)
   return isomorphism(E, [0, 0, 0, 1])
 end
 
 @doc raw"""
-    negation_map(E::EllCrv) -> EllCrvIso
+    negation_map(E::EllipticCurve) -> EllCrvIso
 
 Return the negation isomorphism on the elliptic curve $E$.
 """
-function negation_map(E::EllCrv)
-  a1, a2, a3, a4, a6 = a_invars(E)
+function negation_map(E::EllipticCurve)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   return isomorphism(E, [0, -a1, -a3, -1])
 end
 
@@ -124,10 +124,10 @@ end
 
 #Following Connell's Handbook for Elliptic Curves Chapter 4.4
 @doc raw"""
-    is_isomorphic(E1::EllCrv, E2::EllCrv) -> Bool
+    is_isomorphic(E1::EllipticCurve, E2::EllipticCurve) -> Bool
 Return true when $E1$ and $E2$ are isomorphic
 """
-function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
+function is_isomorphic(E1::EllipticCurve{T}, E2::EllipticCurve{T}) where T
   K = base_field(E1)
   char = characteristic(K)
   j1 = j_invariant(E1)
@@ -141,8 +141,8 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
   if char == 2
     E1, phi1 = simplified_model(E1)
     E2, phi2 = simplified_model(E2)
-    a1, a2, a3, a4, a6 = a_invars(E1)
-    _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
+    a1, a2, a3, a4, a6 = a_invariants(E1)
+    _a1, _a2, _a3, _a4, _a6 = a_invariants(E2)
     Rx, x = polynomial_ring(K, "x")
     # j-invariant non-zero
     if j1!=0
@@ -168,8 +168,8 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
   if char == 3 && j1 == 0
     E1, phi1 = simplified_model(E1)
     E2, phi2 = simplified_model(E2)
-    a1, a2, a3, a4, a6 = a_invars(E1)
-    _a1, _a2, _a3, _a4, _a6 = a_invars(E2)
+    a1, a2, a3, a4, a6 = a_invariants(E1)
+    _a1, _a2, _a3, _a4, _a6 = a_invariants(E2)
     Rx, x = polynomial_ring(K, "x", cached = false)
     us = roots(x^4 - a4//_a4)
     for u in us
@@ -182,8 +182,8 @@ function is_isomorphic(E1::EllCrv{T}, E2::EllCrv{T}) where T
     return false
   end
 
-  c4, c6 = c_invars(E1)
-  _c4, _c6 = c_invars(E2)
+  c4, c6 = c_invariants(E1)
+  _c4, _c6 = c_invariants(E2)
 
 
   if j1!=0 && j1!=1728
@@ -205,11 +205,11 @@ end
 
 #Following Connell's Handbook for Elliptic Curves Chapter 4.4
 @doc raw"""
-    isomorphism(E1::EllCrv, E2::EllCrv) -> EllCrvIso
+    isomorphism(E1::EllipticCurve, E2::EllipticCurve) -> EllCrvIso
 Return an isomorphism between $E1$ and $E2$ if they are isomorphic.
 Otherwise return an error.
 """
-function isomorphism(E1::EllCrv, E2::EllCrv)
+function isomorphism(E1::EllipticCurve, E2::EllipticCurve)
   K = base_field(E1)
   char = characteristic(K)
   j1 = j_invariant(E1)
@@ -220,8 +220,8 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
 
   E1s, pre_iso = simplified_model(E1)
   E2s, _, post_iso = simplified_model(E2)
-  a1, a2, a3, a4, a6 = a_invars(E1s)
-  _a1, _a2, _a3, _a4, _a6 = a_invars(E2s)
+  a1, a2, a3, a4, a6 = a_invariants(E1s)
+  _a1, _a2, _a3, _a4, _a6 = a_invariants(E2s)
 
 
   if char == 2
@@ -273,8 +273,8 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
     end
   end
 
-  c4, c6 = c_invars(E1)
-  _c4, _c6 = c_invars(E2)
+  c4, c6 = c_invariants(E1)
+  _c4, _c6 = c_invariants(E2)
 
   if j1 == 0 #Then c4 and _c4 are equal to 0
     Rx, x = polynomial_ring(K, "x")
@@ -299,8 +299,8 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   end
 
   #Characteristic != 2 and j!= 0, 1728
-  c4, c6 = c_invars(E1)
-  _c4, _c6 = c_invars(E2)
+  c4, c6 = c_invariants(E1)
+  _c4, _c6 = c_invariants(E2)
   usq = (c6//_c6)//(c4//_c4)
 
   is_square(usq) || error("Curves are not isomorphic")
@@ -311,15 +311,15 @@ function isomorphism(E1::EllCrv, E2::EllCrv)
   return pre_iso * phi * post_iso
 end
 #=
-function isomorphism(E::EllCrv, E2::EllCrv)
+function isomorphism(E::EllipticCurve, E2::EllipticCurve)
   char = characteristic(base_field(E))
   if char!= 2 && char!= 3
     if is_isomorphic(E, E2)
-      a1, a2, a3 = a_invars(E)
-      _a1, _a2, _a3 = a_invars(E2)
+      a1, a2, a3 = a_invariants(E)
+      _a1, _a2, _a3 = a_invariants(E2)
 
-      c4, c6 = c_invars(E)
-      _c4, _c6 = c_invars(E2)
+      c4, c6 = c_invariants(E)
+      _c4, _c6 = c_invariants(E2)
       usq = (c6//_c6)//(c4//_c4)
 
       u = sqrt(usq)
@@ -344,13 +344,13 @@ end
 
 # transformation T(r,s,t,u) as in Connell's handbook
 @doc raw"""
-    transform_rstu(E::EllCrv, [r, s, t, u]::Vector{T})
-    -> EllCrv, EllCrvIso, EllCrvIso
+    transform_rstu(E::EllipticCurve, [r, s, t, u]::Vector{T})
+    -> EllipticCurve, EllCrvIso, EllCrvIso
 Return the transformation of E under the isomorphism given by
 [(x - r)//u^2 : (y - s*(x-r) - t)//u^3 : 1], the isomorphism and the inverse of
 the isomorphism
 """
-function transform_rstu(E::EllCrv, T::Vector{S}) where S
+function transform_rstu(E::EllipticCurve, T::Vector{S}) where S
 
   phi = isomorphism(E, T)
 
@@ -359,12 +359,12 @@ end
 
 
 @doc raw"""
-    isomorphism(E::EllCrv, [r, s, t, u]::Vector{T}) -> EllCrvIso
+    isomorphism(E::EllipticCurve, [r, s, t, u]::Vector{T}) -> EllCrvIso
 Return the isomorphism with domain E given by
 [(x - r)//u^2 : (y - s*(x-r) - t)//u^3 : 1]. The codomain
 is calculated automatically.
 """
-function isomorphism(E::EllCrv{T}, isodata::Vector{T}) where T
+function isomorphism(E::EllipticCurve{T}, isodata::Vector{T}) where T
 
   if length(isodata)!= 4
     throw(DomainError(data, "Array needs to have length 4"))
@@ -372,7 +372,7 @@ function isomorphism(E::EllCrv{T}, isodata::Vector{T}) where T
   return EllCrvIso(E, isodata)
 end
 
-function isomorphism(E::EllCrv, data::Vector)
+function isomorphism(E::EllipticCurve, data::Vector)
 
   if length(data)!= 4
     throw(DomainError(data, "Array needs to have length 4"))
@@ -388,10 +388,10 @@ function degree(f::EllCrvIso)
 end
 
 @doc raw"""
-    image(f::EllCrvIso, P::EllCrvPt) -> EllCrvPt
+    image(f::EllCrvIso, P::EllipticCurvePoint) -> EllipticCurvePoint
 Return the image of $P$ under the isomorphism $f$.
 """
-function image(f::EllCrvIso, P::EllCrvPt)
+function image(f::EllCrvIso, P::EllipticCurvePoint)
   @assert domain(f) == parent(P)
   F = codomain(f)
   if !is_finite(P)
@@ -405,10 +405,10 @@ function image(f::EllCrvIso, P::EllCrvPt)
 end
 
 @doc raw"""
-    preimage(f::EllCrvIso, P::EllCrvPt) -> EllCrvPt
+    preimage(f::EllCrvIso, P::EllipticCurvePoint) -> EllipticCurvePoint
 Return the preimage of $P$ under the isomorphism $f$.
 """
-function preimage(f::EllCrvIso, P::EllCrvPt)
+function preimage(f::EllCrvIso, P::EllipticCurvePoint)
   @assert codomain(f) == parent(P)
   E = domain(f)
   if !is_finite(P)
@@ -436,10 +436,10 @@ function compose(f::EllCrvIso, g::EllCrvIso)
 end
 
 @doc raw"""
-    automorphism_group_generators(E::EllCrv) -> Vector{EllCrvIso}
+    automorphism_group_generators(E::EllipticCurve) -> Vector{EllCrvIso}
 Return generators of the automorphism group of $E$.
 """
-function automorphism_group_generators(E::EllCrv{T}) where {T}
+function automorphism_group_generators(E::EllipticCurve{T}) where {T}
   K = base_field(E)
   char = characteristic(K)
   j = j_invariant(E)
@@ -450,7 +450,7 @@ function automorphism_group_generators(E::EllCrv{T}) where {T}
 
   Kx, x = polynomial_ring(K, cached = false)
   Es, pre_iso, post_iso = simplified_model(E)
-  a1, a2, a3, a4, a6 = a_invars(Es)
+  a1, a2, a3, a4, a6 = a_invariants(Es)
 
   if char != 2 && char != 3
     if j == 1728
@@ -637,19 +637,19 @@ struct EllCrvIsoSet{T}
   crv::T
 end
 
-parent(f::EllCrvIso{T}) where {T} = EllCrvIsoSet{EllCrv{T}}(domain(f))
+parent(f::EllCrvIso{T}) where {T} = EllCrvIsoSet{EllipticCurve{T}}(domain(f))
 
-mutable struct EllCrvAutMap{S, T} <: Map{GrpGen, EllCrvIsoSet{T}, HeckeMap, EllCrvAutMap}
-  G::GrpGen
+mutable struct EllCrvAutMap{S, T} <: Map{MultTableGroup, EllCrvIsoSet{T}, HeckeMap, EllCrvAutMap}
+  G::MultTableGroup
   auts::Vector{T}
-  header::MapHeader{GrpGen, EllCrvIsoSet{S}}
+  header::MapHeader{MultTableGroup, EllCrvIsoSet{S}}
 
-  function EllCrvAutMap(E::S, G::GrpGen, auts::Vector{T}) where {S, T}
+  function EllCrvAutMap(E::S, G::MultTableGroup, auts::Vector{T}) where {S, T}
     return new{S, T}(G, auts, MapHeader(G, EllCrvIsoSet{S}(E)))
   end
 end
 
-function image(f::EllCrvAutMap, g::GrpGenElem)
+function image(f::EllCrvAutMap, g::MultTableGroupElem)
   return f.auts[g[]]
 end
 
@@ -663,7 +663,7 @@ function preimage(f::EllCrvAutMap, m::EllCrvIso)
   error("This should not happen")
 end
 
-function automorphism_group(E::EllCrv)
+function automorphism_group(E::EllipticCurve)
   gens = automorphism_group_generators(E)
   cl = closure(gens, *)
   G, Gtocl, cltoG = generic_group(cl, *)
@@ -671,7 +671,7 @@ function automorphism_group(E::EllCrv)
   return domain(m), m
 end
 
-function automorphism_list(E::EllCrv)
+function automorphism_list(E::EllipticCurve)
   gens = automorphism_group_generators(E)
   cl = closure(gens, *)
   return cl

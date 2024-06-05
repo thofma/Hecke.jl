@@ -1,4 +1,4 @@
-function _write_fields(list::Vector{Tuple{AnticNumberField, ZZRingElem}}, filename::String)
+function _write_fields(list::Vector{Tuple{AbsSimpleNumField, ZZRingElem}}, filename::String)
   f=open(filename, "a")
   for L in list
     x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])
@@ -16,7 +16,7 @@ function __to_univariate(Qx, f)
   return z
 end
 
-function _write_fields(list::Vector{Tuple{AnticNumberField, NfRelNS{nf_elem}, ZZRingElem}}, filename::String)
+function _write_fields(list::Vector{Tuple{AbsSimpleNumField, RelNonSimpleNumField{AbsSimpleNumFieldElem}, ZZRingElem}}, filename::String)
   f=open(filename, "a")
   for L in list
     Qx = parent(L[1].pol)

@@ -242,7 +242,7 @@ julia> R = rescale(root_lattice(:D,4),2);
 julia> D = discriminant_group(R);
 
 julia> A = abelian_group(D)
-GrpAb: (Z/2)^2 x (Z/4)^2
+(Z/2)^2 x (Z/4)^2
 
 julia> d = D[1]
 Element
@@ -263,10 +263,10 @@ julia> lift(d)
 N.B. Since there are no elements of $\mathbb{Z}$-lattices, we think of elements of `M` as
 elements of the ambient vector space. Thus if `v::Vector` is such an element
 then the coordinates with respec to the basis of `M` are given by
-`solve_left(basis_matrix(M), v)`.
+`solve(basis_matrix(M), v; side = :left)`.
 """
 @attributes mutable struct TorQuadModule
-  ab_grp::GrpAbFinGen             # underlying abelian group
+  ab_grp::FinGenAbGroup             # underlying abelian group
   cover::ZZLat                     # ZZLat -> ab_grp, x -> x * proj
   rels::ZZLat
   proj::ZZMatrix                  # is a projection and respects the forms
@@ -287,16 +287,16 @@ end
 ### Element
 
 mutable struct TorQuadModuleElem
-  data::GrpAbFinGenElem
+  data::FinGenAbGroupElem
   parent::TorQuadModule
 
-  TorQuadModuleElem(T::TorQuadModule, a::GrpAbFinGenElem) = new(a, T)
+  TorQuadModuleElem(T::TorQuadModule, a::FinGenAbGroupElem) = new(a, T)
 end
 
 ### Maps
 
 @doc raw"""
-    TorQuadModuleMor
+    TorQuadModuleMap
 
 Type for abelian group homomorphisms between torsion quadratic modules. It
 consists of a header which keeps track of the domain and the codomain of type
@@ -351,13 +351,11 @@ Gram matrix quadratic form:
 
 julia> abelian_group_homomorphism(f)
 Map
-  from GrpAb: (Z/3)^2 x Z/12
-  to (General) abelian group with relation matrix
-  [4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
-  with structure of GrpAb: (Z/3)^2 x Z/12
+  from (Z/3)^2 x Z/12
+  to finitely generated abelian group with 4 generators and 4 relations
 ```
 
-Note that an object of type `TorQuadModuleMor` needs not to be a morphism
+Note that an object of type `TorQuadModuleMap` needs not to be a morphism
 of torsion quadratic modules, i.e. it does not have to preserve the
 respective bilinear or quadratic forms of its domain and codomain. Though,
 it must be a homomorphism between the underlying finite abelian groups.
@@ -400,16 +398,16 @@ julia> is_bijective(f)
 true
 ```
 
-Hecke provides several constructors for objects of type `TorQuadModuleMor`, see
+Hecke provides several constructors for objects of type `TorQuadModuleMap`, see
 for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
 [`hom(::TorQuadModule, ::TorQuadModule, ::Vector{TorQuadModuleElem})`](@ref),
 [`identity_map(::TorQuadModule)`](@ref) or [`trivial_morphism(::TorQuadModule)`](@ref).
 """
-mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}
+mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMap}
   header::MapHeader{TorQuadModule, TorQuadModule}
-  map_ab::GrpAbFinGenMap
+  map_ab::FinGenAbGroupHom
 
-  function TorQuadModuleMor(T::TorQuadModule, S::TorQuadModule, m::GrpAbFinGenMap)
+  function TorQuadModuleMap(T::TorQuadModule, S::TorQuadModule, m::FinGenAbGroupHom)
     z = new()
     z.header = MapHeader(T, S)
     z.map_ab = m
@@ -567,11 +565,11 @@ end
 ###############################################################################
 
 mutable struct ZetaFunction
-  K::AnticNumberField
+  K::AbsSimpleNumField
   coeffs::Vector{ZZRingElem}
   dec_types
 
-  function ZetaFunction(K::AnticNumberField)
+  function ZetaFunction(K::AbsSimpleNumField)
     z = new()
     z.K = K
     z.coeffs = ZZRingElem[]

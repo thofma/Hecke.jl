@@ -17,7 +17,7 @@ abstract type _PIPDefault end
 
 abstract type _PIPEichler end
 
-function _satisfies_condition_h(A::AbsAlgAss)
+function _satisfies_condition_h(A::AbstractAssociativeAlgebra)
   dec = decompose(A)
   for (B, _) in dec
     if is_commutative(B)
@@ -40,29 +40,29 @@ _is_principal(::Type{_PIPEichler}, x...; kw...) = _is_principal(_PIPDefault, x..
 
 _is_principal(::Type{<: Any}, x...; kw...) = _is_principal_with_data_bj(x...; kw...)[1]
 
-function _is_principal_with_data(I, O = right_order(I); side = :right)
+function _is_principal_with_data(I, O = right_order(I); side = :right, local_freeness = false)
   A = algebra(O)
   @assert side === :right
   if is_commutative(A)
-    return _is_principal_with_data_etale(I)
+    return _is_principal_with_data_etale(I, local_freeness = local_freeness)
 #  elseif is_eichler(A)
 #    return _is_principal_with_data(_PIPEichler, I, O; side = side)
   elseif _satisfies_condition_h(A)
-    return _is_principal_with_data_bhj(I, O; side = side)
+    return _is_principal_with_data_bhj(I, O; side = side, local_freeness = local_freeness)
   else
-    return _is_principal_with_data(_PIPDefault, I, O; side = side)
+    return _is_principal_with_data(_PIPDefault, I, O; side = side, local_freeness = local_freeness)
   end
 end
 
-function _is_principal(I, O = right_order(I); side = :right)
+function _is_principal(I, O = right_order(I); side = :right, local_freeness = false)
   A = algebra(O)
   @assert side === :right
   if is_commutative(A)
-    return _is_principal_with_data_etale(I)[1]
+    return _is_principal_with_data_etale(I, local_freeness = local_freeness)[1]
   elseif is_eichler(A)
-    return _is_principal(_PIPEichler, I, O; side = side)
+    return _is_principal(_PIPEichler, I, O; side = side, local_freeness = local_freeness)
   else
-    return _is_principal(_PIPDefault, I, O; side = side)
+    return _is_principal(_PIPDefault, I, O; side = side, local_freeness = local_freeness)
   end
 end
 

@@ -33,7 +33,7 @@
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), -1, degreebound = 1)
   z = 1
-  T = NfOrdIdl[]
+  T = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for P in S
     push!(T, P)
     if z == 18

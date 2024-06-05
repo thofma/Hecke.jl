@@ -9,7 +9,7 @@ DocTestSetup = quote
 
 ## Creation
 
-```@docs
+```@docs; canonical=false
 gen(::SimpleNumField)
 gens(::NonSimpleNumField)
 ```
@@ -40,47 +40,47 @@ julia> L([a, 1, 1//2])
 ```
 
 
-```@docs
+```@docs; canonical=false
 quadratic_defect(a::NumFieldElem, p)
-hilbert_symbol(a::nf_elem, b::nf_elem, p::Union{NfAbsOrdIdl, NfRelOrdIdl})
+hilbert_symbol(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal})
 representation_matrix(::NumFieldElem)
-basis_matrix(::Vector{nf_elem})
+basis_matrix(::Vector{AbsSimpleNumFieldElem})
 coefficients(::SimpleNumFieldElem)
 coordinates(::NumFieldElem)
 absolute_coordinates(::NumFieldElem)
 coeff(::SimpleNumFieldElem, ::Int)
 valuation(::NumFieldElem, ::Any)
-torsion_unit_order(::nf_elem, ::Int)
+torsion_unit_order(::AbsSimpleNumFieldElem, ::Int)
 tr(::NumFieldElem)
 absolute_tr(::NumFieldElem)
-algebraic_split(::nf_elem)
+algebraic_split(::AbsSimpleNumFieldElem)
 ```
 
 ### Conjugates
 
-```@docs
+```@docs; canonical=false
 conjugates(::NumFieldElem, ::AcbField)
 conjugates(::NumFieldElem)
-conjugates_log(::nf_elem, ::Int)
-conjugates_real(::nf_elem)
-conjugates_complex(::nf_elem)
-conjugates_arb_log_normalise(::nf_elem)
-minkowski_map(::nf_elem)
+conjugates_log(::AbsSimpleNumFieldElem, ::Int)
+conjugates_real(::AbsSimpleNumFieldElem)
+conjugates_complex(::AbsSimpleNumFieldElem)
+conjugates_arb_log_normalise(::AbsSimpleNumFieldElem)
+minkowski_map(::AbsSimpleNumFieldElem)
 ```
 
 ### Predicates
 
-```@docs
+```@docs; canonical=false
 is_integral(::NumFieldElem)
-is_torsion_unit(::nf_elem)
+is_torsion_unit(::AbsSimpleNumFieldElem)
 is_local_norm(::NumField, ::NumFieldElem, ::Any)
-is_norm_divisible(::nf_elem, ::ZZRingElem)
-is_norm(::AnticNumberField, ::ZZRingElem)
+is_norm_divisible(::AbsSimpleNumFieldElem, ::ZZRingElem)
+is_norm(::AbsSimpleNumField, ::ZZRingElem)
 ```
 
 ### Invariants
 
-```@docs
+```@docs; canonical=false
 norm(::NumFieldElem)
 absolute_norm(::NumFieldElem)
 minpoly(::NumFieldElem)

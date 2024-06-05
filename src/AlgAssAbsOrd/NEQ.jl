@@ -25,7 +25,7 @@ mutable struct FieldOracle{S, T, U, M}
     z.algebra = A
     z.maximal_orders = orders
 
-    if A isa AbsAlgAss{nf_elem}
+    if A isa AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}
       # basis_pmatrices of orders are not required to be in HNF, so we compute them here
       z.hnf_basis_pmats = Vector{typeof(basis_pmatrix(orders[1], copy = false))}(undef, length(orders))
       for i = 1:length(orders)
@@ -58,11 +58,11 @@ mutable struct FieldOracle{S, T, U, M}
   end
 end
 
-function FieldOracle(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd})
+function FieldOracle(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, orders::Vector{<: AlgAssRelOrd})
   return FieldOracle{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor}(A, orders)
 end
 
-function FieldOracle(A::AbsAlgAss{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd})
+function FieldOracle(A::AbstractAssociativeAlgebra{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd})
   return FieldOracle{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor}(A, orders)
 end
 
@@ -78,18 +78,18 @@ mutable struct NormCache{S, T, U, M, T2, T3}
   valuations::Vector{Int}
   fac_elem_mon::FacElemMon{S}
   partial_solutions::Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}
-  solutions_mod_units::Vector{Dict{FacElem{U, S},  GrpAbFinGenElem}}
+  solutions_mod_units::Vector{Dict{FacElem{U, S},  FinGenAbGroupElem}}
 
-  # Only used if S <: AbsAlgAss{QQFieldElem}
+  # Only used if S <: AbstractAssociativeAlgebra{QQFieldElem}
   norm_minus_one::Vector{U}
 
-  # These fields are only set if S <: AbsAlgAss{nf_elem}
+  # These fields are only set if S <: AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}
   UktoOk::MapUnitGrp
-  GtoUk::Vector{GrpAbFinGenMap}
+  GtoUk::Vector{FinGenAbGroupHom}
   GtoUk_surjective::BitVector
-  fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}
+  fields_in_product::Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}}
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbsAlgAss{nf_elem}, T, U, M, T2 <: NfAbsOrdElem, T3}
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, T, U, M, T2 <: AbsNumFieldOrderElem, T3}
     primes = collect(keys(factor(a*parent(a))))
     vals = [ valuation(a, p) for p in primes ]
     z = NormCache{S, T, U, M, T2, T3}(A, orders, parent(a), primes, vals)
@@ -97,7 +97,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     return z
   end
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbsAlgAss{QQFieldElem}, T, U, M, T2 <: ZZRingElem, T3}
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbstractAssociativeAlgebra{QQFieldElem}, T, U, M, T2 <: ZZRingElem, T3}
     primes = collect(keys(factor(a).fac))
     vals = [ valuation(a, p) for p in primes ]
     z = NormCache{S, T, U, M, T2, T3}(A, orders, primes, vals)
@@ -105,7 +105,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     return z
   end
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, Ok::NfAbsOrd, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbsAlgAss{nf_elem}, T, U, M, T2, T3 }
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, Ok::AbsNumFieldOrder, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, T, U, M, T2, T3 }
     z = new{S, T, U, M, T2, T3}()
     z.algebra = A
     z.maximal_orders = orders
@@ -120,22 +120,22 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     z.valuations = valuations
     z.fac_elem_mon = FacElemMon(A)
     z.partial_solutions = Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}(undef, length(orders))
-    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, GrpAbFinGenElem}}(undef, length(orders))
-    z.GtoUk = Vector{GrpAbFinGenMap}(undef, length(orders))
+    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, FinGenAbGroupElem}}(undef, length(orders))
+    z.GtoUk = Vector{FinGenAbGroupHom}(undef, length(orders))
     z.GtoUk_surjective = falses(length(orders))
-    z.fields_in_product = Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}}(undef, length(orders))
+    z.fields_in_product = Vector{Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}}(undef, length(orders))
     for i = 1:length(orders)
       z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
       z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
-      z.solutions_mod_units[i] = Dict{FacElem{U, S}, GrpAbFinGenElem}()
-      z.GtoUk[i] = hom([ GrpAbFinGen(ZZRingElem[])() ], [ Uk() ])
-      z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NfToNfRel}}()
+      z.solutions_mod_units[i] = Dict{FacElem{U, S}, FinGenAbGroupElem}()
+      z.GtoUk[i] = hom([ FinGenAbGroup(ZZRingElem[])() ], [ Uk() ])
+      z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}()
     end
 
     return z
   end
 
-  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbsAlgAss{QQFieldElem}, T, U, M, T2, T3 }
+  function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, primes::Vector{T3}, valuations::Vector{Int}) where { S <: AbstractAssociativeAlgebra{QQFieldElem}, T, U, M, T2, T3 }
     z = new{S, T, U, M, T2, T3}()
     z.algebra = A
     z.maximal_orders = orders
@@ -149,30 +149,30 @@ mutable struct NormCache{S, T, U, M, T2, T3}
     z.valuations = valuations
     z.fac_elem_mon = FacElemMon(A)
     z.partial_solutions = Vector{Dict{Set{Int}, Vector{FacElem{U, S}}}}(undef, length(orders))
-    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, GrpAbFinGenElem}}(undef, length(orders))
+    z.solutions_mod_units = Vector{Dict{FacElem{U, S}, FinGenAbGroupElem}}(undef, length(orders))
     for i = 1:length(orders)
       z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
       z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
-      z.solutions_mod_units[i] = Dict{FacElem{U, S}, GrpAbFinGenElem}()
+      z.solutions_mod_units[i] = Dict{FacElem{U, S}, FinGenAbGroupElem}()
     end
 
     return z
   end
 end
 
-function NormCache(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd}, a::NfAbsOrdElem)
+function NormCache(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, orders::Vector{<: AlgAssRelOrd}, a::AbsNumFieldOrderElem)
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor, typeof(a), ideal_type(parent(a))}(A, orders, a)
 end
 
-function NormCache(A::AbsAlgAss{nf_elem}, orders::Vector{<: AlgAssRelOrd}, Ok::NfAbsOrd, primes::Vector{<: NfAbsOrdIdl}, valuations::Vector{Int})
+function NormCache(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, orders::Vector{<: AlgAssRelOrd}, Ok::AbsNumFieldOrder, primes::Vector{<: AbsNumFieldOrderIdeal}, valuations::Vector{Int})
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfRelToAbsAlgAssMor, elem_type(Ok), ideal_type(Ok)}(A, orders, Ok, primes, valuations)
 end
 
-function NormCache(A::AbsAlgAss{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd}, a::ZZRingElem)
+function NormCache(A::AbstractAssociativeAlgebra{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd}, a::ZZRingElem)
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor, ZZRingElem, ZZRingElem}(A, orders, a)
 end
 
-function NormCache(A::AbsAlgAss{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd}, primes::Vector{ZZRingElem}, valuations::Vector{Int})
+function NormCache(A::AbstractAssociativeAlgebra{QQFieldElem}, orders::Vector{<: AlgAssAbsOrd}, primes::Vector{ZZRingElem}, valuations::Vector{Int})
   return NormCache{typeof(A), typeof(orders[1]), elem_type(A), NfAbsToAbsAlgAssMor, ZZRingElem, ZZRingElem}(A, orders, primes, valuations)
 end
 
@@ -406,7 +406,7 @@ function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, pri
 
     g = GtoQ\sinQ
     h = hom(UK, G, [ GtoQ\(OKtoQ(mUK(UK[i]))) for i = 1:ngens(UK) ])
-    b, u = haspreimage(h, g)
+    b, u = has_preimage_with_preimage(h, g)
     if b
       Q, toQ = quo(UK, kernel(h)[1])
       u = toQ\(toQ(u)) # Reduce the coefficient size (hopefully)
@@ -442,7 +442,7 @@ end
 # Let S be the set of primes lying over primes.
 # This finds a set of representatives of the S-units of K modulo units of O_K,
 # whose norm has the valuations vals at the primes primes.
-function __neq_sunit(K::AnticNumberField, primes::Vector{ZZRingElem}, vals::Vector{Int})
+function __neq_sunit(K::AbsSimpleNumField, primes::Vector{ZZRingElem}, vals::Vector{Int})
   OK = maximal_order(K)
   primes_in_K = prime_ideals_over(OK, primes)
   class_group(K)
@@ -474,7 +474,7 @@ function __neq_sunit(K::AnticNumberField, primes::Vector{ZZRingElem}, vals::Vect
   return elem_type(codomain(mSK))[ mSK(SK(s)) for s in sols ]
 end
 
-function __neq_find_good_primes(NC::NormCache, OK::NfAbsOrd)
+function __neq_find_good_primes(NC::NormCache, OK::AbsNumFieldOrder)
   n = NC.n
   m = degree(nf(OK))
   mn = m//n

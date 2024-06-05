@@ -154,10 +154,10 @@ function _lll(L::NfLat, weights::ZZMatrix, prec::Int)
   n = dim(L)
   g = identity_matrix(FlintZZ, n)
   g1 = identity_matrix(FlintZZ, n)
-  ctx1 = Nemo.lll_ctx(0.4, 0.51, :gram)
-  ctx2 = Nemo.lll_ctx(0.99, 0.51, :gram)
-  @vtime :LLL 1 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g, ctx1)
-  @vtime :LLL 1 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.lll_ctx}), d, g1, ctx2)
+  ctx1 = Nemo.LLLContext(0.4, 0.51, :gram)
+  ctx2 = Nemo.LLLContext(0.99, 0.51, :gram)
+  @vtime :LLL 1 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx1)
+  @vtime :LLL 1 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g1, ctx2)
   mul!(g, g1, g)
   fl = true
   if nbits(maximum(abs, g)) >  div(prec, 2)
@@ -186,10 +186,10 @@ function lll_basis(L::NfLat{T}) where T
   return basis(L)
 end
 
-_abs_disc(O::NfRelOrd) = absolute_discriminant(O)
-_abs_disc(I::NfRelOrdIdl) = absolute_discriminant(order(I))*absolute_norm(I)
+_abs_disc(O::RelNumFieldOrder) = absolute_discriminant(O)
+_abs_disc(I::RelNumFieldOrderIdeal) = absolute_discriminant(order(I))*absolute_norm(I)
 
-function _get_nice_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
+function _get_nice_basis(OL::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFieldOrder}
   L = nf(OL)
   B = pseudo_basis(OL, copy = false)
   ideals = Dict{typeof(B[1][2]), Vector{elem_type(base_field(L))}}()
@@ -211,7 +211,7 @@ function _get_nice_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
   return abs_bas
 end
 
-function lll_basis(OL::T) where T <: Union{NfRelOrdIdl, NfRelOrd}
+function lll_basis(OL::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFieldOrder}
   L = nf(OL)
   B = _get_nice_basis(OL)
   is_exact = false

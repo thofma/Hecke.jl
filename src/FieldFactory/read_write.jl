@@ -47,15 +47,13 @@ function _read_from_file(f::IOStream)
   QQ = number_field(x-1, "b", cached = false, check = false)[1]
   for (k, l) in enumerate(eachline(f))
     a = _parse_fields_tower_blurb(l)
-    #a = eval(Meta.parse(replace(l, '#' => ',')))
-    #@assert a == olda
     K = number_field(Qx(a[1]), "a", cached = false, check = false)[1]
-    auts = Vector{NfToNfMor}(undef, length(a[2]))
+    auts = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(a[2]))
     for i = 1:length(auts)
       img = K(Qx(a[2][i]))
       auts[i] = hom(K, K, img, check = false)
     end
-    embs = Vector{NfToNfMor}(undef, length(a[3]))
+    embs = Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(a[3]))
     def_pol = Qx(a[3][1][1])
     if def_pol == K.pol
       Kcodomain = K

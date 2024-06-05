@@ -4,11 +4,11 @@
 #
 ################################################################################
 
-function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
+function minkowski_matrix_parallel(O::AbsSimpleNumFieldOrder, abs_tol::Int = 64)
   if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] > abs_tol
     A = deepcopy(O.minkowski_matrix[1])
   else
-    T = Vector{Vector{arb}}(undef, degree(O))
+    T = Vector{Vector{ArbFieldElem}}(undef, degree(O))
     B = O.basis_nf
     @Threads.threads for i in 1:degree(O)
       T[i] = minkowski_map(B[i], abs_tol)
@@ -27,12 +27,12 @@ function minkowski_matrix_parallel(O::NfOrd, abs_tol::Int = 64)
 end
 
 @doc raw"""
-    minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> ZZMatrix
+    minkowski_gram_mat_scaled(O::AbsSimpleNumFieldOrder, prec::Int = 64) -> ZZMatrix
 
 Let $c$ be the Minkowski matrix as computed by `minkowski_matrix` with precision $p$.
 This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
 """
-function minkowski_gram_mat_scaled_parallel(O::NfOrd, prec::Int = 64)
+function minkowski_gram_mat_scaled_parallel(O::AbsSimpleNumFieldOrder, prec::Int = 64)
   if isdefined(O, :minkowski_gram_mat_scaled) && O.minkowski_gram_mat_scaled[2] >= prec
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
     Hecke.shift!(A, prec - O.minkowski_gram_mat_scaled[2])
@@ -54,7 +54,7 @@ function minkowski_gram_mat_scaled_parallel(O::NfOrd, prec::Int = 64)
 end
 
 
-function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
+function parallel_lll_precomputation(M::AbsSimpleNumFieldOrder, prec::Int, nblocks::Int = 4)
   n = degree(M)
   K = nf(M)
   dimension_blocks = div(n, nblocks)
@@ -102,7 +102,7 @@ function parallel_lll_precomputation(M::NfOrd, prec::Int, nblocks::Int = 4)
       g1 = Hecke._lll_sublattice(M, indices, prec = prec)[2]
       Hecke._copy_matrix_into_matrix(g, indices, indices, g1)
     end
-    On = NfOrd(K, g*basis_matrix(M, copy = false))
+    On = AbsSimpleNumFieldOrder(K, g*basis_matrix(M, copy = false))
     On.is_maximal = M.is_maximal
     if isdefined(M, :index)
       On.index = M.index

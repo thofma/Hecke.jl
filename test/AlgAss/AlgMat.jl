@@ -246,12 +246,13 @@
 
     mats2 = map(v -> matrix(FlintQQ, v), mats)
     A = matrix_algebra(FlintQQ, mats2)
+    @test dim(A) == 22
     J = radical(A)
     B, = quo(A, J)
     @test dim(B) == 4
   end
 
-  A = Hecke.AlgQuat(QQ, QQ(-1), QQ(-1))
+  A = Hecke.QuaternionAlgebra(QQ, QQ(-1), QQ(-1))
   M = matrix_algebra(QQ, A, 2)
   @test isone(inv(one(M)))
 end

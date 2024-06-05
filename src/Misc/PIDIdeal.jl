@@ -7,6 +7,8 @@ end
 
 base_ring(x::PIDIdeal) = parent(x.gen)
 
+base_ring_type(::Type{PIDIdeal{T}}) where {T} = parent_type(T)
+
 _can_canonicalize(::Type{ZZRingElem}) = true
 
 _can_canonicalize(::Type{<:PolyRingElem{T}}) where {T <: FieldElem} = true

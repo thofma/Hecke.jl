@@ -1,13 +1,13 @@
-@testset "NfAbsNS" begin
+@testset "AbsNonSimpleNumField" begin
 
   Qx, x = FlintQQ["x"]
   K, (a, b) = @inferred number_field([x^2 - 2, x^3 - 3])
 
-  @test K isa NfAbsNS
-  @test elem_type(NfAbsNS) == NfAbsNSElem
-  @test parent_type(NfAbsNSElem) == NfAbsNS
+  @test K isa AbsNonSimpleNumField
+  @test elem_type(AbsNonSimpleNumField) == AbsNonSimpleNumFieldElem
+  @test parent_type(AbsNonSimpleNumFieldElem) == AbsNonSimpleNumField
   @test !is_simple(K)
-  @test !is_simple(NfAbsNS)
+  @test !is_simple(AbsNonSimpleNumField)
 
   @testset "Basics" begin
     @test FlintQQ == @inferred base_ring(K)
@@ -154,9 +154,9 @@
   @testset "rand" begin
     m = make(K, 1:3)
     for x in (rand(K, 1:3), rand(rng, K, 1:3), rand(m), rand(rng, m))
-      @test x isa NfAbsNSElem
+      @test x isa AbsNonSimpleNumFieldElem
     end
-    @test rand(m, 3) isa Vector{NfAbsNSElem}
+    @test rand(m, 3) isa Vector{AbsNonSimpleNumFieldElem}
     @test reproducible(m)
     @test reproducible(K, 1:3)
   end
@@ -191,4 +191,14 @@
   @test domain(f) === KK
   @test codomain(f) === K
   @test degree(KK) == 1
+
+  let
+    Qx, x = QQ["x"]
+    K, (sqrt2, sqrt5) = number_field([x^2 - 2, x^2 - 5], ["sqrt2", "sqrt5"])
+    Kt, t = polynomial_ring(K, :t)
+    f = (20*sqrt2*sqrt5 - 70) * (t + 2) * (t - 2) * t^2 * (t - 1) * (t + 1)
+    fa = factor(f)
+    @test length(fa) == 5
+    @test f == unit(fa) * prod(p^e for (p, e) in fa)
+  end
 end

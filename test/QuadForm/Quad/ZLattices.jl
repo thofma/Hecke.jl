@@ -201,7 +201,7 @@ end
   R = @inferred root_sublattice(L)
   @test 0 == rank(R)
   L = root_lattice(:A,2)
-  R = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  R = lattice(ambient_space(L),basis_matrix(L)[1:1,:])
   @test rank(root_sublattice(R))==1
 
   L = biproduct(root_lattice(:A,2),root_lattice(:D,4))[1]
@@ -495,7 +495,7 @@ end
   N = invariant_lattice(L, G)
   @test ambient_space(N) === ambient_space(L)
   @test rank(N) == 0
-  @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
+  @test invariant_lattice(L, identity_matrix(QQ, 2)) == L
 
   L = [root_lattice(:D,i) for i in 2:10]
   @test all(l -> det(l) == 4, L)
@@ -762,7 +762,7 @@ end
   @test genus(L) == genus(E8)
 
   B = basis_matrix(dual(E8))
-  L = @inferred quadratic_lattice(QQ, [B[i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
+  L = @inferred quadratic_lattice(QQ, [B[i:i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
   @test genus(L) == genus(E8)
 end
 
@@ -800,4 +800,11 @@ end
 
   L = @inferred hyperkaehler_lattice(:OG10)
   @test det(L) == -3
+end
+
+@testset "Fix irreducible components" begin
+  B = matrix(FlintQQ, 8, 16 ,[0, 0, 0, 0, 0, 0, 0, 0, 1, -1//2, 0, -1//2, 1//2, 1//2, 1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1//2, 0, -1//2, -1//2, -1//2, 1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1//2, 0, 1//2, -1//2, -1//2, 1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1//2, 0, -1//2, -1//2, 1//2, -1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1//2, 0, -1//2, -1//2, -1//2, 1//2, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1//2, -1, -1//2, -1//2, 1//2, -1//2, -1//2]);
+  G = matrix(FlintQQ, 16, 16 ,[-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
+  L = integer_lattice(B, gram = G);
+  @test irreducible_components(L)[1] == L
 end

@@ -561,7 +561,7 @@ function riemann_roch_space(D::Divisor)
   B_fin = matrix(map(coordinates, basis_gens))
   B_inf = matrix(map(coordinates, basis(J_inf)))
 
-  M = solve_left(B_inf, B_fin)
+  M = solve(B_inf, B_fin; side = :left)
   d = lcm(vec(map(denominator,collect(M))))
   d_deg = degree(d)
   Mnew = change_base_ring(parent(d), d*M)

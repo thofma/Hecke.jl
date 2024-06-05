@@ -1,9 +1,9 @@
-function MaximalOrder(K::NfAbsNS; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function MaximalOrder(K::AbsNonSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     O = maximal_order_from_components(K)
     O.is_maximal = 1
     return O
-  end::NfAbsOrd{NfAbsNS, NfAbsNSElem}
+  end::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}
 end
 
 
@@ -14,15 +14,15 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function new_maximal_order(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return maximal_order_round_four(O, index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
-function maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function maximal_order_round_four(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return _maximal_order_round_four(O; index_divisors = index_divisors, disc = disc, ramified_primes = ramified_primes)
 end
 
-function _maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function _maximal_order_round_four(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, <:NumFieldElem{QQFieldElem}}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   OO = O
   M = trace_matrix(O)
   l = divisors(M, discriminant(O))
@@ -40,14 +40,14 @@ function _maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFie
         continue
       end
     end
-    @vtime :NfOrd fac = factor(s)
+    @vtime :AbsNumFieldOrder fac = factor(s)
     for (p, j) in fac
-      @vprintln :NfOrd 1 "Computing p-maximal overorder for $p ..."
+      @vprintln :AbsNumFieldOrder 1 "Computing p-maximal overorder for $p ..."
       O1 = pmaximal_overorder(O, p)
       if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
         OO += O1
       end
-      @vprintln :NfOrd 1 "done"
+      @vprintln :AbsNumFieldOrder 1 "done"
     end
   end
   OO.is_maximal = 1
@@ -55,7 +55,7 @@ function _maximal_order_round_four(O::NfAbsOrd{<:NumField{QQFieldElem}, <:NumFie
 end
 
 
-function maximal_order_from_components(L::NfAbsNS; disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function maximal_order_from_components(L::AbsNonSimpleNumField; disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   BKs, lp, disc_order = _maximal_order_of_components(L)
   B = _product_basis(BKs)
   OO = Order(L, B, check = false, cached = false, isbasis = true)
@@ -86,7 +86,7 @@ function maximal_order_from_components(L::NfAbsNS; disc::ZZRingElem = ZZRingElem
   return OO
 end
 
-function _product_basis(l::Vector{Vector{NfAbsNSElem}})
+function _product_basis(l::Vector{Vector{AbsNonSimpleNumFieldElem}})
   nelems = 1
   for i = 1:length(l)
     nelems *= length(l[i])
@@ -109,7 +109,7 @@ function _product_basis(l::Vector{Vector{NfAbsNSElem}})
   return B
 end
 
-function product_basis(l::Vector{Vector{T}}) where T <: Union{NfAbsOrdElem, NfRelOrdElem, NumFieldElem}
+function product_basis(l::Vector{Vector{T}}) where T <: Union{AbsNumFieldOrderElem, RelNumFieldOrderElem, NumFieldElem}
   nelems = 1
   for i = 1:length(l)
     nelems *= length(l[i])
@@ -131,7 +131,7 @@ function product_basis(l::Vector{Vector{T}}) where T <: Union{NfAbsOrdElem, NfRe
   return B
 end
 
-function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdElem, NfRelOrdElem, NumFieldElem}
+function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{AbsNumFieldOrderElem, RelNumFieldOrderElem, NumFieldElem}
   B = Vector{typeof(l1[1])}(undef, length(l1)*length(l2))
   for i = 1:length(l1)
     B[i] = l1[i]
@@ -144,20 +144,20 @@ function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{NfAbsOrdEl
   return B
 end
 
-function _maximal_order_of_components(L::NfAbsNS)
+function _maximal_order_of_components(L::AbsNonSimpleNumField)
   Qx, x = polynomial_ring(FlintQQ, "x")
-  fields = Vector{Tuple{AnticNumberField, NfAbsToNfAbsNS}}(undef, length(L.pol))
+  fields = Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsNonSimpleNumField}}}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fields[i] = component(L, i)
   end
   #Now, bring the maximal order of every component in L
-  B = Vector{Vector{NfAbsNSElem}}(undef, length(fields))
+  B = Vector{Vector{AbsNonSimpleNumFieldElem}}(undef, length(fields))
   d = ZZRingElem(1)
   for i = 1:length(fields)
     OK = maximal_order(fields[i][1])
     d *= discriminant(OK)^(divexact(degree(L), degree(OK)))
     BOK = basis(OK, fields[i][1])
-    BK = Vector{NfAbsNSElem}(undef, degree(OK))
+    BK = Vector{AbsNonSimpleNumFieldElem}(undef, degree(OK))
     for j = 1:length(BK)
       BK[j] = fields[i][2](BOK[j])
     end
@@ -172,11 +172,11 @@ function _maximal_order_of_components(L::NfAbsNS)
   return B, lp, d
 end
 
-function pradical_trace1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Union{Int, ZZRingElem})
+function pradical_trace1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}, p::Union{Int, ZZRingElem})
   return pradical_trace(O, p)
 end
 
-function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
+function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}, p::Int)
   R = Native.GF(p, cached = false)
   d = degree(O)
   K = nf(O)
@@ -250,8 +250,8 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
         A[i, s+nr] = R(M1[s, i])
       end
     end
-    X = right_kernel_basis(A)
-    if isempty(X)
+    X = kernel(A, side = :right)
+    if is_zero(ncols(X))
       I = ideal(O, M1; check=false, M_in_hnf=true)
       reverse!(gens)
       I.gens = gens
@@ -260,10 +260,10 @@ function new_pradical_frobenius1(O::NfAbsOrd{NfAbsNS, NfAbsNSElem}, p::Int)
     end
     #First, find the generators
     new_gens = Vector{elem_type(O)}()
-    for i = 1:length(X)
+    for i = 1:ncols(X)
       coords = zeros(FlintZZ, d)
       for j=1:nr
-        coords[indices[j]] = lift(X[i][j])
+        coords[indices[j]] = lift(X[j, i])
       end
       if !iszero(coords)
         new_el = O(coords)

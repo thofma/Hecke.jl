@@ -10,29 +10,29 @@ function show(io::IO, S::NfMorSet{T}) where {T}
   print(io, "Set of automorphisms of ", S.field)
 end
 
-parent(f::NfToNfMor) = NfMorSet(domain(f))
+parent(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) = NfMorSet(domain(f))
 
-function parent(f::NumFieldMor)
+function parent(f::NumFieldHom)
   @assert domain(f) == codomain(f)
   return NfMorSet(domain(f))
 end
 
-function image(f::NumFieldMor, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
+function image(f::NumFieldHom, a::FacElem{S, T}) where {S <: NumFieldElem, T <: NumField}
   D = Dict{elem_type(codomain(f)), ZZRingElem}(f(b) => e for (b, e) in a)
   return FacElem(D)
 end
 
 ################################################################################
 #
-#  Some basic properties of NfToNfMor
+#  Some basic properties of NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 #
 ################################################################################
 
-is_injective(m::NumFieldMor) = true
+is_injective(m::NumFieldHom) = true
 
-is_surjective(m::NumFieldMor) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
+is_surjective(m::NumFieldHom) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
 
-is_bijective(m::NumFieldMor) = is_surjective(m)
+is_bijective(m::NumFieldHom) = is_surjective(m)
 
 ################################################################################
 #
@@ -40,12 +40,12 @@ is_bijective(m::NumFieldMor) = is_surjective(m)
 #
 ################################################################################
 
-mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
-  G::GrpGen
+mutable struct GrpGenToNfMorSet{S, T} <: Map{MultTableGroup, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
+  G::MultTableGroup
   aut::Vector{S}
-  header::MapHeader{GrpGen, NfMorSet{T}}
+  header::MapHeader{MultTableGroup, NfMorSet{T}}
 
-  function GrpGenToNfMorSet(aut::Vector{S}, G::GrpGen, s::NfMorSet{T}) where {S, T}
+  function GrpGenToNfMorSet(aut::Vector{S}, G::MultTableGroup, s::NfMorSet{T}) where {S, T}
     z = new{S, T}()
     z.header = MapHeader(G, s)
     z.aut = aut
@@ -54,21 +54,21 @@ mutable struct GrpGenToNfMorSet{S, T} <: Map{GrpGen, NfMorSet{T}, HeckeMap, GrpG
   end
 end
 
-function GrpGenToNfMorSet(G::GrpGen, K::NumField)
+function GrpGenToNfMorSet(G::MultTableGroup, K::NumField)
   return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::NumField) where S <: NumFieldMor
+function GrpGenToNfMorSet(G::MultTableGroup, aut::Vector{S}, K::NumField) where S <: NumFieldHom
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end
 
-function image(f::GrpGenToNfMorSet, g::GrpGenElem)
+function image(f::GrpGenToNfMorSet, g::MultTableGroupElem)
   @assert parent(g) == f.G
   K = codomain(f).field
   return f.aut[g[]]
 end
 
-function (f::GrpGenToNfMorSet)(g::GrpGenElem)
+function (f::GrpGenToNfMorSet)(g::MultTableGroupElem)
   return image(f, g)
 end
 
@@ -83,7 +83,7 @@ function preimage(f::GrpGenToNfMorSet{S, T}, a::S) where {S, T}
   error("something wrong")
 end
 
-Base.copy(f::NfToNfMor) = f
+Base.copy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) = f
 
 ################################################################################
 #
@@ -92,11 +92,11 @@ Base.copy(f::NfToNfMor) = f
 ################################################################################
 
 @doc raw"""
-     is_normal(K::AnticNumberField) -> Bool
+     is_normal(K::AbsSimpleNumField) -> Bool
 
 Returns true if $K$ is a normal extension of $\mathbb Q$, false otherwise.
 """
-function is_normal(K::AnticNumberField)
+function is_normal(K::AbsSimpleNumField)
   #Before computing the automorphisms, I split a few primes and check if the
   #splitting behaviour is fine
   c = get_attribute(K, :is_normal)
@@ -116,7 +116,7 @@ function is_normal(K::AnticNumberField)
   end
 end
 
-function is_normal_easy(K::AnticNumberField)
+function is_normal_easy(K::AbsSimpleNumField)
   E = any_order(K)
   p = 1000
   ind = 0
@@ -130,7 +130,7 @@ function is_normal_easy(K::AnticNumberField)
     end
     ind += 1
     dt = prime_decomposition_type(E, p)
-    if !divisible(degree(K), length(dt))
+    if !is_divisible_by(degree(K), length(dt))
       set_attribute!(K, :is_normal => false)
       return false
     end
@@ -153,7 +153,7 @@ is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 #
 ################################################################################
 @doc raw"""
-    is_cm_field(K::AnticNumberField) -> Bool, NfToNfMor
+    is_cm_field(K::AbsSimpleNumField) -> Bool, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
@@ -188,7 +188,7 @@ function is_cm_field_known(K::NumField)
   return c !== nothing
 end
 
-function _find_complex_conj(auts::Vector{NfToNfMor})
+function _find_complex_conj(auts::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   K = domain(auts[1])
   for x in auts
     if !is_involution(x)
@@ -202,7 +202,7 @@ function _find_complex_conj(auts::Vector{NfToNfMor})
   return false, id_hom(K)
 end
 
-function is_cm_field_easy(K::AnticNumberField)
+function is_cm_field_easy(K::AbsSimpleNumField)
   E = any_order(K)
   if is_maximal_order_known(K)
     E = maximal_order(K)
@@ -211,12 +211,12 @@ function is_cm_field_easy(K::AnticNumberField)
   g = zero_matrix(FlintZZ, n, n)
   B = basis(E, nf(E))
   prec = 32
-  imgs = Vector{Vector{arb}}(undef, n)
+  imgs = Vector{Vector{ArbFieldElem}}(undef, n)
   for i = 1:n
     imgs[i] = minkowski_map(B[i], prec)
   end
   i = 1
-  t = arb()
+  t = ArbFieldElem()
   while i <= n
     j = i
     while j <= n
@@ -249,7 +249,7 @@ end
 #
 ################################################################################
 
-function _evaluate_mod(f::QQPolyRingElem, a::nf_elem, d::ZZRingElem)
+function _evaluate_mod(f::QQPolyRingElem, a::AbsSimpleNumFieldElem, d::ZZRingElem)
   #Base.show_backtrace(stdout, Base.stacktrace())
   R = parent(a)
   if iszero(f)
@@ -267,9 +267,9 @@ function _evaluate_mod(f::QQPolyRingElem, a::nf_elem, d::ZZRingElem)
   return s
 end
 
-(f::NfToNfMor)(x::NfOrdIdl) = induce_image(f, x)
+(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = induce_image(f, x)
 
-function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
+function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; target = false)
   K = domain(f)
   if K != codomain(f)
     if target == false
@@ -337,7 +337,7 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
   end
   if !has_2_elem(I)
     #I need to translate the basis matrix
-    bb = Vector{NfOrdElem}(undef, degree(K))
+    bb = Vector{AbsSimpleNumFieldOrderElem}(undef, degree(K))
     B = basis(x, copy = false)
     for i = 1:length(bb)
       bb[i] = OK(f(K(B[i])))
@@ -355,10 +355,10 @@ function induce_image(f::NfToNfMor, x::NfOrdIdl; target = false)
   return I
 end
 
-function induce_image_easy(f::NfToNfMor, P::NfOrdIdl)
+function induce_image_easy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   OK = order(P)
   K = nf(OK)
-  R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)
+  R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)[1]
   Rx = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rx(K.pol)
   prim_img = Rx(image_primitive_element(f))
@@ -388,17 +388,17 @@ end
 ################################################################################
 
 # Embedding of a number field into an algebra over Q.
-mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAbsToAbsAlgAssMor}
-  header::MapHeader{AnticNumberField, S}
+mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, HeckeMap, NfAbsToAbsAlgAssMor}
+  header::MapHeader{AbsSimpleNumField, S}
   mat::QQMatrix
   t::QQMatrix
 
-  function NfAbsToAbsAlgAssMor{S}(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
+  function NfAbsToAbsAlgAssMor{S}(K::AbsSimpleNumField, A::S, M::QQMatrix) where { S <: AbstractAssociativeAlgebra{QQFieldElem} }
     z = new{S}()
     z.mat = M
     z.t = zero_matrix(FlintQQ, 1, degree(K))
 
-    function _image(x::nf_elem)
+    function _image(x::AbsSimpleNumFieldElem)
       for i = 1:degree(K)
         z.t[1, i] = coeff(x, i - 1)
       end
@@ -406,16 +406,16 @@ mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AnticNumberField, S, HeckeMap, NfAb
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{AnticNumberField, S}(K, A, _image)
+    z.header = MapHeader{AbsSimpleNumField, S}(K, A, _image)
     return z
   end
 end
 
-function NfAbsToAbsAlgAssMor(K::AnticNumberField, A::S, M::QQMatrix) where { S <: AbsAlgAss{QQFieldElem} }
+function NfAbsToAbsAlgAssMor(K::AbsSimpleNumField, A::S, M::QQMatrix) where { S <: AbstractAssociativeAlgebra{QQFieldElem} }
   return NfAbsToAbsAlgAssMor{S}(K, A, M)
 end
 
-function haspreimage(m::NfAbsToAbsAlgAssMor, a::AbsAlgAssElem)
+function has_preimage_with_preimage(m::NfAbsToAbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
   A = parent(a)
   t = matrix(FlintQQ, 1, dim(A), coefficients(a))
   b, p = can_solve_with_solution(m.mat, t, side = :left)
@@ -432,23 +432,23 @@ end
 #
 ################################################################################
 @doc raw"""
-    is_involution(f::NfToNfMor) -> Bool
+    is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) -> Bool
 
 Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false otherwise.
 """
-function is_involution(f::NfToNfMor)
+function is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(f)
   @assert K == codomain(f)
   if image_primitive_element(f) == gen(K)
     return false
   end
   p = 2
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = residue_ring(FlintZZ, p, cached = false)
+    R = residue_ring(FlintZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -459,23 +459,23 @@ function is_involution(f::NfToNfMor)
 end
 
 #@doc raw"""
-#    _order(f::NfToNfMor) -> Int
+#    _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) -> Int
 #
 #If $f$ is an automorphism of a field $K$, it returns the order of $f$ in the automorphism group of $K$.
 #"""
-function _order(f::NfToNfMor)
+function _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(f)
   @req K === codomain(f) "The morphism must be an automorphism"
   if image_primitive_element(f) == gen(K)
     return 1
   end
   p = 2
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(FlintZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = residue_ring(FlintZZ, p, cached = false)
+    R = residue_ring(FlintZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -490,7 +490,7 @@ function _order(f::NfToNfMor)
 end
 
 
-function small_generating_set(G::Vector{NfToNfMor})
+function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 
   if length(G) == 1
     return G
@@ -517,12 +517,12 @@ function small_generating_set(G::Vector{NfToNfMor})
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
     if length(closure(fpPolyRingElem[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
-      return NfToNfMor[trygen]
+      return morphism_type(AbsSimpleNumField, AbsSimpleNumField)[trygen]
     end
   end
 
   for i in 1:secondtry
-    gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
+    gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -530,7 +530,7 @@ function small_generating_set(G::Vector{NfToNfMor})
   end
 
   for i in 1:thirdtry
-    gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
+    gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -548,7 +548,7 @@ function small_generating_set(G::Vector{NfToNfMor})
       error("Something wrong with generator search")
     end
     j = j + 1
-    gens = NfToNfMor[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
+    gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
     if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
       return unique(gens)
@@ -556,7 +556,7 @@ function small_generating_set(G::Vector{NfToNfMor})
   end
 end
 
-function _order(G::Vector{NfToNfMor})
+function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   K = domain(G[1])
 	p = 2
   R = Native.GF(p, cached = false)
@@ -576,7 +576,7 @@ end
 #
 ################################################################################
 
-function frobenius_automorphism(P::NfOrdIdl)
+function frobenius_automorphism(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert is_prime(P)
   OK = order(P)
   K = nf(OK)

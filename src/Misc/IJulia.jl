@@ -28,8 +28,8 @@ function Base.show(io::IO, ::MIME"text/html", a::PolyRingElem)
   print(io, "\$")
 end
 
-function math_html(io::IO, a::AnticNumberField)
-  n = find_name(a)
+function math_html(io::IO, a::AbsSimpleNumField)
+  n = get_name(a)
   if n === nothing || !get(io, :compact, false)
     print(io, "\\text{Number field over Rational field with defining polynomial }")
     math_html(io, a.pol)
@@ -38,14 +38,14 @@ function math_html(io::IO, a::AnticNumberField)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::NfRelNS)
+function Base.show(io::IO, ::MIME"text/html", a::RelNonSimpleNumField)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
 
-function math_html(io::IO, a::NfRelNS)
-  n = find_name(a)
+function math_html(io::IO, a::RelNonSimpleNumField)
+  n = get_name(a)
   if n === nothing || !get(io, :compact, false)
     print(io, "\\text{non-simple Relative number field over }")
     math_html(io, base_field(a))
@@ -56,14 +56,14 @@ function math_html(io::IO, a::NfRelNS)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::NfAbsNS)
+function Base.show(io::IO, ::MIME"text/html", a::AbsNonSimpleNumField)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
 
-function math_html(io::IO, a::NfAbsNS)
-  n = find_name(a)
+function math_html(io::IO, a::AbsNonSimpleNumField)
+  n = get_name(a)
   if n === nothing || !get(io, :compact, false)
     print(io, "\\text{non-simple number field with defining polynomials: }")
     math_html(io, a.pol)
@@ -72,7 +72,7 @@ function math_html(io::IO, a::NfAbsNS)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::AnticNumberField)
+function Base.show(io::IO, ::MIME"text/html", a::AbsSimpleNumField)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -109,11 +109,11 @@ end
 =#
 
 #=
-function Base.show(io::IO, b::HTML{nf_elem})
+function Base.show(io::IO, b::HTML{AbsSimpleNumFieldElem})
   math_html(io, b.content)
 end
 
-function Base.show(io::IO, b::HTML{AnticNumberField})
+function Base.show(io::IO, b::HTML{AbsSimpleNumField})
   math_html(io, b.content)
 end
 =#
@@ -139,7 +139,7 @@ end
 #  print(io, ")")
 #end
 
-function math_html(io::IO, a::nf_elem)
+function math_html(io::IO, a::AbsSimpleNumFieldElem)
   s = t = parent(a).S
   f, c = is_cyclotomic_type(parent(a))
   if f
@@ -165,7 +165,7 @@ function math_html(io::IO, a::nf_elem)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::nf_elem)
+function Base.show(io::IO, ::MIME"text/html", a::AbsSimpleNumFieldElem)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -324,17 +324,17 @@ end
 #end
 
 
-function math_html(io::IO, a::NfAbsOrdElem)
+function math_html(io::IO, a::AbsNumFieldOrderElem)
   math_html(io, elem_in_nf(a))
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::NfAbsOrdElem)
+function Base.show(io::IO, ::MIME"text/html", a::AbsNumFieldOrderElem)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
 end
 
-function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
+function math_html(io::IO, O::AbsSimpleNumFieldOrder)
   c = get(io, :compact, false)
   if is_maximal_known_and_maximal(O)
     n = "Maximal order of"
@@ -349,12 +349,12 @@ function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
     return
   end
 
-  n = find_name(O)
-  if !(n===nothing)
+  n = get_name(O)
+  if n !== nothing
     print(io, string(n))
     return
   end
-  n = find_name(nf(O))
+  n = get_name(nf(O))
   if n === nothing
     print(io, "\\text{$n }")
     math_html(io, nf(O))
@@ -363,7 +363,7 @@ function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::NfAbsOrd{AnticNumberField, nf_elem})
+function Base.show(io::IO, ::MIME"text/html", a::AbsSimpleNumFieldOrder)
   print(io, "\$")
   math_html(io, a)
   print(io, "\$")
@@ -371,7 +371,7 @@ end
 
 
 function math_html(io::IO, M::Map)
-  n = find_name(M)
+  n = get_name(M)
   cio = IOContext(io, :compact => true)
   if n === nothing
     print(io, "\\text{Map from }")
@@ -379,14 +379,14 @@ function math_html(io::IO, M::Map)
     print(io, string(n))
     print(io, ": ")
   end
-  n = find_name(domain(M))
+  n = get_name(domain(M))
   if n === nothing
     math_html(cio, domain(M))
   else
     print(io, string(n))
   end
   print(io, "\\to ")
-  n = find_name(codomain(M))
+  n = get_name(codomain(M))
   if n === nothing
     math_html(cio, codomain(M))
   else
@@ -400,9 +400,9 @@ function Base.show(io::IO, ::MIME"text/html", M::Map)
   print(io, "\$")
 end
 
-function math_html(io::IO, I::NfAbsOrdIdlSet)
+function math_html(io::IO, I::AbsNumFieldOrderIdealSet)
   print(io, "\\text{Set of ideals of }")
-  n = find_name(order(I))
+  n = get_name(order(I))
   if n === nothing || !get(io, :compact, false)
     math_html(IOContext(io, :compact => true), order(I))
   else
@@ -410,13 +410,13 @@ function math_html(io::IO, I::NfAbsOrdIdlSet)
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", G::GrpAbFinGen)
+function Base.show(io::IO, ::MIME"text/html", G::FinGenAbGroup)
   print(io, "\$")
   math_html(io, G)
   print(io, "\$")
 end
 
-function show_tensor_product(io::IO, ::MIME"text/html", G::GrpAbFinGen)
+function show_tensor_product(io::IO, ::MIME"text/html", G::FinGenAbGroup)
   T = get_attribute(G, :tensor_product)
   @assert T !== nothing
   io = IOContext(io, :compact => true)
@@ -429,8 +429,8 @@ end
 #TODO: other special show functions for abelian groups
 #      add special(?) for class group
 #      add parent of tuple... (occurs in tensor product)
-function math_html(io::IO, G::GrpAbFinGen)
-  n = find_name(G)
+function math_html(io::IO, G::FinGenAbGroup)
+  n = get_name(G)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
     return
@@ -458,7 +458,7 @@ function math_html(io::IO, G::GrpAbFinGen)
 end
 
 function math_html(io::IO, R::PolyRing)
-  n = find_name(R)
+  n = get_name(R)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
     return
@@ -473,8 +473,8 @@ function Base.show(io::IO, ::MIME"text/html", K::PolyRing)
   print(io, "\$")
 end
 
-function math_html(io::IO, K::NfRel)
-  n = find_name(K)
+function math_html(io::IO, K::RelSimpleNumField)
+  n = get_name(K)
   if !(n === nothing) && get(io, :compact, false)
     print(io, string(n))
     return
@@ -485,7 +485,7 @@ function math_html(io::IO, K::NfRel)
   math_html(io, K.pol)
 end
 
-function Base.show(io::IO, ::MIME"text/html", K::NfRel)
+function Base.show(io::IO, ::MIME"text/html", K::RelSimpleNumField)
   print(io, "\$")
   math_html(io, K)
   print(io, "\$")

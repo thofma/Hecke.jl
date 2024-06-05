@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  Map/AbGrp.jl : Types for maps with domains of type GrpAbFinGen
+#  Map/AbGrp.jl : Types for maps with domains of type FinGenAbGroup
 #
 # This file is part of Hecke.
 #
@@ -38,16 +38,16 @@
 #
 ################################################################################
 
-mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
-                                     HeckeMap, GrpAbFinGenMap}
-  header::MapHeader{GrpAbFinGen, GrpAbFinGen}
+mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
+                                     HeckeMap, FinGenAbGroupHom}
+  header::MapHeader{FinGenAbGroup, FinGenAbGroup}
 
   map::ZZMatrix
   imap::ZZMatrix
-  im::GrpAbFinGen  # if set
-  ke::GrpAbFinGen  # if set
+  im::FinGenAbGroup  # if set
+  ke::FinGenAbGroup  # if set
 
-  function GrpAbFinGenMap(G::GrpAbFinGen)
+  function FinGenAbGroupHom(G::FinGenAbGroup)
     r = new()
     r.header = MapHeader(G, G)
     r.map = identity_matrix(FlintZZ, ngens(G))
@@ -55,14 +55,14 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
     return r
   end
 
-  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::ZZMatrix)
+  function FinGenAbGroupHom(From::FinGenAbGroup, To::FinGenAbGroup, M::ZZMatrix)
     r = new()
     r.header = MapHeader(From, To)
     r.map = M
     return r
   end
 
-  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::ZZMatrix, Mi::ZZMatrix)
+  function FinGenAbGroupHom(From::FinGenAbGroup, To::FinGenAbGroup, M::ZZMatrix, Mi::ZZMatrix)
     r = new()
     r.header = MapHeader(From, To)
     r.map = M
@@ -70,7 +70,7 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
     return r
   end
 
-  function GrpAbFinGenMap(M::T) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+  function FinGenAbGroupHom(M::T) where T <: Map{FinGenAbGroup, FinGenAbGroup}
     r = new()
     D = domain(M)
     r.header = MapHeader(D, codomain(M))
@@ -83,31 +83,31 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
   end
 end
 
-function image(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
+function image(f::Map(FinGenAbGroupHom), a::FinGenAbGroupElem)
   parent(a) == domain(f) || error("not in the domain")
   if !isdefined(f, :map)
     return has_image(f, a)[2]
   end
-  return GrpAbFinGenElem(codomain(f), a.coeff * f.map)
+  return FinGenAbGroupElem(codomain(f), a.coeff * f.map)
 end
 
-function image(phi::GrpAbFinGenMap, U::GrpAbFinGen, add_to_lattice::Bool = !false)
+function image(phi::FinGenAbGroupHom, U::FinGenAbGroup, add_to_lattice::Bool = !false)
   G = domain(phi)
   fl, inj = is_subgroup(U, G)
   fl || error("subgroup is not in the domain")
   return sub(codomain(phi), [phi(inj(U[i])) for i=1:ngens(U)], add_to_lattice)
 end
 
-function preimage(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
+function preimage(f::Map(FinGenAbGroupHom), a::FinGenAbGroupElem)
   if !isdefined(f, :imap)
-    fl, r = haspreimage(f, a)
+    fl, r = has_preimage_with_preimage(f, a)
     fl || error("element is not in the image")
     return r
   end
-  return GrpAbFinGenElem(domain(f), a.coeff * f.imap)
+  return FinGenAbGroupElem(domain(f), a.coeff * f.imap)
 end
 
-function Hecke.preimage(h::GrpAbFinGenMap, u::GrpAbFinGen, add_to_lattice::Bool = true)
+function Hecke.preimage(h::FinGenAbGroupHom, u::FinGenAbGroup, add_to_lattice::Bool = true)
   fl, f = is_subgroup(u, codomain(h))
   @assert fl
   k, mk = kernel(h)
@@ -120,13 +120,13 @@ end
 #
 ################################################################################
 
-@attributes mutable struct FiniteFieldMultGrpMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, FiniteFieldMultGrpMap{S, T}}
-  header::MapHeader{GrpAbFinGen, S}
-  domain::GrpAbFinGen
+@attributes mutable struct FiniteFieldMultGrpMap{S, T} <: Map{FinGenAbGroup, S, HeckeMap, FiniteFieldMultGrpMap{S, T}}
+  header::MapHeader{FinGenAbGroup, S}
+  domain::FinGenAbGroup
   codomain::S
   generator::T
 
-  function FiniteFieldMultGrpMap{S, T}(G::GrpAbFinGen, F::S, generator::T, disc_log::Function) where {S, T}
+  function FiniteFieldMultGrpMap{S, T}(G::FinGenAbGroup, F::S, generator::T, disc_log::Function) where {S, T}
     z = new{S, T}()
     z.header = MapHeader(G, F)
     z.domain = G
@@ -137,7 +137,7 @@ end
   end
 end
 
-function image(f::FiniteFieldMultGrpMap, x::GrpAbFinGenElem)
+function image(f::FiniteFieldMultGrpMap, x::FinGenAbGroupElem)
   return f.generator^x[1]
 end
 
@@ -151,12 +151,12 @@ codomain(f::FiniteFieldMultGrpMap) = f.codomain
 #
 ################################################################################
 
-@attributes mutable struct AbToNfOrdMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfOrdMultGrp}
-  domain::GrpAbFinGen
+@attributes mutable struct AbToNfOrdMultGrp{S, T} <: Map{FinGenAbGroup, S, SetMap, AbToNfOrdMultGrp}
+  domain::FinGenAbGroup
   codomain::S
   generator::T
 
-  function AbToNfOrdMultGrp(O::NfAbsOrd, order::Int, generator::NfAbsOrdElem)
+  function AbToNfOrdMultGrp(O::AbsNumFieldOrder, order::Int, generator::AbsNumFieldOrderElem)
     G = abelian_group([order])
     z = new{typeof(O), typeof(generator)}()
     z.domain = G
@@ -164,7 +164,7 @@ codomain(f::FiniteFieldMultGrpMap) = f.codomain
     z.generator = generator
     return z
   end
-  function AbToNfOrdMultGrp(O::NfRelOrd, order::Int, generator::NfRelOrdElem)
+  function AbToNfOrdMultGrp(O::RelNumFieldOrder, order::Int, generator::RelNumFieldOrderElem)
     G = abelian_group([order])
     z = new{typeof(O), typeof(generator)}()
     z.domain = G
@@ -174,7 +174,7 @@ codomain(f::FiniteFieldMultGrpMap) = f.codomain
   end
 end
 
-function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
+function (f::AbToNfOrdMultGrp)(a::FinGenAbGroupElem)
   return f.generator^a[1]
 end
 
@@ -182,8 +182,8 @@ domain(f::AbToNfOrdMultGrp) = f.domain
 
 codomain(f::AbToNfOrdMultGrp) = f.codomain
 
-@attributes mutable struct AbToNfMultGrp{S, T} <: Map{GrpAbFinGen, S, SetMap, AbToNfMultGrp}
-  domain::GrpAbFinGen
+@attributes mutable struct AbToNfMultGrp{S, T} <: Map{FinGenAbGroup, S, SetMap, AbToNfMultGrp}
+  domain::FinGenAbGroup
   codomain::S
   generator::T
 
@@ -198,11 +198,11 @@ codomain(f::AbToNfOrdMultGrp) = f.codomain
 
 end
 
-function (f::AbToNfMultGrp)(a::GrpAbFinGenElem)
+function (f::AbToNfMultGrp)(a::FinGenAbGroupElem)
   return f.generator^a[1]
 end
 
-function preimage(f::AbToNfMultGrp, b::nf_elem)
+function preimage(f::AbToNfMultGrp, b::AbsSimpleNumFieldElem)
   i = 0
   while i < order(f.domain) && f.generator^i != b
     i += 1
@@ -222,15 +222,15 @@ codomain(f::AbToNfMultGrp) = f.codomain
 ################################################################################
 
 # S is the type of the order (the codomain) and T is the elem_type of the order
-mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, GrpAbFinGenToAbsOrdMap}
-  header::MapHeader{GrpAbFinGen, S}
+mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{FinGenAbGroup, S, HeckeMap, GrpAbFinGenToAbsOrdMap}
+  header::MapHeader{FinGenAbGroup, S}
   generators::Vector{T}
   discrete_logarithm::Function
   modulus # this can be anything, for which powermod(::T, ::ZZRingElem, modulus) is defined
 
-  disc_log::GrpAbFinGenElem #Needed in the conductor computation
+  disc_log::FinGenAbGroupElem #Needed in the conductor computation
 
-  function GrpAbFinGenToAbsOrdMap{S, T}(G::GrpAbFinGen, O::S, generators::Vector{T}, disc_log::Function, modulus...) where {S, T}
+  function GrpAbFinGenToAbsOrdMap{S, T}(G::FinGenAbGroup, O::S, generators::Vector{T}, disc_log::Function, modulus...) where {S, T}
     @assert ngens(G) == length(generators)
 
     z = new{S, T}()
@@ -240,7 +240,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
       z.modulus = modulus[1]
     end
 
-    function _image(a::GrpAbFinGenElem)
+    function _image(a::FinGenAbGroupElem)
       @assert parent(a) === G
       y = one(O)
       for i in 1:length(generators)
@@ -276,17 +276,17 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
   function GrpAbFinGenToAbsOrdMap{S, T}(O::S, generators::Vector{T}, relation_matrix::ZZMatrix, disc_log::Function, modulus...) where {S, T}
     @assert length(generators) == nrows(relation_matrix)
 
-    G = GrpAbFinGen(relation_matrix)
+    G = FinGenAbGroup(relation_matrix)
 
     return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
   end
 end
 
-function GrpAbFinGenToAbsOrdMap(G::GrpAbFinGen, O::S, generators::Vector{T}, disc_log::Function, modulus...) where {S, T}
+function GrpAbFinGenToAbsOrdMap(G::FinGenAbGroup, O::S, generators::Vector{T}, disc_log::Function, modulus...) where {S, T}
   return GrpAbFinGenToAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
 end
 
-function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{ZZRingElem}, disc_log::Function, modulus...) where {S <: NumFieldOrd, T}
+function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, snf_structure::Vector{ZZRingElem}, disc_log::Function, modulus...) where {S <: NumFieldOrder, T}
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, snf_structure, disc_log, modulus...)
 end
 
@@ -294,7 +294,7 @@ function GrpAbFinGenToAbsOrdMap(O::S, generators::Vector{T}, relation_matrix::ZZ
   return GrpAbFinGenToAbsOrdMap{S, T}(O, generators, relation_matrix, disc_log, modulus...)
 end
 
-const GrpAbFinGenToNfAbsOrdMap = GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
+const GrpAbFinGenToNfAbsOrdMap = GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, AbsSimpleNumFieldOrderElem}
 
 ################################################################################
 #
@@ -303,8 +303,8 @@ const GrpAbFinGenToNfAbsOrdMap = GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
 #
 ################################################################################
 
-mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, AbsOrdQuoRing{S, T}, HeckeMap, GrpAbFinGenToAbsOrdQuoRingMultMap}
-  header::MapHeader{GrpAbFinGen, AbsOrdQuoRing{S, T}}
+mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, AbsOrdQuoRing{S, T}, HeckeMap, GrpAbFinGenToAbsOrdQuoRingMultMap}
+  header::MapHeader{FinGenAbGroup, AbsOrdQuoRing{S, T}}
   generators::Vector{AbsOrdQuoRingElem{S, T, U}}
   discrete_logarithm::Function
 
@@ -316,10 +316,10 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
 
 
 
-  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
+  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::FinGenAbGroup, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
     @assert ngens(G) == length(generators)
 
-    function _image(a::GrpAbFinGenElem)
+    function _image(a::FinGenAbGroupElem)
       @assert parent(a) == G
       y = one(Q)
       for i in 1:length(generators)
@@ -353,21 +353,21 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
   function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, relation_matrix::ZZMatrix, disc_log::Function) where {S, T, U}
     @assert length(generators) == nrows(relation_matrix)
 
-    G = GrpAbFinGen(relation_matrix)
+    G = FinGenAbGroup(relation_matrix)
 
     return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G, Q, generators, disc_log)
   end
 
-  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T}, exp::Function, disc_log::Function) where {S, T, U}
+  function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::FinGenAbGroup, Q::AbsOrdQuoRing{S, T}, exp::Function, disc_log::Function) where {S, T, U}
     z = new{S, T, U}()
     z.header = MapHeader(G, Q, exp, disc_log)
     return z
   end
 end
 
-const GrpAbFinGenToNfOrdQuoRingMultMap = GrpAbFinGenToAbsOrdQuoRingMultMap{NfOrd, NfOrdIdl, NfOrdElem}
+const GrpAbFinGenToNfOrdQuoRingMultMap = GrpAbFinGenToAbsOrdQuoRingMultMap{AbsSimpleNumFieldOrder, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderElem}
 
-function GrpAbFinGenToAbsOrdQuoRingMultMap(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
+function GrpAbFinGenToAbsOrdQuoRingMultMap(G::FinGenAbGroup, Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, disc_log::Function) where {S, T, U}
   return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G, Q, generators, disc_log)
 end
 
@@ -379,7 +379,7 @@ function GrpAbFinGenToAbsOrdQuoRingMultMap(Q::AbsOrdQuoRing{S, T}, generators::V
   return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q, generators, relation_matrix, disc_log)
 end
 
-function GrpAbFinGenToAbsOrdQuoRingMultMap(G::GrpAbFinGen, Q::AbsOrdQuoRing{S, T}, exp::Function, disc_log::Function) where {S, T}
+function GrpAbFinGenToAbsOrdQuoRingMultMap(G::FinGenAbGroup, Q::AbsOrdQuoRing{S, T}, exp::Function, disc_log::Function) where {S, T}
   U = elem_type(base_ring(Q))
   return GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G, Q, exp, disc_log)
 end

@@ -27,9 +27,9 @@ function _issimilar_husert_generic(A, B)
   end
 
   s = length(mus)
-  Ks = AnticNumberField[]
-  vecsA = Matrix{nf_elem}(undef, m, sum(ns))
-  vecsB = Matrix{nf_elem}(undef, m, sum(ns))
+  Ks = AbsSimpleNumField[]
+  vecsA = Matrix{AbsSimpleNumFieldElem}(undef, m, sum(ns))
+  vecsB = Matrix{AbsSimpleNumFieldElem}(undef, m, sum(ns))
   k = 1
   for i in 1:s
     K, _ = number_field(mus[i], "a", cached = false)
@@ -67,14 +67,14 @@ function _issimilar_husert_generic(A, B)
   # Now construct the colon ideal
   # First the Q-basis of \prod Mat(n_i, K_i)
   actions = Vector{QQMatrix}()
-  another_basis_of_actions = Vector{Vector{dense_matrix_type(nf_elem)}}()
+  another_basis_of_actions = Vector{Vector{dense_matrix_type(AbsSimpleNumFieldElem)}}()
 
   for i in 1:s
     ni = ns[i]
     for i1 in 1:ni
       for i2 in 1:ni
         for j in 1:degree(Ks[i])
-          V = Vector{dense_matrix_type(nf_elem)}(undef, s)
+          V = Vector{dense_matrix_type(AbsSimpleNumFieldElem)}(undef, s)
           M = representation_matrix(gen(Ks[i])^(j - 1))
           z = zero_matrix(Ks[i], ni, ni)
           z[i1, i2] = gen(Ks[i])^(j-1)
@@ -160,8 +160,8 @@ function _issimilar_husert_generic(A, B)
                                       for i in 1:length(actions))
                                       for j in 1:nrows(bcolonb)]
 
-  other_basis_of_colon_ideal = Vector{dense_matrix_type(nf_elem)}[]
-  other_basis_of_colon_idealAA = Vector{dense_matrix_type(nf_elem)}[]
+  other_basis_of_colon_ideal = Vector{dense_matrix_type(AbsSimpleNumFieldElem)}[]
+  other_basis_of_colon_idealAA = Vector{dense_matrix_type(AbsSimpleNumFieldElem)}[]
 
   for j in 1:nrows(SS)
     ob = foldl((x, y) -> x .+ y,
@@ -206,7 +206,7 @@ function _issimilar_husert_generic(A, B)
     @assert length(dec) == length(b)
     for i in 1:length(dec)
       B, mB = dec[i]
-      local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+      local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = B.isomorphic_full_matrix_algebra
       z = z + mB(preimage(BtoC, C(b[i]))::elem_type(B))
     end
@@ -224,10 +224,10 @@ function _issimilar_husert_generic(A, B)
 
   if fl
     dec = decompose(A)
-    D = Vector{Generic.MatSpaceElem{nf_elem}}(undef, length(dec))
+    D = Vector{Generic.MatSpaceElem{AbsSimpleNumFieldElem}}(undef, length(dec))
     for i in 1:length(dec)
       B, mB = dec[i]
-      local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+      local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
       C, BtoC = B.isomorphic_full_matrix_algebra
       z = BtoC(mB\y)::elem_type(C)
       D[i] = matrix(z)
@@ -239,7 +239,7 @@ function _issimilar_husert_generic(A, B)
   end
 end
 
-function _explode(x::Generic.MatSpaceElem{nf_elem})
+function _explode(x::Generic.MatSpaceElem{AbsSimpleNumFieldElem})
   K = base_ring(x)
   d = degree(K)
   n = nrows(x)
@@ -271,7 +271,7 @@ function _to_absolute_basis(v, m, ns, Ks)
 end
 
 function _to_relative_basis(v, m, ns, Ks)
-  w = Vector{nf_elem}(undef, sum(ns))
+  w = Vector{AbsSimpleNumFieldElem}(undef, sum(ns))
   k = 1
   l = 1
   for i in 1:length(ns)
@@ -290,10 +290,10 @@ end
 
 function _matrix_algebra(Ks, ns)
   s = length(Ks)
-  algs = AlgAss{QQFieldElem}[]
+  algs = StructureConstantAlgebra{QQFieldElem}[]
   for i in 1:s
     A = matrix_algebra(Ks[i], ns[i])
-    B, BtoA = AlgAss(A)
+    B, BtoA = StructureConstantAlgebra(A)
     C, CtoB = restrict_scalars(B, FlintQQ)
     C.isomorphic_full_matrix_algebra = (A, CtoB * BtoA)
     push!(algs, C)

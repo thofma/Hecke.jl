@@ -7,10 +7,10 @@
 #
 ###############################################################################
 
-mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: RingElem
-  header::MapHeader{EllCrv{T}, EllCrv{T}}
-  domain::EllCrv{T}
-  codomain::EllCrv{T}
+mutable struct Isogeny{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, Isogeny} where T<: RingElem
+  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
+  domain::EllipticCurve{T}
+  codomain::EllipticCurve{T}
   coordx::RingElem
   coordy::RingElem
   phi::RingElem
@@ -18,14 +18,14 @@ mutable struct Isogeny{T} <: Map{EllCrv, EllCrv, HeckeMap, Isogeny} where T<: Ri
   psi::RingElem
   degree::Int
 
-  function Isogeny(E::EllCrv{T}) where T<:RingElem
+  function Isogeny(E::EllipticCurve{T}) where T<:RingElem
     r = new{T}()
     r.domain = E
     return r
   end
 end
 
-function Isogeny(E::EllCrv{T}, psi::RingElem) where T<:RingElem
+function Isogeny(E::EllipticCurve{T}, psi::RingElem) where T<:RingElem
   r = Isogeny(E)
 
   #Normalize and set kernel polynomial
@@ -46,7 +46,7 @@ end
 
 
 #Maybe this can be done more efficiently
-function is_kernel_polynomial(E::EllCrv{T}, f::PolyRingElem{T}, check::Bool = false) where T
+function is_kernel_polynomial(E::EllipticCurve{T}, f::PolyRingElem{T}, check::Bool = false) where T
   @req base_ring(f) === base_field(E) "Polynomial and elliptic curve must be defined over same field"
 
   #Assume f to be square-free
@@ -127,16 +127,16 @@ end
 
 
 @doc raw"""
-    is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRingElem)
+    is_prime_cyclic_kernel_polynomial(E::EllipticCurve, p::IntegerUnion, f::PolyRingElem)
 
 Return whether `E` has a cyclic isogeny of with kernel polynomial
 `f`.
 """
-function is_cyclic_kernel_polynomial(E::EllCrv, f::PolyRingElem)
+function is_cyclic_kernel_polynomial(E::EllipticCurve, f::PolyRingElem)
   return is_kernel_polynomial(E, f, true)
 end
 
-function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRingElem)
+function is_prime_cyclic_kernel_polynomial(E::EllipticCurve, p::IntegerUnion, f::PolyRingElem)
   @req base_ring(f) === base_field(E) "Polynomial and elliptic curve must be defined over the same field"
   @req is_prime(p) || p ==1 "p needs to be prime"
   m2 = div(p, 2)
@@ -154,7 +154,7 @@ function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRi
   end
 
   # Quotient ring R[x]/(f)
-  S = residue_ring(parent(f), f)
+  S = residue_ring(parent(f), f)[1]
   xbar = S(gen(parent(f)))
 
   # Test if the p-division polynomial is a multiple of f by computing it in the quotient:
@@ -170,7 +170,7 @@ function is_prime_cyclic_kernel_polynomial(E::EllCrv, p::IntegerUnion, f::PolyRi
 
   # For each a in a set of generators of (Z/pZ)^*/{1, -1}  we check that the
   # multiplication-by-a map permutes the roots of f.
-  Zp = residue_ring(ZZ, p)
+  Zp = residue_ring(ZZ, p)[1]
   U, mU = unit_group(Zp)
   Q, UtoQ = quo(U, [mU\(Zp(-1))])
   for g in gens(Q)
@@ -186,18 +186,18 @@ end
 
 #Currently only works for kernels do not contain 4-torsion. Kernels need to be checked for correctness. Input polynomial needs to be separable.
 @doc raw"""
-    isogeny_from_kernel(E::EllCrv, psi::RingElem) -> Isogeny
+    isogeny_from_kernel(E::EllipticCurve, psi::RingElem) -> Isogeny
 
 Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
 the points whose $x$-coordinates are roots of the input polynomial $\psi$.
 """
-function isogeny_from_kernel(E::EllCrv, psi::RingElem)
+function isogeny_from_kernel(E::EllipticCurve, psi::RingElem)
   return Isogeny(E, psi)
 end
 
 #Input polynomial needs to be separable. (2^r-torsion is allowed however)
 @doc raw"""
-    isogeny_from_kernel_factored(E::EllCrv, psi::RingElem) -> Isogeny
+    isogeny_from_kernel_factored(E::EllipticCurve, psi::RingElem) -> Isogeny
 
 Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
 the points whose $x$-coordinates are roots of the input polynomial $\psi$.
@@ -207,7 +207,7 @@ will purely contain 2-torsion points in the kernel. When there is no 2-torsion l
 the remaining maps will consist of an isogeny with kernel contained in the p-torsion
 for every prime divisor p of the degree of the isogeny.
 """
-function isogeny_from_kernel_factored(E::EllCrv, psi::RingElem)
+function isogeny_from_kernel_factored(E::EllipticCurve, psi::RingElem)
   isogeny_list = Isogeny[]
 
   kernel = psi
@@ -295,11 +295,11 @@ function isogeny_map_omega(f::Isogeny)
 end
 
 @doc raw"""
-    image(phi::Isogeny, P::EllCrvPt) -> EllCrvPt
+    image(phi::Isogeny, P::EllipticCurvePoint) -> EllipticCurvePoint
 
 Return $\phi(P)$.
 """
-function image(f::Isogeny, P::EllCrvPt)
+function image(f::Isogeny, P::EllipticCurvePoint)
   @assert domain(f) == parent(P)
   x = P.coordx
   y = P.coordy
@@ -318,12 +318,12 @@ function image(f::Isogeny, P::EllCrvPt)
 end
 
 @doc raw"""
-    image(fs::Vector{Isogeny}, P::EllCrvPt) -> EllCrvPt
+    image(fs::Vector{Isogeny}, P::EllipticCurvePoint) -> EllipticCurvePoint
 
 Return phi_n \circ phi_(n-1) \circ phi_1(P) where fs is a list of compatible
 isogenies [phi_1, ..., phi_n].
 """
-function image(fs::Vector{Isogeny}, P::EllCrvPt)
+function image(fs::Vector{Isogeny}, P::EllipticCurvePoint)
 
   for f in fs
     @assert domain(f) == parent(P)
@@ -410,7 +410,7 @@ function dual_of_frobenius(E)
 
   supsing = is_supersingular(E)
 
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   f = Isogeny(E)
   K = base_field(E)
   p = characteristic(K)
@@ -436,9 +436,9 @@ function dual_of_frobenius(E)
   #Otherwise it will be a separable isogeny and it suffices to find f and g such that
   #y^p = = f(x) +y*g(x)
   if supsing
-    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^(p^2)))
+    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)[1](y^(p^2)))
   else
-    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)(y^p))
+    yp = lift(residue_ring(Kxy, y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x -a6)[1](y^p))
   end
 
   omega1 = divexact(coefficients(omega)[1], coefficients(yp)[1])
@@ -465,20 +465,20 @@ end
 
 
 @doc raw"""
-    identity_isogeny((E::EllCrv) -> Isogeny
+    identity_isogeny((E::EllipticCurve) -> Isogeny
 
 Return the isogeny corresponding to the identity map on $E$
 """
-function identity_isogeny(E::EllCrv)
+function identity_isogeny(E::EllipticCurve)
   return isomorphism_to_isogeny(identity_map(E))
 end
 
 @doc raw"""
-    multiplication_by_m_map((E::EllCrv, m::Int) -> Isogeny
+    multiplication_by_m_map((E::EllipticCurve, m::Int) -> Isogeny
 
 Return the isogeny corresponding to the multiplication by m map on $E$
 """
-function multiplication_by_m_map(E::EllCrv, m::S) where S<:Union{Integer, ZZRingElem}
+function multiplication_by_m_map(E::EllipticCurve, m::S) where S<:Union{Integer, ZZRingElem}
 
   if m==1
     return isomorphism_to_isogeny(identity_map(E))
@@ -542,20 +542,20 @@ end
 
 
 @doc raw"""
-    frobenius_map(E::EllCrv{FinFieldElem}) -> Isogeny
+    frobenius_map(E::EllipticCurve{FinFieldElem}) -> Isogeny
 
 Return the Frobenius map on E.
 """
-function frobenius_map(E::EllCrv{T}) where T<:FinFieldElem
+function frobenius_map(E::EllipticCurve{T}) where T<:FinFieldElem
   return frobenius_map(E, 1)
 end
 
 @doc raw"""
-    frobenius_map(E::EllCrv{FinFieldElem}, n::Int) -> Isogeny
+    frobenius_map(E::EllipticCurve{FinFieldElem}, n::Int) -> Isogeny
 
 Return the $n$-th power of the Frobenius map on E.
 """
-function frobenius_map(E::EllCrv{T}, n) where T<:FinFieldElem
+function frobenius_map(E::EllipticCurve{T}, n) where T<:FinFieldElem
   f = Isogeny(E)
   K = base_field(E)
   p = characteristic(K)
@@ -698,19 +698,19 @@ function ^(phi::Isogeny, n::Int)
 end
 
 @doc raw"""
-    is_isogenous(E::EllCrv, F::EllCrv) -> Bool
+    is_isogenous(E::EllipticCurve, F::EllipticCurve) -> Bool
 
 Return true when $E$ and $F$ are isogenous. Currently only implemented for
 curves over finite fields.
 """
-function is_isogenous(E::EllCrv{T}, F::EllCrv{T}) where T<:FinFieldElem
+function is_isogenous(E::EllipticCurve{T}, F::EllipticCurve{T}) where T<:FinFieldElem
   return order(E) == order(F)
 end
 
 
 #Algorithm uses Kohel's formulas for isogenies. Based on implementation in Sage described
 #in Daniel Shumow's thesis: Isogenies of Elliptic Curves: A Computational Approach
-function isogeny_kernel_polynomial(E::EllCrv, psi)
+function isogeny_kernel_polynomial(E::EllipticCurve, psi)
 
 #TODO: Test if polynomial defines a possible kernel, i.e. it needs to be monic, separable, defined over the base field and its roots (in the alg. closure)
 #need to be x-coordinates of torsion points on the curve
@@ -735,7 +735,7 @@ function isogeny_kernel_polynomial(E::EllCrv, psi)
   return compute_codomain(E,v,w), phi, omega, d
 end
 
-function even_kernel_polynomial(E::EllCrv, psi_G)
+function even_kernel_polynomial(E::EllipticCurve, psi_G)
   R = parent(psi_G)
   x = gen(R)
   psi_2tor = division_polynomial_univariate(E,2, x)[1]
@@ -751,8 +751,8 @@ function even_kernel_polynomial(E::EllCrv, psi_G)
   Kxy,y = polynomial_ring(R,"y")
 
 
-  a1, a2, a3, a4, a6 = a_invars(E)
-  b2, b4, b6 = b_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6 = b_invariants(E)
 
   if n == 1
     x0 = constant_coefficient(-psi_G)
@@ -804,8 +804,8 @@ function odd_kernel_polynomial(E, psi)
 
   char = characteristic(base_field(E))
 
-  a1, a2, a3, a4, a6 = a_invars(E)
-  b2, b4, b6 = b_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6 = b_invariants(E)
 
   R = parent(psi)
   x = gen(R)
@@ -866,8 +866,8 @@ function odd_kernel_polynomial(E, psi)
   return phi, omega, v, w, n, d
 end
 
-function compute_codomain(E::EllCrv, v, w)
-  a1, a2, a3, a4, a6 = a_invars(E)
+function compute_codomain(E::EllipticCurve, v, w)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   newa4 = a4 - 5*v
   newa6 = a6 - (a1^2 + 4*a2)*v - 7*w
   return elliptic_curve([a1, a2, a3, newa4, newa6])

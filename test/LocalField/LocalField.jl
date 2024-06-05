@@ -127,7 +127,7 @@
   @testset "Exp and Log" begin
     K = PadicField(2, 100)
     Kx, x = polynomial_ring(K, "x", cached = false)
-    L, b = Hecke.eisenstein_extension(x^7+2, "a")
+    L, b = eisenstein_extension(x^7+2, :a)
     pi = uniformizer(L)
     @test iszero(log(pi))
     @test iszero(log(one(L)))
@@ -143,13 +143,13 @@
     KK, a = QadicField(2, 2, 16)
     KKx, x = KK["x"]
     f = x + 2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15
-    L, b = Hecke.eisenstein_extension(f, "b");
+    L, b = eisenstein_extension(f, "b");
     c = L((2^1 + 2^2 + 2^5 + 2^7 + 2^9 + 2^10 + 2^11 + 2^12)*a + 2^0 + 2^6 + 2^8 + 2^9 + 2^10 + 2^11 + 2^14)
     @test valuation(log(c)) == 1
   end
 
   @testset "Maps" begin
-    # FlintQadicField -> FlintQadicField
+    # QadicField -> QadicField
     Qq, a = QadicField(2, 3, 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(Qq)))
 
@@ -166,7 +166,7 @@
     for i in 1:10
       z = mk\(rand(k))
       @test z == f\(f(z))
-      fl, w = @inferred haspreimage(f, z)
+      fl, w = @inferred has_preimage_with_preimage(f, z)
       @test fl
       @test f(w) == z
     end
@@ -187,7 +187,7 @@
       @test g(f(z)) == z
     end
 
-    # FlintQadicField -> LocalField
+    # QadicField -> LocalField
     Qqt, t = Qq["t"]
     L, b = eisenstein_extension(t^3 + 2, "b")
     f = @inferred hom(Qq, L, L(gen(Qq)))
@@ -195,14 +195,14 @@
     @test f(a) == L(gen(Qq))
     @test_throws ErrorException hom(Qq, L, b)
     @test f\(L(gen(Qq))) == gen(Qq)
-    fl, z = @inferred haspreimage(f, b^3)
+    fl, z = @inferred has_preimage_with_preimage(f, b^3)
     @test fl
     @test f(z) == L(-2)
 
-    # LocalField -> FlintQadicField
+    # LocalField -> QadicField
     Qp = PadicField(2, 100)
     Qpx, x = polynomial_ring(Qp)
-    K, a = Hecke.unramified_extension(x^2+x+1)
+    K, a = unramified_extension(x^2+x+1)
     Qq, gQq = QadicField(2, 2, 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(K)))
 
@@ -218,12 +218,12 @@
   @testset "Automorphisms" begin
     K = PadicField(2, 200)
     Kt, t = polynomial_ring(K)
-    L, b = Hecke.eisenstein_extension(t^2+2, "a")
+    L, b = eisenstein_extension(t^2+2, "a")
     @test length(automorphism_list(L)) == 2
     Qq, a = QadicField(2, 2, 100)
     @test length(automorphism_list(Qq)) == 2
     Qqx, x = polynomial_ring(Qq)
-    L, b = Hecke.eisenstein_extension(x^3+2, "a")
+    L, b = eisenstein_extension(x^3+2, "a")
     @test length(automorphism_list(L)) == 3
     @test length(absolute_automorphism_list(L)) == 6
     G, mG = absolute_automorphism_group(L)
@@ -254,7 +254,7 @@
     lp,mp = Hecke.completion(L,P)
     a = uniformizer(lp)
     Qy,y = polynomial_ring(lp,"y")
-    N = Hecke.unramified_extension(y^2+13*y+4)[1]
+    N = unramified_extension(y^2+13*y+4)[1]
     r = N(53)*basis(N)[1] + N(165)*basis(N)[2]
     @test isone(r*r^-1)
   end
@@ -296,5 +296,16 @@
     P = prime_decomposition(OK, 2)[1][1]
     C, mC = completion(K, P)
     @test valuation(log(mC(u))) == 1//2
+  end
+
+  let
+    # missing canonical unit
+    K, a = quadratic_field(5);
+    OK = maximal_order(K)
+    lp = prime_decomposition(OK, 7)
+    C, mC = completion(K, lp[1][1], 20)
+    Ct, t = C["t"];
+    s = sprint(show, "text/plain", t//(1 + t))
+    @test s isa String
   end
 end

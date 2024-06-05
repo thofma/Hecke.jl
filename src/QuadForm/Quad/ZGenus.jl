@@ -92,7 +92,7 @@ INPUT:
   `\ZZ/2\ZZ` && has determinant not divisible by `8`.
 """
 function _trace_diag_mod_8(A::ZZMatrix)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   A8 = change_base_ring(R, A)
   tr = R(0)
   while nrows(A8) > 0
@@ -129,9 +129,8 @@ function _p_adic_symbol(A::ZZMatrix, p::ZZRingElem, val::Int)
   A = divexact(A, q)
   Fp = Native.GF(p)
   A_p = change_base_ring(Fp, A)
-  bp, B_p = left_kernel(A_p)
+  B_p = kernel(A_p, side = :left)
   rref!(B_p)
-  B_p = B_p[1:bp, 1:end]
   if nrows(B_p) == 0
     e0 = _kronecker_symbol(lift(det(A_p)),p)
     return Vector{Int}[Int[m0, n, e0]]
@@ -148,7 +147,7 @@ function _p_adic_symbol(A::ZZMatrix, p::ZZRingElem, val::Int)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = residue_ring(ZZ, p^(val + 3))
+  R = residue_ring(ZZ, p^(val + 3))[1]
   u = R(d)^-1
 
   UZZ = change_base_ring(ZZ, U * d *lift(u))
@@ -198,12 +197,11 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   q = ZZ(2)^m0
   A = divexact(A, q)
   A_2 = change_base_ring(Native.GF(2), A)
-  k2, B_2 = left_kernel(A_2)
+  B_2 = kernel(A_2, side = :left)
   rref!(B_2)
-  B_2 = B_2[1:k2,1:end]
-  R_8 = residue_ring(ZZ, 8)
+  R_8 = residue_ring(ZZ, 8)[1]
   # deal with the matrix being non-degenerate mod 2.
-  if k2 == 0
+  if nrows(B_2) == 0
     d0 = mod(det(A), 8)
     @assert d0 != 0    # SANITY CHECK: The mod 8 determinant shouldn't be zero.
     even, i = _iseven(A)    # Determine whether the matrix is even || odd.
@@ -237,7 +235,7 @@ function _two_adic_symbol(A::ZZMatrix, val::Int)
   F = change_base_ring(QQ, C * A * transpose(C))
   U = F^-1
   d = denominator(U)
-  R = residue_ring(ZZ,ZZ(2)^(val + 3))
+  R = residue_ring(ZZ,ZZ(2)^(val + 3))[1]
   u = lift(R(d)^-1)
   UZZ = change_base_ring(ZZ,U * d * u)
   X = C * A
@@ -500,7 +498,8 @@ function integer_genera(sig_pair::Tuple{Int,Int}, _determinant::RationalUnion;
     maxscale_p = valuation(_max_scale, p)
     local_symbol_p = _local_genera(p, rank, det_val, minscale_p, maxscale_p, even)
     filter!(s -> (prime(s) == 2) || (length(symbol(s)) > 1) || (symbol(s)[1][1] != 0), local_symbol_p)
-    !is_empty(local_symbol_p) && push!(local_symbols, local_symbol_p)
+    isempty(local_symbol_p) && return out
+    push!(local_symbols, local_symbol_p)
   end
   # take the cartesian product of the collection of all possible
   # local genus symbols one for each prime
@@ -725,7 +724,7 @@ function _isglobal_genus(G::ZZGenus)
   end
   D = ZZ(det(G))
   r, s = signature_pair(G)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   oddi = R(r - s)
   for loc in local_symbols(G)
     p = prime(loc)
@@ -935,7 +934,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZZGenus)
 end
 
 function Base.show(io::IO, G::ZZGenus)
-  if !get(io, :supercompact, false)
+  if !is_terse(io)
     print(io, "Genus symbol: ")
   end
   print(io, iseven(G) ? "II" : "I")
@@ -974,7 +973,7 @@ function Base.show(io::IO, ::MIME"text/plain", G::ZZLocalGenus)
 end
 
 function Base.show(io::IO, G::ZZLocalGenus)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     if length(symbol(G)) == 0
       print(io, "Empty local integer genus")
     else
@@ -1206,7 +1205,7 @@ p is congruent 1 mod 4.
 [CS99](@cite) pp 370-371.
 """
 function excess(S::ZZLocalGenus)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   p = prime(S)
   if p == 2
     return dim(S) - oddity(S)
@@ -1234,7 +1233,7 @@ end
 Return the $p$-signature of this $p$-adic form.
 """
 function signature(S::ZZLocalGenus)
-  R = residue_ring(ZZ, 8)
+  R = residue_ring(ZZ, 8)[1]
   if prime(S) == 2
     return oddity(S)
   else
@@ -1249,7 +1248,7 @@ Return the oddity of this even form.
 The oddity is also called the $2$-signature
 """
 function oddity(S::ZZLocalGenus)
-  R = residue_ring(FlintZZ, 8)
+  R = residue_ring(FlintZZ, 8)[1]
   p = prime(S)
   @req p == 2 "The oddity is only defined for p=2"
   k = 0
@@ -2460,6 +2459,7 @@ function rational_isometry_class(g::ZZGenus)
     p = prime(s)
     d = det(s)
     gp = local_quad_space_class(QQ, ZZIdl(p), n, d, h, 0)
+    LGS[ideal(ZZ, p)] = gp
   end
   G.LGS = LGS
   G.dim = dim(g)

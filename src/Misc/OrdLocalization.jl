@@ -5,19 +5,19 @@
 #
 ###############################################################################
 
-mutable struct OrdLoc{T<:nf_elem} <: Hecke.Ring
-   OK::NfAbsOrd{AnticNumberField,T}
-   prime::NfAbsOrdIdl{AnticNumberField,T}
+mutable struct OrdLoc{T<:AbsSimpleNumFieldElem} <: Hecke.Ring
+   OK::AbsNumFieldOrder{AbsSimpleNumField,T}
+   prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}
    comp::Bool
 
-   function OrdLoc{T}(OK::NfAbsOrd{AnticNumberField,T}, prime::NfAbsOrdIdl{AnticNumberField,T}, cached::Bool = true, comp::Bool = false) where {T <: nf_elem}
+   function OrdLoc{T}(OK::AbsNumFieldOrder{AbsSimpleNumField,T}, prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}, cached::Bool = true, comp::Bool = false) where {T <: AbsSimpleNumFieldElem}
       return get_cached!(OrdLocDict, (OK, prime, comp), cached) do
          return new(OK, prime, comp)
       end::OrdLoc{T}
    end
 end
 
-function ppio(a::NfOrdIdl, b::NfOrdIdl)
+function ppio(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, b::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
    c = gcd(a, b)
    n = divexact(a, c)
    g = gcd(c, n)
@@ -29,7 +29,7 @@ function ppio(a::NfOrdIdl, b::NfOrdIdl)
    return c, n
 end
 
-function is_in(a::nf_elem, L::OrdLoc{<:nf_elem})
+function is_in(a::AbsSimpleNumFieldElem, L::OrdLoc{<:AbsSimpleNumFieldElem})
   iszero(a) && return true
   n, d = integral_split(a*L.OK)
   L.comp || (!isone(gcd(d, L.prime)) && return false)
@@ -65,13 +65,13 @@ some more detail in divrem
 
 =#
 
-OrdLocDict = Dict{Tuple{NfAbsOrd{AnticNumberField,nf_elem}, NfAbsOrdIdl{AnticNumberField,nf_elem}, Bool}, Hecke.Ring}()
+OrdLocDict = AbstractAlgebra.CacheDictType{Tuple{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, Bool}, Hecke.Ring}()
 
-mutable struct OrdLocElem{T<:nf_elem} <: RingElem
+mutable struct OrdLocElem{T<:AbsSimpleNumFieldElem} <: RingElem
    data::T
    parent::OrdLoc{T}
 
-   function OrdLocElem{T}(data::T, par::OrdLoc, checked::Bool = true) where {T <:nf_elem}
+   function OrdLocElem{T}(data::T, par::OrdLoc, checked::Bool = true) where {T <:AbsSimpleNumFieldElem}
       data == zero(parent(data)) && return new{T}(data,par)
       checked && (!is_in(data, par)) && error("No valid element of localization")
       return new{T}(data,par)
@@ -96,21 +96,21 @@ addeq!(a::OrdLocElem, b::OrdLocElem) = a + b
 #
 ###############################################################################
 
-elem_type(::Type{OrdLoc{T}}) where {T <: nf_elem} = OrdLocElem{T}
+elem_type(::Type{OrdLoc{T}}) where {T <: AbsSimpleNumFieldElem} = OrdLocElem{T}
 
-parent_type(::Type{OrdLocElem{T}}) where {T <: nf_elem} = OrdLoc{T}
+parent_type(::Type{OrdLocElem{T}}) where {T <: AbsSimpleNumFieldElem} = OrdLoc{T}
 
-order(L::OrdLoc{T}) where {T <: nf_elem}  = L.OK
+order(L::OrdLoc{T}) where {T <: AbsSimpleNumFieldElem}  = L.OK
 
-order(a::OrdLocElem{T}) where {T <: nf_elem}  = order(parent(a))
+order(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}  = order(parent(a))
 
-nf(L::OrdLoc{T}) where {T <: nf_elem}  = nf(L.OK)::parent_type(T)
+nf(L::OrdLoc{T}) where {T <: AbsSimpleNumFieldElem}  = nf(L.OK)::parent_type(T)
 
-nf(a::OrdLocElem{T}) where {T <: nf_elem} = nf(parent(a))
+nf(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = nf(parent(a))
 
-parent(a::OrdLocElem{T})  where {T <: nf_elem} = a.parent
+parent(a::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem} = a.parent
 
-function check_parent(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: nf_elem}
+function check_parent(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem}
     parent(a) != parent(b) && error("Parent objects do not match")
 end
 
@@ -121,35 +121,35 @@ end
 #
 ###############################################################################
 
-data(a::OrdLocElem{T}) where {T <: nf_elem} = a.data
+data(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = a.data
 
-numerator(a::OrdLocElem{T}) where {T <: nf_elem} = numerator(data(a))
+numerator(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = numerator(data(a))
 
-denominator(a::OrdLocElem{T}) where {T <: nf_elem} = denominator(data(a))
+denominator(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = denominator(data(a))
 
-prime(L::OrdLoc{T}) where {T <: nf_elem} = L.prime
+prime(L::OrdLoc{T}) where {T <: AbsSimpleNumFieldElem} = L.prime
 
-prime(a::OrdLocElem{T}) where {T <: nf_elem} = prime(parent(a))
+prime(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = prime(parent(a))
 
-zero(L::OrdLoc{T}) where {T <: nf_elem} = L(0)
+zero(L::OrdLoc{T}) where {T <: AbsSimpleNumFieldElem} = L(0)
 
-one(L::OrdLoc{T}) where {T <: nf_elem} = L(1)
+one(L::OrdLoc{T}) where {T <: AbsSimpleNumFieldElem} = L(1)
 
-iszero(a::OrdLocElem{T}) where {T <: nf_elem} = iszero(data(a))
+iszero(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = iszero(data(a))
 
-isone(a::OrdLocElem{T}) where {T <: nf_elem} = isone(data(a))
+isone(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = isone(data(a))
 
-function in(x::nf_elem, L::OrdLoc)
+function in(x::AbsSimpleNumFieldElem, L::OrdLoc)
    iszero(x) ? true :
    return is_in(x, L)
 end
 
-function is_unit(a::OrdLocElem{T})  where {T <: nf_elem}
+function is_unit(a::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem}
    iszero(a) ? false :
     return is_in(inv(a.data), parent(a))
 end
 
-deepcopy_internal(a::OrdLocElem{T}, dict::IdDict) where {T <: nf_elem} = parent(a)(deepcopy(data(a)))
+deepcopy_internal(a::OrdLocElem{T}, dict::IdDict) where {T <: AbsSimpleNumFieldElem} = parent(a)(deepcopy(data(a)))
 
 ###############################################################################
 #
@@ -165,7 +165,7 @@ function show(io::IO, a::OrdLocElem)
    print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
-function show(io::IO, L::OrdLoc{T}) where {T <: nf_elem}
+function show(io::IO, L::OrdLoc{T}) where {T <: AbsSimpleNumFieldElem}
   if L.comp
     print(io, "Localization of ", order(L), " at complement of ", prime(L))
   else
@@ -179,7 +179,7 @@ end
 #
 ##############################################################################
 
-function -(a::OrdLocElem{T})  where {T <: nf_elem}
+function -(a::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem}
    parent(a)(-data(a))
 end
 
@@ -189,17 +189,17 @@ end
 #
 ###############################################################################
 
-function +(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: nf_elem}
+function +(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem}
    check_parent(a,b)
    return parent(a)(data(a) + data(b), false)
 end
 
-function -(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: nf_elem}
+function -(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem}
    check_parent(a,b)
    return parent(a)(data(a) - data(b), false)
 end
 
-function *(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: nf_elem}
+function *(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem}
    check_parent(a,b)
    return parent(a)(data(a) * data(b), false)
 end
@@ -210,7 +210,7 @@ end
 #
 ###############################################################################
 
-function ==(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+function ==(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
    check_parent(a, b)
    return data(a) == data(b)
 end
@@ -222,12 +222,12 @@ end
 ##############################################################################
 
 @doc raw"""
-     inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+     inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
 Returns the inverse element of $a$ if $a$ is a unit.
 If 'checked = false' the invertibility of $a$ is not checked and the corresponding inverse element
 of the numberfield is returned.
 """
-function inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+function inv(a::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
    b = inv(data(a))
    checked && (!is_in(b, parent(a))) && error("$a not invertible in given localization")
    return parent(a)(b, false)
@@ -240,12 +240,12 @@ end
 ##############################################################################
 
 @doc raw"""
-     divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where {T <: nf_elem}
+     divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
 Returns tuple (`true`,`c`) if $b$ divides $a$ where `c`*$b$ = $a$.
 If 'checked = false' the corresponding element of the numberfield is returned and it is not
 checked whether it is an element of the given localization.
 """
-function divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where {T <: nf_elem}
+function divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
    check_parent(a,b)
 
    if iszero(b)
@@ -267,20 +267,20 @@ function divides(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true) where
 end
 
 @doc raw"""
-     divexact(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+     divexact(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
 Returns element 'c' of given localization s.th. `c`*$b$ = $a$ if such element exists.
 If 'checked = false' the corresponding element of the numberfield is returned and it is not
 checked whether it is an element of the given localization.
 """
-function divexact(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+function divexact(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
    d = divides(a, b, checked)
    d[1] ? d[2] : error("$a not divisible by $b in the given localization")
 end
 
 @doc raw"""
-     div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+     div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
 """
-function _make_legal(a::nf_elem, S::NfOrdIdl)
+function _make_legal(a::AbsSimpleNumFieldElem, S::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   d = denominator(a, order(S))
   n = order(S)(d*a)
   b, _ = ppio(d*order(S), S)
@@ -321,11 +321,11 @@ function divrem(a::OrdLocElem, b::OrdLocElem, checked::Bool = true)
 end
 #=
 #XXX: those do not seem to be there for AbsOrdQuoRingElems
-function div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+function div(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
    return divrem(a, b)[1]
 end
 
-function rem(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: nf_elem}
+function rem(a::OrdLocElem{T}, b::OrdLocElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
    return divrem(a, b)[2]
 end
 =#
@@ -346,11 +346,11 @@ end
 ###############################################################################
 
 @doc raw"""
-    gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+    gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
 
 Returns gcd of $a$ and $b$ in canonical representation.
 """
-function gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+function gcd(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
   L = parent(a)
   L.comp && error("ring not known to be useful euclidean")
    check_parent(a,b)
@@ -372,11 +372,11 @@ end
 ###############################################################################
 
 @doc raw"""
-    gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+    gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
 
 Returns tuple `(g,u,v)` s.th. `g` = gcd($a$,$b$) and `g` = `u` * $a$ + `v` * $b$.
 """
-function gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: nf_elem}
+function gcdx(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
   L = parent(a)
   L.comp && error("ring not known to be useful euclidean")
    check_parent(a,b)
@@ -397,7 +397,7 @@ end
 #
 ###############################################################################
 
-function principal_generator(L::OrdLoc{T}, I::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
+function principal_generator(L::OrdLoc{T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
   #possible for !L.comp due to semi local
   #theoretical for L.comp if L.prime large enough...
    valuation(L(I.gen_one)) >= valuation(L(I.gen_two)) ? L(I.gen_two) : L(I.gen_one)
@@ -410,7 +410,7 @@ end
 #
 ###############################################################################
 
-function ^(a::OrdLocElem{T}, b::Int) where {T <: nf_elem}
+function ^(a::OrdLocElem{T}, b::Int) where {T <: AbsSimpleNumFieldElem}
    return parent(a)(data(a)^b, false)
 end
 
@@ -436,7 +436,7 @@ end
 
 rand(rng::AbstractRNG, R::OrdLoc, r::AbstractUnitRange{Int}) = rand(rng, make(R, r))
 
-rand(K::OrdLoc{T}, r::AbstractVector) where {T <: nf_elem} = rand(Random.GLOBAL_RNG, K, r)
+rand(K::OrdLoc{T}, r::AbstractVector) where {T <: AbsSimpleNumFieldElem} = rand(Random.GLOBAL_RNG, K, r)
 
 ###############################################################################
 #
@@ -444,7 +444,7 @@ rand(K::OrdLoc{T}, r::AbstractVector) where {T <: nf_elem} = rand(Random.GLOBAL_
 #
 ###############################################################################
 
-AbstractAlgebra.promote_rule(::Type{OrdLocElem{T}}, ::Type{OrdLocElem{T}}) where {T <: nf_elem} = OrdLocElem{T}
+AbstractAlgebra.promote_rule(::Type{OrdLocElem{T}}, ::Type{OrdLocElem{T}}) where {T <: AbsSimpleNumFieldElem} = OrdLocElem{T}
 
 ###############################################################################
 #
@@ -452,27 +452,27 @@ AbstractAlgebra.promote_rule(::Type{OrdLocElem{T}}, ::Type{OrdLocElem{T}}) where
 #
 ###############################################################################
 
-(L::OrdLoc{T})() where {T <: nf_elem} = L(zero(nf(L)))
+(L::OrdLoc{T})() where {T <: AbsSimpleNumFieldElem} = L(zero(nf(L)))
 
-(L::OrdLoc{T})(a::Integer)  where {T <: nf_elem} = L(nf(L)(a))
+(L::OrdLoc{T})(a::Integer)  where {T <: AbsSimpleNumFieldElem} = L(nf(L)(a))
 
-function (L::OrdLoc{T})(data::T, checked::Bool = true) where {T <: nf_elem}
+function (L::OrdLoc{T})(data::T, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
    return OrdLocElem{T}(data,L,checked)
 end
 
-function (L::OrdLoc{T})(data::NfAbsOrdElem{AnticNumberField,T}, checked::Bool = true) where {T <: nf_elem}
+function (L::OrdLoc{T})(data::AbsNumFieldOrderElem{AbsSimpleNumField,T}, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
    return OrdLocElem{T}(nf(parent(data))(data),L,checked)
 end
 
-function (L::OrdLoc{T})(data::Rational{<: Integer}, checked::Bool = true) where {T <: nf_elem}
+function (L::OrdLoc{T})(data::Rational{<: Integer}, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
    return OrdLocElem{T}(nf(L)(numerator(data)) // nf(L)(denominator(data)),L,checked)
 end
 
-function (L::OrdLoc{T})(data::ZZRingElem, checked::Bool = true) where {T <: nf_elem}
+function (L::OrdLoc{T})(data::ZZRingElem, checked::Bool = true) where {T <: AbsSimpleNumFieldElem}
    return OrdLocElem{T}(nf(L)(data),L,checked)
 end
 
-function (L::OrdLoc{T})(a::OrdLocElem{T}) where {T <: nf_elem}
+function (L::OrdLoc{T})(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
    L != parent(a) && error("No element of $L")
    return a
 end
@@ -484,11 +484,11 @@ end
 ################################################################################
 
 @doc raw"""
-    valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem}
+    valuation(a::OrdLocElem{T}, prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
 
 Returns the valuation `n` of $a$ at $P$.
 """
-valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: nf_elem} = valuation(data(a), prime)
+valuation(a::OrdLocElem{T}, prime::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem} = valuation(data(a), prime)
 
 ###############################################################################
 #
@@ -497,11 +497,11 @@ valuation(a::OrdLocElem{T}, prime::NfAbsOrdIdl{AnticNumberField,T}) where {T <: 
 ###############################################################################
 
 @doc raw"""
-    canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
+    canonical_unit(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
 
 Returns unit `b`::OrdLocElem{T} s.th. ($a$ * inv(`b`)) is hopefully nicer.
 """
-function canonical_unit(a::OrdLocElem{T}) where {T <: nf_elem}
+function canonical_unit(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem}
    iszero(a) && return parent(a)(1)
    is_unit(a) && return a
    L = parent(a)
@@ -527,7 +527,7 @@ end
 ###############################################################################
 
 @doc raw"""
-    localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp = false) where {T <: nf_elem}
+    localization(OK::AbsNumFieldOrder{AbsSimpleNumField,T}, S::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}; cached=true, comp = false) where {T <: AbsSimpleNumFieldElem}
 
 Returns the localization of the order $OK$ at the ideal $S$.
 If `cached == true` (the default) then the resulting
@@ -536,6 +536,6 @@ to the constructor with the same order $OK$ and ideal $S$.
 `comp == false` means primes dividing $S$ are invertible,
 `comp == true` means all primes not dividing $S$ become units.
 """
-function localization(OK::NfAbsOrd{AnticNumberField,T}, S::NfAbsOrdIdl{AnticNumberField,T}; cached=true, comp::Bool = false) where {T <: nf_elem}
+function localization(OK::AbsNumFieldOrder{AbsSimpleNumField,T}, S::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}; cached=true, comp::Bool = false) where {T <: AbsSimpleNumFieldElem}
    return OrdLoc{T}(OK, S, cached, comp)
 end

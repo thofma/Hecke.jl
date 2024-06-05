@@ -10,16 +10,16 @@ add_assertion_scope(:HNF)
 
 
 function show(io::IO, M::ModuleCtxNmod)
-  print(io, "Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))\n")
+  print(io, "Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))")
 end
 
 function show(io::IO, M::ModuleCtx_fmpz)
-  print(io, "Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))\n")
+  print(io, "Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))")
   if isdefined(M, :basis_idx)
-    print(io, "current index: $(M.basis_idx)\n")
+    print(io, "\ncurrent index: $(M.basis_idx)")
   end
   if isdefined(M, :essential_elementary_divisors)
-    print(io, "current structure: $(M.essential_elementary_divisors)\n")
+    print(io, "\ncurrent structure: $(M.essential_elementary_divisors)")
   end
 end
 
@@ -103,7 +103,7 @@ function check_index(M::ModuleCtx_fmpz)
 
   for i=length(M.rel_reps_p)+1:length(M.rel_gens)
     reduce(C, M.rel_gens[i], d)
-    push!(M.rel_reps_p, solve_ut(M.Mp.basis, change_base_ring(M.Mp.R, M.rel_gens[i])))
+    push!(M.rel_reps_p, _solve_ut(M.Mp.basis, change_base_ring(M.Mp.R, M.rel_gens[i])))
   end
 
 #=
@@ -190,12 +190,12 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
   end
   if isdefined(M, :trafo)
     st = M.done_up_to + 1
-    _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:nrows(M.rel_gens), 1:ncols(M.rel_gens)), Val{true}, offset = st-1, truncate = true)
+    _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:nrows(M.rel_gens), 1:ncols(M.rel_gens)), Val(true), offset = st-1, truncate = true)
     append!(M.trafo, t)
 
   else
     z = vcat(M.bas_gens, M.rel_gens)
-    h, t = hnf_kannan_bachem(z, Val{true}, truncate = true)
+    h, t = hnf_kannan_bachem(z, Val(true); truncate = true)
     M.trafo = t
     M.basis = h
   end

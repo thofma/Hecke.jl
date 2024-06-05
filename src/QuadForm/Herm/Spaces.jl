@@ -75,7 +75,7 @@ function Base.show(io::IO, ::MIME"text/plain", V::HermSpace)
 end
 
 function show(io::IO, V::HermSpace)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Hermitian space")
   else
     print(io, "Hermitian space of dimension $(dim(V))")
@@ -97,7 +97,7 @@ function absolute_simple_field(V::HermSpace)
     set_attribute!(V, :absolute_field => (Eabs, EabsToE))
     return Eabs, EabsToE
   else
-    return c::Tuple{AnticNumberField, NfToNfRel}
+    return c::Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem})}
   end
 end
 
@@ -154,7 +154,8 @@ diagonal_with_transform(V::HermSpace) = _diagonal(V)
 function _diagonal(V::HermSpace, with_transform::Bool = true)
   E = base_ring(V)
   g = gram_matrix(V)
-  k, K = left_kernel(g)
+  K = kernel(g, side = :left)
+  k = nrows(K)
   B = complete_to_basis(K)
   g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
   D, U = _gram_schmidt(g, involution(V))
@@ -191,7 +192,7 @@ function is_isometric(L::HermSpace, M::HermSpace, p::ZZRingElem)
   return _isisometric(L, M, p)
 end
 
-function is_isometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+function is_isometric(L::HermSpace, M::HermSpace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return _isisometric(L, M, p)
 end
 
@@ -265,7 +266,7 @@ end
 #
 ################################################################################
 
-function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
+function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrderIdeal
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
   else
@@ -292,7 +293,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_locally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
+    is_locally_hyperbolic(V::Hermspace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the completion of the hermitian space `V` over $E/K$ at the prime
 ideal `p` of $\mathcal O_K$ is hyperbolic.

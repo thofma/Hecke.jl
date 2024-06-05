@@ -29,8 +29,8 @@ parent.
 
 Important special cases are
  * ```FacElem{ZZRingElem, ZZRing}```, factored integers
- * ```FacElem{nf_elem, AnticNumberField}```, factored algerbaic numbers
- * ```FacElem{NfAbsOrdIdl, NfAbsOrdIdlSet}```, factored ideals
+ * ```FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}```, factored algerbaic numbers
+ * ```FacElem{AbsNumFieldOrderIdeal, AbsNumFieldOrderIdealSet}```, factored ideals
 
 It should be noted that an object of type ```FacElem{ZZRingElem, ZZRing}``
 will, in general, not represent an integer as the exponents can be
@@ -40,13 +40,13 @@ negative.
 In general one can define factored elements by giving 2 arrays, the
 base and the exponent, or a dictionary containing the pairs:
 
-```@docs
+```@docs; canonical=false
 FacElem
-FacElem(a::nf_elem)
+FacElem(a::AbsSimpleNumFieldElem)
 ```
 
-```@docs
-ideal(::NfOrd, ::FacElem{nf_elem, AnticNumberField})
+```@docs; canonical=false
+ideal(::AbsSimpleNumFieldOrder, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
 
@@ -55,7 +55,7 @@ The process of computing the value defined by a factored element is
 available as ```evaluate```. Depending on the types involved this
 can be very efficient.
 
-```@docs
+```@docs; canonical=false
 evaluate(::FacElem{ZZRingElem, S}) where S
 evaluate(::FacElem{QQFieldElem, S} where S)
 evaluate(::FacElem{T,S} where S) where T
@@ -67,36 +67,36 @@ evaluate_naive(::FacElem{T,S} where S) where T
 In the case where the parent of the base allows for efficient gcd computation,
 power products can be made unique:
 
-```@docs
-simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+```@docs; canonical=false
+simplify(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 simplify(x::FacElem{QQFieldElem,S} where S)
 ```
 
 The simplified version can then be used further:
 
-```@docs
+```@docs; canonical=false
 isone(x::FacElem{QQFieldElem, S} where S)
 factor_coprime(::FacElem{ZZRingElem, S} where S)
-factor_coprime(::FacElem{NfOrdIdl, NfOrdIdlSet})
-factor_coprime(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor_coprime(::NfOrdIdlSet, ::FacElem{nf_elem, AnticNumberField})
-factor(::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-factor(::NfOrdIdlSet, ::FacElem{nf_elem, AnticNumberField})
+factor_coprime(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor_coprime(::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor_coprime(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+factor(::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+factor(::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
 ```
 
 For factorised algebraic numbers a unique simplification is not possible,
 however, this allows still do obtain partial results:
 
-```@docs
-compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2)
+```@docs; canonical=false
+compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n::Int = 2)
 ```
 
-```@docs
-valuation(::FacElem{nf_elem,AnticNumberField}, ::NfAbsOrdIdl{AnticNumberField,nf_elem})
-valuation(::FacElem{NfAbsOrdIdl{AnticNumberField,nf_elem},Hecke.NfAbsOrdIdlSet{AnticNumberField,nf_elem}}, ::NfAbsOrdIdl{AnticNumberField,nf_elem})
-evaluate_mod(::FacElem{nf_elem,AnticNumberField}, ::NfOrdFracIdl)
-reduce_ideal(::FacElem{NfAbsOrdIdl{AnticNumberField,nf_elem},Hecke.NfAbsOrdIdlSet{AnticNumberField,nf_elem}})
-modular_proj(::FacElem{nf_elem,AnticNumberField}, ::Hecke.modular_env)
+```@docs; canonical=false
+valuation(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
+valuation(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}}, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem})
+evaluate_mod(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::AbsSimpleNumFieldOrderFractionalIdeal)
+reduce_ideal(::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField,AbsSimpleNumFieldElem}})
+modular_proj(::FacElem{AbsSimpleNumFieldElem,AbsSimpleNumField}, ::Hecke.modular_env)
 ```
 
 ## Positivity & Signs
@@ -107,7 +107,7 @@ Factored elements can be used instead of number field elements for the functions
 
 ## Miscellaneous
 
-```@docs
+```@docs; canonical=false
 max_exp(a::FacElem)
 min_exp(a::FacElem)
 maxabs_exp(a::FacElem)

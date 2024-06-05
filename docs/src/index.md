@@ -1,89 +1,67 @@
-# Hecke
+```@raw html
+---
+# https://vitepress.dev/reference/default-theme-home-page
+layout: home
 
-## About
+hero:
+  name: "Hecke"
+  tagline: Computational number theory for everyone
+  actions:
+    - theme: alt
+      text: Getting Started
+      link: /start/
+    - theme: alt
+      text: Manual
+      link: /manual/
+    - theme: alt
+      text: View on Github
+      link: https://github.com/thofma/Hecke.jl
 
-Hecke is a software package for algebraic number theory maintained by Claus Fieker, Carlo Sircana and Tommy Hofmann.
-It is written in [julia](https://www.julialang.org) and is based on the computer algebra package [Nemo](https://github.com/Nemocas/Nemo.jl).
-
-- <https://github.com/thofma/Hecke.jl> (Source code)
-- <https://thofma.github.io/Hecke.jl/dev/> (Online documentation)
-
-So far, Hecke provides the following features:
-
-  - Orders (including element and ideal arithmetic) in number fields
-  - Computation of maximal orders
-  - Verified residue computations of Dedekind zeta functions
-  - Class and Unit group computation, S-units, PID testing
-  - Lattice enumeration
-  - Sparse linear algebra
-  - Normal forms for modules over maximal orders
-  - Extensions of number fields, non-simple extensions of number fields
-  - Orders and ideals in extensions of fields
-  - Abelian groups
-  - Ray class groups, quotients of ray class groups
-  - Invariant subgroups
-  - Class Field Theory
-  - Associative Algebras
-
-## Installation
-
-To use Hecke, a julia version of 1.6 is necessary (the latest stable julia version will do).
-Please see <https://julialang.org/downloads/> for instructions on how to obtain julia for your system.
-Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
-
-```julia
-julia> using Pkg
-julia> Pkg.add("Hecke")
+features:
+  - title: What is Hecke?
+    details: Hecke is a software package for computational algebraic number theory. It is written in julia and makes use of the computer algebra packages Nemo and AbstractAlgebra.
+  - title: OSCAR
+    details: Hecke is part of the [OSCAR](https://www.oscar-system.org/) system, which covers, in addition to number theory, also commutative algebra, algebraic geometry, group theory and polyhedral geometry.
+---
 ```
 
-## Quick start
+## Features
 
-Here is a quick example of using Hecke:
+- Number fields (absolute, relative, simple and non-simple)
+- Orders and ideals in number fields
+- Class and unit group computations of orders
+- Lattice enumeration
+- Sparse linear algebra
+- Class field theory
+- Abelian groups
+- Associative algebras
+- Ideals and orders in (semsimple) associative algebras
+- Locally free class groups of orders in semisimple algebras
+- Quadratic and Hermitian forms and lattices
 
-```julia
-julia> using Hecke
+## Citing Hecke
 
-Welcome to
+If your research depends on computations done with Hecke, please consider giving us a formal citation:
 
-    _    _           _
-   | |  | |         | |
-   | |__| | ___  ___| | _____
-   |  __  |/ _ \/ __| |/ / _ \
-   | |  | |  __/ (__|   <  __/
-   |_|  |_|\___|\___|_|\_\___|
+- Claus Fieker, William Hart, Tommy Hofmann and Fredrik Johansson, [Nemo/Hecke: Computer Algebra and Number Theory Packages
+  for the Julia Programming Language](https://doi.acm.org/10.1145/3087604.3087611). In: Proceedings of ISSAC '17, pages 157–164, New York, NY, USA, 2017. ACM.
 
-Version 0.22.8...
- ... which comes with absolutely no warranty whatsoever
-(c) 2015-2023 by Claus Fieker, Tommy Hofmann and Carlo Sircana
-
-
-julia> Qx, x = polynomial_ring(FlintQQ, "x");
-
-julia> f = x^3 + 2;
-
-julia> K, a = number_field(f, "a");
-
-julia> O = maximal_order(K);
-
-julia> O
-Maximal order of Number field of degree 3 over QQ
-with basis nf_elem[1, a, a^2]
+```bib
+@inproceedings{nemo,
+    author = {Fieker, Claus and Hart, William and Hofmann, Tommy and Johansson, Fredrik},
+     title = {Nemo/Hecke: Computer Algebra and Number Theory Packages for the Julia Programming Language},
+ booktitle = {Proceedings of the 2017 ACM on International Symposium on Symbolic and Algebraic Computation},
+    series = {ISSAC '17},
+      year = {2017},
+     pages = {157--164},
+  numpages = {8},
+       url = {https://doi.acm.org/10.1145/3087604.3087611},
+       doi = {10.1145/3087604.3087611},
+ publisher = {ACM},
+   address = {New York, NY, USA},
+}
 ```
 
-The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
+## Acknowledgement
 
-```
-help?> absolute_degree
-search: absolute_degree absolute_inertia_degree absolute_coordinates is_absolutely_irreducible
-
-  absolute_degree(a::FqField)
-
-  Return the degree of the given finite field over the prime field.
-
-  ─────────────────────────────────────────────────────────────────────────────────────────────────
-
-  absolute_degree(L::NumField) -> Int
-
-  Given a number field L/K, this function returns the degree of L over \mathbf Q.
-```
-
+Hecke is part of the [OSCAR](https://www.oscar-system.org/) project and the development is supported by the Deutsche Forschungsgemeinschaft DFG within the Collaborative Research Center TRR 195.

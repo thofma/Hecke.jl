@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-function _unit_group(O::NfOrd, c::ClassGrpCtx)
-  u = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+function _unit_group(O::AbsSimpleNumFieldOrder, c::ClassGrpCtx)
+  u = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   _unit_group_find_units(u, c)
   return u
 end
@@ -61,7 +61,7 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
   return k, add_units, s1
 end
 
-function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true, expected_reg::arb = ArbField(32, cached = false)(-1), add::Int = 0)
+function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool = true, expected_reg::ArbFieldElem = ArbField(32, cached = false)(-1), add::Int = 0)
   add_orbit = false
   @vprintln :UnitGroup 1 "Processing ClassGrpCtx to find units ... (using orbits: $add_orbit)"
   @vprintln :UnitGroup 1 "Relation module $(x.M)"
@@ -132,7 +132,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
     k, add_units, s1 = find_candidates(x, u, add)
 
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
-    elements = Vector{FacElem{nf_elem, AnticNumberField}}(undef, nrows(s1))
+    elements = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, nrows(s1))
     for i = 1:nrows(s1)
       elements[i] = FacElem(ge, ZZRingElem[s1[i, j] for j = 1:ncols(s1)])
     end
@@ -157,7 +157,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx; add_orbit::Bool =
 
       if has_full_rank(u)
         @vprintln :UnitGroup 2 "have full rank, can reduce unit first..."
-        y = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[y], u)[1]
+        y = reduce_mod_units(FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[y], u)[1]
       else
         @vprintln :UnitGroup 2 "no full rank, cannot reduce unit first..."
       end

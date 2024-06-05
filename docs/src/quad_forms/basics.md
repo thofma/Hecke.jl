@@ -8,7 +8,7 @@ end
 
 ## Creation of spaces
 
-```@docs
+```@docs; canonical=false
 quadratic_space(::NumField, ::Int)
 hermitian_space(::NumField, ::Int)
 quadratic_space(::NumField, ::MatElem)
@@ -42,7 +42,7 @@ is similar to $K^{\times}/(K^{\times})^2$ in the quadratic case).
 The *discriminant* $\text{disc}(V, \Phi)$ of $(V, \Phi)$ is defined to be
 $(-1)^{(m(m-1)/2)}\text{det}(V, \Phi)$, where $m$ is the rank of $(V, \Phi)$.
 
-```@docs
+```@docs; canonical=false
 rank(::AbstractSpace)
 dim(::AbstractSpace)
 gram_matrix(::AbstractSpace)
@@ -81,7 +81,7 @@ positive or all totally negative. In the former case, $V$ is said to be
 *positive definite*, while in the latter case it is *negative definite*.
 In all the other cases, we say that $V$ is *indefinite*.
 
-```@docs
+```@docs; canonical=false
 is_regular(::AbstractSpace)
 is_quadratic(::AbstractSpace)
 is_hermitian(::AbstractSpace)
@@ -109,7 +109,7 @@ is_definite(Q), is_positive_definite(H)
 
 ## Inner products and diagonalization
 
-```@docs
+```@docs; canonical=false
 gram_matrix(::AbstractSpace{T}, ::MatElem{S}) where {S, T}
 gram_matrix(::AbstractSpace{T}, ::Vector{Vector{U}}) where {T, U}
 inner_product(::AbstractSpace, ::Vector, ::Vector)
@@ -146,7 +146,7 @@ $f \colon V \to V'$ such that for all $x,y \in V$, one has
 An automorphism of spaces is called an *isometry* and a monomorphism is
 called an *embedding*.
 
-```@docs
+```@docs; canonical=false
 hasse_invariant(::QuadSpace, p)
 witt_invariant(::QuadSpace, p)
 is_isometric(::AbstractSpace, ::AbstractSpace)
@@ -185,7 +185,7 @@ locally with respect to the completions at some finite places. Note that in both
 quadratic and hermitian cases, completions are taken at finite places of the fixed
 field $K$.
 
-```@docs
+```@docs; canonical=false
 is_locally_represented_by(::AbstractSpace, ::AbstractSpace, p)
 is_represented_by(::AbstractSpace, ::AbstractSpace)
 ```
@@ -219,7 +219,7 @@ usage, one of the following three methods can be called to obtain the direct
 sum of a finite collection of spaces. Note that the corresponding copies
 of the original spaces in the direct sum are pairwise orthogonal.
 
-```@docs
+```@docs; canonical=false
 direct_sum(::Vector{AbstractSpace})
 direct_product(::Vector{AbstractSpace})
 biproduct(::Vector{AbstractSpace})
@@ -238,7 +238,7 @@ is_zero(matrix(compose(inj[1], proj[2])))
 ```
 ## Orthogonality operations
 
-```@docs
+```@docs; canonical=false
 orthogonal_complement(::AbstractSpace, ::MatElem)
 orthogonal_projection(::AbstractSpace, ::MatElem)
 ```
@@ -261,7 +261,7 @@ there exists an element $x \in V_{\mathfrak p}$ such that
 $\Phi_{\mathfrak p}(x,x) = 0$, where $\Phi_{\mathfrak p}$ is the continuous
 extension of $\Phi$ to $V_{\mathfrak p} \times V_{\mathfrak p}$.
 
-```@docs
+```@docs; canonical=false
 is_isotropic(::AbstractSpace, p)
 ```
 ### Example
@@ -287,8 +287,8 @@ of hyperbolic planes. The hyperbolic plane is the space $(H, \Psi)$ of rank 2
 over $E/K$ such that there exists a basis $e_1, e_2$ of $H$ such that
 $\Psi(e_1, e_1) = \Psi(e_2, e_2) = 0$ and $\Psi(e_1, e_2) = 1$.
 
-```@docs
-is_locally_hyperbolic(::HermSpace, ::NfOrdIdl)
+```@docs; canonical=false
+is_locally_hyperbolic(::HermSpace, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
 ### Example

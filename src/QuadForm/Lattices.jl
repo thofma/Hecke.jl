@@ -1,13 +1,3 @@
-# aliases for deprecation
-is_equivalent(U::AbstractLat, V::AbstractLat) = is_isometric(U, V)
-is_equivalent(U::AbstractLat, V::AbstractLat, p) = is_isometric(U, V, p)
-is_rationally_equivalent(U::AbstractLat, V::AbstractLat) = is_rationally_isometric(U, V)
-is_rationally_equivalent(U::AbstractLat, V::AbstractLat, p) = is_rationally_isometric(U, V, p)
-is_equivalent(U::AbstractSpace, V::AbstractSpace) = is_isometric(U, V)
-is_equivalent(U::AbstractSpace, V::AbstractSpace, p) = is_isometric(U, V, p)
-is_equivalent_with_isometry(U::AbstractLat, V::AbstractLat) = is_isometric_with_isometry(U, V)
-is_equivalent_with_isometry(U::AbstractSpace, V::AbstractSpace) = is_isometric_with_isometry(U, V)
-
 ################################################################################
 #
 #  Verbosity and assertion scopes
@@ -108,7 +98,7 @@ function pseudo_basis(L::AbstractLat)
 end
 
 @doc raw"""
-    coefficient_ideals(L::AbstractLat) -> Vector{NfOrdIdl}
+    coefficient_ideals(L::AbstractLat) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Return the coefficient ideals of a pseudo-basis of the lattice `L`.
 """
@@ -286,7 +276,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
     St = pseudo_matrix(L)
     d = ncols(St)
     for i in 1:nrows(St)
-      if base_ring(L) isa NfOrd
+      if base_ring(L) isa AbsSimpleNumFieldOrder
         I = numerator(coefficient_ideals(St)[i])
         den = denominator(coefficient_ideals(St)[i])
         _assure_weakly_normal_presentation(I)
@@ -306,7 +296,7 @@ function generators(L::AbstractLat; minimal::Bool = false)
     if isdefined(L, :minimal_generators)
       return L.minimal_generators::Vector{Vector{T}}
     end
-    St = _steinitz_form(pseudo_matrix(L), Val{false})
+    St = steinitz_form(pseudo_matrix(L))
     d = nrows(St)
     n = degree(L)
     v = Vector{T}[]
@@ -317,15 +307,15 @@ function generators(L::AbstractLat; minimal::Bool = false)
 
     I = numerator(coefficient_ideals(St)[d])
     den = denominator(coefficient_ideals(St)[d])
-    if minimal && base_ring(L) isa NfOrd
-      b, a = is_principal(I)
+    if minimal && base_ring(L) isa AbsSimpleNumFieldOrder
+      b, a = is_principal_with_data(I)
       if b
         push!(v, T[K(a)//den * matrix(St)[n, j] for j in 1:d])
       end
       return v
     end
 
-    if base_ring(L) isa NfOrd
+    if base_ring(L) isa AbsSimpleNumFieldOrder
       _assure_weakly_normal_presentation(I)
       push!(v, T[K(I.gen_one)//den * matrix(St)[n, j] for j in 1:d])
       push!(v, T[K(I.gen_two)//den * matrix(St)[n, j] for j in 1:d])
@@ -443,7 +433,7 @@ end
 ################################################################################
 
 @doc raw"""
-    discriminant(L::AbstractLat) -> NfOrdFracIdl
+    discriminant(L::AbstractLat) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the discriminant of the lattice `L`, that is, the generalized index ideal
 $[L^\# : L]$.
@@ -463,7 +453,7 @@ end
 ################################################################################
 
 @doc raw"""
-    hasse_invariant(L::AbstractLat, p::Union{InfPlc, NfOrdIdl}) -> Int
+    hasse_invariant(L::AbstractLat, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Return the Hasse invariant of the rational span of the lattice `L` at the place `p`.
 The lattice must be quadratic.
@@ -471,7 +461,7 @@ The lattice must be quadratic.
 hasse_invariant(L::AbstractLat, p)
 
 @doc raw"""
-    witt_invariant(L::AbstractLat, p::Union{InfPlc, NfOrdIdl}) -> Int
+    witt_invariant(L::AbstractLat, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Int
 
 Return the Witt invariant of the rational span of the lattice `L` at the place `p`.
 The lattice must be quadratic.
@@ -485,15 +475,15 @@ witt_invariant(L::AbstractLat, p)
 ################################################################################
 
 @doc raw"""
-    is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::Union{InfPlc, NfAbsOrdIdl})
+    is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::Union{InfPlc, AbsNumFieldOrderIdeal})
                                                                          -> Bool
 
 Return whether the rational spans of the lattices `L` and `M` are isometric over
 the completion at the place `p`.
 """
-is_rationally_isometric(::AbstractLat, ::AbstractLat, ::NfAbsOrdIdl)
+is_rationally_isometric(::AbstractLat, ::AbstractLat, ::AbsNumFieldOrderIdeal)
 
-function is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::NfAbsOrdIdl)
+function is_rationally_isometric(L::AbstractLat, M::AbstractLat, p::AbsNumFieldOrderIdeal)
   return is_isometric(rational_span(L), rational_span(M), p)
 end
 
@@ -640,26 +630,26 @@ function Base.:(*)(L::QuadLat, a)
 end
 
 @doc raw"""
-    *(a::NumFieldOrdIdl, L::AbstractLat) -> AbstractLat
+    *(a::NumFieldOrderIdeal, L::AbstractLat) -> AbstractLat
 
 Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
-Base.:(*)(::NumFieldOrdIdl, ::AbstractLat)
+Base.:(*)(::NumFieldOrderIdeal, ::AbstractLat)
 
-function Base.:(*)(a::Union{NfRelOrdIdl, NfAbsOrdIdl}, L::AbstractLat)
+function Base.:(*)(a::Union{RelNumFieldOrderIdeal, AbsNumFieldOrderIdeal}, L::AbstractLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
   return lattice_in_same_ambient_space(L, m)
 end
 
 @doc raw"""
-    *(a::NumFieldOrdFracIdl, L::AbstractLat) -> AbstractLat
+    *(a::NumFieldOrderFractionalIdeal, L::AbstractLat) -> AbstractLat
 
 Return the lattice $aL$ inside the ambient space of the lattice `L`.
 """
-Base.:(*)(::NumFieldOrdFracIdl, ::AbstractLat)
+Base.:(*)(::NumFieldOrderFractionalIdeal, ::AbstractLat)
 
-function Base.:(*)(a::Union{NfRelOrdFracIdl, NfAbsOrdFracIdl}, L::AbstractLat)
+function Base.:(*)(a::Union{RelNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdeal}, L::AbstractLat)
   @assert has_ambient_space(L)
   m = _module_scale_ideal(a, pseudo_matrix(L))
   return lattice_in_same_ambient_space(L, m)
@@ -723,7 +713,7 @@ end
 ################################################################################
 
 @doc raw"""
-    norm(L::AbstractLat) -> NfAbsOrdFracIdl
+    norm(L::AbstractLat) -> AbsNumFieldOrderFractionalIdeal
 
 Return the norm of the lattice `L`. This is a fractional ideal of the fixed field
 of `L`.
@@ -737,7 +727,7 @@ norm(::AbstractLat)
 ################################################################################
 
 @doc raw"""
-    scale(L::AbstractLat) -> NfOrdFracIdl
+    scale(L::AbstractLat) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the scale of the lattice `L`.
 """
@@ -794,7 +784,7 @@ dual(::AbstractLat)
 ################################################################################
 
 @doc raw"""
-    volume(L::AbstractLat) -> NfOrdFracIdl
+    volume(L::AbstractLat) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Return the volume of the lattice `L`.
 """
@@ -809,7 +799,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_modular(L::AbstractLat) -> Bool, NfOrdFracIdl
+    is_modular(L::AbstractLat) -> Bool, AbsSimpleNumFieldOrderFractionalIdeal
 
 Return whether the lattice `L` is modular. In this case, the second returned value
 is a fractional ideal $\mathfrak a$ of the base algebra of `L` such that
@@ -861,7 +851,7 @@ end
 ################################################################################
 
 @doc raw"""
-    local_basis_matrix(L::AbstractLat, p::NfOrdIdl; type = :any) -> MatElem
+    local_basis_matrix(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; type = :any) -> MatElem
 
 Given a prime ideal `p` and a lattice `L`, return a basis matrix of a lattice
 `M` such that $M_{p} = L_{p}$. Note that if `p` is an ideal in the base ring of
@@ -911,7 +901,7 @@ end
 ################################################################################
 
 @doc raw"""
-    jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
+    jordan_decomposition(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
                                 -> Vector{MatElem}, Vector{MatElem}, Vector{Int}
 
 Return a Jordan decomposition of the completion of the lattice `L` at a prime
@@ -922,7 +912,7 @@ the same length $r$. The completions of the row spans of the matrices $M_i$
 yield a Jordan decomposition of $L_{p}$ into modular sublattices
 $L_i$ with Gram matrices $G_i$ and scale of $p$-adic valuation $s_i$.
 """
-jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
+jordan_decomposition(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 ################################################################################
 #
@@ -931,12 +921,12 @@ jordan_decomposition(L::AbstractLat, p::NfOrdIdl)
 ################################################################################
 
 @doc raw"""
-    is_locally_isometric(L::AbstractLat, M::AbstractLat, p::NfOrdIdl) -> Bool
+    is_locally_isometric(L::AbstractLat, M::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the completions of the lattices `L` and `M` at the prime ideal
 `p` are isometric.
 """
-is_locally_isometric(::AbstractLat, ::AbstractLat, ::NfOrdIdl)
+is_locally_isometric(::AbstractLat, ::AbstractLat, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 ################################################################################
 #
@@ -945,7 +935,7 @@ is_locally_isometric(::AbstractLat, ::AbstractLat, ::NfOrdIdl)
 ################################################################################
 
 @doc raw"""
-    is_isotropic(L::AbstractLat, p::Union{NfOrdIdl, InfPlc}) -> Bool
+    is_isotropic(L::AbstractLat, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, InfPlc}) -> Bool
 
 Return whether the completion of the lattice `L` at the place `p` is
 isotropic.
@@ -1237,7 +1227,7 @@ span of `L` is irreducible.
 function hermitian_structure(L::ZZLat, f::QQMatrix; check::Bool = true,
                                                     ambient_representation::Bool = true,
                                                     res::Union{Nothing, AbstractSpaceRes} = nothing,
-                                                    E::Union{Nothing, NfRel} = nothing)
+                                                    E::Union{Nothing, RelSimpleNumField} = nothing)
 
   return hermitian_structure_with_transfer_data(L, f; check, ambient_representation, res, E)[1]
 end
@@ -1266,7 +1256,7 @@ span of `L` is irreducible.
 function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::Bool = true,
                                                                         ambient_representation::Bool = true,
                                                                         res::Union{Nothing, AbstractSpaceRes} = nothing,
-                                                                        E::Union{Nothing, NfRel} = nothing)
+                                                                        E::Union{Nothing, RelSimpleNumField} = nothing)
 
   # Since the minimal polynomial of f might not be irreducible, but the one
   # of its restriction to _L is, we are only concerned about _L inside
@@ -1360,8 +1350,8 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
 
   for i=1:m
     for j=1:m
-      a = reduce(hcat, view(mb^k, 1+(i-1)*n2, :)*view(G, :, 1+(j-1)*n2) for k in 0:n2-1)
-      co = solve_left(trace_mat, a)
+      a = reduce(hcat, view(mb^k, 1+(i-1)*n2:1+(i-1)*n2, :)*view(G, :, 1+(j-1)*n2:1+(j-1)*n2) for k in 0:n2-1)
+      co = solve(trace_mat, a; side = :left)
       gram[i,j] = only(co*bs)
     end
   end
@@ -1558,7 +1548,7 @@ automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = tru
 
 function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = -1, bacher_depth::Int = 0)
 
-  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
+  assert_has_automorphisms(L; depth, bacher_depth)
 
   gens = L.automorphism_group_generators
 
@@ -1609,7 +1599,12 @@ heuristically depending on the rank of `L`. By default, `bacher_depth` is set to
 automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
 
 function automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
-  assert_has_automorphisms(L; redo, depth = depth, bacher_depth = bacher_depth)
+  # In case one sets up the automorphism group order, from external knowledge
+  if isdefined(L, :automorphism_group_order)
+    return L.automorphism_group_order
+  end
+
+  assert_has_automorphisms(L; redo, depth, bacher_depth)
   return L.automorphism_group_order
 end
 
@@ -1768,7 +1763,7 @@ function maximal_sublattices(L::AbstractLat, p; use_auto::Bool = false,
   E = Int[]
   for i in 1:length(Ls)
     if use_auto
-      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]); side = :left)[2]))
+      m = map_entries(y -> hext\y, (kernel(matrix(Ls[i][1]); side = :left)))
     else
       m = map_entries(y -> hext\y, Ls[i])
     end
@@ -1986,7 +1981,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_maximal_integral(L::AbstractLat, p::NfOrdIdl) -> Bool, AbstractLat
+    is_maximal_integral(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbstractLat
 
 Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
 `L`, return whether the completion of `L` at `p` has integral norm and that `L` has no
@@ -2012,7 +2007,7 @@ output is a minimal overlattice `M` of `L` with integral norm.
 is_maximal_integral(::AbstractLat)
 
 @doc raw"""
-    is_maximal(L::AbstractLat, p::NfOrdIdl) -> Bool, AbstractLat
+    is_maximal(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, AbstractLat
 
 Given a lattice `L` and a prime ideal `p` in the fixed ring $\mathcal O_K$ of
 `L` such that the norm of $L_p$ is integral, return whether `L` is maximal
@@ -2025,7 +2020,7 @@ integral norm and is a proper overlattice of $L_p$.
 is_maximal(::AbstractLat, p)
 
 @doc raw"""
-    maximal_integral_lattice(L::AbstractLat, p::NfOrdIdl) -> AbstractLat
+    maximal_integral_lattice(L::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbstractLat
 
 Given a lattice `L` and a prime ideal `p` of the fixed ring $\mathcal O_K$ of
 `L` such that the norm of $L_p$ is integral, return a lattice `M` in the

@@ -60,7 +60,12 @@
     end
 
     c = FacElem(K(2))^1000 * FacElem(K(3))^-1000 * FacElem(K(5))^1000
-    @test (@inferred e(c)) isa acb
+    @test (@inferred e(c)) isa AcbFieldElem
+
+    c = complex_conjugation(K)
+    if !(K isa QQField)
+      @test c == id_hom(K)
+    end
   end
 
   K, a = quadratic_field(-1)
@@ -73,4 +78,23 @@
   e = complex_embeddings(k)[1]
   eext = extend(e, ktoK)
   @test all(overlaps(c(ktoK(b)), e(b)) for c in eext)
+
+  Qx, x = QQ["x"]
+  K, _ = rationals_as_number_field()
+  Kt, t = K["t"]
+  K1, = number_field(t^2 - 2)
+  K2, = number_field([t^2 - 2, t^2 - 3])
+  K3, = number_field([x^2 - 2, x^2 - 3])
+  for K in Any[K1, K2, K3]
+    c = complex_conjugation(K)
+    @test c == id_hom(K)
+  end
+
+  K1, = number_field(t^2 + 2)
+  K2, = number_field([t^2 + 2])
+  K3, = number_field([x^2 + 2])
+  for K in Any[K1, K2, K3]
+    c = complex_conjugation(K)
+    @test c != id_hom(K)
+  end
 end

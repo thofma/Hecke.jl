@@ -14,7 +14,7 @@ nf(u::UnitGrpCtx) = nf(order(u))
 ################################################################################
 
 function show(io::IO, U::UnitGrpCtx)
-  print(io, "Unit group context of\n$(order(U))\n")
+  print(io, "Unit group context of\n$(order(U))")
 end
 
 ################################################################################
@@ -23,8 +23,8 @@ end
 #
 ################################################################################
 
-function _unit_group_init(O::NfOrd)
-  u = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+function _unit_group_init(O::AbsSimpleNumFieldOrder)
+  u = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   return u
 end
 
@@ -79,7 +79,7 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::ZZRingElem) wh
   return rel, p
 end
 
-function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = Val{false}; post_reduction::Bool = true) where {S <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, T}
+function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, ::Val{rel_only} = Val(false); post_reduction::Bool = true) where {S <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, rel_only}
   @assert has_full_rank(U)
 
   K = nf(order(U))
@@ -117,7 +117,7 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
     @vprintln :UnitGroup 3 "For $p rel: $rel"
   end
 
-  if rel_only === Val{true}
+  if rel_only
     return rel
   end
 
@@ -130,8 +130,8 @@ function _add_dependent_unit!(U::UnitGrpCtx{S}, y::S, rel_only::Type{Val{T}} = V
 
   U.units =  _transform(vcat(U.units, y), m)
 
-  U.conj_log_mat_cutoff = Dict{Int, arb_mat}()
-  U.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
+  U.conj_log_mat_cutoff = Dict{Int, ArbMatrix}()
+  U.conj_log_mat_cutoff_inv = Dict{Int, ArbMatrix}()
   U.tentative_regulator = regulator(U.units, 64)
   U.rel_add_prec = p
   @vprintln :UnitGroup 1 "reduction of the new unit group...index improved by $(abs(rel[r+1]))"
@@ -249,7 +249,7 @@ end
 function _conj_log_mat_cutoff(x::Vector{T}, p::Int) where T
   r = length(x)
 
-  conlog = Vector{Vector{arb}}(undef, length(x))
+  conlog = Vector{Vector{ArbFieldElem}}(undef, length(x))
   q = 2
   for i in 1:length(x)
     conlog[i] = conjugates_arb_log(x[i], p)
@@ -282,7 +282,7 @@ end
 # if !has_full_rank(u) && !fl
 #   -> element x is not independent, but I did not use it to increase the unit
 #      group
-function add_unit!(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
+function add_unit!(u::UnitGrpCtx, x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
   if has_full_rank(u)
     fl = _add_dependent_unit!(u, x)
     return fl
@@ -318,23 +318,23 @@ full_unit_rank(u::UnitGrpCtx) = unit_group_rank(u.order)
 
 function automorphism_list(u::UnitGrpCtx)
   if isdefined(u, :auts)
-    return u.auts::Vector{NfToNfMor}
+    return u.auts::Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}
   else
     auts = automorphism_list(nf(order(u)))
     u.auts = auts
-    u.cache = Dict{nf_elem, nf_elem}[ Dict{nf_elem, nf_elem}() for i in 1:length(u.auts) ]
-    return u.auts::Vector{NfToNfMor}
+    u.cache = Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}[ Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}() for i in 1:length(u.auts) ]
+    return u.auts::Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}
   end
 end
 
-function apply_automorphism(u::UnitGrpCtx, i::Int, x::nf_elem)
+function apply_automorphism(u::UnitGrpCtx, i::Int, x::AbsSimpleNumFieldElem)
   c = u.cache[i]
-  v = get!(() -> automorphism_list(u)[i](x), c, x)::nf_elem
+  v = get!(() -> automorphism_list(u)[i](x), c, x)::AbsSimpleNumFieldElem
   return v
 end
 
-function apply_automorphism(u::UnitGrpCtx, i::Int, x::FacElem{nf_elem, AnticNumberField})
-  D = Dict{nf_elem, ZZRingElem}(apply_automorphism(u, i, b) => e for (b, e) in x)
+function apply_automorphism(u::UnitGrpCtx, i::Int, x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+  D = Dict{AbsSimpleNumFieldElem, ZZRingElem}(apply_automorphism(u, i, b) => e for (b, e) in x)
   return FacElem(D)
 end
 

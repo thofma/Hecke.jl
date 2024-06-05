@@ -83,7 +83,7 @@
 
   @testset "Basis" begin
     b = @inferred basis(I)
-    @test b == NfOrdElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
+    @test b == AbsSimpleNumFieldOrderElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
   end
 
   @testset "Basismatrix" begin
@@ -92,13 +92,13 @@
     b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
+    b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
 
     b = @inferred basis_matrix(M)
     @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
+    b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
     @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
   end
 
@@ -280,6 +280,26 @@
   K, a = quadratic_field(-1)
   O = maximal_order(K)
   @test basis_matrix(ideal(O, representation_matrix(O(a)))) == identity_matrix(ZZ, 2)
+
+  # zero ideals, #1330
+  let
+    OK = maximal_order(quadratic_field(-1, cached = false)[1])
+    I = 0 * OK
+    @test basis_matrix(I) == zero_matrix(ZZ, 0, 2)
+    @test basis(I) == elem_type(OK)[]
+    @test is_zero(I)
+    @test !is_zero(1 * OK)
+    I = ideal(OK, zero_matrix(ZZ, 0, 2))
+    @test is_zero(I)
+    @test is_zero(I)
+    @test minimum(I) == 0
+    @test idempotents(I, 2*OK + 3 * OK) == (0, 1)
+    @test idempotents(2*OK + 3 * OK, I) == (1, 0)
+    @test is_coprime(2*OK + 3 * OK, I)
+    I = ideal(OK, identity_matrix(ZZ, 2))
+    @test !is_zero(I)
+    @test !is_zero(I)
+  end
   
   include("Ideal/Prime.jl")
 

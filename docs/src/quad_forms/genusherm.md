@@ -65,7 +65,7 @@ There are two ways of creating a local genus symbol for hermitian lattices:
     determinant class `:det` or discriminant class `:disc`);
 
 ```julia
-   genus(HermLat, E::NumField, p::NfOrdIdl, data::Vector; type::Symbol = :det,
+   genus(HermLat, E::NumField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, data::Vector; type::Symbol = :det,
                                                           check::Bool = false)
                                                              -> HermLocalGenus
 ```
@@ -73,7 +73,7 @@ There are two ways of creating a local genus symbol for hermitian lattices:
     lattice $L$ over $E/K$ at a prime ideal $\mathfrak p$ of $\mathcal O_K$.
 
 ```julia
-   genus(L::HermLat, p::NfOrdIdl) -> HermLocalGenus
+   genus(L::HermLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> HermLocalGenus
 ```
 
 #### Examples
@@ -90,7 +90,7 @@ OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det)
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
 L = hermitian_lattice(E, gens, gram = D);
 g2 = genus(L, p)
 ```
@@ -99,7 +99,7 @@ g2 = genus(L, p)
 
 ### Attributes
 
-```@docs
+```@docs; canonical=false
 length(::HermLocalGenus)
 base_field(::HermLocalGenus)
 prime(::HermLocalGenus)
@@ -125,7 +125,7 @@ prime(g1)
 
 ### Invariants
 
-```@docs
+```@docs; canonical=false
 scale(::HermLocalGenus, ::Int)
 scale(::HermLocalGenus)
 scales(::HermLocalGenus)
@@ -153,7 +153,7 @@ E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
 L = hermitian_lattice(E, gens, gram = D);
 g2 = genus(L, p);
 scales(g2)
@@ -167,7 +167,7 @@ rank(g2), det(g2), discriminant(g2)
 
 ### Predicates
 
-```@docs
+```@docs; canonical=false
 is_ramified(::HermLocalGenus)
 is_split(::HermLocalGenus)
 is_inert(::HermLocalGenus)
@@ -192,7 +192,7 @@ is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
 
 ### Local uniformizer
 
-```@docs
+```@docs; canonical=false
 uniformizer(::HermLocalGenus)
 ```
 
@@ -218,7 +218,7 @@ determinant class of its Jordan blocks, are given by $\pm 1$, depending on wheth
 determinants are local norms or not. It is possible to get a representative of this
 determinant class in terms of powers of the uniformizer of $g$.
 
-```@docs
+```@docs; canonical=false
 det_representative(::HermLocalGenus, ::Int)
 det_representative(::HermLocalGenus)
 ```
@@ -242,7 +242,7 @@ det_representative(g1,2)
 
 ### Gram matrices
 
-```@docs
+```@docs; canonical=false
 gram_matrix(::HermLocalGenus, ::Int)
 gram_matrix(::HermLocalGenus)
 ```
@@ -258,7 +258,7 @@ E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
 L = hermitian_lattice(E, gens, gram = D);
 g2 = genus(L, p);
 gram_matrix(g2)
@@ -321,7 +321,7 @@ SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && 
 length(SEK)
 G1 = genus([g1], [(SEK[1], 1)])
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
 L = hermitian_lattice(E, gens, gram = D);
 G2 = genus(L)
 ```
@@ -330,7 +330,7 @@ G2 = genus(L)
 
 ### Attributes
 
-```@docs
+```@docs; canonical=false
 base_field(::HermGenus)
 primes(::HermGenus)
 signatures(::HermGenus)
@@ -352,7 +352,7 @@ E, b = number_field(t^2 - a, "b");
 OK = maximal_order(K);
 p = prime_decomposition(OK, 2)[1][1];
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
 L = hermitian_lattice(E, gens, gram = D);
 G2 = genus(L);
 base_field(G2)
@@ -377,7 +377,7 @@ non-isometric. Then we define the *mass* of the genus $G(L)$ of $L$ to be
 Note that since $L$ is definite, any lattice in the genus of $L$ is also definite, and the
 definition makes sense.
 
-```@docs
+```@docs; canonical=false
 mass(::HermLat)
 ```
 
@@ -392,7 +392,7 @@ Kt, t = polynomial_ring(K, "t");
 g = t^2 + 1;
 E, b = number_field(g, "b", cached = false);
 D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [(-3*a + 7)*b + 3*a, (5//2*a - 1)*b - 3//2*a + 4, 0]), map(E, [(3004*a - 4197)*b - 3088*a + 4348, (-1047//2*a + 765)*b + 5313//2*a - 3780, (-a - 1)*b + 3*a - 1]), map(E, [(728381*a - 998259)*b + 3345554*a - 4653462, (-1507194*a + 2168244)*b - 1507194*a + 2168244, (-5917//2*a - 915)*b - 4331//2*a - 488])];
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [(-3*a + 7)*b + 3*a, (5//2*a - 1)*b - 3//2*a + 4, 0]), map(E, [(3004*a - 4197)*b - 3088*a + 4348, (-1047//2*a + 765)*b + 5313//2*a - 3780, (-a - 1)*b + 3*a - 1]), map(E, [(728381*a - 998259)*b + 3345554*a - 4653462, (-1507194*a + 2168244)*b - 1507194*a + 2168244, (-5917//2*a - 915)*b - 4331//2*a - 488])];
 L = hermitian_lattice(E, gens, gram = D);
 mass(L)
 ```
@@ -402,7 +402,7 @@ mass(L)
 
 ## Representatives of a genus
 
-```@docs
+```@docs; canonical=false
 representative(::HermLocalGenus)
 Base.in(::HermLat, ::HermLocalGenus)
 representative(::HermGenus)
@@ -436,7 +436,7 @@ length(representatives(G1))
 
 ## Sum of genera
 
-```@docs
+```@docs; canonical=false
 direct_sum(::HermLocalGenus, ::HermLocalGenus)
 direct_sum(::HermGenus, ::HermGenus)
 ```
@@ -455,7 +455,7 @@ g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
 SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
 G1 = genus([g1], [(SEK[1], 1)]);
 D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
 L = hermitian_lattice(E, gens, gram = D);
 g2 = genus(L, p);
 G2 = genus(L);
@@ -467,9 +467,9 @@ direct_sum(G1, G2)
 
 ## Enumeration of genera
 
-```@docs
+```@docs; canonical=false
 hermitian_local_genera(E, p, ::Int, ::Int, ::Int, ::Int)
-hermitian_genera(::Hecke.NfRel, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.NfRelOrdIdl, Hecke.NfRelOrdFracIdl})
+hermitian_genera(::Hecke.RelSimpleNumField, ::Int, ::Dict{InfPlc, Int}, ::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal})
 ```
 
 ### Examples
@@ -487,7 +487,7 @@ hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
 
 ## Rescaling
 
-```@docs
+```@docs; canonical=false
 rescale(g::HermLocalGenus, a::Union{FieldElem, RationalUnion})
 rescale(G::HermGenus, a::Union{FieldElem, RationalUnion})
 ```

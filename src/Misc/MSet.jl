@@ -170,7 +170,7 @@ dict(s::MSet) = s.dict
 function Base.show(io::IO, s::MSet{T}) where {T}
   if isempty(s)
     print(io, "MSet{$(eltype(s))}()")
-  elseif get(io, :supercompact, false)
+  elseif is_terse(io)
     io = pretty(io)
     print(io, "Multi-set with ", ItemQuantity(length(s), "element"))
     if !(T == Any)
@@ -657,7 +657,7 @@ Base.eltype(::Type{MSubSetItr{T}}) where {T} = MSet{T}
 
 function Base.show(io::IO, M::MSubSetItr{T}) where {T}
   print(io, "Iterator for subsets of a multi-set")
-  if !get(io, :supercompact, false) && T != Any
+  if !is_terse(io) && T != Any
     print(io, " with elements of type $T")
   end
 end
@@ -722,7 +722,7 @@ Base.eltype(::Type{SubSetItr{T}}) where {T} = Set{T}
 
 function Base.show(io::IO, M::SubSetItr{T}) where {T}
   print(io, "Iterator for subsets of a set")
-  if !get(io, :supercompact, false) && T != Any
+  if !is_terse(io) && T != Any
     print(io, " with elements of type $T")
   end
 end
@@ -814,7 +814,7 @@ end
 
 function Base.show(io::IO, M::SubSetSizeItr{T}) where {T}
   print(io, "Iterator for subsets of size $(M.k) of a set")
-  if !get(io, :supercompact, false) && T != Any
+  if !is_terse(io) && T != Any
     print(io, " with elements of type $T")
   end
 end

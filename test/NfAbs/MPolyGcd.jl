@@ -15,6 +15,11 @@
     @test isone(gcd(f+1,g))
 
   end
+
+  # test non-integral defining equation
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 - 1//3*x + 1);
+  R, (u, v) = polynomial_ring(K, ["u", "v"])
+  @test gcd(a*u, a*u) == u
+  @test is_one(gcd(a*u, a^2*v))
 end
-
-

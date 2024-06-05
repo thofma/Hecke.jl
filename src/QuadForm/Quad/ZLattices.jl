@@ -13,6 +13,8 @@ ambient_space(L::ZZLat) = L.space
 
 base_ring(L::ZZLat) = FlintZZ
 
+base_ring_type(::Type{ZZLat}) = ZZRing
+
 base_field(L::ZZLat) = base_ring(gram_matrix(ambient_space(L)))
 
 ################################################################################
@@ -84,7 +86,7 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
   V = quadratic_space(QQ, gram)
   B = zero_matrix(QQ, length(gens), length(gens[1]))
   for i in 1:length(gens)
-    B[i,:] = gens[i]
+    B[i:i,:] = gens[i]
   end
   return lattice(V, B; isbasis = false)
 end
@@ -329,7 +331,7 @@ function orthogonal_submodule(L::ZZLat, C::QQMatrix)
   V = ambient_space(L)
   G = gram_matrix(V)
   M = B * G * transpose(C)
-  _, K = left_kernel(M)
+  K = kernel(M, side = :left)
   K = change_base_ring(ZZ, K*denominator(K))
   Ks = saturate(K)
   return lattice(V, Ks*B; check = false)
@@ -348,7 +350,7 @@ function show(io::IO, ::MIME"text/plain", L::ZZLat)
 end
 
 function show(io::IO, L::ZZLat)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Integer lattice")
   else
     print(io, "Integer lattice of rank $(rank(L)) and degree $(degree(L))")
@@ -471,8 +473,11 @@ end
 # documented in ../Lattices.jl
 
 function automorphism_group_order(L::ZZLat, depth::Int = -1, bacher_depth::Int = 0)
+  if isdefined(L, :automorphism_group_order)
+    return L.automorphism_group_order
+  end
   @req is_definite(L) "The lattice must be definite"
-  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
+  assert_has_automorphisms(L; depth, bacher_depth)
   return L.automorphism_group_order
 end
 
@@ -996,8 +1001,8 @@ function intersect(M::ZZLat, N::ZZLat)
   BMint = change_base_ring(FlintZZ, d * BM)
   BNint = change_base_ring(FlintZZ, d * BN)
   H = vcat(BMint, BNint)
-  k, K = left_kernel(H)
-  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  K = kernel(H, side = :left)
+  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return lattice(ambient_space(M), BI; check = false)
 end
 
@@ -1052,7 +1057,7 @@ function _to_number_field_lattice(L::ZZLat, K, V)
 end
 
 function _to_number_field_lattice(L::ZZLat;
-                                  K::AnticNumberField = rationals_as_number_field()[1],
+                                  K::AbsSimpleNumField = rationals_as_number_field()[1],
                                   V::QuadSpace = quadratic_space(K, gram_matrix(ambient_space(L))))
   return _to_number_field_lattice(L, K, V)
 end
@@ -1105,17 +1110,30 @@ end
 
 Return representatives for the isometry classes in the genus of `L`.
 """
-function genus_representatives(L::ZZLat)
-  s = denominator(scale(L))
-  L = rescale(L, s)
-  LL = _to_number_field_lattice(L)
-  K = base_field(L)
-  G = genus_representatives(LL)
-  res = ZZLat[]
-  for N in G
-    push!(res, _to_ZLat(N; K))
+function genus_representatives(_L::ZZLat)
+  if rank(_L) == 1
+    return ZZLat[_L]
   end
-  map!(L -> rescale(L, 1//s), res, res)
+  s = scale(_L)
+  if s != 1
+    L = rescale(_L, 1//s)
+  else
+    L = _L
+  end
+
+  if rank(L) == 2
+    LL = _to_number_field_lattice(L)
+    G = genus_representatives(LL)
+    res = ZZLat[]
+    for N in G
+      push!(res, _to_ZLat(N; K=QQ))
+    end
+  elseif is_definite(L)
+    res = enumerate_definite_genus(L)
+  else
+    res = spinor_genera_in_genus(L)
+  end
+  s != 1 && map!(L -> rescale(L, s), res, res)
   return res
 end
 
@@ -1124,6 +1142,42 @@ end
 #  Maximal integral lattice
 #
 ################################################################################
+
+@doc raw"""
+    even_sublattice(L::ZZLat) -> ZZLat
+
+Given an integral $\mathbb{Z}$-lattice `L`, i.e. such that the bilinear form
+on `L` is integral, return the largest even sublattice `L0` of `L`.
+
+If `L` is already even, then $L0 = L$.
+
+# Examples
+
+```jldoctest
+julia> L = integer_lattice(; gram=QQ[3 0; 0 16])
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[3    0]
+[0   16]
+
+julia> L0 = even_sublattice(L)
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[12    0]
+[ 0   16]
+
+julia> index(L, L0)
+2
+```
+"""
+function even_sublattice(L::ZZLat)
+  @req is_integral(L) "The bilinear form on the lattice must be integral"
+  is_even(L) && return L
+  diagL = matrix(GF(2; cached=false), rank(L), 1, diagonal(gram_matrix(L)))
+  K2 = kernel(diagL)
+  K = matrix(QQ, [lift(ZZ, a) for a in K2])
+  return lattice_in_same_ambient_space(L, K*basis_matrix(L)) + 2*L
+end
 
 # kept for testing
 function _maximal_integral_lattice(L::ZZLat)
@@ -1192,14 +1246,14 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
   G = change_base_ring(ZZ, gram_matrix(L))
   k = Native.GF(p)
   Gmodp = change_base_ring(k, G)
-  r, V = left_kernel(Gmodp)
-  VZ = lift(V[1:r,:])
+  V = kernel(Gmodp, side = :left)
+  VZ = lift(V)
   H = divexact(VZ * G * transpose(VZ), p)
   if p != 2
     Hk = change_base_ring(k, H)
     ok, __v = _isisotropic_with_vector_finite(Hk)
     if !ok
-      @assert r == 2
+      @assert nrows(V) == 2
       return true, L
     end
     _v = matrix(k, 1, length(__v), __v)
@@ -1213,12 +1267,12 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
     v = QQ(1, p) * change_base_ring(QQ,v)
   else
     p = ZZ(p)
-    R8 = residue_ring(ZZ, ZZ(8))
-    R4 = residue_ring(ZZ, ZZ(4))
+    R8 = residue_ring(ZZ, ZZ(8))[1]
+    R4 = residue_ring(ZZ, ZZ(4))[1]
     findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
-      v = zero_matrix(ZZ, 1, r)
+      v = zero_matrix(ZZ, 1, nrows(V))
       if !(i isa Nothing)
         v[1, i] = 1
         return true, v
@@ -1268,7 +1322,7 @@ Return if `Gnormal` is isotropic mod 4 and an isotropic vector.
 Assumes that G is in partial 2-adic normal form.
 """
 function _is_isotropic_with_vector_mod4(Gnormal)
-  R4 = residue_ring(ZZ, 4)
+  R4 = residue_ring(ZZ, 4)[1]
   G = change_base_ring(R4, Gnormal)
   D = diagonal(G)
   z = R4(0)
@@ -1467,7 +1521,7 @@ function kernel_lattice(L::ZZLat, f::MatElem; ambient_representation::Bool = tru
   else
     finL = f
   end
-  k, K = left_kernel(change_base_ring(ZZ, finL))
+  K = kernel(change_base_ring(ZZ, finL), side = :left)
   return lattice(ambient_space(L), K*basis_matrix(L); check = false)
 end
 
@@ -1795,7 +1849,7 @@ function _irreducible_components_gram(L::ZZLat)
   L = lll(L)
   V = ambient_space(L)
   B = basis_matrix(L)
-  B = [B[i,:] for i in 1:nrows(B)]
+  B = [B[i:i,:] for i in 1:nrows(B)]
   C = QQMatrix[]
   components = ZZLat[]
   while length(B) > 0
@@ -1835,13 +1889,13 @@ function _irreducible_components_short_vectors(L, ub)
     if s[2]>l
       # we hit a new length and should check if we can split
       l = s[2]
-      k, K = kernel(B*G)
+      K = kernel(B*G; side = :right)
       if isone(hnf(vcat(B,transpose(K))))
         break
       end
     end
 
-    if (B*G*s[1])[1] == 0
+    if iszero(B*G*s[1])
       continue
     end
     v = matrix(ZZ, 1, rank(L), s[1])
@@ -2046,7 +2100,7 @@ return the primitive closure $M \cap \mathbb{Q} N$ of `N` in `M`.
 ```jldoctest
 julia> M = root_lattice(:D, 6);
 
-julia> N = lattice_in_same_ambient_space(M, 3*basis_matrix(M)[1,:]);
+julia> N = lattice_in_same_ambient_space(M, 3*basis_matrix(M)[1:1,:]);
 
 julia> basis_matrix(N)
 [3   0   0   0   0   0]
@@ -2091,7 +2145,7 @@ julia> U = hyperbolic_plane_lattice(3);
 
 julia> bU = basis_matrix(U);
 
-julia> e1, e2 = bU[1,:], bU[2,:]
+julia> e1, e2 = bU[1:1,:], bU[2:2,:]
 ([1 0], [0 1])
 
 julia> N = lattice_in_same_ambient_space(U, e1 + e2)
@@ -2123,7 +2177,7 @@ end
 
 @doc raw"""
     glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
-                           -> Tuple{TorQuadModuleMor, TorQuadModuleMor, TorQuadModuleMor}
+                           -> Tuple{TorQuadModuleMap, TorQuadModuleMap, TorQuadModuleMap}
 
 Given three integral $\mathbb Z$-lattices `L`, `S` and `R`, with `S` and `R`
 primitive sublattices of `L` and such that the sum of the ranks of `S` and `R`
@@ -2190,7 +2244,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   gens = TorQuadModuleElem[]
   imgs = TorQuadModuleElem[]
   for i in 1:rank(L)
-    d = bL[i,:]
+    d = bL[i:i,:]
     g = DS(vec(collect(d * prS)))
     if all(is_zero, lift(g))
       continue
@@ -2207,7 +2261,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
 end
 
 @doc raw"""
-    overlattice(glue_map::TorQuadModuleMor) -> ZZLat
+    overlattice(glue_map::TorQuadModuleMap) -> ZZLat
 
 Given the glue map of a primitive extension of $\mathbb Z$-lattices
 $S+R \subseteq L$, return `L`.
@@ -2248,7 +2302,7 @@ julia> overlattice(glue) == M
 true
 ```
 """
-function overlattice(glue_map::TorQuadModuleMor)
+function overlattice(glue_map::TorQuadModuleMap)
   S = relations(domain(glue_map))
   R = relations(codomain(glue_map))
   glue = [lift(g) + lift(glue_map(g)) for g in gens(domain(glue_map))]
@@ -2361,7 +2415,7 @@ function reflection(gram::MatElem, v::MatElem)
   c = base_ring(gram)(2) * ((v * gram * transpose(v)))[1,1]^(-1)
   ref = zero_matrix(base_ring(gram), n, n)
   for k in 1:n
-    ref[k,:] = E[k,:] - c*(E[k,:] * gram * transpose(v))*v
+    ref[k:k,:] = E[k:k,:] - c*(E[k:k,:] * gram * transpose(v))*v
   end
   return ref
 end
@@ -2396,21 +2450,21 @@ function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)
   Trem = deepcopy(T)
   k = 1
   while k <= l
-    g = Trem[k,:]
-    bm = g - E[k,:]
+    g = Trem[k:k,:]
+    bm = g - E[k:k,:]
     qm = bm * G * transpose(bm)
     if valuation(qm, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bm)
       push!(reflection_vectors, bm)
       Trem = Trem * tau1
     else
-      bp = g + E[k,:]
+      bp = g + E[k:k,:]
       qp = bp * G * transpose(bp)
       @assert valuation(qp, p) <= gammaL[k] + 2*delta
       tau1 = reflection(G, bp)
-      tau2 = reflection(G, E[k,:])
+      tau2 = reflection(G, E[k:k,:])
       push!(reflection_vectors,bp)
-      push!(reflection_vectors,E[k,:])
+      push!(reflection_vectors,E[k:k,:])
       Trem = Trem * tau1 * tau2
     end
     k += 1
@@ -2536,7 +2590,7 @@ end
 function _norm_generator(gram_normal, p)
   # the norm generator is the last diagonal entry of the first jordan block.
   # except if the last 2x2 block is a hyperbolic plane
-  R = residue_ring(ZZ, p)
+  R = residue_ring(ZZ, p)[1]
   n = ncols(gram_normal)
   gram_normal = change_base_ring(ZZ, gram_normal)
   gram_modp = change_base_ring(R, gram_normal)
@@ -2550,10 +2604,10 @@ function _norm_generator(gram_normal, p)
   E = identity_matrix(QQ, n)
   q = gram_normal[i,i]
   if q!=0 && valuation(q, p) <= 1
-    return E[i,:]
+    return E[i:i,:]
   end
   @assert p==2
-  return E[i,:] + E[i-1,:]
+  return E[i:i,:] + E[i-1:i-1,:]
 end
 
 ################################################################################
@@ -2703,13 +2757,13 @@ true
 We illustrate how the Leech lattice is constructed from `N`, `h` and `v`.
 
 ```jldoctest leech
-julia> Zmodh = residue_ring(ZZ, h);
+julia> Zmodh, _ = residue_ring(ZZ, h);
 
 julia> V = ambient_space(N);
 
 julia> vG = map_entries(x->Zmodh(ZZ(x)), inner_product(V, v, basis_matrix(N)));
 
-julia> LN = transpose(lift(kernel(vG)[2]))*basis_matrix(N); # vectors whose inner product with `v` is divisible by `h`.
+julia> LN = transpose(lift(Hecke.kernel(vG; side = :right)))*basis_matrix(N); # vectors whose inner product with `v` is divisible by `h`.
 
 julia> lattice(V, LN) == intersect(L, N)
 true
@@ -2740,7 +2794,7 @@ function leech_lattice(niemeier_lattice::ZZLat)
   # sanity checks
   @hassert :Lattice 1 inner_product(V, rho, rho) == 2 * h * (h+1)
   @hassert :Lattice 1 all(h == coxeter_number(i...) for i in ade)
-  rhoB = solve_left(basis_matrix(N), rho)
+  rhoB = solve(basis_matrix(N), rho; side = :left)
   v = QQ(1, h) * transpose(rhoB)
   A = integer_lattice(gram=gram_matrix(N))
   c = QQ(2 + 2//h)
@@ -2750,7 +2804,7 @@ function leech_lattice(niemeier_lattice::ZZLat)
   @hassert :Lattice 1 length(sv)^2 == abs(det(ADE))
   G = reduce(vcat, sv)
   FG = vcat(F, G)
-  K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))))[2])
+  K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))), side = :right))
   B = change_base_ring(QQ, K) * FG
   B = hnf(FakeFmpqMat(B))
   B = QQ(1, B.den) * change_base_ring(QQ, B.num[end-23:end, :])

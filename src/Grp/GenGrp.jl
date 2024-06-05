@@ -10,7 +10,7 @@
 #
 ################################################################################
 
-@attributes mutable struct GrpGen <: Group
+@attributes mutable struct MultTableGroup <: Group
   identity::Int
   order::Int
   mult_table::Matrix{Int}
@@ -22,7 +22,7 @@
   isfromdb::Bool
   small_group_id::Tuple{Int, Int}
 
-  function GrpGen(M::Matrix{Int})
+  function MultTableGroup(M::Matrix{Int})
     z = new()
     z.mult_table = M
     z.identity = find_identity(z)
@@ -51,10 +51,10 @@
   end
 end
 
-struct GrpGenElem <: GroupElem
-  group::GrpGen
+struct MultTableGroupElem <: GroupElem
+  group::MultTableGroup
   i::Int
-  function GrpGenElem(group::GrpGen, i::Int)
+  function MultTableGroupElem(group::MultTableGroup, i::Int)
     og = order(group)
     if i > og
       error("There are only $og elements in $group")
@@ -72,14 +72,14 @@ end
 #
 ################################################################################
 
-mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
+mutable struct MultTableGroupHom <: Map{MultTableGroup, MultTableGroup, HeckeMap, MultTableGroup}
 
-  domain::GrpGen
-  codomain::GrpGen
-  img::Vector{GrpGenElem}
-  preimg::Vector{GrpGenElem}
+  domain::MultTableGroup
+  codomain::MultTableGroup
+  img::Vector{MultTableGroupElem}
+  preimg::Vector{MultTableGroupElem}
 
-  function GrpGenToGrpGenMor(G::GrpGen, H::GrpGen, image::Vector{GrpGenElem})
+  function MultTableGroupHom(G::MultTableGroup, H::MultTableGroup, image::Vector{MultTableGroupElem})
     z = new()
     z.domain = G
     z.codomain = H
@@ -89,18 +89,18 @@ mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
 end
 
 
-mutable struct GrpGenToGrpAbMor #<: Map
+mutable struct MultTableGroupToGroupHom #<: Map
 
-  domain::GrpGen
-  codomain::GrpAbFinGen
-  dict::Dict{GrpGenElem, GrpAbFinGenElem}
+  domain::MultTableGroup
+  codomain::FinGenAbGroup
+  dict::Dict{MultTableGroupElem, FinGenAbGroupElem}
 
-  function GrpGenToGrpAbMor(S::Vector{GrpGenElem}, I::Vector{GrpAbFinGenElem})
+  function MultTableGroupToGroupHom(S::Vector{MultTableGroupElem}, I::Vector{FinGenAbGroupElem})
     z = new()
     z.domain = parent(S[1])
     z.codomain = parent(I[1])
-    dict = Dict{GrpGenElem, GrpAbFinGenElem}()
-    op(t1::Tuple{GrpGenElem, GrpAbFinGenElem}, t2::Tuple{GrpGenElem, GrpAbFinGenElem}) = (t1[1] * t2[1], t1[2] + t2[2])
+    dict = Dict{MultTableGroupElem, FinGenAbGroupElem}()
+    op(t1::Tuple{MultTableGroupElem, FinGenAbGroupElem}, t2::Tuple{MultTableGroupElem, FinGenAbGroupElem}) = (t1[1] * t2[1], t1[2] + t2[2])
     close = closure([(S[i],I[i]) for i in 1:length(S)], op)
     for c in close
       dict[c[1]] = c[2]
@@ -109,7 +109,7 @@ mutable struct GrpGenToGrpAbMor #<: Map
     return z
   end
 
-  function GrpGenToGrpAbMor(dict::Dict{GrpGenElem, GrpAbFinGenElem})
+  function MultTableGroupToGroupHom(dict::Dict{MultTableGroupElem, FinGenAbGroupElem})
     z = new()
     z.domain = parent(first(dict)[1])
     z.codomain = parent(first(dict)[2])
@@ -118,13 +118,13 @@ mutable struct GrpGenToGrpAbMor #<: Map
   end
 end
 
-mutable struct GrpAbToGrpGenMor#<: Map
+mutable struct FinGenAbGroupToGroupHom#<: Map
 
-  domain::GrpAbFinGen
-  codomain::GrpGen
-  I::Vector{GrpGenElem}
+  domain::FinGenAbGroup
+  codomain::MultTableGroup
+  I::Vector{MultTableGroupElem}
 
-  function GrpAbToGrpGenMor(G::GrpAbFinGen, I::Vector{GrpGenElem})
+  function FinGenAbGroupToGroupHom(G::FinGenAbGroup, I::Vector{MultTableGroupElem})
     z = new()
     z.domain = G
     z.codomain = parent(I[1])
@@ -141,14 +141,41 @@ end
 ################################################################################
 @doc raw"""
      generic_group(G, op)
-Computes group of $G$ with operation $op$, implemented with multiplication
-table 'G.mult_table'.
-The elements are just 1..n and i * j = 'G.mult_table'[i, j].
+
+Compute a group on the set $G$ with operation $op$.
+
+Returns a triple `(Gen, GtoGen, GentoG)`, where `Gen` is a group,
+`GtoGen` is a dictionary mapping elements in `G` to elements of `Gen`,
+and `GentoG` is likewise but the other way around.
+
+# Examples
+```jldoctest
+julia> G = [1, -1, im, -im]
+4-element Vector{Complex{Int64}}:
+  1 + 0im
+ -1 + 0im
+  0 + 1im
+  0 - 1im
+
+julia> Gen, GtoGen, GentoG = generic_group(G, *);
+
+julia> Gen
+Generic group of order 4 with multiplication table
+
+julia> one(Gen)
+(1)
+
+julia> GentoG[one(Gen)]
+1 + 0im
+
+julia> GtoGen[-1]
+(2)
+```
 """
 function generic_group(G, op)
-  Gen = GrpGen(_multiplication_table(G, op))
-  GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
-  GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
+  Gen = MultTableGroup(_multiplication_table(G, op))
+  GentoG = Dict{MultTableGroupElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
+  GtoGen = Dict{eltype(G), MultTableGroupElem}(G[i] => Gen[i] for i in 1:length(G))
   return Gen, GtoGen, GentoG
 end
 
@@ -158,11 +185,11 @@ end
 #
 ###############################################################################
 
-function show(io::IO, m::GrpAbToGrpGenMor)
+function show(io::IO, m::FinGenAbGroupToGroupHom)
    print(io, "Group Morphism from\n", m.domain, "\nto ", m.codomain)
 end
 
-function show(io::IO, m::GrpGenToGrpAbMor)
+function show(io::IO, m::MultTableGroupToGroupHom)
    print(io, "Group Morphism from\n", m.domain, "\nto ", m.codomain)
 end
 
@@ -172,16 +199,14 @@ end
 #
 ################################################################################
 
-elem_type(::Type{GrpGen}) = GrpGenElem
+elem_type(::Type{MultTableGroup}) = MultTableGroupElem
 
-Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
+Base.hash(G::MultTableGroupElem, h::UInt) = Base.hash(G.i, h)
 
-Base.hash(G::GrpGen, h::UInt) = UInt(0)
+Base.hash(G::MultTableGroupHom, h::UInt) = UInt(0)
 
-Base.hash(G::GrpGenToGrpGenMor, h::UInt) = UInt(0)
-
-function Base.deepcopy_internal(g::GrpGenElem, dict::IdDict)
-  return GrpGenElem(g.group, g.i)
+function Base.deepcopy_internal(g::MultTableGroupElem, dict::IdDict)
+  return MultTableGroupElem(g.group, g.i)
 end
 
 ################################################################################
@@ -190,7 +215,7 @@ end
 #
 ################################################################################
 
-function parent(g::GrpGenElem)
+function parent(g::MultTableGroupElem)
   return g.group
 end
 
@@ -200,14 +225,14 @@ end
 #
 ################################################################################
 @doc raw"""
-     getindex(G::GrpGen, i::Int)
+     getindex(G::MultTableGroup, i::Int)
 Returns the $i$-th element of $G$.
 """
-function getindex(G::GrpGen, i::Int)
-  return GrpGenElem(G, i)
+function getindex(G::MultTableGroup, i::Int)
+  return MultTableGroupElem(G, i)
 end
 
-function getindex(G::GrpGenElem)
+function getindex(G::MultTableGroupElem)
   return G.i
 end
 
@@ -217,11 +242,11 @@ end
 #
 ################################################################################
 
-function ==(g::GrpGenElem, h::GrpGenElem)
+function ==(g::MultTableGroupElem, h::MultTableGroupElem)
   return parent(g) === parent(h) && g.i == h.i
 end
 
-function ==(g::GrpGenToGrpGenMor, h::GrpGenToGrpGenMor)
+function ==(g::MultTableGroupHom, h::MultTableGroupHom)
   return g.domain === h.domain && g.codomain === h.codomain && g.img == h.img
 end
 
@@ -231,11 +256,11 @@ end
 #
 ################################################################################
 
-function order(G::GrpGen)
+function order(G::MultTableGroup)
   return size(G.mult_table, 1)
 end
 
-length(G::GrpGen) = order(G)
+length(G::MultTableGroup) = order(G)
 
 ################################################################################
 #
@@ -243,7 +268,7 @@ length(G::GrpGen) = order(G)
 #
 ################################################################################
 
-function order(g::GrpGenElem)
+function order(g::MultTableGroupElem)
   k = 2
   h = g * g
   while h != g
@@ -259,7 +284,7 @@ end
 #
 ################################################################################
 
-function find_identity(G::GrpGen)
+function find_identity(G::MultTableGroup)
   return _find_identity(G.mult_table)
 end
 
@@ -268,14 +293,14 @@ function _find_identity(m::Matrix{Int})
 end
 
 @doc raw"""
-     id(G::GrpGen)
+     id(G::MultTableGroup)
 Returns the identity element of $G$.
 """
-function id(G::GrpGen)
-  return GrpGenElem(G, G.identity)
+function id(G::MultTableGroup)
+  return MultTableGroupElem(G, G.identity)
 end
 
-one(G::GrpGen) = id(G)
+one(G::MultTableGroup) = id(G)
 
 ################################################################################
 #
@@ -283,14 +308,14 @@ one(G::GrpGen) = id(G)
 #
 ################################################################################
 
-function *(g::GrpGenElem, h::GrpGenElem)
+function *(g::MultTableGroupElem, h::MultTableGroupElem)
   G = parent(g)
-  return GrpGenElem(G, G.mult_table[g.i, h.i])
+  return MultTableGroupElem(G, G.mult_table[g.i, h.i])
 end
 
-op(g::GrpGenElem, h::GrpGenElem) = g*h
+op(g::MultTableGroupElem, h::MultTableGroupElem) = g*h
 
-function ^(g::GrpGenElem, i::T) where T <: Union{Int64, ZZRingElem}
+function ^(g::MultTableGroupElem, i::T) where T <: Union{Int64, ZZRingElem}
   if i == 0
     return id(parent(g))
   end
@@ -315,11 +340,11 @@ end
 #
 ################################################################################
 
-iszero(a::GrpGenElem) = a == id(parent(a))
+iszero(a::MultTableGroupElem) = a == id(parent(a))
 
-isone(a::GrpGenElem) = a == id(parent(a))
+isone(a::MultTableGroupElem) = a == id(parent(a))
 
-is_identity(a::GrpGenElem) = a == id(parent(a))
+is_identity(a::MultTableGroupElem) = a == id(parent(a))
 
 ################################################################################
 #
@@ -327,7 +352,7 @@ is_identity(a::GrpGenElem) = a == id(parent(a))
 #
 ################################################################################
 
-function inv(g::GrpGenElem)
+function inv(g::MultTableGroupElem)
   G = parent(g)
   m = G.mult_table
   i = g.i
@@ -335,7 +360,7 @@ function inv(g::GrpGenElem)
   ide = id(G)
   for j in 1:l
     if m[i, j] == G.identity
-      return GrpGenElem(G, j)
+      return MultTableGroupElem(G, j)
     end
   end
   error("Not possible")
@@ -347,12 +372,12 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, G::GrpGen)
+function Base.show(io::IO, G::MultTableGroup)
   print(io, "Generic group of order ", order(G), " with multiplication table")
 end
 
-function Base.show(io::IO, g::GrpGenElem)
-  print(io, "($(g.i))\n")
+function Base.show(io::IO, g::MultTableGroupElem)
+  print(io, "($(g.i))")
 end
 
 ################################################################################
@@ -361,9 +386,9 @@ end
 #
 ################################################################################
 
-Base.eltype(::Type{GrpGen}) = GrpGenElem
+Base.eltype(::Type{MultTableGroup}) = MultTableGroupElem
 
-function Base.iterate(G::GrpGen, state::Int = 1)
+function Base.iterate(G::MultTableGroup, state::Int = 1)
   if state > G.order
     return nothing
   end
@@ -377,7 +402,7 @@ end
 #
 ################################################################################
 
-function gens(G::GrpGen)
+function gens(G::MultTableGroup)
   if isdefined(G, :gens)
     return [G[i] for i in G.gens]
   else
@@ -394,10 +419,10 @@ end
 ################################################################################
 
 @doc raw"""
-     _isnormal(H::Vector{GrpGenElem}) -> Bool
+     _isnormal(H::Vector{MultTableGroupElem}) -> Bool
 Check if $H$ is invariant under conjugation by the generators of the group.
 """
-function _isnormal(H::Vector{GrpGenElem})
+function _isnormal(H::Vector{MultTableGroupElem})
   S = gens(parent(H[1]))
   for s in S
     for h in H
@@ -411,11 +436,11 @@ function _isnormal(H::Vector{GrpGenElem})
 end
 
 @doc raw"""
-     _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem) -> Bool
+     _isnormal(H::Vector{MultTableGroupElem}, gen::MultTableGroupElem) -> Bool
 Check if the cyclic group $H$ with generator $gen$ is invariant under
 conjugation by the generators of the group.
 """
-function _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem)
+function _isnormal(H::Vector{MultTableGroupElem}, gen::MultTableGroupElem)
   S = gens(parent(H[1]))
   for s in S
     if !(inv(s) * gen * s in H)
@@ -428,9 +453,9 @@ end
 
 # Compute the cyclic subgroups naively.
 # TODO: Improve this
-function _cyclic_subgroups(G::GrpGen; normal::Bool = false)
-  res = Vector{GrpGenElem}[]
-  res_elem = GrpGenElem[]
+function _cyclic_subgroups(G::MultTableGroup; normal::Bool = false)
+  res = Vector{MultTableGroupElem}[]
+  res_elem = MultTableGroupElem[]
   idG = id(G)
   for g in G
     S = closure([g], *, idG)
@@ -459,19 +484,19 @@ end
 ################################################################################
 
 @doc raw"""
-     _subgroups_all(G::GrpGen; normal::Bool = false)
+     _subgroups_all(G::MultTableGroup; normal::Bool = false)
 Iteratively built up subgroups from cyclic groups.
 Any subgroup is of the form <C_1,...,C_k>, where k are cyclic subgroups.
 """
-function _subgroups_all(G::GrpGen; normal::Bool = false)
-  res = Vector{GrpGenElem}[]
-  res_gens = Vector{GrpGenElem}[]
+function _subgroups_all(G::MultTableGroup; normal::Bool = false)
+  res = Vector{MultTableGroupElem}[]
+  res_gens = Vector{MultTableGroupElem}[]
   cur_grps, Cgen = _cyclic_subgroups(G)
-  cur = Vector{GrpGenElem}[GrpGenElem[g] for g in Cgen]
+  cur = Vector{MultTableGroupElem}[MultTableGroupElem[g] for g in Cgen]
   old = cur
-  ngenext = Vector{GrpGenElem}[]
+  ngenext = Vector{MultTableGroupElem}[]
   while true
-    new = Vector{GrpGenElem}[]
+    new = Vector{MultTableGroupElem}[]
     for c in old
       for cy in Cgen
         n = push!(copy(c), cy)
@@ -499,31 +524,31 @@ function _subgroups_all(G::GrpGen; normal::Bool = false)
 end
 
 @doc raw"""
-     subgroups(G::GrpGen; order::Int = 0,
+     subgroups(G::MultTableGroup; order::Int = 0,
                               index::Int = 0,
                               normal::Bool = false,
                               conjugacy_classes::Bool = false)
 Returns subgroups of $G$ with embedding.
 """
-function subgroups(G::GrpGen; order::Int = 0,
+function subgroups(G::MultTableGroup; order::Int = 0,
                               index::Int = 0,
                               normal::Bool = false,
                               conjugacy_classes::Bool = false)
   H = _subgroups_all(G, normal = normal)
   if order > 0
-    HH = Vector{Vector{GrpGenElem}}([h for h in H if length(h) == order])
+    HH = Vector{Vector{MultTableGroupElem}}([h for h in H if length(h) == order])
   elseif index > 0
-    HH = Vector{Vector{GrpGenElem}}([h for h in H if divexact(length(G), length(h)) == index])
+    HH = Vector{Vector{MultTableGroupElem}}([h for h in H if divexact(length(G), length(h)) == index])
   else
     HH = H
   end
 
   if conjugacy_classes
-    HHH = Vector{Vector{GrpGenElem}}()
+    HHH = Vector{Vector{MultTableGroupElem}}()
     for S in HH
       new = true
       for g in G
-        Sg = sort!(GrpGenElem[g * s * inv(g) for s in S], by = x -> x.i)
+        Sg = sort!(MultTableGroupElem[g * s * inv(g) for s in S], by = x -> x.i)
         if any(isequal(Sg), HHH)
           new = false
           break
@@ -536,7 +561,7 @@ function subgroups(G::GrpGen; order::Int = 0,
     HH = HHH
   end
 
-  res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}(undef, length(HH))
+  res = Vector{Tuple{MultTableGroup, MultTableGroupHom}}(undef, length(HH))
   for i in 1:length(HH)
     res[i] = sub(G, HH[i])
   end
@@ -544,13 +569,13 @@ function subgroups(G::GrpGen; order::Int = 0,
 end
 
 @doc raw"""
-    sub(G::GrpGen, H::Vector{GrpGenElem})
+    sub(G::MultTableGroup, H::Vector{MultTableGroupElem})
 
 Assume that $H$ is a subgroup of $G$, compute a generic group and an embedding.
 """
-function sub(G::GrpGen, H::Vector{GrpGenElem})
+function sub(G::MultTableGroup, H::Vector{MultTableGroupElem})
   Hgen, = generic_group(H, *)
-  m = GrpGenToGrpGenMor(Hgen, G, H)
+  m = MultTableGroupHom(Hgen, G, H)
   return Hgen, m
 end
 
@@ -561,11 +586,11 @@ end
 ################################################################################
 
 @doc raw"""
-    is_abelian(G::GrpGen) -> Bool
+    is_abelian(G::MultTableGroup) -> Bool
 
 Returns whether $G$ is abelian.
 """
-function is_abelian(G::GrpGen)
+function is_abelian(G::MultTableGroup)
   return G.is_abelian
 end
 
@@ -574,11 +599,11 @@ function defines_abelian_group(m)
 end
 
 @doc raw"""
-    is_cyclic(G::GrpGen) -> Bool
+    is_cyclic(G::MultTableGroup) -> Bool
 
 Returns whether $G$ is cyclic.
 """
-function is_cyclic(G::GrpGen)
+function is_cyclic(G::MultTableGroup)
   return G.is_cyclic
 end
 
@@ -588,11 +613,11 @@ end
 #
 ################################################################################
 
-function normalizer(G::GrpGen, mH::GrpGenToGrpGenMor)
+function normalizer(G::MultTableGroup, mH::MultTableGroupHom)
   C = left_cosets(G, mH)
-  H = GrpGenElem[mH(h) for h in domain(mH)]
-  ge = GrpGenElem[mH(h) for h in gens(domain(mH))]
-  norm = GrpGenElem[]
+  H = MultTableGroupElem[mH(h) for h in domain(mH)]
+  ge = MultTableGroupElem[mH(h) for h in gens(domain(mH))]
+  norm = MultTableGroupElem[]
   for c in C
     is_norm = true
     for h in ge
@@ -611,10 +636,10 @@ function normalizer(G::GrpGen, mH::GrpGenToGrpGenMor)
   return sub(G, H)
 end
 
-function left_cosets(G::GrpGen, mH::GrpGenToGrpGenMor)
-  H = GrpGenElem[mH(h) for h in domain(mH)]
+function left_cosets(G::MultTableGroup, mH::MultTableGroupHom)
+  H = MultTableGroupElem[mH(h) for h in domain(mH)]
   GG = collect(G)
-  cosets = GrpGenElem[id(G)]
+  cosets = MultTableGroupElem[id(G)]
   setdiff!(GG, H)
   while !isempty(GG)
     h = pop!(GG)
@@ -624,10 +649,10 @@ function left_cosets(G::GrpGen, mH::GrpGenToGrpGenMor)
   return cosets
 end
 
-function right_cosets(G::GrpGen, mH::GrpGenToGrpGenMor)
-  H = GrpGenElem[mH(h) for h in domain(mH)]
+function right_cosets(G::MultTableGroup, mH::MultTableGroupHom)
+  H = MultTableGroupElem[mH(h) for h in domain(mH)]
   GG = collect(G)
-  cosets = GrpGenElem[id(G)]
+  cosets = MultTableGroupElem[id(G)]
   setdiff!(GG, H)
   while !isempty(GG)
     h = pop!(GG)
@@ -644,10 +669,10 @@ end
 ################################################################################
 
 @doc raw"""
-     quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
+     quotient(G::MultTableGroup, H::MultTableGroup, HtoG::MultTableGroupHom)
 Returns the quotient group $Q$ = $G$/$H$ with canonical map $G$ -> $Q$.
 """
-function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
+function quotient(G::MultTableGroup, H::MultTableGroup, HtoG::MultTableGroupHom)
   elems = elements(HtoG)
   if !_isnormal(elems)
       return @error("Subgroup is not normal")
@@ -673,7 +698,7 @@ function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
       M = M[:,vcat(1:j-1,j+1:end)]
   end
 
-  function quotient_op(A::Vector{GrpGenElem}, B::Vector{GrpGenElem})
+  function quotient_op(A::Vector{MultTableGroupElem}, B::Vector{MultTableGroupElem})
      i = getindex(A[1]*B[1])
      j = findfirst(x->x == i, M)[2]
      return getindex.([G],M[:,j])
@@ -681,13 +706,13 @@ function quotient(G::GrpGen, H::GrpGen, HtoG::GrpGenToGrpGenMor)
 
   Q,SetGtoQ,QtoSetG = generic_group([getindex.(Ref(G),M[:,i]) for i in 1:size(M)[2]], quotient_op)
 
-  image = Vector{GrpGenElem}(undef, order(G))
+  image = Vector{MultTableGroupElem}(undef, order(G))
   for i in 1:order(G)
     j = findfirst(x->x == i, M)[2]
     image[i] = SetGtoQ[getindex.([G],M[:,j])]
   end
 
-  return Q, GrpGenToGrpGenMor(G, Q, image)
+  return Q, MultTableGroupHom(G, Q, image)
 end
 
 #mainly for testing
@@ -697,17 +722,17 @@ function quotient_indx(a::Int64,b::Int64)
   return ResidueRingElem = sort([tuple(find_small_group(quotient(G, subgroups[i][1], subgroups[i][2])[1])[1]...) for i in 1:length(subgroups)])
 end
 
-function direct_product(G1::GrpGen, G2::GrpGen)
+function direct_product(G1::MultTableGroup, G2::MultTableGroup)
   S = [(g1,g2) for g1 in collect(G1), g2 in collect(G2)]
-  directproduct_op(g1::Tuple{GrpGenElem,GrpGenElem}, g2::Tuple{GrpGenElem,GrpGenElem}) = (g1[1] * g2[1], g1[2] * g2[2])
+  directproduct_op(g1::Tuple{MultTableGroupElem,MultTableGroupElem}, g2::Tuple{MultTableGroupElem,MultTableGroupElem}) = (g1[1] * g2[1], g1[2] * g2[2])
   DP, GprodtoDP, DPtoGprod = generic_group(S, directproduct_op)
   DPtoG1 = [DPtoGprod[DP[i]][1] for i in 1:length(DP)]
   DPtoG2 = [DPtoGprod[DP[i]][2] for i in 1:length(DP)]
-  return (DP, GrpGenToGrpGenMor(DP, G1, DPtoG1), GrpGenToGrpGenMor(DP, G2, DPtoG2))
+  return (DP, MultTableGroupHom(DP, G1, DPtoG1), MultTableGroupHom(DP, G2, DPtoG2))
 end
 
 # The commutator subgroup is generated by [g, h]^k, where g, h run through the generators of G and k through the elements of G.
-function commutator_subgroup(G::GrpGen)
+function commutator_subgroup(G::MultTableGroup)
   S = gens(G)
   gens_of_com = Set(elem_type(G)[])
   for g in S
@@ -723,14 +748,14 @@ function commutator_subgroup(G::GrpGen)
   return sub(G, H)
 end
 
-function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
-  ResidueRingElem = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}()
-  push!(ResidueRingElem,(G, GrpGenToGrpGenMor(G,G,elements(G))))
+function derived_series(G::MultTableGroup, n::Int64 = 2 * order(G))
+  ResidueRingElem = Vector{Tuple{MultTableGroup, MultTableGroupHom}}()
+  push!(ResidueRingElem,(G, MultTableGroupHom(G,G,elements(G))))
   Gtemp = G
   indx = 1
   while true
     Gtemp, GtempToGtemp = commutator_subgroup(Gtemp)
-    if Gtemp == ResidueRingElem[indx][1]
+    if order(Gtemp) == order(ResidueRingElem[indx][1])
       break
     end
     push!(ResidueRingElem,(Gtemp, GtempToGtemp))
@@ -739,17 +764,11 @@ function derived_series(G::GrpGen, n::Int64 = 2 * order(G))
   return ResidueRingElem
 end
 
-function ==(G::GrpGen, H::GrpGen)
-  # TODO: Understand why the following makes the tests not pass
-  #return G === H
-  return G.mult_table == H.mult_table
-end
+elements(G::MultTableGroup) = collect(G)
 
-elements(G::GrpGen) = collect(G)
+elements(HtoG::MultTableGroupHom) = unique(HtoG.img)
 
-elements(HtoG::GrpGenToGrpGenMor) = unique(HtoG.img)
-
-function psylow_subgroup(G::GrpGen, p::IntegerUnion)
+function sylow_subgroup(G::MultTableGroup, p::IntegerUnion)
   if !is_prime(p)
     error("$p not prime")
   end
@@ -764,13 +783,13 @@ end
 #
 ################################################################################
 
-function conjugacy_classes(G::GrpGen)
-  CC = Vector{Vector{GrpGenElem}}()
+function conjugacy_classes(G::MultTableGroup)
+  CC = Vector{Vector{MultTableGroupElem}}()
   for x in collect(G)
     if true in in.(Ref(x), CC)##immer
       break
     end
-    new_cc = Vector{GrpGenElem}()
+    new_cc = Vector{MultTableGroupElem}()
     for g in collect(G)
       elem = g * x * inv(g)
         if !(elem in new_cc)
@@ -788,7 +807,7 @@ end
 #
 ################################################################################
 
-function is_characteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
+function is_characteristic(G::MultTableGroup, mH::MultTableGroupHom)
   auts = automorphism_list(G)
   for aut in auts
     if !issubset(aut.img, mH.img)
@@ -798,21 +817,21 @@ function is_characteristic(G::GrpGen, mH::GrpGenToGrpGenMor)
   return true
 end
 
-function induces_to_subgroup(G::GrpGen, mH::GrpGenToGrpGenMor, aut::GrpGenToGrpGenMor)
+function induces_to_subgroup(G::MultTableGroup, mH::MultTableGroupHom, aut::MultTableGroupHom)
   H = mH.domain
-  return GrpGenToGrpGenMor(H, H, [preimage(mH, aut(mH(h))) for h in collect(H)])
+  return MultTableGroupHom(H, H, [preimage(mH, aut(mH(h))) for h in collect(H)])
 end
 
-function induces_to_quotient(G::GrpGen, mQ::GrpGenToGrpGenMor, aut::GrpGenToGrpGenMor)
+function induces_to_quotient(G::MultTableGroup, mQ::MultTableGroupHom, aut::MultTableGroupHom)
   Q = mQ.domain
-  return GrpGenToGrpGenMor(Q, Q, [mQ(aut(preimage(mQ, q))) for q in collect(Q)])
+  return MultTableGroupHom(Q, Q, [mQ(aut(preimage(mQ, q))) for q in collect(Q)])
 end
 
 @doc raw"""
-     max_order(G::GrpGen) -> (g::GrpGenElem, i::Int64)
+     max_order(G::MultTableGroup) -> (g::MultTableGroupElem, i::Int64)
 Returns an element of $G$ with maximal order and the corresponding order.
 """
-function max_order(G::GrpGen)
+function max_order(G::MultTableGroup)
   temp = id(G)
   temp_max = order(temp)
   for g in G
@@ -824,7 +843,7 @@ function max_order(G::GrpGen)
   return(temp, temp_max)
 end
 
-function gen_2_ab(G::GrpGen)
+function gen_2_ab(G::MultTableGroup)
   if !is_abelian(G)
       error("Given group is not abelian")
   end
@@ -837,7 +856,7 @@ function gen_2_ab(G::GrpGen)
 
   for pos_elem in pos
     Cycl_group, TupleToGroup, GroupToTuple = cycl_prod(pos_elem)
-    Gens = Vector{GrpGenElem}(undef,length(pos_elem))
+    Gens = Vector{MultTableGroupElem}(undef,length(pos_elem))
     Rels = [[j for i in 1:pos_elem[j]] for j in 1:length(pos_elem)]
     A = [0 for j in 1:length(pos_elem)]
     for i in 1:length(pos_elem)
@@ -849,11 +868,11 @@ function gen_2_ab(G::GrpGen)
     for mor in Hecke._morphisms_with_gens(Cycl_group, G, Gens, Rels)
       if is_bijective(mor)
         #due to construction alrdy in snf
-        GrpAb = GrpAbFinGen(pos_elem, true)
-        #GrpAbtoG = Dict{GrpAbFinGenElem, GrpGenElem}(x => mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in collect(GrpAb))
+        GrpAb = FinGenAbGroup(pos_elem, true)
+        #GrpAbtoG = Dict{FinGenAbGroupElem, MultTableGroupElem}(x => mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in collect(GrpAb))
         GrpAbtoG = [mor(TupleToGroup[Tuple(Int64.(x.coeff))]) for x in gens(GrpAb)]
-        GtoGrpAb = Dict{GrpGenElem, GrpAbFinGenElem}(G[i] => GrpAb([GroupToTuple[inv(mor)(G[i])]...]) for i in 1:length(G))
-        return (GrpAb, GrpGenToGrpAbMor(GtoGrpAb), GrpAbToGrpGenMor(GrpAb, GrpAbtoG))
+        GtoGrpAb = Dict{MultTableGroupElem, FinGenAbGroupElem}(G[i] => GrpAb([GroupToTuple[inv(mor)(G[i])]...]) for i in 1:length(G))
+        return (GrpAb, MultTableGroupToGroupHom(GtoGrpAb), FinGenAbGroupToGroupHom(GrpAb, GrpAbtoG))
       end
     end
   end
@@ -891,7 +910,7 @@ function cycl_prod(A::Vector{Int64})
   return generic_group(vec([i for i in it]), cycl_prod_op)
 end
 
-function orbit(G::GrpGen, action, x)
+function orbit(G::MultTableGroup, action, x)
   Gens = gens(G)
   L = [x]
   i = 1
@@ -908,10 +927,10 @@ function orbit(G::GrpGen, action, x)
   return L
 end
 
-function stabilizer(G::GrpGen, action, x::T) where T
+function stabilizer(G::MultTableGroup, action, x::T) where T
   Gens = gens(G)
-  S = Vector{GrpGenElem}()
-  D = Dict{T, GrpGenElem}()
+  S = Vector{MultTableGroupElem}()
+  D = Dict{T, MultTableGroupElem}()
   D[x] = id(G)
   L = [x]
   i = 1
@@ -936,7 +955,7 @@ end
 #
 ################################################################################
 
-function intersect(mH::GrpGenToGrpGenMor, mK::GrpGenToGrpGenMor)
+function intersect(mH::MultTableGroupHom, mK::MultTableGroupHom)
   @assert codomain(mH) == codomain(mK)
   H = domain(mH)
   K = domain(mK)
@@ -950,7 +969,7 @@ end
 #
 ################################################################################
 
-function center(G::GrpGen)
+function center(G::MultTableGroup)
   if is_abelian(G)
     return sub(G, collect(G))
   end

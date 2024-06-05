@@ -1,6 +1,6 @@
 ################################################################################
 #
-#          EllCrv/Torsion.jl : Computing torsion points on elliptic curves
+#          EllipticCurve/Torsion.jl : Computing torsion points on elliptic curves
 #
 # This file is part of Hecke.
 #
@@ -41,11 +41,11 @@
 ################################################################################
 
 @doc raw"""
-    order(P::EllCrvPt{nf_elem}) -> ZZRingElem
+    order(P::EllipticCurvePoint{AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Returns the order of the point $P$ or $0$ if the order is infinite.
 """
-function order(P::EllCrvPt{T}) where T<:Union{nf_elem, QQFieldElem}
+function order(P::EllipticCurvePoint{T}) where T<:Union{AbsSimpleNumFieldElem, QQFieldElem}
   if T==QQFieldElem
     N = 12
   else
@@ -71,21 +71,21 @@ end
 ################################################################################
 
 @doc raw"""
-    is_torsion_point(P::EllCrvPt{QQFieldElem}) -> Bool
+    is_torsion_point(P::EllipticCurvePoint{QQFieldElem}) -> Bool
 
 Returns whether the point $P$ is a torsion point.
 """
-function is_torsion_point(P::EllCrvPt{T}) where T <: Union{nf_elem,QQFieldElem}
+function is_torsion_point(P::EllipticCurvePoint{T}) where T <: Union{AbsSimpleNumFieldElem,QQFieldElem}
   o = order(P)
   return o != 0
 end
 
 @doc raw"""
-    is_torsion_point(P::EllCrvPt{fqPolyRepFieldElem}) -> Bool
+    is_torsion_point(P::EllipticCurvePoint{fqPolyRepFieldElem}) -> Bool
 
 Returns whether the point $P$ is a torsion point.
 """
-function is_torsion_point(P::EllCrvPt{fqPolyRepFieldElem})
+function is_torsion_point(P::EllipticCurvePoint{fqPolyRepFieldElem})
   return true
 end
 
@@ -97,12 +97,12 @@ end
 
 # via theorem of Lutz-Nagell
 @doc raw"""
-    torsion_points_lutz_nagell(E::EllCrv{QQFieldElem}) -> Vector{EllCrvPt}
+    torsion_points_lutz_nagell(E::EllipticCurve{QQFieldElem}) -> Vector{EllipticCurvePoint}
 
 Computes the rational torsion points of an elliptic curve using the
 >Lutz-Nagell theorem.
 """
-function torsion_points_lutz_nagell(F::EllCrv{QQFieldElem})
+function torsion_points_lutz_nagell(F::EllipticCurve{QQFieldElem})
 
   if F.short == false
     (G, trafo, ruecktrafo) = short_weierstrass_model(F)
@@ -126,7 +126,7 @@ function torsion_points_lutz_nagell(F::EllCrv{QQFieldElem})
 
   Zx, x = polynomial_ring(FlintZZ, "x")
 
-  _, _, _, a4, a6 = a_invars(E)
+  _, _, _, a4, a6 = a_invariants(E)
 
   # Lutz-Nagell: coordinates of torsion points need to be in ZZ
   for i = 1:length(ycand)
@@ -172,12 +172,12 @@ end
 
 # via division polynomials
 @doc raw"""
-    torsion_points_division_poly(E::EllCrv{QQFieldElem}) -> Array{EllCrvPt}
+    torsion_points_division_poly(E::EllipticCurve{QQFieldElem}) -> Array{EllipticCurvePoint}
 
 Computes the rational torsion points of a rational elliptic curve $E$ using
 division polynomials.
 """
-function torsion_points_division_poly(F::EllCrv{QQFieldElem})
+function torsion_points_division_poly(F::EllipticCurve{QQFieldElem})
 
   # if necessary, transform curve into short form
   if F.short == false
@@ -190,7 +190,7 @@ function torsion_points_division_poly(F::EllCrv{QQFieldElem})
   (E, trafo_int, trafo_rat) = integral_model(G)
 
   # curve has integer coefficients
-  _, _, _, A, B = map(numerator, a_invars(E))
+  _, _, _, A, B = map(numerator, a_invariants(E))
 
   torsionpoints = [infinity(E)]
 
@@ -266,21 +266,21 @@ function torsion_points_division_poly(F::EllCrv{QQFieldElem})
     end
   end
 
-  return torsionpoints::Vector{EllCrvPt{QQFieldElem}}
+  return torsionpoints::Vector{EllipticCurvePoint{QQFieldElem}}
 end
 
 # function for users
 @doc raw"""
-    torsion_points(E::EllCrv{QQFieldElem}) -> Vector{EllCrvPt{QQFieldElem}}
+    torsion_points(E::EllipticCurve{QQFieldElem}) -> Vector{EllipticCurvePoint{QQFieldElem}}
 
 Returns the rational torsion points of $E$.
 """
-function torsion_points(E::EllCrv{QQFieldElem})
+function torsion_points(E::EllipticCurve{QQFieldElem})
   if isdefined(E, :torsion_points)
-    return E.torsion_points::Vector{EllCrvPt{QQFieldElem}}
+    return E.torsion_points::Vector{EllipticCurvePoint{QQFieldElem}}
   end
 
-  t = torsion_points_division_poly(E::EllCrv{QQFieldElem})
+  t = torsion_points_division_poly(E::EllipticCurve{QQFieldElem})
   E.torsion_points = t
   return t
 end
@@ -292,8 +292,8 @@ end
 ################################################################################
 
 @doc raw"""
-    torsion_structure(E::EllCrv{QQFieldElem}) -> (A::Vector{ZZRingElem},
-                                           B::Vector{EllCrvPt{QQFieldElem}}
+    torsion_structure(E::EllipticCurve{QQFieldElem}) -> (A::Vector{ZZRingElem},
+                                           B::Vector{EllipticCurvePoint{QQFieldElem}}
 
 Compute the structure of the rational torsion group of an elliptic curve $E$.
 Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
@@ -302,7 +302,7 @@ $\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
 And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
 `B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
 """
-function torsion_structure(E::EllCrv{QQFieldElem})
+function torsion_structure(E::EllipticCurve{QQFieldElem})
   T = torsion_points(E)
   grouporder = length(T)
   orders = ZZRingElem[]
@@ -342,14 +342,14 @@ end
 ################################################################################
 
 @doc raw"""
-    torsion_bound(E::EllCrv{nf_elem}, n::Int) -> ZZRingElem
+    torsion_bound(E::EllipticCurve{AbsSimpleNumFieldElem}, n::Int) -> ZZRingElem
 
 
 Bound the order of the torsion subgroup of $E by considering
 the order of the reduction of $E$ modulo $n$ distinct primes
 with good reduction
 """
-function torsion_bound(E::EllCrv{nf_elem}, n::Int)
+function torsion_bound(E::EllipticCurve{AbsSimpleNumFieldElem}, n::Int)
   K = base_field(E)
   R = ring_of_integers(K)
   badp = bad_primes(E)
@@ -381,12 +381,12 @@ end
 
 #Adapted from Sage: ell_generic.py
 @doc raw"""
-    pr_torsion_basis(E::EllCrv{nf_elem}, p::ZZRingElem, r = Int) -> Vector{EllCrvPt}
+    pr_torsion_basis(E::EllipticCurve{AbsSimpleNumFieldElem}, p::ZZRingElem, r = Int) -> Vector{EllipticCurvePoint}
 
 Compute a basis for the p-power torsion subgroup. When r is given the algorithm stops searching after
 having found a basis that spans p^r points.
 """
-function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf_elem, QQFieldElem}
+function pr_torsion_basis(E::EllipticCurve{T}, p, r = typemax(Int)) where T <: Union{AbsSimpleNumFieldElem, QQFieldElem}
 
   if !is_prime(p)
     error("p should be a prime number")
@@ -511,10 +511,10 @@ function pr_torsion_basis(E::EllCrv{T}, p, r = typemax(Int)) where T <: Union{nf
 end
 
 #Returns [m, n] with m >n. This is inconsistent with the way torsion_structure
-#returns elements for EllCrv over QQ.
+#returns elements for EllipticCurve over QQ.
 @doc raw"""
-    torsion_structure(E::EllCrv{nf_elem}) -> (A::Vector{ZZRingElem},
-                                           B::Vector{EllCrvPt{nf_elem}}
+    torsion_structure(E::EllipticCurve{AbsSimpleNumFieldElem}) -> (A::Vector{ZZRingElem},
+                                           B::Vector{EllipticCurvePoint{AbsSimpleNumFieldElem}}
 
 Compute the structure of the rational torsion group of an elliptic curve $E$.
 Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
@@ -523,7 +523,7 @@ $\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
 And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
 `B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
 """
-function torsion_structure(E::EllCrv{nf_elem})
+function torsion_structure(E::EllipticCurve{AbsSimpleNumFieldElem})
 
   T1 = T2 = infinity(E)
   k1 = k2 = ZZRingElem(1)
@@ -562,7 +562,7 @@ end
 #
 ################################################################################
 
-function linearly_dependent(P1::EllCrvPt{T}, P2::EllCrvPt{T}) where T
+function linearly_dependent(P1::EllipticCurvePoint{T}, P2::EllipticCurvePoint{T}) where T
 
 #if !istorsion_point(P1)||!istorsion_point(P2)
 #  throw(DomainError, "Points need to be torsion_points")
@@ -590,7 +590,7 @@ end
 #
 ################################################################################
 """
-    division_polynomial_univariate(E::EllCrv, n::Int, [x]) -> Poly
+    division_polynomial_univariate(E::EllipticCurve, n::Int, [x]) -> Poly
 
 Compute the n-th univariate division polynomial of an elliptic curve defined
 over a field k following Mazur and Tate. By default the result is a univariate polynomial over the base ring of `E`.
@@ -603,7 +603,7 @@ A triple of objects is returned:
   univariate 2-torsion polynomial when n is even.
 - The complementary factor, i.e. the first output divided by the second output.
 """
-function division_polynomial_univariate(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
+function division_polynomial_univariate(E::EllipticCurve, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   R = parent(x)
 
@@ -612,7 +612,7 @@ function division_polynomial_univariate(E::EllCrv, n::S, x = polynomial_ring(bas
   if is_short_weierstrass_model(E)
     n == 0 ? poly = 0 : poly = divpol_g_short(E,n,x)
     if mod(n,2) == 0
-      _, _, _, A, B = a_invars(E)
+      _, _, _, A, B = a_invariants(E)
       twotorsfactor = 4*(x^3+A*x+B)
     else
       twotorsfactor = one(R)
@@ -620,7 +620,7 @@ function division_polynomial_univariate(E::EllCrv, n::S, x = polynomial_ring(bas
   else
     n == 0 ? poly = 0 : poly = divpol_g(E,n,x)
       if mod(n,2) == 0
-        b2, b4, b6 = b_invars(E)
+        b2, b4, b6 = b_invariants(E)
         twotorsfactor = 4*x^3+b2*x^2+2*b4*x+b6
       else
         twotorsfactor = one(R)
@@ -631,13 +631,13 @@ end
 
 
 """
-    division_polynomial(E::EllCrv, n::Int, x, y) -> Poly
+    division_polynomial(E::EllipticCurve, n::Int, x, y) -> Poly
 
 Compute the n-th division polynomial of an elliptic curve defined over a field
 k following Mazur and Tate. When x and or y are given the output is
 automatically evaluated using the given values.
 """
-function division_polynomial(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2], y = polynomial_ring(parent(x),"y")[2]) where S<:Union{Integer, ZZRingElem}
+function division_polynomial(E::EllipticCurve, n::S, x = polynomial_ring(base_field(E),"x")[2], y = polynomial_ring(parent(x),"y")[2]) where S<:Union{Integer, ZZRingElem}
   R = parent(y)
 
   if n == 0
@@ -651,7 +651,7 @@ function division_polynomial(E::EllCrv, n::S, x = polynomial_ring(base_field(E),
       return R(divpol_g_short(E,n,x))
     end
   else
-    a1, _, a3 = a_invars(E)
+    a1, _, a3 = a_invariants(E)
     if mod(n,2) == 0
       return (2*y + a1*x + a3)*divpol_g(E,n,x)
     else
@@ -661,10 +661,10 @@ function division_polynomial(E::EllCrv, n::S, x = polynomial_ring(base_field(E),
 end
 
 
-function divpol_g_short(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
+function divpol_g_short(E::EllipticCurve, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   Kx = parent(x)
-  _, _, _, A, B = a_invars(E)
+  _, _, _, A, B = a_invariants(E)
 
   B6sqr = (4*x^3+4*A*x+4*B)^2
 
@@ -689,11 +689,11 @@ function divpol_g_short(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[
   end
 end
 
-function divpol_g(E::EllCrv, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
+function divpol_g(E::EllipticCurve, n::S, x = polynomial_ring(base_field(E),"x")[2]) where S<:Union{Integer, ZZRingElem}
 
   Kx = parent(x)
 
-  b2, b4, b6, b8 = E.b_invars
+  b2, b4, b6, b8 = E.b_invariants
   B4 = 6*x^2+b2*x+b4
   B6sqr = (4*x^3+b2*x^2+2*b4*x+b6)^2
   B8 = 3*x^4 + b2*x^3 + 3*b4*x^2 + 3*b6*x + b8

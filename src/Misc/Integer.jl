@@ -34,62 +34,6 @@ function modord(a::Integer, m::Integer)
   return i
 end
 
-################################################################################
-#
-#  Chinese remaindering modulo UInts to ZZRingElem
-#
-################################################################################
-
-mutable struct fmpz_comb
-  primes::Ptr{UInt}
-  num_primes::Int
-  n::Int
-  comb::Ptr{Ptr{ZZRingElem}}
-  res::Ptr{Ptr{ZZRingElem}}
-  mod_n::UInt
-  mod_ninv::UInt
-  mod_norm::UInt
-
-  function fmpz_comb(primes::Vector{UInt})
-    z = new()
-    ccall((:fmpz_comb_init, libflint), Nothing, (Ref{fmpz_comb}, Ptr{UInt}, Int),
-      z, primes, length(primes))
-    finalizer(_fmpz_comb_clear_fn, z)
-    return z
-  end
-end
-
-function _fmpz_comb_clear_fn(z::fmpz_comb)
-  ccall((:fmpz_comb_clear, libflint), Nothing, (Ref{fmpz_comb},), z)
-end
-
-mutable struct fmpz_comb_temp
-  n::Int
-  comb_temp::Ptr{Ptr{ZZRingElem}}
-  temp::Ptr{ZZRingElem}
-  temp2::Ptr{ZZRingElem}
-
-  function fmpz_comb_temp(comb::fmpz_comb)
-    z = new()
-    ccall((:fmpz_comb_temp_init, libflint), Nothing,
-      (Ref{fmpz_comb_temp}, Ref{fmpz_comb}), z, comb)
-    finalizer(_fmpz_comb_temp_clear_fn, z)
-    return z
-  end
-end
-
-function _fmpz_comb_temp_clear_fn(z::fmpz_comb_temp)
-  ccall((:fmpz_comb_temp_clear, libflint), Nothing, (Ref{fmpz_comb_temp},), z)
-end
-
-
-function fmpz_multi_crt_ui!(z::ZZRingElem, a::Vector{UInt}, b::fmpz_comb, c::fmpz_comb_temp)
-  ccall((:fmpz_multi_CRT_ui, libflint), Nothing,
-    (Ref{ZZRingElem}, Ptr{UInt}, Ref{fmpz_comb}, Ref{fmpz_comb_temp}, Cint),
-    z, a, b, c, 1)
-  return z
-end
-
 function _fmpz_preinvn_struct_clear_fn(z::fmpz_preinvn_struct)
   ccall((:fmpz_preinvn_clear, libflint), Nothing, (Ref{fmpz_preinvn_struct},), z)
 end
@@ -104,8 +48,8 @@ end
 #
 ################################################################################
 
-mutable struct MapSUnitGrpZFacElem <: Map{GrpAbFinGen,FacElemMon{QQField},HeckeMap,MapSUnitGrpZFacElem}
-  header::MapHeader{GrpAbFinGen,FacElemMon{QQField}}
+mutable struct MapSUnitGrpZFacElem <: Map{FinGenAbGroup,FacElemMon{QQField},HeckeMap,MapSUnitGrpZFacElem}
+  header::MapHeader{FinGenAbGroup,FacElemMon{QQField}}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZFacElem()
@@ -117,8 +61,8 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-mutable struct MapSUnitGrpZ <: Map{GrpAbFinGen,QQField,HeckeMap,MapSUnitGrpZ}
-  header::MapHeader{GrpAbFinGen,QQField}
+mutable struct MapSUnitGrpZ <: Map{FinGenAbGroup,QQField,HeckeMap,MapSUnitGrpZ}
+  header::MapHeader{FinGenAbGroup,QQField}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZ()
@@ -131,8 +75,8 @@ function show(io::IO, mC::MapSUnitGrpZ)
 end
 
 @doc raw"""
-    sunit_group_fac_elem(S::Vector{ZZRingElem}) -> GrpAbFinGen, Map
-    sunit_group_fac_elem(S::Vector{Integer}) -> GrpAbFinGen, Map
+    sunit_group_fac_elem(S::Vector{ZZRingElem}) -> FinGenAbGroup, Map
+    sunit_group_fac_elem(S::Vector{Integer}) -> FinGenAbGroup, Map
 
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
@@ -153,7 +97,7 @@ function sunit_group_fac_elem(S::Vector{ZZRingElem})
 
   Sq = QQFieldElem[x for x = S]
 
-  function dexp(a::GrpAbFinGenElem)
+  function dexp(a::FinGenAbGroupElem)
     return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(S)])
   end
 
@@ -182,12 +126,12 @@ function preimage(f::MapSUnitGrpZFacElem, a::QQFieldElem)
 end
 
 function preimage(f::MapSUnitGrpZFacElem, a::FacElem)
-  return sum(GrpAbFinGenElem[e * preimage(f, k) for (k, e) = a.fac])
+  return sum(FinGenAbGroupElem[e * preimage(f, k) for (k, e) = a.fac])
 end
 
 @doc raw"""
-    sunit_group(S::Vector{ZZRingElem}) -> GrpAbFinGen, Map
-    sunit_group(S::Vector{Integer}) -> GrpAbFinGen, Map
+    sunit_group(S::Vector{ZZRingElem}) -> FinGenAbGroup, Map
+    sunit_group(S::Vector{Integer}) -> FinGenAbGroup, Map
 
 The $S$-unit group of $Z$ supported at $S$: the group of
 rational numbers divisible only by primes in $S$.
@@ -204,11 +148,11 @@ function sunit_group(S::Vector{ZZRingElem})
   mp = MapSUnitGrpZ()
   mp.idl = S
 
-  function dexp(a::GrpAbFinGenElem)
+  function dexp(a::FinGenAbGroupElem)
     return evaluate(image(mu, a))
   end
 
-  mp.header = MapHeader(u, FlintQQ, dexp, mu.header.preimage)
+  mp.header = MapHeader(u, FlintQQ, dexp, y->preimage(mu, y))
 
   return u, mp
 end
@@ -435,7 +379,7 @@ mutable struct Divisors{T}
   lf::MSet{T}
   s#::Iterator
   f::Function
-  U::GrpAbFinGen
+  U::FinGenAbGroup
   function Divisors(a::T; units::Bool=false, power::Int=1) where {T}
     r = new{T}()
     r.n = a
@@ -457,10 +401,10 @@ mutable struct Divisors{T}
     end
     return r
   end
-  function Divisors(a::NfOrdIdl; units::Bool=false, power::Int=1)
-    r = new{NfOrdIdl}()
+  function Divisors(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; units::Bool=false, power::Int=1)
+    r = new{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     r.n = a
-    r.lf = MSet{NfOrdIdl}()
+    r.lf = MSet{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     for (p, k) = factor(a)
       k = div(k, power)
       if k > 0
@@ -471,10 +415,10 @@ mutable struct Divisors{T}
     r.s = subsets(r.lf)
     return r
   end
-  function Divisors(a::FacElem{NfOrdIdl}; units::Bool=false, power::Int=1)
-    r = new{NfOrdIdl}()
+  function Divisors(a::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}; units::Bool=false, power::Int=1)
+    r = new{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     r.n = evaluate(a)
-    r.lf = MSet{NfOrdIdl}()
+    r.lf = MSet{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
     for (p, k) = factor(a)
       k = div(k, power)
       if k > 0
@@ -537,17 +481,16 @@ function Base.show(io::IO, D::Divisors)
   if isdefined(D, :U)
     print(io, " times $(D.U)")
   end
-  print(io, "\n")
 end
 
 @doc raw"""
-    unit_group(::ZZRing) -> GrpAbFinGen, Map
+    unit_group(::ZZRing) -> FinGenAbGroup, Map
 
 The unit group of $\mathbb{Z}$, i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
 """
 function unit_group(::ZZRing)
   G = abelian_group([2])
-  exp = function (z::GrpAbFinGenElem)
+  exp = function (z::FinGenAbGroupElem)
     return isodd(z[1]) ? ZZRingElem(-1) : ZZRingElem(1)
   end
   log = function (z::ZZRingElem)
@@ -557,13 +500,13 @@ function unit_group(::ZZRing)
 end
 
 @doc raw"""
-    unit_group(::Integers{T}) -> GrpAbFinGen, Map
+    unit_group(::Integers{T}) -> FinGenAbGroup, Map
 
 The unit group of , i.e. $C_2$ and the map translating between the group and $\mathbb{Z}$.
 """
 function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   G = abelian_group([2])
-  exp = function (z::GrpAbFinGenElem)
+  exp = function (z::FinGenAbGroupElem)
     return isodd(z[1]) ? T(-1) : T(1)
   end
   log = function (z::T)
@@ -808,21 +751,19 @@ function radical(a::T) where {T<:Integer}
 end
 
 function quo(::ZZRing, a::ZZRingElem)
-  R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(FlintZZ, R, x -> R(x), y->lift(y))
+  R, f = residue_ring(FlintZZ, a)
   return R, f
 end
 
 function quo(::ZZRing, a::Integer)
-  R = residue_ring(FlintZZ, a)
-  f = MapFromFunc(FlintZZ, R, x -> R(x), y->lift(y))
+  R, f = residue_ring(FlintZZ, a)
   return R, f
 end
 
 
-^(a::NfAbsOrdIdl, n::IntegerUnion) = Nemo._generic_power(a, n)
+^(a::AbsNumFieldOrderIdeal, n::IntegerUnion) = Nemo._generic_power(a, n)
 
-#^(a::NfRelOrdIdl, n::IntegerUnion)  = Nemo._generic_power(a, n)
+#^(a::RelNumFieldOrderIdeal, n::IntegerUnion)  = Nemo._generic_power(a, n)
 
 
 ################################################################################

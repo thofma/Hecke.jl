@@ -21,19 +21,19 @@ To access $V$ and $B$ see [`ambient_space(L::ZZLat)`](@ref) and [`basis_matrix(L
 
 ### From a gram matrix
 
-```@docs
+```@docs; canonical=false
 integer_lattice(B::QQMatrix)
 ```
 
 ### In a quadratic space
 
-```@docs
+```@docs; canonical=false
 lattice(V::QuadSpace{QQField, QQMatrix}, B::MatElem;)
 ```
 
 ### Special lattices
 
-```@docs
+```@docs; canonical=false
 root_lattice(::Symbol, ::Int)
 hyperbolic_plane_lattice(n::Union{Int64, ZZRingElem})
 integer_lattice(S::Symbol, n::Union{Int64, ZZRingElem})
@@ -49,13 +49,13 @@ See ([`representative(L::ZZGenus)`](@ref))
 
 ### Rescaling the Quadratic Form
 
-```@docs
+```@docs; canonical=false
 rescale(::ZZLat, ::RationalUnion)
 ```
 
 ## Attributes
 
-```@docs
+```@docs; canonical=false
 ambient_space(L::ZZLat)
 basis_matrix(L::ZZLat)
 gram_matrix(L::ZZLat)
@@ -63,7 +63,7 @@ rational_span(L::ZZLat)
 ```
 
 ## Invariants
-```@docs
+```@docs; canonical=false
 rank(L::ZZLat)
 det(L::ZZLat)
 
@@ -83,13 +83,13 @@ is_elementary(L::ZZLat, p::Union{Integer, ZZRingElem})
 For an integral lattice
 The genus of an integer lattice collects its local invariants.
 [`genus(::ZZLat)`](@ref)
-```@docs
+```@docs; canonical=false
 mass(L::ZZLat)
 genus_representatives(L::ZZLat)
 ```
 
 ### Real invariants
-```@docs
+```@docs; canonical=false
 signature_tuple(L::ZZLat)
 is_positive_definite(L::ZZLat)
 is_negative_definite(L::ZZLat)
@@ -97,14 +97,14 @@ is_definite(L::ZZLat)
 ```
 
 ## Isometries
-```@docs
+```@docs; canonical=false
 automorphism_group_generators(L::ZZLat)
 automorphism_group_order(L::ZZLat)
 is_isometric(L::ZZLat, M::ZZLat)
 is_locally_isometric(L::ZZLat, M::ZZLat, p::Int)
 ```
 # Root lattices
-```@docs
+```@docs; canonical=false
 root_lattice_recognition(L::ZZLat)
 root_lattice_recognition_fundamental(L::ZZLat)
 ADE_type(G::MatrixElem)
@@ -116,7 +116,7 @@ highest_root(ADE::Symbol, n)
 Most module operations assume that the lattices live in the same ambient space.
 For instance only lattices in the same ambient space compare.
 
-```@docs
+```@docs; canonical=false
 Base.:(==)(L1::ZZLat, L2::ZZLat)
 is_sublattice(M::ZZLat, N::ZZLat)
 is_sublattice_with_relations(M::ZZLat, N::ZZLat)
@@ -134,20 +134,20 @@ divisibility(::ZZLat, ::Union{Vector, QQMatrix})
 ## Embeddings
 
 ### Categorical constructions
-```@docs
+```@docs; canonical=false
 direct_sum(x::Vector{ZZLat})
 direct_product(x::Vector{ZZLat})
 biproduct(x::Vector{ZZLat})
 ```
 
 ### Orthogonal sublattices
-```@docs
+```@docs; canonical=false
 orthogonal_submodule(::ZZLat, ::ZZLat)
 irreducible_components(::ZZLat)
 ```
 
 ### Dual lattice
-```@docs
+```@docs; canonical=false
 dual(L::ZZLat)
 ```
 
@@ -155,22 +155,27 @@ dual(L::ZZLat)
 See [`discriminant_group(L::ZZLat)`](@ref).
 
 ### Overlattices
-```@docs
+```@docs; canonical=false
 glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
-overlattice(glue_map::TorQuadModuleMor)
+overlattice(glue_map::TorQuadModuleMap)
 local_modification(M::ZZLat, L::ZZLat, p)
 maximal_integral_lattice(L::ZZLat)
 ```
 
-### Sublattices defined by endomorphisms
+### Canonical sublattices
 ```@docs
+even_sublattice(::ZZLat)
+```
+
+### Sublattices defined by endomorphisms
+```@docs; canonical=false
 kernel_lattice(L::ZZLat, f::MatElem)
 invariant_lattice(L::ZZLat, G::Vector{<:MatElem})
 coinvariant_lattice(::ZZLat, ::Union{MatElem, Vector{<:MatElem}})
 ```
 
 ### Computing embeddings
-```@docs
+```@docs; canonical=false
 embed(S::ZZLat, G::ZZGenus)
 embed_in_unimodular(::ZZLat, ::IntegerUnion, ::IntegerUnion)
 ```
@@ -178,11 +183,11 @@ embed_in_unimodular(::ZZLat, ::IntegerUnion, ::IntegerUnion)
 ## LLL, Short and Close Vectors
 
 ### LLL and indefinite LLL
-```@docs
+```@docs; canonical=false
 lll(L::ZZLat; same_ambient::Bool = true)
 ```
 ### Short Vectors
-```@docs
+```@docs; canonical=false
 short_vectors
 shortest_vectors
 short_vectors_iterator
@@ -191,7 +196,7 @@ kissing_number(L::ZZLat)
 ```
 
 ### Close Vectors
-```@docs
+```@docs; canonical=false
 close_vectors(L::ZZLat, v::Vector, arg...; kw...)
 ```
 ---

@@ -15,4 +15,8 @@
     @test !isone(gen^p)
     @test !isone(gen^2)
   end
+
+  K, a = cyclotomic_field(13, cached = false)
+  O = maximal_order(K)
+  @test (@inferred length(Hecke._torsion_units_lattice_enum(O)[1])) == 26
 end

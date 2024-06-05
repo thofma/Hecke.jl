@@ -32,4 +32,10 @@
   K, a = number_field(f, cached = false)
   _, g = Hecke.polredabs(K)
   @test g == f
+
+  f = -x^3 - 14*x^2 - 13*x + 6
+  K, a = number_field(f, cached = false)
+  L, _ = simplify(K)
+  g = defining_polynomial(L)
+  @test is_monic(g) && is_one(denominator(g))
 end

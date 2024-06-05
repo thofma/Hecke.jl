@@ -202,7 +202,7 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
   end
 
   modu = p^prec
-  R = residue_ring(FlintZZ, modu, cached = false)
+  R = residue_ring(FlintZZ, modu, cached = false)[1]
   Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G) # this will probably fail
   D = deepcopy(Gmod)
 
@@ -851,7 +851,7 @@ end
 
 function _issquare(d::zzModRingElem, p)
   f = ZZ(modulus(parent(d)))
-  R = residue_ring(FlintZZ, f, cached = false)
+  R = residue_ring(FlintZZ, f, cached = false)[1]
   g = R(d)
   return _issquare(g, ZZ(p))
 end
@@ -942,8 +942,8 @@ function _normalize(G, p, normal_odd = true)
           j = pop!(non_squares)
           trafo = _normalize_odd_twobytwo(D[[i, j], [i, j]], p)
           _BB = trafo * B[[i, j], :]
-          B[i, :] = _BB[1, :]
-          B[j, :] = _BB[2, :]
+          B[i:i, :] = _BB[1:1, :]
+          B[j:j, :] = _BB[2:2, :]
           #B[[i, j], :] = trafo * B[[i, j], :]
           D[i, i] = 1
           D[j, j] = 1
@@ -1048,7 +1048,7 @@ function _normalize_twobytwo(G, p)
     error("Not a valid 2 x 2 block.")
   end
   scale = p^(_val(G[1, 2], p))
-  D = matrix(R, 2, 2, [divexact(d, R(scale)) for d in G]) # G is symmetric
+  D = map_entries(d -> divexact(d, R(scale)), G) # G is symmetric
   # now D is of the form
   # [2a b ]
   # [b  2c]

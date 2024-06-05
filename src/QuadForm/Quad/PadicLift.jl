@@ -21,10 +21,10 @@ Assumes that $G$ is a block diagonal matrix.
 """
 function _last_block_index(G::Union{zzModMatrix, ZZModMatrix}, p)
   n = nrows(G)
-  val = _min_val(G[n,:], p)
+  val = _min_val(G[n:n,:], p)
   val_current = val
   for k in 1:n-1
-    val_current = _min_val(G[n-k,:], p)
+    val_current = _min_val(G[(n-k):(n-k),:], p)
     if val != val_current
       return n-k+1, val, val_current
     end
@@ -144,7 +144,7 @@ function _solve_X_get_A_and_c(Y::fpMatrix, b, g)
   l = length(equations[1])
   equations = elem_type(k)[i for i in Iterators.flatten(equations)]
   A = matrix(k,r,l, equations)
-  c = A[:, l]
+  c = A[:, l:l]
   A = A[:, 1:end-1]
   return A, c
 end
@@ -183,8 +183,8 @@ function _solve_X_ker(Y::fpMatrix, b, g)
   n = ncols(Y)
   A, c = _solve_X_get_A_and_c(Y, b, g)
   Ker = dense_matrix_type(k)[]
-  r, K = right_kernel(A)
-  for i in 1:r
+  K = kernel(A; side = :right)
+  for i in 1:ncols(K)
     tmp = vec(collect(K[:,i]))
     X = matrix(k, n, n, tmp)
     push!(Ker, X)

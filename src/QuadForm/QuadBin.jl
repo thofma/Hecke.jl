@@ -1,5 +1,3 @@
-import Nemo: can_solve
-
 ###############################################################################
 #
 #   Constructor
@@ -34,12 +32,12 @@ function show(io::IO, ::MIME"text/plain", f::QuadBin)
 end
 
 function show(io::IO, f::QuadBin)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Binary quadratic form")
   else
     io = pretty(io)
     print(io, "Binary quadratic form over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), base_ring(f))
+    print(terse(io), Lowercase(), base_ring(f))
     print(io, ": ")
     _show(io, f, true)
   end
@@ -93,6 +91,8 @@ end
 ################################################################################
 
 base_ring(f::QuadBin{T}) where {T} = f.base_ring::parent_type(T)
+
+base_ring_type(::Type{QuadBin{T}}) where {T} = parent_type(T)
 
 ###############################################################################
 #

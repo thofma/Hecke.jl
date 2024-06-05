@@ -15,7 +15,7 @@ end
 function quo_gens(A, B)
   n, B = rref(transpose(B))
   B = transpose(sub(B, 1:n, 1:ncols(B)))
-  fl, T = can_solve_with_solution(A, B)  # A T = B
+  fl, T = can_solve_with_solution(A, B; side = :right)  # A T = B
   d, r = rref(transpose(T))
   t = sub(r, 1:d, 1:ncols(r))
   t = Hecke.reduce_mod(identity_matrix(base_ring(t), ncols(t)), t)
@@ -32,7 +32,7 @@ function rational_normal_form(M::T) where {T <: MatElem{S} where {S <: FieldElem
     m = (g^v)(M)
     this_g = zero_matrix(base_ring(M), nrows(M), 0)
     while true
-      d, km = nullspace(m)
+      km = kernel(m, side = :right)
       km = quo_gens(km, this_g)
       if ncols(km) == 0
         break

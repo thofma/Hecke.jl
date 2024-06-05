@@ -9,7 +9,7 @@
 # Note that the implementation is for right ideals, while the paper describes
 # it for left ideals.
 
-function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
+function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right, local_freeness::Bool = false)
   # only implemented for right ideals
   @assert side === :right
   if O != right_order(a)
@@ -25,10 +25,12 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
   n = dim(algebra(O))
   aa = denominator(a, O) * a
   aa.order = O
-  for (p, ) in factor(discriminant(O))
-    @vprintln :PIP 1 "Testing local freeness at $p"
-    if !is_locally_free(O, aa, p, side = :right)[1]::Bool
-      return false, zero(algebra(O))
+  if !local_freeness
+    for (p, ) in factor(discriminant(O))
+      @vprintln :PIP 1 "Testing local freeness at $p"
+      if !is_locally_free(O, aa, p, side = :right)[1]::Bool
+        return false, zero(algebra(O))
+      end
     end
   end
 
@@ -90,7 +92,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U::GrpAbFinGen, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{AlgAss{QQFieldElem},AlgAssElem{QQFieldElem,AlgAss{QQFieldElem}}}} = unit_group(OZ)
+  U::FinGenAbGroup, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem},AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}} = unit_group(OZ)
   @vprintln :PIP 1 "Solving principal ideal problem over maximal order..."
 
   #@show Q
@@ -98,7 +100,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
 
   #@show parent(normbeta) == domain(mQ)
   ttt = mQuni\(mQ(normbeta))
-  imgofK1 = GrpAbFinGenElem[ mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(b), ZtoA)))) for b in k1]
+  imgofK1 = FinGenAbGroupElem[ mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(b), ZtoA)))) for b in k1]
   imgofK1assub, m_imgofK1assub = sub(Quni, imgofK1)
   QbyK1, mQbyK1 = quo(Quni, imgofK1)
 
@@ -106,7 +108,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
 
   # This is O_C^* in Q/K1
   S, mS = sub(QbyK1, elem_type(QbyK1)[ mQbyK1(mQuni\(mQ(mU(U[i])::elem_type(OZ)))) for i in 1:ngens(U)])
-  fl, u = haspreimage(mS, mQbyK1(ttt))
+  fl, u = has_preimage_with_preimage(mS, mQbyK1(ttt))
   if !fl
     return false, zero(A)
   end
@@ -117,7 +119,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right)
   _u = prod([ mU(U[i])^u.coeff[1, i] for i in 1:length(u.coeff)])
   UU = _solve_norm_equation_over_center(OA, ZtoA(elem_in_algebra(_u::elem_type(OZ))))
 
-  fll, uu = haspreimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
+  fll, uu = has_preimage_with_preimage(mSS,  mQuni\(mQ(OZ(normred_over_center(elem_in_algebra(UU), ZtoA)))) - ttt)
 
   @assert fll
 
@@ -161,7 +163,7 @@ end
 function _solve_norm_equation_over_center_simple(M, x)
   A = algebra(M)
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = absolute_basis(M)
@@ -296,7 +298,7 @@ function _lift_norm_one_unit_simple(x, F)
     return one(A)
   end
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     @assert isdefined(A, :isomorphic_full_matrix_algebra)
     B, AtoB = A.isomorphic_full_matrix_algebra
     Mbas = basis(M)
@@ -380,7 +382,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   # the center is a number field
   #@show FinZA
   el, id = pseudo_basis(FinZA)[1]
-  fl, el2 = is_principal(id)
+  fl, el2 = is_principal_with_data(id)
   # now lift
 
   a = nice_order_ideal(M)
@@ -443,9 +445,9 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
 
   @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
 
-  R = residue_ring(FlintZZ, nn, cached = false)
+  R = residue_ring(FlintZZ, nn, cached = false)[1]
   li = _lift2(map_entries(u -> R(FlintZZ(u)), matrix(xwrtR)))
-  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, residue_ring(FlintZZ, nn))
+  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, residue_ring(FlintZZ, nn)[1])
 
   return (inv(c) * B(change_base_ring(FlintQQ, li)) * c)
 end
@@ -691,7 +693,7 @@ function _my_direct_product(algebras)
     push!(maps, BtoA)
     push!(pre_maps, AtoB)
   end
-  A = AlgAss(K, mt)
+  A = StructureConstantAlgebra(K, mt)
   A.decomposition = [ (algebras[i], hom(algebras[i], A, maps[i], pre_maps[i])) for i in 1:length(algebras) ]
   return A
 end

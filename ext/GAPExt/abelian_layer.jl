@@ -50,7 +50,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
       E.gen_index = QQFieldElem(1)
       E.disc = discriminant(E)
       set_attribute!(x[1], :maximal_order => E)
-      auts = Vector{NfToNfMor}(undef, 2)
+      auts = Vector{Hecke.automorphism_type(x[1])}(undef, 2)
       auts[1] = hom(x[1], x[1], gen(x[1]), check = false)
       auts[2] = x[2][1]
       Hecke.set_automorphisms(x[1], auts)
@@ -81,7 +81,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
     K, auts = _relative_to_absoluteQQ(x[1], x[2])
     if length(gtype) == 1
       #If the group is cyclic, I prefer to have a generator!
-      new_auts = Vector{NfToNfMor}(undef, 1)
+      new_auts = Vector{Hecke.automorphism_type(K)}(undef, 1)
       new_auts[1] = auts[1]
       for j = 2:length(auts)
         new_auts[1] *= auts[j]
@@ -116,7 +116,7 @@ function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::
   complex = iseven(expo) && !only_real
 
   #Now, the big loop
-  class_fields = Vector{Hecke.ClassField{MapRayClassGrp, GrpAbFinGenMap}}()
+  class_fields = Vector{Hecke.ClassField{MapRayClassGrp, FinGenAbGroupHom}}()
   for (i, k) in enumerate(l_conductors)
     if iszero(mod(i, 1000))
       pt = len - i
@@ -128,14 +128,14 @@ function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::
     end
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
-      s::GrpAbFinGenMap
-      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
+      s::FinGenAbGroupHom
+      C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, FinGenAbGroupHom}
       if Hecke._is_conductor_minQQ(C, n) && Hecke.discriminant_conductorQQ(O, C, k, absolute_discriminant_bound)
         push!(class_fields, C)
       end
     end
   end
-  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(class_fields))
+  fields = Vector{Tuple{Hecke.RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}(undef, length(class_fields))
   for i = 1:length(class_fields)
     @vprintln :Fields 1 "\e[1FComputing class field $(i) /$(length(class_fields))"
     C = class_fields[i]
@@ -181,7 +181,7 @@ function _construct_grp(IdH::GAP.GapObj, uncom::Int)
   return IdCheck
 end
 
-function max_ramified_prime(O::NfOrd, gtype::Vector{Int}, bound::ZZRingElem)
+function max_ramified_prime(O::AbsSimpleNumFieldOrder, gtype::Vector{Int}, bound::ZZRingElem)
   n = prod(gtype)
   fac = factor(n)
   m = Int(minimum(keys(fac.fac)))
@@ -195,9 +195,9 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
   K = F.field
   O = maximal_order(K)
   n = prod(gtype)
-  inf_plc = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
+  inf_plc = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}()
   if abs(discriminant(O))^n > absbound
-    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
+    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}}[]
   end
   bound = div(absbound, abs(discriminant(O))^n)
   @vprintln :Fields 2 ""
@@ -206,7 +206,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
   @vprintln :FieldsNonFancy 1 "Number of conductors: $(length(l_conductors))"
   if length(l_conductors) == 0
     @vprintln :Fields 1 ""
-    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
+    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}}[]
   end
   @vprintln :Fields 2 ""
   @vprint :Fields 1 "Computing class group of $(K.pol)"
@@ -217,9 +217,9 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
     inf_plc = real_places(K)
   end
   expo = lcm(gtype)
-  if length(l_conductors) == 1 && isone(l_conductors[1][1]) && isempty(l_conductors[1][2]) && !divisible(order(Cl)* (2^length(inf_plc)), ZZRingElem(n))
+  if length(l_conductors) == 1 && isone(l_conductors[1][1]) && isempty(l_conductors[1][2]) && !is_divisible_by(order(Cl)* (2^length(inf_plc)), ZZRingElem(n))
     @vprintln :Fields 1 ""
-    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
+    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}}[]
   end
   Hecke.allow_cache!(mCl)
   @vtime :Fields 3 rcg_ctx = Hecke.rayclassgrp_ctx(O, expo)
@@ -227,7 +227,7 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
   j = -1
   #first_group = true
   autos = F.generators_of_automorphisms
-  class_fields_with_act = Tuple{ClassField{MapRayClassGrp, GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}[]
+  class_fields_with_act = Tuple{ClassField{MapRayClassGrp, FinGenAbGroupHom}, Vector{FinGenAbGroupHom}}[]
   fun_sub = (x, y) -> quo(x, y, false)[2]
   for k in l_conductors
     j += 1
@@ -253,13 +253,13 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
     act_S = induce_action_on_subgroup(mS, act)
     imS = inv(mS)
     @vtime :Fields 3 ls = stable_subgroups(S, act_S, op = fun_sub, quotype = gtype)
-    Dcond = Dict{Int, Vector{GrpAbFinGenElem}}()
-    Ddisc = Dict{Tuple{Int, Int}, Vector{GrpAbFinGenElem}}()
+    Dcond = Dict{Int, Vector{FinGenAbGroupElem}}()
+    Ddisc = Dict{Tuple{Int, Int}, Vector{FinGenAbGroupElem}}()
     for s in ls
-      s::GrpAbFinGenMap
+      s::FinGenAbGroupHom
       @hassert :Fields 1 order(codomain(s)) == n
       codomain(s).exponent = expo
-      @vtime :Fields 4 C = ray_class_field(mr, imS*s)::ClassField{MapRayClassGrp, GrpAbFinGenMap}
+      @vtime :Fields 4 C = ray_class_field(mr, imS*s)::ClassField{MapRayClassGrp, FinGenAbGroupHom}
       fl = check_extension(C, bound, Dcond, Ddisc)
       if fl
         res_act = _action(s, act_S)
@@ -272,13 +272,13 @@ function _abelian_normal_extensions(F::FieldsTower, gtype::Vector{Int}, absbound
     @vprintln :Fields 3 "\n"
   end
   if isempty(class_fields_with_act)
-    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}[]
+    return Vector{Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}}[]
   end
   @vprint :Fields 1 "\e[1F$(Hecke.clear_to_eol())Sieving $(length(class_fields_with_act)) abelian extensions"
   candidates = check_abelian_extensions(class_fields_with_act, F, IdG)
   @vprintln :Fields 1 "$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
   t_candidates = findall(candidates)
-  res_cfields = ClassField{MapRayClassGrp, GrpAbFinGenMap}[class_fields_with_act[t_candidates[i]][1] for i = 1:length(t_candidates)]
+  res_cfields = ClassField{MapRayClassGrp, FinGenAbGroupHom}[class_fields_with_act[t_candidates[i]][1] for i = 1:length(t_candidates)]
   return res_cfields
 end
 
@@ -288,16 +288,16 @@ end
 #
 ################################################################################
 
-function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::Dict{Int, GAP.GapObj}, target_group::GAP.GapObj)
+function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClassGrp, FinGenAbGroupHom}}, autos::Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}, grp_to_be_checked::Dict{Int, GAP.GapObj}, target_group::GAP.GapObj)
 
   if isempty(class_fields)
     @vprint :Fields 1 "\e[1F$(Hecke.set_cursor_col())$(Hecke.clear_to_eol())"
-    return Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[]
+    return Tuple{Hecke.RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}[]
   end
   K = base_ring(class_fields[1])
   divisors_of_n = collect(keys(grp_to_be_checked))
   sort!(divisors_of_n)
-  pclassfields = Vector{Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}}(undef, length(divisors_of_n))
+  pclassfields = Vector{Vector{ClassField{MapRayClassGrp, FinGenAbGroupHom}}}(undef, length(divisors_of_n))
   right_grp = trues(length(class_fields))
   ind = 1
   for p in divisors_of_n
@@ -305,7 +305,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
     if iszero(length(it))
       break
     end
-    cfieldsp = Vector{ClassField{MapRayClassGrp, GrpAbFinGenMap}}(undef, length(class_fields))
+    cfieldsp = Vector{ClassField{MapRayClassGrp, FinGenAbGroupHom}}(undef, length(class_fields))
     for i in it
       cfieldsp[i] = Hecke.maximal_p_subfield(class_fields[i], Int(p))
     end
@@ -341,10 +341,10 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
   end
   it = findall(right_grp)
   if isempty(it)
-    return Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
+    return Vector{Tuple{RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}()
   end
   if length(divisors_of_n) == 1 || is_coprime(degree(class_fields[it[1]]), degree(K))
-    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
+    fields = Vector{Tuple{RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}(undef, length(it))
     ind = 1
     for i in it
       res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
@@ -356,7 +356,7 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
     end
   else
     #I need to check the isomorphism class of the Galois group
-    fields = Vector{Tuple{NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
+    fields = Vector{Tuple{RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}()
     for i in it
       res = Vector{typeof(class_fields[1])}(undef, length(divisors_of_n))
       for j = 1:length(divisors_of_n)
@@ -373,17 +373,17 @@ function from_class_fields_to_fields(class_fields::Vector{ClassField{MapRayClass
 
 end
 
-function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}, autos::Vector{NfToNfMor}, grp_to_be_checked::GAP.GapObj, right_grp)
+function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}}, autos::Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}, grp_to_be_checked::GAP.GapObj, right_grp)
 
   use_brauer = true
   it = findall(right_grp)
   K = base_field(class_fields[it[1]])
   OK = maximal_order(K)
-  if divisible(torsion_units_order(K), exponent(class_fields[it[1]]))
+  if is_divisible_by(torsion_units_order(K), exponent(class_fields[it[1]]))
     use_brauer = false
   end
 
-  fields = Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}[]
+  fields = Tuple{Hecke.RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}[]
   expo = Int(exponent(codomain(class_fields[it[1]].quotientmap)))
 
   if !use_brauer
@@ -404,7 +404,7 @@ function compute_fields(class_fields::Vector{Hecke.ClassField{Hecke.MapRayClassG
   return right_grp
 end
 
-function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfToNfMor}) where S where T
+function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}) where S where T
   if length(resul) == 1
     return resul[1].A, resul[1].AbsAutGrpA
   end
@@ -415,8 +415,8 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
     append!(pols, [to_univariate(Kx, resul[i].A.pol[w]) for w = 1:length(resul[i].A.pol)])
   end
   L, gL = number_field(pols, cached = false, check = false)
-  autL = Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}()
-  imgs_auts_base_field = Vector{Vector{Hecke.NfRelNSElem{nf_elem}}}(undef, length(autos))
+  autL = Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}()
+  imgs_auts_base_field = Vector{Vector{Hecke.RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
   for i = 1:length(autos)
     imgs_auts_base_field[i] = gens(L)
   end
@@ -455,7 +455,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{NfT
 
 end
 
-function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Vector{NfToNfMor})
+function set_up_cycl_ext(K::AbsSimpleNumField, n::Int, autK::Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)})
   fac = factor(n)
   for (p, v) in fac
     e = Int(p)^v
@@ -477,14 +477,14 @@ function set_up_cycl_ext(K::AnticNumberField, n::Int, autK::Vector{NfToNfMor})
 
 end
 
-function _action(t::Hecke.GrpAbFinGenMap, act::Vector{Hecke.GrpAbFinGenMap})
+function _action(t::Hecke.FinGenAbGroupHom, act::Vector{Hecke.FinGenAbGroupHom})
 
   T = codomain(t)
   S, mS = snf(T)
-  new_act = Vector{Hecke.GrpAbFinGenMap}(undef, length(act))
+  new_act = Vector{Hecke.FinGenAbGroupHom}(undef, length(act))
   for i = 1:length(act)
     res = mS.map*act[i].map*mS.imap
-    new_act[i] = Hecke.GrpAbFinGenMap(S, S, res)
+    new_act[i] = Hecke.FinGenAbGroupHom(S, S, res)
   end
   return new_act
 
@@ -556,7 +556,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
   end
   it = findall(right_grp)
   if isempty(it)
-    return Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}()
+    return Vector{Tuple{Hecke.RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}()
   end
   use_brauer = true
   if !is_normal_subfield || !iszero(mod(order(torsion_unit_group(base_ring(new_class_fields[it[1]]))[1]), exponent(new_class_fields[it[1]])))
@@ -578,7 +578,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     end
     maprel = hom(C1.A, C.A, mL, gens(C.A))
     autsrelC1 = Hecke.rel_auto(C1)
-    autsrelC = Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}(undef, length(autsrelC1))
+    autsrelC = Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}(undef, length(autsrelC1))
     for s = 1:length(autsrelC1)
       el = autsrelC1[s]
       autsrelC[s] = hom(C.A, C.A, [maprel(x) for x in image_generators(el)])
@@ -595,7 +595,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
     end
   end
   it = findall(right_grp)
-  fields = Vector{Tuple{Hecke.NfRelNS{nf_elem}, Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem}}}(undef, length(it))
+  fields = Vector{Tuple{Hecke.RelNonSimpleNumField{AbsSimpleNumFieldElem}, Vector{Hecke.morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}}}(undef, length(it))
   ind = 1
   for i in it
     C = class_fields[i]
@@ -606,7 +606,7 @@ function computing_over_subfields(class_fields, subfields, idE, autos, right_grp
 end
 
 
-function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctxK, it, ab_invariants::Vector{Int})
+function translate_extensions(mL::Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField), class_fields, new_class_fields, ctxK, it, ab_invariants::Vector{Int})
 
   to_be_done = Int[]
   L = domain(mL)
@@ -636,7 +636,7 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     #I take the intersection of the modulus of C with L
     mR = C.rayclassgroupmap
     fM0 = copy(mR.fact_mod)
-    fm0 = Dict{NfOrdIdl, Int}()
+    fm0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
     for (p, v) in fM0
       p1 = Hecke.intersect_prime(mL, p)
       if !haskey(fm0, p1)
@@ -683,8 +683,8 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
     end
     #Now, the norm group of K over L
     @vtime :Fields 3 ngL, mngL = Hecke.norm_group(mL, mr, prod(ab_invariants_mod))
-    @hassert :Fields 1 divisible(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
-    if !divisible(order(ngL), degree(C)) || !divisible(exponent(C), n)
+    @hassert :Fields 1 is_divisible_by(divexact(ZZRingElem(degree(codomain(mL))), degree(domain(mL))), divexact(order(r), order(ngL)))
+    if !is_divisible_by(order(ngL), degree(C)) || !is_divisible_by(exponent(C), n)
       push!(to_be_done, indclf)
       continue
     end
@@ -710,15 +710,15 @@ function translate_extensions(mL::NfToNfMor, class_fields, new_class_fields, ctx
       ctxK.class_group_map.small_gens = find_gens(pseudo_inv(ctxK.class_group_map), PrimesSet(101, -1))[1]
     end
     @vtime :Fields 3 lP, gS = Hecke.find_gens(mRM, coprime_to = minimum(defining_modulus(mR)[1]))
-    listn = NfOrdIdl[norm(mL, x) for x in lP]
+    listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mL, x) for x in lP]
     # Create the map between R and r by taking norms
-    preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
+    preimgs = Vector{FinGenAbGroupElem}(undef, length(listn))
     for i = 1:length(preimgs)
       preimgs[i] = mr\listn[i]
     end
     proj = hom(gS, preimgs)
     #compute the norm group of C in RM
-    prms = Vector{GrpAbFinGenElem}(undef, length(lP))
+    prms = Vector{FinGenAbGroupElem}(undef, length(lP))
     for i = 1:length(lP)
       prms[i] = C.quotientmap(mR\lP[i])
     end
@@ -760,11 +760,11 @@ function create_sub(ss, iso, PermGAP, auts, K)
     el = lS1[j]
     inds[j] = findfirst(x -> x == el, PermGAP)
   end
-  mL = Hecke.fixed_field(K, NfToNfMor[auts[i] for i in inds])[2]
+  mL = Hecke.fixed_field(K, Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[auts[i] for i in inds])[2]
   return mL
 end
 
-function compute_subfields(K::AnticNumberField, E, H, S)
+function compute_subfields(K::AbsSimpleNumField, E, H, S)
 
   proj = GAP.Globals.NaturalHomomorphismByNormalSubgroup(E, H)
   Hn = GAP.Globals.ImagesSource(proj)
@@ -794,7 +794,7 @@ function translate_class_field_down(subfields, class_fields, it, ab_invariants)
   new_class_fields = similar(class_fields)
   #Now, I translate the fields over the subfields.
   to_be_done = Int[i for i in it]
-  created_subfields = NfToNfMor[]
+  created_subfields = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
   K = base_field(class_fields[to_be_done[1]])
   OK = maximal_order(K)
   ctxK = Hecke.rayclassgrp_ctx(OK, exponent(class_fields[to_be_done[1]]))
@@ -823,7 +823,7 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
       mL = subfields[indsubf]
     end
     L = domain(mL)
-    D = Dict{Int, NfToNfMor}()
+    D = Dict{Int, Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}()
     for j = 1:length(new_class_fields[i].cyc)
       d = degree(new_class_fields[i].cyc[j])
       if !haskey(D, d)
@@ -843,21 +843,21 @@ function translate_fields_up(class_fields, new_class_fields, subfields, it)
         D[d] = mp
       end
     end
-    cyc = Vector{Hecke.ClassField_pp{Hecke.MapRayClassGrp, GrpAbFinGenMap}}(undef, length(C1.cyc))
+    cyc = Vector{Hecke.ClassField_pp{Hecke.MapRayClassGrp, FinGenAbGroupHom}}(undef, length(C1.cyc))
     for j = 1:length(cyc)
       Ccyc = C1.cyc[j]
       d = degree(Ccyc)
       #First, easy: the degree
-      Cpp = Hecke.ClassField_pp{Hecke.MapRayClassGrp, GrpAbFinGenMap}()
+      Cpp = Hecke.ClassField_pp{Hecke.MapRayClassGrp, FinGenAbGroupHom}()
       Cpp.rayclassgroupmap = C.rayclassgroupmap
       Cpp.degree = d
       #Then, the fac elem corresponding to the generator of the Kummer Extension
-      Cpp.a = FacElem(Dict{nf_elem, ZZRingElem}(D[d](x) => v for (x, v) in Ccyc.a))
+      Cpp.a = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}(D[d](x) => v for (x, v) in Ccyc.a))
       #Now, the Kummer extension
       Lzeta = codomain(D[d])
       Lt = polynomial_ring(Lzeta, "t", cached = false)[1]
       d1 = degree(Ccyc.K)
-      coeffs = Vector{nf_elem}(undef, d1 + 1)
+      coeffs = Vector{AbsSimpleNumFieldElem}(undef, d1 + 1)
       coeffs[1] = D[d](coeff(Ccyc.K.pol, 0))
       for s = 2:length(coeffs)-1
         coeffs[s] = zero(Lzeta)

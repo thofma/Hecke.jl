@@ -8,7 +8,7 @@ import Base.Vector
 
 function SRowSpace(R::Ring; cached = true)
   T = elem_type(R)
-  return SRowSpace{T}(R)
+  return SRowSpace{T}(R, cached)
 end
 
 base_ring(A::SRow{ZZRingElem}) = FlintZZ
@@ -24,6 +24,37 @@ function base_ring(A::SRow{T}) where {T}
     error("Base ring of empty row not defined")
   end
 end
+
+base_ring_type(::Type{SRow{T}}) where {T} = parent_type(T)
+
+
+@doc raw"""
+    sparse_row_type(a)
+
+Return the type of the sparse row type of the given element, element type, parent or parent type $a$.
+
+# Examples
+```jldoctest
+julia> x = sparse_row(QQ)
+Sparse row with positions Int64[] and values QQFieldElem[]
+
+julia> sparse_row_type(QQ) == typeof(x)
+true
+
+julia> sparse_row_type(zero(QQ)) == typeof(x)
+true
+
+julia> sparse_row_type(typeof(QQ)) == typeof(x)
+true
+
+julia> sparse_row_type(typeof(zero(QQ))) == typeof(x)
+true
+```
+"""
+sparse_row_type(::T) where {T <: Union{Ring, RingElem}} = sparse_row_type(T)
+sparse_row_type(::Type{T}) where {T <: Ring} = sparse_row_type(elem_type(T))
+sparse_row_type(::Type{T}) where {T <: RingElem} = SRow{T, sparse_inner_type(T)}
+
 
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 
@@ -42,13 +73,13 @@ function sparse_row(R::NCRing)
   return SRow(R)
 end
 
-const _sort = sort
 @doc raw"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
 
 Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
 The elements $x_i$ must belong to the ring $R$.
 """
+
 function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
@@ -62,6 +93,7 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
 where $J = (i_j, x_j)_j$.
 """
+
 function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
@@ -87,6 +119,7 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
 $J = (i_j)_j$ and $V = (x_j)_j$.
 """
+
 function sparse_row(R::NCRing, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
   if sort && length(pos) > 1
     p = sortperm(pos)
@@ -444,8 +477,15 @@ function scale_row_right!(a::SRow{T}, b::T) where T
   if isone(b)
     return a
   end
-  for i=1:length(a.pos)
+  i = 1
+  while i <= length(a)
     a.values[i] *= b
+    if iszero(a.values[i])
+      deleteat!(a.values, i)
+      deleteat!(a.pos, i)
+    else
+     i += 1
+    end
   end
   return a
 end

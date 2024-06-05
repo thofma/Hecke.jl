@@ -41,7 +41,7 @@
    
     f = x^6+3*x+5
     C = @inferred HyperellipticCurve(f)
-    P = @inferred points_with_x(C, 1)
+    P = @inferred points_with_x_coordinate(C, 1)
     @test C([1, -3, 1]) in P && C([1, 3, 1]) in P
   
     @test C([-5*20, 125*20^3 , 3*20]) == C([-5, 125, 3])
@@ -54,7 +54,7 @@
    
     f = x^6+3*x+5
     C = @inferred HyperellipticCurve(f)
-    P = @inferred points_with_x(C, 8)
+    P = @inferred points_with_x_coordinate(C, 8)
     @test C([F(8), F(19), F(1)]) in P && C([F(8), F(18), F(1)]) in P
   
     @test C([F(8), F(19), F(1)]) == C([F(8)*5, F(19)*5^3, F(1)*5])

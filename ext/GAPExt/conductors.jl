@@ -79,7 +79,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
   D = F.isomorphism
   n = prod(st)
   O = maximal_order(F)
-  inertia_subgroups = Dict{ZZRingElem, Vector{NfToNfMor}}()
+  inertia_subgroups = Dict{ZZRingElem, Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}()
   for p in lp
     lP = prime_decomposition(O, p)
     Hp = inertia_subgroup(lP[1][1])

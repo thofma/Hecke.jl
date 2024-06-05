@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function basis_matrix(A::Vector{nf_elem}, ::Type{FakeFmpqMat})
+function basis_matrix(A::Vector{AbsSimpleNumFieldElem}, ::Type{FakeFmpqMat})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -28,7 +28,7 @@ function basis_matrix(A::Vector{nf_elem}, ::Type{FakeFmpqMat})
   return FakeFmpqMat(M, deno)
 end
 
-function basis_matrix(A::Vector{nf_elem})
+function basis_matrix(A::Vector{AbsSimpleNumFieldElem})
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
@@ -49,22 +49,22 @@ end
 #
 ################################################################################
 
-function set_den!(a::nf_elem, d::ZZRingElem)
+function set_den!(a::AbsSimpleNumFieldElem, d::ZZRingElem)
   ccall((:nf_elem_set_den, libantic), Nothing,
-        (Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}),
+        (Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}),
         a, d, parent(a))
 end
 
-function set_num_coeff!(a::nf_elem, i::Int, b::ZZRingElem)
+function set_num_coeff!(a::AbsSimpleNumFieldElem, i::Int, b::ZZRingElem)
   ccall((:_nf_elem_set_coeff_num_fmpz, libantic), Nothing,
-        (Ref{nf_elem}, Int, Ref{ZZRingElem}, Ref{AnticNumberField}),
+        (Ref{AbsSimpleNumFieldElem}, Int, Ref{ZZRingElem}, Ref{AbsSimpleNumField}),
         a, i, b, parent(a))
 end
 
-function gen!(r::nf_elem)
+function gen!(r::AbsSimpleNumFieldElem)
    a = parent(r)
    ccall((:nf_elem_gen, libantic), Nothing,
-         (Ref{nf_elem}, Ref{AnticNumberField}), r, a)
+         (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), r, a)
    return r
 end
 
@@ -76,13 +76,13 @@ end
 ################################################################################
 
 @doc raw"""
-    norm_div(a::nf_elem, d::ZZRingElem, nb::Int) -> QQFieldElem
+    norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int) -> QQFieldElem
 
 Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
 
 Typically, `a` is an element of some ideal with norm `d`.
 """
-function norm_div(a::nf_elem, d::ZZRingElem, nb::Int)
+function norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int)
    z = QQFieldElem()
    # TODO:
    #CF the resultant code has trouble with denominators,
@@ -112,7 +112,7 @@ function norm_div(a::nf_elem, d::ZZRingElem, nb::Int)
    end
    de = denominator(a)
    ccall((:nf_elem_norm_div, libantic), Nothing,
-         (Ref{QQFieldElem}, Ref{nf_elem}, Ref{AnticNumberField}, Ref{ZZRingElem}, UInt),
+         (Ref{QQFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}, Ref{ZZRingElem}, UInt),
          z, (a*de), a.parent, (d*de^n), UInt(nb))
    return z
 end
@@ -125,12 +125,12 @@ end
 
 # TODO: Use fits(Int, n) and then split into ZZModRingElem/zzModRingElem case
 @doc raw"""
-    is_norm_divisible(a::nf_elem, n::ZZRingElem) -> Bool
+    is_norm_divisible(a::AbsSimpleNumFieldElem, n::ZZRingElem) -> Bool
 
 Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is
 an integer.
 """
-function is_norm_divisible(a::nf_elem, n::ZZRingElem)
+function is_norm_divisible(a::AbsSimpleNumFieldElem, n::ZZRingElem)
   K = parent(a)
   if !is_coprime(denominator(K.pol), n)
     na = norm(a)
@@ -144,19 +144,19 @@ function is_norm_divisible(a::nf_elem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)[1]
     R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = residue_ring(FlintZZ, m, cached = false)
+  R = residue_ring(FlintZZ, m, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
 end
 
 #In this version, n is supposed to be a prime power
-function is_norm_divisible_pp(a::nf_elem, n::ZZRingElem)
+function is_norm_divisible_pp(a::AbsSimpleNumFieldElem, n::ZZRingElem)
   K = parent(a)
   if !is_coprime(denominator(K.pol), n)
     na = norm(a)
@@ -170,12 +170,12 @@ function is_norm_divisible_pp(a::nf_elem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = residue_ring(FlintZZ, Int(m), cached = false)
+    R1 = residue_ring(FlintZZ, Int(m), cached = false)[1]
     R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal_pp(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = residue_ring(FlintZZ, m, cached = false)
+  R = residue_ring(FlintZZ, m, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
@@ -188,7 +188,7 @@ end
 #
 ################################################################################
 
-function induce_crt(a::nf_elem, p::ZZRingElem, b::nf_elem, q::ZZRingElem, signed::Bool = false)
+function induce_crt(a::AbsSimpleNumFieldElem, p::ZZRingElem, b::AbsSimpleNumFieldElem, q::ZZRingElem, signed::Bool = false)
   c = parent(a)()
   pi = invmod(p, q)
   mul!(pi, pi, p)
@@ -219,7 +219,7 @@ function inner_crt(a::ZZRingElem, b::ZZRingElem, up::ZZRingElem, pq::ZZRingElem,
   end
 end
 
-function induce_inner_crt(a::nf_elem, b::nf_elem, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem = ZZRingElem(0))
+function induce_inner_crt(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem = ZZRingElem(0))
   c = parent(a)()
   ca = ZZRingElem()
   cb = ZZRingElem()
@@ -238,12 +238,12 @@ end
 ################################################################################
 
 @doc raw"""
-    norm(f::PolyRingElem{nf_elem}) -> QQPolyRingElem
+    norm(f::PolyRingElem{AbsSimpleNumFieldElem}) -> QQPolyRingElem
 
 >The norm of $f$, that is, the product of all conjugates of $f$ taken
 >coefficientwise.
 """
-function norm(f::PolyRingElem{nf_elem})
+function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(f)
   f, i = deflate(f)
@@ -273,22 +273,22 @@ end
 ################################################################################
 
 @doc raw"""
-    factor(K::number_field, f::ZZPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
-    factor(K::number_field, f::QQPolyRingElem) -> Fac{Generic.Poly{nf_elem}}
+    factor(K::number_field, f::ZZPolyRingElem) -> Fac{Generic.Poly{AbsSimpleNumFieldElem}}
+    factor(K::number_field, f::QQPolyRingElem) -> Fac{Generic.Poly{AbsSimpleNumFieldElem}}
 
 The factorisation of $f$ over $K$.
 """
-function factor(K::AnticNumberField, f::QQPolyRingElem)
+function factor(K::AbsSimpleNumField, f::QQPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
-function factor(K::AnticNumberField, f::ZZPolyRingElem)
+function factor(K::AbsSimpleNumField, f::ZZPolyRingElem)
   f1 = change_base_ring(K, f)
   return factor(f1)
 end
 
-function nice(f::PolyRingElem{nf_elem})
+function nice(f::PolyRingElem{AbsSimpleNumFieldElem})
   if degree(f) < 10
     return "$f"
   end
@@ -300,11 +300,11 @@ function nice(f::PolyRingElem{nf_elem})
 end
 
 @doc raw"""
-    factor(f::PolyRingElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
+    factor(f::PolyRingElem{AbsSimpleNumFieldElem}) -> Fac{Generic.Poly{AbsSimpleNumFieldElem}}
 
 The factorisation of $f$.
 """
-function factor(f::PolyRingElem{nf_elem}; algo::Symbol=:default)
+function factor(f::PolyRingElem{AbsSimpleNumFieldElem}; algo::Symbol=:default)
   @assert algo in [:default, :trager, :van_hoeij]
   Kx = parent(f)
   K = base_ring(f)
@@ -343,7 +343,7 @@ function factor(f::PolyRingElem{nf_elem}; algo::Symbol=:default)
 end
 
   #assumes that f is a squarefree polynomial
-function _factor(f::PolyRingElem{nf_elem}; algo::Symbol = :default)
+function _factor(f::PolyRingElem{AbsSimpleNumFieldElem}; algo::Symbol = :default)
 
   K = base_ring(f)
   f = f*(1//leading_coefficient(f))
@@ -356,7 +356,7 @@ function _factor(f::PolyRingElem{nf_elem}; algo::Symbol = :default)
 return lf
 end
 
-function factor_trager(f::PolyRingElem{nf_elem})
+function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
   k = 0
   g = f
   @vprintln :PolyFactor 1 "Using Trager's method"
@@ -368,9 +368,9 @@ function factor_trager(f::PolyRingElem{nf_elem})
 
   Zx = Hecke.Globals.Zx
   @vtime :PolyFactor Np = norm_mod(g, p, Zx)
-  while is_constant(Np) || !is_squarefree(map_coefficients(F, Np))
+  while is_constant(Np) || !is_squarefree(map_coefficients(F, Np, cached = false))
     k = k + 1
-    g = compose(f, gen(Kx) - k*gen(K))
+    g = compose(f, gen(Kx) - k*gen(K), inner = :second)
     @vtime :PolyFactor 2 Np = norm_mod(g, p, Zx)
   end
 
@@ -393,7 +393,7 @@ function factor_trager(f::PolyRingElem{nf_elem})
   while is_constant(N) || !is_squarefree(N)
     error("should not happen")
     k = k + 1
-    g = compose(f, gen(Kx) - k*gen(K))
+    g = compose(f, gen(Kx) - k*gen(K), inner = :second)
     @vtime :PolyFactor 2 N = norm_mod(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
@@ -402,7 +402,7 @@ function factor_trager(f::PolyRingElem{nf_elem})
 
   for i in keys(fac.fac)
     t = change_base_ring(K, i, parent = Kx)
-    t = compose(t, gen(Kx) + k*gen(K))
+    t = compose(t, gen(Kx) + k*gen(K), inner = :second)
     @vtime :PolyFactor 2 t = gcd(f, t)
     push!(res, t)
   end
@@ -410,7 +410,7 @@ function factor_trager(f::PolyRingElem{nf_elem})
   return res
 end
 
-function is_irreducible(f::PolyRingElem{nf_elem})
+function is_irreducible(f::PolyRingElem{AbsSimpleNumFieldElem})
   isresult_right, result = is_irreducible_easy(f)
   if isresult_right
     return result
@@ -419,7 +419,7 @@ function is_irreducible(f::PolyRingElem{nf_elem})
   return length(fac) == 1
 end
 
-function is_irreducible_easy(f::PolyRingElem{nf_elem})
+function is_irreducible_easy(f::PolyRingElem{AbsSimpleNumFieldElem})
   if degree(f) == 1
     return true, true
   end
@@ -483,7 +483,7 @@ function (R::fpPolyRing)(f::fqPolyRepPolyRingElem)
   return g
 end
 
-function _degset(f::PolyRingElem{nf_elem}, p::Int, normal::Bool = false)
+function _degset(f::PolyRingElem{AbsSimpleNumFieldElem}, p::Int, normal::Bool = false)
   K = base_ring(f)
 
   me = modular_init(K, p, deg_limit = 1)
@@ -521,36 +521,36 @@ end
 ################################################################################
 
 @doc raw"""
-    roots(K::AnticNumberField, f::ZZPolyRingElem) -> Vector{nf_elem}
+    roots(K::AbsSimpleNumField, f::ZZPolyRingElem) -> Vector{AbsSimpleNumFieldElem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(K::AnticNumberField, f::ZZPolyRingElem; kw...)
+function roots(K::AbsSimpleNumField, f::ZZPolyRingElem; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
 @doc raw"""
-    roots(K::AnticNumberField, f::QQPolyRingElem) -> Vector{nf_elem}
+    roots(K::AbsSimpleNumField, f::QQPolyRingElem) -> Vector{AbsSimpleNumFieldElem}
 
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is non-zero,
 squarefree and monic.
 """
-function roots(K::AnticNumberField, f::QQPolyRingElem; kw...)
+function roots(K::AbsSimpleNumField, f::QQPolyRingElem; kw...)
   f1 = change_base_ring(K, f)
   return roots(f1; kw...)
 end
 
-function elem_in_nf(a::nf_elem)
+function elem_in_nf(a::AbsSimpleNumFieldElem)
   return a
 end
 
 @doc raw"""
-    roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
+    roots(f::Generic.Poly{AbsSimpleNumFieldElem}; max_roots = degree(f),
                                     ispure = false,
                                     is_squarefree = false,
-                                    is_normal = false)       -> Vector{nf_elem}
+                                    is_normal = false)       -> Vector{AbsSimpleNumFieldElem}
 
 Computes the roots of a polynomial $f$.
 
@@ -560,7 +560,7 @@ Computes the roots of a polynomial $f$.
 - `is_normal` indicates that the field contains no or all the roots of $f$.
 - `is_squarefree` indicated if the polynomial is known to be square free already.
 """
-function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
+function roots(f::Generic.Poly{AbsSimpleNumFieldElem}; max_roots::Int = degree(f),
                                          ispure::Bool = false,
                                          is_squarefree::Bool = false,
                                          is_normal::Bool = false)
@@ -568,25 +568,25 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
   iszero(f) && error("Polynomial must be non-zero")
 
   if max_roots == 0
-    return nf_elem[]
+    return AbsSimpleNumFieldElem[]
   end
 
   k = base_ring(f)
 
   if max_roots <= 1 && iszero(coeff(f, 0))
-    return nf_elem[zero(k)]
+    return AbsSimpleNumFieldElem[zero(k)]
   end
 
   if degree(f) == 0
-    return nf_elem[]
+    return AbsSimpleNumFieldElem[]
   end
 
   if degree(f) == 1
-    return nf_elem[-coeff(f, 0)//coeff(f, 1)]
+    return AbsSimpleNumFieldElem[-coeff(f, 0)//coeff(f, 1)]
   end
 
   f = divexact(f, leading_coefficient(f))
-  rts = nf_elem[]
+  rts = AbsSimpleNumFieldElem[]
 
   if iszero(constant_coefficient(f))
     push!(rts, zero(k))
@@ -614,18 +614,18 @@ function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
     @assert is_monic(ff)
     @assert all(x->isone(denominator(x)), coefficients(ff))
     rt = _roots_hensel(ff, max_roots = max_roots, ispure = ispure, is_normal = is_normal)
-    return vcat(rts, nf_elem[x//d for x = rt])
+    return vcat(rts, AbsSimpleNumFieldElem[x//d for x = rt])
   end
 
   return vcat(rts, _roots_hensel(f, max_roots = max_roots, ispure = ispure, is_normal = is_normal))
 end
 
 @doc raw"""
-    has_root(f::PolyRingElem{nf_elem}) -> Bool, nf_elem
+    has_root(f::PolyRingElem{AbsSimpleNumFieldElem}) -> Bool, AbsSimpleNumFieldElem
 
 Tests if $f$ has a root and return it.
 """
-function has_root(f::PolyRingElem{nf_elem})
+function has_root(f::PolyRingElem{AbsSimpleNumFieldElem})
   rt = roots(f, max_roots = 1)
   if length(rt) == 0
     return false, zero(base_ring(f))
@@ -635,17 +635,17 @@ function has_root(f::PolyRingElem{nf_elem})
 end
 
 @doc raw"""
-    has_root(f::ZZPolyRingElem, K::AnticNumberField) -> Bool, nf_elem
-    has_root(f::QQPolyRingElem, K::AnticNumberField) -> Bool, nf_elem
+    has_root(f::ZZPolyRingElem, K::AbsSimpleNumField) -> Bool, AbsSimpleNumFieldElem
+    has_root(f::QQPolyRingElem, K::AbsSimpleNumField) -> Bool, AbsSimpleNumFieldElem
 
 Tests if $f$ has a root in $K$, and return it.
 """
-function has_root(f::ZZPolyRingElem, K::AnticNumberField)
+function has_root(f::ZZPolyRingElem, K::AbsSimpleNumField)
   f1 = change_base_ring(K, f)
   return has_root(f1)
 end
 
-function has_root(f::QQPolyRingElem, K::AnticNumberField)
+function has_root(f::QQPolyRingElem, K::AbsSimpleNumField)
   f1 = change_base_ring(K, f)
   return has_root(f1)
 end
@@ -657,7 +657,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false) -> Bool, nf_elem
+    is_power(a::AbsSimpleNumFieldElem, n::Int; with_roots_unity::Bool = false) -> Bool, AbsSimpleNumFieldElem
 
 Determines whether $a$ has an $n$-th root. If this is the case,
 the root is returned.
@@ -665,7 +665,7 @@ the root is returned.
 If the field $K$ is known to contain the $n$-th roots of unity,
 one can set `with_roots_unity` to `true`.
 """
-function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, is_integral::Bool = false, trager = false)
+function is_power(a::AbsSimpleNumFieldElem, n::Int; with_roots_unity::Bool = false, is_integral::Bool = false, trager = false)
 #  @req is_defining_polynomial_nice(parent(a)) "Defining polynomial must be integral and monic"
   @assert n > 0
   if n == 1
@@ -705,7 +705,7 @@ function is_power(a::nf_elem, n::Int; with_roots_unity::Bool = false, is_integra
   end
 end
 
-function is_power_trager(a::nf_elem, n::Int)
+function is_power_trager(a::AbsSimpleNumFieldElem, n::Int)
   # This is done using Trager factorization, but we can do some short cuts
   # The norm will be the minpoly_a(x^n), which will always be squarefree.
   K = parent(a)
@@ -744,7 +744,7 @@ function is_power_trager(a::nf_elem, n::Int)
   return false, a
 end
 
-function _height(a::nf_elem)
+function _height(a::AbsSimpleNumFieldElem)
   h = ZZRingElem(1)
   for i in 1:degree(parent(a))
     h = max(h, height(coeff(a, i - 1)))
@@ -752,13 +752,13 @@ function _height(a::nf_elem)
   return h
 end
 
-is_square(a::nf_elem) = is_power(a, 2)[1]
+is_square(a::AbsSimpleNumFieldElem) = is_power(a, 2)[1]
 
 is_square_with_sqrt(a::NumFieldElem) = is_power(a, 2)
 
-sqrt(a::nf_elem) = root(a, 2)
+sqrt(a::AbsSimpleNumFieldElem) = root(a, 2)
 
-function root(a::nf_elem, n::Int)
+function root(a::AbsSimpleNumFieldElem, n::Int)
   fl, rt = is_power(a, n)
   if fl
     return rt
@@ -767,20 +767,20 @@ function root(a::nf_elem, n::Int)
   error("$a has no $n-th root")
 end
 
-function roots(a::nf_elem, n::Int)
+function roots(a::AbsSimpleNumFieldElem, n::Int)
   @assert n > 0
   if n == 1 || iszero(a)
-    return nf_elem[a]
+    return AbsSimpleNumFieldElem[a]
   end
 
   d = denominator(a)
   Ky, y = polynomial_ring(parent(a), "y", cached = false)
   rt = roots(y^n - a*d^n, ispure = true)
 
-  return nf_elem[x//d for x = rt]
+  return AbsSimpleNumFieldElem[x//d for x = rt]
 end
 
-function root(a::NfOrdElem, n::Int)
+function root(a::AbsSimpleNumFieldOrderElem, n::Int)
   fl, rt = is_power(a.elem_in_nf, n)
   if fl
     O = parent(a)
@@ -798,7 +798,7 @@ end
 #
 ################################################################################
 
-function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too slow
+function inv_lift_recon(a::AbsSimpleNumFieldElem)  # not competitive....reconstruction is too slow
   p = next_prime(2^60)
   K = parent(a)
   me = modular_init(K, p)
@@ -828,7 +828,7 @@ function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too 
   return b
 end
 
-function inv_lift(a::nf_elem)  # better, but not enough
+function inv_lift(a::AbsSimpleNumFieldElem)  # better, but not enough
   p = next_prime(2^60)
   K = parent(a)
   me = modular_init(K, p)
@@ -860,19 +860,19 @@ end
 #
 ################################################################################
 
-function __mod(a::nf_elem, b::ZZRingElem, fl::Bool = true)#, sym::Bool = false) # Not yet
+function __mod(a::AbsSimpleNumFieldElem, b::ZZRingElem, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
-  ccall((:nf_elem_mod_fmpz_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}, Cint), z, a, b, parent(a), Cint(fl))
+  ccall((:nf_elem_mod_fmpz_den, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
 end
 
-function coprime_denominator(a::nf_elem, b::ZZRingElem)
+function coprime_denominator(a::AbsSimpleNumFieldElem, b::ZZRingElem)
   z = parent(a)()
-  ccall((:nf_elem_coprime_den, libantic), Nothing, (Ref{nf_elem}, Ref{nf_elem}, Ref{ZZRingElem}, Ref{AnticNumberField}), z, a, b, parent(a))
+  ccall((:nf_elem_coprime_den, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), z, a, b, parent(a))
   return z
 end
 
-function mod(b::nf_elem, p::ZZRingElem)
+function mod(b::AbsSimpleNumFieldElem, p::ZZRingElem)
   K = parent(b)
   if is_defining_polynomial_nice(parent(b))
     return coprime_denominator(b, p)
@@ -882,10 +882,10 @@ function mod(b::nf_elem, p::ZZRingElem)
   end
 end
 
-mod(x::nf_elem, y::Integer) = mod(x, ZZRingElem(y))
+mod(x::AbsSimpleNumFieldElem, y::Integer) = mod(x, ZZRingElem(y))
 
 
-function rem(a::nf_elem, b::ZZRingElem)
+function rem(a::AbsSimpleNumFieldElem, b::ZZRingElem)
   c = deepcopy(a)
   rem!(c, b)
   return c
@@ -898,7 +898,7 @@ end
 #
 ################################################################################
 
-function conjugate_quad(a::nf_elem)
+function conjugate_quad(a::AbsSimpleNumFieldElem)
   k = parent(a)
   @assert degree(k) == 2
   #fallback: tr(a) = a + bar(a), so tr(a) - a = bar(a)...
@@ -935,7 +935,7 @@ function conjugate_quad(a::nf_elem)
   return b
 end
 
-function complex_conjugate(a::nf_elem)
+function complex_conjugate(a::AbsSimpleNumFieldElem)
   d = degree(parent(a))
   if d == 1
     return a
@@ -955,6 +955,6 @@ end
 #
 ################################################################################
 
-_integral_multiplicator(a::nf_elem) = denominator(minpoly(a))
+_integral_multiplicator(a::AbsSimpleNumFieldElem) = denominator(minpoly(a))
 
 _integral_multiplicator(a::QQPolyRingElem) = denominator(a)

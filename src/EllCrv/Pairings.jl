@@ -1,6 +1,6 @@
 ################################################################################
 #
-#             EllCrv/Pairings.jl: Functions for computing various pairings
+#             EllipticCurve/Pairings.jl: Functions for computing various pairings
 #                                on elliptic curves
 #
 # This file is part of Hecke.
@@ -42,7 +42,7 @@
 # Compute the value of f(R) where f(x, y) = y -a*x - b is the equation defining
 # the line through P and Q.
 # Inspired by the Sage implementation by David Hansen in ell_point.py
-function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
+function straight_line(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}, R::EllipticCurvePoint{T}) where T
   @req parent(P) == parent(Q) == parent(R) "P, Q and R need to lie on the same curve"
   if is_infinite(R)
     error("R has to be a finite point")
@@ -69,7 +69,7 @@ function straight_line(P::EllCrvPt{T}, Q::EllCrvPt{T}, R::EllCrvPt{T}) where T
 
   if P == Q
     #Line tangent to P
-    a1, a2, a3, a4, a6 = a_invars(E)
+    a1, a2, a3, a4, a6 = a_invariants(E)
     num = 3*P[1]^2 + 2*a2*P[1] + a4 - a1*P[2]
     denom = 2*P[2] + a1*P[1] + a3
 
@@ -93,7 +93,7 @@ end
 # Evaluate the function f_{n, P} at the point Q, where the divisor of
 # f_{n, P} is given by n*[P]-[n*P]-(n-1)*[O].
 # Linearly dependent points might end up dividing by zero and give a DivideError
-function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
+function _try_miller(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}, n::Int) where T
   @req parent(P) == parent(Q) "P and Q need to lie on the same curve"
   @req is_finite(Q) "Q must be finite"
   @req n != 0 "n must be non-zero"
@@ -141,12 +141,12 @@ function _try_miller(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
 end
 
 @doc raw"""
-    weil_pairing(P::EllCrvPt, Q::EllCrvPt, n::Int) -> FieldElem
+    weil_pairing(P::EllipticCurvePoint, Q::EllipticCurvePoint, n::Int) -> FieldElem
 
 Given two $n$-torsion points $P$ and $Q$ on an elliptic curve, return the Weil
 pairing $e_n(P, Q)$.
 """
-function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
+function weil_pairing(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}, n::Int) where T
   E = parent(P)
   K = base_field(E)
   O = infinity(E)
@@ -167,7 +167,7 @@ function weil_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
 end
 
 @doc raw"""
-    tate_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, n::Int) where T
+    tate_pairing(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}, n::Int) where T
 
 Given an $n$-torsion point $P$ and another point $Q$ on an elliptic curve over
 a finite field $K$. Return the Tate pairing $t_n(P, Q)$ by returning a
@@ -175,8 +175,8 @@ representative of the coset modulo $n$-th powers.
 
 See also [reduced_tate_pairing](@ref) if one wants an $n$-th root.
 """
-function tate_pairing(P::EllCrvPt{T},
-                      Q::EllCrvPt{T}, n::IntegerUnion) where {T <: FinFieldElem}
+function tate_pairing(P::EllipticCurvePoint{T},
+                      Q::EllipticCurvePoint{T}, n::IntegerUnion) where {T <: FinFieldElem}
   E = parent(P)
   @req E == parent(Q) "P and Q need to be points on the same curve."
   @req n*P == infinity(E) "P is not of order dividing n."
@@ -199,20 +199,20 @@ end
 #Assuming that P and Q are defined over the same field which contains the nth roots of unity.
 #Should be identical to reduced_tate_pairing in Magma
 @doc raw"""
-    reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n::Int) -> FieldElem
+    reduced_tate_pairing(P::EllipticCurvePoint, Q::EllipticCurvePoint, n::Int) -> FieldElem
 
 Given an $n$-torsion point $P$ and another point $Q$ on an elliptic curve over
 a finite field $K$, eturn the reduced Tate pairing $t_n(P, Q)^{(\#K - 1)/n}$.
 
 See also [`tate_pairing`](@ref).
 """
-function reduced_tate_pairing(P::EllCrvPt, Q::EllCrvPt, n)
+function reduced_tate_pairing(P::EllipticCurvePoint, Q::EllipticCurvePoint, n)
   E = parent(P)
   @req E == parent(Q) "P and Q need to be points on the same curve."
   K = base_field(E)
   d = degree(K)
   q = order(K)
-  @req divisible(q - 1, n) "K needs to contain the nth roots of unity."
+  @req is_divisible_by(q - 1, n) "K needs to contain the nth roots of unity."
   @req n*P == infinity(E) "P must be of order n."
 
   e = div(q - 1, n)
