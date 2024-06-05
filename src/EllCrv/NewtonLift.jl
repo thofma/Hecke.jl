@@ -84,7 +84,7 @@ end
 function _can_reconstruct_with_reconstruction(E::EllipticCurve, padic_point, F_to_K, prec)
   @vprint :NewtonIteration 2 "trying rational reconstruction\n"
   K = codomain(F_to_K)
-  prec0 = precision(K)
+  # prec0 = precision(K)
   #setprecision!(F_to_K, prec) # leads to difficult bugs
 
   xnF, ynF, dnF = [map_coefficients(x->preimage(F_to_K,K(x); small_lift=true), a) for a in padic_point]
@@ -175,7 +175,7 @@ end
 function _newton_step(Rt, ainvsOKt, point, extra_points, prec)
   @assert parent(point[1]) === parent(ainvsOKt[1])
   # increase precision to the desired output precision
-  point = [setprecision(i, 2*prec) for i in point]
+  point = [setprecision!(i, 2*prec) for i in point]
 
   fn = _compute_fn(point, ainvsOKt)
 
@@ -290,6 +290,6 @@ function can_solve_with_solution_mod(A::T, b::T, n::Int; side) where {T<: MatEle
   # double check the computation
   bb = A*xOK
   @assert minimum(precision.(xOK)) >= n  && minimum(precision.(bb)) >= n && bb==b
-  return fl, xOK #_setprecision!(xK, prec)
+  return fl, xOK
 end
 
