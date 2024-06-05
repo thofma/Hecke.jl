@@ -156,3 +156,77 @@ end
   n = Hecke.n_positive_roots((y-1//10000)*(y-2//10000)*(y-100), Hecke.embedding(P))
   @test n == 3
 end
+
+@testset "numerical roots" begin
+  QQx, x = QQ[:x]
+  f = x^3-2
+  r = roots(f)
+  @test length(r) == 0
+
+  r = roots(ArbField(100), f)
+  @test length(r) == 1
+  fa = factor(ArbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  r = roots(RealField(), f)
+  @test length(r) == 1
+  fa = factor(RealField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+
+
+  r = roots(AcbField(100), f)
+  @test length(r) == 3
+  fa = factor(AcbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  r = roots(ComplexField(), f)
+  @test length(r) == 3
+  fa = factor(ComplexField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+
+  ZZx, x = ZZ[:x]
+  f = x^3-2
+  r = roots(f)
+  @test length(r) == 0
+
+  r = roots(ArbField(100), f)
+  @test length(r) == 1
+  fa = factor(ArbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  r = roots(RealField(), f)
+  @test length(r) == 1
+  fa = factor(RealField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+
+  r = roots(AcbField(100), f)
+  @test length(r) == 3
+  fa = factor(AcbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  r = roots(ComplexField(), f)
+  @test length(r) == 3
+  fa = factor(ComplexField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+
+  r = roots(GF(5), f)
+  @test length(r) == 1
+
+  r = roots(GF(5, 2), f)
+  @test length(r) == 3
+
+  fa = factor(GF(5), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+
+  fa = factor(6*x)
+  @test length(fa) == 3
+
+  fa = factor(QQ, 6*x)
+  @test length(fa) == 1
+
+  # 
+  let
+    K, = rationals_as_number_field()
+    Ky, y = K["y"]
+    f = y^4 - 46720785304//289510225*y^3 + 11506176//289510225*y^2 + 20030976//1412245*y - 2985984//289510225
+    @test Hecke.n_positive_roots(f, real_embeddings(K)[1]) == 3
+  end
+end
+
+

@@ -554,7 +554,7 @@ end
 #
 ################################################################################
 
-function Native.finite_field(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
+function Native.finite_field(f::T, s::VarName = :a; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
   if check
     @assert is_irreducible(f)
   end
@@ -563,7 +563,7 @@ function Native.finite_field(f::T, s::String = "a" ; cached::Bool = true, check:
   return F, gen(F)
 end
 
-function Native.finite_field(f::PolyRingElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
+function Native.finite_field(f::PolyRingElem{T}, s::VarName = :a; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
   if check
     @assert is_irreducible(f)
   end
@@ -650,11 +650,11 @@ end
 #
 ################################################################################
 
-function _char(F::FqPolyRepField)
+function _char(F::Union{FqPolyRepField, FqField, FpField})
   return characteristic(F)
 end
 
-function _char(F::fqPolyRepField)
+function _char(F::Union{fpField, fqPolyRepField})
   return Int(characteristic(F))
 end
 
@@ -675,10 +675,10 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
   d = absolute_degree(F)
   K, gK = Native.finite_field(p, d, "a", cached = cached)
   k, mk = absolute_field(base_field(F))
-  def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F))
+  def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F), cached = false)
   img_gen_k = roots(K, defining_polynomial(k))[1]
   mp = hom(k, K, img_gen_k)
-  g = map_coefficients(mp, def_pol_new)
+  g = map_coefficients(mp, def_pol_new, cached = false)
   img_gen_F = roots(g)[1]
   img_basis_k = powers(img_gen_k, degree(k)-1)
   img_absolute_basis = Vector{elem_type(K)}(undef, degree(K))
@@ -745,7 +745,7 @@ function factor(f::PolyRingElem{T}) where T <: RelFinFieldElem
   F, mF = absolute_field(K)
   imF = inv(mF)
   @assert domain(imF) == K
-  fF = map_coefficients(imF, f)
+  fF = map_coefficients(imF, f, cached = false)
   lfF = factor(fF)
   facs = Dict{typeof(f), Int}()
   for (p, k) in lfF

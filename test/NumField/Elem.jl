@@ -58,14 +58,14 @@
     Qx, x = polynomial_ring(FlintQQ, "x")
     K, a = number_field(x^3 - 2)
     v = [a^0, a^2]
-    @assert elem_type(K) == nf_elem
+    @assert elem_type(K) == AbsSimpleNumFieldElem
     for args = ((v, 1:3), (v, 1:3, 2))
       m = make(K, args...)
       for x in (rand(args...), rand(rng, args...),
                 rand(m), rand(rng, m))
-        @test x isa nf_elem
+        @test x isa AbsSimpleNumFieldElem
       end
-      @test rand(m, 3) isa Vector{nf_elem}
+      @test rand(m, 3) isa Vector{AbsSimpleNumFieldElem}
       c = zero(K)
       @test c === rand!(c, m)
       @test c === rand!(rng, c, m)
@@ -257,4 +257,21 @@ begin
   r = roots(h)
   @test length(r) == 8
   @test all(iszero, h.(r))
+end
+
+begin
+  f = absolute_minpoly(QQ(1//3))
+  @test degree(f) == 1 && is_monic(f) && f(1//3) == 0
+end
+
+let
+  NF, sr5 = quadratic_field(5)
+  phi = (1 + sr5)//2
+  NFy, y = NF["y"]
+  MF, srm = number_field(y^2 - (phi - 5//27), "a")
+  MFz, z = MF["z"]
+  LF, lr = number_field(z^3 - (phi + srm)//2, "b")
+  LFw, w = LF["w"]
+  r = roots(w^3 - (phi - srm)//2)
+  @test length(r) == 1
 end

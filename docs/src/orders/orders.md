@@ -23,15 +23,15 @@ and can also be interpreted as a normalization of any other order.
 
 ## Creation and basic properties
 
-```@docs
-Order(::AnticNumberField, ::Vector{nf_elem})
-Order(::AnticNumberField, ::FakeFmpqMat)
-Order(::NfOrdFracIdl)
-EquationOrder(::AnticNumberField)
-MaximalOrder(::AnticNumberField)
-MaximalOrder(::NfOrd)
-lll(::NfOrd)
-any_order(K::AnticNumberField)
+```@docs; canonical=false
+Order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
+Order(::AbsSimpleNumField, ::QQMatrix)
+Order(::AbsSimpleNumFieldOrderFractionalIdeal)
+EquationOrder(::AbsSimpleNumField)
+MaximalOrder(::AbsSimpleNumField)
+MaximalOrder(::AbsSimpleNumFieldOrder)
+lll(::AbsSimpleNumFieldOrder)
+any_order(K::AbsSimpleNumField)
 ```
 
 ### Example
@@ -43,50 +43,50 @@ K, a = number_field(x^2 - 2, "a");
 O = EquationOrder(K)
 ```
 
-```@docs
-parent(::NfOrd)
-signature(::NfOrd)
-nf(::NfOrd)
-basis(::NfOrd)
-lll_basis(::NfOrd)
-basis(::NfOrd, ::AnticNumberField)
-pseudo_basis(::NfRelOrd)
-basis_pmatrix(::NfRelOrd)
-basis_nf(::NfRelOrd)
-inv_coeff_ideals(::NfRelOrd)
-basis_matrix(::NfAbsOrd)
-basis_mat_inv(::NfOrd)
-gen_index(::NfOrd)
-is_index_divisor(::NfOrd, ::ZZRingElem)
-minkowski_matrix(::NfOrd, ::Int)
-in(::nf_elem, ::NfOrd)
-norm_change_const(::NfOrd)
-trace_matrix(::NfOrd)
-+(::NfAbsOrd, ::NfAbsOrd)
-poverorder(::NfOrd, ::ZZRingElem)
-poverorders(::NfOrd, ::ZZRingElem)
-pmaximal_overorder(::NfOrd, ::ZZRingElem)
-pradical(::NfAbsOrd, ::Union{Integer, ZZRingElem})
-pradical(::NfRelOrd, ::Union{Hecke.NfRelOrdIdl, NfOrdIdl})
-ring_of_multipliers(::NfAbsOrdIdl)
+```@docs; canonical=false
+parent(::AbsSimpleNumFieldOrder)
+signature(::AbsSimpleNumFieldOrder)
+nf(::AbsSimpleNumFieldOrder)
+basis(::AbsSimpleNumFieldOrder)
+lll_basis(::AbsSimpleNumFieldOrder)
+basis(::AbsSimpleNumFieldOrder, ::AbsSimpleNumField)
+pseudo_basis(::RelNumFieldOrder)
+basis_pmatrix(::RelNumFieldOrder)
+basis_nf(::RelNumFieldOrder)
+inv_coeff_ideals(::RelNumFieldOrder)
+basis_matrix(::AbsNumFieldOrder)
+basis_mat_inv(::AbsSimpleNumFieldOrder)
+gen_index(::AbsSimpleNumFieldOrder)
+is_index_divisor(::AbsSimpleNumFieldOrder, ::ZZRingElem)
+minkowski_matrix(::AbsSimpleNumFieldOrder, ::Int)
+in(::AbsSimpleNumFieldElem, ::AbsSimpleNumFieldOrder)
+norm_change_const(::AbsSimpleNumFieldOrder)
+trace_matrix(::AbsSimpleNumFieldOrder)
++(::AbsNumFieldOrder, ::AbsNumFieldOrder)
+poverorder(::AbsSimpleNumFieldOrder, ::ZZRingElem)
+poverorders(::AbsSimpleNumFieldOrder, ::ZZRingElem)
+pmaximal_overorder(::AbsSimpleNumFieldOrder, ::ZZRingElem)
+pradical(::AbsNumFieldOrder, ::Union{Integer, ZZRingElem})
+pradical(::RelNumFieldOrder, ::Union{Hecke.RelNumFieldOrderIdeal, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+ring_of_multipliers(::AbsNumFieldOrderIdeal)
 
 ```
 
 ## Invariants
 
-```@docs
-discriminant(::NfOrd)
-discriminant(::NfAbsOrd)
-reduced_discriminant(::NfOrd)
-degree(::NfOrd)
-index(::NfOrd)
-different(::NfOrd)
-codifferent(::NfOrd)
-is_gorenstein(::NfOrd)
-is_bass(::NfOrd)
-is_equation_order(::NfOrd)
-zeta_log_residue(::NfOrd, ::Float64)
-ramified_primes(::NfOrd)
+```@docs; canonical=false
+discriminant(::AbsSimpleNumFieldOrder)
+discriminant(::AbsNumFieldOrder)
+reduced_discriminant(::AbsSimpleNumFieldOrder)
+degree(::AbsSimpleNumFieldOrder)
+index(::AbsSimpleNumFieldOrder)
+different(::AbsSimpleNumFieldOrder)
+codifferent(::AbsSimpleNumFieldOrder)
+is_gorenstein(::AbsSimpleNumFieldOrder)
+is_bass(::AbsSimpleNumFieldOrder)
+is_equation_order(::AbsSimpleNumFieldOrder)
+zeta_log_residue(::AbsSimpleNumFieldOrder, ::Float64)
+ramified_primes(::AbsSimpleNumFieldOrder)
 ```
 
 ## Arithmetic
@@ -104,27 +104,27 @@ allow a point-wise inverse to server as the *discrete logarithm* map.
 For more information on abelian group, see [here](@ref AbelianGroupLink),
 for ideals, [here](@ref NfOrdIdlLink).
 
-- [`torsion_unit_group(::NfOrd)`](@ref)
-- [`unit_group(::NfOrd)`](@ref)
-- [`unit_group_fac_elem(::NfOrd)`](@ref)
-- [`sunit_group(::Vector{NfOrdIdl})`](@ref)
-- [`sunit_group_fac_elem(::Vector{NfOrdIdl})`](@ref)
-- [`sunit_mod_units_group_fac_elem(::Vector{NfOrdIdl})`](@ref)
-- [`class_group(::NfOrd)`](@ref)
-- [`picard_group(::NfOrd)`](@ref)
-- [`narrow_class_group(::NfOrd)`](@ref)
+- [`torsion_unit_group(::AbsSimpleNumFieldOrder)`](@ref)
+- [`unit_group(::AbsSimpleNumFieldOrder)`](@ref)
+- [`unit_group_fac_elem(::AbsSimpleNumFieldOrder)`](@ref)
+- [`sunit_group(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})`](@ref)
+- [`sunit_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})`](@ref)
+- [`sunit_mod_units_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})`](@ref)
+- [`class_group(::AbsSimpleNumFieldOrder)`](@ref)
+- [`picard_group(::AbsSimpleNumFieldOrder)`](@ref)
+- [`narrow_class_group(::AbsSimpleNumFieldOrder)`](@ref)
 
 For the processing of units, there are a couple of helper functions
 also available:
 
-```@docs
+```@docs; canonical=false
 is_independent
 ```
 
 ## Predicates
 
-```@docs
-Hecke.is_contained(::NfAbsOrd, ::NfAbsOrd)
-is_maximal(::NfAbsOrd)
+```@docs; canonical=false
+Hecke.is_contained(::AbsNumFieldOrder, ::AbsNumFieldOrder)
+is_maximal(::AbsNumFieldOrder)
 ```
 

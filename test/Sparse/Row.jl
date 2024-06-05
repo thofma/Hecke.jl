@@ -1,22 +1,28 @@
 @testset "Row" begin
   R = FlintZZ
+  S, _ = residue_ring(ZZ, 4)
 
   # Construction
 
   A = @inferred sparse_row(FlintZZ)
   @test A isa SRow{ZZRingElem}
+  @test A isa sparse_row_type(ZZRing)
 
   C = @inferred sparse_row(R)
   @test C isa SRow{ZZRingElem}
+  @test C isa sparse_row_type(R)
 
   D = @inferred sparse_row(R, [(1, ZZRingElem(1)), (2, ZZRingElem(2))])
   @test D isa SRow{ZZRingElem}
+  @test D isa sparse_row_type(R)
 
   E = @inferred sparse_row(R, [(1, 1), (2, 2)])
   @test E isa SRow{ZZRingElem}
+  @test E isa sparse_row_type(R)
 
   F = @inferred sparse_row(R, [1, 2], [ZZRingElem(1), ZZRingElem(2)])
   @test F isa SRow{ZZRingElem}
+  @test F isa sparse_row_type(R)
 
   # Equality
 
@@ -66,6 +72,7 @@
   Rx, x = polynomial_ring(R, "x", cached = false)
   H = @inferred change_base_ring(Rx, G)
   @test H == sparse_row(Rx, collect(1:5), map(Rx, collect(1:5)))
+  @test typeof(H) == sparse_row_type(Rx)
 
   # Iterator interface
 
@@ -82,7 +89,10 @@
 
   A = sparse_row(FlintZZ, [1, 2, 4], ZZRingElem[1, 2, 3])
   scale_row!(A, ZZRingElem(2))
+  B = sparse_row(S, [1, 3, 4], [1, 2, 3])
+  scale_row!(B, S(2))
   @test A == sparse_row(FlintZZ, [1, 2, 4], ZZRingElem[2, 4, 6])
+  @test B == sparse_row(S, [1, 4], [2, 2])
 
   # Addition
   A = sparse_row(FlintZZ, [1, 2, 3, 5], ZZRingElem[1, 2, 3, 5])
@@ -131,7 +141,7 @@
 
   # Lifting
 
-  S = residue_ring(FlintZZ, 5)
+  S = residue_ring(FlintZZ, 5)[1]
   A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
   B = @inferred lift(A)
   @test sparse_row(R, [1, 2, 3, 5], [1, 1, 2, 3]) == B
@@ -142,7 +152,7 @@
   b = @inferred norm2(A)
   @test b == ZZRingElem(25 + 4 + 16 + 100)
 
-  S = residue_ring(FlintZZ, 5)
+  S = residue_ring(FlintZZ, 5)[1]
   A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
   b = @inferred norm2(A)
   @test b == R(0)

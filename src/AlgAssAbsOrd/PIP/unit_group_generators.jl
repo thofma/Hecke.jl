@@ -56,7 +56,7 @@ function _unit_group_generators_maximal_simple(M)
     @assert all(b in M for b in gens_in_M)
     return gens_in_M
   elseif dim(ZA) == 4 && !is_split(ZA) && !isdefined(A, :isomorphic_full_matrix_algebra)
-    Q, QtoZA = isquaternion_algebra(ZA)
+    Q, QtoZA = is_quaternion_algebra(ZA)
     MQ = _get_order_from_gens(Q, [QtoZA\(ZAtoA\(elem_in_algebra(b))) for b in absolute_basis(M)])
     _gens =  _unit_group_generators_quaternion(MQ)
     gens_in_M = [ ZAtoA(QtoZA(elem_in_algebra(u))) for u in _gens]
@@ -103,7 +103,7 @@ function _SLn_generators(OK, n)
     #
     # We find a small generating set of OK as Z-algebra
     found = false
-    local G::Vector{nf_elem}
+    local G::Vector{AbsSimpleNumFieldElem}
     for i in 1:d
       for j in 1:10
         G = [elem_in_nf(rand(OK, 2)) for k in 1:i]
@@ -280,7 +280,7 @@ global __GLn_generators_quadratic = [(-4, 1, [[[ 1, 0 ],[ 0, 0 ],[ 0, -1 ],[ 1, 
 ################################################################################
 
 function _orbit_stabilizer(G, idity, a)
-  OT = Tuple{typeof(idity), FakeFmpqMat}[(idity, hnf(basis_matrix(a)))]
+  OT = Tuple{typeof(idity), FakeFmpqMat}[(idity, hnf(basis_matrix(FakeFmpqMat, a)))]
   Y = typeof(idity)[]
   m = 1
   while m <= length(OT)
@@ -303,10 +303,8 @@ function _orbit_stabilizer(G, idity, a)
   return OT, Y
 end
 
-function _operate(g::AbsAlgAssElem, b)
+function _operate(g::AbstractAssociativeAlgebraElem, b)
   M = representation_matrix(g, :right)
   c = hnf(b * FakeFmpqMat(M))
   return c
 end
-
-

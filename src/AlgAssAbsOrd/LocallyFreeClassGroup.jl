@@ -11,12 +11,12 @@ add_verbosity_scope(:LocallyFreeClassGroup)
 # case if O is the integral group ring of a group algebra), the computation can
 # be speeded up by setting cond = :left.
 @doc raw"""
-    locally_free_class_group(O::AlgAssAbsOrd) -> GrpAbFinGen
+    locally_free_class_group(O::AlgAssAbsOrd) -> FinGenAbGroup
 
 Given an order $O$ in a semisimple algebra over $\mathbb Q$, this function
 returns the locally free class group of $O$.
 """
-function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, return_disc_log_data::Type{Val{T}} = Val{false}) where T
+function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, ::Val{return_disc_log_data} = Val(false)) where return_disc_log_data
   A = algebra(O)
   OA = maximal_order(O)
   Z, ZtoA = center(A)
@@ -51,9 +51,9 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
 
   # Find the infinite places we need for the ray class group of FinZ
   @vprintln :LocallyFreeClassGroup "Find the splitting infinite places"
-  inf_plc = Vector{Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}(undef, length(fields_and_maps))
+  inf_plc = Vector{Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}(undef, length(fields_and_maps))
   for i = 1:length(fields_and_maps)
-    inf_plc[i] = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
+    inf_plc[i] = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}()
   end
   for i = 1:length(Adec)
     B, BtoA = Adec[i]
@@ -101,7 +101,7 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :center, retur
 
   S, StoCl = snf(Cl)
 
-  if return_disc_log_data == Val{true}
+  if return_disc_log_data
     return S, compose(RtoCl, inv(StoCl)), mR, FinZ
   else
     return S
@@ -113,22 +113,22 @@ end
 # See Bley, Wilson: "Computations in relative algebraic K-groups".
 @doc raw"""
     locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
-      -> GrpAbFinGen, DiscLogLocallyFreeClassGroup
+      -> FinGenAbGroup, DiscLogLocallyFreeClassGroup
 
 Given a group ring $O$, this function returns the locally free class group of
 $O$ and map from the set of ideals of $O$ to this group.
 As the function only works for group rings, it is tested whether
-`A = algebra(O)` is of type `AlgGrp` and whether `O == Order(A, basis(A))`.
+`A = algebra(O)` is of type `GroupAlgebra` and whether `O == Order(A, basis(A))`.
 These tests can be disabled by setting `check = false`.
 """
 function locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
   if check
-    if !(algebra(O) isa AlgGrp) || basis_matrix(O, copy = false) != FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(O))), ZZRingElem(1))
+    if !(algebra(O) isa GroupAlgebra) || basis_matrix(FakeFmpqMat, O, copy = false) != FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(O))), ZZRingElem(1))
       error("Only implemented for group rings")
     end
   end
 
-  Cl, RtoCl, mR, FinZ = locally_free_class_group(O, :left, Val{true})
+  Cl, RtoCl, mR, FinZ = locally_free_class_group(O, :left, Val(true))
 
   IdlSet = IdealSet(O)
   disc_log = DiscLogLocallyFreeClassGroup{typeof(IdlSet), typeof(Cl)}(IdlSet, Cl, RtoCl, mR, FinZ)
@@ -140,7 +140,7 @@ end
 # Computes the representative in the ray class group (domain(mR)) for the ideal
 # nr(a)*O_Z, where nr is the reduced norm and O_Z the maximal order of the centre
 # of A.
-function _reduced_norms(a::AbsAlgAssElem, mR::MapRayClassGroupAlg)
+function _reduced_norms(a::AbstractAssociativeAlgebraElem, mR::MapRayClassGroupAlg)
   A = parent(a)
   Adec = decompose(A)
   r = zero_matrix(FlintZZ, 1, 0)
@@ -163,7 +163,7 @@ function _reduced_norms(a::AbsAlgAssElem, mR::MapRayClassGroupAlg)
     r = hcat(r, g.coeff)
   end
   G = codomain(mR.into_product_of_groups)
-  return mR.into_product_of_groups\(GrpAbFinGenElem(G, r))
+  return mR.into_product_of_groups\(FinGenAbGroupElem(G, r))
 end
 
 ################################################################################
@@ -196,7 +196,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
   OinZ = _as_order_of_smaller_algebra(ZtoA, O, OA)
   @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :left)
   @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :right)
-  @assert isone(denominator(basis_matrix(FinZ) * basis_mat_inv(OinZ)))
+  @assert isone(denominator(basis_matrix(FinZ) * basis_mat_inv(FakeFmpqMat, OinZ)))
 
   primary_ideals = Vector{Tuple{ideal_type(O), ideal_type(O)}}()
   prim = primary_decomposition(FinZ, OinZ)
@@ -223,7 +223,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
     pF = p + F
     qF = moduli[i]
     char = minimum(p)
-    B, OtoB = AlgAss(O, pF, char)
+    B, OtoB = StructureConstantAlgebra(O, pF, char)
     k1_B = K1(B; do_units = do_units)
     k1_O = [ OtoB\x for x in k1_B ]
     if pF != qF
@@ -242,11 +242,11 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
 end
 
 @doc raw"""
-    K1(A::AlgAss{<:FinFieldElem}) -> Vector{AbsAlgAssElem}
+    K1(A::StructureConstantAlgebra{<:FinFieldElem}) -> Vector{AbstractAssociativeAlgebraElem}
 
 Given an algebra over a finite field, this function returns generators for $K_1(A)$.
 """
-function K1(A::AlgAss{<:FinFieldElem}; do_units::Bool = false)
+function K1(A::StructureConstantAlgebra{<:FinFieldElem}; do_units::Bool = false)
   # We use the exact sequence 1 + J -> K_1(A) -> K_1(B/J) -> 1
   J = radical(A)
   onePlusJ = _1_plus_j(A, J)
@@ -259,7 +259,7 @@ end
 
 # Computes generators for K_1(A) with A semisimple as described in
 # Bley, Boltje "Computation of Locally Free Class Groups", p. 84.
-function K1_semisimple(A::AlgAss{<:FinFieldElem}; do_units::Bool = false)
+function K1_semisimple(A::StructureConstantAlgebra{<:FinFieldElem}; do_units::Bool = false)
 
   Adec = decompose(A)
   k1 = Vector{elem_type(A)}()
@@ -301,7 +301,7 @@ function K1_semisimple(A::AlgAss{<:FinFieldElem}; do_units::Bool = false)
 end
 
 # Generators for GL_n(K), taken from Taylor, Pairs of Generators for Matrix Groups. I
-function _unit_group_generators(A::AlgMat{<:FinFieldElem})
+function _unit_group_generators(A::MatAlgebra{<:FinFieldElem})
   K = base_ring(A)
   @assert degree(A)^2 == dim(A)
   d = degree(A)
@@ -340,7 +340,7 @@ function _unit_group_generators(A::AlgMat{<:FinFieldElem})
 end
 
 # Computes generators for 1 + J where J is the Jacobson Radical of A
-function _1_plus_j(A::AlgAss{<:FinFieldElem}, jacobson_radical::AbsAlgAssIdl...)
+function _1_plus_j(A::StructureConstantAlgebra{<:FinFieldElem}, jacobson_radical::AbsAlgAssIdl...)
   F = base_ring(A)
 
   if length(jacobson_radical) == 1
@@ -376,7 +376,7 @@ end
 
 # Assumes v_p(a) = 0.
 # Constructs n, d integral with n/d = a and v_p(n) = v_p(d) = 0.
-function coprime_num_and_den(a::nf_elem, p::NfAbsOrdIdl)
+function coprime_num_and_den(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal)
   K = parent(a)
   OK = maximal_order(K)
   facA = factor(a*OK)
@@ -399,15 +399,15 @@ end
 
 mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLogLocallyFreeClassGroup}
   header::MapHeader{S, T}
-  RtoC::GrpAbFinGenMap # Map from the ray class group of the centre to the class group
+  RtoC::FinGenAbGroupHom # Map from the ray class group of the centre to the class group
   mR::MapRayClassGroupAlg
   FinZ::AlgAssAbsOrdIdl # Conductor of the order in the maximal order contracted to the centre
-  FinKs::Vector{NfOrdIdl}
-  primes_in_fields::Vector{Vector{Tuple{NfOrdIdl, ZZRingElem, NfOrdIdl}}}
+  FinKs::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+  primes_in_fields::Vector{Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}}
   fields_and_maps
   ZtoA
 
-  function DiscLogLocallyFreeClassGroup{S, T}(IdlSet::S, C::T, RtoC::GrpAbFinGenMap, mR::MapRayClassGroupAlg, FinZ::AlgAssAbsOrdIdl) where {S, T}
+  function DiscLogLocallyFreeClassGroup{S, T}(IdlSet::S, C::T, RtoC::FinGenAbGroupHom, mR::MapRayClassGroupAlg, FinZ::AlgAssAbsOrdIdl) where {S, T}
     m = new{S, T}()
     O = order(IdlSet)
     A = algebra(O)
@@ -421,7 +421,7 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
 
     # Some precomputations
     #nf_idl_type = ideal_type(order_type(fields_and_maps[1][1]))
-    nf_idl_type = ideal_type(order_type(AnticNumberField))
+    nf_idl_type = ideal_type(order_type(AbsSimpleNumField))
     FinKs = Vector{nf_idl_type}(undef, length(fields_and_maps))
     for i = 1:length(fields_and_maps)
       K, ZtoK = fields_and_maps[i]
@@ -458,7 +458,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::ModAlgAssLat)
     error("Ambient module of lattice must be free of rank one")
   end
   Ibmat = basis_matrix(I)
-  II = ideal_from_lattice_gens(A, O, [AregToA(VToAreg(V(_eltseq(Ibmat[i, :])))) for i in 1:nrows(Ibmat)])
+  II = ideal_from_lattice_gens(A, O, [AregToA(VToAreg(V(_eltseq(Ibmat[i:i, :])))) for i in 1:nrows(Ibmat)])
   return m(II)
 end
 
@@ -469,8 +469,8 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   RtoC = m.RtoC
   mR =  m.mR
   FinZ = m.FinZ
-  fields_and_maps = m.fields_and_maps::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}}
-  ZtoA = m.ZtoA::morphism_type(AlgAss{QQFieldElem}, typeof(A))
+  fields_and_maps = m.fields_and_maps::Vector{Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
+  ZtoA = m.ZtoA::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
   _T = _ext_type(elem_type(base_ring(A)))
   nf_idl_type = ideal_type(order_type(_T))
   primes_in_fields = m.primes_in_fields::Vector{Vector{Tuple{nf_idl_type, ZZRingElem, nf_idl_type}}}
@@ -492,7 +492,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
     x = locally_free_basis(I, p)
     gamma = normred_over_center(x, ZtoA)
 
-    elts_in_R = Vector{GrpAbFinGenElem}(undef, length(fields_and_maps))
+    elts_in_R = Vector{FinGenAbGroupElem}(undef, length(fields_and_maps))
     for j = 1:length(fields_and_maps)
       K, ZtoK = fields_and_maps[j]
       OK = maximal_order(K)
@@ -559,7 +559,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
 
     # Put the components together and map it to C
     G = codomain(mR.into_product_of_groups)
-    r = mR.into_product_of_groups \ (GrpAbFinGenElem(G, reduce(hcat, [e.coeff for e in elts_in_R])))
+    r = mR.into_product_of_groups \ (FinGenAbGroupElem(G, reduce(hcat, [e.coeff for e in elts_in_R])))
     c += RtoC(r)
   end
   return c
@@ -571,4 +571,105 @@ function show(io::IO, m::DiscLogLocallyFreeClassGroup)
   show(IOContext(io, :compact => true), domain(m))
   println(io, "into locally free class group ")
   show(IOContext(io, :compact => true), codomain(m))
+end
+
+################################################################################
+#
+#  General kernel group
+#
+################################################################################
+
+# Bley-Boltje, 3.9
+function kernel_group(O::AlgAssAbsOrd, cond::Symbol = :center)
+  A = algebra(O)
+  OA = maximal_order(O)
+  Z, ZtoA = center(A)
+  Fl = conductor(O, OA, :left)
+  if cond == :left
+    F = Fl
+    FinZ = _as_ideal_of_smaller_algebra(ZtoA, F)
+  elseif cond == :center
+    FinZ = _as_ideal_of_smaller_algebra(ZtoA, Fl)
+    # Compute FinZ*OA but as an ideal of O
+    bOA = basis(OA, copy = false)
+    bFinZ = basis(FinZ, copy = false)
+    basis_F = Vector{elem_type(A)}()
+    for x in bOA
+      for y in bFinZ
+        t = ZtoA(y) * elem_in_algebra(x, copy = false)
+        push!(basis_F, t)
+      end
+    end
+    F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
+  elseif cond == :product
+    Fr = conductor(O, OA, :right)
+    F = Fr*Fl
+    FinZ = _as_ideal_of_smaller_algebra(ZtoA, F)
+  else
+    error("Option :$(cond) for cond not implemented")
+  end
+
+  @vprintln :LocallyFreeClassGroup "Decomposing algebra"
+  Adec = decompose(A)
+  fields_and_maps = as_number_fields(Z)
+
+  # Find the infinite places we need for the ray class group of FinZ
+  @vprintln :LocallyFreeClassGroup "Find the splitting infinite places"
+  inf_plc = Vector{Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}(undef, length(fields_and_maps))
+  for i = 1:length(fields_and_maps)
+    inf_plc[i] = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}()
+  end
+  for i = 1:length(Adec)
+    B, BtoA = Adec[i]
+    C, CtoB = _as_algebra_over_center(B)
+    K = base_ring(C)
+    @assert K === fields_and_maps[i][1]
+
+    places = real_places(K)
+    for p in places
+      if !is_split(C, p)
+        push!(inf_plc[i], p)
+      end
+    end
+  end
+
+  @vprintln :LocallyFreeClassGroup "Compute ray class group"
+  R, mR = ray_class_group(FinZ, inf_plc)
+
+  # Compute K_1(O/F) and the subgroup of R generated by nr(a)*OZ for a in k1 where
+  # nr is the reduced norm and OZ the maximal order in Z
+  @vprintln :LocallyFreeClassGroup "Compute K_1"
+  k1 = K1_order_mod_conductor(O, OA, F, FinZ)
+
+  k1_as_subgroup = Vector{elem_type(R)}()
+  @vprintln :LocallyFreeClassGroup "Lift generators to units of the algebra"
+  for x in k1
+    # It is possible that x is not invertible in A
+    t = is_invertible(elem_in_algebra(x, copy = false))[1]
+    k = 0
+    while !t
+      k += 1
+      r = rand(F, 1)
+      x += r
+      t = is_invertible(elem_in_algebra(x, copy = false))[1]
+      if k > 100
+        error("Something wrong")
+      end
+    end
+    s = _reduced_norms(elem_in_algebra(x, copy = false), mR)
+    push!(k1_as_subgroup, s)
+  end
+
+  RR, mRR = ray_class_group(1*order(FinZ), inf_plc)
+
+  phi = hom(R, RR, [mRR\(mR(r)) for r in gens(R)])
+
+  K, KtoR = kernel(phi)
+  subgens = elem_type(K)[]
+  for s in k1_as_subgroup
+    fl, b = has_preimage_with_preimage(KtoR, s)
+    @assert fl
+    push!(subgens, b)
+  end
+  return snf(quo(K, subgens)[1])[1]
 end

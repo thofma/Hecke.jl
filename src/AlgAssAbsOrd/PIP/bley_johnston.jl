@@ -48,9 +48,9 @@ function __unit_reps_simple(M, F)
 
   if isdefined(B, :isomorphic_full_matrix_algebra)
     # It is faster to compute products in M_n(F) than in an associative algebra
-    local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
-    local BtoC::Hecke.AbsAlgAssMorGen{AlgAss{QQFieldElem}, AlgMat{nf_elem, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}}, AbstractAlgebra.Generic.MatSpaceElem{nf_elem}, QQMatrix}
-    #local BtoC::morphism_type(typeof(B), AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}})
+    local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+    local BtoC::Hecke.AbsAlgAssMorGen{StructureConstantAlgebra{QQFieldElem}, MatAlgebra{AbsSimpleNumFieldElem, AbstractAlgebra.Generic.MatSpaceElem{AbsSimpleNumFieldElem}}, AbstractAlgebra.Generic.MatSpaceElem{AbsSimpleNumFieldElem}, QQMatrix}
+    #local BtoC::morphism_type(typeof(B), MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}})
     C, BtoC = B.isomorphic_full_matrix_algebra
     UBinC = elem_type(C)[BtoC(u)::elem_type(C) for u in UB]
     ___units = collect(zip(UBinC, UB_reduced))
@@ -158,7 +158,8 @@ function __unit_reps(M, F)
   return unit_reps
 end
 
-function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
+function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local_freeness::Bool = false)
+  # local_freeness needs to be accepted since the generic interface uses it
   A = algebra(O)
   if _alpha === nothing
     _assert_has_refined_wedderburn_decomposition(A)
@@ -183,7 +184,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
 
   # Now test local freeness at the primes dividing the index [M : O]
   for p in prime_divisors(index(O, M))
-    if !islocally_free(O, I, p, side = :right)[1]
+    if !is_locally_free(O, I, p, side = :right)[1]
       @vprintln :PIP "Not locally free at $p"
       return false, zero(A)
     end
@@ -231,7 +232,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
     push!(bases, IMinB_basis)
     #@show UB
     #if isdefined(B, :isomorphic_full_matrix_algebra)
-    #  local C::AlgMat{nf_elem, Generic.MatSpaceElem{nf_elem}}
+    #  local C::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     #  C, BtoC = B.isomorphic_full_matrix_algebra
     #  MinC = _get_order_from_gens(C, elem_type(C)[BtoC(elem_in_algebra(b)) for b in absolute_basis(MinB)])
     #  @show MinC
@@ -271,7 +272,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
   #@info "preprocessing units"
   #@time for i in 1:length(dec)
   #  _local_coeffs = Vector{QQFieldElem}[]
-  #  m = dec_sorted[i][2]::morphism_type(AlgAss{QQFieldElem}, typeof(A))
+  #  m = dec_sorted[i][2]::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
   #  alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
   #  for u in units_sorted[i]
   #    aui =  alphai * u
@@ -287,7 +288,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing)
   @vprintln :PIP "Lengths $(length.(local_coeffs))"
   #@time for i in 1:length(dec)
   #  _local_coeffs = Vector{QQFieldElem}[]
-  #  m = dec_sorted[i][2]::morphism_type(AlgAss{QQFieldElem}, typeof(A))
+  #  m = dec_sorted[i][2]::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
   #  alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
   #  par = Iterators.partition(1:length(units_sorted[i]), multi * dim(A))
   #  ui = units_sorted[i]
@@ -547,7 +548,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     _local_coeffs = __local_coeffs[i]
     #_local_coeffs = _local_coeffs_buffer(A, length(ui)) #Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
     #_local_coeffs = Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
-    m = dec_sorted[i][2]::morphism_type(AlgAss{QQFieldElem}, typeof(A))
+    m = dec_sorted[i][2]::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
     alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
     kblock = div(length(ui), nt)
     if mod(length(ui), nt) != 0

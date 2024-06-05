@@ -273,7 +273,7 @@ function rem(a::HessQRElem, b::HessQRElem)
   end
   R = parent(a).R
   F, mF = quo(ZZ, d)
-  aa = map_coefficients(mF, a.c*a.f)
+  aa = map_coefficients(mF, a.c*a.f, cached = false)
   if iszero(aa)
     z = mF(one(domain(mF)))
   else
@@ -335,13 +335,14 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
   F = GF(b.c)
   Ft, t = rational_function_field(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
+  S = a.R
   return Ft, MapFromFunc(a, Ft,
                          x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
-                         y->HessQRElem(a, ZZRingElem(1), map_coefficients(z -> lift(ZZ, z), numerator(y)), map_coefficients(z -> lift(ZZ, z), denominator(y))))
+                         y->HessQRElem(a, ZZRingElem(1), map_coefficients(z -> lift(ZZ, z), numerator(y), parent = S), map_coefficients(z -> lift(ZZ, z), denominator(y), parent = S)))
 end
 
 function Nemo.residue_ring(a::HessQR, b::HessQRElem)
-  F = residue_ring(FlintZZ, b.c)
+  F = residue_ring(FlintZZ, b.c)[1]
   Fx, x = polynomial_ring(F, cached = false)
   Q = fraction_field(Fx, cached = false)
   return Q, MapFromFunc(

@@ -1,3 +1,6 @@
+Unless otherwise specified in a file, Hecke is licensed under the BSD 2-Clause
+"Simplified" License.
+
 Copyright (c) 2015: Claus Fieker, Tommy Hofmann
 All rights reserved.
 
@@ -22,3 +25,6 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+The following components included in Hecke have their own licences:
+
+- src/Misc/AVLTrees [MIT] (see https://github.com/JuliaCollections/DataStructures.jl)

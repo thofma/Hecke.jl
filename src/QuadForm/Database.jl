@@ -27,7 +27,7 @@ function Base.show(io::IO, ::MIME"text/plain", L::LatDB)
 end
 
 function Base.show(io::IO, L::LatDB)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Integer lattices database")
   else
     print(io, "Nebe-Sloan database of lattices (rank limit = ", L.max_rank, ")")
@@ -209,7 +209,7 @@ function Base.show(io::IO, ::MIME"text/plain", D::QuadLatDB)
 end
 
 function Base.show(io::IO, D::QuadLatDB)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Quadratic lattices database")
   else
     s = get(D.metadata, "Description", "Quadratic lattices database")
@@ -317,7 +317,7 @@ function Base.show(io::IO, ::MIME"text/plain", D::HermLatDB)
 end
 
 function Base.show(io::IO, D::HermLatDB)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Hermitian lattices database")
   else
     s = get(D.metadata, "Description", "Hermitian lattices database")

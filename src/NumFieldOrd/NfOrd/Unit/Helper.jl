@@ -1,8 +1,8 @@
-function _transform(x::Array{nf_elem}, y::ZZMatrix)
+function _transform(x::Array{AbsSimpleNumFieldElem}, y::ZZMatrix)
   n = length(x)
   @assert n == nrows(y)
   m = ncols(y)
-  z = Array{nf_elem}(m)
+  z = Array{AbsSimpleNumFieldElem}(m)
   for i in 1:m
     z[i] = x[1]^y[1, i]
     for j in 2:n

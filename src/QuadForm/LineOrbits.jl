@@ -45,12 +45,12 @@ function Base.show(io::IO, ::MIME"text/plain", P::LineEnumCtx)
 end
 
 function Base.show(io::IO, P::LineEnumCtx)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Iterator for vector lines")
   else
     io = pretty(io)
     print(io, "Iterator for Gr(1, $(dim(P))) over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), P.K)
+    print(terse(io), Lowercase(), P.K)
   end
 end
 
@@ -89,7 +89,7 @@ function next(P::LineEnumCtx)
   if depth(P) > 0
     i = dim(P)
     while true
-      @show i, P.v, depth(P)
+      #@show i, P.v, depth(P)
       if i == depth(P)
         P.v[i] = zero!(P.v[i])
         i = i - 1
@@ -120,7 +120,7 @@ function next(P::LineEnumCtx{T, S}) where {T <: Union{fpField, FpField}, S}
   if depth(P) > 0
     i = dim(P)
     while true
-      @show i, P.v, depth(P)
+      #@show i, P.v, depth(P)
       if i == depth(P)
         P.v[i] = zero!(P.v[i])
         i = i - 1

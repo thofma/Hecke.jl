@@ -898,9 +898,9 @@ function _short_vectors_gram(::Type{S}, _G, lb, ub, elem_type::Type{U} = ZZRingE
     Glll = G
     T = G
   elseif hard
-    Glll, T = lll_gram_with_transform(G, lll_ctx(0.99999999999999, 0.500000000001, :gram))
+    Glll, T = lll_gram_with_transform(G, LLLContext(0.99999999999999, 0.500000000001, :gram))
   else
-    Glll, T = lll_gram_with_transform(G, lll_ctx(0.9999, 0.5001, :gram))
+    Glll, T = lll_gram_with_transform(G, LLLContext(0.9999, 0.5001, :gram))
   end
 
   # We pass d and T to the next level, but it is actually only used for the
@@ -981,7 +981,7 @@ end
 
 function _short_vectors_gram_integral(::Type{S}, _G, ub, elem_type::Type{U} = ZZRingElem; hard = false) where {S, U}
   if hard
-    Glll, T = lll_gram_with_transform(_G, lll_ctx(0.99999999999999, 0.500000000001, :gram))
+    Glll, T = lll_gram_with_transform(_G, LLLContext(0.99999999999999, 0.500000000001, :gram))
   else
     Glll, T = lll_gram_with_transform(_G)
   end

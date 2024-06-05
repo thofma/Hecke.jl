@@ -1,6 +1,6 @@
 ################################################################################
 #
-#             EllCrv/Heights.jl : Height functions on elliptic curves
+#             EllipticCurve/Heights.jl : Height functions on elliptic curves
 #
 # This file is part of Hecke.
 #
@@ -59,16 +59,16 @@ function naive_height_coordinate(x::QQFieldElem, prec::Int = 100)
 end
 
 @doc raw"""
-    naive_height(P::EllCrvPt{QQFieldElem}, prec) -> arb
+    naive_height(P::EllipticCurvePoint{QQFieldElem}, prec) -> ArbFieldElem
 
 Return the naive height of a point $P$ on an elliptic curve defined over
 $\mathbb{Q}$.
 """
-function naive_height(P::EllCrvPt{QQFieldElem}, prec::Int = 100)
+function naive_height(P::EllipticCurvePoint{QQFieldElem}, prec::Int = 100)
   return naive_height_coordinate(P[1], prec)
 end
 
-function naive_height_coordinate(x::nf_elem, prec::Int = 100)
+function naive_height_coordinate(x::AbsSimpleNumFieldElem, prec::Int = 100)
   attempt = 1
 
   K = parent(x)
@@ -109,12 +109,12 @@ function naive_height_coordinate(x::nf_elem, prec::Int = 100)
 end
 
 @doc raw"""
-    naive_height(P::EllCrvPt{nf_elem}, prec) -> arb
+    naive_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, prec) -> ArbFieldElem
 
 Return the naive height of a point $P$ on an elliptic curve defined over
 a number field.
 """
-function naive_height(P::EllCrvPt{nf_elem}, prec::Int = 100)
+function naive_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, prec::Int = 100)
   return naive_height_coordinate(P[1], prec)
 end
 
@@ -131,13 +131,13 @@ end
 #TODO: Fine-tune precision
 
 @doc raw"""
-    local_height(P::EllCrvPt{QQFieldElem}, p::IntegerUnion, prec::Int) -> ArbField
+    local_height(P::EllipticCurvePoint{QQFieldElem}, p::IntegerUnion, prec::Int) -> ArbField
 
 Computes the local height of a point $P$ on an elliptic curve defined over
 $\mathbf{Q}$ at $p$. The number $p$ must be a prime or $0$. In the latter case,
 the height at the infinite place is returned.
 """
-function local_height(P::EllCrvPt{QQFieldElem}, p, prec::Int = 100)
+function local_height(P::EllipticCurvePoint{QQFieldElem}, p, prec::Int = 100)
 
   if !is_finite(P)
     return zero(ArbField(prec, cached = false))
@@ -159,7 +159,7 @@ function local_height(P::EllCrvPt{QQFieldElem}, p, prec::Int = 100)
   x = P[1]
   y = P[2]
 
-  a1, a2, a3, a4, a6 = map(numerator, a_invars(F))
+  a1, a2, a3, a4, a6 = map(numerator, a_invariants(F))
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(F)
 
@@ -210,7 +210,7 @@ function local_height(P::EllCrvPt{QQFieldElem}, p, prec::Int = 100)
   end
 end
 
-function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
+function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int = 100)
 
   if !is_finite(P)
     return zero(ArbField(prec, cached = false))
@@ -235,10 +235,10 @@ function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
   x = P[1]
   y = P[2]
 
-  a1, a2, a3, a4, a6 = map(numerator, a_invars(F))
+  a1, a2, a3, a4, a6 = map(numerator, a_invariants(F))
 
-  b2, b4, b6, b8 = map(OK, b_invars(E))
-  c4, c6 = map(OK, c_invars(E))
+  b2, b4, b6, b8 = map(OK, b_invariants(E))
+  c4, c6 = map(OK, c_invariants(E))
 
   delta = discriminant(E)
 
@@ -288,7 +288,7 @@ function local_height(P::EllCrvPt{nf_elem}, pIdeal::NfOrdIdl, prec::Int = 100)
   end
 end
 
-function local_height(P::EllCrvPt{nf_elem}, v::InfPlc, prec = 100)
+function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, v::InfPlc, prec = 100)
   return archimedean_height(P, v, prec)
 end
 
@@ -300,7 +300,7 @@ end
 
 #Precision is given in bits (as Real Field also works this way), but maybe this should be changed. In Magma precision is given in decimals
 
-function _real_height(P::EllCrvPt{QQFieldElem}, prec = 100)
+function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
   attempt = 3
   d = ceil(Int, prec*log(10,2))
 
@@ -311,7 +311,7 @@ function _real_height(P::EllCrvPt{QQFieldElem}, prec = 100)
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
 
   b2, b4, b6, b8 = get_b_integral(F)
   H = max(ZZ(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
@@ -392,7 +392,7 @@ function _real_height(P::EllCrvPt{QQFieldElem}, prec = 100)
     ccall((:arf_set_si_2exp_si, libarb), Nothing,
         (Ref{arf_struct}, Int, Int), error_arf, Int(1), Int(-wprec))
     ccall((:arb_add_error_arf, libarb), Nothing,
-            (Ref{arb}, Ref{arf_struct}), mu, error_arf)
+            (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
     @assert radiuslttwopower(mu, prec)
@@ -400,7 +400,7 @@ function _real_height(P::EllCrvPt{QQFieldElem}, prec = 100)
   end
 end
 
-function archimedean_height(P::EllCrvPt{nf_elem}, _v::InfPlc, prec = 100)
+function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::InfPlc, prec = 100)
   v = _embedding(_v)
   attempt = 3
   d = ceil(Int, prec*log(10,2))
@@ -412,7 +412,7 @@ function archimedean_height(P::EllCrvPt{nf_elem}, _v::InfPlc, prec = 100)
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(F)))
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
   R = ArbField(prec)
   b2, b4, b6, b8 = map(t -> evaluate(t, v,  prec), get_b_integral(F))
   H = max(R(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
@@ -498,7 +498,7 @@ function archimedean_height(P::EllCrvPt{nf_elem}, _v::InfPlc, prec = 100)
     ccall((:arf_set_si_2exp_si, libarb), Nothing,
         (Ref{arf_struct}, Int, Int), error_arf, Int(1), Int(-wprec))
     ccall((:arb_add_error_arf, libarb), Nothing,
-            (Ref{arb}, Ref{arf_struct}), mu, error_arf)
+            (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
     @assert radiuslttwopower(mu, prec)
@@ -514,23 +514,23 @@ end
 ################################################################################
 
 @doc raw"""
-    neron_tate_height(P::EllCrvPt{T}, prec::Int) -> arb
-      where T<:Union{QQFieldElem, nf_elem}
+    neron_tate_height(P::EllipticCurvePoint{T}, prec::Int) -> ArbFieldElem
+      where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
-function neron_tate_height(P::EllCrvPt{T}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
+function neron_tate_height(P::EllipticCurvePoint{T}, prec::Int = 100) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
   return canonical_height(P, prec)
 end
 
 @doc raw"""
-    canonical_height(P::EllCrvPt{QQFieldElem}, prec::Int) -> arb
+    canonical_height(P::EllipticCurvePoint{QQFieldElem}, prec::Int) -> ArbFieldElem
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
-function canonical_height(P::EllCrvPt{QQFieldElem}, prec = 100)
+function canonical_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
   attempt = 1
 
   while true
@@ -557,12 +557,12 @@ function canonical_height(P::EllCrvPt{QQFieldElem}, prec = 100)
 end
 
 @doc raw"""
-    canonical_height(P::EllCrvPt{nf_elem}, prec::Int) -> arb
+    canonical_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, prec::Int) -> ArbFieldElem
 
 Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over a number field
 """
-function canonical_height(P::EllCrvPt{nf_elem}, prec = 100)
+function canonical_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, prec = 100)
   attempt = 1
   K = base_field(parent(P))
   OK = ring_of_integers(K)
@@ -605,14 +605,14 @@ function canonical_height(P::EllCrvPt{nf_elem}, prec = 100)
 end
 
 @doc raw"""
-    height_pairing(P::EllCrvPt{T},Q::EllCrvPt{T}, prec::Int)
-      -> ArbField where T<:Union{QQFieldElem, nf_elem}
+    height_pairing(P::EllipticCurvePoint{T},Q::EllipticCurvePoint{T}, prec::Int)
+      -> ArbField where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
 
 Compute the height pairing of two points $P$ and $Q$ of an
 elliptic curve defined over a number field. It is defined by
 $h(P,Q) = (h(P + Q) - h(P) -h(Q))/2$ where $h$ is the canonical height.
 """
-function height_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
+function height_pairing(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}, prec::Int = 100) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
   attempt = 1
   while true
     wprec = attempt * prec
@@ -628,12 +628,12 @@ function height_pairing(P::EllCrvPt{T}, Q::EllCrvPt{T}, prec::Int = 100) where T
 end
 
 @doc raw"""
-    regulator(S::Vector{EllCrvPt{T}}, prec = 100) -> ArbField
+    regulator(S::Vector{EllipticCurvePoint{T}}, prec = 100) -> ArbField
 
 Return the determinant of the height pairing matrix of a given
 set of points $S$ on an elliptic curve over a number field.
 """
-function regulator(S::Vector{EllCrvPt{T}}, prec::Int = 100) where T<:Union{QQFieldElem, nf_elem}
+function regulator(S::Vector{EllipticCurvePoint{T}}, prec::Int = 100) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
   attempt = 2
 
   while true
@@ -675,14 +675,14 @@ end
 # lower bounds are considerably less sharp.
 
 @doc raw"""
-    CPS_height_bounds(E::EllCrv) -> arb, arb
+    CPS_height_bounds(E::EllipticCurve) -> ArbFieldElem, ArbFieldElem
 
 Given an elliptic curve over a number field or rational field, return a tuple
 `a, b` giving bounds for the difference between the naive and the canonical
 height of an elliptic curve E. We have `a <= naive_height(P) -
 canonical_height(P) <= b` for all rational points `P` of `E`.
 """
-function CPS_height_bounds(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
+function CPS_height_bounds(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
   # This is just a working precision
   prec = 110
   P = bad_primes(E)
@@ -710,7 +710,7 @@ function CPS_height_bounds(E::EllCrv{T}) where T<:Union{QQFieldElem, nf_elem}
   return 1//(3*d) * dv_arch, 1//(3*d) * ev_arch + non_arch_contribution
 end
 
-function CPS_non_archimedean(E::EllCrv{T}, v, prec::Int = 100) where T
+function CPS_non_archimedean(E::EllipticCurve{T}, v, prec::Int = 100) where T
   OK = ring_of_integers(base_field(E))
   Ep, K, f, c = tates_algorithm_local(E, v)
   k = K.ksymbol
@@ -755,13 +755,13 @@ function CPS_non_archimedean(E::EllCrv{T}, v, prec::Int = 100) where T
   return (Rc(av) + Rc(Rc(disc_ord)//6))*log(qv)
 end
 
-function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
+function CPS_dvev_real(E::EllipticCurve{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
   Kx, x = polynomial_ring(K, "x")
 
-  b2, b4, b6, b8 = b_invars(E)
+  b2, b4, b6, b8 = b_invariants(E)
 
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   df = 12*x^2 +2*b2*x + 2*b4
@@ -779,14 +779,14 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
 
   Rx, x = polynomial_ring(Rc, "x")
 
-  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, _embedding(v), prec), b_invars(E)))
+  b2R, b4R, b6R, b8R = map(real, map(t -> evaluate(t, _embedding(v), prec), b_invariants(E)))
 
   fR = 4*x^3 + b2R*x^2 + 2*b4R*x + b6R
   gR = x^4 - b4R*x^2 -2*b6R*x - b8R
   FR = b6R*x^4 + 2*b4R*x^3 + b2R*x^2 + 4*x
   GR = -b8R*x^4 - 2*b6R*x^3 - b4R*x^2 + 1
 
-  test_fg = function(x::arb)
+  test_fg = function(x::ArbFieldElem)
 
     fx = evaluate(fR, x)
 
@@ -796,7 +796,7 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
   filter!(test_fg, S)
   fglist = map(s -> max(abs(evaluate(fR,s)), abs(evaluate(gR,s))), S)
 
-  test_FG = function(x::arb)
+  test_FG = function(x::ArbFieldElem)
   Fx = evaluate(FR, x)
     return abs(x)<= 1 && (Fx > 0 ||contains(Fx, zero(Rc)))
   end
@@ -812,27 +812,27 @@ function CPS_dvev_real(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Uni
 end
 
 
-function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
+function CPS_dvev_complex(E::EllipticCurve{T}, v::V, prec::Int = 100) where T where V<:Union{InfPlc, PosInf}
 
   Rc = ArbField(prec)
   C = AcbField(prec)
   K = base_field(E)
   Rx, x = polynomial_ring(C, "x")
 
-  b2, b4, b6, b8 = map(t -> evaluate(t, _embedding(v), prec), b_invars(E))
+  b2, b4, b6, b8 = map(t -> evaluate(t, _embedding(v), prec), b_invariants(E))
 
   f = 4*x^3 + b2*x^2 + 2*b4*x + b6
   g = x^4 - b4*x^2 -2*b6*x - b8
   F = b6*x^4 + 2*b4*x^3 + b2*x^2 + 4*x
   G = -b8*x^4 - 2*b6*x^3 - b4*x^2 + 1
 
-  E_fg = function (u::acb, eta::arb)
+  E_fg = function (u::AcbFieldElem, eta::ArbFieldElem)
     fsum = sum([eta^i//factorial(i)*abs(derivative(f, i)(u)) for i in (1:3)])
     gsum = sum([eta^i//factorial(i)*abs(derivative(g, i)(u)) for i in (1:4)])
     return max(fsum, gsum)
   end
 
-  E_FG = function (u::acb, eta::arb)
+  E_FG = function (u::AcbFieldElem, eta::ArbFieldElem)
     Fsum = sum([eta^i//factorial(i)*abs(derivative(F, i)(u)) for i in (1:4)])
     Gsum = sum([eta^i//factorial(i)*abs(derivative(G, i)(u)) for i in (1:4)])
     return max(Fsum, Gsum)
@@ -846,7 +846,7 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
   H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
 
-  # minimum and maximum of Vector{arb} are bugged, even reduec(min/max, ...)
+  # minimum and maximum of Vector{ArbFieldElem} are bugged, even reduec(min/max, ...)
   alpha_start_fg = H_fg[1]
   beta_start_fg = H_fg[1]
   for x in H_fg
@@ -876,7 +876,7 @@ function CPS_dvev_complex(E::EllCrv{T}, v::V, prec::Int = 100) where T where V<:
   return approx_dv, approx_ev
 end
 
-function refine_alpha_bound(P::PolyRingElem, Q::PolyRingElem, E,  mu::arb, a::arb, b::arb, r::arb, alpha_bound::arb, prec)
+function refine_alpha_bound(P::PolyRingElem, Q::PolyRingElem, E,  mu::ArbFieldElem, a::ArbFieldElem, b::ArbFieldElem, r::ArbFieldElem, alpha_bound::ArbFieldElem, prec)
 
   C = AcbField(prec, cached = false)
   Rc = ArbField(prec, cached = false)
@@ -921,7 +921,7 @@ end
 
 
 
-function refine_beta_bound(P::PolyRingElem, Q::PolyRingElem, E,  mu::arb, a::arb, b::arb, r::arb, beta_bound::arb, prec)
+function refine_beta_bound(P::PolyRingElem, Q::PolyRingElem, E,  mu::ArbFieldElem, a::ArbFieldElem, b::ArbFieldElem, r::ArbFieldElem, beta_bound::ArbFieldElem, prec)
 
   C = AcbField(prec, cached = false)
   Rc = ArbField(prec, cached = false)

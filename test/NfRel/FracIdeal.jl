@@ -31,4 +31,17 @@
     @test I + I == I
     @test isone(I//I)
   end
+
+  let
+    K, a = rationals_as_number_field()
+    Kt, t = polynomial_ring(K, "t")
+    L, b = number_field(t^2 + 1, "b")
+    OL = maximal_order(L)
+    I = zero(L) * OL
+    @test iszero(I)
+    @test nrows(basis_pmatrix(I)) == 0
+    @test isempty(pseudo_basis(I))
+    I = one(L) * OL
+    @test !iszero(L)
+  end
 end

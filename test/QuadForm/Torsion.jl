@@ -5,7 +5,7 @@
   @test order(T) == 1
   # discriminant_group group of a non full lattice
   L = integer_lattice(2*identity_matrix(ZZ,2))
-  S = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  S = lattice(ambient_space(L),basis_matrix(L)[1:1,:])
   @test order(discriminant_group(S)) == 4
   @test discriminant_group(S) === discriminant_group(S)
 
@@ -20,7 +20,7 @@
   @test order(T) == 4
   @test elementary_divisors(T) == ZZRingElem[2, 2]
 
-  S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
+  S = lattice(ambient_space(L),basis_matrix(L)[2:2,:])
   D = discriminant_group(S)
   D0, _ = sub(D,gens(D)[1:0])
   @test order(D0)==1
@@ -39,11 +39,11 @@
   @test lift(inner_product(a,b)) == 1//2
   @test order(a) == 2
   @test order(0*a) == 1
-  set_attribute!(q1, :name, "q1")
+  AbstractAlgebra.set_name!(q1, "q1")
   f = hom(q1,q1, ZZ[2 0; 0 1])
   @test sprint(show, f) isa String
 
-  ok, c = @inferred has_preimage(f ,b)
+  ok, c = @inferred has_preimage_with_preimage(f ,b)
   @test ok
   @test b == c
   @test_throws ArgumentError preimage(f,a)

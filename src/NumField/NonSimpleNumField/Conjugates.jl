@@ -1,4 +1,4 @@
-function signature(L::NfRelNS)
+function signature(L::RelNonSimpleNumField)
   c = get_attribute(L, :signature)
   if c isa Tuple{Int, Int}
     return c::Tuple{Int, Int}
@@ -22,17 +22,17 @@ function signature(L::NfRelNS)
   return r, s
 end
 
-function conjugates_arb(a::NfRelNSElem{T}, prec::Int = 32) where {T}
+function conjugates_arb(a::RelNonSimpleNumFieldElem{T}, prec::Int = 32) where {T}
   # This is very slow.
 
   f = data(a)
   wprec = prec
   L = parent(a)
-  res = Vector{acb}(undef, absolute_degree(L))
+  res = Vector{AcbFieldElem}(undef, absolute_degree(L))
   found = false
   K = base_field(L)
   plcK = complex_embeddings(K, conjugates = false)
-  pols = Vector{Generic.MPoly{acb}}(undef, length(plcK))
+  pols = Vector{Generic.MPoly{AcbFieldElem}}(undef, length(plcK))
   r, s = signature(L)
   while !found
     found = true
@@ -84,18 +84,18 @@ end
 #
 ################################################################################
 
-function _conjugates_data(L::NfRelNS{T}, p::Int) where T
+function _conjugates_data(L::RelNonSimpleNumField{T}, p::Int) where T
   cd = get_attribute(L, :conjugates_data)
   if cd === nothing
-    D = Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}}()
+    D = Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}}()
     res = __conjugates_data(L, p)
     D[p] = res
     set_attribute!(L, :conjugates_data => D)
     return res
   end
-  cd::Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}}
+  cd::Dict{Int, Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}}
   if haskey(cd, p)
-    res = cd[p]::Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}
+    res = cd[p]::Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}
     return res
   end
   res = __conjugates_data(L, p)
@@ -103,11 +103,11 @@ function _conjugates_data(L::NfRelNS{T}, p::Int) where T
   return res
 end
 
-function __conjugates_data(L::NfRelNS{T}, p::Int) where T
+function __conjugates_data(L::RelNonSimpleNumField{T}, p::Int) where T
   data = [_conjugates_data(component(L, j)[1], p) for j = 1:ngens(L)]
   plcs = complex_embeddings(base_field(L), conjugates = false)
   r, s = signature(L)
-  res = Vector{Tuple{embedding_type(base_field(L)), Vector{acb}}}(undef, r+s)
+  res = Vector{Tuple{embedding_type(base_field(L)), Vector{AcbFieldElem}}}(undef, r+s)
   r_cnt = 0
   c_cnt = 0
   for P in plcs
@@ -116,17 +116,17 @@ function __conjugates_data(L::NfRelNS{T}, p::Int) where T
       ind_real, ind_complex = enumerate_conj_prim_rel(datas)
       for y in ind_real
         r_cnt += 1
-        res[r_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)])
+        res[r_cnt] = (P, AcbFieldElem[datas[j][2][y[j]] for j = 1:length(y)])
       end
       for y in ind_complex
         c_cnt += 1
-        res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)])
+        res[r + c_cnt] = (P, AcbFieldElem[datas[j][2][y[j]] for j = 1:length(y)])
       end
     else
       it = cartesian_product_iterator([1:length(x[2]) for x in datas], inplace = true)
       for y in it
         c_cnt += 1
-        res[r + c_cnt] = (P, acb[datas[j][2][y[j]] for j = 1:length(y)])
+        res[r + c_cnt] = (P, AcbFieldElem[datas[j][2][y[j]] for j = 1:length(y)])
       end
     end
   end

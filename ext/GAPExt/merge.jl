@@ -128,17 +128,17 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
   # Now, I have to translate the automorphisms.
   # Easy thing: first, I write the automorphisms of the non simple extension
   # Then translating them is straightforward.
-  autK = Vector{NfToNfMor}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
+  autK = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(x.generators_of_automorphisms)+ length(y.generators_of_automorphisms))
   el = image_primitive_element(mK)
   for i = 1:length(x.generators_of_automorphisms)
     ima = mx(image_primitive_element(x.generators_of_automorphisms[i]))
-    autns = hom(Kns, Kns, NfAbsNSElem[ima, gens(Kns)[2]], check = false)
+    autns = hom(Kns, Kns, AbsNonSimpleNumFieldElem[ima, gens(Kns)[2]], check = false)
     ima = mK\(autns(el))
     autK[i] = hom(K, K, ima, check = false)
   end
   for j = 1:length(y.generators_of_automorphisms)
     ima = my(image_primitive_element(y.generators_of_automorphisms[j]))
-    autns = hom(Kns, Kns, NfAbsNSElem[gens(Kns)[1], ima], check = false)
+    autns = hom(Kns, Kns, AbsNonSimpleNumFieldElem[gens(Kns)[1], ima], check = false)
     ima = mK\(autns(el))
     autK[j+length(x.generators_of_automorphisms)] = hom(K, K, ima, check = false)
   end
@@ -157,8 +157,8 @@ function _to_composite(x::FieldsTower, y::FieldsTower, abs_disc::ZZRingElem)
   emb_suby = y.subfields[i]
   lsub, m1, m2 = number_field(domain(emb_subx), domain(emb_suby), cached = false, check = false)
   Seemb, mSeemb = simple_extension(lsub, check = false)
-  ev = nf_elem[mK\(mx(image_primitive_element(emb_subx))), mK\(my(image_primitive_element(emb_suby)))]
-  embs = NfToNfMor[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
+  ev = AbsSimpleNumFieldElem[mK\(mx(image_primitive_element(emb_subx))), mK\(my(image_primitive_element(emb_suby)))]
+  embs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[hom(Seemb, K, evaluate(mSeemb(gen(Seemb)).data, ev))]
   for j = 1:length(x.subfields)
     if codomain(x.subfields[j]) != domain(emb_subx)
       push!(embs, x.subfields[j])
@@ -331,7 +331,7 @@ function new_check_disc(K::FieldsTower, L::FieldsTower, absolute_bound::ZZRingEl
 end
 
 function maximal_abelian_subextension(F::FieldsTower)
-  fields = AnticNumberField[]
+  fields = AbsSimpleNumField[]
   for x in F.subfields
     if degree(domain(x)) == 1
       push!(fields, codomain(x))
@@ -341,7 +341,7 @@ function maximal_abelian_subextension(F::FieldsTower)
 end
 
 
-function check_norm_group_and_disc(lfieldsK::Vector{AnticNumberField}, lfieldsL::Vector{AnticNumberField}, bound::ZZRingElem)
+function check_norm_group_and_disc(lfieldsK::Vector{AbsSimpleNumField}, lfieldsL::Vector{AbsSimpleNumField}, bound::ZZRingElem)
 
   target_deg = prod(degree(x) for x in lfieldsK) * prod(degree(x) for x in lfieldsL)
   discK = lcm([discriminant(maximal_order(x)) for x in lfieldsK])
@@ -556,7 +556,7 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   expo = lcm(vcat([degree(x) for x in maximal_abelian_subextension(list1[1])], [degree(x) for x in maximal_abelian_subextension(list2[1])]))
   modulo = 1
   for p in ramified_primes
-    if !divisible(expo, p)
+    if !is_divisible_by(expo, p)
       modulo *= p
     else
       bound_disc = valuation_bound_discriminant(ppio(expo, p)[1], p)
@@ -568,7 +568,7 @@ function sieve_by_norm_group(list1::Vector{FieldsTower}, list2::Vector{FieldsTow
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, modulo, true, expo)
   Kt = polynomial_ring(K, "t", cached = false)[1]
-  norm_groups = Vector{GrpAbFinGenMap}(undef, length(v))
+  norm_groups = Vector{FinGenAbGroupHom}(undef, length(v))
   for i = 1:length(v)
     lfieldsK = maximal_abelian_subextension(list1[v[i][1]])
     lfieldsL = maximal_abelian_subextension(list2[v[i][2]])

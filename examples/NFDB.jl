@@ -70,7 +70,7 @@ end
 
 mutable struct NFDBRecord{T}
   data::Dict{Symbol, Any}
-  K::AnticNumberField
+  K::AbsSimpleNumField
 
   function NFDBRecord{T}(data) where {T}
     z = new{T}()
@@ -123,7 +123,7 @@ function update_properties!(D::NFDB)
   return D
 end
 
-function NFDB(L::Vector{AnticNumberField}; compute = [])
+function NFDB(L::Vector{AbsSimpleNumField}; compute = [])
   res = NFDB{1}()
   for K in L
     D = _create_record(K, compute = compute)
@@ -186,7 +186,7 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                                                         end),
                               :is_normal => (Bool, x -> is_normal(x)),
                               :automorphism_group => (Tuple{Int, Int}, x -> find_small_group(automorphism_group(x)[1])[1]),
-                              :regulator => (arb, x -> regulator(maximal_order(x))),
+                              :regulator => (ArbFieldElem, x -> regulator(maximal_order(x))),
                               :lmfdb_label => (String, x -> ""),
                               :is_abelian => (Bool, x -> is_abelian(automorphism_group(x)[1])),
                               :non_simple => (Vector{QQPolyRingElem}, x -> non_simple_extension(x)),
@@ -354,7 +354,7 @@ function _get(K, s, x...)
   end
 end
 
-function _create_record(K::AnticNumberField; compute = [], keep_field = true)
+function _create_record(K::AbsSimpleNumField; compute = [], keep_field = true)
   f = defining_polynomial(K)
   data = Dict{Symbol, Any}()
   data[:poly] = f
@@ -427,7 +427,15 @@ _stringify(x::Tuple{Int, Int}) = string(x)
 
 _stringify(x) = string(x)
 
-_stringify(x::arb) = _string(x)
+_stringify(x::ArbFieldElem) = _string(x)
+
+function _stringify(x::NumFieldElem)
+  return _stringify.(coordinates(x))
+end
+
+function _stringify(x::PolyRingElem)
+  return _stringify([_stringify(coeff(x, i)) for i in 0:degree(x)])
+end
 
 function get_record(io::IO)
   data = Dict{Symbol, Any}()
@@ -757,7 +765,7 @@ function _parse(::Type{Perm{Int}}, io, start = Base.read(io, UInt8))
   return b, perm_from_string(String(take!(res)))
 end
 
-function _parse(::Type{arb}, io, start = Base.read(io, UInt8))
+function _parse(::Type{ArbFieldElem}, io, start = Base.read(io, UInt8))
   n = IOBuffer()
   b = start
   while !eof(io) && b == UInt8(' ')
@@ -785,7 +793,7 @@ function _parse(::Type{arb}, io, start = Base.read(io, UInt8))
   return b, RR(nu)
 end
 
-function _string(a::arb)
+function _string(a::ArbFieldElem)
   s = string(a)
   if s[1] != '['
     s = "[" * s * "]"
@@ -1036,7 +1044,7 @@ function Base.merge(D::Vector{NFDB{1}})
 end
 
 # should call update_properties! afterwards
-function unsafe_add!(DB::NFDB, K::AnticNumberField)
+function unsafe_add!(DB::NFDB, K::AbsSimpleNumField)
   D = _create_record(K, keep_field = false)
   push!(DB.fields, D)
   return D
@@ -1106,7 +1114,7 @@ names64 = [ "C64", "C8^2", "C8:C8", "C2^3:C8", "(C2*C4):C8", "D4:C8", "Q8:C8",
            "D10.C2^2", "C2^4*C4", "C2^3*D4", "C2^3*Q8", "C2^2*D4:C2",
            "C2*Q8:C2^2", "C2*C4.C2^3", "D4.C2^3", "C2^6" ]
 
-function has_obviously_relative_class_number_not_one(K::AnticNumberField, is_normal::Bool = true, maxdeg::Int = degree(K))
+function has_obviously_relative_class_number_not_one(K::AbsSimpleNumField, is_normal::Bool = true, maxdeg::Int = degree(K))
   if is_normal
     subs = subfields_normal(K)
   else
@@ -1156,17 +1164,132 @@ end
 #
 ################################################################################
 
-function _p_adic_regulator(K, p, fast::Bool = false)
-  if !is_normal(K)
-    return _padic_regulator_non_normal(K, p)
+function _p_adic_regulator(K::AbsSimpleNumField, p::IntegerUnion)
+  return _p_adic_regulator_coates(K, p)
+end
+
+function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
+  # Implementation due to Scheima Obeidi, 2024
+  degK = degree(K)
+  if degK == 1 # rationals
+    return zero(QQ)
   end
+  @req is_totally_real(K) "Field must be totally real"
+  OK = ring_of_integers(K)
+  dp = prime_ideals_over(OK, p)
+  U, mU = unit_group_fac_elem(OK)
+  rK = torsion_free_rank(U)
+  EK = [mU(U[j]) for j in 2:(rK + 1)]
+  push!(EK, FacElem(K(1+p))) # put 1+p in list with fundamental units
+  prec = degK + 20 # precision for working Qp
+  working_prec = prec + 20
+  # The precision management:
+  #
+  # prec = precision of Qp/Zp, this is where the determinant of the matrix
+  #        eventually resides. Might be zero, if prec < v(reg_p(K))
+  #
+  # working_prec = precision for the completion map (this does not guarentee
+  #                the precision of the output)
+  #
+  # There are some gotos, because we need to distinguish low prec and low
+  # working_prec.
+  while true
+    (prec > 2^12 || working_prec > 2^12) && error("Something wrong")
+    imK =[LocalFieldValuationRingElem{PadicField, PadicFieldElem}[] for i in 1:degK]
+    Qp = PadicField(p, prec, cached = false)
+    Zp = ring_of_integers(Qp)
+    dK = discriminant(OK)
+    r = maximum([ramification_index(P) for P in dp])
+    ims = [[] for i in 1:degK]
+    # In general  [LocalFieldElem{QadicFieldElem, EisensteinLocalField}[] for i in 1:degK]
+    # In the easy case [QadicFieldElem[] for i in 1:degK]
+    #
+    # Compute the logarithm of all elements under all embeddings
+    # We need a working precision independent of prec
+    while length(ims[rK + 1]) < length(dp) # while not everything is filled
+      empty!.(ims)
+      for j in 1:length(dp)
+        local C, mC
+        try
+          C, mC = completion_easy(K, dp[j], working_prec)
+        catch e
+          if !(e isa ErrorException && e.msg == "cannot deal with difficult primes yet")
+            rethrow()
+          end
+          C, mC = completion(K, dp[j], working_prec)
+        end
+        for i in 1:(rK+1)
+          try
+            # the evaluation of the logarithm may fail, if the precision
+            # is not high enough
+            el = _evaluate_log_of_fac_elem(mC, dp[j], EK[i])
+            if is_zero(el)
+              @goto bad_working_prec
+            end
+            push!(ims[i], el)
+          catch e
+            if !(e isa ErrorException && e.msg == "precision too low")
+              rethrow()
+            end
+            @goto bad_working_prec
+          end
+        end
+      end
+    end
+
+    m = 0
+    mj = minimum(QQFieldElem[valuation(ims[i][j]) for i in 1:length(ims) for j in 1:length(dp)])
+    if mj >= 0
+      m = zero(QQ)
+    else
+      m = mj
+    end
+
+    for i in 1:(rK+1)
+      for j in 1:length(ims[i])
+        OC = ring_of_integers(parent(ims[i][j]))
+        try
+          w = absolute_coordinates(Zp, OC(ims[i][j]*p^(Int(-m*r)))) #coates
+          append!(imK[i], w)
+        catch e
+          if e isa ErrorException && startswith(e.msg, "Precision of field")
+            @goto bad_working_prec
+          else
+            rethrow(e)
+          end
+        end
+      end
+    end
+    X = matrix(Zp, imK)
+    dX = AbstractAlgebra.det_df(X)
+    if is_zero(dX)
+      @goto bad_prec
+    end
+    vp = valuation(AbstractAlgebra.det_df(X))
+    vp = vp +  m*r*degK + valuation(dK, p)//2 - 1
+    return vp
+
+    @label bad_prec
+    prec = 2 * prec
+    #@info "Increasing prec to $(prec)"
+    working_prec = max(working_prec, prec + 20)
+    continue
+
+    @label bad_working_prec
+    working_prec = 2 * working_prec
+    #@info "Increasing working_prec to $(working_prec)"
+    continue
+  end
+end
+
+function _p_adic_regulator_normal(K, p, fast::Bool = false)
   OK = maximal_order(K)
   P = prime_ideals_over(OK, p)[1]
   U, mU = unit_group_fac_elem(OK)
   A, mA = automorphism_group(K)
   @req order(A) == degree(K) "Field must be normal"
   @req is_totally_real(K) "Field must be totally real"
-  r = rank(U)
+  r = torsion_free_rank(U)
   prec = degree(K) + 10
   _det = Hecke.AbstractAlgebra.det_df
   while true
@@ -1187,13 +1310,14 @@ function _p_adic_regulator(K, p, fast::Bool = false)
       C, mC = completion(K, P, prec)
     end
     Rmat = zero_matrix(C, r, r)
-    D = Dict{nf_elem, elem_type(C)}()
+    D = Dict{AbsSimpleNumFieldElem, elem_type(C)}()
     good = true
     for i in 1:r
       for j in 1:r
         try
           Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[i])(mU(U[j + 1])), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
         catch e
+          @show "asds"
           if !(e isa ErrorException && e.msg == "precision too low")
             rethrow()
           end
@@ -1221,7 +1345,7 @@ function _p_adic_regulator(K, p, fast::Bool = false)
   end
 end
 
-function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField}, D = Dict{nf_elem, elem_type(codomain(mC))}())
+function _evaluate_log_of_fac_elem(mC, P, e::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, D = Dict{AbsSimpleNumFieldElem, elem_type(codomain(mC))}())
   C = codomain(mC)
   K = base_ring(e)
   pi = K(uniformizer(P))
@@ -1239,7 +1363,7 @@ function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField},
       if is_zero(bb)
         error("precision too low")
       end
-      if bb isa qadic
+      if bb isa QadicFieldElem
         return _log(bb)
       else
         return log(bb)
@@ -1250,7 +1374,7 @@ function _evaluate_log_of_fac_elem(mC, P, e::FacElem{nf_elem, AnticNumberField},
   return res
 end
 
-function _padic_regulator_non_normal(K, p)
+function _p_adic_regulator_non_normal(K, p)
   @req is_totally_real(K) "Field must be totally real"
   a = gen(K)
   N, KtoN = normal_closure(K)
@@ -1282,7 +1406,7 @@ function _padic_regulator_non_normal(K, p)
 
   OK = ring_of_integers(K)
   U, mU = unit_group_fac_elem(OK)
-  r = rank(U)
+  r = torsion_free_rank(U)
   prec = 64
   _det = Hecke.AbstractAlgebra.det_df
   while true
@@ -1304,3 +1428,166 @@ function _padic_regulator_non_normal(K, p)
     end
   end
 end
+
+# Hack in some tables of relative fields
+
+mutable struct NFDBRecordGeneric{T, S}
+  data::Dict{Symbol, Any}
+  K::S
+
+  function NFDBRecordGeneric{T, S}(data) where {T, S}
+    z = new{T, S}()
+    z.data = data
+    return z
+  end
+end
+
+mutable struct NFDBGeneric{T, S}
+  meta::Dict{Symbol, Any}
+  fields::Vector{NFDBRecordGeneric{T, S}}
+  prop::Vector{Tuple{Symbol, Int}} # 0 not, 1 there, 2 partial
+
+   function NFDBGeneric{T, S}() where {T, S}
+    z = new{T, S}()
+    z.meta = Dict{Symbol, Any}()
+    z.fields = NFDBRecordGeneric{T, S}[]
+    return z
+  end
+end
+   
+function NFDBGeneric(L::Vector{RelSimpleNumField{AbsSimpleNumFieldElem}})
+  res = NFDBGeneric{1, eltype(L)}()
+  for K in L
+    D = _create_record(K)
+    push!(res.fields, D)
+  end
+  return res
+end
+
+function _create_record(K::RelSimpleNumField{AbsSimpleNumFieldElem}; keep_field = true)
+  f = defining_polynomial(K)
+  data = Dict{Symbol, Any}()
+  data[:base_field_poly] = defining_polynomial(base_field(K))
+  data[:poly] = f
+  data[:deg] = degree(f)
+  data[:absolute_discriminant] = norm(discriminant(maximal_order(K)))
+  D = NFDBRecordGeneric{1, typeof(K)}(data)
+  if keep_field
+    D.K = K
+  end
+  return D
+end
+
+function Base.write(io::IO, D::NFDBRecordGeneric{1, RelSimpleNumField{AbsSimpleNumFieldElem}})
+  m = 0
+  prop = [:base_field_poly, :poly, :deg, :absolute_discriminant]
+  j = length(prop)
+  for d in prop
+    if haskey(D.data, d)
+      m += 1
+      print(io, _stringify(D.data[d]))
+      if m < j
+        print(io, ",")
+      end
+    end
+  end
+  return nothing
+end
+
+function get_record_generic(io::IO)
+  data = Dict{Symbol, Any}()
+  b, v  = _parse(Vector{QQFieldElem}, io)
+  @assert b == UInt8(',')
+  f = Hecke.Globals.Qx(v)
+  data[:base_field_poly] = f
+  K, = number_field(f; cached = true)
+  Kt, = polynomial_ring(K, "t", cached = false)
+  b, v = _parse(Vector{Vector{QQFieldElem}}, io)
+  poly = Kt([K(w) for w in v])
+  data[:poly] = poly
+  return NFDBRecordGeneric{1, RelSimpleNumField{AbsSimpleNumFieldElem}}(data)
+end
+
+function Base.write(io::IO, D::NFDBGeneric)
+  for (p, e) in D.meta
+    print(io, "# ", p, ":", e, "\n")
+  end
+  for i in 1:length(D.fields)
+    Base.write(io, D.fields[i])
+    print(io, "\n")
+  end
+end
+
+function Base.show(io::IO, D::NFDBGeneric)
+  k = length(D.meta)
+  if k == 0
+    println(io, "Number field table no metadata")
+  else
+    println(io, "Number field table with metadata:")
+  end
+
+  for (i, (p, e)) in enumerate(D.meta)
+    print(io, p, ": ", e)
+    print(io, "\n")
+  end
+
+  print(io, "No. fields: ", length(D.fields))
+end
+
+function Base.read(file::String, ::Type{NFDBGeneric})
+  metadata = Dict()
+  f = open(file)
+  head = 0
+  local line
+  while !eof(f)
+    line = readline(f)
+    if line[1] == '#'
+      head += 1
+      if !(':' in line)
+        continue
+      end
+      i = 2
+      while line[i] != ':'
+        i += 1
+      end
+      key = Symbol(strip(line[2:i-1]))
+      val = strip(line[i+1:end])
+      metadata[key] = val
+    else
+      break
+    end
+  end
+  DB = NFDBGeneric{1, RelSimpleNumField{AbsSimpleNumFieldElem}}()
+  if line[1] != '#'
+    D = get_record_generic(IOBuffer(line))
+    push!(DB.fields, D)
+    while !eof(f)
+      line = readline(f)
+      D = get_record_generic(IOBuffer(line))
+      push!(DB.fields, D)
+    end
+  end
+  close(f)
+  DB.meta = metadata
+  return DB
+end
+
+function unsafe_add!(DB::NFDBGeneric, K)
+  D = _create_record(K, keep_field = false)
+  push!(DB.fields, D)
+  return D
+end
+
+function add_meta!(D::NFDBGeneric, p::Pair)
+  D.meta[p[1]] = p[2]
+  return D
+end
+
+function get_meta!(D::NFDBGeneric, p::Symbol)
+  if haskey(D.meta, p)
+    return D.meta[p]
+  else
+    error("Information $p not found in metadata")
+  end
+end
+

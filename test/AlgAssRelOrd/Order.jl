@@ -5,7 +5,7 @@
 
   @testset "Any order" begin
     Ky, y = K["y"]
-    A = AlgAss(y^2 - QQFieldElem(1, 5))
+    A = StructureConstantAlgebra(y^2 - QQFieldElem(1, 5))
 
     O = any_order(A)
 
@@ -42,7 +42,7 @@
     O2 = Hecke.maximal_order_via_relative(KG)
     @test discriminant(O1) == discriminant(O2)
 
-    KG = AlgAss(KG)[1]
+    KG = StructureConstantAlgebra(KG)[1]
 
     O1 = Hecke.maximal_order_via_absolute(KG)
     O2 = Hecke.maximal_order_via_relative(KG)

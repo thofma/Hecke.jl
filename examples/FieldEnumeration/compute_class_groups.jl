@@ -71,7 +71,7 @@ function _fancy_class_number(OK)
 end
 
 
-function has_obviously_not_relative_class_number_one(K::AnticNumberField)
+function has_obviously_not_relative_class_number_one(K::AbsSimpleNumField)
   lll(maximal_order(K))
   subs = Hecke.subfields_normal(K)
   cmfields = []

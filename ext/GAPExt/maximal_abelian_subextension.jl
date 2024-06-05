@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp, GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, F::FieldsTower, IdExtension::GAP.GapObj)
+function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp, FinGenAbGroupHom}, Vector{FinGenAbGroupHom}}}, F::FieldsTower, IdExtension::GAP.GapObj)
   K = F.field
   autos = F.generators_of_automorphisms
   i = 1
@@ -38,7 +38,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   return check_abelian_extensions(class_fields, autos, F.subfields[i])
 end
 
-function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,GrpAbFinGenMap}, Vector{GrpAbFinGenMap}}}, autos::Vector{NfToNfMor}, emb_sub::NfToNfMor)#, deg_mas::Set{Int})
+function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayClassGrp,FinGenAbGroupHom}, Vector{FinGenAbGroupHom}}}, autos::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})#, deg_mas::Set{Int})
   @vprintln :MaxAbExt 3 "Starting checking abelian extension"
   K = base_field(class_fields[1][1])
   d = degree(K)
@@ -81,7 +81,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   for i = 1:length(class_fields)
     @vprintln :MaxAbExt 3 "Class Field $i"
     C, res_act = class_fields[i]
-    res_act_new = Vector{GrpAbFinGenMap}(undef, length(act_indices))
+    res_act_new = Vector{FinGenAbGroupHom}(undef, length(act_indices))
     for i = 1:length(act_indices)
       res_act_new[i] = res_act[act_indices[i]]
     end
@@ -92,7 +92,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
 end
 
 
-function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGenMap}, emb_sub::NfToNfMor, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
+function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{FinGenAbGroupHom}, emb_sub::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, rcg_ctx::Hecke.ctx_rayclassgrp, exponent_extension::Int)
   #I consider the action on every P-sylow and see if it is trivial
   G = codomain(C.quotientmap)
   expG = Int(exponent(G))
@@ -101,7 +101,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
   new_prime = false
   for (P, v) in fac
     # I check that the action of the P-Sylow has no fixed points.
-    PS, mPS = psylow_subgroup(G, P, false)
+    PS, mPS = sylow_subgroup(G, P, false)
     s, ms = snf(PS)
     act_sub = induce_action_on_subgroup(ms*mPS, res_act)
     if !is_fixed_point_free(act_sub)
@@ -127,7 +127,7 @@ function check_abelian_extension(C::Hecke.ClassField, res_act::Vector{GrpAbFinGe
 
 end
 
-function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::ZZRingElem)
+function _bound_exp_conductor_wild(O::AbsSimpleNumFieldOrder, n::Int, q::Int, bound::ZZRingElem)
   d = degree(O)
   lp = prime_decomposition_type(O, q)
   f_times_r = divexact(d, lp[1][2])
@@ -138,7 +138,7 @@ function _bound_exp_conductor_wild(O::NfOrd, n::Int, q::Int, bound::ZZRingElem)
   return div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
 end
 
-function minimumd(D::Dict{NfOrdIdl, Int}, deg_ext::Int)
+function minimumd(D::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, deg_ext::Int)
   primes_done = Int[]
   res = 1
   for (P, e) in D
@@ -161,7 +161,7 @@ function minimumd(D::Dict{NfOrdIdl, Int}, deg_ext::Int)
   return res
 end
 
-function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx::Hecke.ctx_rayclassgrp, exp_extension::Int)
+function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, ctx::Hecke.ctx_rayclassgrp, exp_extension::Int)
   K = base_field(A)
   k = domain(mp)
   ZK = maximal_order(K)
@@ -178,7 +178,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
   deg = expected_order
   #First, a suitable modulus for A over k
   #I take the discriminant K/k times the norm of the conductor A/K
-  fm0 = Dict{NfOrdIdl, Int}()
+  fm0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (P, e) in mR1.fact_mod
     p = intersect_prime(mp, P)
     if !haskey(fm0, p)
@@ -206,7 +206,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     end
   end
   #Now, I extend this modulus to K
-  fM0 = Dict{NfOrdIdl, Int}()
+  fM0 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   for (p, v) in fm0
     lp = prime_decomposition(mp, p)
     if is_coprime(minimum(p, copy = false), expo*deg)
@@ -273,15 +273,15 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NfToNfMor, ctx
     @vtime :MaxAbExt 1  r, mr = Hecke.ray_class_groupQQ(zk, Int(wrp), rel_plc, ctx.n)
   end
   @vtime :MaxAbExt 1 lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
-  listn = NfOrdIdl[norm(mp, x) for x in lP]
+  listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mp, x) for x in lP]
   # Create the map between R and r by taking norms
-  preimgs = Vector{GrpAbFinGenElem}(undef, length(listn))
+  preimgs = Vector{FinGenAbGroupElem}(undef, length(listn))
   for i = 1:length(preimgs)
     preimgs[i] = mr\listn[i]
   end
   proj = hom(gS, preimgs)
   #compute the norm group of A in R
-  prms = Vector{GrpAbFinGenElem}(undef, length(lP))
+  prms = Vector{FinGenAbGroupElem}(undef, length(lP))
   for i = 1:length(lP)
     if haskey(mR1.prime_ideal_preimage_cache, lP[i])
       f = mR1.prime_ideal_preimage_cache[lP[i]]

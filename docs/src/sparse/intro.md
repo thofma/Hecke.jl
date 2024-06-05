@@ -27,7 +27,7 @@ In particular any two sparse rows over the same base ring can be added.
 
 ### Creation
 
-```@docs
+```@docs; canonical=false
 sparse_row(::ZZRing, ::Vector{Tuple{Int, ZZRingElem}})
 sparse_row(::ZZRing, ::Vector{Tuple{Int, Int}})
 sparse_row(::ZZRing, ::Vector{Int}, ::Vector{ZZRingElem})
@@ -41,7 +41,7 @@ Rows support the usual operations:
 - multiplication by scalars
 - `div`, `divexact`
 
-```@docs
+```@docs; canonical=false
 getindex(::SRow{ZZRingElem}, ::Int)
 add_scaled_row(::SRow{ZZRingElem}, ::SRow{ZZRingElem}, ::ZZRingElem)
 add_scaled_row(::SRow{T}, ::SRow{T}, ::T) where {T}
@@ -51,13 +51,13 @@ length(::SRow)
 
 ### Change of base ring
 
-```@docs
+```@docs; canonical=false
 change_base_ring(::ZZRing, ::SRow{ZZRingElem})
 ```
 
 ### Maximum, minimum and 2-norm
 
-```@docs
+```@docs; canonical=false
 maximum(::SRow)
 maximum(::SRow{ZZRingElem})
 minimum(::SRow{ZZRingElem})
@@ -67,7 +67,7 @@ norm2(::SRow{ZZRingElem})
 
 ### Functionality for integral sparse rows
 
-```@docs
+```@docs; canonical=false
 lift(::SRow{zzModRingElem})
 mod!(::SRow{ZZRingElem}, ::ZZRingElem)
 mod_sym!(::SRow{ZZRingElem}, ::ZZRingElem)
@@ -77,7 +77,7 @@ maximum(::typeof(abs), ::SRow{ZZRingElem})
 
 ### Conversion to/from julia and AbstractAlgebra types
 
-```@docs
+```@docs; canonical=false
 Vector(r::SRow, n::Int)
 sparse_row(A::MatElem)
 dense_row(r::SRow, n::Int)
@@ -95,26 +95,26 @@ Internally, sparse matrices are implemented as an array of sparse rows.
 As a consequence, unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.
 
 ### Construction
-```@docs
+```@docs; canonical=false
 sparse_matrix(::Ring)
 sparse_matrix(::Ring, ::Int, ::Int)
 ```
 
 Sparse matrices can also be created from dense matrices as well as from julia arrays:
 
-```@docs
+```@docs; canonical=false
 sparse_matrix(::MatElem; keepzrows)
 sparse_matrix(::Matrix{T}) where {T}
 sparse_matrix(::Ring, ::Matrix{T}) where {T}
 ```
 The normal way however, is to add rows:
 
-```@docs
+```@docs; canonical=false
 push!(::SMat{T}, ::SRow{T}) where {T}
 ```
 
 Sparse matrices can also be concatenated to form larger ones:
-```@docs
+```@docs; canonical=false
 vcat!(::SMat{T}, ::SMat{T}) where {T}
 vcat(::SMat{T}, ::SMat{T}) where {T}
 hcat!(::SMat{T}, ::SMat{T}) where {T}
@@ -123,29 +123,29 @@ hcat(::SMat{T}, ::SMat{T}) where {T}
 (Normal julia ``cat`` is also supported)
 
 There are special constructors:
-```@docs
+```@docs; canonical=false
 identity_matrix(::Type{SMat}, ::Ring, ::Int)
 zero_matrix(::Type{SMat}, ::Ring, ::Int)
 zero_matrix(::Type{SMat}, ::Ring, ::Int, ::Int)
 block_diagonal_matrix(xs::Vector{<:SMat{T}}) where {T}
 ```
 Slices:
-```@docs
+```@docs; canonical=false
 sub(::SMat{T}, ::AbstractUnitRange, ::AbstractUnitRange) where {T}
 ```
 
 Transpose:
-```@docs
+```@docs; canonical=false
 transpose(A::SMat)
 ```
 
 ### Elementary Properties
-```@docs
+```@docs; canonical=false
 sparsity(::SMat)
 density(::SMat)
 nnz(::SMat)
-nrows(::SMat)
-ncols(::SMat)
+number_of_rows(::SMat)
+number_of_columns(::SMat)
 isone(::SMat)
 iszero(::SMat)
 is_upper_triangular(::SMat)
@@ -170,7 +170,7 @@ Hecke.hnf_kannan_bachem(::SMat{ZZRingElem})
 diagonal_form(::SMat{ZZRingElem})
 ```
 ### Manipulation/ Access
-```@docs
+```@docs; canonical=false
 getindex(::SMat{T}, ::Int, ::Int) where {T}
 getindex(::SMat{T}, ::Int) where {T}
 setindex!(::SMat{T}, ::SRow{T}, ::Int) where {T}
@@ -191,7 +191,7 @@ rand_row(::SMat{T}) where {T}
 ```
 
 Changing of the ring:
-```@docs
+```@docs; canonical=false
 map_entries(f, ::SMat)
 change_base_ring(::Ring, ::SMat)
 ```
@@ -204,21 +204,21 @@ Matrices support the usual operations as well
 - multiplication by scalars
 
 Various products:
-```@docs
+```@docs; canonical=false
 *(::SMat{T}, ::AbstractVector{T}) where {T}
 *(::SMat{T}, ::AbstractMatrix{T})  where {T}
 *(::SMat{T}, ::MatElem{T}) where {T}
 *(::SRow{T}, ::SMat{T}) where {T}
 ```
 
-```@docs
+```@docs; canonical=false
 dot(::SRow{T}, ::SMat{T}, ::SRow{T}) where T
 dot(::MatrixElem{T}, ::SMat{T}, ::MatrixElem{T}) where T
 dot(::AbstractVector{T}, ::SMat{T}, ::AbstractVector{T}) where T
 ```
 
 Other:
-```@docs
+```@docs; canonical=false
 sparse(::SMat)
 ZZMatrix(::SMat{ZZRingElem})
 ZZMatrix(::SMat{T}) where {T <: Integer}

@@ -22,7 +22,7 @@ end
   Qx, x = polynomial_ring(FlintQQ, "x")
   f = x^3-2
   K = splitting_field(f)
-  @test typeof(K) == AnticNumberField
+  @test typeof(K) == AbsSimpleNumField
   K1 = number_field([x^3-2, x^2+x+1])[1]
   K1abs = simple_extension(K1)[1]
   @test is_isomorphic(K, K1abs)
@@ -36,7 +36,7 @@ end
   Kt, t = polynomial_ring(K, "t")
   g = t^4-2
   L = splitting_field(g)
-  @test typeof(L) == Hecke.NfRel{nf_elem}
+  @test typeof(L) == Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}
   @test absolute_degree(L) == 8
 end
 
@@ -44,7 +44,7 @@ end
 
   Qx, x = polynomial_ring(FlintQQ, "x")
   K = number_field(x^5 - x^4 - x^3 - 220*x^2 - 360*x - 200)[1]
-  @test typeof(K) == AnticNumberField
+  @test typeof(K) == AbsSimpleNumField
   L = simplify(K, canonical = true)[1]
   @test L.pol == x^5 - x^4 + x^3 - 19*x^2 + 35*x + 77
 end

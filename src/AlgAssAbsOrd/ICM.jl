@@ -6,8 +6,8 @@
 
 # Stefano Marseglia "Computing the ideal class monoid of an order"
 @doc raw"""
-    ideal_class_monoid(R::NfAbsOrd)
-      -> Vector{FacElem{NfOrdFracIdl, NfOrdFracIdlSet}}
+    ideal_class_monoid(R::AbsNumFieldOrder)
+      -> Vector{FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
     ideal_class_monoid(R::AlgAssAbsOrd)
       -> Vector{FacElem{AlgAssAbsOrdIdl, AlgAssAbsOrdIdlSet}}
 
@@ -15,7 +15,7 @@ Given an order $R$ in a number field or a finite product of number fields, this
 function returns representatives of the isomorphism classes of fractional
 ideals in $R$.
 """
-function ideal_class_monoid(R::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
+function ideal_class_monoid(R::T) where { T <: Union{ AbsNumFieldOrder, AlgAssAbsOrd } }
   @assert is_commutative(R)
   orders = overorders(R)
   result = Vector{FacElem{fractional_ideal_type(R)}}()
@@ -27,7 +27,7 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Prop. 4.1
 @doc raw"""
-    is_locally_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
+    is_locally_isomorphic(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal) -> Bool
     is_locally_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool
     is_locally_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool
 
@@ -35,7 +35,7 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra, this function returns `true` if $I_p$ and $J_p$ are isomorphic for
 all primes $p$ of $R$ and `false` otherwise.
 """
-function is_locally_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl } }
+function is_locally_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl } }
   IJ = colon(I, J)
   JI = colon(J, I)
   return one(_algebra(order(I))) in IJ*JI
@@ -43,15 +43,15 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Cor. 4.5
 @doc raw"""
-    is_isomorphic_with_map(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
-    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
-    is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
+    is_isomorphic_with_map(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbstractAssociativeAlgebraElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` and an element $a \in A$ such that
 $I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
-function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
   A = _algebra(order(I))
   if !is_locally_isomorphic(I, J)
     return false, zero(A)
@@ -71,19 +71,19 @@ function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfO
 end
 
 @doc raw"""
-    is_isomorphic(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool, nf_elem
-    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, nf_elem
-    is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbsAlgAssElem
+    is_isomorphic(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbstractAssociativeAlgebraElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` if an element $a \in A$ exists such that
 $I = aJ$ and `false` otherwise.
 """
-function is_isomorphic(I::T, J::T) where { T <: Union{ NfAbsOrdIdl, NfOrdFracIdl, AlgAssAbsOrdIdl}}
+function is_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
   return is_isomorphic_with_map(I, J)[1]
 end
 
-function ring_of_multipliers(I::NfOrdFracIdl)
+function ring_of_multipliers(I::AbsSimpleNumFieldOrderFractionalIdeal)
   return ring_of_multipliers(numerator(I, copy = false))
 end
 
@@ -96,7 +96,7 @@ end
 # Computes representatives of the weak equivalence classes of fractional ideals
 # of R with ring of multipliers S.
 # Algorithm 2 in Marseglia: "Computing the ideal class monoid of an order"
-function _wicm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
+function _wicm_bar(R::T, S::T) where { T <: Union{ AbsNumFieldOrder, AlgAssAbsOrd } }
   K = _algebra(S)
   oneS = one(K)*S
   St = trace_dual(S)
@@ -144,7 +144,7 @@ end
 
 # Computes the fractional ideals I in ICM(R) with (I:I) = S
 # Part of Algorithm 3 in Marseglia: "Computing the ideal class monoid of an order"
-function _icm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
+function _icm_bar(R::T, S::T) where { T <: Union{ AbsNumFieldOrder, AlgAssAbsOrd } }
   ideals = _wicm_bar(R, S)
   P, mP = picard_group(S)
   fac_elem_mon = FacElemMon(FracIdealSet(R))
@@ -179,8 +179,8 @@ function _icm_bar(R::T, S::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd } }
 end
 
 # Computes all subgroups of S/a as fractional ideals of R.
-function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgAssAbsOrd }, T2 <: Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl } }
-  Q, mQ = quo(S, a, GrpAbFinGen)
+function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrder, AlgAssAbsOrd }, T2 <: Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
+  Q, mQ = quo(S, a, FinGenAbGroup)
   if order(Q) == 1
     return [ a ]
   end
@@ -198,7 +198,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgA
   offset = mQ.offset
   subs = subgroups(Q)
 
-  function group_to_ideal(s::Tuple{GrpAbFinGen, GrpAbFinGenMap})
+  function group_to_ideal(s::Tuple{FinGenAbGroup, FinGenAbGroupHom})
     H, HtoQ = image(s[2], false)
     for i = 1:(d - offset)
       v = HtoQ(H[i]).coeff
@@ -213,7 +213,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ NfAbsOrd, AlgA
       M = basis_matrix(potential_basis, FakeFmpqMat)
       return ideal(algebra(R), R, M)
     else
-      M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(R, copy = false)
+      M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(FakeFmpqMat, R, copy = false)
       return fractional_ideal(R, M)
     end
   end
@@ -238,12 +238,12 @@ function ideal_to_matrix(I::AlgAssAbsOrdIdl)
   return M.num
 end
 
-function ideal_to_matrix(I::Union{ NfAbsOrdIdl, NfOrdFracIdl })
+function ideal_to_matrix(I::Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal })
   O = order(I)
   K = nf(O)
   a = gen(K)
   M = FakeFmpqMat(representation_matrix(a))
-  B = basis_matrix(I, copy = false)*basis_matrix(O, copy = false)
+  B = basis_matrix(I, copy = false)*basis_matrix(FakeFmpqMat, O, copy = false)
   C = inv(B)
   M = mul!(M, B, M)
   M = mul!(M, M, C)
@@ -259,7 +259,7 @@ function matrix_to_ideal(O::AlgAssAbsOrd, M::ZZMatrix)
   result = zeros(A, dim(A))
   for (K, AtoK) in fields_and_maps
     MK = change_base_ring(K, M) - gen(K)*identity_matrix(K, dim(A))
-    _, B = nullspace(MK)
+    B = kernel(MK, side = :right)
     for j = 1:ncols(B)
       for i = 1:dim(A)
         result[i] += AtoK\B[i, j]
@@ -269,13 +269,13 @@ function matrix_to_ideal(O::AlgAssAbsOrd, M::ZZMatrix)
   return ideal_from_lattice_gens(algebra(O), O, result), result
 end
 
-function matrix_to_ideal(O::NfAbsOrd, M::ZZMatrix)
+function matrix_to_ideal(O::AbsNumFieldOrder, M::ZZMatrix)
   f = charpoly(M)
   K = nf(O)
   @assert K.pol == parent(K.pol)(f)
   result = zeros(K, degree(K))
   MK = change_base_ring(K, M) - gen(K)*identity_matrix(K, degree(K))
-  _, B = nullspace(MK)
+  B = kernel(MK, side = :right)
   for j = 1:ncols(B)
     for i = 1:degree(K)
       result[i] += B[i, j]
@@ -300,7 +300,7 @@ function is_conjugate(M::ZZMatrix, N::ZZMatrix)
   end
 
   fac = factor(f)
-  fields = Vector{AnticNumberField}()
+  fields = Vector{AbsSimpleNumField}()
   for (g, e) in fac
     e != 1 ? error("The characteristic polynomial must be square-free") : nothing
     push!(fields, number_field(g)[1])
@@ -310,12 +310,12 @@ function is_conjugate(M::ZZMatrix, N::ZZMatrix)
     return _isconjugate(equation_order(fields[1]), M, N)
   end
 
-  A, AtoK = direct_product(fields)::Tuple{AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}}
+  A, AtoK = direct_product(fields)::Tuple{StructureConstantAlgebra{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
   O = _equation_order(A)
   return _isconjugate(O, M, N)
 end
 
-function _isconjugate(O::Union{ NfAbsOrd, AlgAssAbsOrd }, M::ZZMatrix, N::ZZMatrix)
+function _isconjugate(O::Union{ AbsNumFieldOrder, AlgAssAbsOrd }, M::ZZMatrix, N::ZZMatrix)
   I, basisI = matrix_to_ideal(O, M)
   J, basisJ = matrix_to_ideal(O, N)
   t, a = is_isomorphic_with_map(J, I)

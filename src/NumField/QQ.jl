@@ -3,7 +3,7 @@
 
 Type for ideals in ZZ. Parametrized by a generator in ZZ.
 """
-struct ZZIdl <: NumFieldOrdIdl
+struct ZZIdl <: NumFieldOrderIdeal
   gen::ZZRingElem
 
   function ZZIdl(x::ZZRingElem)
@@ -20,7 +20,7 @@ end
 
 Type for fractional ideals in ZZ or QQ, parametrized by a generator in QQ.
 """
-struct ZZFracIdl <: NumFieldOrdFracIdl
+struct ZZFracIdl <: NumFieldOrderFractionalIdeal
   gen::QQFieldElem
 
   function ZZFracIdl(x::QQFieldElem)
@@ -75,7 +75,7 @@ absolute_minimum(x::ZZIdl) = gen(x)
 
 absolute_minimum(x::ZZFracIdl) = gen(x)
 
-prime_decomposition(O::NfOrd, p::ZZIdl) = prime_decomposition(O, gen(p))
+prime_decomposition(O::AbsSimpleNumFieldOrder, p::ZZIdl) = prime_decomposition(O, gen(p))
 
 uniformizer(x::ZZIdl) = gen(x)
 
@@ -127,7 +127,13 @@ end
 
 *(x::ZZIdl, y::ZZIdl) = ZZIdl(x.gen * y.gen)
 
-intersect(x::ZZIdl, y::ZZIdl) = ZZIdl(lcm(x.gen, y.gen))
+function intersect(x::ZZIdl, y::ZZIdl...)
+  g = gen(x)
+  for I in y
+    g = lcm(g, gen(I))
+  end
+  return ZZIdl(g)
+end
 
 lcm(x::ZZIdl, y::ZZIdl) = intersect(x, y)
 
@@ -152,6 +158,13 @@ isone(I::ZZIdl) = isone(I.gen)
 iszero(I::ZZIdl) = iszero(gen(I))
 is_maximal(I::ZZIdl) = is_prime(gen(I))
 is_prime(I::ZZIdl) = is_zero(I) || is_maximal(I)
+is_primary(I::ZZIdl) = is_zero(I) || is_prime_power_with_data(gen(I))[1]
+
+is_subset(I::ZZIdl, J::ZZIdl) = is_divisible_by(gen(J), gen(I))
+
+radical(I::ZZIdl) = iszero(I) ? I : ideal(ZZ, radical(gen(I)))
+primary_decomposition(I::ZZIdl) = iszero(I) ? [ (I,I) ] :
+  [ (ideal(ZZ, p^k), ideal(ZZ, p)) for (p,k) in factor(gen(I)) ]
 
 maximal_order(::QQField) = ZZ
 
@@ -277,7 +290,7 @@ sunit_group_fac_elem(S::Vector{ZZIdl}) = sunit_group_fac_elem([gen(i) for i in S
 #
 ################################################################################
 
-# Let's not turn this into an arb for now
+# Let's not turn this into an ArbFieldElem for now
 # If this causes trouble, we need to change it to ArbField(p, cached = false)(x)
 evaluate(x::QQFieldElem, ::PosInf, p::Int) = x
 
@@ -291,6 +304,8 @@ evaluate(x::QQFieldElem, ::PosInf, p::Int) = x
 quo(R::ZZRing, I::ZZIdl) = quo(R, gen(I))
 
 residue_ring(R::ZZRing, I::ZZIdl) = quo(R, I)
+
+residue_field(R::ZZRing, I::ZZIdl) = residue_field(R, gen(I))
 
 
 ################################################################################

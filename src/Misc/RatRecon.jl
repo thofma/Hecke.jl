@@ -114,11 +114,11 @@ end
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
 @doc raw"""
-    rational_reconstruction(a::nf_elem, b::ZZRingElem)
+    rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem)
 
 Applies the `rational_reconstruction` function to each coefficient.
 """
-function rational_reconstruction(a::nf_elem, b::ZZRingElem; ErrorTolerant::Bool = false)
+function rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem; ErrorTolerant::Bool = false)
   K= parent(a)
   Qx = parent(K.pol)
   res = Qx(0)
@@ -319,7 +319,7 @@ function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem,
    while true
      np += 1
      if testPrime_jl(f,p) == true && testPrime_jl(g,p) == true
-         Rp, t = polynomial_ring(residue_ring(FlintZZ, p, cached=false), cached=false)
+         Rp, t = polynomial_ring(residue_ring(FlintZZ, p, cached=false)[1], cached=false)
          gp = Rp(g)
          fp = Rp(f)
          fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, bnd, ErrorTolerant = ErrorTolerant)

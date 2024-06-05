@@ -12,7 +12,7 @@ function Base.show(io::IO, ::MIME"text/plain", L::HermLat)
 end
 
 function show(io::IO, L::HermLat)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Hermitian lattice")
   else
     print(io, "Hermitian lattice of rank $(rank(L)) and degree $(degree(L))")
@@ -229,7 +229,7 @@ function norm(L::HermLat)
   to_sum = reduce(+, tr(C[i] * G[i, j] * v(C[j]))*R for j in 1:length(C) for i in 1:(j-1); init = to_sum)
   n = minimum(numerator(to_sum))//denominator(to_sum)
   L.norm = n
-  return n
+  return n::fractional_ideal_type(base_ring(base_ring(L)))
 end
 
 ################################################################################
@@ -280,7 +280,7 @@ end
 
 @doc raw"""
     bad_primes(L::HermLat; discriminant::Bool = false, dyadic::Bool = false)
-                                                             -> Vector{NfOrdIdl}
+                                                             -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Given a hermitian lattice `L` over $E/K$, return the prime ideals of $\mathcal O_K$
 dividing the scale or the volume of `L`.
@@ -475,8 +475,8 @@ function _is_maximal_integral(L::HermLat, p)
   F, h = residue_field(R, D[1][1])
   hext = extend(h, E)
   sGmodp = map_entries(hext, s * G)
-  Vnullity, V = kernel(sGmodp; side = :left)
-  if Vnullity == 0
+  V = kernel(sGmodp, side = :left)
+  if nrows(V) == 0
     return true, zero_matrix(E, 0, 0)
   end
 
@@ -535,7 +535,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     @assert S[end] != 0
     if minimal
       max = 1
-      M = pseudo_matrix(B[lS][1, :], fractional_ideal_type(R)[invP])
+      M = pseudo_matrix(B[lS][1:1, :], fractional_ideal_type(R)[invP])
     else
       max = S[end]
       coeff_ideals = fractional_ideal_type(R)[]
@@ -559,7 +559,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(B[lS][1, :], [invP^(div(S[end], 2))])
+        M = pseudo_matrix(B[lS][1:1, :], [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]
@@ -587,7 +587,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     end
     # new we look for zeros of ax^2 + by^2
     kk, h = residue_field(R, P)
-    while sum(S[i] * nrows(B[i]) for i in 1:length(B); init = 0) > 1
+    while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]; init = 0) > 1
       k = 0
       for i in 1:(length(S) + 1)
         if S[i] == 1
@@ -601,7 +601,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
       while valuation(G[k][1, 1] + G[k][2, 2] * elem_in_nf(norm(r)), P) < 2
         r = h\rand(kk)
       end
-      M = pseudo_matrix(B[k][1, :] + elem_in_nf(r) * B[k][2, :], [invP])
+      M = pseudo_matrix(B[k][1:1, :] + elem_in_nf(r) * B[k][2:2, :], [invP])
       _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
       LLL = invP * pseudo_matrix(L)
       _new_pmat = _intersect_modules_with_map(_new_pmat, LLL, absolute_map)
@@ -618,7 +618,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(B[lS][1, :], [invP^(div(S[end], 2))])
+        M = pseudo_matrix(B[lS][1:1, :], [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]

@@ -21,12 +21,12 @@ $$q: M/N \to \mathbb{Q} / m \mathbb{Z}.$$
 where $n \mathbb{Z} = \Phi(M,N)$ and
 $m \mathbb{Z} = 2n\mathbb{Z} + \sum_{x \in N} \mathbb{Z} \Phi (x,x)$.
 
-```@docs
+```@docs; canonical=false
 torsion_quadratic_module(M::ZZLat, N::ZZLat)
 ```
 
 ### The underlying Type
-```@docs
+```@docs; canonical=false
 TorQuadModule
 ```
 
@@ -35,7 +35,7 @@ Here we display the part that is specific to elements of torsion quadratic modul
 
 ### Attributes
 
-```@docs
+```@docs; canonical=false
 abelian_group(T::TorQuadModule)
 cover(T::TorQuadModule)
 relations(T::TorQuadModule)
@@ -49,30 +49,30 @@ modulus_quadratic_form(T::TorQuadModule)
 
 ### Elements
 
-```@docs
+```@docs; canonical=false
 quadratic_product(a::TorQuadModuleElem)
 inner_product(a::TorQuadModuleElem, b::TorQuadModuleElem)
 ```
 
 ### Lift to the cover
-```@docs
+```@docs; canonical=false
 lift(a::TorQuadModuleElem)
 representative(::TorQuadModuleElem)
 ```
 
 ### Orthogonal submodules
-```@docs
+```@docs; canonical=false
 orthogonal_submodule(T::TorQuadModule, S::TorQuadModule)
 ```
 
 ### Isometry
-```@docs
+```@docs; canonical=false
 is_isometric_with_isometry(T::TorQuadModule, U::TorQuadModule)
 is_anti_isometric_with_anti_isometry(T::TorQuadModule, U::TorQuadModule)
 ```
 
 ### Primary and elementary modules
-```@docs
+```@docs; canonical=false
 is_primary_with_prime(T::TorQuadModule)
 is_primary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
 is_elementary_with_prime(T::TorQuadModule)
@@ -80,7 +80,7 @@ is_elementary(T::TorQuadModule, p::Union{Integer, ZZRingElem})
 ```
 
 ### Smith normal form
-```@docs
+```@docs; canonical=false
 snf(T::TorQuadModule)
 is_snf(T::TorQuadModule)
 ```
@@ -92,24 +92,24 @@ integral integer quadratic lattices.
 
 ### From a lattice
 
-```@docs
+```@docs; canonical=false
 discriminant_group(::ZZLat)
 ```
 
 ### From a matrix
 
-```@docs
+```@docs; canonical=false
 torsion_quadratic_module(q::QQMatrix)
 ```
 
 ### Rescaling the form
-```@docs
+```@docs; canonical=false
 rescale(T::TorQuadModule, k::RingElement)
 ```
 
 ### Invariants
 
-```@docs
+```@docs; canonical=false
 is_degenerate(T::TorQuadModule)
 is_semi_regular(T::TorQuadModule)
 radical_bilinear(T::TorQuadModule)
@@ -118,21 +118,21 @@ normal_form(T::TorQuadModule; partial=false)
 ```
 
 ### Genus
-```@docs
+```@docs; canonical=false
 genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
 brown_invariant(T::TorQuadModule)
 is_genus(T::TorQuadModule, signature_pair::Tuple{Int, Int})
 ```
 
 ### Categorical constructions
-```@docs
+```@docs; canonical=false
 direct_sum(x::Vector{TorQuadModule})
 direct_product(x::Vector{TorQuadModule})
 biproduct(x::Vector{TorQuadModule})
 ```
 
 ### Submodules
-```@docs
+```@docs; canonical=false
 submodules(::TorQuadModule)
-stable_submodules(::TorQuadModule, ::Vector{TorQuadModuleMor})
+stable_submodules(::TorQuadModule, ::Vector{TorQuadModuleMap})
 ```

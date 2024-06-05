@@ -134,7 +134,7 @@ Return the fixed field of the space `V`.
 fixed_field(::AbstractSpace)
 
 @doc raw"""
-    involution(V::AbstractSpace) -> NumFieldMor
+    involution(V::AbstractSpace) -> NumFieldHom
 
 Return the involution of the space `V`.
 """
@@ -290,7 +290,8 @@ Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the s
 """
 function orthogonal_basis(V::AbstractSpace)
   G = gram_matrix(V)
-  r, Rad = left_kernel(G)
+  Rad = kernel(G, side = :left)
+  r = nrows(Rad)
   if r > 0
     basis_nondeg = _basis_complement(Rad)
     G_nondeg = gram_matrix(V, basis_nondeg)
@@ -416,7 +417,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
+    is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Bool
 
 Return whether the spaces `L` and `M` are isometric over the completion at `p`.
 """
@@ -540,7 +541,7 @@ Return if the space `V` is isotropic and an isotropic vector.
 is_isotropic_with_vector(::AbstractSpace)
 
 @doc raw"""
-    is_isotropic(V::AbstractSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
+    is_isotropic(V::AbstractSpace, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, InfPlc}) -> Bool
 
 Given a space `V` and a place `p` in the fixed field `K` of `V`, return
 whether the completion of `V` at `p` is isotropic.
@@ -656,8 +657,7 @@ matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbstractSpace, M::MatElem)
   N = gram_matrix(V) * _map(transpose(M), involution(V))
-  r, K = left_kernel(N)
-  @assert r == nrows(K)
+  K = kernel(N, side = :left)
   return K
 end
 
@@ -783,7 +783,7 @@ biproduct(x::Vararg{AbstractSpace}) = biproduct(collect(x))
 ################################################################################
 
 @doc raw"""
-    is_locally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbstractSpace -> Bool
+    is_locally_represented_by(U::T, V::T, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where T <: AbstractSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
 the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is

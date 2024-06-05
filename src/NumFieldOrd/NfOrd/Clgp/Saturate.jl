@@ -5,7 +5,7 @@ add_verbosity_scope(:Saturate)
 
 export saturate!
 
-function mod_p(R::Vector{FacElem{nf_elem, AnticNumberField}}, Q::NfOrdIdl, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)
+function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
   mF1 = Hecke.extend_easy(mF, number_field(Zk))
@@ -46,7 +46,7 @@ end
         change a_i
 =#
 
-function _mod_exponents(a::FacElem{nf_elem, AnticNumberField}, p::Int)
+function _mod_exponents(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, p::Int)
   pU = UInt(p)
   a1 = copy(a.fac)
   for i = a1.idxfloor:length(a1.vals)
@@ -70,16 +70,16 @@ function _mod_exponents(a::FacElem{nf_elem, AnticNumberField}, p::Int)
 end
 
 function relations(c::Hecke.ClassGrpCtx)
-  v = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(c.R_gen) + length(c.R_rel))
+  v = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, length(c.R_gen) + length(c.R_rel))
   for i = 1:length(c.R_gen)
-    if typeof(c.R_gen[i]) == nf_elem
+    if typeof(c.R_gen[i]) == AbsSimpleNumFieldElem
       v[i] = FacElem(c.R_gen[i])
     else
       v[i] = c.R_gen[i]
     end
   end
   for i = 1:length(c.R_rel)
-    if typeof(c.R_rel[i]) == nf_elem
+    if typeof(c.R_rel[i]) == AbsSimpleNumFieldElem
       v[i+length(c.R_gen)] = FacElem(c.R_rel[i])
     else
       v[i+length(c.R_gen)] = c.R_rel[i]
@@ -89,16 +89,16 @@ function relations(c::Hecke.ClassGrpCtx)
 end
 
 function relations_mod_powers(c::Hecke.ClassGrpCtx, p::Int)
-  v = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(c.R_gen) + length(c.R_rel))
+  v = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(undef, length(c.R_gen) + length(c.R_rel))
   for i = 1:length(c.R_gen)
-    if typeof(c.R_gen[i]) == nf_elem
+    if typeof(c.R_gen[i]) == AbsSimpleNumFieldElem
       v[i] = FacElem(c.R_gen[i])
     else
       v[i] = _mod_exponents(c.R_gen[i], p)
     end
   end
   for i = 1:length(c.R_rel)
-    if typeof(c.R_rel[i]) == nf_elem
+    if typeof(c.R_rel[i]) == AbsSimpleNumFieldElem
       v[i+length(c.R_gen)] = FacElem(c.R_rel[i])
     else
       v[i+length(c.R_gen)] = _mod_exponents(c.R_rel[i], p)
@@ -119,11 +119,11 @@ function relations_matrix(c::Hecke.ClassGrpCtx)
 end
 
 
-function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberField}}, p::Int, stable::Float64 = 1.5)
+function compute_candidates_for_saturate(v::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, p::Int, stable::Float64 = 1.5)
   K = base_ring(v[1])
   OK = maximal_order(K)
   zeta, sT = Hecke.torsion_units_gen_order(K)
-  v1 = FacElem{nf_elem, AnticNumberField}[_mod_exponents(x, p) for x in v]
+  v1 = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[_mod_exponents(x, p) for x in v]
   if gcd(sT, p) != 1
     push!(v1, FacElem(zeta))
   end
@@ -165,11 +165,11 @@ function compute_candidates_for_saturate(v::Vector{FacElem{nf_elem, AnticNumberF
           @vtime :Saturate 3 z = mod_p(v1, Q[1], Int(p), T, D, true)
         end
         z = z*A
-        rrz, z = nullspace(z)
-        if iszero(rrz)
+        z = kernel(z, side = :right)
+        if iszero(ncols(z))
           return zero_matrix(FlintZZ, 0, length(v1))
         end
-        A = A*sub(z, 1:nrows(z), 1:rrz)
+        A = A*z
         if cA == ncols(A)
           i += 1
         else
@@ -196,7 +196,7 @@ end
 
 function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::Float64 = 1.5)
   ZK = order(c.FB.ideals[1])
-  K = nf(ZK)
+  K = Hecke.nf(ZK)
   zeta, sT = Hecke.torsion_units_gen_order(K)
 
   @vprintln :Saturate 3 "Reducing exponents"
@@ -314,11 +314,11 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
     for i = 1:lfacts
       z = matrix(T, 1, length(R), Hecke.fpFieldElem[disc_log[evals[j][i]^e] for j = 1:length(R)])
       z = z*A
-      rrz, z = nullspace(z)
-      if iszero(rrz)
+      z = kernel(z, side = :right)
+      if iszero(ncols(z))
         return zero_matrix(FlintZZ, 0, length(R))
       end
-      A = A*sub(z, 1:nrows(z), 1:rrz)
+      A = A*z
       if cA == ncols(A)
         att += 1
       else
@@ -357,10 +357,10 @@ end
 function saturate!(U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert is_prime(n)
   O = order(U)
-  K = nf(O)
+  K = Hecke.nf(O)
   success = false
   restart = false
-  decom = Dict{NfOrdIdl, ZZRingElem}()
+  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
   while true
     @vprintln :Saturate 1 "Computing candidates for the saturation"
     R = U.units
@@ -410,7 +410,7 @@ end
 
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Float64 = 3.5; use_orbit::Bool = false, easy_root::Bool = false, use_LLL::Bool = false)
   @assert is_prime(n)
-  K = nf(U)
+  K = Hecke.nf(U)
   @vprintln :Saturate 1 "Simplifying the context"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
   success = false
@@ -444,7 +444,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         end
       end
 
-      decom = Dict{NfOrdIdl, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
+      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
       @vprintln :Saturate 1 "Testing if element is an n-th power"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
@@ -502,13 +502,13 @@ end
 
 function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LLL::Bool = false)
 
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem, Hecke.ZZRingElem_Array_Mod.ZZRingElem_Array}, add_rels = false)
+  d = Hecke.class_group_init(c.FB, sparse_matrix_type(ZZ), add_rels = false)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
   R = relations(c)
   R_mat = relations_matrix(c)
 
-  new_rels = Vector{FacElem{nf_elem, AnticNumberField}}()
+  new_rels = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}()
   vals_new_rels = Vector{SRow{ZZRingElem}}()
   @vprintln :Saturate 1 "Computing rels..."
   for i=1:length(c.FB.ideals)

@@ -6,7 +6,7 @@ end
 
 
 
-function unit_group_disc_exp(x::GrpAbFinGenElem, U::UnitGrpCtx)
+function unit_group_disc_exp(x::FinGenAbGroupElem, U::UnitGrpCtx)
   K = nf(order(U))
   y = FacElem([K(U.torsion_units_gen)], [x.coeff[1,1]])
   for i=1:length(U.units)
@@ -15,12 +15,12 @@ function unit_group_disc_exp(x::GrpAbFinGenElem, U::UnitGrpCtx)
   return y
 end
 
-function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::GrpAbFinGen) #snf
+function unit_group_disc_log(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField} , U::UnitGrpCtx, G::FinGenAbGroup) #snf
 
   if length(U.units) == 0
     r = [-1]
   else
-    r = _add_dependent_unit!(U, x, Val{true})
+    r = _add_dependent_unit!(U, x, Val(true))
   end
   @assert r[end] == -1
 

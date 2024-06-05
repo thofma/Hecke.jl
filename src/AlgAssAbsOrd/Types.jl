@@ -16,7 +16,7 @@
   index::ZZRingElem                      # The det of basis_mat_inv
                                    # (this is the index of the equation order
                                    #  in the given order)
-  det_basis_matrix::QQFieldElem           
+  det_basis_matrix::QQFieldElem
   disc::ZZRingElem                       # Discriminant
 
   is_maximal::Int                   # 0 Not known
@@ -77,7 +77,7 @@
   end
 end
 
-const AlgAssAbsOrdID = Dict{Tuple{AbsAlgAss, FakeFmpqMat}, AlgAssAbsOrd}()
+const AlgAssAbsOrdID = AbstractAlgebra.CacheDictType{Tuple{AbstractAssociativeAlgebra, FakeFmpqMat}, AlgAssAbsOrd}()
 
 @attributes mutable struct AlgAssAbsOrdElem{S, T} <: NCRingElem
   elem_in_algebra::T
@@ -172,7 +172,7 @@ end
                                        # to different orders
   normred::Dict{AlgAssAbsOrd{S, T}, QQFieldElem}
 
-  function AlgAssAbsOrdIdl{S, T}(A::S) where { S <: AbsAlgAss, T <: AbsAlgAssElem }
+  function AlgAssAbsOrdIdl{S, T}(A::S) where { S <: AbstractAssociativeAlgebra, T <: AbstractAssociativeAlgebraElem }
     r = new{S, T}()
     r.algebra = A
     r.isleft = 0
@@ -186,7 +186,7 @@ end
     return r
   end
 
-  function AlgAssAbsOrdIdl{S, T}(A::S, M::FakeFmpqMat) where { S <: AbsAlgAss, T <: AbsAlgAssElem }
+  function AlgAssAbsOrdIdl{S, T}(A::S, M::FakeFmpqMat) where { S <: AbstractAssociativeAlgebra, T <: AbstractAssociativeAlgebraElem }
     r = AlgAssAbsOrdIdl{S, T}(A)
     r.basis_matrix = M
     n = nrows(M)

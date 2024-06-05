@@ -121,7 +121,7 @@ end
     K, a = number_field(f, "a")
 
     Ky, y = K["y"]
-    g = Vector{Generic.Poly{nf_elem}}()
+    g = Vector{Generic.Poly{AbsSimpleNumFieldElem}}()
     h = monic_randpoly(Ky, 2, 2, 10)
     while !is_irreducible(h)
       h = monic_randpoly(Ky, 2, 2, 10)
@@ -223,8 +223,8 @@ begin
   c = Hecke._integral_multiplicator(b)
   @test is_integral(c * b)
   O = any_order(L)
-  @test nf(O) === L
+  @test Hecke.nf(O) === L
   L, b = number_field([t^2 + 1//2])
   O = any_order(L)
-  @test nf(O) === L
+  @test Hecke.nf(O) === L
 end

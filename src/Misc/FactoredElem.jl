@@ -69,7 +69,7 @@ end
 
 # abstract nonsense
 
-const FacElemMonDict = IdDict()
+const FacElemMonDict = AbstractAlgebra.CacheDictType{Ring, FacElemMon}()
 
 function (x::FacElemMon{S})() where S
   z = FacElem{elem_type(S), S}()
@@ -177,6 +177,8 @@ end
 parent(x::FacElem) = x.parent
 
 base_ring(x::FacElemMon) = x.base_ring
+
+base_ring_type(::Type{FacElemMon{S}}) where {S} = S
 
 base_ring(x::FacElem) = base_ring(parent(x))
 
@@ -439,7 +441,7 @@ end
 #
 ################################################################################
 
-function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
+function evaluate(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}; coprime::Bool = false)
   O = order(base_ring(x))
   if !coprime
     x = simplify(x) # the other method won't work due to one()
@@ -456,7 +458,7 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
   return A
 end
 
-function _ev(d::Dict{nf_elem, ZZRingElem}, oe::nf_elem)
+function _ev(d::Dict{AbsSimpleNumFieldElem, ZZRingElem}, oe::AbsSimpleNumFieldElem)
   z = deepcopy(oe)
   if length(d)==0
     return z

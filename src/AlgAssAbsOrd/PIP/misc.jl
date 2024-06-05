@@ -1,4 +1,4 @@
-function _get_order_from_gens(A::AbsAlgAss{S}, B::Vector{ <: AbsAlgAssElem{S} }) where { S <: NumFieldElem }
+function _get_order_from_gens(A::AbstractAssociativeAlgebra{S}, B::Vector{ <: AbstractAssociativeAlgebraElem{S} }) where { S <: NumFieldElem }
   M = zero_matrix(base_ring(A), length(B), dim(A))
   for i = 1:length(B)
     elem_to_mat_row!(M, i, B[i])
@@ -7,9 +7,9 @@ function _get_order_from_gens(A::AbsAlgAss{S}, B::Vector{ <: AbsAlgAssElem{S} })
   return Order(A, sub(pm, (nrows(pm) - ncols(pm) + 1):nrows(pm), 1:ncols(pm)))
 end
 
-_get_order_from_gens(A::AbsAlgAss{QQFieldElem}, B::Vector) = Order(A, B)
+_get_order_from_gens(A::AbstractAssociativeAlgebra{QQFieldElem}, B::Vector) = Order(A, B)
 
-function absolute_basis(M::AlgAssAbsOrd{<:AlgAss{QQFieldElem}})
+function absolute_basis(M::AlgAssAbsOrd{<:StructureConstantAlgebra{QQFieldElem}})
   return basis(M)
 end
 
@@ -64,6 +64,10 @@ function _get_a_twosided_conductor(O, M)
   end
 
   F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
+  if is_maximal(M)
+    F.left_order = M
+    F.right_order = M
+  end
   return F
 end
 

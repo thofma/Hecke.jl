@@ -1,4 +1,5 @@
 @testset "Misc" begin
+  include("Misc/Integer.jl")
   include("Misc/psibound.jl")
   include("Misc/FiniteField.jl")
   include("Misc/Primes.jl")
@@ -13,4 +14,5 @@
   include("Misc/Matrix.jl")
   include("Misc/PIDIdeal.jl")
   include("Misc/MSet.jl")
+  include("Misc/AVLTrees.jl")
 end

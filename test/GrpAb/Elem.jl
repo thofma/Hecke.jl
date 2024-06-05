@@ -3,13 +3,13 @@
     M = FlintZZ[1 2 3; 4 5 6]
     G = @inferred abelian_group(M)
     N = FlintZZ[1 2 3]
-    a = @inferred GrpAbFinGenElem(G, N)
+    a = @inferred FinGenAbGroupElem(G, N)
     @test parent(a) == G
     @test a.coeff == N
 
     G = @inferred abelian_group([3, 0])
     N = FlintZZ[1 1]
-    a = @inferred GrpAbFinGenElem(G, N)
+    a = @inferred FinGenAbGroupElem(G, N)
     @test @inferred parent(a) == G
     @test a.coeff == N
 
@@ -36,28 +36,28 @@
   @testset "Parent" begin
     G = @inferred abelian_group([3, 0])
     N = FlintZZ[1 1]
-    a = @inferred GrpAbFinGenElem(G, N)
+    a = @inferred FinGenAbGroupElem(G, N)
     @test @inferred parent(a) == G
   end
 
   @testset "String I/O" begin
     G = abelian_group([3, 0])
     N = FlintZZ[1 1]
-    a = GrpAbFinGenElem(G, N)
+    a = FinGenAbGroupElem(G, N)
     @test isa(string(a), String)
   end
 
   @testset "Hashing" begin
     G = abelian_group([3, 0])
     N = FlintZZ[1 1]
-    a = GrpAbFinGenElem(G, N)
+    a = FinGenAbGroupElem(G, N)
     @test isa(hash(a), UInt)
   end
 
   @testset "Indexing" begin
     G = abelian_group([3, 0])
     N = FlintZZ[1 2]
-    a = GrpAbFinGenElem(G, N)
+    a = FinGenAbGroupElem(G, N)
     @test @inferred a[1] == 1
     @test @inferred a[2] == 2
   end
@@ -65,12 +65,12 @@
   @testset "Comparison" begin
     G = abelian_group([3, 0])
     N = FlintZZ[1 2]
-    a = GrpAbFinGenElem(G, N)
-    b = GrpAbFinGenElem(G, deepcopy(N))
+    a = FinGenAbGroupElem(G, N)
+    b = FinGenAbGroupElem(G, deepcopy(N))
     @test @inferred a == b
 
     H = abelian_group([3, 0])
-    c = GrpAbFinGenElem(H, N)
+    c = FinGenAbGroupElem(H, N)
     @test_throws ErrorException a == c
   end
 

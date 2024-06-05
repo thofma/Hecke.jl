@@ -369,7 +369,7 @@ end
 function Base.show(io::IO, L::RelLattice{T, D}) where {T, D}
   print("Relation lattice for $T with underlying graph \n$(L.graph)\n")
   print("In weak dict: $(length(L.weak_vertices))\n")
-  print("In dict: $(length(L.block_gc))\n")
+  print("In dict: $(length(L.block_gc))")
 end
 
 # The finalizer, which must be attached to a every group in the lattice.

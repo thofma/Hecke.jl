@@ -5,21 +5,21 @@
 ################################################################################
 
 @doc raw"""
-    nf(x::NumFieldOrdIdl) -> AnticNumberField
+    nf(x::NumFieldOrderIdeal) -> AbsSimpleNumField
 
 Returns the number field, of which $x$ is an integral ideal.
 """
-nf(x::NumFieldOrdIdl) = nf(order(x))
+nf(x::NumFieldOrderIdeal) = nf(order(x))
 
 
 @doc raw"""
-    order(I::NumFieldOrdIdl) -> NfOrd
+    order(I::NumFieldOrderIdeal) -> AbsSimpleNumFieldOrder
 
 Returns the order of $I$.
 """
-@inline order(a::NumFieldOrdIdl) = a.order
+@inline order(a::NumFieldOrderIdeal) = a.order
 
-_algebra(a::NumFieldOrdIdl) = nf(a)
+_algebra(a::NumFieldOrderIdeal) = nf(a)
 
 ################################################################################
 #
@@ -27,22 +27,22 @@ _algebra(a::NumFieldOrdIdl) = nf(a)
 #
 ################################################################################
 
-function degree(P::NfRelOrdIdl)
+function degree(P::RelNumFieldOrderIdeal)
   @assert is_prime(P)
   return P.splitting_type[2]*degree(minimum(P))
 end
 
-function ramification_index(P::NfRelOrdIdl)
+function ramification_index(P::RelNumFieldOrderIdeal)
   @assert is_prime(P)
   return P.splitting_type[1]
 end
 
-function absolute_ramification_index(P::NfRelOrdIdl)
+function absolute_ramification_index(P::RelNumFieldOrderIdeal)
   @assert is_prime(P)
   return P.splitting_type[1]*absolute_ramification_index(minimum(P))
 end
 
-function absolute_ramification_index(P::NfAbsOrdIdl)
+function absolute_ramification_index(P::AbsNumFieldOrderIdeal)
   @assert is_prime(P)
   return ramification_index(P)
 end
@@ -54,11 +54,11 @@ end
 #
 ################################################################################
 
-function absolute_basis(I::T) where T <: Union{NfAbsOrdIdl, NfAbsOrdFracIdl}
+function absolute_basis(I::T) where T <: Union{AbsNumFieldOrderIdeal, AbsNumFieldOrderFractionalIdeal}
   return basis(I)
 end
 
-function absolute_basis(I::T) where T <: Union{NfRelOrdIdl, NfRelOrdFracIdl}
+function absolute_basis(I::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}
   res = elem_type(nf(order(I)))[]
   pb = pseudo_basis(I)
   pbb = pseudo_basis(order(I))
@@ -78,18 +78,18 @@ end
 ################################################################################
 
 @doc raw"""
-    absolute_minimum(I::NumFieldOrdIdl) -> ZZRingElem
+    absolute_minimum(I::NumFieldOrderIdeal) -> ZZRingElem
 
 Given an ideal $I$, returns a generator of the ideal $I \cap \mathbb Z$.
 """
-absolute_minimum(::NumFieldOrdIdl)
+absolute_minimum(::NumFieldOrderIdeal)
 
 
-function absolute_minimum(I::NfAbsOrdIdl)
+function absolute_minimum(I::AbsNumFieldOrderIdeal)
   return minimum(I)
 end
 
-function absolute_minimum(I::NfRelOrdIdl)
+function absolute_minimum(I::RelNumFieldOrderIdeal)
   return absolute_minimum(minimum(I))::ZZRingElem
 end
 
@@ -100,21 +100,21 @@ end
 ################################################################################
 
 @doc raw"""
-    absolute_norm(I::NumFieldOrdIdl) -> ZZRingElem
+    absolute_norm(I::NumFieldOrderIdeal) -> ZZRingElem
 
 Given an ideal $I$, returns its norm over $\mathbb Q$.
 """
-absolute_norm(::NumFieldOrdIdl)
+absolute_norm(::NumFieldOrderIdeal)
 
-function absolute_norm(x::NfAbsOrdIdl)
+function absolute_norm(x::AbsNumFieldOrderIdeal)
   return norm(x)
 end
 
-function absolute_norm(a::NfRelOrdIdl)
+function absolute_norm(a::RelNumFieldOrderIdeal)
   return norm(a, FlintQQ)
 end
 
-function norm(I::NumFieldOrdIdl, K::NumField)
+function norm(I::NumFieldOrderIdeal, K::NumField)
   O = order(I)
   if K == base_field(O)
     return norm(I)
@@ -123,7 +123,7 @@ function norm(I::NumFieldOrdIdl, K::NumField)
   end
 end
 
-function norm(I::NumFieldOrdIdl, ::QQField)
+function norm(I::NumFieldOrderIdeal, ::QQField)
   return absolute_norm(I)
 end
 
@@ -134,11 +134,11 @@ end
 ################################################################################
 
 @doc raw"""
-    uniformizer(P::NumFieldOrdIdl) -> NumFieldOrdElem
+    uniformizer(P::NumFieldOrderIdeal) -> NumFieldOrderElem
 
 Given a prime ideal $P$, returns an element $u \in P$ with valuation(u, P) == 1.
 """
-function uniformizer(P::NfRelOrdIdl)
+function uniformizer(P::RelNumFieldOrderIdeal)
   @assert is_prime(P)
 
   if isone(ramification_index(P))
@@ -156,7 +156,7 @@ function uniformizer(P::NfRelOrdIdl)
   return z
 end
 
-function uniformizer(P::NfAbsOrdIdl)
+function uniformizer(P::AbsNumFieldOrderIdeal)
   @assert is_prime(P)
   p = minimum(P)
   if isdefined(P, :gens_normal) && P.gens_normal == p
@@ -187,19 +187,19 @@ end
 ################################################################################
 
 @doc raw"""
-    p_uniformizer(P::NumFieldOrdIdl) -> NumFieldOrdElem
+    p_uniformizer(P::NumFieldOrderIdeal) -> NumFieldOrderElem
 
 Given a prime ideal P, returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
 other prime ideals lying over minimum(P).
 """
-p_uniformizer(::NumFieldOrdIdl)
+p_uniformizer(::NumFieldOrderIdeal)
 
-function p_uniformizer(P::NfAbsOrdIdl)
+function p_uniformizer(P::AbsNumFieldOrderIdeal)
   assure_2_normal(P)
   return P.gen_two
 end
 
-function p_uniformizer(P::NfRelOrdIdl{S, T, U}) where {S, T, U}
+function p_uniformizer(P::RelNumFieldOrderIdeal{S, T, U}) where {S, T, U}
   @assert is_prime(P)
 
   if isdefined(P, :p_uniformizer)
@@ -231,13 +231,13 @@ end
 ################################################################################
 
 @doc raw"""
-    anti_uniformizer(P::NumFieldOrdIdl) -> NumFieldElem
+    anti_uniformizer(P::NumFieldOrderIdeal) -> NumFieldElem
 
 Given a prime ideal $P$, returns an element $a$ in the number field containing $P$
 with valuation(a, P) == -1, valuation(a, Q) = 0 at the prime conjugate to $P$
 and non-negative valuation at all other prime ideals.
 """
-anti_uniformizer(::NumFieldOrdIdl)
+anti_uniformizer(::NumFieldOrderIdeal)
 
 ################################################################################
 #
@@ -246,19 +246,19 @@ anti_uniformizer(::NumFieldOrdIdl)
 ################################################################################
 
 @doc raw"""
-    absolute_anti_uniformizer(P::NumFieldOrdIdl) -> NumFieldElem
+    absolute_anti_uniformizer(P::NumFieldOrderIdeal) -> NumFieldElem
 
 Given a prime ideal $P$, this function returns an element $x$ with valuation(x, P) = -1$,
 valuation(x, Q) = 0$ for every ideal Q conjugate to $P$ and non-negative valuation
 at any other prime ideal.
 """
-absolute_anti_uniformizer(::NumFieldOrdIdl)
+absolute_anti_uniformizer(::NumFieldOrderIdeal)
 
-function absolute_anti_uniformizer(P::NfAbsOrdIdl)
+function absolute_anti_uniformizer(P::AbsNumFieldOrderIdeal)
   return anti_uniformizer(P)
 end
 
-function absolute_anti_uniformizer(P::NfRelOrdIdl)
+function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
   OL = order(P)
   L = nf(OL)
   A = absolute_basis(OL)
@@ -301,9 +301,9 @@ function absolute_anti_uniformizer(P::NfRelOrdIdl)
     end
   end
 
-  K = left_kernel_basis(z)
+  K = kernel(z, side = :left)
 
-  k = K[1]
+  k = K[1, :]
   return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(k[i]) for i in 1:d]))
 end
 
@@ -314,18 +314,18 @@ end
 ################################################################################
 
 @doc raw"""
-    prime_number(P::NumFieldOrdIdl) -> ZZRingElem
+    prime_number(P::NumFieldOrderIdeal) -> ZZRingElem
 
 Given a prime ideal $P$, returns the unique prime number $p$ contained in $P$.
 """
-function prime_number(P::NumFieldOrdIdl; check::Bool = true)
+function prime_number(P::NumFieldOrderIdeal; check::Bool = true)
   if check
     @assert is_prime(P)
   end
   return prime_number(minimum(P), check = false)
 end
 
-function prime_number(P::NfAbsOrdIdl; check::Bool = true)
+function prime_number(P::AbsNumFieldOrderIdeal; check::Bool = true)
   if check
     @assert is_prime(P)
   end
@@ -339,7 +339,7 @@ end
 #
 ################################################################################
 
-function support(I::T) where T <: Union{NumFieldOrdIdl, NumFieldOrdFracIdl}
+function support(I::T) where T <: Union{NumFieldOrderIdeal, NumFieldOrderFractionalIdeal}
   lp = factor(I)
   return collect(keys(lp))
 end
@@ -350,15 +350,15 @@ end
 #
 ################################################################################
 
-is_integral(I::NumFieldOrdIdl) = true
+is_integral(I::NumFieldOrderIdeal) = true
 
-function is_integral(I::NfOrdFracIdl)
+function is_integral(I::AbsSimpleNumFieldOrderFractionalIdeal)
   @assert is_maximal(order(I))
   simplify(I)
   return denominator(I) == 1
 end
 
-function is_integral(a::NfRelOrdFracIdl)
+function is_integral(a::RelNumFieldOrderFractionalIdeal)
   @assert is_maximal(order(a))
   return defines_ideal(order(a), basis_pmatrix(a, copy = false))
 end
@@ -369,14 +369,14 @@ end
 #
 ################################################################################
 
-function tr(I::NfAbsOrdIdl)
+function tr(I::AbsNumFieldOrderIdeal)
   E = nf(order(I))
   K = base_field(E)
   return gcd(ZZRingElem[tr(x) for x in basis(I)])
 end
 
 
-function tr(I::NfAbsOrdFracIdl)
+function tr(I::AbsNumFieldOrderFractionalIdeal)
   E = nf(order(I))
   K = base_field(E)
   traces = QQFieldElem[trace(b) for b in basis(I)]
@@ -384,7 +384,7 @@ function tr(I::NfAbsOrdFracIdl)
   return reduce(gcd, traces; init = QQFieldElem(0))
 end
 
-function tr(I::T) where T <: Union{NfRelOrdIdl, NfRelOrdFracIdl}
+function tr(I::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}
   E = nf(order(I))
   K = base_field(E)
   return fractional_ideal(maximal_order(K), elem_type(K)[trace(b) for b in absolute_basis(I)])
@@ -396,9 +396,9 @@ end
 #
 ################################################################################
 
-gens(I::NumFieldOrdIdl) = small_generating_set(I)
+gens(I::NumFieldOrderIdeal) = small_generating_set(I)
 
-function gens(I::NumFieldOrdFracIdl)
+function gens(I::NumFieldOrderFractionalIdeal)
   K = nf(order(I))
   nI = numerator(I)
   dI = denominator(I)
@@ -406,7 +406,7 @@ function gens(I::NumFieldOrdFracIdl)
   return elem_type(K)[elem_in_nf(x)//dI for x in gnI]
 end
 
-function small_generating_set(I::NfAbsOrdIdl)
+function small_generating_set(I::AbsNumFieldOrderIdeal)
   OK = order(I)
   if isone(I)
     return elem_type(OK)[one(OK)]
@@ -421,7 +421,7 @@ function small_generating_set(I::NfAbsOrdIdl)
   id_gen = zero_matrix(FlintZZ, 2*n, n)
   m = minimum(I, copy = false)
   B = basis(I, copy = false)
-  gens = NfOrdElem[]
+  gens = AbsSimpleNumFieldOrderElem[]
   for i = 1:length(B)
     if i != 1
       c = matrix(FlintZZ, 1, n, coordinates(B[i]))
@@ -441,7 +441,7 @@ function small_generating_set(I::NfAbsOrdIdl)
   return gens
 end
 
-function small_generating_set(I::NfRelOrdIdl)
+function small_generating_set(I::RelNumFieldOrderIdeal)
   OK = order(I)
   K = nf(OK)
   B = pseudo_basis(I, copy = false)
@@ -472,7 +472,7 @@ function small_generating_set(I::NfRelOrdIdl)
   return starting_gens[indices]
 end
 
-function is_ramified(O::NumFieldOrd, P::NumFieldOrdIdl)
+function is_ramified(O::NumFieldOrder, P::NumFieldOrderIdeal)
   OK = order(P)
   d = discriminant(O, nf(OK))
   return !is_coprime(P, d)

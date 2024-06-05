@@ -17,7 +17,7 @@ function get_sunits_from_subfield_data!(c::Hecke.ClassGrpCtx, UZK::Hecke.UnitGrp
   end
 end
 
-function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
+function class_group_via_brauer(O::AbsSimpleNumFieldOrder, N::NormRelation; compact::Bool = true)
   K = N.K
   OK = lll(maximal_order(nf(O)))
 
@@ -26,7 +26,7 @@ function class_group_via_brauer(O::NfOrd, N::NormRelation; compact::Bool = true)
   S = prime_ideals_up_to(OK, bound)
   #First, we try with a smaller factor base.
 
-  Sfirst = NfOrdIdl[]
+  Sfirst = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   primes_added = ZZRingElem[]
   threshold = min(200, div(length(S), 2))
   i = 1

@@ -5,14 +5,14 @@
 ################################################################################
 
 @doc raw"""
-    induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_elem}, q::ZZRingElem) -> Generic.Poly{nf_elem}, ZZRingElem
+    induce_crt(a::Generic.Poly{AbsSimpleNumFieldElem}, p::ZZRingElem, b::Generic.Poly{AbsSimpleNumFieldElem}, q::ZZRingElem) -> Generic.Poly{AbsSimpleNumFieldElem}, ZZRingElem
 
 Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
 to all coefficients recursively.
 Implicitly assumes that $a$ and $b$ have integral coefficients (i.e. no
 denominators).
 """
-function induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_elem}, q::ZZRingElem, signed::Bool = false)
+function induce_crt(a::Generic.Poly{AbsSimpleNumFieldElem}, p::ZZRingElem, b::Generic.Poly{AbsSimpleNumFieldElem}, q::ZZRingElem, signed::Bool = false)
   c = parent(a)()
   pi = invmod(p, q)
   mul!(pi, pi, p)
@@ -29,13 +29,13 @@ function induce_crt(a::Generic.Poly{nf_elem}, p::ZZRingElem, b::Generic.Poly{nf_
 end
 
 @doc raw"""
-    induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::ZZRingElem) -> bool, Generic.Poly{nf_elem}
+    induce_rational_reconstruction(a::Generic.Poly{AbsSimpleNumFieldElem}, M::ZZRingElem) -> bool, Generic.Poly{AbsSimpleNumFieldElem}
 
 Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
 the coefficients to be integral (no checks done)
 returns true iff this is successful for all coefficients.
 """
-function induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::ZZRingElem)
+function induce_rational_reconstruction(a::Generic.Poly{AbsSimpleNumFieldElem}, M::ZZRingElem)
   b = parent(a)()
   for i=0:degree(a)
     fl, x = rational_reconstruction(coeff(a, i), M)
@@ -55,11 +55,11 @@ end
 ################################################################################
 
 @doc raw"""
-    gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
+    gcd(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem}) -> Generic.Poly{AbsSimpleNumFieldElem}
 
 Computes the greatest common divisor of $f$ and $g$ using a modular algorithm.
 """
-function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool = false)
+function gcd(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem}, test_sqfr::Bool = false)
   # modular kronnecker assumes a, b !=n 0
   if iszero(a)
     if iszero(b)
@@ -86,7 +86,7 @@ end
 ################################################################################
 
 # There is some weird type instability
-function gcd_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+function gcd_modular(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem})
   # naive version, kind of
   # polys should be integral
   # rat recon maybe replace by known den if poly integral (Kronnecker)
@@ -107,7 +107,7 @@ function gcd_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
     fp = deepcopy(t)::Vector{fqPolyRepPolyRingElem}  # bad!!!
     gp = Hecke.modular_proj(b, me)
     gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Vector{fqPolyRepPolyRingElem}
-    gc = Hecke.modular_lift(gp, me)::Generic.Poly{nf_elem}
+    gc = Hecke.modular_lift(gp, me)::Generic.Poly{AbsSimpleNumFieldElem}
     if isone(gc)
       return parent(a)(1)
     end
@@ -138,7 +138,7 @@ function gcd_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
 end
 
 
-function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+function _preproc_pol(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem})
   a1 = a*(1//leading_coefficient(a))
   da = Base.reduce(lcm, [denominator(coeff(a1, i)) for i=0:degree(a)])
   b1 = b*(1//leading_coefficient(b))
@@ -161,7 +161,7 @@ function _preproc_pol(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   return a2, b2, fsa
 end
 
-function gcd_euclid(a::AbstractAlgebra.PolyRingElem{nf_elem}, b::AbstractAlgebra.PolyRingElem{nf_elem})
+function gcd_euclid(a::AbstractAlgebra.PolyRingElem{AbsSimpleNumFieldElem}, b::AbstractAlgebra.PolyRingElem{AbsSimpleNumFieldElem})
    check_parent(a, b)
    if length(a) > length(b)
       (a, b) = (b, a)
@@ -176,7 +176,7 @@ end
 
 #similar to gcd_modular, but avoids rational reconstruction by controlling
 #a/the denominator
-function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool = false)
+function gcd_modular_kronnecker(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem}, test_sqfr::Bool = false)
   # rat recon maybe replace by known den if poly integral (Kronnecker)
   # if not monic, scale by gcd
   # remove content?
@@ -258,7 +258,7 @@ end
 #rational reconstructio is expensive - enventually
 #TODO: figure out the denominators in advance. Resultants?
 
-function gcdx_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+function gcdx_modular(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem})
   a = a*(1//leading_coefficient(a))
   b = b*(1//leading_coefficient(b))
   global p_start
@@ -331,7 +331,7 @@ end
 #  write gcdx using lifting (lin/ quad)
 #  try using deg-1-primes only (& complicated lifting)
 #
-function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+function gcdx_mod_res(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem})
   @assert parent(a) == parent(b)
   a = a*(1//leading_coefficient(a))
   da = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
@@ -416,7 +416,7 @@ end
 #
 ################################################################################
 
-function eq_mod(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, d::ZZRingElem)
+function eq_mod(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem}, d::ZZRingElem)
   e = degree(a) == degree(b)
   K= base_ring(parent(a))
   i=0
@@ -456,7 +456,7 @@ end
 #
 ################################################################################
 
-function resultant_mod(f::Generic.Poly{nf_elem}, g::Generic.Poly{nf_elem})
+function resultant_mod(f::Generic.Poly{AbsSimpleNumFieldElem}, g::Generic.Poly{AbsSimpleNumFieldElem})
   global p_start
   p = p_start
   K = base_ring(parent(f))
@@ -503,7 +503,7 @@ end
 
 
 
-function landau_mignotte_bound(f::PolyRingElem{nf_elem})
+function landau_mignotte_bound(f::PolyRingElem{AbsSimpleNumFieldElem})
   Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
   for i=0:degree(f)
@@ -516,7 +516,7 @@ end
 
 
 
-function cld_bound(f::PolyRingElem{nf_elem}, k::Vector{Int})
+function cld_bound(f::PolyRingElem{AbsSimpleNumFieldElem}, k::Vector{Int})
   @assert all(kk -> 0 <= kk < degree(f), k)
   Zx, x = polynomial_ring(FlintZZ, cached = false)
   g = Zx()
@@ -535,7 +535,7 @@ function cld_bound(f::PolyRingElem{nf_elem}, k::Vector{Int})
   end
   return bb
 end
-cld_bound(f::PolyRingElem{nf_elem}, k::Int) = cld_bound(f, [k])[1]
+cld_bound(f::PolyRingElem{AbsSimpleNumFieldElem}, k::Int) = cld_bound(f, [k])[1]
 
 function cld_bound(f::ZZPolyRingElem, k::Int)
   @assert 0 <= k < degree(f)

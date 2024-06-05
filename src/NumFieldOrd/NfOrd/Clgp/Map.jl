@@ -3,11 +3,11 @@
 ################################################################################
 
 @doc raw"""
-    power_class(A::NfOrdIdl, e::ZZRingElem) -> NfOrdIdl
+    power_class(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Computes a (small) ideal in the same class as $A^e$.
 """
-function power_class(A::NfOrdIdl, e::ZZRingElem)
+function power_class(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, e::ZZRingElem)
   if iszero(e)
     O = order(A)
     return ideal(O, 1)
@@ -37,11 +37,11 @@ function power_class(A::NfOrdIdl, e::ZZRingElem)
 end
 
 @doc raw"""
-    power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem}) -> NfOrdIdl
+    power_product_class(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, e::Vector{ZZRingElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
-function power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem})
+function power_product_class(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, e::Vector{ZZRingElem})
   i = 1
   while i <= length(e) && e[i] == 0
     i += 1
@@ -63,7 +63,7 @@ function power_product_class(A::Vector{NfOrdIdl}, e::Vector{ZZRingElem})
   return B
 end
 
-function class_group_disc_exp(a::GrpAbFinGenElem, c::ClassGrpCtx)
+function class_group_disc_exp(a::FinGenAbGroupElem, c::ClassGrpCtx)
   if length(c.dl_data) == 3
     Ti = inv(c.dl_data[2])
     c.dl_data = (c.dl_data[1], c.dl_data[2], c.dl_data[3], Ti)
@@ -97,18 +97,18 @@ function class_group_disc_log(r::SRow{ZZRingElem}, c::ClassGrpCtx)
   for (p,v) = r
     rr[1, p-s+1] = v
   end
-  d = GrpAbFinGenElem(C, view(rr*T, 1:1, nrows(T)-length(C.snf)+1:nrows(T)))
+  d = FinGenAbGroupElem(C, view(rr*T, 1:1, nrows(T)-length(C.snf)+1:nrows(T)))
 #  println(d)
   return d
 end
 
 @doc raw"""
-    class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{ZZRingElem}
+    class_group_ideal_relation(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, c::ClassGrpCtx) -> AbsSimpleNumFieldElem, SRow{ZZRingElem}
 
 Finds a number field element $\alpha$ such that $\alpha I$ factors over
 the factor base in $c$.
 """
-function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
+function class_group_ideal_relation(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, c::ClassGrpCtx)
   #easy case: I factors over the FB...
   # should be done for a factor base, not the class group ctx.
   # the ctx is needed for the small_elements business
@@ -211,7 +211,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
 end
 
-function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
+function class_group_disc_log(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, c::ClassGrpCtx)
   q, w = class_group_ideal_relation(I, c)
 #  J = simplify(q*I)
 #  H = prod([v<0?inv(c.FB.ideals[p])^Int(-v):c.FB.ideals[p]^Int(v) for (p,v) = w])
@@ -222,7 +222,7 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   return class_group_disc_log(w, c)
 end
 
-function change_base_ring(mC::MapClassGrp, O::NfOrd)
+function change_base_ring(mC::MapClassGrp, O::AbsSimpleNumFieldOrder)
   L = order(codomain(mC))
   mD = MapClassGrp()
   mD.header = MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), y -> mC.header.preimage(codomain(mC)(y)))
@@ -235,7 +235,7 @@ function show(io::IO, mC::MapClassGrp)
   show(IOContext(io, :compact => true), codomain(mC))
 end
 
-function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
+function class_group(c::ClassGrpCtx, O::AbsSimpleNumFieldOrder = order(c); redo::Bool = false)
   if !redo
     if isdefined(c, :cl_map)
       mC = c.cl_map::MapClassGrp
@@ -251,7 +251,7 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
 
   local disclog
   let c = c, C = C
-    function disclog(x::NfOrdIdl)
+    function disclog(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
       if x.is_principal == 1
         return id(C)
       end
@@ -261,7 +261,7 @@ function class_group(c::ClassGrpCtx, O::NfOrd = order(c); redo::Bool = false)
 
   local expo
   let c = c
-    function expo(x::GrpAbFinGenElem)
+    function expo(x::FinGenAbGroupElem)
       return class_group_disc_exp(x, c)
     end
   end
@@ -277,7 +277,7 @@ end
 function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 
   if !redo && isdefined(c, :dl_data)
-    return c.dl_data[3]::GrpAbFinGen
+    return c.dl_data[3]::FinGenAbGroup
   end
 
   h, p = class_group_get_pivot_info(c)
@@ -308,13 +308,13 @@ end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
 @doc raw"""
-    is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, number_field}
+    is_principal_fac_elem(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Bool, FacElem{AbsSimpleNumFieldElem, number_field}
 
 Tests if $I$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
-function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function is_principal_fac_elem(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   J, a = reduce_ideal(I)
   @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   fl, x = is_principal_fac_elem(J)
@@ -324,11 +324,11 @@ function is_principal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 @doc raw"""
-    principal_generator_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, number_field}
+    principal_generator_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FacElem{AbsSimpleNumFieldElem, number_field}
 
 For a principal ideal $A$, find a generator in factored form.
 """
-function principal_generator_fac_elem(A::NfOrdIdl)
+function principal_generator_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   fl, e = is_principal_fac_elem(A)
   if !fl
     error("Ideal is not principal")
@@ -338,11 +338,11 @@ end
 
 
 @doc raw"""
-    principal_generator_fac_elem(I::FacElem) -> FacElem{nf_elem, number_field}
+    principal_generator_fac_elem(I::FacElem) -> FacElem{AbsSimpleNumFieldElem, number_field}
 
 For a principal ideal $I$ in factored form, find a generator in factored form.
 """
-function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+function principal_generator_fac_elem(I::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   if isempty(I.fac)
     return FacElem(one(nf(order(base_ring(I)))))
   end
@@ -355,11 +355,11 @@ function principal_generator_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 @doc raw"""
-    principal_generator(A::NfOrdIdl) -> NfOrdElem
+    principal_generator(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem
 
 For a principal ideal $A$, find a generator.
 """
-function principal_generator(A::NfOrdIdl)
+function principal_generator(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   O = order(A)
   if is_maximal(O)
     fl, e = is_principal_fac_elem(A)
@@ -377,53 +377,53 @@ function principal_generator(A::NfOrdIdl)
 end
 
 @doc raw"""
-    is_principal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, number_field}
+    is_principal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool, FacElem{AbsSimpleNumFieldElem, number_field}
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 The generator will be in factored form.
 """
-function is_principal_fac_elem(A::NfOrdIdl)
-  return _isprincipal_fac_elem(A::NfOrdIdl, Val{false})
+function is_principal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  return _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Val(false))
 end
 
-function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) where {U}
-  # If support === Val{true}, also compute the support of the factored element.
+function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Val{support} = Val(false)) where {support}
+  # If `support`, also compute the support of the factored element.
   # (This is not the same as the support of the ideal A!)
   if A.is_principal == 1
     if isdefined(A, :princ_gen_fac_elem)
-      if support === Val{false}
+      if !support
         return true, A.princ_gen_fac_elem
       else
         #a = A.princ_gen_fac_elem
-        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
       end
     else
       if isdefined(A, :princ_gen)
         A.princ_gen_fac_elem = FacElem(A.princ_gen.elem_in_nf)
       end
       a = A.princ_gen_fac_elem
-      if support === Val{false}
+      if !support
         return true, a
       else
-        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{NfOrdIdl, ZZRingElem}
+        #return true, a, factor_coprime(IdealSet(order(A)), a, refine = true)::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}
       end
     end
   end
   O = order(A)
   @assert is_maximal_known_and_maximal(O)
   if A.is_principal == 2
-    if support === Val{false}
+    if !support
       return false, FacElem(one(nf(O)))
     else
-      return false, FacElem(one(nf(O))), Dict{NfOrdIdl, ZZRingElem}()
+      return false, FacElem(one(nf(O))), Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
     end
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
     L = lll(maximal_order(nf(O)))
     class_group(L)
-    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
+    c = get_attribute(L, :ClassGrpCtx)::Hecke.ClassGrpCtx{sparse_matrix_type(ZZ)}
     A = IdealSet(L)(A)
   else
     L = O
@@ -431,13 +431,13 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 
   module_trafo_assure(c.M)
 
-  H = c.M.basis::SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}
+  H = c.M.basis::sparse_matrix_type(ZZ)
   T = c.M.trafo::Vector
 
   x, r = class_group_ideal_relation(A, c)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
 
-  R, d = solve_ut(H, r)
+  R, d = _solve_ut(H, r)
 
   if d != 1
     A.is_principal = 2
@@ -455,17 +455,17 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
   for i in length(T):-1:1
     apply_right!(rs, T[i])
   end
-  base = vcat(c.R_gen, c.R_rel)::Vector{Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}
-  e = FacElem(base, rs)::FacElem{nf_elem, AnticNumberField}
+  base = vcat(c.R_gen, c.R_rel)::Vector{Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}
+  e = FacElem(base, rs)::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}
   add_to_key!(e.fac, x, -1)
 
   #reduce e modulo units.
-  e = reduce_mod_units(FacElem{nf_elem, AnticNumberField}[e], get_attribute(L, :UnitGrpCtx))[1]
+  e = reduce_mod_units(FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[e], get_attribute(L, :UnitGrpCtx))[1]
   A.is_principal = 1
   A.princ_gen_fac_elem = e
   # TODO: if we set it to be principal, we need to set the generator. Otherwise the ^ function is broken
 
-  if support === Val{false}
+  if !support
     return true, e
   else
     prime_exponents = sparse_row(FlintZZ, collect(1:length(base)), rs) * vcat(c.M.bas_gens, c.M.rel_gens)
@@ -493,13 +493,13 @@ function _isprincipal_fac_elem(A::NfOrdIdl, support::Type{Val{U}} = Val{false}) 
 end
 
 @doc raw"""
-    is_principal(A::NfOrdIdl) -> Bool, NfOrdElem
-    is_principal(A::NfOrdFracIdl) -> Bool, NfOrdElem
+    is_principal_with_data(A::AbsSimpleNumFieldOrderIdeal) -> Bool, AbsSimpleNumFieldOrderElem
+    is_principal_with_data(A::AbsSimpleNumFieldOrderFractionalIdeal) -> Bool, AbsSimpleNumFieldElem
 
 Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 \langle \alpha\rangle$ or $(\mathtt{false}, 1)$ otherwise.
 """
-function is_principal(A::NfOrdIdl)
+function is_principal_with_data(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if A.is_principal == 1 && isdefined(A, :princ_gen)
     return true, A.princ_gen
   end
@@ -522,7 +522,7 @@ function is_principal(A::NfOrdIdl)
   return fl, ev
 end
 
-function is_principal(A::NfOrdFracIdl)
+function is_principal_with_data(A::AbsSimpleNumFieldOrderFractionalIdeal)
   O = order(A)
   if !is_maximal(O)
     fl, a = is_principal_non_maximal(numerator(A, copy = false))
@@ -534,10 +534,31 @@ function is_principal(A::NfOrdFracIdl)
   return fl, b//denominator(A, copy = false)
 end
 
+@doc raw"""
+    is_principal(A::AbsSimpleNumFieldOrderIdeal) -> Bool
+    is_principal(A::AbsSimpleNumFieldOrderFractionalIdeal) -> Bool
+
+Tests if $A$ is principal.
+"""
+function is_principal(A::AbsSimpleNumFieldOrderIdeal)
+  if A.is_principal == 1
+    return true
+  end
+  if A.is_principal == 2
+    return false
+  end
+  return is_principal_fac_elem(A)[1]
+ end
+
+function is_principal(A::AbsSimpleNumFieldOrderFractionalIdeal)
+  # _fac_elem does not exist for fractional ideals?
+  return is_principal_with_data(A)[1]
+end
+
 # does not work, cannot work. Problem
 #  x = 1/2 \pm 10^-n
 # then x+1/2 = 1 \pm 10^-n and ceil can be 1 or 2
-function unique_fmpz_mat(C::Nemo.arb_mat)
+function unique_fmpz_mat(C::Nemo.ArbMatrix)
   half = parent(C[1,1])(QQFieldElem(1//2))  #TODO: does not work
   half = parent(C[1,1])(1)//2
   v = zero_matrix(FlintZZ, nrows(C), ncols(C))
@@ -553,7 +574,7 @@ function unique_fmpz_mat(C::Nemo.arb_mat)
   return true, v
 end
 
-function round_approx(::Type{ZZMatrix}, C::Nemo.arb_mat)
+function round_approx(::Type{ZZMatrix}, C::Nemo.ArbMatrix)
   v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 
   for i=1:nrows(C)
@@ -561,7 +582,7 @@ function round_approx(::Type{ZZMatrix}, C::Nemo.arb_mat)
       a = upper_bound(ZZRingElem, C[i,j])
       b = lower_bound(C[i,j], ZZRingElem)
       if (b-a) > sqrt(abs(C[i,j]))
-        throw(InexactError(:round_approx, arb, C[i,j]))
+        throw(InexactError(:round_approx, ArbFieldElem, C[i,j]))
       end
       v[i,j] = div(a+b, 2)
     end
@@ -571,7 +592,7 @@ end
 
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
-function reduce_mod_units(a::Vector{FacElem{nf_elem, AnticNumberField}}, U::UnitGrpCtx)
+function reduce_mod_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, U::UnitGrpCtx)
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
   #TODO:
@@ -588,15 +609,15 @@ function reduce_mod_units(a::Vector{FacElem{nf_elem, AnticNumberField}}, U::Unit
   cnt = 10
   V = zero_matrix(FlintZZ, 1, 1)
 
-  local B::arb_mat
+  local B::ArbMatrix
 
   if isdefined(U, :tentative_regulator)
     #TODO: improve here - it works, kind of...
-    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::arb_mat
-    bd = maximum(sqrt(sum((B[i,j]::arb)^2 for j=1:ncols(B)))::arb for i=1:nrows(B))
+    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::ArbMatrix
+    bd = maximum(sqrt(sum((B[i,j]::ArbFieldElem)^2 for j=1:ncols(B)))::ArbFieldElem for i=1:nrows(B))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
-      s = ccall((:arb_bits, libarb), Int, (Ref{arb}, ), bd)
+      s = ccall((:arb_bits, libarb), Int, (Ref{ArbFieldElem}, ), bd)
       prec = max(s, prec)
       prec = 1<<nbits(prec)
     else
@@ -605,8 +626,8 @@ function reduce_mod_units(a::Vector{FacElem{nf_elem, AnticNumberField}}, U::Unit
   end
 
   while true
-    prec::Int, A::arb_mat = Hecke._conj_log_mat_cutoff_inv(U, prec)
-    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::arb_mat
+    prec::Int, A::ArbMatrix = Hecke._conj_log_mat_cutoff_inv(U, prec)
+    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::ArbMatrix
     C = B*A
     exact = true
     try
@@ -657,24 +678,24 @@ end
 ################################################################################
 
 @doc raw"""
-    find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m)) -> MapClassGrp
+    find_coprime_representatives(mC::MapClassGrp, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} = factor(m)) -> MapClassGrp
 
 Returns a class group map such that the representatives for every classes are coprime to $m$.
 $lp$ is the factorization of $m$.
 """
-function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
+function find_coprime_representatives(mC::MapClassGrp, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} = factor(m))
   C = domain(mC)
   O = order(m)
   K = nf(O)
 
-  ideals = NfOrdIdl[first(keys(mC.princ_gens[i][1].fac)) for i = 1:ngens(C)]
+  ideals = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[first(keys(mC.princ_gens[i][1].fac)) for i = 1:ngens(C)]
 
   L, el = find_coprime_representatives(ideals, m, lp)
 
   local exp
   let L = L, C = C
-    function exp(a::GrpAbFinGenElem)
-      e = Dict{NfOrdIdl,ZZRingElem}()
+    function exp(a::FinGenAbGroupElem)
+      e = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},ZZRingElem}()
       for i = 1:ngens(C)
         if !iszero(a[i])
           e[L[i]] = a[i]
@@ -691,17 +712,17 @@ function find_coprime_representatives(mC::MapClassGrp, m::NfOrdIdl, lp::Dict{NfO
 
 end
 @doc raw"""
-    find_coprime_representatives(ideals::Vector{nfOrdIdl}, m::NfOrdIdl) -> Vector{NfOrdIdl}, Vector{nf_elem}
+    find_coprime_representatives(ideals::Vector{nfOrdIdl}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, Vector{AbsSimpleNumFieldElem}
 
 Returns a vector v of ideals and elements el coprime to m such that ideals[i] = el[i]*v[i].
 """
-function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int} = factor(m))
+function find_coprime_representatives(ideals::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} = factor(m))
 
   OK = order(m)
   K = nf(OK)
 
-  L = Vector{NfOrdIdl}(undef, length(ideals))
-  el = Vector{nf_elem}(undef, length(ideals))
+  L = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}(undef, length(ideals))
+  el = Vector{AbsSimpleNumFieldElem}(undef, length(ideals))
   ppp = 1.0
   for (p, v) in lp
     ppp *= (1 - 1/Float64(norm(p)))
@@ -725,12 +746,12 @@ function find_coprime_representatives(ideals::Vector{NfOrdIdl}, m::NfOrdIdl, lp:
 
 end
 
-function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int})
+function coprime_deterministic(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, lp::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int})
   g, ng = ppio(minimum(a, copy = false), minimum(m, copy = false))
   @assert !isone(g)
-  primes = Tuple{ZZRingElem, nf_elem}[]
+  primes = Tuple{ZZRingElem, AbsSimpleNumFieldElem}[]
   for (p, v) in lp
-    if !divisible(g, minimum(p, copy = false))
+    if !is_divisible_by(g, minimum(p, copy = false))
       continue
     end
     vp = valuation(a, p)
@@ -779,11 +800,11 @@ function coprime_deterministic(a::NfOrdIdl, m::NfOrdIdl, lp::Dict{NfOrdIdl, Int}
   return I.num, res*I.den
 end
 
-function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
+function probabilistic_coprime(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   O = order(a)
   K = nf(O)
   J = inv(a)
-  temp = basis_matrix(J.num, copy = false)*basis_matrix(O, copy = false)
+  temp = basis_matrix(J.num, copy = false)*basis_matrix(FakeFmpqMat, O, copy = false)
   b = temp.num
   b_den = temp.den
   prec = 100
@@ -818,14 +839,4 @@ function probabilistic_coprime(a::NfOrdIdl, m::NfOrdIdl)
     I1 = I.num
   end
   return I1, s*I.den
-end
-
-################################################################################
-#
-#  Wrapper
-#
-################################################################################
-
-function is_principal_with_data(I::Union{NfOrdIdl, NfOrdFracIdl})
-  return is_principal(I)
 end

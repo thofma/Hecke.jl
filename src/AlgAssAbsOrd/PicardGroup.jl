@@ -8,7 +8,7 @@ mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, HeckeMap, MapRayClassGroup
   header::MapHeader{S, T}
   modulus#::AlgAssAbsOrdIdl{...}
   groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp}}
-  into_product_of_groups::GrpAbFinGenMap # the isomorphism between the domain and the product of the groups in groups_in_number_fields
+  into_product_of_groups::FinGenAbGroupHom # the isomorphism between the domain and the product of the groups in groups_in_number_fields
 
   function MapRayClassGroupAlg{S, T}() where {S, T}
     return new{S, T}()
@@ -18,8 +18,6 @@ end
 function modulus(f::MapRayClassGroupAlg{S, T}) where {S, T}
   return f.modulus::elem_type(base_ring_type(T))
 end
-
-base_ring_type(::Type{FacElemMon{S}}) where {S} = S
 
 mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
   header::MapHeader{S, T}
@@ -52,7 +50,7 @@ end
 
 @doc raw"""
     picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
-      -> GrpAbFinGen, MapPicardGroup
+      -> FinGenAbGroup, MapPicardGroup
 
 Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
 returns the picard group of $O$.
@@ -62,7 +60,7 @@ for the computation of refined discrete logarithms in non maximal orders are don
 function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   @assert is_commutative(O)
   if !prepare_ref_disc_log && isdefined(O, :picard_group)
-    mp = O.picard_group::MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}
+    mp = O.picard_group::MapPicardGrp{FinGenAbGroup, parent_type(ideal_type(O))}
     return domain(mp), mp
   end
 
@@ -71,7 +69,7 @@ function picard_group(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   end
 
   if prepare_ref_disc_log && isdefined(O, :picard_group)
-    mP = O.picard_group::MapPicardGrp{GrpAbFinGen, parent_type(ideal_type(O))}
+    mP = O.picard_group::MapPicardGrp{FinGenAbGroup, parent_type(ideal_type(O))}
     if isdefined(mP, :betas) && isdefined(mP, :gammas) && isdefined(mP, :right_transform)
       return domain(mP), mP
     end
@@ -82,16 +80,16 @@ end
 function _picard_group_maximal(O::AlgAssAbsOrd)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  class_groups = Tuple{GrpAbFinGen, MapClassGrp}[ class_group(field) for (field, map) in fields_and_maps ]
+  class_groups = Tuple{FinGenAbGroup, MapClassGrp}[ class_group(field) for (field, map) in fields_and_maps ]
   P = class_groups[1][1]
   for i = 2:length(class_groups)
-    P = direct_product(P, class_groups[i][1]; task = :none)::GrpAbFinGen
+    P = direct_product(P, class_groups[i][1]; task = :none)::FinGenAbGroup
   end
   S, StoP = snf(P)
 
   local disc_exp
   let A = A, StoP = StoP, fields_and_maps = fields_and_maps, class_groups = class_groups, O = O
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       p = StoP(x)
       basis_of_ideal = Vector{elem_type(A)}()
       offset = 1
@@ -113,7 +111,7 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
   local disc_log
   let fields_and_maps = fields_and_maps, class_groups = class_groups, StoP = StoP, P = P
     function disc_log(x::AlgAssAbsOrdIdl)
-      ideals = Vector{NfOrdIdl}()
+      ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
       for i = 1:length(fields_and_maps)
         push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
       end
@@ -129,19 +127,19 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
   end
 
   Idl = IdealSet(O)
-  StoIdl = MapPicardGrp{GrpAbFinGen, typeof(Idl)}()
+  StoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
   StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   O.picard_group = StoIdl
   return S, StoIdl
 end
 
 
-function _trivial_picard(O::AlgAssAbsOrd, R::GrpAbFinGen, mR)
+function _trivial_picard(O::AlgAssAbsOrd, R::FinGenAbGroup, mR)
   A = algebra(O)
   Idl = IdealSet(O)
   local disc_exp_triv
   let O = O
-    function disc_exp_triv(x::GrpAbFinGenElem)
+    function disc_exp_triv(x::FinGenAbGroupElem)
       return ideal(O, one(O))
     end
   end
@@ -155,7 +153,7 @@ function _trivial_picard(O::AlgAssAbsOrd, R::GrpAbFinGen, mR)
 
   Idl = IdealSet(O)
   fac_elem_mon_A = FacElemMon(A)
-  RtoIdl = MapPicardGrp{GrpAbFinGen, typeof(Idl)}()
+  RtoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
   RtoIdl.header = MapHeader(R, Idl, disc_exp_triv, disc_log_triv)
   RtoIdl.right_transform = zero_matrix(FlintZZ, 0, 0)
   RtoIdl.betas = Vector{elem_type(fac_elem_mon_A)}()
@@ -197,7 +195,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
 
     # Compute the image of the map from G to R, i. e. the kernel of the map from
     # R to Pic(O).
-    GinR = Vector{GrpAbFinGenElem}()
+    GinR = Vector{FinGenAbGroupElem}()
     for i = 1:ngens(G)
       g = OO(OtoQ\(GtoQ(G[i])))
       r = mR\(ideal(OO, g))
@@ -263,7 +261,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     S_rels, U, V = snf_with_transform(H)
     Vi = inv(V)
 
-    # In principle S_rels is the SNF of GrpAbFinGen(H), but we can as well use R
+    # In principle S_rels is the SNF of FinGenAbGroup(H), but we can as well use R
     # here, since the transformation for the HNF is from the left.
     S, StoR = _reduce_snf(R, S_rels, V, Vi)
 
@@ -340,7 +338,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
 
   local disc_exp
   let Idl = Idl, gens_snf = gens_snf
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       y = one(Idl)
       for i = 1:length(x.coeff)
         y *= gens_snf[i]^x[i]
@@ -365,7 +363,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     end
   end
 
-  StoIdl = MapPicardGrp{GrpAbFinGen, typeof(Idl)}()
+  StoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
   StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   StoIdl.ray_class_group_map = mR
 
@@ -477,11 +475,24 @@ function _principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
   return g
 end
 
-function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl)
-  if is_maximal(order(a))
-    return _is_principal_maximal(a)
+function _is_principal_with_data_etale(a::AlgAssAbsOrdIdl; local_freeness::Bool = false)
+  # all the internal functions assume that the ideal is an ideal of the order
+  #
+  # support the keyword argument, since the "generic" interface requires it
+  O = order(a)
+  d = denominator(a, O)
+  b = d * a
+  if is_maximal(O)
+    fl, z = _is_principal_maximal(b)
+  else
+    fl, z =  _is_principal_non_maximal(b)
   end
-  return _is_principal_non_maximal(a)
+  if !fl
+    return fl, elem_in_algebra(z)
+  else
+    # d * a = z * O
+    return fl, 1//d * elem_in_algebra(z)
+  end
 end
 
 function is_principal_fac_elem(a::AlgAssAbsOrdIdl)
@@ -496,6 +507,7 @@ end
 
 function _is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
+  @assert is_one(denominator(a, O))
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
 
@@ -524,7 +536,7 @@ function _is_principal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   return true, FacElem(bases, exps)
 end
 
-# for is_principal_non_maximal see NfOrd/PicardGroup.jl
+# for is_principal_non_maximal see AbsSimpleNumFieldOrder/PicardGroup.jl
 
 ################################################################################
 #
@@ -533,13 +545,13 @@ end
 ################################################################################
 
 # inf_pcl[i] may contain places for the field A.maps_to_numberfields[i][1]
-function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector{Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}()) where {T}
+function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector{Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}()) where {T}
   O = order(m)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
 
   # Compute the groups in the number fields
-  groups = Vector{Tuple{GrpAbFinGen, MapRayClassGrp}}()
+  groups = Vector{Tuple{FinGenAbGroup, MapRayClassGrp}}()
   for i = 1:length(fields_and_maps)
     mi = _as_ideal_of_number_field(m, fields_and_maps[i][2])
     if length(inf_plc) != 0
@@ -553,7 +565,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
 
   C = groups[1][1]
   for i = 2:length(groups)
-    C = direct_product(C, groups[i][1], task = :none)::GrpAbFinGen
+    C = direct_product(C, groups[i][1], task = :none)::FinGenAbGroup
   end
   S, StoC = snf(C)
 
@@ -562,7 +574,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
 
   local disc_exp
   let StoC = StoC, groups = groups, O = O, one_ideals = one_ideals
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       z = StoC(x).coeff
       y = fac_elem_mon()
       j = 1
@@ -580,7 +592,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
   local disc_log
   let fields_and_maps = fields_and_maps, C = C, StoC = StoC
     function disc_log(x::AlgAssAbsOrdIdl)
-      ideals = Vector{NfOrdIdl}()
+      ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
       for i = 1:length(fields_and_maps)
         push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
       end
@@ -596,9 +608,9 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
 
 
     function disc_log(x::FacElem)
-      ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
+      ideals = Vector{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
       for i = 1:length(fields_and_maps)
-        base = Vector{NfOrdIdl}()
+        base = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
         exp = Vector{ZZRingElem}()
         for (I, e) in x
           push!(base, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
@@ -640,7 +652,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
 
   local disc_exp
   let fac_elem_mon = fac_elem_mon, generators = generators
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       y = fac_elem_mon()
       for i = 1:ngens(parent(x))
         y *= generators[i]^x[i]
@@ -655,7 +667,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
       return StoR\(mR\x)
     end
 
-    function disc_log(x::NfAbsOrdIdl)
+    function disc_log(x::AbsNumFieldOrderIdeal)
       return StoR\(mR\x)
     end
   end
@@ -712,7 +724,7 @@ function disc_log_generalized_ray_class_grp(I::FacElem{S, T}, mR::MapRayClassGro
 
   groups = mR.groups_in_number_fields
 
-  ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
+  ideals = Vector{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}()
 
   for i = 1:length(fields_and_maps)
     push!(ideals, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
@@ -753,7 +765,7 @@ function disc_log_generalized_ray_class_grp(I::S, mR::MapRayClassGroupAlg) where
 
   groups = mR.groups_in_number_fields
 
-  ideals = Vector{NfOrdIdl}()
+  ideals = Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
 
   for i = 1:length(fields_and_maps)
     push!(ideals, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
@@ -792,14 +804,15 @@ end
 ################################################################################
 
 @doc raw"""
-    kernel_group(O::AlgAssAbsOrd) -> GrpAbFinGen, MapPicardGroup
+    kernel_group_with_disc_log(O::AlgAssAbsOrd) -> FinGenAbGroup, MapPicardGroup
 
 Given an order $O$ in a commutative algebra over $\mathbb Q$, this function
 returns the group $D$ in the exact sequence $0 \to D \to Pic(O) \to Pic(O')$
 where $O'$ is a maximal order containing $O$.
 """
-function kernel_group(O::AlgAssAbsOrd)
+function kernel_group_with_disc_log(O::AlgAssAbsOrd)
   A = algebra(O)
+  @req is_commutative(O) "Order must be commutative"
   OO = maximal_order(A)
 
   # We use the short exact sequence
@@ -811,10 +824,10 @@ function kernel_group(O::AlgAssAbsOrd)
 
   Idl = IdealSet(O)
   if C == P
-    D = GrpAbFinGen(ZZRingElem[])
+    D = FinGenAbGroup(ZZRingElem[])
     local disc_exp_triv
     let O = O
-      function disc_exp_triv(x::GrpAbFinGenElem)
+      function disc_exp_triv(x::FinGenAbGroupElem)
         return ideal(O, one(O))
       end
     end
@@ -832,8 +845,8 @@ function kernel_group(O::AlgAssAbsOrd)
   end
 
   # Build the morphism from Pic(O) to Pic(OO)
-  A = Vector{GrpAbFinGenElem}()
-  B = Vector{GrpAbFinGenElem}()
+  A = Vector{FinGenAbGroupElem}()
+  B = Vector{FinGenAbGroupElem}()
   for i = 1:ngens(P)
     push!(A, P[i])
     p = mP(P[i])
@@ -856,7 +869,7 @@ function kernel_group(O::AlgAssAbsOrd)
 
   local disc_exp
   let Idl = Idl, gens_snf = gens_snf
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       y = one(Idl)
       for i = 1:length(x.coeff)
         y *= gens_snf[i]^x.coeff[1, i]
@@ -869,13 +882,13 @@ function kernel_group(O::AlgAssAbsOrd)
   let mP = mP, DtoP = DtoP, StoD = StoD
     function disc_log(x::AlgAssAbsOrdIdl)
       p = mP\x
-      b, g = haspreimage(DtoP, p)
+      b, g = has_preimage_with_preimage(DtoP, p)
       @assert b "Ideal not an element of the kernel group"
       return StoD\g
     end
   end
 
-  StoIdl = MapPicardGrp{GrpAbFinGen, typeof(Idl)}()
+  StoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
   StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   return S, StoIdl
 end
@@ -886,7 +899,7 @@ end
 #
 ################################################################################
 
-# Mostly taken from NfOrd/LinearAlgebra.jl
+# Mostly taken from AbsSimpleNumFieldOrder/LinearAlgebra.jl
 function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   O = order(b)
   @assert isone(denominator(b, O))
@@ -921,8 +934,8 @@ function _intersect_modules(BM::FakeFmpqMat, BN::FakeFmpqMat)
   BMint = change_base_ring(FlintZZ, numerator(d * BM))
   BNint = change_base_ring(FlintZZ, numerator(d * BN))
   H = vcat(BMint, BNint)
-  k, K = left_kernel(H)
-  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:k, 1:nrows(BM)) * BMint)), d)
+  K = kernel(H, side = :left)
+  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return BI
 end
 

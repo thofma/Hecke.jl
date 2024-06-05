@@ -25,7 +25,7 @@ end
 #
 ################################################################################
 
-(O::AlgAssRelOrd{S, T, U})(a::AbsAlgAssElem{S}, check::Bool = true) where {S, T, U} = begin
+(O::AlgAssRelOrd{S, T, U})(a::AbstractAssociativeAlgebraElem{S}, check::Bool = true) where {S, T, U} = begin
   if check
     (x, y) = _check_elem_in_order(a, O)
     !x && error("Algebra element not in the order")
@@ -35,7 +35,7 @@ end
   end
 end
 
-(O::AlgAssRelOrd{S, T, U})(a::AbsAlgAssElem{S}, arr::Vector{S}, check::Bool = false) where {S, T, U} = begin
+(O::AlgAssRelOrd{S, T, U})(a::AbstractAssociativeAlgebraElem{S}, arr::Vector{S}, check::Bool = false) where {S, T, U} = begin
   if check
     (x, y) = _check_elem_in_order(a, O)
     (!x || arr != y) && error("Algebra element not in the order")

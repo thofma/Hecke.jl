@@ -26,7 +26,6 @@ function endomorphism_ring(f::EndAlgMap, L::ModAlgAssLat)
     end
     return O
   end
-  @show "endomorphism_ring computation: $(objectid(L))"
 
   Bm = basis_matrix(L)
   Bminv = basis_matrix_inverse(L)
@@ -54,7 +53,7 @@ function endomorphism_ring(f::EndAlgMap, L::ModAlgAssLat)
     end
   end
   bas = [Bminv * b * Bm for b in BELint]
-  O = Order(E, E.(bas), isbasis = true, check = false)
+  O = Order(E, [E(b, check = false) for b in bas], isbasis = true, check = false)
   set_attribute!(L, :endomorphism_ring => (O, f))
   return O
 end
@@ -103,7 +102,7 @@ function _hom_space_as_ideal(L::ModAlgAssLat, M::ModAlgAssLat)
   @req L.V === M.V "Lattices must have equal ambient module"
   @req L.base_ring === M.base_ring "Lattices must have equal order"
 
-  E, f = endomorphism_algebra(L.V)
+  E, f = endomorphism_algebra(M.V)
   O = endomorphism_ring(f, M) # this is End_Lambda(M) in E = End_A(V)
 
   # write the basis of E with respect to the basis of L and M respectively
@@ -130,7 +129,7 @@ function _hom_space_as_ideal(L::ModAlgAssLat, M::ModAlgAssLat)
     end
   end
   bas = [basis_matrix_inverse(L) * b * basis_matrix(M) for b in Bint]
-  Ibas = E.(bas) # this is Hom_Lambda(L, M) in E = End_A(V)
+  Ibas = [E(x, check = false) for x in bas] # this is Hom_Lambda(L, M) in E = End_A(V)
   I = ideal(E, O, FakeFmpqMat(basis_matrix(Ibas)); side=:right)
 
   return E, f, O, I
@@ -143,12 +142,12 @@ end
 ################################################################################
 
 function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
-  fl, iso = is_isomorphic_with_isomorphism(M.V, L.V)
+  fl, iso = is_isomorphic_with_isomorphism(L.V, M.V)
   if !fl
     return false, zero_map(L.V, M.V)
   end
-  MM = iso(M)
-  return _is_locally_isomorphic_same_ambient_module(L, MM)
+  LL = iso(L)
+  return _is_locally_isomorphic_same_ambient_module(LL, M)
 end
 
 function _is_locally_isomorphic_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat)
@@ -156,8 +155,11 @@ function _is_locally_isomorphic_same_ambient_module(L::ModAlgAssLat, M::ModAlgAs
   d = denominator(T)
   dd = det(T)
   ps = union(prime_divisors(d), prime_divisors(numerator(dd)), prime_divisors(denominator(dd)))
+  # In the end these are all computations with endomorphism rings, so we do this once
+  E, f, O, I = _hom_space_as_ideal(L, M)
+
   for p in ps
-    if !is_locally_isomorphic(L, M, p)
+    if !_is_loc_iso_gen(L, M, p, E, f, O, I, Val(false))
       return false
     end
   end
@@ -169,9 +171,9 @@ function is_locally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat,
   @req base_ring(L.base_ring) isa ZZRing "Order must be a Z-order"
 
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
-    fl, t = _is_locl_iso_abs_irred(L, M, p, Val{true})
+    fl, t = _is_loc_iso_abs_irred(L, M, p, Val(true))
   else
-    fl, t =  _is_loc_iso_gen(L, M, p, Val{true})
+    fl, t = _is_loc_iso_gen(L, M, p, Val(true))
   end
 
   if fl
@@ -184,11 +186,11 @@ function is_locally_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion
   @req L.base_ring === M.base_ring "Orders of lattices must agree"
   @req base_ring(L.base_ring) isa ZZRing "Order must be a Z-order"
   if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
-    fl = _is_loc_iso_abs_irred(L, M, p, Val{false})
+    fl = _is_loc_iso_abs_irred(L, M, p, Val(false))
   else
-    fl = _is_loc_iso_gen(L, M, p, Val{false})
+    fl = _is_loc_iso_gen(L, M, p, Val(false))
     if is_absolutely_irreducible_known(L.V) && is_absolutely_irreducible(L.V)
-      @assert _is_loc_iso_gen(L, M, p, Val{false}) == _is_loc_iso_abs_irred(L, M, p, Val{false})
+      @assert _is_loc_iso_gen(L, M, p, Val(false)) == _is_loc_iso_abs_irred(L, M, p, Val(false))
     end
   end
   return fl
@@ -197,12 +199,27 @@ end
 function _is_loc_iso_gen(L::ModAlgAssLat,
                          M::ModAlgAssLat,
                          p::IntegerUnion,
-                         with_iso::Type{Val{S}} = Val{true}) where {S}
+                         with_iso_val::Val{with_iso} = Val(true)) where {with_iso}
   E, f, O, I = _hom_space_as_ideal(L, M)
+  return _is_loc_iso_gen(L, M, p, E, f, O, I, with_iso_val)
+end
+
+function _is_loc_iso_gen(L::ModAlgAssLat,
+                         M::ModAlgAssLat,
+                         p::IntegerUnion,
+                         E,
+                         f,
+                         O,
+                         I,
+                         ::Val{with_iso} = Val(true)) where {with_iso}
   fl, alpha = is_locally_free(I, p, side = :right)
   imal = image(f, alpha)
   if !fl
-    return fl, imal
+    if with_iso === Val{true}
+      return fl, imal
+    else
+      return fl
+    end
   end
   mat = matrix(imal)
   # I need to test whether M is a (p-)local isomorphism L -> M
@@ -210,7 +227,7 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
   for i in 1:nrows(newbasmat)
     for j in 1:ncols(newbasmat)
       if !iszero(newbasmat[i, j]) && valuation(newbasmat[i, j], p) < 0
-        if with_iso === Val{true}
+        if with_iso
           return false, imal
         else
           return false
@@ -220,7 +237,7 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
   end
   # This means (L * mat)_p \subseteq M_p
   # This is an equality if and only if the base change matrix is invertible modulo p.
-  if with_iso === Val{true}
+  if with_iso
     return valuation(det(newbasmat), p) == 0, imal
   else
     return valuation(det(newbasmat), p) == 0
@@ -230,13 +247,13 @@ end
 function _is_loc_iso_abs_irred(L::ModAlgAssLat,
                                M::ModAlgAssLat,
                                p::IntegerUnion,
-                               with_iso::Type{Val{S}} = Val{true}) where {S}
+                               ::Val{with_iso} = Val(true)) where {with_iso}
   # We are assuming that L.V === M.V is absolutely irreducible
   # I will not even check this.
   T = basis_matrix(L) * basis_matrix_inverse(M)
   d = denominator(T)
   T = d * T
-  if with_iso === Val{true}
+  if with_iso
     fl = iszero(valuation(det(T), p))
     if fl
       error("Tell the developers to finally do it!")
@@ -254,12 +271,22 @@ end
 #
 ################################################################################
 
-function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}} = Val{true}) where {T}
+function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat, ::Val{with_iso} = Val(true)) where {with_iso}
+  @vprintln :PIP 1 "is_isomorphic: computing hom space as ideal"
   E, f, O, I = _hom_space_as_ideal(L, M)
   # This is BHJ, 2022, Prop. 3.3
   # Need to check that L and M are locally isomorphic
-  if with_iso === Val{true}
-    fl, beta = is_principal_with_data(I, O, side = :right)
+  @vprintln :PIP 1 "is_isomorphic: checking local isomorphism"
+  if !is_locally_isomorphic(L, M)
+    @vprintln :PIP 1 "is_isomorphic: not locally isomorphic"
+    return false
+  end
+  @vprintln :PIP 1 "is_isomorphic: locally isomorphic"
+  if with_iso
+    @vprintln :PIP 1 "is_isomorphic: doing pip test"
+    # Not that at this point, we know what L and M are locally isomorphic.
+    # In particular, I is locally free
+    fl, beta = _is_principal_with_data(I, O, side = :right, local_freeness = true)
     if !fl
       return false, zero_map(L.V, M.V)
     end
@@ -268,42 +295,43 @@ function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M:
     @assert isom(L) == M
     return true, isom
   else
-    return is_principal(I, O, side = :right)
+    return _is_principal(I, O, side = :right, local_freeness = true)
   end
 end
 
 function is_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat)
-  return _is_isomorphic(L, M, Val{true})
+  return _is_isomorphic(L, M, Val(true))
 end
 
 function is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat)
-  return _is_isomorphic(L, M, Val{false})
+  return _is_isomorphic(L, M, Val(false))
 end
 
-function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}) where {T}
+function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso_val::Val{with_iso}) where {with_iso}
   # the hom_space function wants L and M sitting inside the same ambient space
   # there is some choice we can make
   # we try to choose the order, where we already computed the endomorphism
   # algebra
+  #
+  # But we always prefer to do things in M
 
   endoMVknown = get_attribute(M.V, :endomorphism_algebra) !== nothing && isdefined(domain(get_attribute(M.V, :endomorphism_algebra)), :decomposition)
   endoLVknown = get_attribute(L.V, :endomorphism_algebra) !== nothing && isdefined(domain(get_attribute(L.V, :endomorphism_algebra)), :decomposition)
 
-  # We always prefer to do things in M
   if endoMVknown || (!endoMVknown && !endoLVknown)
     fl, iso = is_isomorphic_with_isomorphism(L.V, M.V)
     if !fl
-      if with_iso === Val{false}
+      if !with_iso
         return false
       else
         return false, zero_map(L.V, M.V)
       end
     end
     LL = iso(L)
-    if with_iso === Val{false}
-      return _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso)
+    if !with_iso
+      return _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso_val)
     else
-      fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso)
+      fl, LLtoM = _is_isomorphic_with_isomorphism_same_ambient_module(LL, M, with_iso_val)
       if fl
         _iso = iso * LLtoM
         @assert _iso(L) == M
@@ -315,17 +343,17 @@ function _is_isomorphic(L::ModAlgAssLat, M::ModAlgAssLat, with_iso::Type{Val{T}}
   else
     fl, iso = is_isomorphic_with_isomorphism(M.V, L.V)
     if !fl
-      if with_iso === Val{false}
+      if !with_iso
         return false
       else
         return false, zero_map(L.V, M.V)
       end
     end
     MM = iso(M)
-    if with_iso === Val{false}
-      return _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso)
+    if !with_iso
+      return _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso_val)
     else
-      fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso)
+      fl, LtoMM = _is_isomorphic_with_isomorphism_same_ambient_module(L, MM, with_iso_val)
       if fl
         _iso = LtoMM * inv(iso)
         @assert _iso(L) == M

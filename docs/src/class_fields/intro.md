@@ -28,11 +28,11 @@ This is a finite abelian group. For $m_0 = Z_K$ and $m_\infty = \{\}$ we
 get $C()$ is the class group, if $m_\infty$ contains all real places, we obtain
 the narrow class group, or strict class group.
 
-```@docs
-ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
-class_group(K::Nemo.AnticNumberField)
+```@docs; canonical=false
+ray_class_group(m::Hecke.AbsNumFieldOrderIdeal{Nemo.AbsSimpleNumField,Nemo.AbsSimpleNumFieldElem}, inf_plc::Vector{Hecke.InfPlc}; p_part, n_quo)
+class_group(K::Nemo.AbsSimpleNumField)
 norm_group(f::Nemo.PolyRingElem, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
-norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
+norm_group(K::RelSimpleNumField{AbsSimpleNumFieldElem}, mR::Hecke.MapRayClassGrp, is_abelian::Bool)
 ```
 
 
@@ -47,13 +47,13 @@ maps.
 
 It should be noted that this is a _lazy_ construction: nothing is computed at this point.
 
-```@docs
+```@docs; canonical=false
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp})
-ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.GrpAbFinGenMap)
-ray_class_field(I::Hecke.NfAbsOrdIdl; n_quo, p_part)
-ray_class_field(I::Hecke.NfAbsOrdIdl, ::Vector{InfPlc}; n_quo, p_part)
-hilbert_class_field(k::AnticNumberField)
-ring_class_field(::NfAbsOrd)
+ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.FinGenAbGroupHom)
+ray_class_field(I::Hecke.AbsNumFieldOrderIdeal; n_quo, p_part)
+ray_class_field(I::Hecke.AbsNumFieldOrderIdeal, ::Vector{InfPlc}; n_quo, p_part)
+hilbert_class_field(k::AbsSimpleNumField)
+ring_class_field(::AbsNumFieldOrder)
 ```
 
 ### Example
@@ -76,7 +76,7 @@ The algorithm employed is based on Kummer-theory and requires the addition of a 
 root of unity. Progress can be monitored by setting `set_verbose_level(:ClassField, n)`
 where $0\le n\le 3$
 
-```@docs
+```@docs; canonical=false
 number_field(C::ClassField)
 ```
 
@@ -91,15 +91,15 @@ ZK = maximal_order(K)
 isone(discriminant(ZK))
 ```
 
-```@docs
-ray_class_field(K::NfRel{nf_elem})
-genus_field(A::ClassField, k::AnticNumberField)
-maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
-maximal_abelian_subfield(K::NfRel{nf_elem})
+```@docs; canonical=false
+ray_class_field(K::RelSimpleNumField{AbsSimpleNumFieldElem})
+genus_field(A::ClassField, k::AbsSimpleNumField)
+maximal_abelian_subfield(A::ClassField, k::AbsSimpleNumField)
+maximal_abelian_subfield(K::RelSimpleNumField{AbsSimpleNumFieldElem})
 ```
 
 ## Invariants
-```@docs
+```@docs; canonical=false
 degree(C::ClassField)
 base_ring(A::Hecke.ClassField)
 base_field(A::Hecke.ClassField)
@@ -107,21 +107,21 @@ discriminant(C::Hecke.ClassField)
 conductor(C::Hecke.ClassField)
 defining_modulus(C::ClassField)
 is_cyclic(C::ClassField)
-is_conductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Vector{InfPlc})
+is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{InfPlc})
 is_normal(C::ClassField)
 is_central(C::ClassField)
 ```
 
 ## Operations
-```@docs
+```@docs; canonical=false
 *(a::Hecke.ClassField, b::Hecke.ClassField)
 compositum(a::Hecke.ClassField, b::Hecke.ClassField)
 ==(a::Hecke.ClassField, b::Hecke.ClassField)
 intersect(a::Hecke.ClassField, b::Hecke.ClassField)
-prime_decomposition_type(C::Hecke.ClassField, p::Hecke.NfAbsOrdIdl)
+prime_decomposition_type(C::Hecke.ClassField, p::Hecke.AbsNumFieldOrderIdeal)
 Hecke.is_subfield(a::ClassField, b::ClassField)
-Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem)
-Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem, p::Hecke.NfAbsOrdIdl)
+Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.AbsNumFieldOrderElem)
+Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.AbsNumFieldOrderElem, p::Hecke.AbsNumFieldOrderIdeal)
 Hecke.normal_closure(r::Hecke.ClassField)
 subfields(r::ClassField)
 ```

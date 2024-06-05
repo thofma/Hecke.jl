@@ -19,7 +19,7 @@ function SpinorGeneraCtx(L::QuadLat)
   RCG, mRCG, Gens = _compute_ray_class_group(L)
 
   # 1) Map the generators into the class group to create the factor group.
-  subgroupgens = GrpAbFinGenElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
+  subgroupgens = FinGenAbGroupElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
 
   for g in gens(RCG)
     push!(subgroupgens, 2*g)
@@ -281,9 +281,9 @@ function spinor_norm(L, p)
     # Generators of the (principal) norm ideals of the Jordan components: since
     # p is odd, the norms (and the scales) are just the dimensions of the
     # Jordan components
-     normgens = nf_elem[g[1,1] for g in G]
+     normgens = AbsSimpleNumFieldElem[g[1,1] for g in G]
 
-     twonormgens = nf_elem[]
+     twonormgens = AbsSimpleNumFieldElem[]
 
      for i in 1:length(normgens)
        for j in 1:length(normgens)
@@ -375,7 +375,7 @@ function good_bong(L, p)
   @req is_dyadic(p) "Prime must be dyadic"
   G, JJ = maximal_norm_splitting(L, p)
   K = nf(base_ring(L))
-  bong = nf_elem[]
+  bong = AbsSimpleNumFieldElem[]
   for i in 1:length(G)
     GG = G[i]
     if nrows(GG) == 2
@@ -681,8 +681,8 @@ end
 # parameter atinfinity can be a list of tuples <v, +1 or -1>, where v is an
 # element of real_places(nf(base_ring(L))). All places, finite or infinite, which
 # are unspecified are interpreted as 1.}
-function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}[]) where {T}
-  #local s::nf_elem
+function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}[]) where {T}
+  #local s::AbsSimpleNumFieldElem
   R = order(base_ring(codomain(mRCG)))
   F = nf(R)
   IP = defining_modulus(mRCG)[2]
@@ -890,7 +890,7 @@ function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
     for P in lp
       g = _map_idele_into_class_group(C.mR, [(P, uniformizer(P))])
       h = C.mQ(g)
-      if !haspreimage(mS, h)[1]
+      if !has_preimage_with_preimage(mS, h)[1]
         push!(gens, P)
         push!(tmp_gens, h)
         S, mS = sub(codomain(C.mQ), tmp_gens)
@@ -915,7 +915,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   @req e == 0 || valuation(norm(L), p) >= e "The lattice must be even"
   B = local_basis_matrix(L, p, type = :submodule)
   n = nrows(B)
-  if F isa AnticNumberField
+  if F isa AbsSimpleNumField
     @assert nbits(minimum(p)) < 60
     k, h = ResidueFieldSmall(R, p)
   else
@@ -933,7 +933,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   if use_auto
     G = automorphism_group_generators(L)
     @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
-    adjust_gens = eltype(G)[solve_left(B, B*g) for g in G]
+    adjust_gens = eltype(G)[solve(B, B*g; side = :left) for g in G]
     @hassert :GenRep 1 all(let form = form; g -> g * form * transpose(g) == form; end, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
     adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
@@ -1386,7 +1386,7 @@ function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
 end
 
 function show(io::IO, f::LocMultGrpModSquMap)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Map for local unit group modulo squares")
   else
     print(io, "Map for local unit group modulo squares at the prime ideal ")
@@ -1394,7 +1394,7 @@ function show(io::IO, f::LocMultGrpModSquMap)
   end
 end
 
-function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
+function image(f::LocMultGrpModSquMap, x::FinGenAbGroupElem)
   @assert parent(x) == f.domain
   K = f.codomain
   if !f.is_dyadic
@@ -1418,7 +1418,7 @@ function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
   end
 end
 
-function preimage(f::LocMultGrpModSquMap, y::nf_elem)
+function preimage(f::LocMultGrpModSquMap, y::AbsSimpleNumFieldElem)
   @assert parent(y) == f.codomain
   if !f.is_dyadic
     v = valuation(y, f.p)
@@ -1806,7 +1806,7 @@ function _fractional_ideal_from_base_ring_generators(OE, v)
   return fractional_ideal(OE, basis_matrix(v) * basis_mat_inv(OE))
 end
 
-function _intersect(I::NfRelOrdFracIdl, J::NfRelOrdFracIdl)
+function _intersect(I::RelNumFieldOrderFractionalIdeal, J::RelNumFieldOrderFractionalIdeal)
   pm = _intersect_modules(basis_pmatrix(I), basis_pmatrix(J))
   return fractional_ideal(order(I), pm)
 end
@@ -1925,11 +1925,11 @@ function absolute_norm(A::Hecke.AlgAssAbsOrdIdl)
   return norm(A)
 end
 
-function absolute_norm(A::NfAbsOrdFracIdl)
+function absolute_norm(A::AbsNumFieldOrderFractionalIdeal)
   return norm(A)
 end
 
-function *(a::NfAbsOrdFracIdl{AnticNumberField,nf_elem}, b::AlgAssRelOrdIdl{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem},AlgAss{nf_elem}})
+function *(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},StructureConstantAlgebra{AbsSimpleNumFieldElem}})
   pm = basis_pmatrix(b)
   pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
   return ideal(algebra(order(b)), pmnew)
@@ -2042,7 +2042,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
     end
   end
 
-  A = AlgAss(K, mult_tb)
+  A = StructureConstantAlgebra(K, mult_tb)
   B = basis(A)
   sigma(a) = A([a.coeffs[2], a.coeffs[1]])
   inv2 = inv(A(2))
@@ -2193,7 +2193,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   # So if proper = true, we don't have to do anything
   # and if proper = false, we have to sieve using is_equivalent
   for c in C
-    I::NfOrdFracIdl = _exp(c)
+    I::AbsSimpleNumFieldOrderFractionalIdeal = _exp(c)
     J = numerator(I)
     f = _ideal_to_form(J, d)
     if proper || all(h -> !is_equivalent(h, f, proper = false), res)
@@ -2223,7 +2223,7 @@ function _form_to_ideal(f::QuadBin{ZZRingElem}, O, a)
 end
 
 # This is from Kani
-function _ideal_to_form(I::NfAbsOrdIdl, delta)
+function _ideal_to_form(I::AbsNumFieldOrderIdeal, delta)
   # first make primitive
   M = _hnf(basis_matrix(I), :lowerleft)
   g = reduce(gcd, [M[1, 1], M[1, 2], M[2, 2]])

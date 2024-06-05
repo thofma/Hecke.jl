@@ -3,7 +3,7 @@
   @testset "Minimal Submodules" begin
 
     F, a = finite_field(3,1,"a")
-    R = residue_ring(FlintZZ,9)
+    R = residue_ring(FlintZZ,9)[1]
 
     V=abelian_group([3,3,9,9])
 
@@ -27,7 +27,7 @@
 
   @testset "Dual Module" begin
 
-    R=residue_ring(FlintZZ,9)
+    R=residue_ring(FlintZZ,9)[1]
     V=abelian_group([3,3,9,9])
     V.is_snf=true
     V.snf=[3,3,9,9]
@@ -46,7 +46,7 @@
 
   @testset "submodules with given structure" begin
 
-    R=residue_ring(FlintZZ,8)
+    R=residue_ring(FlintZZ,8)[1]
     V=abelian_group([2,4,8,8])
     V.is_snf=true
     V.snf=[2,4,8,8]
@@ -60,9 +60,9 @@
     ls=submodules(M,typesub=[2,3])
     y=subgroups(V,quotype=[4,8])
 
-    mp1=Hecke.GrpAbFinGenMap(V,V,lift(A))
-    mp2=Hecke.GrpAbFinGenMap(V,V,lift(B))
-    mp3=Hecke.GrpAbFinGenMap(V,V,lift(C))
+    mp1=Hecke.FinGenAbGroupHom(V,V,lift(A))
+    mp2=Hecke.FinGenAbGroupHom(V,V,lift(B))
+    mp3=Hecke.FinGenAbGroupHom(V,V,lift(C))
     act=[mp1,mp2,mp3]
 
     i=0
@@ -87,7 +87,7 @@
 
   @testset "submodules" begin
 
-    R=residue_ring(FlintZZ,4)
+    R=residue_ring(FlintZZ,4)[1]
     V=abelian_group([2,2,4])
     V.is_snf=true
     V.snf=[2,2,4]

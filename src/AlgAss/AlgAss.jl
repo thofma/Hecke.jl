@@ -1,4 +1,4 @@
-add_assertion_scope(:AlgAss)
+add_assertion_scope(:StructureConstantAlgebra)
 
 ################################################################################
 #
@@ -6,7 +6,7 @@ add_assertion_scope(:AlgAss)
 #
 ################################################################################
 
-function denominator_of_multiplication_table(A::AlgAss{QQFieldElem})
+function denominator_of_multiplication_table(A::StructureConstantAlgebra{QQFieldElem})
   get_attribute!(A, :denominator_of_multiplication_table) do
     den = one(ZZ)
     mt = multiplication_table(A)
@@ -22,37 +22,39 @@ function denominator_of_multiplication_table(A::AlgAss{QQFieldElem})
   end::ZZRingElem
 end
 
-base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
+base_ring(A::StructureConstantAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
-has_one(A::AlgAss) = A.has_one
+base_ring_type(::Type{StructureConstantAlgebra{T}}) where {T} = parent_type(T)
 
-iszero(A::AlgAss) = A.iszero
+has_one(A::StructureConstantAlgebra) = A.has_one
 
-function Generic.dim(A::AlgAss)
+iszero(A::StructureConstantAlgebra) = A.iszero
+
+function Generic.dim(A::StructureConstantAlgebra)
   if iszero(A)
     return 0
   end
   return size(multiplication_table(A, copy = false), 1)
 end
 
-degree(A::AlgAss) = dim(A)
+degree(A::StructureConstantAlgebra) = dim(A)
 
-elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
+elem_type(::Type{StructureConstantAlgebra{T}}) where {T} = AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
 
-order_type(::AlgAss{QQFieldElem}) = AlgAssAbsOrd{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem})}
-order_type(::Type{AlgAss{QQFieldElem}}) = AlgAssAbsOrd{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem})}
+order_type(::StructureConstantAlgebra{QQFieldElem}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem})}
+order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem})}
 
-order_type(::AlgAss{T}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
-order_type(::Type{AlgAss{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::StructureConstantAlgebra{T}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{StructureConstantAlgebra{T}}) where { T <: NumFieldElem } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 @doc raw"""
-    multiplication_table(A::AlgAss; copy::Bool = true) -> Array{RingElem, 3}
+    multiplication_table(A::StructureConstantAlgebra; copy::Bool = true) -> Array{RingElem, 3}
 
 Given an algebra $A$ this function returns the multiplication table of $A$:
 If the function returns $M$ and the basis of $A$ is $e_1,\dots, e_n$ then
 it holds $e_i \cdot e_j = \sum_k M[i, j, k] \cdot e_k$.
 """
-function multiplication_table(A::AlgAss; copy::Bool = true)
+function multiplication_table(A::StructureConstantAlgebra; copy::Bool = true)
   if copy
     return deepcopy(A.mult_table)
   else
@@ -66,14 +68,14 @@ end
 #
 ################################################################################
 
-is_commutative_known(A::AlgAss) = (A.is_commutative != 0)
+is_commutative_known(A::StructureConstantAlgebra) = (A.is_commutative != 0)
 
 @doc raw"""
-    is_commutative(A::AlgAss) -> Bool
+    is_commutative(A::StructureConstantAlgebra) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
-function is_commutative(A::AlgAss)
+function is_commutative(A::StructureConstantAlgebra)
   if is_commutative_known(A)
     return A.is_commutative == 1
   end
@@ -97,7 +99,7 @@ end
 
 # This only works if base_ring(A) is a field (probably)
 # Returns (true, one) if there is a one and (false, something) if not.
-function find_one(A::AlgAss)
+function find_one(A::StructureConstantAlgebra)
   if iszero(A)
     return true, elem_type(base_ring(A))[]
   end
@@ -121,18 +123,18 @@ function find_one(A::AlgAss)
   if n != 1 && !iszero(Mc[n + 1, n + 1])
     return false, zeros(base_ring(A), n)
   end
-  cc = solve_ut(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
+  cc = _solve_ut(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
   one = elem_type(base_ring(A))[ cc[i, 1] for i = 1:n ]
   return true, one
 end
 
 raw"""
-    zero_algebra(R::Ring) -> AlgAss
+    zero_algebra(R::Ring) -> StructureConstantAlgebra
 
 Return the zero ring as an associative $R$-algebra.
 """
 function zero_algebra(R::Ring)
-  A = AlgAss{elem_type(R)}(R)
+  A = StructureConstantAlgebra{elem_type(R)}(R)
   A.iszero = true
   A.is_commutative = 1
   A.has_one = true
@@ -148,16 +150,16 @@ raw"""
     Unless `check = false`, this includes (time consuming) associativity and distributivity checks.
     If `one` is given, record the element with the according coefficient vector as one element of the algebra.
 """
-associative_algebra(R::Ring, mult_table::Array{<:Any, 3}; check::Bool = true) = AlgAss(R, mult_table; check)
-associative_algebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where T = AlgAss(R, mult_table, one; check)
+associative_algebra(R::Ring, mult_table::Array{<:Any, 3}; check::Bool = true) = StructureConstantAlgebra(R, mult_table; check)
+associative_algebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where T = StructureConstantAlgebra(R, mult_table, one; check)
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = get_assertion_level(:AlgAss) > 0) where {T}
+function StructureConstantAlgebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = get_assertion_level(:StructureConstantAlgebra) > 0) where {T}
   @req all(isequal(size(mult_table, 1)), size(mult_table)) "Multiplication must have dimensions have same length"
 
   if size(mult_table, 1) == 0
     return zero_algebra(R)
   end
-  A = AlgAss{T}(R, mult_table, one)
+  A = StructureConstantAlgebra{T}(R, mult_table, one)
   if check
     @req check_associativity(A) "Multiplication table does not define associative operation"
     @req check_distributivity(A) "Multiplication table does not define distributive operation"
@@ -165,12 +167,12 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = 
   return A
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = get_assertion_level(:AlgAss) > 0) where {T}
+function StructureConstantAlgebra(R::Ring, mult_table::Array{T, 3}; check::Bool = get_assertion_level(:StructureConstantAlgebra) > 0) where {T}
   @req all(isequal(size(mult_table, 1)), size(mult_table)) "Multiplication must have dimensions have same length"
   if size(mult_table, 1) == 0
     return zero_algebra(R)
   end
-  A = AlgAss{T}(R)
+  A = StructureConstantAlgebra{T}(R)
   A.mult_table = mult_table
   A.iszero = false
   has_one, one = find_one(A)
@@ -186,7 +188,7 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}; check::Bool = get_assertion_le
 end
 
 # Does anyone actually use this?
-function AlgAss(R::Ring, d::Int, arr::Vector{T}) where {T}
+function StructureConstantAlgebra(R::Ring, d::Int, arr::Vector{T}) where {T}
   if d == 0
     return _zero_algebra(R)
   end
@@ -199,7 +201,7 @@ function AlgAss(R::Ring, d::Int, arr::Vector{T}) where {T}
       end
     end
   end
-  return AlgAss(R, mult_table)
+  return StructureConstantAlgebra(R, mult_table)
 end
 
 raw"""
@@ -207,8 +209,8 @@ raw"""
 
 Associative algebra $R[x]/f$.
 """
-associative_algebra(f::PolyRingElem) = AlgAss(f)
-function AlgAss(f::PolyRingElem)
+associative_algebra(f::PolyRingElem) = StructureConstantAlgebra(f)
+function StructureConstantAlgebra(f::PolyRingElem)
   R = base_ring(parent(f))
   n = degree(f)
   Rx = parent(f)
@@ -229,13 +231,13 @@ function AlgAss(f::PolyRingElem)
   end
   one = map(R, zeros(Int, n))
   one[1] = R(1)
-  A = AlgAss(R, mult_table, one)
+  A = StructureConstantAlgebra(R, mult_table, one)
   A.is_commutative = 1
   return A
 end
 
-function AlgAss(K::AnticNumberField)
-  A = AlgAss(K.pol)
+function StructureConstantAlgebra(K::AbsSimpleNumField)
+  A = StructureConstantAlgebra(K.pol)
   m = AbsAlgAssToNfAbsMor(A, K, identity_matrix(FlintQQ, dim(A)), identity_matrix(FlintQQ, dim(A)))
   A.maps_to_numberfields = [ (K, m) ]
   return A, m
@@ -263,23 +265,23 @@ function addmul!(a::AlgAssAbsOrdElem, b::ZZRingElem, c::AlgAssAbsOrdElem)
   return add!(a, a, b * c)
 end
 
-function addmul!(a::NfAbsOrdElem, b::ZZRingElem, c::NfAbsOrdElem)
+function addmul!(a::AbsNumFieldOrderElem, b::ZZRingElem, c::AbsNumFieldOrderElem)
   return add!(a, a, b * c)
 end
 
 @doc raw"""
-    quo(O::NfAbsOrd, I::NfAbsOrdIdl, p::Union{ Int, ZZRingElem })
+    quo(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, p::Union{ Int, ZZRingElem })
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
-      -> AlgAss, AbsOrdToAlgAssMor
+      -> StructureConstantAlgebra, AbsOrdToAlgAssMor
 
 Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
 constructs $O/I$ as an algebra over $\mathbb F_p$ together with the projection
 map $O \to O/I$.
 It is assumed that $p$ is prime.
 """
-quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::IntegerUnion) = AlgAss(O, I, p)
+quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}, p::IntegerUnion) = StructureConstantAlgebra(O, I, p)
 
-function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::IntegerUnion)
+function StructureConstantAlgebra(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}, p::IntegerUnion)
   @assert order(I) === O
 
   n = degree(O)
@@ -303,7 +305,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
     local _image_zero
 
     let A = A
-      function _image_zero(a::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
+      function _image_zero(a::Union{ AbsNumFieldOrderElem, AlgAssAbsOrdElem })
         return A()
       end
     end
@@ -311,7 +313,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
     local _preimage_zero
 
     let O = O
-      function _preimage_zero(a::AlgAssElem)
+      function _preimage_zero(a::AssociativeAlgebraElem)
         return O()
       end
     end
@@ -337,9 +339,9 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   if isone(BO[1])
     one = zeros(Fp, r)
     one[1] = Fp(1)
-    A = AlgAss(Fp, mult_table, one)
+    A = StructureConstantAlgebra(Fp, mult_table, one)
   else
-    A = AlgAss(Fp, mult_table)
+    A = StructureConstantAlgebra(Fp, mult_table)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -348,7 +350,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   local _image
 
   let I = I, A = A, basis_elts = basis_elts, Fp = Fp
-    function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
+    function _image(a::Union{AbsNumFieldOrderElem, AlgAssAbsOrdElem})
       c = coordinates(mod(a, I), copy = false)
       return A([ Fp(c[i]) for i in basis_elts ])
     end
@@ -357,7 +359,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   local _preimage
 
   let BO = BO, basis_elts = basis_elts, r = r
-    function _preimage(a::AlgAssElem)
+    function _preimage(a::AssociativeAlgebraElem)
       z = zero(O)::eltype(BO)
       ca = coefficients(a, copy = false)
       for i in 1:r
@@ -390,18 +392,18 @@ function reduce_vector_mod_hnf(v::ZZMatrix, M::ZZMatrix)
 end
 
 @doc raw"""
-    quo(I::NfAbsOrdIdl, J::NfAbsOrdIdl, p::Union{ Int, ZZRingElem })
+    quo(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal, p::Union{ Int, ZZRingElem })
     quo(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Union{ Int, ZZRingElem })
-      -> AlgAss, AbsOrdToAlgAssMor
+      -> StructureConstantAlgebra, AbsOrdToAlgAssMor
 
 Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
 constructs $I/J$ as an algebra over $\mathbb F_p$ together with the projection
 map $I \to I/J$.
 It is assumed that $p$ is prime.
 """
-quo(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, p::Union{ Integer, ZZRingElem }) = AlgAss(I, J, p)
+quo(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl }, J::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl }, p::Union{ Integer, ZZRingElem }) = StructureConstantAlgebra(I, J, p)
 
-function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::IntegerUnion)
+function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl }, J::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}, p::IntegerUnion)
   @assert order(I) === order(J)
 
   O = order(I)
@@ -428,7 +430,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
     local _image_zero
 
     let A = A
-      function _image_zero(a::Union{ NfAbsOrdElem, AlgAssAbsOrdElem })
+      function _image_zero(a::Union{ AbsNumFieldOrderElem, AlgAssAbsOrdElem })
         return A()
       end
     end
@@ -436,7 +438,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
     local _preimage_zero
 
     let O = O
-      function _preimage_zero(a::AlgAssElem)
+      function _preimage_zero(a::AssociativeAlgebraElem)
         return O()
       end
     end
@@ -466,7 +468,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
     end
   end
 
-  A = AlgAss(Fp, mult_table)
+  A = StructureConstantAlgebra(Fp, mult_table)
   if is_commutative(O)
     A.is_commutative = 1
   end
@@ -476,7 +478,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
   local _image
 
   let BmatJinI = BmatJinI, I = I, r = r, A = A, t = t, Fp = Fp
-    function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem})
+    function _image(a::Union{AbsNumFieldOrderElem, AlgAssAbsOrdElem})
       elem_to_mat_row!(t.num, 1, t.den, _elem_in_algebra(a, copy = false))
       t = mul!(t, t, basis_mat_inv(I, copy = false))
       @assert isone(t.den) "Not an element of the domain"
@@ -488,7 +490,7 @@ function AlgAss(I::Union{ NfAbsOrdIdl, AlgAssAbsOrdIdl }, J::Union{NfAbsOrdIdl, 
   local _preimage
 
   let BI = BI, basis_elts = basis_elts, r = r
-    function _preimage(a::AlgAssElem)
+    function _preimage(a::AssociativeAlgebraElem)
       return O(sum(lift(ZZ, coefficients(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r))
     end
   end
@@ -517,18 +519,18 @@ p = prime_decomposition(OK, 2)[1][1]
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
 @doc raw"""
-    quo(O::NfRelOrd, I::NfRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
-    quo(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
-      -> AlgAss, RelOrdToAlgAssMor
+    quo(O::RelNumFieldOrder, I::RelNumFieldOrderIdeal, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
+    quo(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
+      -> StructureConstantAlgebra, RelOrdToAlgAssMor
 
 Given an ideal $I$ such that $p \cdot O \subseteq I \subseteq O$ this function
 constructs $O/I$ as an algebra over the finite field $R/p$, where $R$ is the
 order of $p$, together with the projection map $O \to O/I$.
 It is assumed that `R == base_ring(O)` and that $p$ is prime.
 """
-quo(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S} = AlgAss(O, I, p)
+quo(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd{T, S} }, I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) where {T, S} = StructureConstantAlgebra(O, I, p)
 
-function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S}
+function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd{T, S} }, I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S}
 
   K = _algebra(O)
 
@@ -560,7 +562,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
     local _image_zero
 
     let A = A
-      function _image_zero(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+      function _image_zero(a::Union{ RelNumFieldOrderElem, AlgAssRelOrdElem })
         return A()
       end
     end
@@ -568,7 +570,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
     local _preimage_zero
 
     let O = O
-      function _preimage_zero(a::AlgAssElem)
+      function _preimage_zero(a::AssociativeAlgebraElem)
         return O()
       end
     end
@@ -614,9 +616,9 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   if isone(new_basisO[basis_elts[1]][1])
     one = zeros(Fp, length(basis_elts))
     one[1] = Fp(1)
-    A = AlgAss(Fp, mult_table, one)
+    A = StructureConstantAlgebra(Fp, mult_table, one)
   else
-    A = AlgAss(Fp, mult_table)
+    A = StructureConstantAlgebra(Fp, mult_table)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -625,7 +627,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
   local _image
 
   let A = A, O = O
-    function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+    function _image(a::Union{ RelNumFieldOrderElem, AlgAssRelOrdElem })
       c = _elem_in_algebra(a, copy = false)
       coeffs_c = _coeff(c)
       for k in reducers
@@ -657,7 +659,7 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 
   local _preimage
   let lifted_basis_of_A = lifted_basis_of_A, O = O, invmmF = invmmF
-    function _preimage(v::AlgAssElem)
+    function _preimage(v::AssociativeAlgebraElem)
       return O(sum((invmmF(v.coeffs[i]))*lifted_basis_of_A[i] for i in 1:r))
     end
   end
@@ -668,9 +670,9 @@ function AlgAss(O::Union{ NfRelOrd{T, S}, AlgAssRelOrd{T, S} }, I::Union{ NfRelO
 end
 
 @doc raw"""
-    quo(I::NfRelOrdIdl, J::NfRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
-    quo(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
-      -> AlgAss, RelOrdToAlgAssMor
+    quo(I::RelNumFieldOrderIdeal, J::RelNumFieldOrderIdeal, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
+    quo(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
+      -> StructureConstantAlgebra, RelOrdToAlgAssMor
 
 Given an ideal $J$ such that $p \cdot I \subseteq J \subseteq I$ this function
 constructs $I/J$ as an algebra over the finite field $R/p$, where $R$ is the
@@ -679,9 +681,9 @@ It is assumed that `order(I) === order(J)` and in particular both should be
 defined. Further, it should hold `R == base_ring(order(I))` and $p$ should be
 prime.
 """
-quo(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S} = AlgAss(I, J, p, mF)
+quo(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S} = StructureConstantAlgebra(I, J, p, mF)
 
-function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{NfOrdIdl, NfRelOrdIdl}, mF = residue_field(order(p), p)[2]) where {T, S}
+function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssRelOrdIdl{T, S} }, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}, mF = residue_field(order(p), p)[2]) where {T, S}
   @assert _algebra(I) === _algebra(J)
   @assert order(I) === order(J)
 
@@ -715,7 +717,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
     local _image_zero
 
     let A = A
-      function _image_zero(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+      function _image_zero(a::Union{ RelNumFieldOrderElem, AlgAssRelOrdElem })
         return A()
       end
     end
@@ -723,7 +725,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
     local _preimage_zero
 
     let O = O
-      function _preimage_zero(a::AlgAssElem)
+      function _preimage_zero(a::AssociativeAlgebraElem)
         return O()
       end
     end
@@ -769,9 +771,9 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   if isone(new_basisI[basis_elts[1]][1])
     one = zeros(Fp, length(basis_elts))
     one[1] = Fp(1)
-    A = AlgAss(Fp, mult_table, one)
+    A = StructureConstantAlgebra(Fp, mult_table, one)
   else
-    A = AlgAss(Fp, mult_table)
+    A = StructureConstantAlgebra(Fp, mult_table)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -780,7 +782,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   local _image
 
   let O = O, new_bmatJinI = new_bmatJinI, A = A
-    function _image(a::Union{ NfRelOrdElem, AlgAssRelOrdElem })
+    function _image(a::Union{ RelNumFieldOrderElem, AlgAssRelOrdElem })
       c = _elem_in_algebra(a, copy = false)
       coeffs = _coeff(c)
       for k in reducers
@@ -814,7 +816,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   local _preimage
 
   let O = O, invmmF = invmmF, lifted_basis_of_A = lifted_basis_of_A
-    function _preimage(v::AlgAssElem)
+    function _preimage(v::AssociativeAlgebraElem)
       return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
     end
   end
@@ -824,7 +826,7 @@ function AlgAss(I::Union{ NfRelOrdIdl{T, S}, AlgAssRelOrdIdl{T, S} }, J::Union{ 
   return A, OtoA
 end
 
-function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
+function StructureConstantAlgebra(A::Generic.MatRing{T}) where { T <: FieldElem }
   n = A.n
   K = base_ring(A)
   n2 = n^2
@@ -845,12 +847,12 @@ function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
   for i = 1:n
     oneA[i + (i - 1)*n] = oneK
   end
-  A = AlgAss(K, mult_table, oneA)
+  A = StructureConstantAlgebra(K, mult_table, oneA)
   A.is_commutative = ( n == 1 ? 1 : 2 )
   return A
 end
 
-function AlgAss(A::AlgAss)
+function StructureConstantAlgebra(A::StructureConstantAlgebra)
   R = base_ring(A)
   d = dim(A)
   return A, hom(A, A, identity_matrix(R, d), identity_matrix(R, d))
@@ -862,7 +864,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, A::AlgAss)
+function show(io::IO, A::StructureConstantAlgebra)
   print(io, "Associative algebra of dimension ", dim(A), " over ", base_ring(A))
 end
 
@@ -872,8 +874,8 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(A::AlgAss{T}, dict::IdDict) where {T}
-  B = AlgAss{T}(base_ring(A))
+function Base.deepcopy_internal(A::StructureConstantAlgebra{T}, dict::IdDict) where {T}
+  B = StructureConstantAlgebra{T}(base_ring(A))
   for x in fieldnames(typeof(A))
     if x != :base_ring && isdefined(A, x)
       setfield!(B, x, Base.deepcopy_internal(getfield(A, x), dict))
@@ -893,14 +895,13 @@ end
 # We assume ncols(B) == dim(A).
 # A rref of B will be computed IN PLACE! If return_LU is Val{true}, a LU-factorization
 # of transpose(rref(B)) is returned.
-function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::Type{Val{S}} = Val{false}; is_commutative = false) where { T, S }
+function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatElem{T}, ::Val{return_LU} = Val(false); is_commutative = false) where { T, return_LU }
   K = base_ring(A)
   n = dim(A)
   r = rref!(B)
   if r == 0
-    if return_LU == Val{true}
-      #return Array{elem_type(K), 3}(undef, 0, 0, 0),  SymmetricGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0), LinearSolveCtx{typeof(B)}
-      return Array{elem_type(K), 3}(undef, 0, 0, 0), LinearSolveCtx{typeof(B)}()
+    if return_LU
+      return Array{elem_type(K), 3}(undef, 0, 0, 0), solve_init(B)
     else
       return Array{elem_type(K), 3}(undef, 0, 0, 0)
     end
@@ -913,7 +914,7 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
 
   Btr = transpose(B)
   #_, p, L, U = lu(Btr)
-  LL = solve_context(Btr, side = :right)
+  LL = solve_init(Btr)
 
   iscom = is_commutative || Hecke.is_commutative(A)
 
@@ -932,10 +933,10 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
       #_d = deepcopy(d)
       #mc = matrix(K, length(c.coeffs), 1, c.coeffs)
       #@assert can_solve_with_solution(Btr, mc)[1]
-      #d = solve_lt(L, d)
-      #d = solve_ut(U, d)
+      #d = _solve_lt(L, d)
+      #d = _solve_ut(U, d)
       #@assert Btr * d == mc
-      fl,dd = solve(LL, c.coeffs)
+      dd = solve(LL, c.coeffs, side = :right)
       for k = 1:r
         #@assert dd[k] == d[k, 1]
         mult_table[i, j, k] = dd[k]
@@ -949,7 +950,7 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
     end
   end
 
-  if return_LU == Val{true}
+  if return_LU
     return mult_table, LL #p, L, U, LL
   else
     return mult_table
@@ -957,22 +958,22 @@ function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::T
 end
 
 @doc raw"""
-     subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false,
+     subalgebra(A::StructureConstantAlgebra, e::AssociativeAlgebraElem, idempotent::Bool = false,
                 action::Symbol = :left)
-       -> AlgAss, AbsAlgAssMor
+       -> StructureConstantAlgebra, AbsAlgAssMor
 
 Given an algebra $A$ and an element $e$, this function constructs the algebra
 $e \cdot A$ (if `action == :left`) respectively $A \cdot e$ (if `action == :right`)
 and a map from this algebra to $A$.
 If `idempotent` is `true`, it is assumed that $e$ is idempotent in $A$.
 """
-function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
+function subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
   @assert parent(e) == A
   R = base_ring(A)
   n = dim(A)
   # This is the basis of e*A, resp. A*e
   B1 = representation_matrix(e, action)
-  mult_table, LL = _build_subalgebra_mult_table!(A, B1, Val{true})
+  mult_table, LL = _build_subalgebra_mult_table!(A, B1, Val(true))
 
   r = size(mult_table, 1)
 
@@ -990,18 +991,17 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     # for k = 1:n
     #   d[p[k], 1] = e.coeffs[k]
     # end
-    # d = solve_lt(L, d)
-    # d = solve_ut(U, d)
+    # d = _solve_lt(L, d)
+    # d = _solve_ut(U, d)
     # v = Vector{elem_type(R)}(undef, r)
     # for i in 1:r
     #   v[i] = d[i, 1]
     # end
-    fl, vv = solve(LL, e.coeffs)
-    @assert fl
+    vv = solve(LL, e.coeffs, side = :right)
     #@assert v == vv[1:r]
-    eA = AlgAss(R, mult_table, vv[1:r])
+    eA = StructureConstantAlgebra(R, mult_table, vv[1:r])
   else
-    eA = AlgAss(R, mult_table)
+    eA = StructureConstantAlgebra(R, mult_table)
   end
 
   if A.is_commutative == 1
@@ -1018,10 +1018,9 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
       #for k = 1:n
       #  d[p[k], 1] = B2[i, k]
       #end
-      #d = solve_lt(L, d)
-      #d = solve_ut(U, d)
-      fl, dd = solve(LL, [B2[i, k] for k in 1:n])
-      @assert fl
+      #d = _solve_lt(L, d)
+      #d = _solve_ut(U, d)
+      dd = solve(LL, [B2[i, k] for k in 1:n], side = :right)
       #@assert [d[i, 1] for i in 1:nrows(d)] == dd
       for k in 1:r
         C[i, k] = dd[k]
@@ -1035,18 +1034,18 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
 end
 
 @doc raw"""
-    subalgebra(A::AlgAss, basis::Vector{AlgAssElem}) -> AlgAss, AbsAlgAssMor
+    subalgebra(A::StructureConstantAlgebra, basis::Vector{AssociativeAlgebraElem}) -> StructureConstantAlgebra, AbsAlgAssMor
 
 Returns the subalgebra of $A$ generated by the elements in `basis` and a map
 from this algebra to $A$.
 """
-function subalgebra(A::AlgAss{T}, basis::Vector{AlgAssElem{T, AlgAss{T}}}; is_commutative = false) where T
+function subalgebra(A::StructureConstantAlgebra{T}, basis::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}}; is_commutative = false) where T
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:length(basis)
     elem_to_mat_row!(M, i, basis[i])
   end
-  mt = _build_subalgebra_mult_table!(A, M, is_commutative = is_commutative)
-  B = AlgAss(base_ring(A), mt)
+  mt = _build_subalgebra_mult_table!(A, M; is_commutative = is_commutative)
+  B = StructureConstantAlgebra(base_ring(A), mt)
   return B, hom(B, A, sub(M, 1:length(basis), 1:dim(A)))
 end
 
@@ -1056,7 +1055,7 @@ end
 #
 ###############################################################################
 
-function _assure_trace_basis(A::AlgAss{T}) where T
+function _assure_trace_basis(A::StructureConstantAlgebra{T}) where T
   if !isdefined(A, :trace_basis_elem)
     A.trace_basis_elem = Vector{T}(undef, dim(A))
     for i=1:length(A.trace_basis_elem)
@@ -1067,13 +1066,13 @@ function _assure_trace_basis(A::AlgAss{T}) where T
 end
 
 @doc raw"""
-    trace_matrix(A::AlgAss) -> MatElem
+    trace_matrix(A::StructureConstantAlgebra) -> MatElem
 
 Returns a matrix $M$ over the base ring of $A$ such that
 $M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
 basis of $A$.
 """
-function trace_matrix(A::AlgAss)
+function trace_matrix(A::StructureConstantAlgebra)
   _assure_trace_basis(A)
   F = base_ring(A)
   n = dim(A)
@@ -1097,7 +1096,7 @@ end
 #
 ###############################################################################
 
-function _rep_for_center!(M::T, A::AlgAss) where T<: MatElem
+function _rep_for_center!(M::T, A::StructureConstantAlgebra) where T<: MatElem
   n = dim(A)
   mt = multiplication_table(A, copy = false)
   tt = zero(base_ring(A))
@@ -1117,24 +1116,25 @@ function _rep_for_center!(M::T, A::AlgAss) where T<: MatElem
 end
 
 @doc raw"""
-    center(A::AlgAss) -> AlgAss, AbsAlgAssMor
+    center(A::StructureConstantAlgebra) -> StructureConstantAlgebra, AbsAlgAssMor
 
 Returns the center $C$ of $A$ and the inclusion $C \to A$.
 """
-function center(A::AlgAss{T}) where {T}
+function center(A::StructureConstantAlgebra{T}) where {T}
   if is_commutative(A)
-    B, mB = AlgAss(A)
+    B, mB = StructureConstantAlgebra(A)
     return B, mB
   end
   if isdefined(A, :center)
-    return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, AlgAss{T})}
+    return A.center::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})}
   end
 
   n = dim(A)
   M = zero_matrix(base_ring(A), n^2, n)
   # I concatenate the difference between the right and left representation matrices.
   _rep_for_center!(M, A)
-  k, B = nullspace(M)
+  B = kernel(M, side = :right)
+  k = ncols(B)
   res = Vector{elem_type(A)}(undef, k)
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
@@ -1146,7 +1146,7 @@ function center(A::AlgAss{T}) where {T}
   # can align
 
   if isdefined(A, :decomposition)
-    idems = elem_type(C)[haspreimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
+    idems = elem_type(C)[has_preimage_with_preimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
     set_attribute!(C, :central_idempotents, idems)
   end
 
@@ -1161,7 +1161,7 @@ end
 
 # See W. Eberly "Computations for Algebras and Group Representations" p. 126.
 # TODO: fix the type
-function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _find_non_trivial_idempotent(A::StructureConstantAlgebra{T}) where { T } #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     error("Dimension of algebra is 1")
   end
@@ -1189,8 +1189,8 @@ function _find_non_trivial_idempotent(A::AlgAss{T}) where { T } #<: Union{fpFiel
   end
 end
 
-#function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
-function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
+#function _find_idempotent_via_non_squarefree_poly(A::StructureConstantAlgebra{T}, a::AssociativeAlgebraElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _find_idempotent_via_non_squarefree_poly(A::StructureConstantAlgebra{T}, a::AssociativeAlgebraElem{T}, mina) where {T}
   fac = factor(mina)
   if length(fac) == 1
     return zero(A)
@@ -1215,14 +1215,14 @@ function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}
   end
   MN = hcat(transpose(M), N)
   r = rref!(MN)
-  be = solve_ut(sub(MN, 1:r, 1:dim(bA)), sub(MN, 1:r, (dim(bA) + 1):(dim(bA) + 1)))
+  be = _solve_ut(sub(MN, 1:r, 1:dim(bA)), sub(MN, 1:r, (dim(bA) + 1):(dim(bA) + 1)))
   e = bAtoA(bA([ be[i, 1] for i = 1:dim(bA) ]))
   return e
 end
 
 # A should be semi-simple
 # See W. Eberly "Computations for Algebras and Group Representations" p. 89.
-function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
+function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool = false)
   Z, ZtoA = center(A)
   if dim(Z) == 1
     error("Dimension of centre is 1")
@@ -1261,10 +1261,10 @@ function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
   end
 end
 
-#function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+#function _find_idempotent_via_squarefree_poly(A::StructureConstantAlgebra{T}, a::AssociativeAlgebraElem{T}, mina::Union{fpPolyRingElem, FpPolyRingElem, FqPolyRepPolyRingElem, fqPolyRepPolyRingElem}) where { T <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
 # TODO: fix the type
-function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina) where {T}
-  B = AlgAss(mina)
+function _find_idempotent_via_squarefree_poly(A::StructureConstantAlgebra{T}, a::AssociativeAlgebraElem{T}, mina) where {T}
+  B = StructureConstantAlgebra(mina)
   idemB = _extraction_of_idempotents(B, true)
 
   e = dot(coefficients(idemB, copy = false), [ a^k for k = 0:(degree(mina) - 1) ])
@@ -1272,7 +1272,7 @@ function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mi
 end
 
 # TODO: fix the type
-function _primitive_idempotents(A::AlgAss{T}) where { T } #<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _primitive_idempotents(A::StructureConstantAlgebra{T}) where { T } #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     return [ one(A) ]
   end
@@ -1313,7 +1313,7 @@ end
 # This computes a "matrix type" basis for A.
 # See W. Eberly "Computations for Algebras and Group Representations" p. 121.
 # TODO: fix the type
-function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
+function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} }
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
@@ -1340,7 +1340,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: U
     M4 = representation_matrix(bb - one(eAe), :right)
 
     M = hcat(M1, M2, M3, M4)
-    xx = eAe(left_kernel_basis(M)[1])
+    xx = eAe(kernel(M, side = :left)[1, :])
     x = m1(m2(xx))
 
     new_basis[1 + (i - 1)*k] = x # this is e_1i
@@ -1357,7 +1357,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T, S }#<: U
     NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(aa)))
-    b, yy = can_solve_with_solution(transpose(N), NN)
+    b, yy = can_solve_with_solution(transpose(N), NN; side = :right)
     @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 
@@ -1376,7 +1376,7 @@ end
 
 # Assumes that A is central and isomorphic to a matrix algebra of base_ring(A)
 # TODO: fix the type
-function _as_matrix_algebra(A::AlgAss{T}) where { T } # <: Union{fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AlgAssElem{T, AlgAss{T}} }
+function _as_matrix_algebra(A::StructureConstantAlgebra{T}) where { T } # <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} }
 
   idempotents = _primitive_idempotents(A)
   @assert length(idempotents)^2 == dim(A)
@@ -1401,30 +1401,30 @@ end
 ################################################################################
 
 @doc raw"""
-    direct_product(algebras::AlgAss...; task::Symbol = :sum)
-      -> AlgAss, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
-    direct_product(algebras::Vector{AlgAss}; task::Symbol = :sum)
-      -> AlgAss, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
+    direct_product(algebras::StructureConstantAlgebra...; task::Symbol = :sum)
+      -> StructureConstantAlgebra, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
+    direct_product(algebras::Vector{StructureConstantAlgebra}; task::Symbol = :sum)
+      -> StructureConstantAlgebra, Vector{AbsAlgAssMor}, Vector{AbsAlgAssMor}
 
 Returns the algebra $A = A_1 \times \cdots \times A_k$. `task` can be
 ":sum", ":prod", ":both" or ":none" and determines which canonical maps
 are computed as well: ":sum" for the injections, ":prod" for the projections.
 """
-function direct_product(algebras::Vector{<: AlgAss{T}}; task::Symbol = :sum) where T
+function direct_product(algebras::Vector{<: StructureConstantAlgebra{T}}; task::Symbol = :sum) where T
   @req !isempty(algebras) "Must be at least one algebra for direct product (or specifiy the field)"
   return direct_product(algebras..., task = task)
 end
 
-function direct_product(K, algebras::Vector{<: AlgAss{T}}; task::Symbol = :sum) where T
+function direct_product(K, algebras::Vector{<: StructureConstantAlgebra{T}}; task::Symbol = :sum) where T
   if length(algebras) == 0
     mt = zeros(K, 0, 0, 0)
-    A = AlgAss(K, mt; check = false)
+    A = StructureConstantAlgebra(K, mt; check = false)
     return A, morphism_type(eltype(algebras), typeof(A))[]
   end
   return direct_product(algebras..., task = task)
 end
 
-function direct_product(a::AlgAss{T}, _algebras::AlgAss{T}...; task::Symbol = :sum) where T
+function direct_product(a::StructureConstantAlgebra{T}, _algebras::StructureConstantAlgebra{T}...; task::Symbol = :sum) where T
   algebras = (a, _algebras...)
   @assert !isempty(algebras)
   @assert all( A -> base_ring(A) == base_ring(algebras[1]), algebras)
@@ -1445,7 +1445,7 @@ function direct_product(a::AlgAss{T}, _algebras::AlgAss{T}...; task::Symbol = :s
     end
     offset += dd
   end
-  A = AlgAss(base_ring(algebras[1]), mt; check = false)
+  A = StructureConstantAlgebra(base_ring(algebras[1]), mt; check = false)
   if task == :none
     return A
   end
@@ -1483,28 +1483,28 @@ end
 
 @doc raw"""
     direct_product(fields::AnticNumberFields...)
-      -> AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor}
+      -> StructureConstantAlgebra{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor}
     direct_product(fields::Vector{AnticNumberFields})
-      -> AlgAss{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor}
+      -> StructureConstantAlgebra{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor}
 
 Returns the algebra $A = K_1 \times \cdots \times K_k$ and the projection
 maps $A ->> K_i$.
 """
-function direct_product(fields::Vector{AnticNumberField})
+function direct_product(fields::Vector{AbsSimpleNumField})
   return direct_product(fields...)
 end
 
-function direct_product(_field::AnticNumberField, _fields::AnticNumberField...)
+function direct_product(_field::AbsSimpleNumField, _fields::AbsSimpleNumField...)
   fields = (_field, _fields...)
-  algebras = Tuple{AlgAss{QQFieldElem}, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}[ AlgAss(K) for K in fields ]
+  algebras = Tuple{StructureConstantAlgebra{QQFieldElem}, AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}[ StructureConstantAlgebra(K) for K in fields ]
   A, proj, inj = direct_product([ B for (B, m) in algebras ], task = :both)
   A.decomposition = [ (algebras[i][1], inj[i]) for i = 1:length(algebras) ]
-  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}(undef, length(fields))
+  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}(undef, length(fields))
   for i = 1:length(fields)
     # Assumes, that the map algebras[i] -> K is given by the identity matrix
     maps_to_fields[i] = AbsAlgAssToNfAbsMor(A, fields[i], proj[i].mat, proj[i].imat)
   end
-  A.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{AlgAss{QQFieldElem}, elem_type(AlgAss{QQFieldElem}), AnticNumberField, QQMatrix}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
+  A.maps_to_numberfields = Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
   return A, maps_to_fields
 end
 
@@ -1538,7 +1538,7 @@ function quaternion_algebra2(K::Field, a::T, b::T) where { T <: FieldElem }
   M[4, 3, 2] = b
   M[4, 4, 1] = -a*b
 
-  return AlgAss(K, M, [ one(K), zero(K), zero(K), zero(K) ])
+  return StructureConstantAlgebra(K, M, [ one(K), zero(K), zero(K), zero(K) ])
 end
 
 quaternion_algebra2(K::Field, a::Int, b::Int) = quaternion_algebra2(K, K(a), K(b))
@@ -1551,7 +1551,7 @@ quaternion_algebra2(a::Int, b::Int) = quaternion_algebra2(FlintQQ, QQFieldElem(a
 #
 ################################################################################
 
-function opposite_algebra(A::AlgAss)
+function opposite_algebra(A::StructureConstantAlgebra)
   K = base_ring(A)
   B = basis(A)
   d = dim(A)
@@ -1563,7 +1563,7 @@ function opposite_algebra(A::AlgAss)
   end
   o = one(A).coeffs
 
-  B = AlgAss(K, z, o)
+  B = StructureConstantAlgebra(K, z, o)
   return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d))
 end
 

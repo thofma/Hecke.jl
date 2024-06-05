@@ -1,5 +1,5 @@
 @testset "Map/NumField.jl" begin
-  # AnticNumberField -> AnticNumberField
+  # AbsSimpleNumField -> AbsSimpleNumField
   Qx, x = FlintQQ["x"]
   K, a = number_field(x^2 - 2, "a")
   s = involution(K)
@@ -13,7 +13,7 @@
   for i in 1:10
     z = rand(K, -2:2)
     @test z == f\(f(z))
-    fl, w = @inferred haspreimage(f, z)
+    fl, w = @inferred has_preimage_with_preimage(f, z)
     @test fl
     @test f(w) == z
   end
@@ -47,7 +47,7 @@
   @test domain(l) === k
   @test codomain(l) === K
 
-  fl, z = @inferred haspreimage(f, a)
+  fl, z = @inferred has_preimage_with_preimage(f, a)
   @test !fl
 
   for i in 1:10
@@ -55,7 +55,7 @@
     @test h(f(z)) == l(z)
   end
 
-  # AnticNumberField -> NfRel{nf_elem}
+  # AbsSimpleNumField -> RelSimpleNumField{AbsSimpleNumFieldElem}
 
   QQQ, q = number_field(x - 1, "q")
   QQQt, t = QQQ["t"]
@@ -67,7 +67,7 @@
   @test f(a) == -b
   @test_throws ErrorException hom(K, L, b + 1)
   @test f\(-b) == a
-  fl, z = @inferred haspreimage(f, -b)
+  fl, z = @inferred has_preimage_with_preimage(f, -b)
   @test fl
 
   f = @inferred hom(K, L, -b, inverse = (one(K), -a))
@@ -96,7 +96,7 @@
 
   h = hom(QQQ, K, one(K))
 
-  fl, _ = @inferred haspreimage(h, gen(K))
+  fl, _ = @inferred has_preimage_with_preimage(h, gen(K))
   @test !fl
 
   l = @inferred h * f
@@ -106,7 +106,7 @@
     @test l(z) == f(h(z))
   end
 
-  # NfRel{nf_elem} -> AnticNumberField
+  # RelSimpleNumField{AbsSimpleNumFieldElem} -> AbsSimpleNumField
 
   K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
@@ -152,7 +152,7 @@
   @test_throws ErrorException hom(L, M, h, one(M))
   @test f(L(a)) == 1//576*z^7 - 7//144*z^5 - 7//72*z^3 + 5//3*z
 
-  # NfRel{nf_elem} -> NfRel{nf_elem}
+  # RelSimpleNumField{AbsSimpleNumFieldElem} -> RelSimpleNumField{AbsSimpleNumFieldElem}
 
   K, a = number_field(x^2 - 2, "a")
   Kt, t = K["t"]
@@ -193,7 +193,7 @@
   @test f(b) == 1//4*bb^3 - 7//2*bb
   @test f(L(a)) == LL(-a)
 
-  # NfRel to NfRelNfRel
+  # RelSimpleNumField to NfRelNfRel
 
   Qx, x = QQ["x"]
   _K, a = number_field(x^2 - 2, "a")
@@ -204,7 +204,7 @@
   K, c = number_field(y^2 + y + b - 5, "c")
   f = hom(Ka, K, c, inverse = (-_b^2 - _b + 5, _b))
 
-  # NfAbsNS
+  # AbsNonSimpleNumField
 
   K, a = number_field([x^2 - 2])
   f = @inferred id_hom(K)
@@ -214,7 +214,7 @@
   end
   @test f * f == f
 
-  # NfRelNS
+  # RelNonSimpleNumField
 
   K, a = number_field(x^2 - 2)
   Kt, t = K["t"]
@@ -226,7 +226,7 @@
   end
   @test f * f == f
 
-  # NfRel{NfAbsNS}
+  # RelSimpleNumField{AbsNonSimpleNumField}
 
   Kt, t = K["t"]
   E, b = number_field(t^2 - 3)
@@ -336,9 +336,9 @@
     @test f == g
     @test_throws ErrorException hom(QQ, K, K(2))
     @test K(2) == @inferred (f(QQ(2)))
-    fl, c = @inferred haspreimage(f, K(2))
+    fl, c = @inferred has_preimage_with_preimage(f, K(2))
     @test fl && c == QQ(2)
-    fl, c = @inferred haspreimage(f, a)
+    fl, c = @inferred has_preimage_with_preimage(f, a)
     @test !fl
 
     h = hom(K, K)

@@ -13,7 +13,7 @@
     # f = x^2 + 1
     # g = x^3 + 3x^2 + 5x - 5
     f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
-    A = AlgAss(f2g3)
+    A = StructureConstantAlgebra(f2g3)
     J = radical(A)
     Q, AtoQ = quo(A, J)
 
@@ -56,12 +56,48 @@
       @test mod(AtoQ\(AtoQ(c)), J2) == mod(c, J2)
       @test mod(AtoQ\(AtoQ(d)), J2) == mod(d, J2)
       @test AtoQ(c + d) == AtoQ(c) + AtoQ(d)
+      @test AtoQ(c * d) == AtoQ(c) * AtoQ(d)
 
       e = rand(Q, -10:10)
       f = rand(Q, -10:10)
       @test AtoQ(AtoQ\e) == e
       @test AtoQ(AtoQ\f) == f
       @test mod(AtoQ\(e + f), J2) == mod((AtoQ\e + AtoQ\f), J2)
+      @test mod(AtoQ\(e * f), J2) == mod((AtoQ\e) * (AtoQ\f), J2)
+    end
+
+    # An example where the multiplication table of the quotient is not 0,
+    # see https://github.com/thofma/Hecke.jl/issues/1399 .
+    G = small_group(8, 4)
+    A, _ = StructureConstantAlgebra(group_algebra(FlintQQ, G))
+    I = ideal(A, one(A))
+    J = ideal(A, sum(A[i] for i in 1:8))
+    Q, AtoQ = quo(I, J)
+
+    @test dim(Q) == 7
+
+    @test iszero(AtoQ(zero(A)))
+    @test AtoQ\zero(Q) in J
+    for i in 1:7
+      for j in 1:7
+        @test Q[i]*Q[j] == AtoQ((AtoQ\Q[i])*(AtoQ\Q[j]))
+      end
+    end
+
+    for i = 1:5
+      c = rand(A, -10:10)
+      d = rand(A, -10:10)
+      @test mod(AtoQ\(AtoQ(c)), J) == mod(c, J)
+      @test mod(AtoQ\(AtoQ(d)), J) == mod(d, J)
+      @test AtoQ(c + d) == AtoQ(c) + AtoQ(d)
+      @test AtoQ(c * d) == AtoQ(c) * AtoQ(d)
+
+      e = rand(Q, -10:10)
+      f = rand(Q, -10:10)
+      @test AtoQ(AtoQ\e) == e
+      @test AtoQ(AtoQ\f) == f
+      @test mod(AtoQ\(e + f), J) == mod((AtoQ\e + AtoQ\f), J)
+      @test mod(AtoQ\(e * f), J) == mod((AtoQ\e) * (AtoQ\f), J)
     end
   end
 

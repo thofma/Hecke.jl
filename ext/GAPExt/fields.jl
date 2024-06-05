@@ -26,18 +26,18 @@ end
 
 
 mutable struct FieldsTower
-  field::AnticNumberField
-  generators_of_automorphisms::Vector{NfToNfMor}
-  subfields::Vector{NfToNfMor}
+  field::AbsSimpleNumField
+  generators_of_automorphisms::Vector{Hecke._AbsSimpleNumFieldAut}
+  subfields::Vector{Hecke._AbsSimpleNumFieldHom}
   ramified_primes::Vector{ZZRingElem}
   is_abelian::Bool
   #Solvable embedding problems for the extension
   #They are here to improve the conductor computation
-  isomorphism::Dict{NfToNfMor, GAP.GapObj}
+  isomorphism::Dict{Hecke._AbsSimpleNumFieldHom, GAP.GapObj}
   admissible_cocycles::Vector{cocycle_ctx}
   projections_for_conductors::Vector{GAP.GapObj}
 
-  function FieldsTower(K::AnticNumberField, auts::Vector{NfToNfMor}, subfields::Vector{NfToNfMor})
+  function FieldsTower(K::AbsSimpleNumField, auts::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, subfields::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
     z = new()
     z.field = K
     z.generators_of_automorphisms = auts
@@ -71,25 +71,25 @@ end
 #
 ################################################################################
 
-function Hecke.field_context(K::AnticNumberField)
-  layers = Vector{NfToNfMor}[]
+function Hecke.field_context(K::AbsSimpleNumField)
+  layers = Vector{Hecke.Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}[]
   autsK = automorphism_list(K, copy = false)
   lll(maximal_order(K))
   permGC = _from_autos_to_perm(autsK)
   G = _perm_to_gap_grp(permGC)
-  D2 = Vector{Tuple{GAP.GapObj, NfToNfMor}}(undef, length(autsK))
+  D2 = Vector{Tuple{GAP.GapObj, Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(autsK))
   for i = 1:length(autsK)
     p =  _perm_to_gap_perm(permGC[i])
     D2[i] = (p, autsK[i])
   end
   @assert GAP.Globals.IsSolvable(G)
   L = GAP.Globals.DerivedSeries(G)
-  embs = Vector{NfToNfMor}(undef, length(L)-1)
+  embs = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(L)-1)
   F = K
   for i = length(L)-1:-1:2
     H = L[i]
     gensGAP = GAP.Globals.GeneratorsOfGroup(H)
-    ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+    ggs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
     push!(layers, closure(ggs))
     Fnew, mF = fixed_field(K, ggs)
     Fnew, mS = simplify(Fnew, cached = false, save_LLL_basis = false)
@@ -100,11 +100,11 @@ function Hecke.field_context(K::AnticNumberField)
   end
   H = L[1]
   gensGAP = GAP.Globals.GeneratorsOfGroup(H)
-  ggs = NfToNfMor[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+  ggs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
   push!(layers, closure(ggs))
   auts = small_generating_set(layers[1])
   for i = 2:length(layers)
-    auts_layers = NfToNfMor[x for x in layers[i] if !(x in layers[i-1])]
+    auts_layers = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[x for x in layers[i] if !(x in layers[i-1])]
     append!(auts, small_generating_set(auts_layers))
   end
   KQ = rationals_as_number_field()[1]
@@ -122,7 +122,7 @@ function assure_automorphisms(T::FieldsTower)
   assure_automorphisms(T.field, T.generators_of_automorphisms)
 end
 
-function assure_automorphisms(K::AnticNumberField, gens::Vector{NfToNfMor})
+function assure_automorphisms(K::AbsSimpleNumField, gens::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   if !is_automorphisms_known(K)
     auts = closure(gens, degree(K))
     set_automorphisms(K, auts)
@@ -161,13 +161,13 @@ function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: A
    end
 end
 
-function permutation_group(G::Vector{Hecke.NfRelNSToNfRelNSMor_nf_elem})
+function permutation_group(G::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem}}})
   permutations = permutation_group1(G)
   return _perm_to_gap_grp(permutations)
 end
 
 
-function permutations(G::Vector{Hecke.NfToNfMor})
+function permutations(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   K = domain(G[1])
   n = length(G)
   dK = degree(K)
@@ -253,11 +253,11 @@ function permutations(G::Vector{Hecke.NfToNfMor})
   return perms
 end
 
-function permutation_group(G::Vector{Hecke.NfToNfMor})
+function permutation_group(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   return _perm_to_gap_grp(permutations(G))
 end
 
-function _from_autos_to_perm(G::Vector{Hecke.NfToNfMor})
+function _from_autos_to_perm(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 
   K = domain(G[1])
   @assert degree(K) == length(G)
@@ -306,7 +306,7 @@ function _perm_to_gap_perm(x::Vector{Int})
   return z
 end
 
-function IdGroup(autos::Vector{NfToNfMor})
+function IdGroup(autos::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   G = permutation_group(autos)
   return GAP.Globals.IdGroup(G)
 end
@@ -317,7 +317,7 @@ end
 #
 ###############################################################################
 
-function _split_extension(G::Vector{Hecke.NfToNfMor}, mats::Vector{Hecke.GrpAbFinGenMap})
+function _split_extension(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, mats::Vector{Hecke.FinGenAbGroupHom})
 
   gtype = map(Int, domain(mats[1]).snf)
   G1 = permutation_group(G)
@@ -350,7 +350,7 @@ end
 #
 ###############################################################################
 
-function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}, res_act::Vector{GrpAbFinGenMap})
+function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, res_act::Vector{FinGenAbGroupHom})
 
   GS = domain(res_act[1])
   @assert is_snf(GS)
@@ -383,7 +383,7 @@ function check_group_extension(TargetGroup::GAP.GapObj, autos::Vector{NfToNfMor}
   #Now, I have to check if the split extension is isomorphic to IdH
   Qn, mQn = quo(GS, uncom, false)
   S1, mS1 = snf(Qn)
-  new_res_act = Vector{GrpAbFinGenMap}(undef, length(res_act))
+  new_res_act = Vector{FinGenAbGroupHom}(undef, length(res_act))
   for i = 1:length(res_act)
     Mat = mS1.map*mQn.imap*res_act[i].map*mQn.map*mS1.imap
     Hecke.reduce_mod_snf!(Mat, S1.snf)
@@ -445,7 +445,7 @@ function field_extensions(x::FieldsTower, bound::ZZRingElem, IsoE1::GAP.GapObj, 
   for j = 1:length(list)
     @vtime :Fields 4 maximal_order(list[j][1])
     fld, autos, embed = _relative_to_absolute(list[j][1], list[j][2])
-    previous_fields = Vector{NfToNfMor}(undef, length(x.subfields)+1)
+    previous_fields = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(x.subfields)+1)
     for s = 1:length(x.subfields)
       previous_fields[s] = x.subfields[s]
     end
@@ -538,7 +538,7 @@ function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_p
     @assert b == 1
     K = rationals_as_number_field()[1]
     g = hom(K, K, K(1))
-    return FieldsTower[FieldsTower(K, NfToNfMor[g], Vector{NfToNfMor}())]
+    return FieldsTower[FieldsTower(K, Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[g], Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}())]
   end
   G = GAP.Globals.SmallGroup(a, b)
   if using_direct_product
