@@ -351,6 +351,9 @@
       Th = hom_tensor(T, T, map(mH, [rand(H) for x = 1:2])) #induced map in tensor product
       Dh = hom_direct_sum(D, D, map(mH, rand(H, (2,2)))) #induced map on direct prod
     end
+
+    C, mC = free_resolution(G)
+    sprint(show, C)
     #=
 
     C, mC = free_resolution(G)
