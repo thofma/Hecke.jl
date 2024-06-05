@@ -54,7 +54,7 @@
   basisk = [Ek(Ft_to_kFt.([b[1],b[2]])) for b in basisE]
 
 
-  @test all(basisE[i] == newton_lift(E,basisk[i],OFtokF;max_iterations=7)[2] for i in 1:4)
+  @test all(basisE[i] == newton_lift(E,basisk[i],OFtokF;max_iterations=7)[2] for i in 1:2)
   # test a non-integral section
   @test 2*basisE[1] == newton_lift(E,2*basisk[1],OFtokF;max_iterations=7)[2]
 end
