@@ -6,117 +6,151 @@
 ################################################################################
 # CHECK precision!!!
 
-function Base.show(io::IO, Q::LocalFieldValuationRing)
-  print("Integers of ", Q.Q)
-end
+################################################################################
+#
+#  Parent type etc
+#
+################################################################################
 
-function MaximalOrder(Q::QadicField)
-  return LocalFieldValuationRing{QadicField, QadicFieldElem}(Q)
-end
+parent_type(::Type{LocalFieldValuationRingElem{S, T}}) where {S, T} = LocalFieldValuationRing{S, T}
+elem_type(::Type{LocalFieldValuationRing{S, T}}) where {S, T} = LocalFieldValuationRingElem{S, T}
+is_domain_type(::Type{<: LocalFieldValuationRing}) = true
+is_exact_type(::Type{<: LocalFieldValuationRing}) = false
 
-function MaximalOrder(Q::PadicField)
-  return LocalFieldValuationRing{PadicField, PadicFieldElem}(Q)
-end
-#integers(Q::QadicField) = ring_of_integers(Q)
-function MaximalOrder(Q::LocalField{S, T}) where {S, T <: Union{EisensteinLocalField, UnramifiedLocalField}}
-  return LocalFieldValuationRing{LocalField{S, T}, LocalFieldElem{S, T}}(Q)
-end
-#integers(Q::PadicField) = ring_of_integers(Q)
+################################################################################
+#
+#  Field access
+#
+################################################################################
 
-valuation_ring(K::NonArchLocalField) = MaximalOrder(K)
+_field(R::LocalFieldValuationRing) = R.Q
 
-uniformizer(R::LocalFieldValuationRing) = R(uniformizer(R.Q))
-
-function Base.show(io::IO, a::LocalFieldValuationRingElem)
-  print(io, a.x)
-end
-
-function AbstractAlgebra.expressify(a::LocalFieldValuationRingElem; context=nothing)
-  return expressify(a.x; context=context)
-end
-
-*(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x*b.x)
-+(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x+b.x)
--(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x-b.x)
--(a::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, -a.x)
-^(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x^b.x)
-^(a::T, b::LocalFieldValuationRingElem{S, T}) where {S, T} = a^b.x
-
-function inv(a::LocalFieldValuationRingElem)
-  valuation(a.x) == 0 || error("The element is not invertible!")
-  return LocalFieldValuationRingElem(a.P, inv(a.x))
-end
-
-==(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = a.x == b.x
-
-function divexact(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem; check::Bool=true)
-  @assert !iszero(b.x)
-  iszero(a) && return a
-  valuation(a.x) >= valuation(b.x) || error("division not exact")
-  return LocalFieldValuationRingElem(a.P, a.x//b.x)
-end
-
-function Base.divrem(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
-  if valuation(a.x) < valuation(b.x)
-    return setprecision(a.P(0), precision(a)), a
-  end
-  q = divexact(a, b)
-  return q, a-q*b
-end
-
-function Base.div(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
-  if valuation(a.x) < valuation(b.x)
-    return setprecision(a.P(0), precision(a))
-  end
-  q = divexact(a, b)
-  return q
-end
+base_ring(R::LocalFieldValuationRing) = Union{}
+base_ring_type(::Type{<: LocalFieldValuationRing}) = typeof(Union{})
 
 parent(a::LocalFieldValuationRingElem) = a.P
-elem_type(::Type{LocalFieldValuationRing{S, T}}) where {S, T} = LocalFieldValuationRingElem{S, T}
-parent_type(::Type{LocalFieldValuationRingElem{S, T}}) where {S, T} = LocalFieldValuationRing{S, T}
+data(a::LocalFieldValuationRingElem) = a.x
+
+################################################################################
+#
+#  Basic functionality
+#
+################################################################################
+
+characteristic(R::LocalFieldValuationRing) = 0
 
 function zero(Q::LocalFieldValuationRing; precision::Int=precision(Q))
-  return LocalFieldValuationRingElem(Q, zero(Q.Q, precision = precision))
+  return LocalFieldValuationRingElem(Q, zero(_field(Q), precision = precision))
 end
 
 function one(Q::LocalFieldValuationRing; precision::Int=precision(Q))
-  return LocalFieldValuationRingElem(Q, one(Q.Q, precision = precision))
+  return LocalFieldValuationRingElem(Q, one(_field(Q), precision = precision))
 end
+
+is_zero(a::LocalFieldValuationRingElem) = is_zero(data(a))
+is_one(a::LocalFieldValuationRingElem) = is_one(data(a))
+
+valuation(a::LocalFieldValuationRingElem) = valuation(data(a))
+uniformizer(R::LocalFieldValuationRing) = R(uniformizer(_field(R)))
+
+is_unit(a::LocalFieldValuationRingElem) = !iszero(a) && valuation(a) == 0
+
+function canonical_unit(a::LocalFieldValuationRingElem)
+  iszero(data(a)) && return setprecision(parent(a)(1), precision(a))
+  v = ZZ(absolute_ramification_index(_field(parent(a)))*valuation(data(a)))
+  pi = uniformizer(_field(parent(a)))
+  return LocalFieldValuationRingElem(parent(a), data(a)//pi^v)
+end
+
+################################################################################
+#
+#  Precision
+#
+################################################################################
+
+Base.precision(Q::LocalFieldValuationRing) = precision(_field(Q))
+Base.precision(a::LocalFieldValuationRingElem) = precision(data(a))
+
+function setprecision!(Q::LocalFieldValuationRing, n::Int)
+  setprecision!(_field(Q), n)
+end
+
+function Base.setprecision(a::LocalFieldValuationRingElem, n::Int)
+  return parent(a)(setprecision(data(a), n))
+end
+
+function setprecision!(a::LocalFieldValuationRingElem, n::Int)
+  a.x = setprecision!(data(a), n)
+  return a
+end
+
+function Base.setprecision(a::Generic.MatSpaceElem{LocalFieldValuationRingElem{QadicFieldElem}}, n::Int)
+  return map_entries(x -> setprecision(x, n), a)
+end
+
+function with_precision(f, R::LocalFieldValuationRing, n::Int)
+  return with_precision(f, _field(R), n)
+end
+
+################################################################################
+#
+#  Coefficients
+#
+################################################################################
+
+coefficient_ring(Q::LocalFieldValuationRing) = ring_of_integers(coefficient_ring(_field(Q)))
+
+coefficient_ring(K::LocalField) = base_field(K)
+
+function absolute_coordinates(a::LocalFieldValuationRingElem)
+  v = absolute_coordinates(data(a))
+  Zp = ring_of_integers(base_field(parent(data(a))))
+  return Zp.(v)
+end
+
+function absolute_coordinates(Zp::LocalFieldValuationRing, a::LocalFieldValuationRingElem)
+  v = absolute_coordinates(_field(Zp), data(a))
+  return Zp.(v)
+end
+
+################################################################################
+#
+#  Parent object overloading
+#
+################################################################################
 
 function (Q::LocalFieldValuationRing{S, T})(a::T) where {S, T}
-  @assert parent(a) === Q.Q
+  @assert parent(a) === _field(Q)
   LocalFieldValuationRingElem(Q, a)
 end
-(Q::LocalFieldValuationRing)(a::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x)
+
+(Q::LocalFieldValuationRing)(a::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(parent(a), data(a))
 
 function (Q::LocalFieldValuationRing)(a::Integer; precision::Int=precision(Q))
-  return LocalFieldValuationRingElem(Q, Q.Q(a, precision = precision))
+  return LocalFieldValuationRingElem(Q, _field(Q)(a, precision = precision))
 end
 
 function (Q::LocalFieldValuationRing)(a::ZZRingElem; precision::Int=precision(Q))
-  return LocalFieldValuationRingElem(Q, Q.Q(a, precision = precision))
+  return LocalFieldValuationRingElem(Q, _field(Q)(a, precision = precision))
 end
 
 function (Q::LocalFieldValuationRing)(a::QQFieldElem; precision::Int=precision(Q))
-  p = prime(Q.Q)
+  p = prime(_field(Q))
   if iszero(mod(denominator(a), p))
     error("The element is not in the ring!")
   end
-  return LocalFieldValuationRingElem(Q, Q.Q(a, precision = precision))
+  return LocalFieldValuationRingElem(Q, _field(Q)(a, precision = precision))
 end
 
-(Q::LocalFieldValuationRing)() = LocalFieldValuationRingElem(Q, Q.Q())
+(Q::LocalFieldValuationRing)(; precision::Int=precision(_field(Q))) = LocalFieldValuationRingElem(Q, _field(Q)(precision = precision))
 
 function (Q::Union{PadicField, QadicField, LocalField})(a::LocalFieldValuationRingElem)
-  if parent(a).Q !== Q
+  if _field(parent(a)) !== Q
     error("Parent mismatch")
   end
-  return a.x
+  return data(a)
 end
 
-valuation(a::LocalFieldValuationRingElem) = valuation(a.x)
-is_unit(a::LocalFieldValuationRingElem) = !iszero(a) && valuation(a) == 0
 (Q::QadicField)(a::PadicFieldElem) =  _map(Q, a) #TODO: do properly
 
 function _map(Q::QadicField, a::PadicFieldElem)
@@ -134,90 +168,198 @@ function _map(Q::QadicField, a::PadicFieldElem)
   end
 end
 
-function Base.deepcopy_internal(a::LocalFieldValuationRingElem, dict::IdDict)
-  return LocalFieldValuationRingElem(a.P, a.x)
+################################################################################
+#
+#  Printing
+#
+################################################################################
+
+function Base.show(io::IO, R::LocalFieldValuationRing)
+  @show_name(io, R)
+  @show_special(io, R)
+
+  print(pretty(io), "Valuation ring of ", Lowercase(), _field(R))
 end
 
-function canonical_unit(a::LocalFieldValuationRingElem)
-  iszero(a.x) && return setprecision(a.P(1), precision(a))
-  v = valuation(a.x)
-  return LocalFieldValuationRingElem(a.P, inv(a.x//prime(a.P.Q)^v))
+function Base.show(io::IO, a::LocalFieldValuationRingElem)
+  print(io, data(a))
+end
+
+function AbstractAlgebra.expressify(a::LocalFieldValuationRingElem; context=nothing)
+  return expressify(data(a); context=context)
+end
+
+################################################################################
+#
+#  Hashing / deepcopy
+#
+################################################################################
+
+function Base.hash(a::LocalFieldValuationRingElem, h::UInt)
+  return hash(data(a), h)
+end
+
+function Base.deepcopy_internal(a::LocalFieldValuationRingElem, dict::IdDict)
+  return LocalFieldValuationRingElem(parent(a), data(a))
+end
+
+################################################################################
+#
+#  Comparison
+#
+################################################################################
+
+==(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = data(a) == data(b)
+
+################################################################################
+#
+#  Unary operations
+#
+################################################################################
+
+-(a::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(parent(a), -data(a))
+
+################################################################################
+#
+#  Binary operations
+#
+################################################################################
+
+*(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(parent(a), data(a) * data(b))
++(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(parent(a), data(a) + data(b))
+-(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(parent(a), data(a) - data(b))
+
+################################################################################
+#
+#  Powering
+#
+################################################################################
+
+^(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(parent(a), data(a)^data(b))
+^(a::T, b::LocalFieldValuationRingElem{S, T}) where {S, T} = a^data(b)
+
+function Base.:(^)(a::LocalFieldValuationRingElem, e::Int)
+  @req is_unit(a) || e >= 0 "Element is not invertible"
+  return parent(a)(data(a)^e)
+end
+
+################################################################################
+#
+#  Divexact
+#
+################################################################################
+
+function divexact(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem; check::Bool=true)
+  @assert !iszero(data(b))
+  iszero(a) && return a
+  valuation(data(a)) >= valuation(data(b)) || error("division not exact")
+  return LocalFieldValuationRingElem(parent(a), data(a)//data(b))
+end
+
+################################################################################
+#
+#  Divrem / gcd
+#
+################################################################################
+
+function Base.divrem(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
+  @req parent(a) === parent(b) "Parents do not match"
+  @req !is_zero(b) "Division by 0"
+  if !is_zero(a) && valuation(data(a)) >= valuation(data(b))
+    q = divexact(a, b)
+    return q, a - q*b
+  end
+  return setprecision(parent(a)(0), precision(a)), a
+end
+
+function Base.div(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
+  if valuation(data(a)) < valuation(data(b))
+    return setprecision(parent(a)(0), precision(a))
+  end
+  q = divexact(a, b)
+  return q
 end
 
 function gcdx(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
   if iszero(a)
     c = canonical_unit(b)
-    return b*c, a, c
+    return divexact(b, c), a, inv(c)
   end
   if iszero(b)
     c = canonical_unit(a)
-    return a*c, c, b
+    return divexact(a, c), inv(c), b
   end
-  if valuation(a.x) < valuation(b.x)
+  if valuation(data(a)) < valuation(data(b))
     c = canonical_unit(a)
-    return a*c, c, setprecision(a.P(0), precision(a))
+    return divexact(a, c), inv(c), setprecision(parent(a)(0), precision(a))
   else
     c = canonical_unit(b)
-    return b*c, setprecision(b.P(0), precision(b)), c
+    return divexact(b, c), setprecision(parent(b)(0), precision(b)), inv(c)
   end
 end
 
-function mul_red!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c::LocalFieldValuationRingElem, f::Bool = false)
-  return b*c
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+function inv(a::LocalFieldValuationRingElem)
+  @req is_unit(a) "Element is not invertible"
+  return LocalFieldValuationRingElem(parent(a), inv(data(a)))
 end
 
-function mul!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c::LocalFieldValuationRingElem)
-  return b*c
-end
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
 
-function add!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c::LocalFieldValuationRingElem)
-  return b+c
-end
-
-function addeq!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
-  return a+b
-end
-
-Base.iszero(a::LocalFieldValuationRingElem) = iszero(a.x)
-Base.isone(a::LocalFieldValuationRingElem) = isone(a.x)
-
-Base.precision(Q::LocalFieldValuationRing) = precision(Q.Q)
-Base.precision(a::LocalFieldValuationRingElem) = precision(a.x)
-
-function setprecision!(Q::LocalFieldValuationRing, n::Int)
-  setprecision!(Q.Q, n)
-end
-
-function Base.setprecision(a::LocalFieldValuationRingElem, n::Int)
-  return a.P(setprecision(a.x, n))
-end
-
-function setprecision!(a::LocalFieldValuationRingElem, n::Int)
-  a.x = setprecision!(a.x, n)
+function zero!(a::LocalFieldValuationRingElem)
+  a.x = zero!(data(a))
   return a
 end
 
-function Base.setprecision(a::Generic.MatSpaceElem{LocalFieldValuationRingElem{QadicFieldElem}}, n::Int)
-  return map_entries(x -> setprecision(x, n), a)
+function mul_red!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c::LocalFieldValuationRingElem, f::Bool = false)
+  a.x = mul_red!(data(a), data(b), data(c), f)
+  return a
 end
 
-coefficient_ring(Q::LocalFieldValuationRing) = ring_of_integers(coefficient_ring(Q.Q))
-
-coefficient_ring(K::LocalField) = base_field(K)
-
-function absolute_coordinates(a::LocalFieldValuationRingElem)
-  v = absolute_coordinates(a.x)
-  Zp = ring_of_integers(prime_field(parent(a.x)))
-  return Zp.(v)
+function mul!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c::LocalFieldValuationRingElem)
+  a.x = mul!(data(a), data(b), data(c))
+  return a
 end
 
-function absolute_coordinates(Zp::LocalFieldValuationRing, a::LocalFieldValuationRingElem)
-  v = absolute_coordinates(Zp.Q, a.x)
-  return Zp.(v)
+function add!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c::LocalFieldValuationRingElem)
+  a.x = add!(data(a), data(b), data(c))
+  return a
 end
+
+function addeq!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
+  a.x = addeq!(data(a), data(b))
+  return a
+end
+
+################################################################################
+#
+#  Promotion
+#
+################################################################################
 
 AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingElem{S, T}}, ::Type{LocalFieldValuationRingElem{S, T}}) where {S, T} = LocalFieldValuationRingElem{S, T}
 
 function AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingElem{S, T}}, ::Type{U}) where {S, T, U <: RingElement}
   AbstractAlgebra.promote_rule(T, U) == T ? LocalFieldValuationRingElem{S, T} : Union{}
 end
+
+################################################################################
+#
+#  Construction
+#
+################################################################################
+
+@attr LocalFieldValuationRing{T, elem_type(T)} function valuation_ring(K::T) where {T <: NonArchLocalField}
+  return LocalFieldValuationRing{T, elem_type(T)}(K)
+end
+
+MaximalOrder(K::NonArchLocalField) = valuation_ring(K)

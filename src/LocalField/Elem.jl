@@ -244,7 +244,7 @@ function zero(K::LocalField; precision=precision(K))
   return setprecision(K(a), precision)
 end
 
-(K::LocalField)() = zero(K)
+(K::LocalField)(; precision=precision(K)) = zero(K, precision = precision)
 
 function one(K::LocalField; precision=precision(K))
   a = one(parent(defining_polynomial(K)))
