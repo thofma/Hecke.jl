@@ -31,6 +31,10 @@ function Base.show(io::IO, a::LocalFieldValuationRingElem)
   print(io, a.x)
 end
 
+function AbstractAlgebra.expressify(a::LocalFieldValuationRingElem; context=nothing)
+  return expressify(a.x; context=context)
+end
+
 *(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x*b.x)
 +(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x+b.x)
 -(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(a.P, a.x-b.x)
