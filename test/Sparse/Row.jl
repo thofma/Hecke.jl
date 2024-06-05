@@ -170,10 +170,11 @@
   b = R([3 4; 5 6])
   i = R([1 0; 0 1])
   A = sparse_row(R,[1],[a])
+  AA = sparse_row(R,[1],[a])
   B = sparse_row(R,[1],[b])
   @test dot(A,B) != dot(B,A)
   @test A*i == A == i*A
-  @test scale_row!(A,b) != scale_row_right!(A,b)
+  @test !(scale_row!(A,b) == scale_row_right!(AA,b))
   C = add_scaled_row(A,B,i)
   @test C == A+B
 end

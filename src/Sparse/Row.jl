@@ -421,7 +421,7 @@ end
     scale_row!(a::SRow, b::NCRingElem) -> SRow
 
 Returns the (left) product of $b \times a$.
-For Rows, the standard multiplication is from the left. 
+For rows, the standard multiplication is from the left. 
 """
 function scale_row!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
@@ -539,7 +539,7 @@ function *(A::SRow, b)
   return A*base_ring(A)(b)
 end
 
-#left and right div not implimented
+#left and right div not implemented
 function div(A::SRow{T}, b::T) where T
   B = sparse_row(base_ring(A))
   if iszero(b)
@@ -563,11 +563,13 @@ function div(A::SRow{T}, b::Integer) where T
 end
 
 @doc raw"""
-  divexact(A::SRow, b::NCRingElem; check::Bool = true) -> SRow
+  divexact(A::SRow, b::RingElem; check::Bool = true) -> SRow
 
-Returns the left divexact $A/b$
+Return $C$ such that $a = b \cdot C$. Implicitly calling divexact_left(A,b;check)
 """
-function divexact(A::SRow{T}, b::T; check::Bool=true) where T
+divexact(A::SRow{T}, b::T; check::Bool=true) where T <: RingElem = divexact_left(A, b; check)
+
+function divexact_left(A::SRow{T}, b::T; check::Bool=true) where T <: NCRingElem
   B = sparse_row(base_ring(A))
   if iszero(b)
     return error("Division by zero")
@@ -591,7 +593,7 @@ end
 @doc raw"""
   divexact_right(A::SRow, b::NCRingElem; check::Bool = true) -> SRow
 
-Returns the right divexact $A/b$
+Return $C$ such that $A = C \cdot b.
 """
 function divexact_right(A::SRow{T}, b::T; check::Bool=true) where T
   B = sparse_row(base_ring(A))
@@ -686,7 +688,7 @@ add_right_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_right_scaled_
 @doc raw"""
     add_right_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Returns the right scaled row $c A$ to $B$ by changing $B$ in place.
+Return the right scaled row $c A$ to $B$ by changing $B$ in place.
 """
 
 function add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
