@@ -103,7 +103,7 @@ function _can_reconstruct_with_reconstruction(E::EllipticCurve, padic_point, F_t
 end
 
 function _newton_lift(P::EllipticCurvePoint, E::EllipticCurve, F_to_K, Ft_to_OKt, F_to_k, max_iterations, sing, prime, break_condition=_can_reconstruct_with_reconstruction)
-  ainvs = a_invars(E)
+  ainvs = a_invariants(E)
   @assert P[3] == 1
   xn = P[1]
   yn = P[2]
