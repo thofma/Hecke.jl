@@ -165,7 +165,7 @@
   @test sparse_row(dense_row(A, 6)) == A
 
   #SRow{NCRingElem}
-  R = MatrixAlgebra(QQ,2)
+  R = matrix_algebra(QQ,2)
   a = R([1 2; 3 4])
   b = R([3 4; 5 6])
   i = R([1 0; 0 1])
