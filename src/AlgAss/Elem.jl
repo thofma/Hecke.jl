@@ -876,7 +876,7 @@ function _addmul!(M::MatrixElem, i, j, b, c)
 end
 
 function _addmul!(M::QQMatrix, i, j, a::QQFieldElem, b::QQFieldElem)
-  c = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), M, i - 1, j - 1)
+  c = mat_entry_ptr(M, i, j)
   ccall((:fmpq_addmul, libflint), Nothing, (Ptr{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), c, a, b)
 end
 

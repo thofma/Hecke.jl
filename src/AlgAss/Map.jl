@@ -114,7 +114,7 @@ end
 function __set!(c_t::QQMatrix, ca)
   GC.@preserve c_t begin
     for i in 1:length(ca)
-      t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), c_t, 0, i - 1)
+      t = mat_entry_ptr(c_t, 1, i)
       ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, ca[i])
     end
   end

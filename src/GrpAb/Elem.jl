@@ -69,7 +69,7 @@ function reduce_mod_snf!(a::ZZMatrix, v::Vector{ZZRingElem})
       d = v[i]
       if !iszero(d)
         for j = 1:nrows(a)
-          t = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, j - 1, i - 1)
+          t = mat_entry_ptr(a, j, i)
           ccall((:fmpz_mod, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), t, t, d)
         end
         #a[1, i] = mod(a[1, i], A.snf[i])

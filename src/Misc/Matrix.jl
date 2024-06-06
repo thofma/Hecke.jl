@@ -238,8 +238,8 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
         if j > ncols(H)
           break
         end
-        n = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, j - 1)
-        m = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, j - 1)
+        n = mat_entry_ptr(a, c, j)
+        m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
@@ -248,8 +248,8 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
           continue
         end
         for k = j:ncols(a)
-          t = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, k - 1)
-          l = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, k - 1)
+          t = mat_entry_ptr(a, c, k)
+          l = mat_entry_ptr(H, i, k)
           ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
           #a[c, k] = a[c, k] - q * H[i, k]
         end
@@ -270,8 +270,8 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
         if iszero(j)
           break
         end
-        n = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, j - 1)
-        m = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, j - 1)
+        n = mat_entry_ptr(a, c, j)
+        m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
@@ -280,8 +280,8 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
           continue
         end
         for k = 1:j
-          t = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, k - 1)
-          l = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, k - 1)
+          t = mat_entry_ptr(a, c, k)
+          l = mat_entry_ptr(H, i, k)
           ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
         end
       end
@@ -328,10 +328,8 @@ function _copy_matrix_into_matrix(A::ZZMatrix, i::Int, j::Int, B::ZZMatrix)
   @GC.preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
-        d = ccall((:fmpz_mat_entry, libflint),
-                  Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), B, k, l)
-        t = ccall((:fmpz_mat_entry, libflint),
-                  Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), A, i - 1 + k, j - 1 + l)
+        d = mat_entry_ptr(B, 1 + k, 1 + l)
+        t = mat_entry_ptr(A, i + k, j + l)
         ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), t, d)
       end
     end
@@ -342,10 +340,8 @@ function _copy_matrix_into_matrix!(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
   @GC.preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
-        d = ccall((:fmpq_mat_entry, libflint),
-                  Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), B, k, l)
-        t = ccall((:fmpq_mat_entry, libflint),
-                  Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), A, i - 1 + k, j - 1 + l)
+        d = mat_entry_ptr(B, 1 + k, 1 + l)
+        t = mat_entry_ptr(A, i + k, j + l)
         ccall((:fmpq_set, libflint), Nothing, (Ptr{QQFieldElem}, Ptr{QQFieldElem}), t, d)
       end
     end
@@ -480,13 +476,13 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
   #this is probably not really optimal...
   GC.@preserve S R begin
     for i=1:min(nrows(S), ncols(S))
-      Sii = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), S, i - 1, i - 1)
+      Sii = mat_entry_ptr(S, i, i)
       fl = ccall((:fmpz_is_one, libflint), Bool, (Ref{ZZRingElem},), Sii)
       if fl
         continue
       end
       for j=i+1:min(nrows(S), ncols(S))
-        Sjj = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), S, j - 1, j - 1)
+        Sjj = mat_entry_ptr(S, j, j)
         fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), Sjj)
         if fl
           continue
@@ -524,8 +520,8 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         # so col i and j of R will be transformed. We do it naively
         # careful: at this point, R is still transposed
         for k = 1:nrows(R)
-          Rik = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), R, i - 1, k - 1)
-          Rjk = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), R, j - 1, k - 1)
+          Rik = mat_entry_ptr(R, i, k)
+          Rjk = mat_entry_ptr(R, j, k)
           aux = ZZRingElem()
           ccall((:fmpz_mul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rik, e)
           ccall((:fmpz_addmul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rjk, f)
