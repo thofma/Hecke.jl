@@ -39,7 +39,7 @@ function _singular_points_weierstrass_model(E::EllipticCurve{<:AbstractAlgebra.G
   return sing
 end
 
-@doc r"""
+@doc raw"""
     newton_lift(E::EllipticCurve, P::EllipticCurvePoint, reduction_map; max_iterations=16) -> Bool, EllipticCurvePoint
 
 Return a point `Q` of `E` which reduces by `reduction_map` to `P` and whether it exists.
