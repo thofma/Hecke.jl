@@ -5,7 +5,7 @@ add_verbosity_scope(:NewtonIteration)
 _valuation(x::RingElem) = iszero(x) ? QQ(precision(parent(x))) : valuation(x)
 
 
-r"""
+raw"""
     _singular_points_weierstrass_model(E::EllipticCurve{<:FracField{<:AbstractAlgebra.Generic.Poly}})
 
 Return the singular points of the weierstrass model W/k of E/k(t).
