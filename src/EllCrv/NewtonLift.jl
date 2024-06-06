@@ -201,9 +201,13 @@ function _newton_step(Rt, ainvsOKt, point, extra_points, prec)
   ynt = yn(t)
   dnt = dn(t)
 
-  xt = sum(gen(R,i+1)*t^i for i in 0:xd; init = zero(Rt))
-  yt = sum(gen(R, i+xd+2)*t^i for i in 0:yd; init = zero(Rt))
-  dt = sum(gen(R, i+xd+1+yd+2)*t^i for i in 0:dd-1; init = zero(Rt))#+t^dd
+  gensR = gens(R)
+  #xt = sum(gen(R,i+1)*t^i for i in 0:xd; init = zero(Rt))
+  xt = Rt(gensR[1:xd+1])
+  #yt = sum(gen(R, i+xd+2)*t^i for i in 0:yd; init = zero(Rt))
+  yt = Rt(gensR[xd+2:xd+yd+2])
+  #dt = sum(gen(R, i+xd+1+yd+2)*t^i for i in 0:dd-1; init = zero(Rt))
+  dt = Rt(gensR[xd+yd+3:xd+yd+dd+2])
 
   DF = (2*ynt + a1*dnt*xnt + a3*dnt^3)*yt +(a1*dnt*ynt- (3*xnt^2 + a2*dnt^2*2*xnt + a4*dnt^4))*xt + (a1*xnt*ynt + a3*3*dnt^2*ynt - (a2*2*dnt*xnt^2 + a4*4*dnt^3*xnt + a6*6*dnt^5))*dt
   eqn = fn(t) + DF
@@ -243,9 +247,12 @@ function _newton_step(Rt, ainvsOKt, point, extra_points, prec)
   @assert minimum(_valuation.(v)) >= prec
   t = gen(OKt)
 
-  xne = sum(v[i+1]*t^i for i in 0:xd; init=zero(OKt))
-  yne = sum(v[i+xd+2]*t^i for i in 0:yd; init=zero(OKt))
-  dne = sum(v[i+xd+2+yd+1]*t^i for i in 0:dd-1; init=zero(OKt))
+  # xne = sum(v[i+1]*t^i for i in 0:xd; init=zero(OKt))
+  xne = OKt(v[1:xd+1, 1])
+  #yne = sum(v[i+xd+2]*t^i for i in 0:yd; init=zero(OKt))
+  yne = OKt(v[xd+2:xd+2+yd,1])
+  #dne = sum(v[i+xd+2+yd+1]*t^i for i in 0:dd-1; init=zero(OKt))
+  dne = OKt(v[xd+yd+3:xd+yd+dd+2,1])
 
   xn1 = xn + xne
   yn1 = yn + yne
