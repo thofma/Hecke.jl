@@ -9,6 +9,7 @@
   include("EllCrv/MinimalModels.jl")
   include("EllCrv/Models.jl")
   include("EllCrv/MordellWeilRank.jl")
+  include("EllCrv/NewtonLift.jl")
   include("EllCrv/Pairings.jl")
   include("EllCrv/Periods.jl")
   include("EllCrv/Torsion.jl")

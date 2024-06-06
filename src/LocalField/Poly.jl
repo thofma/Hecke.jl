@@ -12,17 +12,17 @@ function setprecision_fixed_precision(f::Generic.Poly{QadicFieldElem}, N::Int)
   return f
 end
 
-function setprecision_fixed_precision(a::LocalFieldElem, n::Int)
+function setprecision_fixed_precision(a::Union{LocalFieldElem, LocalFieldValuationRingElem}, n::Int)
   return setprecision(a, n)
 end
 
-function Nemo.setprecision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
+function Nemo.setprecision(f::Generic.Poly{<:Union{LocalFieldElem, LocalFieldValuationRingElem}}, n::Int)
   f = map_coefficients(x->setprecision(x, n), f, parent = parent(f))
   @assert iszero(f) || !iszero(f.coeffs[f.length])
   return f
 end
 
-function setprecision!(f::Generic.Poly{<:LocalFieldElem}, n::Int)
+function setprecision!(f::Generic.Poly{<:Union{LocalFieldElem, LocalFieldValuationRingElem}}, n::Int)
   for i = 1:length(f.coeffs)
     f.coeffs[i] = setprecision(f.coeffs[i], n)
   end
@@ -31,7 +31,7 @@ function setprecision!(f::Generic.Poly{<:LocalFieldElem}, n::Int)
   return f
 end
 
-function setprecision_fixed_precision(f::Generic.Poly{<:LocalFieldElem}, n::Int)
+function setprecision_fixed_precision(f::Generic.Poly{<:Union{LocalFieldElem, LocalFieldValuationRingElem}}, n::Int)
   fr = map_coefficients(x -> setprecision_fixed_precision(x, n), f, parent = parent(f))
   @assert iszero(fr) || !iszero(fr.coeffs[fr.length])
   return fr
@@ -41,7 +41,7 @@ end
 #otherwise the precision is lost:
 #an empty poly is "filled" with 0 in precision of the ring
 #a zero (in a) might have a different precision....
-function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{PadicFieldElem, QadicFieldElem, Hecke.LocalFieldElem}}
+function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem, LocalFieldValuationRingElem}}
    fit!(c, n + 1)
    c.coeffs[n + 1] = a
    c.length = max(length(c), n + 1)
@@ -234,7 +234,7 @@ end
 ################################################################################
 
 
-function Nemo.precision(g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem}
+function Nemo.precision(g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem, LocalFieldValuationRingElem}
   N = precision(coeff(g, 0))
   for i = 1:degree(g)
     N = min(N, precision(coeff(g, i)))
