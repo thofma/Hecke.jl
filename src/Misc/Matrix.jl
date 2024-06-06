@@ -336,7 +336,7 @@ function _copy_matrix_into_matrix(A::ZZMatrix, i::Int, j::Int, B::ZZMatrix)
   end
 end
 
-function _copy_matrix_into_matrix!(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
+function _copy_matrix_into_matrix(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
   @GC.preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
@@ -346,6 +346,15 @@ function _copy_matrix_into_matrix!(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
       end
     end
   end
+end
+
+function _copy_matrix_into_matrix(A::MatElem, i::Int, j::Int, B::MatElem)
+  for k in 0:nrows(B) - 1
+    for l in 0:ncols(B) - 1
+      setindex!(A, B[k+1, l+1], i+k, j+l)
+    end
+  end
+  return nothing
 end
 
 function _copy_matrix_into_matrix(A::MatElem, r::Vector{Int}, c::Vector{Int}, B::MatElem)

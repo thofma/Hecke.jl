@@ -9,8 +9,8 @@
   A = QQ[1 2; 3 4]
   B = QQ[1;]
   Z = zero_matrix(QQ, 3, 3)
-  Hecke._copy_matrix_into_matrix!(Z, 1, 1, A)
-  Hecke._copy_matrix_into_matrix!(Z, 3, 3, B)
+  Hecke._copy_matrix_into_matrix(Z, 1, 1, A)
+  Hecke._copy_matrix_into_matrix(Z, 3, 3, B)
   @test Z == diagonal_matrix(A, B)
 
   A = ZZ[1 2; 3 4]
