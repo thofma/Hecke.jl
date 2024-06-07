@@ -26,10 +26,6 @@ end
 
 parent(a::KInftyElem{T}) where T <: FieldElement = a.parent
 
-function check_parent(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
-  parent(a) != parent(b) && error("Parent objects do not match")
-end
-
 function Base.hash(a::KInftyElem, h::UInt)
   b = 0x32ba43ad011affd1%UInt
   return xor(b, hash(data(a), h))

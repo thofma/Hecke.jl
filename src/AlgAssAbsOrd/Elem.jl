@@ -6,16 +6,6 @@ Base.hash(x::AlgAssAbsOrdElem, h::UInt) = hash(elem_in_algebra(x, copy = false),
 
 ################################################################################
 #
-#  Parent check
-#
-################################################################################
-
-function check_parent(x::AlgAssAbsOrdElem{S, T}, y::AlgAssAbsOrdElem{S, T}) where {S, T}
-  return parent(x) === parent(y)
-end
-
-################################################################################
-#
 #  Parent object overloading
 #
 ################################################################################
@@ -175,12 +165,12 @@ end
 ###############################################################################
 
 function *(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
-  !check_parent(x, y) && error("Wrong parents")
+  check_parent(x, y)
   return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false))
 end
 
 function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
-  !check_parent(x, y) && error("Wrong parents")
+  check_parent(x, y)
   z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
     z.coordinates = [ x.coordinates[i] + y.coordinates[i] for i = 1:degree(parent(x)) ]
@@ -190,7 +180,7 @@ function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } 
 end
 
 function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
-  !check_parent(x, y) && error("Wrong parents")
+  check_parent(x, y)
   z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
     z.coordinates = [ x.coordinates[i] - y.coordinates[i] for i = 1:degree(parent(x)) ]
@@ -213,7 +203,7 @@ end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
 function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
-  !check_parent(a, b) && error("Wrong parents")
+  check_parent(a, b)
   O = parent(a)
   c = divexact(elem_in_algebra(a, copy = false), elem_in_algebra(b, copy = false), action)
   if check
