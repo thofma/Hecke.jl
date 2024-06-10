@@ -51,9 +51,9 @@ julia> sparse_row_type(typeof(zero(QQ))) == typeof(x)
 true
 ```
 """
-sparse_row_type(::T) where {T <: Union{Ring, RingElem}} = sparse_row_type(T)
-sparse_row_type(::Type{T}) where {T <: Ring} = sparse_row_type(elem_type(T))
-sparse_row_type(::Type{T}) where {T <: RingElem} = SRow{T, sparse_inner_type(T)}
+sparse_row_type(::T) where {T <: Union{NCRing, NCRingElem}} = sparse_row_type(T)
+sparse_row_type(::Type{T}) where {T <: NCRing} = sparse_row_type(elem_type(T))
+sparse_row_type(::Type{T}) where {T <: NCRingElem} = SRow{T, sparse_inner_type(T)}
 
 
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
@@ -461,8 +461,15 @@ function scale_row!(a::SRow{T}, b::T) where T
   if isone(b)
     return a
   end
-  for i=1:length(a.pos)
+  i = 1
+  while i <= length(a)
     a.values[i] = b*a.values[i]
+    if iszero(a.values[i])
+      deleteat!(a.values, i)
+      deleteat!(a.pos, i)
+    else
+     i += 1
+    end
   end
   return a
 end

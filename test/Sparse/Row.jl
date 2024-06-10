@@ -176,9 +176,9 @@
 
   #SRow{NCRingElem}
   R = matrix_algebra(QQ,2)
-  a = R([1 2; 3 4])
-  b = R([3 4; 5 6])
-  i = R([1 0; 0 1])
+  a = R(matrix(QQ,[1 2; 3 4]))
+  b = R(matrix(QQ,[3 4; 5 6]))
+  i = R(1)
   A = sparse_row(R,[1],[a])
   AA = sparse_row(R,[1],[a])
   B = sparse_row(R,[1],[b])

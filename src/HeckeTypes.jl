@@ -390,9 +390,9 @@ end
 
 # helper function used by SRow construct and also by the default
 # methods for `sparse_matrix_type` and `sparse_row_type`.
-sparse_inner_type(::T) where {T <: Union{Ring, RingElem}} = sparse_inner_type(T)
-sparse_inner_type(::Type{T}) where {T <: Ring} = sparse_inner_type(elem_type(T))
-sparse_inner_type(::Type{T}) where {T <: RingElem} = Vector{T}
+sparse_inner_type(::T) where {T <: Union{NCRing, NCRingElem}} = sparse_inner_type(T)
+sparse_inner_type(::Type{T}) where {T <: NCRing} = sparse_inner_type(elem_type(T))
+sparse_inner_type(::Type{T}) where {T <: NCRingElem} = Vector{T}
 
 ################################################################################
 #
