@@ -93,7 +93,6 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
 where $J = (i_j, x_j)_j$.
 """
-
 function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
@@ -119,7 +118,6 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
 $J = (i_j)_j$ and $V = (x_j)_j$.
 """
-
 function sparse_row(R::NCRing, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
   if sort && length(pos) > 1
     p = sortperm(pos)
@@ -453,7 +451,7 @@ end
 @doc raw"""
     scale_row!(a::SRow, b::NCRingElem) -> SRow
 
-Returns the (left) product of $b \times a$.
+Returns the (left) product of $b \times a$ and reassigns the value of $a$ to this product. 
 For rows, the standard multiplication is from the left. 
 """
 function scale_row!(a::SRow{T}, b::T) where T
@@ -477,7 +475,7 @@ end
 @doc raw"""
     scale_row_right!(a::SRow, b::NCRingElem) -> SRow
 
-Returns the (right) product of $a \times b$.
+Returns the (right) product of $a \times b$ and modifies $a$ to this product.
 """
 function scale_row_right!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
@@ -612,7 +610,7 @@ end
 @doc raw"""
   divexact(A::SRow, b::RingElem; check::Bool = true) -> SRow
 
-Return $C$ such that $a = b \cdot C$. Implicitly calling divexact_left(A,b;check)
+Return $C$ such that $a = b \cdot C$. Calls the function `divexact_left(A,b;check)`
 """
 divexact(A::SRow{T}, b::T; check::Bool=true) where T <: RingElem = divexact_left(A, b; check)
 
