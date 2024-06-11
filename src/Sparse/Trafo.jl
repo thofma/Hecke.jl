@@ -155,7 +155,9 @@ end
 Multiply the $i$-th row of $A$ by $c$ inplace.
 """
 function scale_row!(A::SMat{T}, i::Int, c::T) where T
-  scale_row!(A[i], c)
+  A.nnz = A.nnz + length(A[i])
+  scale_row!(A[i],c)
+  A.nnz = A.nnz - length(A[i])
   return A
 end
 
