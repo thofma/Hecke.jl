@@ -93,7 +93,7 @@ end
 #
 ################################################################################
 
-mutable struct LocalFieldValuationRing{S, T} <: Generic.Ring
+@attributes mutable struct LocalFieldValuationRing{S, T} <: Generic.Ring
   Q::S #The corresponding local field
   basis::Vector{T} #The OK-basis of the ring, where OK is
                    #the maximal order of the base field of Q
