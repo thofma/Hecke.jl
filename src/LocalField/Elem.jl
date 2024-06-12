@@ -398,13 +398,6 @@ function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldE
   return v
 end
 
-function check_parent(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  if parent(a) !== parent(b)
-    error("Wrong parents!")
-  end
-  return nothing
-end
-
 ################################################################################
 #
 #  Representation matrix
