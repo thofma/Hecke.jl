@@ -141,3 +141,18 @@ end
   @test_throws ErrorException Order(K, [x])
 end
 
+
+@testset "Order - Misc" begin
+  k, a = cyclotomic_field(11)
+  zk = maximal_order(k)
+  lp = prime_ideals_over(zk, 23)
+  p1 = lp[1]
+  p2 = lp[2]
+  p1.gen_two *= zk(a+1)
+  p2.gen_two *= zk(a+1)
+
+  @test p1 != p2
+end
+
+
+
