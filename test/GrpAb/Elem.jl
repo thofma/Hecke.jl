@@ -235,4 +235,12 @@
       @test L*M*R == T
     end
   end
+
+  @testset "Coefficients" begin
+    G = @inferred abelian_group(2, 2, 2)
+    a = @inferred G([1, 1, 1])
+    @test @inferred coefficients(a) == FlintZZ[1 1 1]
+    @test @inferred coefficients(a; copy=false) == FlintZZ[1 1 1]
+    @test @inferred coeff(a, 1) == FlintZZ(1)
+  end
 end
