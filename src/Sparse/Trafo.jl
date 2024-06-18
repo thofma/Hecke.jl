@@ -285,17 +285,24 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
 
   for r in A.rows
     if i in r.pos
-      i_i = findfirst(r.pos, i)
+      i_i = findfirst(isequal(i), r.pos)
       val_i = r.values[i_i]
+      iszero(c*val_i) && continue
       if j in r.pos
-        i_j = findfirst(r.pos, j)
+        i_j = findfirst(isequal(j), r.pos)
         val_j = r.values[i_j]
-
+        
         r.values[i_j] += c*r.values[i_i]
+	if iszero(r.values[i_j])
+         deleteat!(r.pos, i_j)
+	 deleteat!(r.values, i_j)
+	 A.nnz -= 1
+        end
       else
         k = searchsortedfirst(r.pos, j)
         insert!(r.pos, k, j)
-        insert!(r.values, k, c*r.values[i_i])
+	insert!(r.values, k, c*r.values[i_i])
+	A.nnz += 1
       end
     end
   end
