@@ -291,7 +291,7 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
       if j in r.pos
         i_j = findfirst(isequal(j), r.pos)
         val_j = r.values[i_j]
-        
+
         r.values[i_j] += c*r.values[i_i]
 	if iszero(r.values[i_j])
          deleteat!(r.pos, i_j)
