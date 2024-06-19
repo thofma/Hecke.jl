@@ -781,6 +781,32 @@ princ_gen_special(A::AbsNumFieldOrderIdeal) = A.princ_gen_special[A.princ_gen_sp
 #  Equality
 #
 ################################################################################
+#to be used in the ideal ===
+#in case
+# the ideals are known to be prime ideals
+# with the same minimum
+# in the easy case: nice equation order, nice prime
+#Then the ideals are "mapped" in to GF(p)[x]/f and are equal iff they
+#agree there, so
+# map the 2nd gen (the first is p)
+# check if they are coprime in the residue ring
+#
+#the _test should be able to ensure type-stability and the use of small
+#p for speed.
+function _test(p::Union{Int, ZZRingElem}, f::AbsSimpleNumFieldElem, g::AbsSimpleNumFieldElem, h::QQPolyRingElem)
+  #the GF(p) version should be faster, in partcular for small p
+  #however, there are functions missing, Rx(f) will fail for large p
+#  R = Native.GF(p, cached = false, check = false)
+  R = residue_ring(ZZ, p, cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
+  f1 = Rx(f)
+  f2 = Rx(g)
+  f = Rx(h)
+  #the problem was f1 and f2 included a unit mod f, thus the gcd was non-trivial
+  f1 = gcd(f, f1)
+  f2 = gcd(f, f2)
+  return !is_coprime(f1, f2)
+end
 
 function ==(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   @assert order(x) === order(y)
@@ -820,11 +846,12 @@ function ==(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
     end
     OK = order(x)
     if contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
-      R = residue_ring(FlintZZ, px, cached = false)[1]
-      Rx = polynomial_ring(R, "x", cached = false)[1]
-      f1 = Rx(elem_in_nf(x.gen_two))
-      f2 = Rx(elem_in_nf(y.gen_two))
-      return !is_coprime(f1, f2)
+      f = defining_polynomial(number_field(OK))
+      if px <= typemax(Int)
+        return _test(Int(px), elem_in_nf(x.gen_two), elem_in_nf(y.gen_two), f)
+      else
+        return _test(px, elem_in_nf(x.gen_two), elem_in_nf(y.gen_two), f)
+      end
     end
   end
   if isdefined(x, :basis_matrix) && has_2_elem(y)

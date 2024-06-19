@@ -88,14 +88,14 @@ end
 ###############################################################################
 
 function *(x::T, y::T) where T <: NumFieldOrderElem
-  @req check_parent(x, y) "Wrong parents"
+  check_parent(x, y)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
 end
 
 function +(x::T, y::T) where T <: NumFieldOrderElem
-  @req check_parent(x, y) "Wrong parents"
+  check_parent(x, y)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   if x.has_coord && y.has_coord
@@ -107,7 +107,7 @@ function +(x::T, y::T) where T <: NumFieldOrderElem
 end
 
 function -(x::T, y::T) where T <: NumFieldOrderElem
-  @req check_parent(x, y) "Wrong parents"
+  check_parent(x, y)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
   if x.has_coord && y.has_coord
@@ -118,7 +118,7 @@ function -(x::T, y::T) where T <: NumFieldOrderElem
 end
 
 function divexact(x::T, y::T; check::Bool = true) where T <: NumFieldOrderElem
-  @req check_parent(x, y) "Wrong parents"
+  check_parent(x, y)
   a = divexact(x.elem_in_nf, y.elem_in_nf)
   if check && !(in(a, parent(x)))
     throw(ArgumentError("Quotient not an element of the order."))

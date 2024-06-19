@@ -244,7 +244,7 @@ function zero(K::LocalField; precision=precision(K))
   return setprecision(K(a), precision)
 end
 
-(K::LocalField)() = zero(K)
+(K::LocalField)(; precision=precision(K)) = zero(K, precision = precision)
 
 function one(K::LocalField; precision=precision(K))
   a = one(parent(defining_polynomial(K)))
@@ -396,13 +396,6 @@ function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldE
     end
   end
   return v
-end
-
-function check_parent(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  if parent(a) !== parent(b)
-    error("Wrong parents!")
-  end
-  return nothing
 end
 
 ################################################################################

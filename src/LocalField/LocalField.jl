@@ -5,18 +5,21 @@
 ################################################################################
 
 function show(io::IO, a::LocalField{S, EisensteinLocalField}) where S
-  print(io, "Eisenstein extension with defining polynomial ", defining_polynomial(a))
-  print(io, " over ", base_field(a))
+  io = pretty(io)
+  print(io, LowercaseOff(), "Eisenstein extension with defining polynomial ", defining_polynomial(a))
+  print(io, " over ", Lowercase(), base_field(a))
 end
 
 function show(io::IO, a::LocalField{S, UnramifiedLocalField}) where S
+  io = pretty(io)
   print(io, "Unramified extension with defining polynomial ", defining_polynomial(a))
-  print(io, " over ", base_field(a))
+  print(io, " over ", Lowercase(), base_field(a))
 end
 
 function show(io::IO, a::LocalField{S, GenericLocalField}) where S
+  io = pretty(io)
   print(io, "Extension with defining polynomial ", defining_polynomial(a))
-  print(io, " over ", base_field(a))
+  print(io, " over ", Lowercase(), base_field(a))
 end
 
 ################################################################################

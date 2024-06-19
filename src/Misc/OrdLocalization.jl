@@ -110,11 +110,6 @@ nf(a::OrdLocElem{T}) where {T <: AbsSimpleNumFieldElem} = nf(parent(a))
 
 parent(a::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem} = a.parent
 
-function check_parent(a::OrdLocElem{T}, b::OrdLocElem{T})  where {T <: AbsSimpleNumFieldElem}
-    parent(a) != parent(b) && error("Parent objects do not match")
-end
-
-
 ###############################################################################
 #
 #   Basic manipulation

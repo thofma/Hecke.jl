@@ -102,19 +102,6 @@ Nemo.residue_ring(O::Union{RelNumFieldOrder, AlgAssRelOrd}, I::Union{RelNumField
 
 ################################################################################
 #
-#  Parent check
-#
-################################################################################
-
-function check_parent(x::RelOrdQuoRingElem, y::RelOrdQuoRingElem)
-  if parent(x) !== parent(y)
-    error("Elements must have same parents")
-  end
-  return true
-end
-
-################################################################################
-#
 #  Arithmetic
 #
 ################################################################################

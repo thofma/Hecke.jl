@@ -111,8 +111,6 @@ function expressify(a::HessQRElem; context = nothing)
                               expressify(a.g, context = context)))
 end
 
-check_parent(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) || error("Incompatible rings")
-
 function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::HessQR)
   if iszero(a)
     return zero(S), one(S)

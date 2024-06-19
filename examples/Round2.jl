@@ -158,8 +158,6 @@ Nemo.canonical_unit(a::OrderElem) = OrderElem(parent(a), ZZRingElem(1))
 
 Base.deepcopy_internal(a::OrderElem, dict::IdDict) = OrderElem(parent(a), Base.deepcopy_internal(a.data, dict))
 
-check_parent(a::OrderElem, b::OrderElem) = parent(a) == parent(b) || error("Incompatible orders")
-
 +(a::OrderElem, b::OrderElem) = check_parent(a, b) && OrderElem(parent(a), a.data + b.data)
 -(a::OrderElem, b::OrderElem) = check_parent(a, b) && OrderElem(parent(a), a.data - b.data)
 -(a::OrderElem) = OrderElem(parent(a), -a.data)
@@ -848,8 +846,6 @@ function expressify(a::HessQRElem; context = nothing)
              Expr(:call, ://, expressify(a.f, context = context),
                               expressify(a.g, context = context)))
 end
-
-check_parent(a::HessQRElem, b::HessQRElem) = parent(a) == parent(b) || error("Incompatible rings")
 
 function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::HessQR)
   if iszero(a)
