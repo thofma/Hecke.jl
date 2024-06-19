@@ -174,7 +174,7 @@
   @test dense_row(A, 6) == matrix(FlintZZ, 1, 6, [-5, 0, 2, -10, 1, 0])
   @test sparse_row(dense_row(A, 6)) == A
 
-  #SRow{NCRingElem}
+  SRow{NCRingElem}
   R = matrix_algebra(QQ,2)
   a = R(matrix(QQ,[1 2; 3 4]))
   b = R(matrix(QQ,[3 4; 5 6]))
@@ -185,6 +185,12 @@
   @test dot(A,B) != dot(B,A)
   @test A*i == A == i*A
   @test !(scale_row!(A,b) == scale_row_right!(AA,b))
-  C = add_scaled_row(A,B,i)
+  #C = add_scaled_row(A,B,i)
+  #@test C == A+B
+
+  F, (x,y) = free_associative_algebra(QQ,[:x, :y])
+  A = sparse_row(F,[1],[x])
+  B = sparse_row(F,[1],[y])
+  C = add_scaled_row(A,B,F(1))
   @test C == A+B
 end
