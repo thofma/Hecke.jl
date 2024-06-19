@@ -58,4 +58,13 @@
   # mul! for matrix algebra elements
   A = matrix_algebra(QQ, 2)
   @test isone(mul!(zero(A), one(A), ZZRingElem(1)))
+
+  # add! for matrix algebra elements
+  # 1547
+  let
+    A = matrix_algebra(QQ, 2)
+    b = A(matrix(QQ, [3 4; 5 6]))
+    Hecke.addeq!(b,b)
+    @test b == A(matrix(QQ, [6 8; 10 12]))
+  end
 end
