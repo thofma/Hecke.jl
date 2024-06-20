@@ -249,7 +249,7 @@ end
 Returns the $\mathbf Z$-basis of $I$.
 """
 function basis(a::AbsNumFieldOrderFractionalIdeal{S, T}) where {S, T}
-  B = basis_matrix(FakeFmpqMat, a)
+  B = basis_matrix(FakeFmpqMat, a; copy = false)
   d = degree(order(a))
   O = order(a)
   K = nf(O)
@@ -337,7 +337,7 @@ function assure_has_numerator_and_denominator(a::AbsNumFieldOrderFractionalIdeal
     error("Not a valid fractional ideal")
   end
 
-  a.num = ideal(order(a), numerator(basis_matrix(FakeFmpqMat, a, copy = false)))
+  a.num = ideal(order(a), numerator(basis_matrix(FakeFmpqMat, a, copy = false)); M_in_hnf = true)
   a.den = denominator(basis_matrix(FakeFmpqMat, a, copy = false))
   return nothing
 end
