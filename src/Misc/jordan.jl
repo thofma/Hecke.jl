@@ -126,15 +126,6 @@ function decompose_primary(M::MatElem{T}) where T <: FieldElem
   return L
 end
 
-function _copy_matrix_into_matrix(A::MatElem, i::Int, j::Int, B::MatElem)
-  for k in 0:nrows(B) - 1
-    for l in 0:ncols(B) - 1
-      setindex!(A, B[k+1, l+1], i+k, j+l)
-    end
-  end
-  return nothing
-end
-
 
 @doc raw"""
     companion_matrix(p::PolyRingElem) -> MatElem
