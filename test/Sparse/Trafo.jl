@@ -143,16 +143,16 @@
   @test isone(Asparse.nnz)
   @test !(zero(R) in Asparse[1].values)
 
-  Bsparse = sparse_matrix(R, [4 0; 3 3])
-  @test Hecke.add_scaled_col!(Bsparse, 1, 2, R(3)) == sparse_matrix(R, [4 0; 3 0])
-  @test Bsparse.nnz == 2
+  Bsparse = sparse_matrix(R, [4 0; 1 0; 3 3; 2 6])
+  @test Hecke.add_scaled_col!(Bsparse, 1, 2, R(3)) == sparse_matrix(R, [4 0; 1 3; 3 0; 2 0])
+  @test Bsparse.nnz == 5
   for i = 1:nrows(Bsparse)
     @test !(zero(R) in Bsparse[i].values)
   end
 
   Csparse = sparse_matrix(R, [4 0 0 1 2 0 1; 0 1 6 2 3 1 1])
-  @test Hecke.transform_row!(Csparse, 1, 2, R(3), R(2), one(R), zero(R)) == sparse_matrix(R, [0 2 0 7 0 2 5; 4 0 0 1 2 0 1])
-  @test Csparse.nnz == 8
+  @test Hecke.transform_row!(Csparse, 1, 2, R(3), R(2), R(3), zero(R)) == sparse_matrix(R, [0 2 0 7 0 2 5; 0 0 0 3 6 0 3])
+  @test Csparse.nnz == 7
   for i = 1:nrows(Csparse)
     @test !(zero(R) in Csparse[i].values)
   end
