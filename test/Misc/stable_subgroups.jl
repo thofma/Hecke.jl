@@ -22,6 +22,14 @@
     for y in ls
       @test Hecke.is_submodule(M,y)
     end
+
+    ls = maximal_submodules(M)
+    ls1 = minimal_submodules(M1)
+
+    @test length(ls) == length(ls1)
+    for y in ls
+      @test Hecke.is_submodule(M,y)
+    end
   end
 
 
