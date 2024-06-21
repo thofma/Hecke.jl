@@ -41,6 +41,11 @@ For more information please visit
 """
 module Hecke
 
+using DispatchDoctor
+
+DispatchDoctor.register_macro!(Symbol("@attr"), DispatchDoctor.IncompatibleMacro)
+DispatchDoctor.register_macro!(Symbol("@attributes"), DispatchDoctor.IncompatibleMacro)
+
 ################################################################################
 #
 #  Import/export
@@ -555,6 +560,7 @@ function is_absolutely_irreducible end
 #
 ################################################################################
 
+@stable begin
 include("HeckeTypes.jl")
 include("Sparse.jl")
 include("NumField/NfRel/Types.jl")
@@ -587,6 +593,7 @@ include("QuadForm.jl")
 include("FieldFactory.jl")
 include("RieSrf.jl")
 include("../examples/NFDB.jl")
+end
 
 const _RealRings = _RealRing[_RealRing()]
 
