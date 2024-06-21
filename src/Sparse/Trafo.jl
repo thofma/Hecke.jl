@@ -155,7 +155,9 @@ end
 Multiply the $i$-th row of $A$ by $c$ inplace.
 """
 function scale_row!(A::SMat{T}, i::Int, c::T) where T
-  scale_row!(A[i], c)
+  A.nnz = A.nnz - length(A[i])
+  scale_row!(A[i],c)
+  A.nnz = A.nnz + length(A[i])
   return A
 end
 
@@ -283,17 +285,24 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
 
   for r in A.rows
     if i in r.pos
-      i_i = findfirst(r.pos, i)
+      i_i = findfirst(isequal(i), r.pos)
       val_i = r.values[i_i]
+      iszero(c*val_i) && continue
       if j in r.pos
-        i_j = findfirst(r.pos, j)
+        i_j = findfirst(isequal(j), r.pos)
         val_j = r.values[i_j]
 
         r.values[i_j] += c*r.values[i_i]
+        if iszero(r.values[i_j])
+          deleteat!(r.pos, i_j)
+          deleteat!(r.values, i_j)
+          A.nnz -= 1
+        end
       else
         k = searchsortedfirst(r.pos, j)
         insert!(r.pos, k, j)
         insert!(r.values, k, c*r.values[i_i])
+        A.nnz += 1
       end
     end
   end
@@ -386,6 +395,18 @@ function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
       push!(tr.values, d*Aj.values[pj])
     end
     pj += 1
+  end
+  for pi in length(sr):-1:1
+    if iszero(sr.values[pi])
+      deleteat!(sr.values, pi)
+      deleteat!(sr.pos, pi)
+    end
+  end
+  for pj in length(tr):-1:1
+    if iszero(tr.values[pj])
+      deleteat!(tr.values, pj)
+      deleteat!(tr.pos, pj)
+    end
   end
 
   return sr, tr
