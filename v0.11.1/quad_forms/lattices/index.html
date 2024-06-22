@@ -1,0 +1,1628 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.1">
+    
+    
+      
+        <title>Lattices - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.e8d9bf0c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.e6a45f82.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#quadratic-and-hermitian-lattices" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Lattices
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        Number field operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_2" type="checkbox" id="__nav_2_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Function fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Orders" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4">
+          Quadratic and Hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Quadratic and Hermitian forms" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and Hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basics/" class="md-nav__link">
+        Quadratic and hermitian spaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Lattices
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Lattices
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-lattices" class="md-nav__link">
+    Creation of lattices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-invariants" class="md-nav__link">
+    Basic invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rational-invariants" class="md-nav__link">
+    Rational invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#definiteness" class="md-nav__link">
+    Definiteness
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#module-operations" class="md-nav__link">
+    Module operations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-properties" class="md-nav__link">
+    Local properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#genera" class="md-nav__link">
+    Genera
+  </a>
+  
+    <nav class="md-nav" aria-label="Genera">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation-of-genera-from-lattices" class="md-nav__link">
+    Creation of genera from lattices
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#properties-of-genera" class="md-nav__link">
+    Properties of genera
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-if-lattice-is-contained-in-genus" class="md-nav__link">
+    Check if lattice is contained in genus
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-representatives" class="md-nav__link">
+    Creating representatives
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_5" type="checkbox" id="__nav_2_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_6" type="checkbox" id="__nav_2_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        Factored Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        Sparse Linear Algebra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_8" type="checkbox" id="__nav_2_8" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_8">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_8">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-lattices" class="md-nav__link">
+    Creation of lattices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-invariants" class="md-nav__link">
+    Basic invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rational-invariants" class="md-nav__link">
+    Rational invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#definiteness" class="md-nav__link">
+    Definiteness
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#module-operations" class="md-nav__link">
+    Module operations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-properties" class="md-nav__link">
+    Local properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#genera" class="md-nav__link">
+    Genera
+  </a>
+  
+    <nav class="md-nav" aria-label="Genera">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#creation-of-genera-from-lattices" class="md-nav__link">
+    Creation of genera from lattices
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#properties-of-genera" class="md-nav__link">
+    Properties of genera
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-if-lattice-is-contained-in-genus" class="md-nav__link">
+    Check if lattice is contained in genus
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-representatives" class="md-nav__link">
+    Creating representatives
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/thofma/Hecke.jl/edit/master/docs/quad_forms/lattices.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+<p><a id='Quadratic-and-hermitian-lattices'></a></p>
+<p><a id='Quadratic-and-hermitian-lattices-1'></a></p>
+<h1 id="quadratic-and-hermitian-lattices">Quadratic and hermitian lattices</h1>
+<p><a id='Creation-of-lattices'></a></p>
+<p><a id='Creation-of-lattices-1'></a></p>
+<h2 id="creation-of-lattices">Creation of lattices</h2>
+<p><a id='quadratic_lattice-Tuple{NumField, MatElem}' href='#quadratic_lattice-Tuple{NumField, MatElem}'>#</a>
+<strong><code>quadratic_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quadratic_lattice</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">;</span> <span class="n">gram_ambient_space</span> <span class="o">=</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuadLat</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script> and a matrix <script type="math/tex">B</script>, returns the quadratic lattice spanned by the rows of <script type="math/tex">B</script> inside the quadratic space over <script type="math/tex">K</script> with gram matrix <script type="math/tex">F</script>.</p>
+<p>If <script type="math/tex">F</script> is not supplied, the gram matrix of the ambient space will be the identity matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Quad/Lattices.jl#L49' class='documenter-source'>source</a><br></p>
+<p><a id='quadratic_lattice-Tuple{NumField, Hecke.PMat}' href='#quadratic_lattice-Tuple{NumField, Hecke.PMat}'>#</a>
+<strong><code>quadratic_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quadratic_lattice</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">PMat</span><span class="p">;</span> <span class="n">gram_ambient_space</span> <span class="o">=</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuadLat</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script> and a pseudo-matrix <script type="math/tex">B</script>, returns the quadratic lattice spanned by the pseudo-matrix <script type="math/tex">B</script> inside the quadratic space over <script type="math/tex">K</script> with gram matrix <script type="math/tex">F</script>.</p>
+<p>If <script type="math/tex">F</script> is not supplied, the gram matrix of the ambient space will be the identity matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Quad/Lattices.jl#L19' class='documenter-source'>source</a><br></p>
+<p><a id='hermitian_lattice-Tuple{NumField, MatElem}' href='#hermitian_lattice-Tuple{NumField, MatElem}'>#</a>
+<strong><code>hermitian_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">;</span> <span class="n">gram_ambient_space</span> <span class="o">=</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HermLat</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script> and a matrix <script type="math/tex">B</script>, returns the hermitian lattice spanned by the rows of <script type="math/tex">B</script> inside the hermitian space over <script type="math/tex">K</script> with gram matrix <script type="math/tex">F</script>.</p>
+<p>If <script type="math/tex">F</script> is not supplied, the gram matrix of the ambient space will be the identity matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Lattices.jl#L50' class='documenter-source'>source</a><br></p>
+<p><a id='hermitian_lattice-Tuple{NumField, Hecke.PMat}' href='#hermitian_lattice-Tuple{NumField, Hecke.PMat}'>#</a>
+<strong><code>hermitian_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hermitian_lattice</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">PMat</span><span class="p">;</span> <span class="n">gram_ambient_space</span> <span class="o">=</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HermLat</span>
+</code></pre></div>
+<p>Given a number field <script type="math/tex">K</script> and a pseudo-matrix <script type="math/tex">B</script>, returns the hermitian lattice spanned by the pseudo-matrix <script type="math/tex">B</script> inside the hermitian space over <script type="math/tex">K</script> with gram matrix <script type="math/tex">F</script>.</p>
+<p>If <script type="math/tex">F</script> is not supplied, the gram matrix of the ambient space will be the identity matrix.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Lattices.jl#L19' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Basic-invariants'></a></p>
+<p><a id='Basic-invariants-1'></a></p>
+<h2 id="basic-invariants">Basic invariants</h2>
+<p><a id='ambient_space-Tuple{Hecke.AbsLat}' href='#ambient_space-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>ambient_space</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ambient_space</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsSpace</span>
+</code></pre></div>
+<p>Returns the ambient space of <script type="math/tex">L</script>. If the ambient space is not known, an error is raised.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L49' class='documenter-source'>source</a><br></p>
+<p><a id='rational_span-Tuple{Hecke.AbsLat}' href='#rational_span-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>rational_span</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rational_span</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsSpace</span>
+</code></pre></div>
+<p>Returns the rational span of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L70' class='documenter-source'>source</a><br></p>
+<p><a id='fixed_field-Tuple{Hecke.AbsLat}' href='#fixed_field-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>fixed_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">fixed_field</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Returns the fixed field of the involution of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L146' class='documenter-source'>source</a><br></p>
+<p><a id='involution-Tuple{Hecke.AbsLat}' href='#involution-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>involution</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">involution</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Map</span>
+</code></pre></div>
+<p>Returns the involution of the rational span of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L153' class='documenter-source'>source</a><br></p>
+<p><a id='rank-Tuple{Hecke.AbsLat}' href='#rank-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Returns the rank of the underlying module of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L160' class='documenter-source'>source</a><br></p>
+<p><a id='degree-Tuple{Hecke.AbsLat}' href='#degree-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>degree</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">degree</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Returns the dimension of the ambient space of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L167' class='documenter-source'>source</a><br></p>
+<p><a id='generators-Tuple{Hecke.AbsLat}' href='#generators-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>generators</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">generators</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">;</span> <span class="n">minimal</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Vector</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns a set of generators of <script type="math/tex">L</script> over the base ring of <script type="math/tex">L</script>.</p>
+<p>If <code>minimal == true</code>, the number of generators is minimal. Note that computing minimal generators is expensive.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L262' class='documenter-source'>source</a><br></p>
+<p><a id='discriminant-Tuple{Hecke.AbsLat}' href='#discriminant-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdFracIdl</span>
+</code></pre></div>
+<p>Returns the discriminant of <script type="math/tex">L</script>, that is, the generalized index ideal <script type="math/tex">[L^\# : L]</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L361' class='documenter-source'>source</a><br></p>
+<p><a id='pseudo_matrix-Tuple{Hecke.AbsLat}' href='#pseudo_matrix-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>pseudo_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">pseudo_matrix</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PMat</span>
+</code></pre></div>
+<p>Returns the basis pseudo-matrix of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L99' class='documenter-source'>source</a><br></p>
+<p><a id='coefficient_ideals-Tuple{Hecke.AbsLat}' href='#coefficient_ideals-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>coefficient_ideals</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">coefficient_ideals</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the coefficient ideals of the pseudo-basis of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L123' class='documenter-source'>source</a><br></p>
+<p><a id='absolute_basis-Tuple{Hecke.AbsLat}' href='#absolute_basis-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>absolute_basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">absolute_basis</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span>
+</code></pre></div>
+<p>Returns a <script type="math/tex">\mathbf{Z}</script>-basis of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L570' class='documenter-source'>source</a><br></p>
+<p><a id='absolute_basis_matrix-Tuple{Hecke.AbsLat}' href='#absolute_basis_matrix-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>absolute_basis_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">absolute_basis_matrix</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Returns a <script type="math/tex">\mathbf{Z}</script>-basis matrix of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L593' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Rational-invariants'></a></p>
+<p><a id='Rational-invariants-1'></a></p>
+<h2 id="rational-invariants">Rational invariants</h2>
+<p><a id='hasse_invariant-Tuple{QuadLat, Any}' href='#hasse_invariant-Tuple{QuadLat, Any}'>#</a>
+<strong><code>hasse_invariant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hasse_invariant</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">NfOrdIdl</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Returns the Hasse invariant of the rational span of <script type="math/tex">L</script> at <script type="math/tex">p</script>. The lattice must be quadratic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L381' class='documenter-source'>source</a><br></p>
+<p><a id='witt_invariant-Tuple{QuadLat, NfAbsOrdIdl}' href='#witt_invariant-Tuple{QuadLat, NfAbsOrdIdl}'>#</a>
+<strong><code>witt_invariant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">witt_invariant</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">NfOrdIdl</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Returns the Witt invariant of the rational span of <script type="math/tex">L</script> at <script type="math/tex">p</script>. The lattice must be quadratic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L389' class='documenter-source'>source</a><br></p>
+<p><a id='isrationally_isometric-Tuple{Hecke.AbsLat, Hecke.AbsLat, NfAbsOrdIdl}' href='#isrationally_isometric-Tuple{Hecke.AbsLat, Hecke.AbsLat, NfAbsOrdIdl}'>#</a>
+<strong><code>isrationally_isometric</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isrationally_isometric</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">NfOrdIdl</span><span class="p">})</span>
+                                                                     <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the rational spans of <script type="math/tex">L</script> and <script type="math/tex">M</script> are isometric over the completion at <script type="math/tex">\mathfrak p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L403' class='documenter-source'>source</a><br></p>
+<p><a id='isrationally_isometric-Tuple{Hecke.AbsLat, Hecke.AbsLat}' href='#isrationally_isometric-Tuple{Hecke.AbsLat, Hecke.AbsLat}'>#</a>
+<strong><code>isrationally_isometric</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isrationally_isometric</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span>
+                                        <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the rational spans of <script type="math/tex">L</script> and <script type="math/tex">M</script> are isometric.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L420' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Definiteness'></a></p>
+<p><a id='Definiteness-1'></a></p>
+<h2 id="definiteness">Definiteness</h2>
+<p><a id='ispositive_definite-Tuple{Hecke.AbsLat}' href='#ispositive_definite-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>ispositive_definite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ispositive_definite</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the rational span of <script type="math/tex">L</script> is positive definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L436' class='documenter-source'>source</a><br></p>
+<p><a id='isnegative_definite-Tuple{Hecke.AbsLat}' href='#isnegative_definite-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>isnegative_definite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isnegative_definite</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the rational span of <script type="math/tex">L</script> is negative definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L443' class='documenter-source'>source</a><br></p>
+<p><a id='isdefinite-Tuple{Hecke.AbsLat}' href='#isdefinite-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>isdefinite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isdefinite</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the rational span of <script type="math/tex">L</script> is definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L450' class='documenter-source'>source</a><br></p>
+<p><a id='can_scale_totally_positive-Tuple{Hecke.AbsLat}' href='#can_scale_totally_positive-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>can_scale_totally_positive</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">can_scale_totally_positive</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Returns whether there is a totally positive rescaled lattice of <script type="math/tex">L</script>. If so, the second return value is an element <script type="math/tex">a</script> such that <script type="math/tex">L^a</script> is totally positive.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L457' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Module-operations'></a></p>
+<p><a id='Module-operations-1'></a></p>
+<h2 id="module-operations">Module operations</h2>
+<p><a id='*-Tuple{NumFieldElem, Hecke.AbsLat}' href='#*-Tuple{NumFieldElem, Hecke.AbsLat}'>#</a>
+<strong><code>*</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">NumFieldElem</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsLat</span>
+</code></pre></div>
+<p>Returns the lattice <script type="math/tex">aM</script> inside the ambient space of <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L527' class='documenter-source'>source</a><br></p>
+<p><a id='*-Tuple{NfOrdIdl, Hecke.AbsLat}' href='#*-Tuple{NfOrdIdl, Hecke.AbsLat}'>#</a>
+<strong><code>*</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsLat</span>
+</code></pre></div>
+<p>Returns the lattice <script type="math/tex">aM</script> inside the ambient space of <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L542' class='documenter-source'>source</a><br></p>
+<p><a id='*-Tuple{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}, Hecke.AbsLat}' href='#*-Tuple{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}, Hecke.AbsLat}'>#</a>
+<strong><code>*</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">NfOrdFracIdl</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsLat</span>
+</code></pre></div>
+<p>Returns the lattice <script type="math/tex">aM</script> inside the ambient space of <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L553' class='documenter-source'>source</a><br></p>
+<p><a id='rescale-Tuple{Hecke.AbsLat, NumFieldElem}' href='#rescale-Tuple{Hecke.AbsLat, NumFieldElem}'>#</a>
+<strong><code>rescale</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rescale</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="kt">NumFieldElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsLat</span>
+</code></pre></div>
+<p>Returns the rescaled lattice <script type="math/tex">L^a</script>. Note that this has a different ambient space than <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L648' class='documenter-source'>source</a><br></p>
+<p><a id='dual-Tuple{Hecke.AbsLat}' href='#dual-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>dual</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">dual</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsLat</span>
+</code></pre></div>
+<p>Returns the dual lattice of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L679' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Invariants'></a></p>
+<p><a id='Invariants-1'></a></p>
+<h2 id="invariants">Invariants</h2>
+<p><a id='norm-Tuple{Hecke.AbsLat}' href='#norm-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>norm</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">norm</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdFracIdl</span>
+</code></pre></div>
+<p>Returns the norm of <script type="math/tex">L</script>. This is a fractional ideal of the fixed field of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L622' class='documenter-source'>source</a><br></p>
+<p><a id='scale-Tuple{Hecke.AbsLat}' href='#scale-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>scale</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">scale</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdFracIdl</span>
+</code></pre></div>
+<p>Returns the scale of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L635' class='documenter-source'>source</a><br></p>
+<p><a id='isintegral-Tuple{Hecke.AbsLat}' href='#isintegral-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>isintegral</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isintegral</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the lattice <script type="math/tex">L</script> is integral.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L664' class='documenter-source'>source</a><br></p>
+<p><a id='volume-Tuple{Hecke.AbsLat}' href='#volume-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>volume</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">volume</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdFracIdl</span>
+</code></pre></div>
+<p>Returns the volume of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L692' class='documenter-source'>source</a><br></p>
+<p><a id='ismodular-Tuple{Hecke.AbsLat}' href='#ismodular-Tuple{Hecke.AbsLat}'>#</a>
+<strong><code>ismodular</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ismodular</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfOrdFracIdl</span>
+</code></pre></div>
+<p>Returns whether <script type="math/tex">L</script> is modular. In this case, the second return value is a fractional ideal <script type="math/tex">\mathfrak a</script> such that <script type="math/tex">\mathfrak a L^\# = L</script>, where <script type="math/tex">L^\#</script> is the dual of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L707' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Local-properties'></a></p>
+<p><a id='Local-properties-1'></a></p>
+<h2 id="local-properties">Local properties</h2>
+<p><a id='local_basis_matrix-Tuple{Hecke.AbsLat, Any}' href='#local_basis_matrix-Tuple{Hecke.AbsLat, Any}'>#</a>
+<strong><code>local_basis_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">local_basis_matrix</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">;</span> <span class="n">type</span> <span class="o">=</span> <span class="ss">:any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatElem</span>
+</code></pre></div>
+<p>Given a prime ideal <script type="math/tex">\mathfrak p</script> and a lattice <script type="math/tex">L</script>, this function returns a basis matrix of lattice <script type="math/tex">M</script> such that <script type="math/tex">M_{\mathfrak{p}} = L_{\mathfrak{p}}</script>.</p>
+<ul>
+<li>If <code>type == :submodule</code>, the lattice <script type="math/tex">L</script> will be a sublattice of <script type="math/tex">M</script>.</li>
+<li>If <code>type == :supermodule</code>, the lattice <script type="math/tex">L</script> will be a superlattice of <script type="math/tex">M</script>.</li>
+<li>If <code>type == :any</code>, there may not be any containment relation between <script type="math/tex">M</script> and <script type="math/tex">L</script>.</li>
+</ul>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L760' class='documenter-source'>source</a><br></p>
+<p><a id='jordan_decomposition-Tuple{Hecke.AbsLat, NfOrdIdl}' href='#jordan_decomposition-Tuple{Hecke.AbsLat, NfOrdIdl}'>#</a>
+<strong><code>jordan_decomposition</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">jordan_decomposition</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span>
+                            <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">MatElem</span><span class="p">},</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">MatElem</span><span class="p">},</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns a Jordan decomposition of the completion of <script type="math/tex">L</script> at <script type="math/tex">\mathfrak p</script>.</p>
+<p>The return value consists of three lists <script type="math/tex">(M_i)_i</script>, <script type="math/tex">(G_i)_i</script> and <script type="math/tex">(s_i)_i</script> of the same length <script type="math/tex">r</script>. The completions of the row spans of the matrices <script type="math/tex">M_i</script> yield a Jordan decomposition of <script type="math/tex">L_{\mathfrak{p}}</script> into modular sublattices <script type="math/tex">L_i</script> with gram matrices <script type="math/tex">G_i</script> and scale of <script type="math/tex">\mathfrak{p}</script>-adic valuation <script type="math/tex">s_i</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L808' class='documenter-source'>source</a><br></p>
+<p><a id='islocally_isometric-Tuple{Hecke.AbsLat, Hecke.AbsLat, NfOrdIdl}' href='#islocally_isometric-Tuple{Hecke.AbsLat, Hecke.AbsLat, NfOrdIdl}'>#</a>
+<strong><code>islocally_isometric</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">islocally_isometric</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">M</span><span class="o">::</span><span class="kt">AbsLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the completions of <script type="math/tex">L</script> and <script type="math/tex">M</script> at the prime ideal <script type="math/tex">\mathfrak{p}</script> are locally isometric.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Lattices.jl#L827' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Genera'></a></p>
+<p><a id='Genera-1'></a></p>
+<h2 id="genera">Genera</h2>
+<p><a id='Creation-of-genera-from-lattices'></a></p>
+<p><a id='Creation-of-genera-from-lattices-1'></a></p>
+<h3 id="creation-of-genera-from-lattices">Creation of genera from lattices</h3>
+<p><a id='genus-Tuple{HermLat, Any}' href='#genus-Tuple{HermLat, Any}'>#</a>
+<strong><code>genus</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LocalGenusHerm</span>
+</code></pre></div>
+<p>Returns the genus of <script type="math/tex">L</script> at the prime ideal <script type="math/tex">\mathfrak p</script>.</p>
+<p>See [Kir16, Definition 8.3.1].</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L819' class='documenter-source'>source</a><br></p>
+<p><a id='genus-Tuple{HermLat}' href='#genus-Tuple{HermLat}'>#</a>
+<strong><code>genus</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">genus</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenusHerm</span>
+</code></pre></div>
+<p>Given a Hermitian lattice, return the genus it belongs to.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L1265' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Properties-of-genera'></a></p>
+<p><a id='Properties-of-genera-1'></a></p>
+<h3 id="properties-of-genera">Properties of genera</h3>
+<p><a id='rank-Tuple{Hecke.LocalGenusHerm}' href='#rank-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a genus symbol <script type="math/tex">G</script>, return the rank of a lattice in <script type="math/tex">G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L118' class='documenter-source'>source</a><br></p>
+<p><a id='rank-Tuple{Hecke.LocalGenusHerm, Int64}' href='#rank-Tuple{Hecke.LocalGenusHerm, Int64}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Given a genus symbol for Hermitian lattices over <script type="math/tex">E/K</script>, return the rank of the <script type="math/tex">i</script>th Jordan block of <script type="math/tex">G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L110' class='documenter-source'>source</a><br></p>
+<p><a id='ranks-Tuple{Hecke.LocalGenusHerm}' href='#ranks-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>ranks</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ranks</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span>
+</code></pre></div>
+<p>Given a genus symbol for Hermitian lattices over <script type="math/tex">E/K</script>, return the ranks of the Jordan blocks of <script type="math/tex">G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L127' class='documenter-source'>source</a><br></p>
+<p><a id='det-Tuple{Hecke.LocalGenusHerm}' href='#det-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>det</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Given a genus symbol <script type="math/tex">G</script>, return the determinant of a lattice in <script type="math/tex">G</script>. This will be <code>1</code> or <code>-1</code> depending on whether the determinant is a local norm or not.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L144' class='documenter-source'>source</a><br></p>
+<p><a id='det_representative-Tuple{Hecke.LocalGenusHerm}' href='#det_representative-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>det_representative</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det_representative</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldElem</span>
+</code></pre></div>
+<p>Return a representative for the norm class of the determinant of <script type="math/tex">G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L352' class='documenter-source'>source</a><br></p>
+<p><a id='gram_matrix-Tuple{Hecke.LocalGenusHerm}' href='#gram_matrix-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>gram_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span>
+</code></pre></div>
+<p>Return a matrix <script type="math/tex">M</script>, such that a lattice with Gram matrix <script type="math/tex">M</script> is an element of the given genus.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L406' class='documenter-source'>source</a><br></p>
+<p><a id='primes-Tuple{Hecke.GenusHerm}' href='#primes-Tuple{Hecke.GenusHerm}'>#</a>
+<strong><code>primes</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">primes</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the primes of a global genus symbol.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L1311' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Check-if-lattice-is-contained-in-genus'></a></p>
+<p><a id='Check-if-lattice-is-contained-in-genus-1'></a></p>
+<h3 id="check-if-lattice-is-contained-in-genus">Check if lattice is contained in genus</h3>
+<p><a id='in-Tuple{HermLat, Hecke.LocalGenusHerm}' href='#in-Tuple{HermLat, Hecke.LocalGenusHerm}'>#</a>
+<strong><code>in</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">in</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">,</span> <span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Test if the lattice <script type="math/tex">L</script> is contained in the local genus <script type="math/tex">G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L878' class='documenter-source'>source</a><br></p>
+<p><a id='in-Tuple{HermLat, Hecke.GenusHerm}' href='#in-Tuple{HermLat, Hecke.GenusHerm}'>#</a>
+<strong><code>in</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">in</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">HermLat</span><span class="p">,</span> <span class="n">G</span><span class="o">::</span><span class="kt">GenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Test if the lattice <script type="math/tex">L</script> is contained in the genus <script type="math/tex">G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L1206' class='documenter-source'>source</a><br></p>
+<hr />
+<p><a id='Creating-representatives'></a></p>
+<p><a id='Creating-representatives-1'></a></p>
+<h3 id="creating-representatives">Creating representatives</h3>
+<p><a id='representative-Tuple{Hecke.LocalGenusHerm}' href='#representative-Tuple{Hecke.LocalGenusHerm}'>#</a>
+<strong><code>representative</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">representative</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">LocalGenusHerm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HermLat</span>
+</code></pre></div>
+<p>Given a local genus, return a Hermitian lattice contained in this genus.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/93e34d793fd2083407e7ad423a8678d04e06d8b4/src/QuadForm/Herm/Genus.jl#L523' class='documenter-source'>source</a><br></p>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../basics/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quadratic and hermitian spaces" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Quadratic and hermitian spaces
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../abelian/introduction/" class="md-footer__link md-footer__link--next" aria-label="Next: Introduction" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Introduction
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.8aa65030.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>
