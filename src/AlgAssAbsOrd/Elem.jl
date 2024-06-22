@@ -190,13 +190,14 @@ function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } 
 end
 
 function *(n::IntegerUnion, x::AlgAssAbsOrdElem)
-  O=x.parent
-  y=Vector{ZZRingElem}(undef, O.dim)
-  z=coordinates(x, copy = false)
-  for i=1:O.dim
-    y[i] = z[i] * n
+  #O=x.parent
+  O = parent(x)
+  y = O(n * elem_in_algebra(x, copy = false))
+  if x.has_coord
+    y.coordinates = n .* coordinates(x, copy = false)
+    y.has_coord = true
   end
-  return O(y)
+  return y
 end
 
 *(x::AlgAssAbsOrdElem, n::IntegerUnion) = n*x
