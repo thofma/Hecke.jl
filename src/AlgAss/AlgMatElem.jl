@@ -121,12 +121,6 @@ function add!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(c) != parent(b) && error("Parents don't match.")
   A = parent(a)
 
-  if c === a || c === b
-    d = A()
-    d = add!(d, a, b)
-    return d
-  end
-
   c.matrix = add!(c.matrix, a.matrix, b.matrix)
   c.has_coeffs = false
 
@@ -157,6 +151,15 @@ function addeq!(b::T, a::T) where {T <: MatAlgebraElem}
   b.has_coeffs = false
 
   return b
+end
+
+function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::T) where {T}
+  parent(c) !== parent(a) && error("Parents don't match.")
+  A = parent(a)
+
+  c.matrix = mul!(c.matrix, a.matrix, b)
+  c.has_coeffs = false
+  return c
 end
 
 ################################################################################

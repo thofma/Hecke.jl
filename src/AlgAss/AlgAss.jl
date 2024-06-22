@@ -261,12 +261,14 @@ function reduce_rows_mod_hnf!(M::ZZMatrix, N::ZZMatrix, rows::Vector{Int})
   return M
 end
 
-function addmul!(a::AlgAssAbsOrdElem, b::ZZRingElem, c::AlgAssAbsOrdElem)
-  return add!(a, a, b * c)
+function addmul!(a::AlgAssAbsOrdElem, b::ZZRingElem, c::AlgAssAbsOrdElem, d = parent(a)())
+  mul!(d, b, c)
+  return add!(a, a, d)
 end
 
-function addmul!(a::AbsNumFieldOrderElem, b::ZZRingElem, c::AbsNumFieldOrderElem)
-  return add!(a, a, b * c)
+function addmul!(a::AbsNumFieldOrderElem, b::ZZRingElem, c::AbsNumFieldOrderElem, d = parent(a)())
+  mul!(d, b, c)
+  return add!(a, a, d)
 end
 
 @doc raw"""
@@ -358,13 +360,15 @@ function StructureConstantAlgebra(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::U
 
   local _preimage
 
-  let BO = BO, basis_elts = basis_elts, r = r
+  temp = zero(O)
+
+  let BO = BO, basis_elts = basis_elts, r = r, temp = temp
     function _preimage(a::AssociativeAlgebraElem)
       z = zero(O)::eltype(BO)
       ca = coefficients(a, copy = false)
       for i in 1:r
         l = lift(ZZ, ca[i])
-        addmul!(z, l, BO[basis_elts[i]])
+        addmul!(z, l, BO[basis_elts[i]], temp)
       end
       return z
       #return sum(lift(coefficients(a, copy = false)[i])*BO[basis_elts[i]] for i = 1:r)
@@ -407,6 +411,7 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
   @assert order(I) === order(J)
 
   O = order(I)
+  Oalgebra = _algebra(O)
 
   n = degree(O)
   BmatJinI = hnf(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
@@ -489,9 +494,21 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
 
   local _preimage
 
-  let BI = BI, basis_elts = basis_elts, r = r
+  temppp = zero(Oalgebra)
+
+  let BI = BI, basis_elts = basis_elts, r = r, Oalgebra = Oalgebra, temppp = temppp
     function _preimage(a::AssociativeAlgebraElem)
-      return O(sum(lift(ZZ, coefficients(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r))
+      acoords = map(x -> QQ(lift(ZZ, x)), coefficients(a, copy = false))
+      z = zero(Oalgebra)
+      for i in 1:r
+        if is_zero(acoords[i])
+          continue
+        end
+        temppp = mul!(temppp, acoords[i], BI[basis_elts[i]])
+        z = add!(z, z, temppp)
+      end
+      _zz = O(z)
+      return _zz
     end
   end
 
