@@ -40,7 +40,7 @@ jobs:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
-        uses: julia-actions/cache@v1
+        uses: julia-actions/cache@v2
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1
       - name: "Inject GAP and Polymake as test dependencies"
@@ -84,7 +84,7 @@ jobs:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
-        uses: julia-actions/cache@v1
+        uses: julia-actions/cache@v2
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1
       - name: "Run threaded tests"
