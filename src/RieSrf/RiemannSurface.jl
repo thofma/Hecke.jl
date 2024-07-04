@@ -27,6 +27,7 @@ mutable struct RiemannSurface
   complex_field::AcbField
   monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
   homology_basis::Tuple{Vector{Vector{Int64}}, fmpz_mat, fmpz_mat}
+  degree::Vector{Int}
 
   function RiemannSurface(f::MPolyElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     K = base_ring(f)
@@ -54,6 +55,20 @@ mutable struct RiemannSurface
     
     RS.weak_error = Rc(10)^(-(2//3) *b10prec)
     RS.error = Rc(10)^(-prec + 1)
+    
+    RS.degree = degrees(f)
+    
+    #Additional field with low precision
+    
+    #Process differentials to store complex ones?
+    #Low precision differentials?
+    
+    #Homogenization?
+    #Variable for integration scheme?
+    
+    #Store data for fundamental group, dicriminant points, homoology?
+    #Fiber function?
+    
     
     
     

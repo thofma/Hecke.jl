@@ -49,9 +49,9 @@ function gauss_legendre_path_parameters(points, gamma::CPath, err)
 
   if path_type(gamma) == 0
     split_line_segment(points, gamma, err)
-  else if path_type(gamma) == 1
+  elseif path_type(gamma) == 1
     gauss_legendre_arc_parameters(points, gamma)
-  else if path_type(gamma) == 2
+  elseif path_type(gamma) == 2
     gauss_legendre_arc_parameters(points, gamma)
     #point?
   end
