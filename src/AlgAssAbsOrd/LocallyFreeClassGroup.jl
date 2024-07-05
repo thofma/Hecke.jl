@@ -360,8 +360,11 @@ function _1_plus_j(A::StructureConstantAlgebra{<:FinFieldElem}, jacobson_radical
   while !iszero(J)
     J2 = J^2
     Q, AtoQ = quo(J, J2)
+    absB = absolute_basis(base_ring(A)) # Generators of base ring as abelian group
     for i = 1:dim(Q)
-      push!(onePlusJ, one(A) + AtoQ\Q[i])
+      for b in absB
+        push!(onePlusJ, one(A) + AtoQ\(b*Q[i]))
+      end
     end
     J = J2
   end
