@@ -322,9 +322,15 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
   gens = elem_type(O)[]
   for e in q
     _x = mu(mq\e)
+    _n = abs(FlintZZ(absolute_tr(_x)))
     # Reduce modulo squares, so that the trace is hopefully small
     x = evaluate(reduce_mod_powers(elem_in_nf(_x), 2))
     n = abs(FlintZZ(absolute_tr(x)))
+    if _n < n
+      # the old x has smaller trace
+      x = _x
+      n = _n
+    end
     if !(n in norms)
       newel = enumerate(O, Int(n), true)
       for un in newel
@@ -439,8 +445,6 @@ function ___standard_involution(A)
   invol = N
   return hom(A, A, invol, inv(invol))
 end
-
-global _debug = []
 
 function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   A = algebra(M)
