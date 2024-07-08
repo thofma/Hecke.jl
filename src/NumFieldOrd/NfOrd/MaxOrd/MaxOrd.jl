@@ -154,7 +154,7 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
     Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
-    ds = gcd(rres(f1, derivative(f1)), discriminant(O))
+    ds = gcd(reduced_resultant(f1, derivative(f1)), discriminant(O))
     l = prefactorization(f1, ds)
   else
     ds = discriminant(O)
