@@ -1715,7 +1715,7 @@ end
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
-  tmp_xxgcd::ZZMatrix # used only by xxgcd in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_gcdxx::ZZMatrix # used only by gcdxx in AbsSimpleNumFieldOrder/residue_ring.jl
   tmp_div::ZZMatrix # used only by div in AbsSimpleNumFieldOrder/residue_ring.jl
   tmp_ann::ZZMatrix # used only by annihilator in AbsSimpleNumFieldOrder/residue_ring.jl
   tmp_euc::ZZMatrix # used only by euclid in AbsSimpleNumFieldOrder/residue_ring.jl
@@ -1731,7 +1731,7 @@ end
     z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
-    z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
+    z.tmp_gcdxx = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
     z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
     z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
     z.one = simplify!(one(z))

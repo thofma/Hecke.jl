@@ -81,7 +81,7 @@ end
   end
 end
 
-@testset "xxgcd" begin
+@testset "gcdxx" begin
   F, _ = cyclotomic_field(20)
   OF = maximal_order(F)
   P = prime_decomposition(OF, 2)[1][1]
@@ -92,7 +92,7 @@ end
 
   for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 3)*S(pi^2)]
     for b in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 3)*S(pi^2)]
-      g, u, v, s, t = Hecke.xxgcd(a, b)
+      g, u, v, s, t = Hecke.AbstractAlgebra.gcdxx(a, b)
       @test g == gcd(a, b)
       @test g == u*a + v*b
       @test is_zero(s*a + t*b)
