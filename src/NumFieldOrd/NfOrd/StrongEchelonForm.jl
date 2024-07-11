@@ -64,7 +64,7 @@ end
 function det(M::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   nrows(M) != ncols(M) && error("Matrix must be square matrix")
   N = deepcopy(M)
-  d = triangularize!(N)
+  d = AbstractAlgebra.triangularize!(N)
   z = one(base_ring(M))
   for i in 1:nrows(N)
     z = z * N[i, i]
