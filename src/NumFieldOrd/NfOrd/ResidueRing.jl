@@ -74,6 +74,8 @@ function simplify!(x::AbsOrdQuoRingElem)
   return x
 end
 
+canonical_unit(x::AbsOrdQuoRingElem) = one(parent(x))
+
 ################################################################################
 #
 #  Hashing
