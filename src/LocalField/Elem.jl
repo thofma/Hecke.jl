@@ -47,11 +47,14 @@ function _generator_valuation(K::LocalField)
 end
 
 function compute_precision(K::LocalField, a::Generic.Poly)
-  v = numerator(_generator_valuation(K)*ramification_index(K))
   prec = precision(coeff(a, 0))*ramification_index(K)
+  degree(a) == 0 && return prec
+  v = Int(numerator(_generator_valuation(K)*ramification_index(K)))
+  vi = 0
   for i = 1:degree(a)
+    vi += v
     c = coeff(a, i)
-    prec = min(prec, precision(c)*ramification_index(K)+Int(numerator(ceil(i*v))))
+    prec = min(prec, precision(c)*ramification_index(K) + vi)
   end
   return prec
 end
