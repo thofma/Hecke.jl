@@ -29,8 +29,8 @@ end
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
-  @test !is_domain_type(typeof(S))
-  @test is_exact_type(typeof(S))
+  @test !is_domain_type(elem_type(S))
+  @test is_exact_type(elem_type(S))
   test_Ring_interface(S)
 
   # the euclidean conformance test seems to assume that the ring is a domain
@@ -42,8 +42,8 @@ end
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
-  @test !is_domain_type(typeof(S))
-  @test is_exact_type(typeof(S))
+  @test !is_domain_type(elem_type(S))
+  @test is_exact_type(elem_type(S))
   test_Ring_interface(S)
 
   # LocalField
@@ -56,8 +56,8 @@ end
   S, RtoS = residue_ring(R, pi^3)
   # In this case, valuation(pi) == 1//2
   @test Hecke._exponent(S) == 3
-  @test !is_domain_type(typeof(S))
-  @test is_exact_type(typeof(S))
+  @test !is_domain_type(elem_type(S))
+  @test is_exact_type(elem_type(S))
   test_Ring_interface(S)
 end
 
