@@ -6,8 +6,8 @@
 
 parent_type(::Type{LocalFieldValuationRingResidueRingElem{S, T}}) where {S, T} = LocalFieldValuationRingResidueRing{S, T}
 elem_type(::Type{LocalFieldValuationRingResidueRing{S, T}}) where {S, T} = LocalFieldValuationRingResidueRingElem{S, T}
-is_domain_type(::Type{<: LocalFieldValuationRingResidueRing}) = false
-is_exact_type(::Type{<: LocalFieldValuationRingResidueRing}) = true
+is_domain_type(::Type{<: LocalFieldValuationRingResidueRingElem}) = false
+is_exact_type(::Type{<: LocalFieldValuationRingResidueRingElem}) = true
 
 ################################################################################
 #

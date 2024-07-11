@@ -398,7 +398,7 @@ function _strong_echelon_form_nonsplit!(M)
     end
     return M
   else
-    strong_echelon_form_naive!(M)
+    AbstractAlgebra.strong_echelon_form_naive!(M)
     return M
   end
 
@@ -446,7 +446,7 @@ function _strong_echelon_form_nonsplit(M)
     return M_cur
   else
     N = deepcopy(M)
-    strong_echelon_form_naive!(N)
+    AbstractAlgebra.strong_echelon_form_naive!(N)
     return N
   end
 end
