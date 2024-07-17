@@ -109,7 +109,7 @@ mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, NumFieldHom}
   inverse_data::V
   absolute_basis::Vector{W}
   absolute_basis_matrix_image::QQMatrix
-  solve_context::Solve.SolveCtx{QQFieldElem, QQMatrix, QQMatrix, QQMatrix}
+  solve_context::Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix}
 
   function NumFieldHom{S, T, U, V}() where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}()

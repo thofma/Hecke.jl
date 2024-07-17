@@ -210,13 +210,17 @@ end
 
   M = matrix(S, [1 2 3 4 5; 0 0 8 9 10; 0 0 0 14 15])
   C = solve_init(M)
-
-  @test C isa AbstractAlgebra.solve_context_type(elem_type(S))
-  @test C isa AbstractAlgebra.solve_context_type(zero(S))
-  @test C isa AbstractAlgebra.solve_context_type(typeof(S))
   @test C isa AbstractAlgebra.solve_context_type(S)
-  @test C isa AbstractAlgebra.solve_context_type(typeof(M))
   @test C isa AbstractAlgebra.solve_context_type(M)
+
+  @test AbstractAlgebra.Solve.matrix_normal_form_type(C) === AbstractAlgebra.Solve.HowellFormTrait()
+
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), elem_type(S))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), zero(S))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), typeof(S))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), S)
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), typeof(M))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), M)
 
   @test_throws ErrorException solve(C, [ S(1) ])
   @test_throws ErrorException solve(C, [ S(1) ], side = :right)
