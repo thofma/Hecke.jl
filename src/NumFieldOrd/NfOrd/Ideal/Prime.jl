@@ -879,7 +879,7 @@ function factor_easy(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
         ideals[P] = valuation(I, P)
       end
     end
-    r = is_power(r)[2]
+    r = is_perfect_power_with_data(r)[2]
     if !isone(r)
       r = ppio(minimum(I), r)[1]
       J = gcd(I, r)
@@ -934,7 +934,7 @@ function prefactorization(I::AbsNumFieldOrderIdeal)
     for p in pp
       push!(ideals, gcd(I, p))
     end
-    r = is_power(r)[2]
+    r = is_perfect_power_with_data(r)[2]
     if !isone(r)
       push!(ideals, gcd(I, r))
     end
@@ -972,7 +972,7 @@ function is_prime(A::AbsNumFieldOrderIdeal)
 
   K = nf(order(A))
 
-  (n, p) = is_power(norm(A, copy = false))
+  (n, p) = is_perfect_power_with_data(norm(A, copy = false))
 
   if !is_prime(p)
     A.is_prime = 2

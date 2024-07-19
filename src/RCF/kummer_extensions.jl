@@ -538,7 +538,7 @@ function reduce_mod_powers(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField},
     b1 = one(base_ring(a))
   end
   d = denominator(b1, maximal_order(parent(b1)))
-  k, d1 = is_power(d)
+  k, d1 = is_perfect_power_with_data(d)
   if k > 1
     d = d1^(div(k, n) + 1)
   end

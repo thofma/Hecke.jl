@@ -271,7 +271,7 @@ function prs_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
   Rt = parent(f)
   R = base_ring(Rt)
   m = ZZRingElem(modulus(R))
-  e, p = is_power(m)
+  e, p = is_perfect_power_with_data(m)
   easy = is_prime(p)
   @assert easy
 
@@ -314,7 +314,7 @@ function rres_sircana_pp(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: Re
   Rt = parent(f1)
   R = base_ring(Rt)
   m = ZZRingElem(modulus(R))
-  e, p = is_power(m)
+  e, p = is_perfect_power_with_data(m)
   f = deepcopy(f1)
   g = deepcopy(g1)
 
@@ -879,7 +879,7 @@ function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Re
   Rt = parent(f)
   R = base_ring(Rt)
   m = ZZRingElem(modulus(R))
-  e, p = is_power(m)
+  e, p = is_perfect_power_with_data(m)
   easy = is_prime(p)
 
   Zx = polynomial_ring(FlintZZ, cached = false)[1]

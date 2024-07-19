@@ -1275,7 +1275,7 @@ function prefactorization(I::RelNumFieldOrderIdeal)
   for p in pp
     push!(ideals, I + ideal(OK, p))
   end
-  r = is_power(r)[2]
+  r = is_perfect_power_with_data(r)[2]
   if !isone(r)
     push!(ideals, I + ideal(OK, r))
   end
