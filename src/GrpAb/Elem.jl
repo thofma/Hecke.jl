@@ -455,3 +455,31 @@ Base.IteratorSize(::Type{FinGenAbGroup}) = Base.HasLength()
 Base.length(G::FinGenAbGroup) = Int(order(G))
 
 Base.eltype(::Type{FinGenAbGroup}) = FinGenAbGroupElem
+
+################################################################################
+#
+#  Coefficients
+#
+################################################################################
+
+@doc raw"""
+    coefficients(a::FinGenAbGroupElem) -> ZZMatrix
+
+Return the coefficients of `a` in the generators of `parent(a)`.
+"""
+function coefficients(a::FinGenAbGroupElem; copy::Bool=true)
+  if !copy
+    return a.coeff
+  else
+    return deepcopy(a.coeff)
+  end
+end
+
+@doc raw"""
+    coeff(a::FinGenAbGroupElem, n::Int) -> ZZRingElem
+
+Return the coefficient of `a` with respect to the `n`-th generator of `parent(a)`.
+"""
+function coeff(a::FinGenAbGroupElem, n::Int)
+  return a.coeff[1, n]
+end
