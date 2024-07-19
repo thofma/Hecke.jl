@@ -119,7 +119,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
   Ar = base_ring(A)
 
-  b = ArbMatSpace(Ar, 1, r)()
+  b = ArbMatrixSpace(Ar, 1, r)()
 
   conlog = conjugates_arb_log(y, p)
 
@@ -171,7 +171,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
     Ar = base_ring(A)
 
-    b = ArbMatSpace(Ar, 1, r)()
+    b = ArbMatrixSpace(Ar, 1, r)()
 
     conlog = conjugates_arb_log(y, p)
 
