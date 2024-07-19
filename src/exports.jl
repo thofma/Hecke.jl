@@ -780,6 +780,7 @@ export real_places
 export reduce_full
 export reduced_charpoly
 export reduced_discriminant
+export reduced_resultant
 export reduced_tate_pairing
 export reduction_type
 export refine_alpha_bound

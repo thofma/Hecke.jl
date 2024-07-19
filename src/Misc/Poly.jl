@@ -317,12 +317,12 @@ end
 ################################################################################
 
 @doc raw"""
-    rres(f::ZZPolyRingElem, g::ZZPolyRingElem) -> ZZRingElem
+    reduced_resultant(f::ZZPolyRingElem, g::ZZPolyRingElem) -> ZZRingElem
 
 The reduced resultant of $f$ and $g$,
 that is a generator for the ideal $(f, g) \cap Z$.
 """
-function rres(f::ZZPolyRingElem, g::ZZPolyRingElem)
+function reduced_resultant(f::ZZPolyRingElem, g::ZZPolyRingElem)
   return rres_bez(f,g)
 end
 

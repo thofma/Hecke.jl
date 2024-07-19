@@ -1042,14 +1042,14 @@ function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
-    m = data(rres(B, F))
+    m = data(reduced_resultant(B, F))
     return gcd(a, m)
   else
     S1 = residue_ring(FlintZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
-    m1 = data(rres(B1, F1))
+    m1 = data(reduced_resultant(B1, F1))
     return gcd(a, m1)
   end
 end

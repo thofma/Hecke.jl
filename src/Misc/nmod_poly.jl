@@ -757,12 +757,12 @@ end
 # in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
 @doc raw"""
-    rres(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+    reduced_resultant(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
 
 The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
 That is a generator for the $(f, g) \cap Z$
 """
-function rres(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function reduced_resultant(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Nemo.check_parent(f, g)
   return rres_sircana(f, g)
 end
@@ -1383,7 +1383,7 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem,
       if is_unit(coeff(f, 0))
         return true
       else
-        return is_unit(gcd(coeff(f, 0), rres(f, h)))
+        return is_unit(gcd(coeff(f, 0), reduced_resultant(f, h)))
       end
     end
     if is_unit(leading_coefficient(f))
@@ -1393,13 +1393,13 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem,
         if is_unit(g)
           return true
         else
-          return is_unit(gcd(coeff(g, 0), rres(f, h)))
+          return is_unit(gcd(coeff(g, 0), reduced_resultant(f, h)))
         end
       elseif is_constant(h)
         if is_unit(h)
           return true
         else
-          return is_unit(gcd(coeff(h, 0), rres(f, g)))
+          return is_unit(gcd(coeff(h, 0), reduced_resultant(f, g)))
         end
       end
       if degree(g) > degree(h)

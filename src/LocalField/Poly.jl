@@ -514,10 +514,9 @@ end
 #
 ################################################################################
 
-reduced_resultant(f::T, g::T) where T <: PolyRingElem = rres(f, g)
-reduced_discriminant(f::PolyRingElem) = rres(f, derivative(f))
+reduced_discriminant(f::PolyRingElem) = reduced_resultant(f, derivative(f))
 
-function rres(f::Generic.Poly{PadicFieldElem}, g::Generic.Poly{PadicFieldElem})
+function redcued_resultant(f::Generic.Poly{PadicFieldElem}, g::Generic.Poly{PadicFieldElem})
   Kt = parent(f)
   K = base_ring(Kt)
   p = prime(K)
@@ -625,7 +624,7 @@ function _resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{Pad
   return res*res1*res2
 end
 
-function rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
+function reduced_resultant(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   Nemo.check_parent(f, g)
   @assert is_monic(f) || is_monic(g) "One of the two polynomials must be monic!"
   #First, we need to make the polynomials integral
