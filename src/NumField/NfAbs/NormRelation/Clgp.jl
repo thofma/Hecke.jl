@@ -4,7 +4,7 @@ function get_sunits_from_subfield_data!(c::Hecke.ClassGrpCtx, UZK::Hecke.UnitGrp
 
   if Hecke.is_prime_power(index(N)) && compact
     docompact = true
-    _, onlyp = is_power(index(N))
+    _, onlyp = is_perfect_power_with_data(index(N))
   end
 
 

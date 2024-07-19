@@ -61,7 +61,7 @@ function has_preimage_with_preimage(M::FinGenAbGroupHom, a::FinGenAbGroupElem)
   end
 end
 
-@attr AbstractAlgebra.Solve.SolveCtx{ZZRingElem, ZZMatrix, ZZMatrix, ZZMatrix} function _preimage_ctx(M::FinGenAbGroupHom)
+@attr AbstractAlgebra.Solve.SolveCtx{ZZRingElem, AbstractAlgebra.Solve.HermiteFormTrait, ZZMatrix, ZZMatrix, ZZMatrix} function _preimage_ctx(M::FinGenAbGroupHom)
   return solve_init(vcat(M.map, rels(codomain(M))))
 end
 

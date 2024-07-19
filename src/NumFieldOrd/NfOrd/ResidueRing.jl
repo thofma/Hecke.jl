@@ -74,6 +74,8 @@ function simplify!(x::AbsOrdQuoRingElem)
   return x
 end
 
+canonical_unit(x::AbsOrdQuoRingElem) = one(parent(x))
+
 ################################################################################
 #
 #  Hashing
@@ -732,7 +734,7 @@ end
 #
 ################################################################################
 
-function xxgcd(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldOrderQuoRingElem)
+function AbstractAlgebra.gcdxx(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldOrderQuoRingElem)
   Q = parent(x)
   O = base_ring(Q)
 
@@ -762,7 +764,7 @@ function xxgcd(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldOrderQu
 
   a = coordinates(one(O), copy = false)
 
-  V = parent(x).tmp_xxgcd
+  V = parent(x).tmp_gcdxx
 
   V[1, 1] = 1
 

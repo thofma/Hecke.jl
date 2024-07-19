@@ -210,7 +210,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}())
         elseif saturate_units
           @vprintln :NormRelation 3 "  Compact presentation ..."
-          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_power(index(N))[2], decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}())
+          @vtime :NormRelation 4 u = Hecke.compact_presentation(u, is_perfect_power_with_data(index(N))[2], decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}())
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(N, i, x), v) for (x,v) = u.fac))
         #=
@@ -376,7 +376,7 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AbsSimpleNumField, S, n::Int, i
   g = gcd(index(N), n)
   compact = 0
   if !isone(g)
-    compact = is_power(g)[2]
+    compact = is_perfect_power_with_data(g)[2]
   end
   return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
 end

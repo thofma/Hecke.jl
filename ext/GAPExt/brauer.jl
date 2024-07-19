@@ -584,7 +584,7 @@ end
 ###############################################################################
 
 function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::Int)
-  p2 = is_power(length(G))[2]
+  p2 = is_perfect_power_with_data(length(G))[2]
   if p == p2
     return G
   end
@@ -886,7 +886,7 @@ function check_obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, n::
   lp = ramified_primes(F)
   assure_automorphisms(F)
 
-  v, p = is_power(n)
+  v, p = is_perfect_power_with_data(n)
   if all(x -> (isone(mod(x, n)) || x == p), lp)
     return _obstruction_pp_no_extend(F, cocycles, n)
   end
@@ -902,7 +902,7 @@ end
 
 
 function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = is_power(pv)
+  v, p = is_perfect_power_with_data(pv)
   Kc = _ext_cycl(F.generators_of_automorphisms, pv)
   K = F.field
   K1 = Kc.Ka
@@ -999,7 +999,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
 end
 
 function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = is_power(pv)
+  v, p = is_perfect_power_with_data(pv)
   K = F.field
   autsK = automorphism_list(K, copy = false)
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
@@ -1121,7 +1121,7 @@ function issplit_at_p(F::FieldsTower, G::Vector{<: NumFieldHom{AbsSimpleNumField
   lp = prime_decomposition(O, p, cached = true)
   if degree(O) == length(G)
     if !is_coprime(length(G), p)
-      q = is_power(n)[2]
+      q = is_perfect_power_with_data(n)[2]
       Gq = pSylow(G, q)
       return issplit_at_P(O, Gq, Coc, lp[1][1], n, Rx)
     else
@@ -1143,7 +1143,7 @@ function _find_theta(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumFie
   # F is the quotient, mF the map
   K = domain(G[1])
   O = maximal_order(K)
-  p = is_power(e)[2]
+  p = is_perfect_power_with_data(e)[2]
   t = div(e, p)
   gF = gen(F)
   igF = K(mF\gF)
@@ -1193,7 +1193,7 @@ function _find_frob(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
     fmod = Rt(K.pol)
   end
   gK = gen(K)
-  p = is_power(e)[2]
+  p = is_perfect_power_with_data(e)[2]
   t = div(e, p)
   expo = mod(q, e)
   gF = gen(F)
