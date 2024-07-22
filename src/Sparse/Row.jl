@@ -607,7 +607,7 @@ function div(A::SRow{T}, b::Integer) where T
 end
 
 @doc raw"""
-  divexact(A::SRow, b::RingElem; check::Bool = true) -> SRow
+    divexact(A::SRow, b::RingElem; check::Bool = true) -> SRow
 
 Return $C$ such that $a = b \cdot C$. Calls the function `divexact_left(A,b;check)`
 """
@@ -635,7 +635,7 @@ function divexact(A::SRow{T}, b::Integer; check::Bool=true) where T
 end
 
 @doc raw"""
-  divexact_right(A::SRow, b::NCRingElem; check::Bool = true) -> SRow
+    divexact_right(A::SRow, b::NCRingElem; check::Bool = true) -> SRow
 
 Return $C$ such that $A = C \cdot b.
 """
