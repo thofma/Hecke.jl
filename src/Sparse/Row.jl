@@ -79,7 +79,6 @@ end
 Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
 The elements $x_i$ must belong to the ring $R$.
 """
-
 function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
