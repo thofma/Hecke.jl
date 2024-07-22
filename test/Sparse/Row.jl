@@ -174,7 +174,7 @@
   @test dense_row(A, 6) == matrix(FlintZZ, 1, 6, [-5, 0, 2, -10, 1, 0])
   @test sparse_row(dense_row(A, 6)) == A
 
-  SRow{NCRingElem}
+  # SRow{NCRingElem}
   R = matrix_algebra(QQ,2)
   a = R(matrix(QQ,[1 2; 3 4]))
   b = R(matrix(QQ,[3 4; 5 6]))
