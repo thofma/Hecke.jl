@@ -566,7 +566,7 @@ end
 function Base.:+(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   K = parent(a)
-  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
+  c = setprecision(base_ring(a.data), _precision_base(K)) do
     a.data + b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
@@ -575,7 +575,7 @@ end
 function Base.:-(a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   K = parent(a)
-  c = setprecision(base_ring(a.data), ceil(Int, precision(K)/ramification_index(K))) do
+  c = setprecision(base_ring(a.data), _precision_base(K)) do
     a.data - b.data
   end
   return LocalFieldElem{S, T}(parent(a), c, min(precision(a), precision(b)))
@@ -627,12 +627,12 @@ end
 
 function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
-  K = c.parent = a.parent
-  e = ramification_index(parent(a))
+  K = parent(a)
+  e = ramification_index(K)
   c.data = mul!(c.data, a.data, b.data)
-  c.data = mod(c.data, defining_polynomial(parent(a), max(precision(c.data), ceil(Int, precision(K)/e))))
+  c.data = mod(c.data, defining_polynomial(K, max(precision(c.data), _precision_base(K))))
 #  c.precision = compute_precision(a.parent, c.data)
-  e = absolute_ramification_index(parent(a))
+  e = absolute_ramification_index(K)
   if iszero(a)
     va = 0
   else
@@ -644,8 +644,8 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
     vb = Int(e*valuation(b))
   end
   pr = min(precision(a) - va, precision(b) - vb) + va+vb
-  c.precision = min(compute_precision(a.parent, c.data), pr)
-#  c.precision = compute_precision(a.parent, c.data)
+  c.precision = min(compute_precision(K, c.data), pr)
+#  c.precision = compute_precision(K, c.data)
   return c
 end
 
@@ -814,7 +814,6 @@ function log(a::LocalFieldElem)
   end
   return logy + va*logeps
 end
-
 
 function _log_one_units(a::LocalFieldElem)
   K = parent(a)

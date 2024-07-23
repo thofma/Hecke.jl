@@ -13,7 +13,8 @@ abstract type GenericLocalField <: LocalFieldParameter end
   def_poly::Function #Int -> Poly at prec n
   def_poly_cache::Dict{Int, Generic.Poly{S}}
   S::Symbol
-  precision::Int #only used for exact to ring
+  precision_base::Int #only used for exact to ring
+  precision_times_ramification_index::Int #only used for exact to ring
   traces_basis::Dict{Int, Vector{S}}
   ramification_index::Int
   inertia_degree::Int
@@ -26,7 +27,8 @@ abstract type GenericLocalField <: LocalFieldParameter end
     z.def_poly_cache = Dict{Int, Generic.Poly{S}}(precision(f) => f)
     z.traces_basis = Dict{Int, Vector{S}}()
     z.S = s
-    z.precision = precision(f)
+    z.precision_base = precision(f)
+    z.precision_times_ramification_index = -1
     z.ramification_index = -1
     z.inertia_degree = -1
     return z
