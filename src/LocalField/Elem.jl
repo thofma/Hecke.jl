@@ -104,8 +104,9 @@ parent_type(::Type{LocalFieldElem{S, T}}) where {S <: FieldElem, T <: LocalField
 #
 ################################################################################
 
-coeff(a::LocalFieldElem, i::Int) = coeff(a.data, i)
-setcoeff!(a::LocalFieldElem, i::Int) = setcoeff!(a.data, i)
+data(a::LocalFieldElem) = a.data
+coeff(a::LocalFieldElem, i::Int) = coeff(data(a), i)
+setcoeff!(a::LocalFieldElem, i::Int) = setcoeff!(data(a), i)
 
 ################################################################################
 #
@@ -244,19 +245,19 @@ end
 
 function zero(K::LocalField; precision=precision(K))
   a = zero(parent(defining_polynomial(K)))
-  return setprecision(K(a), precision)
+  return setprecision!(K(a), precision)
 end
 
 (K::LocalField)(; precision=precision(K)) = zero(K, precision = precision)
 
 function one(K::LocalField; precision=precision(K))
   a = one(parent(defining_polynomial(K)))
-  return setprecision(K(a), precision)
+  return setprecision!(K(a), precision)
 end
 
 function zero!(a::LocalFieldElem; precision=precision(parent(a)))
   zero!(a.data)
-  a.data = setprecision(a.data, precision)
+  a.data = setprecision!(a.data, precision)
   return a
 end
 
@@ -643,7 +644,7 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   else
     vb = Int(e*valuation(b))
   end
-  pr = min(precision(a) - va, precision(b) - vb) + va+vb
+  pr = min(precision(a) + vb, precision(b) + va)
   c.precision = min(compute_precision(K, c.data), pr)
 #  c.precision = compute_precision(K, c.data)
   return c
@@ -712,17 +713,15 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   if n < 0 && iszero(a)
     error("Element is not invertible")
   end
-  e = absolute_ramification_index(parent(a))
-  v = valuation(n, prime(parent(a)))
+  v = valuation(n, prime(K))
+  prec = precision(data(a)) + v
   if v > 0
-    b = setprecision(base_ring(a.data), precision(a.data)+v) do
-            setprecision(a.data, precision(a.data)+v)
-        end
+    b = setprecision(data(a), prec)
   else
-    b = a.data
+    b = data(a)
   end
-  b = setprecision(base_ring(b), precision(b)) do
-    powermod(b, n, defining_polynomial(K, precision(b)))
+  b = with_precision(base_ring(b), prec) do
+    powermod(b, n, defining_polynomial(K, prec))
   end
   return K(b)
 end
@@ -758,11 +757,9 @@ function exp(a::LocalFieldElem)
   a = setprecision(a, N)
   oN = precision(parent(a))
   setprecision!(parent(a), max(oN, N))
-  res = one(K)
-  res = setprecision(res, N)
+  res = one(K, precision = N)
   el = one(K)
-  res = res
-  den = setprecision!(one(Qp), N)
+  den = one(Qp, precision = N)
   #precision is suboptimal, its truncated badly, thus losing it
   max_i = QQFieldElem(N)//(valuation(a) - QQFieldElem(1, p-1)) + 1
   bound = Int(floor(ZZRingElem, max_i))
