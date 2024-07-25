@@ -347,7 +347,46 @@ function valuation(a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFie
   return valuation(norm(a))//degree(parent(a))
 end
 
+function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldElem
+  return QQ(_valuation_integral(a), absolute_ramification_index(base_field(parent(a))))
+end
+
 function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldElem
+  return QQ(_valuation_integral(a), absolute_ramification_index(parent(a)))
+end
+
+_valuation_integral(a::Union{PadicFieldElem, QadicFieldElem}) = valuation(a)
+
+function _valuation_integral(a::LocalFieldElem)
+  return numerator(absolute_ramification_index(parent(a))*valuation(a))
+end
+
+function _valuation_integral(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldElem
+  if iszero(a)
+    error("Input element is zero")
+  end
+  K = parent(a)
+  i = 0
+  c = coeff(a, i)
+  while iszero(c)
+    i += 1
+    c = coeff(a, i)
+  end
+  v = _valuation_integral(c)
+  for j in i + 1:degree(K)
+    c = coeff(a, j)
+    if iszero(c)
+      continue
+    end
+    vc = _valuation_integral(c)
+    if vc < v
+      v = vc
+    end
+  end
+  return v
+end
+
+function _valuation_integral(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldElem
   if iszero(a)
     error("Input element is zero")
   end
@@ -360,43 +399,15 @@ function valuation(a::LocalFieldElem{S, EisensteinLocalField}) where S <: FieldE
     i > degree(parent(a)) && error("interesting element")
     c = coeff(a, i)
   end
-  vc = valuation(c)
-  v = vc + QQFieldElem(i, e)
-  for j = i+1:degree(K)
+  v = e*_valuation_integral(c) + i
+  for j = i + 1:degree(K)
     c = coeff(a, j)
     if iszero(c)
       continue
     end
-    vc = valuation(c)
-    vnew = vc + QQFieldElem(j, e)
+    vnew = e*_valuation_integral(c) + j
     if vnew < v
       v = vnew
-    end
-  end
-  return v
-end
-
-function valuation(a::LocalFieldElem{S, UnramifiedLocalField}) where S <: FieldElem
-  if iszero(a)
-    error("Input element is zero")
-  end
-  K = parent(a)
-  e = absolute_ramification_index(K)
-  i = 0
-  c = coeff(a, i)
-  while iszero(c)
-    i += 1
-    c = coeff(a, i)
-  end
-  v = valuation(c)
-  for j = i+1:degree(K)
-    c = coeff(a, j)
-    if iszero(c)
-      continue
-    end
-    vc = valuation(c)
-    if vc < v
-      v = vc
     end
   end
   return v
@@ -633,17 +644,8 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   c.data = mul!(c.data, a.data, b.data)
   c.data = mod(c.data, defining_polynomial(K, max(precision(c.data), _precision_base(K))))
 #  c.precision = compute_precision(a.parent, c.data)
-  e = absolute_ramification_index(K)
-  if iszero(a)
-    va = 0
-  else
-    va = Int(e*valuation(a))
-  end
-  if iszero(b)
-    vb = 0
-  else
-    vb = Int(e*valuation(b))
-  end
+  va = (iszero(a) ? 0 : Int(_valuation_integral(a)))
+  vb = (iszero(b) ? 0 : Int(_valuation_integral(b)))
   pr = min(precision(a) + vb, precision(b) + va)
   c.precision = min(compute_precision(K, c.data), pr)
 #  c.precision = compute_precision(K, c.data)
@@ -686,8 +688,7 @@ end
 
 function inv(a::LocalFieldElem)
   K = parent(a)
-  e =  absolute_ramification_index(parent(a))
-  v =  Int(e*valuation(a))
+  v = Int(_valuation_integral(a))
   if v == 0
     p = invmod(a.data, defining_polynomial(K, precision(a.data)))
     return K(p)
@@ -720,7 +721,7 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   else
     b = data(a)
   end
-  b = with_precision(base_ring(b), prec) do
+  b = setprecision(base_ring(b), prec) do
     powermod(b, n, defining_polynomial(K, prec))
   end
   return K(b)
@@ -826,7 +827,7 @@ function _log_one_units(a::LocalFieldElem)
   el = deepcopy(a)
   d = ZZRingElem(1)
   e = absolute_ramification_index(K)
-  v = numerator(e*valuation(a-1))
+  v = _valuation_integral(a - 1)
   N = precision(el)
   num = a
   den = ZZRingElem(1)
@@ -842,7 +843,7 @@ function _log_one_units(a::LocalFieldElem)
       den = d
       break
     end
-    attempt = clog(d, 2) + div(N, numerator(e*valuation(el-1)))
+    attempt = clog(d, 2) + div(N, _valuation_integral(el - 1))
     if attempt > candidate
       break
     else
@@ -863,7 +864,7 @@ function divexact(a::LocalFieldElem, b::Union{Integer, ZZRingElem}; check::Bool=
   iszero(a) && return setprecision(a, precision(a) - v*e)
   Qp = prime_field(K)
   old = precision(Qp)
-  setprecision!(Qp, e*precision(a)+round(Int, e*valuation(a)) + v)
+  setprecision!(Qp, e*precision(a)+ Int(_valuation_integral(a)) + v)
   bb = inv(Qp(b))
   setprecision!(Qp, old)
   return a*bb
@@ -1045,7 +1046,7 @@ function expansion(x::NonArchLocalFieldElem, pi = uniformizer(parent(x)))
   K = parent(x)
   F, KtoF = residue_field(K)
   Rt, t = laurent_series_ring(F, prec, :x)
-  v = ZZ(valuation(x) * absolute_ramification_index(K))
+  v = _valuation_integral(x)
   y = divexact(x, pi^v)
   coeffs = elem_type(F)[]
   res = zero(Rt)
