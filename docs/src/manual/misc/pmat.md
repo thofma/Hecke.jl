@@ -1,4 +1,4 @@
-# [Introduction](@id PMatLink)
+# [Pseudo-matrices](@id PMatLink)
 
 ```@meta
 CurrentModule = Hecke
