@@ -17,6 +17,7 @@ abstract type GenericLocalField <: LocalFieldParameter end
   precision_times_ramification_index::Int #only used for exact to ring
   traces_basis::Dict{Int, Vector{S}}
   ramification_index::Int
+  absolute_ramification_index::Int
   inertia_degree::Int
   uniformizer::Generic.Poly{S}
   residue_field_map
@@ -30,6 +31,7 @@ abstract type GenericLocalField <: LocalFieldParameter end
     z.precision_base = precision(f)
     z.precision_times_ramification_index = -1
     z.ramification_index = -1
+    z.absolute_ramification_index = -1
     z.inertia_degree = -1
     return z
   end

@@ -222,7 +222,10 @@ absolute_ramification_index(K::PadicField) = 1
 absolute_ramification_index(K::QadicField) = 1
 
 function absolute_ramification_index(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  return ramification_index(K)*absolute_ramification_index(base_field(K))
+  if K.absolute_ramification_index < 0
+    K.absolute_ramification_index = ramification_index(K)*absolute_ramification_index(base_field(K))
+  end
+  return K.absolute_ramification_index
 end
 
 function ramification_index(L::LocalField, K::Union{PadicField, QadicField, LocalField})
