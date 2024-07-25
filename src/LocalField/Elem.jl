@@ -35,21 +35,12 @@ end
 #
 ################################################################################
 
-function _generator_valuation(K::LocalField{S, T}) where {S <: Union{PadicFieldElem, QadicFieldElem}, T <: LocalFieldParameter}
-  f = defining_polynomial(K)
-#  @show K, f
-  return QQFieldElem(valuation(coeff(f, 0)), degree(f))
-end
-
-function _generator_valuation(K::LocalField)
-  f = defining_polynomial(K)
-  return divexact(valuation(coeff(f, 0)), degree(K))
-end
-
 function compute_precision(K::LocalField, a::Generic.Poly)
   prec = precision(coeff(a, 0))*ramification_index(K)
   degree(a) == 0 && return prec
-  v = Int(numerator(_generator_valuation(K)*ramification_index(K)))
+  f = defining_polynomial(K)
+  v = Int(numerator(valuation(coeff(f, 0))))
+  # Note: v == Int(numerator(QQ(valuation(coeff(f, 0)), degree(K))*ramification_index(K)))
   vi = 0
   for i = 1:degree(a)
     vi += v
@@ -641,14 +632,12 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   check_parent(a, b)
   K = parent(a)
   e = ramification_index(K)
-  c.data = mul!(c.data, a.data, b.data)
-  c.data = mod(c.data, defining_polynomial(K, max(precision(c.data), _precision_base(K))))
-#  c.precision = compute_precision(a.parent, c.data)
+  c.data = mul!(c.data, data(a), data(b))
+  c.data = mod(c.data, defining_polynomial(K, max(precision(data(c)), _precision_base(K))))
   va = (iszero(a) ? 0 : Int(_valuation_integral(a)))
   vb = (iszero(b) ? 0 : Int(_valuation_integral(b)))
   pr = min(precision(a) + vb, precision(b) + va)
-  c.precision = min(compute_precision(K, c.data), pr)
-#  c.precision = compute_precision(K, c.data)
+  c.precision = min(compute_precision(K, data(c)), pr)
   return c
 end
 
