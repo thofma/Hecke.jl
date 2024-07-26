@@ -222,8 +222,12 @@ function iszero(a::LocalFieldElem{S, EisensteinLocalField}) where S
   return true
 end
 
-isone(a::LocalFieldElem) = isone(a.data)
-isone(a::LocalFieldElem{S, EisensteinLocalField}) where S = iszero(a-1)
+isone(a::LocalFieldElem) = isone(data(a))
+function isone(a::LocalFieldElem{S, EisensteinLocalField}) where S
+  a1 = a - one(parent(a), precision = precision(a))
+  return iszero(a1)
+end
+
 is_unit(a::LocalFieldElem) = !iszero(a)
 
 function O(K::LocalField, prec::T) where T <: IntegerUnion
@@ -805,7 +809,7 @@ end
 function _log_one_units(a::LocalFieldElem)
   K = parent(a)
   if isone(a)
-    return setprecision!(zero(K), precision(a))
+    return zero(K, precision = precision(a))
   end
   #TODO: computing log(a^p^l)//p^l might accelerate the
   #computation. Find the optimal l.
@@ -815,30 +819,30 @@ function _log_one_units(a::LocalFieldElem)
   p = prime(K)
   el = deepcopy(a)
   d = ZZRingElem(1)
-  e = absolute_ramification_index(K)
-  v = _valuation_integral(a - 1)
+  v = _valuation_integral(a - one(K, precision = precision(a)))
   N = precision(el)
   num = a
   den = ZZRingElem(1)
   candidate = div(N, v)
-  #XXX: currently broke!
-  # the precision is not increasing...
-  while true
+  Nv = candidate
+  while Nv != 1
     d *= p
     el = el^p
     N = precision(el)
-    if isone(el) || iszero(el - 1)
+    el1 = el - one(K, precision = N)
+
+    if iszero(el1)
       num = el
       den = d
       break
     end
-    attempt = clog(d, 2) + div(N, _valuation_integral(el - 1))
-    if attempt > candidate
-      break
-    else
-      num = el
-      den = d
-    end
+
+    Nv = div(N, _valuation_integral(el1))
+    attempt = clog(d, 2) + Nv
+    attempt > candidate && break
+
+    num = el
+    den = d
   end
   r = _log_one_units_fast(num)
   r = divexact(r, den)
