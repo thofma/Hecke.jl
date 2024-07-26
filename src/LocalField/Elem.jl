@@ -735,7 +735,7 @@ function _underlying_base_field(K::T) where T <: Union{PadicField, QadicField}
 end
 
 @doc raw"""
-    log(a::LocalFieldElem) -> LocalFieldElem
+    exp(a::LocalFieldElem) -> LocalFieldElem
 
 Computes the $p$-adic exponential of $a$.
 """
