@@ -790,16 +790,17 @@ function log(a::LocalFieldElem)
   e = absolute_ramification_index(K)
   f = absolute_inertia_degree(K)
   p = prime(K)
+  pf1 = p^f - 1
   pi = uniformizer(K)
   y = a*pi^(-Int(numerator(va*e)))
   #Now, y has valuation 0
-  z = y^(p^f-1)
+  z = y^pf1
   #Now, z is a 1-unit
-  logy = _log_one_units(z)//(p^f-1)
+  logy = _log_one_units(z)//pf1
   eps = ((pi^e)//p)
   #Same trick to make eps is now a 1-unit.
   if !isone(eps) && iszero(valuation(eps-1))
-    logeps = divexact(_log_one_units(eps^(p^f-1)), p^f-1)
+    logeps = divexact(_log_one_units(eps^pf1), pf1)
   else
     logeps = _log_one_units(eps)
   end
