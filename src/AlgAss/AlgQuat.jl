@@ -363,9 +363,9 @@ function unit_group_modulo_scalars(O::AlgAssAbsOrd)
   return enumerate(O, 1)
 end
 
-function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd})
+function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd}; GRH::Bool = true)
   gens1 = unit_group_modulo_scalars(O)
-  u, mu = unit_group(base_ring(O))
+  u, mu = unit_group(base_ring(O); GRH = GRH)
   A = algebra(O)
   gens2 = [ O(A(elem_in_nf(mu(u[i])))) for i in 1:ngens(u) ]
   return append!(gens1, gens2)

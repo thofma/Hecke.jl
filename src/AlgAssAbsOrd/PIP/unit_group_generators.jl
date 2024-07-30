@@ -11,7 +11,7 @@ function _unit_group_generators(O)
   return Y
 end
 
-function _unit_group_generators_maximal(M)
+function _unit_group_generators_maximal(M; GRH::Bool = true)
   res = decompose(algebra(M))
   Mbas = basis(M)
   idems = [mB(one(B)) for (B, mB) in res]
@@ -19,7 +19,7 @@ function _unit_group_generators_maximal(M)
   for i in 1:length(res)
     B, mB = res[i]
     MinB = Order(B, [(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
-    UB = _unit_group_generators_maximal_simple(MinB)
+    UB = _unit_group_generators_maximal_simple(MinB; GRH = GRH)
     e = sum(idems[j] for j in 1:length(res) if j != i; init = zero(algebra(M)))
     @assert isone(e + mB(one(B)))
     for u in UB
@@ -31,19 +31,21 @@ function _unit_group_generators_maximal(M)
   return gens
 end
 
-function _unit_group_generators_maximal_simple(M)
+function _unit_group_generators_maximal_simple(M; GRH::Bool = true)
   A = algebra(M)
   if dim(A) == 0
     return [zero(A)]
   end
   ZA, ZAtoA = _as_algebra_over_center(A)
   if dim(ZA) == 1
+    !GRH && error("Not implemented (yet)")
     # this is a field
     K, AtoK = _as_field_with_isomorphism(A)
     OK = maximal_order(K)
     u, mu = unit_group(OK)
     return [preimage(AtoK, elem_in_nf(mu(u[i]))) for i in 1:ngens(u)]
   elseif isdefined(A, :isomorphic_full_matrix_algebra)
+    !GRH && error("Not implemented (yet)")
     B, AtoB = A.isomorphic_full_matrix_algebra
     OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     N, S = nice_order(OB)
@@ -58,7 +60,7 @@ function _unit_group_generators_maximal_simple(M)
   elseif dim(ZA) == 4 && !is_split(ZA) && !isdefined(A, :isomorphic_full_matrix_algebra)
     Q, QtoZA = is_quaternion_algebra(ZA)
     MQ = _get_order_from_gens(Q, [QtoZA\(ZAtoA\(elem_in_algebra(b))) for b in absolute_basis(M)])
-    _gens =  _unit_group_generators_quaternion(MQ)
+    _gens =  _unit_group_generators_quaternion(MQ; GRH = GRH)
     gens_in_M = [ ZAtoA(QtoZA(elem_in_algebra(u))) for u in _gens]
     @assert all(b in M for b in gens_in_M)
     return gens_in_M
