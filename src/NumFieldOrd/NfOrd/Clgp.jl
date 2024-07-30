@@ -345,11 +345,32 @@ function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true
 
   if !GRH
     class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
+    sat = ZZRingElem[]
     for (p, _) in factor(c.h)
+      push!(sat, p)
       while saturate!(c, U, Int(p), 3.5)
       end
     end
     c.GRH = false
+
+    if unit_group_rank(O) > 0
+      # need to make sure that the unit group is correct
+      tent_reg = tentative_regulator(U)
+      low_reg = lower_regulator_bound(Hecke.nf(O))
+      fl, regindexbound = unique_integer(floor(tent_reg/low_reg))
+      @vprintln :ClassGroupProof "Saturating unit group up to $(regindexbound))"
+      for p in PrimesSet(1, Int(regindexbound))
+        if p in sat
+          continue
+        end
+        while saturate!(c, U, Int(p), 3.5)
+        end
+      end
+    end
+  end
+
+  if degree(O) == 1
+    @assert c.h == 1
   end
 
   return c, U, _validate_class_unit_group(c, U)[1]
@@ -470,7 +491,7 @@ All elements will be returned in factored form.
 function unit_group_fac_elem(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
-    UUU, mUUU = unit_group_fac_elem(OK)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+    UUU, mUUU = unit_group_fac_elem(OK; GRH = GRH)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
     return _unit_group_non_maximal(O, OK, mUUU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
 

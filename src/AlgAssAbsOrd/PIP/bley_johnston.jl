@@ -5,7 +5,7 @@
 ################################################################################
 
 # Compute a set S, such that pi(S) = im(pi), where pi : M^* -> (M/F)^*.
-function _unit_reps(M, F)
+function _unit_reps(M, F; GRH::Bool = true)
   D = get_attribute!(M, :unit_reps) do
     return Dict{typeof(F), Vector{Vector{elem_type(algebra(M))}}}()
   end::Dict{typeof(F), Vector{Vector{elem_type(algebra(M))}}}
@@ -14,20 +14,20 @@ function _unit_reps(M, F)
     @vprintln :PIP "Unit representatives cached for this conductor ideal"
     return D[F]
   else
-    u = __unit_reps(M, F)
+    u = __unit_reps(M, F; GRH = GRH)
     D[F] = u
     return u
   end
 end
 
-function __unit_reps_simple(M, F)
+function __unit_reps_simple(M, F; GRH::Bool = true)
   B = algebra(M)
   @vprintln :PIP _describe(B)
   @vprintln :PIP "Computing generators of the maximal order"
   if dim(B) == 0
     return [zero(B)]
   end
-  UB = _unit_group_generators_maximal_simple(M)
+  UB = _unit_group_generators_maximal_simple(M; GRH = GRH)
   Q, MtoQ = quo(M, F)
   for u in UB
     @assert u in M && inv(u) in M
@@ -137,7 +137,7 @@ function __unit_reps_estimates(M, F)
   #return unit_reps
 end
 
-function __unit_reps(M, F)
+function __unit_reps(M, F; GRH::Bool = true)
   #_assert_has_refined_wedderburn_decomposition(algebra(M))
   A = algebra(M)
   dec = decompose(algebra(M))
@@ -147,7 +147,7 @@ function __unit_reps(M, F)
     FinB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(b)) for b in absolute_basis(F)])
     @assert Hecke._test_ideal_sidedness(FinB, MinB, :right)
     FinB.order = MinB
-    _unit_reps =  __unit_reps_simple(MinB, FinB)
+    _unit_reps =  __unit_reps_simple(MinB, FinB; GRH = GRH)
     @vprintln :PIP "Mapping back once more"
     to_return = Vector{elem_type(A)}(undef, length(_unit_reps))
     Threads.@threads for i in 1:length(_unit_reps)
@@ -158,7 +158,7 @@ function __unit_reps(M, F)
   return unit_reps
 end
 
-function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local_freeness::Bool = false)
+function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local_freeness::Bool = false, GRH::Bool = true)
   # local_freeness needs to be accepted since the generic interface uses it
   A = algebra(O)
   if _alpha === nothing
@@ -241,7 +241,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
     #@show FinB
   end
 
-  unit_reps = _unit_reps(M, F)
+  unit_reps = _unit_reps(M, F; GRH = GRH)
 
   decc = copy(dec)
   p = sortperm(unit_reps, by = x -> length(x))
