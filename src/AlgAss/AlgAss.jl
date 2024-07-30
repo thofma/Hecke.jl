@@ -190,7 +190,7 @@ end
 # Does anyone actually use this?
 function StructureConstantAlgebra(R::Ring, d::Int, arr::Vector{T}) where {T}
   if d == 0
-    return _zero_algebra(R)
+    return zero_algebra(R)
   end
   mult_table = Array{T, 3}(undef, d, d, d)
   n = d^2
@@ -302,7 +302,7 @@ function StructureConstantAlgebra(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::U
   Fp = GF(p, cached = false)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -430,7 +430,7 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
   Fp = GF(p, cached = false)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -574,7 +574,7 @@ function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd
   r = length(basis_elts)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -729,7 +729,7 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
   r = length(basis_elts)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -995,7 +995,7 @@ function subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T,
   r = size(mult_table, 1)
 
   if r == 0
-    eA = _zero_algebra(R)
+    eA = zero_algebra(R)
     return eA, hom(eA, A, zero_matrix(R, 0, n))
   end
 
