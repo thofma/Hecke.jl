@@ -397,7 +397,7 @@ mutable struct RootCtxSingle{T}
 
   function RootCtxSingle(f::PolyRingElem{S}, K::fqPolyRepField) where {S <: SeriesElem}
     #not used I think
-    RR,  = power_series_ring(K, max_precision(R), string(var(R)), cached = false) #can't get the model
+    RR,  = power_series_ring(K, max_precision(R), var(R), cached = false) #can't get the model
     return RootCtxSingle(f, RR)
   end
 

@@ -737,7 +737,7 @@ end
 function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   d = Dict{AcbPolyRingElem, Int}()
-  Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
   for (k,v) = g.fac
     for r = roots(R, k)
       d[t-r] = v
@@ -748,7 +748,7 @@ end
 
 function factor(R::ComplexField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
   g = factor(f)
-  Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
   d = Dict{typeof(t), Int}()
   for (k,v) = g.fac
     for r = roots(R, k)
@@ -772,7 +772,7 @@ end
 
 function factor(R::Union{RealField, ArbField}, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
   g = factor(f)
-  Rx, x = polynomial_ring(R, String(var(parent(f))), cached = false)
+  Rx, x = polynomial_ring(R, var(parent(f)), cached = false)
   d = Dict{typeof(x), Int}()
   if isa(R, RealField)
     C = ComplexField()
