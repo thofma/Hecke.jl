@@ -39,8 +39,8 @@ function compute_precision(K::LocalField, a::Generic.Poly)
   prec = precision(coeff(a, 0))*ramification_index(K)
   degree(a) == 0 && return prec
   f = defining_polynomial(K)
-  v = Int(numerator(valuation(coeff(f, 0))))
-  # Note: v == Int(numerator(QQ(valuation(coeff(f, 0)), degree(K))*ramification_index(K)))
+  v = Int(numerator(valuation(coeff(f, 0))//degree(K) * ramification_index(K)))
+  # TODO: Presumably, v is supposed to be the valuation of gen(K). Is this correct?
   vi = 0
   for i = 1:degree(a)
     vi += v

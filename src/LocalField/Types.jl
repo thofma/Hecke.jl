@@ -13,8 +13,10 @@ abstract type GenericLocalField <: LocalFieldParameter end
   def_poly::Function #Int -> Poly at prec n
   def_poly_cache::Dict{Int, Generic.Poly{S}}
   S::Symbol
-  precision_base::Int #only used for exact to ring
-  precision_times_ramification_index::Int #only used for exact to ring
+  precision_base::Int # precision of the defining polynomial
+  precision_times_ramification_index::Int # precision_base * ramification index,
+                                          # this is the precision that is used
+                                          # for "exact input"
   traces_basis::Dict{Int, Vector{S}}
   ramification_index::Int
   absolute_ramification_index::Int
