@@ -461,7 +461,7 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     coeffs_eisenstein[e+1] = one(Qp)
     pol_gen = Qpx(coeffs_eisenstein)
     Kp.def_poly_cache[new_prec] = pol_gen
-    Kp.precision = new_prec
+    setprecision!(Kp, new_prec * ramification_index(Kp))
     #Should I update the traces too?
     img_prim_elem = Vector{PadicFieldElem}(undef, e)
     for i = 1:e
