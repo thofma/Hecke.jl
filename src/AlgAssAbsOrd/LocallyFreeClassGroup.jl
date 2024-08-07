@@ -233,7 +233,22 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
   end
   # Make the generators coprime to the other ideals
   if length(moduli) != 0 # maybe O is maximal
-    k1 = make_coprime(elements_for_crt, moduli)
+    # we compute the idempotents using the ideals in the center
+    # and map them to the order
+    # this is faster than computing the idempotents in the order itself
+    if length(moduli) >= 2
+      idemZ = _idempotents_for_make_coprime([q * OinZ for (q,_) in prim])
+      idems = [O(ZtoA(elem_in_algebra.(x))) for x in idemZ]
+      for i in 1:length(idems)
+        u = idems[i]
+        @assert u in moduli[i]
+        @assert all(1 - u in moduli[j] for j in 1:length(moduli) if j != i)
+      end
+    else
+      # only one moduli, so no idempotent
+      idems = elem_type(O)[]
+    end
+    k1 = make_coprime(elements_for_crt, moduli, idems)
   else
     k1 = elem_type(O)[]
   end
