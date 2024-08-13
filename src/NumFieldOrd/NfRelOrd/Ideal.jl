@@ -169,7 +169,7 @@ function defines_ideal(O::RelNumFieldOrder{T, S}, M::PMat{T, S}) where {T, S}
   K = base_field(nf(O))
   coeffs = basis_pmatrix(O, copy = false).coeffs
   I = pseudo_matrix(identity_matrix(K, degree(O)), deepcopy(coeffs))
-  return _spans_subset_of_pseudohnf(M, I, :lowerleft)
+  return _spans_subset_of_pseudohnf(M, I, shape = :lowerleft)
 end
 
 @doc raw"""

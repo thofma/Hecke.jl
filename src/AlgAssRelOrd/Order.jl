@@ -489,7 +489,7 @@ function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
     OO = A.maximal_order::AlgAssRelOrd{S, T, U}
-    if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false), :lowerleft)
+    if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false); shape = :lowerleft)
       return OO
     end
   end

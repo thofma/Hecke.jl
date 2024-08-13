@@ -151,7 +151,7 @@ function _intersect_modules(a::PMat, b::PMat, full_rank = true)
 end
 
 function _modules_equality(a::PMat, b::PMat)
-  _spans_subset_of_pseudohnf(a, b, :lowerleft) && _spans_subset_of_pseudohnf(b, a, :lowerleft)
+  _spans_subset_of_pseudohnf(a, b; shape = :lowerleft) && _spans_subset_of_pseudohnf(b, a; shape = :lowerleft)
 end
 
 function _module_scale_ideal(a::AbsNumFieldOrderIdeal, b::PMat)
@@ -266,7 +266,7 @@ function _local_basis_matrix_prime_below_submodule(a::PMat, p)
   end
   if false
     _z = pseudo_matrix(z, [one(nf(R)) * R for i in 1:nrows(z)])
-    @assert _spans_subset_of_pseudohnf(_z, a, :lowerleft)
+    @assert _spans_subset_of_pseudohnf(_z, a; shape = :lowerleft)
     @assert valuation(det(_z), D[1][1]) == valuation(det(a), D[1][1])
   end
   return z
