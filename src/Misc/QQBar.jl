@@ -53,14 +53,23 @@ end
 function factor(f::PolyRingElem{QQBarFieldElem})
   # the roots of f in Qbar are contained in the roots of norm(f) in Qbar
   @req !is_zero(f) "Polynomial must be non-zero"
+  rts = roots(f)
+  facts = [gen(parent(f)) - r for r in rts]
+  fac = Fac(parent(f)(leading_coefficient(f)), Dict(facts[i] => valuation(f, facts[i]) for i in 1:length(facts)))
+  @assert degree(f) == sum(e for (_,e) in fac)
+  return fac
+end
+
+function roots(f::PolyRingElem{QQBarFieldElem})
+  # the roots of f in Qbar are contained in the roots of norm(f) in Qbar
+  @req !is_zero(f) "Polynomial must be non-zero"
   QQbar = base_ring(f)
   cfs, pe = _map_to_common_number_field(collect(coefficients(f)))
   K = parent(cfs[1])
   Kt, t = polynomial_ring(K; cached = false)
   fK = Kt(cfs)
-  rts = roots(QQbar, norm(fK))
-  facts = [gen(parent(f)) - r for r in rts if is_zero(f(r))]
-  fac = Fac(parent(f)(leading_coefficient(f)), Dict(facts[i] => valuation(f, facts[i]) for i in 1:length(facts)))
-  @assert degree(f) == sum(e for (_,e) in fac)
-  return fac
+  rts = roots(QQbar, norm(fK)::dense_poly_type(QQ))
+  rts = unique!(QQBarFieldElem[r for r in rts if is_zero(f(r))])
+  return rts
 end
+
