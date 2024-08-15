@@ -6,4 +6,5 @@
   include("LocalField/Completions.jl")
   include("LocalField/Ring.jl")
   include("LocalField/ResidueRing.jl")
+  include("LocalField/PowerSeries.jl")
 end
