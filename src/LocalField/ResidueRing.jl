@@ -16,7 +16,7 @@ is_exact_type(::Type{<: LocalFieldValuationRingResidueRingElem}) = true
 ################################################################################
 
 _valuation_ring(R::LocalFieldValuationRingResidueRing) = R.R
-_field(R::LocalFieldValuationRingResidueRing) = _valuation_ring(R).Q
+_field(R::LocalFieldValuationRingResidueRing) = _field(_valuation_ring(R))
 _exponent(R::LocalFieldValuationRingResidueRing) = R.k
 
 base_ring(R::LocalFieldValuationRingResidueRing) = Union{}
@@ -24,7 +24,7 @@ base_ring_type(::Type{<: LocalFieldValuationRingResidueRing}) = typeof(Union{})
 
 parent(a::LocalFieldValuationRingResidueRingElem) = a.parent
 data(a::LocalFieldValuationRingResidueRingElem) = a.a
-lift(a::LocalFieldValuationRingResidueRingElem) = _valuation_ring(parent(a))(data(a))
+lift(a::LocalFieldValuationRingResidueRingElem) = data(a)
 
 ################################################################################
 #
@@ -32,7 +32,13 @@ lift(a::LocalFieldValuationRingResidueRingElem) = _valuation_ring(parent(a))(dat
 #
 ################################################################################
 
-characteristic(R::LocalFieldValuationRingResidueRing) = prime(_field(R))^_exponent(R)
+function characteristic(R::LocalFieldValuationRingResidueRing{<:NonArchLocalFieldValuationRing})
+  return prime(_field(R))^_exponent(R)
+end
+
+function characteristic(R::LocalFieldValuationRingResidueRing{<:LaurentSeriesFieldValuationRing})
+  return characteristic(_field(R))
+end
 
 zero(R::LocalFieldValuationRingResidueRing) = R()
 one(R::LocalFieldValuationRingResidueRing) = R(one(_valuation_ring(R), precision = _exponent(R)), copy = false)
@@ -53,6 +59,15 @@ function canonical_unit(a::LocalFieldValuationRingResidueRingElem)
   return one(parent(a))
 end
 
+function uniformizer(R::LocalFieldValuationRingResidueRing, k::Int = 1)
+  @req k >= 0 "Not an element of the valuation ring"
+  if k >= _exponent(R)
+    return zero(R)
+  end
+  p = uniformizer(_field(R), k, prec = _exponent(R))
+  return R(p, check = false, copy = false)
+end
+
 ################################################################################
 #
 #  Parent object overloading
@@ -70,16 +85,10 @@ function (R::LocalFieldValuationRingResidueRing)(a::LocalFieldValuationRingResid
   return a
 end
 
-function (R::LocalFieldValuationRingResidueRing)(a::LocalFieldValuationRingElem; copy::Bool = true)
+function (R::LocalFieldValuationRingResidueRing)(a::NonArchLocalFieldValuationRingElem; copy::Bool = true, check::Bool = true)
   @req parent(a) === _valuation_ring(R) "Rings don't match"
-  return R(a.x, copy = copy)
-end
-
-function (R::LocalFieldValuationRingResidueRing)(a::NonArchLocalFieldElem; copy::Bool = true, check::Bool = true)
-  @req parent(a) === _field(R) "Fields don't match"
   if check
     @req precision(a) >= _exponent(R) "Insufficient precision"
-    @req is_zero(a) || valuation(a) >= 0 "Not an element of the valuation ring"
   end
   # Make sure that we have unique representatives
   if copy
@@ -88,6 +97,11 @@ function (R::LocalFieldValuationRingResidueRing)(a::NonArchLocalFieldElem; copy:
     b = setprecision!(a, _exponent(R))
   end
   return LocalFieldValuationRingResidueRingElem(b, R)
+end
+
+function (R::LocalFieldValuationRingResidueRing)(a::NonArchLocalFieldElemTypes; copy::Bool = true, check::Bool = true)
+  @req parent(a) === _field(R) "Fields don't match"
+  return R(_valuation_ring(R)(a), copy = copy, check = check)
 end
 
 ################################################################################
@@ -100,14 +114,14 @@ function Base.show(io::IO, R::LocalFieldValuationRingResidueRing)
   @show_name(io, R)
   @show_special(io, R)
 
-  print(io, _valuation_ring(R), " modulo ", uniformizer(_field(R)), "^", _exponent(R))
+  print(io, _valuation_ring(R), " modulo ", uniformizer(_valuation_ring(R)), "^", _exponent(R))
 end
 
-function AbstractAlgebra.expressify(x::LocalFieldValuationRingResidueRingElem{PadicField}; context = nothing)
+function AbstractAlgebra.expressify(x::LocalFieldValuationRingResidueRingElem{T}; context = nothing) where {T <: LocalFieldValuationRing{PadicField}}
   p = BigInt(prime(_field(parent(x))))
   sum = Expr(:call, :+)
   v = valuation(data(x))
-  u = BigInt(lift(ZZ, data(x)))
+  u = BigInt(lift(ZZ, data(data(x))))
   if v > 0
     u = div(u, p^v)
   end
@@ -119,8 +133,8 @@ function AbstractAlgebra.expressify(x::LocalFieldValuationRingResidueRingElem{Pa
   return sum
 end
 
-function AbstractAlgebra.expressify(a::LocalFieldValuationRingResidueRingElem{QadicField}, x = var(_field(parent(a))); context = nothing)
-  b = data(a)
+function AbstractAlgebra.expressify(a::LocalFieldValuationRingResidueRingElem{T}, x = var(_field(parent(a))); context = nothing) where {T <: LocalFieldValuationRing{QadicField}}
+  b = data(data(a))
   K = base_field(parent(b))
   if iszero(b)
     return 0
@@ -159,7 +173,7 @@ function AbstractAlgebra.expressify(a::LocalFieldValuationRingResidueRingElem{Qa
   return sum
 end
 
-function show(io::IO, a::LocalFieldValuationRingResidueRingElem{<:Union{PadicField, QadicField}})
+function show(io::IO, a::LocalFieldValuationRingResidueRingElem{T}) where {T <: LocalFieldValuationRing{<: Union{PadicField, QadicField}}}
   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
@@ -238,7 +252,7 @@ end
 #
 ################################################################################
 
-function divexact(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
+function divexact(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem; check::Bool = true)
   @req parent(a) === parent(b) "Parents do not match"
   @req !is_zero(b) "Division by 0"
   if is_zero(a)
@@ -246,7 +260,6 @@ function divexact(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuat
   end
   @req valuation(data(a)) >= valuation(data(b)) "Division not possible"
   c = divexact(data(a), data(b))
-  setprecision!(c, _exponent(parent(a)))
   return parent(a)(c, copy = false, check = false)
 end
 
@@ -299,8 +312,8 @@ function annihilator(a::LocalFieldValuationRingResidueRingElem)
     return one(parent(a))
   end
   pi = uniformizer(_valuation_ring(parent(a)))
-  va = absolute_ramification_index(_field(parent(a)))*valuation(data(a))
-  return parent(a)(pi)^ZZ(_exponent(parent(a)) - va)
+  va = _valuation_integral(data(a))
+  return parent(a)(pi)^(_exponent(parent(a)) - va)
 end
 
 ################################################################################
@@ -364,9 +377,9 @@ end
 #
 ################################################################################
 
-function residue_ring(R::LocalFieldValuationRing, a::LocalFieldValuationRingElem)
+function residue_ring(R::NonArchLocalFieldValuationRing, a::NonArchLocalFieldValuationRingElem)
   @req parent(a) === R "Rings do not match"
-  k = Int(absolute_ramification_index(R.Q)*valuation(a))
+  k = Int(_valuation_integral(a))
   S = LocalFieldValuationRingResidueRing(R, k)
   return S, Generic.EuclideanRingResidueMap(R, S)
 end

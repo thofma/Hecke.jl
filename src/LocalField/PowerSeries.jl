@@ -50,6 +50,7 @@ is_zero(a::LaurentSeriesFieldValuationRingElem) = is_zero(data(a))
 is_one(a::LaurentSeriesFieldValuationRingElem) = is_one(data(a))
 
 valuation(a::LaurentSeriesFieldValuationRingElem) = valuation(data(a))
+_valuation_integral(a::LaurentSeriesFieldValuationRingElem) = valuation(data(a))
 uniformizer(R::LaurentSeriesFieldValuationRing) = R(uniformizer(_field(R)))
 
 is_unit(a::LaurentSeriesFieldValuationRingElem) = !iszero(a) && valuation(a) == 0

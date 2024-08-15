@@ -152,18 +152,18 @@ end
 #
 ################################################################################
 
-# Type for O/m^k where O is the valuation ring of the field F and m the maximal
-# ideal
-@attributes mutable struct LocalFieldValuationRingResidueRing{S <: NonArchLocalFieldTypes, T <: NonArchLocalFieldElemTypes} <: Ring
-  R::LocalFieldValuationRing{S, T}
+# Type for O/m^k where O is a valuation ring and m the maximal ideal
+# TODO: Should this be called NonArchLocalFieldValuationRingResidueRing?
+@attributes mutable struct LocalFieldValuationRingResidueRing{S <: NonArchLocalFieldValuationRing, T <: NonArchLocalFieldValuationRingElem} <: Ring
+  R::S
   k::Int
 
-  function LocalFieldValuationRingResidueRing(R::LocalFieldValuationRing{S, T}, k::Int) where {S, T}
-    return new{S, T}(R, k)
+  function LocalFieldValuationRingResidueRing(R::S, k::Int) where S
+    return new{S, elem_type(S)}(R, k)
   end
 end
 
-mutable struct LocalFieldValuationRingResidueRingElem{S <: NonArchLocalFieldTypes, T <: NonArchLocalFieldElemTypes} <: RingElem
+mutable struct LocalFieldValuationRingResidueRingElem{S <: NonArchLocalFieldValuationRing, T <: NonArchLocalFieldValuationRingElem} <: RingElem
   a::T
   parent::LocalFieldValuationRingResidueRing{S, T}
 
