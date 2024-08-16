@@ -59,8 +59,16 @@ function ideal(R::PolyRing{<:FieldElem}, x...)
   return _ideal_pid(R, x...)
 end
 
+function ideal(R::PolyRing{<:FieldElem}, xs::AbstractVector{T}) where T<:RingElement
+  return _ideal_pid(R, xs)
+end
+
 function ideal(R::Field, x...)
   return _ideal_pid(R, x...)
+end
+
+function ideal(R::Field, xs::AbstractVector{T}) where T<:RingElement
+  return _ideal_pid(R, xs)
 end
 
 # Show
