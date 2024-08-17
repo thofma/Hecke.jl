@@ -706,7 +706,7 @@ function CPS_height_bounds(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsS
     ev_arch += 2*log(ev)
   end
 
-  non_arch_contribution = sum([CPS_non_archimedean(E, v, prec) for v in P])//d
+  non_arch_contribution = sum([CPS_non_archimedean(E, v, prec) for v in P];init = zero(ArbField(prec, cached = false)))//d
   return 1//(3*d) * dv_arch, 1//(3*d) * ev_arch + non_arch_contribution
 end
 

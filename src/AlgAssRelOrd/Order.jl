@@ -369,8 +369,10 @@ end
 Returns `true` if $R$ and $S$ are equal and `false` otherwise.
 """
 function ==(R::AlgAssRelOrd, S::AlgAssRelOrd)
-  algebra(R) != algebra(S) && return false
-  return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
+  algebra(R) !== algebra(S) && return false
+  Rpmat = basis_pmatrix(R, copy = false)
+  Spmat = basis_pmatrix(S, copy = false)
+  return _spans_subset_of_pseudohnf(Rpmat, Spmat; shape = :lowerleft) && _spans_subset_of_pseudohnf(Spmat, Rpmat; shape = :lowerleft)
 end
 
 ################################################################################
