@@ -774,7 +774,7 @@ function _test_ideal_sidedness(a::AlgAssRelOrdIdl, O::AlgAssRelOrd, side::Symbol
     error("side must be either :left or :right")
   end
 
-  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false), :lowerleft)
+  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false); shape = :lowerleft)
 end
 
 function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
@@ -789,7 +789,7 @@ function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
     error("side must be either :left or :right")
   end
 
-  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false), :lowerleft)
+  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false); shape = :lowerleft)
 end
 
 ################################################################################

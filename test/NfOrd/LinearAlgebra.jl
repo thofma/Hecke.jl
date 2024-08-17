@@ -99,7 +99,7 @@
       @test G.matrix == U*PM.matrix
 
       G2, U2 = Hecke.pseudo_hnf_kb_with_transform(PM, :lowerleft)
-      @test Hecke._spans_subset_of_pseudohnf(PM, G2, :lowerleft)
+      @test Hecke._spans_subset_of_pseudohnf(PM, G2, shape = :lowerleft)
       @test !iszero(det(U2))
       @test G2.matrix == U2*PM.matrix
 
@@ -113,7 +113,7 @@
       @test H.matrix == V*PN.matrix
 
       H2, V2 = Hecke.pseudo_hnf_kb_with_transform(PN, :lowerleft)
-      @test Hecke._spans_subset_of_pseudohnf(PN, H2, :lowerleft)
+      @test Hecke._spans_subset_of_pseudohnf(PN, H2, shape = :lowerleft)
       @test !iszero(det(V2))
       @test H2.matrix == V2*PN.matrix
     end
@@ -163,10 +163,10 @@
   K, a = number_field(x^2 + 1, "a", cached = false);
   M = matrix(K, 1, 3, [5*a, 3*a, 0])
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, shape = :lowerleft)
   M = matrix(K, 1, 3, [0, 0, 3*a])
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :upperright)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, shape = :upperright)
 
   Qx, x = polynomial_ring(FlintQQ, "x")
   f = x - 1
@@ -176,7 +176,7 @@
   E, b = number_field(g, "b", cached = false)
   gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
   pm = pseudo_hnf(pseudo_matrix(matrix(gens)), :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, shape = :lowerleft)
 
   # issue 1112
   K, a = cyclotomic_real_subfield(8, "a");
