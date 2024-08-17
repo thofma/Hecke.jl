@@ -236,4 +236,15 @@
   C, p = Hecke.product_of_components_with_projection(A, Int[])
   @test is_zero(C) && dim(C) == 0
   @test domain(p) === A && codomain(p) === C && is_one(p(one(A)))
+
+  # Skolem-Noether
+  K, a = quadratic_field(-13)
+  A = matrix_algebra(K, 3)
+  X = rand(A, -1:1)
+  while !is_invertible(X)[1]
+    X = rand(A, -1:1)
+  end
+  h = hom(A, A, inv(X) .* basis(A) .* X)
+  a = Hecke._skolem_noether(h)
+  @test all(h(b) == inv(a) * b * a for b in basis(A))
 end
