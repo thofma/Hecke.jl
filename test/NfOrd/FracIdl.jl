@@ -49,6 +49,10 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     @test b == [ K1(8), a1, 2*a1^2 ]
     b = @inferred basis(M)
     @test b == [ K1(8), a1, 2*a1^2 ]
+
+    b = basis(J)
+    @test b !== basis(J)
+    @test basis(J, copy = false) === basis(J, copy = false)
   end
 
   @testset "Norm" begin
