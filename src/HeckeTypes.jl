@@ -1101,6 +1101,7 @@ mutable struct AbsNumFieldOrderFractionalIdeal{S, T} <: NumFieldOrderFractionalI
   norm::QQFieldElem
   basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
+  basis::Vector{T}
 
   function AbsNumFieldOrderFractionalIdeal{S, T}(O::AbsNumFieldOrder{S, T}) where {S, T}
     z = new{S, T}()

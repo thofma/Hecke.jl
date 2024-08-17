@@ -248,7 +248,11 @@ end
 
 Returns the $\mathbf Z$-basis of $I$.
 """
-function basis(a::AbsNumFieldOrderFractionalIdeal{S, T}) where {S, T}
+function basis(a::AbsNumFieldOrderFractionalIdeal{S, T}; copy::Bool = true) where {S, T}
+  if isdefined(a, :basis)
+    copy && return Base.copy(a.basis)
+    return a.basis
+  end
   B = basis_matrix(FakeFmpqMat, a; copy = false)
   d = degree(order(a))
   O = order(a)
@@ -263,7 +267,7 @@ function basis(a::AbsNumFieldOrderFractionalIdeal{S, T}) where {S, T}
     z = divexact(z, B.den)
     res[i] = z
   end
-
+  a.basis = res
   return res
 end
 
