@@ -1583,4 +1583,3 @@ function opposite_algebra(A::StructureConstantAlgebra)
   B = StructureConstantAlgebra(K, z, o)
   return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d))
 end
-
