@@ -351,7 +351,7 @@ function _unit_group_generators(A::MatAlgebra{<:FinFieldElem})
     @assert is_unit(det(g2))
     push!(res, g1, g2)
   end
-  return map(A, res)
+  return map(A, res)::Vector{elem_type(A)}
 end
 
 # Computes generators for 1 + J where J is the Jacobson Radical of A
