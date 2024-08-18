@@ -502,7 +502,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     #@show B
 
-    v = _short_vectors_gram_integral(G, FlintZZ(B), hard = true)
+    v = _short_vectors_gram_integral(Vector, G, FlintZZ(B), hard = true)
 
     #if min == degree(base_ring(A))
     for w in v

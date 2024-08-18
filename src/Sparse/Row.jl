@@ -801,7 +801,7 @@ end
 Returns $A \cdot A^t$.
 """
 function norm2(A::SRow{T}) where {T}
-  return sum([x * x for x in A.values])
+  return sum(T[x * x for x in A.values]; init = zero(base_ring(A)))
 end
 
 ################################################################################
