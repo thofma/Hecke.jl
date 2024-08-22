@@ -76,7 +76,7 @@ end
 
 (R::LocalFieldValuationRingResidueRing)() = R(zero(_valuation_ring(R), precision = _exponent(R)), copy = false)
 
-function (R::LocalFieldValuationRingResidueRing)(a::Union{Integer, ZZRingElem, QQFieldElem, Rational})
+function (R::LocalFieldValuationRingResidueRing)(a::RingElement)
   return R(_valuation_ring(R)(a, precision = _exponent(R)), copy = false)
 end
 
@@ -114,7 +114,7 @@ function Base.show(io::IO, R::LocalFieldValuationRingResidueRing)
   @show_name(io, R)
   @show_special(io, R)
 
-  print(io, _valuation_ring(R), " modulo ", uniformizer(_valuation_ring(R)), "^", _exponent(R))
+  print(io, _valuation_ring(R), " modulo (", uniformizer(_valuation_ring(R)), ")^", _exponent(R))
 end
 
 function AbstractAlgebra.expressify(x::LocalFieldValuationRingResidueRingElem{T}; context = nothing) where {T <: LocalFieldValuationRing{PadicField}}

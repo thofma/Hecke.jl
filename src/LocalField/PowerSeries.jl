@@ -125,6 +125,12 @@ function (Q::LaurentSeriesFieldValuationRing)(; precision::Int=precision(Q))
   return LaurentSeriesFieldValuationRingElem(Q, aR)
 end
 
+function (Q::LaurentSeriesFieldValuationRing)(a::FinFieldElem; precision::Int=precision(Q))
+  @assert base_ring(data(Q)) === parent(a) "Fields don't match"
+  aR = set_precision!(data(Q)(a), precision)
+  return LaurentSeriesFieldValuationRingElem(Q, aR)
+end
+
 function (K::Generic.LaurentSeriesField)(a::LaurentSeriesFieldValuationRingElem)
   if _field(parent(a)) !== K
     error("Parent mismatch")
