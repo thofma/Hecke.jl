@@ -300,6 +300,16 @@
     @test !is_zero(I)
     @test !is_zero(I)
   end
+
+  let
+    P, x = polynomial_ring(ZZ)
+    K, a = number_field( x^3 + x + 1)
+    R = maximal_order(K)
+    OO = Order(K, basis(2*R))
+    I = ideal(OO, [OO(x) for x in basis(2*R)])
+    G = gens(I)
+    @test I == ideal(OO, G)
+  end
   
   include("Ideal/Prime.jl")
 
