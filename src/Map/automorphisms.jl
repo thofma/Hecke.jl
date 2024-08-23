@@ -26,7 +26,7 @@ end
 
 function _automorphisms(K::AbsSimpleNumField; is_abelian::Bool = false)
   if degree(K) == 1
-    return automorphism_type(K)[hom(K, K, one(K))]
+    return automorphism_type(K)[hom(K, K, gen(K))]
   end
   if Nemo.is_cyclo_type(K)
     f = get_attribute(K, :cyclo)::Int

@@ -77,6 +77,10 @@ end
   @test fl
   fl, tau = Hecke.is_cm_field(K)
   @test fl
+
+  Qt, t = QQ["t"]
+  K, _ = number_field(t+1; cached=false)
+  @test length(automorphism_list(K)) == 1
 end
 
 @testset "parents" begin
