@@ -224,7 +224,7 @@ Returns the inverse of the basis matrix of $I$.
 """
 function basis_mat_inv(::Type{FakeFmpqMat}, a::AbsNumFieldOrderFractionalIdeal; copy::Bool = true)
   if !isdefined(a, :basis_mat_inv)
-    a.basis_mat_inv = inv(basis_matrix(FakeFmpqMat, a))
+    a.basis_mat_inv = inv(basis_matrix(FakeFmpqMat, a; copy = false))
   end
   if copy
     return deepcopy(a.basis_mat_inv)
