@@ -751,8 +751,8 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
     d1 = clog(ZZRingElem(degree(f)+1), p)
     L = QadicField(p, d1, min(precision(f), precision(g)))
     Lt = polynomial_ring(L, "t")[1]
-    fL = change_base_ring(f, L, Lt)
-    gL = change_base_ring(g, L, Lt)
+    fL = map_coefficients(L, f, parent = Lt)
+    gL = map_coefficients(L, g, parent = Lt)
     cp = characteristic_polynomial(fL, gL)
     #cp will have coefficients over K, so I need to change the base ring.
     cf = [coeff(coeff(cp, i), 0) for i = 0:degree(cp)]
