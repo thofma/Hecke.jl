@@ -4,6 +4,8 @@
 #
 ################################################################################
 
+denominator_of_structure_constant_table(A::GroupAlgebra{QQFieldElem}) = one(ZZ)
+
 denominator_of_multiplication_table(A::GroupAlgebra{QQFieldElem}) = one(ZZ)
 
 base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
@@ -188,11 +190,6 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    center(A::GroupAlgebra) -> StructureConstantAlgebra, AbsAlgAssMor
-
-Returns the center $C$ of $A$ and the inclusion $C \to A$.
-"""
 function center(A::GroupAlgebra{T}) where {T}
   if isdefined(A, :center)
     return A.center::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}
@@ -754,7 +751,7 @@ function __decompose_abelian_group_algebra(A::GroupAlgebra)
   idems = _central_primitive_idempotents_abelian(A)
   res = Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}()
   for idem in idems
-    S, StoA = subalgebra(A, idem, true)
+    S, StoA = _subalgebra(A, idem, true)
     S.is_simple = 1
     push!(res, (S, StoA))
   end

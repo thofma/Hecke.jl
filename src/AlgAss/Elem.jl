@@ -116,6 +116,24 @@ end
 
 ################################################################################
 #
+#  Idempotent
+#
+################################################################################
+
+function is_idempotent(a::AbstractAssociativeAlgebraElem)
+  return a^2 == a
+end
+
+function is_central(a::AbstractAssociativeAlgebraElem)
+  return all(a * b == b * a for b in basis(parent(a)))
+end
+
+function is_central_idempotent(a::AbstractAssociativeAlgebraElem)
+  return is_idempotent(a) && is_central(a)
+end
+
+################################################################################
+#
 #  Unary operations
 #
 ################################################################################
@@ -593,12 +611,17 @@ end
 
 (A::GroupAlgebra{T, S, R})() where {T, S, R} = GroupAlgebraElem{T, typeof(A)}(A)
 
-function (A::StructureConstantAlgebra{T})(c::Vector{T}; copy::Bool = true) where {T}
+function (A::StructureConstantAlgebra{T})(c::Vector; copy::Bool = true) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
-  if copy
-    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, deepcopy(c))
+  if eltype(c) === T
+    _c = c
   else
-    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, c)
+    _c = convert(Vector{T}, map(base_ring(A), c))::Vector{T}
+  end
+  if copy
+    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, deepcopy(_c))
+  else
+    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, _c)
   end
 end
 

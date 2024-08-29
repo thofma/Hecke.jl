@@ -84,7 +84,7 @@
   @testset "Generators" begin
     Qx, x = FlintQQ["x"]
     A = StructureConstantAlgebra((x^2 + 1)*(x^2 + 3))
-    g, full_basis, v = gens(A, Val(true))
+    g, full_basis, v = gens_with_data(A)
 
     @test length(full_basis) == dim(A)
 

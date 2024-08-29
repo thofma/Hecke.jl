@@ -285,6 +285,8 @@ export different_divisor
 export differential
 export dim
 export dimension
+export dimension_of_center
+export dimension_over_center
 export direct_product
 export direct_sum
 export disc_log
@@ -360,6 +362,7 @@ export gcd_into!
 export gen_index
 export generators
 export generic_group
+export gens_with_data
 export genus
 export genus_field
 export genus_representatives
@@ -456,6 +459,7 @@ export is_automorphous
 export is_bass
 export is_bijective
 export is_central
+export is_central_idempotent
 export is_chain_complex
 export is_characteristic
 export is_cochain_complex
@@ -489,6 +493,7 @@ export is_fundamental_discriminant
 export is_genus
 export is_gorenstein
 export is_hermitian
+export is_idempotent
 export is_indefinite
 export is_independent
 export is_index_divisor
@@ -860,6 +865,8 @@ export stable_faltings_height
 export stable_subgroups
 export stable_submodules
 export strong_echelon_form
+export structure_constant_algebra
+export structure_constant_table
 export sub
 export subalgebra
 export subfields

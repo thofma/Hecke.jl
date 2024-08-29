@@ -16,8 +16,26 @@
     @test Hecke.is_integral(QQFieldElem(1, 2)*C[1]) == false
   end
 
+  let
+    A = matrix_algebra(QQ, 2)
+    @test is_idempotent(A(QQ[1 0; 0 0]))
+    @test !is_central(A(QQ[1 0; 0 0]))
+    @test is_central(A(QQ[2 0; 0 2]))
+    @test !is_central_idempotent(A(QQ[1 0; 0 0]))
+    @test is_central_idempotent(A(QQ[1 0; 0 1]))
+
+    Qx, x = FlintQQ["x"]
+    f = (x + 1)*(x - 1)
+    B = StructureConstantAlgebra(f)
+    e = B([1//2, 1//2])
+    @test is_central_idempotent(e)
+  end
+
+
   @testset "Characteristic polynomial" begin
+    f = x^2 + 1
     K, a = number_field(f, "a")
+    A = StructureConstantAlgebra(f)
 
     b = rand(K, -10:10)
     c = A(coefficients(b))
