@@ -173,7 +173,36 @@ function AbstractAlgebra.expressify(a::LocalFieldValuationRingResidueRingElem{T}
   return sum
 end
 
+function AbstractAlgebra.expressify(a::LocalFieldValuationRingResidueRingElem{<: LaurentSeriesFieldValuationRing}, x = var(parent(data(data(a)))); context = nothing)
+  sum = Expr(:call, :+)
+  b = data(data(a)) # the underlying power series
+  v = valuation(b)
+  for i in 0:pol_length(b) - 1
+    k = i + v
+    c = polcoeff(b, i)
+    if !iszero(c)
+      if k == 0
+        xk = 1
+      elseif k == 1
+        xk = x
+      else
+        xk = Expr(:call, :^, x, k)
+      end
+      if isone(c)
+        push!(sum.args, Expr(:call, :*, xk))
+      else
+        push!(sum.args, Expr(:call, :*, expressify(c, context = context), xk))
+      end
+    end
+  end
+  return sum
+end
+
 function show(io::IO, a::LocalFieldValuationRingResidueRingElem{T}) where {T <: LocalFieldValuationRing{<: Union{PadicField, QadicField}}}
+  print(io, AbstractAlgebra.obj_to_string(a, context = io))
+end
+
+function show(io::IO, a::LocalFieldValuationRingResidueRingElem{<: LaurentSeriesFieldValuationRing})
   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
