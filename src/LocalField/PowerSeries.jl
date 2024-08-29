@@ -174,7 +174,7 @@ function Base.hash(a::LaurentSeriesFieldValuationRingElem, h::UInt)
 end
 
 function Base.deepcopy_internal(a::LaurentSeriesFieldValuationRingElem, dict::IdDict)
-  return LaurentSeriesFieldValuationRingElem(parent(a), data(a))
+  return LaurentSeriesFieldValuationRingElem(parent(a), Base.deepcopy_internal(data(a), dict))
 end
 
 ################################################################################

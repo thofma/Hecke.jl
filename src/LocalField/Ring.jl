@@ -204,7 +204,7 @@ function Base.hash(a::LocalFieldValuationRingElem, h::UInt)
 end
 
 function Base.deepcopy_internal(a::LocalFieldValuationRingElem, dict::IdDict)
-  return LocalFieldValuationRingElem(parent(a), data(a))
+  return LocalFieldValuationRingElem(parent(a), Base.deepcopy_internal(data(a), dict))
 end
 
 ################################################################################
