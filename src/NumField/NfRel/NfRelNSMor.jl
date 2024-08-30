@@ -40,7 +40,7 @@ end
 function _get_poly_from_elem(a::RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, Qxy)
   K = base_field(parent(a))
   Qx = parent(K.pol)
-  p = change_base_ring(a.data, x -> evaluate(Qx(x), gen(Qxy, nvars(Qxy))))
+  p = map_coefficients(x -> evaluate(Qx(x), gen(Qxy, nvars(Qxy))), a.data)
   p1 = evaluate(p, [i for i in 1:ngens(parent(a))], gens(Qxy)[1:end-1])
   res = coeff(p1, [0 for i = 1:nvars(parent(p1))])
   return res
@@ -67,7 +67,7 @@ end
 
 function (Rxy::zzModMPolyRing)(f::QQMPolyRingElem)
   R = base_ring(Rxy)
-  res = change_base_ring(f, x -> divexact(R(numerator(x)), R(denominator(x))), Rxy)
+  res = map_coefficients(x -> divexact(R(numerator(x)), R(denominator(x))), f, parent = Rxy)
   return res
 end
 
@@ -233,12 +233,12 @@ function _compose_mod(a, vars, vals, powers, modu)
       if !haskey(powers[j], exp)
         powers[j][exp] = powermod(vals[j], exp, modu)
       end
-      t = mulmod(t, powers[j][exp], modu)
+      t = divrem(t * powers[j][exp], modu)[2]
       v[varnum] = 0
     end
     M = MPolyBuildCtx(S)
     push_term!(M, c, v)
-    push!(r, mulmod(t, finish(M), modu))
+    push!(r, divrem(t * finish(M), modu)[2])
   end
   return finish(r)
 end
