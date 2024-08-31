@@ -13,9 +13,13 @@ abstract type GenericLocalField <: LocalFieldParameter end
   def_poly::Function #Int -> Poly at prec n
   def_poly_cache::Dict{Int, Generic.Poly{S}}
   S::Symbol
-  precision::Int #only used for exact to ring
+  precision_base::Int # precision of the defining polynomial
+  precision_times_ramification_index::Int # precision_base * ramification index,
+                                          # this is the precision that is used
+                                          # for "exact input"
   traces_basis::Dict{Int, Vector{S}}
   ramification_index::Int
+  absolute_ramification_index::Int
   inertia_degree::Int
   uniformizer::Generic.Poly{S}
   residue_field_map
@@ -26,8 +30,10 @@ abstract type GenericLocalField <: LocalFieldParameter end
     z.def_poly_cache = Dict{Int, Generic.Poly{S}}(precision(f) => f)
     z.traces_basis = Dict{Int, Vector{S}}()
     z.S = s
-    z.precision = precision(f)
+    z.precision_base = precision(f)
+    z.precision_times_ramification_index = -1
     z.ramification_index = -1
+    z.absolute_ramification_index = -1
     z.inertia_degree = -1
     return z
   end
@@ -51,7 +57,7 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
   prim_img::T
   inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}
   precision::Int
-  lift_data::Tuple{Int, ZZMatrix, AbstractAlgebra.Solve.SolveCtx{QQFieldElem, QQMatrix, QQMatrix, QQMatrix}}
+  lift_data::Tuple{Int, ZZMatrix, AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix}}
 
   function CompletionMap(K::AbsSimpleNumField, L::LocalField{QadicFieldElem, EisensteinLocalField},
                           img::LocalFieldElem{QadicFieldElem, EisensteinLocalField},

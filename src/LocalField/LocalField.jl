@@ -222,7 +222,10 @@ absolute_ramification_index(K::PadicField) = 1
 absolute_ramification_index(K::QadicField) = 1
 
 function absolute_ramification_index(K::LocalField{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  return ramification_index(K)*absolute_ramification_index(base_field(K))
+  if K.absolute_ramification_index < 0
+    K.absolute_ramification_index = ramification_index(K)*absolute_ramification_index(base_field(K))
+  end
+  return K.absolute_ramification_index
 end
 
 function ramification_index(L::LocalField, K::Union{PadicField, QadicField, LocalField})
@@ -368,19 +371,27 @@ function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::VarName, ::Ty
   return local_field(fK, s, T, cached = cached, check = check)
 end
 
-function defining_polynomial(K::LocalField, n::Int = ceil(Int, precision(K)/ramification_index(K)))
+function defining_polynomial(K::LocalField, n::Int = _precision_base(K))
   if !haskey(K.def_poly_cache, n)
     K.def_poly_cache[n] = K.def_poly(n)
   end
   return K.def_poly_cache[n]
 end
 
+function _precision_base(K::LocalField)
+  return K.precision_base
+end
+
 function precision(K::LocalField)
-  return K.precision*ramification_index(K)
+  if K.precision_times_ramification_index < 0
+    K.precision_times_ramification_index = K.precision_base * ramification_index(K)
+  end
+  return K.precision_times_ramification_index
 end
 
 function setprecision!(K::LocalField, n::Int)
-  K.precision = ceil(Int, n/ramification_index(K))
+  K.precision_base = ceil(Int, n/ramification_index(K))
+  K.precision_times_ramification_index = n
   return nothing
 end
 
@@ -395,7 +406,6 @@ function setprecision(f::Function, K::Union{LocalField, PadicField, QadicField},
       end
   return v
 end
-
 
 ################################################################################
 #

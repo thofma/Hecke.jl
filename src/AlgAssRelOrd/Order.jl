@@ -369,8 +369,10 @@ end
 Returns `true` if $R$ and $S$ are equal and `false` otherwise.
 """
 function ==(R::AlgAssRelOrd, S::AlgAssRelOrd)
-  algebra(R) != algebra(S) && return false
-  return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
+  algebra(R) !== algebra(S) && return false
+  Rpmat = basis_pmatrix(R, copy = false)
+  Spmat = basis_pmatrix(S, copy = false)
+  return _spans_subset_of_pseudohnf(Rpmat, Spmat; shape = :lowerleft) && _spans_subset_of_pseudohnf(Spmat, Rpmat; shape = :lowerleft)
 end
 
 ################################################################################
@@ -489,7 +491,7 @@ function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
     OO = A.maximal_order::AlgAssRelOrd{S, T, U}
-    if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false), :lowerleft)
+    if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false); shape = :lowerleft)
       return OO
     end
   end

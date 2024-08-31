@@ -101,7 +101,7 @@ end
 
 function  ray_class_field_cyclic_pp_Brauer(CFpp::ClassField_pp{S, T}) where {S, T}
   e = degree(CFpp)
-  v, q = is_power(e)
+  v, q = is_perfect_power_with_data(e)
   k = base_field(CFpp)
   CE = cyclotomic_extension(k, e)
   @vtime :ClassField 1 "Computing maximal order and lll \n"

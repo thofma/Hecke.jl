@@ -53,5 +53,9 @@ function regulator(x::Vector{T}, abs_tol::Int = 64) where T
 end
 
 function lower_regulator_bound(K::AbsSimpleNumField)
-  return ArbField(64, cached = false)("0.054")
+  R = ArbField(64, cached = false)
+  r1, r2 = signature(K)
+  w = torsion_units_order(K)
+  zimmert = w * 4//100 * exp(46//100 * R(r1) + 1/100 * R(r2))
+  return max(zimmert, ArbField(64, cached = false)("0.054"))
 end

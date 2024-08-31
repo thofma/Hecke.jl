@@ -28,9 +28,9 @@ In particular any two sparse rows over the same base ring can be added.
 ### Creation
 
 ```@docs
-sparse_row(::ZZRing, ::Vector{Tuple{Int, ZZRingElem}})
-sparse_row(::ZZRing, ::Vector{Tuple{Int, Int}})
-sparse_row(::ZZRing, ::Vector{Int}, ::Vector{ZZRingElem})
+sparse_row(::NCRing, ::Vector{Tuple{Int, T}}) where T
+sparse_row(::NCRing, ::Vector{Tuple{Int, Int}})
+sparse_row(::NCRing, ::Vector{Int}, ::Vector{T}) where T
 ```
 
 ### Basic operations

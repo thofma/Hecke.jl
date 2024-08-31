@@ -180,7 +180,7 @@ function is_sublattice(L::AbstractLat, M::AbstractLat)
     return false
   end
 
-  return _spans_subset_of_pseudohnf(pseudo_matrix(M), _pseudo_hnf(L), :lowerleft)
+  return _spans_subset_of_pseudohnf(pseudo_matrix(M), _pseudo_hnf(L); shape = :lowerleft)
 end
 
 @doc raw"""

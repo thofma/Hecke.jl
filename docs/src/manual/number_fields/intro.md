@@ -2,7 +2,7 @@
 CurrentModule = Hecke
 ```
 
-# [Introduction](@id NumberFieldsLink2)
+# [Introduction](@id NumberFieldsLink)
 
 By definition, mathematically a number field is just a finite extension of the rational $\mathbf{Q}$.
 In Hecke, a number field $L$ is recursively defined as being the field of rational numbers $\mathbf{Q}$ or

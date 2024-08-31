@@ -299,7 +299,7 @@ function reduced_discriminant(O::AbsSimpleNumFieldOrder)
   if is_equation_order(O)
     Zx = polynomial_ring(FlintZZ, cached = false)[1]
     f = Zx(nf(O).pol)
-    return rres(f, derivative(f))
+    return reduced_resultant(f, derivative(f))
   end
   return maximal_elementary_divisor(trace_matrix(O, copy = false))
 end

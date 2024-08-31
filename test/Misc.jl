@@ -15,4 +15,5 @@
   include("Misc/PIDIdeal.jl")
   include("Misc/MSet.jl")
   include("Misc/AVLTrees.jl")
+  include("Misc/QQBar.jl")
 end

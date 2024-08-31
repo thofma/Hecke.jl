@@ -1170,8 +1170,41 @@ end
 #
 ################################################################################
 
+function _idempotents_for_make_coprime(ideals)
+  products = _compute_products_for_make_coprime(ideals)
+  n = length(ideals)
+  res = elem_type(order_type(algebra(ideals[1])))[]
+  for i = 1:n
+    u, v = idempotents(ideals[i], products[i])
+    push!(res, u)
+  end
+  return res
+end
+
 # For an element x of elements[i] this computes an element y with
 # x \equiv y mod ideals[i] and x \equiv 1 mod ideals[j] for all j not equal i.
+function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}, idempotents::Vector{S}) where { S <: Union{ AbsNumFieldOrderElem, AlgAssAbsOrdElem }, T <: Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
+  @assert !isempty(ideals)
+  @assert length(elements) == length(ideals)
+
+  n = length(ideals)
+  if n == 1
+    return elements[1]
+  end
+
+  One = one(order(ideals[1]))
+  result = Vector{S}()
+  for i = 1:n
+    u = idempotents[i]
+
+    for j = 1:length(elements[i])
+      t = elements[i][j] * (1 - u) + One * u
+      push!(result, t)
+    end
+  end
+  return result
+end
+
 function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}) where { S <: Union{ AbsNumFieldOrderElem, AlgAssAbsOrdElem }, T <: Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl } }
   @assert !isempty(ideals)
   @assert length(elements) == length(ideals)
@@ -1181,18 +1214,9 @@ function make_coprime(elements::Vector{Vector{S}}, ideals::Vector{T}) where { S 
     return elements[1]
   end
 
-  products = _compute_products_for_make_coprime(ideals)
+  idempotents = _idempotents_for_make_coprime(ideals)
 
-  One = one(order(ideals[1]))
-  result = Vector{S}()
-  for i = 1:n
-    u, v = idempotents(ideals[i], products[i])
-    for j = 1:length(elements[i])
-      t = elements[i][j] * v + One * u
-      push!(result, t)
-    end
-  end
-  return result
+  return make_coprime(elements, ideals, idempotents)
 end
 
 # Build the products \prod_{j\neq i} ideals[j] for all i

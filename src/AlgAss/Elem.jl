@@ -871,19 +871,34 @@ _set_to_copy!(M::QQMatrix, i, j, c) = M[i, j] = c
 
 _set_to_copy!(M, i, j, c) = M[i, j] = deepcopy(c)
 
-function _addmul!(M::MatrixElem, i, j, b, c)
+function _addmul!(M::MatrixElem, i, j, b, c, temp = nothing)
   return M[i, j] = addmul!(M[i, j], b, c)
 end
 
-function _addmul!(M::QQMatrix, i, j, a::QQFieldElem, b::QQFieldElem)
-  c = mat_entry_ptr(M, i, j)
-  ccall((:fmpq_addmul, libflint), Nothing, (Ptr{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), c, a, b)
+function _addmul!(M::QQMatrix, i, j, a::QQFieldElem, b::QQFieldElem, temp = nothing)
+  GC.@preserve M begin
+    c = mat_entry_ptr(M, i, j)
+    ccall((:fmpq_addmul, libflint), Nothing, (Ptr{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), c, a, b)
+  end
+end
+
+function _addmul!(M::FqMatrix, i, j, a::FqFieldElem, b::FqFieldElem, temp = base_ring(M)())
+  GC.@preserve M begin
+    c = Nemo.fq_default_mat_entry_ptr(M, i, j)
+    mul!(temp, a, b)
+    ccall((:fq_default_add, libflint), Nothing, (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), c, c, temp, base_ring(M))
+  end
 end
 
 function representation_matrix!(a::Union{AssociativeAlgebraElem, MatAlgebraElem}, M::MatElem, action::Symbol = :left)
   A = parent(a)
   acoeff = coefficients(a, copy = false)
   mt = multiplication_table(A, copy = false)
+  if base_ring(A) isa QQField
+    temp = nothing
+  else
+    temp = base_ring(A)()
+  end
   GC.@preserve M begin
     if action == :left
       for i = 1:dim(A)
@@ -892,7 +907,7 @@ function representation_matrix!(a::Union{AssociativeAlgebraElem, MatAlgebraElem}
         end
         for j = 1:dim(A)
           for k = 1:dim(A)
-            _addmul!(M, j, k, acoeff[i], mt[i, j, k])
+            _addmul!(M, j, k, acoeff[i], mt[i, j, k], temp)
             #M[j, k] += acoeff[i] * mt[i, j, k]
           end
         end

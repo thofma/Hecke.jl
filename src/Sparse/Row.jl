@@ -51,9 +51,9 @@ julia> sparse_row_type(typeof(zero(QQ))) == typeof(x)
 true
 ```
 """
-sparse_row_type(::T) where {T <: Union{Ring, RingElem}} = sparse_row_type(T)
-sparse_row_type(::Type{T}) where {T <: Ring} = sparse_row_type(elem_type(T))
-sparse_row_type(::Type{T}) where {T <: RingElem} = SRow{T, sparse_inner_type(T)}
+sparse_row_type(::T) where {T <: Union{NCRing, NCRingElem}} = sparse_row_type(T)
+sparse_row_type(::Type{T}) where {T <: NCRing} = sparse_row_type(elem_type(T))
+sparse_row_type(::Type{T}) where {T <: NCRingElem} = SRow{T, sparse_inner_type(T)}
 
 
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
@@ -69,7 +69,7 @@ sparse_row_type(::Type{T}) where {T <: RingElem} = SRow{T, sparse_inner_type(T)}
 
 Constructs an empty row with base ring $R$.
 """
-function sparse_row(R::Ring)
+function sparse_row(R::NCRing)
   return SRow(R)
 end
 
@@ -79,7 +79,7 @@ end
 Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
 The elements $x_i$ must belong to the ring $R$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
+function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
@@ -92,7 +92,7 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
 where $J = (i_j, x_j)_j$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
+function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
@@ -112,12 +112,12 @@ function swap!(A::SRow, B::SRow)
 end
 
 @doc raw"""
-    sparse_row(R::Ring, J::Vector{Int}, V::Vector{T}) -> SRow{T}
+    sparse_row(R::NCRing, J::Vector{Int}, V::Vector{T}) -> SRow{T}
 
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
 $J = (i_j)_j$ and $V = (x_j)_j$.
 """
-function sparse_row(R::Ring, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
+function sparse_row(R::NCRing, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
   if sort && length(pos) > 1
     p = sortperm(pos)
     pos = pos[p]
@@ -294,7 +294,7 @@ end
 
 Create a new sparse row by coercing all elements into the ring $R$.
 """
-function change_base_ring(R::S, A::SRow{T}) where {T <: RingElem, S <: Ring}
+function change_base_ring(R::S, A::SRow{T}) where {T <: NCRingElem, S <: NCRing}
   z = sparse_row(R)
   for (i, v) in A
     nv = R(v)
@@ -321,7 +321,7 @@ end
 
 Given a sparse row $(a_i)_{i}$ and an index $j$ return $a_j$.
 """
-function Base.getindex(A::SRow{T}, i::Int) where {T <: RingElem}
+function Base.getindex(A::SRow{T}, i::Int) where {T <: NCRingElem}
   i < 1 && error("Index must be positive")
   p = findfirst(isequal(i), A.pos)
   if p === nothing
@@ -371,7 +371,7 @@ Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
 @doc raw"""
     dot(A::SRow, B::SRow) -> RingElem
 
-Returns the dot product of $A$ and $B$.
+Returns the dot product of $A$ and $B$. Note the order matters in non-commutative case.
 """
 function dot(A::SRow{T}, B::SRow{T}) where T
   @assert length(A) != 0
@@ -385,7 +385,7 @@ function dot(A::SRow{T}, B::SRow{T}) where T
       return v
     end
     if B.pos[b] == A.pos[a]
-      v += B.values[b] * A.values[a]
+      v += A.values[a] * B.values[b] 
     end
   end
   return v
@@ -447,11 +447,39 @@ end
 #  Inplace scaling
 #
 ################################################################################
+@doc raw"""
+    scale_row!(a::SRow, b::NCRingElem) -> SRow
 
+Returns the (left) product of $b \times a$ and reassigns the value of $a$ to this product. 
+For rows, the standard multiplication is from the left. 
+"""
 function scale_row!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
   if isone(b)
-    return
+    return a
+  end
+  i = 1
+  while i <= length(a)
+    a.values[i] = b*a.values[i]
+    if iszero(a.values[i])
+      deleteat!(a.values, i)
+      deleteat!(a.pos, i)
+    else
+     i += 1
+    end
+  end
+  return a
+end
+
+@doc raw"""
+    scale_row_right!(a::SRow, b::NCRingElem) -> SRow
+
+Returns the (right) product of $a \times b$ and modifies $a$ to this product.
+"""
+function scale_row_right!(a::SRow{T}, b::T) where T
+  @assert !iszero(b)
+  if isone(b)
+    return a
   end
   i = 1
   while i <= length(a)
@@ -463,6 +491,11 @@ function scale_row!(a::SRow{T}, b::T) where T
      i += 1
     end
   end
+  return a
+end
+
+function scale_row_left!(a::SRow{T}, b::T) where T
+  return scale_row!(a,b)
 end
 
 ################################################################################
@@ -550,6 +583,7 @@ function *(A::SRow, b)
   return A*base_ring(A)(b)
 end
 
+#left and right div not implemented
 function div(A::SRow{T}, b::T) where T
   B = sparse_row(base_ring(A))
   if iszero(b)
@@ -572,13 +606,20 @@ function div(A::SRow{T}, b::Integer) where T
   return div(A, base_ring(A)(b))
 end
 
-function divexact(A::SRow{T}, b::T; check::Bool=true) where T
+@doc raw"""
+    divexact(A::SRow, b::RingElem; check::Bool = true) -> SRow
+
+Return $C$ such that $a = b \cdot C$. Calls the function `divexact_left(A,b;check)`
+"""
+divexact(A::SRow{T}, b::T; check::Bool=true) where T <: RingElem = divexact_left(A, b; check)
+
+function divexact_left(A::SRow{T}, b::T; check::Bool=true) where T <: NCRingElem
   B = sparse_row(base_ring(A))
   if iszero(b)
     return error("Division by zero")
   end
   for (p,v) = A
-    nv = divexact(v, b; check=check)
+    nv = divexact_left(v, b; check=check)
     @assert !iszero(nv)
     push!(B.pos, p)
     push!(B.values, nv)
@@ -590,7 +631,33 @@ function divexact(A::SRow{T}, b::Integer; check::Bool=true) where T
   if length(A.values) == 0
     return deepcopy(A)
   end
-  return divexact(A, base_ring(A)(b); check=check)
+  return divexact_left(A, base_ring(A)(b), check=check)
+end
+
+@doc raw"""
+    divexact_right(A::SRow, b::NCRingElem; check::Bool = true) -> SRow
+
+Return $C$ such that $A = C \cdot b.
+"""
+function divexact_right(A::SRow{T}, b::T; check::Bool=true) where T
+  B = sparse_row(base_ring(A))
+  if iszero(b)
+    return error("Division by zero")
+  end
+  for (p,v) = A
+    nv = divexact_right(v, b; check=check)
+    @assert !iszero(nv)
+    push!(B.pos, p)
+    push!(B.values, nv)
+  end
+  return B
+end
+
+function divexact_right(A::SRow{T}, b::Integer; check::Bool=true) where T
+  if length(A.values) == 0
+    return deepcopy(A)
+  end
+  return divexact_right(A, base_ring(A)(b); check=check)
 end
 
 ################################################################################
@@ -617,11 +684,12 @@ end
 Returns the row $c A + B$.
 """
 add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
+add_left_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
 
 @doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Returns the row $c A + B$ by changing $B$ in place.
+Adds the left scaled row $c A$ to $B$.
 """
 function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   @assert a !== b
@@ -657,7 +725,49 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   return b
 end
 
-add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c) 
+
+add_right_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
+
+@doc raw"""
+    add_right_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
+
+Return the right scaled row $c A$ to $B$ by changing $B$ in place.
+"""
+
+function add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
+  @assert a !== b
+  i = 1
+  j = 1
+  t = base_ring(a)()
+  while i <= length(a) && j <= length(b)
+    if a.pos[i] < b.pos[j]
+      insert!(b.pos, j, a.pos[i])
+      insert!(b.values, j, a.values[i]*c)
+      i += 1
+      j += 1
+    elseif a.pos[i] > b.pos[j]
+      j += 1
+    else
+      t = mul!(t, a.values[i], c)
+      b.values[j] = addeq!(b.values[j], t)
+
+      if iszero(b.values[j])
+        deleteat!(b.values, j)
+        deleteat!(b.pos, j)
+      else
+        j += 1
+      end
+      i += 1
+    end
+  end
+  while i <= length(a)
+    push!(b.pos, a.pos[i])
+    push!(b.values, a.values[i]*c)
+    i += 1
+  end
+  return b
+end
 
 ################################################################################
 #
@@ -691,7 +801,7 @@ end
 Returns $A \cdot A^t$.
 """
 function norm2(A::SRow{T}) where {T}
-  return sum([x * x for x in A.values])
+  return sum(T[x * x for x in A.values]; init = zero(base_ring(A)))
 end
 
 ################################################################################

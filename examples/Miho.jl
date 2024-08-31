@@ -14,11 +14,11 @@ end
 Miho Aoki: From Leopoldt
 
 Let G = C_(p^n) and K with Gal(K) = G
-Then 
+Then
 
-    O_K = oplus Z[G] a_i 
+    O_K = oplus Z[G] a_i
 
-where the a_i are given explicitly as Gauss-sums from large cyclotomic fields   
+where the a_i are given explicitly as Gauss-sums from large cyclotomic fields
 This implements the Acciaro-Fieker approach, bypassing the Gauss sums
 IN particular for n = 1 and tame fields, it will find a normal generator.
 """
@@ -81,7 +81,7 @@ function INB(K::AbsSimpleNumField)
     q, mq = quo(U, [preimage(mU, x) for x = u])
     all_u = q
     get_u = x -> mU(preimage(mq, x))
-    e, pp = is_power(p)
+    e, pp = is_perfect_power_with_data(p)
     au = mG(sigma^divexact(p, pp))
     tr = x->sum(mG(sigma^(i*divexact(p, pp)))(x) for i=0:pp-1)
   end

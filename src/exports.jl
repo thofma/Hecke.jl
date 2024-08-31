@@ -146,6 +146,7 @@ export absolute_tr
 export absolute_value
 export add!
 export add_assertion_scope
+export add_right_scaled_row
 export add_scaled_row
 export add_verbosity_scope
 export algebra
@@ -780,6 +781,7 @@ export real_places
 export reduce_full
 export reduced_charpoly
 export reduced_discriminant
+export reduced_resultant
 export reduced_tate_pairing
 export reduction_type
 export refine_alpha_bound
@@ -813,6 +815,7 @@ export rresx
 export saturate
 export scale
 export scale_row!
+export scale_row_right!
 export scales
 export schur_index
 export semi_global_minimal_model

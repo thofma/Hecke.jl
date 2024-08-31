@@ -164,7 +164,7 @@ end
 Tests if $n$ is the exact power of a prime number.
 """
 function is_prime_power(n::ZZRingElem)
-  e, p = is_power(n)
+  e, p = is_perfect_power_with_data(n)
   return is_prime(p)
 end
 
@@ -296,7 +296,7 @@ function factor_insert!(r::Dict{ZZRingElem,Int}, N::ZZRingElem, scale::Int=1)
   if isone(N)
     return r
   end
-  fac, N = is_power(N)
+  fac, N = is_perfect_power_with_data(N)
   if fac > 1
     return factor_insert!(r, N, fac)
   end

@@ -1141,7 +1141,7 @@ function _islocally_free_left(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int,
     end
 
     for i = 1:length(basiseIJoverZ)
-      a += mod(toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[i]))))*basiseIJoverZ[i], pI)
+      add!(a, a, mod(toOpO\(toOJ\(AtoOJ(BtoA(BtoC\C[i]))))*basiseIJoverZ[i], pI))
     end
   end
 

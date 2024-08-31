@@ -418,6 +418,7 @@ function small_generating_set(I::AbsNumFieldOrderIdeal)
     _assure_weakly_normal_presentation(I)
     return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
+  n = degree(order(I))
   id_gen = zero_matrix(FlintZZ, 2*n, n)
   m = minimum(I, copy = false)
   B = basis(I, copy = false)
@@ -430,11 +431,11 @@ function small_generating_set(I::AbsNumFieldOrderIdeal)
         continue
       end
     end
-    M = representation_matrix_mod(B[i], modu)
+    M = representation_matrix_mod(B[i], m)
     _copy_matrix_into_matrix(id_gen, 1, 1, M)
     hnf_modular_eldiv!(id_gen, m, :lowerleft)
     push!(gens, B[i])
-    if view(id_gen, n+1:2*n, 1:n) == basis_matrix(a, copy = false)
+    if view(id_gen, n+1:2*n, 1:n) == basis_matrix(I, copy = false)
       break
     end
   end

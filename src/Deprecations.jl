@@ -269,3 +269,7 @@ end
 
 @deprecate hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}}) hom_direct_sum(G, H, A)
 @deprecate hom(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}}) hom_tensor(G, H, A)
+
+# Deprecated in 0.33.0
+
+@deprecate rres reduced_resultant

@@ -321,7 +321,7 @@ function _preproc(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldE
         add_to_key!(x, K(mod(uncom, P)), exponent-l)
       end
       if !isone(com)
-        e, b = is_power(com)
+        e, b = is_perfect_power_with_data(com)
         add_to_key!(x, K(b), -e*l)
       end
     end
@@ -335,7 +335,7 @@ function _preproc(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldE
         add_to_key!(x, K(mod(uncom, P)), l)
       end
       if !isone(com)
-        e, b = is_power(com)
+        e, b = is_perfect_power_with_data(com)
         add_to_key!(x, K(b), e*l)
       end
     end

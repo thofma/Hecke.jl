@@ -14,8 +14,8 @@
 
 parent_type(::Type{LocalFieldValuationRingElem{S, T}}) where {S, T} = LocalFieldValuationRing{S, T}
 elem_type(::Type{LocalFieldValuationRing{S, T}}) where {S, T} = LocalFieldValuationRingElem{S, T}
-is_domain_type(::Type{<: LocalFieldValuationRing}) = true
-is_exact_type(::Type{<: LocalFieldValuationRing}) = false
+is_domain_type(::Type{<: LocalFieldValuationRingElem}) = true
+is_exact_type(::Type{<: LocalFieldValuationRingElem}) = false
 
 ################################################################################
 #

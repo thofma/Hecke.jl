@@ -4,14 +4,14 @@
 #
 ################################################################################
 
-function unit_group(O::AlgAssAbsOrd)
+function unit_group(O::AlgAssAbsOrd; GRH::Bool = true)
   @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group) do
     if is_maximal(O)
-      U, mU = _unit_group_maximal(O)
+      U, mU = _unit_group_maximal(O; GRH = GRH)
     else
       OK = maximal_order(O)
-      UU, mUU = unit_group(OK)
+      UU, mUU = unit_group(OK; GRH = GRH)
       U, mU = _unit_group_non_maximal(O, OK, mUU)
     end
     return mU
@@ -101,10 +101,10 @@ function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
   return S, StoO
 end
 
-function _unit_group_maximal(O::AlgAssAbsOrd)
+function _unit_group_maximal(O::AlgAssAbsOrd; GRH::Bool = true)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{FinGenAbGroup, MapUnitGrp{AbsSimpleNumFieldOrder}}[ unit_group(maximal_order(field)) for (field, map) in fields_and_maps ]
+  unit_groups = Tuple{FinGenAbGroup, MapUnitGrp{AbsSimpleNumFieldOrder}}[ unit_group(maximal_order(field); GRH = GRH) for (field, map) in fields_and_maps ]
   G = unit_groups[1][1]
   for i = 2:length(unit_groups)
     G = direct_product(G, unit_groups[i][1], task = :none)::FinGenAbGroup

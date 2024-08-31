@@ -1285,20 +1285,79 @@ function small_knot(k::AbsSimpleNumField, stable::Int = 5)
 end
 
 @doc raw"""
-    subfields(C::ClassField; degree::Int) -> Vector{ClassField}
+    subfields(C::ClassField; degree::Int, is_normal, type) -> Vector{ClassField}
 
 Find all subfields of $C$ over the base field.
 
 If the optional keyword argument `degree` is positive, then only those with prescribed
 degree will be returned.
 
+If the optional keyword `is_normal` is given, then only those that are normal
+over the field fixed by the automorphisms is returned. For normal base fields,
+this amounts to extensions that are normal over `Q`.
+
+If the optional keyword `is_normal` is set to a list of automorphisms, then
+only those wil be considered.
+
+`type` can be set to the desired relative Galois group, given as a vector
+of integers descibing the structure.
+
 !!! note
     This will not find all subfields over $\mathbf{Q}$, but only the ones
     sharing the same base field.
 """
-function subfields(C::ClassField; degree::Int = -1)
+function subfields(C::ClassField; arg...)
+  degree = -1
+  if haskey(arg, :degree)
+    val = arg[:degree]
+    @req isa(val, Int) "degree must be an integer"
+    degree = Int(val)
+  end
+
   mR = C.rayclassgroupmap
   mQ = C.quotientmap
+
+  k = base_field(C)
+
+  if haskey(arg, :type)
+    val = arg[:type]
+    @req isa(val, Vector{Int}) "type must be a vector of ints"
+    qtype = Int[x for x = val]
+  end
+
+  if haskey(arg, :is_normal)
+    val = arg[:is_normal]
+    if val == is_normal
+      aut = automorphism_list(k)
+    elseif isa(val, Vector{<:Map{AbsSimpleNumField, AbsSimpleNumField}})
+      aut = val
+    else
+      error("is_normal must be either emtpy or a list of automorphisms")
+    end
+    aut = small_generating_set(aut)
+    c, inf = conductor(C)
+    if any(x-> c != induce_image(x, c), aut)
+      error("modulus not stable under automorphisms")
+    end
+    s1 = Set(inf)
+    if any(x -> s1 != Set(induce_image(x, y) for y = s1), aut)
+      error("modulus not stable under automorphisms")
+    end
+    C = rewrite_with_conductor(C)
+    mR = C.rayclassgroupmap
+    mQ = C.quotientmap
+    act = induce_action(C, aut)
+    if haskey(arg, :type)
+      @req !haskey(arg, :degree) "degree and type are exclusive" 
+      s = stable_subgroups(codomain(mQ), act; quotype = qtype, op = (x,y) -> quo(x, y, false)[2])
+    else
+      s = stable_subgroups(codomain(mQ), act; op = (x,y) -> quo(x, y, false)[2])
+      if degree != -1
+        s = filter(x->order(codomain(x)) == degree, collect(s))
+      end
+    end
+    return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = s]
+  end
 
   if degree > 0
     return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = subgroups(codomain(mQ), index = degree, fun = (x,y) -> quo(x, y, false)[2])]

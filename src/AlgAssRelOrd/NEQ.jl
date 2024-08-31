@@ -455,7 +455,7 @@ function _issubmodule(modules::Vector{<: PMat}, O::RelNumFieldOrder, LtoA::NfRel
   end
   result = Vector{Int}()
   for i = 1:length(modules)
-    if _spans_subset_of_pseudohnf(PM, modules[i], :lowerleft)
+    if _spans_subset_of_pseudohnf(PM, modules[i]; shape = :lowerleft)
       push!(result, i)
     end
   end

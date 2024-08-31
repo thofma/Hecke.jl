@@ -202,13 +202,6 @@ isequal(x::FakeFmpqMat, y::FakeFmpqMat) = (x.num == y.num) && (x.den == y.den)
 #
 ################################################################################
 
-to_array(x::FakeFmpqMat) = (x.num, x.den)
-
-function to_fmpz_mat(x::FakeFmpqMat)
-  !isone(x.den) && error("Denominator has to be 1")
-  return numerator(x)
-end
-
 function FakeFmpqMat(x::Vector{QQFieldElem})
   dens = ZZRingElem[denominator(x[i]) for i=1:length(x)]
   den = lcm(dens)

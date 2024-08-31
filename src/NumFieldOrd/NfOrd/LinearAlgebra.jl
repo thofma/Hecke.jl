@@ -858,7 +858,7 @@ function mul_col!(M::Generic.Mat{T}, i::Int, r::T) where T
   return nothing
 end
 
-function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
+function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, ::Val{with_solution} = Val(false); shape::Symbol = :upperright) where {T, S, with_solution}
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   start = 1
@@ -869,6 +869,9 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape
     step = -1
   end
   w = deepcopy(v)
+  if with_solution
+    sol = zero_matrix(base_ring(v), 1, nrows(P))
+  end
   for i = start:step:stop
     # find pivot
     if shape === :upperright
@@ -877,9 +880,16 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape
       piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
     end
     if !(w[1, piv]//P.matrix[i, piv] in P.coeffs[i])
-      return false
+      if with_solution
+        return false, sol
+      else
+        return false
+      end
     end
     e = w[1, piv]//P.matrix[i, piv]
+    if with_solution
+      sol[1, i] = e
+    end
     if shape == :upperright
       for j = piv:ncols(P)
         w[1, j] = w[1, j] - e*P.matrix[i, j]
@@ -890,13 +900,22 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape
       end
     end
   end
-  if !iszero(w)
-    return false
+  if with_solution
+    if !iszero(w)
+      return false, sol
+    else
+      return true, sol
+    end
+  else
+    if !iszero(w)
+      return false
+    else
+      return true
+    end
   end
-  return true
 end
 
-function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
+function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S}; shape::Symbol = :upperright) where {T, S}
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   start = 1
@@ -935,7 +954,7 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
   return true
 end
 
-function _spans_subset_of_pseudohnf(M::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, P::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, shape::Symbol = :upperright)
+function _spans_subset_of_pseudohnf(M::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, P::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}; shape::Symbol = :upperright)
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   for i in 1:nrows(M)
@@ -943,7 +962,7 @@ function _spans_subset_of_pseudohnf(M::PMat{AbsSimpleNumFieldElem, AbsSimpleNumF
     v = sub(M.matrix, i:i, 1:ncols(P))
     for b in basis(A.num)
       bb = divexact(elem_in_nf(b), A.den)
-      if !Hecke._contained_in_span_of_pseudohnf(bb*v, P, shape)
+      if !Hecke._contained_in_span_of_pseudohnf(bb*v, P; shape = shape)
         return false
       end
     end
@@ -951,12 +970,12 @@ function _spans_subset_of_pseudohnf(M::PMat{AbsSimpleNumFieldElem, AbsSimpleNumF
   return true
 end
 
-function _spans_subset_of_pseudohnf(M::PMat{T, S}, P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
+function _spans_subset_of_pseudohnf(M::PMat{T, S}, P::PMat{T, S}; shape::Symbol = :upperright) where {T, S}
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   for i in 1:nrows(M)
     v = sub(M.matrix, i:i, 1:ncols(P))
-    if !Hecke._contained_in_span_of_pseudohnf(v, M.coeffs[i], P, shape)
+    if !Hecke._contained_in_span_of_pseudohnf(v, M.coeffs[i], P; shape = shape)
       return false
     end
   end

@@ -611,28 +611,6 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    *(a::AlgAssRelOrdIdl, x::AbsNumFieldOrderElem) -> AlgAssRelOrdIdl
-    *(x::AbsNumFieldOrderElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
-    *(a::AlgAssRelOrdIdl, x::RelNumFieldOrderElem) -> AlgAssRelOrdIdl
-    *(x::RelNumFieldOrderElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
-    *(a::AlgAssRelOrdIdl, x::Int) -> AlgAssRelOrdIdl
-    *(x::Int, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
-    *(a::AlgAssRelOrdIdl, x::ZZRingElem) -> AlgAssRelOrdIdl
-    *(x::ZZRingElem, a::AlgAssRelOrdIdl) -> AlgAssRelOrdIdl
-    *(a::AlgAssRelOrdIdl{S, T, U}, x::S) where { S, T, U } -> AlgAssRelOrdIdl{S, T, U}
-    *(x::S, a::AlgAssRelOrdIdl{S, T, U}) where { S, T, U } -> AlgAssRelOrdIdl{S, T, U}
-    *(a::AlgAssRelOrdIdl{S, T, U}, x::AbstractAssociativeAlgebraElem{S}) where { S, T, U }
-      -> AlgAssRelOrdIdl{S, T, U}
-    *(x::AbstractAssociativeAlgebraElem{S}, a::AlgAssRelOrdIdl{S, T, U}) where { S, T, U }
-      -> AlgAssRelOrdIdl{S, T, U}
-    *(a::AlgAssRelOrdIdl{S, T, U}, x::AlgAssRelOrdElem{S, T, U}) where { S, T, U }
-      -> AlgAssRelOrdIdl{S, T, U}
-    *(x::AlgAssRelOrdElem{S, T, U}, a::AlgAssRelOrdIdl{S, T}) where { S, T, U }
-      -> AlgAssRelOrdIdl{S, T, U}
-
-Returns the ideal $a*x$ respectively $x*a$.
-"""
 function *(a::AlgAssRelOrdIdl{S, T, U}, x::Union{ Int, ZZRingElem, AbsNumFieldOrderElem, RelNumFieldOrderElem, S }) where { S <: NumFieldElem, T, U }
   if iszero(x)
     return _zero_ideal(algebra(a))
@@ -750,7 +728,10 @@ Returns `true` if $a$ and $b$ are equal and `false` otherwise.
 """
 function ==(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where { S, T, U }
   algebra(a) !== algebra(b) && return false
-  return basis_pmatrix(a, copy = false) == basis_pmatrix(b, copy = false)
+  apmat = basis_pmatrix(a, copy = false)
+  bpmat = basis_pmatrix(b, copy = false)
+  return _spans_subset_of_pseudohnf(apmat, bpmat; shape = :lowerleft) &&
+         _spans_subset_of_pseudohnf(bpmat, apmat; shape = :lowerleft)
 end
 
 ################################################################################
@@ -774,7 +755,7 @@ function _test_ideal_sidedness(a::AlgAssRelOrdIdl, O::AlgAssRelOrd, side::Symbol
     error("side must be either :left or :right")
   end
 
-  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false), :lowerleft)
+  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false); shape = :lowerleft)
 end
 
 function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
@@ -789,7 +770,7 @@ function _test_ideal_sidedness(a::AlgAssRelOrdIdl, side::Symbol)
     error("side must be either :left or :right")
   end
 
-  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false), :lowerleft)
+  return _spans_subset_of_pseudohnf(basis_pmatrix(c, copy = false), basis_pmatrix(a, copy = false); shape = :lowerleft)
 end
 
 ################################################################################
@@ -1793,3 +1774,18 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssRelOrdIdl)
   return J
 end
 
+################################################################################
+#
+#  Extend
+#
+################################################################################
+
+function Base.:(*)(I::AlgAssRelOrdIdl, O::AlgAssRelOrd)
+  @assert algebra(I) === algebra(O)
+  return I * (one(algebra(O)) * O)
+end
+
+function Base.:(*)(O::AlgAssRelOrd, I::AlgAssRelOrdIdl)
+  @assert algebra(I) === algebra(O)
+  return (one(algebra(O)) * O) * I
+end

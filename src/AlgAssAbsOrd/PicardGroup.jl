@@ -545,7 +545,7 @@ end
 ################################################################################
 
 # inf_pcl[i] may contain places for the field A.maps_to_numberfields[i][1]
-function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector{Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}()) where {T}
+function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector{Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}(); GRH::Bool = true) where {T}
   O = order(m)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -555,9 +555,9 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
   for i = 1:length(fields_and_maps)
     mi = _as_ideal_of_number_field(m, fields_and_maps[i][2])
     if length(inf_plc) != 0
-      r, mr = ray_class_group(mi, inf_plc[i])
+      r, mr = ray_class_group(mi, inf_plc[i]; GRH = GRH)
     else
-      r, mr = ray_class_group(mi)
+      r, mr = ray_class_group(mi; GRH = GRH)
     end
     push!(groups, _make_disc_exp_deterministic(mr))
     #push!(groups, ray_class_group(mi))

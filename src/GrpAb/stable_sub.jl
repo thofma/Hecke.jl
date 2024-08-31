@@ -323,7 +323,7 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
   else
     minlist = minimal_submodules(N,ind)
   end
-  list=Vector{zzModMatrix}(undef, length(minlist))
+  list=Vector{zzModMatrix}()
   v=[divexact(ZZRingElem(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
     K = abelian_group([ZZRingElem(R.n) for j=1:nrows(x)])
@@ -335,7 +335,7 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
     end
     mH = Hecke.FinGenAbGroupHom(S.V,K,A)
     sg, msg = kernel(mH)
-    push!(list, reduce(vcat, [(mS(msg(y))).coeff for y in gens(sg)]))
+    push!(list, change_base_ring(R, reduce(vcat, [(mS(msg(y))).coeff for y in gens(sg)])))
   end
   return list
 

@@ -202,14 +202,22 @@ function compose_and_squash(f::AbsAlgAssMor{R, U, T}, g::AbsAlgAssMor{S, R, T}) 
   end
 end
 
-function hom(A::R, B::S, imgs::Vector) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra}
+function hom(A::R, B::S, imgs::Vector; check = true) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra}
   @assert length(imgs) == dim(A)
   bmat = basis_matrix(imgs)
-  return hom(A, B, bmat)
+  return hom(A, B, bmat; check = check)
 end
 
-function hom(A::R, B::S, M::T) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
-  return AbsAlgAssMor{R, S, T}(A, B, M)
+function hom(A::R, B::S, M::T; check = true) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
+  h = AbsAlgAssMor{R, S, T}(A, B, M)
+  if check
+    for a in basis(A), b in basis(A)
+      if h(a * b) != h(a) * h(b)
+        error("Data does not define an algebra homomorphism")
+      end
+    end
+  end
+  return h
 end
 
 function hom(A::R, B::S, M::T, N::T) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
