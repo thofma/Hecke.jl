@@ -72,7 +72,7 @@ end
 #
 ################################################################################
 
-#=
+
 function part_echolonize!(A)
  A = delete_zero_rows!(A)
  n = nrows(A)
@@ -99,7 +99,6 @@ function part_echolonize!(A)
  end
  return SG
 end
-=#
 
 function part_echolonize_field!(A)
  A = delete_zero_rows!(A)
@@ -143,7 +142,6 @@ function single_rows_to_top!(SG)
  return SG
 end
 
-#=
 function build_part_ref!(SG)
  queue = collect(ncols(SG.A):-1:1)
  while !isempty(queue)
@@ -173,7 +171,6 @@ function build_part_ref!(SG)
   queue = queue_new
  end
 end
-=#
 
 function build_part_ref_field!(SG)
  queue = collect(ncols(SG.A):-1:1)
@@ -207,7 +204,6 @@ function build_part_ref_field!(SG)
  end
 end
 
-#=
 function find_best_single_row(SG)
  best_single_row = -1
  best_col = NaN
@@ -245,7 +241,6 @@ function find_best_single_row(SG)
  end
  return best_single_row
 end
-=#
 
 function find_best_single_row_field(SG)
  best_single_row = -1
@@ -336,7 +331,6 @@ function handle_new_light_weight!(i, SG)
  return SG
 end
 
-#=
 function eliminate_and_update!(best_single_row, SG)
  @assert best_single_row != 0
  best_row = deepcopy(SG.A[best_single_row])
@@ -358,7 +352,6 @@ function eliminate_and_update!(best_single_row, SG)
  end
  return SG
 end
-=#
 
 function eliminate_and_update_field!(best_single_row, SG)
  @assert best_single_row != 0
@@ -395,7 +388,6 @@ function find_row_to_add_on(row_idx, best_row, best_col_idces::Vector{Int64}, SG
  return row_idx
 end
 
-#=
 function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
@@ -414,13 +406,18 @@ function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
    deleteat!(SG.col_list[c], jj)
   end
  end
+ @assert !(0 in SG.A[row_idx].values)#test
  scale_row!(SG.A, row_idx, best_val_red)
- @assert !(0 in SG.A[row_idx].values)
+ @assert !(0 in SG.A[row_idx].values)#test
+ @assert !(0 in best_row.values)
+ if row_idx == 171 
+  @show(best_row,SG.A[row_idx], -val_red)
+ end
  Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val_red)
  @assert iszero(SG.A[row_idx, best_col])
+ @assert !(0 in SG.A[row_idx].values)
  return SG
 end
-=#
 
 function add_to_eliminate_field!(L_row, row_idx, best_row, best_col, best_val, SG)
  @assert L_row in SG.col_list[best_col]
@@ -509,7 +506,6 @@ end
 #
 ################################################################################
 
-#=
 function compute_kernel(SG, with_light = true)
  update_light_cols!(SG)
  @assert SG.nlight > -1
@@ -518,7 +514,6 @@ function compute_kernel(SG, with_light = true)
  l, K = init_kernel(_nullity, _dense_kernel, SG, with_light)
  return compose_kernel(l, K, SG)
 end
-=#
  
 function compute_kernel_field(SG, with_light = true)
  update_light_cols!(SG)
@@ -643,7 +638,6 @@ function compose_kernel_elem(_kernel, single_part, SG)
 end
 =#
 
-#=
 function compose_kernel(l, K, SG)
  R = base_ring(SG.A)
  n = nrows(SG.A)
@@ -681,7 +675,6 @@ function compose_kernel(l, K, SG)
  end
  return l, K
 end
-=#
 
 function compose_kernel_field(l, K, SG)
  R = base_ring(SG.A)
