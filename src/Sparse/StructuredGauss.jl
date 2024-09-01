@@ -406,13 +406,8 @@ function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
    deleteat!(SG.col_list[c], jj)
   end
  end
- @assert !(0 in SG.A[row_idx].values)#test
  scale_row!(SG.A, row_idx, best_val_red)
- @assert !(0 in SG.A[row_idx].values)#test
  @assert !(0 in best_row.values)
- if row_idx == 171 
-  @show(best_row,SG.A[row_idx], -val_red)
- end
  Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val_red)
  @assert iszero(SG.A[row_idx, best_col])
  @assert !(0 in SG.A[row_idx].values)
