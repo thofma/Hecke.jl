@@ -190,7 +190,7 @@ end
 # Does anyone actually use this?
 function StructureConstantAlgebra(R::Ring, d::Int, arr::Vector{T}) where {T}
   if d == 0
-    return _zero_algebra(R)
+    return zero_algebra(R)
   end
   mult_table = Array{T, 3}(undef, d, d, d)
   n = d^2
@@ -261,12 +261,14 @@ function reduce_rows_mod_hnf!(M::ZZMatrix, N::ZZMatrix, rows::Vector{Int})
   return M
 end
 
-function addmul!(a::AlgAssAbsOrdElem, b::ZZRingElem, c::AlgAssAbsOrdElem)
-  return add!(a, a, b * c)
+function addmul!(a::AlgAssAbsOrdElem, b::ZZRingElem, c::AlgAssAbsOrdElem, d = parent(a)())
+  mul!(d, b, c)
+  return add!(a, a, d)
 end
 
-function addmul!(a::AbsNumFieldOrderElem, b::ZZRingElem, c::AbsNumFieldOrderElem)
-  return add!(a, a, b * c)
+function addmul!(a::AbsNumFieldOrderElem, b::ZZRingElem, c::AbsNumFieldOrderElem, d = parent(a)())
+  mul!(d, b, c)
+  return add!(a, a, d)
 end
 
 @doc raw"""
@@ -300,7 +302,7 @@ function StructureConstantAlgebra(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::U
   Fp = GF(p, cached = false)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -358,13 +360,15 @@ function StructureConstantAlgebra(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::U
 
   local _preimage
 
-  let BO = BO, basis_elts = basis_elts, r = r
+  temp = zero(O)
+
+  let BO = BO, basis_elts = basis_elts, r = r, temp = temp
     function _preimage(a::AssociativeAlgebraElem)
       z = zero(O)::eltype(BO)
       ca = coefficients(a, copy = false)
       for i in 1:r
         l = lift(ZZ, ca[i])
-        addmul!(z, l, BO[basis_elts[i]])
+        addmul!(z, l, BO[basis_elts[i]], temp)
       end
       return z
       #return sum(lift(coefficients(a, copy = false)[i])*BO[basis_elts[i]] for i = 1:r)
@@ -407,6 +411,7 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
   @assert order(I) === order(J)
 
   O = order(I)
+  Oalgebra = _algebra(O)
 
   n = degree(O)
   BmatJinI = hnf(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
@@ -425,7 +430,7 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
   Fp = GF(p, cached = false)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -489,9 +494,21 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
 
   local _preimage
 
-  let BI = BI, basis_elts = basis_elts, r = r
+  temppp = zero(Oalgebra)
+
+  let BI = BI, basis_elts = basis_elts, r = r, Oalgebra = Oalgebra, temppp = temppp
     function _preimage(a::AssociativeAlgebraElem)
-      return O(sum(lift(ZZ, coefficients(a, copy = false)[i])*BI[basis_elts[i]] for i = 1:r))
+      acoords = map(x -> QQ(lift(ZZ, x)), coefficients(a, copy = false))
+      z = zero(Oalgebra)
+      for i in 1:r
+        if is_zero(acoords[i])
+          continue
+        end
+        temppp = mul!(temppp, acoords[i], BI[basis_elts[i]])
+        z = add!(z, z, temppp)
+      end
+      _zz = O(z)
+      return _zz
     end
   end
 
@@ -557,7 +574,7 @@ function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd
   r = length(basis_elts)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -712,7 +729,7 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
   r = length(basis_elts)
 
   if r == 0
-    A = _zero_algebra(Fp)
+    A = zero_algebra(Fp)
 
     local _image_zero
 
@@ -978,7 +995,7 @@ function subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T,
   r = size(mult_table, 1)
 
   if r == 0
-    eA = _zero_algebra(R)
+    eA = zero_algebra(R)
     return eA, hom(eA, A, zero_matrix(R, 0, n))
   end
 
@@ -1566,4 +1583,3 @@ function opposite_algebra(A::StructureConstantAlgebra)
   B = StructureConstantAlgebra(K, z, o)
   return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d))
 end
-

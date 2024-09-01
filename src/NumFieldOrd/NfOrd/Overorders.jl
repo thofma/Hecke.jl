@@ -592,7 +592,7 @@ end
 function _overorders_with_local_property(O, pred)
   orders = typeof(O)[]
   M = maximal_order(O)
-  n, f = is_power(divexact(discriminant(O), discriminant(M)))
+  n, f = is_perfect_power_with_data(divexact(discriminant(O), discriminant(M)))
   @assert n % 2 == 0
   for (p, ) in factor(f)
     lp = prime_ideals_over(O, p)
@@ -644,7 +644,7 @@ end
 function overorders_etale(O)
   orders = typeof(O)[]
   M = maximal_order(O)
-  n, f = is_power(divexact(discriminant(O), discriminant(M)))
+  n, f = is_perfect_power_with_data(divexact(discriminant(O), discriminant(M)))
   @assert n % 2 == 0
   for (p, ) in factor(f)
     new_p = poverorders_etale(O, p)
@@ -1061,7 +1061,7 @@ end
 
 function is_bass(O::AlgAssAbsOrd)
   @assert is_commutative(O)
-  n, f = is_power(divexact(discriminant(O), discriminant(maximal_order(O))))
+  n, f = is_perfect_power_with_data(divexact(discriminant(O), discriminant(maximal_order(O))))
   @assert n % 2 == 0
   for (p, _) in factor(f)
     for P in prime_ideals_over(O, p)
@@ -1092,7 +1092,7 @@ end
 
 function is_gorenstein(O::AlgAssAbsOrd)
   @assert is_commutative(O)
-  n, f = is_power(divexact(discriminant(O), discriminant(maximal_order(O))))
+  n, f = is_perfect_power_with_data(divexact(discriminant(O), discriminant(maximal_order(O))))
   @assert n % 2 == 0
   for (p, _) in factor(f)
     for P in prime_ideals_over(O, p)
@@ -1203,7 +1203,7 @@ function poverorders_goursat(O1::AbsSimpleNumFieldOrder, O2::AbsSimpleNumFieldOr
   d = degree(O2)
   for O in l2
     i = index(O2, O)
-    e, _ = is_power(i)
+    e, _ = is_perfect_power_with_data(i)
     for k in 1:e
       ideals = ideals_with_norm(O, p, k)
       for (typ, I) in ideals

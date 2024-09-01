@@ -154,7 +154,7 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
     Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
     f1 = Zx(K.pol)
-    ds = gcd(rres(f1, derivative(f1)), discriminant(O))
+    ds = gcd(reduced_resultant(f1, derivative(f1)), discriminant(O))
     l = prefactorization(f1, ds)
   else
     ds = discriminant(O)
@@ -222,7 +222,7 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
     return OO
   end
   for i=1:length(l1)
-    a, b = is_power(l1[i])
+    a, b = is_perfect_power_with_data(l1[i])
     if a>1
       if is_prime(b)
         O1 = pmaximal_overorder(O, b)
@@ -264,7 +264,7 @@ function _TameOverorderBL(O::AbsSimpleNumFieldOrder, lp::Vector{ZZRingElem})
     if is_coprime(q, discriminant(OO))
       continue
     end
-    _, q = is_power(q)
+    _, q = is_perfect_power_with_data(q)
     if is_prime(q)
       OO1 = pmaximal_overorder(O, q)
       if valuation(discriminant(OO1), q) < valuation(discriminant(OO), q)
@@ -480,7 +480,7 @@ function TameOverorderBL(O::AbsSimpleNumFieldOrder, lp::Vector{ZZRingElem}=ZZRin
   l=coprime_base(list)
   #Some trivial things, maybe useless
   for i=1:length(l)
-    a,b=is_power(l[i])
+    a,b=is_perfect_power_with_data(l[i])
     if a>1
       l[i]=b
     end
@@ -1017,7 +1017,7 @@ function prefactorization(f::ZZPolyRingElem, d::ZZRingElem, f1::ZZPolyRingElem =
   final_factors = ZZRingElem[]
   while !isempty(factors)
     d1 = pop!(factors)
-    d1 = is_power(d1)[2]
+    d1 = is_perfect_power_with_data(d1)[2]
     if isone(d1) || iszero(d1)
       continue
     end

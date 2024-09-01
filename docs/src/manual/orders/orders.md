@@ -75,7 +75,6 @@ ring_of_multipliers(::AbsNumFieldOrderIdeal)
 ## Invariants
 
 ```@docs
-discriminant(::AbsSimpleNumFieldOrder)
 discriminant(::AbsNumFieldOrder)
 reduced_discriminant(::AbsSimpleNumFieldOrder)
 degree(::AbsSimpleNumFieldOrder)

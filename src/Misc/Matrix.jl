@@ -853,7 +853,7 @@ function divisors(M::ZZMatrix, d::ZZRingElem)
       push!(l, p)
     end
   end
-  d = is_power(d)[2]
+  d = is_perfect_power_with_data(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
   while !is_diagonal(M1)
     M1 = transpose(M1)

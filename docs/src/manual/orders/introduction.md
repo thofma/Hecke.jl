@@ -59,8 +59,8 @@ Usually, to create an order, one starts with a field (or a polynomial):
 using Hecke; # hide
 Qx, x = polynomial_ring(QQ, "x");
 K, a = number_field(x^2 - 10, "a");
-E = EquationOrder(K)
-Z_K = MaximalOrder(K)
+E = equation_order(K)
+Z_K = maximal_order(K)
 conductor(E)
 E == Z_K
 ```

@@ -310,14 +310,14 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
   values::S
   pos::Vector{Int}
 
-  function SRow(R::Ring)
+  function SRow(R::NCRing)
     @assert R != ZZ
     S = sparse_inner_type(R)
     r = new{elem_type(R), S}(R, S(), Vector{Int}())
     return r
   end
 
-  function SRow(R::Ring, p::Vector{Int64}, S::AbstractVector; check::Bool = true)
+  function SRow(R::NCRing, p::Vector{Int64}, S::AbstractVector; check::Bool = true)
     if check && any(iszero, S)
       p = copy(p)
       S = deepcopy(S)
@@ -336,7 +336,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, A::Vector{Tuple{Int, T}}) where T
+  function SRow(R::NCRing, A::Vector{Tuple{Int, T}}) where T
     r = SRow(R)
     for (i, v) = A
       if !iszero(v)
@@ -348,7 +348,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow(R::Ring, A::Vector{Tuple{Int, Int}})
+  function SRow(R::NCRing, A::Vector{Tuple{Int, Int}})
     r = SRow(R)
     for (i, v) = A
       if !iszero(v)
@@ -369,7 +369,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
     return r
   end
 
-  function SRow{T}(R::Ring, pos::Vector{Int}, val::Vector{T}) where {T}
+  function SRow{T}(R::NCRing, pos::Vector{Int}, val::Vector{T}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
     r = SRow(R)
     for i=1:length(pos)
@@ -390,9 +390,9 @@ end
 
 # helper function used by SRow construct and also by the default
 # methods for `sparse_matrix_type` and `sparse_row_type`.
-sparse_inner_type(::T) where {T <: Union{Ring, RingElem}} = sparse_inner_type(T)
-sparse_inner_type(::Type{T}) where {T <: Ring} = sparse_inner_type(elem_type(T))
-sparse_inner_type(::Type{T}) where {T <: RingElem} = Vector{T}
+sparse_inner_type(::T) where {T <: Union{NCRing, NCRingElem}} = sparse_inner_type(T)
+sparse_inner_type(::Type{T}) where {T <: NCRing} = sparse_inner_type(elem_type(T))
+sparse_inner_type(::Type{T}) where {T <: NCRingElem} = Vector{T}
 
 ################################################################################
 #
@@ -1101,6 +1101,7 @@ mutable struct AbsNumFieldOrderFractionalIdeal{S, T} <: NumFieldOrderFractionalI
   norm::QQFieldElem
   basis_matrix::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
+  basis::Vector{T}
 
   function AbsNumFieldOrderFractionalIdeal{S, T}(O::AbsNumFieldOrder{S, T}) where {S, T}
     z = new{S, T}()
@@ -1715,7 +1716,7 @@ end
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
-  tmp_xxgcd::ZZMatrix # used only by xxgcd in AbsSimpleNumFieldOrder/residue_ring.jl
+  tmp_gcdxx::ZZMatrix # used only by gcdxx in AbsSimpleNumFieldOrder/residue_ring.jl
   tmp_div::ZZMatrix # used only by div in AbsSimpleNumFieldOrder/residue_ring.jl
   tmp_ann::ZZMatrix # used only by annihilator in AbsSimpleNumFieldOrder/residue_ring.jl
   tmp_euc::ZZMatrix # used only by euclid in AbsSimpleNumFieldOrder/residue_ring.jl
@@ -1731,7 +1732,7 @@ end
     z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
-    z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
+    z.tmp_gcdxx = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
     z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
     z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
     z.one = simplify!(one(z))

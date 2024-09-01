@@ -322,9 +322,15 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
   gens = elem_type(O)[]
   for e in q
     _x = mu(mq\e)
+    _n = abs(FlintZZ(absolute_tr(_x)))
     # Reduce modulo squares, so that the trace is hopefully small
     x = evaluate(reduce_mod_powers(elem_in_nf(_x), 2))
     n = abs(FlintZZ(absolute_tr(x)))
+    if _n < n
+      # the old x has smaller trace
+      x = _x
+      n = _n
+    end
     if !(n in norms)
       newel = enumerate(O, Int(n), true)
       for un in newel
@@ -357,9 +363,9 @@ function unit_group_modulo_scalars(O::AlgAssAbsOrd)
   return enumerate(O, 1)
 end
 
-function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd})
+function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd}; GRH::Bool = true)
   gens1 = unit_group_modulo_scalars(O)
-  u, mu = unit_group(base_ring(O))
+  u, mu = unit_group(base_ring(O); GRH = GRH)
   A = algebra(O)
   gens2 = [ O(A(elem_in_nf(mu(u[i])))) for i in 1:ngens(u) ]
   return append!(gens1, gens2)
@@ -440,8 +446,6 @@ function ___standard_involution(A)
   return hom(A, A, invol, inv(invol))
 end
 
-global _debug = []
-
 function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   A = algebra(M)
   f = standard_involution(A)
@@ -498,7 +502,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     #@show B
 
-    v = _short_vectors_gram_integral(G, FlintZZ(B), hard = true)
+    v = _short_vectors_gram_integral(Vector, G, FlintZZ(B), hard = true)
 
     #if min == degree(base_ring(A))
     for w in v

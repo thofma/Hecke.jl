@@ -25,6 +25,11 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     @test basis_matrix(Hecke.FakeFmpqMat, L) == Hecke.Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
     @test basis_mat_inv(Hecke.FakeFmpqMat, L) == Hecke.Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
 
+    LL = @inferred fractional_ideal(O1, QQ[8 0 0; 0 1//2 0; 0 0 1//2])
+    @test LL.basis_matrix == Hecke.Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
+    @test basis_matrix(Hecke.FakeFmpqMat, LL) == Hecke.Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
+    @test basis_mat_inv(Hecke.FakeFmpqMat, LL) == Hecke.Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
+
     M = @inferred fractional_ideal(O1, 2*a1//2)
     @test basis_matrix(Hecke.FakeFmpqMat, M) == Hecke.Hecke.FakeFmpqMat(FlintZZ[16 0 0; 0 1 0; 0 0 1], ZZRingElem(2))
     @test basis_mat_inv(Hecke.FakeFmpqMat, M) == Hecke.Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 16 0; 0 0 16], ZZRingElem(8))
@@ -49,6 +54,10 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     @test b == [ K1(8), a1, 2*a1^2 ]
     b = @inferred basis(M)
     @test b == [ K1(8), a1, 2*a1^2 ]
+
+    b = basis(J)
+    @test b !== basis(J)
+    @test basis(J, copy = false) === basis(J, copy = false)
   end
 
   @testset "Norm" begin

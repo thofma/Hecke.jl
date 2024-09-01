@@ -144,6 +144,9 @@
   @test length(subfields(r)) == 5
   @test length(subfields(r; degree = 2)) == 3
   @test is_central(r)
+  @test length(subfields(r; degree = 2, is_normal)) == 3
+  @test length(subfields(r; type = [2], is_normal)) == 3
+  @test length(subfields(r; is_normal = automorphism_list(base_field(r)))) == 5
 
   K = quadratic_field(5)[1]
   OK = maximal_order(K)

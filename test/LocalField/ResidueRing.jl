@@ -29,8 +29,8 @@ end
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
-  @test !is_domain_type(typeof(S))
-  @test is_exact_type(typeof(S))
+  @test !is_domain_type(elem_type(S))
+  @test is_exact_type(elem_type(S))
   test_Ring_interface(S)
 
   # the euclidean conformance test seems to assume that the ring is a domain
@@ -42,8 +42,8 @@ end
   R = valuation_ring(K)
   pi = uniformizer(R)
   S, RtoS = residue_ring(R, pi^3)
-  @test !is_domain_type(typeof(S))
-  @test is_exact_type(typeof(S))
+  @test !is_domain_type(elem_type(S))
+  @test is_exact_type(elem_type(S))
   test_Ring_interface(S)
 
   # LocalField
@@ -56,8 +56,8 @@ end
   S, RtoS = residue_ring(R, pi^3)
   # In this case, valuation(pi) == 1//2
   @test Hecke._exponent(S) == 3
-  @test !is_domain_type(typeof(S))
-  @test is_exact_type(typeof(S))
+  @test !is_domain_type(elem_type(S))
+  @test is_exact_type(elem_type(S))
   test_Ring_interface(S)
 end
 
@@ -81,7 +81,7 @@ end
   end
 end
 
-@testset "xxgcd" begin
+@testset "gcdxx" begin
   F, _ = cyclotomic_field(20)
   OF = maximal_order(F)
   P = prime_decomposition(OF, 2)[1][1]
@@ -92,7 +92,7 @@ end
 
   for a in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 3)*S(pi^2)]
     for b in [zero(S), one(S), S(pi), S(pi + 1), QQ(1, 3)*S(pi^2)]
-      g, u, v, s, t = Hecke.xxgcd(a, b)
+      g, u, v, s, t = Hecke.AbstractAlgebra.gcdxx(a, b)
       @test g == gcd(a, b)
       @test g == u*a + v*b
       @test is_zero(s*a + t*b)
@@ -210,13 +210,17 @@ end
 
   M = matrix(S, [1 2 3 4 5; 0 0 8 9 10; 0 0 0 14 15])
   C = solve_init(M)
-
-  @test C isa AbstractAlgebra.solve_context_type(elem_type(S))
-  @test C isa AbstractAlgebra.solve_context_type(zero(S))
-  @test C isa AbstractAlgebra.solve_context_type(typeof(S))
   @test C isa AbstractAlgebra.solve_context_type(S)
-  @test C isa AbstractAlgebra.solve_context_type(typeof(M))
   @test C isa AbstractAlgebra.solve_context_type(M)
+
+  @test AbstractAlgebra.Solve.matrix_normal_form_type(C) === AbstractAlgebra.Solve.HowellFormTrait()
+
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), elem_type(S))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), zero(S))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), typeof(S))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), S)
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), typeof(M))
+  @test C isa AbstractAlgebra.solve_context_type(AbstractAlgebra.Solve.HowellFormTrait(), M)
 
   @test_throws ErrorException solve(C, [ S(1) ])
   @test_throws ErrorException solve(C, [ S(1) ], side = :right)

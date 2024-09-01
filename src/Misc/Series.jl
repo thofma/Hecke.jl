@@ -207,7 +207,7 @@ function mymul_ks(f::PolyRingElem{<:SeriesElem{QadicFieldElem}}, g::PolyRingElem
           Base.GC.@preserve FG, setcoeff!(H, x, coeffraw(FG, x + (j*nfg+i)*(2*h-1)))
         end
       end
-      push!(c, Qq(H, mp))
+      push!(c, Qq(H; precision = mp))
       @assert valuation(c[end]) >= 0
     end
     while iszero(c[end]) && length(c) > 1

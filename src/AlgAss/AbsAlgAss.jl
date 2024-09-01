@@ -1441,3 +1441,50 @@ function central_primitive_idempotents(A::AbstractAssociativeAlgebra)
   end
   return res
 end
+
+###############################################################################
+#
+#  Skolem-Noether
+#
+################################################################################
+
+function _skolem_noether(h::AbsAlgAssMor)
+  A = domain(h)
+  @req A === codomain(h) "Morphism must be an isomorphism"
+  @req is_simple(A) "Algebra must be simple"
+  @req is_central(A) "Algebra must be central"
+  # for b, consider the map f_b : A -> A, x -> b * x - x * h(b)
+  # we look for something in the intersection ker(f_b), where b runs through
+  # a basis of A. We are tad more clever and consider only the restriction
+  # on the kernel (intersection) we found so far
+  #
+  # Also if we hit something one-dimensional, we are done
+  B = basis(A)
+  C = B
+  Cmat = basis_matrix(C)
+  for b in B
+    M = basis_matrix(elem_type(A)[b * c - c * h(b) for c in C])
+    K = kernel(M, side = :left)
+    Cmat = K * Cmat
+    C = elem_type(A)[A(Cmat[i, :]) for i in 1:nrows(Cmat)]
+    if length(C) == 1
+      break
+    end
+  end
+  if length(C) == 1
+    a = C[1]
+    fl, _ = is_invertible(a)
+    @assert fl
+    return a
+  else
+    for i in 1:length(C)
+      a = C[i]
+      fl, _ = is_invertible(a)
+      if fl
+        return a
+      end
+    end
+    # do some random combination
+    error("Not impelemented yet")
+  end
+end

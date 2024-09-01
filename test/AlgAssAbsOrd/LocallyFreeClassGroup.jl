@@ -117,3 +117,13 @@ end
     @test is_isomorphic(kernel_group(ZG), abelian_group(o))[1]
   end
 end
+
+let
+  A, = StructureConstantAlgebra(group_algebra(GF(2, 3), small_group(2, 1)))
+  u = Hecke.K1(A; do_units = true)
+  @test length(closure(u, *)) == 8 * 7
+
+  A, = StructureConstantAlgebra(group_algebra(GF(2, 4), small_group(2, 1)))
+  u = Hecke.K1(A; do_units = true)
+  @test length(closure(u, *)) == 16 * 15
+end

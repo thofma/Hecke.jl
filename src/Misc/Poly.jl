@@ -317,12 +317,12 @@ end
 ################################################################################
 
 @doc raw"""
-    rres(f::ZZPolyRingElem, g::ZZPolyRingElem) -> ZZRingElem
+    reduced_resultant(f::ZZPolyRingElem, g::ZZPolyRingElem) -> ZZRingElem
 
 The reduced resultant of $f$ and $g$,
 that is a generator for the ideal $(f, g) \cap Z$.
 """
-function rres(f::ZZPolyRingElem, g::ZZPolyRingElem)
+function reduced_resultant(f::ZZPolyRingElem, g::ZZPolyRingElem)
   return rres_bez(f,g)
 end
 
@@ -720,7 +720,7 @@ function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]))
 end
 
-function roots(x::RealPoly)
+function roots(x::RealPolyRingElem)
   rt = roots(map_coefficients(ComplexField(), x), isolate_real=true)
   return real.(filter(isreal, rt))
 end
@@ -728,7 +728,8 @@ end
 function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   g = squarefree_part(f)
   all_rts = _roots(g, prec)
-  rl_rts = real.(filter(isreal, all_rts))
+  # real.(filter(...)) leads to worse type inference
+  rl_rts = map(real, (filter(isreal, all_rts)))
   compl_rts = filter(x -> !isreal(x) && is_positive(imag(x)), all_rts)
   @assert length(rl_rts) + 2 * length(compl_rts) == degree(g)
   return all_rts, rl_rts, compl_rts
@@ -737,7 +738,7 @@ end
 function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
   d = Dict{AcbPolyRingElem, Int}()
-  Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
   for (k,v) = g.fac
     for r = roots(R, k)
       d[t-r] = v
@@ -748,7 +749,7 @@ end
 
 function factor(R::ComplexField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
   g = factor(f)
-  Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
   d = Dict{typeof(t), Int}()
   for (k,v) = g.fac
     for r = roots(R, k)
@@ -772,7 +773,7 @@ end
 
 function factor(R::Union{RealField, ArbField}, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
   g = factor(f)
-  Rx, x = polynomial_ring(R, String(var(parent(f))), cached = false)
+  Rx, x = polynomial_ring(R, var(parent(f)), cached = false)
   d = Dict{typeof(x), Int}()
   if isa(R, RealField)
     C = ComplexField()

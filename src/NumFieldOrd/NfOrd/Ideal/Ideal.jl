@@ -1042,14 +1042,14 @@ function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
-    m = data(rres(B, F))
+    m = data(reduced_resultant(B, F))
     return gcd(a, m)
   else
     S1 = residue_ring(FlintZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
-    m1 = data(rres(B1, F1))
+    m1 = data(reduced_resultant(B1, F1))
     return gcd(a, m1)
   end
 end
@@ -1468,7 +1468,7 @@ function is_power_unram(I::AbsNumFieldOrderIdeal)
     return 0, I
   end
 
-  e, ra = is_power(m)
+  e, ra = is_perfect_power_with_data(m)
   J = gcd(I, ra)
 
   II = J^e//I
@@ -1493,11 +1493,11 @@ end
 
 function is_power(I::AbsSimpleNumFieldOrderFractionalIdeal)
   num, den = integral_split(I)
-  e, r = is_power(num)
+  e, r = is_perfect_power_with_data(num)
   if e == 1
     return e, I
   end
-  f, s = is_power(den)
+  f, s = is_perfect_power_with_data(den)
   g = gcd(e, f)
   return g, r^div(e, g)//s^div(f, g)
 end
@@ -2398,7 +2398,7 @@ function is_coprime(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal)
   #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and
   #let x be a nilpotent element. Then I = 1 if and only if I + x = 1
   m = gcd(minimum(I, copy = false), minimum(J, copy = false))
-  m = is_power(m)[2]
+  m = is_perfect_power_with_data(m)[2]
   if has_2_elem(I) && has_2_elem(J)
     K = nf(order(I))
     if gcd(m, index(order(I))) == 1
@@ -2493,7 +2493,7 @@ residue ring has the required size. Here, the ideals are returned in factorised 
 function euler_phi_inv_fac_elem(n::ZZRingElem, zk::AbsSimpleNumFieldOrder)
   lp = []
   for d = Divisors(n)
-    k, p = is_power(d+1)
+    k, p = is_perfect_power_with_data(d+1)
     if is_prime(p)
       ll = prime_decomposition(zk, p)
       for P = ll

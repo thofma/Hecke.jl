@@ -755,9 +755,9 @@ end
 
 function short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
                 v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
-  # If A == 1, we cache the short element on the order and retrieve (as ong as
-  # the precision fits)
-  if is_one(A)
+  # If A == 1 and v is trivial, we cache the short element on the order and
+  # retrieve (as ong as the precision fits)
+  if is_one(A) && size(v) == (1, 1) && is_zero(v)
     O = order(A)
     r = get_attribute(O, :short_elem_trivial_ideal)
     if r !== nothing && r[1]::Int >= prec

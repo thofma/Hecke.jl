@@ -423,7 +423,7 @@ function _ext_and_autos(resul::Vector{Hecke.ClassField{S, T}}, autos::Vector{Hec
   #Now, the automorphisms...
   for i = 1:length(resul)
     Cp = resul[i]
-    p = is_power(degree(Cp))[2]
+    p = is_perfect_power_with_data(degree(Cp))[2]
     w = 1
     while mod(degree(pols[w]), p) != 0
       w += 1

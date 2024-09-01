@@ -20,8 +20,8 @@ end
   Oabs = Hecke.maximal_order_via_absolute(L)
   Brel = Hecke.basis_pmatrix(Orel, copy = false)
   Babs = Hecke.basis_pmatrix(Oabs, copy = false)
-  @test Hecke._spans_subset_of_pseudohnf(Brel, Babs, :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Brel, Babs; shape = :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Babs, Brel; shape = :lowerleft)
 
   for i = 1:1
     f = monic_randpoly(Qx, 2, 3, 10)
@@ -41,8 +41,8 @@ end
     Oabs = Hecke.maximal_order_via_absolute(L)
     Brel = Hecke.basis_pmatrix(Orel, copy = false)
     Babs = Hecke.basis_pmatrix(Oabs, copy = false)
-    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs, :lowerleft)
-    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs; shape = :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel; shape = :lowerleft)
   end
 
   f = x^4 - 2*x^3 - 353*x^2 + 354*x + 24014;
@@ -68,8 +68,8 @@ end
     Oabs = Hecke.maximal_order_via_absolute(L)
     Brel = Hecke.basis_pmatrix(Orel, copy = false)
     Babs = Hecke.basis_pmatrix(Oabs, copy = false)
-    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs, :lowerleft)
-    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs; shape = :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel; shape = :lowerleft)
   end
 end
 
@@ -92,8 +92,8 @@ end
     Cs[i] = ideal(OK, K(QQFieldElem(1, 2)))
   end
   Bs = Hecke.pseudo_matrix(Ms, Cs)
-  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs; shape = :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns; shape = :lowerleft)
 
   K, a = number_field(x^2 - 2*x + 38, "a", cached = false)
   OK = maximal_order(K)
@@ -110,8 +110,8 @@ end
     Cs[i] = ideal(OK, K(QQFieldElem(1, 4)))
   end
   Bs = Hecke.pseudo_matrix(Ms, Cs)
-  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs; shape = :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns; shape = :lowerleft)
 
   for i = 1:1
     f = monic_randpoly(Qx, 2, 2, 10)
@@ -138,8 +138,8 @@ end
     Os = Hecke.maximal_order_via_simple(L)
     Bns = Hecke.basis_pmatrix(Ons, copy = false)
     Bs = Hecke.basis_pmatrix(Os, copy = false)
-    @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
-    @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Bns, Bs; shape = :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Bs, Bns; shape = :lowerleft)
   end
 end
 
