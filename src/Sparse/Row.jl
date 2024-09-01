@@ -698,10 +698,13 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   t = base_ring(a)()
   while i <= length(a) && j <= length(b)
     if a.pos[i] < b.pos[j]
-      insert!(b.pos, j, a.pos[i])
-      insert!(b.values, j, c*a.values[i])
+      t = mul!(t, c, a.values[i])
+      if !iszero(t)
+        insert!(b.pos, j, a.pos[i])
+        insert!(b.values, j, c*a.values[i])
+        j += 1
+      end
       i += 1
-      j += 1
     elseif a.pos[i] > b.pos[j]
       j += 1
     else
@@ -718,8 +721,11 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
     end
   end
   while i <= length(a)
-    push!(b.pos, a.pos[i])
-    push!(b.values, c*a.values[i])
+    t = mul!(t, c, a.values[i])
+    if !iszero(t)
+      push!(b.pos, a.pos[i])
+      push!(b.values, c*a.values[i])
+    end
     i += 1
   end
   return b
