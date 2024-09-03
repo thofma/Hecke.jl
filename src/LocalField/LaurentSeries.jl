@@ -1,6 +1,8 @@
 characteristic(K::Generic.LaurentSeriesField{<:FinFieldElem}) = characteristic(base_ring(K))
 
-uniformizer(K::Generic.LaurentSeriesField{<:FinFieldElem}) = gen(K)
+function uniformizer(K::Generic.LaurentSeriesField{<:FinFieldElem}, k::Int = 1; prec = max_precision(K))
+  return set_precision!(gen(K)^k, prec)
+end
 
 absolute_ramification_index(K::Generic.LaurentSeriesField{<:FinFieldElem}) = ZZ(1)
 
