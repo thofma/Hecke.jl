@@ -1120,37 +1120,37 @@ function _hensel(f::PolyRingElem{T}, g::PolyRingElem{T}, h::PolyRingElem{T}, s::
   #@assert is_nilpotent(content(g*s+h*t-1))
   Rx = parent(f)
   aux1 = Rx()
-  mul!(aux1, g, h)
-  sub!(aux1, f, aux1)
+  aux1 = mul!(aux1, g, h)
+  aux1 = sub!(aux1, f, aux1)
   #aux1 = f-g*h
   aux2 = Rx()
-  mul!(aux2, s, aux1)
+  aux2 = mul!(aux2, s, aux1)
   q, r = divrem(aux2, h)
   #@assert s*e == q*h+r
-  mul!(aux1, aux1, t)
-  add!(aux1, aux1, g)
-  mul!(aux2, q, g)
-  add!(aux1, aux1, aux2)
+  aux1 = mul!(aux1, aux1, t)
+  aux1 = add!(aux1, aux1, g)
+  aux2 = mul!(aux2, q, g)
+  aux1 = add!(aux1, aux1, aux2)
   #g = g+t*e+q*g
   g = aux1
-  add!(aux2, h, r)
+  aux2 = add!(aux2, h, r)
   h = aux2
   #h = h+r
   #@assert is_monic(h)
   aux3 = Rx()
   aux4 = Rx()
-  mul!(aux3, s, aux1)
-  mul!(aux4, t, aux2)
-  add!(aux3, aux3, aux4)
-  sub!(aux3, aux3, one(Rx))
-  mul!(aux4, s, aux3)
+  aux3 = mul!(aux3, s, aux1)
+  aux4 = mul!(aux4, t, aux2)
+  aux3 = add!(aux3, aux3, aux4)
+  aux3 = sub!(aux3, aux3, one(Rx))
+  aux4 = mul!(aux4, s, aux3)
   c, d = divrem(aux4, h)
   #@assert s*b == c*h+d
-  mul!(aux3, aux3, t)
-  sub!(aux3, t, aux3)
-  mul!(c, c, g)
-  sub!(aux3, aux3, c)
-  sub!(aux4, s, d)
+  aux3 = mul!(aux3, aux3, t)
+  aux3 = sub!(aux3, t, aux3)
+  c = mul!(c, c, g)
+  aux3 = sub!(aux3, aux3, c)
+  aux4 = sub!(aux4, s, d)
   return aux1, aux2, aux4, aux3
 end
 
