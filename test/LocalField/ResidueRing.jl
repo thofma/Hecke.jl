@@ -59,6 +59,14 @@ end
     @test is_exact_type(elem_type(R))
     test_Ring_interface(R)
 
+    p = uniformizer(R)
+    @test p == R(pi)
+    @test p == R(uniformizer(K))
+    p = uniformizer(R, 2)
+    @test p == R(pi^2)
+    p = uniformizer(R, 3)
+    @test is_zero(p)
+
     # the euclidean conformance test seems to assume that the ring is a domain
     R, _ = residue_ring(O, pi)
     test_EuclideanRing_interface(R)

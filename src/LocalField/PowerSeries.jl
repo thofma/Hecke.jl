@@ -59,7 +59,7 @@ function canonical_unit(a::LaurentSeriesFieldValuationRingElem)
   iszero(a) && return one(parent(a), precision = precision(a))
   v = valuation(a)
   pi = uniformizer(parent(a))
-  return LaurentSeriesFieldValuationRingElem(parent(a), divexact(data(a), pi^v))
+  return divexact(data(a), pi^v)
 end
 
 ################################################################################
@@ -104,7 +104,11 @@ function (Q::LaurentSeriesFieldValuationRing)(a::Generic.LaurentSeriesFieldElem)
   @assert parent(a) === _field(Q)
   @req valuation(a) >= 0 "Not an element of the valuation ring"
   R = data(Q)
-  b = R([polcoeff(a, i) for i in 0:pol_length(a) - 1], pol_length(a), precision(a), valuation(a))
+  c = zeros(base_ring(R), pol_length(a) * Generic.scale(a))
+  for i in 0:pol_length(a) - 1
+    c[Generic.scale(a) * i + 1] = polcoeff(a, i)
+  end
+  b = R(c, Generic.scale(a) * pol_length(a), precision(a), valuation(a))
   return Q(b)
 end
 
@@ -288,11 +292,6 @@ end
 
 function zero!(a::LaurentSeriesFieldValuationRingElem)
   a.a = zero!(data(a))
-  return a
-end
-
-function mul_red!(a::LaurentSeriesFieldValuationRingElem, b::LaurentSeriesFieldValuationRingElem, c::LaurentSeriesFieldValuationRingElem, f::Bool = false)
-  a.a = mul_red!(data(a), data(b), data(c), f)
   return a
 end
 
