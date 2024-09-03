@@ -576,7 +576,8 @@ function init_kernel(_nullity, _dense_kernel, SG, with_light=false)
  else
   l = _nullity
  end
- K = zeros(R, m, l)
+ M = matrix_space(R, m, l)
+ K = M()
  #initialisation
  ilight = 1
  for i = 1:m
