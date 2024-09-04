@@ -162,7 +162,6 @@ function build_part_ref!(SG)
     SG.is_single_col[j] = true
     SG.single_col[singleton_row_idx] = j
     SG.nlight-=1
-    #SG.nlight<0 && print("nlight < 0 singleton case")
     SG.nsingle+=1
     swap_i_into_base(singleton_row_idx, SG)
     SG.base+=1
@@ -180,7 +179,6 @@ function build_part_ref_field!(SG)
    if length(SG.col_list[j])==1 && SG.is_light_col[j]
     singleton_row_origin = only(SG.col_list[j])
     singleton_row_idx = SG.col_list_permi[singleton_row_origin]
-    @assert !iszero(SG.A[singleton_row_idx, j])
     scale_row!(SG.A, singleton_row_idx, inv(SG.A[singleton_row_idx, j]))
     for jj in SG.A[singleton_row_idx].pos
      if SG.is_light_col[jj]
@@ -194,7 +192,6 @@ function build_part_ref_field!(SG)
     SG.is_single_col[j] = true
     SG.single_col[singleton_row_idx] = j
     SG.nlight-=1
-    #SG.nlight<0 && print("nlight < 0 singleton case")
     SG.nsingle+=1
     swap_i_into_base(singleton_row_idx, SG)
     SG.base+=1
@@ -312,7 +309,6 @@ function turn_heavy(SG)
   end
  end
  SG.nlight -= SG.heavy_ext
- #SG.nlight<0 && print("nlight < 0 extension case")
 end
 
 function handle_new_light_weight!(i, SG)
@@ -333,7 +329,8 @@ end
 
 function eliminate_and_update!(best_single_row, SG)
  @assert best_single_row != 0
- best_row = deepcopy(SG.A[best_single_row])
+ @show best_single_row
+ @show best_row = deepcopy(SG.A[best_single_row])
  best_col = find_light_entry(best_row.pos, SG.is_light_col)
  @assert length(SG.col_list[best_col]) > 1
  best_val = SG.A[best_single_row, best_col]
@@ -342,6 +339,7 @@ function eliminate_and_update!(best_single_row, SG)
  row_idx = 0
  while length(best_col_idces) > 1
   row_idx = find_row_to_add_on(row_idx, best_row, best_col_idces, SG)
+  best_single_row == 115 && @show row_idx
   @assert best_col_idces == SG.col_list[best_col]
   @assert row_idx > 0
   @assert SG.col_list_perm[row_idx] in SG.col_list[best_col]
@@ -379,7 +377,7 @@ function eliminate_and_update_field!(best_single_row, SG)
 end
 
 function find_row_to_add_on(row_idx, best_row, best_col_idces::Vector{Int64}, SG::data_StructGauss)
- for L_row in best_col_idces[end:-1:1] #right??? breaking condition missing?
+ for L_row in best_col_idces[end:-1:1]
   row_idx = SG.col_list_permi[L_row]
   SG.A[row_idx] == best_row && continue
   row_idx < SG.base && continue
@@ -389,12 +387,12 @@ function find_row_to_add_on(row_idx, best_row, best_col_idces::Vector{Int64}, SG
 end
 
 function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
+ @show best_val
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
- val = SG.A[row_idx, best_col] 
+ val = SG.A[row_idx, best_col]
  @assert !iszero(val)
  #case !over_field && over_Z:
- #g = gcd(lift(ZZ, val), lift(ZZ, best_val))
  g = gcd(val, best_val)
  val_red = divexact(val, g)
  best_val_red = divexact(best_val, g)
@@ -406,6 +404,7 @@ function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
    deleteat!(SG.col_list[c], jj)
   end
  end
+ row_idx == 112 && @show val, best_val, g, val_red, best_val_red
  scale_row!(SG.A, row_idx, best_val_red)
  @assert !(0 in best_row.values)
  Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val_red)
@@ -427,7 +426,6 @@ function add_to_eliminate_field!(L_row, row_idx, best_row, best_col, best_val, S
    deleteat!(SG.col_list[c], jj)
   end
  end
- #scale_row!(SG.A, row_idx, best_val_red)
  @assert !(0 in SG.A[row_idx].values)
  Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val)
  @assert iszero(SG.A[row_idx, best_col])
@@ -450,13 +448,13 @@ end
 #
 ################################################################################
 
-function swap_entries(v, i,j) #swaps entries v[i], v[j]
+function swap_entries(v, i,j)
  v[i],v[j] = v[j],v[i]
 end
 
 function swap_rows_perm(i, j, SG)
  if i != j
-  swap_rows!(SG.A, i, j) #swap!(A[i],A[j]) throws error later???
+  swap_rows!(SG.A, i, j)
   swap_entries(SG.single_col, i, j)
   swap_entries(SG.col_list_perm, i, j)
   swap_entries(SG.col_list_permi, SG.col_list_perm[i], SG.col_list_perm[j])
@@ -555,19 +553,6 @@ function dense_kernel(SG)
  return size(_dense_kernel)[2], _dense_kernel
 end
 
-#=
-function dense_kernel_new(SG)
-  ST = sparse_matrix(base_ring(SG.A), 0, nrows(SG.Y))
-  YT = transpose(SG.Y)
-  for j in SG.heavy_mapi
-   push!(ST, YT[j])
-  end
-  S = transpose(ST)
-  _dense_kernel = kernel(matrix(S), side=:right)
-  return 1, _dense_kernel
- end
- =#
-
 function init_kernel(_nullity, _dense_kernel, SG, with_light=false)
  R = base_ring(SG.A)
  m = ncols(SG.A)
@@ -598,41 +583,6 @@ function init_kernel(_nullity, _dense_kernel, SG, with_light=false)
  end
  return l, K
 end
-
-#=
-function compose_kernel_elem(_kernel, single_part, SG)
- nfail = 0
- failure = []
- for i=SG.base-1:-1:1
-  c = SG.single_col[i]
-  if c>0
-   y = 0
-   x = NaN
-   j=1
-   while j <= length(SG.A[i])
-    cc = SG.A[i].pos[j]
-    xx = SG.A[i].values[j]
-    if cc==c
-     x = xx
-     j+=1
-    elseif !(cc in single_part)
-     y += (xx*_kernel[cc])
-     j+=1
-    else
-     break
-    end
-   end
-   if j <= length(SG.A[i])
-    nfail +=1
-    push!(failure, i)
-   else
-    _kernel[c]=-y*inv(x)
-   end
-  end
- end 
- return _kernel, failure
-end
-=#
 
 function compose_kernel(l, K, SG)
  R = base_ring(SG.A)
@@ -698,55 +648,6 @@ function compose_kernel_field(l, K, SG)
  end
  return l, K
 end
-
-#=
-function kernel_matrix(_nullity, _dense_kernel, SG)
- R = base_ring(SG.A)
- n = nrows(SG.A)
- m = ncols(SG.A)
- l = _nullity+SG.nlight
- K = zeros(R, m, l)
- #initialisation
- ilight = 1
- for i = 1:m
-  if SG.is_light_col[i]
-   @assert ilight <= SG.nlight
-   K[i, _nullity+ilight] = one(R)
-   ilight +=1
-  else 
-   j = SG.heavy_map[i]
-   if j>0
-    for c = 1:_nullity
-     K[i,c] = _dense_kernel[j, c]
-    end
-   end
-  end
- end
-#compose kernel in single cols
- for i = n:-1:1
-  c = SG.single_col[i]
-  if c>0
-   y = zeros(R,l)
-   for idx in 1:length(SG.A[i])
-    cc = SG.A[i].pos[idx]
-    xx = SG.A[i].values[idx]
-    if cc == c
-     @assert isone(xx)
-    else
-     for k = 1:l
-      kern_c = K[cc,k]
-      !iszero(kern_c) && (y[k]-=xx*kern_c)
-     end
-    end
-   end
-   for k = 1:l
-    K[c, k] = y[k]
-   end
-  end
- end
- return(l, K)
-end
-=#
 
 function delete_zero_rows!(A::SMat{T}) where T #where s denotes the first row where we wanna start
   for i=A.r:-1:1
