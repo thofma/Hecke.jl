@@ -34,12 +34,12 @@ function __unit_reps_simple(M, F; GRH::Bool = true)
     #@show u in FinB
   end
   @vprintln :PIP "Number of generators: $(length(UB))"
-  UB_reduced = unique!([MtoQ(M(u)) for u in UB])
+  UB_reduced = [MtoQ(M(u)) for u in UB]
   #@show UB_reduced
   #@show norm(F)
   #QQ, MtoQQ = _quo_as_mat_alg_small(M, F)
   QQ = FakeAbsOrdQuoRing(M, F)
-  _UB_reduced = unique!([QQ(M(u)) for u in UB])
+  _UB_reduced = [QQ(M(u)) for u in UB]
 
   #@show length(UB)
   #@show UB_reduced
@@ -190,41 +190,34 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
     end
   end
 
+  F = Hecke._get_a_twosided_conductor(O, M)
+  # Now make corpime to conductor
+ 
+  Iorig = I
+  if F == 1*O || I + F == one(A) * O
+    # I should improve this
+    I, sca = I, one(A)
+  else
+    I, sca = _coprime_integral_ideal_class(I, F)
+    #I, sca = _coprime_integral_ideal_class_deterministic(I, F)
+  end
+
+  @vprintln :PIP 1 "Found coprime integral ideal class"
+
+  @hassert :PIP 1 sca * Iorig == I
+
+  @hassert :PIP 1 I + F == one(A) * O
+
+  alpha = sca * alpha
+
   @assert alpha * M == I * M
-
-  Z, ZtoA = center(A)
-  Fl = conductor(O, M, :left)
-
-  FinZ = _as_ideal_of_smaller_algebra(ZtoA, Fl)
-  # Compute FinZ*OA but as an ideal of O
-  bM = basis(M, copy = false)
-  bFinZ = basis(FinZ, copy = false)
-  basis_F = Vector{elem_type(A)}()
-  for x in bM
-    for y in bFinZ
-      yy = ZtoA(y)
-      t = yy * elem_in_algebra(x, copy = false)
-      push!(basis_F, t)
-    end
-  end
-
-  for b in basis_F
-    @assert b in O
-  end
-
-  F = ideal_from_lattice_gens(A, O, basis_F, :twosided)
-  #@show norm(F)
-  #@show norm((conductor(O, M, :left) * conductor(O, M, :right)))
-  #@show F == (conductor(O, M, :left) * conductor(O, M, :right))
-  #@show det(basis_matrix(F))
-  #@show det(basis_matrix(conductor(O, M, :left) * conductor(O, M, :right)))
 
   bases = Vector{elem_type(A)}[]
 
   IM = I * M
 
   for (B, mB) in dec
-    MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
+    MinB = Hecke._get_order_from_gens(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
     #@show is_maximal(MinC)
     #@show hnf(basis_matrix(MinC))
     IMinB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(b)) for b in absolute_basis(IM)])
@@ -254,8 +247,6 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
     push!(bases_offsets_and_lengths, (k, length(bases_sorted[i])))
     k += length(bases_sorted[i])
   end
-
-  #@show bases_offsets_and_lengths
 
   # let's collect the Z-basis of the Mi
   bases_sorted_cat = reduce(vcat, bases_sorted)
@@ -341,14 +332,14 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
   # form the product of the first sets
   #@show length(cartesian_product_iterator([1:length(local_coeffs[i]) for i in 1:length(dec) - 1]))
 
-
   @vprintln :PIP "Starting the new method :)"
   fl, x = recursive_iterator([length(local_coeffs[i]) for i in 1:length(dec)], dd, local_coeffs, bases_offsets_and_lengths, indices_integral, indices_nonintegral)
   @vprintln :PIP "New method says $fl"
   if fl
     _vtemp = reduce(.+, (local_coeffs[i][x[i]] for i in 1:length(local_coeffs)))
     el = A(_vtemp * (H * special_basis_matrix))
-    @assert el * O == I
+    el = inv(sca) * el
+    @assert el * O == Iorig
     #@vprintln :PIP "Checking with old method"
     #ffl, xx = _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
     #@assert ffl
@@ -356,23 +347,22 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
   end
 
   return false, zero(A)
+#
+#  ffl, xx = _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
+#
+#  @assert fl === ffl
+#  return ffl, inv(sca) * xx
+#
 
-  ffl, xx = _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
-
-  @assert fl === ffl
-  return ffl, xx
-
-
-#  for u in Iterators.product(unit_reps...)
-#    uu = sum(dec[i][2](u[i]) for i in 1:length(dec))
-#    aui = [ dec[i][2](dec[i][2]\(alpha)) * dec[i][2](u[i]) for i in 1:length(dec)]
-#    @assert sum(aui) == alpha * uu
-#    if uu * alpha in I
-#      @show alpha * uu
-#      return true, uu * alpha
-#    end
-#  end
-#  return false, zero(O)
+  for u in Iterators.product(unit_reps...)
+    uu = sum(dec[i][2](dec[i][2]\(u[i])) for i in 1:length(dec))
+    aui = [ dec[i][2](dec[i][2]\(alpha)) * dec[i][2](dec[i][2]\(u[i])) for i in 1:length(dec)]
+    @assert sum(aui) == alpha * uu
+    if alpha * uu in I
+      return true, inv(sca) * alpha * uu
+    end
+  end
+  return false, zero(O)
 end
 
 function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
