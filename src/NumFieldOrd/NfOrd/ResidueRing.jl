@@ -401,11 +401,8 @@ end
 #
 ################################################################################
 
-function ==(x::AbsOrdQuoRing, y::AbsOrdQuoRing)
-  return base_ring(x) === base_ring(y) && ideal(x) == ideal(y)
-end
-
 function ==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+  parent(x) !== parent(y) && return false
   simplify!(x)
   simplify!(y)
   return x.elem == y.elem

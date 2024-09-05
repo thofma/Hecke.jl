@@ -218,8 +218,4 @@ end
 #
 ################################################################################
 
-function ==(x::RelOrdQuoRing, y::RelOrdQuoRing)
-  return base_ring(x) === base_ring(y) && ideal(x) == ideal(y)
-end
-
-==(x::RelOrdQuoRingElem, y::RelOrdQuoRingElem) = x.elem == y.elem
+==(x::RelOrdQuoRingElem, y::RelOrdQuoRingElem) = parent(x) === parent(y) && x.elem == y.elem
