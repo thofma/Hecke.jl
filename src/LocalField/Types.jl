@@ -45,6 +45,9 @@ mutable struct LocalFieldElem{S, T} <: NonArchLocalFieldElem
   precision::Int
 end
 
+const NonArchLocalFieldTypes = Union{PadicField, QadicField, LocalField, Generic.LaurentSeriesField{<: FinFieldElem}}
+const NonArchLocalFieldElemTypes = Union{PadicFieldElem, QadicFieldElem, LocalFieldElem, Generic.LaurentSeriesFieldElem{<: FinFieldElem}}
+
 ################################################################################
 #
 #  CompletionMap
@@ -99,11 +102,14 @@ end
 #
 ################################################################################
 
-@attributes mutable struct LocalFieldValuationRing{S, T} <: Generic.Ring
+abstract type NonArchLocalFieldValuationRing <: Ring end
+abstract type NonArchLocalFieldValuationRingElem <: RingElem end
+
+@attributes mutable struct LocalFieldValuationRing{S, T} <: NonArchLocalFieldValuationRing
   Q::S #The corresponding local field
   basis::Vector{T} #The OK-basis of the ring, where OK is
                    #the maximal order of the base field of Q
-  function LocalFieldValuationRing{S, T}(x::S) where {S <: Union{LocalField, QadicField, PadicField}, T}
+  function LocalFieldValuationRing{S, T}(x::S) where {S <: NonArchLocalField, T}
     z = new{S, T}()
     z.Q = x
     return z
@@ -111,11 +117,32 @@ end
 
 end
 
-mutable struct LocalFieldValuationRingElem{S, T} <: RingElem
+mutable struct LocalFieldValuationRingElem{S, T} <: NonArchLocalFieldValuationRingElem
   P::LocalFieldValuationRing{S, T}
   x::T
   function LocalFieldValuationRingElem(P::LocalFieldValuationRing{S, T}, a::T) where {S, T}
     r = new{S, T}(P, a)
+  end
+end
+
+# Wrap PowerSeriesRing as a dedicated "valuation ring" type
+
+@attributes mutable struct LaurentSeriesFieldValuationRing{FieldType, RingType, RingElemType} <: NonArchLocalFieldValuationRing
+  K::FieldType # the Laurent series field
+  R::RingType # the power series ring
+
+  function LaurentSeriesFieldValuationRing(K::Generic.LaurentSeriesField{<:FinFieldElem})
+    R, _ = power_series_ring(base_ring(K), max_precision(K), var(K), cached = false)
+    return new{typeof(K), typeof(R), elem_type(R)}(K, R)
+  end
+end
+
+mutable struct LaurentSeriesFieldValuationRingElem{FieldType, SeriesRingType, SeriesType} <: NonArchLocalFieldValuationRingElem
+  parent::LaurentSeriesFieldValuationRing{FieldType, SeriesRingType, SeriesType}
+  a::SeriesType # a power series
+
+  function LaurentSeriesFieldValuationRingElem(R::LaurentSeriesFieldValuationRing{S, T, U}, a::U) where {S, T, U}
+    return new{S, T, U}(R, a)
   end
 end
 
@@ -125,18 +152,18 @@ end
 #
 ################################################################################
 
-# Type for O/m^k where O is the valuation ring of the field F and m the maximal
-# ideal
-@attributes mutable struct LocalFieldValuationRingResidueRing{S <: NonArchLocalField, T <: NonArchLocalFieldElem} <: Ring
-  R::LocalFieldValuationRing{S, T}
+# Type for O/m^k where O is a valuation ring and m the maximal ideal
+# TODO: Should this be called NonArchLocalFieldValuationRingResidueRing?
+@attributes mutable struct LocalFieldValuationRingResidueRing{S <: NonArchLocalFieldValuationRing, T <: NonArchLocalFieldValuationRingElem} <: Ring
+  R::S
   k::Int
 
-  function LocalFieldValuationRingResidueRing(R::LocalFieldValuationRing{S, T}, k::Int) where {S, T}
-    return new{S, T}(R, k)
+  function LocalFieldValuationRingResidueRing(R::S, k::Int) where S
+    return new{S, elem_type(S)}(R, k)
   end
 end
 
-mutable struct LocalFieldValuationRingResidueRingElem{S <: NonArchLocalField, T <: NonArchLocalFieldElem} <: RingElem
+mutable struct LocalFieldValuationRingResidueRingElem{S <: NonArchLocalFieldValuationRing, T <: NonArchLocalFieldValuationRingElem} <: RingElem
   a::T
   parent::LocalFieldValuationRingResidueRing{S, T}
 
