@@ -1,6 +1,5 @@
 # alternative names for some functions from Base
-#= none =#
-
+@alias trace tr
 
 # alternative names for some functions from LinearAlgebra
 # we don't use the `@alias` macro here because we provide custom
