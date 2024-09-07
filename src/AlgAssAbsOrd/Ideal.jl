@@ -534,7 +534,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   _, oned = integral_split(coefficients(one(A)), ZZ)
 
   if is_full_rank(a) && is_full_rank(b)
-    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_multiplication_table(A) * oned
+    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_structure_constant_table(A) * oned
     H = sub(hnf_modular_eldiv!(FakeFmpqMat(M), el), (d2 - d + 1):d2, 1:d)
     @hassert :AlgAssOrd 1 H == sub(hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
   else

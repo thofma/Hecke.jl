@@ -225,6 +225,9 @@ function multiplication_table(A::MatAlgebra; copy::Bool = true)
   end
 end
 
+denominator_of_structure_constant_table(A::MatAlgebra) =
+    denominator_of_multiplication_table(A)
+
 function denominator_of_multiplication_table(A::MatAlgebra)
   get_attribute!(A, :denominator_of_multiplication_table) do
     den = one(ZZ)
@@ -595,11 +598,6 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    center(A::MatAlgebra) -> StructureConstantAlgebra, AbsAlgAssMor
-
-Returns the center $C$ of $A$ and the inclusion $C \to A$.
-"""
 function center(A::MatAlgebra{T, S}) where {T, S}
   if isdefined(A, :center)
     return A.center::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}

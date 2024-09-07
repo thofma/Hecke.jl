@@ -335,6 +335,16 @@ end
 
 mul!(z::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, x::Union{ Int, ZZRingElem }) = mul!(z, x, y)
 
+function addmul!(a::AlgAssAbsOrdElem, b::ZZRingElem, c::AlgAssAbsOrdElem, d = parent(a)())
+  mul!(d, b, c)
+  return add!(a, a, d)
+end
+
+function addmul!(a::AbsNumFieldOrderElem, b::ZZRingElem, c::AbsNumFieldOrderElem, d = parent(a)())
+  mul!(d, b, c)
+  return add!(a, a, d)
+end
+
 ################################################################################
 #
 #  String I/O
