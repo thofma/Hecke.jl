@@ -49,18 +49,29 @@ end
 
 function _is_principal_maximal_simple_component(a, M, side = :right)
   A = algebra(M)
-  ZA, _ = _as_algebra_over_center(A)
+  ZA, ZAtoA = _as_algebra_over_center(A)
+
+  if !isdefined(A, :isomorphic_full_matrix_algebra) && dim(ZA) == 1
+    B = matrix_algebra(base_ring(ZA), 1)
+    img = [preimage(ZAtoA, x) for x in basis(A)]
+    m = matrix(base_ring(B), dim(A), dim(B), [(x.coeffs[1])/(one(A).coeffs[1]) for x in img])
+    minv = matrix([ZAtoA(x[1, 1] * one(ZA)).coeffs for x in basis(B)])
+    AtoB = AbsAlgAssMorGen(A, B, m, minv)
+    A.isomorphic_full_matrix_algebra = B, AtoB
+  end
+
   if isdefined(A, :isomorphic_full_matrix_algebra)
     local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     B, AtoB = A.isomorphic_full_matrix_algebra
-    #@show B
     OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     #@show OB
     ainOB = ideal_from_lattice_gens(B, elem_type(B)[(AtoB(b)) for b in absolute_basis(a)])
     #@show ainOB
     #@show is_maximal(OB)
     fl, gen = _is_principal_maximal_full_matrix_algebra(ainOB, OB, side)
-    return fl, (AtoB\gen)::elem_type(A)
+    gentr = (AtoB\gen)::elem_type(A)
+    @hassert :PIP 1 gentr * M == a
+    return fl, gentr
   elseif base_ring(A) isa QQField && dim(A) == 4 && !is_split(A)
     return _is_principal_maximal_quaternion(a, M, side)
   elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
