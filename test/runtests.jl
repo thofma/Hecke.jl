@@ -263,6 +263,15 @@ if short_test
   @info "Running short tests"
   include(joinpath("..", "system", "precompile.jl"))
 else
+  # Run the doctests
+  if v"1.10-" <= VERSION < v"1.11-"
+    @info "Running doctests (Julia version is 1.10)"
+    DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
+    doctest(Hecke)
+  else
+    @info "Not running doctests (Julia version must be 1.10)"
+  end
+
   if !isparallel
     # We are not short
     k, a = quadratic_field(5)
@@ -298,14 +307,5 @@ else
   else
     # Now we are parallel
     include("parallel.jl")
-  end
-
-  # Run the doctests
-  if v"1.10-" <= VERSION < v"1.11-"
-    @info "Running doctests (Julia version is 1.10)"
-    DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
-    doctest(Hecke)
-  else
-    @info "Not running doctests (Julia version must be 1.10)"
   end
 end

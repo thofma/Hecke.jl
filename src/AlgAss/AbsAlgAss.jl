@@ -210,7 +210,7 @@ Given a simple $K$-algebra with center $C$, return the $C$-dimension $A$.
 julia> A = matrix_algebra(QQ, 2);
 
 julia> dimension_of_center(A)
-4
+1
 ```
 """
 @attr Int function dimension_over_center(A::AbstractAssociativeAlgebra)
