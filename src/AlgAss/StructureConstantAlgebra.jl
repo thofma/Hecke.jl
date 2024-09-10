@@ -35,7 +35,7 @@ supplied coordinate vector as the one element of the algebra.
 
 ```jldoctest
 julia> associative_algebra(QQ, reshape([1, 0, 0, 2, 0, 1, 1, 0], (2, 2, 2)))
-Associative algebra of dimension 2 over Rational field
+Structure constant algebra of dimension 2 over QQ
 ```
 """
 function structure_constant_algebra(R::Ring, sctable::Array{<:Any, 3}; one = nothing,
@@ -54,8 +54,10 @@ $R[X]/(f)$ as an algebra.
 # Examples
 
 ```jldoctest
+julia> Qx, x = QQ["x"]; f = x^2 - 2;
+
 julia> structure_constant_algebra(f)
-Associative algebra of dimension 2 over Rational field
+Structure constant algebra of dimension 2 over QQ
 ```
 """
 structure_constant_algebra(f::PolyRingElem) = StructureConstantAlgebra(f)
@@ -154,7 +156,7 @@ $K$-linear map $A \to L$.
 julia> L, = quadratic_field(2);
 
 julia> structure_constant_algebra(L)
-(Associative algebra of dimension 2 over Rational field, Map: associative algebra of dimension 2 over QQ -> L)
+(Structure constant algebra of dimension 2 over QQ, Map: structure constant algebra -> real quadratic field)
 ```
 """
 function structure_constant_algebra(K::SimpleNumField)
