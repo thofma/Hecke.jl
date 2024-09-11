@@ -749,7 +749,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
       error("Not yet implemented")
     end
     d1 = clog(ZZRingElem(degree(f)+1), p)
-    L = QadicField(p, d1, min(precision(f), precision(g)))
+    L = qadic_field(p, d1, precision = min(precision(f), precision(g)))
     Lt = polynomial_ring(L, "t")[1]
     fL = map_coefficients(L, f, parent = Lt)
     gL = map_coefficients(L, g, parent = Lt)

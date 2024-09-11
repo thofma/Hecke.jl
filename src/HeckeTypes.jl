@@ -2240,11 +2240,11 @@ mutable struct qAdicRootCtx
     lf = Hecke.factor_mod_pk(Array, H, 1)
     if splitting_field
       d = lcm([degree(y[1]) for y = lf])
-      R = QadicField(p, d, 1)[1]
+      R = qadic_field(p, d, precision = 1)[1]
       Q = [R]
       r.is_splitting = true
     else
-      Q = [QadicField(p, x, 1)[1] for x = Set(degree(y[1]) for y = lf)]
+      Q = [qadic_field(p, x, precision = 1)[1] for x = Set(degree(y[1]) for y = lf)]
       r.is_splitting = false
     end
     @assert all(x->isone(x[2]), lf)

@@ -39,7 +39,7 @@
   end
 
   @testset "Norm" begin
-    K = QadicField(3, 4, 10)[1]
+    K = qadic_field(3, 4, precision = 10)[1]
     Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
     b = @inferred basis(L)
@@ -140,7 +140,7 @@
       @test iszero(logexp - el) || valuation(logexp - el) > 80 #need improving
     end
 
-    KK, a = QadicField(2, 2, 16)
+    KK, a = qadic_field(2, 2, precision = 16)
     KKx, x = KK["x"]
     f = x + 2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15
     L, b = eisenstein_extension(f, "b");
@@ -150,7 +150,7 @@
 
   @testset "Maps" begin
     # QadicField -> QadicField
-    Qq, a = QadicField(2, 3, 100)
+    Qq, a = qadic_field(2, 3, precision = 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(Qq)))
 
     i = findfirst(x -> x == a, rt)
@@ -203,7 +203,7 @@
     Qp = padic_field(2, precision = 100)
     Qpx, x = polynomial_ring(Qp)
     K, a = unramified_extension(x^2+x+1)
-    Qq, gQq = QadicField(2, 2, 100)
+    Qq, gQq = qadic_field(2, 2, precision = 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(K)))
 
     f = @inferred hom(K, Qq, rt[1])
@@ -220,7 +220,7 @@
     Kt, t = polynomial_ring(K)
     L, b = eisenstein_extension(t^2+2, "a")
     @test length(automorphism_list(L)) == 2
-    Qq, a = QadicField(2, 2, 100)
+    Qq, a = qadic_field(2, 2, precision = 100)
     @test length(automorphism_list(Qq)) == 2
     Qqx, x = polynomial_ring(Qq)
     L, b = eisenstein_extension(x^3+2, "a")
@@ -260,7 +260,7 @@
   end
 
   @testset "extend extend extend" begin
-    K, = QadicField(5, 2, 10)
+    K, = qadic_field(5, 2, precision = 10)
     L, = unramified_extension(K, 3)
     M, = unramified_extension(L, 3)
   end
