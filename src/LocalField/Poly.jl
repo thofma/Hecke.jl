@@ -711,8 +711,6 @@ function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFie
   return res*res1
 end
 
-base_field(Q::QadicField) = base_ring(defining_polynomial(Q))
-
 function norm(f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   Kx = parent(f)
   K = base_ring(f)
