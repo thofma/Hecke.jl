@@ -134,15 +134,6 @@ end
 #
 ################################################################################
 
-function prime_field(L::Union{QadicField, LocalField})
-  L = base_ring(defining_polynomial(L))
-  while typeof(L) != PadicField
-    L = base_ring(defining_polynomial(L))
-  end
-  return L
-end
-
-
 function base_field(L::LocalField)
   return base_ring(defining_polynomial(L))
 end

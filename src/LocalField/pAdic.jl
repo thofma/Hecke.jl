@@ -41,7 +41,7 @@ function my_log_one_minus(x::PadicFieldElem)
   pp = prime(parent(x), 2)
   X = 1-x
   while true
-    y = lift(1-X) % pp
+    y = lift(ZZ, 1-X) % pp
     lg += parent(x)(my_log_one_minus_inner(y, precision(x), le, prime(parent(x))))
     X = X*inv(parent(x)(1-y))
     pp *= pp
@@ -76,10 +76,10 @@ function my_log_one_minus(x::QadicFieldElem)
   pp = prime(parent(x))^2
   X = 1-x
   R, _ = polynomial_ring(QQ, cached = false)
-  S, _ = residue_ring(R, map_coefficients(x->QQ(lift(x)), defining_polynomial(parent(x)), parent = R))
+  S, _ = residue_ring(R, map_coefficients(x->QQ(lift(ZZ, x)), defining_polynomial(parent(x)), parent = R))
   while true
     Y = 1-X
-    y = S(R([lift(coeff(Y, i)) % pp for i=0:length(Y)]))
+    y = S(R([lift(ZZ, coeff(Y, i)) % pp for i=0:length(Y)]))
     lg += parent(x)(my_log_one_minus_inner(y, precision(x), le, prime(parent(x))).data)
     X = X*inv(parent(x)(1-y.data))
     pp *= pp

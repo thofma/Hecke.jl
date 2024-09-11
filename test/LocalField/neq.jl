@@ -36,7 +36,7 @@ end
   l2 = prime_decomposition(maximal_order(k), 2)
   k2, _ = Hecke.completion(k, l2[1][1], 120)
 
-  G, mG = automorphism_group(k2, prime_field(k2))
+  G, mG = automorphism_group(k2, Hecke.absolute_base_field(k2))
   @test all([mG(x*y) == mG(x) * mG(y) for x = G for y = G])
 
 end
