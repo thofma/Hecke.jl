@@ -17,7 +17,7 @@
     @test absolute_degree(L) == 4
     @test prime(L) == 2
 
-    Q2 = PadicField(2, 10)
+    Q2 = padic_field(2, precision = 10)
     Q2s, s = polynomial_ring(Q2, "s")
     f = s^2+s+1
     Ku, c = local_field(f, "s", Hecke.UnramifiedLocalField, check = false)
@@ -125,7 +125,7 @@
 
 
   @testset "Exp and Log" begin
-    K = PadicField(2, 100)
+    K = padic_field(2, precision = 100)
     Kx, x = polynomial_ring(K, "x", cached = false)
     L, b = eisenstein_extension(x^7+2, :a)
     pi = uniformizer(L)
@@ -200,7 +200,7 @@
     @test f(z) == L(-2)
 
     # LocalField -> QadicField
-    Qp = PadicField(2, 100)
+    Qp = padic_field(2, precision = 100)
     Qpx, x = polynomial_ring(Qp)
     K, a = unramified_extension(x^2+x+1)
     Qq, gQq = QadicField(2, 2, 100)
@@ -216,7 +216,7 @@
   end
 
   @testset "Automorphisms" begin
-    K = PadicField(2, 200)
+    K = padic_field(2, precision = 200)
     Kt, t = polynomial_ring(K)
     L, b = eisenstein_extension(t^2+2, "a")
     @test length(automorphism_list(L)) == 2
@@ -274,7 +274,7 @@
   @test length(automorphism_list(k3)) == 3
 
   @testset "image of one units under log" begin
-    Qp = PadicField(3, 10)
+    Qp = padic_field(3, precision = 10)
     Qpt, t = Qp["t"]
     E, a = eisenstein_extension(t^2 - 3)
     n, x = Hecke.image_of_logarithm_one_units(E)

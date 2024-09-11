@@ -1196,7 +1196,7 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
   while true
     (prec > 2^12 || working_prec > 2^12) && error("Something wrong")
     imK =[LocalFieldValuationRingElem{PadicField, PadicFieldElem}[] for i in 1:degK]
-    Qp = PadicField(p, prec, cached = false)
+    Qp = padic_field(p, precision = prec, cached = false)
     Zp = ring_of_integers(Qp)
     dK = discriminant(OK)
     r = maximum([ramification_index(P) for P in dp])

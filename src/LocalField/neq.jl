@@ -1367,7 +1367,7 @@ function is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem)
       end
       continue
     end
-    Qp = PadicField(p, prec)
+    Qp = padic_field(p, precision = prec)
     #for each P we need
     # - a gen (pi) for the valuation
     # - a gen for the residue field

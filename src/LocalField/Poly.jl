@@ -49,7 +49,7 @@ function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{PadicFiel
 end
 
 #TODO: find better crossover points
-#  qp = PadicField(3, 10);
+#  qp = padic_field(3, precision = 10);
 #  qpt, t = qp["t"]
 #  E = eisenstein_extension(cyclotomic(3, gen(Hecke.Globals.Zx))(t+1))[1]
 #  Es, s = E["s"]

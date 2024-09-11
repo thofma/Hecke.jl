@@ -357,7 +357,7 @@ end
 
 function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::VarName, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
-  K = PadicField(p, precision)
+  K = padic_field(p, precision = precision)
   fK = map_coefficients(K, f, cached = false)
   return local_field(fK, s, T, cached = cached, check = check)
 end

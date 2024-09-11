@@ -112,7 +112,7 @@ end
 
 @testset "Misc LocalField" begin
   K = QadicField(3, 5, 10)[1]
-  k = PadicField(3, 10)
+  k = padic_field(3, precision = 10)
   @test is_norm(K, k(3)) == false
   @test is_norm(K, k(3)^5) == true
 

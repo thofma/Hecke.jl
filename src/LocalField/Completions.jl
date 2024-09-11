@@ -189,7 +189,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   f = degree(P)
   e = ramification_index(P)
   prec_padics = div(precision+e-1, e)
-  Qp = PadicField(minimum(P), prec_padics, cached = false)
+  Qp = padic_field(minimum(P), precision = prec_padics, cached = false)
   Zp = maximal_order(Qp)
   Qq, gQq = QadicField(minimum(P), f, prec_padics, cached = false)
   Qqx, gQqx = polynomial_ring(Qq, "x")
@@ -384,7 +384,7 @@ function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderId
   @assert nf(OK) == K
   @assert isone(degree(P))
   e = ramification_index(P)
-  Qp = PadicField(minimum(P), precision)
+  Qp = padic_field(minimum(P), precision = precision)
   Zp = maximal_order(Qp)
   Zx = FlintZZ["x"][1]
   Qpx = polynomial_ring(Qp, "x")[1]
@@ -443,7 +443,7 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     if r > 0
       ex += 1
     end
-    Qp = PadicField(prime(Kp), div(new_prec, e)+1)
+    Qp = padic_field(prime(Kp), precision = div(new_prec, e) + 1)
     Zp = maximal_order(Qp)
     Qpx, _ = polynomial_ring(Qp, "x")
     pows_u = powers(u, e-1)
@@ -496,7 +496,7 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
   f = degree(P)
   p = minimum(P)
   Qq, gQq = QadicField(p, f, precision)
-  Qp = PadicField(p, precision)
+  Qp = padic_field(p, precision = precision)
   Zp = maximal_order(Qp)
   q, mq = residue_field(Qq)
   F, mF = residue_field(OK, P)
