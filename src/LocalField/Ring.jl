@@ -51,6 +51,7 @@ is_zero(a::LocalFieldValuationRingElem) = is_zero(data(a))
 is_one(a::LocalFieldValuationRingElem) = is_one(data(a))
 
 valuation(a::LocalFieldValuationRingElem) = valuation(data(a))
+_valuation_integral(a::LocalFieldValuationRingElem) = _valuation_integral(data(a))
 uniformizer(R::LocalFieldValuationRing) = R(uniformizer(_field(R)))
 
 is_unit(a::LocalFieldValuationRingElem) = !iszero(a) && valuation(a) == 0
@@ -119,9 +120,12 @@ end
 #
 ################################################################################
 
-function (Q::LocalFieldValuationRing{S, T})(a::T) where {S, T}
-  @assert parent(a) === _field(Q)
-  LocalFieldValuationRingElem(Q, a)
+function (Q::LocalFieldValuationRing{S, T})(a::T; check::Bool = true) where {S, T}
+  @req parent(a) === _field(Q) "Fields do not match"
+  if check
+    @req is_zero(a) || valuation(a) >= 0 "Not an element of the valuation ring"
+  end
+  return LocalFieldValuationRingElem(Q, a)
 end
 
 (Q::LocalFieldValuationRing)(a::LocalFieldValuationRingElem) = LocalFieldValuationRingElem(parent(a), data(a))
@@ -200,7 +204,7 @@ function Base.hash(a::LocalFieldValuationRingElem, h::UInt)
 end
 
 function Base.deepcopy_internal(a::LocalFieldValuationRingElem, dict::IdDict)
-  return LocalFieldValuationRingElem(parent(a), data(a))
+  return LocalFieldValuationRingElem(parent(a), Base.deepcopy_internal(data(a), dict))
 end
 
 ################################################################################

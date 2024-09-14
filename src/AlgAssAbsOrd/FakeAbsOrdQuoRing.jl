@@ -77,6 +77,10 @@ function Base.:(==)(x::FakeAbsOrdQuoRingElem, y::FakeAbsOrdQuoRingElem)
   return x.v == y.v
 end
 
+function Base.hash(x::FakeAbsOrdQuoRingElem, h::UInt)
+  return hash(x.v, h)
+end
+
 # multiplication
 function Base.:(*)(x::FakeAbsOrdQuoRingElem, y::FakeAbsOrdQuoRingElem)
   rmat = y.rep_mat * x.rep_mat

@@ -9,6 +9,8 @@ Returns the order containing $x$.
 """
 @inline parent(x::AlgAssRelOrdElem) = x.parent
 
+Base.hash(x::AlgAssRelOrdElem, h::UInt) = hash(elem_in_algebra(x, copy = false), h)
+
 ################################################################################
 #
 #  Parent object overloading

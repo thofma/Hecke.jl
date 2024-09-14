@@ -48,7 +48,40 @@ end
 
   # creation
 
-  @test_throws ArgumentError associative_algebra(QQ, map(QQ, reshape([1 2 1 2; 1 2 1 2], 2, 2, 2)))
+  @test_throws ArgumentError structure_constant_algebra(QQ, map(QQ, reshape([1 2 1 2; 1 2 1 2], 2, 2, 2)))
+  @test_throws ArgumentError structure_constant_algebra(QQ, reshape([2], 1, 1, 1); one = QQFieldElem[2, 3])
+  
+  A = structure_constant_algebra(QQ, reshape([1], 1, 1, 1); one = QQFieldElem[1])
+  A = structure_constant_algebra(QQ, reshape([1], 1, 1, 1); one = Int[1])
+  A = structure_constant_algebra(QQ, reshape([], 0, 0, 0); one = [])
+  A = StructureConstantAlgebra(QQ, 0, QQFieldElem[])
+  A = zero_algebra(StructureConstantAlgebra, QQ)
+  fl, v = Hecke.find_one(A)
+  @test fl && v == QQFieldElem[]
+
+  A = @inferred associative_algebra(QQ, reshape([1, 0, 0, 2, 0, 1, 1, 0], (2, 2, 2)))
+  @test dim(A) == 2
+  @test base_ring(A) === QQ
+  @test structure_constant_table(A) == reshape([1, 0, 0, 2, 0, 1, 1, 0], (2, 2, 2))
+  @test structure_constant_table(A; copy = false) == reshape([1, 0, 0, 2, 0, 1, 1, 0], (2, 2, 2))
+
+  K, = quadratic_field(2)
+  A, m = structure_constant_algebra(K)
+  @test base_ring(A) === QQ
+  @test dim(A) == 2
+  @test m(one(A)) == one(K)
+  @test preimage(m, one(K)) == one(A)
+  @test m(zero(A)) == zero(K)
+  @test preimage(m, zero(K)) == zero(A)
+  Kt, t = K["t"]
+  L, b = number_field(t^2 + 3, "b")
+  A, m = structure_constant_algebra(L)
+  @test base_ring(A) === K
+  @test dim(A) == 2
+  @test m(one(A)) == one(L)
+  @test preimage(m, one(L)) == one(A)
+  @test m(zero(A)) == zero(L)
+  @test preimage(m, zero(L)) == zero(A)
 
   @testset "Change of ring" begin
 
@@ -106,7 +139,7 @@ end
     # Extend from F_p^m to F_p^n
     Fqx, x = Fq["x"]
     f = x^2 + 5x + 2
-    A = associative_algebra(f)
+    A = structure_constant_algebra(f)
     B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fq)
     @test absolute_degree(base_ring(B)) == degree(f)*degree(Fq)
@@ -124,7 +157,7 @@ end
     mt[2, 1, 2] = Fp(1)
     mt[2, 2, 1] = Fp(1)
     mt[2, 2, 2] = Fp(1)
-    A = associative_algebra(Fp, mt)
+    A = structure_constant_algebra(Fp, mt)
     B, BtoA = Hecke._as_algebra_over_center(A)
     @test characteristic(base_ring(B)) == characteristic(Fp)
     @test degree(base_ring(B)) == dim(A)
@@ -134,9 +167,9 @@ end
 
     # zero algebra
 
-    A = associative_algebra(QQ, Array{QQFieldElem}(undef, 0, 0, 0))
+    A = structure_constant_algebra(QQ, Array{QQFieldElem}(undef, 0, 0, 0))
     @test dim(A) == 0
-    A = associative_algebra(QQ, Array{QQFieldElem}(undef, 0, 0, 0), QQFieldElem[])
+    A = structure_constant_algebra(QQ, Array{QQFieldElem}(undef, 0, 0, 0), QQFieldElem[])
     @test dim(A) == 0
   end
 
@@ -226,7 +259,7 @@ end
 
     K, a = number_field(x^2 - 2, "a")
     HH = Hecke.quaternion_algebra2(2, 3)
-    A = associative_algebra(K, map(K, HH.mult_table))
+    A = structure_constant_algebra(K, map(K, HH.mult_table))
     Ps = real_places(K)
     @test is_split(A, Ps[1])
     @test is_split(A, Ps[2])
