@@ -72,7 +72,6 @@ end
 #
 ################################################################################
 
-
 function part_echolonize!(A)
  A = delete_zero_rows!(A)
  n = nrows(A)
