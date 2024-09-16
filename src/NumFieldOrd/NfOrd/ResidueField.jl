@@ -40,7 +40,7 @@ end
 # Compute the residue field data given the prime P
 function compute_residue_field_data!(P)
   p = minimum(P)
-  if fits(Int, p)
+  if isa(p, IntegerUnion) && fits(Int, p)
     smallp = Int(p)
     A, m = StructureConstantAlgebra(order(P), P, smallp)
     compute_residue_field_data!(P, m)

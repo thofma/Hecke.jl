@@ -96,7 +96,7 @@ basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_
 #
 ################################################################################
 
-function basis(O::GenOrd)
+function basis(O::GenOrd; copy::Bool = true)
   get_attribute!(O, :basis) do
     if _is_standard(O)
       return map(O, basis(field(O)))
