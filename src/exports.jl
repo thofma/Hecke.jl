@@ -613,6 +613,7 @@ export lattice_with_local_conditions
 export lcm
 export leading_coefficient
 export leech_lattice
+export left_ideal
 export left_order
 export level
 export lll
@@ -801,6 +802,7 @@ export restrict_scalars
 export restrict_scalars_with_map
 export resultant
 export riemann_roch_space
+export right_ideal
 export right_order
 export ring_of_integers
 export ring_of_multipliers

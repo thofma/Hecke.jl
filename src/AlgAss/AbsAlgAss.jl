@@ -727,7 +727,7 @@ of the basis elements of $A$ and a map from $B$ to $A$.
 function regular_matrix_algebra(A::Union{ StructureConstantAlgebra, GroupAlgebra })
   K = base_ring(A)
   B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true)
-  return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
+  return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)); check = false)
 end
 
 ###############################################################################
@@ -1117,7 +1117,7 @@ function product_of_components_with_projection(A::AbstractAssociativeAlgebra, a:
   for b in basis(A)
     push!(imgs, sum(injstoB[i](injs[i]\b) for i in eachindex(a); init = zero(B)))
   end
-  p = hom(A, B, basis_matrix(imgs))
+  p = hom(A, B, basis_matrix(imgs); check = false)
   _transport_refined_wedderburn_decomposition_forward(p)
   return B, p
 end

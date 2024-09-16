@@ -65,8 +65,8 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
   OpO, toOpO = quo(O, p*O, p)
   B, toB = _as_matrix_algebra(OpO)
 
-  I = ideal_from_gens(B, [ toB(toOpO(O(b))) for b in absolute_basis(M) ])
-  J = ideal_from_gens(B, [ toB(toOpO(O(b))) for b in absolute_basis(N) ])
+  I = _ideal_from_kgens(B, [ toB(toOpO(O(b))) for b in absolute_basis(M) ])
+  J = _ideal_from_kgens(B, [ toB(toOpO(O(b))) for b in absolute_basis(N) ])
 
   # Compute the image of 1 under the canonical projections O -> O/M respectively O -> O/N
   Fq = base_ring(B)
@@ -83,7 +83,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
       break
     end
   end
-  v = matrix(Fq, degree(B), 1, [ vv[i, nonZeroCol] for i = 1:degree(B) ])
+  v = matrix(Fq, degree(B), 1, elem_type(Fq)[ vv[i, nonZeroCol] for i = 1:degree(B) ])
   ww = mod(one(B), J)
   nonZeroCol = 0
   for i = 1:degree(B)
@@ -97,7 +97,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
       break
     end
   end
-  w = matrix(Fq, degree(B), 1, [ ww[i, nonZeroCol] for i = 1:degree(B) ])
+  w = matrix(Fq, degree(B), 1, elem_type(Fq)[ ww[i, nonZeroCol] for i = 1:degree(B) ])
 
   b = ceil(Int, degree(base_ring(B))*dim(B)*log2(BigInt(characteristic(base_ring(B)))))
   # A minimal set of generators of around b elements should generate B^\times
