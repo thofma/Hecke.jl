@@ -55,11 +55,26 @@ function _col_list(A)
  return col_list
 end
 
+@doc raw"""
+    structured_gauss(A::SMat{T}) where T <: RingElem
 
-function structured_gauss(A::SMat{T}) where T <: RingElem 
+Return a tuple (\nu, N) consisting of the nullity \nu of A and a basis N
+(consisting of column vectors) for the right nullspace of A, i.e. such that
+AN is the zero matrix.
+"""
+
+function structured_gauss(A::SMat{T}) where T <: RingElem
  SG = part_echolonize!(A)
  return compute_kernel(SG)
 end
+
+@doc raw"""
+    structured_gauss(A::SMat{T}) where T <: FieldElem
+
+Return a tuple (\nu, N) consisting of the nullity \nu of A and a basis N
+(consisting of column vectors) for the right nullspace of A, i.e. such that
+AN is the zero matrix.
+"""
 
 function structured_gauss_field(A::SMat{T}) where T <: FieldElem
  SG = part_echolonize_field!(A)
@@ -71,6 +86,9 @@ end
 #  Partial Echolonization
 #
 ################################################################################
+
+#Build an upper triangular matrix for as many columns as possible compromising
+#the loss of sparsity during this process.
 
 function part_echolonize!(A)
  A = delete_zero_rows!(A)
@@ -93,7 +111,6 @@ function part_echolonize!(A)
    turn_heavy(SG)
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
-
   eliminate_and_update!(best_single_row, SG)
  end
  return SG
@@ -206,7 +223,7 @@ function find_best_single_row(SG)
  best_val = NaN
  best_len = -1
  best_is_one = false
- for i = SG.base:SG.single_row_limit-1  #here not the case in first loop
+ for i = SG.base:SG.single_row_limit-1
   single_row = SG.A[i]
   single_row_len = length(single_row)
   w = SG.light_weight[i]
@@ -266,14 +283,13 @@ function find_dense_cols(SG)
    col_len = length(SG.col_list[i])
    if col_len > SG.heavy_col_len[1]
     if SG.heavy_ext == 1
-     SG.heavy_col_idx[1] = i 
+     SG.heavy_col_idx[1] = i
      SG.heavy_col_len[1] = col_len
     else
-    #jk = SG.heavy_ext
      for j = SG.heavy_ext:-1:2 
-      if col_len >= SG.heavy_col_len[j]  
+      if col_len >= SG.heavy_col_len[j]
        for k = 1:j-1
-        SG.heavy_col_idx[k] = SG.heavy_col_idx[k + 1]#replace by delete and insert!!!
+        SG.heavy_col_idx[k] = SG.heavy_col_idx[k + 1]
         SG.heavy_col_len[k] = SG.heavy_col_len[k + 1]
        end
        SG.heavy_col_idx[j] = i
@@ -304,7 +320,6 @@ function turn_heavy(SG)
    @assert SG.light_weight[i_now] > 0
    SG.light_weight[i_now]-=1
    handle_new_light_weight!(i_now, SG)
-   #test_Y(SG)
   end
  end
  SG.nlight -= SG.heavy_ext
@@ -328,17 +343,15 @@ end
 
 function eliminate_and_update!(best_single_row, SG)
  @assert best_single_row != 0
- @show best_single_row
- @show best_row = deepcopy(SG.A[best_single_row])
+ best_row = deepcopy(SG.A[best_single_row])
  best_col = find_light_entry(best_row.pos, SG.is_light_col)
  @assert length(SG.col_list[best_col]) > 1
- best_val = SG.A[best_single_row, best_col]
+ best_val = deepcopy(SG.A[best_single_row, best_col])
  @assert !iszero(best_val)
  best_col_idces = SG.col_list[best_col]
  row_idx = 0
  while length(best_col_idces) > 1
   row_idx = find_row_to_add_on(row_idx, best_row, best_col_idces, SG)
-  best_single_row == 115 && @show row_idx
   @assert best_col_idces == SG.col_list[best_col]
   @assert row_idx > 0
   @assert SG.col_list_perm[row_idx] in SG.col_list[best_col]
@@ -386,12 +399,10 @@ function find_row_to_add_on(row_idx, best_row, best_col_idces::Vector{Int64}, SG
 end
 
 function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
- @show best_val
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
  val = SG.A[row_idx, best_col]
  @assert !iszero(val)
- #case !over_field && over_Z:
  g = gcd(val, best_val)
  val_red = divexact(val, g)
  best_val_red = divexact(best_val, g)
@@ -403,7 +414,6 @@ function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
    deleteat!(SG.col_list[c], jj)
   end
  end
- row_idx == 112 && @show val, best_val, g, val_red, best_val_red
  scale_row!(SG.A, row_idx, best_val_red)
  @assert !(0 in best_row.values)
  Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val_red)
@@ -415,7 +425,7 @@ end
 function add_to_eliminate_field!(L_row, row_idx, best_row, best_col, best_val, SG)
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
- val = SG.A[row_idx, best_col] 
+ val = SG.A[row_idx, best_col]
  @assert !iszero(val)
  @assert L_row in SG.col_list[best_col]
  for c in SG.A[row_idx].pos
@@ -435,7 +445,7 @@ function update_after_addition!(L_row, row_idx::Int, best_col, SG::data_StructGa
  SG.light_weight[row_idx] = 0
  for c in SG.A[row_idx].pos
   @assert c != best_col
-  SG.is_light_col[c] && sort!(push!(SG.col_list[c], L_row)) 
+  SG.is_light_col[c] && sort!(push!(SG.col_list[c], L_row))
   SG.is_light_col[c] && (SG.light_weight[row_idx]+=1)
  end
  return SG
@@ -498,15 +508,18 @@ end
 #
 ################################################################################
 
+#Compute the kernel corresponding to the non echolonized part from above and
+#insert backwards using the triangular part to get the full kernel.
+
 function compute_kernel(SG, with_light = true)
- update_light_cols!(SG)
+ Hecke.update_light_cols!(SG)
  @assert SG.nlight > -1
- collect_dense_cols!(SG)
- _nullity, _dense_kernel = dense_kernel(SG)
- l, K = init_kernel(_nullity, _dense_kernel, SG, with_light)
+ Hecke.collect_dense_cols!(SG)
+ _nullity, _dense_kernel = Hecke.dense_kernel(SG)
+ l, K = Hecke.init_kernel(_nullity, _dense_kernel, SG, with_light)
  return compose_kernel(l, K, SG)
 end
- 
+
 function compute_kernel_field(SG, with_light = true)
  update_light_cols!(SG)
  @assert SG.nlight > -1
@@ -533,7 +546,7 @@ function collect_dense_cols!(SG)
  for i = 1:m
   if !SG.is_light_col[i] && !SG.is_single_col[i]
    SG.heavy_map[i] = j
-   push!(SG.heavy_mapi,i)  
+   push!(SG.heavy_mapi,i)
    j+=1
   end
  end
@@ -543,7 +556,7 @@ end
 
 function dense_kernel(SG)
  ST = sparse_matrix(base_ring(SG.A), 0, nrows(SG.Y))
- YT = transpose(SG.Y)
+ YT = transpose(delete_zero_rows!(SG.Y))
  for j in SG.heavy_mapi
   push!(ST, YT[j])
  end
@@ -571,7 +584,7 @@ function init_kernel(_nullity, _dense_kernel, SG, with_light=false)
     K[i, _nullity+ilight] = one(R)
     ilight +=1
    end
-  else 
+  else
    j = SG.heavy_map[i]
    if j>0
     for c = 1:_nullity
@@ -648,7 +661,7 @@ function compose_kernel_field(l, K, SG)
  return l, K
 end
 
-function delete_zero_rows!(A::SMat{T}) where T #where s denotes the first row where we wanna start
+function delete_zero_rows!(A::SMat{T}) where T
   for i=A.r:-1:1
     if isempty(A[i].pos)
       deleteat!(A.rows, i)
@@ -657,3 +670,7 @@ function delete_zero_rows!(A::SMat{T}) where T #where s denotes the first row wh
   end
   return A
 end
+
+
+#TODO: combine field and ring version
+#TODO: make computation kernel in compute_kernel faster
