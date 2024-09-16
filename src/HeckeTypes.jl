@@ -1,5 +1,13 @@
 ################################################################################
 #
+#  Maps
+#
+################################################################################
+
+include("Map/MapType.jl")
+
+################################################################################
+#
 #  Abstract types for number fields
 #
 ################################################################################
@@ -959,6 +967,7 @@ const AbsNumFieldOrderIdealSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrde
   prim_elem::AbsNumFieldOrderElem{S, T}
   min_poly_prim_elem::ZZPolyRingElem  # minimal polynomial modulo P
   basis_in_prim::Vector{ZZMatrix} #
+  phi::MapFromFunc{ZZRing, FqField}
 
   function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}) where {S, T}
     # populate the bits types (Bool, Int) with default values
@@ -1858,14 +1867,6 @@ function QuadBin(R, a, b, c)
   z.base_ring = R
   return z
 end
-
-################################################################################
-#
-#  Maps
-#
-################################################################################
-
-include("Map/MapType.jl")
 
 ################################################################################
 #

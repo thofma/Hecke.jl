@@ -91,6 +91,10 @@ end
   gen_two::GenOrdElem
 
   princ_gen::GenOrdElem
+  prim_elem::GenOrdElem
+  min_poly_prim_elem
+  basis_in_prim
+  phi
 
   splitting_type::Tuple{Int, Int}
                          #ordered as ramification index, inertia degree

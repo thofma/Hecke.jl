@@ -11,42 +11,50 @@
 #                          pi(a)
 #                        - a vector of ZZMatrix B, such that
 #                          pi(basis(O)[i]) = sum_j B[i][1, j] * pi(a)^j
-function compute_residue_field_data(m)
+function compute_residue_field_data(m, phi)
   O = domain(m)
   basisO = basis(O, copy = false)
   B = codomain(m)
   primB, minprimB, getcoordpowerbasis = _as_field(B)
   f = degree(minprimB)
+  F = domain(phi)
+  @assert F === base_ring(O)
   prim_elem = m\(primB)
-  min_poly_prim_elem = ZZPolyRingElem(ZZRingElem[lift(ZZ, coeff(minprimB, i)) for i in 0:degree(minprimB)])
-  min_poly_prim_elem.parent = ZZPolyRing(FlintZZ, :$, false)
-  basis_in_prim = Vector{ZZMatrix}(undef, degree(O))
+  min_poly_prim_elem = (polynomial_ring(F, :$, cached = false)[1])(elem_type(F)[preimage(phi, coeff(minprimB, i)) for i in 0:degree(minprimB)])
+  basis_in_prim = Vector{dense_matrix_type(F)}(undef, degree(O))
   for i in 1:degree(O)
-    basis_in_prim[i] = zero_matrix(FlintZZ, 1, f)
+    basis_in_prim[i] = zero_matrix(F, 1, f)
     t = getcoordpowerbasis(m(basisO[i]))
     for j in 1:f
-      basis_in_prim[i][1, j] = lift(ZZ, t[1, j])
+      basis_in_prim[i][1, j] = preimage(phi, t[1, j])
     end
   end
-  return prim_elem, min_poly_prim_elem, basis_in_prim
+  return prim_elem, min_poly_prim_elem, basis_in_prim, phi
 end
 
 # Compute the residue field data and store it in the prime P given the map m
-function compute_residue_field_data!(P, m)
-  P.prim_elem, P.min_poly_prim_elem, P.basis_in_prim = compute_residue_field_data(m)
+function compute_residue_field_data!(P::AbsNumFieldOrderIdeal, m)
+  F = base_ring(codomain(m))
+  phi = MapFromFunc(ZZ, F, x -> F(x), y -> lift(ZZ, y))
+  return compute_residue_field_data!(P, m, phi)
+end
+
+function compute_residue_field_data!(P, m, phi)
+  P.prim_elem, P.min_poly_prim_elem, P.basis_in_prim, P.phi = compute_residue_field_data(m, phi)
   return nothing
 end
 
 # Compute the residue field data given the prime P
 function compute_residue_field_data!(P)
   p = minimum(P)
-  if fits(Int, p)
+  if isa(p, IntegerUnion) && fits(Int, p)
     smallp = Int(p)
     A, m = StructureConstantAlgebra(order(P), P, smallp)
     compute_residue_field_data!(P, m)
   else
-    AA, mm = StructureConstantAlgebra(order(P), P, p)
-    compute_residue_field_data!(P, mm)
+    _, phi = residue_field(base_ring(order(P)), p)
+    AA, mm = StructureConstantAlgebra(order(P), P, p, phi)
+    compute_residue_field_data!(P, mm, phi)
   end
   return nothing
 end
@@ -55,7 +63,7 @@ end
 # data is often cached.
 function get_residue_field_data(P)
   if isdefined(P, :prim_elem)
-    return P.prim_elem, P.min_poly_prim_elem, P.basis_in_prim
+    return P.prim_elem, P.min_poly_prim_elem, P.basis_in_prim, P.phi
   else
     compute_residue_field_data!(P)
     get_residue_field_data(P)
@@ -184,6 +192,7 @@ end
 #  High level functions
 #
 ################################################################################
+
 @doc raw"""
     residue_field(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, check::Bool = true) -> Field, Map
 

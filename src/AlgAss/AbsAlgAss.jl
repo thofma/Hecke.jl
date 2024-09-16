@@ -608,6 +608,17 @@ function _primitive_element(A::AbstractAssociativeAlgebra{QQFieldElem})
   return a, minpoly(a)
 end
 
+function __primitive_element(A::AbstractAssociativeAlgebra{QQFieldElem})
+  return _primitive_element(A)
+end
+
+function __primitive_element(A::AbstractAssociativeAlgebra{<:NumFieldElem})
+  B, BtoA = restrict_scalars(A, QQ)
+  a, f = __primitive_element(B)
+  b = BtoA(a)
+  return b, minpoly(b)
+end
+
 function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbstractAssociativeAlgebra{T}} #<: Union{zzModRingElem, FqPolyRepFieldElem, fqPolyRepFieldElem, EuclideanRingResidueRingElem{ZZRingElem}, QQFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fpFieldElem}
   d = dim(A)
   a = rand(A)
