@@ -203,14 +203,6 @@ AbstractAlgebra.factor(x::RingElement) = factor(x)
 
 ################################################################################
 #
-#  Verbose printing and custom assertions
-#
-################################################################################
-
-include("Assertions.jl")
-
-################################################################################
-#
 #  Setter and getter for objects
 #
 ################################################################################
@@ -435,71 +427,6 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
      Base.include(Main, test_file)
      assertions(false)
    end
-end
-
-################################################################################
-#
-#  Verbose time printing
-#
-################################################################################
-
-macro vtime(args...)
-  if length(args) == 2
-    msg = string(args[2])
-    quote
-      if get_verbosity_level($(args[1])) >= 1
-        local t0 = time_ns()
-        local val = $(esc(args[2]))
-        println((time_ns()-t0)/1e9, " @ ", $msg)
-        val
-      else
-        local val2 = $(esc(args[2]))
-        val2
-      end
-    end
-  elseif length(args) == 3
-    msg = string(args[3])
-    quote
-      if get_verbosity_level($(args[1])) >= $(args[2])
-        local t0 = time_ns()
-        local val = $(esc(args[3]))
-        println((time_ns()-t0)/1e9, " @ ", $msg)
-        val
-      else
-        local val2 = $(esc(args[3]))
-        val2
-      end
-    end
-  end
-end
-
-#usage
-# @vtime_add_ellapsed :ClassGroup 2 clg :saturate  s= hnf(a)
-# @vtime_add :ClassGroup 2 clg :saturate  0.5
-# -> clg.time[:saturate] +=
-function _vtime_add(D::Dict, k::Any, v::Any)
-  if haskey(D, k)
-    D[k] += v
-  else
-    D[k] = v
-  end
-end
-
-macro vtime_add(flag, level, var, key, value)
-  quote
-    if get_verbosity_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, $(esc(value)))
-    end
-  end
-end
-
-macro vtime_add_elapsed(flag, level, var, key, stmt)
-  quote
-    tm = @elapsed $(esc(stmt))
-    if get_verbosity_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, tm)
-    end
-  end
 end
 
 ################################################################################
