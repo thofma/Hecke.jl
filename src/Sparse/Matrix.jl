@@ -1502,14 +1502,21 @@ end
   `name` controls the variable name of the matrix.
 """
 function to_hecke(io::IOStream, A::SMat; name = "A")
+  # hard code the allowed rings
+  R = base_ring(A)
+  println(io, "K = ", R == ZZ ? "ZZ" :
+                      R == QQ ? "QQ" :
+                      R isa FqField && absolute_degree(R) == 1 ? "GF($(characteristic(R)))" :
+                      error("cannot save this base")
+                     )
   T = typeof(A.rows[1].values[1])
-  println(io, name, " = SMat{$T}()")
+  println(io, name, " = sparse_matrix(K)")
   for i=A.rows
-    print(io, "push!($(name), SRow{$T}(Tuple{Int, $T}[");
+    print(io, "push!($(name), sparse_row(K, Tuple{Int, $T}[");
     for j=1:length(i.pos)-1
       print(io, "($(i.pos[j]), $(i.values[j])), ")
     end
-    println(io, "($(i.pos[end]), $(i.values[end]))]))")
+    println(io, "($(i.pos[end]), K($(i.values[end])))]))")
   end
 end
 
