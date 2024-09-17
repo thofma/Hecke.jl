@@ -77,6 +77,18 @@ import AbstractAlgebra: get_cached!, @alias
 
 import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent, terse, is_terse
 
+import AbstractAlgebra:
+  add_assertion_scope,
+  add_verbosity_scope,
+  assertions,
+  clearindent,
+  get_assertion_level,
+  get_verbosity_level,
+  popindent,
+  pushindent,
+  set_assertion_level,
+  set_verbosity_level
+
 import AbstractAlgebra: Solve
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
