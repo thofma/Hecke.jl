@@ -1,6 +1,3 @@
-add_verbosity_scope(:Conjugacy)
-add_assertion_scope(:Conjugacy)
-
 include("Conjugacy/Husert.jl")
 include("Conjugacy/Lifting.jl")
 include("Conjugacy/Random.jl")

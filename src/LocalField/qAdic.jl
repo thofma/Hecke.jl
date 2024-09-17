@@ -1,6 +1,3 @@
-add_verbosity_scope(:qAdic)
-add_assertion_scope(:qAdic)
-
 @attributes QadicField
 
 function residue_field(Q::QadicField)

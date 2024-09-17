@@ -8,9 +8,6 @@ import Nemo: shift_left, shift_right
 import Base: *
 export factor_absolute
 
-add_verbosity_scope(:AbsFact)
-add_assertion_scope(:AbsFact)
-
 function Hecke.norm(f::MPolyRingElem{AbsSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(Kx)

@@ -1,5 +1,3 @@
-add_verbosity_scope(:RelNumFieldOrder)
-
 ################################################################################
 #
 #  Is maximal order known

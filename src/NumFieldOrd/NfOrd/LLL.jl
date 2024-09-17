@@ -1,6 +1,3 @@
-add_verbosity_scope(:LLL)
-add_assertion_scope(:LLL)
-
 ################################################################################
 #
 #  Special functions for real fields and quadratic fields

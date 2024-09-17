@@ -1,8 +1,3 @@
-add_verbosity_scope(:AbExt)
-add_assertion_scope(:AbExt)
-
-add_verbosity_scope(:MaxAbExt)
-
 ###############################################################################
 #
 #  Abelian extensions

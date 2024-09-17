@@ -183,6 +183,109 @@ function __init__()
      _RealRings[i] = _RealRing()
   end
 
+  add_verbosity_scope(:AbExt)
+  add_assertion_scope(:AbExt)
+
+  add_verbosity_scope(:AbsFact)
+  add_assertion_scope(:AbsFact)
+
+  add_verbosity_scope(:AbsNumFieldOrder)
+  add_assertion_scope(:AbsNumFieldOrder)
+
+  add_assertion_scope(:AbsOrdQuoRing)
+
+  add_verbosity_scope(:AlgAssOrd)
+  add_assertion_scope(:AlgAssOrd)
+
+  add_verbosity_scope(:Automorphisms)
+
+  add_verbosity_scope(:ClassField)
+  add_assertion_scope(:ClassField)
+
+  add_verbosity_scope(:ClassGroup)
+  add_assertion_scope(:ClassGroup)
+  add_verbosity_scope(:ClassGroup_time)
+  add_verbosity_scope(:ClassGroup_gc)
+  add_verbosity_scope(:ClassGroupProof)
+
+  add_verbosity_scope(:CompactPresentation)
+  add_assertion_scope(:CompactPresentation)
+
+  add_verbosity_scope(:Conjugacy)
+  add_assertion_scope(:Conjugacy)
+
+  add_verbosity_scope(:GenRep)
+  add_assertion_scope(:GenRep)
+
+  add_verbosity_scope(:HNF)
+  add_assertion_scope(:HNF)
+
+  add_verbosity_scope(:LatEnum)
+  add_assertion_scope(:LatEnum)
+
+  add_verbosity_scope(:Lattice)
+  add_assertion_scope(:Lattice)
+
+  add_verbosity_scope(:LLL)
+  add_assertion_scope(:LLL)
+
+  add_verbosity_scope(:LocallyFreeClassGroup)
+
+  add_verbosity_scope(:MaxAbExt)
+
+  add_assertion_scope(:ModLattice)
+
+  add_verbosity_scope(:MPolyGcd)
+
+  add_verbosity_scope(:NewtonIteration)
+
+  add_verbosity_scope(:NormRelation)
+  add_assertion_scope(:NormRelation)
+
+  add_assertion_scope(:padic_poly)
+
+  add_verbosity_scope(:Par)
+
+  add_assertion_scope(:PID_Test)
+
+  add_verbosity_scope(:PIP)
+  add_assertion_scope(:PIP)
+
+  add_verbosity_scope(:PolyFactor)
+  add_assertion_scope(:PolyFactor)
+
+  add_verbosity_scope(:PseudoHnf)
+  add_assertion_scope(:PseudoHnf)
+  add_verbosity_scope(:PseudoHnfKB)
+
+  add_verbosity_scope(:qAdic)
+  add_assertion_scope(:qAdic)
+
+  add_verbosity_scope(:RayFacElem)
+  add_assertion_scope(:RayFacElem)
+
+  add_verbosity_scope(:RelNumFieldOrder)
+
+  add_assertion_scope(:RelSimpleNumField)
+
+  add_assertion_scope(:Rres)
+
+  add_verbosity_scope(:Saturate)
+
+  add_verbosity_scope(:Simplify)
+
+  add_verbosity_scope(:Subfields)
+
+  add_verbosity_scope(:StabSub)
+  add_assertion_scope(:StabSub)
+
+  add_assertion_scope(:StructureConstantAlgebra)
+
+  add_verbosity_scope(:UnitGroup)
+  add_assertion_scope(:UnitGroup)
+
+  add_verbosity_scope(:ZGenRep)
+  add_assertion_scope(:ZGenRep)
 end
 
 module Globals
@@ -468,7 +571,6 @@ Base.showerror(io::IO, ::NotImplemented) =
 function checkbounds(a::Int, b::Int) nothing; end;
 
 ################################################################################
-add_assertion_scope(:PID_Test)
 
 ################################################################################
 #

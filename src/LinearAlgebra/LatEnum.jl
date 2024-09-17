@@ -45,9 +45,6 @@
 #     L, U for the other bound as well and using this for exclusion.
 #     (see other comment below)
 
-add_assertion_scope(:LatEnum)
-add_verbosity_scope(:LatEnum)
-
 function show(io::IO, E::enum_ctx)
   println(io, "EnumCtx")
   if isdefined(E, :c)

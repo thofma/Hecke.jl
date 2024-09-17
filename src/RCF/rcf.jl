@@ -1,7 +1,3 @@
-add_verbosity_scope(:ClassField)
-add_assertion_scope(:ClassField)
-
-
 ###############################################################################
 #
 #  Number_field interface and reduction to prime power case
