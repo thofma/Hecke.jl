@@ -49,7 +49,7 @@ function setcoeff!(c::Generic.Poly{T}, n::Int, a::T) where {T <: Union{PadicFiel
 end
 
 #TODO: find better crossover points
-#  qp = PadicField(3, 10);
+#  qp = padic_field(3, precision = 10);
 #  qpt, t = qp["t"]
 #  E = eisenstein_extension(cyclotomic(3, gen(Hecke.Globals.Zx))(t+1))[1]
 #  Es, s = E["s"]
@@ -711,8 +711,6 @@ function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFie
   return res*res1
 end
 
-base_field(Q::QadicField) = base_ring(defining_polynomial(Q))
-
 function norm(f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   Kx = parent(f)
   K = base_ring(f)
@@ -749,7 +747,7 @@ function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where
       error("Not yet implemented")
     end
     d1 = clog(ZZRingElem(degree(f)+1), p)
-    L = QadicField(p, d1, min(precision(f), precision(g)))
+    L = qadic_field(p, d1, precision = min(precision(f), precision(g)))
     Lt = polynomial_ring(L, "t")[1]
     fL = map_coefficients(L, f, parent = Lt)
     gL = map_coefficients(L, g, parent = Lt)
@@ -928,7 +926,7 @@ function lift(C::HenselCtxdr, mx::Int)
   N = minimum([precision(x) for x in C.lf])
   N = min(N, minimum([precision(x) for x in C.la]))
   #have: N need mx
-  one = setprecision(parent(p), mx) do
+  one = with_precision(parent(p), mx) do
     Base.one(parent(p))
   end
   ch = Int[mx]

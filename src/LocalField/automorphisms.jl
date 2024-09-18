@@ -106,7 +106,9 @@ function _roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldE
 end
 
 function automorphism_list(K::T) where T <: Union{LocalField, QadicField}
-  f = map_coefficients(K, defining_polynomial(K), cached = false)
+  f = with_precision(base_field(K), precision(K)) do
+    map_coefficients(K, defining_polynomial(K), cached = false)
+  end
   rt = roots(f)
   rt = refine_roots1(f, rt)
 

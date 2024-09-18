@@ -134,15 +134,6 @@ end
 #
 ################################################################################
 
-function prime_field(L::Union{QadicField, LocalField})
-  L = base_ring(defining_polynomial(L))
-  while typeof(L) != PadicField
-    L = base_ring(defining_polynomial(L))
-  end
-  return L
-end
-
-
 function base_field(L::LocalField)
   return base_ring(defining_polynomial(L))
 end
@@ -366,7 +357,7 @@ end
 
 function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::VarName, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
-  K = PadicField(p, precision)
+  K = padic_field(p, precision = precision)
   fK = map_coefficients(K, f, cached = false)
   return local_field(fK, s, T, cached = cached, check = check)
 end
@@ -395,17 +386,19 @@ function setprecision!(K::LocalField, n::Int)
   return nothing
 end
 
-function setprecision(f::Function, K::Union{LocalField, PadicField, QadicField}, n::Int)
+function with_precision(f, K::LocalField, n::Int)
+  @assert n >= 0
   old = precision(K)
-#  @assert n>=0
   setprecision!(K, n)
   v = try
-        setprecision(f, base_field(K), ceil(Int, n/ramification_index(K)))
-      finally
-        setprecision!(K, old)
-      end
+    with_precision(f, base_field(K), ceil(Int, n/ramification_index(K)))
+  finally
+    setprecision!(K, old)
+  end
   return v
 end
+
+setprecision(f, K::LocalField, n::Int) = with_precision(f, K, n)
 
 ################################################################################
 #
@@ -498,7 +491,7 @@ end
 
  ################### unramified extension over local field L of a given degree n ####################
 
- function unramified_extension(L::Union{PadicField, QadicField, LocalField}, n::Int)
+ function unramified_extension(L::Union{QadicField, LocalField}, n::Int)
    R, mR = residue_field(L)
    Rt, t = polynomial_ring(R, "t", cached = false)
    f = Rt(push!([rand(R) for i = 0:n-1], one(R)))
