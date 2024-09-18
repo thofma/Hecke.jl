@@ -298,7 +298,7 @@ function factor_insert!(r::Dict{ZZRingElem,Int}, N::ZZRingElem, scale::Int=1)
   end
   fac, N = is_perfect_power_with_data(N)
   if fac > 1
-    return factor_insert!(r, N, fac)
+    return factor_insert!(r, N, fac * scale)
   end
   if is_prime(N)
     @assert !haskey(r, N)
