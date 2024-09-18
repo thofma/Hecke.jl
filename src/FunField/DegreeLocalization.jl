@@ -299,6 +299,8 @@ function divrem(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <:
   end
 end
 
+Base.rem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement = mod(a, b, checked)
+
 ###############################################################################
 #
 #  GCD
