@@ -77,7 +77,7 @@ import AbstractAlgebra: get_cached!, @alias
 
 import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent, terse, is_terse
 
-import AbstractAlgebra: Solve
+import AbstractAlgebra: Solve, coprime_base_steel
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
@@ -94,7 +94,7 @@ import Nemo
 
 import Pkg
 
-exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
+exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
            :set_entry!,]
 
@@ -110,7 +110,7 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
              valuation!, is_cyclo_type, is_embedded, is_maxreal_type,
-             mat_entry_ptr
+             mat_entry_ptr, factor_trial_range
 
 AbstractAlgebra.@include_deprecated_bindings()
 Nemo.@include_deprecated_bindings()
@@ -164,7 +164,7 @@ function __init__()
 
   global R = _RealRing()
 
-  global flint_rand_ctx = flint_rand_state()
+  #global flint_rand_ctx = flint_rand_state()
 
   resize!(_RealRings, Threads.nthreads())
   for i in 1:Threads.nthreads()

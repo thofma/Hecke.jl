@@ -1,3 +1,25 @@
+
+##implemented
+# Bernstein: asymptotically fastest, linear in the total input size
+#   pointless for small ints as it requires intermediate numbers to be
+#   huge
+# Bach/Shallit/???: not too bad, source Epure's Masters thesis
+#   can operate on Int types as no intermediate is larger than the input
+# Steel: a misnomer: similar to Magma, basically implements a memory
+#   optimised version of Bach
+#   faster than Magma on
+# > I := [Random(1, 10000) * Random(1, 10000) : x in [1..10000]];
+# > time c := CoprimeBasis(I);
+# julia> I = [ZZRingElem(rand(1:10000))*rand(1:10000) for i in 1:10000];
+#
+# experimentally, unless the input is enormous, Steel wins
+# on smallish input Bach is better than Bernstein, on larger this
+# changes
+#
+# needs
+# isone, gcd_into!, divexact!, copy
+# (some more for Bernstein: FactorBase, gcd, divexact)
+
 import Nemo.isone, Nemo.divexact, Base.copy
 
 function gcd_into!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
@@ -423,87 +445,3 @@ function coprime_base_bernstein(S::Vector{E}) where E
   return merge_bernstein(P1, P2)
 end
 
-function augment_steel(S::Vector{E}, a::E, start::Int = 1) where E
-  i = start
-  if is_unit(a)
-    return S
-  end
-
-  g = a
-  new = true
-
-  while i<=length(S) && !isone(a)
-    if new
-      g = gcd(S[i], a)
-      new = false
-    else
-      g = gcd_into!(g, S[i], a)
-    end
-    if is_unit(g)
-      i += 1
-      continue
-    end
-    si = divexact(S[i], g)
-    a = divexact(a, g)
-    if is_unit(si) # g = S[i] and S[i] | a
-      continue
-    end
-    S[i] = si
-    if is_unit(a) # g = a and a | S[i]
-      a = copy(g)
-      continue
-    end
-    augment_steel(S, copy(g), i)
-    continue
-  end
-  if !is_unit(a)
-    push!(S, a)
-  end
-
-  return S;
-end
-
-function coprime_base_steel(S::Vector{E}) where E
-  @assert !isempty(S)
-  T = Array{E}(undef, 1)
-  T[1] = S[1]
-  for i=2:length(S)
-    augment_steel(T, S[i])
-  end
-  return T
-end
-
-##implemented
-# Bernstein: asymptotically fastest, linear in the total input size
-#   pointless for small ints as it requires intermediate numbers to be
-#   huge
-# Bach/Shallit/???: not too bad, source Epure's Masters thesis
-#   can operate on Int types as no intermediate is larger than the input
-# Steel: a misnomer: similar to Magma, basically implements a memory
-#   optimised version of Bach
-#   faster than Magma on
-# > I := [Random(1, 10000) * Random(1, 10000) : x in [1..10000]];
-# > time c := CoprimeBasis(I);
-# julia> I = [ZZRingElem(rand(1:10000))*rand(1:10000) for i in 1:10000];
-#
-# experimentally, unless the input is enormous, Steel wins
-# on smallish input Bach is better than Bernstein, on larger this
-# changes
-#
-# needs
-# isone, gcd_into!, divexact!, copy
-# (some more for Bernstein: FactorBase, gcd, divexact)
-
-@doc raw"""
-    coprime_base{E}(S::Vector{E}) -> Vector{E}
-
-Returns a coprime base for $S$, i.e. the resulting array contains pairwise coprime objects that multiplicatively generate the same set as the input array.
-"""
-coprime_base(x) = coprime_base_steel(x)
-
-@doc raw"""
-    coprime_base_insert{E}(S::Vector{E}, a::E) -> Vector{E}
-
-Given a coprime array $S$, insert a new element, i.e. find a coprime base for `push(S, a)`.
-"""
-coprime_base_insert(S, a) = augment_steel(S, a)
