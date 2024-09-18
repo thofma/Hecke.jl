@@ -175,11 +175,6 @@ function Hecke.add!(a::OrderElem, b::OrderElem, c::OrderElem)
   return a
 end
 
-function Hecke.addeq!(a::OrderElem, b::OrderElem)
-  a.data = Hecke.addeq!(a.data, b.data)
-  return a
-end
-
 function Hecke.tr(a::OrderElem)
   return parent(a).R(trace(a.data))
 end
@@ -928,16 +923,6 @@ end
 
 function Hecke.add!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
   d = b+c
-  @assert parent(a.f) == parent(d.f)
-  @assert parent(a.g) == parent(d.g)
-  a.c = d.c
-  a.f = d.f
-  a.g = d.g
-  return a
-end
-
-function Hecke.addeq!(a::HessQRElem, b::HessQRElem)
-  d = a+b
   @assert parent(a.f) == parent(d.f)
   @assert parent(a.g) == parent(d.g)
   a.c = d.c

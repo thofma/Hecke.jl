@@ -285,13 +285,6 @@ function sub!(z::RelFinFieldElem{S, T}, x::RelFinFieldElem{S, T}, y::RelFinField
   return z
 end
 
-
-function addeq!(z::RelFinFieldElem{S, T}, x::RelFinFieldElem{S, T}) where {S, T}
-  z.data = add!(z.data, z.data, x.data)
-  z.data = rem!(z.data, z.data, defining_polynomial(parent(z)))
-  return z
-end
-
 function Base.div(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T}
   return x*inv(y)
 end

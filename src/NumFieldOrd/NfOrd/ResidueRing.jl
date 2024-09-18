@@ -272,8 +272,6 @@ function add!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   return _easy_mod(z)
 end
 
-addeq!(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = add!(x, x, y)
-
 function sub!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = sub!(z.elem, x.elem, y.elem)
   z.isreduced = false

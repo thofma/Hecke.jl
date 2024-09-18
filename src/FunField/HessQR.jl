@@ -198,16 +198,6 @@ function Hecke.add!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
   return a
 end
 
-function Hecke.addeq!(a::HessQRElem, b::HessQRElem)
-  d = a+b
-  @assert parent(a.f) == parent(d.f)
-  @assert parent(a.g) == parent(d.g)
-  a.c = d.c
-  a.f = d.f
-  a.g = d.g
-  return a
-end
-
 function divrem(a::HessQRElem, b::HessQRElem)
   check_parent(a, b)
   if iszero(b)

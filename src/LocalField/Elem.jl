@@ -617,13 +617,6 @@ function add!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   return c
 end
 
-function addeq!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  check_parent(a, c)
-  c.data = add!(c.data, c.data, a.data)
-  c.precision = min(a.precision, c.precision)
-  return c
-end
-
 function sub!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   c.parent = a.parent

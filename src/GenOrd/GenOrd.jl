@@ -300,11 +300,6 @@ function add!(a::GenOrdElem, b::GenOrdElem, c::GenOrdElem)
   return a
 end
 
-function addeq!(a::GenOrdElem, b::GenOrdElem)
-  a.data = Hecke.addeq!(a.data, b.data)
-  return a
-end
-
 ################################################################################
 #
 #  Trace and norm

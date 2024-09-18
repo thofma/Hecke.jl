@@ -419,12 +419,6 @@ function mul!(c::RelSimpleNumFieldElem{T}, a::RelSimpleNumFieldElem{T}, b::T) wh
   return c
 end
 
-function addeq!(b::RelSimpleNumFieldElem{T}, a::RelSimpleNumFieldElem{T}) where {T}
-  addeq!(b.data, a.data)
-  b = reduce!(b)
-  return b
-end
-
 function add!(c::RelSimpleNumFieldElem{T}, a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
   add!(c.data, a.data, b.data)
   c = reduce!(c)
