@@ -117,7 +117,7 @@
     c = @inferred add!(c, c, O1(a1^2))
     @test b == c
     c = O1(a1)
-    c = @inferred addeq!(c, O1(a1^2))
+    c = @inferred add!(c, O1(a1^2))
     @test b == c
     @test b == O1(a1 + a1^2)
 

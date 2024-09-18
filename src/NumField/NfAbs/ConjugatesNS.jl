@@ -166,13 +166,13 @@ function _evaluate(f::QQMPolyRingElem, vals::Vector{AcbFieldElem})
     j = i = i + 1
     while iseven(j) && length(r) > 1
       top = pop!(r)
-      r[end] = addeq!(r[end], top)
+      r[end] = add!(r[end], top)
       j >>>= 1
     end
   end
   while length(r) > 1
     top = pop!(r)
-    r[end] = addeq!(r[end], top)
+    r[end] = add!(r[end], top)
   end
   return r[1]
 end

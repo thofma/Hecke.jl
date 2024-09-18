@@ -1,6 +1,6 @@
 module Suri
 using Hecke
-import Hecke: valuation, divexact, parent_type, elem_type, mul!, addeq!, parent
+import Hecke: valuation, divexact, parent_type, elem_type, mul!, add!, parent
 import Base: +, -, *, ^
 
 #= follows Sebastian Posur's idea
@@ -293,7 +293,7 @@ divexact(a::RRSelem, b::RRSelem; check::Bool=true) = RRSelem(a.R, [mod(a.x[i]*in
 (R::RRS)(a::Integer) = RRSelem(R, a)
 (R::RRS)(a::RRSelem) = a
 
-function addeq!(a::RRSelem, b::RRSelem)
+function add!(a::RRSelem, b::RRSelem)
   for i=1:length(a.x)
     a.x[i] = mod(a.x[i] + b.x[i], a.R.p[i])
     a.r    = mod(a.r    + b.r   , a.R.r)
