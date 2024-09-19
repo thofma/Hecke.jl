@@ -4,11 +4,6 @@
 #       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors,
 #       Hecke.rank, Hecke.det
 
-add_verbosity_scope(:HNF)
-
-add_assertion_scope(:HNF)
-
-
 function show(io::IO, M::ModuleCtxNmod)
   print(io, "Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))")
 end

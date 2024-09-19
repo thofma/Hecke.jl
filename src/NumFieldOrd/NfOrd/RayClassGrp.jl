@@ -1,6 +1,3 @@
-add_verbosity_scope(:RayFacElem)
-add_assertion_scope(:RayFacElem)
-
 ###############################################################################
 #
 #  Map Type

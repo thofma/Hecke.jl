@@ -1,8 +1,6 @@
 module RelSaturate
 using Hecke
 
-add_verbosity_scope(:Saturate)
-
 export saturate!
 
 function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)

@@ -1,8 +1,6 @@
 # Import the progress bar and Dates for the conversion of seconds
 import Dates
 
-add_verbosity_scope(:ClassGroupProof)
-
 # This is a modified showprogress from Pkg.GitTools
 
 PROGRESS_BAR_PERCENTAGE_GRANULARITY = Ref(0.1)

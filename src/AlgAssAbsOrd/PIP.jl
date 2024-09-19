@@ -1,6 +1,3 @@
-add_verbosity_scope(:PIP)
-add_assertion_scope(:PIP)
-
 ################################################################################
 #
 #  Is principal for maximal orders

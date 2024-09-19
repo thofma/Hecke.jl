@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-add_verbosity_scope(:LocallyFreeClassGroup)
-
 # Bley, Boltje "Computation of Locally Free Class Groups"
 # If the left and right conductor of O in a maximal order coincide (which is the
 # case if O is the integral group ring of a group algebra), the computation can

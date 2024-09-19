@@ -43,15 +43,14 @@ using Pkg, Nemo, Documenter, DocumenterVitepress, DocumenterCitations
                       "pmat/introduction.md",
                       "misc/conjugacy.md",
                       ],
-          "Extra features" => ["features/macros.md",
-                               "features/mset.md",
+          "Extra features" => ["features/mset.md",
                               ],
           "Examples" => "examples.md",
           "References" => "references.md",
           "Developer" => [ "dev/test.md",
                          ]
          ]
- 
+
 # Overwrite printing to make the header not full of redundant nonsense
 # Turns
 #   Hecke.Order - Method

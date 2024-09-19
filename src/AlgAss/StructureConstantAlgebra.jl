@@ -1,5 +1,3 @@
-add_assertion_scope(:StructureConstantAlgebra)
-
 ################################################################################
 #
 #  Derived types
@@ -146,7 +144,7 @@ end
 
 @doc raw"""
     structure_constant_algebra(K::SimpleNumField) -> StructureConstantAlgebra, Map
- 
+
 Given a number field $L/K$, return $L$ as a $K$-algebra $A$ together with a
 $K$-linear map $A \to L$.
 

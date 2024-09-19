@@ -6,12 +6,6 @@ export ==
 export ^
 export ⊕
 export ⊗
-export @hassert
-export @req
-export @v_do
-export @vprint
-export @vprintln
-export @vtime
 export AbstractLat
 export AbstractSpace
 export AbstractSpaceMor
