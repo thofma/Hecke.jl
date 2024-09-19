@@ -305,11 +305,6 @@ function add!(a::LaurentSeriesFieldValuationRingElem, b::LaurentSeriesFieldValua
   return a
 end
 
-function addeq!(a::LaurentSeriesFieldValuationRingElem, b::LaurentSeriesFieldValuationRingElem)
-  a.a = addeq!(data(a), data(b))
-  return a
-end
-
 ################################################################################
 #
 #  Promotion

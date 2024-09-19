@@ -146,10 +146,10 @@ function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: A
        G.buckets[j] = zero(R)
      end
    end
-   G.buckets[i] = addeq!(G.buckets[i], p)
+   G.buckets[i] = add!(G.buckets[i], p)
    while i <= G.len
       if length(G.buckets[i]) >= 4^i
-         G.buckets[i + 1] = addeq!(G.buckets[i + 1], G.buckets[i])
+         G.buckets[i + 1] = add!(G.buckets[i + 1], G.buckets[i])
          G.buckets[i] = R()
          i += 1
       end

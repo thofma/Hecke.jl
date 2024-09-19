@@ -260,17 +260,6 @@ function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
   return c
 end
 
-function addeq!(b::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}) where {T}
-  parent(a) != parent(b) && error("Parents don't match.")
-  A = parent(a)
-
-  for i = 1:dim(A)
-    b.coeffs[i] = addeq!(coefficients(b, copy = false)[i], coefficients(a, copy = false)[i])
-  end
-
-  return b
-end
-
 function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::T) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 

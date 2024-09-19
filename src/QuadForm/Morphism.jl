@@ -551,7 +551,7 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
       if k > 0
         if !is0
           if S <: ZZRingElem
-            addeq!(vector_sums[I][k], ww)
+            add!(vector_sums[I][k], ww)
           else
             @inbounds for l in 1:dim(C)
               vector_sums[I][k][l] += ww[l]
@@ -2126,7 +2126,7 @@ function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::I
     getindex!(tmp2, v, 1, i)
     getindex!(tmp3, A, i, k)
     mul!(tmp1, tmp2, tmp3)
-    addeq!(t, tmp1)
+    add!(t, tmp1)
   end
   return t
 end
@@ -2151,7 +2151,7 @@ function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int,
     getindex!(tmp2, v, 1, i)
     getindex!(tmp3, A, k, i)
     mul!(tmp1, tmp2, tmp3)
-    addeq!(t, tmp1)
+    add!(t, tmp1)
   end
   return t
 end

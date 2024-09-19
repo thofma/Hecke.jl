@@ -275,7 +275,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
         end
 
         Q[i, j] = div(-C[i, j], R.snf[j]) + 1
-        C[i, j] = addeq!(C[i, j], R.snf[j]*Q[i, j])
+        C[i, j] = add!(C[i, j], R.snf[j]*Q[i, j])
       end
     end
 

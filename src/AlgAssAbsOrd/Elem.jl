@@ -303,12 +303,6 @@ end
 #
 ################################################################################
 
-function addeq!(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
-  x.elem_in_algebra = addeq!(elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
-  x.has_coord = false
-  return x
-end
-
 function add!(z::T, x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   z.elem_in_algebra = add!(elem_in_algebra(z, copy = false), elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
   z.has_coord = false
