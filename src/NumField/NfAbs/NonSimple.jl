@@ -372,13 +372,6 @@ function Nemo.add!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::
   return c
 end
 
-function Nemo.addeq!(b::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem)
-  addeq!(b.data, a.data)
-  b = reduce!(b)
-  return b
-end
-
-
 function Nemo.mul!(c::AbsNonSimpleNumFieldElem, a::AbsNonSimpleNumFieldElem, b::ZZRingElem)
   mul!(c.data, a.data, b)
   return c

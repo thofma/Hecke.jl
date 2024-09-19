@@ -339,11 +339,6 @@ function add!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c:
   return a
 end
 
-function addeq!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
-  a.x = addeq!(data(a), data(b))
-  return a
-end
-
 ################################################################################
 #
 #  Promotion

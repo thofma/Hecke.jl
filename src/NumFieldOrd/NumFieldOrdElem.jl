@@ -232,16 +232,6 @@ end
   return z
 end
 
-function addeq!(z::AbsNumFieldOrderElem, x::AbsNumFieldOrderElem)
-  addeq!(z.elem_in_nf, x.elem_in_nf)
-  if x.has_coord && z.has_coord
-    for i in 1:degree(parent(z))
-      add!(z.coordinates[i], z.coordinates[i], x.coordinates[i])
-    end
-  end
-  return z
-end
-
 ################################################################################
 #
 #  Unsafe ad hoc operations

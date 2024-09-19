@@ -156,10 +156,6 @@ function mul!(a::KInftyElem{T}, b::KInftyElem{T}, c::KInftyElem{T}) where {T}
   return b*c
 end
 
-function addeq!(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return a+b
-end
-
 ###############################################################################
 #
 #   Comparison

@@ -82,7 +82,7 @@
   let
     A = matrix_algebra(QQ, 2)
     b = A(matrix(QQ, [3 4; 5 6]))
-    Hecke.addeq!(b,b)
+    Hecke.add!(b,b)
     @test b == A(matrix(QQ, [6 8; 10 12]))
   end
 end

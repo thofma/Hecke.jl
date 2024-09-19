@@ -18,7 +18,7 @@ base_ring(A::AbstractAssociativeAlgebra)
 
 Return the zero ring as an algebra over the field $K$.
 
-The optional first argument determines the type of the algebra, and can be 
+The optional first argument determines the type of the algebra, and can be
 `StructureConstantAlgebra` (default) or `MatrixAlgebra`.
 
 # Examples
@@ -354,7 +354,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
       end
 
       s = mul!(s, t, Mrj)
-      v[j] = addeq!(v[j], s)
+      v[j] = add!(v[j], s)
     end
     v[c] = zero!(v[c])
   end
@@ -383,7 +383,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
     t = -Mrp
     for c = pivot_col + 1:ncols(M)
       s = mul!(s, t, v[c])
-      M[r, c] = addeq!(M[r, c], s)
+      M[r, c] = add!(M[r, c], s)
     end
     M[r, pivot_col] = zero(base_ring(M))
   end

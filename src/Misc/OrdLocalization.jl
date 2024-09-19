@@ -88,8 +88,6 @@ add!(c::OrdLocElem, a::OrdLocElem, b::OrdLocElem) = a + b
 
 mul!(c::OrdLocElem, a::OrdLocElem, b::OrdLocElem) = a * b
 
-addeq!(a::OrdLocElem, b::OrdLocElem) = a + b
-
 ###############################################################################
 #
 #   Data type and parent object methods
