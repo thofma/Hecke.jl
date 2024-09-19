@@ -208,7 +208,7 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
 
   n = ncols(Gmod)
 
-  Qp = PadicField(p, prec, cached = false)
+  Qp = padic_field(p, precision = prec, cached = false)
 
   if n == 0
     return (zero_matrix(FlintQQ, n, n), zero_matrix(FlintQQ, n, n))::Tuple{QQMatrix, QQMatrix}

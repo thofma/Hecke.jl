@@ -862,7 +862,7 @@ function field(RC::RootCtx, m::MatElem)
 
   @vprintln :AbsFact 1 "target field has (local) degree $k"
 
-  Qq = QadicField(characteristic(F), k, 1, cached = false)[1]
+  Qq = qadic_field(characteristic(F), k, precision = 1, cached = false)[1]
   Qqt = polynomial_ring(Qq, cached = false)[1]
   k, mk = residue_field(Qq)
 
