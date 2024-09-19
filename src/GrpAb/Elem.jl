@@ -224,6 +224,60 @@ end
 
 *(x::FinGenAbGroupElem, y::Integer) = y*x
 
+###############################################################################
+#
+#   Unsafe operators
+#
+###############################################################################
+
+function reduce!(x::FinGenAbGroupElem)
+  assure_reduced!(parent(x), x.coeff)
+  return x
+end
+
+function zero!(x::FinGenAbGroupElem)
+  zero!(x.coeff)
+  # no reduction necessary
+  return x
+end
+
+function neg!(x::FinGenAbGroupElem)
+  neg!(x.coeff)
+  return reduce!(x)
+end
+
+# TODO: set! for ZZMatrix not yet implemented, hence this is not yet implemented
+#function set!(x::FinGenAbGroupElem, y::FinGenAbGroupElem)
+#  set!(x.coeff, y.coeff)
+#  # no reduction necessary
+#  return x
+#end
+
+function add!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::FinGenAbGroupElem)
+  add!(x.coeff, y.coeff, z.coeff)
+  return reduce!(x)
+end
+
+function sub!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::FinGenAbGroupElem)
+  sub!(x.coeff, y.coeff, z.coeff)
+  return reduce!(x)
+end
+
+function mul!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::Union{Int,ZZRingElem})
+  mul!(x.coeff, y.coeff, z)
+  return reduce!(x)
+end
+
+function addmul!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::Union{Int,ZZRingElem})
+  addmul!(x.coeff, y.coeff, z)
+  return reduce!(x)
+end
+
+function addmul_delayed_reduction!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::Union{Int,ZZRingElem})
+  addmul!(x.coeff, y.coeff, z)
+  return x
+end
+
 ################################################################################
 #
 #  Neutral element
