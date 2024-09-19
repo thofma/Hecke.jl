@@ -25,10 +25,6 @@ function AbstractAlgebra.factor_squarefree(a::Generic.MPoly{<:NumFieldElem})
   return _doit(a, factor_squarefree)
 end
 
-function AbstractAlgebra.factor(a::Generic.Poly{AbsSimpleNumFieldElem})
-  return Hecke.factor(a)
-end
-
 function AbstractAlgebra.MPolyFactor.mfactor_choose_eval_points!(
   alphas::Vector,
   A::E,
