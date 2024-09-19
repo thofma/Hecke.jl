@@ -442,12 +442,7 @@ function compose(f::FinGenAbGroupHom, g::FinGenAbGroupHom)
   else
     M = f.map*g.map
   end
-  if is_snf(C)
-    reduce_mod_snf!(M, C.snf)
-  else
-    assure_has_hnf(C)
-    reduce_mod_hnf_ur!(M, C.hnf)
-  end
+  assure_reduced!(C, M)
   return hom(domain(f), codomain(g), M, check = false)
 end
 
@@ -456,12 +451,7 @@ function +(f::FinGenAbGroupHom, g::FinGenAbGroupHom)
   @assert codomain(f) == codomain(g)
   M = f.map + g.map
   C = codomain(f)
-  if is_snf(C)
-    reduce_mod_snf!(M, C.snf)
-  else
-    assure_has_hnf(C)
-    reduce_mod_hnf_ur!(M, C.hnf)
-  end
+  assure_reduced!(C, M)
 
   return hom(domain(f), codomain(f), M, check = false)
 end
@@ -471,12 +461,7 @@ function -(f::FinGenAbGroupHom, g::FinGenAbGroupHom)
   @assert codomain(f) == codomain(g)
   M = f.map - g.map
   C = codomain(f)
-  if is_snf(C)
-    reduce_mod_snf!(M, C.snf)
-  else
-    assure_has_hnf(C)
-    reduce_mod_hnf_ur!(M, C.hnf)
-  end
+  assure_reduced!(C, M)
 
   return hom(domain(f), codomain(f), M, check = false)
 end
@@ -484,12 +469,7 @@ end
 function -(f::FinGenAbGroupHom)
   M = -f.map
   C = codomain(f)
-  if is_snf(C)
-    reduce_mod_snf!(M, C.snf)
-  else
-    assure_has_hnf(C)
-    reduce_mod_hnf_ur!(M, C.hnf)
-  end
+  assure_reduced!(C, M)
 
   return hom(domain(f), codomain(f), M, check = false)
 end
@@ -497,12 +477,7 @@ end
 function Base.:(*)(a::IntegerUnion, f::FinGenAbGroupHom)
   M = a*f.map
   C = codomain(f)
-  if is_snf(C)
-    reduce_mod_snf!(M, C.snf)
-  else
-    assure_has_hnf(C)
-    reduce_mod_hnf_ur!(M, C.snf)
-  end
+  assure_reduced!(C, M)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
@@ -527,12 +502,7 @@ function Base.:^(f::FinGenAbGroupHom, n::Integer)
   else
     M = f.map^n
   end
-  if is_snf(C)
-    reduce_mod_snf!(M, C.snf)
-  else
-    assure_has_hnf(C)
-    reduce_mod_hnf_ur!(M, C.snf)
-  end
+  assure_reduced!(C, M)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
@@ -540,12 +510,7 @@ function evaluate(p::ZZPolyRingElem, f::FinGenAbGroupHom)
   @assert domain(f) === codomain(f)
   M = p(f.map)
   C = codomain(f)
-  if is_snf(C)
-    reduce_mod_snf!(M, C.snf)
-  else
-    assure_has_hnf(C)
-    reduce_mod_hnf_ur!(M, C.snf)
-  end
+  assure_reduced!(C, M)
   return hom(domain(f), codomain(f), M, check = false)
 end
 
