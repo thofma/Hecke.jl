@@ -64,12 +64,6 @@
 #
 ################################################################################
 
-add_verbosity_scope(:ClassGroup)
-add_verbosity_scope(:ClassGroup_time)
-add_verbosity_scope(:ClassGroup_gc)
-
-add_assertion_scope(:ClassGroup)
-
 include("Clgp/Ctx.jl")
 include("Clgp/FacBase_Euc.jl")
 include("Clgp/FacBase_Idl.jl")

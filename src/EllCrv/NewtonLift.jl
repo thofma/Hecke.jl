@@ -1,6 +1,5 @@
 #import Hecke.AbstractAlgebra
 export newton_lift
-add_verbosity_scope(:NewtonIteration)
 
 _valuation(x::RingElem) = iszero(x) ? QQ(precision(parent(x))) : valuation(x)
 

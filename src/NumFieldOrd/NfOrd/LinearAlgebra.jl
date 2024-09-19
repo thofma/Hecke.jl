@@ -1,9 +1,5 @@
 import Base.vcat, Base.hcat
 
-add_verbosity_scope(:PseudoHnf)
-add_assertion_scope(:PseudoHnf)
-add_verbosity_scope(:PseudoHnfKB)
-
 function _det_bound(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
   n = nrows(M)
   O = base_ring(M)

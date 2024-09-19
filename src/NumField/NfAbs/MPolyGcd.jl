@@ -1,5 +1,3 @@
-add_verbosity_scope(:MPolyGcd)
-
 function gcd(f::Hecke.Generic.MPoly{<:NumFieldElem}, g::Hecke.Generic.MPoly{<:NumFieldElem})
   R = parent(f)
   K = coefficient_ring(f)

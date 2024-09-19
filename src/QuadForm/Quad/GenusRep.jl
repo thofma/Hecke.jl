@@ -3,9 +3,6 @@
 # With permission ported from Magma package of Markus Kirschmer:
 # http://www.math.rwth-aachen.de/~Markus.Kirschmer/magma/lat.html
 
-add_verbosity_scope(:GenRep)
-add_assertion_scope(:GenRep)
-
 ################################################################################
 #
 #  SpinorGeneraCtx

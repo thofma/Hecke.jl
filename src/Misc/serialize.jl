@@ -60,7 +60,6 @@
 #  return NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}(K, L, a)
 #end
 #
-add_verbosity_scope(:Par)
 
 function _bizarre(a::Int, b::Int)
   return length(Hecke.class_group(Hecke.wildanger_field(a, b)[1])[1])
