@@ -47,16 +47,7 @@ end
 # This destroy's the input. If you don't want this, use A(::ZZMatrix)
 
 function FinGenAbGroupElem(A::FinGenAbGroup, a::ZZMatrix)
-  if is_snf(A)
-    return elem_snf(A, a)
-  else
-    return elem_gen(A, a)
-  end
-end
-
-function elem_gen(A::FinGenAbGroup, a::ZZMatrix)
-  assure_has_hnf(A)
-  reduce_mod_hnf_ur!(a, A.hnf)
+  assure_reduced!(A, a)
   z = FinGenAbGroupElem()
   z.parent = A
   z.coeff = a
@@ -78,12 +69,13 @@ function reduce_mod_snf!(a::ZZMatrix, v::Vector{ZZRingElem})
   end
 end
 
-function elem_snf(A::FinGenAbGroup, a::ZZMatrix)
-  reduce_mod_snf!(a, A.snf)
-  z = FinGenAbGroupElem()
-  z.parent = A
-  z.coeff = a
-  return z
+function assure_reduced!(A::FinGenAbGroup, a::ZZMatrix)
+  if is_snf(A)
+    reduce_mod_snf!(a, A.snf)
+  else
+    assure_has_hnf(A)
+    reduce_mod_hnf_ur!(a, A.hnf)
+  end
 end
 
 ################################################################################
