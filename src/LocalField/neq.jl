@@ -214,7 +214,7 @@ function coordinates(a::Union{QadicFieldElem, LocalFieldElem}, k)
   return c
 end
 coordinates(a::PadicFieldElem, ::PadicField) = [a]
-lift(a::Hecke.LocalFieldValuationRingElem{PadicField, PadicFieldElem}) = lift(a.x)
+lift(R::Ring, a::Hecke.LocalFieldValuationRingElem{PadicField, PadicFieldElem}) = lift(R, a.x)
 
 function setprecision!(A::Generic.MatSpaceElem{Hecke.LocalFieldValuationRingElem{PadicField, PadicFieldElem}}, n::Int)
   for i=1:nrows(A)
@@ -255,7 +255,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
   cur_a = copy(a)
   cur_b = b
 #  @assert degree(K) == e
-  Qp = prime_field(K)
+  Qp = absolute_base_field(K)
   Zp = ring_of_integers(Qp)
   expo_mult = identity_matrix(ZZ, length(cur_a))
   #transformation of cur_a to a
@@ -565,7 +565,7 @@ struct MapEvalCtx
   map::Generic.MatSpaceElem{PadicFieldElem}
 
   function MapEvalCtx(M::LocalFieldMor)
-    mat = matrix(prime_field(domain(M)),
+    mat = matrix(absolute_base_field(domain(M)),
                  absolute_degree(domain(M)),
                  absolute_degree(codomain(M)),
                  reduce(vcat, [absolute_coordinates(M(x))
@@ -778,7 +778,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
     E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E), cached = false))
-    G2 = automorphism_list(E2, prime_field(E2))
+    G2 = automorphism_list(E2, absolute_base_field(E2))
     GG = morphism_type(E)[]
     for e = G2
       ime = e(gen(E2))
@@ -794,7 +794,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
     @assert length(GG) == divexact(absolute_degree(E), absolute_degree(K))
 #    @assert all(x->x in GG, automorphism_list(E, K))
   else
-    GG = automorphism_list(E, prime_field(E))
+    GG = automorphism_list(E, absolute_base_field(E))
     gK = map(E, gK)
     GG = [g for g = GG if map(g, gK) == gK]
   end
@@ -828,7 +828,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   beta = []
   sigma_hat = []
   #need to map and compare all generators
-  gL = gens(L, prime_field(L))
+  gL = gens(L, absolute_base_field(L))
   imGG = map(x->map(x, map(E, gL)), GG)
   imG = map(x->map(x, gL), G)
 
@@ -1367,7 +1367,7 @@ function is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem)
       end
       continue
     end
-    Qp = PadicField(p, prec)
+    Qp = padic_field(p, precision = prec)
     #for each P we need
     # - a gen (pi) for the valuation
     # - a gen for the residue field

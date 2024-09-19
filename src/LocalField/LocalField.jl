@@ -134,15 +134,6 @@ end
 #
 ################################################################################
 
-function prime_field(L::Union{QadicField, LocalField})
-  L = base_ring(defining_polynomial(L))
-  while typeof(L) != PadicField
-    L = base_ring(defining_polynomial(L))
-  end
-  return L
-end
-
-
 function base_field(L::LocalField)
   return base_ring(defining_polynomial(L))
 end
@@ -366,7 +357,7 @@ end
 
 function local_field(f::QQPolyRingElem, p::Int, precision::Int, s::VarName, ::Type{T} = GenericLocalField; check::Bool = true, cached::Bool = true) where T <: LocalFieldParameter
   @assert is_prime(p)
-  K = PadicField(p, precision)
+  K = padic_field(p, precision = precision)
   fK = map_coefficients(K, f, cached = false)
   return local_field(fK, s, T, cached = cached, check = check)
 end

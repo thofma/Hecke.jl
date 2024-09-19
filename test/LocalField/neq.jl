@@ -36,7 +36,7 @@ end
   l2 = prime_decomposition(maximal_order(k), 2)
   k2, _ = Hecke.completion(k, l2[1][1], 120)
 
-  G, mG = automorphism_group(k2, prime_field(k2))
+  G, mG = automorphism_group(k2, Hecke.absolute_base_field(k2))
   @test all([mG(x*y) == mG(x) * mG(y) for x = G for y = G])
 
 end
@@ -111,8 +111,8 @@ end
 end
 
 @testset "Misc LocalField" begin
-  K = QadicField(3, 5, 10)[1]
-  k = PadicField(3, 10)
+  K = qadic_field(3, 5, precision = 10)[1]
+  k = padic_field(3, precision = 10)
   @test is_norm(K, k(3)) == false
   @test is_norm(K, k(3)^5) == true
 
