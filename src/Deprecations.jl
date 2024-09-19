@@ -274,9 +274,9 @@ end
 
 @deprecate rres reduced_resultant
 
-# To be deprecated in 0.34.0
+# Deprecated in 0.34.0
 
-#@deprecate lift(a::LocalFieldValuationRingElem) lift(ZZ, a)
-lift(a::LocalFieldValuationRingElem) = lift(ZZ, a)
-#@deprecate prime_field(L::Union{QadicField, LocalField}) absolute_base_field(L)
-prime_field(L::Union{QadicField, LocalField}) = absolute_base_field(L)
+@deprecate lift(a::LocalFieldValuationRingElem) lift(ZZ, a)
+@deprecate prime_field(L::Union{QadicField, LocalField}) absolute_base_field(L)
+@deprecate coefficient_ring(k::LocalField) base_field(k)
+@deprecate coefficient_field(k::QadicField) base_field(k)

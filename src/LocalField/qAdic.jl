@@ -54,8 +54,6 @@ function residue_field(Q::PadicField)
   return k, mp
 end
 
-coefficient_field(Q::QadicField) = coefficient_ring(Q)
-
 function getUnit(a::PadicFieldElem)
   u = ZZRingElem()
   ccall((:fmpz_set, libflint), Cvoid, (Ref{ZZRingElem}, Ref{Int}), u, a.u)
@@ -85,7 +83,7 @@ uniformizer(Q::QadicField) = Q(prime(Q))
 
 uniformizer(Q::PadicField) = Q(prime(Q))
 
-function defining_polynomial(Q::QadicField, P::Ring = coefficient_ring(Q))
+function defining_polynomial(Q::QadicField, P::Ring = base_field(Q))
   Pt, t = polynomial_ring(P, cached = false)
   f = Pt()
   for i=0:Q.len-1
