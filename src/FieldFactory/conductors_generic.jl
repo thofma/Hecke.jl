@@ -182,7 +182,8 @@ function conductors_tame(O::AbsSimpleNumFieldOrder, n::Int, bound::ZZRingElem; u
   list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to, prime_base = unramified_outside)
 
   extra_list = Tuple{Int, ZZRingElem}[(1, ZZRingElem(1))]
-  for q in ram_primes
+  for _q in ram_primes
+    q = ZZ(_q)
     if !isempty(unramified_outside) && !(q in unramified_outside)
       continue
     end
@@ -244,7 +245,8 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
   #
   wild_list = Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}[(1, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1))]
-  for q in wild_ram
+  for _q in wild_ram
+    q = ZZ(_q)
     if !isempty(unramified_outside) && !(q in unramified_outside)
       continue
     end
