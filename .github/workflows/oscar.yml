@@ -1,9 +1,13 @@
 name: OscarCI
 
 on:
-   pull_request:
-     branches:
-       - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    # Every day at 3:05 AM UTC
+    - cron: '5 3 * * *'
+
 
 concurrency:
   # group by workflow and ref; the last slightly strange component ensures that for pull
