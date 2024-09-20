@@ -522,7 +522,7 @@ end
     artin_schreier_equation(d::Int, c::Union{fpFieldElem, fqPolyRepFieldElem})
 
     Find an element `x` in `parent(c)` such that `frobenius(x, d) -x = c`.
-    Additive Hilber 90.
+    Additive Hilbert 90.
 """
 function artin_schreier_equation(d::Int, c::FinFieldElem)
    F = parent(c)
