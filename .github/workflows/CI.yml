@@ -7,6 +7,9 @@ on:
       - 'release-'
     tags: '*'
   pull_request:
+  schedule:
+    # Every day at 3:05 AM UTC
+    - cron: '5 3 * * *'
 
 concurrency:
   # group by workflow and ref; the last slightly strange component ensures that for pull
