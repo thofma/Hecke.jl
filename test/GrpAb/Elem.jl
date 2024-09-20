@@ -93,6 +93,53 @@
     @test aa == G([2, 0, 0])
   end
 
+  @testset "Unsafe operators" begin
+    G = abelian_group([3, 3, 0])
+
+    a = G([1, 2, 3])
+    @test zero!(a) == G([0, 0, 0])
+    @test a == G([0, 0, 0])
+
+    a = G([1, 2, 3])
+    @test neg!(a) == G([-1, -2, -3])
+    @test a == G([-1, -2, -3])
+
+    # TODO: set! not yet implemented
+    #a = G([1, 2, 3])
+    #@test Hecke.set!(a, G[1]) == G([1, 0, 0])
+    #@test a == G([1, 0, 0])
+
+    a = G([1, 2, 3])
+    @test add!(a, a) == G([2, 1, 6])
+    @test a == G([2, 1, 6])
+
+    a = G([1, 2, 3])
+    @test sub!(a, G([4, 4, 4])) == G([-3, -2, -1])
+    @test a == G([-3, -2, -1])
+
+    a = G([1, 2, 3])
+    @test mul!(a, 4) == G([1, 2, 12])
+    @test a == G([1, 2, 12])
+
+    a = G([1, 2, 3])
+    @test mul!(a, ZZ(4)) == G([1, 2, 12])
+    @test a == G([1, 2, 12])
+
+    a = G([1, 2, 3])
+    @test addmul!(a, G([1,1,1]), 4) == G([2, 0, 7])
+    @test a == G([2, 0, 7])
+
+    a = G([1, 2, 3])
+    @test addmul!(a, G([1,1,1]), ZZ(4)) == G([2, 0, 7])
+    @test a == G([2, 0, 7])
+
+    a = G([1, 2, 3])
+    @test Hecke.addmul_delayed_reduction!(a, G([1,1,1]), ZZ(4)) != G([2, 0, 7])
+    reduce!(a)
+    @test a == G([2, 0, 7])
+
+  end
+
   @testset "Neutral element" begin
     G = abelian_group([3, 3, 3])
     a = G[1]
