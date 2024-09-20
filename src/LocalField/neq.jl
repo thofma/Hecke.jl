@@ -488,6 +488,8 @@ end
 
     Find an element `x` in `parent(c)` such that `frobenius(x, d) = x*c`.
     If the norm of `c` is one, this is supposed to work.
+
+    (Hilbert 90)
 """
 function frobenius_equation(d::Int, c::FinFieldElem)
    F = parent(c)
@@ -520,6 +522,7 @@ end
     artin_schreier_equation(d::Int, c::Union{fpFieldElem, fqPolyRepFieldElem})
 
     Find an element `x` in `parent(c)` such that `frobenius(x, d) -x = c`.
+    Additive Hilber 90.
 """
 function artin_schreier_equation(d::Int, c::FinFieldElem)
    F = parent(c)
@@ -587,7 +590,11 @@ end
 """
 solve, hopefully,
     x^phi//x = c
-    for phi the frobenius of parent(c) over F
+    for phi the Frobenius of parent(c) over F
+
+Requires norm(c) == 1  for the norm relative to the Frobenius
+
+(multiplicative Hilbert 90)
 """
 function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicField, Hecke.LocalField}; frobenius = false)
   E = parent(c)
@@ -618,7 +625,9 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicF
 
   v_deg = valuation(absolute_degree(E), prime(E))
   setprecision(E, precision(E) + v_deg) do
-    c = setprecision(c, precision(E))
+    cd = setprecision(c, precision(E))
+    #careful: the function only works if norm(c) == 1
+    #increasing the precision will break this
     cnt = 0
     while true
       local gamma
@@ -632,7 +641,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicF
       a = zero(E)
       for i=1:divexact(absolute_degree(E), absolute_degree(F))
         a += b
-        b = c*fr(b)
+        b = cd*fr(b)
       end
       iszero(a) && continue
       va = valuation(a)
@@ -767,13 +776,12 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   @assert valuation(u) == 0
   v = norm_equation(E, u)
   @assert valuation(v) == 0
-  global last_neq = (E, u, v)
   @assert norm(v) == u
   pi = v*uniformizer(L)
   pi_inv = inv(pi)
 
   #if (like here) L is Eisenstein over unram, then the automorphisms are easier
-  global last_mKL = mKL
+  
   if ramification_index(L) == degree(L) && e > 1#so we're ramified
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
@@ -869,6 +877,8 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
     @assert length(fb) == 1
 
     c = GG[fa[fb[1]]](pi) * pi_inv
+
+#    @assert isone(norm(c))
 
     us = frobenius_equation(c, K, frobenius = fr)
     #think...
