@@ -102,17 +102,21 @@ end
   K, a = cyclotomic_field(5)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a^-1
+  @test aut(a) == conj(a)
 
   K, a = cyclotomic_field(29)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a^-1
+  @test aut(a) == conj(a)
 
   K, a = cyclotomic_field(13)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a^-1
+  @test aut(a) == conj(a)
   K, a = quadratic_field(5)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a
+  @test aut(a) == conj(a)
 end
 
 @testset "Bad example" begin

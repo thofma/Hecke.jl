@@ -540,6 +540,16 @@ function complex_conjugation(K::AbsSimpleNumField; auts::Vector{<:NumFieldHom{Ab
   error("something went wrong!")
 end
 
+@doc raw"""
+    conj(a::AbsSimpleNumFieldElem)
+
+Return the complex conjugation of `a` by applying `complex_conjugation` to `parent(a)`.
+
+!!! note
+    If you need to compute many conjugations of elements of the same field, it is
+    faster to call `complex_conjugation` once directly.
+"""
+conj(a::AbsSimpleNumFieldElem) = complex_conjugation(parent(a))(a)
 
 function _find_complex_conjugation(K::AbsSimpleNumField, A::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   a = gen(K)
