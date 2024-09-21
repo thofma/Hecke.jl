@@ -44,16 +44,6 @@ end
 #
 ################################################################################
 
-# This destroy's the input. If you don't want this, use A(::ZZMatrix)
-
-function FinGenAbGroupElem(A::FinGenAbGroup, a::ZZMatrix)
-  assure_reduced!(A, a)
-  z = FinGenAbGroupElem()
-  z.parent = A
-  z.coeff = a
-  return z
-end
-
 function reduce_mod_snf!(a::ZZMatrix, v::Vector{ZZRingElem})
   GC.@preserve a begin
     for i = 1:length(v)

@@ -1828,11 +1828,16 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
 end
 
-mutable struct FinGenAbGroupElem <: GrpAbElem
+struct FinGenAbGroupElem <: GrpAbElem
   parent::FinGenAbGroup
   coeff::ZZMatrix
 
-  FinGenAbGroupElem() = new()
+  # This destroy's the input. If you don't want this, use A(::ZZMatrix)
+  function FinGenAbGroupElem(A::FinGenAbGroup, a::ZZMatrix)
+    assure_reduced!(A, a)
+    return new(A, a)
+  end
+
 end
 
 ################################################################################
