@@ -487,59 +487,68 @@ end
 @doc raw"""
     complex_conjugation(K::AbsSimpleNumField)
 
-Given a totally complex normal number field, this function returns an
-automorphism which is the restriction of complex conjugation at one embedding.
+Given a normal number field, this function returns an automorphism which is the
+restriction of complex conjugation at one embedding.
 """
 function complex_conjugation(K::AbsSimpleNumField; auts::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}} = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[])
-  if is_totally_real(K)
-    return id_hom(K)
-  end
-  if !isempty(auts)
-    A = auts
-  else
-    A = automorphism_list(K)
-    if length(A) < degree(K)
-      error("Number field must be normal")
+  get_attribute!(K, :complex_conjugation) do
+    if is_totally_real(K)
+      return id_hom(K)
     end
-  end
-  a = gen(K)
-  d = length(A)
-  !is_totally_complex(K) && error("Number field must be totally complex")
-  #First, quick and dirty. If only one automorphism works, then we return it
-  p = 32
-  while true
-    c = conjugates(a, p)
-    for i = 1:d
-      if !is_involution(A[i])
-        continue
+    if !isempty(auts)
+      A = auts
+    else
+      A = automorphism_list(K)
+      if length(A) < degree(K)
+        error("Number field must be normal")
       end
-      cc = conj.(conjugates(image_primitive_element(A[i]), p))
-      for k = 1:d
-        if overlaps(c[k], cc[k])
-          found = true
-          for j = 1:d
-            if j == k
-              continue
+    end
+    a = gen(K)
+    d = length(A)
+    !is_totally_complex(K) && error("Number field must be totally complex")
+    #First, quick and dirty. If only one automorphism works, then we return it
+    p = 32
+    while true
+      c = conjugates(a, p)
+      for i = 1:d
+        if !is_involution(A[i])
+          continue
+        end
+        cc = conj.(conjugates(image_primitive_element(A[i]), p))
+        for k = 1:d
+          if overlaps(c[k], cc[k])
+            found = true
+            for j = 1:d
+              if j == k
+                continue
+              end
+              if overlaps(c[j], cc[k])
+                found = false
+                break
+              end
             end
-            if overlaps(c[j], cc[k])
-              found = false
-              break
+            if found
+              return A[i]
             end
-          end
-          if found
-            return A[i]
           end
         end
       end
+      p = 2 * p
+      if p > 2^18
+        error("Precision too high in complex_conjugation")
+      end
     end
-    p = 2 * p
-    if p > 2^18
-      error("Precision too high in complex_conjugation")
-    end
-  end
-  error("something went wrong!")
+    error("something went wrong!")
+  end::morphism_type(K)
 end
 
+@doc raw"""
+    conj(a::AbsSimpleNumFieldElem)
+
+Given an element $a$ of a normal number field, return the image of $a$ under
+complex conjugation.
+"""
+conj(a::AbsSimpleNumFieldElem) = complex_conjugation(parent(a))(a)
 
 function _find_complex_conjugation(K::AbsSimpleNumField, A::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   a = gen(K)
