@@ -692,8 +692,8 @@ function frobenius_equation2(c::Hecke.LocalFieldElem, F::Union{PadicField, Qadic
       return s
     end
     @assert v > 0
-    pvE = uniformizer(E, Int(v*eE))
-    pvE_inv = uniformizer(E, -Int(v*eE))
+    pvE = uniformizer(E, Int(v*eE); prec = pr)
+    pvE_inv = uniformizer(E, -Int(v*eE); prec = pr)
     x = mK((cc-1)* pvE_inv)
     a = preimage(mK, artin_schreier_equation(X, x))
     t = (1+pvE*a)
