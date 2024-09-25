@@ -17,7 +17,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   #I need to compute the degree of the maximal abelian subextension over this subfield.
   deg_mas = Set{Int}()
   if degree(domain(F.subfields[i])) == 1
-    idH = GAP.julia_to_gap([1, 1])
+    idH = GAP.GapObj([1, 1])
   else
     idH = IdGroup(automorphism_list(domain(F.subfields[i])))
   end
