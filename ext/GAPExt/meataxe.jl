@@ -1,6 +1,6 @@
 ## `ZZRingElem` to GAP integer
-function _julia_to_gap(obj::ZZRingElem)
-  Nemo._fmpz_is_small(obj) && return GAP.julia_to_gap(Int(obj))
+function _GapObj(obj::ZZRingElem)
+  Nemo._fmpz_is_small(obj) && return GAP.GapObj(Int(obj))
   GC.@preserve obj begin
     x = Nemo._as_bigint(obj)
     return ccall((:MakeObjInt, GAP.libgap), GAP.GapObj, (Ptr{UInt64}, Cint), x.d, x.size)
@@ -42,10 +42,10 @@ end
 # computes the isomorphism between the Oscar field F and the corresponding GAP field
 function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fpField, Nemo.FpField}
    p = characteristic(F)
-   G = GAP.Globals.GF(_julia_to_gap(p))
+   G = GAP.Globals.GF(_GapObj(p))
    e = GAP.Globals.One(G)
 
-   f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = _julia_to_gap(lift(x))*e
+   f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = _GapObj(lift(x))*e
    finv(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
 
    return MapFromFunc(F, G, f, finv)
@@ -118,7 +118,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
 end
 
 function __to_gap(h, x::Vector)
-  return GAP.Globals.GModuleByMats(GAP.julia_to_gap([GAP.julia_to_gap(map(x -> _image(h, x), Matrix(y))) for y in x]), codomain(h))
+  return GAP.Globals.GModuleByMats(GAP.GapObj([GAP.GapObj(map(x -> _image(h, x), Matrix(y))) for y in x]), codomain(h))
 end
 
 function __gap_matrix_to_julia(h, g)

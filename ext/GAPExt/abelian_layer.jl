@@ -16,7 +16,7 @@ function _real_level(L::GAP.GapObj)
       push!(lElem, g)
     end
   end
-  S = GAP.Globals.Subgroup(G, GAP.julia_to_gap(lElem))
+  S = GAP.Globals.Subgroup(G, GAP.GapObj(lElem))
   #Now, I check containment.
   k = 0
   for i = 2:length(L)
@@ -175,7 +175,7 @@ function _construct_grp(IdH::GAP.GapObj, uncom::Int)
     ex = ppio(o, uncom)[1]
     push!(new_gens, gens[i]^ex)
   end
-  S = GAP.Globals.Subgroup(G, GAP.julia_to_gap(new_gens))
+  S = GAP.Globals.Subgroup(G, GAP.GapObj(new_gens))
   Q = GAP.Globals.FactorGroup(G, S)
   IdCheck = GAP.Globals.IdGroup(Q)
   return IdCheck

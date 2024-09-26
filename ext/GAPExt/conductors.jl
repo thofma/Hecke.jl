@@ -95,7 +95,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
     for p in lp
       gHp = inertia_subgroups[p]
       els = [D[g] for g in gHp]
-      sub = GAP.Globals.Subgroup(G, GAP.julia_to_gap(els))
+      sub = GAP.Globals.Subgroup(G, GAP.GapObj(els))
       ord = GAP.Globals.Size(sub)
       subgs = Vector{GAP.GapObj}()
       preimages = Vector{Vector{GAP.GapObj}}(undef, length(els))
@@ -106,7 +106,7 @@ function _conductors_using_cocycles(F::FieldsTower, st::Vector{Int}, l_cond::Vec
       it = cartesian_product_iterator(UnitRange{Int}[1:n for i = 1:length(els)], inplace = true)
       sizes_preimages = Int[]
       for I in it
-        sub = GAP.Globals.Subgroup(E, GAP.julia_to_gap([preimages[i][I[i]] for i = 1:length(els)]))
+        sub = GAP.Globals.Subgroup(E, GAP.GapObj([preimages[i][I[i]] for i = 1:length(els)]))
         push!(sizes_preimages, GAP.Globals.Size(sub))
         if maximum(sizes_preimages) != ord && minimum(sizes_preimages) == ord
           break
