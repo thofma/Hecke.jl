@@ -138,6 +138,15 @@ end
 ################################################################################
 
 @doc raw"""
+    components(x::FinGenAbGroupElem) -> Vector{ZZRingElem}
+
+Returns the components of the element $x$.
+"""
+function components(x::FinGenAbGroupElem)
+  return x.coeff
+end
+
+@doc raw"""
     getindex(x::FinGenAbGroupElem, i::Int) -> ZZRingElem
 
 Returns the $i$-th component of the element $x$.

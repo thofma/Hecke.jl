@@ -206,6 +206,7 @@ export codifferent
 export codomain
 export coefficient_ideals
 export coefficients
+export components
 export coinvariant_lattice
 export cokernel
 export collapse_top_layer
