@@ -39,7 +39,7 @@ function _singular_points_weierstrass_model(E::EllipticCurve{<:AbstractAlgebra.G
 end
 
 @doc raw"""
-    newton_lift(E::EllipticCurve, P::EllipticCurvePoint, reduction_map; max_iterations=16) -> Bool, EllipticCurvePoint
+    newton_lift(E::EllipticCurve, P::EllipticCurvePoint, reduction_map; max_iterations=7) -> Bool, EllipticCurvePoint
 
 Return a point `Q` of `E` which reduces by `reduction_map` to `P` and whether it exists.
 
@@ -57,9 +57,9 @@ Input:
 - `E` -- the elliptic curve ``E/F(t)``
 - `p` -- a point of ``E/k(t)``
 - `reduction map` -- the canonical homomorphism $O_F \rightarrow k$
-- max_iterations -- the maximal number of Newton iteration steps
+- max_iterations -- the maximal number of Newton iteration steps, setting to a high value slows down computations a lot.
 """
-function newton_lift(E::EllipticCurve{<:Generic.FracFieldElem{<:PolyRingElem}}, P::EllipticCurvePoint{<:Generic.FracFieldElem{<:PolyRingElem}}, reduction_map::Map; max_iterations::Int=16)
+function newton_lift(E::EllipticCurve{<:Generic.FracFieldElem{<:PolyRingElem}}, P::EllipticCurvePoint{<:Generic.FracFieldElem{<:PolyRingElem}}, reduction_map::Map; max_iterations::Int=7)
   # O_F -> O_F/m =: k
   # K the completion of F at m
   sing = _singular_points_weierstrass_model(E)
