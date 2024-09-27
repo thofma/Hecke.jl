@@ -571,7 +571,13 @@ end
 function is_abelian(K::RelSimpleNumField)
   k = base_field(K)
   Ok = maximal_order(k)
-  d = ideal(Ok, Ok(discriminant(K.pol)))
+  _d = discriminant(K.pol)
+  if _d in Ok
+    d = ideal(Ok, Ok(_d))
+  else
+    d = discriminant(any_order(K))
+    @assert order(d) == Ok
+  end
   r, mr = ray_class_group(d, real_places(k), n_quo = degree(K))
   s, ms = norm_group(K.pol, mr, false)
   deg = divexact(order(r), order(s))
@@ -977,11 +983,22 @@ function maximal_abelian_subfield(K::RelSimpleNumField{AbsSimpleNumFieldElem}; o
     dd = d
   else
     d = ideal(zk, discriminant(K))
-    dd = d.num
+    if !isone(d.den)
+      dd = discriminant(any_order(K))
+    else
+      dd = d.num
+    end
   end
 
   r1, r2 = signature(base_field(K))
-  C, mC = ray_class_group(dd, infinite_places(base_field(K))[1:r1], n_quo = degree(K))
+  #of_closure cannot use the n_quo by the degree: any D_n field has
+  #zeta_n in the closure...thus a degree 5 field might have a 
+  #degree 4 subfield (actually 2 x 4) in the closure.
+  if of_closure
+    C, mC = ray_class_group(dd, infinite_places(base_field(K))[1:r1])
+  else
+    C, mC = ray_class_group(dd, infinite_places(base_field(K))[1:r1], n_quo = degree(K))
+  end
   N, iN = norm_group(K, mC, of_closure = of_closure)
   return ray_class_field(mC, quo(C, iN, false)[2])
 end
