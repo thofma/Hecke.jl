@@ -283,7 +283,7 @@ function can_solve_with_solution_mod(A::T, b::T, n::Int; side) where {T<: MatEle
   pi = uniformizer(OK)
   R, OK_to_R = residue_ring(OK, pi^n)
 
-  @show minimum(precision.(A))
+  #@show minimum(precision.(A))
   @assert minimum(precision.(A))>=n
   @assert minimum(precision.(b))>=n
 
