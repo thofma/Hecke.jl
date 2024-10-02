@@ -1,3 +1,9 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
+```
 ## Structural Computations
 Abelian groups support a wide range of structural operations such as
  - enumeration of subgroups

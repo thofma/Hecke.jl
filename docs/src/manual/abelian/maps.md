@@ -1,7 +1,14 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
+```
+## Maps
 Maps between abelian groups are mainly of type `FinGenAbGroupHom`. They
 allow normal map operations such as `image`, `preimage`, `domain`, `codomain`
 and can be created in a variety of situations.
-## Maps
+
 Maps between abelian groups can be constructed via
  - images of the generators
  - pairs of elements

@@ -1,3 +1,9 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
+```
 ## Elements
 Elements in a finitely generated abelian group are of type `FinGenAbGroupElem`
 and are always given as a linear combination of the generators.
