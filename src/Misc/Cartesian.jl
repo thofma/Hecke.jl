@@ -84,9 +84,9 @@ function Base.length(F::CartesianProductIt)
   return prod(length(x) for x in F.ranges)
 end
 
-Base.IteratorSize(::Type{CartesianProductIt{T}}) where T = Base.HasLength()
+Base.IteratorSize(::Type{<:CartesianProductIt{T}}) where T = Base.HasLength()
 
-Base.eltype(::CartesianProductIt{T}) where T = Vector{eltype(T)}
+Base.eltype(::Type{<:CartesianProductIt{T}}) where T = Vector{eltype(T)}
 
 function Base.getindex(F::CartesianProductIt{T}, i::Int) where T
   v = Vector{eltype{T}}(undef, length(F.ranges))
