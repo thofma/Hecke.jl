@@ -358,9 +358,9 @@ function Base.iterate(A::SRow, st::Int = 1)
   return (A.pos[st], A.values[st]), st + 1
 end
 
-Base.eltype(::Type{SRow{T}}) where T = Tuple{Int, T}
+Base.eltype(::Type{<:SRow{T}}) where T = Tuple{Int, T}
 
-Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
+Base.IteratorSize(::Type{<:SRow{T}}) where T = Base.HasLength()
 
 ################################################################################
 #

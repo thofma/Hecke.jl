@@ -281,7 +281,7 @@ mutable struct Divisors{T}
   end
 end
 
-Base.IteratorSize(::Divisors) = Base.HasLength()
+Base.IteratorSize(::Type{Divisors{T}}) where {T} = Base.HasLength()
 Base.length(D::Divisors) = length(D.s)
 Base.eltype(::Type{Divisors{T}}) where {T} = T
 

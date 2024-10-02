@@ -398,7 +398,7 @@ end
 #  return A.to != -1 && st > A.to
 #end
 
-Base.eltype(::PrimesSet{T}) where {T <: IntegerUnion} = T
+Base.eltype(::Type{PrimesSet{T}}) where {T <: IntegerUnion} = T
 
 Base.length(A::PrimesSet) = length(collect(A))
 
