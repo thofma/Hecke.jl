@@ -344,11 +344,6 @@ function Nemo.mul!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T
   return a*b
 end
 
-function Nemo.addeq!(b::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T}) where {T}
-  addeq!(b.data, a.data)
-  return b
-end
-
 function Nemo.add!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
   c.data = add!(c.data, a.data, b.data)
   return c

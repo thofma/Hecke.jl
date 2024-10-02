@@ -358,9 +358,9 @@ function Base.iterate(A::SRow, st::Int = 1)
   return (A.pos[st], A.values[st]), st + 1
 end
 
-Base.eltype(::Type{SRow{T}}) where T = Tuple{Int, T}
+Base.eltype(::Type{<:SRow{T}}) where T = Tuple{Int, T}
 
-Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
+Base.IteratorSize(::Type{<:SRow{T}}) where T = Base.HasLength()
 
 ################################################################################
 #
@@ -385,7 +385,7 @@ function dot(A::SRow{T}, B::SRow{T}) where T
       return v
     end
     if B.pos[b] == A.pos[a]
-      v += A.values[a] * B.values[b] 
+      v += A.values[a] * B.values[b]
     end
   end
   return v
@@ -450,8 +450,8 @@ end
 @doc raw"""
     scale_row!(a::SRow, b::NCRingElem) -> SRow
 
-Returns the (left) product of $b \times a$ and reassigns the value of $a$ to this product. 
-For rows, the standard multiplication is from the left. 
+Returns the (left) product of $b \times a$ and reassigns the value of $a$ to this product.
+For rows, the standard multiplication is from the left.
 """
 function scale_row!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
@@ -709,7 +709,7 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
       j += 1
     else
       t = mul!(t, c, a.values[i])
-      b.values[j] = addeq!(b.values[j], t)
+      b.values[j] = add!(b.values[j], t)
 
       if iszero(b.values[j])
         deleteat!(b.values, j)
@@ -731,7 +731,7 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   return b
 end
 
-add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c) 
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
 
 add_right_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
 
@@ -756,7 +756,7 @@ function add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
       j += 1
     else
       t = mul!(t, a.values[i], c)
-      b.values[j] = addeq!(b.values[j], t)
+      b.values[j] = add!(b.values[j], t)
 
       if iszero(b.values[j])
         deleteat!(b.values, j)

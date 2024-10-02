@@ -172,181 +172,7 @@ function is_prime_power(n::Integer)
   return is_prime_power(ZZRingElem(n))
 end
 
-################################################################################
-# random and factor
-################################################################################
-
-factor(a...; b...) = Nemo.factor(a...; b...)
-
-factor(a::Integer) = factor(ZZRingElem(a))
-
-mutable struct flint_rand_ctx_t
-  a::Ptr{Nothing}
-  function flint_rand_ctx_t()
-    return new()
-  end
-end
-
-function show(io::IO, A::flint_rand_ctx_t)
-  println(io, "Flint random state")
-end
-
-function flint_rand_state()
-  A = flint_rand_ctx_t()
-  A.a = ccall((:flint_rand_alloc, libflint), Ptr{Nothing}, (Int,), 1)
-  ccall((:flint_randinit, libflint), Nothing, (Ptr{Nothing},), A.a)
-
-  function clean_rand_state(A::flint_rand_ctx_t)
-    ccall((:flint_randclear, libflint), Nothing, (Ptr{Nothing},), A.a)
-    ccall((:flint_rand_free, libflint), Nothing, (Ptr{Nothing},), A.a)
-    nothing
-  end
-  finalizer(clean_rand_state, A)
-  return A
-end
-
-global flint_rand_ctx
-
-function ecm(a::ZZRingElem, B1::UInt, B2::UInt, ncrv::UInt, rnd=flint_rand_ctx)
-  f = ZZRingElem()
-  r = ccall((:fmpz_factor_ecm, libflint), Int32, (Ref{ZZRingElem}, UInt, UInt, UInt, Ptr{Nothing}, Ref{ZZRingElem}), f, ncrv, B1, B2, rnd.a, a)
-  return r, f
-end
-
-function ecm(a::ZZRingElem, B1::Int, B2::Int, ncrv::Int, rnd=flint_rand_ctx)
-  return ecm(a, UInt(B1), UInt(B2), UInt(ncrv), rnd)
-end
-
-#data from http://www.mersennewiki.org/index.php/Elliptic_Curve_Method
-const B1 = [2, 11, 50, 250, 1000, 3000, 11000, 43000, 110000, 260000, 850000, 2900000];
-const nC = [25, 90, 300, 700, 1800, 5100, 10600, 19300, 49000, 124000, 210000, 340000];
-
-function ecm(a::ZZRingElem, max_digits::Int=div(ndigits(a), 3), rnd=flint_rand_ctx)
-  n = ndigits(a, 10)
-  B1s = 15
-
-  i = 1
-  s = max(div(max_digits - 10, 5), 1)
-  #i = s = max(i, s)
-  while i <= s
-    e, f = ecm(a, B1[i] * 1000, B1[i] * 1000 * 100, nC[i], rnd)
-    if e != 0
-      return (e, f)
-    end
-    i += 1
-    if i > length(B1)
-      return (e, f)
-    end
-  end
-  return (Int32(0), a)
-end
-
-function factor_trial_range(N::ZZRingElem, start::Int=0, np::Int=10^5)
-  F = Nemo.fmpz_factor()
-  ccall((:fmpz_factor_trial_range, libflint), Nothing, (Ref{Nemo.fmpz_factor}, Ref{ZZRingElem}, UInt, UInt), F, N, start, np)
-  res = Dict{ZZRingElem,Int}()
-  for i in 1:F.num
-    z = ZZRingElem()
-    ccall((:fmpz_factor_get_fmpz, libflint), Nothing,
-      (Ref{ZZRingElem}, Ref{Nemo.fmpz_factor}, Int), z, F, i - 1)
-    res[z] = unsafe_load(F.exp, i)
-  end
-  return res, canonical_unit(N)
-end
-
-const big_primes = ZZRingElem[]
-
-function factor(N::ZZRingElem)
-  if iszero(N)
-    throw(ArgumentError("Argument is not non-zero"))
-  end
-  N_in = N
-  global big_primes
-  r, c = factor_trial_range(N)
-  for (p, v) = r
-    N = divexact(N, p^v)
-  end
-  if is_unit(N)
-    @assert N == c
-    return Nemo.Fac(c, r)
-  end
-  N *= c
-  @assert N > 0
-
-  for p = big_primes
-    v, N = remove(N, p)
-    if v > 0
-      @assert !haskey(r, p)
-      r[p] = v
-    end
-  end
-  factor_insert!(r, N)
-  for p = keys(r)
-    if nbits(p) > 60 && !(p in big_primes)
-      push!(big_primes, p)
-    end
-  end
-  return Nemo.Fac(c, r)
-end
-
-function factor_insert!(r::Dict{ZZRingElem,Int}, N::ZZRingElem, scale::Int=1)
-  #assumes N to be positive
-  #        no small divisors
-  #        no big_primes
-  if isone(N)
-    return r
-  end
-  fac, N = is_perfect_power_with_data(N)
-  if fac > 1
-    return factor_insert!(r, N, fac)
-  end
-  if is_prime(N)
-    @assert !haskey(r, N)
-    r[N] = scale
-    return r
-  end
-  if ndigits(N) < 60
-    s = Nemo.factor(N) #MPQS
-    for (p, k) in s
-      if haskey(r, p)
-        r[p] += k * scale
-      else
-        r[p] = k * scale
-      end
-    end
-    return r
-  end
-
-  e, f = ecm(N)
-  if e == 0
-    s = Nemo.factor(N)
-    for (p, k) in s
-      if haskey(r, p)
-        r[p] += k * scale
-      else
-        r[p] = k * scale
-      end
-    end
-    return r
-  end
-  cp = coprime_base([N, f])
-  for i = cp
-    factor_insert!(r, i, scale * valuation(N, i))
-  end
-  return r
-end
-
-#TODO: problem(s)
-# Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
-# faster than ecm.
-# ecm is much better if there are "small" factors.
-# p-1 and p+1 methods are missing
-# so probably
-# if n is small enough -> Nemo
-# if n is too large: ecm
-# otherwise
-#  need ecm to find small factors
-# then recurse...
+######################################################################################
 
 function _factors_trial_division(n::ZZRingElem, np::Int=10^5)
   res, u = factor_trial_range(n, 0, np)
@@ -356,7 +182,6 @@ function _factors_trial_division(n::ZZRingElem, np::Int=10^5)
     n = divexact(n, p^v)
   end
   return factors, n
-
 end
 
 @doc raw"""
@@ -456,7 +281,7 @@ mutable struct Divisors{T}
   end
 end
 
-Base.IteratorSize(::Divisors) = Base.HasLength()
+Base.IteratorSize(::Type{Divisors{T}}) where {T} = Base.HasLength()
 Base.length(D::Divisors) = length(D.s)
 Base.eltype(::Type{Divisors{T}}) where {T} = T
 

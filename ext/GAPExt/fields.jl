@@ -146,10 +146,10 @@ function Base.push!(G::AbstractAlgebra.Generic.geobucket{T}, p::T) where {T <: A
        G.buckets[j] = zero(R)
      end
    end
-   G.buckets[i] = addeq!(G.buckets[i], p)
+   G.buckets[i] = add!(G.buckets[i], p)
    while i <= G.len
       if length(G.buckets[i]) >= 4^i
-         G.buckets[i + 1] = addeq!(G.buckets[i + 1], G.buckets[i])
+         G.buckets[i + 1] = add!(G.buckets[i + 1], G.buckets[i])
          G.buckets[i] = R()
          i += 1
       end
@@ -296,12 +296,12 @@ function _perm_to_gap_grp(perm::Vector{Vector{Int}})
     z = _perm_to_gap_perm(x)
     push!(g, z)
   end
-  g1 = GAP.julia_to_gap(g)
+  g1 = GAP.GapObj(g)
   return GAP.Globals.Group(g1)
 end
 
 function _perm_to_gap_perm(x::Vector{Int})
-  x1 = GAP.julia_to_gap(x)
+  x1 = GAP.GapObj(x)
   z = GAP.Globals.PermList(x1)
   return z
 end
@@ -322,7 +322,7 @@ function _split_extension(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleN
   gtype = map(Int, domain(mats[1]).snf)
   G1 = permutation_group(G)
   gensG1 = GAP.Globals.GeneratorsOfGroup(G1)
-  A = GAP.Globals.AbelianGroup(GAP.julia_to_gap(gtype))
+  A = GAP.Globals.AbelianGroup(GAP.GapObj(gtype))
   gens = GAP.Globals.GeneratorsOfGroup(A)
   auts = Vector{GAP.GapObj}(undef, length(mats))
   for i = 1:length(mats)
@@ -336,10 +336,10 @@ function _split_extension(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleN
       end
       images[j] = g
     end
-    auts[i] = GAP.Globals.GroupHomomorphismByImages(A, A, gens, GAP.julia_to_gap(images))
+    auts[i] = GAP.Globals.GroupHomomorphismByImages(A, A, gens, GAP.GapObj(images))
   end
-  AutGrp = GAP.Globals.Group(GAP.julia_to_gap(auts))
-  mp = GAP.Globals.GroupHomomorphismByImages(G1, AutGrp, gensG1, GAP.julia_to_gap(auts))
+  AutGrp = GAP.Globals.Group(GAP.GapObj(auts))
+  mp = GAP.Globals.GroupHomomorphismByImages(G1, AutGrp, gensG1, GAP.GapObj(auts))
   return GAP.Globals.SplitExtension(G1, mp, A)
 
 end

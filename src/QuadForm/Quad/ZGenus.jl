@@ -1902,7 +1902,7 @@ Return `(Delta, f)` where f: QQ^x -> Delta`
 has the property that q is automorphous if and only if $f(q)=0$.
 Further Delta is in bijection with the proper spinor genera of `G`.
 """
-@attr function _automorphous_numbers(G::ZZGenus)
+@attr Any function _automorphous_numbers(G::ZZGenus)
   @assert is_integral(G)
   P = [prime(g) for g in local_symbols(G)]
   A, proj, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
@@ -2236,7 +2236,7 @@ function _mass_squared(G::ZZLocalGenus)
   # f_2q that are both of type I (odd)
   for k in 1:r-1
     if sym[k][4] == sym[k+1][4] == 1 && sym[k][1] + 1 == sym[k+1][1]
-      addeq!(nI_I, ZZ(1))
+      add!(nI_I, ZZ(1))
     end
   end
   mul!(m_p, m_p, QQ(2)^(2*(nI_I - nII)))
@@ -2349,7 +2349,7 @@ function _gamma_exact(_n)
   while n != 1//2
     if n < 0
       mul!(a, a, inv(n))
-      addeq!(n, QQ(1))
+      add!(n, QQ(1))
     elseif n > 0
       sub!(n, n, QQ(1))
       mul!(a, a, n)

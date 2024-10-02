@@ -1,9 +1,5 @@
 import Base.vcat, Base.hcat
 
-add_verbosity_scope(:PseudoHnf)
-add_assertion_scope(:PseudoHnf)
-add_verbosity_scope(:PseudoHnfKB)
-
 function _det_bound(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
   n = nrows(M)
   O = base_ring(M)
@@ -734,7 +730,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
         q = q - res.matrix[i, j]
         for c = j:ncols(res)
           mul!(t, q, res.matrix[j, c])
-          addeq!(res.matrix[i, c], t)
+          add!(res.matrix[i, c], t)
         end
       end
     end
@@ -750,7 +746,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
         q = q - res.matrix[i, j]
         for c = 1:j
           mul!(t, q, res.matrix[j + shift, c])
-          addeq!(res.matrix[i, c], t)
+          add!(res.matrix[i, c], t)
         end
       end
     end
@@ -1059,7 +1055,7 @@ function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_transform::Bool = fa
          for c = i:n
             t = deepcopy(A[j, c])
             mul!(t1, A[k, c], -Aji)
-            addeq!(A[j, c], t1)
+            add!(A[j, c], t1)
             mul!(t1, t, u)
             mul!(t2, A[k, c], v)
             add!(A[k, c], t1, t2)
@@ -1068,7 +1064,7 @@ function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_transform::Bool = fa
             for c = 1:m
                t = deepcopy(U[j, c])
                mul!(t1, U[k, c], -Aji)
-               addeq!(U[j, c], t1)
+               add!(U[j, c], t1)
                mul!(t1, t, u)
                mul!(t2, U[k, c], v)
                add!(U[k, c], t1, t2)
@@ -1091,12 +1087,12 @@ function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_transform::Bool = fa
          q = q - A[j, k]
          for c = k:n
             mul!(t, q, A[k, c])
-            addeq!(A[j, c], t)
+            add!(A[j, c], t)
          end
          if with_transform
             for c = 1:m
                mul!(t, q, U[k, c])
-               addeq!(U[j, c], t)
+               add!(U[j, c], t)
             end
          end
       end
@@ -1123,7 +1119,7 @@ function _in_span(v::Vector{AbsSimpleNumFieldElem}, P::PMat)
       s = K()
       for j = 1:k-1
          mul!(t, P.matrix[j, i], x[j])
-         addeq!(s, t)
+         add!(s, t)
       end
       s = v[i] - s
       if iszero(P.matrix[k, i])
@@ -1213,12 +1209,12 @@ function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c:
       q = q - A[r, i]
       for j = i:ncols(A)
          mul!(t, q, A[p,j])
-         addeq!(A[r,j], t)
+         add!(A[r,j], t)
       end
       if with_transform
          for j = 1:ncols(U)
             mul!(t, q, U[p,j])
-            addeq!(U[r,j], t)
+            add!(U[r,j], t)
          end
       end
    end
@@ -1242,12 +1238,12 @@ function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int},
       q = q - A[p, c]
       for j = c:ncols(A)
          mul!(t, q, A[r,j])
-         addeq!(A[p,j], t)
+         add!(A[p,j], t)
       end
       if with_transform
          for j = 1:ncols(U)
             mul!(t, q, U[r,j])
-            addeq!(U[p,j], t)
+            add!(U[p,j], t)
          end
       end
    end
@@ -1361,8 +1357,8 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
                t = deepcopy(A[i, c])
                #t1 = mul!(t1, A[p, c], -Aij)
                mul!(t1, A[p, c], -Aij)
-               #A[i, c] = addeq!(A[i, c], t1)
-               addeq!(A[i, c], t1)
+               #A[i, c] = add!(A[i, c], t1)
+               add!(A[i, c], t1)
                #t1 = mul!(t1, t, u)
                mul!(t1, t, u)
                #t2 = mul!(t2, A[p, c], v)
@@ -1375,8 +1371,8 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
                   t = deepcopy(U[i, c])
                   #t1 = mul!(t1, U[p, c], -Aij)
                   mul!(t1, U[p, c], -Aij)
-                  #U[i, c] = addeq!(U[i, c], t1)
-                  addeq!(U[i, c], t1)
+                  #U[i, c] = add!(U[i, c], t1)
+                  add!(U[i, c], t1)
                   #t1 = mul!(t1, t, u)
                   mul!(t1, t, u)
                   #t2 = mul!(t2, U[p, c], v)
@@ -1526,7 +1522,7 @@ function kb_clear_row!(S::PMat2, K::Generic.Mat{AbsSimpleNumFieldElem}, i::Int, 
       for r = i:m
          t = deepcopy(A[r, j])
          mul!(t1, A[r, i], -Aij)
-         addeq!(A[r,j], t1)
+         add!(A[r,j], t1)
          mul!(t1, t, u)
          mul!(t2, A[r, i], v)
          add!(A[r, i], t1, t2)
@@ -1535,7 +1531,7 @@ function kb_clear_row!(S::PMat2, K::Generic.Mat{AbsSimpleNumFieldElem}, i::Int, 
          for r = 1:n
             t = deepcopy(K[r, j])
             mul!(t1, K[r, i], -Aij)
-            addeq!(K[r,j], t1)
+            add!(K[r,j], t1)
             mul!(t1, t, u)
             mul!(t2, K[r, i], v)
             add!(K[r, i], t1, t2)

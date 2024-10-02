@@ -617,13 +617,6 @@ function add!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   return c
 end
 
-function addeq!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
-  check_parent(a, c)
-  c.data = add!(c.data, c.data, a.data)
-  c.precision = min(a.precision, c.precision)
-  return c
-end
-
 function sub!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldElem{S, T}) where {S <: FieldElem, T <: LocalFieldParameter}
   check_parent(a, b)
   c.parent = a.parent
@@ -856,7 +849,7 @@ function divexact(a::LocalFieldElem, b::Union{Integer, ZZRingElem}; check::Bool=
   e = absolute_ramification_index(K)
   v = valuation(b, p)
   iszero(a) && return setprecision(a, precision(a) - v*e)
-  Qp = prime_field(K)
+  Qp = absolute_base_field(K)
   old = precision(Qp)
   setprecision!(Qp, e*precision(a)+ Int(_valuation_integral(a)) + v)
   bb = inv(Qp(b))

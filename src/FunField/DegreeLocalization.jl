@@ -156,10 +156,6 @@ function mul!(a::KInftyElem{T}, b::KInftyElem{T}, c::KInftyElem{T}) where {T}
   return b*c
 end
 
-function addeq!(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return a+b
-end
-
 ###############################################################################
 #
 #   Comparison
@@ -298,6 +294,8 @@ function divrem(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <:
     return divexact(a, b, check = check), parent(a)()
   end
 end
+
+Base.rem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement = mod(a, b, checked)
 
 ###############################################################################
 #

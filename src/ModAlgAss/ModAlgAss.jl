@@ -1,5 +1,3 @@
-add_assertion_scope(:ModLattice)
-
 @attributes mutable struct ModAlgAss{S, T, U}
   base_ring::S
   dim::Int

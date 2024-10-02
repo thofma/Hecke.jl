@@ -992,5 +992,5 @@ function Base.iterate(
   return (f, (p, exp))
 end
 
-Base.IteratorSize(::FactorsOfSquarefree) = Base.SizeUnknown()
-Base.eltype(::FactorsOfSquarefree{T}) where T = T
+Base.IteratorSize(::Type{FactorsOfSquarefree{T}}) where T = Base.SizeUnknown()
+Base.eltype(::Type{FactorsOfSquarefree{T}}) where T = T

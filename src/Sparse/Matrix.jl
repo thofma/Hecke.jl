@@ -521,7 +521,7 @@ function length(A::SMat)
   return nrows(A)
 end
 
-Base.eltype(A::SMat{T}) where {T} = SRow{T}
+Base.eltype(::Type{<:SMat{T}}) where {T} = SRow{T}
 
 ################################################################################
 #

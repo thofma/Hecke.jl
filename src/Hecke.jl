@@ -77,7 +77,19 @@ import AbstractAlgebra: get_cached!, @alias
 
 import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent, terse, is_terse
 
-import AbstractAlgebra: Solve
+import AbstractAlgebra:
+  add_assertion_scope,
+  add_verbosity_scope,
+  assertions,
+  clearindent,
+  get_assertion_level,
+  get_verbosity_level,
+  popindent,
+  pushindent,
+  set_assertion_level,
+  set_verbosity_level
+
+import AbstractAlgebra: Solve, coprime_base_steel
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
@@ -94,7 +106,7 @@ import Nemo
 
 import Pkg
 
-exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
+exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
            :set_entry!,]
 
@@ -110,7 +122,7 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
              valuation!, is_cyclo_type, is_embedded, is_maxreal_type,
-             mat_entry_ptr
+             mat_entry_ptr, factor_trial_range
 
 AbstractAlgebra.@include_deprecated_bindings()
 Nemo.@include_deprecated_bindings()
@@ -164,13 +176,116 @@ function __init__()
 
   global R = _RealRing()
 
-  global flint_rand_ctx = flint_rand_state()
+  #global flint_rand_ctx = flint_rand_state()
 
   resize!(_RealRings, Threads.nthreads())
   for i in 1:Threads.nthreads()
      _RealRings[i] = _RealRing()
   end
 
+  add_verbosity_scope(:AbExt)
+  add_assertion_scope(:AbExt)
+
+  add_verbosity_scope(:AbsFact)
+  add_assertion_scope(:AbsFact)
+
+  add_verbosity_scope(:AbsNumFieldOrder)
+  add_assertion_scope(:AbsNumFieldOrder)
+
+  add_assertion_scope(:AbsOrdQuoRing)
+
+  add_verbosity_scope(:AlgAssOrd)
+  add_assertion_scope(:AlgAssOrd)
+
+  add_verbosity_scope(:Automorphisms)
+
+  add_verbosity_scope(:ClassField)
+  add_assertion_scope(:ClassField)
+
+  add_verbosity_scope(:ClassGroup)
+  add_assertion_scope(:ClassGroup)
+  add_verbosity_scope(:ClassGroup_time)
+  add_verbosity_scope(:ClassGroup_gc)
+  add_verbosity_scope(:ClassGroupProof)
+
+  add_verbosity_scope(:CompactPresentation)
+  add_assertion_scope(:CompactPresentation)
+
+  add_verbosity_scope(:Conjugacy)
+  add_assertion_scope(:Conjugacy)
+
+  add_verbosity_scope(:GenRep)
+  add_assertion_scope(:GenRep)
+
+  add_verbosity_scope(:HNF)
+  add_assertion_scope(:HNF)
+
+  add_verbosity_scope(:LatEnum)
+  add_assertion_scope(:LatEnum)
+
+  add_verbosity_scope(:Lattice)
+  add_assertion_scope(:Lattice)
+
+  add_verbosity_scope(:LLL)
+  add_assertion_scope(:LLL)
+
+  add_verbosity_scope(:LocallyFreeClassGroup)
+
+  add_verbosity_scope(:MaxAbExt)
+
+  add_assertion_scope(:ModLattice)
+
+  add_verbosity_scope(:MPolyGcd)
+
+  add_verbosity_scope(:NewtonIteration)
+
+  add_verbosity_scope(:NormRelation)
+  add_assertion_scope(:NormRelation)
+
+  add_assertion_scope(:padic_poly)
+
+  add_verbosity_scope(:Par)
+
+  add_assertion_scope(:PID_Test)
+
+  add_verbosity_scope(:PIP)
+  add_assertion_scope(:PIP)
+
+  add_verbosity_scope(:PolyFactor)
+  add_assertion_scope(:PolyFactor)
+
+  add_verbosity_scope(:PseudoHnf)
+  add_assertion_scope(:PseudoHnf)
+  add_verbosity_scope(:PseudoHnfKB)
+
+  add_verbosity_scope(:qAdic)
+  add_assertion_scope(:qAdic)
+
+  add_verbosity_scope(:RayFacElem)
+  add_assertion_scope(:RayFacElem)
+
+  add_verbosity_scope(:RelNumFieldOrder)
+
+  add_assertion_scope(:RelSimpleNumField)
+
+  add_assertion_scope(:Rres)
+
+  add_verbosity_scope(:Saturate)
+
+  add_verbosity_scope(:Simplify)
+
+  add_verbosity_scope(:Subfields)
+
+  add_verbosity_scope(:StabSub)
+  add_assertion_scope(:StabSub)
+
+  add_assertion_scope(:StructureConstantAlgebra)
+
+  add_verbosity_scope(:UnitGroup)
+  add_assertion_scope(:UnitGroup)
+
+  add_verbosity_scope(:ZGenRep)
+  add_assertion_scope(:ZGenRep)
 end
 
 module Globals
@@ -200,14 +315,6 @@ include("Aliases.jl")
 # AA.factor, so let's add a fallback.
 
 AbstractAlgebra.factor(x::RingElement) = factor(x)
-
-################################################################################
-#
-#  Verbose printing and custom assertions
-#
-################################################################################
-
-include("Assertions.jl")
 
 ################################################################################
 #
@@ -439,71 +546,6 @@ end
 
 ################################################################################
 #
-#  Verbose time printing
-#
-################################################################################
-
-macro vtime(args...)
-  if length(args) == 2
-    msg = string(args[2])
-    quote
-      if get_verbosity_level($(args[1])) >= 1
-        local t0 = time_ns()
-        local val = $(esc(args[2]))
-        println((time_ns()-t0)/1e9, " @ ", $msg)
-        val
-      else
-        local val2 = $(esc(args[2]))
-        val2
-      end
-    end
-  elseif length(args) == 3
-    msg = string(args[3])
-    quote
-      if get_verbosity_level($(args[1])) >= $(args[2])
-        local t0 = time_ns()
-        local val = $(esc(args[3]))
-        println((time_ns()-t0)/1e9, " @ ", $msg)
-        val
-      else
-        local val2 = $(esc(args[3]))
-        val2
-      end
-    end
-  end
-end
-
-#usage
-# @vtime_add_ellapsed :ClassGroup 2 clg :saturate  s= hnf(a)
-# @vtime_add :ClassGroup 2 clg :saturate  0.5
-# -> clg.time[:saturate] +=
-function _vtime_add(D::Dict, k::Any, v::Any)
-  if haskey(D, k)
-    D[k] += v
-  else
-    D[k] = v
-  end
-end
-
-macro vtime_add(flag, level, var, key, value)
-  quote
-    if get_verbosity_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, $(esc(value)))
-    end
-  end
-end
-
-macro vtime_add_elapsed(flag, level, var, key, stmt)
-  quote
-    tm = @elapsed $(esc(stmt))
-    if get_verbosity_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, tm)
-    end
-  end
-end
-
-################################################################################
-#
 #  Exception types
 #
 ################################################################################
@@ -529,7 +571,6 @@ Base.showerror(io::IO, ::NotImplemented) =
 function checkbounds(a::Int, b::Int) nothing; end;
 
 ################################################################################
-add_assertion_scope(:PID_Test)
 
 ################################################################################
 #

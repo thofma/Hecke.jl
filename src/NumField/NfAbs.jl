@@ -1,10 +1,5 @@
 import Nemo.sub!, Base.gcd
 
-add_verbosity_scope(:PolyFactor)
-add_assertion_scope(:PolyFactor)
-add_verbosity_scope(:CompactPresentation)
-add_assertion_scope(:CompactPresentation)
-
 if Int == Int32
   global const p_start = next_prime(2^30)
 else

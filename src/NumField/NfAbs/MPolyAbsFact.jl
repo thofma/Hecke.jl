@@ -8,9 +8,6 @@ import Nemo: shift_left, shift_right
 import Base: *
 export factor_absolute
 
-add_verbosity_scope(:AbsFact)
-add_assertion_scope(:AbsFact)
-
 function Hecke.norm(f::MPolyRingElem{AbsSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(Kx)
@@ -865,7 +862,7 @@ function field(RC::RootCtx, m::MatElem)
 
   @vprintln :AbsFact 1 "target field has (local) degree $k"
 
-  Qq = QadicField(characteristic(F), k, 1, cached = false)[1]
+  Qq = qadic_field(characteristic(F), k, precision = 1, cached = false)[1]
   Qqt = polynomial_ring(Qq, cached = false)[1]
   k, mk = residue_field(Qq)
 

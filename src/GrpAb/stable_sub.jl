@@ -1,6 +1,3 @@
-add_verbosity_scope(:StabSub)
-add_assertion_scope(:StabSub)
-
 ###############################################################################
 #
 #  Tools for ZpnGModules

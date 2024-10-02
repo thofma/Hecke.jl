@@ -32,9 +32,6 @@
 #
 ################################################################################
 
-add_verbosity_scope(:UnitGroup)
-add_assertion_scope(:UnitGroup)
-
 include("Unit/FindUnits.jl")
 include("Unit/Helper.jl")
 include("Unit/Independent.jl")

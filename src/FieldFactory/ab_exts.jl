@@ -1,8 +1,3 @@
-add_verbosity_scope(:AbExt)
-add_assertion_scope(:AbExt)
-
-add_verbosity_scope(:MaxAbExt)
-
 ###############################################################################
 #
 #  Abelian extensions
@@ -1053,7 +1048,8 @@ function discriminant_conductorQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::I
 
   R=residue_ring(FlintZZ, m, cached=false)[1]
 
-  for (p,v) in lp
+  for (_p,v) in lp
+    p = ZZ(_p)
     if v==1
       ap=n
       if cyc_prime
@@ -1142,7 +1138,8 @@ function discriminantQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::Int)
 
   R=residue_ring(FlintZZ, m, cached=false)[1]
 
-  for (p,v) in lp
+  for (_p,v) in lp
+    p = ZZ(_p)
     if v==1
       ap=n
       if cyc_prime
@@ -1296,7 +1293,8 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   K=nf(O)
 
   R=residue_ring(FlintZZ, mm, cached=false)[1]
-  for (p,v) in lp.fac
+  for (_p,v) in lp.fac
+    p = ZZ(_p)
     if isodd(p)
       if v==1
         x=_unit_grp_residue_field_mod_n(Int(p), n)[1]

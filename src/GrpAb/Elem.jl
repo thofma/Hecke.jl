@@ -44,25 +44,6 @@ end
 #
 ################################################################################
 
-# This destroy's the input. If you don't want this, use A(::ZZMatrix)
-
-function FinGenAbGroupElem(A::FinGenAbGroup, a::ZZMatrix)
-  if is_snf(A)
-    return elem_snf(A, a)
-  else
-    return elem_gen(A, a)
-  end
-end
-
-function elem_gen(A::FinGenAbGroup, a::ZZMatrix)
-  assure_has_hnf(A)
-  reduce_mod_hnf_ur!(a, A.hnf)
-  z = FinGenAbGroupElem()
-  z.parent = A
-  z.coeff = a
-  return z
-end
-
 function reduce_mod_snf!(a::ZZMatrix, v::Vector{ZZRingElem})
   GC.@preserve a begin
     for i = 1:length(v)
@@ -78,12 +59,13 @@ function reduce_mod_snf!(a::ZZMatrix, v::Vector{ZZRingElem})
   end
 end
 
-function elem_snf(A::FinGenAbGroup, a::ZZMatrix)
-  reduce_mod_snf!(a, A.snf)
-  z = FinGenAbGroupElem()
-  z.parent = A
-  z.coeff = a
-  return z
+function assure_reduced!(A::FinGenAbGroup, a::ZZMatrix)
+  if is_snf(A)
+    reduce_mod_snf!(a, A.snf)
+  else
+    assure_has_hnf(A)
+    reduce_mod_hnf_ur!(a, A.hnf)
+  end
 end
 
 ################################################################################
@@ -231,6 +213,60 @@ end
 *(x::FinGenAbGroupElem, y::ZZRingElem) = y*x
 
 *(x::FinGenAbGroupElem, y::Integer) = y*x
+
+###############################################################################
+#
+#   Unsafe operators
+#
+###############################################################################
+
+function reduce!(x::FinGenAbGroupElem)
+  assure_reduced!(parent(x), x.coeff)
+  return x
+end
+
+function zero!(x::FinGenAbGroupElem)
+  zero!(x.coeff)
+  # no reduction necessary
+  return x
+end
+
+function neg!(x::FinGenAbGroupElem)
+  neg!(x.coeff)
+  return reduce!(x)
+end
+
+# TODO: set! for ZZMatrix not yet implemented, hence this is not yet implemented
+#function set!(x::FinGenAbGroupElem, y::FinGenAbGroupElem)
+#  set!(x.coeff, y.coeff)
+#  # no reduction necessary
+#  return x
+#end
+
+function add!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::FinGenAbGroupElem)
+  add!(x.coeff, y.coeff, z.coeff)
+  return reduce!(x)
+end
+
+function sub!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::FinGenAbGroupElem)
+  sub!(x.coeff, y.coeff, z.coeff)
+  return reduce!(x)
+end
+
+function mul!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::Union{Int,ZZRingElem})
+  mul!(x.coeff, y.coeff, z)
+  return reduce!(x)
+end
+
+function addmul!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::Union{Int,ZZRingElem})
+  addmul!(x.coeff, y.coeff, z)
+  return reduce!(x)
+end
+
+function addmul_delayed_reduction!(x::FinGenAbGroupElem, y::FinGenAbGroupElem, z::Union{Int,ZZRingElem})
+  addmul!(x.coeff, y.coeff, z)
+  return x
+end
 
 ################################################################################
 #

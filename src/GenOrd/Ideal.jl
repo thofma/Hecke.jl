@@ -730,7 +730,12 @@ function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p:
   return ideals
 end
 
-function Hecke.StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem)
+function StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem)
+  FQ, phi = residue_field(base_ring(O), p)
+  StructureConstantAlgebra(O, I, p, phi)
+end
+
+function StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem, phi)
   @assert order(I) === O
 
   n = degree(O)
@@ -746,7 +751,7 @@ function Hecke.StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem)
   end
 
   r = length(basis_elts)
-  FQ, phi = residue_field(O.R,p)
+  FQ = codomain(phi)
 
   if r == 0
     A = zero_algebra(FQ)
@@ -999,7 +1004,7 @@ end
 #
 ################################################################################
 
-mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, Hecke.HeckeMap, GenOrdToAlgAssMor}
+mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, Hecke.HeckeMap, Any}#GenOrdToAlgAssMor}
   header::Hecke.MapHeader
 
   function GenOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
@@ -1010,9 +1015,8 @@ mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, He
 end
 
 function GenOrdToAlgAssMor(O::GenOrd, A::StructureConstantAlgebra{T}, _image, _preimage) where {T}
-  return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
+  return GenOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
-
 
 ################################################################################
 #
@@ -1033,3 +1037,45 @@ function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Gene
   return characteristic(function_field(base_ring(R)))
 end
 
+mutable struct GenOrdToFqField{S, T} <: Map{S, T, Hecke.HeckeMap, Any}#GenOrdToFqField}
+  header::Hecke.MapHeader
+
+  function GenOrdToFqField{S, T}(O::S, A::T, _image::Function, _preimage::Function) where {S <: GenOrd, T}
+    z = new{S, T}()
+    z.header = Hecke.MapHeader(O, A, _image, _preimage)
+    return z
+  end
+end
+
+function Nemo._residue_field(f::PolyRingElem{<:NumFieldElem})
+  Kt = parent(f)
+  L, b = number_field(f, "a"; cached = false)
+  return L, MapFromFunc(Kt, L, x -> L(x), y -> Kt(y))
+end
+
+function residue_field(O::GenOrd, P::GenOrdIdl, check::Bool = true)
+  a, g, b, phi = get_residue_field_data(P)::Tuple{elem_type(O),
+                                                  dense_poly_type(base_ring(O)),
+                                                  Vector{dense_matrix_type(base_ring(O))},
+                                                  Any} # not optimal
+  gg = map_coefficients(phi, g)
+  bb = map_entries.(phi, b)
+  K = base_ring(parent(gg))
+  F, KtoF = Nemo._residue_field(gg)
+  d = degree(O)
+  imgofbas = [KtoF(parent(gg)(bb[i][1, :])) for i in 1:d]
+  powersofa = powers(a, degree(g))
+
+  _image = function(x::GenOrdElem)
+    @assert parent(x) === O
+    c = base_ring(O).(coordinates(x))
+    return sum(phi(c[i]) * imgofbas[i] for i in 1:d)
+  end
+
+  _preimage = function(x)
+    @assert parent(x) === F
+    return sum(preimage(phi, coeff(x, i - 1)) * powersofa[i] for i in 1:degree(g))
+  end
+
+  return F, GenOrdToFqField{typeof(O), typeof(F)}(O, F, _image, _preimage)
+end

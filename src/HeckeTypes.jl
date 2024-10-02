@@ -1,5 +1,13 @@
 ################################################################################
 #
+#  Maps
+#
+################################################################################
+
+include("Map/MapType.jl")
+
+################################################################################
+#
 #  Abstract types for number fields
 #
 ################################################################################
@@ -959,6 +967,7 @@ const AbsNumFieldOrderIdealSetID = AbstractAlgebra.CacheDictType{AbsNumFieldOrde
   prim_elem::AbsNumFieldOrderElem{S, T}
   min_poly_prim_elem::ZZPolyRingElem  # minimal polynomial modulo P
   basis_in_prim::Vector{ZZMatrix} #
+  phi::MapFromFunc{ZZRing, FqField}
 
   function AbsNumFieldOrderIdeal{S, T}(O::AbsNumFieldOrder{S, T}) where {S, T}
     # populate the bits types (Bool, Int) with default values
@@ -1819,11 +1828,16 @@ abstract type GrpAbElem <: AbstractAlgebra.AdditiveGroupElem end
 
 end
 
-mutable struct FinGenAbGroupElem <: GrpAbElem
+struct FinGenAbGroupElem <: GrpAbElem
   parent::FinGenAbGroup
   coeff::ZZMatrix
 
-  FinGenAbGroupElem() = new()
+  # This destroy's the input. If you don't want this, use A(::ZZMatrix)
+  function FinGenAbGroupElem(A::FinGenAbGroup, a::ZZMatrix)
+    assure_reduced!(A, a)
+    return new(A, a)
+  end
+
 end
 
 ################################################################################
@@ -1858,14 +1872,6 @@ function QuadBin(R, a, b, c)
   z.base_ring = R
   return z
 end
-
-################################################################################
-#
-#  Maps
-#
-################################################################################
-
-include("Map/MapType.jl")
 
 ################################################################################
 #
@@ -2240,11 +2246,11 @@ mutable struct qAdicRootCtx
     lf = Hecke.factor_mod_pk(Array, H, 1)
     if splitting_field
       d = lcm([degree(y[1]) for y = lf])
-      R = QadicField(p, d, 1)[1]
+      R = qadic_field(p, d, precision = 1)[1]
       Q = [R]
       r.is_splitting = true
     else
-      Q = [QadicField(p, x, 1)[1] for x = Set(degree(y[1]) for y = lf)]
+      Q = [qadic_field(p, x, precision = 1)[1] for x = Set(degree(y[1]) for y = lf)]
       r.is_splitting = false
     end
     @assert all(x->isone(x[2]), lf)

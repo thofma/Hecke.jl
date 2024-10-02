@@ -205,7 +205,6 @@ function kernel(M::SMat{T}; side::Symbol = :left) where T <: FieldElement
   Solve.check_option(side, [:right, :left], "side")
   if side == :right
     return _right_kernel(M)[2]
-  elseif side == :left
-    return _left_kernel(M)[2]
   end
+  return _left_kernel(M)[2]
 end

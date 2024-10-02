@@ -1,5 +1,3 @@
-add_verbosity_scope(:Simplify)
-
 @doc raw"""
     simplify(K::AbsSimpleNumField; canonical::Bool = false) -> AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 

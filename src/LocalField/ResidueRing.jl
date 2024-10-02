@@ -381,13 +381,6 @@ function add!(c::LocalFieldValuationRingResidueRingElem, a::LocalFieldValuationR
   return c
 end
 
-function addeq!(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem)
-  @req parent(a) === parent(b) "Parents do not match"
-  a.a = addeq!(data(a), data(b))
-  a.a = setprecision!(a.a, _exponent(parent(a)))
-  return a
-end
-
 ################################################################################
 #
 #  Promotion

@@ -158,7 +158,7 @@ function find_subgroup(L::GAP.GapObj, level::Int)
     end
   end
   if !found
-    return found, GAP.julia_to_gap([candidate])
+    return found, GAP.GapObj([candidate])
   end
   #I need to change the series...
   L1 = GAP.GapObj[]
@@ -168,7 +168,7 @@ function find_subgroup(L::GAP.GapObj, level::Int)
   for i = level:length(L)
     push!(L1, GAP.Globals.Image(proj_comp, L[i]))
   end
-  return found, GAP.julia_to_gap(L1)
+  return found, GAP.GapObj(L1)
 end
 
 ################################################################################
@@ -227,7 +227,7 @@ function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
   for i = 1:length(gensEp)
     push!(imgs_new_proj, GAP.Globals.Image(proj, gensEp[i]))
   end
-  imgs_proj = GAP.julia_to_gap(imgs_new_proj)
+  imgs_proj = GAP.GapObj(imgs_new_proj)
   Gp = GAP.Globals.Subgroup(G, imgs_proj)
   #I need the inclusion of Gp into G for strange (GAP) reasons.
   gensGp = GAP.Globals.GeneratorsOfGroup(Gp)
@@ -241,7 +241,7 @@ function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
     prel = GAP.Globals.PreImagesRepresentative(inj_Ep, el)
     push!(images_inclusion, prel)
   end
-  imgs_inclusion = GAP.julia_to_gap(images_inclusion)
+  imgs_inclusion = GAP.GapObj(images_inclusion)
   new_incl = GAP.Globals.GroupHomomorphismByImages(A, Ep, gensA, imgs_inclusion)
   res =  cocycle_ctx(new_proj, new_incl, cocycle.cocycle)
   res.inclusion_of_pSylow = inclusion_Gp
@@ -318,14 +318,14 @@ function _to_subgroup_of_kernel(cocycle::cocycle_ctx, S)
     el_E = GAP.Globals.Image(cocycle.inclusion, el_A)
     push!(images_inclusion, GAP.Globals.Image(pr1, el_E))
   end
-  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.julia_to_gap(images_inclusion))
+  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.GapObj(images_inclusion))
   gensE_new = GAP.Globals.GeneratorsOfGroup(E_new)
   images_proj = []
   for i = 1:length(gensE_new)
     el = GAP.Globals.PreImagesRepresentative(pr1, gensE_new[i])
     push!(images_proj, GAP.Globals.Image(cocycle.projection, el))
   end
-  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
+  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.GapObj(images_proj))
   local new_coc
   let cocycle = cocycle, pr = pr
     function new_coc(x::GAP.GapObj, y::GAP.GapObj)
@@ -355,7 +355,7 @@ function _to_prime_power_kernel(cocycle::cocycle_ctx, p::Int)
   E = GAP.Globals.Source(cocycle.projection)
   G = GAP.Globals.ImagesSource(cocycle.projection)
   sizeG = GAP.Globals.Size(G)
-  S = GAP.Globals.Subgroup(A, GAP.julia_to_gap(gens_sub))
+  S = GAP.Globals.Subgroup(A, GAP.GapObj(gens_sub))
   pr = GAP.Globals.NaturalHomomorphismByNormalSubgroup(A, S)
   #I still need to create the maps.
   S1 = GAP.Globals.Image(cocycle.inclusion, S)
@@ -369,14 +369,14 @@ function _to_prime_power_kernel(cocycle::cocycle_ctx, p::Int)
     el_E = GAP.Globals.Image(cocycle.inclusion, el_A)
     push!(images_inclusion, GAP.Globals.Image(pr1, el_E))
   end
-  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.julia_to_gap(images_inclusion))
+  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.GapObj(images_inclusion))
   gensE_new = GAP.Globals.GeneratorsOfGroup(E_new)
   images_proj = []
   for i = 1:length(gensE_new)
     el = GAP.Globals.PreImagesRepresentative(pr1, gensE_new[i])
     push!(images_proj, GAP.Globals.Image(cocycle.projection, el))
   end
-  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
+  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.GapObj(images_proj))
   local new_coc
   let cocycle = cocycle, pr = pr
     function new_coc(x::GAP.GapObj, y::GAP.GapObj)
@@ -432,7 +432,7 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   gK = GAP.Globals.GeneratorsOfGroup(K)
   for s = 1:length(gens)
     ind_auts_quo[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
-    igK = GAP.julia_to_gap([GAP.Globals.Image(gens[s], gK[i]) for i = 1:length(gK)])
+    igK = GAP.GapObj([GAP.Globals.Image(gens[s], gK[i]) for i = 1:length(gK)])
     h = GAP.Globals.GroupHomomorphismByImages(K, K, gK, igK)
     ind_auts_sub[s] = GAP.Globals.Image(isoAutK, h)
   end
@@ -443,7 +443,7 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   for s = 1:length(gens)
     gensubs[s] = GAP.Globals.Image(EmbAutG, ind_auts_quo[s]) * GAP.Globals.Image(EmbAutK, ind_auts_sub[s])
   end
-  S = GAP.Globals.Subgroup(GProd, GAP.julia_to_gap(gensubs))
+  S = GAP.Globals.Subgroup(GProd, GAP.GapObj(gensubs))
   @vprintln :BrauerObst 1 "Map constructed. Enumerating cosets..."
   Transv = GAP.Globals.RightTransversal(GProd, S)
   Tperm = GAP.Globals.List(Transv)
@@ -472,7 +472,7 @@ function projections(mG::GAP.GapObj)
   for s = 1:length(gens)
     gens_img[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
   end
-  S = GAP.Globals.Subgroup(permAutG, GAP.julia_to_gap(gens_img))
+  S = GAP.Globals.Subgroup(permAutG, GAP.GapObj(gens_img))
   @vprintln :BrauerObst 1 "Map constructed. Enumerating cosets..."
   Transv = GAP.Globals.RightTransversal(permAutG, S)
   Tperm = GAP.Globals.List(Transv)

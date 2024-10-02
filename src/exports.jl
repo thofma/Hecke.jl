@@ -6,12 +6,6 @@ export ==
 export ^
 export ⊕
 export ⊗
-export @hassert
-export @req
-export @v_do
-export @vprint
-export @vprintln
-export @vtime
 export AbstractLat
 export AbstractSpace
 export AbstractSpaceMor
@@ -130,6 +124,7 @@ export abs2
 export abs_upper_bound
 export absolute_automorphism_group
 export absolute_automorphism_list
+export absolute_base_field
 export absolute_basis
 export absolute_basis_matrix
 export absolute_coordinates

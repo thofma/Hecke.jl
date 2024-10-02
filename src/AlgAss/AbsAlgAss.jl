@@ -18,7 +18,7 @@ base_ring(A::AbstractAssociativeAlgebra)
 
 Return the zero ring as an algebra over the field $K$.
 
-The optional first argument determines the type of the algebra, and can be 
+The optional first argument determines the type of the algebra, and can be
 `StructureConstantAlgebra` (default) or `MatrixAlgebra`.
 
 # Examples
@@ -354,7 +354,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
       end
 
       s = mul!(s, t, Mrj)
-      v[j] = addeq!(v[j], s)
+      v[j] = add!(v[j], s)
     end
     v[c] = zero!(v[c])
   end
@@ -383,7 +383,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
     t = -Mrp
     for c = pivot_col + 1:ncols(M)
       s = mul!(s, t, v[c])
-      M[r, c] = addeq!(M[r, c], s)
+      M[r, c] = add!(M[r, c], s)
     end
     M[r, pivot_col] = zero(base_ring(M))
   end
@@ -606,6 +606,17 @@ end
 function _primitive_element(A::AbstractAssociativeAlgebra{QQFieldElem})
   a = primitive_element_via_number_fields(A)
   return a, minpoly(a)
+end
+
+function __primitive_element(A::AbstractAssociativeAlgebra{QQFieldElem})
+  return _primitive_element(A)
+end
+
+function __primitive_element(A::AbstractAssociativeAlgebra{<:NumFieldElem})
+  B, BtoA = restrict_scalars(A, QQ)
+  a, f = __primitive_element(B)
+  b = BtoA(a)
+  return b, minpoly(b)
 end
 
 function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbstractAssociativeAlgebra{T}} #<: Union{zzModRingElem, FqPolyRepFieldElem, fqPolyRepFieldElem, EuclideanRingResidueRingElem{ZZRingElem}, QQFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fpFieldElem}

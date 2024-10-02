@@ -1,5 +1,5 @@
 #XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision(parent(r)), starting_prec::Int = 2)
   Q = parent(r)
   n = prec
   i = n
@@ -19,14 +19,14 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = parent(r)
   for p = reverse(chain)
     setprecision!(r, p)
     setprecision!(o, p)
-    Q.prec_max = r.N
+    setprecision!(Q, r.N)
     if r.N > precision(Q)
       setprecision!(qf, r.N)
       setprecision!(qfs, r.N)
     end
     r = r - qf(r)*o
     if r.N >= n
-      Q.prec_max = n
+      setprecision!(Q, n)
       return r
     end
     o = o*(2-qfs(r)*o)
@@ -34,7 +34,7 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = parent(r)
   return r
 end
 
-function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = parent(r).prec_max, starting_prec::Int = 2)
+function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = precision(parent(r)), starting_prec::Int = 2)
   Q = parent(r)
   n = precision
   i = n
@@ -93,7 +93,7 @@ function roots(C::qAdicRootCtx, n::Int = 10)
   lf = factor_mod_pk(Array, C.H, n)
   rt = QadicFieldElem[]
   for Q = C.Q
-    Q.prec_max = n
+    setprecision!(Q, n)
     for x = lf
       if is_splitting(C) || degree(x[1]) == degree(Q)
         append!(rt, roots(Q, x[1], max_roots = 1))

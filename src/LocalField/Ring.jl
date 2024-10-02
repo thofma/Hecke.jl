@@ -99,9 +99,7 @@ end
 #
 ################################################################################
 
-coefficient_ring(Q::LocalFieldValuationRing) = ring_of_integers(coefficient_ring(_field(Q)))
-
-coefficient_ring(K::LocalField) = base_field(K)
+coefficient_ring(Q::LocalFieldValuationRing) = valuation_ring(base_field(_field(Q)))
 
 function absolute_coordinates(a::LocalFieldValuationRingElem)
   v = absolute_coordinates(data(a))
@@ -336,11 +334,6 @@ end
 
 function add!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem, c::LocalFieldValuationRingElem)
   a.x = add!(data(a), data(b), data(c))
-  return a
-end
-
-function addeq!(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
-  a.x = addeq!(data(a), data(b))
   return a
 end
 
