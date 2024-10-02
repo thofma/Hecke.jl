@@ -208,4 +208,5 @@ function kernel(M::SMat{T}; side::Symbol = :left) where T <: FieldElement
   elseif side == :left
     return _left_kernel(M)[2]
   end
+  error("unreachable")
 end
