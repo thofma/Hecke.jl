@@ -22,7 +22,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     env:
-      PR_NUMBER: ${{github.event.number}}
+      PR_NUMBER: ${{github.event.number || '0' }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - uses: actions/checkout@v4
