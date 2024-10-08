@@ -53,6 +53,19 @@ mutable struct NewtonPolygon{T}
   phi::T
   p::ZZRingElem
   development::Vector{T}
+
+  function NewtonPolygon(P::Polygon, f::T, phi::T, p::ZZRingElem, dev::Vector{T}) where T <: PolyRingElem
+    return new{T}(P, f, phi, p, dev)
+  end
+
+  function NewtonPolygon(P::Polygon, f::T, phi::T, development::Vector{T}) where T <: PolyRingElem{<: Union{NonArchLocalFieldElemTypes, NonArchLocalFieldValuationRingElem}}
+    N = new{T}()
+    N.P = P
+    N.f = f
+    N.phi = phi
+    N.development = development
+    return N
+  end
 end
 
 lines(N::NewtonPolygon) = N.P.lines
@@ -220,22 +233,21 @@ end
 ###############################################################################
 
 @doc raw"""
-    newton_polygon(f::PolyRingElem{T}, phi::PolyRingElem{T}) where T <: Union{PadicFieldElem, QadicFieldElem}
+    newton_polygon(f::PolyRingElem{T}, phi::PolyRingElem{T}) where T <: NonArchLocalFieldElemTypes
 
 Computes the $\phi$-polygon of $f$, i.e. the lower convex hull of the points $(i, v(a_i))$
 where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
-function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{QadicFieldElem, PadicFieldElem, LocalFieldElem}
+function newton_polygon(f::T, phi::T) where T <: PolyRingElem{<: Union{NonArchLocalFieldElemTypes, NonArchLocalFieldValuationRingElem}}
   dev = phi_development(f, phi)
   a = Tuple{Int, Int}[]
   for i = 0:length(dev) -1
     if !iszero(dev[i+1])
-      push!(a, (i, _valuation(dev[i+1])))
+      push!(a, (i, minimum(_valuation_integral, Iterators.filter(!is_zero, coefficients(dev[i + 1])))))
     end
   end
   P = lower_convex_hull(a)
-  p = prime(base_ring(f))
-  return NewtonPolygon(P, f, phi, p, dev)
+  return NewtonPolygon(P, f, phi, dev)
 end
 
 #TODO: in Oscar/experimental/GaloisGrp are the "missing" functions
@@ -279,16 +291,6 @@ end
 function valuation(f::Generic.Poly{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   l = Int[Int(valuation(coeff(f, i), p)) for i = 0:degree(f) if !iszero(coeff(f, i))]
   return minimum(l)
-end
-
-function _valuation(f::Generic.Poly{T}) where T <: Union{QadicFieldElem, PadicFieldElem}
-  return minimum([valuation(coeff(f, i)) for i = 0:degree(f)])
-end
-
-function _valuation(f::Generic.Poly{<:LocalFieldElem})
-  K = base_ring(f)
-  e = absolute_ramification_index(K)
-  return minimum(ZZRingElem[numerator(e*valuation(coeff(f, i))) for i = 0:degree(f)])
 end
 
 ################################################################################
