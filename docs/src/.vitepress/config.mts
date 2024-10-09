@@ -132,8 +132,8 @@ export default defineConfig({
               text: 'Developer',
               collapsed: true,
               items: [
-                { text: 'Macros', link: 'manual/developer/macros'},
                 { text: 'Tests', link: 'manual/developer/test'},
+                { text: 'Documentation', link: 'manual/developer/documentation'},
               ]
             }
           ]
