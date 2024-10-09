@@ -372,3 +372,11 @@ let
   ll1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)], conductors = conds)
   @test length(l1) == length(ll1)
 end
+
+let
+  # https://github.com/thofma/Hecke.jl/issues/1625
+  K, a = cyclotomic_field(7, :a)
+  P, x = polynomial_ring(K, :x)
+  L, = number_field(x^3 - 840539241479//13824*a^5 - 18036715089631//9216*a^4 - 18036715089631//9216*a^3 - 840539241479//13824*a^2 - 7320065966297//9216)
+  @test !is_abelian(L)
+end
