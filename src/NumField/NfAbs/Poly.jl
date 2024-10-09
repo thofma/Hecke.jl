@@ -522,7 +522,7 @@ function cld_bound(f::PolyRingElem{AbsSimpleNumFieldElem}, k::Vector{Int})
   g = Zx()
   n = degree(base_ring(f))
   for i=0:degree(f)
-    setcoeff!(g, i, Hecke.upper_bound(ZZRingElem, sqrt(t2(coeff(f, i))//n)))
+    setcoeff!(g, i, Hecke.upper_bound(ZZRingElem, sqrt(t2(coeff(f, i)))))
   end
   if is_monic(f)
     setcoeff!(g, degree(f), ZZRingElem(1))
