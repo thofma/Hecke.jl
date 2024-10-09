@@ -10,7 +10,7 @@ denominator_of_multiplication_table(A::GroupAlgebra{QQFieldElem}) = one(ZZ)
 
 base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
-base_ring_type(::Type{GroupAlgebra{T}}) where {T} = parent_type(T)
+base_ring_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = parent_type(T)
 
 Generic.dim(A::GroupAlgebra) = size(multiplication_table(A, copy = false), 1)
 

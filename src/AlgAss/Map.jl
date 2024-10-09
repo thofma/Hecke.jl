@@ -220,7 +220,8 @@ function hom(A::R, B::S, M::T; check = true) where {R <: AbstractAssociativeAlge
   return h
 end
 
-function hom(A::R, B::S, M::T, N::T) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
+function hom(A::R, B::S, M::T, N::T; check = true) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
+  # TODO: add check
   return AbsAlgAssMor{R, S, T}(A, B, M, N)
 end
 

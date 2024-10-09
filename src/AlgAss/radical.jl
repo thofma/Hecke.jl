@@ -32,7 +32,7 @@
 Returns the Jacobson radical of $A$.
 """
 function radical(A::AbstractAssociativeAlgebra)
-  return ideal_from_gens(A, _radical(A), :twosided)
+  return _ideal_from_kgens(A, _radical(A); side = :twosided)
 end
 
 function _radical(A::AbstractAssociativeAlgebra)

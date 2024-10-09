@@ -14,7 +14,13 @@ base_ring_type(::Type{MatAlgebra{T, S}}) where {T, S} = parent_type(T)
 
 coefficient_ring(A::MatAlgebra{T, S}) where {T, S} = A.coefficient_ring::base_ring_type(S)
 
-basis(A::MatAlgebra) = A.basis::Vector{elem_type(A)}
+function basis(A::MatAlgebra; copy::Bool = true)
+  if copy
+    return Base.copy(A.basis::Vector{elem_type(A)})
+  else
+    return A.basis::Vector{elem_type(A)}
+  end
+end
 
 has_one(A::MatAlgebra) = true
 

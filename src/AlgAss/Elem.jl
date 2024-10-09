@@ -644,6 +644,11 @@ function (A::GroupAlgebra)(a::GroupAlgebraElem)
   return a
 end
 
+function (A::MatAlgebra)(a::MatAlgebraElem)
+  @assert parent(a) == A "Wrong parent"
+  return a
+end
+
 # For polynomial substitution
 for T in subtypes(AbstractAssociativeAlgebra)
   @eval begin
