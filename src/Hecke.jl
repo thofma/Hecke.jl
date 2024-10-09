@@ -144,30 +144,32 @@ end
 
 global const maximal_order = MaximalOrder
 
+function _print_banner()
+  println("")
+  print("Welcome to \n")
+  printstyled(raw"
+    _    _           _
+   | |  | |         | |
+   | |__| | ___  ___| | _____
+   |  __  |/ _ \/ __| |/ / _ \
+   | |  | |  __/ (__|   <  __/
+   |_|  |_|\___|\___|_|\_\___|", color = :red)
+  println()
+  print("Version")
+  printstyled(" $VERSION_NUMBER ", color = :green)
+  print("... \n ... which comes with absolutely no warranty whatsoever")
+  println()
+  println("(c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+  println()
+end
+
 function __init__()
   # verify some base rings survived serialization/deserialization
   @assert base_ring(Hecke.Globals.Zx) === FlintZZ
   @assert base_ring(Hecke.Globals.Qx) === FlintQQ
 
   if AbstractAlgebra.should_show_banner() && get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
-    println("")
-    print("Welcome to \n")
-    printstyled("
-    _    _           _
-   | |  | |         | |
-   | |__| | ___  ___| | _____
-   |  __  |/ _ \\/ __| |/ / _ \\
-   | |  | |  __/ (__|   <  __/
-   |_|  |_|\\___|\\___|_|\\_\\___|
-    ", color = :red)
-
-    println()
-    print("Version")
-    printstyled(" $VERSION_NUMBER ", color = :green)
-    print("... \n ... which comes with absolutely no warranty whatsoever")
-    println()
-    println("(c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
-    println()
+    _print_banner()
   end
 
   #if inNotebook()  # to make toggle work in IJulia
