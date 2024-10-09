@@ -4,18 +4,14 @@ DocTestSetup = quote
     using Hecke
 end
 ```
-# [Abelian Groups](@id AbelianGroupLink2)
-
-Here we describe the interface to abelian groups in Hecke.
-
-## Introduction
+# [Introduction](@id AbelianGroupLink2)
 
 Within Hecke, abelian groups are of generic abstract type `GrpAb` which does not
 have to be finitely generated, $\mathbb Q/\mathbb Z$ is an example of a more
 general abelian group. Having said that, most of the functionality is
 restricted to abelian groups that are finitely presented as $\mathbb Z$-modules.
 
-### Basic Creation
+## Basic Creation
 
 Finitely presented (as $\mathbb Z$-modules) abelian groups are of type `FinGenAbGroup`
 with elements of type `FinGenAbGroupElem`. The creation is mostly via a relation
@@ -51,7 +47,7 @@ using Hecke # hide
 abelian_groups(8)
 ```
 
-### Invariants
+## Invariants
 ```@docs
 is_snf(A::FinGenAbGroup)
 number_of_generators(A::FinGenAbGroup)

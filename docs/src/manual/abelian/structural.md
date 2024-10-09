@@ -4,7 +4,7 @@ DocTestSetup = quote
     using Hecke
 end
 ```
-## Structural Computations
+# Structural Computations
 Abelian groups support a wide range of structural operations such as
  - enumeration of subgroups
  - (outer) direct products
@@ -17,7 +17,7 @@ snf(A::FinGenAbGroup)
 Hecke.find_isomorphism(G, op, A::Hecke.GrpAb)
 ```
 
-### Subgroups and Quotients
+## Subgroups and Quotients
 ```@docs
 torsion_subgroup(G::FinGenAbGroup)
 sub(G::FinGenAbGroup, s::Vector{FinGenAbGroupElem})
@@ -81,7 +81,7 @@ The difference between `issubset =` $\subset$ and
 intersect(mG::FinGenAbGroupHom, mH::FinGenAbGroupHom)
 ```
 
-### Direct Products
+## Direct Products
 ```@docs
 direct_product(G::FinGenAbGroup...)
 canonical_injection(G::FinGenAbGroup, i::Int)
@@ -89,13 +89,13 @@ canonical_projection(G::FinGenAbGroup, i::Int)
 flat(G::FinGenAbGroup)
 ```
 
-### Tensor Producs
+## Tensor Producs
 ```@docs
 tensor_product(G::FinGenAbGroup...)
 hom_tensor(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}})
 ```
 
-### Hom-Group
+## Hom-Group
 ```@docs
 hom(::FinGenAbGroup, ::FinGenAbGroup)
 ```
