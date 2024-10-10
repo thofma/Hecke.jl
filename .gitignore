@@ -9,3 +9,5 @@ docs/site/*
 docs/build/*
 Manifest.toml
 .DS_Store
+docs/node_modules/*
+docs/package-lock.json
