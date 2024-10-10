@@ -25,6 +25,7 @@ parent(x::FinGenAbGroupElem)
 ## Access
 
 ```@docs
+components(x::FinGenAbGroupElem)
 getindex(x::FinGenAbGroupElem, i::Int)
 ```
 
