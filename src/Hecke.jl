@@ -155,6 +155,7 @@ function _print_banner()
    | |  | |  __/ (__|   <  __/
    |_|  |_|\___|\___|_|\_\___|", color = :red)
   println()
+  println()
   print("Version")
   printstyled(" $VERSION_NUMBER ", color = :green)
   print("... \n ... which comes with absolutely no warranty whatsoever")
