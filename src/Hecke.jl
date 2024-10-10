@@ -787,11 +787,10 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
   if format == :html
     open_doc()
   elseif format == :vitepress
-    println("""Run `mkdocs serve` inside `../Hecke/docs/` to view the documentation.
-
-            Use `format = :html` for a simplified version of the docs which does
-            not require `mkdocs`.
+    println("""Run `npm run docs:dev` inside `../Hecke/docs/` to view the documentation.
             """)
+  else
+    error("format :$(format) not recognized")
   end
 end
 
