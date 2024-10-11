@@ -138,21 +138,42 @@ end
 ################################################################################
 
 @doc raw"""
-    components(x::FinGenAbGroupElem) -> Vector{ZZRingElem}
-
-Returns the components of the element $x$.
-"""
-function components(x::FinGenAbGroupElem)
-  return x.coeff
-end
-
-@doc raw"""
     getindex(x::FinGenAbGroupElem, i::Int) -> ZZRingElem
 
 Returns the $i$-th component of the element $x$.
 """
 function getindex(x::FinGenAbGroupElem, i::Int)
   return x.coeff[1, i]
+end
+
+@doc raw"""
+    getindex(x::FinGenAbGroupElem, v::AbstractVector{Int}) -> Vector{ZZRingElem}
+
+Returns the $i$-th components of the element $x$ where $i \in v$.
+
+!!! note
+    This function is inefficient since the elements are internally stored using ZZMatrix but this function outputs a vector.
+"""
+function getindex(x::FinGenAbGroupElem, v::AbstractVector{Int})
+  return [x.coeff[1, i] for i in v]
+end
+
+@doc raw"""
+    firstindex(x::FinGenAbGroupElem) -> Int64
+
+Returns the first component of the element $x$.
+"""
+function Base.firstindex(x::FinGenAbGroupElem)
+  return Int64(1)
+end
+
+@doc raw"""
+    lastindex(x::FinGenAbGroupElem) -> Int64
+
+Returns the last component of the element $x$.
+"""
+function Base.lastindex(x::FinGenAbGroupElem)
+  return ngens(parent(x))
 end
 
 ################################################################################
