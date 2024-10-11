@@ -7,5 +7,7 @@ deps/hecke/libhecke.so.0
 deps/hecke/libhecke.so.0.0.0
 docs/site/*
 docs/build/*
+docs/node_modules/*
+docs/package-lock.json
 Manifest.toml
 .DS_Store
