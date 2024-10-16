@@ -207,7 +207,8 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
 end
 
 function get_coeff_fmpz!(x::fqPolyRepFieldElem, n::Int, z::ZZRingElem)
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), z, ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n))
+  c = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n)
+  set!(z, c)
   return z
 end
 

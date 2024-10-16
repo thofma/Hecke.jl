@@ -412,7 +412,7 @@ function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNum
     M[i, j] = z_q.num[1, j]
   end
 
-  ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), d, z_q.den)
+  set!(d, z_q.den)
 
   return nothing
 end

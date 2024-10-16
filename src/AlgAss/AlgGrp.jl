@@ -875,7 +875,7 @@ function __set_row!(y::QQMatrix, k, c)
   begin
     for i in 1:length(c)
       t = mat_entry_ptr(y, k, i)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, c[i])
+      set!(t, c[i])
     end
   end
   nothing
@@ -886,7 +886,7 @@ function __set_row!(c::Vector{QQFieldElem}, y::QQMatrix, k)
   begin
     for i in 1:length(c)
       t = mat_entry_ptr(y, k, i)
-      ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ptr{QQFieldElem}), c[i], t)
+      set!(c[i], t)
     end
   end
   nothing
@@ -895,7 +895,7 @@ end
 function __set!(y, k, c)
   GC.@preserve y begin
     t = mat_entry_ptr(y, 1, k)
-    ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, c)
+    set!(t, c)
   end
   nothing
 end

@@ -50,12 +50,12 @@ function copy_into!(a::MPolyRingElem, b::MPolyRingElem)
 end
 
 function copy_into!(a::ZZRingElem, b::ZZRingElem)
-  ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), a, b)
+  set!(a, b)
   return a
 end
 
 function copy_into!(a::QQFieldElem, b::QQFieldElem)
-  ccall((:fmpq_set, libflint), Nothing, (Ref{QQFieldElem}, Ref{QQFieldElem}), a, b)
+  set!(a, b)
   return a
 end
 

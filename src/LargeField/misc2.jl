@@ -131,7 +131,7 @@ function local_norm!(n::ZZRingElem, ap::Vector{fqPolyRepFieldElem}, me::Hecke.mo
     ccall((:fq_nmod_norm, libflint), Nothing, (Ref{ZZRingElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), n, ap[j], ap[j].parent)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
+  set!(n, nn)
   return n
 end
 
@@ -259,7 +259,7 @@ function local_norm!(n::ZZRingElem, ap::zzModMatrix, me::Hecke.modular_env)
     np = Nemo.getindex_raw(ap, j, 1)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
+  set!(n, nn)
   return n
 end
 

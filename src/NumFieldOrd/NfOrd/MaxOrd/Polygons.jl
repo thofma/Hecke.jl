@@ -865,7 +865,7 @@ function find_random_second_gen(A::AbsNumFieldOrderIdeal{S, T}) where {S, T}
     # Put the entries of B into the (1 x d)-Matrix m
     for i in 1:degree(O)
       s = mat_entry_ptr(m, 1, i)
-      ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), s, B[i])
+      set!(s, B[i])
     end
     if iszero(m)
       continue
