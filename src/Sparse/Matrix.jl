@@ -310,7 +310,7 @@ end
 
 @inline function _get(x::Ptr{ZZRingElem})
   z = ZZRingElem()
-  ccall((:fmpz_set, libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}), z, x)
+  set!(z, x)
   return z
 end
 

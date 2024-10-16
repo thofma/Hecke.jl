@@ -330,7 +330,7 @@ function _copy_matrix_into_matrix(A::ZZMatrix, i::Int, j::Int, B::ZZMatrix)
       for l in 0:ncols(B) - 1
         d = mat_entry_ptr(B, 1 + k, 1 + l)
         t = mat_entry_ptr(A, i + k, j + l)
-        ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), t, d)
+        set!(t, d)
       end
     end
   end
@@ -342,7 +342,7 @@ function _copy_matrix_into_matrix(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
       for l in 0:ncols(B) - 1
         d = mat_entry_ptr(B, 1 + k, 1 + l)
         t = mat_entry_ptr(A, i + k, j + l)
-        ccall((:fmpq_set, libflint), Nothing, (Ptr{QQFieldElem}, Ptr{QQFieldElem}), t, d)
+        set!(t, d)
       end
     end
   end
@@ -532,13 +532,13 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
           Rik = mat_entry_ptr(R, i, k)
           Rjk = mat_entry_ptr(R, j, k)
           aux = ZZRingElem()
-          ccall((:fmpz_mul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rik, e)
+          mul!(aux, Rik, e)
           ccall((:fmpz_addmul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rjk, f)
           aux1 = ZZRingElem()
-          ccall((:fmpz_mul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux1, Rjk, a)
+          mul!(aux1, Rjk, a)
           ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux1, Rik, b)
-          ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Rik, aux)
-          ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Rjk, aux1)
+          set!(Rik, aux)
+          set!(Rjk, aux1)
           #R[i, k], R[j, k] = e*R[i,k]+f*R[j,k], -b*R[i,k]+a*R[j,k]
         end
       end

@@ -600,7 +600,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
 #  djj = lift_root(f, ajj, bjj, p, 10)
 #  d = K(parent(K.pol)(djj))
       ccall((:nf_elem_set, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), c, d, K)
-      ccall((:fmpz_set_si, libflint), Nothing, (Ref{ZZRingElem}, Cint), pc, precision(x))
+      set!(pc, precision(x))
     elseif precision(x) < pc
       d = mod_sym(c, p^precision(x))
     else

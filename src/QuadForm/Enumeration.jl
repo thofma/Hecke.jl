@@ -522,7 +522,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
     if _short_enough
       # t1 must be a UInt
       #z = QQFieldElem()
-      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      #set!(z, t1)
       # Todo
       y = Vector{elem_type}(undef, n)
       if S === elem_type
@@ -752,11 +752,7 @@ end
   return s
 end
 
-function _deepcopy_cheap(x::QQFieldElem)
-  z = QQFieldElem()
-  ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, x)
-  return z
-end
+_deepcopy_cheap(x::QQFieldElem) = set!(QQFieldElem(), x)
 
 function is_lessorequal(x::QQFieldElem, y::UInt)
   c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{QQFieldElem}, UInt), x, y)
@@ -1050,7 +1046,7 @@ end
 end
 
 @inline function add_two!(z::ZZRingElem, x::ZZRingElem)
-  ccall((:fmpz_add_ui, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Int), z, x, 2)
+  add!(z, x, 2)
   return z
 end
 
