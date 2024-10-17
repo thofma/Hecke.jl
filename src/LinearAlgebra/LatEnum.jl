@@ -244,12 +244,12 @@ end
 
 @inline function fmpz_mat_entry_incref!(a::ZZMatrix, r::Int, c::Int)
   z = Nemo.mat_entry_ptr(a, r, c)
-  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, 1)
+  add!(z, 1)
 end
 
 function fmpz_mat_entry_add_ui!(a::ZZMatrix, r::Int, c::Int, v::UInt)
   z = Nemo.mat_entry_ptr(a, r, c)
-  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, v)
+  add!(z, v)
 end
 
 function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}

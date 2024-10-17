@@ -313,8 +313,7 @@ function Base.iterate(C::LatEnumCtx{X, Y, elem_type}) where {X, Y, elem_type}
 
     if _short_enough
       # t1 must be a UInt
-      #z = QQFieldElem()
-      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      #z = QQFieldElem(t1)
       # Todo
       return (pp_vector(x), pp_length(len)), i
       #y = Vector{S}(undef, n)
@@ -398,8 +397,7 @@ function Base.iterate(C::LatEnumCtx{S, W, V}, it::Int) where {S, W, V}
 
     if _short_enough
       # t1 must be a UInt
-      #z = QQFieldElem()
-      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      #z = QQFieldElem(t1)
       # Todo
       #y = __clean_and_assemble(x, transform)
       #return (y, len//scale), i
@@ -504,7 +502,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
     t2 = numerator!(t2, t1)
     _short_enough = false
     if S === Int
-      _len = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t2)
+      _len = Int(t2)
       _short_enough = _len <= c
       if !(l isa Nothing)
         _short_enough = _short_enough && _len >= l
@@ -638,8 +636,6 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothi
   end
 end
 
-@noinline _bound_error() = error("Overflow in bound computation")
-
 @inline function _compute_bounds(Ti::QQFieldElem, Qi, Ui, t1 = QQFieldElem(),
                                              t2 = ZZRingElem(),
                                              t3 = ZZRingElem(),
@@ -649,20 +645,18 @@ end
   t2 = floor!(t2, t1, t3, t4)
   t2 = isqrt!(t2, t2)
   # Now t2 = ceil(sqrt(Ti/Qi))
-  t2 = add_two!(t2, t2)
+  t2 = add!(t2, 2)
   # Now t2 = ceil(sqrt(Ti/Qi)) + 2
 
   t1 = sub!(t1, Ui, t2)
-  t1 = neg!(t1, t1)
+  t1 = neg!(t1)
   t5 = ceil!(t5, t1, t3, t4)
-  !fits(Int, t5) && _bound_error()
-  ub = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t5)
+  ub = Int(t5)  # will throw if t5 does not fit into an Int
 
   t1 = add!(t1, Ui, t2)
-  t1 = neg!(t1, t1)
+  t1 = neg!(t1)
   t5 = floor!(t5, t1, t3, t4)
-  !fits(Int, t5) && _bound_error()
-  lb = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t5) - 1
+  lb = Int(t5) - 1   # will throw if t5 does not fit into an Int
 
   return ub, lb
 end
@@ -707,10 +701,10 @@ end
 @inline function update_U!(U, QQ::Matrix{QQFieldElem}, i, n, x, t = QQFieldElem(), t2 = ZZRingElem())
   # U[i] = sum(QQ[i, j] * x[j] for j in (i + 1):n)
   s = @inbounds U[i]
-  @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{ZZRingElem}, Int), t2, x[i + 1])
+  @inbounds set!(t2, x[i + 1])
   @inbounds s = mul!(s, QQ[i, i + 1], t2)
   for j in (i + 2):n
-    @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{ZZRingElem}, Int), t2, x[j])
+    @inbounds set!(t2, x[j])
     @inbounds mul!(t, QQ[i, j], t2)
     s = add!(s, s, t)
     #addmul!(s, QQ[i, j], t2, t)
@@ -1021,16 +1015,6 @@ end
 #
 ################################################################################
 
-@inline function numerator!(z::ZZRingElem, y::QQFieldElem)
-  ccall((:fmpq_numerator, libflint), Cvoid, (Ref{ZZRingElem}, Ref{QQFieldElem}), z, y)
-  return z
-end
-
-@inline function denominator!(z::ZZRingElem, y::QQFieldElem)
-  ccall((:fmpq_denominator, libflint), Cvoid, (Ref{ZZRingElem}, Ref{QQFieldElem}), z, y)
-  return z
-end
-
 @inline function floor!(z::ZZRingElem, y::QQFieldElem, t0::ZZRingElem, t1::ZZRingElem)
   numerator!(t0, y)
   denominator!(t1, y)
@@ -1045,11 +1029,6 @@ end
   return z
 end
 
-@inline function add_two!(z::ZZRingElem, x::ZZRingElem)
-  add!(z, x, 2)
-  return z
-end
-
 @inline function isqrt!(z::ZZRingElem, a::ZZRingElem)
   ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, a)
   return z
@@ -1059,8 +1038,4 @@ floor!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(floor(x))
 
 isqrt!(z::Int, x::Int) = isqrt(x)
 
-add_two!(z::Int, x::Int) = x + 2
-
 ceil!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(ceil(x))
-
-numerator!(z::Int, x::Rational{Int}) = numerator(x)

@@ -820,7 +820,7 @@ function _idempotents_via_matrices(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrder
   @hassert :AbsNumFieldOrder 2 -z in x
   @hassert :AbsNumFieldOrder 2 1 + z in y
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
+  zero!(V)
 
   return -z, 1 + z
 end

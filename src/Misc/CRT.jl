@@ -494,13 +494,13 @@ function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::UInt)
   K = a.parent
   @assert n < degree(K) && n >=0
 
-  ra = pointer_from_objref(a)
+  ra = Ptr{ZZRingElem}(pointer_from_objref(a))
 
   if degree(K) == 1
-    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra, c)
+    set!(ra, c)
     ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, ), a)
   elseif degree(K) == 2
-    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra+n*sizeof(Int), c)
+    set!(ra+n*sizeof(Int), c)
   else
     ccall((:fmpq_poly_set_coeff_ui, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Int, UInt), a, n, c)
    # includes canonicalisation and treatment of den.

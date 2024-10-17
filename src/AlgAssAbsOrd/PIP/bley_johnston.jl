@@ -192,7 +192,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
 
   F = Hecke._get_a_twosided_conductor(O, M)
   # Now make corpime to conductor
- 
+
   Iorig = I
   if F == 1*O || I + F == one(A) * O
     # I should improve this
@@ -377,7 +377,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
     end
     w = local_coeffs[1][idx[1]]
     for i in 1:dd
-      ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{QQFieldElem}, Ref{QQFieldElem}), vtemp[i], w[i])
+      set!(vtemp[i], w[i])
     end
     #@show vtemp
     for j in 2:(length(dec) - 1)
@@ -404,7 +404,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
     #@show length(ids)
     for j in ids
       #for i in 1:dd
-      #  ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{QQFieldElem}, Ref{QQFieldElem}), vtemp[i], _vtempcopy[i])
+      #  set!(vtemp[i], _vtempcopy[i])
       #end
       _vtemp = deepcopy(vtemp) .+ local_coeffs[end][j]
       if all(is_integral, _vtemp)
@@ -420,7 +420,7 @@ function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, 
 end
 
 #
-function _recursive_iterator!(x, lengths, d, elts::Vector, bases_offsets, indices_integral, indices_nonintegral, k, i, vtemp)
+function _recursive_iterator!(x, lengths, d, elts::Vector, bases_offsets, indices_integral, indices_nonintegral, k, i, vtemp::Vector{QQFieldElem})
   if i > k
     println("2", x)
   elseif i == k # unroll 1-loop base case for speed
@@ -466,18 +466,18 @@ function _recursive_iterator!(x, lengths, d, elts::Vector, bases_offsets, indice
   end
 end
 
-function _is_admissible(x, i, d, elts, bases_offsets, vtemp)
+function _is_admissible(x, i, d, elts, bases_offsets, vtemp::Vector{QQFieldElem})
   # Test if x[1,...,i] is admissible
   w = elts[1][x[1]]
   for k in 1:d
-    ccall((:fmpq_set, libflint), Ref{Nothing}, (Ref{QQFieldElem}, Ref{QQFieldElem}), vtemp[k], w[k])
+    set!(vtemp[k], w[k])
   end
   #@show vtemp
   for j in 2:i
     w = elts[j][x[j]]
     #@assert all(iszero, @view w[1:bases_offsets[j][1] - 1])
     for k in bases_offsets[j][1]:d
-      add!(vtemp[k], vtemp[k], w[k])
+      add!(vtemp[k], w[k])
     end
   end
 
