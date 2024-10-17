@@ -871,10 +871,15 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, ::Val
   for i = start:step:stop
     # find pivot
     if shape === :upperright
-      piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+      _piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))
     else
-      piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+      _piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))
     end
+    # The pseudo-HNF might be the zero matrix?
+    if _piv isa Nothing
+      continue
+    end
+    piv = _piv::Int
     if !(w[1, piv]//P.matrix[i, piv] in P.coeffs[i])
       if with_solution
         return false, sol
