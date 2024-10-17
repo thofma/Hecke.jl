@@ -558,6 +558,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   _, mK = residue_field(order(P), P)
   mK = extend(mK, K)
   r = length(factor(map_coefficients(mK, f, cached = false)))
+  prec_scale = max(r, prec_scale)
   N = degree(f)
   @vprintln :PolyFactor 1  "Having $r local factors for degree $N"
 
@@ -589,7 +590,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
     - the bounds are monotonous in the abs value of the coeffs (I think they are using abs value of coeff)
     - the math works for real coeffs as well
     - thus create an ZZPolyRingElem with pos. coeffs. containing upper bounds of the conjugates of the
-      coeffs. DOne via T_2: sqrt(n*T_2(alpha) is an upper bounds for all conjugates
+      coeffs. Done via T_2: sqrt(T_2(alpha) is an upper bounds for all conjugates
     - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs
     - leading coeff as well as den are algebraic
       CHECK: den*lead*cld in Z[alpha] (or in the order used)
@@ -603,7 +604,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   #       2nd block is for additional bits for rounding?
   bb = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
   #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors,
-  #       need everywhere sqrt(n*T_2)? to get conjugate bounds
+  #       need everywhere sqrt(T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprintln :PolyFactor 2 "using CLD precision bounds $b"
 
