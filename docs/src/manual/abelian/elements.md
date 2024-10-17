@@ -25,6 +25,7 @@ parent(x::FinGenAbGroupElem)
 ## Access
 
 ```@docs
+getindex(x::FinGenAbGroupElem, v::AbstractVector{Int})
 getindex(x::FinGenAbGroupElem, i::Int)
 ```
 
