@@ -12,9 +12,9 @@
   for b in (matrix(OK, 1, 1, [alpha + beta]), OK.([alpha + beta]))
     b = matrix(OK, 1, 1, [alpha + beta])
     fl, X, K = can_solve_with_solution_and_kernel(M, b; side = :left)
-    @assert fl
-    @assert X * M == b
-    @assert is_zero(K * M)
+    @test fl
+    @test X * M == b
+    @test is_zero(K * M)
   end
   for b in (matrix(OK, 1, 1, [one(OK)]), [OK(1)])
     fl = can_solve(M, b; side = :left)
@@ -29,9 +29,9 @@
   @test ncols(K) >= 2
   b = matrix(OK, 1, 1, [alpha + beta])
   fl, X, K = can_solve_with_solution_and_kernel(M, b; side = :right)
-  @assert fl
-  @assert M * X == b
-  @assert is_zero(M * K)
+  @test fl
+  @test M * X == b
+  @test is_zero(M * K)
   b = matrix(OK, 1, 1, [one(OK)])
   fl = can_solve(M, b; side = :right)
   @test !fl
@@ -46,13 +46,21 @@
     X = rand(matrix_space(OK, k, n), 5)
     B = X * A
     fl, v = can_solve_with_solution(A, B, side = :left)
-    @assert fl
-    @assert v * A == B
+    @test fl
+    @test v * A == B
 
     X = rand(matrix_space(OK, m, k), 5)
     B = A * X
     fl, v = can_solve_with_solution(A, B, side = :right)
-    @assert fl
-    @assert A * v == B
+    @test fl
+    @test A * v == B
   end
+
+  # fix some issue with matrices not of full rank
+
+  A = zero_matrix(OK, 1, 1)
+  B = zero_matrix(OK, 2, 1)
+  fl, v = can_solve_with_solution(A, B, side = :left)
+  @test fl
+  @test v * A == B
 end
