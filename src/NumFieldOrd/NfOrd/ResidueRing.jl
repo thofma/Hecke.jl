@@ -498,14 +498,14 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   for i in 2:(d + 1)
     if !iszero(V[1, i])
   #if !iszero(sub(V, 1:1, 2:(d + 1)))
-      ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
+      zero!(V)
       return false, zero(parent(x))
     end
   end
 
   z = R(-base_ring(R)(ZZRingElem[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
+  zero!(V)
   @hassert :AbsOrdQuoRing 1 z*y == x
   return true, z
 end
@@ -776,7 +776,7 @@ function AbstractAlgebra.gcdxx(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpl
 
   @hassert :AbsOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
+  zero!(V)
 
   return g, u, v, -f, e
 end

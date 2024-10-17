@@ -720,7 +720,7 @@ function add_into!(A::ZZMatrix, C::ZZMatrix, c::Int)
     A_ptr = Nemo.mat_entry_ptr(A, i+c, 1)
     C_ptr = Nemo.mat_entry_ptr(C, i, 1)
     for j=1:ncols(A)
-      ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), A_ptr, A_ptr, C_ptr)
+      add!(A_ptr, C_ptr)
       A_ptr += sizeof(Clong)
       C_ptr += sizeof(Clong)
     end
@@ -1247,7 +1247,7 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
       for i=1:nrows(D.x)
         x_ptr = Nemo.mat_entry_ptr(D.x, i, 1)
         for j=1:ncols(D.x)
-          ccall((:fmpz_addmul_si, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ref{ZZRingElem}, Int), x_ptr, ppow, Int(D.y_mod[i, j]))
+          addmul!(x_ptr, ppow, Int(D.y_mod[i, j]))
           x_ptr += 8
         end
       end
@@ -1302,7 +1302,7 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
          ccall((:fmpz_zero, Nemo.libflint), Cvoid, (Ptr{ZZRingElem},), Ay_ptr)
          for j=1:n
            y_ptr = Nemo.mat_entry_ptr(D.y_mod, j, 1)
-           ccall((:fmpz_addmul_ui, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, UInt), Ay_ptr, A_ptr, unsafe_load(y_ptr))
+           addmul!(Ay_ptr, A_ptr, unsafe_load(y_ptr))
            A_ptr += sizeof(ZZRingElem)
          end
        end

@@ -243,14 +243,14 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), q)
+        fl = is_zero(q)
         if fl
           continue
         end
         for k = j:ncols(a)
           t = mat_entry_ptr(a, c, k)
           l = mat_entry_ptr(H, i, k)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
+          submul!(t, q, l)
           #a[c, k] = a[c, k] - q * H[i, k]
         end
       end
@@ -275,14 +275,14 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), q)
+        fl = is_zero(q)
         if fl
           continue
         end
         for k = 1:j
           t = mat_entry_ptr(a, c, k)
           l = mat_entry_ptr(H, i, k)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
+          submul!(t, q, l)
         end
       end
     end
@@ -486,17 +486,17 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
   GC.@preserve S R begin
     for i=1:min(nrows(S), ncols(S))
       Sii = mat_entry_ptr(S, i, i)
-      fl = ccall((:fmpz_is_one, libflint), Bool, (Ref{ZZRingElem},), Sii)
+      fl = is_one(Sii)
       if fl
         continue
       end
       for j=i+1:min(nrows(S), ncols(S))
         Sjj = mat_entry_ptr(S, j, j)
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), Sjj)
+        fl = is_zero(Sjj)
         if fl
           continue
         end
-        fl1 = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), Sii)
+        fl1 = is_zero(Sii)
         if !fl1
           fl2 = Bool(ccall((:fmpz_divisible, libflint), Cint,
               (Ref{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sii))
@@ -517,13 +517,13 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         ccall((:fmpz_tdiv_qr, libflint), Nothing,
           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), a, r, Sii, g)
         #a = divexact(S[i,i], g)
-        ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Sii, g)
+        set!(Sii, g)
         #S[i,i] = g
         b = ZZRingElem()
         ccall((:fmpz_tdiv_qr, libflint), Nothing,
           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), b, r, Sjj, g)
         #b = divexact(S[j,j], g)
-        ccall((:fmpz_mul, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sjj, a)
+        Sjj = mul!(Sjj, a)
         #S[j,j] *= a
         # V = [e -b ; f a];
         # so col i and j of R will be transformed. We do it naively
@@ -532,19 +532,18 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
           Rik = mat_entry_ptr(R, i, k)
           Rjk = mat_entry_ptr(R, j, k)
           aux = ZZRingElem()
-          mul!(aux, Rik, e)
-          ccall((:fmpz_addmul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rjk, f)
+          aux = mul!(aux, Rik, e)
+          aux = addmul!(aux, Rjk, f)
           aux1 = ZZRingElem()
-          mul!(aux1, Rjk, a)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux1, Rik, b)
+          aux1 = mul!(aux1, Rjk, a)
+          aux1 = submul!(aux1, Rik, b)
           set!(Rik, aux)
           set!(Rjk, aux1)
           #R[i, k], R[j, k] = e*R[i,k]+f*R[j,k], -b*R[i,k]+a*R[j,k]
         end
       end
     end
-    ccall((:fmpz_mat_transpose, libflint), Nothing,
-         (Ref{ZZMatrix}, Ref{ZZMatrix}), R, R)
+    transpose!(R)
   end
   return S, R
 end

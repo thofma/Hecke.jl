@@ -890,7 +890,7 @@ end
 function _addmul!(M::QQMatrix, i, j, a::QQFieldElem, b::QQFieldElem, temp = nothing)
   GC.@preserve M begin
     c = mat_entry_ptr(M, i, j)
-    ccall((:fmpq_addmul, libflint), Nothing, (Ptr{QQFieldElem}, Ref{QQFieldElem}, Ref{QQFieldElem}), c, a, b)
+    addmul!(c, a, b)
   end
 end
 

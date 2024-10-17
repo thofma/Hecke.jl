@@ -122,7 +122,7 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
              valuation!, is_cyclo_type, is_embedded, is_maxreal_type,
-             mat_entry_ptr, factor_trial_range, set!
+             mat_entry_ptr, factor_trial_range, set!, numerator!, denominator!
 
 AbstractAlgebra.@include_deprecated_bindings()
 Nemo.@include_deprecated_bindings()
