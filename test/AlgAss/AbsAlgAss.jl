@@ -112,7 +112,7 @@
     A = StructureConstantAlgebra(f2g3)
     fg = A(QQFieldElem[-5, 5, -2, 6, 3, 1, 0, 0, 0, 0, 0, 0, 0]) # = f*g
     J = radical(A)
-    I = ideal(A, fg)
+    I = left_ideal(A, fg)
     @test I == J
 
     f = x^2 + 1
@@ -124,7 +124,7 @@
     A = StructureConstantAlgebra(g2h3)
     gh = A(map(K, [10, -5, -28, -13, 2, 1, 0, 0, 0, 0, 0, 0])) # = g*h
     J = radical(A)
-    I = ideal(A, gh)
+    I = left_ideal(A, gh)
     @test I == J
 
     G = small_group(8, 4)
@@ -138,7 +138,7 @@
             0 0 0 0 1 0 0 1;
             0 0 0 0 0 1 0 1;
             0 0 0 0 0 0 1 1]
-    @test I == ideal(A, bI)
+    @test I == Hecke._ideal_from_matrix(A, bI)
     ge = [A(g) - A(one(G)) for g in G]
     @test all(in(I), ge)
     AS, AStoA = StructureConstantAlgebra(A)
