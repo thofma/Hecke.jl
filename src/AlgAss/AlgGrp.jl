@@ -32,8 +32,8 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
-function (A::GroupAlgebra{T, S, R})(c::Vector{T}; copy::Bool = false) where {T, S, R}
-  length(c) != dim(A) && error("Dimensions don't match.")
+function (A::GroupAlgebra{T, S, R})(c::Union{Vector{T}, SRow{T}}; copy::Bool = false) where {T, S, R}
+  c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
@@ -52,6 +52,14 @@ function multiplication_table(A::GroupAlgebra; copy::Bool = true)
   end
 end
 
+# get the underyling group operation, I wish this was part of the group interface
+
+_op(G::AbstractAlgebra.AdditiveGroup) = +
+
+_op(G::Group) = *
+
+_op(A::GroupAlgebra) = _op(group(A))
+
 ################################################################################
 #
 #  Construction
@@ -59,17 +67,29 @@ end
 ################################################################################
 
 @doc raw"""
-    group_algebra(K::Ring, G; op = *) -> GroupAlgebra
+    group_algebra(K::Ring, G::Group; cached::Bool = true) -> GroupAlgebra
 
-Returns the group ring $K[G]$.
-$G$ may be any set and `op` a group operation on $G$.
+Return the group algebra of the group $G$ over the ring $R$. Shorthand syntax
+for this construction is `R[G]`.
+
+# Examples
+
+```jldoctest
+julia> QG = group_algebra(QQ, small_group(8, 5))
+Group algebra
+  of generic group of order 8 with multiplication table
+  over rational field
+```
 """
-group_algebra(K::Ring, G; op = *) = GroupAlgebra(K, G, op = op)
+group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; op = *, cached)
 
-group_algebra(K::Ring, G::FinGenAbGroup) = GroupAlgebra(K, G)
-
-function group_algebra(K::Field, G; op = *)
-  A = GroupAlgebra(K, G, op = op)
+# one additional level of indirection to hide the non-user facing options
+# `op` and `sparse`.
+function _group_algebra(K::Ring, G; op = *, sparse = _use_sparse_group_algebra(G), cached::Bool = true)
+  A = GroupAlgebra(K, G; op = _op(G) , sparse = sparse, cached = cached)
+  if !(K isa Field)
+    return A
+  end
   if iszero(characteristic(K))
     A.issemisimple = 1
   else
@@ -78,20 +98,18 @@ function group_algebra(K::Field, G; op = *)
   return A
 end
 
-function group_algebra(K::Field, G::FinGenAbGroup)
-  A = group_algebra(K, G, op = +)
-  A.is_commutative = true
-  return A
-end
+#_group_algebra(K::Ring, G::FinGenAbGroup; op = +, cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G, cached, sparse)
 
-@doc raw"""
-    (K::Ring)[G::Group] -> GroupAlgebra
-    (K::Ring)[G::FinGenAbGroup] -> GroupAlgebra
-
-Returns the group ring $K[G]$.
-"""
 getindex(K::Ring, G::Group) = group_algebra(K, G)
 getindex(K::Ring, G::FinGenAbGroup) = group_algebra(K, G)
+
+function _use_sparse_group_algebra(G)
+  if !is_finite(G)
+    return true
+  else
+    return order(G) >= 1000
+  end
+end
 
 ################################################################################
 #
@@ -629,7 +647,7 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 #
 ################################################################################
 
-mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
+mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAssMorGen}
   domain::S
   codomain::T
   tempdomain::U

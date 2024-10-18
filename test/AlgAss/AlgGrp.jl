@@ -73,4 +73,35 @@
       end
     end
   end
+
+  # abelian groups
+
+  QG = group_algebra(QQ, abelian_group([2, 2]))
+  @test QG isa GroupAlgebra
+  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); cached = false)
+  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); sparse = true)
+
+  QG = Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true)
+  @test QG isa GroupAlgebra
+  @test QG !== Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true, cached = false)
+
+  # test sparse arithmetic
+
+  let
+    G = SymmetricGroup(10)
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    for i in 1:10
+      a = rand(G)
+      b = rand(G)
+      c = a * b
+      d = b * a
+      aa = QG(a)
+      bb = QG(b)
+      cc = QG(c)
+      dd = QG(d)
+      @test aa * bb == cc
+      @test bb * aa == dd
+      @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
+    end
+  end
 end

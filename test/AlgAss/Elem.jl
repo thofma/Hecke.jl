@@ -85,4 +85,13 @@
     Hecke.add!(b,b)
     @test b == A(matrix(QQ, [6 8; 10 12]))
   end
+
+  # fancy group algebra element constructor
+  G = abelian_group([2, 2]); a = G([0, 1]);
+  QG = Hecke._group_algebra(QQ, G; sparse = false);
+  @test QG(Dict(a => 2, zero(G) => 1)) == 2 * QG(a) + 1 * QG(zero(G))
+  @test QG(a => ZZ(2), zero(G) => QQ(1)) == 2 * QG(a) + 1 * QG(zero(G))
+  QG = Hecke._group_algebra(QQ, G; sparse = true);
+  @test QG(Dict(a => 2, zero(G) => 1)) == 2 * QG(a) + 1 * QG(zero(G))
+  @test QG(a => ZZ(2), zero(G) => QQ(1)) == 2 * QG(a) + 1 * QG(zero(G))
 end
