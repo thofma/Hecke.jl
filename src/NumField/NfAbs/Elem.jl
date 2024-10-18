@@ -920,13 +920,22 @@ function conjugate_quad(a::AbsSimpleNumFieldElem)
   q = ZZRingElem()
   GC.@preserve b begin
     a_ptr = reinterpret(Ptr{Int}, pointer_from_objref(a))
+    b_ptr = reinterpret(Ptr{Int}, pointer_from_objref(b))
     p_ptr = reinterpret(Ptr{Int}, k.pol_coeffs)
     s = sizeof(Ptr{ZZRingElem})
 
-    ccall((:fmpz_mul, libflint), Cvoid, (Ref{ZZRingElem}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr +s)
-    ccall((:fmpz_sub, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b)), a_ptr, q)
-    ccall((:fmpz_neg, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
-    ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
+    # The C type `nf_elem_t` (corresponding to `AbsSimpleNumFieldElem`) starts with
+    # an `fmpq_poly_t` (our `QQPolyRingElem`).
+
+    # compute r*y, where `r` is the second coefficient in k.pol_coeffs (hence `p_ptr+s`)
+    # and `y` is the second coefficient in `a`
+    ccall((:fmpz_mul, libflint), Cvoid, (Ref{ZZRingElem}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr+s)
+    # compute x - r*y, store it as first coefficient for `b`
+    ccall((:fmpz_sub, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), b_ptr, a_ptr, q)
+    # compute -y, store it as second coefficient for `b`
+    ccall((:fmpz_neg, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), b_ptr+s, a_ptr+s)
+    # copy the denominator from `a` to `b`
+    ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), b_ptr+3*s, a_ptr+3*s)
   end
   #TODO:
   # - write in c?
