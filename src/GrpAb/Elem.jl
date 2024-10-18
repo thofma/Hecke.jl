@@ -158,20 +158,10 @@ function getindex(x::FinGenAbGroupElem, v::AbstractVector{Int})
   return [x.coeff[1, i] for i in v]
 end
 
-@doc raw"""
-    firstindex(x::FinGenAbGroupElem) -> Int64
-
-Returns the first component of the element $x$.
-"""
 function Base.firstindex(x::FinGenAbGroupElem)
-  return Int64(1)
+  return Int(1)
 end
 
-@doc raw"""
-    lastindex(x::FinGenAbGroupElem) -> Int64
-
-Returns the last component of the element $x$.
-"""
 function Base.lastindex(x::FinGenAbGroupElem)
   return ngens(parent(x))
 end
