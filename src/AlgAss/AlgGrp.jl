@@ -32,8 +32,8 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
-function (A::GroupAlgebra{T, S, R})(c::Vector{T}; copy::Bool = false) where {T, S, R}
-  length(c) != dim(A) && error("Dimensions don't match.")
+function (A::GroupAlgebra{T, S, R})(c::Union{Vector{T}, SRow{T}}; copy::Bool = false) where {T, S, R}
+  c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
@@ -64,12 +64,12 @@ end
 Returns the group ring $K[G]$.
 $G$ may be any set and `op` a group operation on $G$.
 """
-group_algebra(K::Ring, G; op = *) = GroupAlgebra(K, G, op = op)
+group_algebra(K::Ring, G; op = *, cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G; op, sparse, cached)
 
-group_algebra(K::Ring, G::FinGenAbGroup) = GroupAlgebra(K, G)
+group_algebra(K::Ring, G::FinGenAbGroup; cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G; sparse, cached)
 
-function group_algebra(K::Field, G; op = *)
-  A = GroupAlgebra(K, G, op = op)
+function group_algebra(K::Field, G; op = *, sparse::Bool = false, cached::Bool = true)
+  A = GroupAlgebra(K, G; op, sparse, cached)
   if iszero(characteristic(K))
     A.issemisimple = 1
   else

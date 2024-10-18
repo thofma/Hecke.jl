@@ -145,6 +145,9 @@ end
   center
   maps_to_numberfields
   maximal_order
+  sparse::Bool
+  ind::Int
+  sparse_one
 
   function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool = true)
     A = GroupAlgebra(K, G, op = +, cached = cached)
@@ -152,9 +155,11 @@ end
     return A
   end
 
-  function GroupAlgebra(K::Ring, G; op = *, cached = true)
+  function GroupAlgebra(K::Ring, G; op = *, cached = true, sparse::Bool = false)
     return get_cached!(GroupAlgebraID, (K, G, op), cached) do
       A = new{elem_type(K), typeof(G), elem_type(G)}()
+      A.sparse = sparse
+      A.ind = -1
       A.is_commutative = 0
       A.is_simple = 0
       A.issemisimple = 0
@@ -163,36 +168,50 @@ end
       d = Int(order(G))
       A.group_to_base = Dict{elem_type(G), Int}()
       A.base_to_group = Vector{elem_type(G)}(undef, d)
-      A.mult_table = zeros(Int, d, d)
 
-      i = 2
-      for g in collect(G)
-        if isone(g)
-          A.group_to_base[deepcopy(g)] = 1
-          A.base_to_group[1] = deepcopy(g)
-          continue
+      if A.sparse
+        if G isa FinGenAbGroup
+          el = zero(G)
+        else
+          el = one(G)
         end
-        A.group_to_base[deepcopy(g)] = i
-        A.base_to_group[i] = deepcopy(g)
-        i += 1
+        A.group_to_base[el] = 1
+        A.base_to_group[1] = el
+        A.sparse_one = sparse_row(K, [1], [one(K)])
+        A.ind = 1 # index - 1 for the next group element
       end
 
-      v = Vector{elem_type(K)}(undef, d)
-      for i in 1:d
-        v[i] = zero(K)
-      end
-      v[1] = one(K)
-
-      A.one = v
-
-      for i = 1:d
-        for j = 1:d
-          l = op(A.base_to_group[i], A.base_to_group[j])
-          A.mult_table[i, j] = A.group_to_base[l]
+      if !A.sparse
+        A.mult_table = zeros(Int, d, d)
+        i = 2
+        for g in collect(G)
+          if isone(g)
+            A.group_to_base[deepcopy(g)] = 1
+            A.base_to_group[1] = deepcopy(g)
+            continue
+          end
+          A.group_to_base[deepcopy(g)] = i
+          A.base_to_group[i] = deepcopy(g)
+          i += 1
         end
-      end
 
-      @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+        v = Vector{elem_type(K)}(undef, d)
+        for i in 1:d
+          v[i] = zero(K)
+        end
+        v[1] = one(K)
+
+        A.one = v
+
+        for i = 1:d
+          for j = 1:d
+            l = op(A.base_to_group[i], A.base_to_group[j])
+            A.mult_table[i, j] = A.group_to_base[l]
+          end
+        end
+
+        @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+      end
 
       return A
     end::GroupAlgebra{elem_type(K), typeof(G), elem_type(G)}
@@ -204,19 +223,35 @@ const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring, Any, Any}, Grou
 mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   parent::S
   coeffs::Vector{T}
+  coeffs_sparse
 
   function GroupAlgebraElem{T, S}(A::S) where {T, S}
     z = new{T, S}()
     z.parent = A
-    z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
-    for i = 1:length(z.coeffs)
-      z.coeffs[i] = A.base_ring()
+    if !A.sparse
+      z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
+      for i = 1:length(z.coeffs)
+        z.coeffs[i] = A.base_ring()
+      end
+    else
+      z.coeffs_sparse = sparse_row(base_ring(A))
     end
     return z
   end
 
   function GroupAlgebraElem{T, S}(A::S, g::U) where {T, S, U}
-    return A[A.group_to_base[g]]
+    if A.sparse
+      i = get!(A.group_to_base, g) do
+        A.ind += 1
+        A.base_to_group[A.ind] = g
+        return A.ind
+      end
+      a = GroupAlgebraElem{T, S}(A)
+      a.coeffs_sparse = sparse_row(base_ring(A), [i], [one(base_ring(A))])
+      return a
+    else
+      return A[A.group_to_base[g]]
+    end
   end
 
   # This does not make a copy of coeffs
@@ -226,7 +261,21 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
     z.coeffs = coeffs
     return z
   end
+
+  function GroupAlgebraElem{T, S}(A::S, coeffs::SRow{T}) where {T, S}
+    z = new{T, S}()
+    z.parent = A
+    z.coeffs_sparse = coeffs
+    return z
+  end
 end
+
+__elem_index(A, g) = get!(A.group_to_base, g) do
+        A.ind += 1
+        A.base_to_group[A.ind] = g
+        return A.ind
+      end
+
 
 ################################################################################
 #
