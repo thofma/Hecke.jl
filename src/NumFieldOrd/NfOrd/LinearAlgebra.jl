@@ -165,16 +165,6 @@ function set!(z::fpPolyRingElem, x::fpPolyRingElem)
   ccall((:nmod_poly_set, libflint), Nothing, (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}), z, x)
 end
 
-function __helper!(z, mF, entries)
-  s = size(entries)
-  for i in 1:s[2]
-    for j in 1:s[1]
-      z[j, i] = mF(entries[j, i])
-    end
-  end
-  return z
-end
-
 function mod_sym(x::AbsSimpleNumFieldOrderElem, m::ZZRingElem)
   z = coordinates(x)
   for i in 1:length(z)

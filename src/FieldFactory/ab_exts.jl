@@ -699,14 +699,6 @@ function _ext_with_autos(Qx, x, i::Int, j::Int)
   return Qx(cp1), Qx(cp2)
 end
 
-function __get_term(a::QQMPolyRingElem, exps::Vector{UInt})
-   z = QQFieldElem()
-   ccall((:fmpq_mpoly_get_coeff_fmpq_ui, libflint), Nothing,
-         (Ref{QQFieldElem}, Ref{QQMPolyRingElem}, Ptr{UInt}, Ref{QQMPolyRing}),
-         z, a, exps, parent(a))
-   return z
-end
-
 function _C22_with_max_ord(l)
   list = Vector{Tuple{AbsSimpleNumField, Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}, Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}()
   Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
