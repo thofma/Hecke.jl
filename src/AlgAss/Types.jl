@@ -236,20 +236,21 @@ end
 
 # S is the type of the algebra, T = elem_type(S) and U is the type of matrices
 # over the base ring of the algebra
-mutable struct AbsAlgAssIdl{S, T, U}
+mutable struct AbsAlgAssIdl{S}
   algebra::S
-  basis::Vector{T}
-  basis_matrix::U
+  basis#::Vector{elem_type(algebra)}
+  basis_matrix#::dense_matrix_type(base_ring_Type(A))
+  basis_matrix_solve_ctx#solve_context_type(...)
 
   isleft::Int                      # 0 Not known
                                    # 1 Known to be a left ideal
                                    # 2 Known not to be a left ideal
   isright::Int                     # as for isleft
 
-  iszero::Int
+  iszero::Int                      # as for isleft
 
-  function AbsAlgAssIdl{S, T, U}(A::S) where {S, T, U}
-    I = new{S, T, U}()
+  function AbsAlgAssIdl{S}(A::S) where {S}
+    I = new{S}()
     I.algebra = A
     I.isleft = 0
     I.isright = 0
@@ -257,8 +258,8 @@ mutable struct AbsAlgAssIdl{S, T, U}
     return I
   end
 
-  function AbsAlgAssIdl{S, U}(A::S, M::U) where {S, U}
-    I = new{S, elem_type(S), U}()
+  function AbsAlgAssIdl{S}(A::S, M::MatElem) where {S}
+    I = new{S}()
     I.algebra = A
     I.basis_matrix = M
     I.isleft = 0

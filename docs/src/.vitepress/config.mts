@@ -95,6 +95,7 @@ export default defineConfig({
                 { text: 'Introduction', link: 'manual/algebras/intro'},
                 { text: 'Basics', link: 'manual/algebras/basics'},
                 { text: 'Structure constant algebras', link: 'manual/algebras/structureconstant'},
+                { text: 'Ideals', link: 'manual/algebras/ideals'},
               ]
             },
             {
