@@ -59,17 +59,25 @@ end
 ################################################################################
 
 @doc raw"""
-    group_algebra(K::Ring, G; op = *) -> GroupAlgebra
+    group_algebra(K::Ring, G::Group; sparse::Bool = false,
+                                     cached::Bool = true) -> GroupAlgebra
 
-Returns the group ring $K[G]$.
-$G$ may be any set and `op` a group operation on $G$.
+Return the group algebra of the group $G$ over the ring $R$.
+
+# Examples
+
+```jldoctest
+julia> QG = group_algebra(QQ, small_group(8, 5))
+Group algebra
+  of generic group of order 8 with multiplication table
+  over rational field
+```
 """
-group_algebra(K::Ring, G; op = *, cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G; op, sparse, cached)
-
-group_algebra(K::Ring, G::FinGenAbGroup; cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G; sparse, cached)
-
-function group_algebra(K::Field, G; op = *, sparse::Bool = false, cached::Bool = true)
-  A = GroupAlgebra(K, G; op, sparse, cached)
+function group_algebra(K::Ring, G; op = *, sparse::Bool = false, cached::Bool = true)
+  A = GroupAlgebra(K, G; op = op , sparse = sparse, cached = cached)
+  if !(K isa Field)
+    return A
+  end
   if iszero(characteristic(K))
     A.issemisimple = 1
   else
@@ -78,18 +86,8 @@ function group_algebra(K::Field, G; op = *, sparse::Bool = false, cached::Bool =
   return A
 end
 
-function group_algebra(K::Field, G::FinGenAbGroup)
-  A = group_algebra(K, G, op = +)
-  A.is_commutative = true
-  return A
-end
+group_algebra(K::Ring, G::FinGenAbGroup; cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G, cached, sparse)
 
-@doc raw"""
-    (K::Ring)[G::Group] -> GroupAlgebra
-    (K::Ring)[G::FinGenAbGroup] -> GroupAlgebra
-
-Returns the group ring $K[G]$.
-"""
 getindex(K::Ring, G::Group) = group_algebra(K, G)
 getindex(K::Ring, G::FinGenAbGroup) = group_algebra(K, G)
 
@@ -629,7 +627,7 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 #
 ################################################################################
 
-mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
+mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAssMorGen}
   domain::S
   codomain::T
   tempdomain::U

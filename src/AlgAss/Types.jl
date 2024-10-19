@@ -130,6 +130,13 @@ end
 @attributes mutable struct GroupAlgebra{T, S, R} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   group::S
+  # We represent elements using a coefficient vector,
+  # so all we have to keep track of is which group element corresponds to
+  # which basis element of the algebra
+  # This is what group_to_base, base_to_group are for. They realize the map
+  # G -> {1,...,n}
+  # {1,...n} -> G
+
   group_to_base::Dict{R, Int}
   base_to_group::Vector{R}
   one::Vector{T}
@@ -145,18 +152,21 @@ end
   center
   maps_to_numberfields
   maximal_order
-  sparse::Bool
-  ind::Int
-  sparse_one
 
-  function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool = true)
-    A = GroupAlgebra(K, G, op = +, cached = cached)
+  # For the sparse presentation
+  sparse::Bool
+  ind::Int      # This is the number of group elements currently stored in
+                # group_to_base and base_to_group.
+  sparse_one    # Store the sparse row for the one element
+
+  function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool = true, sparse::Bool = false)
+    A = GroupAlgebra(K, G; op = +, cached = cached, sparse = sparse)
     A.is_commutative = true
     return A
   end
 
-  function GroupAlgebra(K::Ring, G; op = *, cached = true, sparse::Bool = false)
-    return get_cached!(GroupAlgebraID, (K, G, op), cached) do
+  function GroupAlgebra(K::Ring, G; op = *, cached::Bool = true, sparse::Bool = false)
+    return get_cached!(GroupAlgebraID, (K, G, op, sparse), cached) do
       A = new{elem_type(K), typeof(G), elem_type(G)}()
       A.sparse = sparse
       A.ind = -1
@@ -165,9 +175,14 @@ end
       A.issemisimple = 0
       A.base_ring = K
       A.group = G
-      d = Int(order(G))
       A.group_to_base = Dict{elem_type(G), Int}()
-      A.base_to_group = Vector{elem_type(G)}(undef, d)
+      if !sparse
+        @assert is_finite(G)
+        d = order(Int, G)
+        A.base_to_group = Vector{elem_type(G)}(undef, d)
+      else
+        A.base_to_group = Vector{elem_type(G)}(undef, 1)
+      end
 
       if A.sparse
         if G isa FinGenAbGroup
@@ -218,7 +233,7 @@ end
   end
 end
 
-const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring, Any, Any}, GroupAlgebra}()
+const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring, Any, Any, Bool}, GroupAlgebra}()
 
 mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   parent::S
@@ -241,11 +256,7 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
 
   function GroupAlgebraElem{T, S}(A::S, g::U) where {T, S, U}
     if A.sparse
-      i = get!(A.group_to_base, g) do
-        A.ind += 1
-        A.base_to_group[A.ind] = g
-        return A.ind
-      end
+      i = __elem_index(A, g)
       a = GroupAlgebraElem{T, S}(A)
       a.coeffs_sparse = sparse_row(base_ring(A), [i], [one(base_ring(A))])
       return a
@@ -272,10 +283,10 @@ end
 
 __elem_index(A, g) = get!(A.group_to_base, g) do
         A.ind += 1
+        resize!(A.base_to_group, max(A.ind, length(A.base_to_group)))
         A.base_to_group[A.ind] = g
         return A.ind
       end
-
 
 ################################################################################
 #

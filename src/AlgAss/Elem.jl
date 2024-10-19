@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-_is_sparse(a::AbstractAssociativeAlgebraElem) = false
+_is_sparse(a::AbstractAssociativeAlgebraElem) = _is_sparse(parent(a))
 
-_is_sparse(a::GroupAlgebraElem) = parent(a).sparse
+_is_dense(a::AbstractAssociativeAlgebraElem) = _is_dense(parent(a))
 
 function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem{T}}, ::Type{S}) where {T, S}
   if AbstractAlgebra.promote_rule(T, S) === T
@@ -94,7 +94,7 @@ function one(A::AbstractAssociativeAlgebra)
   if !has_one(A)
     error("Algebra does not have a one")
   end
-  if !A.sparse
+  if _is_dense(A)
     return A(deepcopy(A.one)) # deepcopy needed by mul!
   else
     return A(deepcopy(A.sparse_one))
@@ -681,7 +681,17 @@ end
 #end
 
 function (A::GroupAlgebra{T, S, R})(c::R) where {T, S, R}
-  return GroupAlgebraElem{T, typeof(A)}(A, deepcopy(c))
+  return GroupAlgebraElem{T, typeof(A)}(A, c)
+end
+
+function (A::GroupAlgebra{T, S, R})(d::Dict{R, <: Any}) where {T, S, R}
+  K = base_ring(A)
+  dd = sparse_row(base_ring(A), [(__elem_index(A, g), K(i)) for (g, i) in d])
+  if _is_dense(A)
+    return GroupAlgebraElem{T, typeof(A)}(A, Vector(dd, dim(A)))
+  else
+    return GroupAlgebraElem{T, typeof(A)}(A, dd)
+  end
 end
 
 # Generic.Mat needs it
@@ -727,18 +737,22 @@ function show(io::IO, a::AbstractAssociativeAlgebraElem)
   if get(io, :compact, false)
     print(io, coefficients(a, copy = false))
   else
-    if a isa GroupAlgebraElem && parent(a).sparse
+    if _is_sparse(a)
       sum = Expr(:call, :+)
       if !iszero(a)
         for (i, ci) in a.coeffs_sparse
           push!(sum.args,
                 Expr(:call, :*, AbstractAlgebra.expressify(ci, context = io),
-                                AbstractAlgebra.expressify(parent(a).base_to_group[i], context = io)))
+                                AbstractAlgebra.expressify(parent(a).base_to_group[i], context = IOContext(io, :compact => true))))
         end
       end
       print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
     else
-      print(io, coefficients(a, copy = false))
+      ve = Expr(:vect)
+      for ci in coefficients(a, copy = false)
+        push!(ve.args, AbstractAlgebra.expressify(ci, context = io))
+      end
+      print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(ve)))
     end
   end
 end
@@ -781,7 +795,11 @@ end
 
 function ==(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && return false
-  return coefficients(a, copy = false) == coefficients(b, copy = false)
+  if !_is_sparse(a)
+    return coefficients(a, copy = false) == coefficients(b, copy = false)
+  else
+    return a.coeffs_sparse == b.coeffs_sparse
+  end
 end
 
 ################################################################################
