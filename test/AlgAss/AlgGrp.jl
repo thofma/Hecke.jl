@@ -73,4 +73,15 @@
       end
     end
   end
+
+  # abelian groups
+
+  QG = group_algebra(QQ, abelian_group([2, 2]))
+  @test QG isa GroupAlgebra
+  @test QG !== group_algebra(QQ, abelian_group([2, 2]); cached = false)
+  @test QG !== group_algebra(QQ, abelian_group([2, 2]); sparse = true)
+
+  QG = group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true)
+  @test QG isa GroupAlgebra
+  @test QG !== group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true, cached = false)
 end

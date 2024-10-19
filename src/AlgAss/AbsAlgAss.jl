@@ -1,3 +1,18 @@
+################################################################################
+#
+#  Internal thingy
+#
+################################################################################
+
+# check if elements are represented using a sparse row
+
+_is_sparse(A::AbstractAssociativeAlgebra) = false
+
+_is_sparse(A::GroupAlgebra) = A.sparse
+
+# because we are lazy
+_is_dense(A::AbstractAssociativeAlgebra) = !_is_sparse(A)
+
 _base_ring(A::AbstractAssociativeAlgebra) = base_ring(A)
 
 @doc raw"""

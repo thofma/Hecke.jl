@@ -199,6 +199,8 @@ end
 #
 ################################################################################
 
+is_finite(::MultTableGroup) = true
+
 elem_type(::Type{MultTableGroup}) = MultTableGroupElem
 
 Base.hash(G::MultTableGroupElem, h::UInt) = Base.hash(G.i, h)
@@ -256,9 +258,11 @@ end
 #
 ################################################################################
 
-function order(G::MultTableGroup)
+function order(::Type{Int}, G::MultTableGroup)
   return size(G.mult_table, 1)
 end
+
+order(G::MultTableGroup) = order(Int, G)
 
 length(G::MultTableGroup) = order(G)
 
