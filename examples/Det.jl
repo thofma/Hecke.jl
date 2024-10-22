@@ -700,22 +700,31 @@ function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U)
       if i > last || is_zero(R)
         return U
       end
-      U.r += 1
-      @assert U.r <= last
-      U_ptr = Nemo.mat_entry_ptr(U, i, 1)
-      R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
-      for j=1:ncols(U)
-        set!(U_ptr, R_ptr)
-        zero!(R_ptr)
-        R_ptr += sizeof(Clong)
-        U_ptr += sizeof(Clong)
+      while !is_zero(R)
+        U.r += 1
+        if i > last
+          return U
+        end
+        @assert U.r <= last
+        U_ptr = Nemo.mat_entry_ptr(U, i, 1)
+        R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
+        for j=1:ncols(U)
+          set!(U_ptr, R_ptr)
+          mod_sym!(U_ptr, R_ptr, m, t)
+          ccall((:fmpz_sub, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), R_ptr, R_ptr, U_ptr)
+          ccall((:fmpz_divexact, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), R_ptr, R_ptr, m)
+          R_ptr += sizeof(Clong)
+          U_ptr += sizeof(Clong)
+          i += 1
+        end
       end
+      return U
     end
   end
 end
 
 function add_into!(A::ZZMatrix, C::ZZMatrix, c::Int)
-  A.r = max(A.r, C.r+c)
+  @show A.r = max(A.r, C.r+c)
   for i=1:nrows(C)
     A_ptr = Nemo.mat_entry_ptr(A, i+c, 1)
     C_ptr = Nemo.mat_entry_ptr(C, i, 1)
@@ -757,7 +766,7 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
   # Compute max num iters in k
   k = (n-1)*(log2(EntrySize)+log2(n)/2) - (2*log2(n) + log2(EntrySize));
-  k = k/log2(m);
+  k = max(1, k/log2(m));
   k = 2+Int(ceil(log2(k)));
   println("Max num iters is k=$(k)");
 
@@ -766,21 +775,23 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
   @show size(U)
   @assert nrows(U) == 1
-  @show pr = 2^(k+2)-1
-  V = zero_matrix(ZZ, pr, ncols(U))
+  @show pr = 2^(k+2)-1  
+  V = zero_matrix(ZZ, pr+100, ncols(U))
   V[1, :] = U
   U = V
   U.r = 1
-  @assert maximum(abs, U) <= m
+#  @assert maximum(abs, U) <= m
 
   I = identity_matrix(ZZ,n)
   R = (I-A*B0)/m
-  V = zero_matrix(ZZ, pr, ncols(U))
+  V = zero_matrix(ZZ, pr + 100, ncols(U))
   V[1, :] = U*B0 #sol mod m
-  V.r = 1
-  renorm(V, m, last = 2)
+  @show V.r = 1
+  renorm(V, m; last = 10)
+  l = nrows(V)
   add_into!(V, V*R, 1) #sol mod m^2
-  renorm(V, m, last = 3)
+  renorm(V, m; last = 10)
+  @show V
 
   if is_zero(R)
     return true;
@@ -804,21 +815,23 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
     if nrows(V) > nrows(R)
       n = nrows(R)
-      e = div(nrows(V), n)
-      for j=1:e
+      l = nrows(V)
+      e = div(l, n)
+      add_into!(V, V[e*n+1:end, :]*R, ex+e*n)
+      for j=e:-1:1
+        @assert j*n <= pr
         add_into!(V, V[(j-1)*n+1:j*n, :]*R, ex+(j-1)*n)
-        renorm(V, m, start = ex+(j-1)*n-1, last = pr)
+#        renorm(V, m, start = ex+(j-1)*n-1, last = pr)
         if nrows(V)*nbits(m) >= pr_max
           @show "abort at j", j, e, nrows(V), nrows(V)*nbits(m), pr_max
           return V, m
         end
       end
-      add_into!(V, V[e*n+1:end, :]*R, ex+e*n)
-      renorm(V, m, start = ex+e*n-1, last = pr)
+#      renorm(V, m, start = ex+e*n-1, last = pr)
     else
       add_into!(V, V*R, ex) #sol mod 2(2ex+1)
-      renorm(V, m, start = ex-1, last = pr)
     end
+    renorm(V, m, start = ex-1, last = pr)
 
 
     @show 2*ex
@@ -834,15 +847,20 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
   return V, m
 end
 
+#inplace conversion
+#the rows of a are encoding a base-b row vector
+#this computes asymptotically fast(?) the ZZ-version
 function to_base(a::ZZMatrix, b::ZZRingElem, nr::Int = nrows(a))
   while nr > 1
     for i=1:div(nr, 2)
       add_row!(a, b, 2*i-1, 2*i)
+      swap_rows!(a, i, 2*i-1)
     end
     if is_odd(nr)
-      add_row(a, b^2, nr-1, nr)
+      add_row!(a, b^2, div(nr, 2), nr)
     end
     nr = div(nr, 2)
+    b *= b
   end
   return a[1:1, :]
 end
@@ -1228,8 +1246,8 @@ function map_entries!(A::Matrix{Float64}, k::Nemo.fpField, d::ZZMatrix)
 end
 
 function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
-  #we're solving Ax=B
-  @assert nrows(B) == nrows(D.A)
+  @assert ncols(D.A) == nrows(B)
+  #we're solveing Ax=B
   zero!(D.x)
   d = deepcopy(B)
   ppow = ZZ(1)
