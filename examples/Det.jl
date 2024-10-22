@@ -1278,8 +1278,8 @@ function map_entries!(A::Matrix{Float64}, k::Nemo.fpField, d::ZZMatrix)
 end
 
 function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
-  #we're solving Ax=B
-  @assert nrows(B) == nrows(D.A)
+  @assert ncols(D.A) == nrows(B)
+  #we're solveing Ax=B
   zero!(D.x)
   d = deepcopy(B)
   ppow = ZZ(1)
