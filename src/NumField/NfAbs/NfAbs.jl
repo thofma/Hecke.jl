@@ -470,7 +470,7 @@ end
       is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField) -> Bool, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
 Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
-Otherwise the function returns "false" and a morphism mapping everything to 0.
+Otherwise the function returns `false` and a morphism mapping everything to `0`.
 
 This function assumes that $K$ is normal.
 """
@@ -481,7 +481,6 @@ function is_subfield_normal(K::AbsSimpleNumField, L::AbsSimpleNumField)
   end
   b, prim_img = _issubfield_normal(K, L)
   return b, hom(K, L, prim_img, check = false)
-
 end
 
 ################################################################################
