@@ -684,21 +684,25 @@ end
 Returns the row $c A + B$.
 """
 add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
-add_left_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
+
+add_left_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_left_scaled_row!(a, deepcopy(b), c)
+add_right_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
+
+
 
 @doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
 Adds the left scaled row $c A$ to $B$.
 """
-function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
+function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, ::Val{left_side} = Val(true)) where {T, left_side}
   @assert a !== b
   i = 1
   j = 1
   t = base_ring(a)()
   while i <= length(a) && j <= length(b)
     if a.pos[i] < b.pos[j]
-      t = mul!(t, c, a.values[i])
+      t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
       if !iszero(t)
         insert!(b.pos, j, a.pos[i])
         insert!(b.values, j, c*a.values[i])
@@ -708,7 +712,7 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
     elseif a.pos[i] > b.pos[j]
       j += 1
     else
-      t = mul!(t, c, a.values[i])
+      t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
       b.values[j] = add!(b.values[j], t)
 
       if iszero(b.values[j])
@@ -721,7 +725,7 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
     end
   end
   while i <= length(a)
-    t = mul!(t, c, a.values[i])
+    t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
     if !iszero(t)
       push!(b.pos, a.pos[i])
       push!(b.values, c*a.values[i])
@@ -731,49 +735,18 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   return b
 end
 
+# ignore tmp argument
 add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
 
-add_right_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
+add_left_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T = add_scaled_row!(a, b, c)
 
 @doc raw"""
     add_right_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
 Return the right scaled row $c A$ to $B$ by changing $B$ in place.
 """
+add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T = add_scaled_row!(a, b, c, Val(false))
 
-function add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
-  @assert a !== b
-  i = 1
-  j = 1
-  t = base_ring(a)()
-  while i <= length(a) && j <= length(b)
-    if a.pos[i] < b.pos[j]
-      insert!(b.pos, j, a.pos[i])
-      insert!(b.values, j, a.values[i]*c)
-      i += 1
-      j += 1
-    elseif a.pos[i] > b.pos[j]
-      j += 1
-    else
-      t = mul!(t, a.values[i], c)
-      b.values[j] = add!(b.values[j], t)
-
-      if iszero(b.values[j])
-        deleteat!(b.values, j)
-        deleteat!(b.pos, j)
-      else
-        j += 1
-      end
-      i += 1
-    end
-  end
-  while i <= length(a)
-    push!(b.pos, a.pos[i])
-    push!(b.values, a.values[i]*c)
-    i += 1
-  end
-  return b
-end
 
 ################################################################################
 #

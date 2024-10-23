@@ -136,6 +136,11 @@
   @inferred Hecke.add_scaled_row!(A, B, RR(3))
   @test B == sparse_row(RR, [2,3,5,6], [3,6,4,3])
 
+  A = sparse_row(RR, [1,2,3,4,6,7], [4,1,1,2,1,4])
+  B = sparse_row(RR, [3,4,5], [3,6,4])
+  @inferred Hecke.add_right_scaled_row!(A, B, RR(3))
+  @test B == sparse_row(RR, [2,3,5,6], [3,6,4,3])
+
   # Maximum
 
   A = sparse_row(FlintZZ, [1, 2, 3, 5], ZZRingElem[-5, 2, 4, 10])
