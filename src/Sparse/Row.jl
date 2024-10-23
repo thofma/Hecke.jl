@@ -447,6 +447,7 @@ end
 #  Inplace scaling
 #
 ################################################################################
+
 @doc raw"""
     scale_row!(a::SRow, b::NCRingElem) -> SRow
 
@@ -454,8 +455,9 @@ Returns the (left) product of $b \times a$ and reassigns the value of $a$ to thi
 For rows, the standard multiplication is from the left.
 """
 function scale_row!(a::SRow{T}, b::T) where T
-  @assert !iszero(b)
-  if isone(b)
+  if iszero(b)
+    return empty!(a)
+  elseif isone(b)
     return a
   end
   i = 1
@@ -465,11 +467,13 @@ function scale_row!(a::SRow{T}, b::T) where T
       deleteat!(a.values, i)
       deleteat!(a.pos, i)
     else
-     i += 1
+      i += 1
     end
   end
   return a
 end
+
+scale_row!(a::SRow, b) = scale_row!(a, base_ring(a)(b))
 
 @doc raw"""
     scale_row_right!(a::SRow, b::NCRingElem) -> SRow
@@ -477,8 +481,9 @@ end
 Returns the (right) product of $a \times b$ and modifies $a$ to this product.
 """
 function scale_row_right!(a::SRow{T}, b::T) where T
-  @assert !iszero(b)
-  if isone(b)
+  if iszero(b)
+    return empty!(a)
+  elseif isone(b)
     return a
   end
   i = 1
@@ -488,15 +493,19 @@ function scale_row_right!(a::SRow{T}, b::T) where T
       deleteat!(a.values, i)
       deleteat!(a.pos, i)
     else
-     i += 1
+      i += 1
     end
   end
   return a
 end
 
+scale_row_right!(a::SRow, b) = scale_row_right!(a, base_ring(a)(b))
+
 function scale_row_left!(a::SRow{T}, b::T) where T
   return scale_row!(a,b)
 end
+
+scale_row_left!(a::SRow, b) = scale_row_left!(a, base_ring(a)(b))
 
 ################################################################################
 #
