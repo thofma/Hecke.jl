@@ -752,7 +752,7 @@ add_left_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T = add_scaled_row!(a, 
 @doc raw"""
     add_right_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Return the right scaled row $c A$ to $B$ by changing $B$ in place.
+Return the right scaled row $A c$ to $B$ by changing $B$ in place.
 """
 add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T = add_scaled_row!(a, b, c, Val(false))
 
