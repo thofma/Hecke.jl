@@ -527,10 +527,10 @@ function -(A::SRow{T}, B::SRow{T}) where T
     if length(B) == 0
       return A
     else
-      return add_scaled_row(B, A, base_ring(B)(-1))
+      return add_scaled_row(B, A, -1)
     end
   end
-  return add_scaled_row(B, A, base_ring(A)(-1))
+  return add_scaled_row(B, A, -1)
 end
 
 function -(A::SRow{T}) where {T}
@@ -761,6 +761,95 @@ add_left_scaled_row!(a::SRow{T}, b::SRow{T}, c) where T = add_scaled_row!(a, b, 
 Return the right scaled row $A c$ to $B$ by changing $B$ in place.
 """
 add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c) where T = add_scaled_row!(a, b, c, Val(false))
+
+
+################################################################################
+#
+#  Mutating arithmetics
+#
+################################################################################
+
+function zero!(z::SRow)
+  return empty!(z)
+end
+
+function neg!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return neg!(x)
+  end
+  swap!(z, -x)
+  return z
+end
+
+function neg!(z::SRow)
+  for i in 1:length(z)
+    z.values[i] = neg!(z.values[i])
+  end
+  return z
+end
+
+function add!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  if z === x
+    return add!(x, y)
+  elseif z === y
+    return add!(y, x)
+  end
+  swap!(z, x + y)
+  return z
+end
+
+function add!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return scale_row!(z, 2)
+  end
+  return add_scaled_row!(x, z, one(base_ring(x)))
+end
+
+function sub!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  if z === x
+    return sub!(x, y)
+  elseif z === y
+    return neg!(sub!(y, x))
+  end
+  swap!(z, x - y)
+  return z
+end
+
+function sub!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return empty!(z)
+  end
+  return add_scaled_row!(x, z, -1)
+end
+
+function mul!(z::SRow{T}, x::SRow{T}, c) where T
+  if z === x
+    return scale_row_right!(x, c)
+  end
+  swap!(z, x * c)
+  return z
+end
+
+function mul!(z::SRow{T}, c, y::SRow{T}) where T
+  if z === y
+    return scale_row_left!(y, c)
+  end
+  swap!(z, c * y)
+  return z
+end
+
+function addmul!(z::SRow{T}, x::SRow{T}, y) where T
+  return add_right_scaled_row!(x, z, y)
+end
+
+function addmul!(z::SRow{T}, x, y::SRow{T}) where T
+  return add_left_scaled_row!(y, z, x)
+end
+
+
+# ignore temp variable
+addmul!(z::SRow{T}, x::SRow{T}, y, t) where T = addmul!(z, x, y)
+addmul!(z::SRow{T}, x, y::SRow{T}, t) where T = addmul!(z, x, y)
 
 
 ################################################################################
