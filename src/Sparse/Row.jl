@@ -839,10 +839,16 @@ function mul!(z::SRow{T}, c, y::SRow{T}) where T
 end
 
 function addmul!(z::SRow{T}, x::SRow{T}, y) where T
+  if z === x
+    return scale_row_right!(x, y+1)
+  end
   return add_right_scaled_row!(x, z, y)
 end
 
 function addmul!(z::SRow{T}, x, y::SRow{T}) where T
+  if z === x
+    return scale_row_left!(y, x+1)
+  end
   return add_left_scaled_row!(y, z, x)
 end
 
