@@ -558,7 +558,8 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   _, mK = residue_field(order(P), P)
   mK = extend(mK, K)
   r = length(factor(map_coefficients(mK, f, cached = false)))
-  prec_scale = max(r, prec_scale)
+  prec_scale = max(nbits(r), prec_scale)
+  
   N = degree(f)
   @vprintln :PolyFactor 1  "Having $r local factors for degree $N"
 
