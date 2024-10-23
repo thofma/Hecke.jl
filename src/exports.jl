@@ -557,6 +557,7 @@ export is_snf
 export is_split
 export is_squarefree
 export is_subfield
+export is_subfield_normal
 export is_subgroup
 export is_sublattice
 export is_sublattice_with_relations
@@ -737,6 +738,7 @@ export prime_ideals_up_to
 export primes
 export primitive_closure
 export principal_generator
+export principal_subfields
 export pselmer_group
 export pselmer_group_fac_elem
 export pseudo_basis
