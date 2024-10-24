@@ -32,8 +32,8 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
-function (A::GroupAlgebra{T, S, R})(c::Vector{T}; copy::Bool = false) where {T, S, R}
-  length(c) != dim(A) && error("Dimensions don't match.")
+function (A::GroupAlgebra{T, S, R})(c::Union{Vector{T}, SRow{T}}; copy::Bool = false) where {T, S, R}
+  c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
@@ -59,17 +59,25 @@ end
 ################################################################################
 
 @doc raw"""
-    group_algebra(K::Ring, G; op = *) -> GroupAlgebra
+    group_algebra(K::Ring, G::Group; sparse::Bool = false,
+                                     cached::Bool = true) -> GroupAlgebra
 
-Returns the group ring $K[G]$.
-$G$ may be any set and `op` a group operation on $G$.
+Return the group algebra of the group $G$ over the ring $R$.
+
+# Examples
+
+```jldoctest
+julia> QG = group_algebra(QQ, small_group(8, 5))
+Group algebra
+  of generic group of order 8 with multiplication table
+  over rational field
+```
 """
-group_algebra(K::Ring, G; op = *) = GroupAlgebra(K, G, op = op)
-
-group_algebra(K::Ring, G::FinGenAbGroup) = GroupAlgebra(K, G)
-
-function group_algebra(K::Field, G; op = *)
-  A = GroupAlgebra(K, G, op = op)
+function group_algebra(K::Ring, G; op = *, sparse::Bool = false, cached::Bool = true)
+  A = GroupAlgebra(K, G; op = op , sparse = sparse, cached = cached)
+  if !(K isa Field)
+    return A
+  end
   if iszero(characteristic(K))
     A.issemisimple = 1
   else
@@ -78,18 +86,8 @@ function group_algebra(K::Field, G; op = *)
   return A
 end
 
-function group_algebra(K::Field, G::FinGenAbGroup)
-  A = group_algebra(K, G, op = +)
-  A.is_commutative = true
-  return A
-end
+group_algebra(K::Ring, G::FinGenAbGroup; cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G, cached, sparse)
 
-@doc raw"""
-    (K::Ring)[G::Group] -> GroupAlgebra
-    (K::Ring)[G::FinGenAbGroup] -> GroupAlgebra
-
-Returns the group ring $K[G]$.
-"""
 getindex(K::Ring, G::Group) = group_algebra(K, G)
 getindex(K::Ring, G::FinGenAbGroup) = group_algebra(K, G)
 
@@ -629,7 +627,7 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 #
 ################################################################################
 
-mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
+mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAssMorGen}
   domain::S
   codomain::T
   tempdomain::U
