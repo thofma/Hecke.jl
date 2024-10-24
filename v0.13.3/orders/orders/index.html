@@ -1,0 +1,1560 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.5">
+    
+    
+      
+        <title>Basics - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.2d9f7617.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.e6a45f82.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#orders" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Basics
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        Number field operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_2" type="checkbox" id="__nav_2_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Function fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Orders" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Basics
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Basics
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-and-basic-properties" class="md-nav__link">
+    Creation and basic properties
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation and basic properties">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4">
+          Quadratic and Hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Quadratic and Hermitian forms" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and Hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/basics/" class="md-nav__link">
+        Quadratic and hermitian spaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/lattices/" class="md-nav__link">
+        Lattices
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_5" type="checkbox" id="__nav_2_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_6" type="checkbox" id="__nav_2_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/Map/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        Factored Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        Sparse Linear Algebra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_8" type="checkbox" id="__nav_2_8" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_8">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_8">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-and-basic-properties" class="md-nav__link">
+    Creation and basic properties
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation and basic properties">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicates" class="md-nav__link">
+    Predicates
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/thofma/Hecke.jl/edit/master/docs/orders/orders.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+<p><a id='Orders'></a></p>
+<p><a id='Orders-1'></a></p>
+<h1 id="orders">Orders</h1>
+<p>Orders, that is, unitary subrings that are free <script type="math/tex">\mathbf{Z}</script>-modules of rank equal to the degree of the number field, are at the core of the arithmetic of number fields. In Hecke, orders are always represented using the module structure, be it the <script type="math/tex">\mathbf{Z}</script>-module structure for orders of absolute numbers fields, or the structure as a module over the maximal order of the base field in the case of relative number fields. In this chapter we mainly deal with orders of absolute fields. However, many functions apply in same way to relative extensions. There are more general definitions of orders in number fields available, but those are (currently) not implemented in Hecke.</p>
+<p>Among all orders in a fixed field, there is a unique maximal order, called the <em>maximal order</em>, or <em>ring of integers</em> of the number field. It is well known that this is the only order that is a Dedekind domain, hence has a rich ideal structure as well. The maximal order is also the integral closure of <script type="math/tex">\mathbf{Z}</script> in the number field and can also be interpreted as a normalization of any other order.</p>
+<p><a id='Creation-and-basic-properties'></a></p>
+<p><a id='Creation-and-basic-properties-1'></a></p>
+<h2 id="creation-and-basic-properties">Creation and basic properties</h2>
+<p><a id='Order-Tuple{AnticNumberField, Vector{nf_elem}}' href='#Order-Tuple{AnticNumberField, Vector{nf_elem}}'>#</a>
+<strong><code>Order</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Order</span><span class="p">(</span><span class="n">B</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">};</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">,</span> <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">,</span> <span class="n">isbasis</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+<span class="n">Order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">};</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">,</span> <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">,</span> <span class="n">isbasis</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</code></pre></div>
+<p>Returns the order generated by <script type="math/tex">B</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">B</script> defines an order. If <code>isbasis</code> is set, then elements are assumed to form a <script type="math/tex">\mathbf{Z}</script>-basis.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L738' class='documenter-source'>source</a><br></p>
+<p><a id='Order-Tuple{AnticNumberField, FakeFmpqMat}' href='#Order-Tuple{AnticNumberField, FakeFmpqMat}'>#</a>
+<strong><code>Order</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">FakeFmpqMat</span><span class="p">;</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</code></pre></div>
+<p>Returns the order which has basis matrix <script type="math/tex">A</script> with respect to the power basis of <script type="math/tex">K</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">A</script> defines an order.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L777' class='documenter-source'>source</a><br></p>
+<p><a id='Order-Tuple{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}}' href='#Order-Tuple{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}}'>#</a>
+<strong><code>Order</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="kt">fmpz_mat</span><span class="p">,</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="nb">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</code></pre></div>
+<p>Returns the order which has basis matrix <script type="math/tex">A</script> with respect to the power basis of <script type="math/tex">K</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">A</script> defines an order.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L808' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>Order(A::AbsAlgAss{&lt;: NumFieldElem}, M::PMat{&lt;: NumFieldElem, T})
+  -&gt; AlgAssRelOrd
+</code></pre></div>
+<p>Returns the order of <script type="math/tex">A</script> with basis pseudo-matrix <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/AlgAssRelOrd/Order.jl#L50' class='documenter-source'>source</a><br></p>
+<p><a id='EquationOrder-Tuple{AnticNumberField}' href='#EquationOrder-Tuple{AnticNumberField}'>#</a>
+<strong><code>EquationOrder</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">EquationOrder</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldOrd</span>
+<span class="n">equation_order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumFieldOrd</span>
+</code></pre></div>
+<p>Returns the equation order of the number field <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L895' class='documenter-source'>source</a><br></p>
+<p><a id='MaximalOrder-Tuple{AnticNumberField}' href='#MaximalOrder-Tuple{AnticNumberField}'>#</a>
+<strong><code>MaximalOrder</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">MaximalOrder</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumField</span><span class="p">{</span><span class="kt">fmpq</span><span class="p">};</span> <span class="n">discriminant</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">,</span> <span class="n">ramified_primes</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</code></pre></div>
+<p>Returns the maximal order of <script type="math/tex">K</script>. Additional information can be supplied if they are already known, as the ramified primes or the discriminant of the maximal order.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">FlintQQ</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+<span class="gp">julia&gt;</span> <span class="n">O</span> <span class="o">=</span> <span class="n">MaximalOrder</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/MaxOrd/MaxOrd.jl#L30' class='documenter-source'>source</a><br></p>
+<p><a id='MaximalOrder-Tuple{NfOrd}' href='#MaximalOrder-Tuple{NfOrd}'>#</a>
+<strong><code>MaximalOrder</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">MaximalOrder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">;</span> <span class="n">index_divisors</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">},</span> <span class="n">discriminant</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">,</span> <span class="n">ramified_primes</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</code></pre></div>
+<p>Returns the maximal order of the number field that contains <script type="math/tex">O</script>. Additional information can be supplied if they are already known, as the ramified primes, the discriminant of the maximal order or a set of integers dividing the index of <script type="math/tex">O</script> in the maximal order.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/MaxOrd/MaxOrd.jl#L9' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>MaximalOrder(O::AlgAssAbsOrd)
+</code></pre></div>
+<p>Given an order <script type="math/tex">O</script>, this function returns a maximal order containing <script type="math/tex">O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/AlgAssAbsOrd/Order.jl#L759' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>MaximalOrder(A::AbsAlgAss{fmpq}) -&gt; AlgAssAbsOrd
+</code></pre></div>
+<p>Returns a maximal order of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/AlgAssAbsOrd/Order.jl#L856' class='documenter-source'>source</a><br></p>
+<p><a id='lll-Tuple{NfOrd}' href='#lll-Tuple{NfOrd}'>#</a>
+<strong><code>lll</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">lll</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</code></pre></div>
+<p>The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/LLL.jl#L193' class='documenter-source'>source</a><br></p>
+<p><a id='any_order-Tuple{AnticNumberField}' href='#any_order-Tuple{AnticNumberField}'>#</a>
+<strong><code>any_order</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">any_order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">NumberField</span><span class="p">)</span>
+</code></pre></div>
+<p>Return some order in <script type="math/tex">K</script>. In case the defining polynomial for <script type="math/tex">K</script> is monic and integral, this just returns the equation order. In the other case <script type="math/tex">\mathbb Z[\alpha]\cap \mathbb Z[1/\alpha]</script> is returned.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L834' class='documenter-source'>source</a><br></p>
+<p><a id='Example'></a></p>
+<p><a id='Example-1'></a></p>
+<h3 id="example">Example</h3>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">FlintQQ</span><span class="p">,</span> <span class="s">&quot;x&quot;</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span> <span class="n">O</span> <span class="o">=</span> <span class="n">EquationOrder</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="go">Order of Number field over Rational Field with defining polynomial x^2 - 2</span>
+<span class="go">with Z-basis NfOrdElem[1, a]</span>
+</code></pre></div>
+<p><a id='parent-Tuple{NfOrd}' href='#parent-Tuple{NfOrd}'>#</a>
+<strong><code>parent</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">parent</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdSet</span>
+</code></pre></div>
+<p>Returns the parent of <script type="math/tex">\mathcal O</script>, that is, the set of orders of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L63' class='documenter-source'>source</a><br></p>
+<p><a id='signature-Tuple{NfOrd}' href='#signature-Tuple{NfOrd}'>#</a>
+<strong><code>signature</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">signature</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NumFieldOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Tuple</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the signature of the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NumFieldOrd.jl#L90' class='documenter-source'>source</a><br></p>
+<p><a id='nf-Tuple{NfOrd}' href='#nf-Tuple{NfOrd}'>#</a>
+<strong><code>nf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">nf</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NumFieldOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NumField</span>
+</code></pre></div>
+<p>Returns the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NumFieldOrd.jl#L7' class='documenter-source'>source</a><br></p>
+<p><a id='basis-Tuple{NfOrd}' href='#basis-Tuple{NfOrd}'>#</a>
+<strong><code>basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">basis</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NfAbsOrdElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L154' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">basis</span><span class="p">(</span><span class="n">I</span><span class="o">::</span><span class="kt">NfAbsOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">I</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/FracIdeal.jl#L252' class='documenter-source'>source</a><br></p>
+<p><a id='lll_basis-Tuple{NfOrd}' href='#lll_basis-Tuple{NfOrd}'>#</a>
+<strong><code>lll_basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">lll_basis</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">NumFieldOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>A basis for <script type="math/tex">M</script> that is reduced using the LLL algorithm for the Minkowski metric.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/LLL.jl#L686' class='documenter-source'>source</a><br></p>
+<p><a id='basis-Tuple{NfOrd, AnticNumberField}' href='#basis-Tuple{NfOrd, AnticNumberField}'>#</a>
+<strong><code>basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">basis</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">K</span><span class="o">::</span><span class="kt">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis elements of <script type="math/tex">\mathcal O</script> as elements of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L161' class='documenter-source'>source</a><br></p>
+<p><a id='pseudo_basis-Tuple{Hecke.NfRelOrd}' href='#pseudo_basis-Tuple{Hecke.NfRelOrd}'>#</a>
+<strong><code>pseudo_basis</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code>  <span class="n">pseudo_basis</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfRelOrd</span><span class="p">{</span><span class="kt">T</span><span class="p">,</span> <span class="kt">S</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">{</span><span class="kt">T</span><span class="p">},</span> <span class="kt">S</span><span class="p">}}</span>
+</code></pre></div>
+<p>Returns the pseudo-basis of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfRelOrd/NfRelOrd.jl#L150' class='documenter-source'>source</a><br></p>
+<p><a id='basis_pmatrix-Tuple{Hecke.NfRelOrd}' href='#basis_pmatrix-Tuple{Hecke.NfRelOrd}'>#</a>
+<strong><code>basis_pmatrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code>  <span class="n">basis_pmatrix</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfRelOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PMat</span>
+</code></pre></div>
+<p>Returns the basis pseudo-matrix of <script type="math/tex">\mathcal O</script> with respect to the power basis of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfRelOrd/NfRelOrd.jl#L164' class='documenter-source'>source</a><br></p>
+<p><a id='basis_nf-Tuple{Hecke.NfRelOrd}' href='#basis_nf-Tuple{Hecke.NfRelOrd}'>#</a>
+<strong><code>basis_nf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code>  <span class="n">basis_nf</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfRelOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">NumFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the elements of the pseudo-basis of <script type="math/tex">\mathcal O</script> as elements of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfRelOrd/NfRelOrd.jl#L199' class='documenter-source'>source</a><br></p>
+<p><a id='inv_coeff_ideals-Tuple{Hecke.NfRelOrd}' href='#inv_coeff_ideals-Tuple{Hecke.NfRelOrd}'>#</a>
+<strong><code>inv_coeff_ideals</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code>  <span class="n">inv_coeff_ideals</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfRelOrd</span><span class="p">{</span><span class="kt">T</span><span class="p">,</span> <span class="kt">S</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">S</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the inverses of the coefficient ideals of the pseudo basis of <script type="math/tex">O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfRelOrd/NfRelOrd.jl#L179' class='documenter-source'>source</a><br></p>
+<p><a id='basis_matrix-Tuple{NfAbsOrd}' href='#basis_matrix-Tuple{NfAbsOrd}'>#</a>
+<strong><code>basis_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">basis_matrix</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</code></pre></div>
+<p>Returns the basis matrix of <script type="math/tex">\mathcal O</script> with respect to the basis of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L191' class='documenter-source'>source</a><br></p>
+<p><a id='basis_mat_inv-Tuple{NfOrd}' href='#basis_mat_inv-Tuple{NfOrd}'>#</a>
+<strong><code>basis_mat_inv</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">basis_mat_inv</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</code></pre></div>
+<p>Returns the inverse of the basis matrix of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L206' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>basis_mat_inv(A::NfAbsOrdIdl) -&gt; fmpz_mat
+</code></pre></div>
+<p>Returns the inverse basis matrix of <script type="math/tex">A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/Ideal/Ideal.jl#L553' class='documenter-source'>source</a><br></p>
+<p><a id='gen_index-Tuple{NfOrd}' href='#gen_index-Tuple{NfOrd}'>#</a>
+<strong><code>gen_index</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gen_index</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpq</span>
+</code></pre></div>
+<p>Returns the generalized index of <script type="math/tex">\mathcal O</script> with respect to the equation order of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L315' class='documenter-source'>source</a><br></p>
+<p><a id='isindex_divisor-Tuple{NfOrd, fmpz}' href='#isindex_divisor-Tuple{NfOrd, fmpz}'>#</a>
+<strong><code>isindex_divisor</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isindex_divisor</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">d</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">isindex_divisor</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">d</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether <script type="math/tex">d</script> is a divisor of the index of <script type="math/tex">\mathcal O</script>. It is assumed that <script type="math/tex">\mathcal O</script> contains the equation order of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L360' class='documenter-source'>source</a><br></p>
+<p><a id='minkowski_matrix-Tuple{NfOrd, Int64}' href='#minkowski_matrix-Tuple{NfOrd, Int64}'>#</a>
+<strong><code>minkowski_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">minkowski_matrix</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">arb_mat</span>
+</code></pre></div>
+<p>Returns the Minkowski matrix of <script type="math/tex">\mathcal O</script>.  Thus if <script type="math/tex">\mathcal O</script> has degree <script type="math/tex">d</script>, then the result is a matrix in <script type="math/tex">\operatorname{Mat}_{d\times d}(\mathbf R)</script>. The entries of the matrix are real balls of type <code>arb</code> with radius less then <code>2^-abs_tol</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L415' class='documenter-source'>source</a><br></p>
+<p><a id='in-Tuple{nf_elem, NfOrd}' href='#in-Tuple{nf_elem, NfOrd}'>#</a>
+<strong><code>in</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">in</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">NumFieldElem</span><span class="p">,</span> <span class="n">O</span><span class="o">::</span><span class="kt">NumFieldOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Checks whether <script type="math/tex">a</script> lies in <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L525' class='documenter-source'>source</a><br></p>
+<p><a id='norm_change_const-Tuple{NfOrd}' href='#norm_change_const-Tuple{NfOrd}'>#</a>
+<strong><code>norm_change_const</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">norm_change_const</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="kt">Float64</span><span class="p">,</span> <span class="kt">Float64</span><span class="p">)</span>
+</code></pre></div>
+<p>Returns <script type="math/tex">(c_1, c_2) \in \mathbf R_{>0}^2</script> such that for all <script type="math/tex">x = \sum_{i=1}^d x_i \omega_i \in \mathcal O</script> we have <script type="math/tex">T_2(x) \leq c_1 \cdot \sum_i^d x_i^2</script> and <script type="math/tex">\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)</script>, where <script type="math/tex">(\omega_i)_i</script> is the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L641' class='documenter-source'>source</a><br></p>
+<p><a id='trace_matrix-Tuple{NfOrd}' href='#trace_matrix-Tuple{NfOrd}'>#</a>
+<strong><code>trace_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">trace_matrix</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz_mat</span>
+</code></pre></div>
+<p>Returns the trace matrix of <script type="math/tex">\mathcal O</script>, that is, the matrix <script type="math/tex">(\operatorname{tr}_{K/\mathbf Q}(b_i \cdot b_j))_{1 \leq i, j \leq d}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L1091' class='documenter-source'>source</a><br></p>
+<p><a id='+-Tuple{NfAbsOrd, NfAbsOrd}' href='#+-Tuple{NfAbsOrd, NfAbsOrd}'>#</a>
+<strong><code>+</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="o">+</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">S</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</code></pre></div>
+<p>Given two orders <script type="math/tex">R</script>, <script type="math/tex">S</script> of <script type="math/tex">K</script>, this function returns the smallest order containing both <script type="math/tex">R</script> and <script type="math/tex">S</script>. It is assumed that <script type="math/tex">R</script>, <script type="math/tex">S</script> contain the ambient equation order and have coprime index.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L1137' class='documenter-source'>source</a><br></p>
+<p><a id='poverorder-Tuple{NfOrd, fmpz}' href='#poverorder-Tuple{NfOrd, fmpz}'>#</a>
+<strong><code>poverorder</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">poverorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+<span class="n">poverorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</code></pre></div>
+<p>This function tries to find an order that is locally larger than <script type="math/tex">\mathcal O</script> at the prime <script type="math/tex">p</script>: If <script type="math/tex">p</script> divides the index <script type="math/tex">[ \mathcal O_K : \mathcal O]</script>, this function will return an order <script type="math/tex">R</script> such that <script type="math/tex">v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])</script>. Otherwise <script type="math/tex">\mathcal O</script> is returned.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/MaxOrd/MaxOrd.jl#L552' class='documenter-source'>source</a><br></p>
+<p><a id='poverorders-Tuple{NfOrd, fmpz}' href='#poverorders-Tuple{NfOrd, fmpz}'>#</a>
+<strong><code>poverorders</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">poverorders</span><span class="p">(</span><span class="n">O</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">Ord</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns all <code>p</code>-overorders of <code>O</code>, that is all overorders <code>M</code>, such that the index of <code>O</code> in <code>M</code> is a <code>p</code>-power.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/Overorders.jl#L192' class='documenter-source'>source</a><br></p>
+<p><a id='pmaximal_overorder-Tuple{NfOrd, fmpz}' href='#pmaximal_overorder-Tuple{NfOrd, fmpz}'>#</a>
+<strong><code>pmaximal_overorder</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">pmaximal_overorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+<span class="n">pmaximal_overorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</code></pre></div>
+<p>This function finds a <script type="math/tex">p</script>-maximal order <script type="math/tex">R</script> containing <script type="math/tex">\mathcal O</script>. That is, the index <script type="math/tex">[ \mathcal O_K : R]</script> is not divisible by <script type="math/tex">p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/MaxOrd/MaxOrd.jl#L584' class='documenter-source'>source</a><br></p>
+<p><a id='pradical-Tuple{NfAbsOrd, Union{Integer, fmpz}}' href='#pradical-Tuple{NfAbsOrd, Union{Integer, fmpz}}'>#</a>
+<strong><code>pradical</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">pradical</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="p">{</span><span class="kt">fmpz</span><span class="o">|</span><span class="kt">Integer</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</code></pre></div>
+<p>Given a prime number <script type="math/tex">p</script>, this function returns the <script type="math/tex">p</script>-radical <script type="math/tex">\sqrt{p\mathcal O}</script> of <script type="math/tex">\mathcal O</script>, which is just <script type="math/tex">\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k \in p\mathcal O \}</script>. It is not checked that <script type="math/tex">p</script> is prime.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/Ideal/Ideal.jl#L1966' class='documenter-source'>source</a><br></p>
+<p><a id='pradical-Tuple{Hecke.NfRelOrd, Union{Hecke.NfRelOrdIdl, NfOrdIdl}}' href='#pradical-Tuple{Hecke.NfRelOrd, Union{Hecke.NfRelOrdIdl, NfOrdIdl}}'>#</a>
+<strong><code>pradical</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code>  <span class="n">pradical</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfRelOrd</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfRelOrdIdl</span>
+</code></pre></div>
+<p>Given a prime ideal <script type="math/tex">P</script>, this function returns the <script type="math/tex">P</script>-radical <script type="math/tex">\sqrt{P\mathcal O}</script> of <script type="math/tex">\mathcal O</script>, which is just <script type="math/tex">\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k \in P\mathcal O \}</script>. It is not checked that <script type="math/tex">P</script> is prime.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfRelOrd/Ideal.jl#L799' class='documenter-source'>source</a><br></p>
+<p><a id='ring_of_multipliers-Tuple{NfAbsOrdIdl}' href='#ring_of_multipliers-Tuple{NfAbsOrdIdl}'>#</a>
+<strong><code>ring_of_multipliers</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ring_of_multipliers</span><span class="p">(</span><span class="n">I</span><span class="o">::</span><span class="kt">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</code></pre></div>
+<p>Computes the order <script type="math/tex">(I : I)</script>, which is the set of all <script type="math/tex">x \in K</script> with <script type="math/tex">xI \subseteq I</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/MaxOrd/MaxOrd.jl#L628' class='documenter-source'>source</a><br></p>
+<p><a id='Invariants'></a></p>
+<p><a id='Invariants-1'></a></p>
+<h2 id="invariants">Invariants</h2>
+<p><a id='discriminant-Tuple{NfOrd}' href='#discriminant-Tuple{NfOrd}'>#</a>
+<strong><code>discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Returns the discriminant of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L283' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>discriminant(E::EllCrv{T}) -&gt; T
+</code></pre></div>
+<p>Computes the discriminant of <script type="math/tex">E</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/EllCrv/EllCrv.jl#L463' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>discriminant(O::AlgssRelOrd)
+</code></pre></div>
+<p>Returns the discriminant of <script type="math/tex">O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/AlgAssRelOrd/Order.jl#L411' class='documenter-source'>source</a><br></p>
+<p><a id='discriminant-Tuple{NfAbsOrd}' href='#discriminant-Tuple{NfAbsOrd}'>#</a>
+<strong><code>discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Returns the discriminant of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L283' class='documenter-source'>source</a><br></p>
+<p><a id='reduced_discriminant-Tuple{NfOrd}' href='#reduced_discriminant-Tuple{NfOrd}'>#</a>
+<strong><code>reduced_discriminant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">reduced_discriminant</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Returns the reduced discriminant, that is, the largest elementary divisor of the trace matrix of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L294' class='documenter-source'>source</a><br></p>
+<p><a id='degree-Tuple{NfOrd}' href='#degree-Tuple{NfOrd}'>#</a>
+<strong><code>degree</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">degree</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NumFieldOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>Returns the degree of <script type="math/tex">\mathcal O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NumFieldOrd.jl#L73' class='documenter-source'>source</a><br></p>
+<p><a id='index-Tuple{NfOrd}' href='#index-Tuple{NfOrd}'>#</a>
+<strong><code>index</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">index</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Assuming that the order <script type="math/tex">\mathcal O</script> contains the equation order <script type="math/tex">\mathbf Z[\alpha]</script> of the ambient number field, this function returns the index <script type="math/tex">[ \mathcal O : \mathbf Z]</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L334' class='documenter-source'>source</a><br></p>
+<p><a id='different-Tuple{NfOrd}' href='#different-Tuple{NfOrd}'>#</a>
+<strong><code>different</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">different</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</code></pre></div>
+<p>The differnt ideal of <script type="math/tex">R</script>, that is, the ideal generated by all differents of elements in <script type="math/tex">R</script>. For Gorenstein orders, this is also the inverse ideal of the co-different.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L1283' class='documenter-source'>source</a><br></p>
+<p><a id='codifferent-Tuple{NfOrd}' href='#codifferent-Tuple{NfOrd}'>#</a>
+<strong><code>codifferent</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">codifferent</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</code></pre></div>
+<p>The codiffernt ideal of <script type="math/tex">R</script>, i.e. the trace-dual of <script type="math/tex">R</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L1333' class='documenter-source'>source</a><br></p>
+<p><a id='isgorenstein-Tuple{NfOrd}' href='#isgorenstein-Tuple{NfOrd}'>#</a>
+<strong><code>isgorenstein</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isgorenstein</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the order <code>\mathcal{O}</code> is Gorenstein.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/Overorders.jl#L1082' class='documenter-source'>source</a><br></p>
+<p><a id='isbass-Tuple{NfOrd}' href='#isbass-Tuple{NfOrd}'>#</a>
+<strong><code>isbass</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isbass</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the order <code>\mathcal{O}</code> is Bass.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/Overorders.jl#L1046' class='documenter-source'>source</a><br></p>
+<p><a id='isequation_order-Tuple{NfOrd}' href='#isequation_order-Tuple{NfOrd}'>#</a>
+<strong><code>isequation_order</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isequation_order</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NumFieldOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether <script type="math/tex">\mathcal O</script> is the equation order of the ambient number field <script type="math/tex">K</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NumFieldOrd.jl#L33' class='documenter-source'>source</a><br></p>
+<p><a id='zeta_log_residue-Tuple{NfOrd, Float64}' href='#zeta_log_residue-Tuple{NfOrd, Float64}'>#</a>
+<strong><code>zeta_log_residue</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">zeta_log_residue</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">error</span><span class="o">::</span><span class="kt">Float64</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">arb</span>
+</code></pre></div>
+<p>Computes the residue of the zeta function of <script type="math/tex">\mathcal O</script> at <script type="math/tex">1</script>. The output will be an element of type <code>arb</code> with radius less then <code>error</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/Zeta.jl#L337' class='documenter-source'>source</a><br></p>
+<p><a id='ramified_primes-Tuple{NfOrd}' href='#ramified_primes-Tuple{NfOrd}'>#</a>
+<strong><code>ramified_primes</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ramified_primes</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the list of prime numbers that divide <script type="math/tex">\operatorname{disc}(\mathcal O)</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L378' class='documenter-source'>source</a><br></p>
+<p><a id='Arithmetic'></a></p>
+<p><a id='Arithmetic-1'></a></p>
+<h2 id="arithmetic">Arithmetic</h2>
+<p>Progress and intermediate results of the functions mentioned here can be obtained via <code>verbose_level</code>, supported are</p>
+<ul>
+<li><code>ClassGroup</code></li>
+<li><code>UnitGroup</code></li>
+</ul>
+<p>All of the functions have a very similar interface: they return an abelian group and a map converting elements of the group into the objects required. The maps also allow a point-wise inverse to server as the <em>discrete logarithm</em> map. For more information on abelian group, see <a href="../../abelian/introduction/#AbelianGroupLink">here</a>, for ideals, <a href="../ideals/#NfOrdIdlLink">here</a>.</p>
+<ul>
+<li><a href="../ideals/#torsion_unit_group-Tuple{NfOrd}"><code>torsion_unit_group(::NfOrd)</code></a></li>
+<li><a href="../ideals/#unit_group-Tuple{NfOrd}"><code>unit_group(::NfOrd)</code></a></li>
+<li><a href="../ideals/#unit_group_fac_elem-Tuple{NfOrd}"><code>unit_group_fac_elem(::NfOrd)</code></a></li>
+<li><a href="../ideals/#sunit_group-Tuple{Vector{NfOrdIdl}}"><code>sunit_group(::Vector{NfOrdIdl})</code></a></li>
+<li><a href="../ideals/#sunit_group_fac_elem-Tuple{Vector{NfOrdIdl}}"><code>sunit_group_fac_elem(::Vector{NfOrdIdl})</code></a></li>
+<li><a href="../ideals/#sunit_mod_units_group_fac_elem-Tuple{Vector{NfOrdIdl}}"><code>sunit_mod_units_group_fac_elem(::Vector{NfOrdIdl})</code></a></li>
+<li><a href="../ideals/#class_group-Tuple{NfOrd}"><code>class_group(::NfOrd)</code></a></li>
+<li><a href="../ideals/#picard_group-Tuple{NfOrd}"><code>picard_group(::NfOrd)</code></a></li>
+<li><a href="../ideals/#narrow_class_group-Tuple{NfOrd}"><code>narrow_class_group(::NfOrd)</code></a></li>
+</ul>
+<p>For the processing of units, there are a couple of helper functions also available:</p>
+<p><a id='isindependent' href='#isindependent'>#</a>
+<strong><code>isindependent</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">isindependent</span><span class="p">{</span><span class="kt">T</span><span class="p">}(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span>
+</code></pre></div>
+<p>Given an array of non-zero units in a number field, returns whether they are multiplicatively independent.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/Unit/Independent.jl#L23' class='documenter-source'>source</a><br></p>
+<p><a id='Predicates'></a></p>
+<p><a id='Predicates-1'></a></p>
+<h2 id="predicates">Predicates</h2>
+<p><a id='iscontained-Tuple{NfAbsOrd, NfAbsOrd}' href='#iscontained-Tuple{NfAbsOrd, NfAbsOrd}'>#</a>
+<strong><code>iscontained</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">iscontained</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">,</span> <span class="n">S</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Checks if <script type="math/tex">R</script> is contained in <script type="math/tex">S</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NfOrd/NfOrd.jl#L1072' class='documenter-source'>source</a><br></p>
+<p><a id='ismaximal-Tuple{NfAbsOrd}' href='#ismaximal-Tuple{NfAbsOrd}'>#</a>
+<strong><code>ismaximal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ismaximal</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Tests if the order <script type="math/tex">R</script> is maximal. This might trigger the computation of the maximal order.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/24543d03c4f31d1fae753475008c200cb9be3534/src/NumFieldOrd/NumFieldOrd.jl#L45' class='documenter-source'>source</a><br></p>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../introduction/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Introduction" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Introduction
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../elements/" class="md-footer__link md-footer__link--next" aria-label="Next: Elements" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Elements
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.467223ff.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>
