@@ -12,10 +12,11 @@ function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::
   pp, e = Hecke.ppio(oF, p)
   #We now want the discrete logarithm of the images of the elements of R in F
   #We don't need the full group, just the quotient by p
-  #We compute a generator and cache the powers in dl
-  #Then we will compute the discrete logarithms by checking the values in dl
+  #We compute a generator and
+  # - cache the powers in dl if pp is small
+  # -  we will compute the discrete logarithms by checking the values in dl
+  #    or via BSGS
   dl = Dict{Hecke.Nemo.fpFieldElem, Int}()
-  dl[F(1)] = 0
   exp_to_test = divexact(pp, p)
   x = rand(F)
   while true
@@ -28,12 +29,21 @@ function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::
     end
     x = rand(F)
   end
-  y = x
-  for i = 1:pp-1
-    dl[y] = i
-    y *= x
+  if nbits(pp) < 19 # seems to be a reasonable cutoff
+    y = one(F)
+    for i = 0:pp-1
+      dl[y] = i
+      y *= x
+    end
   end
-  return matrix(T, 1, length(R), Int[dl[image(mF1, R[i], D[i], cached, pp)^e] % p for i in 1:length(R)])
+  ma = Vector{Int}(undef, length(R))
+  for i in 1:length(R)
+    imgd = image(mF1, R[i], D[i], cached, pp)^e
+    ma[i] = get!(dl, imgd) do
+      Hecke.baby_step_giant_step(x, pp, imgd, dl) % p
+    end
+  end
+  return matrix(T, 1, length(R), ma)
 end
 
 #= idea

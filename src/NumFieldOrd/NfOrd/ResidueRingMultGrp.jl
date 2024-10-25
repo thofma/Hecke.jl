@@ -714,6 +714,8 @@ of the first step. This allows to speed up subsequent calls with
 the same $g$ and $n$.
 """
 function baby_step_giant_step(g, n, h, cache::Dict)
+  # if cache is given, it must be empty or contain
+  # *all* big steps
   @assert typeof(g) == typeof(h)
   m = ZZRingElem(isqrt(n) + 1)
   if isempty(cache)

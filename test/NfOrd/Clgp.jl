@@ -285,4 +285,11 @@ end
       @test order(c) == 892
     end
   end
+
+  # saturation at large primes
+  
+  # the cyclotomic units are saturated at any prime l, since the class number h_149^+ is one.
+  K, = cyclotomic_real_subfield(149, "a")
+  u = Hecke._cyclotomic_units_totally_real_prime_conductor(K, 149)
+  @test nrows(Hecke.RelSaturate.compute_candidates_for_saturate(FacElem.(u[2:end]), next_prime(2^25))) == 0
 end
