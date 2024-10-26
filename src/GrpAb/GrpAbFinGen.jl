@@ -586,6 +586,8 @@ function order(A::FinGenAbGroup)
   return prod(elementary_divisors(A))
 end
 
+order(::Type{Int}, A::FinGenAbGroup) = Int(order(A))
+
 ################################################################################
 #
 #  Exponent
