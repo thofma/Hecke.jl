@@ -325,7 +325,7 @@ end
 
 # Copy B into A at position (i, j)
 function _copy_matrix_into_matrix(A::ZZMatrix, i::Int, j::Int, B::ZZMatrix)
-  @GC.preserve A B begin
+  GC.@preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
         d = mat_entry_ptr(B, 1 + k, 1 + l)
@@ -337,7 +337,7 @@ function _copy_matrix_into_matrix(A::ZZMatrix, i::Int, j::Int, B::ZZMatrix)
 end
 
 function _copy_matrix_into_matrix(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
-  @GC.preserve A B begin
+  GC.@preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
         d = mat_entry_ptr(B, 1 + k, 1 + l)
