@@ -2284,6 +2284,7 @@ function automorphism_group_generators(g::QuadBin{ZZRingElem})
       f = matrix(ZZ, 2, 2, [a, b, n, -a])
       push!(gens, t* f * inv(t))
     end
+    # Stevell can make sense of this:
 #     if is_ambiguous && !(a==0 ||(a != 0 && c ==0 && b % (2*a) == 0))
 #       error("missing case")
 #    end
