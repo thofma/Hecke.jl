@@ -216,7 +216,7 @@
 
     g = binary_quadratic_form(-4, 3, 0)
     gens = automorphism_group_generators(g)
-    @test gens == [ZZ[-1 0;0 -1]]
+    @test gens == [ZZ[-1 0;0 -1], ZZ[-4 3; -5 4]]
 
     g = binary_quadratic_form(1, 2, 0)
     gens = automorphism_group_generators(g)
