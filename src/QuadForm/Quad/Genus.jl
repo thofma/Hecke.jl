@@ -1613,7 +1613,7 @@ function show(io::IO, ::MIME"text/plain", G::QuadGenus)
   print(io, Indent())
   for (pl, v) in sig
     println(io)
-    Base.show(terse(io), Lowercase(), pl)
+    print(terse(io), Lowercase(), pl)
     print(io, " => ", v)
   end
   print(io, Dedent())
