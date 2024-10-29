@@ -2135,7 +2135,7 @@ end
 
 function _lattice_to_binary_quadratic_form(L::QuadLat)
   M = absolute_basis_matrix(L) # This corresponds to a basis of L
-  @assert nrows(M) == 2 && ncols(M) == 2
+  @assert nrows(M) == 2
   G = gram_matrix(ambient_space(L), M)
   GG = change_base_ring(FlintQQ, G)
   d = denominator(GG)
@@ -2284,10 +2284,6 @@ function automorphism_group_generators(g::QuadBin{ZZRingElem})
       f = matrix(ZZ, 2, 2, [a, b, n, -a])
       push!(gens, t* f * inv(t))
     end
-    # Stevell can make sense of this:
-#     if is_ambiguous && !(a==0 ||(a != 0 && c ==0 && b % (2*a) == 0))
-#       error("missing case")
-#    end
     for T in gens
       @assert _action(g, T) == g
     end
