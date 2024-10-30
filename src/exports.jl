@@ -241,7 +241,6 @@ export content_ideal
 export contract
 export coordinates
 export coprime_base
-export coprime_base_insert
 export copy
 export cos
 export cover
