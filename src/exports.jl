@@ -241,7 +241,6 @@ export content_ideal
 export contract
 export coordinates
 export coprime_base
-export coprime_base_insert
 export copy
 export cos
 export cover
@@ -867,7 +866,6 @@ export strong_echelon_form
 export structure_constant_algebra
 export structure_constant_table
 export sub
-export subalgebra
 export subfields
 export subgroups
 export submodules
