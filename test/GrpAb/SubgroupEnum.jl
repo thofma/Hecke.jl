@@ -220,4 +220,15 @@
       @test all([order(t[1]) == 7*3 for t in T])
     end
   end
+
+  # test for no subgroups
+
+  G = abelian_group([9, 3, 3])
+  @test length(collect(subgroups(G; index = 2))) == 0
+  @test length(collect(subgroups(G; order = 10001323))) == 0
+  @test length(collect(subgroups(G; subtype = [6, 6, 6]))) == 0
+  @test length(collect(subgroups(G; quotype = [6, 6, 6]))) == 0
+
+  G = abelian_group([2])
+  @test length(collect(subgroups(G; quotype = [3]))) == 0
 end

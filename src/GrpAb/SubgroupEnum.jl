@@ -875,6 +875,13 @@ end
 # Same as above but now allow a function to be applied to the output
 function _subgroups(G::FinGenAbGroup; subtype = [-1], quotype = [-1], order = -1,
                                     index = -1, fun = sub)
+  if !is_divisible_by(Hecke.order(G), order) || # the -1 default is ok
+     !is_divisible_by(Hecke.order(G), index) ||
+     (subtype != [-1] && !has_quotient(G, subtype)) ||
+     (quotype != [-1] && !has_quotient(G, quotype))
+    return ()
+  end
+
   return ( fun(G, convert(Vector{FinGenAbGroupElem}, z)) for z in _subgroups_gens(G, subtype, quotype, order, index))
 end
 
@@ -918,14 +925,6 @@ function subgroups(G::FinGenAbGroup; subtype = :all,
   # Handle the parameters
 
   options = Int16[ subtype != :all, quotype != :all, order != -1, index != -1]
-
-  if mod(Hecke.order(G), index) != 0
-    error("Index must divide the group order")
-  end
-
-  if mod(Hecke.order(G), order) != 0
-    error("Index must divide the group order")
-  end
 
   if sum(options) > 1
     error("Currently only one non-default parameter is supported.")
