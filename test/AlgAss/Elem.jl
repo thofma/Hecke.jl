@@ -94,4 +94,15 @@
   QG = Hecke._group_algebra(QQ, G; sparse = true);
   @test QG(Dict(a => 2, zero(G) => 1)) == 2 * QG(a) + 1 * QG(zero(G))
   @test QG(a => ZZ(2), zero(G) => QQ(1)) == 2 * QG(a) + 1 * QG(zero(G))
+
+  let
+    # Jordan-Chevalley
+    Qx, x = QQ[:x]
+    A = associative_algebra((x^2 + 1)^2)
+    alpha = basis(A)[2]
+    u, v = Hecke.jordan_chevalley_decomposition(alpha)
+    @test u == A(QQ.([0, 3//2, 0, 1//2]))
+    @test v == A(QQ.([0, -1//2, 0, -1//2]))
+    @test u + v == alpha
+  end
 end
