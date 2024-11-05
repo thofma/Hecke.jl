@@ -822,6 +822,10 @@ function sub!(z::SRow{T}, x::SRow{T}) where T
   return add_scaled_row!(x, z, -1)
 end
 
+function mul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
 function mul!(z::SRow{T}, x::SRow{T}, c) where T
   if z === x
     return scale_row_right!(x, c)
@@ -838,6 +842,10 @@ function mul!(z::SRow{T}, c, y::SRow{T}) where T
   return z
 end
 
+function addmul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
 function addmul!(z::SRow{T}, x::SRow{T}, y) where T
   if z === x
     return scale_row_right!(x, y+1)
@@ -852,10 +860,30 @@ function addmul!(z::SRow{T}, x, y::SRow{T}) where T
   return add_left_scaled_row!(y, z, x)
 end
 
+function submul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
+function submul!(z::SRow{T}, x::SRow{T}, y) where T
+  if z === x
+    return scale_row_right!(x, -y+1)
+  end
+  return add_right_scaled_row!(x, z, -y)
+end
+
+function submul!(z::SRow{T}, x, y::SRow{T}) where T
+  if z === x
+    return scale_row_left!(y, -x+1)
+  end
+  return add_left_scaled_row!(y, z, -x)
+end
+
 
 # ignore temp variable
 addmul!(z::SRow{T}, x::SRow{T}, y, t) where T = addmul!(z, x, y)
 addmul!(z::SRow{T}, x, y::SRow{T}, t) where T = addmul!(z, x, y)
+submul!(z::SRow{T}, x::SRow{T}, y, t) where T = submul!(z, x, y)
+submul!(z::SRow{T}, x, y::SRow{T}, t) where T = submul!(z, x, y)
 
 
 ################################################################################
