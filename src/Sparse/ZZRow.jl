@@ -276,7 +276,6 @@ end
 
 function add_scaled_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingElem, sr::SRow{ZZRingElem} = sparse_row(ZZ))
   empty!(sr)
-  @assert c != 0
   n = ZZRingElem()
   pi = 1
   pj = 1
@@ -323,6 +322,9 @@ function add_scaled_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingEle
 end
 
 function add_scaled_row!(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingElem, sr::SRow{ZZRingElem} = sparse_row(ZZ))
+  if iszero(c)
+    return Aj
+  end
   _t = sr
   sr = add_scaled_row(Ai, Aj, c, sr)
   @assert _t === sr

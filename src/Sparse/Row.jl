@@ -523,9 +523,9 @@ scale_row_left!(a::SRow, b) = scale_row_left!(a, base_ring(a)(b))
 
 function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
-    return B
+    return deepcopy(B)
   elseif length(B.values) == 0
-    return A
+    return deepcopy(A)
   end
   return add_scaled_row(A, B, one(base_ring(A)))
 end
@@ -533,7 +533,7 @@ end
 function -(A::SRow{T}, B::SRow{T}) where T
   if length(A) == 0
     if length(B) == 0
-      return A
+      return deepcopy(A)
     else
       return add_scaled_row(B, A, -1)
     end
