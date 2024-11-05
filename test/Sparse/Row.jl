@@ -204,4 +204,40 @@
   B = sparse_row(F,[1],[y])
   C = add_scaled_row(A,B,F(1))
   @test C == A+B
+
+  # mutating arithmetic
+  randcoeff() = begin
+    n = rand((1,1,1,2,5,7,15))
+    return rand(-2^n:2^n)
+  end
+  Main.equality(A::SRow, B::SRow) = A == B
+  @testset "mutating arithmetic; R = $R" for R in (ZZ, QQ)
+    for _ in 1:10
+      maxind_A = rand(0:10)
+      inds_A = Hecke.Random.randsubseq(1:maxind_A, rand())
+      vals_A = elem_type(R)[R(rand((-1, 1)) * rand(1:10)) for _ in 1:length(inds_A)]
+      A = sparse_row(R, inds_A, vals_A)
+
+      maxind_B = rand(0:10)
+      inds_B = Hecke.Random.randsubseq(1:maxind_B, rand())
+      vals_B = elem_type(R)[R(rand((-1, 1)) * rand(1:10)) for _ in 1:length(inds_B)]
+      B = sparse_row(R, inds_B, vals_B)
+
+      test_mutating_op_like_zero(zero, zero!, A)
+
+      test_mutating_op_like_neg(-, neg!, A)
+
+      test_mutating_op_like_add(+, add!, A, B)
+      test_mutating_op_like_add(-, sub!, A, B)
+      test_mutating_op_like_mul(*, mul!, A, randcoeff(); right_factor_is_scalar=true)
+      test_mutating_op_like_mul(*, mul!, randcoeff(), A; left_factor_is_scalar=true)
+      test_mutating_op_like_mul(*, mul!, A, ZZ(randcoeff()); right_factor_is_scalar=true)
+      test_mutating_op_like_mul(*, mul!, ZZ(randcoeff()), A; left_factor_is_scalar=true)
+
+      test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, B, randcoeff(); right_factor_is_scalar=true)
+      test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, randcoeff(), B; left_factor_is_scalar=true)
+      test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, B, randcoeff(); right_factor_is_scalar=true)
+      test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, randcoeff(), B; left_factor_is_scalar=true)
+    end
+  end
 end

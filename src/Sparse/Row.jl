@@ -105,6 +105,14 @@ function Base.empty!(A::SRow)
   return A
 end
 
+function Base.empty(A::SRow)
+  return sparse_row(base_ring(A))
+end
+
+function zero(A::SRow)
+  return empty(A)
+end
+
 function swap!(A::SRow, B::SRow)
   A.pos, B.pos = B.pos, A.pos
   A.values, B.values = B.values, A.values
