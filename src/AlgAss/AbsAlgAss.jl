@@ -1241,3 +1241,96 @@ function _skolem_noether(h::AbsAlgAssMor)
     error("Not impelemented yet")
   end
 end
+
+################################################################################
+#
+#  Maximal separable subalgebra
+#
+################################################################################
+
+# (Part of) Algorithm 5.5 of Lenstra-Silverberg, Algorithms for Commutative Algebras Over the Rational Numbers
+# (they only state it for QQ, but should be valid in charcteristic zero)
+function maximal_separable_subalgebra(A::AbstractAssociativeAlgebra)
+  @req is_commutative(A) "Algebra must be commutative"
+  @req is_zero(characteristic(base_ring(A))) "Characteristic of base ring must be zero"
+
+  B = basis(A)
+  BU = eltype(B)[]
+  for b in B
+    u, v = jordan_chevalley_decomposition(b)
+    push!(BU, u)
+  end
+  R = echelon_form(basis_matrix(BU); trim = true)
+  return _subalgebra(A, [elem_from_mat_row(A, R, i) for i in 1:nrows(R)])
+end
+
+################################################################################
+#
+#  Multiplicative dependencies
+#
+################################################################################
+
+function _multiplicative_dependencies(A::AbstractAssociativeAlgebra, S::Vector)
+  @req is_commutative(A) "Algebra must be commutative"
+  @req is_zero(characteristic(base_ring(A))) "Characteristic of base ring must be zero"
+
+  B, BtoA = maximal_separable_subalgebra(A)
+
+  nfs = _as_number_fields(B)
+
+  jcs = first.(jordan_chevalley_decomposition.(S))
+  jc = [has_preimage_with_preimage(BtoA, x)[2] for x in first.(jordan_chevalley_decomposition.(S))]
+
+  F = free_abelian_group(length(S))
+
+  kernels = ZZMatrix[]
+
+  for (K, BtoK) in nfs
+    eltsinK = BtoK.(jc)
+    if any(is_zero, eltsinK)
+      error("oopsie, elements not invertible")
+    end
+    # hack to get something
+    v = _mult_dep(K, eltsinK)
+    Hm = reduce(vcat, v)
+    push!(kernels, Hm)
+  end
+
+  J = radical(A)
+  m = dim(A) # TODO: compute the nilpotency index
+  logimgs = elem_type(A)[]
+  for (s, pis) in zip(S, jcs)
+    w = s*inv(pis)
+    v = 1 - w
+    logimg = -sum(v^i * QQ(1//i) for i in 1:m)
+    push!(logimgs, logimg)
+  end
+  Blog, = integral_split(basis_matrix(logimgs), ZZ)
+
+  push!(kernels, kernel(Blog, side = :left))
+
+  RtoF = reduce((x, y) -> intersect(x, y, false)[2], [sub(F, k, false)[2] for k in kernels])
+  return [_eltseq(x.coeff) for x in RtoF.(gens(domain(RtoF)))]
+end
+
+function _multiplicative_dependencies(v::Vector{<:MatElem})
+  A = matrix_algebra(QQ, v)
+  S = A.(v)
+  _multiplicative_dependencies(A, S)
+end
+
+# TODO: Use Ge
+function _mult_dep(K::AbsSimpleNumField, S::Vector)
+  OK = maximal_order(K)
+  sup = reduce(vcat, [ support(s, OK) for s in S])
+  # I don't know why noone ever implemented this
+  if isempty(sup)
+    push!(sup, prime_ideals_over(OK, 2)[1])
+  end
+  U, mU = sunit_group(unique!(sup))
+  SinU = .\(mU, S)
+  F = free_abelian_group(length(SinU))
+  h = hom(F, U, SinU)
+  K, mK = kernel(h)
+  [x.coeff for x in mK.(gens(K))]
+end

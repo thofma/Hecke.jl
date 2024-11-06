@@ -247,4 +247,26 @@
   h = hom(A, A, inv(X) .* basis(A) .* X)
   a = Hecke._skolem_noether(h)
   @test all(h(b) == inv(a) * b * a for b in basis(A))
+
+  let
+    # maximal separable subalgebra
+    Qx, x = QQ[:x]
+    A = associative_algebra((x^2 + 1)^2)
+    B, BtoA = Hecke.maximal_separable_subalgebra(A)
+    @test domain(BtoA) === B
+    @test codomain(BtoA) == A
+    @test dim(B) == 2
+    @test is_simple(B)
+  end
+
+  let
+    # multiplicative depdendencies
+    a = QQ[1 2; 3 4]
+    c = QQ[-3 2; 3 0]
+    v = [a, a^2, c, c*a]
+    m = Hecke._multiplicative_dependencies([a, a^2, c, c*a])
+    for w in m
+      @test isone(prod(v[i]^Int(w[i]) for i in 1:length(v)))
+    end
+  end
 end

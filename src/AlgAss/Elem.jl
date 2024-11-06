@@ -1227,3 +1227,50 @@ end
 function denominator(x::AbstractAssociativeAlgebraElem)
   return lcm([ denominator(y) for y in coefficients(x, copy = false) ])
 end
+
+################################################################################
+#
+#  Jordan-Chevalley decomposition
+#
+################################################################################
+
+function _gcdx3(a, b, c)
+  g, u, v = gcdx(b, c)
+  g, s, t = gcdx(a, g)
+  @assert s * a + u * t * b + v * t * c == g
+  return g, s, u * t, v * t
+end
+
+# Algorithm 5.1 of Lenstra-Silverberg, Algorithms for Commutative Algebras Over the Rational Numbers
+# (they only state it for QQ, but should be valid in charcteristic zero
+function jordan_chevalley_decomposition(x::AbstractAssociativeAlgebraElem)
+  @req is_commutative(parent(x)) "Algebra must be commutative"
+  @req is_zero(characteristic(base_ring(parent(x)))) "Base field must be of characteristic zero"
+  g = minpoly(x)
+  gp = derivative(g)
+  ggpgcd = gcd(g, gp)
+  ghat = divexact(g, ggpgcd)
+  ghatp = derivative(ghat)
+  m = zero_matrix(base_ring(gp), degree(ggpgcd), degree(ggpgcd))
+  h = mod(ghatp, ggpgcd)
+  for l in 0:degree(h)
+    m[1, l + 1] = coeff(h, l)
+  end
+  for i in 1:(degree(ggpgcd)-1)
+    h = mod(i * shift_left(ghat, i - 1) + shift_left(ghatp, i), ggpgcd)
+    for l in 0:degree(h)
+      m[i + 1, l + 1] = coeff(h, l)
+    end
+  end
+  v = [zero(QQ) for k in 1:degree(ggpgcd)]
+  if length(v) > 0
+    v[1] = 1
+  end
+  fl, _q = can_solve_with_solution(m, v; side = :left)
+  @assert fl
+  q = parent(g)(_q)
+  v = q(x)*ghat(x)
+  u = x - v
+  return u, v
+end
+
