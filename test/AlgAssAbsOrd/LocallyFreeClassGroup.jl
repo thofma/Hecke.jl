@@ -1,6 +1,6 @@
 @testset "Locally free class group of group algebras" begin
   G = small_group(8, 4)
-  A = GroupAlgebra(FlintQQ, G)
+  A = GroupAlgebra(QQ, G)
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[ 2 ]
@@ -23,7 +23,7 @@
   @test C.snf == ZZRingElem[ 2 ]
 
   G = small_group(10, 2)
-  A = GroupAlgebra(FlintQQ, G)
+  A = GroupAlgebra(QQ, G)
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
@@ -34,18 +34,18 @@
   @test C.snf == ZZRingElem[]
 
   G = small_group(12, 3)
-  A = StructureConstantAlgebra(GroupAlgebra(FlintQQ, G))[1]
+  A = StructureConstantAlgebra(GroupAlgebra(QQ, G))[1]
   O = Order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
 end
 
 @testset "Locally free class group of matrix algebras" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 47
   K, a = number_field(f, "a")
   A = StructureConstantAlgebra(matrix_ring(K, 2))
-  A, _ = Hecke.restrict_scalars(A, FlintQQ)
+  A, _ = Hecke.restrict_scalars(A, QQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
   @test C.snf == ZZRingElem[ 5 ]
@@ -53,14 +53,14 @@ end
   f = x^2 + 26
   K, a = number_field(f, "a")
   A = StructureConstantAlgebra(matrix_ring(K, 2))
-  A, _ = Hecke.restrict_scalars(A, FlintQQ)
+  A, _ = Hecke.restrict_scalars(A, QQ)
   O = MaximalOrder(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
   @test C.snf == ZZRingElem[ 6 ]
 end
 
 @testset "Discrete logarithm of locally free class group" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^12 - x^11 + x^9 - x^8 + x^6 - x^4 + x^3 - x + 1
   K, a = number_field(f, "a") # Gal(K/Q) = C2 x C6 (aka 12T2 aka small_group(12, 5))
   OK = maximal_order(K)

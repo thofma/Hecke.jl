@@ -177,9 +177,9 @@ place_type(::Type{QQField}) = PosInf
 
 fractional_ideal_type(::QQField) = ZZFracIdl
 
-elem_in_nf(x::ZZRingElem) = FlintQQ(x)
+elem_in_nf(x::ZZRingElem) = QQ(x)
 
-nf(::ZZRing) = FlintQQ
+nf(::ZZRing) = QQ
 
 # Infinite places
 

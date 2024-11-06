@@ -30,7 +30,7 @@ end
 
 @testset "Picard group of maximal orders of algebras" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^3 - 10x^2 - 3x - 2
   g = x^2 - 9x + 1
   A = StructureConstantAlgebra(f*g)
@@ -50,7 +50,7 @@ end
 @testset "Picard group of non maximal orders of algebras" begin
 
   G = abelian_group([2, 3])
-  A = GroupAlgebra(FlintQQ, G)
+  A = GroupAlgebra(QQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)
   @test is_snf(P)
@@ -66,14 +66,14 @@ end
   @test mP\ideal(O, one(O)) in P
 
   G = abelian_group([3, 3])
-  A = GroupAlgebra(FlintQQ, G)
+  A = GroupAlgebra(QQ, G)
   O = Order(A, basis(A))
   P, mP = picard_group(O)
   @test is_snf(P)
   @test P.snf == ZZRingElem[ 3 ]
   @test test_disc_log_picard(P, mP, O)
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^3 - 10x^2 - 3x - 2
   g = x^2 - 9x + 1
   A = StructureConstantAlgebra(f*g)
@@ -100,7 +100,7 @@ end
 
 @testset "Unit groups of orders of algebras" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^3 - 12*x^2 - 6324*x + 459510
   K, a = number_field(f, "a", cached = false)
   OK = equation_order(K)

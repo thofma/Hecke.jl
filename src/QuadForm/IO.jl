@@ -22,7 +22,7 @@ end
 function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
   K = nf(base_ring(L))
   if !skip_field
-    println(io, "Qx, x = polynomial_ring(FlintQQ, :x, cached = false)")
+    println(io, "Qx, x = polynomial_ring(QQ, :x, cached = false)")
     f = absolute_minpoly(gen(K))
     pol = string(f)
     pol = replace(pol, string(var(parent(f))) => "x")
@@ -51,7 +51,7 @@ end
 function to_hecke(io::IO, L::HermLat; target = "L", skip_field = false)
   E = nf(base_ring(L))
   K = base_field(E)
-  println(io, "Qx, x = polynomial_ring(FlintQQ, :x)")
+  println(io, "Qx, x = polynomial_ring(QQ, :x)")
   f = defining_polynomial(K)
   pol = replace(string(f), string(var(parent(f))) => "x")
   println(io, "f = ", pol)
@@ -90,7 +90,7 @@ end
 function to_hecke(io::IO, G::HermGenus; target = "G")
   E = base_field(G)
   K = base_field(E)
-  println(io, "Qx, x = polynomial_ring(FlintQQ, :x)")
+  println(io, "Qx, x = polynomial_ring(QQ, :x)")
   f = defining_polynomial(K)
   pol = replace(string(f), string(var(parent(f))) => "x")
   println(io, "f = ", pol)
@@ -234,8 +234,8 @@ function to_hecke(io::IO, L::ZZLat; target = "L", skip_field = false)
   G = gram_matrix(ambient_space(L))
   Bst = "[" * split(string([B[i, j] for i in 1:nrows(B) for j in 1:ncols(B)]), '[')[2]
   Gst = "[" * split(string([G[i, j] for i in 1:nrows(G) for j in 1:ncols(G)]), '[')[2]
-  println(io, "B = matrix(FlintQQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
-  println(io, "G = matrix(FlintQQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
+  println(io, "B = matrix(QQ, ", nrows(B), ", ", ncols(B), " ,", Bst, ");")
+  println(io, "G = matrix(QQ, ", nrows(G), ", ", ncols(G), " ,", Gst, ");")
   println(io, target, " = ", "integer_lattice(B, gram = G);")
 end
 

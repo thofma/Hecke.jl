@@ -1,5 +1,5 @@
 @testset "IO" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, 16]);
@@ -8,7 +8,7 @@
   @test Hecke.to_hecke_string(L) isa String
   @test Hecke.to_magma_string(L) isa String
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^4-x^3-4*x^2+4*x+1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -21,8 +21,8 @@
   @test Hecke.to_magma_string(L) isa String
 
   # For Zlattices
-  B = matrix(FlintQQ, 6, 7 ,[1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1]);
-  G = matrix(FlintQQ, 7, 7 ,[3, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 2, 2, 1, 2, 2, 3, 2, 2, 2, 1, 2, 2, 2, 3, 2, 2, 1, 2, 2, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1]);
+  B = matrix(QQ, 6, 7 ,[1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, -1]);
+  G = matrix(QQ, 7, 7 ,[3, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 2, 2, 1, 2, 2, 3, 2, 2, 2, 1, 2, 2, 2, 3, 2, 2, 1, 2, 2, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1]);
   L = integer_lattice(B, gram = G)
 
   @test Hecke.to_hecke_string(L) isa String

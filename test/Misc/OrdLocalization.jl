@@ -1,5 +1,5 @@
 
-Qx,x = FlintQQ["x"]
+Qx,x = QQ["x"]
 K,a = number_field(x^6+108)
 OK = ring_of_integers(K)
 lp = prime_decomposition(OK, 5)

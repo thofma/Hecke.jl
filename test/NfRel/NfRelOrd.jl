@@ -10,7 +10,7 @@ function monic_randpoly(S::PolyRing, dmin::Int, dmax::Int, n::Int)
 end
 
 @testset "Relative maximal orders of simple extensions" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 36*x + 16
   K, a = number_field(f, "a", cached = false)
   Ky, y = K["y"]
@@ -75,7 +75,7 @@ end
 
 
 @testset "Relative maximal orders of non-simple extensions" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
 
   K, a = number_field(x, "a")
   OK = maximal_order(K)
@@ -144,7 +144,7 @@ end
 end
 
 @testset "Field towers" begin
-   Qx, x = FlintQQ["x"]
+   Qx, x = QQ["x"]
 
   Q1, q1 = number_field(x, "q1", cached = false)
   Z1 = maximal_order(Q1)
@@ -175,7 +175,7 @@ end
 end
 
 @testset "Different/codifferent" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2
   K, a = number_field(f, "a", cached = false)
   Kt, t = K["t"]
@@ -190,7 +190,7 @@ end
 end
 
 @testset "rand" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 36*x + 16
   K, a = number_field(f, "a")
   Ky, y = K["y"]

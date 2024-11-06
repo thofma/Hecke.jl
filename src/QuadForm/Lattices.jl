@@ -589,7 +589,7 @@ function _intersect_via_restriction_of_scalars(L::AbstractLat, M::AbstractLat)
   @assert has_ambient_space(L) && has_ambient_space(M)
   @assert ambient_space(L) === ambient_space(M)
   @assert !(L isa ZZLat)
-  Lres, f = restrict_scalars_with_map(L, FlintQQ)
+  Lres, f = restrict_scalars_with_map(L, QQ)
   Mres = restrict_scalars(M, f)
   Nres = intersect(Lres, Mres)
   Bres = basis_matrix(Nres)
@@ -953,7 +953,7 @@ function restrict_scalars(L::AbstractLat, K::QQField,
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, K, alpha)
   Babs = absolute_basis(L)
-  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  Mabs = zero_matrix(QQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)
     v = f\(Babs[i])
     for j in 1:length(v)
@@ -980,7 +980,7 @@ function restrict_scalars_with_map(L::AbstractLat, K::QQField,
   V = ambient_space(L)
   Vabs, f = restrict_scalars(V, K, alpha)
   Babs = absolute_basis(L)
-  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  Mabs = zero_matrix(QQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)
     v = f\(Babs[i])
     for j in 1:length(v)
@@ -1004,7 +1004,7 @@ function restrict_scalars(L::AbstractLat, f::AbstractSpaceRes)
   @req ambient_space(L) === codomain(f) "Incompatible arguments: ambient space of L must be the same as the codomain of f"
   Vabs = domain(f)
   Babs = absolute_basis(L)
-  Mabs = zero_matrix(FlintQQ, length(Babs), rank(Vabs))
+  Mabs = zero_matrix(QQ, length(Babs), rank(Vabs))
   for i in 1:length(Babs)
     v = f\(Babs[i])
     for j in 1:length(v)
@@ -1396,7 +1396,7 @@ function _Zforms(L::AbstractLat{<: NumField}, generators::Vector)
   forms = ZZMatrix[]
   scalars = QQFieldElem[]
   for b in generators
-    Vres, VresToV = restrict_scalars(V, FlintQQ, b)
+    Vres, VresToV = restrict_scalars(V, QQ, b)
     G = gram_matrix(Vres, map(t -> preimage(VresToV, t), Babs))
     d = denominator(G)
     Gint = change_base_ring(FlintZZ, d * G)
@@ -1685,7 +1685,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
   end
 
   if b
-    T = change_base_ring(FlintQQ, inv(TL)*T*TM)
+    T = change_base_ring(QQ, inv(TL)*T*TM)
     fl, s1 = can_solve_with_solution(BabsmatL, basis_matrix_of_rational_span(L); side = :left)
     fl, s2 = can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM; side = :left)
     T = s1 * change_base_ring(E, T) * s2
@@ -2053,7 +2053,7 @@ One can also use the alias `saturate(L, M)`.
 function primitive_closure(M::AbstractLat, N::AbstractLat)
   @assert has_ambient_space(N) && has_ambient_space(M)
   @req ambient_space(N) === ambient_space(M) "Lattices must be in the same ambient space"
-  Mres, f = restrict_scalars_with_map(M, FlintQQ)
+  Mres, f = restrict_scalars_with_map(M, QQ)
   Nres = restrict_scalars(N, f)
   Lres = primitive_closure(Mres, Nres)
   B = basis_matrix(Lres)

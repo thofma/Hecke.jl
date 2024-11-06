@@ -244,7 +244,7 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
       else # length == 1 extend the module
         s = QQFieldElem[]
         for x in k[1, :]
-          @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
+          @vtime :qAdic 1 y = lift_reco(QQ, x, reco = true)
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
@@ -353,14 +353,14 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
 
-    x = FlintQQ(c, d)
+    x = QQ(c, d)
     if v < 0
       return x//prime(R, -v)
     else
       return x*prime(R, v)
     end
   else
-    return lift(FlintQQ, a)
+    return lift(QQ, a)
   end
 end
 

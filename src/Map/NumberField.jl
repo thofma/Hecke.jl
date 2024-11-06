@@ -396,7 +396,7 @@ mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, HeckeMap, NfA
   function NfAbsToAbsAlgAssMor{S}(K::AbsSimpleNumField, A::S, M::QQMatrix) where { S <: AbstractAssociativeAlgebra{QQFieldElem} }
     z = new{S}()
     z.mat = M
-    z.t = zero_matrix(FlintQQ, 1, degree(K))
+    z.t = zero_matrix(QQ, 1, degree(K))
 
     function _image(x::AbsSimpleNumFieldElem)
       for i = 1:degree(K)
@@ -417,7 +417,7 @@ end
 
 function has_preimage_with_preimage(m::NfAbsToAbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
   A = parent(a)
-  t = matrix(FlintQQ, 1, dim(A), coefficients(a))
+  t = matrix(QQ, 1, dim(A), coefficients(a))
   b, p = can_solve_with_solution(m.mat, t, side = :left)
   if b
     return true, domain(m)([ p[1, i] for i = 1:nrows(m.mat) ])

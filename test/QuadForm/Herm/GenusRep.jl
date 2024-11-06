@@ -6,7 +6,7 @@
 
   # Lattice 214 from the database: `a(P) != P` in `_neighbours`
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^2 - x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -28,7 +28,7 @@
 
   # Lattice 324 from the database: `special == true` in `_neighbours`
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^2 - x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -52,7 +52,7 @@
 
   # Lattice 441 from the database: `special == false` in `_neighbours`; calls `_all_row_span`
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -104,7 +104,7 @@
   # Other indefinite examples
   #
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 + 1, "b")
@@ -113,7 +113,7 @@
   L = @inferred representative(G)
   @test length(@inferred Hecke.genus_representatives(L)) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^6 + x^5 + x^4 + x^3 + x^2 + x + 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -150,7 +150,7 @@
   @test length(genus_representatives(H)) == 1
 
   # Non-CM and class number 69; Salem polynomial
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^3 - 44*x^2 - 4*x + 175
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -163,7 +163,7 @@
 
   let
     # 1512
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     f = x^3 - 6*x^2 - 4*x + 23
     K, a = number_field(f, "a", cached = false)
     Kt, t = polynomial_ring(K, "t")

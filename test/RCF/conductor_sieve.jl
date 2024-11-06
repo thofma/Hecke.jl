@@ -2,7 +2,7 @@
 
   @testset "abelian extensions && related examples" begin
 
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x - 1, "a")
     l = Hecke.abelian_normal_extensions(K, Int[2,2], ZZRingElem(10)^4)
     @test length(l)==47
@@ -19,7 +19,7 @@
     auts = small_generating_set(automorphism_list(K, copy = false))
     l = Hecke.abelian_normal_extensions(K, Int[2], ZZRingElem(10)^5)
     @test length(l) == 41
-    l1 = typeof(l[1])[x for x in l if abs(discriminant(x, FlintQQ)) < 5*10^3]
+    l1 = typeof(l[1])[x for x in l if abs(discriminant(x, QQ)) < 5*10^3]
     lnn = Hecke.abelian_extensions(K, Int[2], 5*ZZRingElem(10)^3)
     ln = typeof(l[1])[x for x in lnn if is_normal(x)]
     @test length(ln) == length(l1)

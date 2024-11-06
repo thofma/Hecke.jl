@@ -1,5 +1,5 @@
 @testset "AlgAssAbsOrdIdl" begin
-  QG = group_algebra(FlintQQ, FinGenAbGroup([ 4 ]))
+  QG = group_algebra(QQ, FinGenAbGroup([ 4 ]))
 
   @testset "Arithmetic" begin
     O = any_order(QG)
@@ -29,7 +29,7 @@
 
   #=
   @testset "Locally free basis" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^4 - 5x^2 + 5
     K, a = number_field(f, "a", cached = false, check = false) # Gal(K/Q) == C_4
     OK = maximal_order(K)
@@ -50,7 +50,7 @@
   =#
 
   @testset "rand" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
     I = 2*O

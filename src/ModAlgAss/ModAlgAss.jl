@@ -568,7 +568,7 @@ automorphism_map(f::NfToModAlgAssMor) = f.mG
 
 function galois_module(K::AbsSimpleNumField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
   G = domain(aut)
-  A = FlintQQ[G]
+  A = QQ[G]
   return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
 end
 

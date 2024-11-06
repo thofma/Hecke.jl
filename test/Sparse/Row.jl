@@ -172,7 +172,7 @@
 
   A = sparse_row(FlintZZ, [1, 3, 4, 5], ZZRingElem[-5, 2, -10, 1])
   @test maximum(abs, A) == ZZRingElem(10)
-  B = sparse_row(FlintQQ, [1, 2, 4, 5], map(QQFieldElem, [1, 2, 9//4, 1]))
+  B = sparse_row(QQ, [1, 2, 4, 5], map(QQFieldElem, [1, 2, 9//4, 1]))
   @test maximum(B) == QQFieldElem(9, 4)
   C = sparse_row(FlintZZ, [1, 2, 4, 5], ZZRingElem[-10, 100, 1, 1])
   @test minimum(C) == ZZRingElem(-10)

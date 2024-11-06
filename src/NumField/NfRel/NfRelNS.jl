@@ -33,7 +33,7 @@
 ################################################################################
 
 #= trivial example
-Qx, x = polynomial_ring(FlintQQ)
+Qx, x = polynomial_ring(QQ)
 QQ = number_field(x-1)[1]
 QQt, t = QQ["t"]
 K, gK = number_field([t^2-2, t^2-3, t^2-5, t^2-7])
@@ -186,7 +186,7 @@ function number_field(::Type{AbsNonSimpleNumField}, L::RelNonSimpleNumField{AbsS
   @assert degree(base_field(L)) == 1
   K = base_field(L)
   Kx, _ = polynomial_ring(K, "x", cached = false)
-  pols = QQPolyRingElem[map_coefficients(FlintQQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
+  pols = QQPolyRingElem[map_coefficients(QQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
   return number_field(pols, cached = false, check = false)
 end
 
@@ -786,7 +786,7 @@ function Nemo.discriminant(K::RelNonSimpleNumField, ::QQField)
   return d
 end
 
-absolute_discriminant(K::RelNonSimpleNumField) = discriminant(K, FlintQQ)
+absolute_discriminant(K::RelNonSimpleNumField) = discriminant(K, QQ)
 
 ################################################################################
 #

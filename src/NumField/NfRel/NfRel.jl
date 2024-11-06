@@ -192,7 +192,7 @@ end
 #Conversion to absolute non simple
 function number_field(::Type{AbsSimpleNumField}, L::RelSimpleNumField{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true)
   @assert degree(base_field(L)) == 1
-  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol, cached = false))
+  pol = to_univariate(Globals.Qx, map_coefficients(QQ, L.pol, cached = false))
   return number_field(pol, check = false, cached = cached)
 end
 
@@ -641,7 +641,7 @@ function charpoly(a::RelSimpleNumFieldElem, k::Union{RelSimpleNumField, AbsSimpl
 end
 
 function absolute_charpoly(a::RelSimpleNumFieldElem)
-  return charpoly(a, FlintQQ)
+  return charpoly(a, QQ)
 end
 
 function (R::Generic.PolyRing{AbsSimpleNumFieldElem})(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem})

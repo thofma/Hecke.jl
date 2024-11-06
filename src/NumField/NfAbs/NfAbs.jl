@@ -339,7 +339,7 @@ function normal_basis(K::AbsSimpleNumField)
 
   # length(Aut) != n && error("The field is not normal over the rationals!")
 
-  # A = zero_matrix(FlintQQ, n, n)
+  # A = zero_matrix(QQ, n, n)
   # _B = basis(lll(maximal_order(K)))
   # for i in 1:n
   #   r = elem_in_nf(_B[i])
@@ -661,7 +661,7 @@ all elements have parent $K$.
 
 **Example**
 
-    julia> Qx, x = FlintQQ["x"]
+    julia> Qx, x = QQ["x"]
     julia> K, a = number_field(x^3 + 2, "a")
     julia> write("interesting_elements", [1, a, a^2])
     julia> A = read("interesting_elements", K, Hecke.AbsSimpleNumFieldElem)
@@ -701,7 +701,7 @@ all elements have parent $K$.
 
 **Example**
 
-    julia> Qx, x = FlintQQ["x"]
+    julia> Qx, x = QQ["x"]
     julia> K, a = number_field(x^3 + 2, "a")
     julia> write("interesting_elements", [1, a, a^2])
     julia> A = read("interesting_elements", K, Hecke.AbsSimpleNumFieldElem)
@@ -721,7 +721,7 @@ end
 Computes the splitting field of $f$ as an absolute field.
 """
 function splitting_field(f::ZZPolyRingElem; do_roots::Bool = false)
-  Qx = polynomial_ring(FlintQQ, parent(f).S, cached = false)[1]
+  Qx = polynomial_ring(QQ, parent(f).S, cached = false)[1]
   return splitting_field(Qx(f), do_roots = do_roots)
 end
 
@@ -730,7 +730,7 @@ function splitting_field(f::QQPolyRingElem; do_roots::Bool = false)
 end
 
 function splitting_field(fl::Vector{ZZPolyRingElem}; coprime::Bool = false, do_roots::Bool = false)
-  Qx = polynomial_ring(FlintQQ, parent(fl[1]).S, cached = false)[1]
+  Qx = polynomial_ring(QQ, parent(fl[1]).S, cached = false)[1]
   return splitting_field([Qx(x) for x = fl], coprime = coprime, do_roots = do_roots)
 end
 
@@ -750,9 +750,9 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   fl = fl[findall(x->degree(x) > 1, fl)]
   if length(fl) == 0
     if do_roots
-      return FlintQQ, r
+      return QQ, r
     else
-      return FlintQQ
+      return QQ
     end
   end
   K, a = number_field(fl[1])#, check = false, cached = false)
@@ -1251,7 +1251,7 @@ function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, ::Va
           return
         end
       end
-      setcoeff!(g, i, FlintQQ(c))
+      setcoeff!(g, i, QQ(c))
     end
 
     ff = g

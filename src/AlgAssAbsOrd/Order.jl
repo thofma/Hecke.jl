@@ -326,7 +326,7 @@ end
 ################################################################################
 
 function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, ::Val{short} = Val(false)) where {S, T, short}
-  t = zero_matrix(FlintQQ, 1, degree(O))
+  t = zero_matrix(QQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = FakeFmpqMat(t)
   t = t*basis_mat_inv(FakeFmpqMat, O, copy = false)
@@ -366,7 +366,7 @@ end
 Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
 """
 function denominator(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd)
-  t = zero_matrix(FlintQQ, 1, degree(O))
+  t = zero_matrix(QQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = FakeFmpqMat(t)
   t = mul!(t, t, basis_mat_inv(FakeFmpqMat, O, copy = false))
@@ -850,7 +850,7 @@ function any_order(A::AbstractAssociativeAlgebra{QQFieldElem})
   return get_attribute!(A, :any_order) do
     d = _denominator_of_mult_table(A)
     di = dim(A)
-    M = vcat(zero_matrix(FlintQQ, 1, di), d*identity_matrix(FlintQQ, di))
+    M = vcat(zero_matrix(QQ, 1, di), d*identity_matrix(QQ, di))
     oneA = one(A)
     for i = 1:di
       M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
@@ -883,7 +883,7 @@ function maximal_order_via_decomposition(A::AbstractAssociativeAlgebra{QQFieldEl
     return first(A.maximal_order)::AlgAssAbsOrd{typeof(A), elem_type(A)}
   end
   fields_and_maps = __as_number_fields(A, use_maximal_order = false)
-  M = zero_matrix(FlintQQ, dim(A), dim(A))
+  M = zero_matrix(QQ, dim(A), dim(A))
   row = 1
   for i = 1:length(fields_and_maps)
     K = fields_and_maps[i][1]
@@ -943,7 +943,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = 
   n = degree(A)
 
   # Build a matrix with the first rows of basis elements of O
-  M = zero_matrix(FlintQQ, dim(A), n)
+  M = zero_matrix(QQ, dim(A), n)
   for i = 1:dim(A)
     for j = 1:n
       M[i, j] = deepcopy(matrix(elem_in_algebra(basis(O, copy = false)[i], copy = false), copy = false)[1, j])
@@ -963,7 +963,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = 
   simpleOrder = Order(A, bb)
   simpleOrder.isnice = true
 
-  @assert basis_matrix(FakeFmpqMat, simpleOrder) == FakeFmpqMat(identity_matrix(FlintQQ, n^2))
+  @assert basis_matrix(FakeFmpqMat, simpleOrder) == FakeFmpqMat(identity_matrix(QQ, n^2))
 
   if with_transform
     return simpleOrder, A(M)
@@ -1065,7 +1065,7 @@ function enum_units(O::AlgAssAbsOrd{S, T}, g::ZZRingElem) where { S <: MatAlgebr
       if j == i
         continue
       end
-      E = identity_matrix(FlintQQ, n)
+      E = identity_matrix(QQ, n)
       E[i, j] = deepcopy(g)
       push!(result, L(A(E)))
     end
@@ -1073,19 +1073,19 @@ function enum_units(O::AlgAssAbsOrd{S, T}, g::ZZRingElem) where { S <: MatAlgebr
 
   # n \nmid i and n \mid j
   for i = 1:n1
-    E = identity_matrix(FlintQQ, n)
+    E = identity_matrix(QQ, n)
     E[i, n] = deepcopy(a)
     push!(result, L(A(E)))
   end
 
   # n \mid i and n \nmid j
   for j = 1:n1
-    E = identity_matrix(FlintQQ, n)
+    E = identity_matrix(QQ, n)
     E[n, j] = deepcopy(ai)
     push!(result, L(A(E)))
   end
 
-  E = identity_matrix(FlintQQ, n)
+  E = identity_matrix(QQ, n)
   E[1, 1] = ZZRingElem(-1)
   push!(result, L(A(E)))
   return result

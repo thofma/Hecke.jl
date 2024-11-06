@@ -669,7 +669,7 @@ function automorphism_list(K::NumField, L::NumField)
 end
 
 function absolute_automorphism_list(K::NumField)
-  return _automorphisms(K, K, FlintQQ)
+  return _automorphisms(K, K, QQ)
 end
 
 function _automorphisms(K::NumField{QQFieldElem}, F::NumField, L::QQField)

@@ -9,7 +9,7 @@ function abelian_extensions(O::Union{ZZRing, QQField},
                             only_real::Bool = false,
                             tame::Bool = false)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   K, _ = number_field(x - 1, "a", cached = false)
   OK = maximal_order(K)
   l = abelian_extensions(OK, gtype, discriminant_bound,
@@ -539,7 +539,7 @@ end
 function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Val{unused}=Val(false)) where unused
 
   @assert !(real && complex)
-  Qx,x=polynomial_ring(FlintQQ, "x")
+  Qx,x=polynomial_ring(QQ, "x")
   sqf=squarefree_up_to(bound)
   if real
     deleteat!(sqf,1)
@@ -568,7 +568,7 @@ end
 
 function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   K = number_field(x-1, cached = false, check = false)[1]
   sqf = squarefree_up_to(bound, prime_base = unramified_outside)
   final_list = Int[]
@@ -701,7 +701,7 @@ end
 
 function _C22_with_max_ord(l)
   list = Vector{Tuple{AbsSimpleNumField, Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}, Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}()
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   K = number_field(x-1, cached = false)[1]
   @vprintln :AbExt 1 "Constructing the C2xC2 extension: $(length(l))"
   for (i, (p1, p2)) in enumerate(l)

@@ -572,7 +572,7 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-Hecke.base_ring(::AbsSimpleNumField) = FlintQQ
+Hecke.base_ring(::AbsSimpleNumField) = QQ
 
 function (R::PolyRing{T})(a::Generic.RationalFunctionFieldElem{T}) where {T}
   @assert isone(denominator(a))

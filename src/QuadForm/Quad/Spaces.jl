@@ -507,7 +507,7 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
 
   if dim == 1
     !isempty(finite) && error("Impossible Hasse invariants")
-    return matrix(FlintQQ, 1, 1, ZZRingElem[det])
+    return matrix(QQ, 1, 1, ZZRingElem[det])
   end
 
   finite = unique(finite)
@@ -586,7 +586,7 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
 
   #// The binary case
   a = _find_quaternion_algebra(QQFieldElem(-det)::QQFieldElem, finite::Vector{ZZRingElem}, negative == 2 ? PosInf[inf] : PosInf[])
-  Drat = map(FlintQQ, D)
+  Drat = map(QQ, D)
   push!(Drat, a)
   push!(Drat, squarefree_part(FlintZZ(det * a)))
   M = diagonal_matrix(Drat)

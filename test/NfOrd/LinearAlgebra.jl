@@ -1,7 +1,7 @@
 @testset "Linear algebra" begin
 
   @testset "Dixon solve" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     K, a = number_field(x^3 + 3)
     A = rand(matrix_space(K, 4, 4), 10:100)
     while iszero(det(A))
@@ -12,7 +12,7 @@
   end
 
   @testset "Pseudo matrices" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
 
     # Compute a pseudo-hnf of a matrix over Z and check result against the HNF
 
@@ -140,7 +140,7 @@
   end
 
   @testset "rand" begin
-    R, x = polynomial_ring(FlintQQ, "x")
+    R, x = polynomial_ring(QQ, "x")
     K, a = number_field(x, "a")
     O = maximal_order(K)
     I = Hecke.AbsSimpleNumFieldOrderFractionalIdeal(ideal(O, O(2)), ZZRingElem(2))
@@ -159,7 +159,7 @@
   end
 
   # issue 859
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   K, a = number_field(x^2 + 1, "a", cached = false);
   M = matrix(K, 1, 3, [5*a, 3*a, 0])
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
@@ -168,7 +168,7 @@
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(pm, pm, shape = :upperright)
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")

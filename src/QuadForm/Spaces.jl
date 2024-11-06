@@ -619,7 +619,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
   B = absolute_basis(E)
   v = elem_type(E)[zero(E) for i in 1:n]
   w = elem_type(E)[zero(E) for i in 1:n]
-  G = zero_matrix(FlintQQ, d * n, d * n)
+  G = zero_matrix(QQ, d * n, d * n)
   r = 1
   c = 1
   for i in 1:n
@@ -629,7 +629,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
       for j in 1:n
         for bj in 1:length(B)
           w[j] = B[bj]
-          G[r, c] = trace(alpha * inner_product(V, v, w), FlintQQ)
+          G[r, c] = trace(alpha * inner_product(V, v, w), QQ)
           w[j] = zero(E)
           c = c + 1
         end
@@ -638,7 +638,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
       r = r + 1
     end
   end
-  Vres = quadratic_space(FlintQQ, G; check = false)
+  Vres = quadratic_space(QQ, G; check = false)
   VrestoV = AbstractSpaceRes(Vres, V, identity_matrix(QQ, rank(Vres)), identity_matrix(E, rank(V)))
   return Vres, VrestoV
 end

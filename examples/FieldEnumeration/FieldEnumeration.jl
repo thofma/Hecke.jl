@@ -11,7 +11,7 @@ function __to_univariate(Qx, f)
   z = zero(Qx)
   x = gen(Qx)
   for (c, m) in zip(coefficients(f), monomials(f))
-    z = z + FlintQQ(c) * x^total_degree(m)
+    z = z + QQ(c) * x^total_degree(m)
   end
   return z
 end
@@ -30,7 +30,7 @@ end
 
 function _read_fields(filename::String)
   f=open(filename, "r")
-  Qx,x=polynomial_ring(FlintQQ,"x")
+  Qx,x=polynomial_ring(QQ,"x")
   pols = []
   for s in eachline(f)
     a=Main.eval(Meta.parse(s))

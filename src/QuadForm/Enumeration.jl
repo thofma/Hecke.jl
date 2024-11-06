@@ -23,7 +23,7 @@ end
 
 function _pseudo_cholesky(G::ZZMatrix, ::Type{QQMatrix})
   n = ncols(G)
-  C = zero_matrix(FlintQQ, n, n)
+  C = zero_matrix(QQ, n, n)
   return __pseudo_cholesky!(C, G)
 end
 
@@ -866,9 +866,9 @@ function __assemble_result!(W, V::T, transform, n) where {T}
     end
 
     if positive
-      push!(W, (m, FlintQQ(l)))
+      push!(W, (m, QQ(l)))
     else
-      push!(W, (-m, FlintQQ(l)))
+      push!(W, (-m, QQ(l)))
     end
     k += 1
   end

@@ -67,7 +67,7 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
 
-    x = FlintQQ(c, d)
+    x = QQ(c, d)
     if v < 0
       return x//prime(R, -v)
     else

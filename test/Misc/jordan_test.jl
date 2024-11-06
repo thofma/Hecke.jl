@@ -1,6 +1,6 @@
 @testset "Jordan and Rational canonical form" begin
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^6 + rand(Qx, 1:5, -3:3)
   M = companion_matrix(f)
   @test minpoly(Qx, M) == f
@@ -13,10 +13,10 @@
   @test minpoly(Qx, J) == g^2
   @test charpoly(Qx, J) == g^2
 
-  M = identity_matrix(FlintQQ, 6)
+  M = identity_matrix(QQ, 6)
   for i = 1:6
     for j = i+1:6
-      M[i, j] = rand(FlintQQ, -2:2)
+      M[i, j] = rand(QQ, -2:2)
     end
   end
   M1 = transpose(M)
@@ -44,7 +44,7 @@
   g = x^3 + rand(Qx, 1:2, -2:2)
   f1 = f
   f2 = f*g
-  C = zero_matrix(FlintQQ, 9, 9)
+  C = zero_matrix(QQ, 9, 9)
   Hecke._copy_matrix_into_matrix(C, 1, 1, companion_matrix(f1))
   Hecke._copy_matrix_into_matrix(C, 4, 4, companion_matrix(f2))
   CF, TM = rational_canonical_form(C)
@@ -80,7 +80,7 @@ end
                     0 0 0 0 1 0; ]) ]
 
   Eig = common_eigenspaces(M, side = :right)
-  V = zero_matrix(FlintQQ, 6, 0)
+  V = zero_matrix(QQ, 6, 0)
   for (e, v) in Eig
     @test length(e) == 3
     for i = 1:3
@@ -91,7 +91,7 @@ end
   @test rref!(V) == 6
 
   Eig = common_eigenspaces(M, side = :left)
-  V = zero_matrix(FlintQQ, 0, 6)
+  V = zero_matrix(QQ, 0, 6)
   for (e, v) in Eig
     @test length(e) == 3
     for i = 1:3

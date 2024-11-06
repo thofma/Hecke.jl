@@ -1,6 +1,6 @@
 @testset "Ideal class monoid of orders in number fields" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^3 + 31*x^2 + 43*x + 77
   K, a = number_field(f, "a")
   O = equation_order(K)
@@ -24,7 +24,7 @@ end
 
 @testset "Ideal class monoid of orders in algebras" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^3 + 31*x^2 + 43*x + 77
   A = StructureConstantAlgebra(f)
   O = Order(A, basis(A))

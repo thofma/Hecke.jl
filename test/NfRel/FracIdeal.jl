@@ -1,5 +1,5 @@
 @testset "Relative fractional ideals" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 12*x - 92
   K, a = number_field(f, "a")
   OK = maximal_order(K)

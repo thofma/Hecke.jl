@@ -1,6 +1,6 @@
 @testset "Misc/number_field" begin
   @testset "constructors" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
 
     # test number_field constructors with single polynomial
     K1, a = number_field(x^2 + 1)
@@ -31,7 +31,7 @@
   end
 
   @testset "is_subfield" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     K, a = number_field(x^2 + 1, "a")
     L, b = number_field(x^4 + 1, "b")
 
@@ -51,7 +51,7 @@
   end
 
   @testset "is_isomorphic" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^5 + 12x - 92
     K, a = number_field(f, "a")
 

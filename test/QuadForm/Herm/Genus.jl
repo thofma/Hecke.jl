@@ -408,7 +408,7 @@
   @test G == genus([g], [(rlp[1], 2), (rlp[2], 2)])
 
   # rank 1 representative
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   f = x^2 + x - 1;
   K, a = number_field(f, "a", cached = false);
   Kt, t = polynomial_ring(K, "t");
@@ -423,7 +423,7 @@
   # Fix norm in non-dyadic ramified case
 
   # Rank 1 example
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^10 - 10*x^8 + 35*x^6 + x^5 - 50*x^4 - 5*x^3 + 25*x^2 + 5*x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -530,7 +530,7 @@ end
 @testset "non-integral genera" begin
   
   # rescaling
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^2 - 3
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -588,7 +588,7 @@ end
 end
 
 @testset "Hermitian form with given invariants" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^6 + x^5 - 5*x^4 - 4*x^3 + 6*x^2 + 3*x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -610,7 +610,7 @@ end
 end
 
 @testset "Hashes" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")

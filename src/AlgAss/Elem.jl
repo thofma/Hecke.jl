@@ -916,7 +916,7 @@ function elem_from_mat_row(A::AbstractAssociativeAlgebra{T}, M::MatElem{T}, i::I
 end
 
 function elem_to_mat_row!(x::ZZMatrix, i::Int, d::ZZRingElem, a::AbstractAssociativeAlgebraElem{QQFieldElem})
-  z = zero_matrix(FlintQQ, 1, ncols(x))
+  z = zero_matrix(QQ, 1, ncols(x))
   elem_to_mat_row!(z, 1, a)
   z_q = FakeFmpqMat(z)
 

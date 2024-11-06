@@ -1,5 +1,5 @@
 @testset "Unramified extension" begin
-    Qx,x = FlintQQ["x"]
+    Qx,x = QQ["x"]
     f = Qx([1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1])
     L = number_field(f)[1]
     P = prime_decomposition(maximal_order(L),7)[1][1]

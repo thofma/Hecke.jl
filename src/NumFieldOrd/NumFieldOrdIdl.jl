@@ -111,7 +111,7 @@ function absolute_norm(x::AbsNumFieldOrderIdeal)
 end
 
 function absolute_norm(a::RelNumFieldOrderIdeal)
-  return norm(a, FlintQQ)
+  return norm(a, QQ)
 end
 
 function norm(I::NumFieldOrderIdeal, K::NumField)
@@ -263,7 +263,7 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
   L = nf(OL)
   A = absolute_basis(OL)
   d = absolute_degree(nf(OL))
-  OLmat = zero_matrix(FlintQQ, d, d)
+  OLmat = zero_matrix(QQ, d, d)
   Lbas = absolute_basis(L)
   for i in 1:d
     c = elem_in_nf(A[i], copy = false)
@@ -279,7 +279,7 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
 
   @show is_integral(u)
 
-  umat = zero_matrix(FlintQQ, d, d)
+  umat = zero_matrix(QQ, d, d)
 
   for i in 1:d
     c = u * Lbas[i]

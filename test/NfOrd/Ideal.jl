@@ -1,5 +1,5 @@
 @testset "Ideals" begin
-   Qx, x = polynomial_ring(FlintQQ, "x")
+   Qx, x = polynomial_ring(QQ, "x")
 
    K1, a1 = number_field(x^3 - 2, "a")
    O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
@@ -57,7 +57,7 @@
 
     # Test where gens are weakly normal and second generator is zero
     @testset begin
-      R, x = polynomial_ring(FlintQQ, "x")
+      R, x = polynomial_ring(QQ, "x")
       _K, _a = number_field(x, "a")
       _O = maximal_order(_K)
       _I = fractional_ideal(_O, _K(1))
@@ -262,7 +262,7 @@
   end
 
   # Minimum for non-simple
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x - 1
   K, a = number_field([f], "a")
   O = maximal_order(K)

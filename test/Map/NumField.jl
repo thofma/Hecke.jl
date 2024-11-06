@@ -1,6 +1,6 @@
 @testset "Map/NumField.jl" begin
   # AbsSimpleNumField -> AbsSimpleNumField
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x^2 - 2, "a")
   s = involution(K)
 
@@ -238,7 +238,7 @@
   @test f * f == f
 
   #Example that was failing
-  Qx, x = FlintQQ["x"];
+  Qx, x = QQ["x"];
   K, a = number_field(x^2+5, cached = false)
   Kns, gns = number_field([x^2+5, x^2+1])
   L = absolute_simple_field(Kns)[1]

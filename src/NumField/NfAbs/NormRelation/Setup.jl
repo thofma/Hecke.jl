@@ -656,7 +656,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
     reverse!(H)
   end
 
-  QG = GroupAlgebra(FlintQQ, G)
+  QG = GroupAlgebra(QQ, G)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(H))
   for i in 1:length(H)
@@ -668,14 +668,14 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
   if pure
     if iszero(target_den)
-      m = zero_matrix(FlintQQ, length(H), n)
+      m = zero_matrix(QQ, length(H), n)
       for i in 1:length(H)
         for j in 1:n
           m[i, j] = norms[i].coeffs[j]
         end
       end
 
-      onee = matrix(FlintQQ, 1, n, coefficients(one(QG)))
+      onee = matrix(QQ, 1, n, coefficients(one(QG)))
 
       b, v, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
     else
@@ -689,7 +689,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
       onee = matrix(FlintZZ, 1, n, coefficients(one(QG)))
 
       b, w, K = can_solve_with_solution_and_kernel(m, target_den * onee, side = :left)
-      v = 1//target_den * change_base_ring(FlintQQ, w)
+      v = 1//target_den * change_base_ring(QQ, w)
     end
 
     if !b
@@ -812,9 +812,9 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
   end
 
   if iszero(target_den)
-    onee = matrix(FlintQQ, 1, n, coefficients(one(QG)))
+    onee = matrix(QQ, 1, n, coefficients(one(QG)))
 
-    m = zero_matrix(FlintQQ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
+    m = zero_matrix(QQ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
 
     B = basis(QG)
 
@@ -857,7 +857,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
     b, w, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
 
-    v = 1//target_den * change_base_ring(FlintQQ, w)
+    v = 1//target_den * change_base_ring(QQ, w)
   end
 
   @assert b
@@ -997,7 +997,7 @@ function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem
 
   reverse!(all_non_trivial_subs)
 
-  QG = GroupAlgebra(FlintQQ, G, cached = false)
+  QG = GroupAlgebra(QQ, G, cached = false)
   norms_rev = Dict{elem_type(QG), Int}()
   norms = Vector{elem_type(QG)}(undef, length(all_non_trivial_subs))
   for i in 1:length(all_non_trivial_subs)

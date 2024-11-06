@@ -23,7 +23,7 @@ function _combine(f::QQPolyRingElem, g::QQPolyRingElem, Qxy)
 end
 
 function multi_quad_with_aut(d::Vector{ZZRingElem})
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   Qxy, y = polynomial_ring(Qx, "y", cached = false)
   lp = [ number_field(x^2-a)[1] for a = d]
   aut = [ [gen(x), -gen(x)] for x = lp]
@@ -48,7 +48,7 @@ function multi_quad_with_aut(d::Vector{ZZRingElem})
 end
 
 function multi_quad_with_emb(d::Vector{ZZRingElem})
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   Qxy, y = polynomial_ring(Qx, "y", cached = false)
   lp = [ number_field(x^2-a)[1] for a = d]
   aut = [ [gen(x)] for x = lp]

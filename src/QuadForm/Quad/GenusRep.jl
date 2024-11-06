@@ -106,7 +106,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
     _mass = mass(L)
     @vprintln :GenRep 1 "... $(_mass)"
   else
-    _mass = -one(FlintQQ)
+    _mass = -one(QQ)
   end
 
   @vprintln :GenRep 1 "Found $(length(spinor_genera)) many spinor genera in genus"
@@ -1059,7 +1059,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   return result
 end
 
-function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -one(FlintQQ))
+function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -one(QQ))
   @req is_definite(L) "Lattice must be definite"
   result = typeof(L)[ L ]
   i = 1
@@ -1465,7 +1465,7 @@ function __colon_raw(K, a, b)
   d = degree(K)
   bb = b
   B = inv(basis_matrix(a)) #QQMatrix(basis_mat_inv(a, copy = false))
-  M = zero_matrix(FlintQQ, d^2, d)
+  M = zero_matrix(QQ, d^2, d)
   for i = 1:d
     N = representation_matrix(bb[i])*B
     for s = 1:d
@@ -2137,7 +2137,7 @@ function _lattice_to_binary_quadratic_form(L::QuadLat)
   M = absolute_basis_matrix(L) # This corresponds to a basis of L
   @assert nrows(M) == 2
   G = gram_matrix(ambient_space(L), M)
-  GG = change_base_ring(FlintQQ, G)
+  GG = change_base_ring(QQ, G)
   d = denominator(GG)
   f = binary_quadratic_form(FlintZZ(d * GG[1, 1]), FlintZZ(2 * d * GG[1, 2]), FlintZZ(d * GG[2, 2]))
   return f, d

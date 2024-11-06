@@ -101,7 +101,7 @@ function sunit_group_fac_elem(S::Vector{ZZRingElem})
     return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(S)])
   end
 
-  mp.header = MapHeader(G, FacElemMon(FlintQQ), dexp)
+  mp.header = MapHeader(G, FacElemMon(QQ), dexp)
 
   return G, mp
 end
@@ -152,7 +152,7 @@ function sunit_group(S::Vector{ZZRingElem})
     return evaluate(image(mu, a))
   end
 
-  mp.header = MapHeader(u, FlintQQ, dexp, y->preimage(mu, y))
+  mp.header = MapHeader(u, QQ, dexp, y->preimage(mu, y))
 
   return u, mp
 end

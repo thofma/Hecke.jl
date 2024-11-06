@@ -33,7 +33,7 @@ function basis_matrix(A::Vector{AbsSimpleNumFieldElem})
   n = length(A)
   d = degree(parent(A[1]))
 
-  M = zero_matrix(FlintQQ, n, d)
+  M = zero_matrix(QQ, n, d)
 
   for i in 1:n
     for j in 1:d
@@ -256,7 +256,7 @@ function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
     PQ = QQFieldElem[tr(x) for x in P]
     N = power_sums_to_polynomial(PQ)*norm(leading_coefficient(f))
   else
-    Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+    Qx = polynomial_ring(QQ, "x", cached = false)[1]
     Qxy = polynomial_ring(Qx, "y", cached = false)[1]
 
     T = change_base_ring(Qx, K.pol, parent = Qxy)

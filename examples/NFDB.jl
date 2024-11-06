@@ -1,5 +1,5 @@
 function _class_group(c::Vector{BigInt})
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = Qx(c)
   K, a = number_field(f, cached = false)
   OK = lll(maximal_order(K))

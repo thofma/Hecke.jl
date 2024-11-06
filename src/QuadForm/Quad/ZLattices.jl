@@ -45,13 +45,13 @@ julia> gram_matrix(L) == matrix(ZZ, [2 -1; -1 2])
 true
 ```
 """
-function integer_lattice(B::QQMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
-  V = quadratic_space(FlintQQ, gram; check)
+function integer_lattice(B::QQMatrix; gram = identity_matrix(QQ, ncols(B)), check::Bool=true)
+  V = quadratic_space(QQ, gram; check)
   return lattice(V, B; check)
 end
 
-function integer_lattice(B::ZZMatrix; gram = identity_matrix(FlintQQ, ncols(B)), check::Bool=true)
-  V = quadratic_space(FlintQQ, gram; check)
+function integer_lattice(B::ZZMatrix; gram = identity_matrix(QQ, ncols(B)), check::Bool=true)
+  V = quadratic_space(QQ, gram; check)
   return lattice(V, B; check)
 end
 
@@ -60,7 +60,7 @@ quadratic_lattice(::QQField, B::Union{ZZMatrix, QQMatrix}; gram = identity_matri
 
 function integer_lattice(;gram, check=true)
   n = nrows(gram)
-  return lattice(quadratic_space(FlintQQ, gram; check), identity_matrix(FlintQQ, n); check)
+  return lattice(quadratic_space(QQ, gram; check), identity_matrix(QQ, n); check)
 end
 
 ### Documentation in ./Lattices.jl
@@ -221,7 +221,7 @@ function rational_span(L::ZZLat)
     return L.rational_span
   else
     G = gram_matrix(L)
-    V = quadratic_space(FlintQQ, G)
+    V = quadratic_space(QQ, G)
     L.rational_span = V
     return V
   end
@@ -425,8 +425,8 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
   end
 
   # Now gens are with respect to the basis of L
-  @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(FlintQQ, gens[i]) * GL *
-                          transpose(change_base_ring(FlintQQ, gens[i])) == GL; end, 1:length(gens))
+  @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
+                          transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
   L.automorphism_group_order = order
@@ -444,14 +444,14 @@ function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = 
 
   gens = L.automorphism_group_generators
   if !ambient_representation
-    return QQMatrix[ change_base_ring(FlintQQ, g) for g in gens]
+    return QQMatrix[ change_base_ring(QQ, g) for g in gens]
   else
     # Now translate to get the automorphisms with respect to basis_matrix(L)
     bm = basis_matrix(L)
     V = ambient_space(L)
     if rank(L) == rank(V)
       bminv = inv(bm)
-      res = QQMatrix[bminv * change_base_ring(FlintQQ, g) * bm for g in gens]
+      res = QQMatrix[bminv * change_base_ring(QQ, g) * bm for g in gens]
     else
       # Extend trivially to the orthogonal complement of the rational span
       !is_regular(V) &&
@@ -461,8 +461,8 @@ function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = 
       C = orthogonal_complement(V, basis_matrix(L))
       C = vcat(basis_matrix(L), C)
       Cinv = inv(C)
-      D = identity_matrix(FlintQQ, rank(V) - rank(L))
-      res = QQMatrix[Cinv * diagonal_matrix(change_base_ring(FlintQQ, g), D) * C for g in gens]
+      D = identity_matrix(QQ, rank(V) - rank(L))
+      res = QQMatrix[Cinv * diagonal_matrix(change_base_ring(QQ, g), D) * C for g in gens]
     end
     @hassert :Lattice 1 all(g * gram_matrix(V) * transpose(g) == gram_matrix(V)
                             for g in res)
@@ -527,15 +527,15 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   @req is_definite(L) && is_definite(M) "The lattices must be definite"
 
   if rank(L) != rank(M)
-    return false, zero_matrix(FlintQQ, 0, 0)
+    return false, zero_matrix(QQ, 0, 0)
   end
 
   if genus(L) != genus(M)
-    return false, zero_matrix(FlintQQ, 0, 0)
+    return false, zero_matrix(QQ, 0, 0)
   end
 
   if rank(L) == 0
-    return true, identity_matrix(FlintQQ, 0, 0)
+    return true, identity_matrix(QQ, 0, 0)
   end
 
   i = sign(gram_matrix(L)[1,1])
@@ -562,7 +562,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   # GLint, GMint are integral, primitive scalings of GL and GM
   # If they are isometric, then the scalars must be identical.
   if dL//cL != dM//cM
-    return false, zero_matrix(FlintQQ, 0, 0)
+    return false, zero_matrix(QQ, 0, 0)
   end
 
   # Now compute LLL reduces gram matrices
@@ -587,7 +587,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   end
 
   if b
-    T = change_base_ring(FlintQQ, inv(TL)*T*TM)
+    T = change_base_ring(QQ, inv(TL)*T*TM)
     if !ambient_representation
       @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
       return true, T
@@ -610,7 +610,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
         CV = vcat(basis_matrix(L), CV)
         CW = orthogonal_complement(W, basis_matrix(M))
         CW = vcat(basis_matrix(M), CW)
-        D = identity_matrix(FlintQQ, rank(V) - rank(L))
+        D = identity_matrix(QQ, rank(V) - rank(L))
         T = inv(CV) * diagonal_matrix(T, D) * CW
       end
       @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * transpose(T) ==
@@ -618,7 +618,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
       return true, T
     end
   else
-    return false, zero_matrix(FlintQQ, 0, 0)
+    return false, zero_matrix(QQ, 0, 0)
   end
 end
 
@@ -1002,7 +1002,7 @@ function intersect(M::ZZLat, N::ZZLat)
   BNint = change_base_ring(FlintZZ, d * BN)
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
-  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
+  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return lattice(ambient_space(M), BI; check = false)
 end
 
@@ -1067,19 +1067,19 @@ function _to_ZLat(L::QuadLat, K, V)
   pm = pseudo_matrix(L)
   cm = coefficient_ideals(pm)
   pmm = matrix(pm)
-  bm = zero_matrix(FlintQQ, rank(L), dim(V))
+  bm = zero_matrix(QQ, rank(L), dim(V))
   for i in 1:nrows(pm)
     a = norm(cm[i])
     for j in 1:ncols(pm)
-      bm[i, j] = a * FlintQQ(pmm[i, j])
+      bm[i, j] = a * QQ(pmm[i, j])
     end
   end
   return lattice(V, bm; check = false)
 end
 
 function _to_ZLat(L::QuadLat;
-                  K::QQField = FlintQQ,
-                  V::QuadSpace = quadratic_space(K, map_entries(FlintQQ, gram_matrix(ambient_space(L)))))
+                  K::QQField = QQ,
+                  V::QuadSpace = quadratic_space(K, map_entries(QQ, gram_matrix(ambient_space(L)))))
   return _to_ZLat(L, K, V)
 end
 

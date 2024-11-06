@@ -631,15 +631,15 @@ function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, P::AbsNumFieldOrder
 end
 
 function is_local_norm(K::AbsSimpleNumField, a::RingElement, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return is_local_norm(K, FlintQQ(a), P)
+  return is_local_norm(K, QQ(a), P)
 end
 
 function is_local_norm(K::AbsSimpleNumField, a::RingElement, p::ZZRingElem)
-  return is_local_norm(K, FlintQQ(a), p)
+  return is_local_norm(K, QQ(a), p)
 end
 
 function is_local_norm(K::AbsSimpleNumField, a::RingElement, p::Integer)
-  return is_local_norm(K, FlintQQ(a), ZZRingElem(p))
+  return is_local_norm(K, QQ(a), ZZRingElem(p))
 end
 
 function is_local_norm(K::RelSimpleNumField{T}, a::T, P) where {T} # ideal of parent(a)
@@ -677,7 +677,7 @@ function _special_unit(P, p::ZZRingElem)
   end
   k = GF(p, cached = false)
   hex(x) = k(numerator(x)) * inv(k(denominator(x)))
-  hexinv(x) = FlintQQ(lift(x))
+  hexinv(x) = QQ(lift(x))
   t = hexinv(sqrt(hex(a)))
   a = a//t^2
   x = x//t
@@ -780,7 +780,7 @@ end
 
 ################################################################################
 #
-#  Treat FlintQQ as a number field
+#  Treat QQ as a number field
 #
 ################################################################################
 

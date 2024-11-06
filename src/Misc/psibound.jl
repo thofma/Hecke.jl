@@ -4,7 +4,7 @@ import Nemo.setcoeff!, Nemo.lift, Hecke.lift, Nemo.rem
 #  setcoeff!(g, i, lift(a))
 #end
 
-function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
+function bernstein(h::Int, it::Any, Q = QQ, cl = ceil, a::Int = 776)
   #use 771 and cl = floor to get decent upper bounds
   # more on the choice of 776 and 771 in Dan's paper
 

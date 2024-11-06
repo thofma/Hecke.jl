@@ -25,9 +25,9 @@
   for i in 1:10
     r = 10
     c = 20
-    M = matrix(FlintQQ, rand([0,0,0,0,0,0,0,0,0,0,1], r, c))
+    M = matrix(QQ, rand([0,0,0,0,0,0,0,0,0,0,1], r, c))
     Ms = sparse_matrix(M)
-    N = matrix(FlintQQ, rand([0,0,0,0,0,0,0,0,0,0,1], r, 2))
+    N = matrix(QQ, rand([0,0,0,0,0,0,0,0,0,0,1], r, 2))
     Ns = sparse_matrix(N)
     fl, sol = can_solve_with_solution(Ms, Ns, side = :right)
     @test fl == can_solve(Ms, Ns, side = :right)

@@ -59,7 +59,7 @@ elem_type(::Type{EmbeddedNumField{S, E}}) where {S, E} = EmbeddedNumFieldElem{el
 
 parent_type(::Type{EmbeddedNumFieldElem{T}}) where {T} = EmbeddedNumField{parent_type(T), embedding_type(parent_type(T))}
 
-base_ring(::EmbeddedNumField) = FlintQQ
+base_ring(::EmbeddedNumField) = QQ
 
 base_ring_type(::Type{<:EmbeddedNumField}) = QQField
 

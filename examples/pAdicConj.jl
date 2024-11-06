@@ -32,7 +32,7 @@ function mult_syzygies_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
       push!(u, a[i])
       lu = vcat(lu, la[i])
     else # length == 1 extend the module
-      r = [lift_reco(FlintQQ, x, reco = true) for x = k[1]]
+      r = [lift_reco(QQ, x, reco = true) for x = k[1]]
       #lift can fail if precision wrong.
       #or at least result is (can be) garbage
       #= bound on relation

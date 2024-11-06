@@ -1,5 +1,5 @@
 @testset "Elements" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
   O1 = EquationOrder(K1)

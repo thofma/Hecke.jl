@@ -403,7 +403,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   kt, t = polynomial_ring(k, "t", cached = false)
   fL = L.pol(t)
   Kr, gKr = number_field(fL, check = false, cached = false)
-  M = zero_matrix(FlintQQ, degree(Ka), degree(Ka))
+  M = zero_matrix(QQ, degree(Ka), degree(Ka))
   z = one(S)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, elem_in_nf(a))
@@ -412,7 +412,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
     mul!(z, z, elem_in_nf(a))
     elem_to_mat_row!(M, i, z)
   end
-  N = zero_matrix(FlintQQ, 2, degree(S))
+  N = zero_matrix(QQ, 2, degree(S))
   for i = 1:2
     elem_to_mat_row!(N, i, S[i])
   end

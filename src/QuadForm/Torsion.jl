@@ -44,7 +44,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
     for g in gens
       @req length(g) == n "Generator not an element of the ambient space"
       fl, v = can_solve_with_solution(BM,
-                                      matrix(FlintQQ, 1, n, g);
+                                      matrix(QQ, 1, n, g);
                                       side = :left)
       @req denominator(v) == 1 "Generator not an element of the lattice"
       ginA = A(change_base_ring(FlintZZ, v))
@@ -68,7 +68,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   if gens !== nothing  && length(gens) > 0
     gens_lift = gens
   else
-    gens_lift = Vector{QQFieldElem}[reshape(collect(change_base_ring(FlintQQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
+    gens_lift = Vector{QQFieldElem}[reshape(collect(change_base_ring(QQ, mS(s).coeff) * BM), :) for s in Hecke.gens(S)]
   end
 
   num = basis_matrix(M) * gram_matrix(ambient_space(M)) * transpose(basis_matrix(N))
@@ -91,7 +91,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   T.ab_grp = S
   T.proj = inv(mS).map
   T.gens_lift = gens_lift
-  T.gens_lift_mat = matrix(FlintQQ, length(gens_lift), degree(M), reduce(vcat, gens_lift; init = QQFieldElem[]))
+  T.gens_lift_mat = matrix(QQ, length(gens_lift), degree(M), reduce(vcat, gens_lift; init = QQFieldElem[]))
   T.modulus = _modulus
   T.modulus_qf = _modulus_qf
   T.value_module = QmodnZ(_modulus)
@@ -224,7 +224,7 @@ function gram_matrix_bilinear(T::TorQuadModule)
     return T.gram_matrix_bilinear
   end
   g = gens(T)
-  G = zero_matrix(FlintQQ, length(g), length(g))
+  G = zero_matrix(QQ, length(g), length(g))
   for i in 1:length(g)
     for j in 1:i
       G[i, j] = G[j, i] = lift(g[i] * g[j])
@@ -248,7 +248,7 @@ function gram_matrix_quadratic(T::TorQuadModule)
   end
   g = gens(T)
   r = length(g)
-  G = zero_matrix(FlintQQ, r, r)
+  G = zero_matrix(QQ, r, r)
   for i in 1:r
     for j in 1:(i - 1)
       G[i, j] = G[j, i] = lift(g[i] * g[j])
@@ -339,7 +339,7 @@ and $v \in M$.
 """
 function (T::TorQuadModule)(v::Vector)
   @req length(v) == dim(ambient_space(cover(T))) "Vector of wrong length"
-  vv = map(FlintQQ, v)
+  vv = map(QQ, v)
   if eltype(vv) != QQFieldElem
     error("Cannot coerce elements to the rationals")
   end
@@ -348,7 +348,7 @@ end
 
 function (T::TorQuadModule)(v::Vector{QQFieldElem})
   @req length(v) == degree(cover(T)) "Vector of wrong length"
-  vv = matrix(FlintQQ, 1, length(v), v)
+  vv = matrix(QQ, 1, length(v), v)
   vv = change_base_ring(ZZ, solve(basis_matrix(cover(T)), vv; side = :left))
   return T(abelian_group(T)(vv * T.proj))
 end
@@ -619,7 +619,7 @@ For $a + N \in M/N$ this returns the representative $a$.
 """
 function lift(a::TorQuadModuleElem)
   T = parent(a)
-  z = change_base_ring(FlintQQ, a.data.coeff) * T.gens_lift_mat
+  z = change_base_ring(QQ, a.data.coeff) * T.gens_lift_mat
   return QQFieldElem[z[1, i] for i in 1:ncols(z)]
 end
 
@@ -1234,7 +1234,7 @@ julia> a = gens(T)[1];
 julia> a*a == -phi(a)*phi(a)
 true
 
-julia> G = matrix(FlintQQ, 6, 6 , [3 3 0 0 0  0;
+julia> G = matrix(QQ, 6, 6 , [3 3 0 0 0  0;
                                    3 3 3 0 3  0;
                                    0 3 3 3 0  0;
                                    0 0 3 3 0  0;
@@ -1253,7 +1253,7 @@ julia> B = matrix(QQ, 6, 6 , [1    0    0    0    0    0;
 
 julia> M = lattice(V, B);
 
-julia> B2 = matrix(FlintQQ, 6, 6 , [ 1  0 -1  1  0 0;
+julia> B2 = matrix(QQ, 6, 6 , [ 1  0 -1  1  0 0;
                                      0  0  1 -1  0 0;
                                     -1  1  1 -1 -1 0;
                                      1 -1 -1  2  1 0;
@@ -1412,7 +1412,7 @@ function torsion_quadratic_module(q::QQMatrix)
   d = denominator(q)
   Q = change_base_ring(FlintZZ, d * q)
   S, U, V = snf_with_transform(Q)
-  D = change_base_ring(FlintQQ, U) * q * change_base_ring(FlintQQ, V)
+  D = change_base_ring(QQ, U) * q * change_base_ring(QQ, V)
   L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)); gram = d^2 * q)
   denoms = QQFieldElem[denominator(D[i, i]) for i in 1:ncols(D)]
   rels = diagonal_matrix(denoms) * U

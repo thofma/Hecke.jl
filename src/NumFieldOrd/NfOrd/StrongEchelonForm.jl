@@ -452,7 +452,7 @@ function _strong_echelon_form_nonsplit(M)
 end
 
 function test_pseudohnf()
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   for i in 2:15
     K, a = number_field(x^i - 10, "a")
     O = maximal_order(K)

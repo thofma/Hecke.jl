@@ -441,7 +441,7 @@ end
 end
 
 @testset "Exact totally real Dedekind zeta functions" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = quadratic_field(5)
 
   res = map(QQFieldElem, [1//30, 0, 1//60, 0, 67//630, 0, 361//120, 0, 412751//1650,
@@ -470,7 +470,7 @@ end
 end
 
 @testset "Masses" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
@@ -478,7 +478,7 @@ end
   L26097 = quadratic_lattice(K, gens, gram = D)
   @test mass(L26097) == QQFieldElem(3, 32)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
@@ -486,7 +486,7 @@ end
   L23539 = quadratic_lattice(K, gens, gram = D)
   @test mass(L23539) == QQFieldElem(1, 128)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
@@ -494,7 +494,7 @@ end
   L23563 = quadratic_lattice(K, gens, gram = D)
   @test mass(L23563) == QQFieldElem(1, 32)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-x-1;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, a+2]);
@@ -502,7 +502,7 @@ end
   L23460 = quadratic_lattice(K, gens, gram = D)
   @test mass(L23460) == QQFieldElem(1, 96)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-x-4;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [4, 0, 0, 0, 2, 0, 0, 0, 4]);
@@ -510,7 +510,7 @@ end
   L2354 = quadratic_lattice(K, gens, gram = D)
   @test mass(L2354) == QQFieldElem(1, 4)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
@@ -518,7 +518,7 @@ end
   L1109 = quadratic_lattice(K, gens, gram = D)
   @test mass(L1109) == QQFieldElem(1, 32)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 6, 6, [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2]);
@@ -526,7 +526,7 @@ end
   L28819 = quadratic_lattice(K, gens, gram = D)
   @test mass(L28819) == QQFieldElem(1, 46080)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 4, 4, [1, 0, 0, 0, 0, -5*a+8, 0, 0, 0, 0, 1, 0, 0, 0, 0, -15*a+24]);
@@ -543,7 +543,7 @@ end
   @test Hecke.local_factor(L, p) == QQFieldElem(1)
   @test mass(L) == QQFieldElem(1, 12)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2
   K, a = number_field(f)
   D = matrix(K, 2, 2, [3*a + 4, 9*a + 12, 9*a + 12, 36*a + 48])

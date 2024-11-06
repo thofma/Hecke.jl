@@ -276,7 +276,7 @@ using Hecke.SparseArrays
   D = sparse_matrix(FlintZZ, [1 5 3; 0 -10 0; 0 1 0])
   b = @inferred maximum(abs, D)
   @test b == ZZRingElem(10)
-  D = sparse_matrix(FlintQQ, [1 2 QQFieldElem(9, 4); 0 -10 0; 0 1 0])
+  D = sparse_matrix(QQ, [1 2 QQFieldElem(9, 4); 0 -10 0; 0 1 0])
   b = @inferred maximum(D)
   @test b == QQFieldElem(9, 4)
   b = @inferred minimum(D)

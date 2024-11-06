@@ -1,5 +1,5 @@
 @testset "Clgp" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   @testset "class numbers" begin
     @testset "quadratic fields" begin
       classnumbersofquadraticfields = Tuple{Int, Int}[(-50,1),(-49,1),(-48,1),(-47,5),(-46,4)
@@ -87,7 +87,7 @@
 end
 
 @testset "_class_unit_group" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   AF = ArbField(20, cached = false)
 
   @testset "K = Q" begin
@@ -220,7 +220,7 @@ end
   end
 
   @testset "S3 field" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     f = x^6-24*x^4+157*x^2-162
     K, a = number_field(f)
     OK = maximal_order(K)
@@ -230,7 +230,7 @@ end
   end
 
   @testset "Proof" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     f = x^2 - 3 * 5 * 7 * 11
     K, a = number_field(f)
     OK = maximal_order(K)

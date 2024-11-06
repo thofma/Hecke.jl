@@ -85,7 +85,7 @@ Version 0.22.8...
 (c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
 
-julia> Qx, x = polynomial_ring(FlintQQ, "x");
+julia> Qx, x = polynomial_ring(QQ, "x");
 
 julia> f = x^3 + 2;
 

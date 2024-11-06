@@ -4,7 +4,7 @@
   @test parent_type(elem_type(AbsSimpleNumFieldOrder)) === AbsSimpleNumFieldOrder
 
   @testset "Construction" begin
-     Qx, x = polynomial_ring(FlintQQ, "x")
+     Qx, x = polynomial_ring(QQ, "x")
 
      K1, a1 = number_field(x^3 - 2, "a")
     O1 = EquationOrder(K1, true)
@@ -43,7 +43,7 @@
 
      K4, a4 = number_field(x^2 - 5, "a")
     O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], ZZRingElem(1)))
-    O44 = Order(K4, FlintQQ[1 0; 0 2])
+    O44 = Order(K4, QQ[1 0; 0 2])
     O444 = Order(K4, FlintZZ[1 0; 0 2])
 
     @test Hecke.nf(O4) == K4
@@ -59,7 +59,7 @@
     @test Hecke.nf(O6) == K6
 
     O7 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)), check = true, cached = false)
-    O77 = Order(K6, FlintQQ[1 0; 0 1//6])
+    O77 = Order(K6, QQ[1 0; 0 1//6])
 
     #@test O7 == O77
     #@test !(O7 === O77)
@@ -75,7 +75,7 @@
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 0], FlintZZ(6)))
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
   O1 = EquationOrder(K1)
@@ -198,11 +198,11 @@
     @test b == 1
 
     b = @inferred gen_index(O4)
-    @test b == FlintQQ(1, 2)
+    @test b == QQ(1, 2)
     @test_throws ErrorException index(O4)
 
     b = @inferred gen_index(O7)
-    @test b == FlintQQ(6)
+    @test b == QQ(6)
     b = @inferred index(O7)
     @test b == 6
 

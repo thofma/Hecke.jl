@@ -256,7 +256,7 @@ function rres_bez(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} 
   @assert typeof(f) == typeof(g)
   R = base_ring(f)
   Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
-  Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+  Qx = polynomial_ring(QQ, "x", cached = false)[1]
   g, q, w = gcdx(Qx(lift(Zx, f)), Qx(lift(Zx, g)))
   return gcd(R(0), R(lcm(denominator(q), denominator(w))))
 end

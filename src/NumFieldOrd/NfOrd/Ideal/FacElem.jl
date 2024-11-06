@@ -9,7 +9,7 @@ function factored_norm(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
     #  b[n] = k
     #end
   end
-  bb = FacElem(FlintQQ, b)
+  bb = FacElem(QQ, b)
   simplify!(bb)
   return bb
 end
@@ -45,7 +45,7 @@ function factored_norm(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumF
     #  b[v] = -k
     #end
   end
-  bb = FacElem(FlintQQ, b)
+  bb = FacElem(QQ, b)
   simplify!(bb)
   return bb
 end

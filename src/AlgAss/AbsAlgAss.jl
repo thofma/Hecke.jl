@@ -802,7 +802,7 @@ function CrossedProductAlgebra(K::AbsSimpleNumField, G::Vector{T}, cocval::Matri
       end
     end
   end
-  return StructureConstantAlgebra(FlintQQ, M)
+  return StructureConstantAlgebra(QQ, M)
 
 end
 
@@ -853,7 +853,7 @@ function CrossedProductAlgebra(O::AbsSimpleNumFieldOrder, G::Vector{T}, cocval::
   j = find_elem(G, j1)
   O1 = QQFieldElem[0 for i=1:n*m]
   O1[j] = QQFieldElem(1)
-  A = StructureConstantAlgebra(FlintQQ, M, O1)
+  A = StructureConstantAlgebra(QQ, M, O1)
   A.is_simple = 1
   return A
 

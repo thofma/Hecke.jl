@@ -1025,7 +1025,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
     bas = elem_type(K)[one(K)]
     B = basis_matrix(bas, FakeFmpqMat) # trivially in lower-left HNF
     full_rank = false
-    m = FlintQQ()
+    m = QQ()
   end
 
   dummy_vector = elem_type(K)[K()]

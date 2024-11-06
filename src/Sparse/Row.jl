@@ -13,7 +13,7 @@ end
 
 base_ring(A::SRow{ZZRingElem}) = FlintZZ
 
-base_ring(A::SRow{QQFieldElem}) = FlintQQ
+base_ring(A::SRow{QQFieldElem}) = QQ
 
 function base_ring(A::SRow{T}) where {T}
   if isdefined(A, :base_ring)

@@ -357,7 +357,7 @@ function tr(a::NumFieldElem, k::NumField)
   return _elem_tr_to(a, k)
 end
 
-tr(a::NumFieldElem, ::QQField) = _elem_tr_to(a, FlintQQ)
+tr(a::NumFieldElem, ::QQField) = _elem_tr_to(a, QQ)
 
 @doc doc"""
     norm(a::NumFieldElem, k::NumField) -> NumFieldElem
@@ -369,7 +369,7 @@ function norm(a::NumFieldElem, k::NumField)
   _elem_norm_to(a, k)
 end
 
-norm(a::NumFieldElem, ::QQField) = _elem_norm_to(a, FlintQQ)
+norm(a::NumFieldElem, ::QQField) = _elem_norm_to(a, QQ)
 
 @doc doc"""
     absolute_tr(a::NumFieldElem) -> QQFieldElem
@@ -654,7 +654,7 @@ absolute_minpoly(a::AbsSimpleNumFieldElem) = minpoly(a)
 
 absolute_minpoly(a::AbsNonSimpleNumField) = minpoly(a)
 
-absolute_minpoly(a::T) where T <: Union{RelNonSimpleNumFieldElem, RelSimpleNumFieldElem} = minpoly(a, FlintQQ)
+absolute_minpoly(a::T) where T <: Union{RelNonSimpleNumFieldElem, RelSimpleNumFieldElem} = minpoly(a, QQ)
 
 absolute_minpoly(a::QQFieldElem) = Hecke.Globals.Qx([-a, 1])
 

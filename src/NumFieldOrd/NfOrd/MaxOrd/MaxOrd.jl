@@ -33,7 +33,7 @@ or the discriminant of the maximal order.
 # Example
 
 ```julia-repl
-julia> Qx, x = FlintQQ["x"];
+julia> Qx, x = QQ["x"];
 julia> K, a = number_field(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```

@@ -231,7 +231,7 @@ end
 function _reduce_standard_form(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem)
   K = parent(a)
   if is_rational(a) && is_rational(b)
-    n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))
+    n, m, ap, bp = _reduce_standard_form(QQ(a), QQ(b))
     return K(n), K(m), K(ap), K(bp)
   else
     return one(K), one(K), a, b
@@ -283,7 +283,7 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   f = standard_involution(A)
   B = elem_in_algebra.(absolute_basis(O))
   d = length(B)
-  G = zero_matrix(FlintQQ, d, d)
+  G = zero_matrix(QQ, d, d)
   for i in 1:d
     for j in 1:d
       G[i, j] = FlintZZ(absolute_tr(trred(B[i] * f(B[j]))))//2

@@ -1,4 +1,4 @@
-Qx, x = polynomial_ring(FlintQQ, "x")
+Qx, x = polynomial_ring(QQ, "x")
 K2, a2 = number_field(x^3 - 2, "a1")
 K3, (a3,) = number_field([x^3 - 2], "a2")
 @testset "Fractional ideals for $K1" for (K1, a1) in [(K2, a2), (K3, a3)]
@@ -62,7 +62,7 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
 
   @testset "Norm" begin
     b = @inferred norm(J)
-    @test b == FlintQQ(16, 2^3)
+    @test b == QQ(16, 2^3)
   end
 
   @testset "Ring of multipliers" begin
@@ -75,7 +75,7 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
   @testset "Denominator" begin
     # This was once a bug found by Johannes
     @testset begin
-      R, x = polynomial_ring(FlintQQ, "x")
+      R, x = polynomial_ring(QQ, "x")
       K, a = number_field(x, "a")
       O = maximal_order(K)
       I = Hecke.AbsSimpleNumFieldOrderFractionalIdeal(ideal(O, O(2)), ZZRingElem(2))
