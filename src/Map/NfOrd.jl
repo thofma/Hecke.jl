@@ -1087,6 +1087,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
   p = mF.defining_pol
   q = one(Fq)
   t = mF.t
+  quo = gcd(quo, order(Fq)-1)
   for (k, v) = a.fac
     vv = v
     if quo != 0
