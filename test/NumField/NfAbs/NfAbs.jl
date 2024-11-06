@@ -85,3 +85,17 @@ end
   @test !is_normal(K)
   @test length(automorphism_list(K)) == 2
 end
+
+
+@testset "NumField/NfAbs/MultDep" begin
+  k, a = wildanger_field(5,13);
+  zk = lll(maximal_order(k))
+  class_group(zk)
+  h = zk.__attrs[:ClassGrpCtx]
+  r = vcat(h.R_gen, h.R_rel);
+  r = [x for x = r if isa(x, AbsSimpleNumFieldElem)]
+  q = Hecke.syzygies(r)  
+  @test all(isone, evaluate(FacElem(r, q[i, :])) for i=1:nrows(q))
+end
+
+
