@@ -145,22 +145,19 @@ end
 global const maximal_order = MaximalOrder
 
 function _print_banner()
+  printstyled(raw""" _    _           _          """, color = :red)
   println("")
-  print("Welcome to \n")
-  printstyled(raw"
-    _    _           _
-   | |  | |         | |
-   | |__| | ___  ___| | _____
-   |  __  |/ _ \/ __| |/ / _ \
-   | |  | |  __/ (__|   <  __/
-   |_|  |_|\___|\___|_|\_\___|", color = :red)
-  println()
-  println()
-  print("Version")
-  printstyled(" $VERSION_NUMBER ", color = :green)
-  print("... \n ... which comes with absolutely no warranty whatsoever")
-  println()
-  println("(c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+  printstyled(raw"""| |  | |         | |         """, color = :red)
+  println("|  Software package for")
+  printstyled(raw"""| |__| | ___  ___| | _____   """, color = :red)
+  println("|  algorithmic algebraic number theory")
+  printstyled(raw"""|  __  |/ _ \/ __| |/ / _ \  """, color = :red)
+  println("|  ")
+  printstyled(raw"""| |  | |  __/ (__|   <  __/  """, color = :red)
+  println("|  Manual: https://thofma.github.io/Hecke.jl")
+  printstyled(raw"""|_|  |_|\___|\___|_|\_\___|  """, color = :red)
+  print("|  Version ")
+  printstyled("$VERSION_NUMBER", color = :green)
   println()
 end
 
