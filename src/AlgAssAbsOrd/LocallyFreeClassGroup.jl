@@ -121,7 +121,7 @@ These tests can be disabled by setting `check = false`.
 """
 function locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
   if check
-    if !(algebra(O) isa GroupAlgebra) || basis_matrix(FakeFmpqMat, O, copy = false) != FakeFmpqMat(identity_matrix(FlintZZ, dim(algebra(O))), ZZRingElem(1))
+    if !(algebra(O) isa GroupAlgebra) || basis_matrix(FakeFmpqMat, O, copy = false) != FakeFmpqMat(identity_matrix(ZZ, dim(algebra(O))), ZZRingElem(1))
       error("Only implemented for group rings")
     end
   end
@@ -141,7 +141,7 @@ end
 function _reduced_norms(a::AbstractAssociativeAlgebraElem, mR::MapRayClassGroupAlg)
   A = parent(a)
   Adec = decompose(A)
-  r = zero_matrix(FlintZZ, 1, 0)
+  r = zero_matrix(ZZ, 1, 0)
 
   for i = 1:length(Adec)
     B, BtoA = Adec[i]

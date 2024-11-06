@@ -440,7 +440,7 @@ function _torsion_units_gen(K::AbsSimpleNumField)
   fac = factor(m).fac
   gen = K(1)
   ord = 1
-  Zx, x = polynomial_ring(FlintZZ, "x")
+  Zx, x = polynomial_ring(ZZ, "x")
   for (p, v) in fac
     if p == 2 && v == 1
       mul!(gen, gen, K(-1))
@@ -474,7 +474,7 @@ function _torsion_units_gen(K::NumField)
   fac = factor(m).fac
   gen = one(K)
   ord = 1
-  Zx, x = polynomial_ring(FlintZZ, "x")
+  Zx, x = polynomial_ring(ZZ, "x")
   for (p, v) in fac
     if p == 2 && v == 1
       mul!(gen, gen, K(-1))

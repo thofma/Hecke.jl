@@ -158,7 +158,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   # We construct the relation matrix and evaluate units and relations with the class group in the quotient by m
   # Then we compute the discrete logarithms
 
-  R = zero_matrix(FlintZZ, 2*(ngens(C)+nG+ngens(H))+nU, ngens(C)+ngens(H)+nG)
+  R = zero_matrix(ZZ, 2*(ngens(C)+nG+ngens(H))+nU, ngens(C)+ngens(H)+nG)
   for i = 1:ncols(R)
     R[i+ngens(C)+nG+ngens(H)+nU, i] = n_quo
   end
@@ -253,7 +253,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
         @vprintln :RayFacElem 1 "J is one"
         return id(X)
       end
-      coeffs = zero_matrix(FlintZZ, 1, ngens(X))
+      coeffs = zero_matrix(ZZ, 1, ngens(X))
       if J.is_principal == 1 && isdefined(J, :princ_gen)
         z = FacElem(Dict(J.princ_gen.elem_in_nf => diffC))
       else
@@ -389,7 +389,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
     mG = groups_and_maps[i][2]
     for (prim, mprim) in mG.tame
       new_mprim = GrpAbFinGenToAbsOrdMap(domain(mprim), codomain(mprim), copy(mprim.generators), mprim.discrete_logarithm)
-      dis = zero_matrix(FlintZZ, 1, ngens(X))
+      dis = zero_matrix(ZZ, 1, ngens(X))
       to_be_c = mprim.disc_log.coeff
       for i = 1:length(to_be_c)
         dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
@@ -402,7 +402,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
 
   disc_log_inf = Dict{eltype(p), FinGenAbGroupElem}()
   for i = 1:length(p)
-    eldi = zero_matrix(FlintZZ, 1, ngens(X))
+    eldi = zero_matrix(ZZ, 1, ngens(X))
     eldi[1, ngens(X) - length(inf_plc) + i] = 1
     disc_log_inf[p[i]] = FinGenAbGroupElem(X, eldi)
   end
@@ -441,7 +441,7 @@ function log_infinite_primes(O::AbsSimpleNumFieldOrder, p::Vector{<: InfPlc})
   let S = S, p = p
     function log(B::T) where T <: Union{AbsSimpleNumFieldElem ,FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
       emb = signs(B, _embedding.(p))
-      ar = zero_matrix(FlintZZ, 1, length(p))
+      ar = zero_matrix(ZZ, 1, length(p))
       for i = 1:length(p)
         if emb[_embedding(p[i])] == -1
           ar[1, i] = 1

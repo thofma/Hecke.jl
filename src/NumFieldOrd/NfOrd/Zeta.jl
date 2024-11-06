@@ -157,7 +157,7 @@ end
   function _comp_summand(R, p::ZZRingElem, m::Int, aa::ArbFieldElem)
     logp = log(R(p))
 
-    pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
+    pm2 = R(p)^(R(ZZ(m)//ZZ(2)))
 
     pm2inv = inv(pm2)
 

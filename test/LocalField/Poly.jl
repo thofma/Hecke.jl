@@ -8,12 +8,12 @@
     Fx, x = polynomial_ring(F, "x")
     f = x^5
     for i = 0:4
-      c = K(rand(FlintZZ, 1:100))
+      c = K(rand(ZZ, 1:100))
       f += c*x^i
     end
     u = 1
     for i = 1:5
-      c = K(rand(FlintZZ, 1:100))
+      c = K(rand(ZZ, 1:100))
       u += 2*c*x^i
     end
 

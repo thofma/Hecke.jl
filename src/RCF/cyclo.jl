@@ -105,7 +105,7 @@ function cyclotomic_extension(k::AbsSimpleNumField, n::Int; cached::Bool = true,
     return c
   end
 
-  ZX, X = polynomial_ring(FlintZZ, cached = false)
+  ZX, X = polynomial_ring(ZZ, cached = false)
   f = cyclotomic(n, X)
   fk = change_base_ring(k, f, parent = kt)
   if n < 5
@@ -371,7 +371,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
   set_attribute!(S, :maximal_order => OS)
 
-  Zx = polynomial_ring(FlintZZ, "x")[1]
+  Zx = polynomial_ring(ZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
   local poly::ZZPolyRingElem
   local poly2::ZZPolyRingElem
@@ -497,7 +497,7 @@ function automorphism_list(C::CyclotomicExt; gens::Vector{<:NumFieldHom{AbsSimpl
     push!(gnew, na)
   end
   #Now add the automorphisms of the relative extension
-  R = residue_ring(FlintZZ, C.n, cached = false)[1]
+  R = residue_ring(ZZ, C.n, cached = false)[1]
   U, mU = unit_group(R)
   if is_cyclic(U)
     k = degree(C.Kr)
@@ -545,7 +545,7 @@ function cyclotomic_field(::Type{ClassField}, n::Integer)
 end
 
 function cyclotomic_field(::Type{ClassField}, n::ZZRingElem)
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
   set_attribute!(C, :cyclo => n, :show => show_cyclo)

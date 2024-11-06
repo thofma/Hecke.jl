@@ -1152,7 +1152,7 @@ The same matrix $A$, but as an `ZZMatrix`.
 Requires a conversion from the base ring of $A$ to $\mathbb ZZ$.
 """
 function ZZMatrix(A::SMat{T}) where T <: Integer
-  B = zero_matrix(FlintZZ, A.r, A.c)
+  B = zero_matrix(ZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
     for j = 1:length(ra.pos)
@@ -1168,7 +1168,7 @@ end
 The same matrix $A$, but as an `ZZMatrix`.
 """
 function ZZMatrix(A::SMat{ZZRingElem})
-  B = zero_matrix(FlintZZ, A.r, A.c)
+  B = zero_matrix(ZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
     for j = 1:length(ra.pos)
@@ -1200,7 +1200,7 @@ end
 """
 function maximum(::typeof(abs), A::SMat{ZZRingElem})
   if length(A.rows) == 0
-    return zero(FlintZZ)
+    return zero(ZZ)
   end
   m = abs(A.rows[1].values[1])
   for i in A.rows
@@ -1249,7 +1249,7 @@ end
 
 function maximum(::typeof(nbits), A::SMat{ZZRingElem})
   if length(A.rows) == 0
-    return zero(FlintZZ)
+    return zero(ZZ)
   end
   m = nbits(A.rows[1].values[1])
   for i in A.rows

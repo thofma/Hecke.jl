@@ -357,7 +357,7 @@ function _get_support(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, I::A
     i += 1
     @vprint :CompactPresentation 3 "Element $i / $(length(a.fac))"
     if isinteger(e)
-      Id1 = ideal(Zk, FlintZZ(e))
+      Id1 = ideal(Zk, ZZ(e))
       push!(A, (Id1, v))
       continue
     end

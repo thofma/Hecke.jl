@@ -521,7 +521,7 @@ function _action_on_quo(mq::FinGenAbGroupHom, act::Vector{FinGenAbGroupHom})
   q=mq.header.codomain
   S,mS=snf(q)
   n=Int(S.snf[end])
-  R=residue_field(FlintZZ, n, cached=false)[1]
+  R=residue_field(ZZ, n, cached=false)[1]
   quo_action=Vector{zzModMatrix}(undef, length(act))
   for s=1:length(act)
     quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
@@ -627,7 +627,7 @@ end
 function C22_extensions(bound::Int)
 
 
-  Qx, x=polynomial_ring(FlintZZ, "x")
+  Qx, x=polynomial_ring(ZZ, "x")
   K, _=number_field(x-1, cached = false)
   Kx,x=polynomial_ring(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
@@ -659,7 +659,7 @@ end
 
 
 function _C22_exts_abexts(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
-  Qx, x = polynomial_ring(FlintZZ, "x", cached = false)
+  Qx, x = polynomial_ring(ZZ, "x", cached = false)
   pairs = _find_pairs(bound, only_real, unramified_outside = unramified_outside)
   return (_ext_with_autos(Qx, x, i, j) for (i, j) in pairs)
 end
@@ -1038,7 +1038,7 @@ function discriminant_conductorQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::I
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)[1]
+  R=residue_ring(ZZ, m, cached=false)[1]
 
   for (_p,v) in lp
     p = ZZ(_p)
@@ -1128,7 +1128,7 @@ function discriminantQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::Int)
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)[1]
+  R=residue_ring(ZZ, m, cached=false)[1]
 
   for (_p,v) in lp
     p = ZZ(_p)
@@ -1284,7 +1284,7 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   O=order(m)
   K=nf(O)
 
-  R=residue_ring(FlintZZ, mm, cached=false)[1]
+  R=residue_ring(ZZ, mm, cached=false)[1]
   for (_p,v) in lp.fac
     p = ZZ(_p)
     if isodd(p)

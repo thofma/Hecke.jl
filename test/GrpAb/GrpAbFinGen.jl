@@ -5,7 +5,7 @@
   end
 
   @testset "Constructor" begin
-    M1 = matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
+    M1 = matrix(ZZ, 2, 3, [1, 2, 3, 4, 5, 6])
     G = @inferred abelian_group(M1)
     @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
@@ -16,7 +16,7 @@
     @test is_abelian(G)
     @test G.rels == M1
 
-    M = FlintZZ[1 2 3; 4 5 6] # ZZMatrix
+    M = ZZ[1 2 3; 4 5 6] # ZZMatrix
     G = @inferred abelian_group(M)
     @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
@@ -48,13 +48,13 @@
     G = @inferred abelian_group(N)
     @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
-    @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+    @test G.rels == matrix(ZZ, 2, 2, [3, 0, 0, 5])
 
     N = ZZRingElem[3, 5]
     G = @inferred abelian_group(N)
     @test isa(G, FinGenAbGroup)
     @test is_abelian(G)
-    @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+    @test G.rels == matrix(ZZ, 2, 2, [3, 0, 0, 5])
 
     G = @inferred free_abelian_group(2)
     @test isa(G, FinGenAbGroup)
@@ -76,25 +76,25 @@
     @test @inferred is_snf(S)
     @test @inferred ngens(S) == 2
     @test @inferred nrels(S) == 2
-    @test @inferred rels(S) == matrix(FlintZZ, 2, 2, [3, 0, 0, 0])
+    @test @inferred rels(S) == matrix(ZZ, 2, 2, [3, 0, 0, 0])
 
     G = abelian_group([3, 5])
     @test @inferred !is_snf(G)
     @test @inferred ngens(G) == 2
     @test @inferred nrels(G) == 2
-    @test @inferred rels(G) == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+    @test @inferred rels(G) == matrix(ZZ, 2, 2, [3, 0, 0, 5])
   end
 
   @testset "Hermite normal form" begin
-    M   = FlintZZ[1 2 3; 4 5 6]
-    HNF = FlintZZ[1 2 3; 0 3 6]
+    M   = ZZ[1 2 3; 4 5 6]
+    HNF = ZZ[1 2 3; 0 3 6]
     G = abelian_group(M)
     Hecke.assure_has_hnf(G)
     @test G.hnf == HNF
   end
 
   @testset "Smith normal form" begin
-    M = FlintZZ[16 17 2 ; 19 23 8 ; 16 17 2]
+    M = ZZ[16 17 2 ; 19 23 8 ; 16 17 2]
     G = abelian_group(M)
     S, mS = @inferred snf(G)
     @test is_snf(S)
@@ -102,7 +102,7 @@
     @test codomain(mS) == G
     @test domain(mS) == S
 
-    M = FlintZZ[-4 0; 0 4]
+    M = ZZ[-4 0; 0 4]
     G = abelian_group(M)
     S, mS = @inferred snf(G)
     @test S.snf == ZZRingElem[4, 4]
@@ -227,14 +227,14 @@
   @testset "Subgroup" begin
     @test_throws ErrorException sub(FinGenAbGroupElem[])
 
-    G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
+    G = abelian_group(ZZ[3 0 0 ; 0 15 0])
     g1 = G[1]
     g2 = G[2]
     g3 = G[3]
     S, S_map = @inferred sub([g1, g2, g3])
     @test is_isomorphic(G, S)
 
-    G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
+    G = abelian_group(ZZ[3 0 0 ; 0 15 0])
     S, mS = snf(G)
     s1 = S[1]
     s2 = S[2]
@@ -242,19 +242,19 @@
     H, mH = @inferred sub(S, [s1, s2, s3])
     @test is_isomorphic(H, G)
 
-    G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
+    G = abelian_group(ZZ[3 0 0 ; 0 15 0])
     g1 = G[1]
     H, mH = @inferred sub(G, [g1])
     @test is_isomorphic(H, abelian_group([3]))
 
-    G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
+    G = abelian_group(ZZ[3 0 0 ; 0 15 0])
     S, mS = snf(G)
     s1 = S[1]
     H, mH = @inferred sub(S, [s1])
     @test is_isomorphic(H, abelian_group([3]))
 
     # G contains empty relation
-    G = abelian_group(FlintZZ[3 0 0 ; 0 15 0 ; 0 0 30 ; 0 0 0])
+    G = abelian_group(ZZ[3 0 0 ; 0 15 0 ; 0 0 30 ; 0 0 0])
     g1 = G[3]
     S, mS = @inferred sub(G, [g1])
     @test is_isomorphic(S, abelian_group([30]))
@@ -278,7 +278,7 @@
   end
 
   @testset "Quotient" begin
-    G = abelian_group(FlintZZ[3 0 0 ; 0 15 0])
+    G = abelian_group(ZZ[3 0 0 ; 0 15 0])
 
     Q, mQ = @inferred quo(G, FinGenAbGroupElem[])
     @test is_isomorphic(Q, G)

@@ -344,7 +344,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
   S = FB.ideals
   ZK = order(S[1])
 
-  z = sparse_matrix_type(ZZ)[zero_matrix(SMat, FlintZZ, 0, length(S)) for i in 1:degree(field(N))]
+  z = sparse_matrix_type(ZZ)[zero_matrix(SMat, ZZ, 0, length(S)) for i in 1:degree(field(N))]
 
   mk = embedding(N, i)
   zk = order(s[1])
@@ -412,7 +412,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
       r = [(p[i], e) for (i, e) in v]
       sort!(r, lt = (a,b)->a[1]<b[1])
     #@show l, r
-      push!(z[i], sparse_row(FlintZZ, r, sort = false))
+      push!(z[i], sparse_row(ZZ, r, sort = false))
     end
   end
 
@@ -431,7 +431,7 @@ end
 function induce_action(N::NormRelation, i, j, s, FB, cache)
   S = FB.ideals
   ZK = order(S[1])
-  z = zero_matrix(SMat, FlintZZ, 0, length(S))
+  z = zero_matrix(SMat, ZZ, 0, length(S))
   mk = embedding(N, i)
   zk = order(s[1])
 
@@ -495,7 +495,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
     r = [(p[i], e) for (i, e) in v]
     sort!(r, lt = (a,b)->a[1]<b[1])
     #@show l, r
-    push!(z, sparse_row(FlintZZ, r, sort = false))
+    push!(z, sparse_row(ZZ, r, sort = false))
   end
 
   #for l in 1:length(s)
@@ -514,7 +514,7 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
     error("Not implemented yet")
   end
   ZK = order(S[1])
-  z = zero_matrix(SMat, FlintZZ, 0, length(S))
+  z = zero_matrix(SMat, ZZ, 0, length(S))
   mk = embedding(N, i)
   for j in 1:length(s)
     v = Tuple{Int, ZZRingElem}[]
@@ -531,7 +531,7 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
     # We still need to sort the positions of the non-zero entries
     sort!(v, by = x -> x[1])
 
-    push!(z, N.pure_coefficients[i] * sparse_row(FlintZZ, v, sort = false))
+    push!(z, N.pure_coefficients[i] * sparse_row(ZZ, v, sort = false))
   end
   return z
 end
@@ -561,7 +561,7 @@ function Hecke.simplify(c::Hecke.ClassGrpCtx)
     end
   end
   for i=1:length(U.units)
-    Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
+    Hecke.class_group_add_relation(d, U.units[i], SRow(ZZ))
   end
   return d, U
 end
@@ -679,21 +679,21 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
       b, v, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
     else
-      m = zero_matrix(FlintZZ, length(H), n)
+      m = zero_matrix(ZZ, length(H), n)
       for i in 1:length(H)
         for j in 1:n
-          m[i, j] = FlintZZ(norms[i].coeffs[j])
+          m[i, j] = ZZ(norms[i].coeffs[j])
         end
       end
 
-      onee = matrix(FlintZZ, 1, n, coefficients(one(QG)))
+      onee = matrix(ZZ, 1, n, coefficients(one(QG)))
 
       b, w, K = can_solve_with_solution_and_kernel(m, target_den * onee, side = :left)
       v = 1//target_den * change_base_ring(QQ, w)
     end
 
     if !b
-      return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
+      return false, zero(ZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
     end
 
     @assert b
@@ -752,7 +752,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
   subgroups_needed = Int[]
 
   if any(isempty, nonannihilating)
-    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
+    return false, zero(ZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
   end
 
   subgroups_needed = Int[]
@@ -837,9 +837,9 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
     b, w, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
     v = w
   elseif true
-    onee = matrix(FlintZZ, 1, n, coefficients(target_den * one(QG)))
+    onee = matrix(ZZ, 1, n, coefficients(target_den * one(QG)))
 
-    m = zero_matrix(FlintZZ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
+    m = zero_matrix(ZZ, dot(length.(left_cosets_for_sub), length.(right_cosets_for_normalizer)), n)
 
     help_with_indicies = Vector{Tuple{Int, Int, Int}}(undef, nrows(m))
     cc = 1
@@ -847,7 +847,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
       for (k, g) in enumerate(left_cosets_for_sub[i])
         for (l, h) in enumerate(right_cosets_for_normalizer[i])
           for j in 1:n
-            m[cc, j] = FlintZZ((QG(g) * norms[subgroups_needed[i]] * QG(h)).coeffs[j])
+            m[cc, j] = ZZ((QG(g) * norms[subgroups_needed[i]] * QG(h)).coeffs[j])
           end
           help_with_indicies[cc] = (i, k, l)
           cc += 1
@@ -874,7 +874,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
   @assert isone(z)
 
-  den = one(FlintZZ)
+  den = one(ZZ)
 
   for i in 1:ncols(v)
     den = lcm(den, denominator(v[1, i]))
@@ -892,7 +892,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
       continue
     else
       i, k, l = help_with_indicies[cc]
-      push!(vvv[i], (FlintZZ(den * v[1, cc]), left_cosets_for_sub[i][k], right_cosets_for_normalizer[i][l]))
+      push!(vvv[i], (ZZ(den * v[1, cc]), left_cosets_for_sub[i][k], right_cosets_for_normalizer[i][l]))
     end
   end
 
@@ -989,7 +989,7 @@ function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem
 
   primes = ZZRingElem[ p for (p, _) in factor(m)]
 
-  S = localization(FlintZZ, primes)
+  S = localization(ZZ, primes)
 
   all_non_trivial_subs = [ (H, mH) for (H, mH) in subgroups(G) if order(H) > 1]
 

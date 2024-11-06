@@ -1399,7 +1399,7 @@ function _Zforms(L::AbstractLat{<: NumField}, generators::Vector)
     Vres, VresToV = restrict_scalars(V, QQ, b)
     G = gram_matrix(Vres, map(t -> preimage(VresToV, t), Babs))
     d = denominator(G)
-    Gint = change_base_ring(FlintZZ, d * G)
+    Gint = change_base_ring(ZZ, d * G)
     c = content(Gint)
     G = divexact(Gint, c)
     push!(forms, G)
@@ -1678,7 +1678,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
   fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
-    T = matrix(FlintZZ, _T)
+    T = matrix(ZZ, _T)
   else
     CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)

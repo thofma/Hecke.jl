@@ -18,7 +18,7 @@ algebra(O::AlgAssAbsOrd) = O.algebra
 
 _algebra(O::AlgAssAbsOrd) = algebra(O)
 
-base_ring(O::AlgAssAbsOrd) = FlintZZ
+base_ring(O::AlgAssAbsOrd) = ZZ
 
 base_ring_type(::Type{AlgAssAbsOrd}) = ZZRing
 
@@ -174,7 +174,7 @@ function index(O::AlgAssAbsOrd)
   B = basis_mat_inv(FakeFmpqMat, O, copy = false)
   n = det(B)
   @assert isinteger(n)
-  return FlintZZ(n)
+  return ZZ(n)
 end
 
 function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
@@ -183,7 +183,7 @@ function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
   B = basis_mat_inv(FakeFmpqMat, R, copy = false)
   m = det(B)
   @assert isinteger(m//n)
-  return FlintZZ(m//n)
+  return ZZ(m//n)
 end
 
 ################################################################################
@@ -419,13 +419,13 @@ rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Integer) = rand(rng, make(O, n))
 
 function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbstractAssociativeAlgebraElem{QQFieldElem}}
   if length(A) == 0
-    return M = FakeFmpqMat(zero_matrix(FlintZZ, 0, 0), ZZ(1))
+    return M = FakeFmpqMat(zero_matrix(ZZ, 0, 0), ZZ(1))
   end
   @assert length(A) > 0
   n = length(A)
   d = dim(parent(A[1]))
 
-  M = zero_matrix(FlintZZ, n, d)
+  M = zero_matrix(ZZ, n, d)
 
   t = ZZRingElem()
 
@@ -487,7 +487,7 @@ function basis_matrix(A::Vector{AlgAssAbsOrdElem{S, T}}) where S where T
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
-  M = zero_matrix(FlintZZ, n, d)
+  M = zero_matrix(ZZ, n, d)
 
   for i in 1:n
     el = coordinates(A[i])
@@ -567,16 +567,16 @@ function trred_matrix(O::AlgAssAbsOrd)
   A=algebra(O)
   x=O.basis_alg
   m=length(x)
-  M=zero_matrix(FlintZZ, m, m)
+  M=zero_matrix(ZZ, m, m)
   a=A()
   for i=1:m
     a = mul!(a, x[i], x[i])
-    M[i,i] = FlintZZ(trred(a))
+    M[i,i] = ZZ(trred(a))
   end
   for i = 1:m
     for j = i+1:m
       a = mul!(a, x[i], x[j])
-      b = FlintZZ(trred(a))
+      b = ZZ(trred(a))
       M[i,j] = b
       M[j,i] = b
     end
@@ -1010,7 +1010,7 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   t = basis_matrix(FakeFmpqMat, R, copy = false)*basis_mat_inv(FakeFmpqMat, S, copy = false)
   @assert isone(t.den)
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
-  M = zero_matrix(FlintZZ, n^2, n)
+  M = zero_matrix(ZZ, n^2, n)
   B = basis(S, copy = false)
 
   NN = transpose(representation_matrix(B[1], action)*basis_mat_R_in_S_inv_num)

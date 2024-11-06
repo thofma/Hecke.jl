@@ -785,10 +785,10 @@ mutable struct HessQRElem <: RingElem
       return r
     end
     if parent(f) != P.R
-      f = map_coefficients(FlintZZ, f, parent = P.R)
+      f = map_coefficients(ZZ, f, parent = P.R)
     end
     if parent(g) != P.R
-      g = map_coefficients(FlintZZ, g, parent = P.R)
+      g = map_coefficients(ZZ, g, parent = P.R)
     end
     gc = gcd(f, g)
     f = divexact(f, gc)
@@ -812,8 +812,8 @@ mutable struct HessQRElem <: RingElem
   function HessQRElem(P::HessQR, f::QQPolyRingElem, g::QQPolyRingElem)
     df = reduce(lcm, map(denominator, coefficients(f)), init = ZZRingElem(1))
     dg = reduce(lcm, map(denominator, coefficients(g)), init = ZZRingElem(1))
-    ff = map_coefficients(FlintZZ, df*f, parent = P.R)
-    gg = map_coefficients(FlintZZ, dg*g, parent = P.R)
+    ff = map_coefficients(ZZ, df*f, parent = P.R)
+    gg = map_coefficients(ZZ, dg*g, parent = P.R)
     #ff/df//gg/dg = dg/df * ff/gg
     return HessQRElem(P, divexact(dg, df), ff, gg)
   end
@@ -1041,7 +1041,7 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
 end
 
 function Nemo.residue_ring(a::HessQR, b::HessQRElem)
-  F, _ = residue_ring(FlintZZ, b.c)
+  F, _ = residue_ring(ZZ, b.c)
   return F, MapFromFunc(a, F, x->F(x.c), y->a(lift(y)))
 end
 

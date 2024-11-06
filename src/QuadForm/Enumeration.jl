@@ -454,19 +454,19 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
   #while (Q[i, i] * (xc + U[i])^2 <= T[i])
   #  xc -= 1
   #end
-  #x[i] = Int(FlintZZ(floor(xc)))
+  #x[i] = Int(ZZ(floor(xc)))
 
   #upperbound_can = -U[i]
   #while (Q[i, i] * (upperbound_can + U[i])^2 <= T[i])
   #  upperbound_can += 1
   #end
-  #L[i] = Int(FlintZZ(ceil(upperbound_can)))
+  #L[i] = Int(ZZ(ceil(upperbound_can)))
 
   # For debugging purposes: Fast, but allocating
   #
-  #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
-  #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
-  #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
+  #_t = isqrt(ZZ(floor(divexact(T[i], Q[i, i]))))
+  #_new_upp = Int(ZZ(ceil(_t + 2 - U[i])))
+  #_new_low = Int(ZZ(floor(-(_t + 2) - U[i]))) - 1
 
   @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
 
@@ -569,19 +569,19 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothi
   #while (Q[i, i] * (xc + U[i])^2 <= T[i])
   #  xc -= 1
   #end
-  #x[i] = Int(FlintZZ(floor(xc)))
+  #x[i] = Int(ZZ(floor(xc)))
 
   #upperbound_can = -U[i]
   #while (Q[i, i] * (upperbound_can + U[i])^2 <= T[i])
   #  upperbound_can += 1
   #end
-  #L[i] = Int(FlintZZ(ceil(upperbound_can)))
+  #L[i] = Int(ZZ(ceil(upperbound_can)))
 
   # For debugging purposes: Fast, but allocating
   #
-  #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
-  #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
-  #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
+  #_t = isqrt(ZZ(floor(divexact(T[i], Q[i, i]))))
+  #_new_upp = Int(ZZ(ceil(_t + 2 - U[i])))
+  #_new_low = Int(ZZ(floor(-(_t + 2) - U[i]))) - 1
 
   _new_upp, _new_low = @inbounds _compute_bounds(T[i], Qd[i], U[i])
 
@@ -883,7 +883,7 @@ end
 
 function _short_vectors_gram(::Type{S}, _G, lb, ub, elem_type::Type{U} = ZZRingElem; hard::Bool = false) where {S, U}
   d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
+  G = change_base_ring(ZZ, d * _G)
   if isempty(G)
     Glll = G
     T = G
@@ -932,7 +932,7 @@ end
 # No assumption on _G, algorithm applies LLL
 function _shortest_vectors_gram(::Type{S}, _G) where {S}
   d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
+  G = change_base_ring(ZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
   ub = minimum([Glll[i, i] for i in 1:nrows(G)])
   @assert ub > 0
@@ -947,7 +947,7 @@ end
 
 function _shortest_vectors_gram(_G, elem_type::Type{S} = ZZRingElem) where {S}
   d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
+  G = change_base_ring(ZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
   ub = minimum([Glll[i, i] for i in 1:nrows(G)])
   V = _short_vectors_gram_nolll_integral(LatEnumCtx, Glll, 0, ub, T, ZZRingElem(1), S)

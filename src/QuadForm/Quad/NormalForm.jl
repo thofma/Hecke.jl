@@ -68,7 +68,7 @@ function _ispadic_normal_form_odd(G, p)
         return false
       end
       u = blocks[i][end][1, 1]
-      m = FlintZZ(u)
+      m = ZZ(u)
       if is_square(F(m))
         return false
       end
@@ -178,7 +178,7 @@ end
 function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
   _G = deepcopy(G)
   dd = denominator(G)
-  G0 = change_base_ring(FlintZZ, dd * G)
+  G0 = change_base_ring(ZZ, dd * G)
   d = valuation(dd, p)
   n = nrows(G)
   r = rank(G0)
@@ -202,7 +202,7 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
   end
 
   modu = p^prec
-  R = residue_ring(FlintZZ, modu, cached = false)[1]
+  R = residue_ring(ZZ, modu, cached = false)[1]
   Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G) # this will probably fail
   D = deepcopy(Gmod)
 
@@ -851,7 +851,7 @@ end
 
 function _issquare(d::zzModRingElem, p)
   f = ZZ(modulus(parent(d)))
-  R = residue_ring(FlintZZ, f, cached = false)[1]
+  R = residue_ring(ZZ, f, cached = false)[1]
   g = R(d)
   return _issquare(g, ZZ(p))
 end

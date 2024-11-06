@@ -8,7 +8,7 @@ function _issimilar_husert(A::ZZMatrix, B::ZZMatrix)
   QA = change_base_ring(QQ, A)
   QB = change_base_ring(QQ, B)
   fl, QC = _issimilar_husert_generic(QA, QB)
-  return fl, change_base_ring(FlintZZ, QC)
+  return fl, change_base_ring(ZZ, QC)
 end
 
 # If successful, returns X such that X * A * X^-1 == B

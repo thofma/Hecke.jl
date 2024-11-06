@@ -133,7 +133,7 @@
     @test iszero(log(one(L)))
     B = basis(L)
     for i = 15:20
-      el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
+      el = sum([rand(ZZ, 0:10)*B[j] for j = 1:7])*pi^i
       explog = exp(log(1+el))
       logexp = log(exp(el))
       @test iszero(explog - 1 - el) || valuation(explog - 1 - el) > 80

@@ -149,22 +149,22 @@ function +(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   if is_simple(nf(OK)) && is_defining_polynomial_nice(nf(OK)) && contains_equation_order(OK) && is_prime(g) && !is_index_divisor(OK, g) && has_2_elem(x) && has_2_elem(y)
     #I can use polynomial arithmetic
     if fits(Int, g)
-      R1 = residue_ring(FlintZZ, Int(g), cached = false)[1]
+      R1 = residue_ring(ZZ, Int(g), cached = false)[1]
       R1x = polynomial_ring(R1, "x", cached = false)[1]
       ggp_small = gcd(R1x(x.gen_two.elem_in_nf), R1x(y.gen_two.elem_in_nf))
       if isone(ggp_small)
         return ideal(OK, 1)
       end
-      Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+      Zx = polynomial_ring(ZZ, "x", cached = false)[1]
       ggZ = lift(Zx, ggp_small)
     else
-      R = residue_ring(FlintZZ, g, cached = false)[1]
+      R = residue_ring(ZZ, g, cached = false)[1]
       Rx = polynomial_ring(R, "x", cached = false)[1]
       ggp_large = gcd(Rx(x.gen_two.elem_in_nf), Rx(y.gen_two.elem_in_nf))
       if isone(ggp_large)
         return ideal(OK, 1)
       end
-      Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+      Zx = polynomial_ring(ZZ, "x", cached = false)[1]
       ggZ = lift(Zx, ggp_large)
     end
     gen_2 = OK(nf(OK)(ggZ))
@@ -256,8 +256,8 @@ function mul_gen(x::S, y::S) where S <: AbsNumFieldOrderIdeal
     end
     return J
   end
-  z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
-  z1 = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+  z = zero_matrix(ZZ, 2*degree(O), degree(O))
+  z1 = zero_matrix(ZZ, 2*degree(O), degree(O))
   X = basis(x, copy = false)
   Y = basis_matrix(y, copy = false)
   for i in 1:d
@@ -416,7 +416,7 @@ function prod_via_2_elem_weakly(a::S, b::S) where S <: AbsNumFieldOrderIdeal
     add!(gen, u, gen)          # Nemo.add_into!(u, gen, gen)
 #    gen2 += (r1*K(a.gen_two) + r2*a.gen_one) *
 #           (r3*K(b.gen_two) + r4*b.gen_one)
-    gen = mod(gen, mod_c^2)    # = element_reduce_mod(gen, O, FlintZZ(mod_c)^2)
+    gen = mod(gen, mod_c^2)    # = element_reduce_mod(gen, O, ZZ(mod_c)^2)
 
     if gcd(norm(gen), norm_int_c^2) == norm_int_c # should be ^n, but for
                                                   # the test ^2 is sufficient
@@ -707,7 +707,7 @@ end
 
 function mul_gen(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
   if y == 0
-    z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
+    z = ideal(order(x), zero_matrix(ZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1
     return z
   end
@@ -918,7 +918,7 @@ function divexact(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldE
   t_2_elem = 0.0
 
   if norm(A, copy = false) == norm(B, copy = false)
-    return ideal(order(A), one(FlintZZ), order(A)(1))
+    return ideal(order(A), one(ZZ), order(A)(1))
   else
     t_prod += @elapsed I = A*inv(B)
     t_simpl += @elapsed simplify_exact!(I)
@@ -952,13 +952,13 @@ function extend(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   # Assumes order(A) \subseteq O
 
   if iszero(A)
-    B = ideal(O, zero_matrix(FlintZZ, degree(O), degree(O)))
+    B = ideal(O, zero_matrix(ZZ, degree(O), degree(O)))
     B.iszero = 1
     return B
   end
 
   d = degree(O)
-  M = zero_matrix(FlintZZ, d^2, d)
+  M = zero_matrix(ZZ, d^2, d)
   X = basis(O, copy = false)
   Y = map(O, basis(A, copy = false))
   t = O()
@@ -984,7 +984,7 @@ function contract(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder)
   # Assumes O \subseteq order(A)
 
   if iszero(A)
-    B = ideal(O, zero_matrix(FlintZZ, degree(O), degree(O)))
+    B = ideal(O, zero_matrix(ZZ, degree(O), degree(O)))
     B.iszero = 1
     return B
   end

@@ -125,7 +125,7 @@ end
 function algebraic_reconstruction(a::AbsSimpleNumFieldElem, M::ZZRingElem)
   K = parent(a)
   n = degree(K)
-  Znn = matrix_space(FlintZZ, n, n)
+  Znn = matrix_space(ZZ, n, n)
 #  L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) Znn(M)]
   L = vcat(hcat(Znn(1), representation_matrix_q(a)[1]), hcat(Znn(0),Znn(M)))
   lll!(L)
@@ -138,7 +138,7 @@ end
 function algebraic_reconstruction(a::AbsSimpleNumFieldElem, M::AbsNumFieldOrderIdeal)
   K = parent(a)
   n = degree(K)
-  Znn = matrix_space(FlintZZ, n, n)
+  Znn = matrix_space(ZZ, n, n)
   L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) basis_matrix(M, copy = false)]
   lll!(L)
   d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, ZZRingElem(1))
@@ -161,7 +161,7 @@ function algebraic_split(a::AbsSimpleNumFieldElem)
   #actually find the kernel and then look for small elements
   #a = be/ga <=> M_a * ga - I * be = 0 (this is the kernel)
   #furthermore, I want be and ga to be "small" - the LLL
-  M = [M*dd identity_matrix(FlintZZ, n); -d^2*identity_matrix(FlintZZ, n) zero_matrix(FlintZZ, n, n)]
+  M = [M*dd identity_matrix(ZZ, n); -d^2*identity_matrix(ZZ, n) zero_matrix(ZZ, n, n)]
   L = lll(M)
   @assert iszero(L[1, 1:n])
   L = L[1, n+1:2*n]

@@ -9,10 +9,10 @@ function basis_matrix(A::Vector{AbsSimpleNumFieldElem}, ::Type{FakeFmpqMat})
   n = length(A)
   d = degree(parent(A[1]))
 
-  M = zero_matrix(FlintZZ, n, d)
+  M = zero_matrix(ZZ, n, d)
 
-  deno = one(FlintZZ)
-  dummy = one(FlintZZ)
+  deno = one(ZZ)
+  dummy = one(ZZ)
 
   for i in 1:n
     deno = lcm(deno, denominator(A[i]))
@@ -144,12 +144,12 @@ function is_norm_divisible(a::AbsSimpleNumFieldElem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = residue_ring(FlintZZ, Int(m), cached = false)[1]
+    R1 = residue_ring(ZZ, Int(m), cached = false)[1]
     R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = residue_ring(FlintZZ, m, cached = false)[1]
+  R = residue_ring(ZZ, m, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)
@@ -170,12 +170,12 @@ function is_norm_divisible_pp(a::AbsSimpleNumFieldElem, n::ZZRingElem)
     m = n
   end
   if fits(Int, m)
-    R1 = residue_ring(FlintZZ, Int(m), cached = false)[1]
+    R1 = residue_ring(ZZ, Int(m), cached = false)[1]
     R1x = polynomial_ring(R1, "x", cached = false)[1]
     el = resultant_ideal_pp(R1x(numerator(a)), R1x(K.pol))
     return iszero(el)
   end
-  R = residue_ring(FlintZZ, m, cached = false)[1]
+  R = residue_ring(ZZ, m, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
   return iszero(el)

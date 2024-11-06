@@ -42,7 +42,7 @@ function narrow_picard_group(O::AbsSimpleNumFieldOrder)
 
   new_ngens = ngens(Q) + ngens(C)
 
-  R = zero_matrix(FlintZZ, new_ngens, new_ngens)
+  R = zero_matrix(ZZ, new_ngens, new_ngens)
   for i in 1:ngens(Q)
     R[i, i] = 2
   end

@@ -94,9 +94,9 @@ function ray_class_group_std(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   RG=rels(G)
   RC=rels(C)
 
-  A=vcat(RC, matrix_space(FlintZZ, ngens(G)+ngens(U), ncols(RC))())
-  B=vcat(matrix_space(FlintZZ, ngens(C), ncols(RG))(), RG)
-  B=vcat(B, matrix_space(FlintZZ, ngens(U) , ncols(RG))())
+  A=vcat(RC, matrix_space(ZZ, ngens(G)+ngens(U), ncols(RC))())
+  B=vcat(matrix_space(ZZ, ngens(C), ncols(RG))(), RG)
+  B=vcat(B, matrix_space(ZZ, ngens(U) , ncols(RG))())
 
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
@@ -250,7 +250,7 @@ function ray_class_group_p_part(p::Integer, m::AbsNumFieldOrderIdeal{AbsSimpleNu
   expo=exponent(G)
   inverse_d=gcdx(nonppartclass,expo)[2]
 
-  R=zero_matrix(FlintZZ, ngens(C)+ngens(U)+ngens(G), ngens(C)+ngens(G))
+  R=zero_matrix(ZZ, ngens(C)+ngens(U)+ngens(G), ngens(C)+ngens(G))
   for i=1:ngens(C)
     R[i,i]=C.snf[i]
   end
@@ -298,7 +298,7 @@ function ray_class_group_p_part(p::Integer, m::AbsNumFieldOrderIdeal{AbsSimpleNu
     a=(mG\(evals[i])).coeff
     if p==2 && !isempty(pr)
       if i==1
-        a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
+        a=hcat(a, matrix(ZZ,1,length(pr), [1 for i in pr]))
       else
         b=lH(tobeeval[length(tobeeval)-ngens(C)-ngens(U)+i])
         a=hcat(a, b.coeff)

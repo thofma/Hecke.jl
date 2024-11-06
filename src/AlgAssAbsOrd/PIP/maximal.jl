@@ -174,13 +174,13 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
   a.isright = 1
   a.order = right_order(a)
-  nrr = FlintZZ(normred(a))
+  nrr = ZZ(normred(a))
   B = basis(a)
   G = zero_matrix(QQ, 4, 4)
   f = standard_involution(A)
   for i in 1:4
     for j in 1:4
-      G[i, j] = FlintZZ(trred(B[i] * f(B[j])))//2
+      G[i, j] = ZZ(trred(B[i] * f(B[j])))//2
     end
   end
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
@@ -307,7 +307,7 @@ end
 function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   @assert side == :right
   @assert _test_ideal_sidedness(I, M, :right)
-  @assert basis_matrix(M) == identity_matrix(FlintZZ, dim(algebra(M)))
+  @assert basis_matrix(M) == identity_matrix(ZZ, dim(algebra(M)))
   den = denominator(I, M)
   a = I * den
   if !is_full_lattice(a)

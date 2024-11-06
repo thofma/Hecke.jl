@@ -385,7 +385,7 @@ function _normal_basis_generator(K, p)
   f = Rx(K.pol)
   fac = factor(f)
   g = divexact(f, first(keys(fac.fac)))
-  Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
+  Zy, y = polynomial_ring(ZZ, "y", cached = false)
   g1 = lift(Zy, g)
   return K(g1)
 end

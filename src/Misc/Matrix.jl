@@ -297,21 +297,21 @@ end
 ################################################################################
 
 function lift_nonsymmetric(a::zzModMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{zzModMatrix}), z, a)
   return z
 end
 
 function lift_nonsymmetric(a::fpMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{fpMatrix}), z, a)
   return z
 end
 
 function lift_unsigned(a::zzModMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, libflint), Nothing,
           (Ref{ZZMatrix}, Ref{zzModMatrix}), z, a)
   return z
@@ -396,7 +396,7 @@ end
 #converts BigFloat -> ZZRingElem via round(a*2^l), in a clever(?) way
 function round_scale(a::Matrix{BigFloat}, l::Int)
   s = size(a)
-  b = zero_matrix(FlintZZ, s[1], s[2])
+  b = zero_matrix(ZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
 
@@ -453,12 +453,12 @@ end
 ################################################################################
 
 function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
-  R = identity_matrix(FlintZZ, ncols(A))
+  R = identity_matrix(ZZ, ncols(A))
   S = deepcopy(A)
 
 
   if !is_diagonal(S)
-    T = zero_matrix(FlintZZ, ncols(A), ncols(A))
+    T = zero_matrix(ZZ, ncols(A), ncols(A))
     GC.@preserve S R T begin
       while true
         hnf_modular_eldiv!(S, mod)
@@ -966,7 +966,7 @@ end
 
 function invmod(M::ZZMatrix, d::ZZRingElem)
   if fits(Int, d)
-    RR = residue_ring(FlintZZ, Int(d), cached = false)[1]
+    RR = residue_ring(ZZ, Int(d), cached = false)[1]
     MRR = map_entries(RR, M)
     SR = zero_matrix(RR, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(SR, 1, 1, MRR)
@@ -979,7 +979,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
   else
-    R = residue_ring(FlintZZ, d, cached = false)[1]
+    R = residue_ring(ZZ, d, cached = false)[1]
     MR = map_entries(R, M)
     S = zero_matrix(R, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(S, 1, 1, MR)

@@ -166,7 +166,7 @@ end
 
 function __init__()
   # verify some base rings survived serialization/deserialization
-  @assert base_ring(Hecke.Globals.Zx) === FlintZZ
+  @assert base_ring(Hecke.Globals.Zx) === ZZ
   @assert base_ring(Hecke.Globals.Qx) === QQ
 
   if AbstractAlgebra.should_show_banner() && get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
@@ -294,8 +294,8 @@ end
 module Globals
   using Hecke
   const Qx, _ = polynomial_ring(QQ, "x", cached = false)
-  const Zx, _ = polynomial_ring(FlintZZ, "x", cached = false)
-  const Zxy, _ = polynomial_ring(FlintZZ, ["x", "y"], cached = false)
+  const Zx, _ = polynomial_ring(ZZ, "x", cached = false)
+  const Zxy, _ = polynomial_ring(ZZ, ["x", "y"], cached = false)
 end
 
 using .Globals

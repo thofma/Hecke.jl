@@ -11,7 +11,7 @@ basis_matrix(L::ZZLat) = L.basis_matrix
 
 ambient_space(L::ZZLat) = L.space
 
-base_ring(L::ZZLat) = FlintZZ
+base_ring(L::ZZLat) = ZZ
 
 base_ring_type(::Type{ZZLat}) = ZZRing
 
@@ -394,7 +394,7 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
   V = ambient_space(L)
   GL = gram_matrix(L)
   d = denominator(GL)
-  res = ZZMatrix[change_base_ring(FlintZZ, d * GL)]
+  res = ZZMatrix[change_base_ring(ZZ, d * GL)]
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
   if res[1][1, 1] < 0
@@ -410,7 +410,7 @@ function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
     fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
     if fl
       _gens, order = auto(Csmall)
-      gens = ZZMatrix[matrix(FlintZZ, g) for g in _gens]
+      gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
     end
   end
   if !try_small || !fl
@@ -549,13 +549,13 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
 
   GL = gram_matrix(L)
   dL = denominator(GL)
-  GLint = change_base_ring(FlintZZ, dL * GL)
+  GLint = change_base_ring(ZZ, dL * GL)
   cL = content(GLint)
   GLint = divexact(GLint, cL)
 
   GM = gram_matrix(M)
   dM = denominator(GM)
-  GMint = change_base_ring(FlintZZ, dM * GM)
+  GMint = change_base_ring(ZZ, dM * GM)
   cM = content(GMint)
   GMint = divexact(GMint, cM)
 
@@ -568,9 +568,9 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   # Now compute LLL reduces gram matrices
 
   GLlll, TL = lll_gram_with_transform(GLint)
-  @hassert :Lattice 1 TL * change_base_ring(FlintZZ, dL*GL) * transpose(TL) == GLlll *cL
+  @hassert :Lattice 1 TL * change_base_ring(ZZ, dL*GL) * transpose(TL) == GLlll *cL
   GMlll, TM = lll_gram_with_transform(GMint)
-  @hassert :Lattice 1 TM * change_base_ring(FlintZZ, dM*GM) * transpose(TM) == GMlll *cM
+  @hassert :Lattice 1 TM * change_base_ring(ZZ, dM*GM) * transpose(TM) == GMlll *cM
 
   # Setup for Plesken--Souvignier
 
@@ -580,7 +580,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth, bacher_depth = bacher_depth)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
-    T = matrix(FlintZZ, _T)
+    T = matrix(ZZ, _T)
   else
     CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)
@@ -998,8 +998,8 @@ function intersect(M::ZZLat, N::ZZLat)
   dM = denominator(BM)
   dN = denominator(BN)
   d = lcm(dM, dN)
-  BMint = change_base_ring(FlintZZ, d * BM)
-  BNint = change_base_ring(FlintZZ, d * BN)
+  BMint = change_base_ring(ZZ, d * BM)
+  BNint = change_base_ring(ZZ, d * BN)
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
   BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)

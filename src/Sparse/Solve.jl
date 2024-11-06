@@ -56,7 +56,7 @@ successful. In this case, the numerator is returned as a matrix and the
 common denominator in the third value.
 """
 function rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem)
-  B = sparse_row(FlintZZ)
+  B = sparse_row(ZZ)
   de = ZZRingElem(1)
   M2 = div(M, 2)
   nbM = div(nbits(M), 2)
@@ -89,7 +89,7 @@ function _solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
   @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
 
-  sol = sparse_row(FlintZZ)
+  sol = sparse_row(ZZ)
   den = ZZRingElem(1)
   while length(b) > 0
     p = b.pos[1]
@@ -115,7 +115,7 @@ function _solve_ut(A::SMat{ZZRingElem}, b::SMat{ZZRingElem})
   @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
   d = ZZRingElem(1)
-  r = sparse_matrix(FlintZZ)
+  r = sparse_matrix(ZZ)
   for i = b
     x, dx = _solve_ut(A, i)
     nd = lcm(d, dx)
@@ -152,7 +152,7 @@ function det_mc(A::SMat{ZZRingElem})
     return prod(z)
   end
 
-  b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
+  b = sparse_matrix(matrix(ZZ, 1, A.c, rand(1:10, A.c)))
   _, qq = solve_dixon_sf(A, b)
 
   q = p_start # global prime
@@ -161,7 +161,7 @@ function det_mc(A::SMat{ZZRingElem})
   mm = ZZRingElem(1)
   last = ZZRingElem(0)
   while true
-    R = residue_ring(FlintZZ, q, cached = false)[1]
+    R = residue_ring(ZZ, q, cached = false)[1]
     d = det(matrix(change_base_ring(R, A)))*inv(R(qq))
     if first
       dd = ZZRingElem(d)
@@ -201,7 +201,7 @@ function det(A::SMat{ZZRingElem})
   #TODO: re-use the zzModMatrix....
   ld = ZZRingElem[]
   for q in lp
-    R = residue_ring(FlintZZ, Int(q), cached = false)[1]
+    R = residue_ring(ZZ, Int(q), cached = false)[1]
     push!(ld, ZZRingElem(det(matrix(change_base_ring(R, A)))))
   end
   #ld = [ZZRingElem(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
@@ -236,7 +236,7 @@ If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
 rational reconstruction is avoided.
 """
 function solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false)
-  B = sparse_matrix(FlintZZ)
+  B = sparse_matrix(ZZ)
   push!(B, b)
   s, d = solve_dixon_sf(A, B, is_int)
   return s[1], d
@@ -245,7 +245,7 @@ end
 function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
-  R = residue_ring(FlintZZ, p, cached = false)[1]
+  R = residue_ring(ZZ, p, cached = false)[1]
 
   Ap = change_base_ring(R, A)
 
@@ -275,7 +275,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
   #now, to solve xA = b, we do
   #              xAT = bT since AT is upper-triag, we can do this!
 
-  sol_all = sparse_matrix(FlintZZ)
+  sol_all = sparse_matrix(ZZ)
   den_all = ZZRingElem(1)
 
   for b in B
@@ -284,7 +284,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
 
     bp = change_base_ring(R, b)
 
-    sol = sparse_row(FlintZZ)
+    sol = sparse_row(ZZ)
     last = (sol, ZZRingElem(1))
 
     while true

@@ -323,9 +323,9 @@ function __neq_sunit(ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, pr
   end
   class_group(K)
   SK, mSK = sunit_mod_units_group_fac_elem(primes_in_K)
-  M = zero_matrix(FlintZZ, length(primes_in_k), ngens(SK))
-  N = zero_matrix(FlintZZ, length(primes_in_K), ngens(SK))
-  b = zero_matrix(FlintZZ, length(primes_in_k), 1)
+  M = zero_matrix(ZZ, length(primes_in_k), ngens(SK))
+  N = zero_matrix(ZZ, length(primes_in_K), ngens(SK))
+  b = zero_matrix(ZZ, length(primes_in_k), 1)
   for c = 1:ngens(SK)
     g = mSK(SK[c])
     ng = norm(ktoK, g)

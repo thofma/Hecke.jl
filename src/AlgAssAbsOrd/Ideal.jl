@@ -241,7 +241,7 @@ end
 ###############################################################################
 
 function _zero_ideal(A::AbstractAssociativeAlgebra{QQFieldElem})
-  a = ideal(A, FakeFmpqMat(zero_matrix(FlintZZ, dim(A), dim(A)), ZZRingElem(1)); M_in_hnf=true)
+  a = ideal(A, FakeFmpqMat(zero_matrix(ZZ, dim(A), dim(A)), ZZRingElem(1)); M_in_hnf=true)
   a.iszero = 1
   return a
 end
@@ -574,7 +574,7 @@ Returns $a \cap b$.
 function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = dim(algebra(a))
   M1 = hcat(basis_matrix(a, copy = false), basis_matrix(a, copy = false))
-  M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, d, d), ZZRingElem(1)), basis_matrix(b, copy = false))
+  M2 = hcat(FakeFmpqMat(zero_matrix(ZZ, d, d), ZZRingElem(1)), basis_matrix(b, copy = false))
   M = vcat(M1, M2)
   H = sub(hnf(M, :lowerleft), 1:d, 1:d)
   c = ideal(algebra(a), H; M_in_hnf=true)
@@ -760,7 +760,7 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::ZZRingElem =
   else
     B = basis(I, copy = false)
   end
-  m = zero_matrix(FlintZZ, degree(O)*length(B), degree(O))
+  m = zero_matrix(ZZ, degree(O)*length(B), degree(O))
   for i = 1:length(B)
     M = FakeFmpqMat(representation_matrix(B[i]))
     M = mul!(M, basis_matrix(FakeFmpqMat, O, copy = false), M)
@@ -1180,7 +1180,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   M1 = view(M1, 1:r, 1:degree(O))
   dM = transpose(kernel(M1, side = :right))
   g = Vector{elem_type(algebra(O))}(undef, nrows(dM) + 1)
-  m = zero_matrix(FlintZZ, degree(O), degree(O))
+  m = zero_matrix(ZZ, degree(O), degree(O))
   for i = 1:nrows(dM)
     for j = 1:ncols(dM)
       m[i, j] = lift(ZZ, dM[i, j])
@@ -1220,7 +1220,7 @@ function pradical(O::AlgAssAbsOrd, p::IntegerUnion)
   end
   # We have l == 1. In this case, we can output I: it is the standard p-trace
   # method.
-  M = zero_matrix(FlintZZ, degree(O), degree(O))
+  M = zero_matrix(ZZ, degree(O), degree(O))
   for i = 1:ncols(B)
     for j = 1:degree(O)
       M[i, j] = lift(ZZ, B[j, i])
@@ -1261,7 +1261,7 @@ end
 
 function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Union{FqMatrix, Zmodn_mat, Generic.Mat{EuclideanRingResidueFieldElem{ZZRingElem}}}, A1::StructureConstantAlgebra, OtoA1::AbsOrdToAlgAssMor)
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action_of_gens) == sub(rref(x)[2], 1:r, 1:ncols(x)) end
-  m = zero_matrix(FlintZZ, nrows(x), degree(O))
+  m = zero_matrix(ZZ, nrows(x), degree(O))
   g = Vector{elem_type(algebra(O))}(undef, nrows(x))
   for i = 1:nrows(x)
     el = OtoA1\(elem_from_mat_row(A1, x, i))
@@ -1599,7 +1599,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl)
   #M = FakeFmpqMat(M)
   #M1 = hcat(M, M)
   #IB = basis_matrix(I, copy = false)
-  #M2 = hcat(FakeFmpqMat(zero_matrix(FlintZZ, nrows(IB), dim(B)), ZZRingElem(1)), IB)
+  #M2 = hcat(FakeFmpqMat(zero_matrix(ZZ, nrows(IB), dim(B)), ZZRingElem(1)), IB)
   #H = hnf(vcat(M1, M2), :lowerleft)
   #k = findfirst(i-> !is_zero_row(H, i), 1:nrows(H))
   #N = sub(H, k:nrows(H), 1:dim(B))
@@ -1624,7 +1624,7 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
   @assert algebra(O) == B
   OA = maximal_order(A)
   # Transport OA to B
-  M = zero_matrix(FlintZZ, dim(B), dim(B))
+  M = zero_matrix(ZZ, dim(B), dim(B))
   for i = 1:dim(A)
     t = OB(m(basis_alg(OA, copy = false)[i]))
     elem_to_mat_row!(M, i, t)
@@ -1703,7 +1703,7 @@ function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   O = order(a)
   d = degree(O)
 
-  V = zero_matrix(FlintZZ, 1 + 2*degree(O), 1 + 2*degree(O))
+  V = zero_matrix(ZZ, 1 + 2*degree(O), 1 + 2*degree(O))
   V[1, 1] = 1
   u = coordinates(one(O))
   for i = 1:d

@@ -1,5 +1,5 @@
 function _random_invertible_matrix(n, B)
-  A = identity_matrix(FlintZZ, n)
+  A = identity_matrix(ZZ, n)
   if n == 1
     return A
   end
@@ -9,7 +9,7 @@ function _random_invertible_matrix(n, B)
     A[i, j] += rand(B)
   end
   @assert det(A) == 1
-  C = identity_matrix(FlintZZ, n)
+  C = identity_matrix(ZZ, n)
   for k in 1:10
     i = rand(1:(n - 1))
     j = rand((i + 1):n)
@@ -243,7 +243,7 @@ end
 
   for (m, o) in lattices_and_aut_order
     n = length(m[1])
-    G = matrix(FlintZZ, n, n, reduce(vcat, m))
+    G = matrix(ZZ, n, n, reduce(vcat, m))
     L = integer_lattice(gram = G)
     Ge = automorphism_group_generators(L, ambient_representation = true)
     test_automorphisms(L, Ge, true)
@@ -317,7 +317,7 @@ end
 
   for (m, o) in lattices_and_aut_order
     n = length(m[1])
-    G = matrix(FlintZZ, n, n, reduce(vcat, m))
+    G = matrix(ZZ, n, n, reduce(vcat, m))
     L = integer_lattice(gram = G)
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1

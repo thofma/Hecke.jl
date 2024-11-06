@@ -52,7 +52,7 @@ function find_candidates(x::ClassGrpCtx, u::UnitGrpCtx, add::Int = 0)
   end
   time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
   @vprintln :UnitGroup 1 "Saturating the kernel"
-  @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
+  @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, ZZ, k.r)))
   @vprintln :UnitGroup 1 "Done"
   s1 = matrix(s)
   lll!(s1)

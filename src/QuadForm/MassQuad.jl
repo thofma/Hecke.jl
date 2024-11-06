@@ -292,7 +292,7 @@ function _local_factor_cho(L, p)
 
   @assert is_integral(exp)
 
-  return QQFieldElem(q)^Int(FlintZZ(exp)) * H//2 * QQFieldElem(1)//beta
+  return QQFieldElem(q)^Int(ZZ(exp)) * H//2 * QQFieldElem(1)//beta
 end
 
 ################################################################################
@@ -410,7 +410,7 @@ function local_factor(L::QuadLat, p)
 
   @assert is_integral(N)
 
-  return q^Int(FlintZZ(N)) * f
+  return q^Int(ZZ(N)) * f
 end
 
 ################################################################################
@@ -1360,7 +1360,7 @@ function _compute_an(Z::ZetaFunction, n::Int, h::Int)
   p, f =  Z.dec_types[h]
   P = p^f
   v, = remove(n, P)
-  z = zero(FlintZZ)
+  z = zero(ZZ)
   for k in 0:v
     z = z + _compute_an(Z, divexact(n, P^k), h - 1)
   end

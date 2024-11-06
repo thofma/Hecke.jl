@@ -132,7 +132,7 @@ mutable struct qAdicConj
     is_ramified(maximal_order(K), p) && error("cannot deal with ramification yet")
     =#
     if splitting_field
-      Zx = polynomial_ring(FlintZZ, cached = false)[1]
+      Zx = polynomial_ring(ZZ, cached = false)[1]
       C = qAdicRootCtx(Zx(K.pol), p, splitting_field = true)
       r = new()
       r.C = C
@@ -144,7 +144,7 @@ mutable struct qAdicConj
       return Dict{Int, Tuple{qAdicRootCtx, Dict{AbsSimpleNumFieldElem, Any}}}()
     end::Dict{Int, Tuple{qAdicRootCtx, Dict{AbsSimpleNumFieldElem, Any}}}
     Dp = get!(D, p) do
-      Zx = polynomial_ring(FlintZZ, cached = false)[1]
+      Zx = polynomial_ring(ZZ, cached = false)[1]
       d = lcm(map(denominator, coefficients(K.pol)))
       C = qAdicRootCtx(Zx(K.pol*d), p)
       return (C, Dict{AbsSimpleNumFieldElem, Any}())
@@ -222,7 +222,7 @@ end
 function _conjugates(a::AbsSimpleNumFieldElem, C::qAdicConj, n::Int, op::Function)
   R = roots(C.C, n)
   @assert parent(a) == C.K
-  Zx = polynomial_ring(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(ZZ, cached = false)[1]
   d = denominator(a)
   f = Zx(d*a)
   res = QadicFieldElem[]
@@ -537,7 +537,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
   C = qAdicConj(K, Int(p))
   r = roots(C.C, precision(ca))
   i = findfirst(x->parent(r[x]) == parent(ca) && r[x] == ca, 1:length(r))
-  Zx = polynomial_ring(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(ZZ, cached = false)[1]
   function inj(a::AbsSimpleNumFieldElem)
     d = denominator(a)
     pr = precision(parent(ca))
@@ -564,7 +564,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
   for i=1:d
     _num_setcoeff!(a, i-1, lift(ZZ, s[i, 1]))
   end
-  f = defining_polynomial(parent(ca), FlintZZ)
+  f = defining_polynomial(parent(ca), ZZ)
   fso = inv(derivative(f)(gen(R)))
   o = matrix(GF(p), d, 1, [lift(ZZ, coeff(fso, j-1)) for j=1:d])
   s = solve(m, o; side = :right)

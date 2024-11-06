@@ -37,7 +37,7 @@
   end
 
   function random_symmetric_matrix(x::Int)
-    M = zero_matrix(FlintZZ, x, x)
+    M = zero_matrix(ZZ, x, x)
     for i = 1:x
       for j= i:x
         a = rand(1:5)
@@ -220,7 +220,7 @@ end
   fa = factor(QQ, 6*x)
   @test length(fa) == 1
 
-  # 
+  #
   let
     K, = rationals_as_number_field()
     Ky, y = K["y"]

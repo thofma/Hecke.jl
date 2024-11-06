@@ -120,7 +120,7 @@ end
 end
 
 @testset "Bad example" begin
-  Zx, x = polynomial_ring(FlintZZ)
+  Zx, x = polynomial_ring(ZZ)
   f = swinnerton_dyer(3, x)
   g = swinnerton_dyer(8, x)
   k, a = number_field(f, cached = false)

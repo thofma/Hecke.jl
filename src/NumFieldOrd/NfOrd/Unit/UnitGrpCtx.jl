@@ -50,7 +50,7 @@ function _search_rational_relation(U::UnitGrpCtx{S}, y::S, bound::ZZRingElem) wh
   @vprintln :UnitGroup 3 "For $p the vector v: $v"
   rel = Array{ZZRingElem}(undef, r + 1)
   for i in 1:r+1
-    rel[i] = zero(FlintZZ)
+    rel[i] = zero(ZZ)
   end
 
   @vprintln :UnitGroup 2 "First iteration to find a rational relation ..."
@@ -346,7 +346,7 @@ end
 
 function _find_new_basis(rel)
   r = length(rel)
-  m = matrix(FlintZZ, reshape(rel, r, 1))
+  m = matrix(ZZ, reshape(rel, r, 1))
 
   h, u = hnf_with_transform(m)
 
@@ -361,8 +361,8 @@ end
 
 function _find_new_basis2(rel)
   r = length(rel)
-  m = zero_matrix(FlintZZ, r, r)
-  #m = matrix(FlintZZ, reshape(rel, r + 1, 1))
+  m = zero_matrix(ZZ, r, r)
+  #m = matrix(ZZ, reshape(rel, r + 1, 1))
   for i in 1:r
     m[i, 1] = rel[i]
   end

@@ -258,7 +258,7 @@ function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::
                                        # bound n and a starting p
   kp = 10
   L =[]
-  pp = FlintZZ(1)
+  pp = ZZ(1)
   j = 0
   local N, D
   while true
@@ -272,9 +272,9 @@ function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::
        N,_ = induce_crt(N, pp, L[1], L[3])
        D,pp = induce_crt(D, pp, L[2], L[3])
     end
-    fl, nu_rat_f = induce_rational_reconstruction(N, FlintZZ(pp), parent = parent(g))
+    fl, nu_rat_f = induce_rational_reconstruction(N, ZZ(pp), parent = parent(g))
     if fl
-      fl, de_rat_f = induce_rational_reconstruction(D, FlintZZ(pp), parent = parent(g))
+      fl, de_rat_f = induce_rational_reconstruction(D, ZZ(pp), parent = parent(g))
       if fl
         t = de_rat_f *g - nu_rat_f
         if ErrorTolerant
@@ -319,7 +319,7 @@ function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem,
    while true
      np += 1
      if testPrime_jl(f,p) == true && testPrime_jl(g,p) == true
-         Rp, t = polynomial_ring(residue_ring(FlintZZ, p, cached=false)[1], cached=false)
+         Rp, t = polynomial_ring(residue_ring(ZZ, p, cached=false)[1], cached=false)
          gp = Rp(g)
          fp = Rp(f)
          fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, bnd, ErrorTolerant = ErrorTolerant)
@@ -390,7 +390,7 @@ function berlekamp_massey_mod(L::Vector{QQFieldElem}; parent = Globals.Qx)
   end
   p = next_prime(ZZRingElem(p_start))
   kp = 10
-  pp = FlintZZ(1)
+  pp = ZZ(1)
   j = 0
   local N
   while true
@@ -403,7 +403,7 @@ function berlekamp_massey_mod(L::Vector{QQFieldElem}; parent = Globals.Qx)
        N, pp = induce_crt(N, pp, L[1], L[2])
       j=1
     end
-    fl, nu_rat_f = induce_rational_reconstruction(N, FlintZZ(pp), parent = Rc)
+    fl, nu_rat_f = induce_rational_reconstruction(N, ZZ(pp), parent = Rc)
     if fl
       return true, nu_rat_f
       #the check for roots is ONLY useful in multivariate interpolation
@@ -422,7 +422,7 @@ function _modpResults(f, p::ZZRingElem, M::Int)
    Rc = f.parent
    l1 = fpPolyRingElem[]; l3 = ZZRingElem[]
    Np = listprimes([f], p, M)
-   Zx, Y = polynomial_ring(FlintZZ, "Y", cached=false)
+   Zx, Y = polynomial_ring(ZZ, "Y", cached=false)
    for j in 1:length(Np)
      RNp = Native.GF(Int(Np[j]), cached=false)
      Rp, t = polynomial_ring(RNp, "t", cached=false)

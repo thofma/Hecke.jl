@@ -35,7 +35,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
       """
   fl, _rels = is_sublattice_with_relations(M, N)
   @req fl "Second lattice must be a sublattice of first lattice"
-  rels = change_base_ring(FlintZZ, _rels)
+  rels = change_base_ring(ZZ, _rels)
   A = abelian_group(rels)
   n = dim(ambient_space(M))
   BM = basis_matrix(M)
@@ -47,7 +47,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
                                       matrix(QQ, 1, n, g);
                                       side = :left)
       @req denominator(v) == 1 "Generator not an element of the lattice"
-      ginA = A(change_base_ring(FlintZZ, v))
+      ginA = A(change_base_ring(ZZ, v))
       push!(gens_in_A, ginA)
     end
     S, mS = sub(A, gens_in_A, false)
@@ -1410,7 +1410,7 @@ function torsion_quadratic_module(q::QQMatrix)
   @req is_symmetric(q) "Matrix must be symmetric"
 
   d = denominator(q)
-  Q = change_base_ring(FlintZZ, d * q)
+  Q = change_base_ring(ZZ, d * q)
   S, U, V = snf_with_transform(Q)
   D = change_base_ring(QQ, U) * q * change_base_ring(QQ, V)
   L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)); gram = d^2 * q)

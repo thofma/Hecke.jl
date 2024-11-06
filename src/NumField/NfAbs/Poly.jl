@@ -504,7 +504,7 @@ end
 
 
 function landau_mignotte_bound(f::PolyRingElem{AbsSimpleNumFieldElem})
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   g = Zx()
   for i=0:degree(f)
     setcoeff!(g, i, Hecke.upper_bound(ZZRingElem, sqrt(t2(coeff(f, i)))))
@@ -518,7 +518,7 @@ end
 
 function cld_bound(f::PolyRingElem{AbsSimpleNumFieldElem}, k::Vector{Int})
   @assert all(kk -> 0 <= kk < degree(f), k)
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   g = Zx()
   n = degree(base_ring(f))
   for i=0:degree(f)
@@ -529,7 +529,7 @@ function cld_bound(f::PolyRingElem{AbsSimpleNumFieldElem}, k::Vector{Int})
   end
   bb = ZZRingElem[]
   for kk = k
-    b = FlintZZ()
+    b = ZZ()
     ccall((:fmpz_poly_CLD_bound, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZPolyRingElem}, Int64), b, g, kk)
     push!(bb, b)
   end
@@ -539,7 +539,7 @@ cld_bound(f::PolyRingElem{AbsSimpleNumFieldElem}, k::Int) = cld_bound(f, [k])[1]
 
 function cld_bound(f::ZZPolyRingElem, k::Int)
   @assert 0 <= k < degree(f)
-  b = FlintZZ()
+  b = ZZ()
   ccall((:fmpz_poly_CLD_bound, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZPolyRingElem}, Int64), b, f, k)
   return b
 end

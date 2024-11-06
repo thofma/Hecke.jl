@@ -21,7 +21,7 @@ function _lll_quad(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumField
   a1 = 2*numerator(norm(b[1]))
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
-  g = matrix(FlintZZ, 2, 2, [a1, a12, a12, a2])
+  g = matrix(ZZ, 2, 2, [a1, a12, a12, a2])
   @hassert :LLL 1 is_positive_definite(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, ZZRingElem(1)), t::ZZMatrix
@@ -44,7 +44,7 @@ end
 #
 ################################################################################
 
-function lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(ZZ, 1, 1); prec::Int = 100)
 
   K = nf(order(A))
 
@@ -86,7 +86,7 @@ function lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
 end
 
 
-function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(ZZ, 1, 1); prec::Int = 100)
   K = nf(order(A))
   n = degree(order(A))
   prec = max(prec, 4*n)
@@ -98,7 +98,7 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
     d = minkowski_gram_mat_scaled(order(A), prec)
     ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), d, d, transpose(l))
     ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), d, l, d)
-    g = zero_matrix(FlintZZ, n, n)
+    g = zero_matrix(ZZ, n, n)
     den = ZZRingElem(1)
     sv = ZZRingElem(0)
   else
@@ -109,8 +109,8 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
     rt_c = roots_ctx(K)
     if !isdefined(rt_c, :cache_z1)
-      rt_c.cache_z1 = zero_matrix(FlintZZ, n, n)
-      rt_c.cache_z2 = zero_matrix(FlintZZ, n, n)
+      rt_c.cache_z1 = zero_matrix(ZZ, n, n)
+      rt_c.cache_z2 = zero_matrix(ZZ, n, n)
     end
 
     d::ZZMatrix = rt_c.cache_z1
@@ -266,7 +266,7 @@ end
 function _minkowski_via_approximation(B::Vector{T}) where T <: NumFieldElem
   K = parent(B[1])
   n = length(B)
-  g = zero_matrix(FlintZZ, n, n)
+  g = zero_matrix(ZZ, n, n)
   prec = 16
   imgs = Vector{Vector{ArbFieldElem}}(undef, n)
   for i = 1:n
@@ -302,7 +302,7 @@ end
 function trace_matrix(b::Vector{T}) where T <: NumFieldElem
   K = parent(b[1])
   n = absolute_degree(K)
-  g = zero_matrix(FlintZZ, n, n)
+  g = zero_matrix(ZZ, n, n)
   aux = K()
   for i = 1:n
     mul!(aux, b[i], b[i])
@@ -348,7 +348,7 @@ function _lll_quad(M::AbsNumFieldOrder)
   a1 = 2*numerator(norm(b[1]))
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
-  g = matrix(FlintZZ, 2, 2, ZZRingElem[a1, a12, a12, a2])
+  g = matrix(ZZ, 2, 2, ZZRingElem[a1, a12, a12, a2])
   @hassert :ClassGroup 1 is_positive_definite(g)
   w = lll_gram_with_transform(g)[2]
   On = AbsNumFieldOrder(K, w*basis_matrix(FakeFmpqMat, M, copy = false))
@@ -497,7 +497,7 @@ function lll_precomputation(M::AbsNumFieldOrder, prec::Int, nblocks::Int = 4)
   end
   int = (dimension_blocks*(nblocks-1)+1):n
   push!(blocks, collect(int))
-  g = identity_matrix(FlintZZ, n)
+  g = identity_matrix(ZZ, n)
   new_prec = prec
   to_do = subsets(blocks, 2)
   done = falses(length(to_do))
@@ -521,7 +521,7 @@ function lll_precomputation(M::AbsNumFieldOrder, prec::Int, nblocks::Int = 4)
         On.gen_index = M.gen_index
       end
       M = On
-      g = identity_matrix(FlintZZ, n)
+      g = identity_matrix(ZZ, n)
       continue
     end
     indices = vcat(to_do[block][1], to_do[block][2])
@@ -562,7 +562,7 @@ function _lll_sublattice(M::AbsNumFieldOrder, u::Vector{Int}; prec = 100)
       end
     end
     @vprintln :LLL 3 "Minkowski matrix computed"
-    g = identity_matrix(FlintZZ, l)
+    g = identity_matrix(ZZ, l)
     d1 = sub(d, u, u)
     prec = div(prec, 2)
     shift!(d1, -prec)  #TODO: remove?
@@ -589,7 +589,7 @@ function _lll_sublattice(M::AbsNumFieldOrder, u::Vector{Int}; prec = 100)
     return prec, g
   else
     @vprintln :LLL 3 "Output the same basis :("
-    return prec, identity_matrix(FlintZZ, l)
+    return prec, identity_matrix(ZZ, l)
   end
 end
 
@@ -628,7 +628,7 @@ function _lll_with_parameters(M::AbsNumFieldOrder, parameters::Tuple{Float64, Fl
 
     @vprintln :LLL 3 "Minkowski matrix computed"
     diag_d = prod_diagonal(d)
-    g = identity_matrix(FlintZZ, n)
+    g = identity_matrix(ZZ, n)
 
     prec = div(prec, 2)
     shift!(d, -prec)  #TODO: remove?
@@ -717,7 +717,7 @@ end
 
 A basis for $I$ that is reduced using the LLL algorithm for the Minkowski metric.
 """
-function lll_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, v::ZZMatrix = zero_matrix(ZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(FakeFmpqMat, A, copy = false)*basis_matrix(FakeFmpqMat, order(A), copy = false)
   K = nf(order(A))
@@ -727,7 +727,7 @@ function lll_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumField
   return q
 end
 
-function lll_basis(A::AbsSimpleNumFieldOrderFractionalIdeal, v::ZZMatrix = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
+function lll_basis(A::AbsSimpleNumFieldOrderFractionalIdeal, v::ZZMatrix = zero_matrix(ZZ, 1, 1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   L, T = lll(A.num, v, prec=prec)
   S = FakeFmpqMat(T)*basis_matrix(A.num)*basis_matrix(FakeFmpqMat, order(A))
@@ -745,13 +745,13 @@ end
 ################################################################################
 
 function short_elem(A::AbsSimpleNumFieldOrderFractionalIdeal,
-                v::ZZMatrix=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
+                v::ZZMatrix=zero_matrix(ZZ, 1,1); prec::Int = 100)
   assure_has_numerator_and_denominator(A)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
 function short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
-                v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
+                v::ZZMatrix = zero_matrix(ZZ, 1,1); prec::Int = 100)
   # If A == 1 and v is trivial, we cache the short element on the order and
   # retrieve (as ong as the precision fits)
   if is_one(A) && size(v) == (1, 1) && is_zero(v)
@@ -769,7 +769,7 @@ function short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFiel
 end
 
 function _short_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
-                v::ZZMatrix = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
+                v::ZZMatrix = zero_matrix(ZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
   t = lll(A, v, prec = prec)[2]
   w = view(t, 1:1, 1:ncols(t))

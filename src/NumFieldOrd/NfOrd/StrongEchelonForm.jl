@@ -115,7 +115,7 @@ function z_split(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEl
     val[i] = valuation(nI, c[i])
   end
   if n == 1
-    nz = one(FlintZZ)
+    nz = one(ZZ)
   else
     nz = prod(b[i, i] for i in 2:n)
   end
@@ -147,7 +147,7 @@ end
 function map_into_integer_quotient(Q::AbsSimpleNumFieldOrderQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
-  R = residue_ring(FlintZZ, m, cached = false)[1]
+  R = residue_ring(ZZ, m, cached = false)[1]
   local f
   let R = R, Q = Q
     function f(x::AbsSimpleNumFieldOrderQuoRingElem)
@@ -176,14 +176,14 @@ function can_make_small(Q::Nemo.ZZModRing)
 end
 
 function make_small(Q::EuclideanRingResidueRing{ZZRingElem})
-  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)[1]
+  R = residue_ring(ZZ, Int(modulus(Q)), cached = false)[1]
   f = (x -> R(x.data)::zzModRingElem)
   g = (x -> Q(x.data)::EuclideanRingResidueRingElem{ZZRingElem})
   return R, f, g
 end
 
 function make_small(Q::Nemo.ZZModRing)
-  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)[1]
+  R = residue_ring(ZZ, Int(modulus(Q)), cached = false)[1]
   f = (x -> R(data(x))::zzModRingElem)
   g = (x -> Q(x.data)::Nemo.ZZModRingElem)
   return R, f, g
@@ -375,7 +375,7 @@ function _strong_echelon_form_nonsplit!(M)
         end
       end
     else
-      forflint = zero_matrix(FlintZZ, n, m)
+      forflint = zero_matrix(ZZ, n, m)
       for i in 1:n
         for j in 1:m
           forflint[i, j] = f(M[i, j]).data
@@ -430,7 +430,7 @@ function _strong_echelon_form_nonsplit(M)
         end
       end
     else
-      forflint = zero_matrix(FlintZZ, n, m)
+      forflint = zero_matrix(ZZ, n, m)
       for i in 1:n
         for j in 1:m
           forflint[i, j] = f(M[i, j]).data

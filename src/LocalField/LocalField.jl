@@ -302,7 +302,7 @@ absolute_basis(K::PadicField) = PadicFieldElem[one(K)]
 
 #=
 function find_irreducible_polynomial(K, n::Int)
-  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(ZZ, "x", cached = false)
   f = cyclotomic(ppio(degree(K), n)*n, x)
   lf = factor(K, f)
   return first(keys(lf[1]))

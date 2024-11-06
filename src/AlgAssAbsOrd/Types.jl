@@ -39,7 +39,7 @@
     O = new{S, T}(A, dim(A))
     O.is_maximal = 0
     O.isnice = false
-    O.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, dim(A)))
+    O.tcontain = FakeFmpqMat(zero_matrix(ZZ, 1, dim(A)))
     return O
   end
 

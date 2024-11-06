@@ -342,7 +342,7 @@ function sparse_row(M::ZZMatrix)
       push!(vals, Nemo.mat_entry_ptr(M, 1, i))
     end
   end
-  return SRow(FlintZZ, pos, vals)
+  return SRow(ZZ, pos, vals)
 end
 
 function get_tmp(A::SMat{ZZRingElem})

@@ -148,7 +148,7 @@ function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, G
   # that is 0 --> O^\times --> G --> H.
   # So, O^\times is the kernel of a map from G to H
   # (we really want a FinGenAbGroupHom, so we can't use compose to build this map)
-  M = zero_matrix(FlintZZ, ngens(G), ngens(H))
+  M = zero_matrix(ZZ, ngens(G), ngens(H))
   for i = 1:ngens(G)
     q = OKtoQ(GtoOK(G[i]))
     h = HtoQ\q
@@ -237,7 +237,7 @@ function _picard_group(O::AbsSimpleNumFieldOrder)
   append!(generators, [ contract(GtoQ(G[i]).elem*OK, O) for i = 1:ngens(G) ])
 
   # Build the relation matrix
-  P = zero_matrix(FlintZZ, length(Z), ngens(G))
+  P = zero_matrix(ZZ, length(Z), ngens(G))
   for i = 1:length(Z)
     t = Z[i].coeff
     for j = 1:ngens(G)
@@ -246,7 +246,7 @@ function _picard_group(O::AbsSimpleNumFieldOrder)
   end
 
   UtoG = compose(UtoOK, compose(OKtoQ, pseudo_inv(GtoQ)))
-  Q = zero_matrix(FlintZZ, ngens(U), ngens(G))
+  Q = zero_matrix(ZZ, ngens(U), ngens(G))
   for i = 1:ngens(U)
     t = UtoG(U[i]).coeff
     for j = 1:ngens(G)
@@ -255,8 +255,8 @@ function _picard_group(O::AbsSimpleNumFieldOrder)
   end
 
   M = hcat(rels(Cl), -P)
-  M = vcat(M, hcat(zero_matrix(FlintZZ, ngens(G), ngens(Cl)), rels(G)))
-  M = vcat(M, hcat(zero_matrix(FlintZZ, nrows(Q), ngens(Cl)), Q))
+  M = vcat(M, hcat(zero_matrix(ZZ, ngens(G), ngens(Cl)), rels(G)))
+  M = vcat(M, hcat(zero_matrix(ZZ, nrows(Q), ngens(Cl)), Q))
 
   P = abelian_group(M)
 

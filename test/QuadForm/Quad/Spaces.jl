@@ -37,12 +37,12 @@
     V = @inferred quadratic_space(K, 2)
     @test_throws ArgumentError quadratic_space(K, -1)
 
-    V = @inferred quadratic_space(K, identity_matrix(FlintZZ, 2))
+    V = @inferred quadratic_space(K, identity_matrix(ZZ, 2))
     @test V == V
     @test V === V
-    W = quadratic_space(K, identity_matrix(FlintZZ, 2))
+    W = quadratic_space(K, identity_matrix(ZZ, 2))
     @test V === W
-    W = quadratic_space(K, identity_matrix(FlintZZ, 2), cached = false)
+    W = quadratic_space(K, identity_matrix(ZZ, 2), cached = false)
     @test V != W
 
     @test (@inferred gram_matrix(V)) == identity_matrix(K, 2)

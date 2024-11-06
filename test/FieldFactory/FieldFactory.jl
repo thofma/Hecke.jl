@@ -78,7 +78,7 @@
   println("Split extension")
   @time begin
     @testset "Split extension" begin
-      x = polynomial_ring(FlintZZ, "x", cached = false)[2]
+      x = polynomial_ring(ZZ, "x", cached = false)[2]
       K =  number_field(x^2+1)[1]
       l = [Hecke.field_context(K)]
       l1 = Hecke.fields(42, 5, l, ZZRingElem(10)^90)

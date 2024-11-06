@@ -164,7 +164,7 @@ function fun_factor(g::Generic.Poly{PadicFieldElem})
   Kt = parent(g)
   v = precision(g)
   pv = prime(K)^v
-  R = residue_ring(FlintZZ, pv, cached = false)[1]
+  R = residue_ring(ZZ, pv, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fR = Rt([R(Hecke.lift(ZZ, coeff(g, i))) for i = 0:degree(g)])
   u, g1 = Hecke.fun_factor(fR)
@@ -317,7 +317,7 @@ function invmod(u::Generic.Poly{PadicFieldElem}, f::Generic.Poly{PadicFieldElem}
   =#
   while true
     pv = prime(K)^v
-    R = residue_ring(FlintZZ, pv, cached = false)[1]
+    R = residue_ring(ZZ, pv, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fR = Rt(elem_type(R)[R(Hecke.lift(ZZ, coeff(f, i))) for i = 0:degree(f)])
     uR = Rt(elem_type(R)[R(Hecke.lift(ZZ, coeff(u, i))) for i = 0:degree(u)])
@@ -519,7 +519,7 @@ function redcued_resultant(f::Generic.Poly{PadicFieldElem}, g::Generic.Poly{Padi
   K = base_ring(Kt)
   p = prime(K)
   v = min(precision(f), precision(g))
-  R = residue_ring(FlintZZ, p^v, cached = false)[1]
+  R = residue_ring(ZZ, p^v, cached = false)[1]
   cf = Vector{elem_type(R)}(undef, degree(f)+1)
   for i = 1:length(cf)
     cf[i] = R(Hecke.lift(ZZ, coeff(f, i-1)))

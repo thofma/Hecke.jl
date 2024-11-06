@@ -132,7 +132,7 @@ end
 
 function _sieve_primitive_elements(B::Vector{AbsNonSimpleNumFieldElem})
   K = parent(B[1])
-  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
   p, d = _find_prime(pols)
   F = Native.finite_field(p, d, "w", cached = false)[1]
@@ -205,7 +205,7 @@ end
 
 function _sieve_primitive_elements(B::Vector{AbsSimpleNumFieldElem})
   K = parent(B[1])
-  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
   a = gen(K)*denominator(K.pol)
 
@@ -346,7 +346,7 @@ function polredabs(K::AbsSimpleNumField)
   I = index(ZK)^2
   D = discriminant(ZK)
   B = basis(ZK, copy = false)
-  Zx = FlintZZ["x"][1]
+  Zx = ZZ["x"][1]
   f = Zx(K.pol)
   p, d = _find_prime(ZZPolyRingElem[f])
 
@@ -373,7 +373,7 @@ function polredabs(K::AbsSimpleNumField)
   while true
     try
       setprecision(BigFloat, pr)
-      E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
+      E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(ZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
 
       if E.C[end] + 0.0001 == E.C[end]  # very very crude...
         pr *= 2

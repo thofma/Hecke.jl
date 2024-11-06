@@ -73,7 +73,7 @@ end
 end
 
 @testset "PolyFactor" begin
-  Zx, x = FlintZZ["x"]
+  Zx, x = ZZ["x"]
   k, a = number_field(swinnerton_dyer(3, x))
   kt, t = k["t"]
 

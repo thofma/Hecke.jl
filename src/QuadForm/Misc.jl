@@ -391,7 +391,7 @@ function _idempotents(x::Vector)
   # ( 0 | M_x | I )
   # ( 0 | M_y | 0 )
 
-  V = zero_matrix(FlintZZ, d * k + 1, d * k + 1)
+  V = zero_matrix(ZZ, d * k + 1, d * k + 1)
 
   u = coordinates(one(O))
 

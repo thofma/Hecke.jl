@@ -50,8 +50,8 @@ mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
   function FinGenAbGroupHom(G::FinGenAbGroup)
     r = new()
     r.header = MapHeader(G, G)
-    r.map = identity_matrix(FlintZZ, ngens(G))
-    r.imap = identity_matrix(FlintZZ, ngens(G))
+    r.map = identity_matrix(ZZ, ngens(G))
+    r.imap = identity_matrix(ZZ, ngens(G))
     return r
   end
 
@@ -75,7 +75,7 @@ mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
     D = domain(M)
     r.header = MapHeader(D, codomain(M))
     if ngens(D) == 0
-      r.map = matrix(FlintZZ, 0, ngens(codomain(M)), ZZRingElem[])
+      r.map = matrix(ZZ, 0, ngens(codomain(M)), ZZRingElem[])
     else
       r.map = reduce(vcat, [M(D[i]).coeff for i=1:ngens(D)])
     end

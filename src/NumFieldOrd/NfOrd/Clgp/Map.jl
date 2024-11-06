@@ -93,7 +93,7 @@ function class_group_disc_log(r::SRow{ZZRingElem}, c::ClassGrpCtx)
   release_tmp(c.M.basis, tmp)
 
 #  println("reduced to $r")
-  rr = zero_matrix(FlintZZ, 1, nrows(T))
+  rr = zero_matrix(ZZ, 1, nrows(T))
   for (p,v) = r
     rr[1, p-s+1] = v
   end
@@ -178,7 +178,7 @@ function class_group_ideal_relation(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, 
       continue
     end
     na = norm(E.A)*abs(na)
-    n = FlintZZ(norm(iI)*na)
+    n = ZZ(norm(iI)*na)
     if is_smooth(c.FB.fb_int, n)
       a = K(O(ZZRingElem[aa[1, i] for i=1:degree(K)]))
       Ia = simplify(a*iI)
@@ -187,7 +187,7 @@ function class_group_ideal_relation(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, 
       local r::SRow{ZZRingElem}
       if isone(n)
         @assert isone(Ia.num)
-        r = sparse_row(FlintZZ)
+        r = sparse_row(ZZ)
       else
         fl, r = _factor!(c.FB, Ia.num, false)
         if !fl
@@ -286,7 +286,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   if isone(h) # group is trivial...
     C = abelian_group(ZZRingElem[])
     #mC = x -> 1*O, inv x-> [1]
-    c.dl_data = (1, identity_matrix(FlintZZ, 1), C)
+    c.dl_data = (1, identity_matrix(ZZ, 1), C)
     return C
   end
 
@@ -468,7 +468,7 @@ function _isprincipal_fac_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   if !support
     return true, e
   else
-    prime_exponents = sparse_row(FlintZZ, collect(1:length(base)), rs) * vcat(c.M.bas_gens, c.M.rel_gens)
+    prime_exponents = sparse_row(ZZ, collect(1:length(base)), rs) * vcat(c.M.bas_gens, c.M.rel_gens)
     prime_exp = [ prime_exponents[i] for i in 1:length(c.FB.ideals)]
     invx = inv(x)
     dinvx = denominator(invx)
@@ -561,7 +561,7 @@ end
 function unique_fmpz_mat(C::Nemo.ArbMatrix)
   half = parent(C[1,1])(QQFieldElem(1//2))  #TODO: does not work
   half = parent(C[1,1])(1)//2
-  v = zero_matrix(FlintZZ, nrows(C), ncols(C))
+  v = zero_matrix(ZZ, nrows(C), ncols(C))
 
   for i=1:nrows(C)
     for j=1:ncols(C)
@@ -575,7 +575,7 @@ function unique_fmpz_mat(C::Nemo.ArbMatrix)
 end
 
 function round_approx(::Type{ZZMatrix}, C::Nemo.ArbMatrix)
-  v = zero_matrix(FlintZZ, nrows(C), ncols(C))
+  v = zero_matrix(ZZ, nrows(C), ncols(C))
 
   for i=1:nrows(C)
     for j=1:ncols(C)
@@ -607,7 +607,7 @@ function reduce_mod_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumF
 
   b = deepcopy(a)
   cnt = 10
-  V = zero_matrix(FlintZZ, 1, 1)
+  V = zero_matrix(ZZ, 1, 1)
 
   local B::ArbMatrix
 
@@ -814,7 +814,7 @@ function probabilistic_coprime(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
       error("Something wrong in short_elem")
     end
     try
-      l, t = lll(J.num, zero_matrix(FlintZZ, 1,1), prec = prec)
+      l, t = lll(J.num, zero_matrix(ZZ, 1,1), prec = prec)
       break
     catch e
       if !(e isa LowPrecisionLLL || e isa InexactError)
@@ -823,7 +823,7 @@ function probabilistic_coprime(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
     end
     prec = 2 * prec
   end
-  rr = matrix(FlintZZ, 1, nrows(t), ZZRingElem[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
+  rr = matrix(ZZ, 1, nrows(t), ZZRingElem[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
   b1 = t*b
   c = rr*b1
   s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
@@ -831,7 +831,7 @@ function probabilistic_coprime(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   I = simplify(I)
   I1 = I.num
   while !is_coprime(I1, m)
-    rr = matrix(FlintZZ, 1, nrows(t), ZZRingElem[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
+    rr = matrix(ZZ, 1, nrows(t), ZZRingElem[rand(1:((minimum(a)^2)*minimum(m))) for i = 1:nrows(t)])
     c = rr*b1
     s = divexact(elem_from_mat_row(K, c, 1, b_den), J.den)
     I = s*a

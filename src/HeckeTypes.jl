@@ -495,7 +495,7 @@ mutable struct EnumCtxArb
   function EnumCtxArb(G::ArbMatrix)
     z = new()
     z.G = G
-    z.x = zero_matrix(FlintZZ, 1, nrows(G))
+    z.x = zero_matrix(ZZ, 1, nrows(G))
     z.p = precision(base_ring(G))
     return z
   end
@@ -562,7 +562,7 @@ mutable struct FakeFmpqMat
   function FakeFmpqMat(x::ZZMatrix)
     z = new()
     z.num = x
-    z.den = one(FlintZZ)
+    z.den = one(ZZ)
     z.rows = nrows(x)
     z.cols = ncols(x)
     return z
@@ -725,10 +725,10 @@ const AbsNumFieldOrderSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFiel
     #r.norm_change_const = (-1.0, -1.0)
     r.is_equation_order = false
     r.is_maximal = 0
-    r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
+    r.tcontain = FakeFmpqMat(zero_matrix(ZZ, 1, degree(a)))
     r.tcontain_fmpz = ZZRingElem()
     r.tcontain_fmpz2 = ZZRingElem()
-    r.tidempotents = zero_matrix(FlintZZ, 1 + 2*degree(a), 1 + 2*degree(a))
+    r.tidempotents = zero_matrix(ZZ, 1 + 2*degree(a), 1 + 2*degree(a))
     r.index_div = Dict{ZZRingElem, Vector}()
     return r
   end
@@ -857,7 +857,7 @@ mutable struct AbsNumFieldOrderElem{S, T} <: NumFieldOrderElem
   end
 
   function AbsNumFieldOrderElem{S, T}(O::AbsNumFieldOrder{S, T}, arr::Vector{U}) where {S, T, U <: Integer}
-    return AbsNumFieldOrderElem{S, T}(O, map(FlintZZ, arr))
+    return AbsNumFieldOrderElem{S, T}(O, map(ZZ, arr))
   end
 
   function AbsNumFieldOrderElem{S, T}(x::AbsNumFieldOrderElem{S, T}) where {S, T}
@@ -1405,14 +1405,14 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
 
   function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
-    Fpx = polynomial_ring(residue_ring(FlintZZ, UInt(p), cached=false)[1], "x", cached=false)[1]
+    Fpx = polynomial_ring(residue_ring(ZZ, UInt(p), cached=false)[1], "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
   end
 
   function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
-    Fpx = polynomial_ring(residue_ring(FlintZZ, p, cached=false)[1], "x", cached=false)[1]
+    Fpx = polynomial_ring(residue_ring(ZZ, p, cached=false)[1], "x", cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
     return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
@@ -1532,7 +1532,7 @@ mutable struct ModuleCtxNmod
 
   function ModuleCtxNmod(p::Int, dim::Int)
     M = new()
-    M.R = residue_ring(FlintZZ, p, cached=false)[1]
+    M.R = residue_ring(ZZ, p, cached=false)[1]
     M.basis = sparse_matrix(M.R)
     M.basis.c = dim
     M.gens = sparse_matrix(M.R)
@@ -1556,13 +1556,13 @@ mutable struct ModuleCtx_fmpz
 
   function ModuleCtx_fmpz(dim::Int, p::Int = next_prime(2^20))
     M = new()
-    M.max_indep = sparse_matrix(FlintZZ)
+    M.max_indep = sparse_matrix(ZZ)
     M.max_indep.c = dim
-    M.bas_gens = sparse_matrix(FlintZZ)
+    M.bas_gens = sparse_matrix(ZZ)
     M.bas_gens.c = dim
-    M.rel_gens = sparse_matrix(FlintZZ)
+    M.rel_gens = sparse_matrix(ZZ)
     M.rel_gens.c = dim
-    R = residue_ring(FlintZZ, p, cached=false)[1]
+    R = residue_ring(ZZ, p, cached=false)[1]
     M.rel_reps_p = sparse_matrix(R)
     M.new = false
     M.Mp = ModuleCtxNmod(R, dim)
@@ -1689,7 +1689,7 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
 
   function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem};
                  prec::Int = 100, val::Int=0, limit::Int = 0) where {Tx, TU, TC}
-    v = matrix(FlintZZ, Base.rand(-val:val, 1,
+    v = matrix(ZZ, Base.rand(-val:val, 1,
                     nrows(clg.val_base)))*clg.val_base
     E = enum_ctx_from_ideal(A, v, prec = prec, limit = limit,
        Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
@@ -1702,7 +1702,7 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
     I.restart = 0
     I.vl = 0
     I.rr = 1:0
-    I.M = zero_matrix(FlintZZ, 1, I.E.n)
+    I.M = zero_matrix(ZZ, 1, I.E.n)
     return I
   end
 end
@@ -1740,10 +1740,10 @@ end
     z.basis_mat_array = Array(z.basis_matrix)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)
-    z.tmp_div = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
-    z.tmp_gcdxx = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
-    z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
-    z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
+    z.tmp_div = zero_matrix(ZZ, 2*d + 1, 2*d + 1)
+    z.tmp_gcdxx = zero_matrix(ZZ, 3*d + 1, 3*d + 1)
+    z.tmp_ann = zero_matrix(ZZ, 2*d, d)
+    z.tmp_euc = zero_matrix(ZZ, 2*d, d)
     z.one = simplify!(one(z))
     return z
   end
@@ -1864,7 +1864,7 @@ mutable struct QuadBin{T}
 end
 
 function QuadBin(a::Integer, b::Integer, c::Integer)
-  return QuadBin(FlintZZ, a, b, c)
+  return QuadBin(ZZ, a, b, c)
 end
 
 function QuadBin(R, a, b, c)
@@ -2056,7 +2056,7 @@ function GrpAbLatticeCreate()
   r = GrpAbLattice()
   r.zero = ZZMatrix(0,0)
   r.mult = *
-  r.make_id = G::FinGenAbGroup -> identity_matrix(FlintZZ, ngens(G))
+  r.make_id = G::FinGenAbGroup -> identity_matrix(ZZ, ngens(G))
   return r
 end
 
@@ -2192,7 +2192,7 @@ mutable struct HenselCtx
     a = new()
     a.f = f
     a.p = UInt(p)
-    Zx,x = polynomial_ring(FlintZZ, "x", cached=false)
+    Zx,x = polynomial_ring(ZZ, "x", cached=false)
     Rx,x = polynomial_ring(Native.GF(UInt(p), cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, libflint), UInt,

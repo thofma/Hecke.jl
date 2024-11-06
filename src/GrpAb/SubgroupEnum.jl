@@ -68,7 +68,7 @@ mutable struct IndexPSubgroups{S, T}
     end
     r.st = i
     r.n = UInt(div(ZZRingElem(p)^(length(s.snf)-i+1) - 1, ZZRingElem(p)-1))
-    r.c = zero_matrix(FlintZZ, length(s.snf), length(s.snf))
+    r.c = zero_matrix(ZZ, length(s.snf), length(s.snf))
     r.mthd = mthd
     r.c
     return r

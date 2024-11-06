@@ -107,7 +107,7 @@ $\mathbf Z/p\mathbf Z$ using exhaustive search.
 """
 function order_via_exhaustive_search(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
-  order = FlintZZ(1)
+  order = ZZ(1)
   a1, a2, a3, a4, a6 = a_invariants(E)
   Ry, y = polynomial_ring(R,"y")
   for x = R
@@ -139,7 +139,7 @@ function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
-  grouporder = FlintZZ(0)
+  grouporder = ZZ(0)
   p == 0 && error("Base field must be finite")
 
   if p != q
@@ -150,7 +150,7 @@ function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
     E = short_weierstrass_model(E)[1]
   end
   _, _, _, a4, a6 = a_invariants(E)
-  x = FlintZZ(0)
+  x = ZZ(0)
 
   while x < p
     C = x^3 + a4*x + a6
@@ -227,7 +227,7 @@ function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
   # step 3
   k = -m
   H = (2*m)*P
-  M = FlintZZ(0) # initialize M, so that it is known after the while loop
+  M = ZZ(0) # initialize M, so that it is known after the while loop
 
   while k < m + 1
     Snew = Q + (k*H)
@@ -374,7 +374,7 @@ function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
     E = short_weierstrass_model(E)[1]
   end
 
-  Nposs = FlintZZ(1)
+  Nposs = ZZ(1)
   h = hasse_interval(E)
   l = h[1]
   b = h[2]
@@ -489,7 +489,7 @@ function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   t = 0
   for i = 1:L
     n_i = div(product, S[i])
-    B = residue_ring(FlintZZ, S[i], cached = false)[1]
+    B = residue_ring(ZZ, S[i], cached = false)[1]
     M_i = inv(B(n_i))
     M_i = M_i.data
     t = t + (M_i * n_i * t_mod_l[i])
@@ -613,9 +613,9 @@ function t_mod_prime(l, E)
     x_q = powermod(x, q_int, f)
     ggt = gcd(f, x_q - x)
     if ggt == 1
-      t = FlintZZ(1)
+      t = ZZ(1)
     else
-      t = FlintZZ(0)
+      t = ZZ(0)
     end
 
     return t
@@ -640,8 +640,8 @@ function t_mod_prime(l, E)
   end
 
   if ggT != 1 # case 1
-    if jacobi_symbol(FlintZZ(k), FlintZZ(l)) == -1
-      return FlintZZ(0)
+    if jacobi_symbol(ZZ(k), ZZ(l)) == -1
+      return ZZ(0)
     else
       # need square root of q (mod l)
       w = is_square_with_sqrt(k_mod)[2]
@@ -663,7 +663,7 @@ function t_mod_prime(l, E)
       end
 
       if ggT == 1
-        return FlintZZ(0)
+        return ZZ(0)
       else
         fwmz = Fnschoof[w_int]
         fwpz = Fnschoof[w_int+4]

@@ -395,7 +395,7 @@ function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNum
   # QQMPolyRingElem
 
   for j in 1:ncols(M)
-    M[i, j] = zero(FlintZZ)
+    M[i, j] = zero(ZZ)
   end
 
   one!(d)

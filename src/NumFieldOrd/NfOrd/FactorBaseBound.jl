@@ -71,7 +71,7 @@ function _factorbase_bound_bdf_right_side(O::AbsSimpleNumFieldOrder, x0::Float64
   function comp_summand(p::ZZRingElem, m::Int)
     logp = log(R(p))
 
-    pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
+    pm2 = R(p)^(R(ZZ(m)//ZZ(2)))
 
     secondterm = R(1) - m*logp//logcurval
 

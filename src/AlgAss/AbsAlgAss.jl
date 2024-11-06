@@ -314,7 +314,7 @@ function rand(A::AbstractAssociativeAlgebra{T}, rng::AbstractUnitRange{Int}) whe
 end
 
 function rand(A::StructureConstantAlgebra{QQFieldElem}, rng::AbstractUnitRange{Int} = -20:20)
-  c = [QQFieldElem(rand(FlintZZ, rng)) for i = 1:dim(A)]
+  c = [QQFieldElem(rand(ZZ, rng)) for i = 1:dim(A)]
   return A(c)
 end
 

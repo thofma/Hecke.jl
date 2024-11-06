@@ -96,7 +96,7 @@ function permutation_group1(G::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimp
   while is_divisible_by(d1, p)
     p = next_prime(p)
   end
-  R = residue_ring(FlintZZ, p, cached = false)[1]
+  R = residue_ring(ZZ, p, cached = false)[1]
   Rm, gRm = polynomial_ring(R, ngens(L)+1, cached = false)
   fmod = Vector{zzModMPolyRingElem}(undef, ngens(L)+1)
   RQm, gRQm = polynomial_ring(QQ, ngens(L)+1, cached = false)

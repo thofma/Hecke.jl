@@ -1248,7 +1248,7 @@ Return the oddity of this even form.
 The oddity is also called the $2$-signature
 """
 function oddity(S::ZZLocalGenus)
-  R = residue_ring(FlintZZ, 8)[1]
+  R = residue_ring(ZZ, 8)[1]
   p = prime(S)
   @req p == 2 "The oddity is only defined for p=2"
   k = 0

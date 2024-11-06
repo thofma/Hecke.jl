@@ -124,7 +124,7 @@ function torsion_points_lutz_nagell(F::EllipticCurve{QQFieldElem})
 
   pcand = Tuple{ZZRingElem, ZZRingElem}[] # candidates for torsion points
 
-  Zx, x = polynomial_ring(FlintZZ, "x")
+  Zx, x = polynomial_ring(ZZ, "x")
 
   _, _, _, a4, a6 = a_invariants(E)
 
@@ -197,7 +197,7 @@ function torsion_points_division_poly(F::EllipticCurve{QQFieldElem})
   # points of order 2 (point has order 2 iff y-coordinate is zero)
   # (note: these points are not detected by the division polynomials)
 
-  Zx, x = polynomial_ring(FlintZZ, "x")
+  Zx, x = polynomial_ring(ZZ, "x")
 
   s = zeros(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
   if length(s) != 0

@@ -49,11 +49,11 @@ end
 
 @testset "Conjugacy of integral matrices" begin
 
-  Zx, x = FlintZZ["x"]
+  Zx, x = ZZ["x"]
   f = x^3 - 4x^2 + 8x + 5
 
   M = companion_matrix(f)
-  U = identity_matrix(FlintZZ, nrows(M))
+  U = identity_matrix(ZZ, nrows(M))
   for i = 1:nrows(M)
     for j = i + 1:ncols(M)
       U[i, j] = rand(-10:10)
@@ -65,7 +65,7 @@ end
   @test b == true
   @test M == V*N*inv(V)
 
-  N = identity_matrix(FlintZZ, nrows(M))
+  N = identity_matrix(ZZ, nrows(M))
   b, V = is_conjugate(M, N)
   @test b == false
 
@@ -73,7 +73,7 @@ end
   h = x^2 - x + 5
 
   M = companion_matrix(f*g*h)
-  U = identity_matrix(FlintZZ, nrows(M))
+  U = identity_matrix(ZZ, nrows(M))
   for i = 1:nrows(M)
     for j = i + 1:ncols(M)
       U[i, j] = rand(-10:10)
@@ -85,7 +85,7 @@ end
   @test b == true
   @test M == V*N*inv(V)
 
-  N = identity_matrix(FlintZZ, nrows(M))
+  N = identity_matrix(ZZ, nrows(M))
   b, V = is_conjugate(M, N)
   @test b == false
 

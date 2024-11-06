@@ -74,7 +74,7 @@ function __assure_princ_gen(c::Hecke.ClassGrpCtx{sparse_matrix_type(ZZ)}, nquo::
         push!(els_r, (j+s-1, ex*el[1, j]))
       end
     end
-    r = sparse_row(FlintZZ, els_r, sort = false)
+    r = sparse_row(ZZ, els_r, sort = false)
     sol, d = _solve_ut(RelHnf, r)
     @assert isone(d)
     rs = zeros(ZZRingElem, c.M.bas_gens.r + c.M.rel_gens.r)
@@ -506,7 +506,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   let O = O, G = G
     function exp2(a::FinGenAbGroupElem)
       @assert parent(a) === G
-      new_coeff = zero_matrix(FlintZZ, 1, ngens(C))
+      new_coeff = zero_matrix(ZZ, 1, ngens(C))
       for i = 1:ngens(G)
         new_coeff[1, i+ind-1] = a[i]*diff
       end
@@ -523,7 +523,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
         return id(G)
       end
       x=idiff*(mC\I)
-      y = zero_matrix(FlintZZ, 1, ngens(G))
+      y = zero_matrix(ZZ, 1, ngens(G))
       for i=ind:ngens(C)
         y[1,i-ind+1]=x.coeff[1,i]
       end
@@ -702,9 +702,9 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
   # Then we compute the discrete logarithms
 
   if n_quo == -1
-    R = zero_matrix(FlintZZ, ngens(C)+nG+ngens(H)+ngens(U), ngens(H)+ngens(C)+nG)
+    R = zero_matrix(ZZ, ngens(C)+nG+ngens(H)+ngens(U), ngens(H)+ngens(C)+nG)
   else
-    R = zero_matrix(FlintZZ, 2*(ngens(C)+nG+ngens(H))+ngens(U), ngens(C)+ngens(H)+nG)
+    R = zero_matrix(ZZ, 2*(ngens(C)+nG+ngens(H))+ngens(U), ngens(C)+ngens(H)+nG)
     for i = 1:ncols(R)
       R[i+ngens(C)+nG+ngens(H)+ngens(U), i] = n_quo
     end
@@ -796,7 +796,7 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
         @vprintln :RayFacElem 1 "J is one"
         return id(X)
       end
-      coeffs = zero_matrix(FlintZZ, 1, ngens(X))
+      coeffs = zero_matrix(ZZ, 1, ngens(X))
       if J.is_principal == 1 && isdefined(J, :princ_gen)
         z = FacElem(Dict(J.princ_gen.elem_in_nf => diffC))
       else
@@ -929,7 +929,7 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
   for i = 1:length(powers)
     mG = groups_and_maps[i][2]
     for (prim, mprim) in mG.tame
-      dis = zero_matrix(FlintZZ, 1, ngens(X))
+      dis = zero_matrix(ZZ, 1, ngens(X))
       to_be_c = mprim.disc_log.coeff
       for i = 1:length(to_be_c)
         dis[1, ind-1+i+ngens(C)] = to_be_c[1, i]
@@ -941,7 +941,7 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
 
   disc_log_inf = Dict{InfPlc, FinGenAbGroupElem}()
   for i = 1:length(p)
-    eldi = zero_matrix(FlintZZ, 1,  ngens(X))
+    eldi = zero_matrix(ZZ, 1,  ngens(X))
     eldi[1, ngens(X) - length(p) + i] = 1
     disc_log_inf[p[i]] = FinGenAbGroupElem(X, eldi)
   end
@@ -967,7 +967,7 @@ end
 
 function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Bool, n_quo::Int)
 
-  R=residue_ring(FlintZZ, modulus, cached=false)[1]
+  R=residue_ring(ZZ, modulus, cached=false)[1]
   U, mU = unit_group_mod(R, n_quo)
   U.exponent = n_quo
   if inf_plc
@@ -1390,7 +1390,7 @@ function has_principal_generator_1_mod_m(I::Union{AbsNumFieldOrderIdeal{AbsSimpl
   tobeeval = _preproc(m, tobeeval1, expo)
   coeffs = Vector{ZZMatrix}(undef, length(tobeeval))
   for i = 1:length(coeffs)
-    coeffs[i] = zero_matrix(FlintZZ, 1, ngens(G))
+    coeffs[i] = zero_matrix(ZZ, 1, ngens(G))
   end
   ii = 1
   for i = 1:length(powers)

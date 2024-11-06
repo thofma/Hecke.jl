@@ -145,7 +145,7 @@
     K2,  = @inferred number_field([x^2 - 50, x^3 - 3])
     OO = EquationOrder(K2)
     Omax = @inferred MaximalOrder(OO)
-    @test discriminant(Omax) == FlintZZ(30233088)
+    @test discriminant(Omax) == ZZ(30233088)
 
     lp = prime_decomposition(Omax, 101)
     @test length(lp) == 3

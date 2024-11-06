@@ -321,7 +321,7 @@ function unit_group(::ZZRing)
   log = function (z::ZZRingElem)
     return z == -1 ? G[1] : G[0]
   end
-  return G, MapFromFunc(G, FlintZZ, exp, log)
+  return G, MapFromFunc(G, ZZ, exp, log)
 end
 
 @doc raw"""
@@ -576,12 +576,12 @@ function radical(a::T) where {T<:Integer}
 end
 
 function quo(::ZZRing, a::ZZRingElem)
-  R, f = residue_ring(FlintZZ, a)
+  R, f = residue_ring(ZZ, a)
   return R, f
 end
 
 function quo(::ZZRing, a::Integer)
-  R, f = residue_ring(FlintZZ, a)
+  R, f = residue_ring(ZZ, a)
   return R, f
 end
 

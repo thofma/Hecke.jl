@@ -204,11 +204,11 @@ end
 
 @doc raw"""
     charpoly(a::AbsNumFieldOrderElem) -> ZZPolyRingElem
-    charpoly(a::AbsNumFieldOrderElem, FlintZZ) -> ZZPolyRingElem
+    charpoly(a::AbsNumFieldOrderElem, ZZ) -> ZZPolyRingElem
 
 The characteristic polynomial of $a$.
 """
-function charpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
+function charpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(ZZ, :x, false))
   return Zx(charpoly(elem_in_nf(a)))
 end
 
@@ -217,7 +217,7 @@ end
 
 The minimal polynomial of $a$.
 """
-function minpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
+function minpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(ZZ, :x, false))
   return Zx(minpoly(elem_in_nf(a)))
 end
 
@@ -461,7 +461,7 @@ function representation_matrix_mod(a::AbsNumFieldOrderElem, d::ZZRingElem)
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
   if fits(Int, d1)
-    R = residue_ring(FlintZZ, Int(d1), cached = false)[1]
+    R = residue_ring(ZZ, Int(d1), cached = false)[1]
     AR = map_entries(R, A)
     BMR = map_entries(R, BM.num)
     BMinvR = map_entries(R, BMinv.num)
@@ -481,7 +481,7 @@ function representation_matrix_mod(a::AbsNumFieldOrderElem, d::ZZRingElem)
     mod!(res, d)
     return res
   else
-    RR = residue_ring(FlintZZ, d1, cached = false)[1]
+    RR = residue_ring(ZZ, d1, cached = false)[1]
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
     mul!(ARR, BMRR, ARR)

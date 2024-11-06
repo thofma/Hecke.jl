@@ -2,7 +2,7 @@
    Qx, x = polynomial_ring(QQ, "x")
 
    K1, a1 = number_field(x^3 - 2, "a")
-   O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
+   O1 = Order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
 
    K2, a2 = number_field(x^2 - 4^2*7^2*5, "a")
    O2 = Order(K2, [K2(1), a2])
@@ -13,18 +13,18 @@
     @test I.princ_gen_special[1] == 1
     @test I.princ_gen_special[2] == 17
     @test I.princ_gen == O1(-17)
-    @test basis_matrix(I) == matrix_space(FlintZZ, 3, 3)(17)
+    @test basis_matrix(I) == matrix_space(ZZ, 3, 3)(17)
 
-    J = @inferred ideal(O1, FlintZZ(-17))
+    J = @inferred ideal(O1, ZZ(-17))
     @test order(J) == O1
     @test J.princ_gen_special[1] == 2
-    @test J.princ_gen_special[3] == FlintZZ(17)
+    @test J.princ_gen_special[3] == ZZ(17)
     @test J.princ_gen == O1(-17)
-    @test basis_matrix(J) == matrix_space(FlintZZ, 3, 3)(17)
+    @test basis_matrix(J) == matrix_space(ZZ, 3, 3)(17)
 
     K = @inferred ideal(O1, O1(-17))
     @test K.princ_gen == O1(-17)
-    @test basis_matrix(K) == matrix_space(FlintZZ, 3, 3)(17)
+    @test basis_matrix(K) == matrix_space(ZZ, 3, 3)(17)
 
     M = @inferred O1(-17)*O1
     L = @inferred O1*O1(-17)
@@ -42,7 +42,7 @@
   end
 
   I = ideal(O1, -17)
-  J = ideal(O1, FlintZZ(-17))
+  J = ideal(O1, ZZ(-17))
   K = ideal(O1, O1(-17))
   M = O1(-17)*O1
   I2 = ideal(O2, O2(1 + a2))
@@ -90,16 +90,16 @@
     M = @inferred ideal(O1, O1(4*a1^2))
 
     b = @inferred basis_matrix(M)
-    @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
+    @test b == ZZ[16 0 0; 0 16 0; 0 0 1]
 
     b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
+    @test b == Hecke.FakeFmpqMat(ZZ[1 0 0; 0 1 0; 0 0 16], ZZ(16))
 
     b = @inferred basis_matrix(M)
-    @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
+    @test b == ZZ[16 0 0; 0 16 0; 0 0 1]
 
     b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
+    @test b == Hecke.FakeFmpqMat(ZZ[1 0 0; 0 1 0; 0 0 16], ZZ(16))
   end
 
   @testset "Inclusion" begin
@@ -191,7 +191,7 @@
 
   @testset "p-Radical" begin
     I = @inferred pradical(O1, 2)
-    @test I == ideal(O1, FlintZZ[2 0 0; 0 1 0; 0 0 1])
+    @test I == ideal(O1, ZZ[2 0 0; 0 1 0; 0 0 1])
 
     # An order which does not contain the equation order
     P, x = polynomial_ring(QQ)
@@ -310,7 +310,7 @@
     G = gens(I)
     @test I == ideal(OO, G)
   end
-  
+
   include("Ideal/Prime.jl")
 
 end

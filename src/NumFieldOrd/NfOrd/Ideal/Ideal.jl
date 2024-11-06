@@ -210,7 +210,7 @@ function ideal(O::AbsNumFieldOrder, v::Vector{<:AbsNumFieldOrderElem})
   for i = 1:length(v)
     @assert O === parent(v[i])
   end
-  M = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+  M = zero_matrix(ZZ, 2*degree(O), degree(O))
   M1 = representation_matrix(v[1])
   _hnf!(M1, :lowerleft)
   _copy_matrix_into_matrix(M, degree(O)+1, 1, M1)
@@ -310,7 +310,7 @@ function ideal_from_z_gens(O::AbsSimpleNumFieldOrder, b::Vector{AbsSimpleNumFiel
   d = degree(O)
   @assert length(b) >= d
 
-  M = zero_matrix(FlintZZ, length(b), d)
+  M = zero_matrix(ZZ, length(b), d)
   for i = 1:length(b)
     el = coordinates(b[i])
     for j = 1:d
@@ -447,7 +447,7 @@ function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
     if is_zero(princ_gen_special(A))
       A.basis_matrix = zero_matrix(ZZ, 0, n)
     else
-      A.basis_matrix = scalar_matrix(FlintZZ, n, princ_gen_special(A))
+      A.basis_matrix = scalar_matrix(ZZ, n, princ_gen_special(A))
     end
     return nothing
   end
@@ -495,7 +495,7 @@ function basis_mat_prime_deg_1(A::AbsNumFieldOrderIdeal)
   @assert A.minimum == A.norm
   O = order(A)
   n = degree(O)
-  b = identity_matrix(FlintZZ, n)
+  b = identity_matrix(ZZ, n)
 
   K, mK = residue_field(O, A)
   assure_has_basis(O)
@@ -555,7 +555,7 @@ function assure_has_basis_mat_inv(A::AbsNumFieldOrderIdeal)
   else
     if degree(order(A)) == 1
       # This will be fixed in flint 2.7
-      A.basis_mat_inv = FakeFmpqMat(identity_matrix(FlintZZ, 1), basis_matrix(A, copy = false)[1, 1])
+      A.basis_mat_inv = FakeFmpqMat(identity_matrix(ZZ, 1), basis_matrix(A, copy = false)[1, 1])
     else
       A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(A, copy = false)))
     end
@@ -654,7 +654,7 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
 
   if has_weakly_normal(A)
     d = denominator(inv(K(A.gen_two)), order(A))
-    d = gcd(d, FlintZZ(A.gen_one))
+    d = gcd(d, ZZ(A.gen_one))
     A.minimum = d
     return nothing
   end
@@ -664,7 +664,7 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
   else
     M = basis_matrix(A, copy = false)
     d = prod(ZZRingElem[M[i, i] for i = 1:nrows(M)])
-    v = matrix(FlintZZ, 1, nrows(M), coordinates(order(A)(d)))
+    v = matrix(ZZ, 1, nrows(M), coordinates(order(A)(d)))
     fl, s = can_solve_with_solution(M, v, side = :left)
     @assert fl
     den = denominator(s[1]//d)
@@ -899,7 +899,7 @@ function in(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIdeal)
 end
 
 function containment_by_matrices(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIdeal)
-  R = residue_ring(FlintZZ, basis_mat_inv(FakeFmpqMat, y, copy = false).den, cached = false)[1]
+  R = residue_ring(ZZ, basis_mat_inv(FakeFmpqMat, y, copy = false).den, cached = false)[1]
   M = map_entries(R, basis_mat_inv(FakeFmpqMat, y, copy = false).num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x, copy = false))
   mul!(v, v, M)
@@ -1036,14 +1036,14 @@ function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
-    S = residue_ring(FlintZZ, Int(a), cached = false)[1]
+    S = residue_ring(ZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
     m = data(reduced_resultant(B, F))
     return gcd(a, m)
   else
-    S1 = residue_ring(FlintZZ, a, cached = false)[1]
+    S1 = residue_ring(ZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
@@ -1056,14 +1056,14 @@ function _minmod_easy_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
-    S = residue_ring(FlintZZ, Int(a), cached = false)[1]
+    S = residue_ring(ZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
     m = lift(rres_sircana_pp(B, F))
     return gcd(a, m)
   else
-    S1 = residue_ring(FlintZZ, a, cached = false)[1]
+    S1 = residue_ring(ZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
@@ -1112,12 +1112,12 @@ function _minmod_comp_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   d, _ = ppio(d, acom)
   mod = acom*d*e
   if fits(Int, mod)
-    S1 = residue_ring(FlintZZ, Int(mod), cached = false)[1]
+    S1 = residue_ring(ZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
     F1 = St1(k.pol)
     m1, u1, v1 = rresx_sircana_pp(B1, F1)  # u*B + v*F = m mod modulus(S)
-    U1 = lift(FlintZZ["x"][1], u1)
+    U1 = lift(ZZ["x"][1], u1)
     # m can be zero...
     m2 = lift(m1)
     if iszero(m2)
@@ -1127,12 +1127,12 @@ function _minmod_comp_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     d = denominator(bi, Zk)
     return min_uncom*gcd(d, acom)
   else
-    S = residue_ring(FlintZZ, mod, cached = false)[1]
+    S = residue_ring(ZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
     m, u, v = rresx_sircana_pp(B, F)  # u*B + v*F = m mod modulus(S)
-    U = lift(FlintZZ["x"][1], u)
+    U = lift(ZZ["x"][1], u)
     # m can be zero...
     m3 = lift(m)
     if iszero(m3)
@@ -1160,12 +1160,12 @@ function _minmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   d, _ = ppio(d, acom)
   mod = acom*d*e
   if fits(Int, mod)
-    S1 = residue_ring(FlintZZ, Int(mod), cached = false)[1]
+    S1 = residue_ring(ZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
     F1 = St1(k.pol)
     m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
-    U1 = lift(FlintZZ["x"][1], u1)
+    U1 = lift(ZZ["x"][1], u1)
     # m can be zero...
     m2 = lift(m1)
     if iszero(m2)
@@ -1175,12 +1175,12 @@ function _minmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     d = denominator(bi, Zk)
     return min_uncom*gcd(d, acom)
   else
-    S = residue_ring(FlintZZ, mod, cached = false)[1]
+    S = residue_ring(ZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
     m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
-    U = lift(FlintZZ["x"][1], u)
+    U = lift(ZZ["x"][1], u)
     # m can be zero...
     m3 = lift(m)
     if iszero(m3)
@@ -1225,7 +1225,7 @@ function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
    e, _ = ppio(basis_matrix(FakeFmpqMat, Zk, copy = false).den, a)
   mod_r = a^2*d*e
   if fits(Int, mod_r)
-    S1 = residue_ring(FlintZZ, Int(mod_r), cached=false)[1]
+    S1 = residue_ring(ZZ, Int(mod_r), cached=false)[1]
     S1t = polynomial_ring(S1, cached=false)[1]
     B1 = S1t(d*b.elem_in_nf)
     F1 = S1t(k.pol)
@@ -1237,11 +1237,11 @@ function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
       c1 = inv(canonical_unit(m1))
       m1 = lift(m1*c1)
     end
-    U1 = lift(polynomial_ring(FlintZZ, "x", cached = false)[1], u1*c1)
+    U1 = lift(polynomial_ring(ZZ, "x", cached = false)[1], u1*c1)
     bi1 = k(U1)//m1*d # at this point, bi*d*b = m mod a*d*idx
     return bi1
   else
-    S = residue_ring(FlintZZ, mod_r, cached=false)[1]
+    S = residue_ring(ZZ, mod_r, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -1254,7 +1254,7 @@ function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
       c = inv(canonical_unit(m))
       m = lift(m*c)
     end
-    U = lift(polynomial_ring(FlintZZ, "x", cached = false)[1], u*c)
+    U = lift(polynomial_ring(ZZ, "x", cached = false)[1], u*c)
     bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
     return bi
   end
@@ -1321,7 +1321,7 @@ function _normmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   com, uncom = ppio(d, a)
   mod = a*com^degree(k)
   if fits(Int, mod)
-    R = residue_ring(FlintZZ, Int(mod), cached=false)[1]
+    R = residue_ring(ZZ, Int(mod), cached=false)[1]
     Rt = polynomial_ring(R, cached=false)[1]
     B1 = Rt(d*b.elem_in_nf)
     F1 = Rt(k.pol)
@@ -1329,7 +1329,7 @@ function _normmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     m3 = gcd(modulus(R), lift(m2))
     return divexact(m3, com^degree(parent(b)))
   else
-    S = residue_ring(FlintZZ, mod, cached=false)[1]
+    S = residue_ring(ZZ, mod, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -1374,9 +1374,9 @@ function simplify(A::AbsNumFieldOrderIdeal)
         #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
         #      order basis. For this it would better be small in the field basis....
         n = _normmod(A.gen_one^degree(order(A)), A.gen_two)
-        @hassert :Rres 1 n == gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
+        @hassert :Rres 1 n == gcd(A.gen_one^degree(order(A)), ZZ(norm(A.gen_two)))
       else
-        n = gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
+        n = gcd(A.gen_one^degree(order(A)), ZZ(norm(A.gen_two)))
       end
       A.norm = n
     end
@@ -2043,10 +2043,10 @@ function pradical_trace(O::AbsNumFieldOrder, p::IntegerUnion)
   if iszero(ncols(B))
     return ideal(O, p)
   end
-  M2 = zero_matrix(FlintZZ, d, d)
+  M2 = zero_matrix(ZZ, d, d)
   for i = 1:ncols(B)
     for j = 1:d
-      M2[i, j] = FlintZZ(lift(ZZ, B[j, i]))
+      M2[i, j] = ZZ(lift(ZZ, B[j, i]))
     end
   end
   gens = elem_type(O)[O(p)]
@@ -2100,7 +2100,7 @@ function pradical_frobenius(O::AbsNumFieldOrder, p::IntegerUnion)
     push!(gens, O(coords))
   end
   #Then, construct the basis matrix of the ideal
-  m = zero_matrix(FlintZZ, d, d)
+  m = zero_matrix(ZZ, d, d)
   for i = 1:ncols(X)
     for j = 1:d
       m[i, j] = lift(ZZ, X[j, i])
@@ -2160,13 +2160,13 @@ function colon(a::AbsNumFieldOrderIdeal, b::AbsNumFieldOrderIdeal, contains::Boo
   bmatinv = basis_mat_inv(FakeFmpqMat, a, copy = false)
 
   if contains
-    m = zero_matrix(FlintZZ, n*length(B), n)
-    id_gen = zero_matrix(FlintZZ, 2*n, n)
+    m = zero_matrix(ZZ, n*length(B), n)
+    id_gen = zero_matrix(ZZ, 2*n, n)
     ind = 1
     modu = minimum(a)*bmatinv.den
     for i = 1:length(B)
       if i != 1
-        c = matrix(FlintZZ, 1, n, coordinates(B[i]))
+        c = matrix(ZZ, 1, n, coordinates(B[i]))
         reduce_mod_hnf_ll!(c, id_gen)
         if iszero(c)
           continue
@@ -2401,14 +2401,14 @@ function is_coprime(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal)
     K = nf(order(I))
     if gcd(m, index(order(I))) == 1
       if fits(Int, m)
-        RI = residue_ring(FlintZZ, Int(m), cached = false)[1]
+        RI = residue_ring(ZZ, Int(m), cached = false)[1]
         RIx = polynomial_ring(RI, "x", cached = false)[1]
         fI1 = RIx(I.gen_two.elem_in_nf)
         fI2 = RIx(J.gen_two.elem_in_nf)
         fI3 = RIx(K.pol)
         fl = _coprimality_test(fI1, fI2, fI3)
       else
-        R = residue_ring(FlintZZ, m, cached = false)[1]
+        R = residue_ring(ZZ, m, cached = false)[1]
         Rx = polynomial_ring(R, "x", cached = false)[1]
         f1 = Rx(I.gen_two.elem_in_nf)
         f2 = Rx(J.gen_two.elem_in_nf)

@@ -35,8 +35,8 @@ function mod_lll(a::AbsNumFieldOrderElem, I::AbsNumFieldOrderIdeal)
   l = lll(I)[2]
   S = l*basis_matrix(I)
   Si = pseudo_inv(S)
-  c = matrix(FlintZZ, 1, nrows(l), coordinates(a)) * Si[1]
-  d = matrix(FlintZZ, 1, nrows(l), [round(ZZRingElem, x, Si[2]) for x = c])
+  c = matrix(ZZ, 1, nrows(l), coordinates(a)) * Si[1]
+  d = matrix(ZZ, 1, nrows(l), [round(ZZRingElem, x, Si[2]) for x = c])
   return a - Hecke.parent(a)(collect(d*S))
 end
 
