@@ -68,7 +68,7 @@ If your research depends on computations done with Hecke, please consider giving
 
 Here is a quick example of using Hecke:
 
-```julia
+```
 julia> using Hecke
  _    _           _          
 | |  | |         | |         |  Software package for
