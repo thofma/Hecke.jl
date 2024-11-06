@@ -92,7 +92,7 @@ function elementary_divisors(A::SMat{ZZRingElem})
       e[i] *= p^v[i]
     end
   end
-  for i = length(e):min(nrows(A), ncols(A))
+  for i = length(e)+1:min(nrows(A), ncols(A))
     push!(e, ZZRingElem(0))
   end
   return e
