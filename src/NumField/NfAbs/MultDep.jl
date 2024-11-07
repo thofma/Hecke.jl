@@ -336,8 +336,11 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
     U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
     U = hcat(U[:, 1:length(u)], U[:, r+1:ncols(U)])
   end
+ 
   U = saturate(U)
+  
   _, U = hnf_with_transform(transpose(U))
+
   k = base_ring(A[1])
   
   U = inv(U)
@@ -350,13 +353,14 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
 
   #so basis is A[indep] cat A[dep] ^U
   #rels: A[tor], .. * V
-  nt = zero_matrix(ZZ, length(A), length(dep) + length(indep))
+  nt = zero_matrix(ZZ, length(A), length(A))
   for i=1:length(indep)
-    nt[i, indep[i]] = 1
+    nt[indep[i], i] = 1
   end
   for i=1:length(dep)
-    nt[i+length(indep), dep[i]] = 1
+    nt[dep[i], i+length(indep)] = 1
   end
+  @assert matrix([collect(1:length(A))]) * nt == matrix([vcat(indep, dep)])
   rel = nt*transpose(V)
   return nt*transpose(U), rel
 end
