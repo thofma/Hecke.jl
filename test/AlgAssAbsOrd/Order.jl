@@ -1,5 +1,5 @@
 @testset "AlgAssAbsOrd" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
 
   A = matrix(QQ, 3, 3, [1,3^4,0,0,1,0,0,0,1]);
   B = matrix(QQ, 3, 3, [1,0,0,27,1,0,0,0,1]);
@@ -117,11 +117,11 @@
     O2 = Hecke.maximal_order_via_decomposition(AA)
     @test discriminant(O1) == discriminant(O2)
 
-    QG = group_algebra(FlintQQ, small_group(2, 1))
+    QG = group_algebra(QQ, small_group(2, 1))
     O = maximal_order(QG)
     @test isone(abs(discriminant(O)))
 
-    M = matrix_algebra(FlintQQ, 3)
+    M = matrix_algebra(QQ, 3)
     O = maximal_order(M)
     @test isone(abs(discriminant(O)))
 
@@ -184,7 +184,7 @@
   end
 
   @testset "rand" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
 

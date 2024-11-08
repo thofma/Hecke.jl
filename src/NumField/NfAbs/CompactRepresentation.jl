@@ -38,7 +38,7 @@ function compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumFiel
 
   v = conjugates_arb_log_normalise(a, arb_prec)
   if length(de) == 0
-    _v = FlintZZ(1)
+    _v = ZZ(1)
   else
     _v = maximum(abs, values(de))+1
   end
@@ -93,7 +93,7 @@ function compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumFiel
   r1, r2 = signature(K)
 
   if length(de) == 0
-    m = FlintZZ(1)
+    m = ZZ(1)
   else
     m = maximum(abs, values(de))
   end
@@ -158,7 +158,7 @@ function compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumFiel
     @vtime :CompactPresentation 1 id = inv(eA)
     local b
     while true
-      @vtime :CompactPresentation 1 b = short_elem(id, matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
+      @vtime :CompactPresentation 1 b = short_elem(id, matrix(ZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
       if abs(norm(b)//norm(id))> ZZRingElem(2)^abs(sum(vvv))*ZZRingElem(2)^degree(K)*abs(discriminant(ZK)) # the trivial case
         short_prec *= 2
         continue

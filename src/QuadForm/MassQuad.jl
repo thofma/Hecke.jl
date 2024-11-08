@@ -292,7 +292,7 @@ function _local_factor_cho(L, p)
 
   @assert is_integral(exp)
 
-  return QQFieldElem(q)^Int(FlintZZ(exp)) * H//2 * QQFieldElem(1)//beta
+  return QQFieldElem(q)^Int(ZZ(exp)) * H//2 * QQFieldElem(1)//beta
 end
 
 ################################################################################
@@ -410,7 +410,7 @@ function local_factor(L::QuadLat, p)
 
   @assert is_integral(N)
 
-  return q^Int(FlintZZ(N)) * f
+  return q^Int(ZZ(N)) * f
 end
 
 ################################################################################
@@ -457,7 +457,7 @@ function _exact_standard_mass(L::QuadLat)
 
   fl = true
 
-  standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
+  standard_mass = QQ(2)^(-absolute_degree(K) * r)
   if isodd(m)
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
     if _exact_dedekind_zeta_cheap(K)
@@ -519,7 +519,7 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
   K = nf(R)
   r = div(m, 2)
 
-  __standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
+  __standard_mass = QQ(2)^(-absolute_degree(K) * r)
   if isodd(m)
     standard_mass = __standard_mass * prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
   else
@@ -562,7 +562,7 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
   r = div(m, 2)
 
   if standard_mass == 0
-    standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
+    standard_mass = QQ(2)^(-absolute_degree(K) * r)
     if isodd(m)
       standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
     else
@@ -1216,7 +1216,7 @@ function _bernoulli_kronecker(z::Int, D)
   @assert z >= 0
   D1 = fundamental_discriminant(D)
   f = abs(D1)
-  K = FlintQQ
+  K = QQ
   Rt, t = power_series_ring(K, z + 3, "t", cached = false, model = :capped_absolute)
   denom = exp(f*t) - 1
   #@show [_kronecker_as_dirichlet(a, N) for a in 1:Int(f)]
@@ -1360,7 +1360,7 @@ function _compute_an(Z::ZetaFunction, n::Int, h::Int)
   p, f =  Z.dec_types[h]
   P = p^f
   v, = remove(n, P)
-  z = zero(FlintZZ)
+  z = zero(ZZ)
   for k in 0:v
     z = z + _compute_an(Z, divexact(n, P^k), h - 1)
   end

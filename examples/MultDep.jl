@@ -13,7 +13,7 @@ function multiplicative_group_mod_units_fac_elem(A::Vector{AbsSimpleNumFieldElem
     cp = coprime_base(A)
   end
   sort!(cp, lt = (a,b) -> norm(a) > norm(b))
-  M = sparse_matrix(FlintZZ)
+  M = sparse_matrix(ZZ)
   for a = A
     T = Tuple{Int, ZZRingElem}[]
     for i = 1:length(cp)
@@ -24,7 +24,7 @@ function multiplicative_group_mod_units_fac_elem(A::Vector{AbsSimpleNumFieldElem
       end
 #      isone(I) && break
     end
-    push!(M, sparse_row(FlintZZ, T))
+    push!(M, sparse_row(ZZ, T))
   end
   h, t = Hecke.hnf_kannan_bachem(M, Val(true), truncate = true)
   return h, t, cp
@@ -92,7 +92,7 @@ function *(O1::AbsNumFieldOrder, O2::AbsNumFieldOrder)
   b2 = basis(O2, k)
   p = [x*y for (x,y) in Base.Iterators.ProductIterator((b1, b2))]
   d = reduce(lcm, [denominator(x) for x = p])
-  M = zero_matrix(FlintZZ, n*n, n)
+  M = zero_matrix(ZZ, n*n, n)
   z = ZZRingElem()
   for i = 1:n*n
     a = p[i]*d
@@ -244,7 +244,7 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
       else # length == 1 extend the module
         s = QQFieldElem[]
         for x in k[1, :]
-          @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
+          @vtime :qAdic 1 y = lift_reco(QQ, x, reco = true)
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
@@ -257,7 +257,7 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
           continue
         end
         d = reduce(lcm, map(denominator, s))
-        gamma = ZZRingElem[FlintZZ(x*d)::ZZRingElem for x = s]
+        gamma = ZZRingElem[ZZ(x*d)::ZZRingElem for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
         @time if !verify_gamma(push!(copy(u), a), gamma, ZZRingElem(p)^prec)
           prec *= 2
@@ -295,12 +295,12 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
   =#
 
   for i=1:length(uu)-1
-    append!(uu[i][2], zeros(FlintZZ, length(uu[end][2])-length(uu[i][2])))
+    append!(uu[i][2], zeros(ZZ, length(uu[end][2])-length(uu[i][2])))
   end
   if length(uu) == 0
-    U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
+    U = matrix(ZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
   else
-    U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
+    U = matrix(ZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
   end
   _, U = hnf_with_transform(U')
   if false
@@ -308,8 +308,8 @@ function mult_syzygies_units(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
     V = sub(U, 1:rows(U), 1:cols(U)-length(u))
     U = sub(U, 1:rows(U), cols(U)-length(u)+1:cols(U))
     #U can be reduced modulo V...
-    Z = zero_matrix(FlintZZ, cols(V), cols(U))
-    I = identity_matrix(FlintZZ, cols(U)) * p^(2*prec)
+    Z = zero_matrix(ZZ, cols(V), cols(U))
+    I = identity_matrix(ZZ, cols(U)) * p^(2*prec)
     k = base_ring(A[1])
     A = [ Z V'; I U']
     l = lll(A)
@@ -353,14 +353,14 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
 
-    x = FlintQQ(c, d)
+    x = QQ(c, d)
     if v < 0
       return x//prime(R, -v)
     else
       return x*prime(R, v)
     end
   else
-    return lift(FlintQQ, a)
+    return lift(QQ, a)
   end
 end
 

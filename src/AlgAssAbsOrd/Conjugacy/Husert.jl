@@ -5,10 +5,10 @@
 ################################################################################
 
 function _issimilar_husert(A::ZZMatrix, B::ZZMatrix)
-  QA = change_base_ring(FlintQQ, A)
-  QB = change_base_ring(FlintQQ, B)
+  QA = change_base_ring(QQ, A)
+  QB = change_base_ring(QQ, B)
   fl, QC = _issimilar_husert_generic(QA, QB)
-  return fl, change_base_ring(FlintZZ, QC)
+  return fl, change_base_ring(ZZ, QC)
 end
 
 # If successful, returns X such that X * A * X^-1 == B
@@ -37,7 +37,7 @@ function _issimilar_husert_generic(A, B)
     EB = eigenspace(change_base_ring(K, B), gen(K), side = :left)
     push!(Ks, K)
     if nrows(EA) != nrows(EB)
-      return false, zero_matrix(FlintQQ, 0, 0)
+      return false, zero_matrix(QQ, 0, 0)
     end
     @assert nrows(EA) == nrows(EB)
     for j in 1:nrows(EA)
@@ -51,8 +51,8 @@ function _issimilar_husert_generic(A, B)
 
   absolute_basis_vec_A = Vector{Vector{QQFieldElem}}()
   absolute_basis_vec_B = Vector{Vector{QQFieldElem}}()
-  absolute_basis_A = zero_matrix(FlintQQ, m, m)
-  absolute_basis_B = zero_matrix(FlintQQ, m, m)
+  absolute_basis_A = zero_matrix(QQ, m, m)
+  absolute_basis_B = zero_matrix(QQ, m, m)
   for i in 1:m
     vA = _to_absolute_basis(view(vecsA, i, :), m, ns, Ks)
     vB = _to_absolute_basis(view(vecsB, i, :), m, ns, Ks)
@@ -88,18 +88,18 @@ function _issimilar_husert_generic(A, B)
           # I need to construct the block matrix, where M is at block (i1, i2)
           # and all the other ones are zero
           # The overall matrix must have size ni * degree(Ks[i])
-          Z1 = zero_matrix(FlintQQ, (i1 - 1) * ds[i], ni * ds[i])
-          Z2 = zero_matrix(FlintQQ, ds[i], (i2 - 1) * ds[i])
+          Z1 = zero_matrix(QQ, (i1 - 1) * ds[i], ni * ds[i])
+          Z2 = zero_matrix(QQ, ds[i], (i2 - 1) * ds[i])
           Z3 = hcat(Z2, M)
-          Z3 = hcat(Z3, zero_matrix(FlintQQ, ds[i], (ni - i2) * ds[i]))
-          Z4 = zero_matrix(FlintQQ, (ni - i1) * ds[i], ni * ds[i])
+          Z3 = hcat(Z3, zero_matrix(QQ, ds[i], (ni - i2) * ds[i]))
+          Z4 = zero_matrix(QQ, (ni - i1) * ds[i], ni * ds[i])
           MM = vcat(Z1, Z3, Z4)
           blocklengthbefore = sum(Int[ns[o] * ds[o] for o in 1:(i - 1)])
           blocklengthafter = sum(Int[ns[o] * ds[o] for o in (i + 1):s])
           D = diagonal_matrix(
-                zero_matrix(FlintQQ, blocklengthbefore, blocklengthbefore),
+                zero_matrix(QQ, blocklengthbefore, blocklengthbefore),
                 MM,
-                zero_matrix(FlintQQ, blocklengthafter, blocklengthafter))
+                zero_matrix(QQ, blocklengthafter, blocklengthafter))
           push!(actions, D)
         end
       end
@@ -115,13 +115,13 @@ function _issimilar_husert_generic(A, B)
 
   la = length(actions)
 
-  M = zero_matrix(FlintQQ, la, 0)
+  M = zero_matrix(QQ, la, 0)
 
   for a in absolute_basis_vec_A
-    _M = zero_matrix(FlintQQ, la, m)
+    _M = zero_matrix(QQ, la, m)
     for i in 1:length(actions)
       D = actions[i]
-      v = matrix(FlintQQ, 1, m, a) * D * absolute_basis_B_inv
+      v = matrix(QQ, 1, m, a) * D * absolute_basis_B_inv
       for j in 1:m
         _M[i, j] = v[1, j]
       end
@@ -134,13 +134,13 @@ function _issimilar_husert_generic(A, B)
 
   SS = N
 
-  M = zero_matrix(FlintQQ, length(actions), 0)
+  M = zero_matrix(QQ, length(actions), 0)
 
   for a in absolute_basis_vec_B
-    _M = zero_matrix(FlintQQ, length(actions), m)
+    _M = zero_matrix(QQ, length(actions), m)
     for i in 1:length(actions)
       D = actions[i]
-      v = matrix(FlintQQ, 1, m, a) * D * absolute_basis_B_inv
+      v = matrix(QQ, 1, m, a) * D * absolute_basis_B_inv
       for j in 1:m
         _M[i, j] = v[j]
       end
@@ -177,7 +177,7 @@ function _issimilar_husert_generic(A, B)
 
   for a in absolute_basis_vec_A
     for i in 1:length(basis_of_colon_ideal)
-      @assert denominator(matrix(FlintQQ, 1, m, a) *
+      @assert denominator(matrix(QQ, 1, m, a) *
                             basis_of_colon_ideal[i] * absolute_basis_B_inv) == 1
     end
   end
@@ -235,7 +235,7 @@ function _issimilar_husert_generic(A, B)
     DD = diagonal_matrix(QQMatrix[_explode(D[i]) for i in 1:length(D)])
     return fl, transpose(absolute_basis_A * DD * absolute_basis_B_inv)
   else
-    return false, zero_matrix(FlintQQ, 0, 0)
+    return false, zero_matrix(QQ, 0, 0)
   end
 end
 
@@ -244,9 +244,9 @@ function _explode(x::Generic.MatSpaceElem{AbsSimpleNumFieldElem})
   d = degree(K)
   n = nrows(x)
   m = ncols(x)
-  z = zero_matrix(FlintQQ, 0, n * d)
+  z = zero_matrix(QQ, 0, n * d)
   for i in 1:n
-    zz = zero_matrix(FlintQQ, d, 0)
+    zz = zero_matrix(QQ, d, 0)
     for j in 1:m
       M = representation_matrix(x[i, j])
       zz = hcat(zz, M)
@@ -294,7 +294,7 @@ function _matrix_algebra(Ks, ns)
   for i in 1:s
     A = matrix_algebra(Ks[i], ns[i])
     B, BtoA = StructureConstantAlgebra(A)
-    C, CtoB = restrict_scalars(B, FlintQQ)
+    C, CtoB = restrict_scalars(B, QQ)
     C.isomorphic_full_matrix_algebra = (A, CtoB * BtoA)
     push!(algs, C)
   end

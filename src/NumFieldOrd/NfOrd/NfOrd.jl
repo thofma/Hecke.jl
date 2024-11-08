@@ -50,7 +50,7 @@ fractional_ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsSimpleNumField
 
 fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
 
-base_ring(::AbsNumFieldOrder) = FlintZZ
+base_ring(::AbsNumFieldOrder) = ZZ
 
 base_ring_type(::Type{<:AbsNumFieldOrder}) = ZZRing
 
@@ -121,7 +121,7 @@ function assure_has_basis_mat_inv(O::AbsNumFieldOrder)
     #The order contains the equation order and the matrix is lower triangular
     #The inverse is lower triangular and it has denominator 1
     #to exploit this, I call can_solve
-    I = _solve_lt(M.num, scalar_matrix(FlintZZ, nrows(M), M.den))
+    I = _solve_lt(M.num, scalar_matrix(ZZ, nrows(M), M.den))
     O.basis_mat_inv = FakeFmpqMat(I)
     return nothing
   end
@@ -297,7 +297,7 @@ the trace matrix of $\mathcal O$.
 """
 function reduced_discriminant(O::AbsSimpleNumFieldOrder)
   if is_equation_order(O)
-    Zx = polynomial_ring(FlintZZ, cached = false)[1]
+    Zx = polynomial_ring(ZZ, cached = false)[1]
     f = Zx(nf(O).pol)
     return reduced_resultant(f, derivative(f))
   end
@@ -457,8 +457,8 @@ function minkowski_gram_mat_scaled(O::AbsNumFieldOrder, prec::Int = 64)
     shift!(A, prec - O.minkowski_gram_mat_scaled[2])
   else
     c = minkowski_matrix(O, prec+2)
-    d = zero_matrix(FlintZZ, degree(O), degree(O))
-    A = zero_matrix(FlintZZ, degree(O), degree(O))
+    d = zero_matrix(ZZ, degree(O), degree(O))
+    A = zero_matrix(ZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
     ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), A, d)
     shift!(A, -prec)
@@ -475,8 +475,8 @@ end
 function minkowski_gram_mat_scaled(B::Vector{T}, prec::Int = 64) where T <: NumFieldElem
   K = parent(B[1])
   c = minkowski_matrix(B, prec+2)
-  d = zero_matrix(FlintZZ, length(B), absolute_degree(K))
-  A = zero_matrix(FlintZZ, length(B), length(B))
+  d = zero_matrix(ZZ, length(B), absolute_degree(K))
+  A = zero_matrix(ZZ, length(B), length(B))
   round_scale!(d, c, prec)
   ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), A, d)
   shift!(A, -prec)
@@ -541,10 +541,10 @@ function in(a::AbsSimpleNumFieldElem, O::AbsSimpleNumFieldOrder)
     elem_to_mat_row!(t.num, 1, t.den, a)
     d = mul!(d, d, d2)
     if fits(Int, d)
-      R = residue_ring(FlintZZ, Int(d), cached = false)[1]
+      R = residue_ring(ZZ, Int(d), cached = false)[1]
       return _check_containment(R, M.num, t.num)
     else
-      R1 = residue_ring(FlintZZ, d, cached = false)[1]
+      R1 = residue_ring(ZZ, d, cached = false)[1]
       return _check_containment(R1, M.num, t.num)
     end
   end
@@ -868,7 +868,7 @@ function any_order(K::AbsSimpleNumField)
     return equation_order(K)
   else
     d = degree(g)
-    M = zero_matrix(FlintZZ, d, d)
+    M = zero_matrix(ZZ, d, d)
     M[1, 1] = 1
     for i in 2:d
       for j in i:-1:2
@@ -934,8 +934,8 @@ end
 function __equation_order(K::AbsSimpleNumField)
   f = K.pol
   if isone(denominator(f) * leading_coefficient(f))
-    M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-    Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+    M = FakeFmpqMat(identity_matrix(ZZ, degree(K)))
+    Minv = FakeFmpqMat(identity_matrix(ZZ, degree(K)))
     z = AbsSimpleNumFieldOrder(K, M, Minv, basis(K), false)
     z.is_equation_order = true
     return z
@@ -951,8 +951,8 @@ function __equation_order(K::AbsNonSimpleNumField)
     end
   end
 
-  M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-  Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+  M = FakeFmpqMat(identity_matrix(ZZ, degree(K)))
+  Minv = FakeFmpqMat(identity_matrix(ZZ, degree(K)))
   z = AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}(K, M, Minv, basis(K), false)
   z.is_equation_order = true
   return z
@@ -1025,7 +1025,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
     bas = elem_type(K)[one(K)]
     B = basis_matrix(bas, FakeFmpqMat) # trivially in lower-left HNF
     full_rank = false
-    m = FlintQQ()
+    m = QQ()
   end
 
   dummy_vector = elem_type(K)[K()]
@@ -1203,7 +1203,7 @@ function trace_matrix(O::AbsNumFieldOrder; copy::Bool = true)
   K = nf(O)
   b = O.basis_nf
   n = degree(K)
-  g = zero_matrix(FlintZZ, n, n)
+  g = zero_matrix(ZZ, n, n)
   aux = K()
   for i = 1:n
     mul!(aux, b[i], b[i])
@@ -1256,7 +1256,7 @@ end
 #
 ################################################################################
 
-function sum_as_Z_modules(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
+function sum_as_Z_modules(O1, O2, z::ZZMatrix = zero_matrix(ZZ, 2 * degree(O1), degree(O1)))
   if contains_equation_order(O1) && contains_equation_order(O2)
     return sum_as_Z_modules_fast(O1, O2, z)
   else
@@ -1264,7 +1264,7 @@ function sum_as_Z_modules(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * degree(
   end
 end
 
-function sum_as_Z_modules_fast(O1, O2, z::ZZMatrix = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
+function sum_as_Z_modules_fast(O1, O2, z::ZZMatrix = zero_matrix(ZZ, 2 * degree(O1), degree(O1)))
   @hassert :AbsNumFieldOrder 1 contains_equation_order(O1)
   @hassert :AbsNumFieldOrder 1 contains_equation_order(O2)
   K = _algebra(O1)
@@ -1331,7 +1331,7 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
     end
     Ml = basis_matrix(l, FakeFmpqMat)
     dd = Ml.den*xinv.den
-    R = residue_ring(FlintZZ, dd, cached = false)[1]
+    R = residue_ring(ZZ, dd, cached = false)[1]
     #if !isone((Ml * xinv).den)
     if !iszero(map_entries(R, Ml.num)*map_entries(R, xinv.num))
       return false, x, Vector{elem_type(K)}()
@@ -1473,7 +1473,7 @@ function conductor(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder)
     error("The first order is not contained in the second!")
   end
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
-  M = zero_matrix(FlintZZ, n^2, n)
+  M = zero_matrix(ZZ, n^2, n)
   B = basis(S, copy = false)
   for k in 1:n
     a = B[k]

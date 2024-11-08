@@ -159,19 +159,19 @@ function nrootscubic(b, c, d, p)
 
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
-      return FlintZZ(3)
+      return ZZ(3)
     else
-      return FlintZZ(0)
+      return ZZ(0)
     end
   elseif length(fac) == 2
     if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
       # one linear and one irreducible quadratic factor
-      return FlintZZ(1)
+      return ZZ(1)
     else
-      return FlintZZ(3) #one double and one single root
+      return ZZ(3) #one double and one single root
     end
   else
-    return FlintZZ(3)
+    return ZZ(3)
   end
 end
 
@@ -187,19 +187,19 @@ function nrootscubic(b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, d::AbsS
   fac = factor(f)
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
-      return FlintZZ(3)
+      return ZZ(3)
     else
-      return FlintZZ(0)
+      return ZZ(0)
     end
   elseif length(fac) == 2
     if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
       # one linear and one irreducible quadratic factor
-      return FlintZZ(1)
+      return ZZ(1)
     else
-      return FlintZZ(3) #one double and one single root
+      return ZZ(3) #one double and one single root
     end
   else
-    return FlintZZ(3)
+    return ZZ(3)
   end
 end
 

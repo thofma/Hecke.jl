@@ -338,7 +338,7 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::ZZRingElem)
   end
 
   if degree(C.Kr) != 1
-    RR = residue_ring(FlintZZ, degree(A))[1]
+    RR = residue_ring(ZZ, degree(A))[1]
     U, mU = unit_group(RR)
     if degree(C.Kr) < order(U)  # there was a common subfield, we
                               # have to pass to a subgroup
@@ -637,7 +637,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   #                            = z^(sum a[i] n[i]) x
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
-  R = residue_ring(FlintZZ, C.n, cached=false)[1]
+  R = residue_ring(ZZ, C.n, cached=false)[1]
   M = change_base_ring(R, mk.map)
   l = kernel(M; side = :right)
   n = lift(l)
@@ -754,7 +754,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     2 for n=2^k, k>2
 =#
   e = degree(CF)
-  g, mg = unit_group(residue_ring(FlintZZ, e, cached=false)[1])
+  g, mg = unit_group(residue_ring(ZZ, e, cached=false)[1])
   @assert is_snf(g)
   @assert (e%8 == 0 && ngens(g)==2) || ngens(g) <= 1
 
@@ -776,7 +776,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   @vprintln :ClassField 2 "building automorphism group over ground field..."
   ng = ngens(g)+1
   AutA_gen = Vector{morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem})}(undef, ng)
-  AutA_rel = zero_matrix(FlintZZ, ng, ng)
+  AutA_rel = zero_matrix(ZZ, ng, ng)
   zeta = C.mp[1]\(gen(Kr))
   n = degree(A)
   @assert e % n == 0

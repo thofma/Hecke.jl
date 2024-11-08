@@ -1,5 +1,5 @@
 function _class_group(c::Vector{BigInt})
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = Qx(c)
   K, a = number_field(f, cached = false)
   OK = lll(maximal_order(K))
@@ -11,7 +11,7 @@ function _class_group_batch(polys::Vector{QQPolyRingElem})
   res = Dict()
   for i in 1:length(polys)
     f = polys[i]
-    c = BigInt[FlintZZ(coeff(f, j)) for j in 0:degree(f)]
+    c = BigInt[ZZ(coeff(f, j)) for j in 0:degree(f)]
     res[i] = @spawn _class_group(c)
   end
 
@@ -1454,7 +1454,7 @@ mutable struct NFDBGeneric{T, S}
     return z
   end
 end
-   
+
 function NFDBGeneric(L::Vector{RelSimpleNumField{AbsSimpleNumFieldElem}})
   res = NFDBGeneric{1, eltype(L)}()
   for K in L

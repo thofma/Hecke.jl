@@ -33,7 +33,7 @@ or the discriminant of the maximal order.
 # Example
 
 ```julia-repl
-julia> Qx, x = FlintQQ["x"];
+julia> Qx, x = QQ["x"];
 julia> K, a = number_field(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
@@ -104,8 +104,8 @@ function pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingE
   ind = index(O)
   K = nf(O)
   EO = EquationOrder(K)
-  M = zero_matrix(FlintZZ, 2 * degree(O), degree(O))
-  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+  M = zero_matrix(ZZ, 2 * degree(O), degree(O))
+  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   f = Zx(K.pol)
   for i in 1:length(primes1)
     p = primes1[i]
@@ -152,7 +152,7 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
   end
 
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
-    Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
+    Zx, x = polynomial_ring(ZZ, "x", cached = false)
     f1 = Zx(K.pol)
     ds = gcd(reduced_resultant(f1, derivative(f1)), discriminant(O))
     l = prefactorization(f1, ds)
@@ -181,7 +181,7 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
   l1 = ZZRingElem[]
   OO = O
   @vprintln :AbsNumFieldOrder 1 "Trial division of the discriminant\n "
-  auxmat = zero_matrix(FlintZZ, 2*degree(K), degree(K))
+  auxmat = zero_matrix(ZZ, 2*degree(K), degree(K))
   first = true
   for d in l
     if disc != -1
@@ -305,7 +305,7 @@ end
 function _radical_by_poly(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = residue_ring(FlintZZ, q, cached=false)[1]
+  R = residue_ring(ZZ, q, cached=false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   f = Rx(K.pol)
   f1 = derivative(f)
@@ -322,7 +322,7 @@ function _radical_by_poly(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   if !isone(fd)
     return fd, ideal(O, q)
   end
-  Zx = polynomial_ring(FlintZZ, "x")[1]
+  Zx = polynomial_ring(ZZ, "x")[1]
   qq, rr = divrem(p1, p2)
   @assert iszero(rr)
   gen2 = O(K(lift(Zx, qq)))
@@ -344,9 +344,9 @@ end
 function _radical_by_trace(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   d = degree(O)
   K = nf(O)
-  R = residue_ring(FlintZZ, q, cached=false)[1]
+  R = residue_ring(ZZ, q, cached=false)[1]
   B = kernel(change_base_ring(R, trace_matrix(O)); side = :right)
-  M2 = zero_matrix(FlintZZ, d, d)
+  M2 = zero_matrix(ZZ, d, d)
   for i = 1:ncols(B)
     for j = 1:d
       na = lift(B[j, i])
@@ -638,13 +638,13 @@ function ring_of_multipliers(a::AbsNumFieldOrderIdeal)
     B = basis(a, copy = false)
   end
   @assert length(B) > 0
-  id_gen = zero_matrix(FlintZZ, 2*n, n)
-  m = zero_matrix(FlintZZ, n*length(B), n)
+  id_gen = zero_matrix(ZZ, 2*n, n)
+  m = zero_matrix(ZZ, n*length(B), n)
   ind = 1
   modu = minimum(a, copy = false)*bmatinv.den
   for i = 1:length(B)
     if i != 1
-      c = matrix(FlintZZ, 1, n, coordinates(B[i]))
+      c = matrix(ZZ, 1, n, coordinates(B[i]))
       reduce_mod_hnf_ll!(c, id_gen)
       if iszero(c)
         continue
@@ -800,7 +800,7 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
     #First, find the generators
     new_gens = Vector{AbsSimpleNumFieldOrderElem}()
     for i = 1:ncols(X)
-      coords = zeros(FlintZZ, d)
+      coords = zeros(ZZ, d)
       for j=1:nr
         coords[indices[j]] = lift(X[j, i])
       end
@@ -817,7 +817,7 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
       return I
     end
     #Then, construct the basis matrix of the ideal
-    m1 = zero_matrix(FlintZZ, length(new_gens) + d, d)
+    m1 = zero_matrix(ZZ, length(new_gens) + d, d)
     for i = 1:length(new_gens)
       el = coordinates(new_gens[i], copy = true)
       for j = 1:nr
@@ -895,7 +895,7 @@ function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
   end
   #First, find the generators
   for i = 1:ncols(X)
-    coords = zeros(FlintZZ, d)
+    coords = zeros(ZZ, d)
     for j=1:nr
       coords[indices[j]] = lift(X[j, i])
     end
@@ -904,7 +904,7 @@ function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
     end
   end
   #Then, construct the basis matrix of the ideal
-  m1 = zero_matrix(FlintZZ, length(gens) - 2 + d, d)
+  m1 = zero_matrix(ZZ, length(gens) - 2 + d, d)
   for i = 3:length(gens)
     el = coordinates(gens[i], copy = false)
     for j = 1:nr
@@ -956,13 +956,13 @@ function pradical_trace1(O::AbsSimpleNumFieldOrder, p::IntegerUnion)
     for j = 1:d
       coords[j] = lift(B[j, i])
     end
-    c = matrix(FlintZZ, 1, d, coords)
+    c = matrix(ZZ, 1, d, coords)
     reduce_mod_hnf_ll!(c, M1)
     if !iszero(c)
       push!(gens, O(coords))
     end
   end
-  M2 = zero_matrix(FlintZZ, length(gens) -2 + d, d)
+  M2 = zero_matrix(ZZ, length(gens) -2 + d, d)
   for i = 3:length(gens)
     c = coordinates(gens[i], copy = false)
     for j = 1:d
@@ -1022,7 +1022,7 @@ function prefactorization(f::ZZPolyRingElem, d::ZZRingElem, f1::ZZPolyRingElem =
       continue
     end
 
-    R = residue_ring(FlintZZ, d1, cached = false)[1]
+    R = residue_ring(ZZ, d1, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(f)
     ff1 = Rx(f1)

@@ -1,6 +1,6 @@
 @testset "Group algebras" begin
   G = small_group(8, 4)
-  A = GroupAlgebra(FlintQQ, G)
+  A = GroupAlgebra(QQ, G)
 
   @testset "Regular matrix algebra" begin
     B, BtoA = Hecke.regular_matrix_algebra(A)
@@ -20,7 +20,7 @@
 
     @test length(full_basis) == dim(A)
 
-    M = zero_matrix(FlintQQ, dim(A), dim(A))
+    M = zero_matrix(QQ, dim(A), dim(A))
     for i = 1:dim(A)
       Hecke.elem_to_mat_row!(M, i, full_basis[i])
     end

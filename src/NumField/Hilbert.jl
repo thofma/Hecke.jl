@@ -380,7 +380,7 @@ end
 Returns the local Hilbert symbol $(a,b)_p$.
 """
 function hilbert_symbol(a::QQFieldElem, b::QQFieldElem, p::ZZRingElem)
-  a = FlintQQ(a)
-  b = FlintQQ(b)
+  a = QQ(a)
+  b = QQ(b)
   hilbert_symbol(numerator(a) * denominator(a), numerator(b) * denominator(b), p)
 end

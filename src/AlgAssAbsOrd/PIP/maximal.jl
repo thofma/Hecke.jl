@@ -108,7 +108,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
 
   Babs = absolute_basis(b)::Vector{elem_type(B)}
   d = length(Babs)
-  G = zero_matrix(FlintQQ, d, d)
+  G = zero_matrix(QQ, d, d)
   #@show reps
   for z in reps
     for i in 1:d
@@ -174,13 +174,13 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
   a.isright = 1
   a.order = right_order(a)
-  nrr = FlintZZ(normred(a))
+  nrr = ZZ(normred(a))
   B = basis(a)
-  G = zero_matrix(FlintQQ, 4, 4)
+  G = zero_matrix(QQ, 4, 4)
   f = standard_involution(A)
   for i in 1:4
     for j in 1:4
-      G[i, j] = FlintZZ(trred(B[i] * f(B[j])))//2
+      G[i, j] = ZZ(trred(B[i] * f(B[j])))//2
     end
   end
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
@@ -205,7 +205,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
   A = algebra(M)
   if degree(A) == 1
     # I don't have _as_field_with_isomorphism for algebras over K
-    AA, AAtoA = restrict_scalars(A, FlintQQ)
+    AA, AAtoA = restrict_scalars(A, QQ)
     K, AAtoK = _as_field_with_isomorphism(AA)
     MK = maximal_order(K)
     I = sum(fractional_ideal_type(order_type(K))[AAtoK(AAtoA\(b)) * MK for b in absolute_basis(a)])
@@ -307,7 +307,7 @@ end
 function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   @assert side == :right
   @assert _test_ideal_sidedness(I, M, :right)
-  @assert basis_matrix(M) == identity_matrix(FlintZZ, dim(algebra(M)))
+  @assert basis_matrix(M) == identity_matrix(ZZ, dim(algebra(M)))
   den = denominator(I, M)
   a = I * den
   if !is_full_lattice(a)
@@ -319,7 +319,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   d = degree(algebra(M))
   e11 = zero(algebra(M))
   e11[1, 1] = 1
-  z = zero_matrix(FlintQQ, d, d^2)
+  z = zero_matrix(QQ, d, d^2)
   B = basis(a)
   for j in 1:d^2
     v = B[j] * e11
@@ -333,9 +333,9 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   @assert all(i -> is_zero_column(h, i), 1:(d^2 - d))
   T = sub(h, 1:d, (d^2 - d + 1:d^2))
   #@show T
-  alpha = zero_matrix(FlintQQ, d, d)
-  e1i = zero_matrix(FlintQQ, d, d)
-  z = zero_matrix(FlintQQ, d, d)
+  alpha = zero_matrix(QQ, d, d)
+  e1i = zero_matrix(QQ, d, d)
+  z = zero_matrix(QQ, d, d)
   for i in 1:d
     for j in 1:d
       z[j, 1] = T[j, i]

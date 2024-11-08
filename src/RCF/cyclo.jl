@@ -105,7 +105,7 @@ function cyclotomic_extension(k::AbsSimpleNumField, n::Int; cached::Bool = true,
     return c
   end
 
-  ZX, X = polynomial_ring(FlintZZ, cached = false)
+  ZX, X = polynomial_ring(ZZ, cached = false)
   f = cyclotomic(n, X)
   fk = change_base_ring(k, f, parent = kt)
   if n < 5
@@ -371,7 +371,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   OS.disc = discriminant(OL)^(degree(k))*discriminant(OK)^(degree(L))
   set_attribute!(S, :maximal_order => OS)
 
-  Zx = polynomial_ring(FlintZZ, "x")[1]
+  Zx = polynomial_ring(ZZ, "x")[1]
   prim_elems = elem_type(OS)[x for x in basis(OS) if _isprobably_primitive(x)]
   local poly::ZZPolyRingElem
   local poly2::ZZPolyRingElem
@@ -403,7 +403,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   kt, t = polynomial_ring(k, "t", cached = false)
   fL = L.pol(t)
   Kr, gKr = number_field(fL, check = false, cached = false)
-  M = zero_matrix(FlintQQ, degree(Ka), degree(Ka))
+  M = zero_matrix(QQ, degree(Ka), degree(Ka))
   z = one(S)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, elem_in_nf(a))
@@ -412,7 +412,7 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
     mul!(z, z, elem_in_nf(a))
     elem_to_mat_row!(M, i, z)
   end
-  N = zero_matrix(FlintQQ, 2, degree(S))
+  N = zero_matrix(QQ, 2, degree(S))
   for i = 1:2
     elem_to_mat_row!(N, i, S[i])
   end
@@ -497,7 +497,7 @@ function automorphism_list(C::CyclotomicExt; gens::Vector{<:NumFieldHom{AbsSimpl
     push!(gnew, na)
   end
   #Now add the automorphisms of the relative extension
-  R = residue_ring(FlintZZ, C.n, cached = false)[1]
+  R = residue_ring(ZZ, C.n, cached = false)[1]
   U, mU = unit_group(R)
   if is_cyclic(U)
     k = degree(C.Kr)
@@ -545,7 +545,7 @@ function cyclotomic_field(::Type{ClassField}, n::Integer)
 end
 
 function cyclotomic_field(::Type{ClassField}, n::ZZRingElem)
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   C = ray_class_field(n*maximal_order(QQ), infinite_places(QQ))
   set_attribute!(C, :cyclo => n, :show => show_cyclo)

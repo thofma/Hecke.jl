@@ -116,7 +116,7 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
         push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
       end
 
-      p = zero_matrix(FlintZZ, 1, 0)
+      p = zero_matrix(ZZ, 1, 0)
       for i = 1:length(ideals)
         C, CtoIdl = class_groups[i]
         c = CtoIdl\ideals[i]
@@ -155,7 +155,7 @@ function _trivial_picard(O::AlgAssAbsOrd, R::FinGenAbGroup, mR)
   fac_elem_mon_A = FacElemMon(A)
   RtoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
   RtoIdl.header = MapHeader(R, Idl, disc_exp_triv, disc_log_triv)
-  RtoIdl.right_transform = zero_matrix(FlintZZ, 0, 0)
+  RtoIdl.right_transform = zero_matrix(ZZ, 0, 0)
   RtoIdl.betas = Vector{elem_type(fac_elem_mon_A)}()
   RtoIdl.gammas = Vector{elem_type(fac_elem_mon_A)}()
   RtoIdl.ray_class_group_map = mR
@@ -230,7 +230,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
 
     # Compute the relations of the generators of G in R
     gens_of_G = Vector{elem_type(fac_elem_mon_A)}()
-    D = zero_matrix(FlintZZ, ngens(R) + ngens(G), ngens(R))
+    D = zero_matrix(ZZ, ngens(R) + ngens(G), ngens(R))
     for i = 1:ngens(R)
       D[i, i] = R.snf[i]
     end
@@ -597,7 +597,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
         push!(ideals, _as_ideal_of_number_field(x, fields_and_maps[i][2]))
       end
 
-      c = zero_matrix(FlintZZ, 1, 0)
+      c = zero_matrix(ZZ, 1, 0)
       for i = 1:length(ideals)
         G, GtoIdl = groups[i]
         g = GtoIdl\ideals[i]
@@ -619,7 +619,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
         push!(ideals, FacElem(base, exp))
       end
 
-      c = zero_matrix(FlintZZ, 1, 0)
+      c = zero_matrix(ZZ, 1, 0)
       for i = 1:length(ideals)
         G, GtoIdl = groups[i]
         g = GtoIdl\ideals[i]
@@ -735,7 +735,7 @@ function disc_log_generalized_ray_class_grp(I::FacElem{S, T}, mR::MapRayClassGro
   minus_idems = elem_type(A)[ -one(A)*idem for idem in idems ]
   bases = Vector{elem_type(A)}()
   exps = Vector{ZZRingElem}()
-  p = zero_matrix(FlintZZ, 1, 0)
+  p = zero_matrix(ZZ, 1, 0)
   ideal_gens = Vector{elem_type(O)}()
   for i = 1:length(ideals)
     K, AtoK = fields_and_maps[i]
@@ -776,7 +776,7 @@ function disc_log_generalized_ray_class_grp(I::S, mR::MapRayClassGroupAlg) where
   minus_idems = elem_type(A)[ -one(A)*idem for idem in idems ]
   bases = Vector{elem_type(A)}()
   exps = Vector{ZZRingElem}()
-  p = zero_matrix(FlintZZ, 1, 0)
+  p = zero_matrix(ZZ, 1, 0)
   ideal_gens = Vector{elem_type(O)}()
   for i = 1:length(ideals)
     K, AtoK = fields_and_maps[i]
@@ -931,11 +931,11 @@ function _intersect_modules(BM::FakeFmpqMat, BN::FakeFmpqMat)
   dM = denominator(BM)
   dN = denominator(BN)
   d = lcm(dM, dN)
-  BMint = change_base_ring(FlintZZ, numerator(d * BM))
-  BNint = change_base_ring(FlintZZ, numerator(d * BN))
+  BMint = change_base_ring(ZZ, numerator(d * BM))
+  BNint = change_base_ring(ZZ, numerator(d * BN))
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
-  BI = divexact(change_base_ring(FlintQQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
+  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return BI
 end
 
@@ -954,7 +954,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
   local c::ZZRingElem
   for i in 1:ncols(BM)
     if !iszero(BM[1, i])
-      c = FlintZZ(divexact(BI[1, i], BM[1, i]))
+      c = ZZ(divexact(BI[1, i], BM[1, i]))
       break
     end
   end

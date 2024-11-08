@@ -153,8 +153,8 @@ function ideal_from_poly(O::AbsSimpleNumFieldOrder, p::Int, fi::Zmodn_poly, ei::
   idl = ideal(O, ZZRingElem(p), O(b, false))
   idl.is_prime = 1
   idl.splitting_type = ei, degree(fi)
-  idl.norm = FlintZZ(p)^degree(fi)
-  idl.minimum = FlintZZ(p)
+  idl.norm = ZZ(p)^degree(fi)
+  idl.minimum = ZZ(p)
 
   # We have to do something to get 2-normal presentation:
   # if ramified or valuation val(b,P) == 1, (p,b)
@@ -350,7 +350,7 @@ function prime_dec_nonindex(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_l
   K = nf(O)
   f = K.pol
   R = parent(f)
-  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(ZZ, "x", cached = false)
   Zf = Zx(f)
 
   if degree_limit == 0
@@ -372,8 +372,8 @@ function prime_dec_nonindex(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_l
     I.gen_two = O(b, false)
     I.is_prime = 1
     I.splitting_type = ei, degree(fi)
-    I.norm = FlintZZ(p)^degree(fi)
-    I.minimum = FlintZZ(p)
+    I.norm = ZZ(p)^degree(fi)
+    I.minimum = ZZ(p)
 
     # We have to do something to get 2-normal presentation:
     # if ramified or valuation val(b,P) == 1, (p,b)
@@ -427,7 +427,7 @@ function anti_uniformizer(P::AbsNumFieldOrderIdeal)
   end
   p = minimum(P)
   M = representation_matrix(uniformizer(P))
-  #Mp = matrix_space(residue_field(FlintZZ, p)[1], nrows(M), ncols(M), false)(M)
+  #Mp = matrix_space(residue_field(ZZ, p)[1], nrows(M), ncols(M), false)(M)
   Mp = change_base_ring(GF(p, cached = false), M)
   K = kernel(Mp, side = :left)
   @assert nrows(K) > 0
@@ -498,7 +498,7 @@ function prime_decomposition_type(O::AbsSimpleNumFieldOrder, p::T) where T <: In
     K = nf(O)
     f = K.pol
     R = parent(f)
-    Zx, x = polynomial_ring(FlintZZ,"x", cached = false)
+    Zx, x = polynomial_ring(ZZ,"x", cached = false)
     Zf = Zx(f)
     fmodp = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)[1](Zf)
     return _prime_decomposition_type(fmodp)
@@ -649,7 +649,7 @@ function divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEl
     K = nf(order(A))
     Qx = parent(K.pol)
     if !fits(Int, minimum(B))
-      R = residue_ring(FlintZZ, minimum(B), cached = false)[1]
+      R = residue_ring(ZZ, minimum(B), cached = false)[1]
       Rx = polynomial_ring(R, "t", cached = false)[1]
       f1 = Rx(Qx(A.gen_two.elem_in_nf))
       f2 = Rx(Qx(B.gen_two.elem_in_nf))
@@ -659,7 +659,7 @@ function divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEl
         res = iszero(mod(f1, f2))
       end
     else
-      R1 = residue_ring(FlintZZ, Int(minimum(B)), cached = false)[1]
+      R1 = residue_ring(ZZ, Int(minimum(B)), cached = false)[1]
       R1x = polynomial_ring(R1, "t", cached = false)[1]
       f11 = R1x(Qx(A.gen_two.elem_in_nf))
       f21 = R1x(Qx(B.gen_two.elem_in_nf))
@@ -910,7 +910,7 @@ function _prefactorization(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   end
   K = nf(I)
   el = I.gen_two.elem_in_nf
-  Zx = polynomial_ring(FlintZZ, "x")[1]
+  Zx = polynomial_ring(ZZ, "x")[1]
   f = Zx(K.pol)
   f1 = Zx(denominator(el)*el)
   return prefactorization(f, n, f1)
@@ -1325,7 +1325,7 @@ end
 
 
 function _fac_and_lift(f::QQMPolyRingElem, p, degree_limit, lower_limit)
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   Zmodpx = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)[1]
   fmodp = Zmodpx(to_univariate(Globals.Qx, f))
   fac = factor(fmodp)
@@ -1366,9 +1366,9 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
   end
 
   Fpx = polynomial_ring(Native.GF(p, cached = false), cached = false)[1]
-  R = residue_ring(FlintZZ, p^2, cached = false)[1]
+  R = residue_ring(ZZ, p^2, cached = false)[1]
   Rx = polynomial_ring(R, cached = false)[1]
-  Zx = polynomial_ring(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(ZZ, cached = false)[1]
 
   fac = [_fac_and_lift(f, p, degree_limit, lower_limit) for f in all_f]
   all_c = [1 for f = all_f]
@@ -1448,8 +1448,8 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
     ideal.gen_two = O(b, false)
     ideal.is_prime = 1
     ideal.splitting_type = ei, degree(fi)
-    ideal.norm = FlintZZ(p)^degree(fi)
-    ideal.minimum = FlintZZ(p)
+    ideal.norm = ZZ(p)^degree(fi)
+    ideal.minimum = ZZ(p)
 
     # We have to do something to get 2-normal presentation:
     # if ramified or valuation val(b,P) == 1, (p,b)
@@ -1647,12 +1647,12 @@ function decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   end
   if is_index_divisor(OK, minimum(P, copy = false))
     q = 2
-    R = residue_ring(FlintZZ, q, cached = false)[1]
+    R = residue_ring(ZZ, q, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     fmod = Rx(K.pol)
     while iszero(discriminant(fmod))
       q = next_prime(q)
-      R = residue_ring(FlintZZ, q, cached = false)[1]
+      R = residue_ring(ZZ, q, cached = false)[1]
       Rx = polynomial_ring(R, "x", cached = false)[1]
       fmod = Rx(K.pol)
     end
@@ -1693,7 +1693,7 @@ end
 function decomposition_group_easy(G, P)
   O = order(P)
   K = nf(O)
-  R = residue_ring(FlintZZ, Int(minimum(P, copy = false)), cached = false)[1]
+  R = residue_ring(ZZ, Int(minimum(P, copy = false)), cached = false)[1]
   Rt, t = polynomial_ring(R, "t", cached = false)
   fmod = Rt(K.pol)
   pols = zzModPolyRingElem[Rt(image_primitive_element(x)) for x in G]
@@ -1757,12 +1757,12 @@ function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleN
   igF = K(mF\gF)
   inertia_grp = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
   q = 2
-  R = residue_ring(FlintZZ, q, cached = false)[1]
+  R = residue_ring(ZZ, q, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = residue_ring(FlintZZ, q, cached = false)[1]
+    R = residue_ring(ZZ, q, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     fmod = Rx(K.pol)
   end
@@ -1799,7 +1799,7 @@ function inertia_subgroup_easy(F, mF, G::Vector{<:NumFieldHom{AbsSimpleNumField,
   OK = order(P)
   K = nf(OK)
   p = minimum(P, copy = false)
-  R = residue_ring(FlintZZ, Int(p), cached = false)[1]
+  R = residue_ring(ZZ, Int(p), cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   gF = gen(F)

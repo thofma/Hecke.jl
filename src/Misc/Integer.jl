@@ -101,7 +101,7 @@ function sunit_group_fac_elem(S::Vector{ZZRingElem})
     return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(S)])
   end
 
-  mp.header = MapHeader(G, FacElemMon(FlintQQ), dexp)
+  mp.header = MapHeader(G, FacElemMon(QQ), dexp)
 
   return G, mp
 end
@@ -152,7 +152,7 @@ function sunit_group(S::Vector{ZZRingElem})
     return evaluate(image(mu, a))
   end
 
-  mp.header = MapHeader(u, FlintQQ, dexp, y->preimage(mu, y))
+  mp.header = MapHeader(u, QQ, dexp, y->preimage(mu, y))
 
   return u, mp
 end
@@ -321,7 +321,7 @@ function unit_group(::ZZRing)
   log = function (z::ZZRingElem)
     return z == -1 ? G[1] : G[0]
   end
-  return G, MapFromFunc(G, FlintZZ, exp, log)
+  return G, MapFromFunc(G, ZZ, exp, log)
 end
 
 @doc raw"""
@@ -576,12 +576,12 @@ function radical(a::T) where {T<:Integer}
 end
 
 function quo(::ZZRing, a::ZZRingElem)
-  R, f = residue_ring(FlintZZ, a)
+  R, f = residue_ring(ZZ, a)
   return R, f
 end
 
 function quo(::ZZRing, a::Integer)
-  R, f = residue_ring(FlintZZ, a)
+  R, f = residue_ring(ZZ, a)
   return R, f
 end
 

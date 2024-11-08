@@ -25,7 +25,7 @@
     end
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, b = number_field(x^3-3*x-1, "a")
   OK = maximal_order(K)
   for P in prime_ideals_up_to(OK, 200)

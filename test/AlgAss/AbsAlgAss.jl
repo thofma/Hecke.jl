@@ -66,7 +66,7 @@
     A = matrix_algebra(Fp, [ matrix(Fp, [ 1 1; 0 1 ]) ]) # not semisimple!
     @test_throws AssertionError decompose(A)
 
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     A = StructureConstantAlgebra((x^2 + 1)*(x^2 + 3))
     dec = Hecke.as_number_fields(A)
 
@@ -82,13 +82,13 @@
   end
 
   @testset "Generators" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     A = StructureConstantAlgebra((x^2 + 1)*(x^2 + 3))
     g, full_basis, v = gens_with_data(A)
 
     @test length(full_basis) == dim(A)
 
-    M = zero_matrix(FlintQQ, dim(A), dim(A))
+    M = zero_matrix(QQ, dim(A), dim(A))
     for i = 1:dim(A)
       Hecke.elem_to_mat_row!(M, i, full_basis[i])
     end
@@ -105,7 +105,7 @@
   end
 
   @testset "Radical" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     # f = x^2 + 1
     # g = x^3 + 3x^2 + 5x - 5
     f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
@@ -159,11 +159,11 @@
     I = radical(AS)
     @test all(in(I), preimage.(Ref(AStoA), ge))
 
-    A = group_algebra(FlintQQ, G)
+    A = group_algebra(QQ, G)
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 0
 
-    for K in [ F2, F4, FlintQQ ]
+    for K in [ F2, F4, QQ ]
       A = matrix_algebra(K, [ matrix(K, 2, 2, [ 1, 0, 0, 0 ]), matrix(K, 2, 2, [ 0, 1, 0, 0 ]), matrix(K, 2, 2, [ 0, 0, 0, 1]) ]) # i. e. upper triangular matrices
       I = radical(A)
       @test nrows(basis_matrix(I, copy = false)) == 1

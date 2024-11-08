@@ -20,7 +20,7 @@
 
 
   @testset "multiplicative_group" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "K = Q" begin
       K,  a = number_field(x,"a");
@@ -279,7 +279,7 @@
   end
 
   @testset "_multgrp_mod_pv" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "K = Q" begin
        K,  a = number_field(x,"a");
@@ -433,7 +433,7 @@
   end
 
   @testset "_multgrp_mod_p" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "K = Q" begin
        K,  a = number_field(x, "a");
@@ -532,7 +532,7 @@
   end
 
   @testset "_1_plus_p_mod_1_plus_pv" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "Method: $method" for method in [:quadratic,:artin_hasse,:p_adic]
 
@@ -661,7 +661,7 @@
   end
 
   @testset "Non-maximal orders" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
 
     K1, a1 = number_field(x^3 - 2, "a1")
     OK1 = maximal_order(K1)

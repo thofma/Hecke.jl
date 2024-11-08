@@ -106,10 +106,10 @@ function _approx_error_bf(disc::ZZRingElem, degree::Int, Tc = BigFloat)
 
   n = BigFloat(degree)
 
-  C1 = @with_round_down(Tc(FlintQQ(2324)//FlintQQ(1000)),Tc)
-  C2 = @with_round_down(Tc(FlintQQ(388)//FlintQQ(100)),Tc)
+  C1 = @with_round_down(Tc(QQ(2324)//QQ(1000)),Tc)
+  C2 = @with_round_down(Tc(QQ(388)//QQ(100)),Tc)
   C3 = Tc(2)
-  C4 = @with_round_down(Tc(FlintQQ(426)//FlintQQ(100)),Tc)
+  C4 = @with_round_down(Tc(QQ(426)//QQ(100)),Tc)
 
   function F(X)#(X::Tc)
     A1 = @with_round_down(C1*logd_down/(@with_round_up(sqrt(X)*log(3*X),Tc)),Tc)
@@ -157,7 +157,7 @@ end
   function _comp_summand(R, p::ZZRingElem, m::Int, aa::ArbFieldElem)
     logp = log(R(p))
 
-    pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
+    pm2 = R(p)^(R(ZZ(m)//ZZ(2)))
 
     pm2inv = inv(pm2)
 

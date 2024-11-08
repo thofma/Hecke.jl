@@ -1,5 +1,5 @@
 @testset "AlgAssRelOrdIdl" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 - 10x - 8
   K, a = number_field(f, "a")
   KG = group_algebra(K, FinGenAbGroup([ 2 ]))

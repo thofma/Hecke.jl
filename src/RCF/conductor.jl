@@ -20,7 +20,7 @@ function _norm_group_gens_small(C::ClassField)
 
   mS=pseudo_inv(mS)
   dom=domain(mS)
-  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
+  M=zero_matrix(ZZ,ngens(dom), ngens(codomain(mS)))
   for i=1:ngens(dom)
     elem=mS(dom[i]).coeff
     for j=1:ngens(codomain(mS))
@@ -344,7 +344,7 @@ function is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNum
   if check
     mS1 = pseudo_inv(mS)
     dom = domain(mS1)
-    M = zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS1)))
+    M = zero_matrix(ZZ,ngens(dom), ngens(codomain(mS1)))
     for i = 1:ngens(dom)
       elem = mS1(dom[i]).coeff
       for j = 1:ngens(codomain(mS1))
@@ -929,7 +929,7 @@ The maximal abelian subfield of $K$ as a class field, i.e. the norm group
 is computed and the corresponding `ray_class_field` created.
 """
 function maximal_abelian_subfield(::Type{ClassField}, K::AbsSimpleNumField)
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   QQ = rationals_as_number_field()[1]
   R, mR = ray_class_group(discriminant(maximal_order(K))*maximal_order(QQ), infinite_places(QQ), n_quo = degree(K))
   f = hom(QQ, K, K(1), check = false)
@@ -992,7 +992,7 @@ function maximal_abelian_subfield(K::RelSimpleNumField{AbsSimpleNumFieldElem}; o
 
   r1, r2 = signature(base_field(K))
   #of_closure cannot use the n_quo by the degree: any D_n field has
-  #zeta_n in the closure...thus a degree 5 field might have a 
+  #zeta_n in the closure...thus a degree 5 field might have a
   #degree 4 subfield (actually 2 x 4) in the closure.
   if of_closure
     C, mC = ray_class_group(dd, infinite_places(base_field(K))[1:r1])
@@ -1365,7 +1365,7 @@ function subfields(C::ClassField; arg...)
     mQ = C.quotientmap
     act = induce_action(C, aut)
     if haskey(arg, :type)
-      @req !haskey(arg, :degree) "degree and type are exclusive" 
+      @req !haskey(arg, :degree) "degree and type are exclusive"
       s = stable_subgroups(codomain(mQ), act; quotype = qtype, op = (x,y) -> quo(x, y, false)[2])
     else
       s = stable_subgroups(codomain(mQ), act; op = (x,y) -> quo(x, y, false)[2])
@@ -1774,7 +1774,7 @@ function lorenz_eta_level(k::AbsSimpleNumField)
   # find max r s.th. eta_r in k, eta_(r+1) not in k
   # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
   r = 2
-  x = polynomial_ring(FlintZZ, cached = false)[2]
+  x = polynomial_ring(ZZ, cached = false)[2]
   f = cos_minpoly(2^r, x)
   while has_root(f, k)[1]
     r += 1

@@ -55,7 +55,7 @@ function val_from_subfield(FB, mk, s)
   S = FB.ideals
   ZK = order(S[1])
 
-  z = zero_matrix(SMat, FlintZZ, 0, length(S))
+  z = zero_matrix(SMat, ZZ, 0, length(S))
 
   zk = order(s[1])
 
@@ -85,7 +85,7 @@ function val_from_subfield(FB, mk, s)
       end
     end
     sort!(v, by = x -> x[1])
-    push!(z, sparse_row(FlintZZ, v))
+    push!(z, sparse_row(ZZ, v))
   end
   return z
 end

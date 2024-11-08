@@ -452,7 +452,7 @@ function maximal_order(A::AbstractAssociativeAlgebra{T}) where { T <: NumFieldEl
   # So far ..._absolute is usually faster for linear, quadratic and cubic base fields,
   # but of course there are exceptions.
   # Feel free to adjust this if-condition.
-  if base_field(base_ring(A)) == FlintQQ && degree(base_ring(A)) <= 3
+  if base_field(base_ring(A)) == QQ && degree(base_ring(A)) <= 3
     O = maximal_order_via_absolute(A)
   else
     O = maximal_order_via_relative(A)
@@ -463,7 +463,7 @@ end
 
 function maximal_order_via_absolute(A::AbstractAssociativeAlgebra{T}) where { T <: NumFieldElem }
   B, BtoA = StructureConstantAlgebra(A)
-  C, CtoB = restrict_scalars(B, FlintQQ)
+  C, CtoB = restrict_scalars(B, QQ)
   OC = maximal_order(C)
   M = zero_matrix(base_ring(A), degree(OC), dim(A))
   for i = 1:degree(OC)

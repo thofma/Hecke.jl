@@ -1,5 +1,5 @@
 @testset "Residue ring multiplicative group" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   A = StructureConstantAlgebra(x^2 - 5)
   O = Order(A, basis(A))
   Q, = quo(O, 2 * O)

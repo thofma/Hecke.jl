@@ -184,11 +184,11 @@ function _solve_norm_equation_over_center_quaternion(M, x)
   A = algebra(M)
   !(base_ring(A) isa QQField) && error("Only implemented for rational quaternion algebras")
   B = basis_alg(M)
-  G = zero_matrix(FlintQQ, 4, 4)
+  G = zero_matrix(QQ, 4, 4)
   f = standard_involution(A)
   for i in 1:4
     for j in 1:4
-      G[i, j] = FlintZZ(trred(B[i] * f(B[j])))//2
+      G[i, j] = ZZ(trred(B[i] * f(B[j])))//2
     end
   end
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
@@ -197,7 +197,7 @@ function _solve_norm_equation_over_center_quaternion(M, x)
   local nrm
   for i in 1:dim(A)
     if !iszero(xalg.coeffs[i])
-      nrm = FlintZZ(divexact(xalg.coeffs[i], one(A).coeffs[i]))
+      nrm = ZZ(divexact(xalg.coeffs[i], one(A).coeffs[i]))
     end
   end
   #@show nrm
@@ -319,11 +319,11 @@ function _lift_norm_one_unit_quaternion(x, F)
   B = basis_alg(M)
   ZA, ZAtoA = center(A)
   FinZA = _as_ideal_of_smaller_algebra(ZAtoA, F)
-  G = zero_matrix(FlintQQ, 4, 4)
+  G = zero_matrix(QQ, 4, 4)
   f = standard_involution(A)
   for i in 1:4
     for j in 1:4
-      G[i, j] = FlintZZ(trred(B[i] * f(B[j])))//2
+      G[i, j] = ZZ(trred(B[i] * f(B[j])))//2
     end
   end
 
@@ -435,7 +435,7 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
   @assert n * one(ZB) == bas
   @assert B(n) * M == F
 
-  nn = FlintZZ(n)
+  nn = ZZ(n)
 
   R, c = nice_order(M)
 
@@ -443,13 +443,13 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
 
   # Now x is in M_n(Z) and I want to lift from M_n(Z/nn)
 
-  @assert mod(FlintZZ(det(matrix((xwrtR)))), nn) == 1
+  @assert mod(ZZ(det(matrix((xwrtR)))), nn) == 1
 
-  R = residue_ring(FlintZZ, nn, cached = false)[1]
-  li = _lift2(map_entries(u -> R(FlintZZ(u)), matrix(xwrtR)))
-  #li = _lift_unimodular_matrix(change_base_ring(FlintZZ, matrix(xwrtR)), nn, residue_ring(FlintZZ, nn)[1])
+  R = residue_ring(ZZ, nn, cached = false)[1]
+  li = _lift2(map_entries(u -> R(ZZ(u)), matrix(xwrtR)))
+  #li = _lift_unimodular_matrix(change_base_ring(ZZ, matrix(xwrtR)), nn, residue_ring(ZZ, nn)[1])
 
-  return (inv(c) * B(change_base_ring(FlintQQ, li)) * c)
+  return (inv(c) * B(change_base_ring(QQ, li)) * c)
 end
 
 ################################################################################
@@ -658,7 +658,7 @@ end
 #
 ################################################################################
 
-_base_ring(::Nemo.ZZModRing) = FlintZZ
+_base_ring(::Nemo.ZZModRing) = ZZ
 
 ################################################################################
 #

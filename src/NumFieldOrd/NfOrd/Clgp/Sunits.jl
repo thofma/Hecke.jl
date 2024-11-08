@@ -41,7 +41,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
 
   X = Vector{AbsSimpleNumFieldElem}()
 
-  rr = sparse_matrix(FlintZZ)
+  rr = sparse_matrix(ZZ)
 
   # To track the valuation of the S-units
   vals_of_rels = SRow{ZZRingElem}[]
@@ -54,18 +54,18 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
     push!(X, x)
     push!(rr, r)
-    v = sparse_row(FlintZZ)
+    v = sparse_row(ZZ)
     # We only track the valuation of the prime ideals in S.
     # Even though S might intersect the class group factor base
     # non-trivially, this should still be correct.
-    push!(vals_of_rels, sparse_row(FlintZZ, [(i, ZZRingElem(-1))], sort = false))
+    push!(vals_of_rels, sparse_row(ZZ, [(i, ZZRingElem(-1))], sort = false))
   end
 
   @vprintln :ClassGroup 1 "... done"
 
   @vprintln :ClassGroup 1 "solving..."
   @vtime :ClassGroup 1 R, d = _solve_ut(H, rr)
-  Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), ZZRingElem(-1)*R)
+  Rd = hcat(d*identity_matrix(SMat, ZZ, nrows(R)), ZZRingElem(-1)*R)
   @vprintln :ClassGroup 1 ".. done, now saturating ..."
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
   @vprintln :ClassGroup 1 " done"
@@ -87,7 +87,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
       apply_right!(rs, T[i])
     end
 
-    _val_vec = sparse_row(FlintZZ)
+    _val_vec = sparse_row(ZZ)
 
     e = FacElem(g, rs)
     for (p, v) = S1[s]
@@ -135,7 +135,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
   let I = I, S1 = S1, C = C
 
     function log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
-      b = sparse_row(FlintZZ)
+      b = sparse_row(ZZ)
       for i=1:length(I)
         v = valuation(a, I[i])
         if v != 0
@@ -190,7 +190,7 @@ function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
   r = MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{ZZRingElem}}(undef, ngens(G))
   for i = 1:ngens(U)
-    r.valuations[i] = sparse_row(FlintZZ)
+    r.valuations[i] = sparse_row(ZZ)
   end
   for i = 1:ngens(S)
     r.valuations[i+ngens(U)] = mS.valuations[i]

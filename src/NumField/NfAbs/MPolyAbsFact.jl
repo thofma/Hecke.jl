@@ -1524,7 +1524,7 @@ function factor(C::AcbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
   Cx, x = polynomial_ring(C, map(String, symbols(parent(f))), cached = false)
   for i=2:length(fa)
     K = base_ring(fa[i][1][1])
-    if K == FlintQQ
+    if K == QQ
       D[map_coefficients(C, fa[i][1][1], parent = Cx)] = fa[i][2]
       continue
     end
@@ -1551,7 +1551,7 @@ function factor(R::ArbField, f::Union{QQMPolyRingElem, ZZMPolyRingElem})
 
   for i=2:length(fa)
     K = base_ring(fa[i][1][1])
-    if K == FlintQQ
+    if K == QQ
       D[map_coefficients(R, fa[i][1][1], parent = Rx)] = fa[i][2]
       continue
     end

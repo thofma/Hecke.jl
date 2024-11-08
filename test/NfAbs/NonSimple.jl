@@ -1,6 +1,6 @@
 @testset "AbsNonSimpleNumField" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, (a, b) = @inferred number_field([x^2 - 2, x^3 - 3])
 
   @test K isa AbsNonSimpleNumField
@@ -10,7 +10,7 @@
   @test !is_simple(AbsNonSimpleNumField)
 
   @testset "Basics" begin
-    @test FlintQQ == @inferred base_ring(K)
+    @test QQ == @inferred base_ring(K)
     @test 6 == @inferred degree(K)
     @test [2, 3] == @inferred degrees(K)
     @test 2 == @inferred ngens(K)
@@ -68,10 +68,10 @@
       u = rand(-10:10)
       @test @inferred z^u == @inferred z^ZZRingElem(u)
 
-      M = zero_matrix(FlintQQ, 1, 6)
+      M = zero_matrix(QQ, 1, 6)
       Hecke.elem_to_mat_row!(M, 1, z)
       @test z == sum(M[1, j] * basis(K)[j] for j in 1:6)
-      M = matrix(FlintQQ, 1, 6, [rand(-10:10) for j in 1:6])
+      M = matrix(QQ, 1, 6, [rand(-10:10) for j in 1:6])
       zz = Hecke.elem_from_mat_row(K, M, 1)
       @test zz == sum(M[1, j] * basis(K)[j] for j in 1:6)
 
@@ -145,7 +145,7 @@
     K2,  = @inferred number_field([x^2 - 50, x^3 - 3])
     OO = EquationOrder(K2)
     Omax = @inferred MaximalOrder(OO)
-    @test discriminant(Omax) == FlintZZ(30233088)
+    @test discriminant(Omax) == ZZ(30233088)
 
     lp = prime_decomposition(Omax, 101)
     @test length(lp) == 3
@@ -171,7 +171,7 @@
   end
 
   @testset "coercion" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     K, (a, b) = number_field([x^2 - 2, x^3 - 3])
     @test (@inferred QQ(2*a^0)) == 2*one(QQ)
     @test @inferred is_rational(2*a^0)

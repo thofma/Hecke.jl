@@ -10,7 +10,7 @@ function _det_bound(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
 end
 
 function _max_max(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
-  d = FlintZZ(1)
+  d = ZZ(1)
   for i in 1:nrows(M)
     for j in 1:ncols(M)
       if !iszero(M[i, j])
@@ -120,7 +120,7 @@ function det(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
 
   @assert length(used_primes) == length(tmp_polys)
 
-  tmp_fmpz_poly = polynomial_ring(FlintZZ)[1]()
+  tmp_fmpz_poly = polynomial_ring(ZZ)[1]()
 
   for i in 0:degree(O)
     for j=1:length(used_primes)
@@ -631,7 +631,7 @@ end
 function _make_integral!(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
   O = order(P.coeffs[1])
-  integralizer = one(FlintZZ)
+  integralizer = one(ZZ)
 
   for i = 1:nrows(P)
     divide_row!(P.matrix, i, K(denominator(P.coeffs[i])))
@@ -639,7 +639,7 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
     simplify(P.coeffs[i])
   end
 
-  z = one(FlintZZ)
+  z = one(ZZ)
   for i in 1:nrows(P)
     for j in 1:ncols(P)
       z = lcm(z, denominator(P.matrix[i, j], O))
@@ -1772,39 +1772,39 @@ function is_pseudo_hnf(M, shape::Symbol = :lowerleft)
 end
 
 function test_triangular()
-  M = zero_matrix(FlintZZ, 3, 3)
+  M = zero_matrix(ZZ, 3, 3)
 
-  M = FlintZZ[1 0 0;
+  M = ZZ[1 0 0;
               0 1 0;
               0 0 1]
 
   @assert is_triangular(M)
 
-  M = FlintZZ[0 0 0;
+  M = ZZ[0 0 0;
               0 1 0;
               0 0 1]
 
   @assert is_triangular(M)
 
-  M = FlintZZ[1 0 0;
+  M = ZZ[1 0 0;
               0 0 0;
               0 0 1]
 
   @assert !is_triangular(M)
 
-  M = FlintZZ[0 1 0;
+  M = ZZ[0 1 0;
               0 0 1;
               0 0 0]
 
   @assert !is_triangular(M)
 
-  M = FlintZZ[1 0 0;
+  M = ZZ[1 0 0;
               0 1 0;
               0 0 0]
 
   @assert !is_triangular(M)
 
-  M = FlintZZ[0 1 0;
+  M = ZZ[0 1 0;
               1 0 0;
               0 0 1]
 

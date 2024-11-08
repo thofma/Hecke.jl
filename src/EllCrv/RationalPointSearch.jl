@@ -752,7 +752,7 @@ end
 
 function Hecke.order_via_exhaustive_search(coeff::Array{T}) where T<:FinFieldElem
   F = parent(coeff[1])
-  order = FlintZZ(0)
+  order = ZZ(0)
   for x in F
     ys = points_with_x_coordinate(coeff, x)
     order += length(ys)

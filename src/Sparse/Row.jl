@@ -11,9 +11,9 @@ function SRowSpace(R::Ring; cached = true)
   return SRowSpace{T}(R, cached)
 end
 
-base_ring(A::SRow{ZZRingElem}) = FlintZZ
+base_ring(A::SRow{ZZRingElem}) = ZZ
 
-base_ring(A::SRow{QQFieldElem}) = FlintQQ
+base_ring(A::SRow{QQFieldElem}) = QQ
 
 function base_ring(A::SRow{T}) where {T}
   if isdefined(A, :base_ring)
@@ -669,7 +669,7 @@ end
 function permute_row(n::SRow{ZZRingElem}, p::Nemo.Generic.Perm{Int})
   r = Tuple{Int, ZZRingElem}[(p[i], v) for (i,v) = n]
   sort!(r, lt = (a,b)->a[1]<b[1])
-  return sparse_row(FlintZZ, r)
+  return sparse_row(ZZ, r)
 end
 
 ################################################################################
@@ -760,7 +760,7 @@ add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T = add_scaled_row!(a,
 Return the sparse row obtained by lifting all entries in $A$.
 """
 function lift(A::SRow{zzModRingElem})
-  b = sparse_row(FlintZZ)
+  b = sparse_row(ZZ)
   for (p,v) = A
     push!(b.pos, p)
     push!(b.values, lift(v))
@@ -796,7 +796,7 @@ Returns the largest, in absolute value, entry of $A$.
 """
 function maximum(::typeof(abs), A::SRow{ZZRingElem})
   if iszero(A)
-    return zero(FlintZZ)
+    return zero(ZZ)
   end
   m = abs(A.values[1])
   for j in 2:length(A)

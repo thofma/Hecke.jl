@@ -268,7 +268,7 @@ math_html(io::IO, a::Rational) = math_html(io, QQFieldElem(a))
 
 function Base.show(io::IO, ::MIME"text/html", ::QQField)
   print(io, "\$")
-  math_html(io, FlintQQ)
+  math_html(io, QQ)
   print(io, "\$")
 end
 
@@ -278,7 +278,7 @@ end
 
 function Base.show(io::IO, ::MIME"text/html", ::ZZRing)
   print(io, "\$")
-  math_html(io, FlintQQ)
+  math_html(io, QQ)
   print(io, "\$")
 end
 

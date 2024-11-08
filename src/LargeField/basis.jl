@@ -24,7 +24,7 @@ function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
 end
 
 #function short_elem(c::roots_ctx, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
-#                v::ZZMatrix = matrix_space(FlintZZ, 1,1)(); prec::Int = 100)
+#                v::ZZMatrix = matrix_space(ZZ, 1,1)(); prec::Int = 100)
 #  l, t = lll(c, A, v, prec = prec)
 #  w = window(t, 1,1, 1, ncols(t))
 #  c = w*b
@@ -33,7 +33,7 @@ end
 #end
 
 function bkz_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, bs::Int;
-                      v::ZZMatrix = zero_matrix(FlintZZ, 1, 1),
+                      v::ZZMatrix = zero_matrix(ZZ, 1, 1),
                       prec::Int = 100)
 
 
@@ -66,7 +66,7 @@ function bkz_basis(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumField
 end
 
 function fplll_basis(rt_c::Hecke.roots_ctx, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, bs::Int;
-                      v::ZZMatrix = zero_matrix(FlintZZ, 1,1),
+                      v::ZZMatrix = zero_matrix(ZZ, 1,1),
                       prec::Int = 100)
 
   K = nf(order(A))

@@ -160,7 +160,7 @@
     @test g[1] == -1 && g[2] == 2 && g[3] == 2
     g, T = Hecke.reduction_with_transformation(f)
     @test g[1] == -1 && g[2] == 2 && g[3] == 2
-    @test T == matrix(FlintZZ, 2, 2, [-1, 1, 0, -1])
+    @test T == matrix(ZZ, 2, 2, [-1, 1, 0, -1])
     @test Hecke._buchmann_vollmer_action(f, T) == g
 
     # TODO: We do not have equivalence for indefinite types :(

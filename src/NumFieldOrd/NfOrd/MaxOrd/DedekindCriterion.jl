@@ -43,7 +43,7 @@ function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, ::Val{compute_o
     end
   end
 
-  Zy, y = polynomial_ring(FlintZZ, "y")
+  Zy, y = polynomial_ring(ZZ, "y")
   Kx, x = polynomial_ring(GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
@@ -113,15 +113,15 @@ end
 
 
 
-dedekind_test(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_test(O, FlintZZ(p))
+dedekind_test(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_test(O, ZZ(p))
 
 dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p, Val(false))
 
-dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_ispmaximal(O, FlintZZ(p))
+dedekind_ispmaximal(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_ispmaximal(O, ZZ(p))
 
 dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem) = dedekind_test(O, p)[2]
 
-dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_poverorder(O, FlintZZ(p))
+dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_poverorder(O, ZZ(p))
 
 
 ###############################################################################
@@ -133,8 +133,8 @@ dedekind_poverorder(O::AbsSimpleNumFieldOrder, p::Integer) = dedekind_poverorder
 function dedekind_test_composite(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   @assert is_equation_order(O)
 
-  Zy = polynomial_ring(FlintZZ, "y")[1]
-  R = residue_ring(FlintZZ, p, cached = false)[1]
+  Zy = polynomial_ring(ZZ, "y")[1]
+  R = residue_ring(ZZ, p, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached=false)[1]
 
   f = Zy(nf(O).pol)

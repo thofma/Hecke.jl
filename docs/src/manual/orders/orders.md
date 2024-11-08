@@ -38,7 +38,7 @@ any_order(K::AbsSimpleNumField)
 
 ```@repl
 using Hecke; # hide
-Qx, x = polynomial_ring(FlintQQ, "x");
+Qx, x = polynomial_ring(QQ, "x");
 K, a = number_field(x^2 - 2, "a");
 O = EquationOrder(K)
 ```

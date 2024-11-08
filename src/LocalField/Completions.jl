@@ -199,7 +199,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   mp = find_morphism(q, F)
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf
-  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   pol_gq = map_coefficients(x -> lift(ZZ, x),  defining_polynomial(Qq), cached = false)
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #@assert mF(OK(gq_in_K)) == mp(g)
@@ -331,7 +331,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
     @assert !(new_prec in keys(Kp.def_poly_cache))
     gq, u = f.inv_img
     ex = div(new_prec+e-1, e)
-    Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+    Zx = polynomial_ring(ZZ, "x", cached = false)[1]
     pol_gq = map_coefficients(x -> lift(ZZ, x), defining_polynomial(base_field(Kp)), cached = false)
     gq = _increase_precision(gq, pol_gq, div(f.precision+e-1, e), ex, P)
     f.inv_img = (gq, f.inv_img[2])
@@ -386,7 +386,7 @@ function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderId
   e = ramification_index(P)
   Qp = padic_field(minimum(P), precision = precision)
   Zp = maximal_order(Qp)
-  Zx = FlintZZ["x"][1]
+  Zx = ZZ["x"][1]
   Qpx = polynomial_ring(Qp, "x")[1]
   u = uniformizer(P).elem_in_nf
   pows_u = powers(u, e-1)
@@ -503,7 +503,7 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
   mp = find_morphism(q, F)
   g = gen(q)
   gq_in_K = (mF\(mp(g))).elem_in_nf
-  Zx = polynomial_ring(FlintZZ, "x")[1]
+  Zx = polynomial_ring(ZZ, "x")[1]
   pol_gq = lift(Zx, defining_polynomial(q))
   gq_in_K = _lift(gq_in_K, pol_gq, precision, P)
   #To compute the image of the primitive element, we use linear algebra if p is an index divisor
@@ -545,7 +545,7 @@ function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::I
   else
     P = prime(f)
     gq, u = f.inv_img
-    Zx = polynomial_ring(FlintZZ, "x")[1]
+    Zx = polynomial_ring(ZZ, "x")[1]
     q, mq = residue_field(Kp)
     pol_gq = lift(Zx, defining_polynomial(q))
     gq = _increase_precision(gq, pol_gq, f.precision, new_prec, P)

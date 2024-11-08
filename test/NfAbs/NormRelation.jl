@@ -1,5 +1,5 @@
 @testset "NormRel" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^8 - x^4 + 1
   K, a = number_field(f, "a", cached = false)
   S = prime_ideals_up_to(maximal_order(K), 1000)
@@ -19,7 +19,7 @@
 
   # Test a non-normal group
 
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   K, a = number_field(x^4-2*x^2+9);
   OK = maximal_order(K);
   lP = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]

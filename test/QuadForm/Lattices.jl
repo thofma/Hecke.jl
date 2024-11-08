@@ -1,5 +1,5 @@
 @testset "Lattices" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-2
   K, a = number_field(f,"a")
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
@@ -8,7 +8,7 @@
   D = matrix(K, 3, 3, [1//64, 0, 0, 0, 1//64, 0, 0, 0, 1//64])
   gensM = [[32, 0, 0], [720*a+448, 0, 0], [16, 16, 0], [152*a+208, 152*a+208, 0], [4*a+24, 4*a, 8], [116*a+152, 20*a+32, 32*a+40]]
   M = @inferred quadratic_lattice(K, gensM, gram = D)
-  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M, FlintQQ)))
+  @test norm(volume(M))*discriminant(K)^rank(L) == abs(det(restrict_scalars(M, QQ)))
 
   p = prime_decomposition(base_ring(L), 2)[1][1]
   @test @inferred is_locally_isometric(L, M, p)
@@ -36,7 +36,7 @@
   OK = maximal_order(K)
   p3 = prime_ideals_over(OK, 3)[1]
   @test is_modular(L, p3)[1]
-  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L, FlintQQ)))
+  @test norm(volume(L))*discriminant(OK)^rank(L) == abs(det(restrict_scalars(L, QQ)))
 
   @test ambient_space(dual(L)) === ambient_space(L)
   @test ambient_space(Hecke.lattice_in_same_ambient_space(L,pseudo_matrix(L))) === ambient_space(L)
@@ -61,7 +61,7 @@
   @test sprint(show, L) isa String
 
   # Smoke test for genus symbol
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^2 - 2, "a")
   L = @inferred quadratic_lattice(K, identity_matrix(K, 10), gram = 35*identity_matrix(K, 10))
   P = prime_decomposition(maximal_order(K), 5)[1][1]
@@ -76,7 +76,7 @@
   #@test GS.data[4] == [35]
   #@test GS.data[5] == []
 
-  Qx, x = FlintQQ["x"];
+  Qx, x = QQ["x"];
   K, a = number_field(x^2 - 2, cached = true);
   Kt, t = K["t"];
   L, b = number_field(t^2 + 11, "b", check = true)
@@ -164,7 +164,7 @@
   @test R != base_ring(base_ring(L))
 
   # Use ZZRingElem in the automorphism group computation (issue 1054)
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x^2 + 1, "a")
   OK = maximal_order(K)
   G = pseudo_matrix(matrix(K, 6, 6 ,[876708188094148315826780735392810, 798141405233250328867679564294410, -352823337641433300965521329447720, 326768950610851461363580717982402, -690595881941554449465975342845028, 433433545243019702766746394677218, 798141405233250328867679564294410, 867615301468758683549323652197099, -301315621373858240463110267500961, 316796431934778296047626373086339, -725765288914917260527454069649226, 505082964151083450666500945258490, -352823337641433300965521329447720, -301315621373858240463110267500961, 809946152369211852531731702980788, -343784636213856787915462553587466, 84764902049682607076640678540130, -613908853150167850995565570653796, 326768950610851461363580717982402, 316796431934778296047626373086339, -343784636213856787915462553587466, 219957919673551825679009958633894, -226934633316066727073394927118195, 298257387132139131540277459301842, -690595881941554449465975342845028, -725765288914917260527454069649226, 84764902049682607076640678540130, -226934633316066727073394927118195, 671443408734467545153681225010914, -277626128761200144008657217470664, 433433545243019702766746394677218, 505082964151083450666500945258490, -613908853150167850995565570653796, 298257387132139131540277459301842, -277626128761200144008657217470664, 640432299215298238271419741190578]), [ one(K)*OK, one(K)*OK, one(K)*OK, one(K)*OK, one(K)*OK, one(K)*OK ])
@@ -174,7 +174,7 @@
 end
 
 @testset "Misc" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")
   Kt, t = K["t"]
   E, b = number_field(t^2 - 2, "b")
@@ -186,7 +186,7 @@ end
 end
 
 @testset "Jordan decomposition" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [3, 2, 1, 2, 3, 1, 1, 1, 1]);
@@ -204,12 +204,12 @@ end
   Vres, VrestoV = restrict_scalars(ambient_space(L), QQ)
   @test domain(VrestoV) === Vres
   @test codomain(VrestoV) === ambient_space(L)
-  Lres = restrict_scalars(L, FlintQQ)
+  Lres = restrict_scalars(L, QQ)
   @test ambient_space(Lres) === Vres
   @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
 
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -221,7 +221,7 @@ end
   L = hermitian_lattice(E, gens, gram = D)
   M = hermitian_lattice(E, gens2, gram = D)
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -231,7 +231,7 @@ end
   gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
   O = hermitian_lattice(E, gens, gram = D)
 
-  Lres, f = Hecke.restrict_scalars_with_map(L, FlintQQ)
+  Lres, f = Hecke.restrict_scalars_with_map(L, QQ)
   Mres = Hecke.restrict_scalars(M, f)
   @test Lres == Hecke.restrict_scalars(L, f)
   @test is_sublattice(Lres, Mres)
@@ -239,7 +239,7 @@ end
 end
 
 @testset "#859" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -254,7 +254,7 @@ end
 end
 
 @testset "Intersection/primitive closure restrict scalars" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -285,7 +285,7 @@ end
 end
 
 @testset "Direct sums" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")

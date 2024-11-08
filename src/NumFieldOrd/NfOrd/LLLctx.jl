@@ -70,8 +70,8 @@ function minkowski_gram_mat_scaled(L::NfLat, p::Int)
   else
     c = minkowski_matrix(L, p)
     B = basis(L)
-    d = zero_matrix(FlintZZ, length(B), absolute_degree(K))
-    A = zero_matrix(FlintZZ, length(B), length(B))
+    d = zero_matrix(ZZ, length(B), absolute_degree(K))
+    A = zero_matrix(ZZ, length(B), length(B))
     round_scale!(d, c, p)
     ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), A, d)
     shift!(A, -p)
@@ -86,9 +86,9 @@ end
 function weighted_minkowski_gram_scaled(L::NfLat, v::ZZMatrix, prec::Int)
   c = deepcopy(minkowski_matrix(L, prec))
   mult_by_2pow_diag!(c, v)
-  d = zero_matrix(FlintZZ, nrows(c), ncols(c))
+  d = zero_matrix(ZZ, nrows(c), ncols(c))
   round_scale!(d, c, prec)
-  g = zero_matrix(FlintZZ, nrows(c), nrows(c))
+  g = zero_matrix(ZZ, nrows(c), nrows(c))
   ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), g, d)
   shift!(g, -prec)
   for i=1:n
@@ -97,7 +97,7 @@ function weighted_minkowski_gram_scaled(L::NfLat, v::ZZMatrix, prec::Int)
   return g
 end
 
-function lll(L::NfLat, weights::ZZMatrix = zero_matrix(FlintZZ, 1, 1); starting_prec::Int = 100 + 25*div(dim(L), 3) + Int(round(log(abs(discriminant(L))))))
+function lll(L::NfLat, weights::ZZMatrix = zero_matrix(ZZ, 1, 1); starting_prec::Int = 100 + 25*div(dim(L), 3) + Int(round(log(abs(discriminant(L))))))
   if L.is_minkowski_exact
     M = _exact_minkowski_matrix(basis(L))
     l, v = lll_gram_with_transform(M)
@@ -152,8 +152,8 @@ function _lll(L::NfLat, weights::ZZMatrix, prec::Int)
     end
   end
   n = dim(L)
-  g = identity_matrix(FlintZZ, n)
-  g1 = identity_matrix(FlintZZ, n)
+  g = identity_matrix(ZZ, n)
+  g1 = identity_matrix(ZZ, n)
   ctx1 = Nemo.LLLContext(0.4, 0.51, :gram)
   ctx2 = Nemo.LLLContext(0.99, 0.51, :gram)
   @vtime :LLL 1 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx1)

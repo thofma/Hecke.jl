@@ -13,7 +13,7 @@
 Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
 function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
 """
-# Top level functions to avoid "type mix-ups" (like StructureConstantAlgebra{fqPolyRepFieldElem} with FlintQQ)
+# Top level functions to avoid "type mix-ups" (like StructureConstantAlgebra{fqPolyRepFieldElem} with QQ)
 function restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, Q::QQField)
   return _restrict_scalars(A, Q)
 end

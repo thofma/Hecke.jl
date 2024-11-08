@@ -175,7 +175,7 @@ function compute_candidates_for_saturate(v::Vector{FacElem{AbsSimpleNumFieldElem
         z = z*A
         z = kernel(z, side = :right)
         if iszero(ncols(z))
-          return zero_matrix(FlintZZ, 0, length(v1))
+          return zero_matrix(ZZ, 0, length(v1))
         end
         A = A*z
         if cA == ncols(A)
@@ -324,7 +324,7 @@ function compute_candidates_for_saturate1(c::Hecke.ClassGrpCtx, p::Int, stable::
       z = z*A
       z = kernel(z, side = :right)
       if iszero(ncols(z))
-        return zero_matrix(FlintZZ, 0, length(R))
+        return zero_matrix(ZZ, 0, length(R))
       end
       A = A*z
       if cA == ncols(A)
@@ -347,7 +347,7 @@ end
 function _get_element(e, R, R_mat, zeta, i)
   K = parent(zeta)
   a = FacElem(K(1))
-  fac_a = sparse_row(FlintZZ)
+  fac_a = sparse_row(ZZ)
   for j = 1:length(R)
     if !iszero(e[j, i])
       mul!(a, a, R[j]^e[j, i])
@@ -438,7 +438,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     zeta = Hecke.torsion_units_generator(K)
     @vprintln :Saturate 1 "(Hopefully) enlarging by $(ncols(e)) elements"
 
-    rels_added = sparse_matrix(FlintZZ)
+    rels_added = sparse_matrix(ZZ)
     R_mat = relations_matrix(c)
     wasted = false
     for i = ncols(e):-1:1
@@ -539,7 +539,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
     push!(vals_new_rels, deepcopy(c.M.basis.rows[i]))
   end
   if use_LLL && !isempty(new_rels)
-    M = sparse_matrix(FlintZZ)
+    M = sparse_matrix(ZZ)
     for x in vals_new_rels
       push!(M, x)
     end
@@ -560,7 +560,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
     end
   end
   for i=1:length(U.units)
-    Hecke.class_group_add_relation(d, U.units[i], sparse_row(FlintZZ))
+    Hecke.class_group_add_relation(d, U.units[i], sparse_row(ZZ))
   end
   return d
 end

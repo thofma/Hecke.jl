@@ -27,7 +27,7 @@ function basis_matrix(d::ZZRingElem, f::ZZPolyRingElem, k::AbsSimpleNumField)
   #assumes deg f < deg k, d coprime to the conductor/ index/ everything
   de = []
   g = d
-  N = zero_matrix(FlintZZ, degree(k), degree(k))
+  N = zero_matrix(ZZ, degree(k), degree(k))
   dN = ZZRingElem(1)
   res = []
   f_orig = f
@@ -45,9 +45,9 @@ function basis_matrix(d::ZZRingElem, f::ZZPolyRingElem, k::AbsSimpleNumField)
     @assert is_monic(fn)
     @assert degree(fn) == i
     if degree(f) == degree(k)
-      M = matrix_space(FlintZZ, degree(k), degree(k))(n)
+      M = matrix_space(ZZ, degree(k), degree(k))(n)
     else
-      M = zero_matrix(FlintZZ, degree(k), degree(k))
+      M = zero_matrix(ZZ, degree(k), degree(k))
       for j=1:i
         M[j,j] = n
       end
@@ -103,7 +103,7 @@ mutable struct RecoCtx
   end
   function RecoCtx(k::AbsSimpleNumField)
     r = new()
-    r.L = identity_matrix(FlintZZ, degree(k))
+    r.L = identity_matrix(ZZ, degree(k))
     r.p1 = ZZRingElem(1)
     r.k = k
     r.new_data = false
@@ -184,7 +184,7 @@ function Hecke.rational_reconstruction(a::AbsSimpleNumFieldElem, R::RecoCtx; int
     if !isdefined(R, :LI)
       R.LI, R.d = pseudo_inv(R.L)
     end
-    t = zero_matrix(FlintZZ, 1, degree(R.k))
+    t = zero_matrix(ZZ, 1, degree(R.k))
     z = ZZRingElem()
     for i=1:degree(R.k)
       Nemo.num_coeff!(z, a, i-1)
@@ -204,7 +204,7 @@ function Hecke.rational_reconstruction(a::AbsSimpleNumFieldElem, R::RecoCtx; int
     return nb >= 0, b
   end
   n = degree(parent(a))
-  Znn = matrix_space(FlintZZ, n, n)
+  Znn = matrix_space(ZZ, n, n)
   L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) R.L]
   lll!(L)
   K = parent(a)

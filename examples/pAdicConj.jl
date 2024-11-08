@@ -32,7 +32,7 @@ function mult_syzygies_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
       push!(u, a[i])
       lu = vcat(lu, la[i])
     else # length == 1 extend the module
-      r = [lift_reco(FlintQQ, x, reco = true) for x = k[1]]
+      r = [lift_reco(QQ, x, reco = true) for x = k[1]]
       #lift can fail if precision wrong.
       #or at least result is (can be) garbage
       #= bound on relation
@@ -61,7 +61,7 @@ function mult_syzygies_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
                ignore bounds?
       =#
       d = reduce(lcm, map(denominator, r))
-      gamma = [FlintZZ(x*d) for x = r]
+      gamma = [ZZ(x*d) for x = r]
       #technically, this relations needs to be verified.
       #=
         we have a relation mod p^k, which means
@@ -84,7 +84,7 @@ function mult_syzygies_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleN
         Not done.
       =#
       @assert reduce(gcd, gamma) == 1 # should be a primitive relation
-      _, U = hnf_with_transform(matrix(FlintZZ, length(r), 1, gamma))
+      _, U = hnf_with_transform(matrix(ZZ, length(r), 1, gamma))
       U = inv(U)
       U = sub(U, 1:nrows(U), 2:ncols(U))
       #new basis is the cols of U
@@ -99,7 +99,7 @@ end
 =#
 
 function non_torsion_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
-  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(FlintZZ, 0, 0))
+  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(ZZ, 0, 0))
   n = degree(R)
   i = B
   while true
@@ -118,7 +118,7 @@ function non_torsion_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R)
 end
 
 function unit_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
-  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(FlintZZ, 0, 0))
+  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(ZZ, 0, 0))
   n = degree(R)
   i = B
   while true

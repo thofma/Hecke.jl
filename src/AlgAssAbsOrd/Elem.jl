@@ -32,7 +32,7 @@ end
 
 (O::AlgAssAbsOrd{S, T})(arr::Vector{ZZRingElem}) where {S, T} = begin
   M = basis_matrix(FakeFmpqMat, O, copy = false)
-  N = matrix(FlintZZ, 1, degree(O), arr)
+  N = matrix(ZZ, 1, degree(O), arr)
   NM = N*M
   x = elem_from_mat_row(algebra(O), NM.num, 1, NM.den)
   return AlgAssAbsOrdElem{S, T}(O, x, deepcopy(arr))
@@ -412,7 +412,7 @@ end
 Returns the trace of $x$.
 """
 function tr(x::AlgAssAbsOrdElem)
-  return FlintZZ(tr(x.elem_in_algebra))
+  return ZZ(tr(x.elem_in_algebra))
 end
 
 @doc raw"""
@@ -421,7 +421,7 @@ end
 Returns the reduced trace of $x$.
 """
 function trred(x::AlgAssAbsOrdElem)
-  return FlintZZ(trred(x.elem_in_algebra))
+  return ZZ(trred(x.elem_in_algebra))
 end
 
 ################################################################################
@@ -469,7 +469,7 @@ function is_divisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::Alg
 
   O = parent(x)
   d = degree(O)
-  V = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
+  V = zero_matrix(ZZ, 2*d + 1, 2*d + 1)
   V[1, 1] = ZZRingElem(1)
 
   for i = 1:d

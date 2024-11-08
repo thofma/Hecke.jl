@@ -117,7 +117,7 @@ function _assure_weakly_normal_presentation(A::AbsNumFieldOrderIdeal)
       A.norm = abs(_normmod(A.gen_one^degree(order(A)), order(A)(b)))
     end
     @hassert :AbsNumFieldOrder 1 gcd(A.gen_one^degree(order(A)),
-                    FlintZZ(norm(A.gen_two))) == A.norm
+                    ZZ(norm(A.gen_two))) == A.norm
 
     if A.gen_one == 1
       A.gens_normal = 2*A.gen_one
@@ -172,7 +172,7 @@ function _assure_weakly_normal_presentation(A::AbsNumFieldOrderIdeal)
 
   r = -Amin2:Amin2
 
-  m = zero_matrix(FlintZZ, 1, degree(O))
+  m = zero_matrix(ZZ, 1, degree(O))
 
   cnt = 0
   while true

@@ -1,5 +1,5 @@
 @testset "Overorders" begin
-  Qx,  x = FlintQQ["x"]
+  Qx,  x = QQ["x"]
 
   f = x^2 + 100x + 100
 
@@ -29,7 +29,7 @@
   @test length(orders) == 36
 
   G = small_group(6, 1)
-  A = StructureConstantAlgebra(group_algebra(FlintQQ, G))[1]
+  A = StructureConstantAlgebra(group_algebra(QQ, G))[1]
   O = Order(A, basis(A))
   orders = @inferred overorders(O)
   @test length(orders) == 12

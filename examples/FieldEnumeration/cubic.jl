@@ -182,7 +182,7 @@ end
 
 
 function Gunter_Qi(r::Range, pref="Qi.new")
-  Qt, t = FlintQQ["t"]
+  Qt, t = QQ["t"]
   k, a = number_field(t^2+1, "k.1")
   s = Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}(k, k, -a)
   M = maximal_order(k)

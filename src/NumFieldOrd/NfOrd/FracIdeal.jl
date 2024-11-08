@@ -791,7 +791,7 @@ end
 function in(x::AbsSimpleNumFieldElem, y::AbsSimpleNumFieldOrderFractionalIdeal)
   B = inv(basis_matrix(FakeFmpqMat, y))
   O = order(y)
-  M = zero_matrix(FlintZZ, 1, degree(O))
+  M = zero_matrix(ZZ, 1, degree(O))
   t = FakeFmpqMat(M)
   elem_to_mat_row!(t.num, 1, t.den, x)
   v = t*basis_mat_inv(FakeFmpqMat, O, copy = false)

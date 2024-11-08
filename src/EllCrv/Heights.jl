@@ -154,7 +154,7 @@ function local_height(P::EllipticCurvePoint{QQFieldElem}, p, prec::Int = 100)
 
   P = phi(P)
 
-  p = FlintZZ(p)
+  p = ZZ(p)
 
   x = P[1]
   y = P[2]

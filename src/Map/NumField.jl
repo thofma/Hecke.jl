@@ -743,7 +743,7 @@ function _assert_has_preimage_data(f::NumFieldHom)
   b = absolute_basis(K)
   d = absolute_degree(K)
   n = absolute_degree(L)
-  M = zero_matrix(FlintQQ, n, d)
+  M = zero_matrix(QQ, n, d)
   for i in 1:d
     c = f(b[i])
     cc = absolute_coordinates(c)

@@ -314,7 +314,7 @@ this function returns the element of $A$ with components `x`.
 """
 function (A::FinGenAbGroup)(x::Vector{ZZRingElem})
   ngens(A) != length(x) && error("Lengths do not coincide")
-  y = matrix(FlintZZ, 1, ngens(A), x)
+  y = matrix(ZZ, 1, ngens(A), x)
   z = FinGenAbGroupElem(A, y)
   return z
 end
@@ -350,7 +350,7 @@ function (A::FinGenAbGroup)(x::ZZMatrix)
 end
 
 function (A::FinGenAbGroup)()
-  y = zero_matrix(FlintZZ, 1, ngens(A))
+  y = zero_matrix(ZZ, 1, ngens(A))
   z = FinGenAbGroupElem(A, y)
   return z
 end
@@ -366,9 +366,9 @@ where the $1$ is at the $i$-th position.
 function getindex(A::FinGenAbGroup, i::Int)
   (i < 0 || i > ngens(A)) && error("Index ($i) out of range (1:$(ngens(A)))")
   if i==0
-    return FinGenAbGroupElem(A, zero_matrix(FlintZZ, 1, ngens(A)))
+    return FinGenAbGroupElem(A, zero_matrix(ZZ, 1, ngens(A)))
   end
-  z = zero_matrix(FlintZZ, 1, ngens(A))
+  z = zero_matrix(ZZ, 1, ngens(A))
   for j in 1:ngens(A)
     z[1, j] = ZZRingElem()
   end

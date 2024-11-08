@@ -312,8 +312,8 @@ true
 is_GLZ_conjugate(A::Union{ZZMatrix, QQMatrix}, B::Union{ZZMatrix, QQMatrix})
 
 function is_GLZ_conjugate(A::ZZMatrix, B::ZZMatrix)
-  AQ = change_base_ring(FlintQQ, A)
-  BQ = change_base_ring(FlintQQ, B)
+  AQ = change_base_ring(QQ, A)
+  BQ = change_base_ring(QQ, B)
   return _isGLZ_conjugate_integral(AQ, BQ)
 end
 
@@ -324,18 +324,18 @@ end
 
 function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
   if nrows(A) != nrows(B)
-    return false, zero_matrix(FlintZZ, 0, 0)
+    return false, zero_matrix(ZZ, 0, 0)
   end
 
   if A == B
-    return true, identity_matrix(FlintZZ, nrows(A))
+    return true, identity_matrix(ZZ, nrows(A))
   end
 
   CA, TA = rational_canonical_form(A)
   CB, TB = rational_canonical_form(B)
 
   if CA != CB
-    return false, zero_matrix(FlintZZ, 0, 0)
+    return false, zero_matrix(ZZ, 0, 0)
   end
 
   @vprint :Conjugacy 1 "Computing commutator algebra\n"
@@ -396,7 +396,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
                                               AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}
 
   if !fl
-    return false, zero_matrix(FlintZZ, 0, 0)
+    return false, zero_matrix(ZZ, 0, 0)
   end
 
   @hassert :Conjugacy 1 y * OO == OI
@@ -406,7 +406,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
 
   d = denominator(OI, OO)
 
-  Y = zero_matrix(FlintZZ, length(idealgens), dim(AA))
+  Y = zero_matrix(ZZ, length(idealgens), dim(AA))
   for i in 1:length(idealgens)
     cc = coordinates(OO(d * idealgens[i]))
     @assert length(cc) == dim(AA)
@@ -415,11 +415,11 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     end
   end
 
-  YY = matrix(FlintZZ, 1, dim(AA), coordinates(OO(d * y)))
+  YY = matrix(ZZ, 1, dim(AA), coordinates(OO(d * y)))
 
   fl, vv = can_solve_with_solution(Y, YY, side = :left)
   @assert fl
-  yy = zero_matrix(FlintQQ, nrows(A), nrows(A))
+  yy = zero_matrix(QQ, nrows(A), nrows(A))
   for i in 1:length(vv)
     yy = yy + vv[1, i] * (invC * I[i])
   end
@@ -434,7 +434,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     return false, zero_matrix(ZZ, 0, 0)
   end
 
-  return fl, map_entries(FlintZZ, T)
+  return fl, map_entries(ZZ, T)
 end
 
 ################################################################################
@@ -456,24 +456,24 @@ function _basis_of_integral_commutator_algebra(A::QQMatrix, B::QQMatrix)
   linind = transpose(LinearIndices((nrows(A), nrows(B))))
   n = nrows(A)
   m = nrows(B)
-  z = zero_matrix(FlintQQ, n*m, n*m)
+  z = zero_matrix(QQ, n*m, n*m)
   for i in 1:m
     for j in 1:n
       for k in 1:n
-        z[linind[i, j], linind[i, k]] += FlintZZ(A[k, j])
+        z[linind[i, j], linind[i, k]] += ZZ(A[k, j])
       end
       for k in 1:m
-        z[linind[i, j], linind[k, j]] -= FlintZZ(B[i, k])
+        z[linind[i, j], linind[k, j]] -= ZZ(B[i, k])
       end
     end
   end
   K = kernel(z; side = :right)
-  KK = change_base_ring(FlintZZ, denominator(K) * K)
+  KK = change_base_ring(ZZ, denominator(K) * K)
   KK = transpose(saturate(transpose(KK)))
   res = QQMatrix[]
   for k in 1:ncols(K)
     cartind = cartesian_product_iterator([1:x for x in (n, m)], inplace = true)
-    M = zero_matrix(FlintQQ, m, n)
+    M = zero_matrix(QQ, m, n)
     for (l, v) in enumerate(cartind)
         M[v[2], v[1]] = KK[l, k]
     end
@@ -567,9 +567,9 @@ function _basis_of_integral_commutator_algebra(As::Vector{QQMatrix},
   @assert all(x -> isone(denominator(x)), As)
   @assert all(x -> isone(denominator(x)), Bs)
   linind = transpose(LinearIndices((n,m)))
-  zz = zero_matrix(FlintQQ, 0, n*m)
+  zz = zero_matrix(QQ, 0, n*m)
   for (A, B) in zip(As, Bs)
-    z = zero_matrix(FlintQQ, n*m, n*m)
+    z = zero_matrix(QQ, n*m, n*m)
     for i in 1:m
       for j in 1:n
         for k in 1:n
@@ -583,12 +583,12 @@ function _basis_of_integral_commutator_algebra(As::Vector{QQMatrix},
     zz = vcat(zz, z)
   end
   K = kernel(zz; side = :right)
-  KK = change_base_ring(FlintZZ, denominator(K) * K)
+  KK = change_base_ring(ZZ, denominator(K) * K)
   KK = transpose(saturate(transpose(KK)))
   res = QQMatrix[]
   for k in 1:ncols(K)
     cartind = cartesian_product_iterator([1:x for x in (n, m)], inplace = true)
-    M = zero_matrix(FlintQQ, m, n)
+    M = zero_matrix(QQ, m, n)
     for (l, v) in enumerate(cartind)
         M[v[2], v[1]] = KK[l, k]
     end
@@ -620,12 +620,12 @@ end
 #      return true, c
 #    end
 #  end
-#  return false, zero_matrix(FlintQQ, 0, 0)
+#  return false, zero_matrix(QQ, 0, 0)
 #end
 #
 #function _isGLZ_conjugate(A::Vector{ZZMatrix}, B::Vector{ZZMatrix})
-#  return __isGLZ_conjugate(map(x -> change_base_ring(FlintQQ, x), A),
-#                          map(x -> change_base_ring(FlintQQ, x), B))
+#  return __isGLZ_conjugate(map(x -> change_base_ring(QQ, x), A),
+#                          map(x -> change_base_ring(QQ, x), B))
 #end
 #
 #function _isGLZ_conjugate(A::Vector{QQMatrix}, B::Vector{QQMatrix})
@@ -638,17 +638,17 @@ end
 #function __isGLZ_conjugate(A::Vector{QQMatrix}, B::Vector{QQMatrix})
 #
 #  if A == B
-#    return true, identity_matrix(FlintQQ, nrows(A[1]))
+#    return true, identity_matrix(QQ, nrows(A[1]))
 #  end
 #  O = _basis_of_integral_commutator_algebra(A, A)
 #  I = _basis_of_integral_commutator_algebra(A, B)
-#  AA = matrix_algebra(FlintQQ, map(x -> map(FlintQQ, x), O))
+#  AA = matrix_algebra(QQ, map(x -> map(QQ, x), O))
 #  ordergens = elem_type(AA)[]
 #  idealgens = elem_type(AA)[]
 #
 #  fl, _C = _isconjugated_probabilistic(A, B)
 #  if !fl
-#    return false, zero_matrix(FlintQQ, 0, 0)
+#    return false, zero_matrix(QQ, 0, 0)
 #  end
 #
 #  @assert all(_C * map(QQ, A[i]) == map(QQ, B[i]) * _C for i in 1:length(A))
@@ -707,7 +707,7 @@ end
 #    # I cannot just lift, I need a preimage in OI
 #    d = denominator(OI, OO)
 #
-#    Y = zero_matrix(FlintQQ, dim(AA), dim(S))
+#    Y = zero_matrix(QQ, dim(AA), dim(S))
 #    OIbasis = basis(OI)
 #    for i in 1:dim(AA)
 #      cc = coefficients(AtoS(OIbasis[i]))
@@ -716,7 +716,7 @@ end
 #      end
 #    end
 #
-#    YY = matrix(FlintQQ, 1, dim(S), coefficients(yyy))
+#    YY = matrix(QQ, 1, dim(S), coefficients(yyy))
 #    # I look for a integral solution, but the matrices are rational ..
 #    d = lcm(denominator(Y), denominator(YY))
 #    fl, vv = can_solve_with_solution(map(ZZ, d*Y), map(ZZ, d*YY), side = :left)
@@ -725,7 +725,7 @@ end
 #  end
 #
 #  if !fl
-#    return false, zero_matrix(FlintQQ, 0, 0)
+#    return false, zero_matrix(QQ, 0, 0)
 #  end
 #
 #  @assert yy * OO == OI
@@ -741,7 +741,7 @@ end
 #
 #  #d = denominator(OI, OO)
 #
-#  #Y = zero_matrix(FlintZZ, length(idealgens), dim(AA))
+#  #Y = zero_matrix(ZZ, length(idealgens), dim(AA))
 #  #for i in 1:length(idealgens)
 #  #  cc = coordinates(OO(d * idealgens[i]))
 #  #  @assert length(cc) == dim(AA)
@@ -750,11 +750,11 @@ end
 #  #  end
 #  #end
 #
-#  #YY = matrix(FlintZZ, 1, dim(AA), coordinates(OO(d * y)))
+#  #YY = matrix(ZZ, 1, dim(AA), coordinates(OO(d * y)))
 #
 #  #fl, vv = can_solve_with_solution(Y, YY, side = :left)
 #  #@assert fl
-#  #yy = zero_matrix(FlintQQ, nrows(A), nrows(A))
+#  #yy = zero_matrix(QQ, nrows(A), nrows(A))
 #  #for i in 1:length(vv)
 #  #  yy = yy + vv[1, i] * (invC * I[i])
 #  #end

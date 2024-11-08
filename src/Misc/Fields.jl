@@ -51,7 +51,7 @@ function _field_as_vector_space(f)
 
   ad = absolute_degree(L)
 
-  absbasismat = zero_matrix(FlintQQ, ad, ad)
+  absbasismat = zero_matrix(QQ, ad, ad)
 
   for i in 1:ad
     c = absolute_coordinates(absB[i])

@@ -9,7 +9,7 @@ Apply `rational_reconstruction` to each coefficient of $a$, resulting
 in either a fail (return (false, s.th.)) or (true, g) for some rational
 polynomial $g$ s.th. $g \equiv a \bmod M$.
 """
-function induce_rational_reconstruction(a::ZZPolyRingElem, M::ZZRingElem; parent=polynomial_ring(FlintQQ, parent(a).S, cached = false)[1])
+function induce_rational_reconstruction(a::ZZPolyRingElem, M::ZZRingElem; parent=polynomial_ring(QQ, parent(a).S, cached = false)[1])
   b = parent()
   for i=0:degree(a)
     fl, x,y = rational_reconstruction(coeff(a, i), M)
@@ -56,7 +56,7 @@ end
 function precomp_compose_mod(y::ZZModPolyRingElem, z::ZZModPolyRingElem)
   zinv = _inv_compose_mod(z)
   nr = Int(iroot(degree(z), 2)) + 1
-  A = zero_matrix(FlintZZ, nr, degree(z))
+  A = zero_matrix(ZZ, nr, degree(z))
   ccall((:fmpz_mod_poly_precompute_matrix, libflint), Nothing,
         (Ref{ZZMatrix}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), A, y, z, zinv, y.parent.base_ring.ninv)
   return A, zinv
@@ -104,7 +104,7 @@ end
 ################################################################################
 function factor_to_dict(a::fmpz_poly_factor)
   res = Dict{ZZPolyRingElem,Int}()
-  Zx,x = polynomial_ring(FlintZZ, "x", cached = false)
+  Zx,x = polynomial_ring(ZZ, "x", cached = false)
   for i in 1:a._num
     f = Zx()
     ccall((:fmpz_poly_set, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
@@ -113,7 +113,7 @@ function factor_to_dict(a::fmpz_poly_factor)
   return res
 end
 
-function factor_to_array(a::fmpz_poly_factor; parent::ZZPolyRing = polynomial_ring(FlintZZ, "x", cached = false)[1])
+function factor_to_array(a::fmpz_poly_factor; parent::ZZPolyRing = polynomial_ring(ZZ, "x", cached = false)[1])
   res = Vector{Tuple{ZZPolyRingElem, Int}}()
   Zx = parent
   for i in 1:a._num
@@ -336,7 +336,7 @@ end
 
 function rres_bez(f::ZZPolyRingElem, g::ZZPolyRingElem)
   Nemo.check_parent(f, g)
-  Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+  Qx = polynomial_ring(QQ, "x", cached = false)[1]
   f1 = Qx(f)
   g1 = Qx(g)
   d, q, w = gcdx(f1, g1)
@@ -378,7 +378,7 @@ $\deg u < \deg g$ and $\deg v < \deg f$.
 function rresx(f::ZZPolyRingElem, g::ZZPolyRingElem)
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
-  Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+  Qx = polynomial_ring(QQ, "x", cached = false)[1]
   g, q, w = gcdx(Qx(f), Qx(g))
   l = lcm(denominator(q), denominator(w))
   Zx = parent(f)
@@ -705,14 +705,14 @@ function roots(::QQField, f::ZZPolyRingElem; max_roots::Int=degree(f))
 end
 
 function roots(f::ZZPolyRingElem; max_roots::Int=degree(f))
-  r = roots(FlintQQ, f, max_roots=max_roots)
-  return ZZRingElem[FlintZZ(x) for x = r if denominator(x) == 1]
+  r = roots(QQ, f, max_roots=max_roots)
+  return ZZRingElem[ZZ(x) for x = r if denominator(x) == 1]
 end
 
 function roots(f::QQPolyRingElem; max_roots::Int=degree(f))
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   g = Zx(denominator(f)*f)
-  return roots(FlintQQ, g)
+  return roots(QQ, g)
 end
 
 function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)

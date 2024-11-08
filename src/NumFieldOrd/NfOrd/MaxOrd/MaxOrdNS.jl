@@ -145,7 +145,7 @@ function product_basis(l1::Vector{T}, l2::Vector{T}) where T <: Union{AbsNumFiel
 end
 
 function _maximal_order_of_components(L::AbsNonSimpleNumField)
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   fields = Vector{Tuple{AbsSimpleNumField, NumFieldHom{AbsSimpleNumField, AbsNonSimpleNumField}}}(undef, length(L.pol))
   for i = 1:length(L.pol)
     fields[i] = component(L, i)
@@ -181,10 +181,10 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
   d = degree(O)
   K = nf(O)
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  Zx = polynomial_ring(FlintZZ, "x")[1]
+  Zx = polynomial_ring(ZZ, "x")[1]
   j = clog(ZZRingElem(d), p)
   els_in_pradical = elem_type(O)[]
-  M1 = zero_matrix(FlintZZ, 2*d, d)
+  M1 = zero_matrix(ZZ, 2*d, d)
   gens = elem_type(O)[O(p)]
   for i = 1:ngens(K)
     g = to_univariate(Globals.Qx, K.pol[i])
@@ -261,7 +261,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
     #First, find the generators
     new_gens = Vector{elem_type(O)}()
     for i = 1:ncols(X)
-      coords = zeros(FlintZZ, d)
+      coords = zeros(ZZ, d)
       for j=1:nr
         coords[indices[j]] = lift(X[j, i])
       end
@@ -278,7 +278,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
       return I
     end
     #Then, construct the basis matrix of the ideal
-    m1 = zero_matrix(FlintZZ, length(new_gens) + d, d)
+    m1 = zero_matrix(ZZ, length(new_gens) + d, d)
     for i = 1:length(new_gens)
       el = coordinates(new_gens[i], copy = true)
       for j = 1:nr

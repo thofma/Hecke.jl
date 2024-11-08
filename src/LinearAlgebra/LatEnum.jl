@@ -114,7 +114,7 @@ function enum_ctx_from_gram(G::ZZMatrix, den = 1; Tx = BigInt, TC = Rational{Big
   E.limit = limit
   E.d = den
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
-  E.x = zero_matrix(FlintZZ, 1, n)
+  E.x = zero_matrix(ZZ, 1, n)
     #coeffs limit+1:n are going to be zero, always
   E.L = Vector{TU}(undef, limit) #lower and
   E.U = Vector{TU}(undef, limit) #upper bounds for the coordinates
@@ -367,7 +367,7 @@ function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::T, limit=-1) where {A,B,
   if enum_ctx_next(E)
     l = deepcopy(E.x) # else the 1st element is not returned....
   else
-    l = matrix(FlintZZ, 0, E.n, ZZRingElem[])
+    l = matrix(ZZ, 0, E.n, ZZRingElem[])
   end
   while enum_ctx_next(E) && (limit == -1 || limit >= Base.size(l, 1))
     l = vcat(l, E.x)
@@ -419,7 +419,7 @@ end
 
 function enumerate_using_gram(G::ArbMatrix, c::ArbFieldElem)
   E = EnumCtxArb(pseudo_cholesky(G))
-  return _enumerate(E, c, nrows(G), zero_matrix(FlintZZ, 1, nrows(G)))
+  return _enumerate(E, c, nrows(G), zero_matrix(ZZ, 1, nrows(G)))
 end
 
 function _enumerate(E::EnumCtxArb, c::ArbFieldElem, i::Int, x::ZZMatrix)

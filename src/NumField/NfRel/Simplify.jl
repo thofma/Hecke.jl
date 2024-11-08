@@ -180,7 +180,7 @@ function _find_prime(L::RelNonSimpleNumField{AbsSimpleNumFieldElem})
   K = base_field(L)
   OK = maximal_order(K)
   OL = maximal_order(L)
-  dL = numerator(discriminant(L, FlintQQ))
+  dL = numerator(discriminant(L, QQ))
 
   n_attempts = min(degree(L), 10)
   candidates = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}(undef, n_attempts)

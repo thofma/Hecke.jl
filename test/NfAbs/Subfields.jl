@@ -1,5 +1,5 @@
 @testset "Fixed fields" begin
-  Qx,x = FlintQQ["x"]
+  Qx,x = QQ["x"]
 
   @testset "FixedField: absolute" begin
     f = x^8+236*x^6+12158*x^4+201788*x^2+779689
@@ -27,7 +27,7 @@
 end
 
 @testset "Subfields" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f_1 = x^6 + 108;
   K_1,_ = number_field(f_1);
   #(C_2)^3

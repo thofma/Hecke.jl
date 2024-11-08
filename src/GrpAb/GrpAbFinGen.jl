@@ -84,7 +84,7 @@ function abelian_group(M::AbstractMatrix{<:IntegerUnion})
 end
 
 function abelian_group(::Type{FinGenAbGroup}, M::AbstractMatrix{<:IntegerUnion})
-  return abelian_group(matrix(FlintZZ, M))
+  return abelian_group(matrix(ZZ, M))
 end
 
 function _issnf(N::Vector{T}) where T <: IntegerUnion
@@ -126,7 +126,7 @@ function abelian_group(::Type{FinGenAbGroup}, M::AbstractVector{<:IntegerUnion})
   if _issnf(M)
     G = FinGenAbGroup(M)
   else
-	N = zero_matrix(FlintZZ, length(M), length(M))
+	N = zero_matrix(ZZ, length(M), length(M))
     for i = 1:length(M)
       N[i,i] = M[i]
     end
@@ -393,7 +393,7 @@ function rels_gen(A::FinGenAbGroup)
 end
 
 function rels_snf(A::FinGenAbGroup)
-  M = zero_matrix(FlintZZ, ngens(A), ngens(A))
+  M = zero_matrix(ZZ, ngens(A), ngens(A))
   for i = 1:ngens(A)
     M[i,i] = A.snf[i]
   end
@@ -836,7 +836,7 @@ function matrix(M::Map{FinGenAbGroup, FinGenAbGroup})
 end
 
 function matrix(M::Generic.IdentityMap{FinGenAbGroup})
-  return identity_matrix(FlintZZ, ngens(domain(M)))
+  return identity_matrix(ZZ, ngens(domain(M)))
 end
 
 @doc raw"""
@@ -920,7 +920,7 @@ function flat(G::FinGenAbGroup)
   else
     H = G
   end
-  return hom(G, H, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)))
+  return hom(G, H, identity_matrix(ZZ, ngens(G)), identity_matrix(ZZ, ngens(G)))
 end
 
 
@@ -931,8 +931,8 @@ end
 function tensor_product2(G::FinGenAbGroup, H::FinGenAbGroup)
   RG = rels(G)
   RH = rels(H)
-  R = vcat(transpose(kronecker_product(transpose(RG), identity_matrix(FlintZZ, ngens(H)))),
-           transpose(kronecker_product(identity_matrix(FlintZZ, ngens(G)), transpose(RH))))
+  R = vcat(transpose(kronecker_product(transpose(RG), identity_matrix(ZZ, ngens(H)))),
+           transpose(kronecker_product(identity_matrix(ZZ, ngens(G)), transpose(RH))))
   G = abelian_group(R)
 end
 
@@ -1084,7 +1084,7 @@ function sub(G::FinGenAbGroup, s::Vector{FinGenAbGroupElem},
 
   if length(s) == 0
     S = FinGenAbGroup(Int[])
-    I = zero_matrix(FlintZZ, ngens(S), ngens(G))
+    I = zero_matrix(ZZ, ngens(S), ngens(G))
     mp = hom(S, G, I, check = false)
     if add_to_lattice
       append!(L, mp)
@@ -1095,7 +1095,7 @@ function sub(G::FinGenAbGroup, s::Vector{FinGenAbGroupElem},
   p = s[1].parent
   @assert G == p
   @assert all(x->x.parent == G, s)
-  m = zero_matrix(FlintZZ, length(s) + nrels(p), ngens(p) + length(s))
+  m = zero_matrix(ZZ, length(s) + nrels(p), ngens(p) + length(s))
   for i = 1:length(s)
     for j = 1:ngens(p)
       m[i + nrels(p), j] = s[i][j]
@@ -1164,7 +1164,7 @@ rows of $M$ together with the injection $\iota : H \to G$.
 """
 function sub(G::FinGenAbGroup, M::ZZMatrix,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  m = zero_matrix(FlintZZ, nrows(M) + nrels(G), ngens(G) + nrows(M))
+  m = zero_matrix(ZZ, nrows(M) + nrels(G), ngens(G) + nrows(M))
   for i = 1:nrows(M)
     for j = 1:ngens(G)
       m[i + nrels(G), j] = M[i,j]
@@ -1232,7 +1232,7 @@ function _sub_integer_snf(G::FinGenAbGroup, n::ZZRingElem, add_to_lattice::Bool 
     end
   end
   Gnew = abelian_group(invariants)
-  mat_map = zero_matrix(FlintZZ, length(invariants), ngens(G))
+  mat_map = zero_matrix(ZZ, length(invariants), ngens(G))
   for i = 1:ngens(Gnew)
     mat_map[i, ind+i-1] = n
   end
@@ -1257,7 +1257,7 @@ function sub(G::FinGenAbGroup, n::ZZRingElem,
   if is_snf(G)
     return _sub_integer_snf(G, n, add_to_lattice, L)
   end
-  H, mH = sub(G, scalar_matrix(FlintZZ, ngens(G), deepcopy(n)), add_to_lattice, L)
+  H, mH = sub(G, scalar_matrix(ZZ, ngens(G), deepcopy(n)), add_to_lattice, L)
   if isdefined(G, :exponent)
     res = divexact(G.exponent, gcd(n, G.exponent))
     if !iszero(res)
@@ -1293,7 +1293,7 @@ $s$, together with the projection $p : G \to H$.
 function quo(G::FinGenAbGroup, s::Vector{FinGenAbGroupElem},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   if length(s) == 0
-    I = identity_matrix(FlintZZ, ngens(G))
+    I = identity_matrix(ZZ, ngens(G))
     m = hom(G, G, I, I, check = false)
     if add_to_lattice
       append!(L, m)
@@ -1303,7 +1303,7 @@ function quo(G::FinGenAbGroup, s::Vector{FinGenAbGroupElem},
 
   p = s[1].parent
   @assert G == p
-  m = zero_matrix(FlintZZ, length(s)+nrels(p), ngens(p))
+  m = zero_matrix(ZZ, length(s)+nrels(p), ngens(p))
   for i = 1:length(s)
     for j = 1:ngens(p)
       m[i + nrels(p),j] = s[i][j]
@@ -1325,7 +1325,7 @@ function quo(G::FinGenAbGroup, s::Vector{FinGenAbGroupElem},
   if isdefined(G, :exponent)
     Q.exponent = G.exponent
   end
-  I = identity_matrix(FlintZZ, ngens(p))
+  I = identity_matrix(ZZ, ngens(p))
   m = hom(p, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)
@@ -1346,7 +1346,7 @@ function quo(G::FinGenAbGroup, M::ZZMatrix,
   if isdefined(G, :exponent)
     Q.exponent = G.exponent
   end
-  I = identity_matrix(FlintZZ, ngens(G))
+  I = identity_matrix(ZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)
@@ -1378,7 +1378,7 @@ end
 function quo_snf(G::FinGenAbGroup, n::IntegerUnion,
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   r = [gcd(x, n) for x = G.snf]
-  I = identity_matrix(FlintZZ, ngens(G))
+  I = identity_matrix(ZZ, ngens(G))
   Q = abelian_group(r)
   if isdefined(G, :exponent)
     Q.exponent = gcd(G.exponent, n)
@@ -1394,12 +1394,12 @@ end
 
 function quo_gen(G::FinGenAbGroup, n::IntegerUnion,
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  m = vcat(G.rels, n*identity_matrix(FlintZZ, ngens(G)))
+  m = vcat(G.rels, n*identity_matrix(ZZ, ngens(G)))
   Q = abelian_group(m)
   if isdefined(G, :exponent)
     Q.exponent = gcd(n, G.exponent)
   end
-  I = identity_matrix(FlintZZ, ngens(G))
+  I = identity_matrix(ZZ, ngens(G))
   m = hom(G, Q, I, I, check = false)
   if add_to_lattice
     append!(L, m)
@@ -1425,7 +1425,7 @@ function Base.intersect(mG::FinGenAbGroupHom, mH::FinGenAbGroupHom,
   G = domain(mG)
   GH = codomain(mG)
   @assert GH == codomain(mH)
-  M = zero_matrix(FlintZZ, nrows(mG.map)+ nrows(mH.map) + nrels(GH), ncols(mG.map)+ nrows(mG.map))
+  M = zero_matrix(ZZ, nrows(mG.map)+ nrows(mH.map) + nrels(GH), ncols(mG.map)+ nrows(mG.map))
   _copy_matrix_into_matrix(M, 1, 1, mG.map)
   for i = 1:nrows(mG.map)
     M[i, i+ncols(mG.map)] = 1
@@ -1437,8 +1437,8 @@ function Base.intersect(mG::FinGenAbGroupHom, mH::FinGenAbGroupHom,
     _copy_matrix_into_matrix(M, nrows(mG.map)+ nrows(mH.map)+1, 1, rels(GH))
   end
   #=
-  M2 = hcat(mG.map, identity_matrix(FlintZZ, nrows(mG.map)))
-  M3 = vcat(vcat(M2, hcat(mH.map, zero_matrix(FlintZZ, nrows(mH.map), nrows(mG.map)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), nrows(mG.map))))
+  M2 = hcat(mG.map, identity_matrix(ZZ, nrows(mG.map)))
+  M3 = vcat(vcat(M2, hcat(mH.map, zero_matrix(ZZ, nrows(mH.map), nrows(mG.map)))), hcat(rels(GH), zero_matrix(ZZ, nrels(GH), nrows(mG.map))))
   @assert M3 == M
   =#
   h = hnf!(M)
@@ -1469,9 +1469,9 @@ function Base.intersect(G::FinGenAbGroup, H::FinGenAbGroup, L::GrpAbLattice = Gr
   if !fl
     error("no common overgroup known")
   end
-  #M = [ mG identity_matrix(FlintZZ, nrows(mG)); mH zero_matrix(FlintZZ, nrows(mH), nrows(mG)) ;
-        #rels(GH) zero_matrix(FlintZZ, nrels(GH), nrows(mG))]
-  M = vcat(vcat(hcat(mG, identity_matrix(FlintZZ, nrows(mG))), hcat(mH, zero_matrix(FlintZZ, nrows(mH), nrows(mG)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), nrows(mG))))
+  #M = [ mG identity_matrix(ZZ, nrows(mG)); mH zero_matrix(ZZ, nrows(mH), nrows(mG)) ;
+        #rels(GH) zero_matrix(ZZ, nrels(GH), nrows(mG))]
+  M = vcat(vcat(hcat(mG, identity_matrix(ZZ, nrows(mG))), hcat(mH, zero_matrix(ZZ, nrows(mH), nrows(mG)))), hcat(rels(GH), zero_matrix(ZZ, nrels(GH), nrows(mG))))
   h = hnf(M)
   i = nrows(h)
   while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
@@ -1689,7 +1689,7 @@ function find_isomorphism(G, op, A::GrpAb)
   @assert is_snf(H)
   Asnf, AsnftoA = snf(A)
   s = length(H.snf)
-  id = identity_matrix(FlintZZ, s)
+  id = identity_matrix(ZZ, s)
   AsnftoH = hom(Asnf, H, id, id)
   GtoA = Dict{eltype(G), FinGenAbGroupElem}()
   AtoG = Dict{FinGenAbGroupElem, eltype(G)}()
@@ -1766,7 +1766,7 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
     end
   end
 
-  rel_mat = zero_matrix(FlintZZ, length(rels), length(S))
+  rel_mat = zero_matrix(ZZ, length(rels), length(S))
   for i in 1:length(rels)
     for j in 1:length(S)
       rel_mat[i, j] = rels[i][j]
@@ -1849,7 +1849,7 @@ function find_isomorphism_with_abelian_group(G, op)
     end
   end
 
-  rel_mat = zero_matrix(FlintZZ, length(rels), length(S))
+  rel_mat = zero_matrix(ZZ, length(rels), length(S))
   for i in 1:length(rels)
     for j in 1:length(S)
       rel_mat[i, j] = rels[i][j]
@@ -2188,10 +2188,10 @@ function has_complement(m::FinGenAbGroupHom, to_lattice::Bool = true)
       return false, sub(G, FinGenAbGroupElem[], false)[2]
     end
     el1 = mS1(el)
-    coeffs = zero_matrix(FlintZZ, 1, ngens(s))
+    coeffs = zero_matrix(ZZ, 1, ngens(s))
     for j = 1:ngens(s)
       if !iszero(el1[j])
-        R = residue_ring(FlintZZ, s.snf[j], cached = false)[1]
+        R = residue_ring(ZZ, s.snf[j], cached = false)[1]
         r1 = R(el1[j])
         r2 = R(SH.snf[i])
         fl1, r = divides(r1, r2)

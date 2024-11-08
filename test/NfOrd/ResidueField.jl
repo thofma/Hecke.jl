@@ -1,6 +1,6 @@
 @testset "residue_field" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^6 + x^5 + 41*x^4 - 34*x^3 + 355*x^2 - 100*x + 125
   K, a = number_field(f, cached = false);
   OK = maximal_order(K);

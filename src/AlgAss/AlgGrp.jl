@@ -517,7 +517,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 
 #function galois_module(K::AbsSimpleNumField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
 #  G = domain(aut)
-#  A = FlintQQ[G]
+#  A = QQ[G]
 #  return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
 #end
 #
@@ -594,7 +594,7 @@ automorphism_map(f::NfToAlgGrpMor) = f.mG
 ## to Q[G] and one from Q[G] to K
 #function _galois_module(K::AbsSimpleNumField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
 #  G = domain(to_automorphisms)
-#  A = FlintQQ[G]
+#  A = QQ[G]
 #  alpha = normal_basis_generator
 #
 #  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
@@ -722,10 +722,10 @@ end
 function _as_full_matrix_algebra_over_Q(A::MatAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
   @assert is_absolute(K) && degree(K) == 1
-  B = matrix_algebra(FlintQQ, degree(A))
+  B = matrix_algebra(QQ, degree(A))
 
   M = identity_matrix(K, dim(B))
-  Minv = identity_matrix(FlintQQ, dim(B))
+  Minv = identity_matrix(QQ, dim(B))
 
   return B, AbsAlgAssMorGen(B, A, M, Minv)
 end
@@ -836,7 +836,7 @@ function _compute_matrix_algebras_from_reps(A, res)
 
     forward_matrix = zero_matrix(field, dim(B), dim(MB))
 
-    back_matrix = zero_matrix(FlintQQ, dim(B), dim(B))
+    back_matrix = zero_matrix(QQ, dim(B), dim(B))
 
     BinMB = elem_type(MB)[]
 
@@ -967,7 +967,7 @@ end
 function _evaluate_rep(el, d, rep)
   c = coefficients(el)
   A = parent(el)
-  z = zero_matrix(FlintQQ, d, d)
+  z = zero_matrix(QQ, d, d)
   for (g, M) in rep
     i = A.group_to_base[g]
     z += c[i] * M
@@ -1109,7 +1109,7 @@ function is_almost_maximally_ramified(K::AbsSimpleNumField, p::ZZRingElem)
     t += 1
   end
 
-  QG = group_algebra(FlintQQ, G)
+  QG = group_algebra(QQ, G)
   A, KtoA = galois_module(K)
   I = KtoA(maximal_order(K))
   assOrd = right_order(I)

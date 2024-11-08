@@ -9,7 +9,7 @@ function show(io::IO, M::ModuleCtxNmod)
 end
 
 function show(io::IO, M::ModuleCtx_fmpz)
-  print(io, "Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))")
+  print(io, "Sparse module over ZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))")
   if isdefined(M, :basis_idx)
     print(io, "\ncurrent index: $(M.basis_idx)")
   end

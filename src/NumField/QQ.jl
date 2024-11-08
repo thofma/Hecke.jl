@@ -34,9 +34,9 @@ end
 
 Base.hash(x::ZZIdl, h::UInt) = hash(gen(x), h)
 
-order(::ZZIdl) = FlintZZ
+order(::ZZIdl) = ZZ
 
-order(::ZZFracIdl) = FlintZZ
+order(::ZZFracIdl) = ZZ
 
 # constructors
 *(::ZZRing, x::IntegerUnion) = ideal(ZZ, x)
@@ -177,9 +177,9 @@ place_type(::Type{QQField}) = PosInf
 
 fractional_ideal_type(::QQField) = ZZFracIdl
 
-elem_in_nf(x::ZZRingElem) = FlintQQ(x)
+elem_in_nf(x::ZZRingElem) = QQ(x)
 
-nf(::ZZRing) = FlintQQ
+nf(::ZZRing) = QQ
 
 # Infinite places
 

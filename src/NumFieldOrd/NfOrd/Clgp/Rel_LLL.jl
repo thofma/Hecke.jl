@@ -82,7 +82,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
   O = order(A)
   n = degree(O)
   L, Tr = lll(A, prec = prec)
-  I = SmallLLLRelationsCtx(zero_matrix(FlintZZ, 1, 1))
+  I = SmallLLLRelationsCtx(zero_matrix(ZZ, 1, 1))
   S = Tr*basis_matrix(A, copy = false)
   bd = abs(discriminant(O))*norm(A)^2
   bd = root(bd, n, check = false)
@@ -104,7 +104,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
   #now select a subset that can yield "small" relations, where
   #small means of effective norm <= sqrt(disc)
   I.A = A
-  I.elt = zero_matrix(FlintZZ, 1, n)
+  I.elt = zero_matrix(ZZ, 1, n)
   return I
 end
 

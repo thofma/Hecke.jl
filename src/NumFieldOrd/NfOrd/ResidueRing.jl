@@ -429,7 +429,7 @@ function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   V = hcat(A', B')
 
   a = coordinates(x.elem, copy = false)
-  rhs = matrix(FlintZZ, d, 1, a)
+  rhs = matrix(ZZ, d, 1, a)
 
   fl, sol = can_solve_with_solution(V, rhs, side = :right)
   if !fl

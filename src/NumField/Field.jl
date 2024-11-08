@@ -14,7 +14,7 @@ base_field(::NumField)
 
 _base_ring(K::NumField) = base_field(K)
 
-_base_ring(::QQField) = FlintQQ
+_base_ring(::QQField) = QQ
 
 ################################################################################
 #

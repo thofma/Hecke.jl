@@ -15,7 +15,7 @@ function _relative_to_absoluteQQ(L::RelNonSimpleNumField{AbsSimpleNumFieldElem},
     embs = Vector{AbsNonSimpleNumFieldElem}(undef, ngens(K))
     imgs = image_generators(auts[i])
     for j = 1:length(imgs)
-      embs[j] = K(map_coefficients(FlintQQ, imgs[j].data, parent = Qxy))
+      embs[j] = K(map_coefficients(QQ, imgs[j].data, parent = Qxy))
     end
     autsK[i] = hom(K, K, embs, check = false)
   end

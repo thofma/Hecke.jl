@@ -1,7 +1,7 @@
 @testset "LocalField" begin
 
   @testset "Creation" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2-2*x+2
     K, a = local_field(f, 2, 10, "a", Hecke.EisensteinLocalField, check = false)
     @test precision(K) == 20
@@ -98,7 +98,7 @@
     @test valuation(mKp(gen(K))) == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
 
-    Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+    Qx, x = polynomial_ring(QQ, "x", cached = false)
     f = x^10 + 5*x^9 - 633*x^8 + 38157*x^7 + 1360601*x^6 - 39808345*x^5 - 464252491*x^4 - 17622187401*x^3 + 2826886632714*x^2 - 96335539805104*x + 1313743135204448
     K, a = number_field(f, check = false, cached = false)
     OK = maximal_order(K)
@@ -133,7 +133,7 @@
     @test iszero(log(one(L)))
     B = basis(L)
     for i = 15:20
-      el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
+      el = sum([rand(ZZ, 0:10)*B[j] for j = 1:7])*pi^i
       explog = exp(log(1+el))
       logexp = log(exp(el))
       @test iszero(explog - 1 - el) || valuation(explog - 1 - el) > 80
@@ -232,7 +232,7 @@
   end
 
   @testset "Unramified extension" begin
-    Qx,x = FlintQQ["x"]
+    Qx,x = QQ["x"]
     f = Qx([ 1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1 ])
     L = number_field(f)[1];
     P = prime_decomposition(maximal_order(L),7)[1][1];
@@ -248,7 +248,7 @@
   end
 
   @testset "Ali-Inverse" begin
-    Qx,x = FlintQQ["x"]
+    Qx,x = QQ["x"]
     L = number_field(x^6-6*x^4+9*x^2+23)[1]
     P = prime_decomposition(maximal_order(L),23)[1][1]
     lp,mp = Hecke.completion(L,P)

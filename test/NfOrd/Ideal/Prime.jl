@@ -1,5 +1,5 @@
 @testset "PrimeIdealsSet" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")
   O = maximal_order(K)
 
@@ -86,7 +86,7 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
-Qx, x = FlintQQ["x"]
+Qx, x = QQ["x"]
 f = x^2 - 2
 K, a = number_field([f], "a")
 O = Order(K, [3*a[1]])
@@ -135,7 +135,7 @@ PD = primary_decomposition(I)
 @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
 
 # Non-maximal, locally maximal order
-Qx, x = FlintQQ["x"]
+Qx, x = QQ["x"]
 f = x^3 - x^2 + 1
 K, a = number_field(f)
 O = equation_order(K)

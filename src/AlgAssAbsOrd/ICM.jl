@@ -293,10 +293,10 @@ matrix exists and `false` and $0$ otherwise.
 The characteristic polynomial of $M$ is required to be square-free.
 """
 function is_conjugate(M::ZZMatrix, N::ZZMatrix)
-  Zx, x = FlintZZ["x"]
+  Zx, x = ZZ["x"]
   f = charpoly(Zx, M)
   if f != charpoly(Zx, N)
-    return false, zero_matrix(FlintZZ, nrows(M), ncols(M))
+    return false, zero_matrix(ZZ, nrows(M), ncols(M))
   end
 
   fac = factor(f)
@@ -321,7 +321,7 @@ function _isconjugate(O::Union{ AbsNumFieldOrder, AlgAssAbsOrd }, M::ZZMatrix, N
   t, a = is_isomorphic_with_map(J, I)
   @assert J == a*I
   if !t
-    return false, zero_matrix(FlintZZ, nrows(M), ncols(M))
+    return false, zero_matrix(ZZ, nrows(M), ncols(M))
   end
 
   aBI = basis_matrix([ a*b for b in basisI ], FakeFmpqMat)

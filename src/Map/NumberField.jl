@@ -208,7 +208,7 @@ function is_cm_field_easy(K::AbsSimpleNumField)
     E = maximal_order(K)
   end
   n = degree(E)
-  g = zero_matrix(FlintZZ, n, n)
+  g = zero_matrix(ZZ, n, n)
   B = basis(E, nf(E))
   prec = 32
   imgs = Vector{Vector{ArbFieldElem}}(undef, n)
@@ -343,7 +343,7 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
       bb[i] = OK(f(K(B[i])))
     end
     I.basis = bb
-    M = zero_matrix(FlintZZ, degree(K), degree(K))
+    M = zero_matrix(ZZ, degree(K), degree(K))
     for i = 1:degree(K)
       el = coordinates(I.basis[i])
       for j = 1:degree(K)
@@ -358,7 +358,7 @@ end
 function induce_image_easy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   OK = order(P)
   K = nf(OK)
-  R = residue_ring(FlintZZ, Int(minimum(P, copy = false))^2, cached = false)[1]
+  R = residue_ring(ZZ, Int(minimum(P, copy = false))^2, cached = false)[1]
   Rx = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rx(K.pol)
   prim_img = Rx(image_primitive_element(f))
@@ -396,7 +396,7 @@ mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, HeckeMap, NfA
   function NfAbsToAbsAlgAssMor{S}(K::AbsSimpleNumField, A::S, M::QQMatrix) where { S <: AbstractAssociativeAlgebra{QQFieldElem} }
     z = new{S}()
     z.mat = M
-    z.t = zero_matrix(FlintQQ, 1, degree(K))
+    z.t = zero_matrix(QQ, 1, degree(K))
 
     function _image(x::AbsSimpleNumFieldElem)
       for i = 1:degree(K)
@@ -417,7 +417,7 @@ end
 
 function has_preimage_with_preimage(m::NfAbsToAbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
   A = parent(a)
-  t = matrix(FlintQQ, 1, dim(A), coefficients(a))
+  t = matrix(QQ, 1, dim(A), coefficients(a))
   b, p = can_solve_with_solution(m.mat, t, side = :left)
   if b
     return true, domain(m)([ p[1, i] for i = 1:nrows(m.mat) ])
@@ -443,12 +443,12 @@ function is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
     return false
   end
   p = 2
-  R = residue_ring(FlintZZ, p, cached = false)[1]
+  R = residue_ring(ZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = residue_ring(FlintZZ, p, cached = false)[1]
+    R = residue_ring(ZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -470,12 +470,12 @@ function _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
     return 1
   end
   p = 2
-  R = residue_ring(FlintZZ, p, cached = false)[1]
+  R = residue_ring(ZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     p = next_prime(p)
-    R = residue_ring(FlintZZ, p, cached = false)[1]
+    R = residue_ring(ZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end

@@ -45,7 +45,7 @@
   end
 
   @testset "Quotients" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     # f = x^2 + 1
     # g = x^3 + 3x^2 + 5x - 5
     f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
@@ -105,7 +105,7 @@
     # An example where the multiplication table of the quotient is not 0,
     # see https://github.com/thofma/Hecke.jl/issues/1399 .
     G = small_group(8, 4)
-    A, _ = StructureConstantAlgebra(group_algebra(FlintQQ, G))
+    A, _ = StructureConstantAlgebra(group_algebra(QQ, G))
     I = left_ideal(A, one(A))
     J = left_ideal(A, sum(A[i] for i in 1:8))
     Q, AtoQ = quo(I, J)

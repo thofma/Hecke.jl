@@ -84,7 +84,7 @@ function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
   local disc_log
   let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
     function disc_log(x::FacElem)
-      g = zero_matrix(FlintZZ, 1, 0)
+      g = zero_matrix(ZZ, 1, 0)
       for i = 1:length(fields_and_maps)
         K, AtoK = fields_and_maps[i]
         U, mU = unit_groups[i]
@@ -131,7 +131,7 @@ function _unit_group_maximal(O::AlgAssAbsOrd; GRH::Bool = true)
   local disc_log
   let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
     function disc_log(x::AlgAssAbsOrdElem)
-      g = zero_matrix(FlintZZ, 1, 0)
+      g = zero_matrix(ZZ, 1, 0)
       for i = 1:length(fields_and_maps)
         K, AtoK = fields_and_maps[i]
         U, mU = unit_groups[i]

@@ -3,7 +3,7 @@
   @testset "Minimal Submodules" begin
 
     F, a = finite_field(3,1,"a")
-    R = residue_ring(FlintZZ,9)[1]
+    R = residue_ring(ZZ,9)[1]
 
     V=abelian_group([3,3,9,9])
 
@@ -35,7 +35,7 @@
 
   @testset "Dual Module" begin
 
-    R=residue_ring(FlintZZ,9)[1]
+    R=residue_ring(ZZ,9)[1]
     V=abelian_group([3,3,9,9])
     V.is_snf=true
     V.snf=[3,3,9,9]
@@ -54,7 +54,7 @@
 
   @testset "submodules with given structure" begin
 
-    R=residue_ring(FlintZZ,8)[1]
+    R=residue_ring(ZZ,8)[1]
     V=abelian_group([2,4,8,8])
     V.is_snf=true
     V.snf=[2,4,8,8]
@@ -95,7 +95,7 @@
 
   @testset "submodules" begin
 
-    R=residue_ring(FlintZZ,4)[1]
+    R=residue_ring(ZZ,4)[1]
     V=abelian_group([2,2,4])
     V.is_snf=true
     V.snf=[2,2,4]

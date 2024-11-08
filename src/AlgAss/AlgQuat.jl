@@ -231,7 +231,7 @@ end
 function _reduce_standard_form(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem)
   K = parent(a)
   if is_rational(a) && is_rational(b)
-    n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))
+    n, m, ap, bp = _reduce_standard_form(QQ(a), QQ(b))
     return K(n), K(m), K(ap), K(bp)
   else
     return one(K), one(K), a, b
@@ -283,10 +283,10 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   f = standard_involution(A)
   B = elem_in_algebra.(absolute_basis(O))
   d = length(B)
-  G = zero_matrix(FlintQQ, d, d)
+  G = zero_matrix(QQ, d, d)
   for i in 1:d
     for j in 1:d
-      G[i, j] = FlintZZ(absolute_tr(trred(B[i] * f(B[j]))))//2
+      G[i, j] = ZZ(absolute_tr(trred(B[i] * f(B[j]))))//2
     end
   end
 
@@ -322,10 +322,10 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
   gens = elem_type(O)[]
   for e in q
     _x = mu(mq\e)
-    _n = abs(FlintZZ(absolute_tr(_x)))
+    _n = abs(ZZ(absolute_tr(_x)))
     # Reduce modulo squares, so that the trace is hopefully small
     x = evaluate(reduce_mod_powers(elem_in_nf(_x), 2))
-    n = abs(FlintZZ(absolute_tr(x)))
+    n = abs(ZZ(absolute_tr(x)))
     if _n < n
       # the old x has smaller trace
       x = _x
@@ -472,7 +472,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
   Babs = absolute_basis(a)
   d = length(Babs)
-  G = zero_matrix(FlintZZ, d, d)
+  G = zero_matrix(ZZ, d, d)
   #@show reps
   for z in reps
     Nnu = z * u * c
@@ -486,7 +486,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     for i in 1:d
       for j in 1:d
-        G[i, j] = FlintZZ(absolute_tr(alpha * trred(Babs[i] * f(Babs[j]))))
+        G[i, j] = ZZ(absolute_tr(alpha * trred(Babs[i] * f(Babs[j]))))
       end
     end
 
@@ -502,7 +502,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     #@show B
 
-    v = _short_vectors_gram_integral(Vector, G, FlintZZ(B), hard = true)
+    v = _short_vectors_gram_integral(Vector, G, ZZ(B), hard = true)
 
     #if min == degree(base_ring(A))
     for w in v

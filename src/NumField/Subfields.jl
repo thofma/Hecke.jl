@@ -55,7 +55,7 @@ function _improve_subfield_basis(K, bas)
       deno = lcm(deno, denominator(basinOK[i, j]))
     end
   end
-   S = saturate(map_entries(FlintZZ, basinOK * deno))
+   S = saturate(map_entries(ZZ, basinOK * deno))
   SS = S * basis_matrix(FakeFmpqMat, OK, copy = false)
   lllOK = lll(OK)
   N = (SS * basis_mat_inv(FakeFmpqMat, lllOK)).num
@@ -74,7 +74,7 @@ function _improve_subfield_basis_no_lll(K, bas)
       deno = lcm(deno, denominator(basinOK[i, j]))
     end
   end
-  S = saturate(map_entries(FlintZZ, basinOK * deno))
+  S = saturate(map_entries(ZZ, basinOK * deno))
   SS = S * basis_matrix(FakeFmpqMat, OK, copy = false)
   return SS
 end
@@ -133,7 +133,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   # First check basis elements
   @vprintln :Subfields 1 "Sieving for primitive elements"
   # First check basis elements
-  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
   p, d = _find_prime(ZZPolyRingElem[f])
   #First, we search for elements that are primitive using block systems
@@ -169,7 +169,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   @vprintln :Subfields 1 "Trying combinations of elements in the basis"
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
-  cs = ZZRingElem[rand(FlintZZ, -2:2) for n in 1:dsubfield]
+  cs = ZZRingElem[rand(ZZ, -2:2) for n in 1:dsubfield]
   k = 0
   s = 1
   first = true
@@ -199,7 +199,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     # increment the components of cs
     bb = div(s, 10)+1
     for n = 1:dsubfield
-      cs[n] = rand(FlintZZ, -bb:bb)
+      cs[n] = rand(ZZ, -bb:bb)
     end
   end
 end
@@ -445,7 +445,7 @@ function fixed_field1(K::AbsSimpleNumField, auts::Vector{<:NumFieldHom{AbsSimple
   if isdefined(OK, :lllO) || degree(K) >= 50
     OK = lll(OK)
   end
-  M = zero_matrix(FlintZZ, degree(K), degree(K)*length(auts_new))
+  M = zero_matrix(ZZ, degree(K), degree(K)*length(auts_new))
   v = Vector{AbsSimpleNumFieldElem}(undef, degree(K))
   MOK = basis_matrix(FakeFmpqMat, OK, copy = false)
   MOKinv = basis_mat_inv(FakeFmpqMat, OK, copy = false)

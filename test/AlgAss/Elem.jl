@@ -1,5 +1,5 @@
 @testset "Elements in algebras" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 1
   A = StructureConstantAlgebra(f)
 
@@ -7,11 +7,11 @@
     @test Hecke.is_integral(A[1]) == true
     @test Hecke.is_integral(QQFieldElem(1, 2)*A[1]) == false
 
-    B = group_algebra(FlintQQ, small_group(2, 1))
+    B = group_algebra(QQ, small_group(2, 1))
     @test Hecke.is_integral(B[1]) == true
     @test Hecke.is_integral(QQFieldElem(1, 2)*B[1]) == false
 
-    C = matrix_algebra(FlintQQ, B, 2)
+    C = matrix_algebra(QQ, B, 2)
     @test Hecke.is_integral(C[1]) == true
     @test Hecke.is_integral(QQFieldElem(1, 2)*C[1]) == false
   end
@@ -24,7 +24,7 @@
     @test !is_central_idempotent(A(QQ[1 0; 0 0]))
     @test is_central_idempotent(A(QQ[1 0; 0 1]))
 
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = (x + 1)*(x - 1)
     B = StructureConstantAlgebra(f)
     e = B([1//2, 1//2])

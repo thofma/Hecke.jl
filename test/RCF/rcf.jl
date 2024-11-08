@@ -1,5 +1,5 @@
 @testset "RCF" begin
-  Qx, x = polynomial_ring(FlintQQ)
+  Qx, x = polynomial_ring(QQ)
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
@@ -78,7 +78,7 @@
     @test Hecke.is_local_norm(r1, zk(p)) == b
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
   B = Hecke.maximal_abelian_subfield(A, k)
@@ -90,7 +90,7 @@
   @test degree(A) == 2
   @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
 
@@ -182,7 +182,7 @@ end
 end
 
 @testset "Some abelian extensions" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x - 1, "a")
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, 7872, true, 16)

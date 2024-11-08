@@ -29,7 +29,7 @@ end
 
 function maximal_order_via_absolute(O::AlgAssRelOrd)
   A = algebra(O)
-  C, AtoC, CtoA = restrict_scalars(A, FlintQQ)
+  C, AtoC, CtoA = restrict_scalars(A, QQ)
   OC = maximal_order(Hecke._get_order_from_gens(C, AtoC.(elem_in_algebra.(absolute_basis(O)))))
   M = zero_matrix(base_ring(A), degree(OC), dim(A))
   for i = 1:degree(OC)

@@ -26,7 +26,7 @@
 
 function steinitz(a::zzModPolyRingElem)
   p = characteristic(base_ring(a))
-  ZZx = polynomial_ring(FlintZZ)[1]
+  ZZx = polynomial_ring(ZZ)[1]
   #  f = lift(ZZx, a)  ## bloody stupid lift for poly uses symmetric residue
   f = [lift(coeff(a, i))::ZZRingElem for i=0:degree(a)]
   return Nemo.evaluate(ZZx(f), p)
@@ -38,7 +38,7 @@ end
 
 function steinitz(a::ResElem{T}) where T <: Union{zzModPolyRingElem, fqPolyRepPolyRingElem, PolyRingElem}
   f = [steinitz(coeff(a.data, i))::ZZRingElem for i=0:degree(a.data)]
-  ZZx = polynomial_ring(FlintZZ)[1]
+  ZZx = polynomial_ring(ZZ)[1]
   S = base_ring(base_ring(parent(a)))
   return evaluate(ZZx(f), size(S))
 end
@@ -217,8 +217,8 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
     R = finite_field(p)
     descent = false
   else
-    f = cyclotomic(r, polynomial_ring(FlintZZ)[2])
-    f = polynomial_ring(residue_ring(FlintZZ, p)[1])[1](f)
+    f = cyclotomic(r, polynomial_ring(ZZ)[2])
+    f = polynomial_ring(residue_ring(ZZ, p)[1])[1](f)
     f = factor(f)
     k = keys(f.fac)
     st = start(k)
@@ -235,7 +235,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
     descent = true
     ord = degree(opt)
     R = Native.finite_field(opt, "a")[1]
-    T = residue_ring(FlintZZ, p)[1]
+    T = residue_ring(ZZ, p)[1]
     J = CoerceMap(T, R)
   end
   zeta = primitive_root_r_div_qm1(R, r)
@@ -355,7 +355,7 @@ function h_minus(p::Int, nb::Int)
   # is the asymptotic size, so that's what nb should be
 
 
-  Zx, x = polynomial_ring(FlintZZ)
+  Zx, x = polynomial_ring(ZZ)
   F = Vector{ZZRingElem}(p-1)
 
   g = rand(1:p-1)

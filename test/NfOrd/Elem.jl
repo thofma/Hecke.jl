@@ -1,5 +1,5 @@
 @testset "Elements" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
   O1 = EquationOrder(K1)
@@ -31,13 +31,13 @@
     @test b4.has_coord
     @test b1 == b4
 
-    b5 = @inferred O1([FlintZZ(2), FlintZZ(0), FlintZZ(0)])
+    b5 = @inferred O1([ZZ(2), ZZ(0), ZZ(0)])
     @test parent(b5) == O1
     @test typeof(b5) == AbsSimpleNumFieldOrderElem
     @test b5.has_coord
     @test b1 == b5
 
-    b6 = @inferred O1(2*a1^0, [FlintZZ(2), FlintZZ(0), FlintZZ(0)])
+    b6 = @inferred O1(2*a1^0, [ZZ(2), ZZ(0), ZZ(0)])
     @test parent(b6) == O1
     @test typeof(b6) == AbsSimpleNumFieldOrderElem
     @test b6.has_coord
@@ -62,7 +62,7 @@
     @test b == K1(2)
 
     b = @inferred coordinates(b1)
-    @test b == [ FlintZZ(2), FlintZZ(0), FlintZZ(0) ]
+    @test b == [ ZZ(2), ZZ(0), ZZ(0) ]
 
     b = O1(a1//2, false)
     @test_throws ErrorException coordinates(b)
@@ -234,12 +234,12 @@
   @testset "Representation matrix" begin
     b = O1(1)
     c = @inferred representation_matrix(b)
-    @test c == one(matrix_space(FlintZZ, 3, 3))
+    @test c == one(matrix_space(ZZ, 3, 3))
     b = O1(a1)
     c = @inferred representation_matrix(b)
-    @test c == FlintZZ[0 1 0; 0 0 1; 2 0 0]
+    @test c == ZZ[0 1 0; 0 0 1; 2 0 0]
     c = @inferred representation_matrix(b, K1)
-    @test c == Hecke.FakeFmpqMat(FlintZZ[0 1 0; 0 0 1; 2 0 0], one(FlintZZ))
+    @test c == Hecke.FakeFmpqMat(ZZ[0 1 0; 0 0 1; 2 0 0], one(ZZ))
   end
 
   @testset "Trace" begin
@@ -274,7 +274,7 @@
       @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end
 
-    B = FlintZZ(10)
+    B = ZZ(10)
     b = @inferred rand(O1, B)
     for i in 1:degree(O1)
       @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
