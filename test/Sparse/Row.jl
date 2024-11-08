@@ -229,15 +229,15 @@
 
       test_mutating_op_like_add(+, add!, A, B)
       test_mutating_op_like_add(-, sub!, A, B)
-      # test_mutating_op_like_mul(*, mul!, A, randcoeff(); right_factor_is_scalar=true)
-      # test_mutating_op_like_mul(*, mul!, randcoeff(), A; left_factor_is_scalar=true)
-      # test_mutating_op_like_mul(*, mul!, A, ZZ(randcoeff()); right_factor_is_scalar=true)
-      # test_mutating_op_like_mul(*, mul!, ZZ(randcoeff()), A; left_factor_is_scalar=true)
+      test_mutating_op_like_add(*, mul!, A, randcoeff(), SRow)
+      test_mutating_op_like_add(*, mul!, randcoeff(), A, SRow)
+      test_mutating_op_like_add(*, mul!, A, ZZ(randcoeff()), SRow)
+      test_mutating_op_like_add(*, mul!, ZZ(randcoeff()), A, SRow)
 
-      # test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, B, randcoeff(); right_factor_is_scalar=true)
-      # test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, randcoeff(), B; left_factor_is_scalar=true)
-      # test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, B, randcoeff(); right_factor_is_scalar=true)
-      # test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, randcoeff(), B; left_factor_is_scalar=true)
+      test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, B, randcoeff(), SRow)
+      test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, randcoeff(), B, SRow)
+      test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, B, randcoeff(), SRow)
+      test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, randcoeff(), B, SRow)
     end
   end
 end
