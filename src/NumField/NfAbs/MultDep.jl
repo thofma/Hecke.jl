@@ -274,7 +274,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'
+            lu = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u]))
             break
           end
           push!(s, y)
@@ -405,6 +405,9 @@ end
 
 #TODO: different name ...
 function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
+  if iszero(a)
+    return QQ(0)
+  end
   if reco
     u, v, N = canonical_split(a)
     R = parent(a)
@@ -418,7 +421,7 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
       return x*prime(R, v)
     end
   else
-    return lift(FlintQQ, a)
+    return lift(QQ, a)
   end
 end
 
