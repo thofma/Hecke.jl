@@ -12,7 +12,7 @@
     @test degree(fixed_field(K,[s,t])[1]) == 2
   end
 
-  @testset "FixedField: realtiv" begin
+  @testset "FixedField: relative" begin
     K,b     = number_field(x-1,"b")
     Ky,y    = K["y"]
     f = y^8+236*y^6+12158*y^4+201788*y^2+779689

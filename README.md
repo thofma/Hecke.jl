@@ -68,24 +68,16 @@ If your research depends on computations done with Hecke, please consider giving
 
 Here is a quick example of using Hecke:
 
-```julia
+```
 julia> using Hecke
+ _    _           _          
+| |  | |         | |         |  Software package for
+| |__| | ___  ___| | _____   |  algorithmic algebraic number theory
+|  __  |/ _ \/ __| |/ / _ \  |  
+| |  | |  __/ (__|   <  __/  |  Manual: https://thofma.github.io/Hecke.jl
+|_|  |_|\___|\___|_|\_\___|  |  Version 0.34.6
 
-Welcome to
-
-    _    _           _
-   | |  | |         | |
-   | |__| | ___  ___| | _____
-   |  __  |/ _ \/ __| |/ / _ \
-   | |  | |  __/ (__|   <  __/
-   |_|  |_|\___|\___|_|\_\___|
-
-Version 0.22.8...
- ... which comes with absolutely no warranty whatsoever
-(c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana
-
-
-julia> Qx, x = polynomial_ring(QQ, "x");
+julia>  Qx, x = polynomial_ring(QQ, "x");
 
 julia> f = x^3 + 2;
 
