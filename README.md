@@ -77,7 +77,7 @@ julia> using Hecke
 | |  | |  __/ (__|   <  __/  |  Manual: https://thofma.github.io/Hecke.jl
 |_|  |_|\___|\___|_|\_\___|  |  Version 0.34.6
 
-julia>  Qx, x = polynomial_ring(FlintQQ, "x");
+julia> Qx, x = polynomial_ring(QQ, "x");
 
 julia> f = x^3 + 2;
 
