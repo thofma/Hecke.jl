@@ -133,6 +133,10 @@ function _SLn_generators(OK, n)
       end
     end
 
+    # The generating set must contain 1
+    # Make sure that this holds
+    @assert one(OK) in B
+
     for i in 1:n
       for j in 1:n
         if j == i
