@@ -582,6 +582,7 @@ function checkbounds(a::Int, b::Int) nothing; end;
 # - The Hecke.MPolyFactor submodule wants to extend it, but is loaded earlier
 # - Introduce the function here, to make everyone happy
 function is_absolutely_irreducible end
+function multiplicative_group end
 
 ################################################################################
 #
