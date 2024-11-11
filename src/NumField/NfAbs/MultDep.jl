@@ -46,7 +46,7 @@ function syzygies_sunits_mod_units(A::Vector{AbsSimpleNumFieldElem}; use_ge::Boo
   end
   h, t = Hecke.hnf_with_transform(matrix(M))
   h = h[1:rank(h), :]
-  return h, t[nrows(h)+1:end, :], cp
+  return t[1:nrows(h), :], t[nrows(h)+1:end, :], cp
   # THINK! do we want or not...
   # - M is naturally sparse, hence it makes sense
   # - for this application we need all units, hence the complete
@@ -192,6 +192,10 @@ function valuation(a::AbsSimpleNumFieldElem, p::GeIdeal)
   return valuation(a, p.a)
 end
 
+#TODO: don't use Gram Schidt over Q, use reals. If M is LLL, then
+#      a low precision should be OK
+#TODO: an interface to reduce several v
+#TODO: a sane implementation that is more memory friendly (views, ...)
 """
 reduce the rows of v modulo the lattice spanned by the rows of M.
 M should be LLL reduced.
@@ -213,6 +217,8 @@ A a vector of units in fac-elem form. Find matrices U and V s.th.
 A^U is a basis for <A>/Tor 
 and
 A^V is a generating system for the relations of A in Units/Tor
+
+The pAdic Ctx is returned as well  
 """
 function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   p = next_prime(100)
@@ -288,7 +294,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
         if !verify_gamma(push!(copy(u), a), gamma, ZZRingElem(p)^prec)
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])'
+          lu = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u]))
           continue
         end
         @assert length(gamma) == length(u)+1
@@ -355,14 +361,14 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
   #rels: A[tor], .. * V
   nt = zero_matrix(ZZ, length(A), length(A))
   for i=1:length(indep)
-    nt[indep[i], i] = 1
+    nt[i, indep[i]] = 1
   end
   for i=1:length(dep)
-    nt[dep[i], i+length(indep)] = 1
+    nt[i+length(indep), dep[i]] = 1
   end
-  @assert matrix([collect(1:length(A))]) * nt == matrix([vcat(indep, dep)])
-  rel = nt*transpose(V)
-  return nt*transpose(U), rel
+#  @assert nt*matrix([collect(1:length(A))])  == matrix([vcat(indep, dep)])
+  rel = V*nt
+  return U*nt, rel, C
 end
 
 
@@ -478,11 +484,13 @@ function syzygies_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
     k, mk = kernel(h)
     i, mi = image(h)
     @assert ngens(i) == 1
-    return preimage(h, mi(i[1])).coeff, vcat([mk(x).coeff for x = gens(k)]...)
+    return preimage(h, mi(i[1])).coeff, vcat([mk(x).coeff for x = gens(k)]...), order(i[1])
   end
 end
 
-"""
+@doc raw"""
+    syzygies(A::Vector{AbsSimpleNumFieldElem}) -> ZZMatrix
+
 Given non-zero elements A[i] in K, find a basis for the relations, returned
   as a matrix.
 """
@@ -490,9 +498,104 @@ function syzygies(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bool = false, max_or
   _, t, _ = syzygies_sunits_mod_units(A; use_ge, max_ord)
   u = [FacElem(A, t[i, :]) for i = 1:nrows(t)]
   _, tt = syzygies_units_mod_tor(u)
-  u = Hecke._transform(u, tt)
-  _, ttt = syzygies_tor(u)
-  return ttt*transpose(tt)*t
+  u = Hecke._transform(u, transpose(tt))
+  _, ttt, _ = syzygies_tor(u)
+  return ttt*tt*t
+end
+
+@doc raw"""
+    multiplicative_group(A::Vector{AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
+
+Return the subgroup of the multiplicative group of the number field generated 
+by the elements in `A` as an abstract abelian group together with a map
+mapping group elements to number field elements and vice-versa.
+"""
+function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder} = nothing, task::Symbol = :all)
+
+  S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord)
+  u = [FacElem(A, T[i, :]) for i = 1:nrows(T)]
+  g1 = [FacElem(A, S[i, :]) for i = 1:nrows(S)] #gens for mult grp/ units
+  
+  U, T, C = syzygies_units_mod_tor(u)
+  g2 = Hecke._transform(u, transpose(U))
+  u = Hecke._transform(u, transpose(T))
+
+  Ut, _, o = syzygies_tor(u)
+
+  t = evaluate(Hecke._transform(u, transpose(Ut))[1])
+
+  G = abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [o]))
+  g = vcat(g1, g2, [FacElem(t)])
+
+  function im(a::FinGenAbGroupElem)
+    @assert parent(a) == G
+    return prod(g[i]^a[i] for i = 1:length(g))
+  end
+
+  local log_mat::Union{Generic.MatSpaceElem{PadicFieldElem}, Nothing} = nothing
+  local prec::Int = 20
+  local gamma::Vector{ZZRingElem}
+
+  function pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+    @assert base_ring(parent(a)) == parent(A[1])
+    c = ZZRingElem[]
+    for i=1:length(cp)
+      v = valuation(a, cp[i])
+      push!(c, divexact(v, valuation(g1[i], cp[i])))
+      a *= g1[i]^-c[end]
+    end
+
+    if log_mat === nothing
+      log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
+    end
+    while true
+      log_a = matrix([conjugates_log(a, C, prec, all = false, flat = true)])
+
+      lv = vcat(log_mat, log_a)
+      #check_precision and change
+      @vtime :qAdic 1 k = kernel(lv, side = :left)
+
+      @assert nrows(k) < 2
+      if nrows(k) == 0
+        error("not in the image")
+      else # length == 1 extend the module
+        @vprint :qAdic 1 "looking for relation\n"
+        s = QQFieldElem[]
+        for x in k[1, :]
+          @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
+          if y === nothing
+            prec *= 2
+            @vprint :qAdic 1  "increase prec to ", prec
+            log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+            break
+          end
+          push!(s, y)
+        end
+        if length(s) < ncols(k)
+          continue
+        end
+        d = reduce(lcm, map(denominator, s))
+        gamma = ZZRingElem[FlintZZ(x*d)::ZZRingElem for x = s]
+        @assert reduce(gcd, gamma) == 1 # should be a primitive relation
+        if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat), prec))
+          prec *= 2
+          @vprint :qAdic 1 "increase prec to ", prec
+          log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+          continue
+        end
+        @assert length(gamma) == length(g2)+1
+        break
+      end
+    end
+    for i=1:length(gamma)-1
+      push!(c, divexact(gamma[i], -gamma[end]))
+    end
+    _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^-gamma[i] for i=1:length(gamma)-1)])
+
+    push!(c, divexact(_c[1,1], _c[1,2]))
+    return G(c)
+  end
+  return G, MapFromFunc(G, parent(g1[1]), im, pr)
 end
 
 export syzygies

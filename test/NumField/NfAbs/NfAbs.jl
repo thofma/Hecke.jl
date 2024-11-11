@@ -88,7 +88,7 @@ end
 
 
 @testset "NumField/NfAbs/MultDep" begin
-  k, a = wildanger_field(5,13);
+  k, a = wildanger_field(5,13; cached = false);
   zk = lll(maximal_order(k))
   class_group(zk)
   h = zk.__attrs[:ClassGrpCtx]
@@ -96,6 +96,9 @@ end
   r = [x for x = r if isa(x, AbsSimpleNumFieldElem)]
   q = Hecke.syzygies(r)  
   @test all(isone, evaluate(FacElem(r, q[i, :])) for i=1:nrows(q))
+
+  U, mU = Hecke.multiplicative_group(r)
+  @test preimage(mU, mU(U[2])) == U[2]
 end
 
 

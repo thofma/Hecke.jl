@@ -269,6 +269,9 @@ end
 function conjugates_log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, C::qAdicConj, n::Int = 10; all::Bool = false, flat::Bool = true)
   first = true
   local res::Vector{QadicFieldElem}
+  if length(a.fac) == 0
+    res = conjugates_log(one(base_ring(parent(a))), C, n, flat = false, all = false)
+  end
   for (k, v) = a.fac
     try
       y = conjugates_log(k, C, n, flat = false, all = false)
