@@ -579,6 +579,7 @@ Base.showerror(io::IO, ::NotImplemented) =
 # - The Hecke.MPolyFactor submodule wants to extend it, but is loaded earlier
 # - Introduce the function here, to make everyone happy
 function is_absolutely_irreducible end
+function multiplicative_group end
 
 ################################################################################
 #
