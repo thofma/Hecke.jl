@@ -1053,6 +1053,9 @@ function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
 end
 
 function _minmod_easy_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
+  if isone(a)
+    return one(a)
+  end
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)

@@ -199,6 +199,9 @@ function resultant_ideal_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: R
       s = gcd(lift(res), pn)
       if !isone(s)
         new_pn = divexact(pn, s)
+        if is_one(new_pn)
+          return zero(R)
+        end
         R1 = residue_ring(ZZ, S(new_pn), cached = false)[1]
         R1t = polynomial_ring(R1, "y", cached = false)[1]
         f2 = R1t(T[R1(lift(coeff(f, i))) for i = 0:degree(f)])
