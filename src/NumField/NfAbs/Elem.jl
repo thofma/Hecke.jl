@@ -157,8 +157,6 @@ end
 
 #In this version, n is supposed to be a prime power
 function is_norm_divisible_pp(a::AbsSimpleNumFieldElem, n::ZZRingElem)
-  Main.a = a
-  Main.n = n
   K = parent(a)
   if !is_coprime(denominator(K.pol), n)
     na = norm(a)
