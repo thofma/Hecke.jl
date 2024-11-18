@@ -250,6 +250,7 @@ end
 ################################################################################
 
 function StructureConstantAlgebra(A::GroupAlgebra{T, S, R}) where {T, S, R}
+  @req _is_dense(A) "StructureConstantAlgebra only works for dense group algebras"
   K = base_ring(A)
   mult = Array{T, 3}(undef, dim(A), dim(A), dim(A))
   B = basis(A)
