@@ -12,7 +12,7 @@ base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
 base_ring_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = parent_type(T)
 
-Generic.dim(A::GroupAlgebra) = size(multiplication_table(A, copy = false), 1)
+Generic.dim(A::GroupAlgebra) = order(Int, group(A))
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 

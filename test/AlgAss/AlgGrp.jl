@@ -90,6 +90,7 @@
   let
     G = SymmetricGroup(10)
     QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    @test dim(QG) == factorial(10)
     for i in 1:10
       a = rand(G)
       b = rand(G)
