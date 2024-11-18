@@ -91,11 +91,32 @@
     G = SymmetricGroup(10)
     QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
     @test dim(QG) == factorial(10)
+    #@test !is_commutative(QG) # needs https://github.com/Nemocas/AbstractAlgebra.jl/pull/1907
     for i in 1:10
       a = rand(G)
       b = rand(G)
       c = a * b
       d = b * a
+      aa = QG(a)
+      bb = QG(b)
+      cc = QG(c)
+      dd = QG(d)
+      @test aa * bb == cc
+      @test bb * aa == dd
+      @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
+    end
+  end
+
+  let
+    G = abelian_group([2, 3, 5000])
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    @test dim(QG) == 2 * 3 * 5000
+    @test is_commutative(QG)
+    for i in 1:10
+      a = rand(G)
+      b = rand(G)
+      c = a + b
+      d = b + a
       aa = QG(a)
       bb = QG(b)
       cc = QG(c)
