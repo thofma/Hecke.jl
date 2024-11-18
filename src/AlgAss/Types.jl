@@ -186,11 +186,7 @@ end
       end
 
       if A.sparse
-        if G isa FinGenAbGroup
-          el = zero(G)
-        else
-          el = one(G)
-        end
+        el = _identity_elem(G)
         A.group_to_base[el] = 1
         A.base_to_group[1] = el
         A.sparse_one = sparse_row(K, [1], [one(K)])
@@ -199,7 +195,7 @@ end
         A.mult_table = zeros(Int, d, d)
         i = 2
         for g in collect(G)
-          if isone(g)
+          if _is_identity_elem(g)
             A.group_to_base[deepcopy(g)] = 1
             A.base_to_group[1] = deepcopy(g)
             continue

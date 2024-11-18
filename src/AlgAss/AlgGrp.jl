@@ -55,10 +55,14 @@ end
 # get the underyling group operation, I wish this was part of the group interface
 
 _op(G::AbstractAlgebra.AdditiveGroup) = +
-
 _op(G::Group) = *
-
 _op(A::GroupAlgebra) = _op(group(A))
+
+_is_identity_elem(x::AbstractAlgebra.AdditiveGroupElem) = iszero(x)
+_is_identity_elem(x::GroupElem) = isone(x)
+
+_identity_elem(G::AbstractAlgebra.AdditiveGroup) = zero(G)
+_identity_elem(G::Group) = one(G)
 
 ################################################################################
 #
