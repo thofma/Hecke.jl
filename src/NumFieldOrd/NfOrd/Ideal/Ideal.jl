@@ -1033,6 +1033,9 @@ function _minmod(a::ZZRingElem, b::AbsNumFieldOrderElem)
 end
 
 function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
+  if is_one(a)
+    return a
+  end
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
@@ -1053,6 +1056,9 @@ function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
 end
 
 function _minmod_easy_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
+  if isone(a)
+    return one(a)
+  end
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
@@ -1147,7 +1153,6 @@ end
 
 
 function _minmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
-
   Zk = parent(b)
   k = number_field(Zk)
   acom, auncom = ppio(a, index(Zk))

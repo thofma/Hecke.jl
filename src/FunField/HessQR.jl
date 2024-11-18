@@ -111,6 +111,8 @@ function expressify(a::HessQRElem; context = nothing)
                               expressify(a.g, context = context)))
 end
 
+Hecke.characteristic(::HessQR) = 0
+
 function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::HessQR)
   if iszero(a)
     return zero(S), one(S)
