@@ -132,16 +132,26 @@ function is_commutative(A::GroupAlgebra)
   if is_commutative_known(A)
     return A.is_commutative == 1
   end
-  for i in 1:dim(A)
-    for j in 1:dim(A)
-      if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
-        A.is_commutative = 2
-        return false
+  if _is_sparse(A)
+    if is_abelian(group(A))
+      A.is_commutative = 1
+      return true
+    else
+      A.is_commutative = 2
+      return false
+    end
+  else
+    for i in 1:dim(A)
+      for j in 1:dim(A)
+        if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
+          A.is_commutative = 2
+          return false
+        end
       end
     end
+    A.is_commutative = 1
+    return true
   end
-  A.is_commutative = 1
-  return true
 end
 
 ################################################################################
