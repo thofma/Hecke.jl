@@ -81,12 +81,12 @@ Group algebra
   over rational field
 ```
 """
-group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; op = *, cached)
+group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; cached)
 
 # one additional level of indirection to hide the non-user facing options
 # `op` and `sparse`.
-function _group_algebra(K::Ring, G; op = *, sparse = _use_sparse_group_algebra(G), cached::Bool = true)
-  A = GroupAlgebra(K, G; op = _op(G) , sparse = sparse, cached = cached)
+function _group_algebra(K::Ring, G; op = _op(G), sparse = _use_sparse_group_algebra(G), cached::Bool = true)
+  A = GroupAlgebra(K, G; op = op , sparse = sparse, cached = cached)
   if !(K isa Field)
     return A
   end
