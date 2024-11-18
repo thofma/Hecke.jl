@@ -171,9 +171,21 @@ end
 
 function show(io::IO, A::GroupAlgebra)
   if is_terse(io)
-    print(io, "Group algebra of dimension ", dim(A), " over ", base_ring(A))
+    print(io, "Group algebra of ")
+    if is_finite(group(A))
+      print(io, "dimension ", order(group(A)))
+    else
+      print(io, "infinite dimension ")
+    end
+    print(io, " over ", base_ring(A))
   else
-    print(io, "Group algebra of group of order ", order(group(A)), " over ")
+    print(io, "Group algebra of group ")
+    if is_finite(group(A))
+      print(io, "of order ", order(group(A)))
+    else
+      print(io, "of infinite order ")
+    end
+    print(io, "over ")
     print(terse(io), base_ring(A))
   end
 end
