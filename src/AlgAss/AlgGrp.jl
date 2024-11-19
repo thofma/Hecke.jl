@@ -12,7 +12,7 @@ base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
 base_ring_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = parent_type(T)
 
-Generic.dim(A::GroupAlgebra) = size(multiplication_table(A, copy = false), 1)
+Generic.dim(A::GroupAlgebra) = order(Int, group(A))
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 
@@ -55,10 +55,14 @@ end
 # get the underyling group operation, I wish this was part of the group interface
 
 _op(G::AbstractAlgebra.AdditiveGroup) = +
-
 _op(G::Group) = *
-
 _op(A::GroupAlgebra) = _op(group(A))
+
+_is_identity_elem(x::AbstractAlgebra.AdditiveGroupElem) = iszero(x)
+_is_identity_elem(x::GroupElem) = isone(x)
+
+_identity_elem(G::AbstractAlgebra.AdditiveGroup) = zero(G)
+_identity_elem(G::Group) = one(G)
 
 ################################################################################
 #
@@ -81,12 +85,12 @@ Group algebra
   over rational field
 ```
 """
-group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; op = *, cached)
+group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; cached)
 
 # one additional level of indirection to hide the non-user facing options
 # `op` and `sparse`.
-function _group_algebra(K::Ring, G; op = *, sparse = _use_sparse_group_algebra(G), cached::Bool = true)
-  A = GroupAlgebra(K, G; op = _op(G) , sparse = sparse, cached = cached)
+function _group_algebra(K::Ring, G; op = _op(G), sparse = _use_sparse_group_algebra(G), cached::Bool = true)
+  A = GroupAlgebra(K, G; op = op , sparse = sparse, cached = cached)
   if !(K isa Field)
     return A
   end
@@ -128,16 +132,26 @@ function is_commutative(A::GroupAlgebra)
   if is_commutative_known(A)
     return A.is_commutative == 1
   end
-  for i in 1:dim(A)
-    for j in 1:dim(A)
-      if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
-        A.is_commutative = 2
-        return false
+  if _is_sparse(A)
+    if is_abelian(group(A))
+      A.is_commutative = 1
+      return true
+    else
+      A.is_commutative = 2
+      return false
+    end
+  else
+    for i in 1:dim(A)
+      for j in 1:dim(A)
+        if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
+          A.is_commutative = 2
+          return false
+        end
       end
     end
+    A.is_commutative = 1
+    return true
   end
-  A.is_commutative = 1
-  return true
 end
 
 ################################################################################
@@ -157,9 +171,21 @@ end
 
 function show(io::IO, A::GroupAlgebra)
   if is_terse(io)
-    print(io, "Group algebra of dimension ", dim(A), " over ", base_ring(A))
+    print(io, "Group algebra of ")
+    if is_finite(group(A))
+      print(io, "dimension ", order(group(A)))
+    else
+      print(io, "infinite dimension ")
+    end
+    print(io, " over ", base_ring(A))
   else
-    print(io, "Group algebra of group of order ", order(group(A)), " over ")
+    print(io, "Group algebra of group ")
+    if is_finite(group(A))
+      print(io, "of order ", order(group(A)))
+    else
+      print(io, "of infinite order ")
+    end
+    print(io, "over ")
     print(terse(io), base_ring(A))
   end
 end
@@ -236,6 +262,7 @@ end
 ################################################################################
 
 function StructureConstantAlgebra(A::GroupAlgebra{T, S, R}) where {T, S, R}
+  @req _is_dense(A) "StructureConstantAlgebra only works for dense group algebras"
   K = base_ring(A)
   mult = Array{T, 3}(undef, dim(A), dim(A), dim(A))
   B = basis(A)
