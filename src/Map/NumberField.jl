@@ -30,7 +30,7 @@ end
 
 is_injective(m::NumFieldHom) = true
 
-is_surjective(m::NumFieldHom) = absolute_degree(domain(m) == absolute_degree(codomain(m)))
+is_surjective(m::NumFieldHom) = absolute_degree(domain(m)) == absolute_degree(codomain(m))
 
 is_bijective(m::NumFieldHom) = is_surjective(m)
 
