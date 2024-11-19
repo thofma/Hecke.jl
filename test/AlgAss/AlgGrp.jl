@@ -107,6 +107,7 @@
       @test aa * bb == cc
       @test bb * aa == dd
       @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
+      @test aa - bb == aa + (-bb)
     end
   end
 
@@ -129,6 +130,7 @@
       @test aa * bb == cc
       @test bb * aa == dd
       @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
+      @test aa - bb == aa + (-bb)
     end
   end
 

@@ -147,8 +147,12 @@ end
 ################################################################################
 
 function -(a::AbstractAssociativeAlgebraElem{T}) where {T}
-  v = T[ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
-  return parent(a)(v)
+  if _is_sparse(a)
+    return parent(a)(-a.coeffs_sparse)
+  else
+    v = T[ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
+    return parent(a)(v)
+  end
 end
 
 ################################################################################
