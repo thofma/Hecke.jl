@@ -1,7 +1,8 @@
 @testset "Group algebras" begin
   G = small_group(8, 4)
   A = GroupAlgebra(QQ, G)
-
+  @test sprint(show, MIME"text/plain"(), A) isa String
+  @test sprint(show, A) isa String
   @testset "Regular matrix algebra" begin
     B, BtoA = Hecke.regular_matrix_algebra(A)
 
@@ -92,6 +93,8 @@
     QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
     @test dim(QG) == factorial(10)
     #@test !is_commutative(QG) # needs https://github.com/Nemocas/AbstractAlgebra.jl/pull/1907
+    @test sprint(show, MIME"text/plain"(), QG) isa String
+    @test sprint(show, QG) isa String
     for i in 1:10
       a = rand(G)
       b = rand(G)
@@ -112,6 +115,8 @@
     QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
     @test dim(QG) == 2 * 3 * 5000
     @test is_commutative(QG)
+    @test sprint(show, MIME"text/plain"(), QG) isa String
+    @test sprint(show, QG) isa String
     for i in 1:10
       a = rand(G)
       b = rand(G)
@@ -125,5 +130,13 @@
       @test bb * aa == dd
       @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
     end
+  end
+
+  let
+    G = abelian_group([2, 3, 0])
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    @test is_commutative(QG)
+    @test sprint(show, MIME"text/plain"(), QG) isa String
+    @test sprint(show, QG) isa String
   end
 end
