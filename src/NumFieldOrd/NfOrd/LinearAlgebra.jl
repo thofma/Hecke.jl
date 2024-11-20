@@ -214,7 +214,9 @@ end
 
 function show(io::IO, P::PMat)
   compact = get(io, :compact, false)
-  if compact
+  if nrows(P.matrix) == 0
+    print(io, "empty $(0) x $(ncols(P)) pseudo-matrix")
+  elseif compact
     for i in 1:nrows(P.matrix)
       i == 1 || print(io, "\n")
       print(io, "(")
