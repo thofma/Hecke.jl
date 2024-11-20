@@ -263,10 +263,10 @@ function getindex(a::GroupAlgebraElem{S, GroupAlgebra{S, T, U}}, g::U) where {S,
     if !haskey(parent(a).group_to_base, g)
       return zero(base_ring(parent(a)))
     else
-      return a.coeffs_sparse[parent(a).group_to_base[g]]
+      return a.coeffs_sparse[parent(a).group_to_base[g]]::S
     end
   else
-    return a.coeffs[parent(a).group_to_base[g]]
+    return a.coeffs[parent(a).group_to_base[g]]::S
   end
 end
 
