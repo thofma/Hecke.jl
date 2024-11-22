@@ -137,6 +137,26 @@
       @test Hecke._in_span(map(K, [1, 2, 3, 4]), A)[1]
       @test Hecke._in_span(map(K, [5, 6, 7, 8]), A)[1] == false
     end
+    @testset "emptiness" begin
+      K, a = quadratic_field(-5)
+      O = maximal_order(K)
+      ide = fractional_ideal(O, one(O))
+      pmat00 = pseudo_matrix(identity_matrix(K, 0), [])
+      pmat02 = pseudo_matrix(matrix(K, 0, 2, []), [])
+      pmat20 = pseudo_matrix(matrix(K, 2, 0, []), [ide, ide])
+      pmat11 = pseudo_matrix(identity_matrix(K, 1), [ide])
+      pmat23 = pseudo_matrix(matrix(K, 2, 3, [1, 2, 3, a, 2*a, 3*a]), [ide, ide])
+      @test is_empty(pmat00)
+      @test is_empty(pmat02)
+      @test is_empty(pmat20)
+      @test !is_empty(pmat11)
+      @test !is_empty(pmat23)
+      @test isempty(pmat00)
+      @test isempty(pmat02)
+      @test isempty(pmat20)
+      @test !is_empty(pmat11)
+      @test !is_empty(pmat23)
+    end
   end
 
   @testset "rand" begin
