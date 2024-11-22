@@ -2052,3 +2052,12 @@ function inv(x::Generic.MatSpaceElem{AbsSimpleNumFieldOrderElem})
   K = nf(R)
   return change_base_ring(R, inv(change_base_ring(K, x)))
 end
+
+################################################################################
+#
+#  Emptiness check
+#
+################################################################################
+
+is_empty(P::PMat) = is_empty(matrix(P))
+
