@@ -3,6 +3,7 @@
 #TODO: sizehint for heavy stuff can be given later, so don't initialize immediately
 #TODO: new struct for second part
 #TODO: add sizehint for Y?
+#TODO: remove whitespaces at beginning of lines
 
 #=
 PROBLEMS:
@@ -382,3 +383,166 @@ mutable struct data_ZZStructGauss{T}
   SG.A.nnz-=length(SG.A[SG.base])
   empty!(SG.A[SG.base].pos), empty!(SG.A[SG.base].values)
  end
+
+function delete_zero_rows!(A::SMat{T}) where T <: ZZRingElem
+ for i = A.r:-1:1
+   if isempty(A[i].pos)
+     deleteat!(A.rows, i)
+     A.r-=1
+   end
+ end
+ return A
+end
+
+################################################################################
+#
+#  Kernel Computation
+#
+################################################################################
+
+#Compute the kernel corresponding to the non echolonized part from above and
+#insert backwards using the triangular part to get the full kernel.
+
+mutable struct data_ZZKernel
+ heavy_mapi::Vector{Int64}
+ heavy_map::Vector{Int64}
+
+ function data_ZZKernel(SG::data_ZZStructGauss, nheavy::Int64)
+  return new(
+  sizehint!(Int[], nheavy),
+  fill(0, ncols(SG.A))
+  )
+ end
+end
+
+function compute_kernel(SG, with_light = true)
+  Hecke.update_light_cols!(SG)
+  @assert SG.nlight >= 0
+  KER = Hecke.collect_dense_cols!(SG)
+  D = dense_matrix(SG, KER)
+  _nullity, _dense_kernel = nullspace(D)
+  l, K = Hecke.init_kernel(_nullity, _dense_kernel, SG, KER, with_light)
+  return compose_kernel(l, K, SG)
+end
+
+function update_light_cols!(SG)
+ for i = 1:ncols(SG.A)
+  if SG.is_light_col[i] && !isempty(SG.col_list[i])
+   SG.is_light_col[i] = false
+   SG.nlight -= 1
+  end
+ end
+ return SG
+end
+
+function collect_dense_cols!(SG)
+ m = ncols(SG.A)
+ nheavy = m - SG.nlight - SG.nsingle
+ KER = data_ZZKernel(SG, nheavy)
+ j = 1
+ for i = 1:m
+  if !SG.is_light_col[i] && !SG.is_single_col[i]
+   KER.heavy_map[i] = j
+   push!(KER.heavy_mapi, i)
+   j+=1
+  end
+ end
+ @assert length(KER.heavy_mapi) == nheavy
+ return KER
+end
+
+function dense_matrix(SG, KER)
+ D = ZZMatrix(nrows(SG.A) - SG.nsingle, length(KER.heavy_mapi))
+ for i in 1:length(SG.Y)
+  for j in 1:length(KER.heavy_mapi)
+   setindex!(D, SG.Y[i], i, j, KER.heavy_mapi[j])
+  end
+ end
+ return D
+end
+
+function dense_kernel(SG, KER)
+ ST = sparse_matrix(base_ring(SG.A), 0, nrows(SG.Y))
+ YT = transpose(delete_zero_rows!(SG.Y))
+ for j in KER.heavy_mapi
+  push!(ST, YT[j])
+ end
+ S = transpose(ST)
+ d, _dense_kernel = nullspace(matrix(S))
+ return size(_dense_kernel)[2], _dense_kernel
+end
+
+function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
+ R = base_ring(SG.A)
+ m = ncols(SG.A)
+ if with_light
+  l = _nullity+SG.nlight
+ else
+  l = _nullity
+ end
+ K = ZZMatrix(m, l)
+ #initialisation
+ ilight = 1
+ for i = 1:m
+  if SG.is_light_col[i]
+   if with_light
+    @assert ilight <= SG.nlight
+    K[i, _nullity+ilight] = one(R)
+    ilight +=1
+   end
+  else
+   j = KER.heavy_map[i]
+   if j>0
+    for c = 1:_nullity
+     ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), Nemo.mat_entry_ptr(K, i, j), Nemo.mat_entry_ptr(_dense_kernel, j, c))
+     #K[i,c] = _dense_kernel[j, c]
+    end
+   end
+  end
+ end
+ return l, K
+end
+
+function compose_kernel(l, K, SG)
+ R = base_ring(SG.A)
+ n = nrows(SG.A)
+ for i = n:-1:1
+  c = SG.single_col[i]
+  if c>0
+   x = R(0)
+   y = zeros(R,l)
+   for idx in 1:length(SG.A[i])
+    cc = SG.A[i].pos[idx]
+    xx = SG.A[i].values[idx]
+    if cc == c
+     x = xx
+    else
+     for k = 1:l
+      kern_c = K[cc,k]
+      !iszero(kern_c) && (y[k]-=xx*kern_c)
+     end
+    end
+   end
+   for k = 1:l
+    x_inv = try
+     inv(x)
+    catch
+     R(0)
+    end
+    if iszero(x_inv)
+     K[:,k] *= x
+     K[c, k] = y[k]
+    else
+     K[c, k] = y[k]*x_inv
+    end
+   end
+  end
+ end
+ return l, K
+end
+
+#Warning: skips zero entries in sparse matrix
+function Base.setindex!(A::ZZMatrix, B::SRow{ZZRingElem}, ar::Int64, ac::Int64, bj::Int64)
+ isnothing(findfirst(isequal(bj), B.pos)) && return
+ ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{Int}), Nemo.mat_entry_ptr(A, ar, ac), Hecke.get_ptr(B.values, findfirst(isequal(bj), B.pos)))
+end

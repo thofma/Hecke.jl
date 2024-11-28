@@ -55,7 +55,7 @@ mutable struct data_StructGauss{T}
  end
 end
 
-function _col_list(A::SMat{T}) where T
+function _col_list(A::SMat{T})::Vector{Vector{Int64}} where T
  n = nrows(A)
  m = ncols(A)
  col_list = [Array{Int64}([]) for i = 1:m]
@@ -76,7 +76,7 @@ Return a tuple (\nu, N) consisting of the nullity \nu of A and a basis N
 AN is the zero matrix.
 """
 
-function structured_gauss(A::SMat{T}) where T <: ZZRingElem
+function structured_gauss(A::SMat{T}) where T <: RingElem
  SG = part_echolonize!(A)
  return compute_kernel(SG)
 end
@@ -103,7 +103,7 @@ end
 #Build an upper triangular matrix for as many columns as possible compromising
 #the loss of sparsity during this process.
 
-function part_echolonize!(A::SMat{T}) where T <: ZZRingElem
+function part_echolonize!(A::SMat{T})::data_StructGauss where T <: RingElem
  A = delete_zero_rows!(A)
  n = nrows(A)
  m = ncols(A)
@@ -129,7 +129,7 @@ function part_echolonize!(A::SMat{T}) where T <: ZZRingElem
  return SG
 end
 
-function part_echolonize_field!(A)
+function part_echolonize_field!(A::SMat{T})::data_StructGauss where T <: FieldElem
  A = delete_zero_rows!(A)
  n = nrows(A)
  m = ncols(A)
@@ -156,7 +156,7 @@ function part_echolonize_field!(A)
  return SG
 end
 
-function single_rows_to_top!(SG::data_StructGauss)
+function single_rows_to_top!(SG::data_StructGauss)::data_StructGauss
  for i = 1:nrows(SG.A)
   len = length(SG.A[i])
   @assert !iszero(len)
@@ -230,7 +230,7 @@ function build_part_ref_field!(SG::data_StructGauss)
  end
 end
 
-function find_best_single_row(SG::data_StructGauss)
+function find_best_single_row(SG::data_StructGauss)::Int64
  best_single_row = -1
  best_col = NaN
  best_val = NaN
@@ -268,7 +268,7 @@ function find_best_single_row(SG::data_StructGauss)
  return best_single_row
 end
 
-function find_best_single_row_field(SG::data_StructGauss)
+function find_best_single_row_field(SG::data_StructGauss)::Int64
  best_single_row = -1
  best_len = -1
  for i = SG.base:SG.single_row_limit-1
@@ -338,7 +338,7 @@ function turn_heavy(SG::data_StructGauss)
  SG.nlight -= SG.heavy_ext
 end
 
-function handle_new_light_weight!(i::Int64, SG::data_StructGauss)
+function handle_new_light_weight!(i::Int64, SG::data_StructGauss)::data_StructGauss
  w = SG.light_weight[i]
  if w == 0
   swap_i_into_base(i, SG)
@@ -354,7 +354,7 @@ function handle_new_light_weight!(i::Int64, SG::data_StructGauss)
  return SG
 end
 
-function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss)
+function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss)::data_StructGauss
  @assert best_single_row != 0
  best_row = deepcopy(SG.A[best_single_row])
  best_col = find_light_entry(best_row.pos, SG.is_light_col)
@@ -376,7 +376,7 @@ function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss)
  return SG
 end
 
-function eliminate_and_update_field!(best_single_row::Int64, SG::data_StructGauss)
+function eliminate_and_update_field!(best_single_row::Int64, SG::data_StructGauss)::data_StructGauss
  @assert best_single_row != 0
  best_col = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col)
  @assert length(SG.col_list[best_col]) > 1
@@ -384,7 +384,7 @@ function eliminate_and_update_field!(best_single_row::Int64, SG::data_StructGaus
  @assert !iszero(best_val)
  scale_row!(SG.A, best_single_row, inv(best_val))
  best_val = SG.A[best_single_row, best_col]
- @assert isone(best_val)A.nnz
+ @assert isone(best_val)
  best_row = deepcopy(SG.A[best_single_row])
  best_col_idces = SG.col_list[best_col]
  row_idx = 0
@@ -401,7 +401,7 @@ function eliminate_and_update_field!(best_single_row::Int64, SG::data_StructGaus
  return SG
 end
 
-function find_row_to_add_on(row_idx::Int64, best_row::SRow{T}, best_col_idces::Vector{Int64}, SG::data_StructGauss) where T
+function find_row_to_add_on(row_idx::Int64, best_row::SRow{T}, best_col_idces::Vector{Int64}, SG::data_StructGauss)::Int64 where T <: FieldElem
  for L_row in best_col_idces[end:-1:1]
   row_idx = SG.col_list_permi[L_row]
   SG.A[row_idx] == best_row && continue
@@ -411,7 +411,7 @@ function find_row_to_add_on(row_idx::Int64, best_row::SRow{T}, best_col_idces::V
  return row_idx
 end
 
-function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val::ZZRingElem, SG::data_StructGauss) where T <: ZZRingElem
+function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val::RingElem, SG::data_StructGauss)::data_StructGauss where T <: RingElem
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
  val = SG.A[row_idx, best_col]
@@ -437,7 +437,7 @@ function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best
  return SG
 end
 
-function add_to_eliminate_field!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val, SG::data_StructGauss) where T
+function add_to_eliminate_field!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val::FieldElem, SG::data_StructGauss)::data_StructGauss where T <: FieldElem
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
  val = SG.A[row_idx, best_col]
@@ -451,12 +451,14 @@ function add_to_eliminate_field!(L_row::Int64, row_idx::Int64, best_row::SRow{T}
   end
  end
  @assert !(0 in SG.A[row_idx].values)
+ SG.A.nnz -= length(SG.A[row_idx])
  Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val)
+ SG.A.nnz += length(SG.A[row_idx])
  @assert iszero(SG.A[row_idx, best_col])
  return SG
 end
 
-function update_after_addition!(L_row::Int64, row_idx::Int64, best_col::Int64, SG::data_StructGauss)
+function update_after_addition!(L_row::Int64, row_idx::Int64, best_col::Int64, SG::data_StructGauss)::data_StructGauss
  SG.light_weight[row_idx] = 0
  for c in SG.A[row_idx].pos
   @assert c != best_col
