@@ -1,27 +1,39 @@
-mutable struct data_StructGauss
- A
- Y
- single_row_limit
- base
- nlight
- nsingle
- light_weight
- col_list
- col_list_perm #perm gives new ordering of original A[i] via their indices
- col_list_permi #A[permi[i]]=A[i] before permutation = list of sigma(i) (recent position of former A[i])
- is_light_col
- is_single_col
- single_col #single_col[i] = c >= 0 if col c has its only entry in row i, i always recent position
- heavy_ext
- heavy_col_idx
- heavy_col_len
- heavy_mapi
- heavy_map
+#TODO: declare return types
+#TODO: sizehints
+#TODO: pointer pointer pointer
+#TODO: sizehint for heavy stuff can be given later, so don't initialize immediately
+#TODO: new struct for second part
 
- function data_StructGauss(A)
+#=
+PROBLEMS:
+- why more nnzs in SG.A+SG.Y than in PR.A?
+- maximum of PR.A greater as in SG.Y?
+=#
+
+mutable struct data_StructGauss{T}
+ A::SMat{T}
+ Y::SMat{T}
+ single_row_limit::Int64
+ base::Int64
+ nlight::Int64
+ nsingle::Int64
+ light_weight::Vector{Int64}
+ col_list::Vector{Vector{Int64}} 
+ col_list_perm::Vector{Int64} #perm gives new ordering of original A[i] via their indices
+ col_list_permi::Vector{Int64} #A[permi[i]]=A[i] before permutation = list of sigma(i) (recent position of former A[i])
+ is_light_col::Vector{Bool}
+ is_single_col::Vector{Bool}
+ single_col::Vector{Int64} #single_col[i] = c >= 0 if col c has its only entry in row i, i always recent position
+ heavy_ext::Int64
+ heavy_col_idx::Vector{Int64}
+ heavy_col_len::Vector{Int64}
+ #heavy_mapi::Vector{Int64}
+ #heavy_map::Vector{Int64}
+
+ function data_StructGauss(A::SMat{T}) where T
   Y = sparse_matrix(base_ring(A), 0, ncols(A))
   col_list = _col_list(A)
-  return new(A,
+  return new{T}(A,
   Y,
   1,
   1,
@@ -37,12 +49,13 @@ mutable struct data_StructGauss
   0,
   Int[],
   Int[],
-  Int[],
-  fill(0, ncols(A)))
+  #Int[],
+  #fill(0, ncols(A))
+  )
  end
 end
 
-function _col_list(A)
+function _col_list(A::SMat{T}) where T
  n = nrows(A)
  m = ncols(A)
  col_list = [Array{Int64}([]) for i = 1:m]
@@ -63,13 +76,13 @@ Return a tuple (\nu, N) consisting of the nullity \nu of A and a basis N
 AN is the zero matrix.
 """
 
-function structured_gauss(A::SMat{T}) where T <: RingElem
+function structured_gauss(A::SMat{T}) where T <: ZZRingElem
  SG = part_echolonize!(A)
  return compute_kernel(SG)
 end
 
 @doc raw"""
-    structured_gauss(A::SMat{T}) where T <: FieldElem
+    structured_gauss_field(A::SMat{T}) where T <: FieldElem
 
 Return a tuple (\nu, N) consisting of the nullity \nu of A and a basis N
 (consisting of column vectors) for the right nullspace of A, i.e. such that
@@ -90,7 +103,7 @@ end
 #Build an upper triangular matrix for as many columns as possible compromising
 #the loss of sparsity during this process.
 
-function part_echolonize!(A)
+function part_echolonize!(A::SMat{T}) where T <: ZZRingElem
  A = delete_zero_rows!(A)
  n = nrows(A)
  m = ncols(A)
@@ -143,7 +156,7 @@ function part_echolonize_field!(A)
  return SG
 end
 
-function single_rows_to_top!(SG)
+function single_rows_to_top!(SG::data_StructGauss)
  for i = 1:nrows(SG.A)
   len = length(SG.A[i])
   @assert !iszero(len)
@@ -158,7 +171,7 @@ function single_rows_to_top!(SG)
  return SG
 end
 
-function build_part_ref!(SG)
+function build_part_ref!(SG::data_StructGauss)
  queue = collect(ncols(SG.A):-1:1)
  while !isempty(queue)
   queue_new = Int[]
@@ -187,7 +200,7 @@ function build_part_ref!(SG)
  end
 end
 
-function build_part_ref_field!(SG)
+function build_part_ref_field!(SG::data_StructGauss)
  queue = collect(ncols(SG.A):-1:1)
  while !isempty(queue)
   queue_new = Int[]
@@ -217,7 +230,7 @@ function build_part_ref_field!(SG)
  end
 end
 
-function find_best_single_row(SG)
+function find_best_single_row(SG::data_StructGauss)
  best_single_row = -1
  best_col = NaN
  best_val = NaN
@@ -255,7 +268,7 @@ function find_best_single_row(SG)
  return best_single_row
 end
 
-function find_best_single_row_field(SG)
+function find_best_single_row_field(SG::data_StructGauss)
  best_single_row = -1
  best_len = -1
  for i = SG.base:SG.single_row_limit-1
@@ -271,7 +284,7 @@ function find_best_single_row_field(SG)
  return best_single_row
 end 
 
-function find_dense_cols(SG)
+function find_dense_cols(SG::data_StructGauss)
  m = ncols(SG.A)
  nheavy = m - (SG.nlight + SG.nsingle)
  nheavy == 0 ? SG.heavy_ext = max(div(SG.nlight,20),1) : SG.heavy_ext = max(div(SG.nlight,100),1)
@@ -304,7 +317,7 @@ function find_dense_cols(SG)
  @assert light_cols == findall(x->SG.is_light_col[x], 1:m)
 end
 
-function turn_heavy(SG)
+function turn_heavy(SG::data_StructGauss)
  for j = 1:SG.heavy_ext
   c = SG.heavy_col_idx[j]
   if c<0
@@ -325,7 +338,7 @@ function turn_heavy(SG)
  SG.nlight -= SG.heavy_ext
 end
 
-function handle_new_light_weight!(i, SG)
+function handle_new_light_weight!(i::Int64, SG::data_StructGauss)
  w = SG.light_weight[i]
  if w == 0
   swap_i_into_base(i, SG)
@@ -341,7 +354,7 @@ function handle_new_light_weight!(i, SG)
  return SG
 end
 
-function eliminate_and_update!(best_single_row, SG)
+function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss)
  @assert best_single_row != 0
  best_row = deepcopy(SG.A[best_single_row])
  best_col = find_light_entry(best_row.pos, SG.is_light_col)
@@ -363,7 +376,7 @@ function eliminate_and_update!(best_single_row, SG)
  return SG
 end
 
-function eliminate_and_update_field!(best_single_row, SG)
+function eliminate_and_update_field!(best_single_row::Int64, SG::data_StructGauss)
  @assert best_single_row != 0
  best_col = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col)
  @assert length(SG.col_list[best_col]) > 1
@@ -371,7 +384,7 @@ function eliminate_and_update_field!(best_single_row, SG)
  @assert !iszero(best_val)
  scale_row!(SG.A, best_single_row, inv(best_val))
  best_val = SG.A[best_single_row, best_col]
- @assert isone(best_val)
+ @assert isone(best_val)A.nnz
  best_row = deepcopy(SG.A[best_single_row])
  best_col_idces = SG.col_list[best_col]
  row_idx = 0
@@ -388,7 +401,7 @@ function eliminate_and_update_field!(best_single_row, SG)
  return SG
 end
 
-function find_row_to_add_on(row_idx, best_row, best_col_idces::Vector{Int64}, SG::data_StructGauss)
+function find_row_to_add_on(row_idx::Int64, best_row::SRow{T}, best_col_idces::Vector{Int64}, SG::data_StructGauss) where T
  for L_row in best_col_idces[end:-1:1]
   row_idx = SG.col_list_permi[L_row]
   SG.A[row_idx] == best_row && continue
@@ -398,7 +411,7 @@ function find_row_to_add_on(row_idx, best_row, best_col_idces::Vector{Int64}, SG
  return row_idx
 end
 
-function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
+function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val::ZZRingElem, SG::data_StructGauss) where T <: ZZRingElem
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
  val = SG.A[row_idx, best_col]
@@ -416,13 +429,15 @@ function add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
  end
  scale_row!(SG.A, row_idx, best_val_red)
  @assert !(0 in best_row.values)
+ SG.A.nnz -= length(SG.A[row_idx])
  Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val_red)
+ SG.A.nnz += length(SG.A[row_idx])
  @assert iszero(SG.A[row_idx, best_col])
  @assert !(0 in SG.A[row_idx].values)
  return SG
 end
 
-function add_to_eliminate_field!(L_row, row_idx, best_row, best_col, best_val, SG)
+function add_to_eliminate_field!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val, SG::data_StructGauss) where T
  @assert L_row in SG.col_list[best_col]
  @assert !(0 in SG.A[row_idx].values)
  val = SG.A[row_idx, best_col]
@@ -441,7 +456,7 @@ function add_to_eliminate_field!(L_row, row_idx, best_row, best_col, best_val, S
  return SG
 end
 
-function update_after_addition!(L_row, row_idx::Int, best_col, SG::data_StructGauss)
+function update_after_addition!(L_row::Int64, row_idx::Int64, best_col::Int64, SG::data_StructGauss)
  SG.light_weight[row_idx] = 0
  for c in SG.A[row_idx].pos
   @assert c != best_col
@@ -457,11 +472,11 @@ end
 #
 ################################################################################
 
-function swap_entries(v, i,j)
+function swap_entries(v::Vector{Int64}, i::Int64, j::Int64)
  v[i],v[j] = v[j],v[i]
 end
 
-function swap_rows_perm(i, j, SG)
+function swap_rows_perm(i::Int64, j, SG::data_StructGauss)
  if i != j
   swap_rows!(SG.A, i, j)
   swap_entries(SG.single_col, i, j)
@@ -471,7 +486,7 @@ function swap_rows_perm(i, j, SG)
  end
 end 
 
-function swap_i_into_base(i, SG::data_StructGauss)
+function swap_i_into_base(i::Int64, SG::data_StructGauss)
  if i < SG.single_row_limit
   swap_rows_perm(i, SG.base, SG)
  else
@@ -491,7 +506,7 @@ function find_light_entry(position_array::Vector{Int64}, is_light_col::Vector{Bo
  end
 end
 
-function move_into_Y(i, SG::data_StructGauss)
+function move_into_Y(i::Int64, SG::data_StructGauss)
  @assert i == SG.base
  push!(SG.Y, deepcopy(SG.A[SG.base]))
  for base_c in SG.A[SG.base].pos
