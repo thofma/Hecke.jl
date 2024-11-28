@@ -205,7 +205,7 @@ isequal(x::FakeFmpqMat, y::FakeFmpqMat) = (x.num == y.num) && (x.den == y.den)
 function FakeFmpqMat(x::Vector{QQFieldElem})
   dens = ZZRingElem[denominator(x[i]) for i=1:length(x)]
   den = lcm(dens)
-  M = zero_matrix(FlintZZ, 1, length(x))
+  M = zero_matrix(ZZ, 1, length(x))
   for i in 1:length(x)
     M[1,i] = numerator(x[i])*divexact(den, dens[i])
   end
@@ -218,7 +218,7 @@ function QQMatrix(x::FakeFmpqMat)
 end
 
 function _fmpq_mat_to_fmpz_mat_den(x::QQMatrix)
-  z = zero_matrix(FlintZZ, nrows(x), ncols(x))
+  z = zero_matrix(ZZ, nrows(x), ncols(x))
   d = ZZRingElem()
   ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{QQMatrix}), z, d, x)
   return z, d
@@ -250,7 +250,7 @@ end
 function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
   if triangular_top
     @assert ncols(x) <= nrows(x)
-    z = one(FlintZZ)
+    z = one(ZZ)
     for i in 1:(ncols(x) - 1)
       for j in (i + 1):ncols(x)
         @assert iszero(x.num[i, j])
@@ -388,7 +388,7 @@ function reduce(::typeof(vcat), A::Vector{FakeFmpqMat})
   end
 
   d = reduce(lcm, (denominator(a) for a in A), init = ZZRingElem(1))
-  res = zero_matrix(FlintZZ, sum(nrows, A), ncols(A[1]))
+  res = zero_matrix(ZZ, sum(nrows, A), ncols(A[1]))
   k = 1
   for i in 1:length(A)
     _copy_matrix_into_matrix(res, k, 1, divexact(d, denominator(A[i])) * numerator(A[i], copy = false))

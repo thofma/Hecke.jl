@@ -3,34 +3,6 @@
 #       GrpAb/Map.jl : Functions for maps between
 #                      finitely generated abelian groups
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2015, 2016, 2017 Tommy Hofmann, Claus Fieker
-#
 ################################################################################
 
 ################################################################################
@@ -131,7 +103,7 @@ end
 #
 ################################################################################
 
-id_hom(G::FinGenAbGroup) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), check = false)
+id_hom(G::FinGenAbGroup) = hom(G, G, identity_matrix(ZZ, ngens(G)), identity_matrix(ZZ, ngens(G)), check = false)
 
 @doc raw"""
     hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}) -> Map
@@ -159,12 +131,12 @@ function hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}; check::
   end
   =#
   if ngens(GB) == 0
-    return hom(GA, GB, matrix(FlintZZ, ngens(GA), 0, ZZRingElem[]), check = check)
+    return hom(GA, GB, matrix(ZZ, ngens(GA), 0, ZZRingElem[]), check = check)
   end
 
   M = reduce(vcat, [hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
-  M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
+  M = vcat(M, hcat(RA, zero_matrix(ZZ, nrows(RA), ncols(B[1].coeff))))
   if isdefined(GB, :exponent) && nrows(M) >= ncols(M)
     H = hnf_modular_eldiv(M, exponent(GB))
   else
@@ -197,7 +169,7 @@ function hom(G::FinGenAbGroup, H::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; c
     M = reduce(vcat, [x.coeff for x = B])
   end
   #=
-  M = zero_matrix(FlintZZ, ngens(G), ngens(H))
+  M = zero_matrix(ZZ, ngens(G), ngens(H))
   for i = 1:ngens(G)
     for j = 1:ngens(H)
       M[i, j] = B[i][j]
@@ -283,7 +255,7 @@ of $h$.
 function kernel(h::FinGenAbGroupHom, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
-  m = zero_matrix(FlintZZ, nrows(h.map)+nrows(rels(H)),
+  m = zero_matrix(ZZ, nrows(h.map)+nrows(rels(H)),
                            ncols(h.map))
   for i=1:nrows(h.map)
     for j=1:ncols(h.map)
@@ -427,13 +399,13 @@ function compose(f::FinGenAbGroupHom, g::FinGenAbGroupHom)
   C = codomain(g)
   if isdefined(C, :exponent)
     if fits(Int, C.exponent)
-      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)[1]
+      RR = residue_ring(ZZ, Int(C.exponent), cached = false)[1]
       fRR = map_entries(RR, f.map)
       gRR = map_entries(RR, g.map)
       MRR = fRR*gRR
       M = lift(MRR)
     else
-      R = residue_ring(FlintZZ, C.exponent, cached = false)[1]
+      R = residue_ring(ZZ, C.exponent, cached = false)[1]
       fR = map_entries(R, f.map)
       gR = map_entries(R, g.map)
       MR = fR*gR
@@ -489,12 +461,12 @@ function Base.:^(f::FinGenAbGroupHom, n::Integer)
   C = codomain(f)
   if isdefined(C, :exponent)
     if fits(Int, C.exponent)
-      RR = residue_ring(FlintZZ, Int(C.exponent), cached = false)[1]
+      RR = residue_ring(ZZ, Int(C.exponent), cached = false)[1]
       fRR = map_entries(RR, f.map)
       MRR = fRR^n
       M = lift(MRR)
     else
-      R = residue_ring(FlintZZ, C.exponent, cached = false)[1]
+      R = residue_ring(ZZ, C.exponent, cached = false)[1]
       fR = map_entries(R, f.map)
       MR = fR^n
       M = map_entries(lift, MR)
@@ -584,7 +556,7 @@ function hom(G::FinGenAbGroup, H::FinGenAbGroup; task::Symbol = :map)
   c = [x[2] for x = r]
 
   function phi(r::FinGenAbGroupElem)
-    return FinGenAbGroupHom(inv(mG) * hom(sG, sH, matrix(FlintZZ, n, m, [r[i] * c[i] for i=1:length(c)]), check = true) * mH)
+    return FinGenAbGroupHom(inv(mG) * hom(sG, sH, matrix(ZZ, n, m, [r[i] * c[i] for i=1:length(c)]), check = true) * mH)
   end
 
   function ihp(r::FinGenAbGroupHom)

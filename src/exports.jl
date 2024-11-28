@@ -241,7 +241,6 @@ export content_ideal
 export contract
 export coordinates
 export coprime_base
-export coprime_base_insert
 export copy
 export cos
 export cover
@@ -557,6 +556,7 @@ export is_snf
 export is_split
 export is_squarefree
 export is_subfield
+export is_subfield_normal
 export is_subgroup
 export is_sublattice
 export is_sublattice_with_relations
@@ -613,6 +613,7 @@ export lattice_with_local_conditions
 export lcm
 export leading_coefficient
 export leech_lattice
+export left_ideal
 export left_order
 export level
 export lll
@@ -736,6 +737,7 @@ export prime_ideals_up_to
 export primes
 export primitive_closure
 export principal_generator
+export principal_subfields
 export pselmer_group
 export pselmer_group_fac_elem
 export pseudo_basis
@@ -801,6 +803,7 @@ export restrict_scalars
 export restrict_scalars_with_map
 export resultant
 export riemann_roch_space
+export right_ideal
 export right_order
 export ring_of_integers
 export ring_of_multipliers
@@ -863,7 +866,6 @@ export strong_echelon_form
 export structure_constant_algebra
 export structure_constant_table
 export sub
-export subalgebra
 export subfields
 export subgroups
 export submodules
@@ -911,6 +913,7 @@ export trivial_morphism
 export trred
 export trred_matrix
 export twists
+export twosided_ideal
 export uniformizer
 export unit_group
 export unit_group_fac_elem

@@ -96,7 +96,7 @@ function _multgrp(Q::AbsOrdQuoRing{U, T}) where {U, T}
   local disc_log
   let fields_and_maps = fields_and_maps, groups = groups, OtoQ = OtoQ, StoG = StoG, G = G, S = S
     function disc_log(x::AbsOrdQuoRingElem)
-      y = zero_matrix(FlintZZ, 1, 0)
+      y = zero_matrix(ZZ, 1, 0)
       for i = 1:length(groups)
         K, AtoK = fields_and_maps[i]
         H, HtoQK = groups[i]
@@ -266,7 +266,7 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
 
   O = order(p)
   g = Vector{elem_type(O)}()
-  M = zero_matrix(FlintZZ, 0, 0)
+  M = zero_matrix(ZZ, 0, 0)
   dlogs = Vector{Function}()
 
   l = 1
@@ -339,7 +339,7 @@ function _expand(g::Vector{T}, M::ZZMatrix, h::Vector{T}, N::ZZMatrix, disc_log:
 
   @assert is_snf(N)
   O = order(q)
-  Z = zero_matrix(FlintZZ, nrows(M) + nrows(N), ncols(M) + ncols(N))
+  Z = zero_matrix(ZZ, nrows(M) + nrows(N), ncols(M) + ncols(N))
   for i = 1:nrows(M)
     for j = 1:ncols(M)
       Z[i, j] = M[i, j]
@@ -394,10 +394,10 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
   M = basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
-  y_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
+  y_fakemat2 = FakeFmpqMat(zero_matrix(ZZ, 1, ncols(M)), ZZRingElem(1))
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
-    y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(y)), ZZRingElem(1))
+    y_fakemat = FakeFmpqMat(matrix(ZZ, 1, degree(O), coordinates(y)), ZZRingElem(1))
     mul!(y_fakemat2, y_fakemat, M)
     #@assert y_fakemat2 == y_fakemat * M
     denominator(y_fakemat2) != 1 && error("Element is in the ideal")

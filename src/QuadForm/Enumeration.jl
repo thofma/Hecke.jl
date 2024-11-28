@@ -23,7 +23,7 @@ end
 
 function _pseudo_cholesky(G::ZZMatrix, ::Type{QQMatrix})
   n = ncols(G)
-  C = zero_matrix(FlintQQ, n, n)
+  C = zero_matrix(QQ, n, n)
   return __pseudo_cholesky!(C, G)
 end
 
@@ -313,8 +313,7 @@ function Base.iterate(C::LatEnumCtx{X, Y, elem_type}) where {X, Y, elem_type}
 
     if _short_enough
       # t1 must be a UInt
-      #z = QQFieldElem()
-      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      #z = QQFieldElem(t1)
       # Todo
       return (pp_vector(x), pp_length(len)), i
       #y = Vector{S}(undef, n)
@@ -398,8 +397,7 @@ function Base.iterate(C::LatEnumCtx{S, W, V}, it::Int) where {S, W, V}
 
     if _short_enough
       # t1 must be a UInt
-      #z = QQFieldElem()
-      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      #z = QQFieldElem(t1)
       # Todo
       #y = __clean_and_assemble(x, transform)
       #return (y, len//scale), i
@@ -456,19 +454,19 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
   #while (Q[i, i] * (xc + U[i])^2 <= T[i])
   #  xc -= 1
   #end
-  #x[i] = Int(FlintZZ(floor(xc)))
+  #x[i] = Int(ZZ(floor(xc)))
 
   #upperbound_can = -U[i]
   #while (Q[i, i] * (upperbound_can + U[i])^2 <= T[i])
   #  upperbound_can += 1
   #end
-  #L[i] = Int(FlintZZ(ceil(upperbound_can)))
+  #L[i] = Int(ZZ(ceil(upperbound_can)))
 
   # For debugging purposes: Fast, but allocating
   #
-  #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
-  #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
-  #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
+  #_t = isqrt(ZZ(floor(divexact(T[i], Q[i, i]))))
+  #_new_upp = Int(ZZ(ceil(_t + 2 - U[i])))
+  #_new_low = Int(ZZ(floor(-(_t + 2) - U[i]))) - 1
 
   @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
 
@@ -504,7 +502,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
     t2 = numerator!(t2, t1)
     _short_enough = false
     if S === Int
-      _len = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t2)
+      _len = Int(t2)
       _short_enough = _len <= c
       if !(l isa Nothing)
         _short_enough = _short_enough && _len >= l
@@ -522,7 +520,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
     if _short_enough
       # t1 must be a UInt
       #z = QQFieldElem()
-      #ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, t1)
+      #set!(z, t1)
       # Todo
       y = Vector{elem_type}(undef, n)
       if S === elem_type
@@ -571,19 +569,19 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothi
   #while (Q[i, i] * (xc + U[i])^2 <= T[i])
   #  xc -= 1
   #end
-  #x[i] = Int(FlintZZ(floor(xc)))
+  #x[i] = Int(ZZ(floor(xc)))
 
   #upperbound_can = -U[i]
   #while (Q[i, i] * (upperbound_can + U[i])^2 <= T[i])
   #  upperbound_can += 1
   #end
-  #L[i] = Int(FlintZZ(ceil(upperbound_can)))
+  #L[i] = Int(ZZ(ceil(upperbound_can)))
 
   # For debugging purposes: Fast, but allocating
   #
-  #_t = isqrt(FlintZZ(floor(divexact(T[i], Q[i, i]))))
-  #_new_upp = Int(FlintZZ(ceil(_t + 2 - U[i])))
-  #_new_low = Int(FlintZZ(floor(-(_t + 2) - U[i]))) - 1
+  #_t = isqrt(ZZ(floor(divexact(T[i], Q[i, i]))))
+  #_new_upp = Int(ZZ(ceil(_t + 2 - U[i])))
+  #_new_low = Int(ZZ(floor(-(_t + 2) - U[i]))) - 1
 
   _new_upp, _new_low = @inbounds _compute_bounds(T[i], Qd[i], U[i])
 
@@ -638,8 +636,6 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothi
   end
 end
 
-@noinline _bound_error() = error("Overflow in bound computation")
-
 @inline function _compute_bounds(Ti::QQFieldElem, Qi, Ui, t1 = QQFieldElem(),
                                              t2 = ZZRingElem(),
                                              t3 = ZZRingElem(),
@@ -649,20 +645,18 @@ end
   t2 = floor!(t2, t1, t3, t4)
   t2 = isqrt!(t2, t2)
   # Now t2 = ceil(sqrt(Ti/Qi))
-  t2 = add_two!(t2, t2)
+  t2 = add!(t2, 2)
   # Now t2 = ceil(sqrt(Ti/Qi)) + 2
 
   t1 = sub!(t1, Ui, t2)
-  t1 = neg!(t1, t1)
+  t1 = neg!(t1)
   t5 = ceil!(t5, t1, t3, t4)
-  !fits(Int, t5) && _bound_error()
-  ub = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t5)
+  ub = Int(t5)  # will throw if t5 does not fit into an Int
 
   t1 = add!(t1, Ui, t2)
-  t1 = neg!(t1, t1)
+  t1 = neg!(t1)
   t5 = floor!(t5, t1, t3, t4)
-  !fits(Int, t5) && _bound_error()
-  lb = ccall((:fmpz_get_si, libflint), Int, (Ref{ZZRingElem}, ), t5) - 1
+  lb = Int(t5) - 1   # will throw if t5 does not fit into an Int
 
   return ub, lb
 end
@@ -707,10 +701,10 @@ end
 @inline function update_U!(U, QQ::Matrix{QQFieldElem}, i, n, x, t = QQFieldElem(), t2 = ZZRingElem())
   # U[i] = sum(QQ[i, j] * x[j] for j in (i + 1):n)
   s = @inbounds U[i]
-  @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{ZZRingElem}, Int), t2, x[i + 1])
+  @inbounds set!(t2, x[i + 1])
   @inbounds s = mul!(s, QQ[i, i + 1], t2)
   for j in (i + 2):n
-    @inbounds ccall((:fmpz_set_si, libflint), Cvoid, (Ref{ZZRingElem}, Int), t2, x[j])
+    @inbounds set!(t2, x[j])
     @inbounds mul!(t, QQ[i, j], t2)
     s = add!(s, s, t)
     #addmul!(s, QQ[i, j], t2, t)
@@ -752,11 +746,7 @@ end
   return s
 end
 
-function _deepcopy_cheap(x::QQFieldElem)
-  z = QQFieldElem()
-  ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ref{QQFieldElem}), z, x)
-  return z
-end
+_deepcopy_cheap(x::QQFieldElem) = set!(QQFieldElem(), x)
 
 function is_lessorequal(x::QQFieldElem, y::UInt)
   c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{QQFieldElem}, UInt), x, y)
@@ -876,9 +866,9 @@ function __assemble_result!(W, V::T, transform, n) where {T}
     end
 
     if positive
-      push!(W, (m, FlintQQ(l)))
+      push!(W, (m, QQ(l)))
     else
-      push!(W, (-m, FlintQQ(l)))
+      push!(W, (-m, QQ(l)))
     end
     k += 1
   end
@@ -893,7 +883,7 @@ end
 
 function _short_vectors_gram(::Type{S}, _G, lb, ub, elem_type::Type{U} = ZZRingElem; hard::Bool = false) where {S, U}
   d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
+  G = change_base_ring(ZZ, d * _G)
   if isempty(G)
     Glll = G
     T = G
@@ -942,7 +932,7 @@ end
 # No assumption on _G, algorithm applies LLL
 function _shortest_vectors_gram(::Type{S}, _G) where {S}
   d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
+  G = change_base_ring(ZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
   ub = minimum([Glll[i, i] for i in 1:nrows(G)])
   @assert ub > 0
@@ -957,7 +947,7 @@ end
 
 function _shortest_vectors_gram(_G, elem_type::Type{S} = ZZRingElem) where {S}
   d = denominator(_G)
-  G = change_base_ring(FlintZZ, d * _G)
+  G = change_base_ring(ZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
   ub = minimum([Glll[i, i] for i in 1:nrows(G)])
   V = _short_vectors_gram_nolll_integral(LatEnumCtx, Glll, 0, ub, T, ZZRingElem(1), S)
@@ -1025,16 +1015,6 @@ end
 #
 ################################################################################
 
-@inline function numerator!(z::ZZRingElem, y::QQFieldElem)
-  ccall((:fmpq_numerator, libflint), Cvoid, (Ref{ZZRingElem}, Ref{QQFieldElem}), z, y)
-  return z
-end
-
-@inline function denominator!(z::ZZRingElem, y::QQFieldElem)
-  ccall((:fmpq_denominator, libflint), Cvoid, (Ref{ZZRingElem}, Ref{QQFieldElem}), z, y)
-  return z
-end
-
 @inline function floor!(z::ZZRingElem, y::QQFieldElem, t0::ZZRingElem, t1::ZZRingElem)
   numerator!(t0, y)
   denominator!(t1, y)
@@ -1049,11 +1029,6 @@ end
   return z
 end
 
-@inline function add_two!(z::ZZRingElem, x::ZZRingElem)
-  ccall((:fmpz_add_ui, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Int), z, x, 2)
-  return z
-end
-
 @inline function isqrt!(z::ZZRingElem, a::ZZRingElem)
   ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, a)
   return z
@@ -1063,8 +1038,4 @@ floor!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(floor(x))
 
 isqrt!(z::Int, x::Int) = isqrt(x)
 
-add_two!(z::Int, x::Int) = x + 2
-
 ceil!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(ceil(x))
-
-numerator!(z::Int, x::Rational{Int}) = numerator(x)

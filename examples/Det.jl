@@ -69,12 +69,12 @@ function perturb!(A, n::Int = 100, c::AbstractRange = -10:10; side::Symbol = :bo
   else
     error("side has to be :right, :left or :both")
   end
-  for i=1:n 
+  for i=1:n
     x = rand(c)
     while iszero(x)
       x = rand(c)
     end
-    if rnd() 
+    if rnd()
       k = rand(1:nrows(A))
       l = rand(1:nrows(A))
       while l == k
@@ -583,7 +583,7 @@ function UniSolve(A::ZZMatrix, bb::ZZMatrix)
   EntrySize = maximum(abs, A)
   e = max(16, Int(2+ceil(2*log2(n)+log2(EntrySize))));
   println("Modulus has  $e bits");
-  
+
   B0 = zero_matrix(ZZ,n,n) ## will be computed by crt in loop below
   m = ZZ(1); p = 2^29;  # MAGIC NUMBER (initial prime, probably should be about 2^29?)
   @time while (nbits(m) < e)
@@ -688,9 +688,9 @@ function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U)
     R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
     U_ptr = Nemo.mat_entry_ptr(U, i, 1)
     for j=1:ncols(U)
-      ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), R_ptr, R_ptr, U_ptr)
+      add!(R_ptr, R_ptr, U_ptr)
       mod_sym!(U_ptr, R_ptr, m, t)
-      ccall((:fmpz_sub, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), R_ptr, R_ptr, U_ptr)
+      sub!(R_ptr, R_ptr, U_ptr)
       ccall((:fmpz_divexact, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), R_ptr, R_ptr, m)
       R_ptr += sizeof(Clong)
       U_ptr += sizeof(Clong)
@@ -705,8 +705,8 @@ function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U)
       U_ptr = Nemo.mat_entry_ptr(U, i, 1)
       R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
       for j=1:ncols(U)
-        ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), U_ptr, R_ptr)
-        ccall((:fmpz_zero, Nemo.libflint), Cvoid, (Ptr{ZZRingElem},), R_ptr)
+        set!(U_ptr, R_ptr)
+        zero!(R_ptr)
         R_ptr += sizeof(Clong)
         U_ptr += sizeof(Clong)
       end
@@ -720,7 +720,7 @@ function add_into!(A::ZZMatrix, C::ZZMatrix, c::Int)
     A_ptr = Nemo.mat_entry_ptr(A, i+c, 1)
     C_ptr = Nemo.mat_entry_ptr(C, i, 1)
     for j=1:ncols(A)
-      ccall((:fmpz_add, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}), A_ptr, A_ptr, C_ptr)
+      add!(A_ptr, C_ptr)
       A_ptr += sizeof(Clong)
       C_ptr += sizeof(Clong)
     end
@@ -957,7 +957,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     isone(d) && break
     d1 *= d
     @show  (Had - nbits(d1) - nbits(prod_p))/60
-    @show mod_sym(d1, prod_p) , det_p 
+    @show mod_sym(d1, prod_p) , det_p
     if Had - nbits(d1) < nbits(prod_p)
       @show "at H-bound",  (Had - nbits(d1) - nbits(prod_p))/60
       return d1
@@ -1039,7 +1039,7 @@ function induce_rational_reconstruction(a::ZZMatrix, b::ZZRingElem)
     A_ptr = Nemo.mat_entry_ptr(A, i, 1)
     for j=1:ncols(a)
 #      @show i, j
-      ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}), T, a_ptr)
+      set!(T, a_ptr)
       Nemo.mul!(T, T, D)
       Nemo.mod!(T, T, b)
       fl = ratrec!(n, d, T, b)
@@ -1048,7 +1048,7 @@ function induce_rational_reconstruction(a::ZZMatrix, b::ZZRingElem)
         D = D*d
         Nemo.mul!(A, A, d)
       end
-      ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ref{ZZRingElem}), A_ptr, n)
+      set!(A_ptr, n)
 
       a_ptr += sizeof(ZZRingElem)
       A_ptr += sizeof(ZZRingElem)
@@ -1179,7 +1179,7 @@ function dixon_init(A::ZZMatrix, B::ZZMatrix, T::DataType = fpMatrix)
   D.bound = 2*maximum(abs, [_D, _N])^2 * 2^30
   D.crt_primes = UInt[]
   D.A_mod = T[]
- 
+
   pr = ZZ(1)
   xp = next_prime(p)
   maxA = maximum(abs, A) *(p-1)*n*2
@@ -1247,7 +1247,7 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
       for i=1:nrows(D.x)
         x_ptr = Nemo.mat_entry_ptr(D.x, i, 1)
         for j=1:ncols(D.x)
-          ccall((:fmpz_addmul_si, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ref{ZZRingElem}, Int), x_ptr, ppow, Int(D.y_mod[i, j]))
+          addmul!(x_ptr, ppow, Int(D.y_mod[i, j]))
           x_ptr += 8
         end
       end
@@ -1302,7 +1302,7 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
          ccall((:fmpz_zero, Nemo.libflint), Cvoid, (Ptr{ZZRingElem},), Ay_ptr)
          for j=1:n
            y_ptr = Nemo.mat_entry_ptr(D.y_mod, j, 1)
-           ccall((:fmpz_addmul_ui, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, UInt), Ay_ptr, A_ptr, unsafe_load(y_ptr))
+           addmul!(Ay_ptr, A_ptr, unsafe_load(y_ptr))
            A_ptr += sizeof(ZZRingElem)
          end
        end

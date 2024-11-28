@@ -262,7 +262,7 @@ function lll_with_transform(M::ArbMatrix; ctx = LLLContext(0.99, 0.51))
   #Find number of bits of precision of coefficients of M and subtract 4 to divide by 16 and ensure the numbers are small enough to round
   p = -(ceil(Int,log(maximum(radius, M))/log(2))+4)
   n = nrows(M)
-  d = zero_matrix(FlintZZ, n, n)
+  d = zero_matrix(ZZ, n, n)
   round_scale!(d, M, p)
   d, T = lll_with_transform(d, ctx)
   T = change_base_ring(R, T)

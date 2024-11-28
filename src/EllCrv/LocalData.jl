@@ -2,36 +2,6 @@
 #
 #             EllipticCurve/LocalData.jl : Computing local data for elliptic curves
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# (C) 2016 Tommy Hofmann
-# (C) 2016 Robin Ammon
-# (C) 2016 Sofia Brenner
-# (C) 2022 Jeroen Hanselman
-#
 ################################################################################
 
 ################################################################################
@@ -189,7 +159,7 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
     delta = discriminant(E)
     vD = _val(delta)
     if vD == 0 # Good reduction
-      return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, KodairaSymbol("I0"), ZZ(0), ZZ(1), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     # change coords so that p|a3,a4,a6
@@ -231,37 +201,37 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
     if !_pdiv(c4) # Type In
       split = _hasroot(one(K), a1, -a2)
       if split
-        cp = FlintZZ(vD)
+        cp = ZZ(vD)
       else
         if mod(vD, 2) == 0
-          cp = FlintZZ(2)
+          cp = ZZ(2)
         else
-          cp = FlintZZ(1)
+          cp = ZZ(1)
         end
       end
       Kp = KodairaSymbol("I$(vD)")
-      fp = FlintZZ(1)
+      fp = ZZ(1)
       return (E, Kp, fp, cp, split)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(a6) < 2 # Type II
       Kp = KodairaSymbol("II")
-      fp = FlintZZ(vD)
-      cp = FlintZZ(1)
+      fp = ZZ(vD)
+      cp = ZZ(1)
       return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(b8) < 3 # Type III
       Kp = KodairaSymbol("III")
-      fp = FlintZZ(vD - 1)
-      cp = FlintZZ(2)
+      fp = ZZ(vD - 1)
+      cp = ZZ(2)
       return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
     if _val(b6) < 3 # Type IV
       cp = _hasroot(one(K), a3//pi, -a6//pi^2) ? ZZ(3) : ZZ(1)
       Kp = KodairaSymbol("IV")
-      fp = FlintZZ(vD - 2)
+      fp = ZZ(vD - 2)
       return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     end
 
@@ -307,7 +277,7 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
     if sw == 1 # w != 0 mod P
       # Three distinct roots, so type I*0
       Kp = KodairaSymbol("I0*")
-      fp = FlintZZ(vD - 4)
+      fp = ZZ(vD - 4)
       cp = ZZ(1 + _nrootscubic(b, c, d))
       return (E, Kp, fp, cp, true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     elseif sw == 2
@@ -379,7 +349,7 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
       m = ix + iy - 5
       fp = vD - m - 4
       Kp = KodairaSymbol("I$(m)*")
-      return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, ZZ(fp), ZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     elseif sw == 3
       # Triple root
       # Change coordinates so that T = 0 mod p
@@ -407,8 +377,8 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
       if !_pdiv(a3t^2 + 4*a6t)
         cp = _hasroot(one(K), a3t, -a6t) ? 3 : 1
         Kp = KodairaSymbol("IV*")
-        fp = FlintZZ(vD - 6)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+        fp = ZZ(vD - 6)
+        return (E, Kp, fp, ZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
 
       # Change coordinates so that p^3|a3, p^5|a6
@@ -425,16 +395,16 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
 
       if _val(a4) < 4 # Type III*
         Kp = KodairaSymbol("III*")
-        fp = FlintZZ(vD - 7)
-        cp = FlintZZ(2)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+        fp = ZZ(vD - 7)
+        cp = ZZ(2)
+        return (E, Kp, fp, ZZ(cp), true)::Tuple{typeof(E), KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       end
 
       if _val(a6) < 6 # Type II*
         Kp = KodairaSymbol("II*")
-        fp = FlintZZ(vD - 8)
-        cp = FlintZZ(1)
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{typeof(E), KodairaSymbol,  ZZRingElem, ZZRingElem, Bool}
+        fp = ZZ(vD - 8)
+        cp = ZZ(1)
+        return (E, Kp, fp, ZZ(cp), true)::Tuple{typeof(E), KodairaSymbol,  ZZRingElem, ZZRingElem, Bool}
       end
 
       # Non-minimal equation, dividing out
@@ -459,7 +429,7 @@ multiplicative reduction.
 """
 function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
 
-  p = FlintZZ(p)
+  p = ZZ(p)
 
   a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
 
@@ -472,7 +442,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
 
   # test for type I0
   if n == 0
-    return (E, KodairaSymbol("I0"), FlintZZ(0), FlintZZ(1), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    return (E, KodairaSymbol("I0"), ZZ(0), ZZ(1), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   # change coordinates so that p | a3, a4, a6
@@ -495,11 +465,11 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     t = smod(a1*r + a3, p)
   else
     if mod(c4, p) == 0
-      r = - invmod(FlintZZ(12), p)*b2
+      r = - invmod(ZZ(12), p)*b2
     else
-      r = - invmod(FlintZZ(12)*c4, p)*(c6 + b2*c4)
+      r = - invmod(ZZ(12)*c4, p)*(c6 + b2*c4)
     end
-      t = - invmod(FlintZZ(2), p)* (a1*r + a3)
+      t = - invmod(ZZ(2), p)* (a1*r + a3)
       r = smod(r, p)
       t = smod(t, p)
   end
@@ -516,44 +486,44 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
   # test for types In, II, III, IV
   if mod(c4, p) != 0
     if quadroots(1, a1, -a2, p)
-      cp = FlintZZ(n)
+      cp = ZZ(n)
     elseif mod(n, 2) == 0
-      cp = FlintZZ(2)
+      cp = ZZ(2)
       split = false
     else
-      cp = FlintZZ(1)
+      cp = ZZ(1)
       split = false
     end
 
     Kp = KodairaSymbol("I$(n)")
-    fp = FlintZZ(1)
+    fp = ZZ(1)
 
     return (E, Kp, fp, cp, split)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(a6, p^2) != 0
     Kp = KodairaSymbol("II")
-    fp = FlintZZ(n)
-    cp = FlintZZ(1)
+    fp = ZZ(n)
+    cp = ZZ(1)
     return (E, Kp, fp, cp, true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(b8, p^3) != 0
     Kp = KodairaSymbol("III")
-    fp = FlintZZ(n-1)
-    cp = FlintZZ(2)
+    fp = ZZ(n-1)
+    cp = ZZ(2)
     return (E, Kp, fp, cp, true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   if mod(b6, p^3) != 0
     if quadroots(1, divexact(a3, p), divexact(-a6, p^2), p)
-      cp = FlintZZ(3)
+      cp = ZZ(3)
     else
-      cp = FlintZZ(1)
+      cp = ZZ(1)
     end
     Kp = KodairaSymbol("IV")
     fp = n - 2
-    return (E, Kp, FlintZZ(fp), cp, true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    return (E, Kp, ZZ(fp), cp, true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
   end
 
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
@@ -561,8 +531,8 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     s = smod(a2, 2)
     t = 2 * smod(divexact(a6, 4), 2)
   else
-    s = -a1 * invmod(FlintZZ(2), p)
-    t = -a3 * invmod(FlintZZ(2), p)
+    s = -a1 * invmod(ZZ(2), p)
+    t = -a3 * invmod(ZZ(2), p)
   end
 
   trans = transform_rstu(E, ZZRingElem[0, s, t, 1])
@@ -582,9 +552,9 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
   # test for distinct roots: type I0*
   if mod(w, p) != 0
     Kp = KodairaSymbol("I0*")
-    fp = FlintZZ(n - 4)
+    fp = ZZ(n - 4)
     cp = 1 + nrootscubic(b, c, d, p)
-    return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    return (E, Kp, fp, ZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
 
   # test for double root: type Im*
   elseif mod(x, p) != 0
@@ -595,7 +565,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     elseif p == 3
       r = b*c
     else
-      r = (b*c - 9*d) * invmod(FlintZZ(2)*x, p)
+      r = (b*c - 9*d) * invmod(ZZ(2)*x, p)
     end
 
     r = p * smod(r, p)
@@ -611,7 +581,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     m = 1
     mx = p^2
     my = p^2
-    cp = FlintZZ(0)
+    cp = ZZ(0)
 
     while cp == 0
       xa2 = divexact(a2, p)
@@ -621,16 +591,16 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
 
       if mod(xa3^2 + 4*xa6, p) !=  0
         if quadroots(1, xa3, -xa6, p)
-          cp = FlintZZ(4)
+          cp = ZZ(4)
         else
-          cp = FlintZZ(2)
+          cp = ZZ(2)
         end
 
       else
         if p == 2
           t = my * xa6
         else
-          t = my * smod(-xa3*invmod(FlintZZ(2), p), p)
+          t = my * smod(-xa3*invmod(ZZ(2), p), p)
         end
 
         trans = transform_rstu(E, [0, 0, t, 1])
@@ -649,9 +619,9 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
 
         if mod(xa4^2 - 4*xa2*xa6, p) != 0
           if quadroots(xa2, xa4, xa6, p)
-            cp = FlintZZ(4)
+            cp = ZZ(4)
           else
-            cp = FlintZZ(2)
+            cp = ZZ(2)
           end
 
         else
@@ -677,7 +647,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     fp = n - m - 4
     Kp = KodairaSymbol("I$(m)*")
 
-    return (E, Kp, FlintZZ(fp), FlintZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+    return (E, Kp, ZZ(fp), ZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
@@ -685,7 +655,7 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     if p == 3
       rp = -d
     else
-      rp = -b * invmod(FlintZZ(3), p)
+      rp = -b * invmod(ZZ(3), p)
     end
 
     r = p * smod(rp, p)
@@ -703,19 +673,19 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
     # Test for type IV*
     if mod(x3^2 + 4* x6, p) != 0
       if quadroots(1, x3, -x6, p)
-        cp = FlintZZ(3)
+        cp = ZZ(3)
       else
-        cp = FlintZZ(1)
+        cp = ZZ(1)
       end
       Kp = KodairaSymbol("IV*")
-      fp = FlintZZ(n - 6)
+      fp = ZZ(n - 6)
 
-      return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+      return (E, Kp, fp, ZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
     else
       if p == 2
         t = x6
       else
-        t = x3 * invmod(FlintZZ(2), p)
+        t = x3 * invmod(ZZ(2), p)
       end
 
       t = -p^2 * smod(t, p)
@@ -730,16 +700,16 @@ function tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p)
       # Test for types III*, II*
       if mod(a4, p^4) != 0
         Kp = KodairaSymbol("III*")
-        fp = FlintZZ(n - 7)
-        cp = FlintZZ(2)
+        fp = ZZ(n - 7)
+        cp = ZZ(2)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+        return (E, Kp, fp, ZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       elseif mod(a6, p^6) != 0
         Kp = KodairaSymbol("II*")
-        fp = FlintZZ(n - 8)
-        cp = FlintZZ(1)
+        fp = ZZ(n - 8)
+        cp = ZZ(1)
 
-        return (E, Kp, fp, FlintZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
+        return (E, Kp, fp, ZZ(cp), true)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}
       else
         E = transform_rstu(E, [0, 0, 0, p])[1]
         return tates_algorithm_local(E, p)::Tuple{EllipticCurve{QQFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool}

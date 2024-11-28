@@ -163,7 +163,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
 
   lengths = Vector{Vector{ZZRingElem}}(undef, length(V))
 
-  tmp = zero_matrix(FlintZZ, 1, n)
+  tmp = zero_matrix(ZZ, 1, n)
 
   for i in 1:length(V)
     # First canonicalize them
@@ -177,7 +177,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
       v .*= -1
     end
 
-    vfmpz = matrix(FlintZZ, 1, n, v)
+    vfmpz = matrix(ZZ, 1, n, v)
 
     w = Vector{ZZRingElem}(undef, r)
     w[1] = numerator(cand[2])
@@ -209,7 +209,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   if auto
     # Find the standard basis vectors
     C.std_basis = Vector{Int}(undef, dim(C))
-    z = zero_matrix(FlintZZ, 1, dim(C))
+    z = zero_matrix(ZZ, 1, dim(C))
     for i in 1:dim(C)
       z[1, C.per[i]] = 1
       k = find_point(z, C.V)
@@ -223,7 +223,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   for i in 1:length(C.G)
     A = Vector{ZZMatrix}(undef, length(C.V))
     for j in 1:length(C.V)
-      A[j] = zero_matrix(FlintZZ, dim(C), 1)
+      A[j] = zero_matrix(ZZ, dim(C), 1)
       for k in 1:dim(C)
         A[j][k, 1] = _dot_product_with_row(C.V[j], C.G[i], k)
       end
@@ -249,7 +249,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   C.orders = Vector{Int}(undef, dim(C))
 
   # -Id is always an automorphism
-  C.g[1] = ZZMatrix[-identity_matrix(FlintZZ, dim(C))]
+  C.g[1] = ZZMatrix[-identity_matrix(ZZ, dim(C))]
 
   # Calculate orbit lengths
 
@@ -492,7 +492,7 @@ end
 #
 ################################################################################
 
-_zero_vector(::Type{ZZRingElem}, len::Int) = zero_matrix(FlintZZ, 1, len)
+_zero_vector(::Type{ZZRingElem}, len::Int) = zero_matrix(ZZ, 1, len)
 _zero_vector(::Type{Int}, len::Int) = zeros(Int, len)
 
 function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
@@ -609,7 +609,7 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
       M = reduce(vcat, vector_sums[i])
     else
       # We need to convert to ZZRingElem since we don't have LLL for Ints
-      M = zero_matrix(FlintZZ, length(vector_sums[i]), length(vector_sums[i][1]))
+      M = zero_matrix(ZZ, length(vector_sums[i]), length(vector_sums[i][1]))
       for r in 1:nrows(M)
         for c in 1:ncols(M)
           M[r, c] = vector_sums[i][r][c]
@@ -638,11 +638,11 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
     transpB = transpose(B)
     C.scpcomb[i].F = [ B*G*transpB for G in C.GZZ ]
 
-    C.scpcomb[i].xvectmp = zero_matrix(FlintZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
-    C.scpcomb[i].xbasetmp = zero_matrix(FlintZZ, nrows(C.scpcomb[i].trans), C.dim)
-    C.scpcomb[i].multmp1 = zero_matrix(FlintZZ, nrows(C.scpcomb[i].trans), C.dim)
-    C.scpcomb[i].multmp2 = zero_matrix(FlintZZ, nrows(C.scpcomb[i].trans), nrows(C.scpcomb[i].trans))
-    C.scpcomb[i].multmp3 = zero_matrix(FlintZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
+    C.scpcomb[i].xvectmp = zero_matrix(ZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
+    C.scpcomb[i].xbasetmp = zero_matrix(ZZ, nrows(C.scpcomb[i].trans), C.dim)
+    C.scpcomb[i].multmp1 = zero_matrix(ZZ, nrows(C.scpcomb[i].trans), C.dim)
+    C.scpcomb[i].multmp2 = zero_matrix(ZZ, nrows(C.scpcomb[i].trans), nrows(C.scpcomb[i].trans))
+    C.scpcomb[i].multmp3 = zero_matrix(ZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
   end
   return nothing
 end
@@ -828,7 +828,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::ZZRingElem = ZZRingElem(-1))
   for i in 1:length(V)
     z = Vector{ZZRingElem}(undef, length(C.G))
     z[1] = V[i][2]
-    m = matrix(FlintZZ, 1, n, V[i][1])
+    m = matrix(ZZ, 1, n, V[i][1])
     mt = transpose(m)
     for k in 2:length(C.G)
       z[k] = (m * C.G[k] * mt)[1, 1]
@@ -1082,7 +1082,7 @@ function _operate(point, A::Matrix{Int}, V)
 end
 
 function _operate(point, A::ZZMatrix, V)
-  return _operate(point, A, V, zero_matrix(FlintZZ, 1, ncols(A)))
+  return _operate(point, A, V, zero_matrix(ZZ, 1, ncols(A)))
 end
 
 
@@ -1812,8 +1812,8 @@ end
 #						stabilizes e	*****/
 function stabil(x1, x2, per, G, V, C)
   dim = length(x1)
-  XG = zero_matrix(FlintZZ, dim, dim)
-  X2 = zero_matrix(FlintZZ, dim, dim)
+  XG = zero_matrix(ZZ, dim, dim)
+  X2 = zero_matrix(ZZ, dim, dim)
   x = Vector{Int}(undef, dim)
   for i in 1:dim
     x[i] = _operate(x1[i], G, V, C.operate_tmp) # ZZRingElem case
@@ -1853,11 +1853,11 @@ function _one(::Type{Matrix{Int}}, n::Int)
   return z
 end
 
-_one(::Type{ZZMatrix}, n::Int) = identity_matrix(FlintZZ, n)
+_one(::Type{ZZMatrix}, n::Int) = identity_matrix(ZZ, n)
 
 _zero(::Type{Matrix{Int}}, n::Int, m::Int) = zeros(Int, n, m)
 
-_zero(::Type{ZZMatrix}, n::Int, m::Int) = zero_matrix(FlintZZ, n, m)
+_zero(::Type{ZZMatrix}, n::Int, m::Int) = zero_matrix(ZZ, n, m)
 
 function matgen(x, dim, per, v)
 #/*****	generates the matrix X which has as row
@@ -2035,8 +2035,8 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
   len = 1
   fail = 0
 #/* fail is the number of successive failures */
-  #A = zero_matrix(FlintZZ, d, d)
-  #B = zero_matrix(FlintZZ, d, d)
+  #A = zero_matrix(ZZ, d, d)
+  #B = zero_matrix(ZZ, d, d)
   while (cnd <= len && fail < Maxfail)
     for i in 1:nG
       if fail >= Maxfail
@@ -2118,7 +2118,7 @@ end
 #
 ################################################################################
 
-function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
+function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = ZZ(), tmp3::ZZRingElem = ZZ())
   getindex!(tmp2, v, 1, 1)
   getindex!(tmp3, A, 1, k)
   mul!(t, tmp2, tmp3)
@@ -2131,8 +2131,8 @@ function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::I
   return t
 end
 
-function _dot_product_with_column(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(FlintZZ))
-  t = zero(FlintZZ)
+function _dot_product_with_column(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(ZZ))
+  t = zero(ZZ)
   t = _dot_product_with_column!(t, v, A, k, tmp)
   return t
 end
@@ -2143,7 +2143,7 @@ function _dot_product_with_entry!(t::ZZRingElem, v::ZZMatrix, A::Vector{ZZMatrix
   return t
 end
 
-function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
+function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = ZZ(), tmp3::ZZRingElem = ZZ())
   getindex!(tmp2, v, 1, 1)
   getindex!(tmp3, A, k, 1)
   mul!(t, tmp2, tmp3)
@@ -2156,8 +2156,8 @@ function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int,
   return t
 end
 
-function _dot_product_with_row(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(FlintZZ))
-  t = zero(FlintZZ)
+function _dot_product_with_row(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(ZZ))
+  t = zero(ZZ)
   t = _dot_product_with_row!(t, v, A, k, tmp)
   return t
 end
@@ -2231,7 +2231,7 @@ function _norm(v::Vector{Int}, M::Matrix{Int}, tmp::Vector{Int} = Vector{Int}(un
   return dot(v, tmp)
 end
 
-function _norm(v::ZZMatrix, M::ZZMatrix, tmp::ZZMatrix = zero_matrix(FlintZZ, 1, ncols(v)))
+function _norm(v::ZZMatrix, M::ZZMatrix, tmp::ZZMatrix = zero_matrix(ZZ, 1, ncols(v)))
   mul!(tmp, v, M)
   return (v * transpose(tmp))[1, 1]
 end
@@ -2311,7 +2311,7 @@ function add_to_row!(A::Matrix{Int}, r::Vector{Int}, i::Int, sign::Bool = false,
   return A
 end
 
-function add_to_row!(A::ZZMatrix, r::ZZMatrix, i::Int, sign::Bool = false, tmp1::ZZRingElem = FlintZZ(), tmp2::ZZRingElem = FlintZZ(), tmp3::ZZRingElem = FlintZZ())
+function add_to_row!(A::ZZMatrix, r::ZZMatrix, i::Int, sign::Bool = false, tmp1::ZZRingElem = ZZ(), tmp2::ZZRingElem = ZZ(), tmp3::ZZRingElem = ZZ())
   @assert ncols(A) == length(r)
   @assert 1 <= i && i <= nrows(A)
   @inbounds for j in 1:ncols(A)
@@ -2348,7 +2348,7 @@ end
 
 # Some tests that I need to add:
 #
-# G = matrix(FlintZZ, 8, 8, [4, -2, 0, 0, 0, 0, 0, 1, -2, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2])
+# G = matrix(ZZ, 8, 8, [4, -2, 0, 0, 0, 0, 0, 1, -2, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2])
 #
 # C = Hecke.ZLatAutoCtx([G]); Hecke.compute_short_vectors(C);
 #
@@ -2395,7 +2395,7 @@ function _int_matrix_with_overflow(a::ZZMatrix, tmp::ZZRingElem)
 end
 
 function _make_small(V::VectorList{ZZMatrix, ZZRingElem})
-  tmp = FlintZZ()
+  tmp = ZZ()
   W = VectorList{Vector{Int}, Int}()
   W.vectors = [ _int_vector_with_overflow(v, tmp) for v in V.vectors ]
   if isdefined(V, :lengths)
@@ -2419,7 +2419,7 @@ _make_small(C::ZLatAutoCtx{Int}) = C
 
 # Forces the entries of C in Ints. Only the fields relevant for `cand` are filled.
 function _make_small(C::ZLatAutoCtx{ZZRingElem})
-  tmp = FlintZZ()
+  tmp = ZZ()
   D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
   D.G = [ _int_matrix_with_overflow(M, tmp) for M in C.G ]
 

@@ -2,36 +2,8 @@
 #
 #                 LatEnum.jl : Basic lattice enumeration
 #
-# This file is part of hecke.
-#
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-# (C) 2015 Claus Fieker
-# (C) 2015 Tommy Hofmann
-#
 ################################################################################
+#
 #  TODO:
 #   - (sh/c)ould be indexed by the type of G and C
 #     in fact, since G is not used after the creation, maybe we should drop it.
@@ -44,6 +16,8 @@
 #   - lower bounds should be non-trivial speed-up by effectively generating the
 #     L, U for the other bound as well and using this for exclusion.
 #     (see other comment below)
+# 
+################################################################################
 
 function show(io::IO, E::enum_ctx)
   println(io, "EnumCtx")
@@ -114,7 +88,7 @@ function enum_ctx_from_gram(G::ZZMatrix, den = 1; Tx = BigInt, TC = Rational{Big
   E.limit = limit
   E.d = den
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
-  E.x = zero_matrix(FlintZZ, 1, n)
+  E.x = zero_matrix(ZZ, 1, n)
     #coeffs limit+1:n are going to be zero, always
   E.L = Vector{TU}(undef, limit) #lower and
   E.U = Vector{TU}(undef, limit) #upper bounds for the coordinates
@@ -244,12 +218,12 @@ end
 
 @inline function fmpz_mat_entry_incref!(a::ZZMatrix, r::Int, c::Int)
   z = Nemo.mat_entry_ptr(a, r, c)
-  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, 1)
+  add!(z, 1)
 end
 
 function fmpz_mat_entry_add_ui!(a::ZZMatrix, r::Int, c::Int, v::UInt)
   z = Nemo.mat_entry_ptr(a, r, c)
-  ccall((:fmpz_add_ui, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Int), z, z, v)
+  add!(z, v)
 end
 
 function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}
@@ -367,7 +341,7 @@ function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::T, limit=-1) where {A,B,
   if enum_ctx_next(E)
     l = deepcopy(E.x) # else the 1st element is not returned....
   else
-    l = matrix(FlintZZ, 0, E.n, ZZRingElem[])
+    l = matrix(ZZ, 0, E.n, ZZRingElem[])
   end
   while enum_ctx_next(E) && (limit == -1 || limit >= Base.size(l, 1))
     l = vcat(l, E.x)
@@ -419,7 +393,7 @@ end
 
 function enumerate_using_gram(G::ArbMatrix, c::ArbFieldElem)
   E = EnumCtxArb(pseudo_cholesky(G))
-  return _enumerate(E, c, nrows(G), zero_matrix(FlintZZ, 1, nrows(G)))
+  return _enumerate(E, c, nrows(G), zero_matrix(ZZ, 1, nrows(G)))
 end
 
 function _enumerate(E::EnumCtxArb, c::ArbFieldElem, i::Int, x::ZZMatrix)

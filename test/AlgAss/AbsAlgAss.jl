@@ -66,7 +66,7 @@
     A = matrix_algebra(Fp, [ matrix(Fp, [ 1 1; 0 1 ]) ]) # not semisimple!
     @test_throws AssertionError decompose(A)
 
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     A = StructureConstantAlgebra((x^2 + 1)*(x^2 + 3))
     dec = Hecke.as_number_fields(A)
 
@@ -82,13 +82,13 @@
   end
 
   @testset "Generators" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     A = StructureConstantAlgebra((x^2 + 1)*(x^2 + 3))
     g, full_basis, v = gens_with_data(A)
 
     @test length(full_basis) == dim(A)
 
-    M = zero_matrix(FlintQQ, dim(A), dim(A))
+    M = zero_matrix(QQ, dim(A), dim(A))
     for i = 1:dim(A)
       Hecke.elem_to_mat_row!(M, i, full_basis[i])
     end
@@ -105,14 +105,14 @@
   end
 
   @testset "Radical" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     # f = x^2 + 1
     # g = x^3 + 3x^2 + 5x - 5
     f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
     A = StructureConstantAlgebra(f2g3)
     fg = A(QQFieldElem[-5, 5, -2, 6, 3, 1, 0, 0, 0, 0, 0, 0, 0]) # = f*g
     J = radical(A)
-    I = ideal(A, fg)
+    I = left_ideal(A, fg)
     @test I == J
 
     f = x^2 + 1
@@ -124,7 +124,7 @@
     A = StructureConstantAlgebra(g2h3)
     gh = A(map(K, [10, -5, -28, -13, 2, 1, 0, 0, 0, 0, 0, 0])) # = g*h
     J = radical(A)
-    I = ideal(A, gh)
+    I = left_ideal(A, gh)
     @test I == J
 
     G = small_group(8, 4)
@@ -138,7 +138,7 @@
             0 0 0 0 1 0 0 1;
             0 0 0 0 0 1 0 1;
             0 0 0 0 0 0 1 1]
-    @test I == ideal(A, bI)
+    @test I == Hecke._ideal_from_matrix(A, bI)
     ge = [A(g) - A(one(G)) for g in G]
     @test all(in(I), ge)
     AS, AStoA = StructureConstantAlgebra(A)
@@ -159,11 +159,11 @@
     I = radical(AS)
     @test all(in(I), preimage.(Ref(AStoA), ge))
 
-    A = group_algebra(FlintQQ, G)
+    A = group_algebra(QQ, G)
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 0
 
-    for K in [ F2, F4, FlintQQ ]
+    for K in [ F2, F4, QQ ]
       A = matrix_algebra(K, [ matrix(K, 2, 2, [ 1, 0, 0, 0 ]), matrix(K, 2, 2, [ 0, 1, 0, 0 ]), matrix(K, 2, 2, [ 0, 0, 0, 1]) ]) # i. e. upper triangular matrices
       I = radical(A)
       @test nrows(basis_matrix(I, copy = false)) == 1
@@ -247,4 +247,26 @@
   h = hom(A, A, inv(X) .* basis(A) .* X)
   a = Hecke._skolem_noether(h)
   @test all(h(b) == inv(a) * b * a for b in basis(A))
+
+  let
+    # maximal separable subalgebra
+    Qx, x = QQ[:x]
+    A = associative_algebra((x^2 + 1)^2)
+    B, BtoA = Hecke.maximal_separable_subalgebra(A)
+    @test domain(BtoA) === B
+    @test codomain(BtoA) == A
+    @test dim(B) == 2
+    @test is_simple(B)
+  end
+
+  let
+    # multiplicative depdendencies
+    a = QQ[1 2; 3 4]
+    c = QQ[-3 2; 3 0]
+    v = [a, a^2, c, c*a]
+    m = Hecke._multiplicative_dependencies([a, a^2, c, c*a])
+    for w in m
+      @test isone(prod(v[i]^Int(w[i]) for i in 1:length(v)))
+    end
+  end
 end

@@ -2,34 +2,6 @@
 #
 #       GrpAb/Elem.jl : Elements in finitely generated abelian groups
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2015, 2016, 2017 Tommy Hofmann, Claus Fieker
-#
 ################################################################################
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.is_snf
@@ -144,6 +116,26 @@ Returns the $i$-th component of the element $x$.
 """
 function getindex(x::FinGenAbGroupElem, i::Int)
   return x.coeff[1, i]
+end
+
+@doc raw"""
+    getindex(x::FinGenAbGroupElem, v::AbstractVector{Int}) -> Vector{ZZRingElem}
+
+Returns the $i$-th components of the element $x$ where $i \in v$.
+
+!!! note
+    This function is inefficient since the elements are internally stored using ZZMatrix but this function outputs a vector.
+"""
+function getindex(x::FinGenAbGroupElem, v::AbstractVector{Int})
+  return [x.coeff[1, i] for i in v]
+end
+
+function Base.firstindex(x::FinGenAbGroupElem)
+  return Int(1)
+end
+
+function Base.lastindex(x::FinGenAbGroupElem)
+  return ngens(parent(x))
 end
 
 ################################################################################
@@ -294,7 +286,7 @@ this function returns the element of $A$ with components `x`.
 """
 function (A::FinGenAbGroup)(x::Vector{ZZRingElem})
   ngens(A) != length(x) && error("Lengths do not coincide")
-  y = matrix(FlintZZ, 1, ngens(A), x)
+  y = matrix(ZZ, 1, ngens(A), x)
   z = FinGenAbGroupElem(A, y)
   return z
 end
@@ -330,7 +322,7 @@ function (A::FinGenAbGroup)(x::ZZMatrix)
 end
 
 function (A::FinGenAbGroup)()
-  y = zero_matrix(FlintZZ, 1, ngens(A))
+  y = zero_matrix(ZZ, 1, ngens(A))
   z = FinGenAbGroupElem(A, y)
   return z
 end
@@ -346,9 +338,9 @@ where the $1$ is at the $i$-th position.
 function getindex(A::FinGenAbGroup, i::Int)
   (i < 0 || i > ngens(A)) && error("Index ($i) out of range (1:$(ngens(A)))")
   if i==0
-    return FinGenAbGroupElem(A, zero_matrix(FlintZZ, 1, ngens(A)))
+    return FinGenAbGroupElem(A, zero_matrix(ZZ, 1, ngens(A)))
   end
-  z = zero_matrix(FlintZZ, 1, ngens(A))
+  z = zero_matrix(ZZ, 1, ngens(A))
   for j in 1:ngens(A)
     z[1, j] = ZZRingElem()
   end

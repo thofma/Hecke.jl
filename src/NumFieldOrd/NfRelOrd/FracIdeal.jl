@@ -296,7 +296,7 @@ function norm(a::RelNumFieldOrderFractionalIdeal, k::QQField)
 end
 
 function absolute_norm(a::RelNumFieldOrderFractionalIdeal)
-  return norm(a, FlintQQ)
+  return norm(a, QQ)
 end
 
 ################################################################################

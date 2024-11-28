@@ -17,7 +17,7 @@ function defines_minimal_overorder(B::Vector, l::Vector)
   if denominator(x) != 1
     return false, M
   end
-  m = zero_matrix(FlintZZ, 1, ncols(M))
+  m = zero_matrix(ZZ, 1, ncols(M))
   for i = 1:ncols(M)
     m[1, i] = numerator(x.coeffs[i])
   end
@@ -32,7 +32,7 @@ function defines_minimal_overorder(B::Vector{AbsSimpleNumFieldElem}, l::Vector{A
   if denominator(x) != 1
     return false, M
   end
-  m = zero_matrix(FlintZZ, 1, ncols(M))
+  m = zero_matrix(ZZ, 1, ncols(M))
   for i = 1:ncols(M)
     m[1, i] = numerator(coeff(x, i - 1))
   end
@@ -64,7 +64,7 @@ mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <: Map{FinGenAbGroup, T2
     z = new{T1, T2, TT, elem_type(T1)}()
     d = degree(M)
     K = _algebra(M)
-    B = zero_matrix(FlintZZ, d, d)
+    B = zero_matrix(ZZ, d, d)
     for i in 1:d
       v = coordinates(M(_elem_in_algebra(basis(N)[i])), copy = false)
       for j in 1:d
@@ -172,7 +172,7 @@ function induce(f::GrpAbFinGenToNfOrdQuoNfOrd, g)
   G = domain(f)
   imgs = Vector{FinGenAbGroupElem}(undef, ngens(G))
   d = degree(codomain(f))
-  m = zero_matrix(FlintZZ, d, d)
+  m = zero_matrix(ZZ, d, d)
   for i in 1:ngens(G)
     imgs[i] = f\(g(f(G[i])))
   end
@@ -569,7 +569,7 @@ function poverorders_etale(O, p::ZZRingElem)
   lP = prime_ideals_over(O, p)
   res = typeof(O)[O]
   K = _algebra(O)
-  tz = zero_matrix(FlintZZ, 2 * degree(O), degree(O))
+  tz = zero_matrix(ZZ, 2 * degree(O), degree(O))
   for P in lP
     nres = typeof(O)[]
     Pprim = pprimary_overorders(O, P)
@@ -616,7 +616,7 @@ function _overorders_with_local_property(O, pred)
         append!(orders, bassP)
       else
         orders1 = Vector{typeof(O)}(undef, length(orders) * length(bassP))
-        z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+        z = zero_matrix(ZZ, 2*degree(O), degree(O))
         kk = 1
         for O1 in orders
           for O2 in bassP
@@ -653,7 +653,7 @@ function overorders_etale(O)
     else
       orders1 = Vector{typeof(O)}(undef, length(orders) * length(new_p))
       sizehint!(orders1, length(orders) * length(new_p))
-      z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+      z = zero_matrix(ZZ, 2*degree(O), degree(O))
       kk = 1
       for O1 in orders
         for O2 in new_p
@@ -1169,7 +1169,7 @@ function ideals_with_norm(O::AbsSimpleNumFieldOrder, p::ZZRingElem, n::Int)
     subs = stable_subgroups(A, autos, quotype=[pInt^y for y in ppar], op = (G, z) -> sub(G, z, false))
 
     for s in subs
-      new_basis_matrix = zero_matrix(FlintZZ, d, d)
+      new_basis_matrix = zero_matrix(ZZ, d, d)
       T = image(s[2], false)
       G = domain(T[2])
       for i in 1:d
@@ -1193,7 +1193,7 @@ function index(R::AbsSimpleNumFieldOrder, S::AbsSimpleNumFieldOrder)
   s = gen_index(S)
   i = r^-1 * s
   @assert isinteger(i)
-  return FlintZZ(i)
+  return ZZ(i)
 end
 
 function poverorders_goursat(O1::AbsSimpleNumFieldOrder, O2::AbsSimpleNumFieldOrder, p::ZZRingElem)

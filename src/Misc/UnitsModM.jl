@@ -57,8 +57,8 @@ function gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=ZZRingElem(0))
   gc = gcd(p-1, mod)
   mi = divexact(p-1, gc)
   fp = factor(gc)
-  Rp = residue_ring(FlintZZ, p, cached=false)[1]
-  Rpp = residue_ring(FlintZZ, p*p, cached=false)[1]
+  Rp = residue_ring(ZZ, p, cached=false)[1]
+  Rpp = residue_ring(ZZ, p*p, cached=false)[1]
 
   g = ZZRingElem(2)
   if is_primitive_root(Rp(g)^mi, gc, fp)
@@ -486,7 +486,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
     if v>=2 && n % p==0
       #We know that (1+p)^(p-1) generates the p-Sylow of Z/p^vZ
       #We only need the quotient by p^valuation(n,p)
-      R = residue_ring(FlintZZ, p^v, cached=false)[1]
+      R = residue_ring(ZZ, p^v, cached=false)[1]
       gen = R(1+p)^(p-1)
       ord1 = gcd(p^(v-1), n)
       aux1 = div(p^(v-1), ord1)
@@ -548,7 +548,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       return Int[], Int[], disclog4
     end
     if v==2
-      R = residue_ring(FlintZZ, 4, cached=false)[1]
+      R = residue_ring(ZZ, 4, cached=false)[1]
       local disclog5
       let R = R
         function disclog5(x::Int)
@@ -562,7 +562,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       end
       return Int[-1], Int[2], disclog5
     else
-      R = residue_ring(FlintZZ, 2^v, cached=false)[1]
+      R = residue_ring(ZZ, 2^v, cached=false)[1]
       ord = gcd(2^(v-2), n)
       gens = Int[-1,5]
       exps = divexact(2^(v-2), ord)

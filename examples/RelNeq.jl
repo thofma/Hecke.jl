@@ -122,7 +122,7 @@ function norm_1_subgroup(A::RelNeq)
         lP = Hecke.prime_decomposition_nonindex(A.m_k_K, P[1])
       end
       f = [ZZRingElem(div(degree(Q[1]), degree(P[1]))) for Q = lP]
-      m = matrix(FlintZZ, 1, length(f), f)
+      m = matrix(ZZ, 1, length(f), f)
       n = kernel(m, side = :right)
       r = ncols(n)
 
@@ -318,8 +318,8 @@ function Hecke.evaluate(N::Norm1Group)
   # want the group extension (and the disc log and such)
   s1, ms1 = snf(N.sC[1])
   s2, ms2 = snf(N.sU[1])
-  R = [rels(s2) zero_matrix(FlintZZ, ngens(s2), ngens(s1));
-       zero_matrix(FlintZZ, ngens(s1), ngens(s2)) rels(s1)]
+  R = [rels(s2) zero_matrix(ZZ, ngens(s2), ngens(s1));
+       zero_matrix(ZZ, ngens(s1), ngens(s2)) rels(s1)]
 
   for i = 1:ngens(s1)
     x = ms1(s1[i])
@@ -387,7 +387,7 @@ function n1group(A::RelNeq, B::Int)
     else
       lq = Hecke.prime_decomposition_nonindex(A.m_k_K, P)
     end
-    f = matrix(FlintZZ, 1, length(lq), ZZRingElem[div(degree(Q[1]), degree(P)) for Q = lq])
+    f = matrix(ZZ, 1, length(lq), ZZRingElem[div(degree(Q[1]), degree(P)) for Q = lq])
     n = kernel(f, side = :right)
     r = ncols(n)
     res = false
@@ -444,7 +444,7 @@ function doit(f::ZZPolyRingElem)
   return C
 end
 
-Zx, x = FlintZZ["x"]
+Zx, x = ZZ["x"]
 function doit(n::String)
   f = open(n, "r")
   fo = open("$n.out", "w")

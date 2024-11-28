@@ -1,5 +1,5 @@
 function to_pari(io::IO, f::Generic.Poly{AbsSimpleNumFieldElem})
-  Zy, y = polynomial_ring(FlintQQ, "y", cached = false)
+  Zy, y = polynomial_ring(QQ, "y", cached = false)
   k = base_ring(f)
   kt = parent(f)
   s_k = k.S
@@ -51,7 +51,7 @@ from
   https://www.math.u-bordeaux.fr/~kbelabas/research/vanhoeij.pdf
   p 26, polys h_1, ..., h_10 (so far)
 
-Zx, x = polynomial_ring(FlintZZ)
+Zx, x = polynomial_ring(ZZ)
 l = [x-1,
 x^2-19,
 x^3-x^2+6,

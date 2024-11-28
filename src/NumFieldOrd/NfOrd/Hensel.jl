@@ -2,34 +2,6 @@
 #
 #  AbsSimpleNumFieldOrder/Hensel.jl : Hensel lifting for simple absolute number fields
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-# (C) 2019 Claus Fieker, Tommy Hofmann, Carlo Sircana
-#
 ################################################################################
 
 # TODO/missing:
@@ -269,7 +241,7 @@ end
 
 #this is (or should be) the HNF basis for P^??
 function _get_basis(pp::ZZRingElem, n::Int, pgg::ZZModPolyRingElem, Qt::ZZModPolyRing)
-  M = zero_matrix(FlintZZ, n, n)
+  M = zero_matrix(ZZ, n, n)
   Q = base_ring(Qt)
   #the lattice for reco:
   #zero!(M)
@@ -299,7 +271,7 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   modu = ZZRingElem(p)^25
   for j = (pr[i-1]+25):25:pr[i]
     pp = ZZRingElem(p)^j
-    Q = residue_ring(FlintZZ, pp, cached=false)[1]
+    Q = residue_ring(ZZ, pp, cached=false)[1]
     Qt, t = polynomial_ring(Q, "t", cached=false)
     pgg = Qt(gg)
     M = _get_basis(pp, n, pgg, Qt)
@@ -319,7 +291,7 @@ function _get_LLL_basis(Mold, Miold, dold, p, pr, i, gg)
   if !iszero(mod(pr[i]-pr[i-1], 25))
     modu = ZZRingElem(p)^mod(pr[i]-pr[i-1], 25)
     pp = ZZRingElem(p)^pr[i]
-    Q = residue_ring(FlintZZ, pp, cached=false)[1]
+    Q = residue_ring(ZZ, pp, cached=false)[1]
     Qt, t = polynomial_ring(Q, "t", cached=false)
     pgg = Qt(gg)
     M = _get_basis(pp, n, pgg, Qt)
@@ -400,7 +372,7 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
 
-  ZX, X = polynomial_ring(FlintZZ, "X", cached = false)
+  ZX, X = polynomial_ring(ZZ, "X", cached = false)
 
   #to avoid embarrassment...
 
@@ -492,7 +464,7 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
   roots_to_lift = trues(length(rt))
 
   n = degree(K)
-  M = zero_matrix(FlintZZ, n, n)
+  M = zero_matrix(ZZ, n, n)
   local Mi::ZZMatrix
   local d::ZZRingElem
 
@@ -500,7 +472,7 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
   for i=2:length(pr)
     @vprintln :Saturate 1 "Step number $i"
     pp = ZZRingElem(p)^pr[i]
-    Q = residue_ring(FlintZZ, pp, cached=false)[1]
+    Q = residue_ring(ZZ, pp, cached=false)[1]
     Qt, t = polynomial_ring(Q, "t", cached=false)
 
     #possibly this should be done with max precision and then adjusted down
@@ -524,7 +496,7 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
       dold = d
       pr_intermediate = pr[i-1] + div(pr[i] - pr[i-1], 2)
       ppint = ZZRingElem(p)^pr_intermediate
-      Qint = residue_ring(FlintZZ, ppint, cached = false)[1]
+      Qint = residue_ring(ZZ, ppint, cached = false)[1]
       Qintt = polynomial_ring(Qint, "t", cached = false)[1]
       pggQint = Qintt(gg)
       Mint = _get_basis(ppint, n, pggQint, Qintt)
@@ -635,9 +607,9 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
         cf = lift(ZX, (Qt(RT[j]*den) % pgg)*ap % pgg)
       end
 
-      ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
+      ve = matrix(ZZ, 1, n, [coeff(cf, k) for k=0:n-1])
       _ve = ve*Mi
-      mu = matrix(FlintZZ, 1, n,  [ round(ZZRingElem, _ve[1, k], d) for k=1:n])
+      mu = matrix(ZZ, 1, n,  [ round(ZZRingElem, _ve[1, k], d) for k=1:n])
       ve = ve - mu*M
       z = ZX()
       for kk=1:n

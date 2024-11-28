@@ -10,7 +10,7 @@ function _det_bound(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
 end
 
 function _max_max(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
-  d = FlintZZ(1)
+  d = ZZ(1)
   for i in 1:nrows(M)
     for j in 1:ncols(M)
       if !iszero(M[i, j])
@@ -120,7 +120,7 @@ function det(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
 
   @assert length(used_primes) == length(tmp_polys)
 
-  tmp_fmpz_poly = polynomial_ring(FlintZZ)[1]()
+  tmp_fmpz_poly = polynomial_ring(ZZ)[1]()
 
   for i in 0:degree(O)
     for j=1:length(used_primes)
@@ -163,16 +163,6 @@ end
 
 function set!(z::fpPolyRingElem, x::fpPolyRingElem)
   ccall((:nmod_poly_set, libflint), Nothing, (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}), z, x)
-end
-
-function __helper!(z, mF, entries)
-  s = size(entries)
-  for i in 1:s[2]
-    for j in 1:s[1]
-      z[j, i] = mF(entries[j, i])
-    end
-  end
-  return z
 end
 
 function mod_sym(x::AbsSimpleNumFieldOrderElem, m::ZZRingElem)
@@ -224,7 +214,9 @@ end
 
 function show(io::IO, P::PMat)
   compact = get(io, :compact, false)
-  if compact
+  if nrows(P.matrix) == 0
+    print(io, "empty $(0) x $(ncols(P)) pseudo-matrix")
+  elseif compact
     for i in 1:nrows(P.matrix)
       i == 1 || print(io, "\n")
       print(io, "(")
@@ -641,7 +633,7 @@ end
 function _make_integral!(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
   O = order(P.coeffs[1])
-  integralizer = one(FlintZZ)
+  integralizer = one(ZZ)
 
   for i = 1:nrows(P)
     divide_row!(P.matrix, i, K(denominator(P.coeffs[i])))
@@ -649,7 +641,7 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
     simplify(P.coeffs[i])
   end
 
-  z = one(FlintZZ)
+  z = one(ZZ)
   for i in 1:nrows(P)
     for j in 1:ncols(P)
       z = lcm(z, denominator(P.matrix[i, j], O))
@@ -871,10 +863,15 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, ::Val
   for i = start:step:stop
     # find pivot
     if shape === :upperright
-      piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+      _piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))
     else
-      piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+      _piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))
     end
+    # The pseudo-HNF might be the zero matrix?
+    if _piv isa Nothing
+      continue
+    end
+    piv = _piv::Int
     if !(w[1, piv]//P.matrix[i, piv] in P.coeffs[i])
       if with_solution
         return false, sol
@@ -1777,39 +1774,39 @@ function is_pseudo_hnf(M, shape::Symbol = :lowerleft)
 end
 
 function test_triangular()
-  M = zero_matrix(FlintZZ, 3, 3)
+  M = zero_matrix(ZZ, 3, 3)
 
-  M = FlintZZ[1 0 0;
+  M = ZZ[1 0 0;
               0 1 0;
               0 0 1]
 
   @assert is_triangular(M)
 
-  M = FlintZZ[0 0 0;
+  M = ZZ[0 0 0;
               0 1 0;
               0 0 1]
 
   @assert is_triangular(M)
 
-  M = FlintZZ[1 0 0;
+  M = ZZ[1 0 0;
               0 0 0;
               0 0 1]
 
   @assert !is_triangular(M)
 
-  M = FlintZZ[0 1 0;
+  M = ZZ[0 1 0;
               0 0 1;
               0 0 0]
 
   @assert !is_triangular(M)
 
-  M = FlintZZ[1 0 0;
+  M = ZZ[1 0 0;
               0 1 0;
               0 0 0]
 
   @assert !is_triangular(M)
 
-  M = FlintZZ[0 1 0;
+  M = ZZ[0 1 0;
               1 0 0;
               0 0 1]
 
@@ -2055,3 +2052,12 @@ function inv(x::Generic.MatSpaceElem{AbsSimpleNumFieldOrderElem})
   K = nf(R)
   return change_base_ring(R, inv(change_base_ring(K, x)))
 end
+
+################################################################################
+#
+#  Emptiness check
+#
+################################################################################
+
+is_empty(P::PMat) = is_empty(matrix(P))
+

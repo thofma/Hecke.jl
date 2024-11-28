@@ -9,7 +9,7 @@ end
 
 ## Creation of algebras
 
-See the corresponding sections in ?????
+See the corresponding sections on [structure constant algebras](@ref SCA).
 ```@docs
 zero_algebra(::Field)
 ```

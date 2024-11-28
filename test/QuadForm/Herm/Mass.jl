@@ -4,7 +4,7 @@
   # Examples from arguments checks: indefinite and rank 0 cases
   #
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^2 - 2
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -101,7 +101,7 @@
   @test m == 1//147456
 
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^2-3
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -114,7 +114,7 @@
   @test m == 1//108
 
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^4-x^3-4*x^2+4*x+1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")

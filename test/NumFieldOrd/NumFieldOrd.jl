@@ -1,5 +1,5 @@
 @testset "NumFieldOrder" begin
-  x = polynomial_ring(FlintQQ, "x", cached = false)[2]
+  x = polynomial_ring(QQ, "x", cached = false)[2]
   K, a = number_field(x^2+1, check = false, cached = false)
   Kns, gKns = number_field([x^2+1], check = false, cached = false)
   Kt, t = polynomial_ring(K, "t", cached = false)
@@ -17,7 +17,7 @@
   BOK = absolute_basis(OK)
   @test @inferred discriminant(BOK) == @inferred discriminant(OK)
   @test @inferred signature(OK) == (0, 1)
-  @test @inferred discriminant(OK, FlintQQ) == discriminant(OK)
+  @test @inferred discriminant(OK, QQ) == discriminant(OK)
 
   OKns = maximal_order(Kns)
   @inferred Hecke.nf(OKns)
@@ -30,7 +30,7 @@
   BOKns = absolute_basis(OKns)
   @test @inferred discriminant(BOKns) == @inferred discriminant(OKns)
   @test @inferred signature(OKns) == (0, 1)
-  @test @inferred discriminant(OKns, FlintQQ) == discriminant(OKns)
+  @test @inferred discriminant(OKns, QQ) == discriminant(OKns)
 
   OL = maximal_order(L)
   @inferred Hecke.nf(OL)
@@ -43,7 +43,7 @@
   BOL = absolute_basis(OL)
   @test numerator(det(trace_matrix(map(elem_in_nf, BOL)))) == @inferred absolute_discriminant(OL)
   @test @inferred signature(OL) == (0, 2)
-  @test @inferred discriminant(OL, FlintQQ) == absolute_discriminant(OL)
+  @test @inferred discriminant(OL, QQ) == absolute_discriminant(OL)
 
   OLns = maximal_order(Lns)
   @inferred Hecke.nf(OLns)
@@ -56,7 +56,7 @@
   BOLns = absolute_basis(OLns)
   @test numerator(det(trace_matrix(map(elem_in_nf, BOLns)))) == @inferred absolute_discriminant(OLns)
   @test @inferred signature(OLns) == (0, 2)
-  @test @inferred discriminant(OLns, FlintQQ) == absolute_discriminant(OLns)
+  @test @inferred discriminant(OLns, QQ) == absolute_discriminant(OLns)
 
 end
 

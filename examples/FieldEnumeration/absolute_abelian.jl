@@ -7,7 +7,7 @@ function _get_simple_extension_and_maximal_order(K)
   pol = K.pol
   k = length(pol)
   gensK = gens(K)
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   basesofmaximalorders = Vector{elem_type(K)}[]
   discs = ZZRingElem[]
   for i in 1:k

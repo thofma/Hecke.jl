@@ -2,35 +2,6 @@
 #
 #             EllipticCurve/Misc.jl : Misc functions
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# (C) 2016 Tommy Hofmann
-# (C) 2016 Robin Ammon
-# (C) 2016 Sofia Brenner
-#
 ################################################################################
 
 ###############################################################################
@@ -159,19 +130,19 @@ function nrootscubic(b, c, d, p)
 
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
-      return FlintZZ(3)
+      return ZZ(3)
     else
-      return FlintZZ(0)
+      return ZZ(0)
     end
   elseif length(fac) == 2
     if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
       # one linear and one irreducible quadratic factor
-      return FlintZZ(1)
+      return ZZ(1)
     else
-      return FlintZZ(3) #one double and one single root
+      return ZZ(3) #one double and one single root
     end
   else
-    return FlintZZ(3)
+    return ZZ(3)
   end
 end
 
@@ -187,19 +158,19 @@ function nrootscubic(b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, d::AbsS
   fac = factor(f)
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
-      return FlintZZ(3)
+      return ZZ(3)
     else
-      return FlintZZ(0)
+      return ZZ(0)
     end
   elseif length(fac) == 2
     if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
       # one linear and one irreducible quadratic factor
-      return FlintZZ(1)
+      return ZZ(1)
     else
-      return FlintZZ(3) #one double and one single root
+      return ZZ(3) #one double and one single root
     end
   else
-    return FlintZZ(3)
+    return ZZ(3)
   end
 end
 

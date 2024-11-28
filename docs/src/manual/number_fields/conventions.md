@@ -1,4 +1,4 @@
-### Number fields
+# Conventions
 
 By an absolute number field we mean finite extensions of $\mathbf Q$, which is
 of type `AbsSimpleNumField` and whose elements are of type `AbsSimpleNumFieldElem`. Such an

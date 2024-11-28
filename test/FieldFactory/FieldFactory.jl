@@ -78,7 +78,7 @@
   println("Split extension")
   @time begin
     @testset "Split extension" begin
-      x = polynomial_ring(FlintZZ, "x", cached = false)[2]
+      x = polynomial_ring(ZZ, "x", cached = false)[2]
       K =  number_field(x^2+1)[1]
       l = [Hecke.field_context(K)]
       l1 = Hecke.fields(42, 5, l, ZZRingElem(10)^90)
@@ -175,7 +175,7 @@
       for x in l3
         @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [30, 3]
       end
-      Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+      Qx, x = polynomial_ring(QQ, "x", cached = false)
       f = x^36 - x^33 + x^27 - x^24 + x^18 - x^12 + x^9 - x^3 + 1
       K, a = number_field(f, cached = false, check = false)
       d = ZZRingElem(1252291517600545939502745293690906945712691746311040212121628914687318440182651069503694911322360563684969)

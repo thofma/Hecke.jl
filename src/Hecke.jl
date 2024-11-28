@@ -1,37 +1,3 @@
-################################################################################
-#
-#     Hecke.jl : Hecke main file
-#
-# This file is part of Hecke.
-#
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020-2024 Claus Fieker, Tommy Hofmann, Carlo Sircana
-#
-################################################################################
-
-
 @doc raw"""
 Hecke is a Julia package for algorithmic algebraic number theory.
 For more information please visit
@@ -108,7 +74,7 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :set_entry!,]
+           :set_entry!, :RDF]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue
@@ -122,7 +88,7 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
              valuation!, is_cyclo_type, is_embedded, is_maxreal_type,
-             mat_entry_ptr, factor_trial_range
+             mat_entry_ptr, factor_trial_range, set!, numerator!, denominator!
 
 AbstractAlgebra.@include_deprecated_bindings()
 Nemo.@include_deprecated_bindings()
@@ -144,30 +110,30 @@ end
 
 global const maximal_order = MaximalOrder
 
+function _print_banner()
+  printstyled(raw""" _    _           _        """, color = :red)
+  println("")
+  printstyled(raw"""| |  | |         | |       """, color = :red)
+  println("  |  Software package for")
+  printstyled(raw"""| |__| | ___  ___| | _____ """, color = :red)
+  println("  |  algorithmic algebraic number theory")
+  printstyled(raw"""|  __  |/ _ \/ __| |/ / _ \\""", color = :red)
+  println("  |  ")
+  printstyled(raw"""| |  | |  __/ (__|   <  __/""", color = :red)
+  println("  |  Manual: https://thofma.github.io/Hecke.jl")
+  printstyled(raw"""|_|  |_|\___|\___|_|\_\___|""", color = :red)
+  print("  |  Version ")
+  printstyled("$VERSION_NUMBER", color = :green)
+  println()
+end
+
 function __init__()
   # verify some base rings survived serialization/deserialization
-  @assert base_ring(Hecke.Globals.Zx) === FlintZZ
-  @assert base_ring(Hecke.Globals.Qx) === FlintQQ
+  @assert base_ring(Hecke.Globals.Zx) === ZZ
+  @assert base_ring(Hecke.Globals.Qx) === QQ
 
   if AbstractAlgebra.should_show_banner() && get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
-    println("")
-    print("Welcome to \n")
-    printstyled("
-    _    _           _
-   | |  | |         | |
-   | |__| | ___  ___| | _____
-   |  __  |/ _ \\/ __| |/ / _ \\
-   | |  | |  __/ (__|   <  __/
-   |_|  |_|\\___|\\___|_|\\_\\___|
-    ", color = :red)
-
-    println()
-    print("Version")
-    printstyled(" $VERSION_NUMBER ", color = :green)
-    print("... \n ... which comes with absolutely no warranty whatsoever")
-    println()
-    println("(c) 2015-2024 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
-    println()
+    _print_banner()
   end
 
   #if inNotebook()  # to make toggle work in IJulia
@@ -290,9 +256,9 @@ end
 
 module Globals
   using Hecke
-  const Qx, _ = polynomial_ring(FlintQQ, "x", cached = false)
-  const Zx, _ = polynomial_ring(FlintZZ, "x", cached = false)
-  const Zxy, _ = polynomial_ring(FlintZZ, ["x", "y"], cached = false)
+  const Qx, _ = polynomial_ring(QQ, "x", cached = false)
+  const Zx, _ = polynomial_ring(ZZ, "x", cached = false)
+  const Zxy, _ = polynomial_ring(ZZ, ["x", "y"], cached = false)
 end
 
 using .Globals
@@ -567,9 +533,6 @@ mutable struct NotImplemented <: Exception end
 Base.showerror(io::IO, ::NotImplemented) =
     print(io, """Not implemented (yet).""")
 
-# what is this function doing here?
-function checkbounds(a::Int, b::Int) nothing; end;
-
 ################################################################################
 
 ################################################################################
@@ -582,6 +545,7 @@ function checkbounds(a::Int, b::Int) nothing; end;
 # - The Hecke.MPolyFactor submodule wants to extend it, but is loaded earlier
 # - Introduce the function here, to make everyone happy
 function is_absolutely_irreducible end
+function multiplicative_group end
 
 ################################################################################
 #
@@ -785,11 +749,10 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
   if format == :html
     open_doc()
   elseif format == :vitepress
-    println("""Run `mkdocs serve` inside `../Hecke/docs/` to view the documentation.
-
-            Use `format = :html` for a simplified version of the docs which does
-            not require `mkdocs`.
+    println("""Run `npm run docs:dev` inside `../Hecke/docs/` to view the documentation.
             """)
+  else
+    error("format :$(format) not recognized")
   end
 end
 

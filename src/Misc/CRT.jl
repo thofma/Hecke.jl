@@ -50,7 +50,7 @@ end
 @doc raw"""
     crt_env(p::Vector{T}) -> crt_env{T}
 
-Given coprime moduli in some euclidean ring (FlintZZ, zzModRingElem\_poly,
+Given coprime moduli in some euclidean ring (ZZ, zzModRingElem\_poly,
 ZZRingElem\_mod\_poly), prepare data for fast application of the chinese
 remainder theorem for those moduli.
 """
@@ -456,7 +456,7 @@ Given ZZRingElem\_poly polynomials $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyRingElem}
-  Zx, x = FlintZZ["x"]
+  Zx, x = ZZ["x"]
   res = Zx()
   m = maximum(degree(x) for x = L)
 
@@ -494,13 +494,13 @@ function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::UInt)
   K = a.parent
   @assert n < degree(K) && n >=0
 
-  ra = pointer_from_objref(a)
+  ra = Ptr{ZZRingElem}(pointer_from_objref(a))
 
   if degree(K) == 1
-    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra, c)
+    set!(ra, c)
     ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, ), a)
   elseif degree(K) == 2
-    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra+n*sizeof(Int), c)
+    set!(ra+n*sizeof(Int), c)
   else
     ccall((:fmpq_poly_set_coeff_ui, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Int, UInt), a, n, c)
    # includes canonicalisation and treatment of den.
@@ -518,7 +518,7 @@ Given matrices $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}, signed::Bool = false) where {T <: MatElem}
-  res = zero_matrix(FlintZZ, nrows(L[1]), ncols(L[1]))
+  res = zero_matrix(ZZ, nrows(L[1]), ncols(L[1]))
 
   if signed
     cr = crt_signed
@@ -582,7 +582,7 @@ function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, d
   @hassert :AbsNumFieldOrder 1 is_prime(p)
   me = modular_env()
   pp = Int(p)
-  me.Fpx = polynomial_ring(residue_ring(FlintZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
+  me.Fpx = polynomial_ring(residue_ring(ZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
   if lazy
     if !is_squarefree(fp)

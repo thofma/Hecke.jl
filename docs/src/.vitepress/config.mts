@@ -57,6 +57,7 @@ export default defineConfig({
               collapsed: true,
               items: [
                 { text: 'Introduction', link: 'manual/number_fields/intro'},
+                { text: 'Conventions', link: 'manual/number_fields/conventions'},
                 { text: 'Number field operations', link: 'manual/number_fields/fields'},
                 { text: 'Elements', link: 'manual/number_fields/elements'},
                 { text: 'Complex embeddings', link: 'manual/number_fields/complex_embeddings'},
@@ -94,6 +95,8 @@ export default defineConfig({
                 { text: 'Introduction', link: 'manual/algebras/intro'},
                 { text: 'Basics', link: 'manual/algebras/basics'},
                 { text: 'Structure constant algebras', link: 'manual/algebras/structureconstant'},
+                { text: 'Group algebras', link: 'manual/algebras/groupalgebras'},
+                { text: 'Ideals', link: 'manual/algebras/ideals'},
               ]
             },
             {
@@ -131,8 +134,8 @@ export default defineConfig({
               text: 'Developer',
               collapsed: true,
               items: [
-                { text: 'Macros', link: 'manual/developer/macros'},
                 { text: 'Tests', link: 'manual/developer/test'},
+                { text: 'Documentation', link: 'manual/developer/documentation'},
               ]
             }
           ]

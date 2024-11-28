@@ -2,34 +2,6 @@
 #
 #        NfOrdClsZeta.jl: Zeta functions of orders in number fields
 #
-# This file is part of hecke.
-#
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2015, 2016 Tommy Hofmann
-#
 ################################################################################
 
 export zeta_log_residue
@@ -106,10 +78,10 @@ function _approx_error_bf(disc::ZZRingElem, degree::Int, Tc = BigFloat)
 
   n = BigFloat(degree)
 
-  C1 = @with_round_down(Tc(FlintQQ(2324)//FlintQQ(1000)),Tc)
-  C2 = @with_round_down(Tc(FlintQQ(388)//FlintQQ(100)),Tc)
+  C1 = @with_round_down(Tc(QQ(2324)//QQ(1000)),Tc)
+  C2 = @with_round_down(Tc(QQ(388)//QQ(100)),Tc)
   C3 = Tc(2)
-  C4 = @with_round_down(Tc(FlintQQ(426)//FlintQQ(100)),Tc)
+  C4 = @with_round_down(Tc(QQ(426)//QQ(100)),Tc)
 
   function F(X)#(X::Tc)
     A1 = @with_round_down(C1*logd_down/(@with_round_up(sqrt(X)*log(3*X),Tc)),Tc)
@@ -157,7 +129,7 @@ end
   function _comp_summand(R, p::ZZRingElem, m::Int, aa::ArbFieldElem)
     logp = log(R(p))
 
-    pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
+    pm2 = R(p)^(R(ZZ(m)//ZZ(2)))
 
     pm2inv = inv(pm2)
 

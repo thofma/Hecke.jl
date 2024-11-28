@@ -1,5 +1,5 @@
 @testset "RCF" begin
-  Qx, x = polynomial_ring(FlintQQ)
+  Qx, x = polynomial_ring(QQ)
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
@@ -78,7 +78,7 @@
     @test Hecke.is_local_norm(r1, zk(p)) == b
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
   B = Hecke.maximal_abelian_subfield(A, k)
@@ -90,7 +90,7 @@
   @test degree(A) == 2
   @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
 
@@ -182,7 +182,7 @@ end
 end
 
 @testset "Some abelian extensions" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x - 1, "a")
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, 7872, true, 16)
@@ -371,4 +371,12 @@ let
   l1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)])
   ll1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)], conductors = conds)
   @test length(l1) == length(ll1)
+end
+
+let
+  # https://github.com/thofma/Hecke.jl/issues/1625
+  K, a = cyclotomic_field(7, :a)
+  P, x = polynomial_ring(K, :x)
+  L, = number_field(x^3 - 840539241479//13824*a^5 - 18036715089631//9216*a^4 - 18036715089631//9216*a^3 - 840539241479//13824*a^2 - 7320065966297//9216)
+  @test !is_abelian(L)
 end

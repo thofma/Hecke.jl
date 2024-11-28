@@ -18,7 +18,7 @@ algebra(O::AlgAssAbsOrd) = O.algebra
 
 _algebra(O::AlgAssAbsOrd) = algebra(O)
 
-base_ring(O::AlgAssAbsOrd) = FlintZZ
+base_ring(O::AlgAssAbsOrd) = ZZ
 
 base_ring_type(::Type{AlgAssAbsOrd}) = ZZRing
 
@@ -174,7 +174,7 @@ function index(O::AlgAssAbsOrd)
   B = basis_mat_inv(FakeFmpqMat, O, copy = false)
   n = det(B)
   @assert isinteger(n)
-  return FlintZZ(n)
+  return ZZ(n)
 end
 
 function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
@@ -183,7 +183,7 @@ function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
   B = basis_mat_inv(FakeFmpqMat, R, copy = false)
   m = det(B)
   @assert isinteger(m//n)
-  return FlintZZ(m//n)
+  return ZZ(m//n)
 end
 
 ################################################################################
@@ -326,7 +326,7 @@ end
 ################################################################################
 
 function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, ::Val{short} = Val(false)) where {S, T, short}
-  t = zero_matrix(FlintQQ, 1, degree(O))
+  t = zero_matrix(QQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = FakeFmpqMat(t)
   t = t*basis_mat_inv(FakeFmpqMat, O, copy = false)
@@ -366,7 +366,7 @@ end
 Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
 """
 function denominator(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd)
-  t = zero_matrix(FlintQQ, 1, degree(O))
+  t = zero_matrix(QQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = FakeFmpqMat(t)
   t = mul!(t, t, basis_mat_inv(FakeFmpqMat, O, copy = false))
@@ -419,13 +419,13 @@ rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Integer) = rand(rng, make(O, n))
 
 function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbstractAssociativeAlgebraElem{QQFieldElem}}
   if length(A) == 0
-    return M = FakeFmpqMat(zero_matrix(FlintZZ, 0, 0), ZZ(1))
+    return M = FakeFmpqMat(zero_matrix(ZZ, 0, 0), ZZ(1))
   end
   @assert length(A) > 0
   n = length(A)
   d = dim(parent(A[1]))
 
-  M = zero_matrix(FlintZZ, n, d)
+  M = zero_matrix(ZZ, n, d)
 
   t = ZZRingElem()
 
@@ -487,7 +487,7 @@ function basis_matrix(A::Vector{AlgAssAbsOrdElem{S, T}}) where S where T
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
-  M = zero_matrix(FlintZZ, n, d)
+  M = zero_matrix(ZZ, n, d)
 
   for i in 1:n
     el = coordinates(A[i])
@@ -567,16 +567,16 @@ function trred_matrix(O::AlgAssAbsOrd)
   A=algebra(O)
   x=O.basis_alg
   m=length(x)
-  M=zero_matrix(FlintZZ, m, m)
+  M=zero_matrix(ZZ, m, m)
   a=A()
   for i=1:m
     a = mul!(a, x[i], x[i])
-    M[i,i] = FlintZZ(trred(a))
+    M[i,i] = ZZ(trred(a))
   end
   for i = 1:m
     for j = i+1:m
       a = mul!(a, x[i], x[j])
-      b = FlintZZ(trred(a))
+      b = ZZ(trred(a))
       M[i,j] = b
       M[j,i] = b
     end
@@ -850,7 +850,7 @@ function any_order(A::AbstractAssociativeAlgebra{QQFieldElem})
   return get_attribute!(A, :any_order) do
     d = _denominator_of_mult_table(A)
     di = dim(A)
-    M = vcat(zero_matrix(FlintQQ, 1, di), d*identity_matrix(FlintQQ, di))
+    M = vcat(zero_matrix(QQ, 1, di), d*identity_matrix(QQ, di))
     oneA = one(A)
     for i = 1:di
       M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
@@ -883,7 +883,7 @@ function maximal_order_via_decomposition(A::AbstractAssociativeAlgebra{QQFieldEl
     return first(A.maximal_order)::AlgAssAbsOrd{typeof(A), elem_type(A)}
   end
   fields_and_maps = __as_number_fields(A, use_maximal_order = false)
-  M = zero_matrix(FlintQQ, dim(A), dim(A))
+  M = zero_matrix(QQ, dim(A), dim(A))
   row = 1
   for i = 1:length(fields_and_maps)
     K = fields_and_maps[i][1]
@@ -943,7 +943,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = 
   n = degree(A)
 
   # Build a matrix with the first rows of basis elements of O
-  M = zero_matrix(FlintQQ, dim(A), n)
+  M = zero_matrix(QQ, dim(A), n)
   for i = 1:dim(A)
     for j = 1:n
       M[i, j] = deepcopy(matrix(elem_in_algebra(basis(O, copy = false)[i], copy = false), copy = false)[1, j])
@@ -963,7 +963,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = 
   simpleOrder = Order(A, bb)
   simpleOrder.isnice = true
 
-  @assert basis_matrix(FakeFmpqMat, simpleOrder) == FakeFmpqMat(identity_matrix(FlintQQ, n^2))
+  @assert basis_matrix(FakeFmpqMat, simpleOrder) == FakeFmpqMat(identity_matrix(QQ, n^2))
 
   if with_transform
     return simpleOrder, A(M)
@@ -1010,7 +1010,7 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   t = basis_matrix(FakeFmpqMat, R, copy = false)*basis_mat_inv(FakeFmpqMat, S, copy = false)
   @assert isone(t.den)
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
-  M = zero_matrix(FlintZZ, n^2, n)
+  M = zero_matrix(ZZ, n^2, n)
   B = basis(S, copy = false)
 
   NN = transpose(representation_matrix(B[1], action)*basis_mat_R_in_S_inv_num)
@@ -1065,7 +1065,7 @@ function enum_units(O::AlgAssAbsOrd{S, T}, g::ZZRingElem) where { S <: MatAlgebr
       if j == i
         continue
       end
-      E = identity_matrix(FlintQQ, n)
+      E = identity_matrix(QQ, n)
       E[i, j] = deepcopy(g)
       push!(result, L(A(E)))
     end
@@ -1073,19 +1073,19 @@ function enum_units(O::AlgAssAbsOrd{S, T}, g::ZZRingElem) where { S <: MatAlgebr
 
   # n \nmid i and n \mid j
   for i = 1:n1
-    E = identity_matrix(FlintQQ, n)
+    E = identity_matrix(QQ, n)
     E[i, n] = deepcopy(a)
     push!(result, L(A(E)))
   end
 
   # n \mid i and n \nmid j
   for j = 1:n1
-    E = identity_matrix(FlintQQ, n)
+    E = identity_matrix(QQ, n)
     E[n, j] = deepcopy(ai)
     push!(result, L(A(E)))
   end
 
-  E = identity_matrix(FlintQQ, n)
+  E = identity_matrix(QQ, n)
   E[1, 1] = ZZRingElem(-1)
   push!(result, L(A(E)))
   return result

@@ -385,7 +385,7 @@ mass(::HermLat)
 
 ```@repl 2
 using Hecke # hide
-Qx, x = polynomial_ring(FlintQQ, "x");
+Qx, x = polynomial_ring(QQ, "x");
 f = x^2 - 2;
 K, a = number_field(f, "a", cached = false);
 Kt, t = polynomial_ring(K, "t");

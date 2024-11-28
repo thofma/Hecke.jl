@@ -1,4 +1,4 @@
-# Structure constant algebras
+# [Structure constant algebras](@id SCA)
 
 ```@meta
 CurrentModule = Hecke

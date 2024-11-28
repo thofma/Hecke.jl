@@ -223,7 +223,7 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
     A.is_commutative = 1
   end
 
-  t = FakeFmpqMat(zero_matrix(FlintZZ, 1, n))
+  t = FakeFmpqMat(zero_matrix(ZZ, 1, n))
 
   local _image
 

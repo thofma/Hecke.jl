@@ -60,7 +60,7 @@ ring_class_field(::AbsNumFieldOrder)
 
 ```@repl
 using Hecke # hide
-Qx, x = polynomial_ring(FlintQQ, "x");
+Qx, x = polynomial_ring(QQ, "x");
 K, a = number_field(x^2 - 10, "a");
 c, mc = class_group(K)
 A = ray_class_field(mc)
@@ -82,7 +82,7 @@ number_field(C::ClassField)
 
 ```@repl
 using Hecke; # hide
-Qx, x = polynomial_ring(FlintQQ, "x");
+Qx, x = polynomial_ring(QQ, "x");
 k, a = number_field(x^2 - 10, "a");
 c, mc = class_group(k);
 A = ray_class_field(mc)

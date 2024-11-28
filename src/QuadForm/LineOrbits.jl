@@ -416,7 +416,7 @@ end
 
 function _normalize!(x::fpMatrix)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
@@ -474,7 +474,7 @@ end
 
 function _normalize!(x::MatElem{FpFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
@@ -533,7 +533,7 @@ end
 
 function _isequal(x::fqPolyRepMatrix, y::Vector{fqPolyRepFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:length(y)
       el = mat_entry_ptr(x, 1, i)
       b = ccall((:fq_nmod_equal, libflint), Cint, (Ref{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), y[i], el, R)
@@ -548,7 +548,7 @@ end
 
 function _muleq!(x::fqPolyRepMatrix, y::fqPolyRepFieldElem)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:nrows(x)
       for j in 1:ncols(x)
         el = mat_entry_ptr(x, i, j)
@@ -561,7 +561,7 @@ end
 
 function _normalize!(x::fqPolyRepMatrix)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
@@ -629,7 +629,7 @@ end
 function _isless(x::Vector{fqPolyRepFieldElem}, y::fqPolyRepMatrix)
   d = length(x)
   R = base_ring(y)
-  @GC.preserve y begin
+  GC.@preserve y begin
     for i in 1:d
       xi = x[i]
       el = mat_entry_ptr(y, 1, i)
@@ -655,7 +655,7 @@ end
 
 function _isequal(x::FqPolyRepMatrix, y::Vector{FqPolyRepFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:length(y)
       el = mat_entry_ptr(x, 1, i)
       b = ccall((:fq_equal, libflint), Cint,
@@ -671,7 +671,7 @@ end
 
 function _muleq!(x::FqPolyRepMatrix, y::FqPolyRepFieldElem)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:nrows(x)
       for j in 1:ncols(x)
         el = mat_entry_ptr(x, i, j)
@@ -685,7 +685,7 @@ end
 
 function _normalize!(x::FqPolyRepMatrix)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
@@ -758,7 +758,7 @@ end
 function _isless(x::Vector{FqPolyRepFieldElem}, y::FqPolyRepMatrix, tx::ZZRingElem = ZZRingElem(), ty::ZZRingElem = ZZRingElem())
   d = length(x)
   R = base_ring(y)
-  @GC.preserve y begin
+  GC.@preserve y begin
     for i in 1:d
       xi = x[i]
       el = mat_entry_ptr(y, 1, i)
@@ -791,7 +791,7 @@ end
 
 function _isequal(x::FqMatrix, y::Vector{FqFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:length(y)
       el = mat_entry_ptr(x, 1, i)
       b = ccall((:fq_default_equal, libflint), Cint,
@@ -807,7 +807,7 @@ end
 
 function _muleq!(x::FqMatrix, y::FqFieldElem)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:nrows(x)
       for j in 1:ncols(x)
         el = Nemo.fq_default_mat_entry_ptr(x, i, j)
@@ -823,7 +823,7 @@ function _normalize!(x::FqMatrix)
   R = base_ring(x)
   piv = 0
   local ell
-  @GC.preserve x begin
+  GC.@preserve x begin
     for j in 1:ncols(x)
       el = Nemo.fq_default_mat_entry_ptr(x, 1, j)
       b = ccall((:fq_default_is_zero, libflint), Cint,
@@ -895,7 +895,7 @@ end
 function _isless(x::Vector{FqFieldElem}, y::FqMatrix, tx::ZZRingElem = ZZRingElem(), ty::ZZRingElem = ZZRingElem())
   d = length(x)
   R = base_ring(y)
-  @GC.preserve y begin
+  GC.@preserve y begin
     for i in 1:d
       xi = x[i]
       el = Nemo.fq_default_mat_entry_ptr(y, 1, i)

@@ -2,34 +2,6 @@
 #
 #  AbsSimpleNumFieldOrder/residue_ring.jl : Quotients of maximal orders of number fields
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-# (C) 2016 Tommy Hofmann
-#
 ################################################################################
 
 ################################################################################
@@ -429,7 +401,7 @@ function is_divisible2(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   V = hcat(A', B')
 
   a = coordinates(x.elem, copy = false)
-  rhs = matrix(FlintZZ, d, 1, a)
+  rhs = matrix(ZZ, d, 1, a)
 
   fl, sol = can_solve_with_solution(V, rhs, side = :right)
   if !fl
@@ -498,14 +470,14 @@ function is_divisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   for i in 2:(d + 1)
     if !iszero(V[1, i])
   #if !iszero(sub(V, 1:1, 2:(d + 1)))
-      ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
+      zero!(V)
       return false, zero(parent(x))
     end
   end
 
   z = R(-base_ring(R)(ZZRingElem[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
+  zero!(V)
   @hassert :AbsOrdQuoRing 1 z*y == x
   return true, z
 end
@@ -776,7 +748,7 @@ function AbstractAlgebra.gcdxx(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpl
 
   @hassert :AbsOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
-  ccall((:fmpz_mat_zero, libflint), Nothing, (Ref{ZZMatrix}, ), V)
+  zero!(V)
 
   return g, u, v, -f, e
 end

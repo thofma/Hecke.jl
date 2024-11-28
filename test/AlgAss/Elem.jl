@@ -1,5 +1,5 @@
 @testset "Elements in algebras" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 1
   A = StructureConstantAlgebra(f)
 
@@ -7,11 +7,11 @@
     @test Hecke.is_integral(A[1]) == true
     @test Hecke.is_integral(QQFieldElem(1, 2)*A[1]) == false
 
-    B = group_algebra(FlintQQ, small_group(2, 1))
+    B = group_algebra(QQ, small_group(2, 1))
     @test Hecke.is_integral(B[1]) == true
     @test Hecke.is_integral(QQFieldElem(1, 2)*B[1]) == false
 
-    C = matrix_algebra(FlintQQ, B, 2)
+    C = matrix_algebra(QQ, B, 2)
     @test Hecke.is_integral(C[1]) == true
     @test Hecke.is_integral(QQFieldElem(1, 2)*C[1]) == false
   end
@@ -24,7 +24,7 @@
     @test !is_central_idempotent(A(QQ[1 0; 0 0]))
     @test is_central_idempotent(A(QQ[1 0; 0 1]))
 
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = (x + 1)*(x - 1)
     B = StructureConstantAlgebra(f)
     e = B([1//2, 1//2])
@@ -84,5 +84,25 @@
     b = A(matrix(QQ, [3 4; 5 6]))
     Hecke.add!(b,b)
     @test b == A(matrix(QQ, [6 8; 10 12]))
+  end
+
+  # fancy group algebra element constructor
+  G = abelian_group([2, 2]); a = G([0, 1]);
+  QG = Hecke._group_algebra(QQ, G; sparse = false);
+  @test QG(Dict(a => 2, zero(G) => 1)) == 2 * QG(a) + 1 * QG(zero(G))
+  @test QG(a => ZZ(2), zero(G) => QQ(1)) == 2 * QG(a) + 1 * QG(zero(G))
+  QG = Hecke._group_algebra(QQ, G; sparse = true);
+  @test QG(Dict(a => 2, zero(G) => 1)) == 2 * QG(a) + 1 * QG(zero(G))
+  @test QG(a => ZZ(2), zero(G) => QQ(1)) == 2 * QG(a) + 1 * QG(zero(G))
+
+  let
+    # Jordan-Chevalley
+    Qx, x = QQ[:x]
+    A = associative_algebra((x^2 + 1)^2)
+    alpha = basis(A)[2]
+    u, v = Hecke.jordan_chevalley_decomposition(alpha)
+    @test u == A(QQ.([0, 3//2, 0, 1//2]))
+    @test v == A(QQ.([0, -1//2, 0, -1//2]))
+    @test u + v == alpha
   end
 end

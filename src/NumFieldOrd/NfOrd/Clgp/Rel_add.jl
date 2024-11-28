@@ -14,7 +14,7 @@ function special_prime_ideal(p::ZZRingElem, a::AbsSimpleNumFieldElem)
   K = parent(a)
   f = K.pol
   R = parent(f)
-  Zx = polynomial_ring(FlintZZ)[1]
+  Zx = polynomial_ring(ZZ)[1]
   Zpx = polynomial_ring(Native.GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
   g = Zpx(a)
   ff = Zpx(f)
@@ -149,7 +149,7 @@ end
 
 
 function class_group_add_relation(clg::ClassGrpCtx{<:SMat{ZZRingElem}}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
-  R = sparse_row(FlintZZ)
+  R = sparse_row(ZZ)
   for i = 1:length(clg.FB.ideals)
     p = clg.FB.ideals[i]
     v = valuation(a, p)

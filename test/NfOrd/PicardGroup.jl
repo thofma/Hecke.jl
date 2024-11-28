@@ -59,7 +59,7 @@ function test_disc_log_units(U, mU, O::AbsSimpleNumFieldOrder)
 end
 
 @testset "Picard group and unit group of non maximal orders" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   AF = ArbField(20)
 
   f = x^3 - 2

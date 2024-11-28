@@ -543,8 +543,8 @@ mutable struct ZLatAutoCtx{S, T, V}
     z.Gtr = ZZMatrix[transpose(g) for g in G]
     z.dim = nrows(G[1])
     z.is_symmetric = falses(length(G))
-    z.operate_tmp = zero_matrix(FlintZZ, 1, ncols(G[1]))
-    z.dot_product_tmp = zero_matrix(FlintZZ, 1, 1)
+    z.operate_tmp = zero_matrix(ZZ, 1, ncols(G[1]))
+    z.dot_product_tmp = zero_matrix(ZZ, 1, 1)
 
     for i in 1:length(z.G)
       z.is_symmetric[i] = is_symmetric(z.G[i])

@@ -75,7 +75,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = sparse_matrix_type(ZZ)
     end
   end
 
-  l = zero_matrix(FlintZZ, n, 1+clg.c.r2)
+  l = zero_matrix(ZZ, n, 1+clg.c.r2)
   for i = 1:n
     l[i,1] = 1
   end
@@ -88,7 +88,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = sparse_matrix_type(ZZ)
   # however, there is nullspace - which is strange...
   l, t = hnf_with_transform(l)
   if 1 + clg.c.r2 + 1 > nrows(l)
-    t = zero_matrix(FlintZZ, 0, 0)
+    t = zero_matrix(ZZ, 0, 0)
   else
     t = view(t, (1+clg.c.r2+1):nrows(l), 1:nrows(l))
   end

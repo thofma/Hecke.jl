@@ -40,7 +40,7 @@
   fl, _ = Hecke.is_GLZ_conjugate(QQ[1 2; 3 4], QQ[1 2 3; 4 5 6; 7 8 9])
   @test !fl
 
-  R = residue_ring(FlintZZ, ZZRingElem(7))[1]
+  R = residue_ring(ZZ, ZZRingElem(7))[1]
   x, y = R(6), R(6)
   q, r = divrem(x, y)
   @test y * q + r == x

@@ -131,7 +131,7 @@ function local_norm!(n::ZZRingElem, ap::Vector{fqPolyRepFieldElem}, me::Hecke.mo
     ccall((:fq_nmod_norm, libflint), Nothing, (Ref{ZZRingElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), n, ap[j], ap[j].parent)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
+  set!(n, nn)
   return n
 end
 
@@ -259,7 +259,7 @@ function local_norm!(n::ZZRingElem, ap::zzModMatrix, me::Hecke.modular_env)
     np = Nemo.getindex_raw(ap, j, 1)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
+  set!(n, nn)
   return n
 end
 
@@ -387,7 +387,7 @@ end
 
 #=
 
-Qx,x = polynomial_ring(FlintQQ, "a")
+Qx,x = polynomial_ring(QQ, "a")
 K, a = cyclotomic_real_subfield(1024, "a");
 @time fb_int = Hecke.int_fb_max_real(1024, 2^20);
 h = Hecke.auto_of_maximal_real(K, 3);
@@ -397,7 +397,7 @@ fb_int = FactorBase(ZZRingElem[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])])
 @time Hecke.basis_rels_4(b, 600, 10, 5, fb_int)
 @time Hecke.basis_rels_5(b, 600, 10, 5, fb_int)
 
-Qx,x = polynomial_ring(FlintQQ, "a")
+Qx,x = polynomial_ring(QQ, "a")
 K, a = cyclotomic_real_subfield(512, "a");
 @time fb_int = Hecke.int_fb_max_real(512, 2^18);
 h = Hecke.auto_of_maximal_real(K, 3);

@@ -267,7 +267,7 @@ function local_factor(L::HermLat, p)
     N = N + div(m ,2)
   end
 
-  return QQFieldElem(q)^(Int(FlintZZ(N))) * f
+  return QQFieldElem(q)^(Int(ZZ(N))) * f
 end
 
 function _standard_mass(L::HermLat, prec::Int = 10)

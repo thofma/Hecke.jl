@@ -234,7 +234,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           push!(deb_rr, (deepcopy(c.M.basis), deepcopy(valofnewelement)))
           rr = Hecke.reduce_right!(c.M.basis, deepcopy(valofnewelement))
           MM = matrix(c.M.basis)
-          vv = zero_matrix(FlintZZ, 1, ncols(MM))
+          vv = zero_matrix(ZZ, 1, ncols(MM))
           for (jj, vvv) in valofnewelement
             vv[1, jj] = vvv
           end
@@ -251,7 +251,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = sup)
         end
         @vtime :NormRelation 4 img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
-        @hassert :NormRelation 1 sparse_row(FlintZZ, [ (j, valuation(img_u, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_u, p) != 0]) == valofnewelement
+        @hassert :NormRelation 1 sparse_row(ZZ, [ (j, valuation(img_u, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_u, p) != 0]) == valofnewelement
         @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
         #=
         if rank(c.M) == length(c.FB.ideals)
@@ -278,7 +278,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
   S = FB.ideals
   ZK = order(S[1])
 
-  z = zero_matrix(SMat, FlintZZ, 0, length(S))
+  z = zero_matrix(SMat, ZZ, 0, length(S))
 
   mk = embedding(N, i)
   zk = order(s[1])
@@ -320,7 +320,7 @@ function induce_action_just_from_subfield(N::NormRelation, i, s, FB, invariant =
 			end
     end
     sort!(v, by = x -> x[1])
-    push!(z, sparse_row(FlintZZ, v))
+    push!(z, sparse_row(ZZ, v))
   end
   return z
 end
@@ -475,7 +475,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
     for i = 1:length(sunitsmodunits)
       r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
       sort!(r, lt = (a,b) -> a[1] < b[1])
-      valuations_sunitsmodunits[i] = sparse_row(FlintZZ, r)
+      valuations_sunitsmodunits[i] = sparse_row(ZZ, r)
     end
   else
     # I need to extract the S-units from the Sclosed-units
@@ -495,7 +495,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
     # ind = indices of S inside c.FB.ideals
     @assert length(Sclosed) == length(c.FB.ideals)
     @assert length(ind) == length(S)
-    z = zero_matrix(FlintZZ, length(c.R_gen), length(Sclosed) - length(S))
+    z = zero_matrix(ZZ, length(c.R_gen), length(Sclosed) - length(S))
     for i in 1:length(c.R_gen)
       k = 1
       for j in 1:length(Sclosed)
@@ -517,7 +517,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
       v_c = sum(SRow{ZZRingElem}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
       r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in v_c]
       sort!(r, lt = (a,b) -> a[1] < b[1])
-      push!(valuations_sunitsmodunits, sparse_row(FlintZZ, r))
+      push!(valuations_sunitsmodunits, sparse_row(ZZ, r))
     end
   end
 
@@ -565,7 +565,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
   r = Hecke.MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{ZZRingElem}}(undef, ngens(res_group))
   for i = 1:length(units)
-    r.valuations[i] = sparse_row(FlintZZ)
+    r.valuations[i] = sparse_row(ZZ)
   end
   for i = 1:length(sunitsmodunits)
     r.valuations[i+length(units)] = valuations_sunitsmodunits[i]
@@ -586,7 +586,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
     fl = true
     for i = 1:ngens(res_group)
       el = r(res_group[i])
-      if sparse_row(FlintZZ, [ (j, valuation(el, S[j])) for j = 1:length(S) if valuation(el, S[j]) != 0]) != r.valuations[i]
+      if sparse_row(ZZ, [ (j, valuation(el, S[j])) for j = 1:length(S) if valuation(el, S[j]) != 0]) != r.valuations[i]
         fl = false
         break
       end

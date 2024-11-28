@@ -126,8 +126,8 @@ end
 function lattice(L::LatDB, r::Int, i::Int)
   _check_range(L, r, i)
   d = L.db[r][i].deg
-  A = matrix(FlintQQ, d, d, L.db[r][i].amb)
-  B = matrix(FlintQQ, r, d, L.db[r][i].basis_mat)
+  A = matrix(QQ, d, d, L.db[r][i].amb)
+  B = matrix(QQ, r, d, L.db[r][i].basis_mat)
   return integer_lattice(B, gram = A)
 end
 

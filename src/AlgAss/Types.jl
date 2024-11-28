@@ -130,6 +130,15 @@ end
 @attributes mutable struct GroupAlgebra{T, S, R} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   group::S
+  # We represent elements using a coefficient vector (which can be either
+  # sparse or dense),
+  # so all we have to keep track of is which group element corresponds to
+  # which basis element of the algebra
+  # This is what group_to_base, base_to_group are for. They realize the map
+  # G -> {1,...,n}
+  # {1,...n} -> G
+  # (In the sparse version, this map is constructed on demand)
+
   group_to_base::Dict{R, Int}
   base_to_group::Vector{R}
   one::Vector{T}
@@ -146,77 +155,109 @@ end
   maps_to_numberfields
   maximal_order
 
-  function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool = true)
-    A = GroupAlgebra(K, G, op = +, cached = cached)
+  # For the sparse presentation
+  sparse::Bool
+  ind::Int      # This is the number of group elements currently stored in
+                # group_to_base and base_to_group.
+  sparse_one    # Store the sparse row for the one element
+
+  function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool = true, sparse::Bool = false)
+    A = GroupAlgebra(K, G; op = +, cached = cached, sparse = sparse)
     A.is_commutative = true
     return A
   end
 
-  function GroupAlgebra(K::Ring, G; op = *, cached = true)
-    return get_cached!(GroupAlgebraID, (K, G, op), cached) do
+  function GroupAlgebra(K::Ring, G; op = *, cached::Bool = true, sparse::Bool = false)
+    return get_cached!(GroupAlgebraID, (K, G, op, sparse), cached) do
       A = new{elem_type(K), typeof(G), elem_type(G)}()
+      A.sparse = sparse
       A.is_commutative = 0
       A.is_simple = 0
       A.issemisimple = 0
       A.base_ring = K
       A.group = G
-      d = Int(order(G))
       A.group_to_base = Dict{elem_type(G), Int}()
-      A.base_to_group = Vector{elem_type(G)}(undef, d)
-      A.mult_table = zeros(Int, d, d)
+      if !sparse
+        @assert is_finite(G)
+        d = order(Int, G)
+        A.base_to_group = Vector{elem_type(G)}(undef, d)
+      else
+        A.base_to_group = Vector{elem_type(G)}(undef, 1)
+      end
 
-      i = 2
-      for g in collect(G)
-        if isone(g)
-          A.group_to_base[deepcopy(g)] = 1
-          A.base_to_group[1] = deepcopy(g)
-          continue
+      if A.sparse
+        el = _identity_elem(G)
+        A.group_to_base[el] = 1
+        A.base_to_group[1] = el
+        A.sparse_one = sparse_row(K, [1], [one(K)])
+      else
+        # dense
+        A.mult_table = zeros(Int, d, d)
+        i = 2
+        for g in collect(G)
+          if _is_identity_elem(g)
+            A.group_to_base[deepcopy(g)] = 1
+            A.base_to_group[1] = deepcopy(g)
+            continue
+          end
+          A.group_to_base[deepcopy(g)] = i
+          A.base_to_group[i] = deepcopy(g)
+          i += 1
         end
-        A.group_to_base[deepcopy(g)] = i
-        A.base_to_group[i] = deepcopy(g)
-        i += 1
-      end
 
-      v = Vector{elem_type(K)}(undef, d)
-      for i in 1:d
-        v[i] = zero(K)
-      end
-      v[1] = one(K)
-
-      A.one = v
-
-      for i = 1:d
-        for j = 1:d
-          l = op(A.base_to_group[i], A.base_to_group[j])
-          A.mult_table[i, j] = A.group_to_base[l]
+        v = Vector{elem_type(K)}(undef, d)
+        for i in 1:d
+          v[i] = zero(K)
         end
-      end
+        v[1] = one(K)
 
-      @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+        A.one = v
+
+        for i = 1:d
+          for j = 1:d
+            l = op(A.base_to_group[i], A.base_to_group[j])
+            A.mult_table[i, j] = A.group_to_base[l]
+          end
+        end
+
+        @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+      end
 
       return A
     end::GroupAlgebra{elem_type(K), typeof(G), elem_type(G)}
   end
 end
 
-const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring, Any, Any}, GroupAlgebra}()
+const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring, Any, Any, Bool}, GroupAlgebra}()
 
 mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   parent::S
   coeffs::Vector{T}
+  coeffs_sparse
 
   function GroupAlgebraElem{T, S}(A::S) where {T, S}
     z = new{T, S}()
     z.parent = A
-    z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
-    for i = 1:length(z.coeffs)
-      z.coeffs[i] = A.base_ring()
+    if !A.sparse
+      z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
+      for i = 1:length(z.coeffs)
+        z.coeffs[i] = A.base_ring()
+      end
+    else
+      z.coeffs_sparse = sparse_row(base_ring(A))
     end
     return z
   end
 
   function GroupAlgebraElem{T, S}(A::S, g::U) where {T, S, U}
-    return A[A.group_to_base[g]]
+    if A.sparse
+      i = __elem_index(A, g)
+      a = GroupAlgebraElem{T, S}(A)
+      a.coeffs_sparse = sparse_row(base_ring(A), [i], [one(base_ring(A))])
+      return a
+    else
+      return A[A.group_to_base[g]]
+    end
   end
 
   # This does not make a copy of coeffs
@@ -226,7 +267,19 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
     z.coeffs = coeffs
     return z
   end
+
+  function GroupAlgebraElem{T, S}(A::S, coeffs::SRow{T}) where {T, S}
+    z = new{T, S}()
+    z.parent = A
+    z.coeffs_sparse = coeffs
+    return z
+  end
 end
+
+__elem_index(A, g) = get!(A.group_to_base, g) do
+        push!(A.base_to_group, g)
+        return length(A.base_to_group)
+      end
 
 ################################################################################
 #
@@ -236,20 +289,21 @@ end
 
 # S is the type of the algebra, T = elem_type(S) and U is the type of matrices
 # over the base ring of the algebra
-mutable struct AbsAlgAssIdl{S, T, U}
+mutable struct AbsAlgAssIdl{S}
   algebra::S
-  basis::Vector{T}
-  basis_matrix::U
+  basis#::Vector{elem_type(algebra)}
+  basis_matrix#::dense_matrix_type(base_ring_Type(A))
+  basis_matrix_solve_ctx#solve_context_type(...)
 
   isleft::Int                      # 0 Not known
                                    # 1 Known to be a left ideal
                                    # 2 Known not to be a left ideal
   isright::Int                     # as for isleft
 
-  iszero::Int
+  iszero::Int                      # as for isleft
 
-  function AbsAlgAssIdl{S, T, U}(A::S) where {S, T, U}
-    I = new{S, T, U}()
+  function AbsAlgAssIdl{S}(A::S) where {S}
+    I = new{S}()
     I.algebra = A
     I.isleft = 0
     I.isright = 0
@@ -257,8 +311,8 @@ mutable struct AbsAlgAssIdl{S, T, U}
     return I
   end
 
-  function AbsAlgAssIdl{S, U}(A::S, M::U) where {S, U}
-    I = new{S, elem_type(S), U}()
+  function AbsAlgAssIdl{S}(A::S, M::MatElem) where {S}
+    I = new{S}()
     I.algebra = A
     I.basis_matrix = M
     I.isleft = 0

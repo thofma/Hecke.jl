@@ -507,7 +507,7 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
 
   if dim == 1
     !isempty(finite) && error("Impossible Hasse invariants")
-    return matrix(FlintQQ, 1, 1, ZZRingElem[det])
+    return matrix(QQ, 1, 1, ZZRingElem[det])
   end
 
   finite = unique(finite)
@@ -570,7 +570,7 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
     filter!(p -> hilbert_symbol(-1, -det, p) != (p in finite ? -1 : 1), PP)
     #// Find some a such that for all p in PP: -a*Det is not a local square
     #// TODO: Find some smaller a?! The approach below is very lame.
-    a = prod(p for p in PP if det % p != 0; init = one(FlintZZ))
+    a = prod(p for p in PP if det % p != 0; init = one(ZZ))
     if negative == 3
       a = -a
       negative = 2
@@ -586,9 +586,9 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
 
   #// The binary case
   a = _find_quaternion_algebra(QQFieldElem(-det)::QQFieldElem, finite::Vector{ZZRingElem}, negative == 2 ? PosInf[inf] : PosInf[])
-  Drat = map(FlintQQ, D)
+  Drat = map(QQ, D)
   push!(Drat, a)
-  push!(Drat, squarefree_part(FlintZZ(det * a)))
+  push!(Drat, squarefree_part(ZZ(det * a)))
   M = diagonal_matrix(Drat)
 
   _, _, d, f, n = _quadratic_form_invariants(M)

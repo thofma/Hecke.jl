@@ -2,34 +2,6 @@
 #
 #  RelSimpleNumField/RelSimpleNumField.jl : Relative number field extensions
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2017 Claus Fieker, Tommy Hofmann
-#
 ################################################################################
 
 ################################################################################
@@ -192,7 +164,7 @@ end
 #Conversion to absolute non simple
 function number_field(::Type{AbsSimpleNumField}, L::RelSimpleNumField{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true)
   @assert degree(base_field(L)) == 1
-  pol = to_univariate(Globals.Qx, map_coefficients(FlintQQ, L.pol, cached = false))
+  pol = to_univariate(Globals.Qx, map_coefficients(QQ, L.pol, cached = false))
   return number_field(pol, check = false, cached = cached)
 end
 
@@ -641,7 +613,7 @@ function charpoly(a::RelSimpleNumFieldElem, k::Union{RelSimpleNumField, AbsSimpl
 end
 
 function absolute_charpoly(a::RelSimpleNumFieldElem)
-  return charpoly(a, FlintQQ)
+  return charpoly(a, QQ)
 end
 
 function (R::Generic.PolyRing{AbsSimpleNumFieldElem})(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem})

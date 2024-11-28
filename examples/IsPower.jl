@@ -106,7 +106,7 @@ function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
   con_pr_j = [[one(parent(x)) for x = y] for y = con_pr]
   no_fac = sum(map(length, con_pr))
   j = 0
-  trafo = identity_matrix(FlintZZ, no_fac)
+  trafo = identity_matrix(ZZ, no_fac)
   no_rt = no_fac
   while true
     j += 1
@@ -128,7 +128,7 @@ function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
       continue
     end
     trafo = hcat(trafo, data)
-    data = zero_matrix(FlintZZ, 1, ncols(trafo))
+    data = zero_matrix(ZZ, 1, ncols(trafo))
     data[1, end] = pk
     trafo = vcat(trafo, data)
     #= roots: products of the local roots that ar small
@@ -312,11 +312,11 @@ function Base.getindex(H::Hecke.HenselCtx, s::Symbol, i::Int)
     return unsafe_load(H.link, i)
   elseif s == :v
     f = Hecke.Globals.Zx()
-    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   elseif s == :w
     f = Hecke.Globals.Zx()
-    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   end
 end

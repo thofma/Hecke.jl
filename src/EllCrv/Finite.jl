@@ -2,36 +2,6 @@
 #
 #          EllipticCurve/Finite.jl : Elliptic curves over finite fields
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# (C) 2016 Tommy Hofmann
-# (C) 2016 Robin Ammon
-# (C) 2016 Sofia Brenner
-# (C) 2022 Jeroen Hanselman
-#
 ################################################################################
 
 ################################################################################
@@ -107,7 +77,7 @@ $\mathbf Z/p\mathbf Z$ using exhaustive search.
 """
 function order_via_exhaustive_search(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
-  order = FlintZZ(1)
+  order = ZZ(1)
   a1, a2, a3, a4, a6 = a_invariants(E)
   Ry, y = polynomial_ring(R,"y")
   for x = R
@@ -139,7 +109,7 @@ function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
-  grouporder = FlintZZ(0)
+  grouporder = ZZ(0)
   p == 0 && error("Base field must be finite")
 
   if p != q
@@ -150,7 +120,7 @@ function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
     E = short_weierstrass_model(E)[1]
   end
   _, _, _, a4, a6 = a_invariants(E)
-  x = FlintZZ(0)
+  x = ZZ(0)
 
   while x < p
     C = x^3 + a4*x + a6
@@ -227,7 +197,7 @@ function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
   # step 3
   k = -m
   H = (2*m)*P
-  M = FlintZZ(0) # initialize M, so that it is known after the while loop
+  M = ZZ(0) # initialize M, so that it is known after the while loop
 
   while k < m + 1
     Snew = Q + (k*H)
@@ -374,7 +344,7 @@ function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
     E = short_weierstrass_model(E)[1]
   end
 
-  Nposs = FlintZZ(1)
+  Nposs = ZZ(1)
   h = hasse_interval(E)
   l = h[1]
   b = h[2]
@@ -489,7 +459,7 @@ function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   t = 0
   for i = 1:L
     n_i = div(product, S[i])
-    B = residue_ring(FlintZZ, S[i], cached = false)[1]
+    B = residue_ring(ZZ, S[i], cached = false)[1]
     M_i = inv(B(n_i))
     M_i = M_i.data
     t = t + (M_i * n_i * t_mod_l[i])
@@ -613,9 +583,9 @@ function t_mod_prime(l, E)
     x_q = powermod(x, q_int, f)
     ggt = gcd(f, x_q - x)
     if ggt == 1
-      t = FlintZZ(1)
+      t = ZZ(1)
     else
-      t = FlintZZ(0)
+      t = ZZ(0)
     end
 
     return t
@@ -640,8 +610,8 @@ function t_mod_prime(l, E)
   end
 
   if ggT != 1 # case 1
-    if jacobi_symbol(FlintZZ(k), FlintZZ(l)) == -1
-      return FlintZZ(0)
+    if jacobi_symbol(ZZ(k), ZZ(l)) == -1
+      return ZZ(0)
     else
       # need square root of q (mod l)
       w = is_square_with_sqrt(k_mod)[2]
@@ -663,7 +633,7 @@ function t_mod_prime(l, E)
       end
 
       if ggT == 1
-        return FlintZZ(0)
+        return ZZ(0)
       else
         fwmz = Fnschoof[w_int]
         fwpz = Fnschoof[w_int+4]

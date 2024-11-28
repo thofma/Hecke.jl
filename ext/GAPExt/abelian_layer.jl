@@ -99,7 +99,7 @@ end
 
 function _abelian_extensionsQQ(gtype::Vector{Int}, absolute_discriminant_bound::ZZRingElem, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   K, _ = number_field(x-1, "a", cached = false)
   O = maximal_order(K)
   n = prod(gtype)

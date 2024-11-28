@@ -272,7 +272,7 @@ function _iterative_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
     k0 = 1 + Int(div(ZZRingElem(e),(pnum-1)))::Int
   end
   g = Vector{AbsSimpleNumFieldOrderElem}()
-  M = zero_matrix(FlintZZ, 0, 0)
+  M = zero_matrix(ZZ, 0, 0)
   dlogs = Vector{Function}()
 
   l = u
@@ -331,7 +331,7 @@ end
 #
 function _expand(g::Vector{AbsSimpleNumFieldOrderElem}, M::ZZMatrix, h::Vector{AbsSimpleNumFieldOrderElem}, N::Vector{ZZRingElem}, disc_log::Function, pl::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if isempty(g)
-    M1 = zero_matrix(FlintZZ, length(N), length(N))
+    M1 = zero_matrix(ZZ, length(N), length(N))
     for i = 1:length(N)
       M1[i, i] = N[i]
     end
@@ -340,7 +340,7 @@ function _expand(g::Vector{AbsSimpleNumFieldOrderElem}, M::ZZMatrix, h::Vector{A
   isempty(h) && return g,M
   O = order(pl)
   Q , mQ = quo(O, pl)
-  Z = zero_matrix(FlintZZ,nrows(M)+length(N),ncols(M)+length(N))
+  Z = zero_matrix(ZZ,nrows(M)+length(N),ncols(M)+length(N))
   for i = 1:nrows(M)
     for j = i:ncols(M)
       Z[i, j] = M[i, j]
@@ -392,11 +392,11 @@ function _pu_mod_pv(pu::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
 
   #Disclog
   M = basis_mat_inv(FakeFmpqMat, pu, copy = false)*mS.imap
-  x_fakemat2 = FakeFmpqMat(zero_matrix(FlintZZ, 1, ncols(M)), ZZRingElem(1))
+  x_fakemat2 = FakeFmpqMat(zero_matrix(ZZ, 1, ncols(M)), ZZRingElem(1))
   local disclog
   let M = M, O = O, S = S, x_fakemat2 = x_fakemat2
     function disclog(x::AbsSimpleNumFieldOrderElem)
-      x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), coordinates(x, copy = false)))
+      x_fakemat = FakeFmpqMat(matrix(ZZ, 1, degree(O), coordinates(x, copy = false)))
       mul!(x_fakemat2, x_fakemat, M)
       #@assert x_fakemat2 == x_fakemat * M
       denominator(x_fakemat2) != 1 && error("Element is in the ideal")
@@ -714,6 +714,8 @@ of the first step. This allows to speed up subsequent calls with
 the same $g$ and $n$.
 """
 function baby_step_giant_step(g, n, h, cache::Dict)
+  # if cache is given, it must be empty or contain
+  # *all* big steps
   @assert typeof(g) == typeof(h)
   m = ZZRingElem(isqrt(n) + 1)
   if isempty(cache)
@@ -1116,7 +1118,7 @@ function _multgrp_Op_aOp(Q::AbsSimpleNumFieldOrderQuoRing, P::AbsNumFieldOrderId
   OtoQQ = NfOrdQuoMap(O, QQ)
 
   H, GtoH = quo(G, [ GtoQQ\OtoQQ(g) for g in gens])
-  @assert GtoH.map == identity_matrix(FlintZZ, ngens(G))
+  @assert GtoH.map == identity_matrix(ZZ, ngens(G))
   HtoQQ = GrpAbFinGenToAbsOrdQuoRingMultMap(H, QQ, GtoQQ.generators, GtoQQ.discrete_logarithm)
 
   return H, HtoQQ

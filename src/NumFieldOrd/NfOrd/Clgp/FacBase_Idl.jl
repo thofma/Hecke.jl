@@ -97,7 +97,7 @@ function _factor!(FB::NfFactorBase, a::AbsSimpleNumFieldElem,
     df = numerator(n)*denominator(a, O)
   end
   if isone(df)
-    return true, sparse_row(FlintZZ)
+    return true, sparse_row(ZZ)
   end
 
   d = factor(FB.fb_int, df, error)  #careful: if df is non-int-smooth, then error is ignored
@@ -126,11 +126,11 @@ function _factor!(FB::NfFactorBase, a::AbsSimpleNumFieldElem,
       @hassert :ClassGroup 9000  ideal(O, a) == prod([FB.ideals[i]^j for (i, j) in r])
     end
     @hassert :ClassGroup 1 length(r) > 0
-    return ret, sparse_row(FlintZZ, r)
+    return ret, sparse_row(ZZ, r)
   else
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
-    return false, sparse_row(FlintZZ)
+    return false, sparse_row(ZZ)
   end
 end
 
@@ -148,7 +148,7 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.AbsNumFieldOrderIdeal{AbsSimp
   # If the ideal is the trivial ideal, return true, and the zero row
   # Otherwise factor will choke
   if isone(n)
-    return true, sparse_row(FlintZZ)
+    return true, sparse_row(ZZ)
   end
 
   d = factor(FB.fb_int, n) # as above: fails - even if error is false -
@@ -173,7 +173,7 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.AbsNumFieldOrderIdeal{AbsSimp
       if error
         @assert vp == 0
       end
-      return false, sparse_row(FlintZZ)
+      return false, sparse_row(ZZ)
     end
     r = vcat(r, s)
   end
@@ -183,14 +183,14 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.AbsNumFieldOrderIdeal{AbsSimp
       FB.mx = length(rw)
     end
     sort!(r, lt = (a,b) -> a[1] < b[1])
-    res = sparse_row(FlintZZ, r)
+    res = sparse_row(ZZ, r)
     @hassert :ClassGroup 9000 A == prod([FB.ideals[i]^j for (i, j) in r])
     @hassert :ClassGroup 1 length(r) > 0
     return true, res
   else
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
-    return false, sparse_row(FlintZZ)
+    return false, sparse_row(ZZ)
   end
 end
 

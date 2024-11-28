@@ -111,7 +111,7 @@ function absolute_norm(x::AbsNumFieldOrderIdeal)
 end
 
 function absolute_norm(a::RelNumFieldOrderIdeal)
-  return norm(a, FlintQQ)
+  return norm(a, QQ)
 end
 
 function norm(I::NumFieldOrderIdeal, K::NumField)
@@ -263,7 +263,7 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
   L = nf(OL)
   A = absolute_basis(OL)
   d = absolute_degree(nf(OL))
-  OLmat = zero_matrix(FlintQQ, d, d)
+  OLmat = zero_matrix(QQ, d, d)
   Lbas = absolute_basis(L)
   for i in 1:d
     c = elem_in_nf(A[i], copy = false)
@@ -279,7 +279,7 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
 
   @show is_integral(u)
 
-  umat = zero_matrix(FlintQQ, d, d)
+  umat = zero_matrix(QQ, d, d)
 
   for i in 1:d
     c = u * Lbas[i]
@@ -297,7 +297,7 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
 
   for i in 1:d
     for j in 1:d
-      z[i, j] = FlintZZ(N[i, j])
+      z[i, j] = ZZ(N[i, j])
     end
   end
 
@@ -419,13 +419,13 @@ function small_generating_set(I::AbsNumFieldOrderIdeal)
     return elem_type(OK)[OK(I.gen_one), OK(I.gen_two)]
   end
   n = degree(order(I))
-  id_gen = zero_matrix(FlintZZ, 2*n, n)
+  id_gen = zero_matrix(ZZ, 2*n, n)
   m = minimum(I, copy = false)
   B = basis(I, copy = false)
   gens = AbsSimpleNumFieldOrderElem[]
   for i = 1:length(B)
     if i != 1
-      c = matrix(FlintZZ, 1, n, coordinates(B[i]))
+      c = matrix(ZZ, 1, n, coordinates(B[i]))
       reduce_mod_hnf_ll!(c, id_gen)
       if iszero(c)
         continue

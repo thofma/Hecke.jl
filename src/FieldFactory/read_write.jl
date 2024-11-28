@@ -41,7 +41,7 @@ function _read_from_file(f::String)
 end
 
 function _read_from_file(f::IOStream)
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   list = Vector{FieldsTower}(undef, countlines(f))
   seekstart(f)
   QQ = number_field(x-1, "b", cached = false, check = false)[1]

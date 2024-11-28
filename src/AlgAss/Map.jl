@@ -115,7 +115,7 @@ function __set!(c_t::QQMatrix, ca)
   GC.@preserve c_t begin
     for i in 1:length(ca)
       t = mat_entry_ptr(c_t, 1, i)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, ca[i])
+      set!(t, ca[i])
     end
   end
 end
@@ -220,7 +220,8 @@ function hom(A::R, B::S, M::T; check = true) where {R <: AbstractAssociativeAlge
   return h
 end
 
-function hom(A::R, B::S, M::T, N::T) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
+function hom(A::R, B::S, M::T, N::T; check = true) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
+  # TODO: add check
   return AbsAlgAssMor{R, S, T}(A, B, M, N)
 end
 

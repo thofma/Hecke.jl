@@ -1,5 +1,5 @@
 @testset "NumField/Elem" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   QasNumberField, _ = number_field(x - 1)
   Kt, t = polynomial_ring(QasNumberField, "t")
   K1, a1 = number_field(x^3 - 2)
@@ -37,7 +37,7 @@
   end
 
   @testset "NumField/Component" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     QasNumberField, _ = number_field(x - 1)
     Kt, t = polynomial_ring(QasNumberField, "t")
     K3, a3 = number_field(t^3 - 2)
@@ -55,7 +55,7 @@
   end
 
   @testset "rand" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^3 - 2)
     v = [a^0, a^2]
     @assert elem_type(K) == AbsSimpleNumFieldElem
@@ -77,7 +77,7 @@
   end
 
   @testset "NumField/Coordinates" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^2+1, cached = false)
     BK = basis(K)
     for i = 1:5
@@ -148,7 +148,7 @@
   end
 
   @testset "relative extension" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12x - 92
     K, a = number_field(f, "a")
     Ky, y = K["y"]

@@ -2,34 +2,6 @@
 #
 #          AbsSimpleNumFieldOrder/Elem.jl : Elements of orders of number fields
 #
-# This file is part of hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2015, 2016 Tommy Hofmann
-#
 ################################################################################
 
 ################################################################################
@@ -204,11 +176,11 @@ end
 
 @doc raw"""
     charpoly(a::AbsNumFieldOrderElem) -> ZZPolyRingElem
-    charpoly(a::AbsNumFieldOrderElem, FlintZZ) -> ZZPolyRingElem
+    charpoly(a::AbsNumFieldOrderElem, ZZ) -> ZZPolyRingElem
 
 The characteristic polynomial of $a$.
 """
-function charpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
+function charpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(ZZ, :x, false))
   return Zx(charpoly(elem_in_nf(a)))
 end
 
@@ -217,7 +189,7 @@ end
 
 The minimal polynomial of $a$.
 """
-function minpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(FlintZZ, :x, false))
+function minpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(ZZ, :x, false))
   return Zx(minpoly(elem_in_nf(a)))
 end
 
@@ -461,7 +433,7 @@ function representation_matrix_mod(a::AbsNumFieldOrderElem, d::ZZRingElem)
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
   if fits(Int, d1)
-    R = residue_ring(FlintZZ, Int(d1), cached = false)[1]
+    R = residue_ring(ZZ, Int(d1), cached = false)[1]
     AR = map_entries(R, A)
     BMR = map_entries(R, BM.num)
     BMinvR = map_entries(R, BMinv.num)
@@ -481,7 +453,7 @@ function representation_matrix_mod(a::AbsNumFieldOrderElem, d::ZZRingElem)
     mod!(res, d)
     return res
   else
-    RR = residue_ring(FlintZZ, d1, cached = false)[1]
+    RR = residue_ring(ZZ, d1, cached = false)[1]
     ARR = map_entries(RR, A)
     BMRR = map_entries(RR, BM.num)
     mul!(ARR, BMRR, ARR)

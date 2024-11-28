@@ -4,7 +4,7 @@
   @test parent_type(elem_type(AbsSimpleNumFieldOrder)) === AbsSimpleNumFieldOrder
 
   @testset "Construction" begin
-     Qx, x = polynomial_ring(FlintQQ, "x")
+     Qx, x = polynomial_ring(QQ, "x")
 
      K1, a1 = number_field(x^3 - 2, "a")
     O1 = EquationOrder(K1, true)
@@ -42,9 +42,9 @@
     @test Hecke.nf(O3) == K3
 
      K4, a4 = number_field(x^2 - 5, "a")
-    O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], ZZRingElem(1)))
-    O44 = Order(K4, FlintQQ[1 0; 0 2])
-    O444 = Order(K4, FlintZZ[1 0; 0 2])
+    O4 = Order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
+    O44 = Order(K4, QQ[1 0; 0 2])
+    O444 = Order(K4, ZZ[1 0; 0 2])
 
     @test Hecke.nf(O4) == K4
 
@@ -58,8 +58,8 @@
 
     @test Hecke.nf(O6) == K6
 
-    O7 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)), check = true, cached = false)
-    O77 = Order(K6, FlintQQ[1 0; 0 1//6])
+    O7 = Order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)), check = true, cached = false)
+    O77 = Order(K6, QQ[1 0; 0 1//6])
 
     #@test O7 == O77
     #@test !(O7 === O77)
@@ -70,12 +70,12 @@
     @test_throws ErrorException Order(K1, [a1, a1, a1], isbasis = true)
     #@test_throws ErrorException Order(K1, [1, a1, a1])
     #@test_throws ErrorException Order(K1, [1.0, a1, a1])
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 0; 0 0], FlintZZ(6)))
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 2; 2 0], FlintZZ(6)))
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 0], FlintZZ(6)))
+    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))
+    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 2; 2 0], ZZ(6)))
+    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0], ZZ(6)))
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
   O1 = EquationOrder(K1)
@@ -108,12 +108,12 @@
   O3 = Order(K3, [ a3^i for i in 0:63])
 
   K4, a4 = number_field(x^2 - 5, "a")
-  O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], ZZRingElem(1)))
+  O4 = Order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
 
   K6, a6 = number_field(x^2 - 180, "a")
   O6 = EquationOrder(K6)
 
-  O7 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)))
+  O7 = Order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)))
 
   O5 = @inferred deepcopy(O2)
 
@@ -157,28 +157,28 @@
     @test O4.basis_nf == [ a4^0, 2*a4 ]
 
     b = @inferred basis_matrix(O1)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 3, 3)), one(ZZ)))
 
     b = @inferred basis_matrix(O2)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 1, 1)), one(ZZ)))
 
     b = @inferred basis_matrix(O3)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 64, 64)), one(ZZ)))
 
     b = @inferred basis_matrix(O4)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], one(FlintZZ)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(ZZ[1 0; 0 2], one(ZZ)))
 
     b = @inferred basis_matrix_inverse(O1)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 3, 3)), one(ZZ)))
 
     b = @inferred basis_matrix_inverse(O2)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 1, 1)), one(ZZ)))
 
     b = @inferred basis_matrix_inverse(O3)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 64, 64)), one(ZZ)))
 
     b = @inferred basis_matrix_inverse(O4)
-    @test b == QQMatrix(Hecke.FakeFmpqMat(FlintZZ[2 0; 0 1], FlintZZ(2)))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(ZZ[2 0; 0 1], ZZ(2)))
   end
 
   @testset "Index" begin
@@ -198,11 +198,11 @@
     @test b == 1
 
     b = @inferred gen_index(O4)
-    @test b == FlintQQ(1, 2)
+    @test b == QQ(1, 2)
     @test_throws ErrorException index(O4)
 
     b = @inferred gen_index(O7)
-    @test b == FlintQQ(6)
+    @test b == QQ(6)
     b = @inferred index(O7)
     @test b == 6
 
@@ -341,12 +341,12 @@
   end
 
   @testset "Addition" begin
-    O6_2 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[2 0; 0 1], FlintZZ(2)))
-    O6_3 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[3 0; 0 1], FlintZZ(3)))
+    O6_2 = Order(K6, Hecke.FakeFmpqMat(ZZ[2 0; 0 1], ZZ(2)))
+    O6_3 = Order(K6, Hecke.FakeFmpqMat(ZZ[3 0; 0 1], ZZ(3)))
 
     b = @inferred O6_2 +
  O6_3
-    @test basis_matrix(b) == QQMatrix(Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)))
+    @test basis_matrix(b) == QQMatrix(Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)))
 
     @test discriminant(b) == 20
 

@@ -86,13 +86,13 @@ end
   @testset "Change of ring" begin
 
     # Restrict from number field to Q
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^3 - 2
     K, a = number_field(f, "a")
 
     A = StructureConstantAlgebra(matrix_ring(K, 2))
-    B, BtoA = Hecke.restrict_scalars(A, FlintQQ)
-    @test base_ring(B) == FlintQQ
+    B, BtoA = Hecke.restrict_scalars(A, QQ)
+    @test base_ring(B) == QQ
     @test dim(B) == dim(A)*degree(K)
 
     test_alg_morphism_char_0(B, A, BtoA)
@@ -244,7 +244,7 @@ end
 
   @testset "Splitting at infinite place" begin
     G = small_group(8, 4)
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x - 1, "a")
     A = Hecke.GroupAlgebra(K, G)
     H = first(c[1] for c in Hecke.decompose(A) if dim(c[1]) == 4)

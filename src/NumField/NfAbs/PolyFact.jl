@@ -117,7 +117,7 @@ mutable struct HenselCtxPadic <: Hensel
   function HenselCtxPadic(f::PolyRingElem{PadicFieldElem})
     r = new()
     r.f = f
-    Zx = polynomial_ring(FlintZZ, cached = false)[1]
+    Zx = polynomial_ring(ZZ, cached = false)[1]
     ff = Zx()
     for i=0:degree(f)
       setcoeff!(ff, i, lift(ZZ, coeff(f, i)))
@@ -137,7 +137,7 @@ end
 
 function factor(C::HenselCtxPadic)
   res =  typeof(C.f)[]
-  Zx = polynomial_ring(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(ZZ, cached = false)[1]
   h = Zx()
   Qp = base_ring(C.f)
   for i = 1:C.X.LF._num #from factor_to_dict
@@ -200,7 +200,7 @@ function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem}, O)
 end
 
 function reco(a::AbsNumFieldOrderElem, M, pM)
-  m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
+  m = matrix(ZZ, 1, degree(parent(a)), coordinates(a))
   m = m - map(x -> round(ZZRingElem, x, pM[2]), m*pM[1])*M
   return parent(a)(m)
 end
@@ -432,15 +432,15 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::AbsSimpleNumFiel
   @assert 0<= from <= N   #from : div by x^from
 #  @assert up_to <= from
 
-  M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
+  M = zero_matrix(ZZ, length(lf), (1+up_to + N - from) * degree(k))
   #last_lf[] = (lf, H.f, up_to)
 
   lf = [divexact_low(mullow(derivative(x), H.f, up_to+1), x, up_to+1) for x = lf]
 #  lf = [divexact(derivative(x)*H.f, x) for x = lf]
 #  @show llf .- lf
 
-  NN = zero_matrix(FlintZZ, 1, degree(k))
-  d = FlintZZ()
+  NN = zero_matrix(ZZ, 1, degree(k))
+  d = ZZ()
 
   for i=0:up_to
     for j=1:length(lf)
@@ -513,7 +513,7 @@ function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingEle
   while false && sc > 0
     BB = tdivpow2(B, sc)
     dd = tdivpow2(d, sc)
-    MM = [M BB; zero_matrix(FlintZZ, ncols(B), ncols(M)) dd*identity_matrix(FlintZZ, ncols(B))]
+    MM = [M BB; zero_matrix(ZZ, ncols(B), ncols(M)) dd*identity_matrix(ZZ, ncols(B))]
     @show maximum(nbits, MM)
     @time MM, T = lll_with_transform(MM, LLLContext(0.75, 0.51))
     @time l, _ = lll_with_removal(MM, bnd, LLLContext(0.75, 0.51))
@@ -524,7 +524,7 @@ function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingEle
     @show maximum(nbits, B)
     @show sc = max(0, sc-55)
   end
-  M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
+  M = [M B; zero_matrix(ZZ, ncols(B), ncols(M)) d*identity_matrix(ZZ, ncols(B))]
   return lll_with_removal(M, bnd)
 end
 
@@ -558,6 +558,8 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   _, mK = residue_field(order(P), P)
   mK = extend(mK, K)
   r = length(factor(map_coefficients(mK, f, cached = false)))
+  prec_scale = max(nbits(r), prec_scale)
+
   N = degree(f)
   @vprintln :PolyFactor 1  "Having $r local factors for degree $N"
 
@@ -589,7 +591,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
     - the bounds are monotonous in the abs value of the coeffs (I think they are using abs value of coeff)
     - the math works for real coeffs as well
     - thus create an ZZPolyRingElem with pos. coeffs. containing upper bounds of the conjugates of the
-      coeffs. DOne via T_2: sqrt(n*T_2(alpha) is an upper bounds for all conjugates
+      coeffs. Done via T_2: sqrt(T_2(alpha) is an upper bounds for all conjugates
     - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs
     - leading coeff as well as den are algebraic
       CHECK: den*lead*cld in Z[alpha] (or in the order used)
@@ -603,13 +605,13 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   #       2nd block is for additional bits for rounding?
   bb = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
   #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors,
-  #       need everywhere sqrt(n*T_2)? to get conjugate bounds
+  #       need everywhere sqrt(T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprintln :PolyFactor 2 "using CLD precision bounds $b"
 
   used = []
   really_used = []
-  M = identity_matrix(FlintZZ, r)*ZZRingElem(2)^prec_scale
+  M = identity_matrix(ZZ, r)*ZZRingElem(2)^prec_scale
 
   while true #the main loop
     #find some prec

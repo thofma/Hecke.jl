@@ -11,9 +11,9 @@ function SRowSpace(R::Ring; cached = true)
   return SRowSpace{T}(R, cached)
 end
 
-base_ring(A::SRow{ZZRingElem}) = FlintZZ
+base_ring(A::SRow{ZZRingElem}) = ZZ
 
-base_ring(A::SRow{QQFieldElem}) = FlintQQ
+base_ring(A::SRow{QQFieldElem}) = QQ
 
 function base_ring(A::SRow{T}) where {T}
   if isdefined(A, :base_ring)
@@ -103,6 +103,14 @@ function Base.empty!(A::SRow)
   empty!(A.pos)
   empty!(A.values)
   return A
+end
+
+function Base.empty(A::SRow)
+  return sparse_row(base_ring(A))
+end
+
+function zero(A::SRow)
+  return empty(A)
 end
 
 function swap!(A::SRow, B::SRow)
@@ -447,6 +455,7 @@ end
 #  Inplace scaling
 #
 ################################################################################
+
 @doc raw"""
     scale_row!(a::SRow, b::NCRingElem) -> SRow
 
@@ -454,8 +463,9 @@ Returns the (left) product of $b \times a$ and reassigns the value of $a$ to thi
 For rows, the standard multiplication is from the left.
 """
 function scale_row!(a::SRow{T}, b::T) where T
-  @assert !iszero(b)
-  if isone(b)
+  if iszero(b)
+    return empty!(a)
+  elseif isone(b)
     return a
   end
   i = 1
@@ -465,11 +475,13 @@ function scale_row!(a::SRow{T}, b::T) where T
       deleteat!(a.values, i)
       deleteat!(a.pos, i)
     else
-     i += 1
+      i += 1
     end
   end
   return a
 end
+
+scale_row!(a::SRow, b) = scale_row!(a, base_ring(a)(b))
 
 @doc raw"""
     scale_row_right!(a::SRow, b::NCRingElem) -> SRow
@@ -477,8 +489,9 @@ end
 Returns the (right) product of $a \times b$ and modifies $a$ to this product.
 """
 function scale_row_right!(a::SRow{T}, b::T) where T
-  @assert !iszero(b)
-  if isone(b)
+  if iszero(b)
+    return empty!(a)
+  elseif isone(b)
     return a
   end
   i = 1
@@ -488,15 +501,19 @@ function scale_row_right!(a::SRow{T}, b::T) where T
       deleteat!(a.values, i)
       deleteat!(a.pos, i)
     else
-     i += 1
+      i += 1
     end
   end
   return a
 end
 
+scale_row_right!(a::SRow, b) = scale_row_right!(a, base_ring(a)(b))
+
 function scale_row_left!(a::SRow{T}, b::T) where T
   return scale_row!(a,b)
 end
+
+scale_row_left!(a::SRow, b) = scale_row_left!(a, base_ring(a)(b))
 
 ################################################################################
 #
@@ -506,9 +523,9 @@ end
 
 function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
-    return B
+    return deepcopy(B)
   elseif length(B.values) == 0
-    return A
+    return deepcopy(A)
   end
   return add_scaled_row(A, B, one(base_ring(A)))
 end
@@ -516,12 +533,12 @@ end
 function -(A::SRow{T}, B::SRow{T}) where T
   if length(A) == 0
     if length(B) == 0
-      return A
+      return deepcopy(A)
     else
-      return add_scaled_row(B, A, base_ring(B)(-1))
+      return add_scaled_row(B, A, -1)
     end
   end
-  return add_scaled_row(B, A, base_ring(A)(-1))
+  return add_scaled_row(B, A, -1)
 end
 
 function -(A::SRow{T}) where {T}
@@ -669,7 +686,7 @@ end
 function permute_row(n::SRow{ZZRingElem}, p::Nemo.Generic.Perm{Int})
   r = Tuple{Int, ZZRingElem}[(p[i], v) for (i,v) = n]
   sort!(r, lt = (a,b)->a[1]<b[1])
-  return sparse_row(FlintZZ, r)
+  return sparse_row(ZZ, r)
 end
 
 ################################################################################
@@ -683,22 +700,28 @@ end
 
 Returns the row $c A + B$.
 """
-add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
-add_left_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
+add_scaled_row(a::SRow{T}, b::SRow{T}, c) where {T} = add_scaled_row!(a, deepcopy(b), c)
+
+add_left_scaled_row(a::SRow{T}, b::SRow{T}, c) where {T} = add_left_scaled_row!(a, deepcopy(b), c)
+add_right_scaled_row(a::SRow{T}, b::SRow{T}, c) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
+
+
 
 @doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
 Adds the left scaled row $c A$ to $B$.
 """
-function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
-  @assert a !== b
+function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, ::Val{left_side} = Val(true)) where {T, left_side}
+  if a === b
+    a = deepcopy(a)
+  end
   i = 1
   j = 1
   t = base_ring(a)()
   while i <= length(a) && j <= length(b)
     if a.pos[i] < b.pos[j]
-      t = mul!(t, c, a.values[i])
+      t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
       if !iszero(t)
         insert!(b.pos, j, a.pos[i])
         insert!(b.values, j, c*a.values[i])
@@ -708,7 +731,7 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
     elseif a.pos[i] > b.pos[j]
       j += 1
     else
-      t = mul!(t, c, a.values[i])
+      t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
       b.values[j] = add!(b.values[j], t)
 
       if iszero(b.values[j])
@@ -721,7 +744,7 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
     end
   end
   while i <= length(a)
-    t = mul!(t, c, a.values[i])
+    t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
     if !iszero(t)
       push!(b.pos, a.pos[i])
       push!(b.values, c*a.values[i])
@@ -731,49 +754,145 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
   return b
 end
 
-add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c) where {T} = add_scaled_row!(a, b, base_ring(a)(c))
 
-add_right_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c, side::Val) where {T} = add_scaled_row!(a, b, base_ring(a)(c), side)
+
+# ignore tmp argument
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
+
+add_left_scaled_row!(a::SRow{T}, b::SRow{T}, c) where T = add_scaled_row!(a, b, c)
 
 @doc raw"""
     add_right_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Return the right scaled row $c A$ to $B$ by changing $B$ in place.
+Return the right scaled row $A c$ to $B$ by changing $B$ in place.
 """
+add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c) where T = add_scaled_row!(a, b, c, Val(false))
 
-function add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
-  @assert a !== b
-  i = 1
-  j = 1
-  t = base_ring(a)()
-  while i <= length(a) && j <= length(b)
-    if a.pos[i] < b.pos[j]
-      insert!(b.pos, j, a.pos[i])
-      insert!(b.values, j, a.values[i]*c)
-      i += 1
-      j += 1
-    elseif a.pos[i] > b.pos[j]
-      j += 1
-    else
-      t = mul!(t, a.values[i], c)
-      b.values[j] = add!(b.values[j], t)
 
-      if iszero(b.values[j])
-        deleteat!(b.values, j)
-        deleteat!(b.pos, j)
-      else
-        j += 1
-      end
-      i += 1
-    end
-  end
-  while i <= length(a)
-    push!(b.pos, a.pos[i])
-    push!(b.values, a.values[i]*c)
-    i += 1
-  end
-  return b
+################################################################################
+#
+#  Mutating arithmetics
+#
+################################################################################
+
+function zero!(z::SRow)
+  return empty!(z)
 end
+
+function neg!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return neg!(x)
+  end
+  swap!(z, -x)
+  return z
+end
+
+function neg!(z::SRow)
+  for i in 1:length(z)
+    z.values[i] = neg!(z.values[i])
+  end
+  return z
+end
+
+function add!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  if z === x
+    return add!(x, y)
+  elseif z === y
+    return add!(y, x)
+  end
+  swap!(z, x + y)
+  return z
+end
+
+function add!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return scale_row!(z, 2)
+  end
+  return add_scaled_row!(x, z, one(base_ring(x)))
+end
+
+function sub!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  if z === x
+    return sub!(x, y)
+  elseif z === y
+    return neg!(sub!(y, x))
+  end
+  swap!(z, x - y)
+  return z
+end
+
+function sub!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return empty!(z)
+  end
+  return add_scaled_row!(x, z, -1)
+end
+
+function mul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
+function mul!(z::SRow{T}, x::SRow{T}, c) where T
+  if z === x
+    return scale_row_right!(x, c)
+  end
+  swap!(z, x * c)
+  return z
+end
+
+function mul!(z::SRow{T}, c, y::SRow{T}) where T
+  if z === y
+    return scale_row_left!(y, c)
+  end
+  swap!(z, c * y)
+  return z
+end
+
+function addmul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
+function addmul!(z::SRow{T}, x::SRow{T}, y) where T
+  if z === x
+    return scale_row_right!(x, y+1)
+  end
+  return add_right_scaled_row!(x, z, y)
+end
+
+function addmul!(z::SRow{T}, x, y::SRow{T}) where T
+  if z === x
+    return scale_row_left!(y, x+1)
+  end
+  return add_left_scaled_row!(y, z, x)
+end
+
+function submul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
+function submul!(z::SRow{T}, x::SRow{T}, y) where T
+  if z === x
+    return scale_row_right!(x, -y+1)
+  end
+  return add_right_scaled_row!(x, z, -y)
+end
+
+function submul!(z::SRow{T}, x, y::SRow{T}) where T
+  if z === x
+    return scale_row_left!(y, -x+1)
+  end
+  return add_left_scaled_row!(y, z, -x)
+end
+
+
+# ignore temp variable
+addmul!(z::SRow{T}, x::SRow{T}, y, t) where T = addmul!(z, x, y)
+addmul!(z::SRow{T}, x, y::SRow{T}, t) where T = addmul!(z, x, y)
+submul!(z::SRow{T}, x::SRow{T}, y, t) where T = submul!(z, x, y)
+submul!(z::SRow{T}, x, y::SRow{T}, t) where T = submul!(z, x, y)
+
 
 ################################################################################
 #
@@ -787,7 +906,7 @@ end
 Return the sparse row obtained by lifting all entries in $A$.
 """
 function lift(A::SRow{zzModRingElem})
-  b = sparse_row(FlintZZ)
+  b = sparse_row(ZZ)
   for (p,v) = A
     push!(b.pos, p)
     push!(b.values, lift(v))
@@ -823,7 +942,7 @@ Returns the largest, in absolute value, entry of $A$.
 """
 function maximum(::typeof(abs), A::SRow{ZZRingElem})
   if iszero(A)
-    return zero(FlintZZ)
+    return zero(ZZ)
   end
   m = abs(A.values[1])
   for j in 2:length(A)

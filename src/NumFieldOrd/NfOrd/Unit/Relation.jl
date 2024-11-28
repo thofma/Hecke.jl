@@ -159,7 +159,7 @@ function _find_relation(x::Vector{S}, y::T, p::Int = 64) where {S, T}
 
   rel = Array{ZZRingElem}(undef, r + 1)
   for i in 1:r+1
-    rel[i] = zero(FlintZZ)
+    rel[i] = zero(ZZ)
   end
 
   while !inv_succesful || !_find_rational_relation!(rel, v, bound)

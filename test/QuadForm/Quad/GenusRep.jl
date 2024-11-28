@@ -1,5 +1,5 @@
 @testset "Genus representatives" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-717210130, 0, 0, 0, -55, 0, 0, 0, -1173298395869600]);
@@ -7,7 +7,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 6
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-34, 0, 0, 0, -17, 0, 0, 0, -17192032]);
@@ -15,7 +15,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 93
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x-1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-98, 0, 0, 0, -2, 0, 0, 0, -5829824]);
@@ -23,7 +23,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 114
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2-2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, -1, 0, 0, 0, -7436]);
@@ -31,7 +31,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1
   K, a = number_field(f)
   M = matrix(QQ, 2, 2, [47, 80, 80, 560])
@@ -45,7 +45,7 @@
   end
   @test w == Int[37, 16, 19, 11, 6, 3, 52, 7, 13, 21]
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [15, 2, 2, 32]);
@@ -55,7 +55,7 @@
 
   # Local isometry test
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 7, 7, [8, -4, 3, 4, 0, 1, 1, -4, 8, 1, 0, 4, 1, 1, 3, 1, 8, 4, 0, 1, 1, 4, 0, 4, 8, 3, 0, 4, 0, 4, 0, 3, 8, 4, 0, 1, 1, 1, 0, 4, 8, -4, 1, 1, 1, 4, 0, -4, 8]);
@@ -72,7 +72,7 @@
   # Rank 2 case
   # This is the integer_lattice with basis [1 2; 3 4]
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [1, 0, 0, 1]);
@@ -80,7 +80,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1
   K, a = number_field(f)
   D = matrix(K, 3, 3, [-18, -6, -9, -6, -3, -3, -9, -3, -6])
@@ -88,7 +88,7 @@
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 2, 2, [2, 0, 0, 3]);
@@ -106,8 +106,8 @@
   L = integer_lattice(ZZ[4 3; 3 8])
   @test length(genus_representatives(L)) == 4
 
-  B = matrix(FlintQQ, 5, 5 ,[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]);
-  G = matrix(FlintQQ, 5, 5 ,[-2, 0, 0, 0, 0, 0, -4, -2, 2, 2, 0, -2, -4, 0, 0, 0, 2, 0, -4, 0, 0, 2, 0, 0, -4]);
+  B = matrix(QQ, 5, 5 ,[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]);
+  G = matrix(QQ, 5, 5 ,[-2, 0, 0, 0, 0, 0, -4, -2, 2, 2, 0, -2, -4, 0, 0, 0, 2, 0, -4, 0, 0, 2, 0, 0, -4]);
   L = integer_lattice(B, gram = G);
   @test length(genus_representatives(L))==1
 
@@ -1049,7 +1049,7 @@ end
   L75 = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L75)) == res[75]
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -2]);
@@ -1057,7 +1057,7 @@ end
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, -8]);
@@ -1065,7 +1065,7 @@ end
   L = quadratic_lattice(K, gens, gram = D)
   @test length(genus_representatives(L)) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [2, 0, 0, 0, 1, 0, 0, 0, 16]);
@@ -1098,8 +1098,8 @@ end
 end
 
 @testset "Genus Representatives non-full rank, definite" begin
-  B = matrix(FlintQQ, 5, 8 ,[0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 31//2, 3//2, 1//2, 1, 0, 0, 0, 0, 5//2, 3//2, 0, 0, 1//2]);
-  G = matrix(FlintQQ, 8, 8 ,[16, -8, 0, 0, 0, 0, 0, 0, -8, 16, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 6]);
+  B = matrix(QQ, 5, 8 ,[0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 31//2, 3//2, 1//2, 1, 0, 0, 0, 0, 5//2, 3//2, 0, 0, 1//2]);
+  G = matrix(QQ, 8, 8 ,[16, -8, 0, 0, 0, 0, 0, 0, -8, 16, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 6]);
   L = integer_lattice(B, gram = G);
   Ns = @inferred genus_representatives(L) #this uses the automorphisms
 
@@ -1107,6 +1107,12 @@ end
   @test rank(L2) != degree(L2)
   Ns2 = @inferred genus_representatives(L2, use_auto = false)
   @test length(Ns2) == length(Ns)
+
+  # Binary case
+  B = matrix(QQ, 2, 23 ,[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  G = matrix(QQ, 23, 23 ,[-4, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, 0, 0, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, 0, 0, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, 1, -1, 3, 1//2, -1//2, 3//2, -3//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1, 3, -3, -1//2, 3//2, -3//2, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 3, -3, 10, 3//2, -3//2, 5, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, -3, 10, -10, -3//2, 5, -5, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1//2, -1//2, 3//2, -3//2, -1//2, 1, -1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1//2, 3//2, -3//2, 5, 1, -1, 3, -3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3//2, -3//2, 5, -5, -1, 3, -3, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -3//2, 5, -5, 17, 3, -3, 10, -10]);
+  L = integer_lattice(B, gram = G);
+  @test length(representatives(genus(L))) == 1
 end
 
 @testset "More ZZGenus representatives" begin

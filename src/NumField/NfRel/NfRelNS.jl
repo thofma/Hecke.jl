@@ -2,38 +2,10 @@
 #
 #  RelSimpleNumField/RelNonSimpleNumField.jl : non-simple relative fields
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2017 Tommy Hofmann, Claus Fieker
-#
 ################################################################################
 
 #= trivial example
-Qx, x = polynomial_ring(FlintQQ)
+Qx, x = polynomial_ring(QQ)
 QQ = number_field(x-1)[1]
 QQt, t = QQ["t"]
 K, gK = number_field([t^2-2, t^2-3, t^2-5, t^2-7])
@@ -186,7 +158,7 @@ function number_field(::Type{AbsNonSimpleNumField}, L::RelNonSimpleNumField{AbsS
   @assert degree(base_field(L)) == 1
   K = base_field(L)
   Kx, _ = polynomial_ring(K, "x", cached = false)
-  pols = QQPolyRingElem[map_coefficients(FlintQQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
+  pols = QQPolyRingElem[map_coefficients(QQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
   return number_field(pols, cached = false, check = false)
 end
 
@@ -786,7 +758,7 @@ function Nemo.discriminant(K::RelNonSimpleNumField, ::QQField)
   return d
 end
 
-absolute_discriminant(K::RelNonSimpleNumField) = discriminant(K, FlintQQ)
+absolute_discriminant(K::RelNonSimpleNumField) = discriminant(K, QQ)
 
 ################################################################################
 #

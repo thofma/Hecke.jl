@@ -6,51 +6,6 @@ module Build
 
 using Pkg, Nemo, Documenter, DocumenterVitepress, DocumenterCitations
 
- pages = [
-          "index.md",
-          "Number fields" => [ "number_fields/intro.md",
-                               "number_fields/fields.md",
-                               "number_fields/elements.md",
-                               "number_fields/complex_embeddings.md",
-                               "number_fields/internal.md"],
-          "Function fields" => [ "function_fields/intro.md",
-                                 "function_fields/basics.md",
-                                 "function_fields/elements.md",
-                                 "function_fields/internal.md",
-                                 "function_fields/degree_localization.md"],
-          "Orders" => [ "orders/introduction.md",
-                        "orders/orders.md",
-                        "orders/elements.md",
-                        "orders/ideals.md",
-                        "orders/frac_ideals.md"
-                      ],
- 	 "Quadratic and hermitian forms" => [ "quad_forms/introduction.md",
- 					      "quad_forms/basics.md",
- 					      "quad_forms/lattices.md",
- 					      "quad_forms/genusherm.md",
- 					      "quad_forms/integer_lattices.md",
- 					      "quad_forms/Zgenera.md",
- 					      "quad_forms/discriminant_group.md"
- 					    ],
-          "Elliptic curves" => [ "elliptic_curves/intro.md",
-                                 "elliptic_curves/basics.md",
-                                 "elliptic_curves/finite_fields.md",
-                                 "elliptic_curves/number_fields.md",],
-          "Abelian groups" => "abelian/introduction.md",
-          "Class field theory" => "class_fields/intro.md",
-          "Misc" =>  ["FacElem.md",
-                      "sparse/intro.md",
-                      "pmat/introduction.md",
-                      "misc/conjugacy.md",
-                      ],
-          "Extra features" => ["features/mset.md",
-                              ],
-          "Examples" => "examples.md",
-          "References" => "references.md",
-          "Developer" => [ "dev/test.md",
-                         ]
-         ]
-
 # Overwrite printing to make the header not full of redundant nonsense
 # Turns
 #   Hecke.Order - Method

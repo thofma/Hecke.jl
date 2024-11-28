@@ -323,9 +323,9 @@ function __neq_sunit(ktoK::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, pr
   end
   class_group(K)
   SK, mSK = sunit_mod_units_group_fac_elem(primes_in_K)
-  M = zero_matrix(FlintZZ, length(primes_in_k), ngens(SK))
-  N = zero_matrix(FlintZZ, length(primes_in_K), ngens(SK))
-  b = zero_matrix(FlintZZ, length(primes_in_k), 1)
+  M = zero_matrix(ZZ, length(primes_in_k), ngens(SK))
+  N = zero_matrix(ZZ, length(primes_in_K), ngens(SK))
+  b = zero_matrix(ZZ, length(primes_in_k), 1)
   for c = 1:ngens(SK)
     g = mSK(SK[c])
     ng = norm(ktoK, g)
@@ -414,7 +414,7 @@ end
 
 function _as_subfield(A::AbstractAssociativeAlgebra{QQFieldElem}, x::AbstractAssociativeAlgebraElem{QQFieldElem}, f::PolyRingElem{QQFieldElem})
   s = one(A)
-  M = zero_matrix(FlintQQ, degree(f), dim(A))
+  M = zero_matrix(QQ, degree(f), dim(A))
   elem_to_mat_row!(M, 1, s)
   for i = 2:degree(f)
     s = mul!(s, s, x)
@@ -489,9 +489,9 @@ _issubmodule(FO::FieldOracle, OL::AbsNumFieldOrder, LtoA::NfAbsToAbsAlgAssMor) =
 function small_elements(O::AlgAssRelOrd)
   A = algebra(O)
   K = base_ring(A)
-  B, BtoA = restrict_scalars(A, FlintQQ)
+  B, BtoA = restrict_scalars(A, QQ)
   pbO = pseudo_basis(O, copy = false)
-  M = zero_matrix(FlintQQ, dim(B), dim(B))
+  M = zero_matrix(QQ, dim(B), dim(B))
   for i = 1:degree(O)
     for j = 1:degree(K)
       t = basis(pbO[i][2])[j]*pbO[i][1]

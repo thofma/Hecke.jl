@@ -226,7 +226,7 @@ end
 
 function AbstractAlgebra.expressify(x::FacElem; context=nothing)
   if length(x.fac) == 0
-    return Expr(:1)
+    return 1
   end
   prod = Expr(:call, :*)
   for (k,v) = x.fac

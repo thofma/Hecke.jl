@@ -1,5 +1,5 @@
 @testset "Spaces" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^2 - 2, "a1")
   OK = maximal_order(K)
   p = 3*OK
@@ -32,11 +32,11 @@
   @test inner_product(V, v, v) == matrix(E,1,1,[3])
 
   @test_throws ArgumentError hermitian_space(E, E[1 b; b 1])
-  @test_throws ArgumentError hermitian_space(E, FlintQQ[1 0; 1 1])
+  @test_throws ArgumentError hermitian_space(E, QQ[1 0; 1 1])
 
-  V = @inferred hermitian_space(E, FlintQQ[1 2; 2 1])
-  @test V === hermitian_space(E, FlintQQ[1 2; 2 1])
-  @test V !== hermitian_space(E, FlintQQ[1 2; 2 1], cached = false)
+  V = @inferred hermitian_space(E, QQ[1 2; 2 1])
+  @test V === hermitian_space(E, QQ[1 2; 2 1])
+  @test V !== hermitian_space(E, QQ[1 2; 2 1], cached = false)
   @test is_hermitian(V)
   @test !is_definite(V)
   @test involution(V) == s
@@ -59,7 +59,7 @@
   @test gram_matrix(Vm) == -gram_matrix(V)
 
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^2-3
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")

@@ -1,5 +1,5 @@
 @testset "Simplify" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^2 - 10, cached = false)
   L, mL = simplify(K)
   @test is_isomorphic(K, L)

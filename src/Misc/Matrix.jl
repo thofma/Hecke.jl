@@ -243,14 +243,14 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), q)
+        fl = is_zero(q)
         if fl
           continue
         end
         for k = j:ncols(a)
           t = mat_entry_ptr(a, c, k)
           l = mat_entry_ptr(H, i, k)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
+          submul!(t, q, l)
           #a[c, k] = a[c, k] - q * H[i, k]
         end
       end
@@ -275,14 +275,14 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), q)
+        fl = is_zero(q)
         if fl
           continue
         end
         for k = 1:j
           t = mat_entry_ptr(a, c, k)
           l = mat_entry_ptr(H, i, k)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
+          submul!(t, q, l)
         end
       end
     end
@@ -297,21 +297,21 @@ end
 ################################################################################
 
 function lift_nonsymmetric(a::zzModMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{zzModMatrix}), z, a)
   return z
 end
 
 function lift_nonsymmetric(a::fpMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{fpMatrix}), z, a)
   return z
 end
 
 function lift_unsigned(a::zzModMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, libflint), Nothing,
           (Ref{ZZMatrix}, Ref{zzModMatrix}), z, a)
   return z
@@ -325,24 +325,24 @@ end
 
 # Copy B into A at position (i, j)
 function _copy_matrix_into_matrix(A::ZZMatrix, i::Int, j::Int, B::ZZMatrix)
-  @GC.preserve A B begin
+  GC.@preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
         d = mat_entry_ptr(B, 1 + k, 1 + l)
         t = mat_entry_ptr(A, i + k, j + l)
-        ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), t, d)
+        set!(t, d)
       end
     end
   end
 end
 
 function _copy_matrix_into_matrix(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
-  @GC.preserve A B begin
+  GC.@preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
         d = mat_entry_ptr(B, 1 + k, 1 + l)
         t = mat_entry_ptr(A, i + k, j + l)
-        ccall((:fmpq_set, libflint), Nothing, (Ptr{QQFieldElem}, Ptr{QQFieldElem}), t, d)
+        set!(t, d)
       end
     end
   end
@@ -396,7 +396,7 @@ end
 #converts BigFloat -> ZZRingElem via round(a*2^l), in a clever(?) way
 function round_scale(a::Matrix{BigFloat}, l::Int)
   s = size(a)
-  b = zero_matrix(FlintZZ, s[1], s[2])
+  b = zero_matrix(ZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
 
@@ -453,12 +453,12 @@ end
 ################################################################################
 
 function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
-  R = identity_matrix(FlintZZ, ncols(A))
+  R = identity_matrix(ZZ, ncols(A))
   S = deepcopy(A)
 
 
   if !is_diagonal(S)
-    T = zero_matrix(FlintZZ, ncols(A), ncols(A))
+    T = zero_matrix(ZZ, ncols(A), ncols(A))
     GC.@preserve S R T begin
       while true
         hnf_modular_eldiv!(S, mod)
@@ -486,17 +486,17 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
   GC.@preserve S R begin
     for i=1:min(nrows(S), ncols(S))
       Sii = mat_entry_ptr(S, i, i)
-      fl = ccall((:fmpz_is_one, libflint), Bool, (Ref{ZZRingElem},), Sii)
+      fl = is_one(Sii)
       if fl
         continue
       end
       for j=i+1:min(nrows(S), ncols(S))
         Sjj = mat_entry_ptr(S, j, j)
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), Sjj)
+        fl = is_zero(Sjj)
         if fl
           continue
         end
-        fl1 = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), Sii)
+        fl1 = is_zero(Sii)
         if !fl1
           fl2 = Bool(ccall((:fmpz_divisible, libflint), Cint,
               (Ref{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sii))
@@ -517,13 +517,13 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         ccall((:fmpz_tdiv_qr, libflint), Nothing,
           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), a, r, Sii, g)
         #a = divexact(S[i,i], g)
-        ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Sii, g)
+        set!(Sii, g)
         #S[i,i] = g
         b = ZZRingElem()
         ccall((:fmpz_tdiv_qr, libflint), Nothing,
           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), b, r, Sjj, g)
         #b = divexact(S[j,j], g)
-        ccall((:fmpz_mul, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sjj, a)
+        Sjj = mul!(Sjj, a)
         #S[j,j] *= a
         # V = [e -b ; f a];
         # so col i and j of R will be transformed. We do it naively
@@ -532,19 +532,18 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
           Rik = mat_entry_ptr(R, i, k)
           Rjk = mat_entry_ptr(R, j, k)
           aux = ZZRingElem()
-          ccall((:fmpz_mul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rik, e)
-          ccall((:fmpz_addmul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rjk, f)
+          aux = mul!(aux, Rik, e)
+          aux = addmul!(aux, Rjk, f)
           aux1 = ZZRingElem()
-          ccall((:fmpz_mul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux1, Rjk, a)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux1, Rik, b)
-          ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Rik, aux)
-          ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Rjk, aux1)
+          aux1 = mul!(aux1, Rjk, a)
+          aux1 = submul!(aux1, Rik, b)
+          set!(Rik, aux)
+          set!(Rjk, aux1)
           #R[i, k], R[j, k] = e*R[i,k]+f*R[j,k], -b*R[i,k]+a*R[j,k]
         end
       end
     end
-    ccall((:fmpz_mat_transpose, libflint), Nothing,
-         (Ref{ZZMatrix}, Ref{ZZMatrix}), R, R)
+    transpose!(R)
   end
   return S, R
 end
@@ -967,7 +966,7 @@ end
 
 function invmod(M::ZZMatrix, d::ZZRingElem)
   if fits(Int, d)
-    RR = residue_ring(FlintZZ, Int(d), cached = false)[1]
+    RR = residue_ring(ZZ, Int(d), cached = false)[1]
     MRR = map_entries(RR, M)
     SR = zero_matrix(RR, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(SR, 1, 1, MRR)
@@ -980,7 +979,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
   else
-    R = residue_ring(FlintZZ, d, cached = false)[1]
+    R = residue_ring(ZZ, d, cached = false)[1]
     MR = map_entries(R, M)
     S = zero_matrix(R, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(S, 1, 1, MR)

@@ -28,7 +28,7 @@
     E = @inferred elliptic_curve([0, 0, 0, 1, 2], check = false)
     @test is_short_weierstrass_model(E)
 
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
 
     f1 = x^3+3*x+5
     g1 = x+2
@@ -102,7 +102,7 @@
 
   E43_a1 = elliptic_curve([0, 1, 1, 0, 0])
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^2 - x - 1, "a")
   OK = maximal_order(K)
 
@@ -113,15 +113,15 @@
   Eshort = elliptic_curve([4, 0])
 
   @testset "Field access" begin
-    @test base_field(E11_a1) == FlintQQ
-    @test base_field(E43_a1) == FlintQQ
+    @test base_field(E11_a1) == QQ
+    @test base_field(E43_a1) == QQ
     @test base_field(E31_1_a1) == K
     @test base_field(E116_1_a1) == K
-    @test base_field(Eshort) == FlintQQ
+    @test base_field(Eshort) == QQ
   end
 
   @testset "Point construction" begin
-    P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
+    P = @inferred E43_a1([QQ(-1), QQ(0)])
     @test typeof(P) == EllipticCurvePoint{QQFieldElem}
     @test parent(P) == E43_a1
     @test @inferred is_finite(P)
@@ -148,7 +148,7 @@
     @test @inferred !is_finite(P)
     @test @inferred is_infinite(P)
 
-    P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
+    P = @inferred E43_a1([QQ(-1), QQ(0)])
 
     P = @inferred E116_1_a1([K(0), -K(a)])
     @test typeof(P) == EllipticCurvePoint{AbsSimpleNumFieldElem}
@@ -212,7 +212,7 @@
 
   @testset "Point arithmetic" begin
     #addition
-    P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
+    P = @inferred E43_a1([QQ(-1), QQ(0)])
     O = infinity(E43_a1)
 
     @test P == @inferred P + O

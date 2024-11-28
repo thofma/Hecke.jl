@@ -91,15 +91,15 @@ function permutation_group1(G::Vector{<:NumFieldHom{RelNonSimpleNumField{AbsSimp
   L = domain(G[1])
   K = base_field(L)
   dK = absolute_degree(L)
-  d1 = numerator(discriminant(L, FlintQQ))
+  d1 = numerator(discriminant(L, QQ))
   p = 2
   while is_divisible_by(d1, p)
     p = next_prime(p)
   end
-  R = residue_ring(FlintZZ, p, cached = false)[1]
+  R = residue_ring(ZZ, p, cached = false)[1]
   Rm, gRm = polynomial_ring(R, ngens(L)+1, cached = false)
   fmod = Vector{zzModMPolyRingElem}(undef, ngens(L)+1)
-  RQm, gRQm = polynomial_ring(FlintQQ, ngens(L)+1, cached = false)
+  RQm, gRQm = polynomial_ring(QQ, ngens(L)+1, cached = false)
   p1 = K.pol
   p1Q = evaluate(p1, gRQm[end])
   fmod[1] = Rm(p1Q)

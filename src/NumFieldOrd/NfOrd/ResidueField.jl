@@ -94,7 +94,7 @@ end
 function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRingElem, p, ::Val{degree_one} = Val(false)) where degree_one
   R = Native.GF(p, cached = false, check = false)
 
-  Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
+  Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
 
   gmodp = Rx(g)

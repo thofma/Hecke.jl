@@ -32,7 +32,7 @@
 Returns the Jacobson radical of $A$.
 """
 function radical(A::AbstractAssociativeAlgebra)
-  return ideal_from_gens(A, _radical(A), :twosided)
+  return _ideal_from_kgens(A, _radical(A); side = :twosided)
 end
 
 function _radical(A::AbstractAssociativeAlgebra)
@@ -285,7 +285,7 @@ function _radical_finite_generic(A::AbstractAssociativeAlgebra{T}) where {T <: U
   end
 
   k = flog(ZZRingElem(dim(A)), p)
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = Qx(push!(QQFieldElem[ -QQFieldElem(T === FqFieldElem ? Nemo._coeff(absgenF^n, i) : coeff(absgenF^n, i)) for i = 0:(n - 1) ], QQFieldElem(1)))
   K, a = number_field(f, "a")
 

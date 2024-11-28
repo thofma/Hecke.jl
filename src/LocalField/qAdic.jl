@@ -56,7 +56,7 @@ end
 
 function getUnit(a::PadicFieldElem)
   u = ZZRingElem()
-  ccall((:fmpz_set, libflint), Cvoid, (Ref{ZZRingElem}, Ref{Int}), u, a.u)
+  u = set!(u, a.u)
   return u, a.v, a.N
 end
 
@@ -67,7 +67,7 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
 
-    x = FlintQQ(c, d)
+    x = QQ(c, d)
     if v < 0
       return x//prime(R, -v)
     else

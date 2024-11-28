@@ -86,7 +86,7 @@ function action(V::FinGenAbGroup, act::Vector{T}) where T<: Map{FinGenAbGroup, F
 
   expon = Int(exponent(V))
   @hassert :StabSub 1 length(factor(order(V)).fac)==1
-  RR = residue_ring(FlintZZ, expon, cached=false)[1]
+  RR = residue_ring(ZZ, expon, cached=false)[1]
   act_mat = Vector{zzModMatrix}(undef, length(act))
   for z = 1:length(act)
     A = zero_matrix(RR, ngens(V), ngens(V))
@@ -242,7 +242,7 @@ function _sub_snf(M::ZpnGModule, n::Int)
   end
   Gnew = abelian_group(invariants)
   action = zzModMatrix[sub(x, ind:ngens(V), ind:ngens(V)) for x in M.G]
-  mat_map = zero_matrix(FlintZZ, length(invariants), ngens(V))
+  mat_map = zero_matrix(ZZ, length(invariants), ngens(V))
   for i = 1:ngens(Gnew)
     mat_map[i, ind+i-1] = n
   end
@@ -432,6 +432,7 @@ Given a ZpnGModule $M$, the function returns all the submodules of $M$.
 
 """
 function submodules(M::ZpnGModule; typequo=Int[-1], typesub=Int[-1], ord=-1)
+  @show typequo
 
   if typequo!=[-1]
     return submodules_with_quo_struct(M,typequo)
@@ -769,7 +770,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
 
   minlist=minimal_submodules(N,ord, lf)
   for x in minlist
-    push!(list, reduce(vcat, [W((mS( S.V(ZZRingElem[FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
+    push!(list, reduce(vcat, [W((mS( S.V(ZZRingElem[ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
   end
   return (x for x in list)
 
@@ -930,7 +931,7 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
       push!(list, it)
     else
 
-      RR = residue_ring(FlintZZ, Int(p)^x1, cached=false)[1]
+      RR = residue_ring(ZZ, Int(p)^x1, cached=false)[1]
       act_mat1 = Vector{zzModMatrix}(undef, length(act))
       for z=1:length(act)
         imgs = FinGenAbGroupElem[]

@@ -1,10 +1,16 @@
-## Elements
+```@meta
+CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
+```
+# Elements
 Elements in a finitely generated abelian group are of type `FinGenAbGroupElem`
 and are always given as a linear combination of the generators.
 Internally this representation is normliased to have a unique
 representative.
 
-### Creation
+## Creation
 In addition to the standard function `id`, `zero` and `one` that can be
 used to create the neutral element, we also support more targeted creation:
 ```@docs
@@ -16,22 +22,23 @@ rand(G::FinGenAbGroup)
 rand(G::FinGenAbGroup, B::ZZRingElem)
 parent(x::FinGenAbGroupElem)
 ```
-### Access
+## Access
 
 ```@docs
+getindex(x::FinGenAbGroupElem, v::AbstractVector{Int})
 getindex(x::FinGenAbGroupElem, i::Int)
 ```
 
-### Predicates
+## Predicates
 
 We have the standard predicates `iszero`, `isone` and `is_identity`
 to test an element for being trivial.
 
-### Invariants
+## Invariants
 ```@docs
 order(A::FinGenAbGroupElem)
 ```
-### Iterator
+## Iterator
 One can iterate over the elements of a finite abelian group.
 
 ```@repl

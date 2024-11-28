@@ -2,41 +2,13 @@
 #
 #  NfAbs/NonSimple.jl : non-simple absolute number fields
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017, 2018: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2018 Tommy Hofmann, Claus Fieker
-#
 ################################################################################
 
-@inline base_ring(K::AbsNonSimpleNumField) = FlintQQ
+@inline base_ring(K::AbsNonSimpleNumField) = QQ
 
 @inline base_ring_type(K::AbsNonSimpleNumField) = QQField
 
-@inline base_field(K::AbsNonSimpleNumField) = FlintQQ
+@inline base_field(K::AbsNonSimpleNumField) = QQ
 
 @inline degree(K::AbsNonSimpleNumField) = K.degree
 
@@ -135,7 +107,7 @@ function basis_matrix(A::Array{AbsNonSimpleNumFieldElem})
   n = length(A)
   d = degree(parent(A[1]))
 
-  MM = zero_matrix(FlintQQ, n, d)
+  MM = zero_matrix(QQ, n, d)
   for i in 1:n
     elem_to_mat_row!(MM, i, A[i])
   end
@@ -395,7 +367,7 @@ function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNum
   # QQMPolyRingElem
 
   for j in 1:ncols(M)
-    M[i, j] = zero(FlintZZ)
+    M[i, j] = zero(ZZ)
   end
 
   one!(d)
@@ -404,7 +376,7 @@ function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNum
     return nothing
   end
 
-  z = zero_matrix(FlintQQ, 1, ncols(M))
+  z = zero_matrix(QQ, 1, ncols(M))
   elem_to_mat_row!(z, 1, a)
   z_q = FakeFmpqMat(z)
 
@@ -412,7 +384,7 @@ function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNum
     M[i, j] = z_q.num[1, j]
   end
 
-  ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}), d, z_q.den)
+  set!(d, z_q.den)
 
   return nothing
 end
@@ -420,7 +392,7 @@ end
 function elem_to_mat_row!(M::QQMatrix, i::Int, a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   for j in 1:ncols(M)
-    M[i, j] = zero(FlintQQ)
+    M[i, j] = zero(QQ)
   end
   adata = data(a)
   for j in 1:length(adata)
@@ -454,7 +426,7 @@ function elem_from_mat_row(K::AbsNonSimpleNumField, M::ZZMatrix, i::Int, d::ZZRi
 end
 
 function SRow(a::AbsNonSimpleNumFieldElem)
-  sr = SRow(FlintQQ)
+  sr = SRow(QQ)
   adata = data(a)
   for i=1:length(adata)
     # TODO: Do this inplace with preallocated exps array
@@ -475,7 +447,7 @@ end
 ################################################################################
 
 function discriminant(K::AbsNonSimpleNumField)
-  Qx = FlintQQ["x"][1]
+  Qx = QQ["x"][1]
   d = QQFieldElem(1)
   for i = 1:length(K.pol)
     d *= discriminant(to_univariate(Qx,K.pol[i]))^(div(degree(K), total_degree(K.pol[i])))
@@ -493,13 +465,13 @@ end
 function minpoly_dense(a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   n = degree(K)
-  M = zero_matrix(FlintQQ, degree(K)+1, degree(K))
+  M = zero_matrix(QQ, degree(K)+1, degree(K))
   z = a^0
   elem_to_mat_row!(M, 1, z)
   z *= a
   elem_to_mat_row!(M, 2, z)
   i = 2
-  Qt, _ = polynomial_ring(FlintQQ,"t", cached=false)
+  Qt, _ = polynomial_ring(QQ,"t", cached=false)
   while true
     if n % (i-1) == 0 && rank(M) < i
       N = kernel(transpose(sub(M, 1:i, 1:ncols(M))), side = :right)
@@ -521,14 +493,14 @@ end
 function minpoly_sparse(a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   n = degree(K)
-  M = sparse_matrix(FlintQQ)
+  M = sparse_matrix(QQ)
   z = a^0
   push!(M, SRow(z))
   z *= a
   sz = SRow(z)
   i = 1
   local so::typeof(sz)
-  Qt, t = polynomial_ring(FlintQQ, "x", cached = false)
+  Qt, t = polynomial_ring(QQ, "x", cached = false)
   while true
     if n % i == 0
       fl, _so = can_solve_with_solution(M, sz)
@@ -647,7 +619,7 @@ end
 function representation_matrix(a::AbsNonSimpleNumFieldElem)
   K = parent(a)
   b = basis(K, copy = false)
-  M = zero_matrix(FlintQQ, degree(K), degree(K))
+  M = zero_matrix(QQ, degree(K), degree(K))
   for i=1:degree(K)
     elem_to_mat_row!(M, i, a*b[i])
   end
@@ -712,7 +684,7 @@ end
 #    end
 #  end
 #
-#  Qx = polynomial_ring(FlintQQ, "x")[1]
+#  Qx = polynomial_ring(QQ, "x")[1]
 #  coeffs = Vector{QQFieldElem}(undef, deg+1)
 #  if iszero(deg)
 #    if iszero(f)
@@ -923,7 +895,7 @@ function number_field(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool
   length(S) == length(f) || error("number of names must match the number of polynomials")
   n = length(S)
   s = var(parent(f[1]))
-  Qx, x = polynomial_ring(FlintQQ, ["$s$i" for i=1:n], cached = false)
+  Qx, x = polynomial_ring(QQ, ["$s$i" for i=1:n], cached = false)
   K = AbsNonSimpleNumField(f, QQMPolyRingElem[f[i](x[i]) for i=1:n], S, cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
@@ -936,12 +908,12 @@ function number_field(f::Vector{QQPolyRingElem}, S::Vector{Symbol}; cached::Bool
 end
 
 function number_field(f::Vector{ZZPolyRingElem}, s::VarName="_\$"; cached::Bool = false, check::Bool = true)
-  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  Qx, _ = polynomial_ring(QQ, var(parent(f[1])), cached = false)
   return number_field(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
 function number_field(f::Vector{ZZPolyRingElem}, s::Vector{<:VarName}; cached::Bool = false, check::Bool = true)
-  Qx, _ = polynomial_ring(FlintQQ, var(parent(f[1])), cached = false)
+  Qx, _ = polynomial_ring(QQ, var(parent(f[1])), cached = false)
   return number_field(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
 end
 
@@ -1033,7 +1005,7 @@ function trace_assure(K::AbsNonSimpleNumField)
   if isdefined(K, :traces)
     return
   end
-  Qx, x = polynomial_ring(FlintQQ, cached = false)
+  Qx, x = polynomial_ring(QQ, cached = false)
   K.traces = Vector{QQFieldElem}[total_degree(f) == 1 ? QQFieldElem[] : polynomial_to_power_sums(to_univariate(Qx, f), total_degree(f)-1) for f = K.pol]
 end
 

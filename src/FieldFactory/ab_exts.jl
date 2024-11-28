@@ -9,7 +9,7 @@ function abelian_extensions(O::Union{ZZRing, QQField},
                             only_real::Bool = false,
                             tame::Bool = false)
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   K, _ = number_field(x - 1, "a", cached = false)
   OK = maximal_order(K)
   l = abelian_extensions(OK, gtype, discriminant_bound,
@@ -521,7 +521,7 @@ function _action_on_quo(mq::FinGenAbGroupHom, act::Vector{FinGenAbGroupHom})
   q=mq.header.codomain
   S,mS=snf(q)
   n=Int(S.snf[end])
-  R=residue_field(FlintZZ, n, cached=false)[1]
+  R=residue_field(ZZ, n, cached=false)[1]
   quo_action=Vector{zzModMatrix}(undef, length(act))
   for s=1:length(act)
     quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
@@ -539,7 +539,7 @@ end
 function quadratic_fields(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Val{unused}=Val(false)) where unused
 
   @assert !(real && complex)
-  Qx,x=polynomial_ring(FlintQQ, "x")
+  Qx,x=polynomial_ring(QQ, "x")
   sqf=squarefree_up_to(bound)
   if real
     deleteat!(sqf,1)
@@ -568,7 +568,7 @@ end
 
 function _quad_ext(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   K = number_field(x-1, cached = false, check = false)[1]
   sqf = squarefree_up_to(bound, prime_base = unramified_outside)
   final_list = Int[]
@@ -627,7 +627,7 @@ end
 function C22_extensions(bound::Int)
 
 
-  Qx, x=polynomial_ring(FlintZZ, "x")
+  Qx, x=polynomial_ring(ZZ, "x")
   K, _=number_field(x-1, cached = false)
   Kx,x=polynomial_ring(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
@@ -659,7 +659,7 @@ end
 
 
 function _C22_exts_abexts(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
-  Qx, x = polynomial_ring(FlintZZ, "x", cached = false)
+  Qx, x = polynomial_ring(ZZ, "x", cached = false)
   pairs = _find_pairs(bound, only_real, unramified_outside = unramified_outside)
   return (_ext_with_autos(Qx, x, i, j) for (i, j) in pairs)
 end
@@ -699,17 +699,9 @@ function _ext_with_autos(Qx, x, i::Int, j::Int)
   return Qx(cp1), Qx(cp2)
 end
 
-function __get_term(a::QQMPolyRingElem, exps::Vector{UInt})
-   z = QQFieldElem()
-   ccall((:fmpq_mpoly_get_coeff_fmpq_ui, libflint), Nothing,
-         (Ref{QQFieldElem}, Ref{QQMPolyRingElem}, Ptr{UInt}, Ref{QQMPolyRing}),
-         z, a, exps, parent(a))
-   return z
-end
-
 function _C22_with_max_ord(l)
   list = Vector{Tuple{AbsSimpleNumField, Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}, Vector{morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}()
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   K = number_field(x-1, cached = false)[1]
   @vprintln :AbExt 1 "Constructing the C2xC2 extension: $(length(l))"
   for (i, (p1, p2)) in enumerate(l)
@@ -1046,7 +1038,7 @@ function discriminant_conductorQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::I
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)[1]
+  R=residue_ring(ZZ, m, cached=false)[1]
 
   for (_p,v) in lp
     p = ZZ(_p)
@@ -1136,7 +1128,7 @@ function discriminantQQ(O::AbsSimpleNumFieldOrder, C::ClassField, m::Int)
   lp=factor(m).fac
   abs_disc=Dict{ZZRingElem,Int}()
 
-  R=residue_ring(FlintZZ, m, cached=false)[1]
+  R=residue_ring(ZZ, m, cached=false)[1]
 
   for (_p,v) in lp
     p = ZZ(_p)
@@ -1292,7 +1284,7 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
   O=order(m)
   K=nf(O)
 
-  R=residue_ring(FlintZZ, mm, cached=false)[1]
+  R=residue_ring(ZZ, mm, cached=false)[1]
   for (_p,v) in lp.fac
     p = ZZ(_p)
     if isodd(p)

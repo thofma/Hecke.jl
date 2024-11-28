@@ -978,7 +978,7 @@ end
 
 quaternion_algebra2(K::Field, a::Int, b::Int) = quaternion_algebra2(K, K(a), K(b))
 
-quaternion_algebra2(a::Int, b::Int) = quaternion_algebra2(FlintQQ, QQFieldElem(a), QQFieldElem(b))
+quaternion_algebra2(a::Int, b::Int) = quaternion_algebra2(QQ, QQFieldElem(a), QQFieldElem(b))
 
 ################################################################################
 #

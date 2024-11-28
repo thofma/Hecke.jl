@@ -393,7 +393,7 @@ function gens_overorder_polygons(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   K = nf(O)
   f = K.pol
   Qx = parent(f)
-  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(ZZ, "x", cached = false)
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
@@ -455,7 +455,7 @@ end
 function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
-  Zy, y = polynomial_ring(FlintZZ, "y", cached = false)
+  Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Kx, x = polynomial_ring(Native.GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
@@ -599,7 +599,7 @@ function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::M
     #we need the kernel of the projection map from A to B.
     #This is given by the basis of all the other components.
     f = dim(B)
-    N1 = vcat(N, zero_matrix(FlintZZ, dim(A) - f, n))
+    N1 = vcat(N, zero_matrix(ZZ, dim(A) - f, n))
     t = 1
     for j = 1:length(AA)
       if j == i
@@ -850,7 +850,7 @@ function find_random_second_gen(A::AbsNumFieldOrderIdeal{S, T}) where {S, T}
 
   r = -Amin2:Amin2
 
-  m = zero_matrix(FlintZZ, 1, degree(O))
+  m = zero_matrix(ZZ, 1, degree(O))
 
   cnt = 0
   dBmat = denominator(basis_matrix(FakeFmpqMat, O, copy = false))
@@ -865,7 +865,7 @@ function find_random_second_gen(A::AbsNumFieldOrderIdeal{S, T}) where {S, T}
     # Put the entries of B into the (1 x d)-Matrix m
     for i in 1:degree(O)
       s = mat_entry_ptr(m, 1, i)
-      ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), s, B[i])
+      set!(s, B[i])
     end
     if iszero(m)
       continue
@@ -904,7 +904,7 @@ end
 
 function decomposition_type_polygon(O::AbsSimpleNumFieldOrder, p::Union{ZZRingElem, Int})
   K = nf(O)
-  Zx, x = polynomial_ring(FlintZZ, "x", cached = false)
+  Zx, x = polynomial_ring(ZZ, "x", cached = false)
   f = Zx(K.pol)
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
@@ -985,7 +985,7 @@ function prime_decomposition_polygons(O::AbsSimpleNumFieldOrder, p::Union{ZZRing
   end
   K = nf(O)
   f = K.pol
-  Zx = polynomial_ring(FlintZZ, "x", cached = false)[1]
+  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = Rx(K.pol)
@@ -1008,8 +1008,8 @@ function prime_decomposition_polygons(O::AbsSimpleNumFieldOrder, p::Union{ZZRing
       J.gen_two = O(b, false)
       J.is_prime = 1
       J.splitting_type = ei, degree(phi)
-      J.norm = FlintZZ(p)^degree(phi)
-      J.minimum = FlintZZ(p)
+      J.norm = ZZ(p)^degree(phi)
+      J.minimum = ZZ(p)
 
       # We have to do something to get 2-normal presentation:
       # if ramified or valuation val(b,P) == 1, (p,b)

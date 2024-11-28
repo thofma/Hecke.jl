@@ -38,8 +38,8 @@ function minkowski_gram_mat_scaled_parallel(O::AbsSimpleNumFieldOrder, prec::Int
     Hecke.shift!(A, prec - O.minkowski_gram_mat_scaled[2])
   else
     c = minkowski_matrix_parallel(O, prec)
-    d = zero_matrix(FlintZZ, degree(O), degree(O))
-    A = zero_matrix(FlintZZ, degree(O), degree(O))
+    d = zero_matrix(ZZ, degree(O), degree(O))
+    A = zero_matrix(ZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
     ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), A, d)
     Hecke.shift!(A, -prec)
@@ -87,7 +87,7 @@ function parallel_lll_precomputation(M::AbsSimpleNumFieldOrder, prec::Int, nbloc
       block += 1
     end
     @vprintln :LLL 3 "Blocks selection finished"
-    g = identity_matrix(FlintZZ, n)
+    g = identity_matrix(ZZ, n)
     while true
       try
         Hecke.minkowski_gram_mat_scaled(M, prec)
