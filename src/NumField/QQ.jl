@@ -32,8 +32,6 @@ struct ZZFracIdl <: NumFieldOrderFractionalIdeal
   end
 end
 
-Base.hash(x::ZZIdl, h::UInt) = hash(gen(x), h)
-
 order(::ZZIdl) = ZZ
 
 order(::ZZFracIdl) = ZZ
@@ -93,8 +91,16 @@ function ==(I::ZZIdl, J::ZZIdl)
   return I.gen == J.gen
 end
 
+function Base.hash(I::ZZIdl, h::UInt)
+  return hash(I.gen, h)
+end
+
 function ==(I::ZZFracIdl, J::ZZFracIdl)
   return I.gen == J.gen
+end
+
+function Base.hash(I::ZZFracIdl, h::UInt)
+  return hash(I.gen, h)
 end
 
 # access
