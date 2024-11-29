@@ -1152,6 +1152,10 @@ function ==(R::AbsNumFieldOrderSet, S::AbsNumFieldOrderSet)
   return R.nf === S.nf
 end
 
+function Base.hash(R::AbsNumFieldOrderSet, h::UInt)
+  return hash(R.nf, h)
+end
+
 ################################################################################
 #
 #  Trace matrix
