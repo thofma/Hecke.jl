@@ -26,6 +26,8 @@
 
      @test valuation(a - preimage(mL1, mL1(a)), lp[2][1]) >= 10
      @test valuation(a - preimage(mL2, mL2(a)), lp[1][1]) >= 10
+
+     @test degree(codomain(completion(k, 37, 2; cached = false)[2])) == 2
    end
 end
 
