@@ -1139,6 +1139,14 @@ function ==(R::AbsNumFieldOrder, S::AbsNumFieldOrder)
   return hnf(R.basis_matrix) == hnf(S.basis_matrix)
 end
 
+function hash(R::AbsNumFieldOrder, h::UInt)
+  h = hash(nf(R), h)
+  h = hash(discriminant(R), h)
+  assure_has_basis_matrix(R)
+  h = hash(hnf(R.basis_matrix), h)
+  return h
+end
+
 @doc raw"""
     is_contained(R::AbsNumFieldOrder, S::AbsNumFieldOrder) -> Bool
 
