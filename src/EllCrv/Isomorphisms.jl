@@ -608,6 +608,14 @@ function ==(f::EllCrvIso, g::EllCrvIso)
   return f.data == g.data && Ef == Eg && base_field(Ef) == base_field(Eg)
 end
 
+function Base.hash(f::EllCrvIso, h::UInt)
+  Ef = domain(f)
+  h = hash(f.data, h)
+  h = hash(Ef, h)
+  h = hash(base_field(Ef), h)
+  return h
+end
+
 
 ################################################################################
 #
