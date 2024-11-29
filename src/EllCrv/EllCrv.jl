@@ -372,6 +372,12 @@ function ==(E::EllipticCurve, F::EllipticCurve)
   return a_invariants(E) == a_invariants(F) && base_field(E) == base_field(F)
 end
 
+function Base.hash(E::EllipticCurve, h::UInt)
+  h = hash(a_invariants(E), h)
+  h = hash(base_field(E), h)
+  return h
+end
+
 ################################################################################
 #
 #  Elementary invariants

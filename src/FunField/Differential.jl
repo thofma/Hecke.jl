@@ -79,6 +79,12 @@ function Base.:(==)(df::FunFldDiff, dg::FunFldDiff)
   return function_field(df) === function_field(df) && df.f == df.f
 end
 
+function Base.hash(df::FunFldDiff, h::UInt)
+  h = hash(function_field(df), h)
+  h = hash(df.f, h)
+  return h
+end
+
 ################################################################################
 #
 #  Arithmetic

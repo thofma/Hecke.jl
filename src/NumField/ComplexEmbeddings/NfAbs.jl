@@ -68,6 +68,12 @@ function Base.:(==)(f::AbsSimpleNumFieldEmbedding, g::AbsSimpleNumFieldEmbedding
       _absolute_index(f) == _absolute_index(g)
 end
 
+function Base.hash(f::AbsSimpleNumFieldEmbedding, h::UInt)
+  h = hash(number_field(f), h)
+  h = hash(_absolute_index(f), h)
+  return h
+end
+
 ################################################################################
 #
 #  String I/O
