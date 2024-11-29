@@ -295,6 +295,14 @@ function ==(f1::QuadBin, f2::QuadBin)
   return f1[1] == f2[1] && f1[2] == f2[2] && f1[3] == f2[3]
 end
 
+function Base.hash(f::QuadBin, h::UInt)
+  h = hash(base_ring(f), h)
+  h = hash(f[1], h)
+  h = hash(f[2], h)
+  h = hash(f[3], h)
+  return h
+end
+
 ###############################################################################
 #
 #   Arithmetic
