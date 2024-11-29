@@ -63,6 +63,12 @@ function Base.:(==)(f::RelSimpleNumFieldEmbedding, g::RelSimpleNumFieldEmbedding
       _absolute_index(f) == _absolute_index(g)
 end
 
+function Base.hash(f::RelSimpleNumFieldEmbedding, h::UInt)
+  h = hash(number_field(f), h)
+  h = hash(_absolute_index(f), h)
+  return h
+end
+
 ################################################################################
 #
 #  Conjugate embedding
