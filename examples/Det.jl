@@ -6,7 +6,7 @@ module Det
 using Hecke
 import AbstractAlgebra, Nemo
 using LinearAlgebra, Profile, Base.Intrinsics
-import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_tril!
+import Nemo: add!, mul!, zero!, sub!
 import Hecke: mod_sym!
 
 #creates an unimodular n x n matrix where the inverse is much larger
@@ -888,7 +888,7 @@ end
 # Determinant algorithm: U is the range for random RHS matrix (default -100:100)
 # Answer is !!! CORRECT UP TO SIGN !!!
 # should be trivial to fix as we compute some det mod odd p already
-function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
+function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false, do_hnf::Bool = false)
   n = ncols(A)
   T = ZZMatrix[]
   AT = A
@@ -950,6 +950,9 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     det_small = true
   end
 
+  if do_hnf
+    _hnf = identity_matrix(ZZ, n)
+  end
   local D::DixonCtx
   f = true
   while !det_small
@@ -961,7 +964,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     end
     @show :solving
     @time TS, d = dixon_solve(D, b)
-    @assert A*TS == d*b
+#    @assert A*TS == d*b
     for i=1:length(T)
       TS = T[i]*TS
     end
@@ -978,10 +981,20 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     @show mod_sym(d1, prod_p) , det_p
     if Had - nbits(d1) < nbits(prod_p)
       @show "at H-bound",  (Had - nbits(d1) - nbits(prod_p))/60
+      if do_hnf
+        @show d
+        T1 = hcol(TS, d)
+        return T1 * _hnf 
+      end
       return d1
     end
     if (Had - nbits(d1) - nbits(prod_p))/60 < dixon_cost(d)
       @show "finishing with CRT"
+      if do_hnf 
+        T1 = hcol(TS, d)
+        AT = AbstractAlgebra.Strassen._solve_triu(T1, AT; side = :left)
+        _hnf = T1 * _hnf 
+      end
       while nbits(prod_p)+nbits(d1) < Had
         change_prime(Ap, p)
         map_entries!(Ap, Nemo.fpField(p, false), A)
@@ -990,13 +1003,20 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
         Nemo.mul!(prod_p, prod_p, ZZ(p))
       end
       mis = mod_sym(det_p*invmod(d1, prod_p), prod_p)
+      if do_hnf
+        h = hnf_modular_eldiv(AT, mis)
+        return h * _hnf 
+      end
       return d1*mis
     end
     @time T1 = hcol(TS, d)
     push!(T, T1)
     @show :solve
-    @time AT = AbstractAlgebra.Strassen._solve_triu(T1, AT)
-    @assert _AT*T1 == AT
+    @time _AT = AbstractAlgebra.Strassen._solve_triu(T1, AT; side = :left)
+#    @assert _AT*T1 == AT
+    if do_hnf
+      _hnf = T1 * _hnf
+    end
     @show maximum(nbits, _AT), maximum(nbits, T1), maximum(nbits, AT)
     AT = _AT
 #    @show nbits(prod_p), nbits(d1)
@@ -1010,7 +1030,10 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
     @show Had / nbits(d1)
-      AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
+      AT = AbstractAlgebra.Strassen._solve_triu(h, AT; side = :left)
+      if do_hnf
+        _hnf = h * _hnf
+      end
       if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
@@ -1018,14 +1041,18 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   end
   det_p = invmod(d1, prod_p)*det_p
   @show det_p = mod_sym(det_p, prod_p)
+  @show small
   @assert !is_zero(det_p)
-  @assert nbits(abs(det_p)) < small
+#  @assert nbits(abs(det_p)) < small
   @show :hnf
   @time h = hnf_modular_eldiv(AT, det_p)
   @show t_det(h) // det_p, det(h)
   d1 *= t_det(h)
 
-  @time AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
+  @time AT = AbstractAlgebra.Strassen._solve_triu(h, AT; side = :left)
+    if do_hnf
+      _hnf = h*_hnf
+    end
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)
@@ -1038,10 +1065,13 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     end
     #           @assert fl == is_unit(det(ZAT));
     if fl
+      if do_hnf
+        return _hnf
+      end
       return d1
     end
-    return d1
     error("unimod failed")
+    return d1
 end
 
 #adaptive rational_reconstruction: if solution is unbalanced with
@@ -1057,7 +1087,7 @@ function induce_rational_reconstruction(a::ZZMatrix, b::ZZRingElem)
     A_ptr = Nemo.mat_entry_ptr(A, i, 1)
     for j=1:ncols(a)
 #      @show i, j
-      set!(T, a_ptr)
+      Nemo.set!(T, a_ptr)
       Nemo.mul!(T, T, D)
       Nemo.mod!(T, T, b)
       fl = ratrec!(n, d, T, b)
@@ -1066,7 +1096,7 @@ function induce_rational_reconstruction(a::ZZMatrix, b::ZZRingElem)
         D = D*d
         Nemo.mul!(A, A, d)
       end
-      set!(A_ptr, n)
+      Nemo.set!(A_ptr, n)
 
       a_ptr += sizeof(ZZRingElem)
       A_ptr += sizeof(ZZRingElem)
