@@ -62,7 +62,7 @@ function base_ring(A::ClassField)
   return order(codomain(A.rayclassgroupmap))
 end
 
-base_ring_type(A::ClassField) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+base_ring_type(::Type{ClassField}) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 @doc raw"""
     base_field(A::ClassField)
