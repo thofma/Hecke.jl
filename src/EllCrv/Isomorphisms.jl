@@ -623,15 +623,16 @@ end
 #
 ################################################################################
 
-
-function show(io::IO, f::EllCrvIso)
+function show(io::IO, ::MIME"text/plain", f::EllCrvIso)
+  io = pretty(io)
   E1 = domain(f)
   E2 = codomain(f)
   fx, fy, fz = rational_maps(f)
-  print(io, "Isomorphism from
-  $(E1) to \n
-  $(E2) given by \n
-  (x : y : 1) -> ($(fx) : $(fy) : $(fz) )")
+  println(io, "Isomorphism")
+  println(io, Indent(), "from ", E1)
+  println(io, "to ", E2)
+  print(io,"given by ")
+  print(io, "(x : y : 1) -> ($(fx) : $(fy) : $(fz) )")
 end
 
 ################################################################################

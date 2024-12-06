@@ -1110,22 +1110,19 @@ Return a list of generators of the group of rational points on $E$.
 
 # Examples
 
-```jldoctest; filter = r"Point.*"
+```jldoctest; filter = r"\(.*"
 julia> E = elliptic_curve(GF(101, 2), [1, 2]);
 
 julia> gens(E)
 2-element Vector{EllipticCurvePoint{FqFieldElem}}:
- Point  (16*o + 42 : 88*o + 97 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
- Point  (88*o + 23 : 94*o + 22 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+ (13*o + 83 : 90*o + 25 : 1)
+ (61*o + 62 : 19*o + 24 : 1)
 
 julia> E = elliptic_curve(GF(101), [1, 2]);
 
 julia> gens(E)
 1-element Vector{EllipticCurvePoint{FqFieldElem}}:
- Point  (85 : 58 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+ (27 : 57 : 1)
 ```
 """
 function gens(E::EllipticCurve{T}) where {T <: FinFieldElem}
@@ -1205,12 +1202,10 @@ argument.
 julia> E = elliptic_curve(GF(101), [1, 2]);
 
 julia> P = E([6, 74])
-Point  (6 : 74 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(6 : 74 : 1)
 
 julia> Q = E([85, 43])
-Point  (85 : 43 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(85 : 43 : 1)
 
 julia> disc_log(P, Q)
 13
