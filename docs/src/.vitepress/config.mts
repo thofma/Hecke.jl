@@ -3,12 +3,6 @@ import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs'
 import mathjax3 from "markdown-it-mathjax3";
 import footnote from "markdown-it-footnote";
 
-function getBaseRepository(base: string): string {
-  if (!base || base === '/') return '/';
-  const parts = base.split('/').filter(Boolean);
-  return parts.length > 0 ? `/${parts[0]}/` : '/';
-}
-
 const baseTemp = {
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
 }
@@ -34,8 +28,7 @@ export default defineConfig({
   outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
   head: [
     ['link', { rel: 'icon', href: 'REPLACE_ME_DOCUMENTER_VITEPRESS_FAVICON' }],
-    ['script', {src: `${getBaseRepository(baseTemp.base)}versions.js`}],
-    // ['script', {src: '/versions.js'], for custom domains, I guess if deploy_url is available.
+    ['script', {src: '/versions.js'],
     ['script', {src: `${baseTemp.base}siteinfo.js`}]
   ],
 
