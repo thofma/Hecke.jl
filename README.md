@@ -2,8 +2,8 @@
 
 **Builds**
 
-[![Docs dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://thofma.github.io/Hecke.jl/dev)
-[![Docs stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://thofma.github.io/Hecke.jl/stable)
+[![Docs dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://docs.hecke.thofma.com/dev)
+[![Docs stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://docs.hecke.thofma.com/stable)
 [![Build status](https://github.com/thofma/Hecke.jl/workflows/Run%20long%20tests/badge.svg?branch=master)](https://github.com/thofma/Hecke.jl/actions?query=workflow%3A%22Run-tests%22+branch%3Amaster)
 [![Codecov](https://codecov.io/github/thofma/Hecke.jl/coverage.svg?branch=master&token=)](https://codecov.io/gh/thofma/Hecke.jl)
 
@@ -14,7 +14,7 @@ It is written in [julia](https://www.julialang.org) and is based on the computer
 Hecke is part of the [OSCAR](https://www.oscar-system.org/) project and the development is supported by the Deutsche Forschungsgemeinschaft DFG within the Collaborative Research Center TRR 195.
 
 - <https://github.com/thofma/Hecke.jl> (Source code)
-- <https://thofma.github.io/Hecke.jl/dev/> (Online documentation)
+- <https://docs.hecke.thofma.com> (Online documentation)
 
 So far, Hecke provides the following features:
 
