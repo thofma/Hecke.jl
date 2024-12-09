@@ -44,8 +44,6 @@ end
 #
 ################################################################################
 
-order_type(K::RelNonSimpleNumField{T}) where {T} = RelNumFieldOrder{T, fractional_ideal_type(order_type(base_field(K))), RelNonSimpleNumFieldElem{T}}
-
 order_type(::Type{RelNonSimpleNumField{T}}) where {T} = RelNumFieldOrder{T, fractional_ideal_type(order_type(parent_type(T))), RelNonSimpleNumFieldElem{T}}
 
 function Nemo.iszero(a::RelNonSimpleNumFieldElem)

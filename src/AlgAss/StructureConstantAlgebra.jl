@@ -9,7 +9,6 @@ elem_type(::Type{StructureConstantAlgebra{T}}) where {T} = AssociativeAlgebraEle
 # Definitions for orders
 order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem})}
 order_type(::Type{StructureConstantAlgebra{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
-order_type(A::StructureConstantAlgebra) = order_type(typeof(A))
 
 ################################################################################
 #

@@ -22,11 +22,7 @@ base_ring_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = order_type(b
 
 elem_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderElem{T, U}
 
-ideal_type(::RelNumFieldOrder{T, S, U}) where {T, S, U} = RelNumFieldOrderIdeal{T, S, U}
-
 ideal_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderIdeal{T, S, U}
-
-fractional_ideal_type(::RelNumFieldOrder{T, S, U}) where {T, S, U} = RelNumFieldOrderFractionalIdeal{T, S, U}
 
 fractional_ideal_type(::Type{RelNumFieldOrder{T, S, U}}) where {T, S, U} = RelNumFieldOrderFractionalIdeal{T, S, U}
 

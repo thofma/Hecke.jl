@@ -71,11 +71,7 @@ dimension_of_center(A::QuaternionAlgebra) = 1
 
 (A::QuaternionAlgebra{T})(a::QQFieldElem) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
-order_type(::QuaternionAlgebra{QQFieldElem}) = order_type(QuaternionAlgebra{QQFieldElem})
-
 order_type(::Type{QuaternionAlgebra{QQFieldElem}}) = AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}, elem_type(QuaternionAlgebra{QQFieldElem})}
-
-order_type(::QuaternionAlgebra{T}) where { T <: NumFieldElem} = order_type(QuaternionAlgebra{T})
 
 order_type(::Type{QuaternionAlgebra{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), QuaternionAlgebra{T}}
 

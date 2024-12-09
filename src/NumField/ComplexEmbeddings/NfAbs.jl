@@ -6,8 +6,6 @@
 
 embedding_type(::Type{AbsSimpleNumField}) = AbsSimpleNumFieldEmbedding
 
-embedding_type(::AbsSimpleNumField) = embedding_type(AbsSimpleNumField)
-
 ################################################################################
 #
 #  Field access

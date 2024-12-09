@@ -13,8 +13,6 @@ number_field(P::AbsNonSimpleNumFieldEmbedding) = P.field
 
 embedding_type(::Type{AbsNonSimpleNumField}) = AbsNonSimpleNumFieldEmbedding
 
-embedding_type(::AbsNonSimpleNumField) = AbsNonSimpleNumFieldEmbedding
-
 isreal(P::AbsNonSimpleNumFieldEmbedding) = P.isreal
 
 is_imaginary(P::AbsNonSimpleNumFieldEmbedding) = !P.isreal

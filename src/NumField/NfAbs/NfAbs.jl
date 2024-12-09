@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-order_type(::AbsSimpleNumField) = AbsSimpleNumFieldOrder
-
 order_type(::Type{AbsSimpleNumField}) = AbsSimpleNumFieldOrder
 
 ################################################################################
