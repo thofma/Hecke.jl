@@ -1,0 +1,1417 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.5">
+    
+    
+      
+        <title>Factored Elements - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2d9f7617.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#factored-elements" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-component="outdated" hidden>
+        <aside class="md-banner md-banner--warning">
+          
+        </aside>
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Factored Elements
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../number_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../number_fields/fields/" class="md-nav__link">
+        Number field operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../number_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../number_fields/complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../number_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_2" type="checkbox" id="__nav_2_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Function fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_3" type="checkbox" id="__nav_2_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Orders" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orders/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orders/orders/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orders/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orders/ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orders/frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_4" type="checkbox" id="__nav_2_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4">
+          Quadratic and Hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Quadratic and Hermitian forms" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and Hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quad_forms/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quad_forms/basics/" class="md-nav__link">
+        Quadratic and hermitian spaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quad_forms/lattices/" class="md-nav__link">
+        Lattices
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_5" type="checkbox" id="__nav_2_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_6" type="checkbox" id="__nav_2_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Misc" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../misc/Map/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Factored Elements
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Factored Elements
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#construction" class="md-nav__link">
+    Construction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversion" class="md-nav__link">
+    Conversion
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#special-functions" class="md-nav__link">
+    Special functions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscellaneous" class="md-nav__link">
+    Miscellaneous
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparse/intro/" class="md-nav__link">
+        Sparse Linear Algebra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_8" type="checkbox" id="__nav_2_8" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_8">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_8">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#construction" class="md-nav__link">
+    Construction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversion" class="md-nav__link">
+    Conversion
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#special-functions" class="md-nav__link">
+    Special functions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscellaneous" class="md-nav__link">
+    Miscellaneous
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/thofma/Hecke.jl/edit/master/docs/FacElem.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+<p><a id='Factored-Elements'></a></p>
+<p><a id='Factored-Elements-1'></a></p>
+<h1 id="factored-elements">Factored Elements</h1>
+<p>In many applications in number theory related to the multiplicative structure of number fields, interesting elements, e.g. units, are extremely large when written wrt. to a fxied basis for the field: for the fundamental unit in <script type="math/tex">Q[\sqrt d]</script> it is known that the coefficients wrt. the canonical basis <script type="math/tex">1, \sqrt d</script> can have <script type="math/tex">O(\exp \sqrt d)</script> many digits. All currently known, fast methods construct those elements as power products of smaller elements, allowing the computer to handle them.</p>
+<p>Mathematically, one can think of factored elements to formally live in the ring <script type="math/tex">Z[K]</script> the group ring of the non-zero field elements. Thus elements are of the form <script type="math/tex"> \prod a*i^{e*i}</script> where <script type="math/tex">a_i</script> are elements in <script type="math/tex">K</script>, typically <em>small</em> and the <script type="math/tex">e_i\in Z</script> are frequently large exponents. We refer to the <script type="math/tex">a_i</script> as the <em>base</em> and the <script type="math/tex">e_i</script> as the <em>exponents</em> of the factored element.</p>
+<p>Since <script type="math/tex">K</script> is, in general, no PID, this presentation is non-unique, elements in this form can easily be multiplied, raised to large powers, but in general not compared and not added.</p>
+<p>In Hecke, this is caputured more generally by the type <code>FacElem</code>, parametrized by the type of the elements in the base and the type of their parent.</p>
+<p>Important special cases are</p>
+<ul>
+<li><code>FacElem{fmpz, FlintIntegerRing}</code>, factored integers</li>
+<li><code>FacElem{nf_elem, AnticNumberField}</code>, factored algerbaic numbers</li>
+<li><code>FacElem{NfAbsOrdIdl, NfAbsOrdIdlSet}</code>, factored ideals</li>
+</ul>
+<p>It should be noted that an object of type `<script type="math/tex">FacElem{fmpz, FlintIntegerRing}</script> will, in general, not represent an integer as the exponents can be negative.</p>
+<p><a id='Construction'></a></p>
+<p><a id='Construction-1'></a></p>
+<h2 id="construction">Construction</h2>
+<p>In general one can define factored elements by giving 2 arrays, the base and the exponent, or a dictionary containing the pairs:</p>
+<p><a id='FacElem' href='#FacElem'>#</a>
+<strong><code>FacElem</code></strong> &mdash; <em>Type</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">FacElem</span><span class="p">{</span><span class="kt">B</span><span class="p">}(</span><span class="n">R</span><span class="p">,</span> <span class="n">base</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">B</span><span class="p">},</span> <span class="n">exp</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">FacElem</span><span class="p">{</span><span class="kt">B</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b_i^{e_i}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L95' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>FacElem{B}(base::Vector{B}, exp::Vector{fmpz}) -&gt; FacElem{B}
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b_i^{e_i}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L120' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>FacElem{B}(R, d::Dict{B, fmpz}) -&gt; FacElem{B}
+FacElem{B}(R, d::Dict{B, Integer}) -&gt; FacElem{B}
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b^{d[p]}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L134' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>FacElem{B}(d::Dict{B, fmpz}) -&gt; FacElem{B}
+FacElem{B}(d::Dict{B, Integer}) -&gt; FacElem{B}
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b^{d[p]}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L151' class='documenter-source'>source</a><br></p>
+<p><a id='FacElem-Tuple{nf_elem}' href='#FacElem-Tuple{nf_elem}'>#</a>
+<strong><code>FacElem</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">FacElem</span><span class="p">{</span><span class="kt">B</span><span class="p">}(</span><span class="n">R</span><span class="p">,</span> <span class="n">base</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">B</span><span class="p">},</span> <span class="n">exp</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">FacElem</span><span class="p">{</span><span class="kt">B</span><span class="p">}</span>
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b_i^{e_i}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L95' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>FacElem{B}(base::Vector{B}, exp::Vector{fmpz}) -&gt; FacElem{B}
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b_i^{e_i}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L120' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>FacElem{B}(R, d::Dict{B, fmpz}) -&gt; FacElem{B}
+FacElem{B}(R, d::Dict{B, Integer}) -&gt; FacElem{B}
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b^{d[p]}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L134' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>FacElem{B}(d::Dict{B, fmpz}) -&gt; FacElem{B}
+FacElem{B}(d::Dict{B, Integer}) -&gt; FacElem{B}
+</code></pre></div>
+<p>Returns the element <script type="math/tex">\prod b^{d[p]}</script>, un-expanded.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L151' class='documenter-source'>source</a><br></p>
+<p><a id='ideal-Tuple{NfOrd, FacElem{nf_elem, AnticNumberField}}' href='#ideal-Tuple{NfOrd, FacElem{nf_elem, AnticNumberField}}'>#</a>
+<strong><code>ideal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code> <span class="n">ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="kt">NfOrd</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="kt">AnticNumberField</span><span class="p">)</span>
+</code></pre></div>
+<p>The factored fractional ideal <script type="math/tex">a*O</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/Ideal/FacElem.jl#L73' class='documenter-source'>source</a><br></p>
+<p><a id='Conversion'></a></p>
+<p><a id='Conversion-1'></a></p>
+<h2 id="conversion">Conversion</h2>
+<p>The process of computing the value defined by a factored element is available as <code>evaluate</code>. Depending on the types involved this can be very efficient.</p>
+<p><a id='evaluate-Union{Tuple{FacElem{fmpz, S}}, Tuple{S}} where S' href='#evaluate-Union{Tuple{FacElem{fmpz, S}}, Tuple{S}} where S'>#</a>
+<strong><code>evaluate</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">evaluate</span><span class="p">{</span><span class="kt">T</span><span class="p">}(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Expands or evaluates the factored element, i.e. actually computes the value. Does "square-and-multiply" on the exponent vectors.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L568' class='documenter-source'>source</a><br></p>
+<p><a id='evaluate-Tuple{FacElem{fmpq}}' href='#evaluate-Tuple{FacElem{fmpq}}'>#</a>
+<strong><code>evaluate</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpq</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">fmpq</span>
+<span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>Expands or evaluates the factored element, i.e. actually computes the the element. Works by first obtaining a simplified version of the power product into coprime base elements.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElemIntegers.jl#L3' class='documenter-source'>source</a><br></p>
+<p><a id='evaluate-Union{Tuple{FacElem{T}}, Tuple{T}} where T' href='#evaluate-Union{Tuple{FacElem{T}}, Tuple{T}} where T'>#</a>
+<strong><code>evaluate</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">evaluate</span><span class="p">{</span><span class="kt">T</span><span class="p">}(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Expands or evaluates the factored element, i.e. actually computes the value. Does "square-and-multiply" on the exponent vectors.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L568' class='documenter-source'>source</a><br></p>
+<p><a id='evaluate_naive-Union{Tuple{FacElem{T}}, Tuple{T}} where T' href='#evaluate_naive-Union{Tuple{FacElem{T}}, Tuple{T}} where T'>#</a>
+<strong><code>evaluate_naive</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="kt">evaluate_naive</span><span class="p">{</span><span class="kt">T</span><span class="p">}(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">T</span>
+</code></pre></div>
+<p>Expands or evaluates the factored element, i.e. actually computes the value. Uses the obvious naive algorithm. Faster for input in finite rings.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L579' class='documenter-source'>source</a><br></p>
+<p><a id='Special-functions'></a></p>
+<p><a id='Special-functions-1'></a></p>
+<h2 id="special-functions">Special functions</h2>
+<p>In the case where the parent of the base allows for efficient gcd computation, power products can be made unique:</p>
+<p><a id='simplify-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}}' href='#simplify-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}}'>#</a>
+<strong><code>simplify</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">simplify</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">NfOrdIdlSet</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">FacElem</span>
+<span class="n">simplify</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdFracIdl</span><span class="p">,</span> <span class="kt">NfOrdFracIdlSet</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">FacElem</span>
+</code></pre></div>
+<p>Uses <code>coprime_base</code> to obtain a simplified version of <script type="math/tex">x</script>, ie. in the simplified version all base ideals will be pariwise coprime but not neccessarily prime!.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/Ideal/FacElem.jl#L209' class='documenter-source'>source</a><br></p>
+<p><a id='simplify-Tuple{FacElem{fmpq}}' href='#simplify-Tuple{FacElem{fmpq}}'>#</a>
+<strong><code>simplify</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">simplify</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpq</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpq</span><span class="p">}</span>
+<span class="n">simplify</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Simplfies the factored element, i.e. arranges for the base to be coprime.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElemIntegers.jl#L19' class='documenter-source'>source</a><br></p>
+<p>The simplified version can then be used further:</p>
+<p><a id='isone-Tuple{FacElem{fmpq}}' href='#isone-Tuple{FacElem{fmpq}}'>#</a>
+<strong><code>isone</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">isone</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpq</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">isone</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Tests if <script type="math/tex">x</script> represents <script type="math/tex">1</script> without an evaluation.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElemIntegers.jl#L125' class='documenter-source'>source</a><br></p>
+<p><a id='factor_coprime-Tuple{FacElem{fmpz}}' href='#factor_coprime-Tuple{FacElem{fmpz}}'>#</a>
+<strong><code>factor_coprime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">factor_coprime</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Fac</span><span class="p">{</span><span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Computed a partial factorisation of <script type="math/tex">x</script>, ie. writes <script type="math/tex">x</script> as a product of pariwise coprime integers.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElemIntegers.jl#L140' class='documenter-source'>source</a><br></p>
+<p><a id='factor_coprime-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}}' href='#factor_coprime-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}}'>#</a>
+<strong><code>factor_coprime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">factor_coprime</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">NfOrdIdlSet</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Computed a partial factorisation of <script type="math/tex">x</script>, ie. writes <script type="math/tex">x</script> as a product of pariwise coprime integral ideals.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/Ideal/FacElem.jl#L282' class='documenter-source'>source</a><br></p>
+<p><a id='factor_coprime-Tuple{FacElem{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}, Hecke.NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}}}' href='#factor_coprime-Tuple{FacElem{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}, Hecke.NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}}}'>#</a>
+<strong><code>factor_coprime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">factor_coprime</span><span class="p">(</span><span class="n">Q</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdFracIdl</span><span class="p">,</span> <span class="kt">NfOrdFracIdlSet</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>A coprime factorisation of <script type="math/tex">Q</script>: each ideal in <script type="math/tex">Q</script> is split using \code{integral_split} and then a coprime basis is computed. This does {\bf not} use any factorisation.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/Ideal/FacElem.jl#L179' class='documenter-source'>source</a><br></p>
+<p><a id='factor_coprime-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}' href='#factor_coprime-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}'>#</a>
+<strong><code>factor_coprime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">factor_coprime</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="kt">AnticNumberField</span><span class="p">},</span> <span class="n">I</span><span class="o">::</span><span class="kt">NfOrdIdlSet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Factors the rincipal ideal generated by <script type="math/tex">a</script> into coprimes by computing a coprime basis from the principal ideals in the factorisation of <script type="math/tex">a</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/FacElem.jl#L392' class='documenter-source'>source</a><br></p>
+<p><a id='factor-Tuple{FacElem{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}, Hecke.NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}}}' href='#factor-Tuple{FacElem{Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}, Hecke.NfAbsOrdFracIdlSet{AnticNumberField, nf_elem}}}'>#</a>
+<strong><code>factor</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code> <span class="n">factor</span><span class="p">(</span><span class="n">Q</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdFracIdl</span><span class="p">,</span> <span class="kt">NfOrdFracIdlSet</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>The factorisation of <script type="math/tex">Q</script>, by refining a coprime factorisation.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/Ideal/FacElem.jl#L192' class='documenter-source'>source</a><br></p>
+<p><a id='factor-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}' href='#factor-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}'>#</a>
+<strong><code>factor</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">factor</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="kt">AnticNumberField</span><span class="p">},</span> <span class="n">I</span><span class="o">::</span><span class="kt">NfOrdIdlSet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">fmpz</span><span class="p">}</span>
+</code></pre></div>
+<p>Factors the principal ideal generated by <script type="math/tex">a</script> by refinind a coprime factorisation.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/FacElem.jl#L447' class='documenter-source'>source</a><br></p>
+<p>For factorised algebraic numbers a unique simplification is not possible, however, this allows still do obtain partial results:</p>
+<p><a id='compact_presentation' href='#compact_presentation'>#</a>
+<strong><code>compact_presentation</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">compact_presentation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="kt">AnticNumberField</span><span class="p">},</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span> <span class="n">decom</span><span class="p">,</span> <span class="n">arb_prec</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="n">short_prec</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FacElem</span>
+</code></pre></div>
+<p>Computes a presentation <script type="math/tex">a = \prod a_i^{n_i}</script> where all the exponents <script type="math/tex">n_i</script> are powers of <script type="math/tex">n</script> and, the elements <script type="math/tex">a_i</script> are "small", generically, they have a norm bounded by <script type="math/tex">d^{n/2}</script> where <script type="math/tex">d</script> is the discriminant of the maximal order. As the algorithm needs the factorisation of the principal ideal generated by <script type="math/tex">a</script>, it can be passed in in \code{decom}.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumField/NfAbs/CompactRepresentation.jl#L1' class='documenter-source'>source</a><br></p>
+<p><a id='signs-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}}' href='#signs-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}}'>#</a>
+<strong><code>signs</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">signs</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">)</span>          <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+<span class="n">signs</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>This function returns a dictionary of the signs of <script type="math/tex">a</script> at all infinite places of the ambient number field. The keys are infinite places of the ambient number field. The value is <script type="math/tex">1</script> if the sign is positive and <script type="math/tex">-1</script> if the sign is negative.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/Places.jl#L113' class='documenter-source'>source</a><br></p>
+<p><a id='signs-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, Vector{InfPlc}}' href='#signs-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, Vector{InfPlc}}'>#</a>
+<strong><code>signs</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">signs</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="n">l</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">})</span>          <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+<span class="n">signs</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">},</span> <span class="n">l</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>This function returns a dictionary of the signs of <script type="math/tex">a</script> at places in <script type="math/tex">l</script>. The keys are the elements of <script type="math/tex">l</script>. The value is <script type="math/tex">1</script> if the sign is positive and <script type="math/tex">-1</script> if the sign is negative. The result will contain as many signs as there are real places contained in <script type="math/tex">l</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/Places.jl#L150' class='documenter-source'>source</a><br></p>
+<p><a id='sign-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, InfPlc}' href='#sign-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, InfPlc}'>#</a>
+<strong><code>sign</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sign</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="kt">InfPlc</span><span class="p">)</span>          <span class="o">-&gt;</span> <span class="kt">Int</span>
+<span class="n">sign</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">},</span> <span class="n">P</span><span class="o">::</span><span class="kt">InfPlc</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</code></pre></div>
+<p>This function returns the sign of <script type="math/tex">a</script> at the place <script type="math/tex">P</script>. The value is <script type="math/tex">1</script> if the sign is positive and <script type="math/tex">-1</script> if the sign is negative.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/Places.jl#L134' class='documenter-source'>source</a><br></p>
+<p><a id='ispositive-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, InfPlc}' href='#ispositive-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, InfPlc}'>#</a>
+<strong><code>ispositive</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ispositive</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="kt">InfPlc</span><span class="p">)</span>          <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">ispositive</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">},</span> <span class="n">P</span><span class="o">::</span><span class="kt">InfPlc</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the element <script type="math/tex">a</script> is positive at the embedding corresponding to <script type="math/tex">P</script>. The place <script type="math/tex">P</script> must be real.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/Places.jl#L189' class='documenter-source'>source</a><br></p>
+<p><a id='ispositive-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, Vector{InfPlc}}' href='#ispositive-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}, Vector{InfPlc}}'>#</a>
+<strong><code>ispositive</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ispositive</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="n">l</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">})</span>          <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">ispositive</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">},</span> <span class="n">l</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">InfPlc</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the element <script type="math/tex">a</script> is positive at the embeddings corresponding to the real places of <script type="math/tex">l</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/Places.jl#L213' class='documenter-source'>source</a><br></p>
+<p><a id='istotally_positive-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}}' href='#istotally_positive-Tuple{Union{FacElem{nf_elem, AnticNumberField}, nf_elem}}'>#</a>
+<strong><code>istotally_positive</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">istotally_positive</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">nf_elem</span><span class="p">)</span>          <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">istotally_positive</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+<p>Returns whether the element <script type="math/tex">a</script> is totally positive, that is, whether it is positive at all places of the ambient number field.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/Places.jl#L224' class='documenter-source'>source</a><br></p>
+<p><a id='valuation-Tuple{FacElem{nf_elem, AnticNumberField}, NfOrdIdl}' href='#valuation-Tuple{FacElem{nf_elem, AnticNumberField}, NfOrdIdl}'>#</a>
+<strong><code>valuation</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="kt">AnticNumberField</span><span class="p">},</span> <span class="n">P</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</code></pre></div>
+<p>The valuation of <script type="math/tex">a</script> at <script type="math/tex">P</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/FacElem.jl#L249' class='documenter-source'>source</a><br></p>
+<p><a id='valuation-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}, NfOrdIdl}' href='#valuation-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}, NfOrdIdl}'>#</a>
+<strong><code>valuation</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">valuation</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdFracIdl</span><span class="p">,</span> <span class="kt">NfOrdFracIdlSet</span><span class="p">},</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span>
+<span class="n">valuation</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">,</span> <span class="kt">NfOrdIdlSet</span><span class="p">},</span> <span class="n">p</span><span class="o">::</span><span class="kt">NfOrdIdl</span><span class="p">)</span>
+</code></pre></div>
+<p>The valuation of <script type="math/tex">A</script> at <script type="math/tex">P</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/Ideal/FacElem.jl#L59' class='documenter-source'>source</a><br></p>
+<p><a id='evaluate_mod-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}}' href='#evaluate_mod-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.NfAbsOrdFracIdl{AnticNumberField, nf_elem}}'>#</a>
+<strong><code>evaluate_mod</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">evaluate_mod</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="kt">AnticNumberField</span><span class="p">},</span> <span class="n">B</span><span class="o">::</span><span class="kt">NfOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nf_elem</span>
+</code></pre></div>
+<p>Evaluates <script type="math/tex">a</script> using CRT and small primes. Assumes that the ideal generated by <script type="math/tex">a</script> is in fact <script type="math/tex">B</script>. Useful in cases where <script type="math/tex">a</script> has huge exponents, but the evaluated element is actually "small".</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumField/NfAbs/CompactRepresentation.jl#L293' class='documenter-source'>source</a><br></p>
+<p><a id='reduce_ideal-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}}' href='#reduce_ideal-Tuple{FacElem{NfOrdIdl, Hecke.NfAbsOrdIdlSet{AnticNumberField, nf_elem}}}'>#</a>
+<strong><code>reduce_ideal</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">reduce_ideal</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">NfOrdIdl</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span><span class="p">,</span> <span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">}</span>
+</code></pre></div>
+<p>Computes <script type="math/tex">B</script> and <script type="math/tex">\alpha</script> in factored form, such that <script type="math/tex">\alpha B = A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/NumFieldOrd/NfOrd/LLL.jl#L785' class='documenter-source'>source</a><br></p>
+<p><a id='modular_proj-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.modular_env}' href='#modular_proj-Tuple{FacElem{nf_elem, AnticNumberField}, Hecke.modular_env}'>#</a>
+<strong><code>modular_proj</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">modular_proj</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">{</span><span class="kt">nf_elem</span><span class="p">,</span> <span class="kt">AnticNumberField</span><span class="p">},</span> <span class="n">me</span><span class="o">::</span><span class="kt">modular_env</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Vector</span><span class="p">{</span><span class="kt">fq_nmod</span><span class="p">}</span>
+</code></pre></div>
+<p>Given an algebraic number <script type="math/tex">a</script> in factored form and data \code{me} as computed by \code{modular_init}, project <script type="math/tex">a</script> onto the residue class fields.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/CRT.jl#L610' class='documenter-source'>source</a><br></p>
+<p><a id='Miscellaneous'></a></p>
+<p><a id='Miscellaneous-1'></a></p>
+<h2 id="miscellaneous">Miscellaneous</h2>
+<p><a id='max_exp-Tuple{FacElem}' href='#max_exp-Tuple{FacElem}'>#</a>
+<strong><code>max_exp</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">max_exp</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">)</span>
+</code></pre></div>
+<p>Finds the largest exponent in the factored element <script type="math/tex">a</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L598' class='documenter-source'>source</a><br></p>
+<p><a id='min_exp-Tuple{FacElem}' href='#min_exp-Tuple{FacElem}'>#</a>
+<strong><code>min_exp</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">min_exp</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">)</span>
+</code></pre></div>
+<p>Finds the smallest exponent in the factored element <script type="math/tex">a</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L607' class='documenter-source'>source</a><br></p>
+<p><a id='maxabs_exp-Tuple{FacElem}' href='#maxabs_exp-Tuple{FacElem}'>#</a>
+<strong><code>maxabs_exp</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">maxabs_exp</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">FacElem</span><span class="p">)</span>
+</code></pre></div>
+<p>Finds the largest exponent by absolute value in the factored element <script type="math/tex">a</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/23b9957017566f747254070348510853fca7caa9/src/Misc/FactoredElem.jl#L616' class='documenter-source'>source</a><br></p>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../misc/Map/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Maps" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Maps
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../sparse/intro/" class="md-footer__link md-footer__link--next" aria-label="Next: Sparse Linear Algebra" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Sparse Linear Algebra
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.bd0b6b67.min.js", "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.467223ff.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>
