@@ -547,6 +547,27 @@ Base.showerror(io::IO, ::NotImplemented) =
 function is_absolutely_irreducible end
 function multiplicative_group end
 
+
+# TODO: once https://github.com/Nemocas/AbstractAlgebra.jl/pull/1924 lands
+# and we require an AA version with it, remove the next four lines
+if !isdefined(AbstractAlgebra, :ideal_type)
+  ideal_type(x) = ideal_type(typeof(x))
+  ideal_type(T::DataType) = throw(MethodError(ideal_type, (T,)))
+end
+
+fractional_ideal_type(x) = fractional_ideal_type(typeof(x))
+fractional_ideal_type(T::DataType) = throw(MethodError(fractional_ideal_type, (T,)))
+
+place_type(x) = place_type(typeof(x))
+place_type(T::DataType) = throw(MethodError(place_type, (T,)))
+
+order_type(x) = order_type(typeof(x))
+order_type(T::DataType) = throw(MethodError(order_type, (T,)))
+
+embedding_type(x) = embedding_type(typeof(x))
+embedding_type(T::DataType) = throw(MethodError(embedding_type, (T,)))
+
+
 ################################################################################
 #
 #  "Submodules"

@@ -44,8 +44,6 @@ end
 #
 ################################################################################
 
-order_type(::AbsNonSimpleNumField) = AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}
-
 order_type(::Type{AbsNonSimpleNumField}) = AbsNumFieldOrder{AbsNonSimpleNumField, AbsNonSimpleNumFieldElem}
 
 function iszero(a::AbsNonSimpleNumFieldElem)

@@ -16,11 +16,8 @@ Generic.dim(A::GroupAlgebra) = order(Int, group(A))
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 
-order_type(::GroupAlgebra{QQFieldElem, S, R}) where { S, R } = AlgAssAbsOrd{GroupAlgebra{QQFieldElem, S, R}, elem_type(GroupAlgebra{QQFieldElem, S, R})}
-
 order_type(::Type{GroupAlgebra{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{GroupAlgebra{QQFieldElem, S, R}, elem_type(GroupAlgebra{QQFieldElem, S, R})}
 
-order_type(::GroupAlgebra{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), GroupAlgebra{T, S, R}}
 order_type(::Type{GroupAlgebra{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), GroupAlgebra{T, S, R}}
 
 @doc raw"""

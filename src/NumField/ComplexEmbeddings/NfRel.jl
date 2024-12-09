@@ -44,8 +44,6 @@ function embedding_type(::Type{RelSimpleNumField{T}}) where {T}
   return RelSimpleNumFieldEmbedding{embedding_type(parent_type(T)), RelSimpleNumField{T}}
 end
 
-embedding_type(K::RelSimpleNumField{T}) where {T} = embedding_type(RelSimpleNumField{T})
-
 _absolute_index(f::RelSimpleNumFieldEmbedding) = f.absolute_index
 
 number_field(f::RelSimpleNumFieldEmbedding) = f.field
