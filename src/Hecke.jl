@@ -72,7 +72,7 @@ import Nemo
 
 import Pkg
 
-exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :call,
+exclude = [:Nemo, :AbstractAlgebra, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
            :set_entry!, :RDF]
 
