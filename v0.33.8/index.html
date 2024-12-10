@@ -47,7 +47,7 @@
     if (window.documenterBaseURL) {
         href = window.documenterBaseURL + '/../stable';
     }
-    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '">Go to the latest documentation</a>.';
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
     div.appendChild(closer);
     document.body.appendChild(div);
 };
