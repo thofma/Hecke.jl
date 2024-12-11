@@ -273,18 +273,7 @@ include("Aliases.jl")
 
 ################################################################################
 #
-#  AbstractAlgebra/Nemo shenanigans
-#
-################################################################################
-
-# We have our own factor in Hecke, but some functions in AA fall back to
-# AA.factor, so let's add a fallback.
-
-AbstractAlgebra.factor(x::RingElement) = factor(x)
-
-################################################################################
-#
-#  Setter and getter for objects
+#  Setter and getter for Nemo type AbsSimpleNumField
 #
 ################################################################################
 
