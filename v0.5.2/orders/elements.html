@@ -1,5 +1,91 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Elements · Hecke</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Hecke</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Hecke</a></li><li><a class="toctext" href="../number_fields/intro.html">Number Fields</a></li><li><span class="toctext">Orders</span><ul><li><a class="toctext" href="introduction.html">Introduction</a></li><li><a class="toctext" href="orders.html">Orders</a></li><li class="current"><a class="toctext" href="elements.html">Elements</a><ul class="internal"><li><a class="toctext" href="#Creation-1">Creation</a></li><li><a class="toctext" href="#Basic-properties-1">Basic properties</a></li><li><a class="toctext" href="#Arithmetic-1">Arithmetic</a></li><li><a class="toctext" href="#Miscallenous-1">Miscallenous</a></li></ul></li><li><a class="toctext" href="ideals.html">Ideals</a></li><li><a class="toctext" href="frac_ideals.html">Fractional ideals</a></li></ul></li><li><a class="toctext" href="../abelian/introduction.html">Abelian Groups</a></li><li><a class="toctext" href="../class_fields/intro.html">Class Field Theory</a></li><li><a class="toctext" href="../sparse/intro.html">Sparse linear algebra</a></li><li><a class="toctext" href="../FacElem.html">Factored Elements</a></li></ul></nav><article id="docs"><header><nav><ul><li>Orders</li><li><a href="elements.html">Elements</a></li></ul><a class="edit-page" href="https://github.com/thofma/Hecke.jl/blob/master/docs/src/orders/elements.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Elements</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Elements-1" href="#Elements-1">Elements</a></h1><p>Elements in orders have two representations: they can be viewed as  elements in the <span>$Z^n$</span> giving the coefficients wrt to the order basis where they are elements in. On the other hand, as every order is in a field, they also have a representation as number field elements. Since, asymptotically, operations are more efficient in the  field (due to fast polynomial arithmetic) than in the order, the primary representation is that as a field element.</p><h2><a class="nav-anchor" id="Creation-1" href="#Creation-1">Creation</a></h2><p>Elements are constructed either as linear combinations of basis elements or via explicit coercion. Elements will be of type <code>NfOrdElem</code>,  the type if actually parametrized by the type of the surrounding field and the type of the field elements. E.g. the type of any element in any order of an absolute simple field will be <code>NfAbsOrdElem{AnticNumberField,nf_elem}</code></p><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Hecke.NfAbsOrd" href="#Hecke.NfAbsOrd"><code>Hecke.NfAbsOrd</code></a> — <span class="docstring-category">Type</span>.</div><div><hr/><pre><code class="language-none">  (O::NfOrd)(a::Union{fmpz, Integer}) -&gt; NfAbsOrdElem</code></pre><blockquote><p>Given an element <span>$a$</span> of type <code>fmpz</code> or <code>Integer</code>, this function coerces the element into <span>$\mathcal O$</span>. It will be checked that <span>$a$</span> is contained in <span>$\mathcal O$</span> if and only if <code>check</code> is <code>true</code>.</p></blockquote></div><div><hr/><pre><code class="language-none">  (O::NfOrd)(arr::Array{fmpz, 1})</code></pre><blockquote><p>Returns the element of <span>$\mathcal O$</span> with coefficient vector <code>arr</code>.</p></blockquote></div><div><hr/><pre><code class="language-none">  (O::NfOrd)() -&gt; NfAbsOrdElem</code></pre><blockquote><p>This function constructs a new element of <span>$\mathcal O$</span> which is set to <span>$0$</span>.</p></blockquote></div></section><h2><a class="nav-anchor" id="Basic-properties-1" href="#Basic-properties-1">Basic properties</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Base.parent-Tuple{NfAbsOrdElem{AnticNumberField,nf_elem}}" href="#Base.parent-Tuple{NfAbsOrdElem{AnticNumberField,nf_elem}}"><code>Base.parent</code></a> — <span class="docstring-category">Method</span>.</div><div><hr/><pre><code class="language-none">parent(a::NfAbsOrdElem) -&gt; NfOrd</code></pre><p>Returns the order of which <span>$a$</span> is an element.</p></div><div><pre><code class="language-none">parent(g::perm)</code></pre><blockquote><p>Return the parent of the permutation <code>g</code>.</p></blockquote><pre><code class="language-julia-repl">julia&gt; G = PermutationGroup(5); g = perm([3,4,5,2,1])
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Elements · Hecke</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+<script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head><body><nav class="toc"><h1>Hecke</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Hecke</a></li><li><a class="toctext" href="../number_fields/intro.html">Number Fields</a></li><li><span class="toctext">Orders</span><ul><li><a class="toctext" href="introduction.html">Introduction</a></li><li><a class="toctext" href="orders.html">Orders</a></li><li class="current"><a class="toctext" href="elements.html">Elements</a><ul class="internal"><li><a class="toctext" href="#Creation-1">Creation</a></li><li><a class="toctext" href="#Basic-properties-1">Basic properties</a></li><li><a class="toctext" href="#Arithmetic-1">Arithmetic</a></li><li><a class="toctext" href="#Miscallenous-1">Miscallenous</a></li></ul></li><li><a class="toctext" href="ideals.html">Ideals</a></li><li><a class="toctext" href="frac_ideals.html">Fractional ideals</a></li></ul></li><li><a class="toctext" href="../abelian/introduction.html">Abelian Groups</a></li><li><a class="toctext" href="../class_fields/intro.html">Class Field Theory</a></li><li><a class="toctext" href="../sparse/intro.html">Sparse linear algebra</a></li><li><a class="toctext" href="../FacElem.html">Factored Elements</a></li></ul></nav><article id="docs"><header><nav><ul><li>Orders</li><li><a href="elements.html">Elements</a></li></ul><a class="edit-page" href="https://github.com/thofma/Hecke.jl/blob/master/docs/src/orders/elements.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Elements</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Elements-1" href="#Elements-1">Elements</a></h1><p>Elements in orders have two representations: they can be viewed as  elements in the <span>$Z^n$</span> giving the coefficients wrt to the order basis where they are elements in. On the other hand, as every order is in a field, they also have a representation as number field elements. Since, asymptotically, operations are more efficient in the  field (due to fast polynomial arithmetic) than in the order, the primary representation is that as a field element.</p><h2><a class="nav-anchor" id="Creation-1" href="#Creation-1">Creation</a></h2><p>Elements are constructed either as linear combinations of basis elements or via explicit coercion. Elements will be of type <code>NfOrdElem</code>,  the type if actually parametrized by the type of the surrounding field and the type of the field elements. E.g. the type of any element in any order of an absolute simple field will be <code>NfAbsOrdElem{AnticNumberField,nf_elem}</code></p><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Hecke.NfAbsOrd" href="#Hecke.NfAbsOrd"><code>Hecke.NfAbsOrd</code></a> — <span class="docstring-category">Type</span>.</div><div><hr/><pre><code class="language-none">  (O::NfOrd)(a::Union{fmpz, Integer}) -&gt; NfAbsOrdElem</code></pre><blockquote><p>Given an element <span>$a$</span> of type <code>fmpz</code> or <code>Integer</code>, this function coerces the element into <span>$\mathcal O$</span>. It will be checked that <span>$a$</span> is contained in <span>$\mathcal O$</span> if and only if <code>check</code> is <code>true</code>.</p></blockquote></div><div><hr/><pre><code class="language-none">  (O::NfOrd)(arr::Array{fmpz, 1})</code></pre><blockquote><p>Returns the element of <span>$\mathcal O$</span> with coefficient vector <code>arr</code>.</p></blockquote></div><div><hr/><pre><code class="language-none">  (O::NfOrd)() -&gt; NfAbsOrdElem</code></pre><blockquote><p>This function constructs a new element of <span>$\mathcal O$</span> which is set to <span>$0$</span>.</p></blockquote></div></section><h2><a class="nav-anchor" id="Basic-properties-1" href="#Basic-properties-1">Basic properties</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Base.parent-Tuple{NfAbsOrdElem{AnticNumberField,nf_elem}}" href="#Base.parent-Tuple{NfAbsOrdElem{AnticNumberField,nf_elem}}"><code>Base.parent</code></a> — <span class="docstring-category">Method</span>.</div><div><hr/><pre><code class="language-none">parent(a::NfAbsOrdElem) -&gt; NfOrd</code></pre><p>Returns the order of which <span>$a$</span> is an element.</p></div><div><pre><code class="language-none">parent(g::perm)</code></pre><blockquote><p>Return the parent of the permutation <code>g</code>.</p></blockquote><pre><code class="language-julia-repl">julia&gt; G = PermutationGroup(5); g = perm([3,4,5,2,1])
 (1,3,5)(2,4)
 
 julia&gt; parent(g) == G
