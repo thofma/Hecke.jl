@@ -50,12 +50,10 @@ by setting `check = false`.
 julia> E = elliptic_curve(QQ, [1, 2]);
 
 julia> E([1, -2])
-Point  (1 : -2 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(1 : -2 : 1)
 
 julia> E([2, -4, 2])
-Point  (1 : -2 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(1 : -2 : 1)
 ```
 
 ```@docs
