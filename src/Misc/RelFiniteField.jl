@@ -56,6 +56,8 @@ function defining_polynomial(F::RelFinField{T}) where T
   return F.defining_polynomial::dense_poly_type(T)
 end
 
+base_field_type(::Type{RelFinField{S}}) where S = parent_type(S)
+
 base_field(F::RelFinField{S}) where S= base_ring(F.defining_polynomial)::parent_type(S)
 
 characteristic(F::RelFinField) = characteristic(base_field(F))
