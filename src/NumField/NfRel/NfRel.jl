@@ -57,6 +57,10 @@ order_type(::Type{RelSimpleNumField{T}}) where {T} = RelNumFieldOrder{T, fractio
 
 @inline base_field(a::RelSimpleNumField{T}) where {T} = a.base_ring::parent_type(T)
 
+base_ring(a::RelSimpleNumField{T}) where {T} = a.base_ring::parent_type(T)
+
+base_ring_type(::Type{RelSimpleNumField{T}}) where {T} = parent_type(T)
+
 @inline data(a::RelSimpleNumFieldElem) = a.data
 
 @inline parent(a::RelSimpleNumFieldElem{T}) where {T} = a.parent::RelSimpleNumField{T}

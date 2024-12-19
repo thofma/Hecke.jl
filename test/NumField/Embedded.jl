@@ -23,7 +23,7 @@ test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
   @test sprint(show, a) isa String
   @test sprint(show, "text/plain", a) isa String
   @test E([1, 2]) == 1 + 2*a
-  test_Ring_interface(E)
+  test_Field_interface(E)
   # trigger expressify
   Et, t = E["t"]
   @test sprint(show, a * t) isa String

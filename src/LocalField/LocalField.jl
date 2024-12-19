@@ -37,6 +37,8 @@ prime(K::LocalField) = prime(base_field(K))
 #
 ################################################################################
 
+base_ring_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = parent_type(S)
+
 base_field_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = parent_type(S)
 
 elem_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalFieldParameter} = LocalFieldElem{S, T}
@@ -47,8 +49,8 @@ elem_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalFieldParame
 #
 ################################################################################
 
-is_domain_type(::Type{S}) where S <: LocalField = true
-is_exact_type(::Type{S}) where S <: LocalField = false
+is_domain_type(::Type{<: LocalFieldElem}) = true
+is_exact_type(::Type{<: LocalFieldElem}) = false
 isfinite(K::LocalField) = isfinite(base_field(K))
 
 ################################################################################
@@ -129,6 +131,10 @@ end
 #  Subfields
 #
 ################################################################################
+
+function base_ring(L::LocalField)
+  return base_ring(defining_polynomial(L))
+end
 
 function base_field(L::LocalField)
   return base_ring(defining_polynomial(L))
