@@ -22,7 +22,12 @@ function val_func_no_index_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, Abs
   gR = gcd!(gR, gR, f)
   g = lift(Zx, gR)
   k = flog(ZZRingElem(typemax(UInt)), P)
-  g = hensel_lift(Zx(K.pol), g, P, k)
+  if degree(p) == degree(K)
+    # inert prime, K.pol is irreducible mod p
+    g = Zx(K.pol)
+  else
+    g = hensel_lift(Zx(K.pol), g, P, k)
+  end
   Sx = polynomial_ring(residue_ring(ZZ, UInt(P)^k, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
