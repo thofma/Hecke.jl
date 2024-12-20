@@ -229,4 +229,13 @@ end
   end
 end
 
+@testset "hensel" begin
+  Zx, x = ZZ["x"]
+  f = x^2 + x + 1
+  h = one(Zx)
+  (gg, hh) = hensel_lift(f, f, h, ZZ(2), 2)
+  @test mod(gg * hh, ZZ(4)) == mod(f, ZZ(4))
+  (gg, hh) = hensel_lift(f, h, f, ZZ(2), 2)
+  @test mod(gg * hh, ZZ(4)) == mod(f, ZZ(4))
+end
 
