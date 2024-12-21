@@ -1,3 +1,16 @@
+# the following is copied from the `random_elem` function
+function test_elem(L::Union{QadicField, Hecke.LocalField})
+  b = basis(L)
+  n = degree(L)
+  r = [rand(1:5*n) for i in 1:n]   # Choose small coordinates
+  return sum( [r[i]*b[i] for i in 1:n])
+end
+
+# TODO/FIXME: implement isapprox so we can get rid of the following HACK:
+function equality(a::T, b::T) where {T <: Union{QadicFieldElem, Hecke.LocalFieldElem}}
+  return a == b
+end
+
 @testset "LocalField" begin
 
   @testset "Creation" begin
@@ -7,6 +20,9 @@
     @test precision(K) == 20
     @test characteristic(K) == 0
     @test prime(K) == 2
+
+    test_Field_interface(K)
+    #test_Field_interface_recursive(K)  # TODO/FIXME: does not work due to missing isapprox
 
     Kt, t = polynomial_ring(K, "t")
     g = t^2+2
@@ -40,8 +56,14 @@
 
   @testset "Norm" begin
     K = qadic_field(3, 4, precision = 10)[1]
+    test_Field_interface(K)
+    #test_Field_interface_recursive(K)  # TODO/FIXME: does not work due to missing isapprox
+
     Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
+    test_Field_interface(L)
+    #test_Field_interface_recursive(L)  # TODO/FIXME: does not work due to missing isapprox
+
     b = @inferred basis(L)
     for i = 1:10
       r = 1+2*uniformizer(L)^i * sum([rand(1:10)*b[i] for i in 1:5])
