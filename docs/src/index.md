@@ -21,7 +21,7 @@ features:
   - title: What is Hecke?
     details: Hecke is a software package for computational algebraic number theory. It is written in julia and makes use of the computer algebra packages Nemo and AbstractAlgebra.
   - title: OSCAR
-    details: Hecke is part of the [OSCAR](https://www.oscar-system.org/) system, which covers, in addition to number theory, also commutative algebra, algebraic geometry, group theory and polyhedral geometry.
+    details: Hecke is part of the <a href="https://www.oscar-system.org/" target="_blank">OSCAR</a> system, which covers, in addition to number theory, also commutative algebra, algebraic geometry, group theory and polyhedral geometry.
 ---
 ```
 
