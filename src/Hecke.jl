@@ -548,6 +548,8 @@ order_type(T::DataType) = throw(MethodError(order_type, (T,)))
 embedding_type(x) = embedding_type(typeof(x))
 embedding_type(T::DataType) = throw(MethodError(embedding_type, (T,)))
 
+base_field_type(x) = base_field_type(typeof(x))
+base_field_type(T::DataType) = throw(MethodError(base_field_type, (T,)))
 
 ################################################################################
 #
