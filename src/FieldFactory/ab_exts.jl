@@ -754,7 +754,6 @@ function _disc(a::Int, b::Int, c::Int, bound::Int)
 end
 
 function _pairs_totally_real(pairs, ls, bound)
-  #b1=floor(Int, Base.sqrt(bound))
   b1 = isqrt(bound)
   # We look for Q(sqrt{a},sqrt{b})
   # Remove all with a = 1
@@ -815,7 +814,6 @@ end
 
 function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[] )
   #first, we need the squarefree numbers
-  #b1=ceil(Int, Base.sqrt(bound))
   b1 = isqrt(bound)
   ls = squarefree_up_to(b1, prime_base = unramified_outside)
   #The first step is to enumerate all the totally real extensions.
