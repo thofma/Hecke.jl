@@ -182,7 +182,7 @@ function show(io::IO, A::GroupAlgebra)
     else
       print(io, "of infinite order ")
     end
-    print(io, "over ")
+    print(io, " over ")
     print(terse(io), base_ring(A))
   end
 end
