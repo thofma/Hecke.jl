@@ -178,11 +178,11 @@ function show(io::IO, A::GroupAlgebra)
   else
     print(io, "Group algebra of group ")
     if is_finite(group(A))
-      print(io, "of order ", order(group(A)))
+      print(io, "of order ", order(group(A)), " ")
     else
       print(io, "of infinite order ")
     end
-    print(io, " over ")
+    print(io, "over ")
     print(terse(io), base_ring(A))
   end
 end
