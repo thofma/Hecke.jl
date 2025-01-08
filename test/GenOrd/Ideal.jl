@@ -77,3 +77,14 @@
     end
   end
 end
+
+let
+  # hashing of fractional ideals
+  k = GF(7)
+  kx, x = rational_function_field(k, "x")
+  kt = parent(numerator(x))
+  ky, y = polynomial_ring(kx, "y")
+  F, a = function_field(y^2+x)
+  O = integral_closure(kt, F)
+  @test hash(fractional_ideal(a*O)) == hash(fractional_ideal(a*O))
+end
