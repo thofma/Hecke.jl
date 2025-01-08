@@ -629,11 +629,12 @@ function mul!(c::LocalFieldElem{S, T}, a::LocalFieldElem{S, T}, b::LocalFieldEle
   check_parent(a, b)
   K = parent(a)
   e = ramification_index(K)
-  c.data = mul!(c.data, data(a), data(b))
-  c.data = mod(c.data, defining_polynomial(K, max(precision(data(c)), _precision_base(K))))
   va = (iszero(a) ? 0 : Int(_valuation_integral(a)))
   vb = (iszero(b) ? 0 : Int(_valuation_integral(b)))
   pr = min(precision(a) + vb, precision(b) + va)
+  c.data = mul!(c.data, data(a), data(b))
+  # from this point on, a, b might have changed (if c === a or c === b)
+  c.data = mod(c.data, defining_polynomial(K, max(precision(data(c)), _precision_base(K))))
   c.precision = min(compute_precision(K, data(c)), pr)
   return c
 end
