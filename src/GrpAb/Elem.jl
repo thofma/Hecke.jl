@@ -138,6 +138,10 @@ function Base.lastindex(x::FinGenAbGroupElem)
   return ngens(parent(x))
 end
 
+function getindex(x::FinGenAbGroupElem, ::Colon)
+  return x[begin:end]
+end
+
 ################################################################################
 #
 #  Comparison
