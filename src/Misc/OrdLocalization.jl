@@ -208,6 +208,13 @@ function ==(a::OrdLocElem{T}, b::OrdLocElem{T}) where {T <: AbsSimpleNumFieldEle
    return data(a) == data(b)
 end
 
+function Base.hash(a::OrdLocElem, h::UInt)
+  b = 0x33dd41cd510034d2%UInt
+  b = xor(hash(parent(a), h), b)
+  b = xor(hash(data(a), h), b)
+  return b
+end
+
 ##############################################################################
 #
 #  Inversion

@@ -254,6 +254,9 @@ function ==(a::ClassField, b::ClassField)
   return is_eq(kernel(h[2])[1], kernel(h[1])[1])
 end
 
+function Base.hash(a::ClassField, h::UInt)
+  return hash(base_ring(a), h)
+end
 
 ###############################################################################
 #
