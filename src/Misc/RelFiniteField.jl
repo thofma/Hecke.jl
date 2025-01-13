@@ -141,6 +141,8 @@ iszero(x::RelFinFieldElem) = iszero(x.data)
 isone(x::RelFinFieldElem) = isone(x.data)
 is_unit(x::RelFinFieldElem) = !iszero(x)
 
+hash(x::RelFinFieldElem, h::UInt) = hash(x.data, h)
+
 ==(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T} = x.data == y.data
 
 coeff(a::RelFinFieldElem, i::Int) = coeff(a.data, i)

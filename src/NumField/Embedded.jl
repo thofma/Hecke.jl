@@ -65,6 +65,8 @@ base_ring_type(::Type{<:EmbeddedNumField}) = QQField
 
 data(x::EmbeddedNumFieldElem) = x.element
 
+characteristic(::EmbeddedNumField) = 0
+
 function embedded_field(K::SimpleNumField, i::NumFieldEmb)
   @assert number_field(i) === K
   E = EmbeddedNumField(K, i)
