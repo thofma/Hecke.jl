@@ -432,8 +432,6 @@ Given a ZpnGModule $M$, the function returns all the submodules of $M$.
 
 """
 function submodules(M::ZpnGModule; typequo=Int[-1], typesub=Int[-1], ord=-1)
-  @show typequo
-
   if typequo!=[-1]
     return submodules_with_quo_struct(M,typequo)
   elseif typesub!=[-1]
