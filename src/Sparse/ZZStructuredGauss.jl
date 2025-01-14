@@ -71,7 +71,6 @@ mutable struct data_ZZStructGauss{T}
  (consisting of column vectors) for the right nullspace of A, i.e. such that
  AN is the zero matrix.
  """
- 
  function structured_gauss(A::SMat{T}) where T <: ZZRingElem
   SG = part_echolonize!(A)
   return compute_kernel(SG)
@@ -422,7 +421,7 @@ function compute_kernel(SG, with_light = true)
   D = dense_matrix(SG, KER)
   _nullity, _dense_kernel = nullspace(D)
   l, K = Hecke.init_kernel(_nullity, _dense_kernel, SG, KER, with_light)
-  return compose_kernel(l, K, SG)
+  return compose_kernel2(l, K, SG)
 end
 
 function update_light_cols!(SG)
@@ -453,23 +452,14 @@ end
 
 function dense_matrix(SG, KER)
  D = ZZMatrix(nrows(SG.A) - SG.nsingle, length(KER.heavy_mapi))
- for i in 1:length(SG.Y)
-  for j in 1:length(KER.heavy_mapi)
-   setindex!(D, SG.Y[i], i, j, KER.heavy_mapi[j])
-  end
- end
+ GC.@preserve D SG KER begin
+	 for i in 1:length(SG.Y)
+	  for j in 1:length(KER.heavy_mapi)
+	   setindex!(D, SG.Y[i], i, j, KER.heavy_mapi[j])
+	  end
+	 end
+	end 
  return D
-end
-
-function dense_kernel(SG, KER)
- ST = sparse_matrix(base_ring(SG.A), 0, nrows(SG.Y))
- YT = transpose(delete_zero_rows!(SG.Y))
- for j in KER.heavy_mapi
-  push!(ST, YT[j])
- end
- S = transpose(ST)
- d, _dense_kernel = nullspace(matrix(S))
- return size(_dense_kernel)[2], _dense_kernel
 end
 
 function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
@@ -487,15 +477,15 @@ function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
   if SG.is_light_col[i]
    if with_light
     @assert ilight <= SG.nlight
-    K[i, _nullity+ilight] = one(R)
+    one!(K[i, _nullity+ilight])
     ilight +=1
    end
   else
    j = KER.heavy_map[i]
    if j>0
     for c = 1:_nullity
-     ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), Nemo.mat_entry_ptr(K, i, j), Nemo.mat_entry_ptr(_dense_kernel, j, c))
-     #K[i,c] = _dense_kernel[j, c]
+      #ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), Nemo.mat_entry_ptr(K, i, j), Nemo.mat_entry_ptr(_dense_kernel, j, c))
+      K[i,c] = _dense_kernel[j, c]
     end
    end
   end
@@ -503,23 +493,26 @@ function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
  return l, K
 end
 
+#=
 function compose_kernel(l, K, SG)
- R = base_ring(SG.A)
  n = nrows(SG.A)
+ y = zeros(ZZ,l)
+ x = ZZ(0)
  for i = n:-1:1
-  c = SG.single_col[i]
+  c = SG.single_col[i]  # col idx of pivot
   if c>0
-   x = R(0)
-   y = zeros(R,l)
+   x = SG.A[i].values[findfirst(isequal(c),SG.A[i].pos)]  # value of pivot
+   for j=1:l
+     zero!(pointer(y, j))
+   end
    for idx in 1:length(SG.A[i])
-    cc = SG.A[i].pos[idx]
+    cc = SG.A[i].pos[idx]  # no alloc
     xx = SG.A[i].values[idx]
     if cc == c
-     x = xx
+     continue
     else
      for k = 1:l
-      kern_c = K[cc,k]
-      !iszero(kern_c) && (y[k]-=xx*kern_c)
+      !iszero(K[cc,k]) && submul!(ptr(y, k),xx,ptr(K, cc, k)) #TODO: try without iszero
      end
     end
    end
@@ -530,13 +523,82 @@ function compose_kernel(l, K, SG)
      R(0)
     end
     if iszero(x_inv)
-     K[:,k] *= x
-     K[c, k] = y[k]
+#     K[:,k] *= x #mul! worse here -- why?
+     for _i=1:?
+       mul!(ptr(K, _i, k), x)
+     end
+     set!(ptr(K, c, k), ptr(y, k))
+#     K[c, k] = y[k] #pointer possible? y might change afterwards
     else
-     K[c, k] = y[k]*x_inv
+     mul!(ptr(K, c, k), ptr(y, k), x_inv)
     end
    end
   end
+ end
+ return l, K
+end
+=#
+
+function compose_kernel(l, K, SG)
+  n, m = nrows(SG.A), ncols(SG.A)
+  x = zero(ZZ)
+  a = zero(ZZ)
+  r = zero(ZZ)
+  g = zero(ZZ)
+  for i = n:-1:1
+    c = SG.single_col[i]  # col idx of pivot or zero
+    iszero(c) && continue
+    @show K[c,:]
+    a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
+    for kern_i in 1:l
+     for idx in 1:length(SG.A[i])
+      cc = SG.A[i].pos[idx]
+      cc == c && continue
+      submul!(x, SG.A[i].values[idx], K[cc, kern_i])#c or cc?
+     end
+     gcd!(g, a, x)
+     divexact!(r, a, g)
+     divexact!(x, x, g)
+     for j = 1:m
+       K[j, kern_i]=r*K[j, kern_i]
+     end
+     K[c, l] = x
+     zero!(x)
+     zero!(r)
+     zero!(g)
+    end
+  end
+  return l, K
+ end
+
+function compose_kernel2(l, K, SG)
+ n, m = nrows(SG.A), ncols(SG.A)
+ x = zero(ZZ)
+ a = zero(ZZ)
+ r = zero(ZZ)
+ g = zero(ZZ)
+ for i = n:-1:1
+   c = SG.single_col[i]  # col idx of pivot or zero
+   iszero(c) && continue
+   @show K[c,:]
+   a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
+   for kern_i in 1:l
+    for idx in 1:length(SG.A[i])
+     cc = SG.A[i].pos[idx]
+     cc == c && continue
+     submul!(x, SG.A[i].values[idx], K[cc, kern_i])#c or cc?
+    end
+    gcd!(g, a, x)
+    divexact!(r, a, g)
+    divexact!(x, x, g)
+    for j = 1:m
+      K[j, kern_i]=r*K[j, kern_i]
+    end
+    K[c, l] = x
+    zero!(x)
+    zero!(r)
+    zero!(g)
+   end
  end
  return l, K
 end
