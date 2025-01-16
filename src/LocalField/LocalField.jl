@@ -47,8 +47,8 @@ elem_type(::Type{LocalField{S, T}}) where {S <: FieldElem, T <: LocalFieldParame
 #
 ################################################################################
 
-is_domain_type(::Type{S}) where S <: LocalField = true
-is_exact_type(::Type{S}) where S <: LocalField = false
+is_domain_type(::Type{<: LocalFieldElem}) = true
+is_exact_type(::Type{<: LocalFieldElem}) = false
 isfinite(K::LocalField) = isfinite(base_field(K))
 
 ################################################################################
