@@ -421,7 +421,7 @@ function compute_kernel(SG, with_light = true)
   D = dense_matrix(SG, KER)
   _nullity, _dense_kernel = nullspace(D)
   l, K = Hecke.init_kernel(_nullity, _dense_kernel, SG, KER, with_light)
-  return compose_kernel2(l, K, SG)
+  return compose_kernel(l, K, SG)
 end
 
 function update_light_cols!(SG)
@@ -493,52 +493,6 @@ function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
  return l, K
 end
 
-#=
-function compose_kernel(l, K, SG)
- n = nrows(SG.A)
- y = zeros(ZZ,l)
- x = ZZ(0)
- for i = n:-1:1
-  c = SG.single_col[i]  # col idx of pivot
-  if c>0
-   x = SG.A[i].values[findfirst(isequal(c),SG.A[i].pos)]  # value of pivot
-   for j=1:l
-     zero!(pointer(y, j))
-   end
-   for idx in 1:length(SG.A[i])
-    cc = SG.A[i].pos[idx]  # no alloc
-    xx = SG.A[i].values[idx]
-    if cc == c
-     continue
-    else
-     for k = 1:l
-      !iszero(K[cc,k]) && submul!(ptr(y, k),xx,ptr(K, cc, k)) #TODO: try without iszero
-     end
-    end
-   end
-   for k = 1:l
-    x_inv = try
-     inv(x)
-    catch
-     R(0)
-    end
-    if iszero(x_inv)
-#     K[:,k] *= x #mul! worse here -- why?
-     for _i=1:?
-       mul!(ptr(K, _i, k), x)
-     end
-     set!(ptr(K, c, k), ptr(y, k))
-#     K[c, k] = y[k] #pointer possible? y might change afterwards
-    else
-     mul!(ptr(K, c, k), ptr(y, k), x_inv)
-    end
-   end
-  end
- end
- return l, K
-end
-=#
-
 function compose_kernel(l, K, SG)
   n, m = nrows(SG.A), ncols(SG.A)
   x = zero(ZZ)
@@ -548,19 +502,20 @@ function compose_kernel(l, K, SG)
   for i = n:-1:1
     c = SG.single_col[i]  # col idx of pivot or zero
     iszero(c) && continue
-    @show K[c,:]
     a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
     for kern_i in 1:l
      for idx in 1:length(SG.A[i])
       cc = SG.A[i].pos[idx]
       cc == c && continue
-      submul!(x, SG.A[i].values[idx], K[cc, kern_i])#c or cc?
+      submul!(x, Nemo.mat_entry_ptr(K, cc, kern_i), reinterpret(Ptr{ZZRingElem}, Hecke.get_ptr(SG.A[i].values, idx))) #TODO
+      #submul!(x, K[cc, kern_i], SG.A[i].values[idx])
      end
      gcd!(g, a, x)
      divexact!(r, a, g)
+     #divexact!(r, reinterpret(Ptr{ZZRingElem}, Hecke.get_ptr(SG.A[i].values, findfirst(isequal(c), SG.A[i].pos))), g) #TODO
      divexact!(x, x, g)
      for j = 1:m
-       K[j, kern_i]=r*K[j, kern_i]
+      Nemo.mul!(Nemo.mat_entry_ptr(K, j, kern_i), Nemo.mat_entry_ptr(K, j, kern_i), r)
      end
      K[c, l] = x
      zero!(x)
@@ -580,19 +535,18 @@ function compose_kernel2(l, K, SG)
  for i = n:-1:1
    c = SG.single_col[i]  # col idx of pivot or zero
    iszero(c) && continue
-   @show K[c,:]
    a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
    for kern_i in 1:l
     for idx in 1:length(SG.A[i])
      cc = SG.A[i].pos[idx]
      cc == c && continue
-     submul!(x, SG.A[i].values[idx], K[cc, kern_i])#c or cc?
+     submul!(x, SG.A[i].values[idx], K[cc, kern_i])
     end
     gcd!(g, a, x)
     divexact!(r, a, g)
     divexact!(x, x, g)
     for j = 1:m
-      K[j, kern_i]=r*K[j, kern_i]
+     K[j, kern_i]=r*K[j, kern_i]
     end
     K[c, l] = x
     zero!(x)
@@ -608,3 +562,10 @@ function Base.setindex!(A::ZZMatrix, B::SRow{ZZRingElem}, ar::Int64, ac::Int64, 
  isnothing(findfirst(isequal(bj), B.pos)) && return
  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{Int}), Nemo.mat_entry_ptr(A, ar, ac), Hecke.get_ptr(B.values, findfirst(isequal(bj), B.pos)))
 end
+
+#=
+function Nemo.submul!(z::ZZRingElemOrPtr, x::ZZRingElemOrPtr, y::Ptr{Int})
+  @ccall libflint.fmpz_submul(z::Ref{ZZRingElem}, x::Ref{ZZRingElem}, y::Ref{Int})::Nothing
+  return z
+end
+=#
