@@ -606,6 +606,14 @@ function is_isomorphic(G::FinGenAbGroup, H::FinGenAbGroup)
   return elementary_divisors(G) == elementary_divisors(H)
 end
 
+function isomorphism(G::FinGenAbGroup, H::FinGenAbGroup)
+  SG, SGtoG = snf(G)
+  SH, SHtoH = snf(H)
+  @req SG.snf == SH.snf "Groups are not isomorphic"
+  h = hom(SG, SH, gens(SH))
+  return inv(SGtoG) * h * SHtoH
+end
+
 ################################################################################
 #
 #  Direct products/direct sums/biproducts
