@@ -6,8 +6,6 @@
 
 embedding_type(::Type{AbsSimpleNumField}) = AbsSimpleNumFieldEmbedding
 
-embedding_type(::AbsSimpleNumField) = embedding_type(AbsSimpleNumField)
-
 ################################################################################
 #
 #  Field access
@@ -66,6 +64,12 @@ end
 function Base.:(==)(f::AbsSimpleNumFieldEmbedding, g::AbsSimpleNumFieldEmbedding)
   return number_field(f) === number_field(g) &&
       _absolute_index(f) == _absolute_index(g)
+end
+
+function Base.hash(f::AbsSimpleNumFieldEmbedding, h::UInt)
+  h = hash(number_field(f), h)
+  h = hash(_absolute_index(f), h)
+  return h
 end
 
 ################################################################################

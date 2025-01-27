@@ -31,7 +31,7 @@ function syzygies_sunits_mod_units(A::Vector{AbsSimpleNumFieldElem}; use_ge::Boo
     cp = coprime_base(A)
   end
   sort!(cp, lt = (a,b) -> norm(a) > norm(b))
-  M = sparse_matrix(FlintZZ)
+  M = sparse_matrix(ZZ)
   for a = A
     T = Tuple{Int, ZZRingElem}[]
     for i = 1:length(cp)
@@ -42,7 +42,7 @@ function syzygies_sunits_mod_units(A::Vector{AbsSimpleNumFieldElem}; use_ge::Boo
       end
 #      isone(I) && break
     end
-    push!(M, sparse_row(FlintZZ, T))
+    push!(M, sparse_row(ZZ, T))
   end
   h, t = Hecke.hnf_with_transform(matrix(M))
   h = h[1:rank(h), :]
@@ -85,7 +85,7 @@ function *(O1::AbsNumFieldOrder, O2::AbsNumFieldOrder)
   b2 = basis(O2, k)
   p = [x*y for (x,y) in Base.Iterators.ProductIterator((b1, b2))]
   d = reduce(lcm, [denominator(x) for x = p])
-  M = zero_matrix(FlintZZ, n*n, n)
+  M = zero_matrix(ZZ, n*n, n)
   z = ZZRingElem()
   for i = 1:n*n
     a = p[i]*d
@@ -276,7 +276,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
         @vprint :qAdic 1 "dependent unit found, looking for relation\n"
         s = QQFieldElem[]
         for x in k[1, :]
-          @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
+          @vtime :qAdic 1 y = lift_reco(QQ, x, reco = true)
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
@@ -289,7 +289,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
           continue
         end
         d = reduce(lcm, map(denominator, s))
-        gamma = ZZRingElem[FlintZZ(x*d)::ZZRingElem for x = s]
+        gamma = ZZRingElem[ZZ(x*d)::ZZRingElem for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
         if !verify_gamma(push!(copy(u), a), gamma, ZZRingElem(p)^prec)
           prec *= 2
@@ -334,15 +334,15 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
   =#
 
   for i=1:length(uu)-1
-    append!(uu[i][2], zeros(FlintZZ, length(uu[end][2])-length(uu[i][2])))
+    append!(uu[i][2], zeros(ZZ, length(uu[end][2])-length(uu[i][2])))
   end
   if length(uu) == 0 #all torsion
     return [], A
   else
-    U = matrix(FlintZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
+    U = matrix(ZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
     U = hcat(U[:, 1:length(u)], U[:, r+1:ncols(U)])
   end
- 
+
   U = saturate(U)
   
   _, U = hnf_with_transform(transpose(U))
@@ -420,7 +420,7 @@ function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
     fl, c, d = rational_reconstruction(u, prime(R, N-v))
     !fl && return nothing
 
-    x = FlintQQ(c, d)
+    x = QQ(c, d)
     if v < 0
       return x//prime(R, -v)
     else
@@ -562,7 +562,7 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
         @vprint :qAdic 1 "looking for relation\n"
         s = QQFieldElem[]
         for x in k[1, :]
-          @vtime :qAdic 1 y = lift_reco(FlintQQ, x, reco = true)
+          @vtime :qAdic 1 y = lift_reco(QQ, x, reco = true)
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
@@ -575,7 +575,7 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
           continue
         end
         d = reduce(lcm, map(denominator, s))
-        gamma = ZZRingElem[FlintZZ(x*d)::ZZRingElem for x = s]
+        gamma = ZZRingElem[ZZ(x*d)::ZZRingElem for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
         if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat), prec))
           prec *= 2

@@ -32,8 +32,6 @@ struct ZZFracIdl <: NumFieldOrderFractionalIdeal
   end
 end
 
-Base.hash(x::ZZIdl, h::UInt) = hash(gen(x), h)
-
 order(::ZZIdl) = ZZ
 
 order(::ZZFracIdl) = ZZ
@@ -93,8 +91,16 @@ function ==(I::ZZIdl, J::ZZIdl)
   return I.gen == J.gen
 end
 
+function Base.hash(I::ZZIdl, h::UInt)
+  return hash(I.gen, h)
+end
+
 function ==(I::ZZFracIdl, J::ZZFracIdl)
   return I.gen == J.gen
+end
+
+function Base.hash(I::ZZFracIdl, h::UInt)
+  return hash(I.gen, h)
 end
 
 # access
@@ -168,14 +174,10 @@ primary_decomposition(I::ZZIdl) = iszero(I) ? [ (I,I) ] :
 
 maximal_order(::QQField) = ZZ
 
-ideal_type(::ZZRing) = ZZIdl
-order_type(::QQField) = ZZRing
 ideal_type(::Type{ZZRing}) = ZZIdl
 order_type(::Type{QQField}) = ZZRing
-place_type(::QQField) = PosInf
 place_type(::Type{QQField}) = PosInf
-
-fractional_ideal_type(::QQField) = ZZFracIdl
+fractional_ideal_type(::Type{QQField}) = ZZFracIdl
 
 elem_in_nf(x::ZZRingElem) = QQ(x)
 

@@ -59,7 +59,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
     end
     return res
   end
-  if gtype == Int[2,2]
+  if gtype == Int[2,2] && bound < ZZ(10)^12 # otherwise the method needs to much memory
     l = Hecke._C22_exts_abexts(Int(bound), only_real, unramified_outside = unramified_outside)
     @vprintln :Fields 1 "Computing maximal orders"
     @vprintln :FieldsNonFancy 1 "Computing maximal orders"

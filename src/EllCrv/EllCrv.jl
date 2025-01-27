@@ -167,12 +167,16 @@ disabled by setting `check = false`.
 
 ```jldoctest
 julia> elliptic_curve(QQ, [1, 2, 3, 4, 5])
-Elliptic curve with equation
-y^2 + x*y + 3*y = x^3 + 2*x^2 + 4*x + 5
+Elliptic curve
+  over rational field
+with equation
+  y^2 + x*y + 3*y = x^3 + 2*x^2 + 4*x + 5
 
 julia> elliptic_curve(GF(3), [1, 1])
-Elliptic curve with equation
-y^2 = x^3 + x + 1
+Elliptic curve
+  over prime field of characteristic 3
+with equation
+  y^2 = x^3 + x + 1
 ```
 """
 elliptic_curve
@@ -253,12 +257,16 @@ disabled by setting `check = false`.
 julia> Qx, x = QQ["x"];
 
 julia> elliptic_curve(x^3 + x + 1)
-Elliptic curve with equation
-y^2 = x^3 + x + 1
+Elliptic curve
+  over rational field
+with equation
+  y^2 = x^3 + x + 1
 
 julia> elliptic_curve(x^3 + x + 1, x)
-Elliptic curve with equation
-y^2 + x*y = x^3 + x + 1
+Elliptic curve
+  over rational field
+with equation
+  y^2 + x*y = x^3 + x + 1
 ```
 """
 function elliptic_curve(f::PolyRingElem{T}, h::PolyRingElem{T} = zero(parent(f)); check::Bool = true) where T
@@ -292,8 +300,10 @@ julia> K = GF(3)
 Prime field of characteristic 3
 
 julia> elliptic_curve_from_j_invariant(K(2))
-Elliptic curve with equation
-y^2 + x*y = x^3 + 1
+Elliptic curve
+  over prime field of characteristic 3
+with equation
+  y^2 + x*y = x^3 + 1
 ```
 """
 function elliptic_curve_from_j_invariant(j::FieldElem)
@@ -370,6 +380,12 @@ Return true if $E$ and $F$ are given by the same model over the same field.
 """
 function ==(E::EllipticCurve, F::EllipticCurve)
   return a_invariants(E) == a_invariants(F) && base_field(E) == base_field(F)
+end
+
+function Base.hash(E::EllipticCurve, h::UInt)
+  h = hash(a_invariants(E), h)
+  h = hash(base_field(E), h)
+  return h
 end
 
 ################################################################################
@@ -578,12 +594,10 @@ by setting `check = false`.
 julia> E = elliptic_curve(QQ, [1, 2]);
 
 julia> E([1, -2])
-Point  (1 : -2 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(1 : -2 : 1)
 
 julia> E([2, -4, 2])
-Point  (1 : -2 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(1 : -2 : 1)
 ```
 """
 function (E::EllipticCurve{T})(coords::Vector{S}; check::Bool = true) where {S, T}
@@ -748,8 +762,31 @@ end
 #
 ################################################################################
 
+function show(io::IO, ::MIME"text/plain", E::EllipticCurve)
+  io = pretty(io)
+  println(io, "Elliptic curve")
+  print(io, Indent(), "over ", Lowercase())
+  print(io, base_field(E))
+  println(io, Dedent())
+  println(io, "with equation")
+  print(io, Indent())
+  _print_equation(io, E)
+  print(io, Dedent())
+end
+
 function show(io::IO, E::EllipticCurve)
-  print(io, "Elliptic curve with equation\n")
+  if is_terse(io)
+    print(io, "Elliptic curve")
+    return
+  end
+  io = pretty(io)
+  print(io, "Elliptic curve over ", Lowercase())
+  print(terse(io), base_field(E))
+  print(io, " with equation ")
+  _print_equation(io, E)
+end
+
+function _print_equation(io::IO, E::EllipticCurve)
   a1, a2, a3, a4, a6 = a_invariants(E)
   sum = Expr(:call, :+)
   push!(sum.args, Expr(:call, :^, :y, 2))
@@ -801,8 +838,10 @@ function show(io::IO, E::EllipticCurve)
   print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
 end
 
+
 function show(io::IO, P::EllipticCurvePoint)
-  print(io, "Point  ($(P[1]) : $(P[2]) : $(P[3]))  of $(P.parent)")
+  io = pretty(io)
+  print(io, "($(P[1]) : $(P[2]) : $(P[3]))")
 end
 
 
@@ -826,8 +865,7 @@ julia> E = elliptic_curve(QQ, [1, 2]);
 julia> P = E([1, -2]);
 
 julia> P + P
-Point  (-1 : 0 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(-1 : 0 : 1)
 ```
 """
 function +(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where T
@@ -1120,10 +1158,8 @@ julia> E = elliptic_curve(QQ, [1, 2]);
 
 julia> division_points(infinity(E), 2)
 2-element Vector{EllipticCurvePoint{QQFieldElem}}:
- Point  (0 : 1 : 0)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
- Point  (-1 : 0 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+ (0 : 1 : 0)
+ (-1 : 0 : 1)
 ```
 """
 function division_points(P::EllipticCurvePoint, m::S) where S<:Union{Integer, ZZRingElem}

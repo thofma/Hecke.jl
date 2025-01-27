@@ -113,7 +113,7 @@ function roots(C::qAdicRootCtx, n::Int = 10)
 end
 
 @doc raw"""
-    qAdicConj(K::AbsSimpleNumField, p::Int)
+    qAdicConj(K::AbsSimpleNumField, p::Int; cached::Bool = true)
 
 Creates a data structure to compute the conjugates in an unramified splitting field
 over $Q_p$.
@@ -123,7 +123,7 @@ mutable struct qAdicConj
   C::qAdicRootCtx
   cache::Dict{AbsSimpleNumFieldElem, Any}
 
-  function qAdicConj(K::AbsSimpleNumField, p::Int; splitting_field::Bool = false)
+  function qAdicConj(K::AbsSimpleNumField, p::Int; splitting_field::Bool = false, cached::Bool = true)
     if discriminant(map_coefficients(Native.GF(p), K.pol)) == 0
       error("cannot deal with difficult primes yet")
     end
@@ -143,7 +143,8 @@ mutable struct qAdicConj
     D = get_attribute!(K, :nf_conjugate_data_qAdic) do
       return Dict{Int, Tuple{qAdicRootCtx, Dict{AbsSimpleNumFieldElem, Any}}}()
     end::Dict{Int, Tuple{qAdicRootCtx, Dict{AbsSimpleNumFieldElem, Any}}}
-    Dp = get!(D, p) do
+
+    Dp = get_cached!(D, p, cached) do
       Zx = polynomial_ring(ZZ, cached = false)[1]
       d = lcm(map(denominator, coefficients(K.pol)))
       C = qAdicRootCtx(Zx(K.pol*d), p)
@@ -499,7 +500,7 @@ function lift_root(f::ZZPolyRingElem, a::AbsSimpleNumFieldElem, o::AbsSimpleNumF
 end
 
 @doc raw"""
-    completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal; cached::Bool = true)
                                                -> QadicField, CompletionMap
 
 The completion of $K$ wrt to the topology induced by the valuation at the
@@ -509,17 +510,17 @@ The map giving the embedding of $K$ into the completion, admits a pointwise
 preimage to obtain a lift.  Note, that the map is not well defined by this
 data: $K$ will have $\deg P$ many embeddings.
 """
-function completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 10)
+function completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 10; cached::Bool = true)
   #non-unique!! will have deg(P) many
   p = minimum(P)
-  C = qAdicConj(K, Int(p))
+  C = qAdicConj(K, Int(p); cached)
   g = conjugates(P.gen_two.elem_in_nf, C)
 #  @show map(x->valuation(x), g)
   i = findfirst(x->valuation(x) > 0, g)
-  return completion(K, p, i, precision)
+  return completion(K, p, i, precision; cached)
 end
 
-completion(K::AbsSimpleNumField, p::Integer, i::Int, precision::Int = 64) = completion(K, ZZRingElem(p), i, precision)
+completion(K::AbsSimpleNumField, p::Integer, i::Int, precision::Int = 64; cached::Bool = true) = completion(K, ZZRingElem(p), i, precision; cached)
 
 @doc raw"""
     completion(K::AbsSimpleNumField, p::ZZRingElem, i::Int) -> QadicField, Map
@@ -527,17 +528,17 @@ completion(K::AbsSimpleNumField, p::Integer, i::Int, precision::Int = 64) = comp
 The completion corresponding to the $i$-th conjugate in the non-canonical ordering of
 `conjugates`.
 """
-function completion(K::AbsSimpleNumField, p::ZZRingElem, i::Int, n = 64)
-  C = qAdicConj(K, Int(p))
+function completion(K::AbsSimpleNumField, p::ZZRingElem, i::Int, n = 64; cached::Bool = true)
+  C = qAdicConj(K, Int(p); cached)
   @assert 0<i<= degree(K)
 
   ca = conjugates(gen(K), C, n, all = true, flat = false)[i]
-  return completion(K, ca)
+  return completion(K, ca; cached)
 end
 
-function completion(K::AbsSimpleNumField, ca::QadicFieldElem)
+function completion(K::AbsSimpleNumField, ca::QadicFieldElem; cached::Bool = true)
   p = prime(parent(ca))
-  C = qAdicConj(K, Int(p))
+  C = qAdicConj(K, Int(p); cached)
   r = roots(C.C, precision(ca))
   i = findfirst(x->parent(r[x]) == parent(ca) && r[x] == ca, 1:length(r))
   Zx = polynomial_ring(ZZ, cached = false)[1]

@@ -144,6 +144,12 @@ function Base.:(==)(a::QmodnZ, b::QmodnZ)
   return a.n == b.n && a.d == b.d
 end
 
+function Base.hash(a::QmodnZ, h::UInt)
+  h = hash(a.n, h)
+  h = hash(a.d, h)
+  return h
+end
+
 function Base.:(==)(a::QmodnZElem, b::QmodnZElem)
   if parent(a).trivialmodulus
     return is_integral(a.elt - b.elt)
@@ -158,7 +164,7 @@ function Base.hash(a::QmodnZElem, h::UInt)
   if parent(a).trivialmodulus
     return hash(a.elt, h)
   end
-  error("not implemented")
+  return h
 end
 
 for T in [ZZRingElem, Integer, QQFieldElem, Rational]

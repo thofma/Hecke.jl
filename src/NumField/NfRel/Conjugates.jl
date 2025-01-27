@@ -1,7 +1,5 @@
 place_type(::Type{T}) where {T <: NumField} = InfPlc{T, embedding_type(T)}
 
-place_type(K::NumField) = place_type(typeof(K))
-
 #function _signs(a)
 #  if iszero(a)
 #    error("element must not be zero")

@@ -3,6 +3,11 @@
   f = x^2 + 1
   A = StructureConstantAlgebra(f)
 
+  @testset "divexact" begin
+    @test divexact(A([1,1]), A([1,1])) == one(A)
+    @test_throws ErrorException divexact(zero(A), zero(A))
+  end
+
   @testset "Is integral" begin
     @test Hecke.is_integral(A[1]) == true
     @test Hecke.is_integral(QQFieldElem(1, 2)*A[1]) == false

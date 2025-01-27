@@ -1,4 +1,3 @@
-
 Qx,x = QQ["x"]
 K,a = number_field(x^6+108)
 OK = ring_of_integers(K)
@@ -124,4 +123,15 @@ end
       @test isone(L(13//13)) == true
       @test is_unit(L(50//2)) == false
     end
+
+  let
+    # hashing
+    Qx, x = QQ["x"]
+    K, a = number_field(x^6 + 108)
+    OK = ring_of_integers(K)
+    lp = prime_decomposition(OK, 5)
+    P = lp[1][1]
+    L = localization(OK, P)
+    @test hash(one(L)) == hash(one(L))
+  end
 end

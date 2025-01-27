@@ -208,4 +208,12 @@
   k, _ = number_field(x^4-11*x^2+9)
   L = abelian_extensions(k, [3], ZZRingElem(10)^16)
   @test length(L) == 2
+
+  let
+    l = Hecke.C22_extensions_with_given_disc(7056)
+    flds = first.(number_field.(Hecke.Globals.Qx.([[1, 0, -5, 0, 1], [25, 0, 11, 0, 1], [22, 2, -1, -2, 1], [49, 0, 7, 0, 1]])))
+    @test all(x -> any(y -> is_isomorphic(x, y), flds), l)
+    l = Hecke.C22_extensions_with_given_disc(7056; only_real = true)
+    @test length(l) == 1 && is_isomorphic(l[1], flds[1])
+  end
 end

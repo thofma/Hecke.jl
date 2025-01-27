@@ -216,6 +216,8 @@ end
 
 ==(f::FinGenAbGroupHom, g::FinGenAbGroupHom) = domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
 
+Base.hash(f::FinGenAbGroupHom, h::UInt) = h
+
 ################################################################################
 #
 #  Inverse of a map

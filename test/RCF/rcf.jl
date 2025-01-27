@@ -380,3 +380,16 @@ let
   L, = number_field(x^3 - 840539241479//13824*a^5 - 18036715089631//9216*a^4 - 18036715089631//9216*a^3 - 840539241479//13824*a^2 - 7320065966297//9216)
   @test !is_abelian(L)
 end
+
+let
+  # fix hashing
+  K, = quadratic_field(-1)
+  OK = maximal_order(K)
+  C = ray_class_field(1*OK)
+  CC = ray_class_field(1*OK)
+  @test C == CC
+  @test hash(C) == hash(CC)
+  D = Dict()
+  D[C] = 1
+  @test haskey(D, CC)
+end

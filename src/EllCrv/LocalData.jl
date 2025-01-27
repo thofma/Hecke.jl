@@ -817,7 +817,11 @@ end
 Return true if $K1$ and $K2$ are the same Kodaira symbol.
 """
 function ==(K1::KodairaSymbol, K2::KodairaSymbol)
-  return K1.ksymbol == K2.kymbol
+  return K1.ksymbol == K2.ksymbol
+end
+
+function Base.hash(K::KodairaSymbol, h::UInt)
+  return hash(K.ksymbol, h)
 end
 
 

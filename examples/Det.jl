@@ -6,7 +6,7 @@ module Det
 using Hecke
 import AbstractAlgebra, Nemo
 using LinearAlgebra, Profile, Base.Intrinsics
-import Nemo: add!, mul!, zero!, sub!, AbstractAlgebra._solve_tril!
+import Nemo: add!, mul!, zero!, sub!
 import Hecke: mod_sym!
 
 #creates an unimodular n x n matrix where the inverse is much larger
@@ -691,7 +691,7 @@ function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U)
       add!(R_ptr, R_ptr, U_ptr)
       mod_sym!(U_ptr, R_ptr, m, t)
       sub!(R_ptr, R_ptr, U_ptr)
-      ccall((:fmpz_divexact, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), R_ptr, R_ptr, m)
+      divexact!(R_ptr, R_ptr, m)
       R_ptr += sizeof(Clong)
       U_ptr += sizeof(Clong)
     end
@@ -700,22 +700,31 @@ function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U)
       if i > last || is_zero(R)
         return U
       end
-      U.r += 1
-      @assert U.r <= last
-      U_ptr = Nemo.mat_entry_ptr(U, i, 1)
-      R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
-      for j=1:ncols(U)
-        set!(U_ptr, R_ptr)
-        zero!(R_ptr)
-        R_ptr += sizeof(Clong)
-        U_ptr += sizeof(Clong)
+      while !is_zero(R)
+        U.r += 1
+        if i > last
+          return U
+        end
+        @assert U.r <= last
+        U_ptr = Nemo.mat_entry_ptr(U, i, 1)
+        R_ptr = Nemo.mat_entry_ptr(R, 1, 1)
+        for j=1:ncols(U)
+          set!(U_ptr, R_ptr)
+          mod_sym!(U_ptr, R_ptr, m, t)
+          sub!(R_ptr, R_ptr, U_ptr)
+          divexact!(R_ptr, R_ptr, m)
+          R_ptr += sizeof(Clong)
+          U_ptr += sizeof(Clong)
+          i += 1
+        end
       end
+      return U
     end
   end
 end
 
 function add_into!(A::ZZMatrix, C::ZZMatrix, c::Int)
-  A.r = max(A.r, C.r+c)
+  @show A.r = max(A.r, C.r+c)
   for i=1:nrows(C)
     A_ptr = Nemo.mat_entry_ptr(A, i+c, 1)
     C_ptr = Nemo.mat_entry_ptr(C, i, 1)
@@ -757,7 +766,7 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
   # Compute max num iters in k
   k = (n-1)*(log2(EntrySize)+log2(n)/2) - (2*log2(n) + log2(EntrySize));
-  k = k/log2(m);
+  k = max(1, k/log2(m));
   k = 2+Int(ceil(log2(k)));
   println("Max num iters is k=$(k)");
 
@@ -766,21 +775,23 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
   @show size(U)
   @assert nrows(U) == 1
-  @show pr = 2^(k+2)-1
-  V = zero_matrix(ZZ, pr, ncols(U))
+  @show pr = 2^(k+2)-1  
+  V = zero_matrix(ZZ, pr+100, ncols(U))
   V[1, :] = U
   U = V
   U.r = 1
-  @assert maximum(abs, U) <= m
+#  @assert maximum(abs, U) <= m
 
   I = identity_matrix(ZZ,n)
   R = (I-A*B0)/m
-  V = zero_matrix(ZZ, pr, ncols(U))
+  V = zero_matrix(ZZ, pr + 100, ncols(U))
   V[1, :] = U*B0 #sol mod m
-  V.r = 1
-  renorm(V, m, last = 2)
+  @show V.r = 1
+  renorm(V, m; last = 10)
+  l = nrows(V)
   add_into!(V, V*R, 1) #sol mod m^2
-  renorm(V, m, last = 3)
+  renorm(V, m; last = 10)
+  @show V
 
   if is_zero(R)
     return true;
@@ -804,21 +815,23 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
     if nrows(V) > nrows(R)
       n = nrows(R)
-      e = div(nrows(V), n)
-      for j=1:e
+      l = nrows(V)
+      e = div(l, n)
+      add_into!(V, V[e*n+1:end, :]*R, ex+e*n)
+      for j=e:-1:1
+        @assert j*n <= pr
         add_into!(V, V[(j-1)*n+1:j*n, :]*R, ex+(j-1)*n)
-        renorm(V, m, start = ex+(j-1)*n-1, last = pr)
+#        renorm(V, m, start = ex+(j-1)*n-1, last = pr)
         if nrows(V)*nbits(m) >= pr_max
           @show "abort at j", j, e, nrows(V), nrows(V)*nbits(m), pr_max
           return V, m
         end
       end
-      add_into!(V, V[e*n+1:end, :]*R, ex+e*n)
-      renorm(V, m, start = ex+e*n-1, last = pr)
+#      renorm(V, m, start = ex+e*n-1, last = pr)
     else
       add_into!(V, V*R, ex) #sol mod 2(2ex+1)
-      renorm(V, m, start = ex-1, last = pr)
     end
+    renorm(V, m, start = ex-1, last = pr)
 
 
     @show 2*ex
@@ -834,15 +847,20 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
   return V, m
 end
 
+#inplace conversion
+#the rows of a are encoding a base-b row vector
+#this computes asymptotically fast(?) the ZZ-version
 function to_base(a::ZZMatrix, b::ZZRingElem, nr::Int = nrows(a))
   while nr > 1
     for i=1:div(nr, 2)
       add_row!(a, b, 2*i-1, 2*i)
+      swap_rows!(a, i, 2*i-1)
     end
     if is_odd(nr)
-      add_row(a, b^2, nr-1, nr)
+      add_row!(a, b^2, div(nr, 2), nr)
     end
     nr = div(nr, 2)
+    b *= b
   end
   return a[1:1, :]
 end
@@ -870,7 +888,7 @@ end
 # Determinant algorithm: U is the range for random RHS matrix (default -100:100)
 # Answer is !!! CORRECT UP TO SIGN !!!
 # should be trivial to fix as we compute some det mod odd p already
-function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
+function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false, do_hnf::Bool = false)
   n = ncols(A)
   T = ZZMatrix[]
   AT = A
@@ -932,6 +950,9 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     det_small = true
   end
 
+  if do_hnf
+    _hnf = identity_matrix(ZZ, n)
+  end
   local D::DixonCtx
   f = true
   while !det_small
@@ -943,7 +964,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     end
     @show :solving
     @time TS, d = dixon_solve(D, b)
-    @assert A*TS == d*b
+#    @assert A*TS == d*b
     for i=1:length(T)
       TS = T[i]*TS
     end
@@ -960,10 +981,20 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     @show mod_sym(d1, prod_p) , det_p
     if Had - nbits(d1) < nbits(prod_p)
       @show "at H-bound",  (Had - nbits(d1) - nbits(prod_p))/60
+      if do_hnf
+        @show d
+        T1 = hcol(TS, d)
+        return T1 * _hnf 
+      end
       return d1
     end
     if (Had - nbits(d1) - nbits(prod_p))/60 < dixon_cost(d)
       @show "finishing with CRT"
+      if do_hnf 
+        T1 = hcol(TS, d)
+        AT = AbstractAlgebra.Strassen._solve_triu(T1, AT; side = :left)
+        _hnf = T1 * _hnf 
+      end
       while nbits(prod_p)+nbits(d1) < Had
         change_prime(Ap, p)
         map_entries!(Ap, Nemo.fpField(p, false), A)
@@ -972,13 +1003,20 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
         Nemo.mul!(prod_p, prod_p, ZZ(p))
       end
       mis = mod_sym(det_p*invmod(d1, prod_p), prod_p)
+      if do_hnf
+        h = hnf_modular_eldiv(AT, mis)
+        return h * _hnf 
+      end
       return d1*mis
     end
     @time T1 = hcol(TS, d)
     push!(T, T1)
     @show :solve
-    @time AT = AbstractAlgebra.Strassen._solve_triu(T1, AT)
-    @assert _AT*T1 == AT
+    @time _AT = AbstractAlgebra.Strassen._solve_triu(T1, AT; side = :left)
+#    @assert _AT*T1 == AT
+    if do_hnf
+      _hnf = T1 * _hnf
+    end
     @show maximum(nbits, _AT), maximum(nbits, T1), maximum(nbits, AT)
     AT = _AT
 #    @show nbits(prod_p), nbits(d1)
@@ -992,7 +1030,10 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
       h = hnf_modular_eldiv(AT, d)
       d1 *= prod([h[i,i] for i=1:n])
     @show Had / nbits(d1)
-      AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
+      AT = AbstractAlgebra.Strassen._solve_triu(h, AT; side = :left)
+      if do_hnf
+        _hnf = h * _hnf
+      end
       if nbits(abs(mod_sym(invmod(d1, prod_p)*det_p, prod_p))) < small
         break
       end
@@ -1000,14 +1041,18 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
   end
   det_p = invmod(d1, prod_p)*det_p
   @show det_p = mod_sym(det_p, prod_p)
+  @show small
   @assert !is_zero(det_p)
-  @assert nbits(abs(det_p)) < small
+#  @assert nbits(abs(det_p)) < small
   @show :hnf
   @time h = hnf_modular_eldiv(AT, det_p)
   @show t_det(h) // det_p, det(h)
   d1 *= t_det(h)
 
-  @time AT = AbstractAlgebra.Strassen._solve_triu(h, AT)
+  @time AT = AbstractAlgebra.Strassen._solve_triu(h, AT; side = :left)
+    if do_hnf
+      _hnf = h*_hnf
+    end
     println("DOING UNICERTZ");
     @show uni_cost(d1)
     @show crt_cost(d1)
@@ -1020,10 +1065,13 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false)
     end
     #           @assert fl == is_unit(det(ZAT));
     if fl
+      if do_hnf
+        return _hnf
+      end
       return d1
     end
-    return d1
     error("unimod failed")
+    return d1
 end
 
 #adaptive rational_reconstruction: if solution is unbalanced with
@@ -1039,7 +1087,7 @@ function induce_rational_reconstruction(a::ZZMatrix, b::ZZRingElem)
     A_ptr = Nemo.mat_entry_ptr(A, i, 1)
     for j=1:ncols(a)
 #      @show i, j
-      set!(T, a_ptr)
+      Nemo.set!(T, a_ptr)
       Nemo.mul!(T, T, D)
       Nemo.mod!(T, T, b)
       fl = ratrec!(n, d, T, b)
@@ -1048,7 +1096,7 @@ function induce_rational_reconstruction(a::ZZMatrix, b::ZZRingElem)
         D = D*d
         Nemo.mul!(A, A, d)
       end
-      set!(A_ptr, n)
+      Nemo.set!(A_ptr, n)
 
       a_ptr += sizeof(ZZRingElem)
       A_ptr += sizeof(ZZRingElem)

@@ -47,8 +47,6 @@ end
 #
 ################################################################################
 
-order_type(K::RelSimpleNumField{T}) where {T} = RelNumFieldOrder{T, fractional_ideal_type(order_type(base_field(K))), RelSimpleNumFieldElem{T}}
-
 order_type(::Type{RelSimpleNumField{T}}) where {T} = RelNumFieldOrder{T, fractional_ideal_type(order_type(parent_type(T))), RelSimpleNumFieldElem{T}}
 
 ################################################################################
