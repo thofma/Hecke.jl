@@ -56,6 +56,8 @@ function defining_polynomial(F::RelFinField{T}) where T
   return F.defining_polynomial::dense_poly_type(T)
 end
 
+base_field_type(::Type{RelFinField{S}}) where S = parent_type(S)
+
 base_field(F::RelFinField{S}) where S= base_ring(F.defining_polynomial)::parent_type(S)
 
 characteristic(F::RelFinField) = characteristic(base_field(F))
@@ -138,6 +140,8 @@ data(a::RelFinFieldElem) = a.data
 iszero(x::RelFinFieldElem) = iszero(x.data)
 isone(x::RelFinFieldElem) = isone(x.data)
 is_unit(x::RelFinFieldElem) = !iszero(x)
+
+hash(x::RelFinFieldElem, h::UInt) = hash(x.data, h)
 
 ==(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T} = x.data == y.data
 

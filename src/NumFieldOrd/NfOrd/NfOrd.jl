@@ -10,15 +10,11 @@
 #
 ################################################################################
 
-Nemo.parent_type(::Type{AbsNumFieldOrderElem{S, T}}) where {S, T} = AbsNumFieldOrder{S, T}
+parent_type(::Type{AbsNumFieldOrderElem{S, T}}) where {S, T} = AbsNumFieldOrder{S, T}
 
-Nemo.elem_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderElem{S, T}
-
-ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsNumFieldOrderIdeal{S, T}
+elem_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderElem{S, T}
 
 ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderIdeal{S, T}
-
-fractional_ideal_type(::AbsNumFieldOrder{S, T}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
 
 fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
 
@@ -1139,6 +1135,14 @@ function ==(R::AbsNumFieldOrder, S::AbsNumFieldOrder)
   return hnf(R.basis_matrix) == hnf(S.basis_matrix)
 end
 
+function hash(R::AbsNumFieldOrder, h::UInt)
+  h = hash(nf(R), h)
+  h = hash(discriminant(R), h)
+  assure_has_basis_matrix(R)
+  h = hash(hnf(R.basis_matrix), h)
+  return h
+end
+
 @doc raw"""
     is_contained(R::AbsNumFieldOrder, S::AbsNumFieldOrder) -> Bool
 
@@ -1150,6 +1154,10 @@ end
 
 function ==(R::AbsNumFieldOrderSet, S::AbsNumFieldOrderSet)
   return R.nf === S.nf
+end
+
+function Base.hash(R::AbsNumFieldOrderSet, h::UInt)
+  return hash(R.nf, h)
 end
 
 ################################################################################

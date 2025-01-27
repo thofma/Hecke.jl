@@ -44,8 +44,6 @@ function embedding_type(::Type{RelSimpleNumField{T}}) where {T}
   return RelSimpleNumFieldEmbedding{embedding_type(parent_type(T)), RelSimpleNumField{T}}
 end
 
-embedding_type(K::RelSimpleNumField{T}) where {T} = embedding_type(RelSimpleNumField{T})
-
 _absolute_index(f::RelSimpleNumFieldEmbedding) = f.absolute_index
 
 number_field(f::RelSimpleNumFieldEmbedding) = f.field
@@ -61,6 +59,12 @@ isreal(P::RelSimpleNumFieldEmbedding) = P.isreal
 function Base.:(==)(f::RelSimpleNumFieldEmbedding, g::RelSimpleNumFieldEmbedding)
   return number_field(f) === number_field(g) &&
       _absolute_index(f) == _absolute_index(g)
+end
+
+function Base.hash(f::RelSimpleNumFieldEmbedding, h::UInt)
+  h = hash(number_field(f), h)
+  h = hash(_absolute_index(f), h)
+  return h
 end
 
 ################################################################################

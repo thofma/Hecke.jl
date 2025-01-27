@@ -15,12 +15,11 @@ end
 
 Return a random point on the elliptic curve $E$ defined over a finite field.
 
-```jldoctest; filter = r"Point.*"
+```jldoctest; filter = r"\(.*"
 julia> E = elliptic_curve(GF(3), [1, 2]);
 
 julia> rand(E)
-Point  (2 : 0 : 1)  of Elliptic curve with equation
-y^2 = x^3 + x + 2
+(2 : 0 : 1)
 ```
 
 ## Cardinality and orders

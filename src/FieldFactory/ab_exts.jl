@@ -625,8 +625,6 @@ end
 ###############################################################################
 
 function C22_extensions(bound::Int)
-
-
   Qx, x=polynomial_ring(ZZ, "x")
   K, _=number_field(x-1, cached = false)
   Kx,x=polynomial_ring(K,"x", cached=false)
@@ -634,7 +632,6 @@ function C22_extensions(bound::Int)
   n=2*b1+1
   pairs = _find_pairs(bound)
   return (_ext(Kx,x,i,j) for (i, j) in pairs)
-
 end
 
 function _ext(Ox,x,i,j)
@@ -757,7 +754,6 @@ function _disc(a::Int, b::Int, c::Int, bound::Int)
 end
 
 function _pairs_totally_real(pairs, ls, bound)
-  #b1=floor(Int, Base.sqrt(bound))
   b1 = isqrt(bound)
   # We look for Q(sqrt{a},sqrt{b})
   # Remove all with a = 1
@@ -818,7 +814,6 @@ end
 
 function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[] )
   #first, we need the squarefree numbers
-  #b1=ceil(Int, Base.sqrt(bound))
   b1 = isqrt(bound)
   ls = squarefree_up_to(b1, prime_base = unramified_outside)
   #The first step is to enumerate all the totally real extensions.
@@ -868,7 +863,66 @@ function _find_pairs(bound::Int, only_real::Bool = false; unramified_outside::Ve
   return vcat(res, real_exts)
 end
 
+# Compute C2xC2 extensions of Q with given discriminant
+# The criterion for the discriminant is from
+# "On the density of discriminants of quartic fields", Baily
+function C22_extensions_with_given_disc(d::Int; only_real = false)
+  res = AbsSimpleNumField[]
+  if d < 2
+    return res
+  end
 
+  e, n = remove(d, 2)
+
+  if !(e in [0, 4, 6, 8])
+    return res
+  end
+
+  fl, m = is_square_with_sqrt(n)
+
+  if !is_squarefree(m)
+    return res
+  end
+
+  if !fl
+    return res
+  end
+
+  wm = length(prime_divisors(m))
+
+  if e == 0
+    nu = divexact(3^(wm - 1) - 1, 2)
+  elseif e == 4
+    nu = divexact(3^wm - 1, 2)
+  elseif e == 6
+    nu = 3^wm - 1
+  else
+    @assert e == 8
+    nu = 3^wm
+  end
+
+  # d is the discriminant, and a multiple of the conductor
+  K, = rationals_as_number_field()
+  O = maximal_order(K)
+
+  r, mr = ray_class_groupQQ(O, Int(d), !only_real, 2)
+  if !has_quotient(r, [2, 2])
+    return res
+  end
+  fun = (x, y) -> quo(x, y, false)[2]
+  ls = subgroups(r, quotype = [2, 2], fun = fun)
+  for s in ls
+    C = ray_class_field(mr, s)
+    _d = discriminantQQ(O, C, d)
+    if _d == d
+      push!(res, absolute_simple_field(number_field(C); simplify = true, cached = false)[1])
+    end
+    if !only_real && length(res) == nu
+      return res
+    end
+  end
+  return res
+end
 
 function _from_relative_to_abs(L::RelNonSimpleNumField{T}, auts::Vector{<: NumFieldHom{RelNonSimpleNumField{T}, RelNonSimpleNumField{T}}}) where T
 

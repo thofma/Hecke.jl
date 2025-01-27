@@ -182,13 +182,9 @@ end
 #
 ################################################################################
 
-base_field_type(::AbsSimpleNumField) = QQField
+base_field_type(::Type{AbsSimpleNumField}) = QQField
 
-base_field_type(::AbsNonSimpleNumField) = QQField
-
-base_field_type(::RelSimpleNumField{T}) where {T} = parent_type(T)
-
-base_field_type(::RelNonSimpleNumField{T}) where {T} = parent_type(T)
+base_field_type(::Type{AbsNonSimpleNumField}) = QQField
 
 base_field_type(::Type{RelNonSimpleNumField{T}}) where {T} = parent_type(T)
 

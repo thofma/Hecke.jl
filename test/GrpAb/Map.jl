@@ -124,4 +124,12 @@
     @test_throws ArgumentError preinverse(f)
     @test_throws ArgumentError postinverse(g)
   end
+
+  let
+    G = abelian_group([2, 2])
+    h = zero_map(G, G);
+    hh = zero_map(G, G);
+    @test h == hh
+    @test hash(h) == hash(hh)
+  end
 end

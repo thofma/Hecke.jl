@@ -463,7 +463,7 @@ function is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeA
   Ma = hcat(M, va)
   r = rref!(Ma)
 
-  if all(iszero, [ Ma[r, i] for i = 1:dim(A) ])
+  if r == 0 || all(iszero, [ Ma[r, i] for i = 1:dim(A) ])
     return false, A()
   end
 

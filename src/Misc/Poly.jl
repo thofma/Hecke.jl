@@ -253,6 +253,14 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p:
   ## is essentially f and f would be a legal answer. Probably reduced mod p^k
   ## with all non-negative coefficients
   ## for now:
+  if is_one(g)
+    h = mod(h, p^k)
+    return g, h
+  elseif is_one(h)
+    g = mod(g, p^k)
+    return g, h
+  end
+
   @assert !iszero(a) && !iszero(b)
   a = lift(parent(g), a)
   b = lift(parent(g), b)

@@ -143,3 +143,9 @@ E = pmaximal_overorder(O, 23)
 lp = prime_decomposition(E, 23)
 @test length(lp) == 2
 
+let
+  # valuation for large degree, inert prime
+  K, a = cyclotomic_real_subfield(101, :a)
+  P, = prime_ideals_over(maximal_order(K), 10007)
+  @test valuation(gen(K), P) == 0
+end

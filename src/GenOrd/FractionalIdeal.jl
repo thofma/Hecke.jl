@@ -276,6 +276,10 @@ function ==(A::GenOrdFracIdl, B::GenOrdFracIdl)
   return isone(denominator(C, copy = false)) && isone(norm(C))
 end
 
+function Base.hash(A::GenOrdFracIdl, h::UInt)
+  return hash(order(A), hash(basis_matrix(A), h))
+end
+
 ################################################################################
 #
 #  Colon

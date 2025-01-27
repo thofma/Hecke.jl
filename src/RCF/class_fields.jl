@@ -62,7 +62,7 @@ function base_ring(A::ClassField)
   return order(codomain(A.rayclassgroupmap))
 end
 
-base_ring_type(A::ClassField) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
+base_ring_type(::Type{ClassField}) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 @doc raw"""
     base_field(A::ClassField)
@@ -254,6 +254,9 @@ function ==(a::ClassField, b::ClassField)
   return is_eq(kernel(h[2])[1], kernel(h[1])[1])
 end
 
+function Base.hash(a::ClassField, h::UInt)
+  return hash(base_ring(a), h)
+end
 
 ###############################################################################
 #

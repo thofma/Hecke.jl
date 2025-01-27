@@ -72,7 +72,7 @@ import Nemo
 
 import Pkg
 
-exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :call,
+exclude = [:Nemo, :AbstractAlgebra, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
            :set_entry!, :RDF]
 
@@ -273,18 +273,7 @@ include("Aliases.jl")
 
 ################################################################################
 #
-#  AbstractAlgebra/Nemo shenanigans
-#
-################################################################################
-
-# We have our own factor in Hecke, but some functions in AA fall back to
-# AA.factor, so let's add a fallback.
-
-AbstractAlgebra.factor(x::RingElement) = factor(x)
-
-################################################################################
-#
-#  Setter and getter for objects
+#  Setter and getter for Nemo type AbsSimpleNumField
 #
 ################################################################################
 
@@ -546,6 +535,21 @@ Base.showerror(io::IO, ::NotImplemented) =
 # - Introduce the function here, to make everyone happy
 function is_absolutely_irreducible end
 function multiplicative_group end
+
+fractional_ideal_type(x) = fractional_ideal_type(typeof(x))
+fractional_ideal_type(T::DataType) = throw(MethodError(fractional_ideal_type, (T,)))
+
+place_type(x) = place_type(typeof(x))
+place_type(T::DataType) = throw(MethodError(place_type, (T,)))
+
+order_type(x) = order_type(typeof(x))
+order_type(T::DataType) = throw(MethodError(order_type, (T,)))
+
+embedding_type(x) = embedding_type(typeof(x))
+embedding_type(T::DataType) = throw(MethodError(embedding_type, (T,)))
+
+base_field_type(x) = base_field_type(typeof(x))
+base_field_type(T::DataType) = throw(MethodError(base_field_type, (T,)))
 
 ################################################################################
 #

@@ -91,8 +91,16 @@ function Base.:(==)(L::Line, L2::Line)
   return L.points == L2.points
 end
 
+function Base.hash(L::Line, h::UInt)
+  return hash(L.points, h)
+end
+
 function Base.:(==)(P::Polygon, P2::Polygon)
   return P.lines == P2.lines
+end
+
+function Base.hash(P::Polygon, h::UInt)
+  return hash(P.lines, h)
 end
 
 ###############################################################################

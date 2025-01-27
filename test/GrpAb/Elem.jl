@@ -7,6 +7,7 @@
     @test parent(a) == G
     @test a.coeff == N
     @test a[begin:end] == [0, 0, 0]
+    @test a[:] == [0, 0, 0]
 
     G = @inferred abelian_group([3, 0])
     N = ZZ[1 1]
@@ -14,6 +15,7 @@
     @test @inferred parent(a) == G
     @test a.coeff == N
     @test a[begin:end] == [1, 1]
+    @test a[:] == [1, 1]
 
     N = matrix(ZZ, 1, 2, [ 1, 1 ])
     a = @inferred G(N)
@@ -24,6 +26,7 @@
     @test @inferred parent(a) == G
     @test a.coeff == transpose(N)
     @test a[begin:end] == [1, 1]
+    @test a[:] == [1, 1]
   end
 
   @testset "Generators" begin
