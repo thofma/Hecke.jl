@@ -167,14 +167,14 @@ function show(io::IO, ::MIME"text/plain", A::GroupAlgebra)
 end
 
 function show(io::IO, A::GroupAlgebra)
+  io = pretty(io)
   if is_terse(io)
     print(io, "Group algebra of ")
     if is_finite(group(A))
-      print(io, "dimension ", order(group(A)))
+      print(io, "dimension ", order(group(A)), " ")
     else
       print(io, "infinite dimension ")
     end
-    print(io, " over ", base_ring(A))
   else
     print(io, "Group algebra of group ")
     if is_finite(group(A))
@@ -182,9 +182,9 @@ function show(io::IO, A::GroupAlgebra)
     else
       print(io, "of infinite order ")
     end
-    print(io, "over ")
-    print(terse(io), base_ring(A))
+    io = terse(io)
   end
+  print(io, "over ", Lowercase(), base_ring(A))
 end
 
 ################################################################################
