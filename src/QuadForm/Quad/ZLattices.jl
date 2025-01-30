@@ -107,7 +107,7 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; 
   # We need to produce a basis matrix
 
   if !isbasis
-    BB = QQMatrix(hnf(FakeFmpqMat(B), :upper_right))
+    BB = QQMatrix(___hnf(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
     while i > 0 && is_zero_row(BB, i)
       i = i - 1
@@ -1016,7 +1016,7 @@ function +(M::ZZLat, N::ZZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
   BM = basis_matrix(M)
   BN = basis_matrix(N)
-  B = QQMatrix(hnf(FakeFmpqMat(vcat(BM, BN))))
+  B = QQMatrix(___hnf(FakeFmpqMat(vcat(BM, BN))))
   i = 1
   while is_zero_row(B, i)
     i += 1
@@ -1416,7 +1416,7 @@ end
 ################################################################################
 
 @attr FakeFmpqMat function _canonical_basis_matrix(L::ZZLat)
-  return hnf(FakeFmpqMat(basis_matrix(L)))
+  return ___hnf(FakeFmpqMat(basis_matrix(L)))
 end
 
 ################################################################################
@@ -1440,7 +1440,7 @@ end
 
 function Base.hash(L::ZZLat, u::UInt)
   V = ambient_space(L)
-  B = hnf(FakeFmpqMat(basis_matrix(L)))
+  B = ___hnf(FakeFmpqMat(basis_matrix(L)))
   # We compare lattices in the same ambient space, and since hnf for the basis
   # matric is unique, one just needs to compare them.
   h = xor(hash(V), hash(B))
@@ -2310,7 +2310,7 @@ function overlattice(glue_map::TorQuadModuleMap)
   glue = reduce(vcat, [matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
   glue = vcat(basis_matrix(S + R), glue)
   glue = FakeFmpqMat(glue)
-  B = hnf(glue)
+  B = ___hnf(glue)
   B = QQ(1, denominator(glue))*change_base_ring(QQ, numerator(B))
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:]; check=false)
 end
@@ -2806,7 +2806,7 @@ function leech_lattice(niemeier_lattice::ZZLat)
   FG = vcat(F, G)
   K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))), side = :right))
   B = change_base_ring(QQ, K) * FG
-  B = hnf(FakeFmpqMat(B))
+  B = ___hnf(FakeFmpqMat(B))
   B = QQ(1, B.den) * change_base_ring(QQ, B.num[end-23:end, :])
   leech_lattice = lattice(V, B)
   leech_lattice = lll(leech_lattice) # make it a bit prettier

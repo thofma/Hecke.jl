@@ -1081,7 +1081,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
           # M.d divides B.den and we can choose (B.den/M.den)*det(M.num) as
           # modulus for the HNF of B.num.
           mm = ZZ(m*denominator(B, copy = false))
-          hnf_modular_eldiv!(B, mm, shape = :lowerleft)
+          ___hnf_modular_eldiv!(B, mm, shape = :lowerleft)
           B = sub(B, nrows(B) - n + 1:nrows(B), 1:n)
 
           # Check if we have a better modulus
@@ -1090,7 +1090,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
             m = new_m
           end
         else
-          hnf!(B)
+          ___hnf!(B)
           k = findfirst(k -> !is_zero_row(B, k), nrows(B) - n + 1:nrows(B))
           B = sub(B, nrows(B) - n + k:nrows(B), 1:n)
           if nrows(B) == n
@@ -1132,14 +1132,14 @@ function ==(R::AbsNumFieldOrder, S::AbsNumFieldOrder)
   end
   assure_has_basis_matrix(R)
   assure_has_basis_matrix(S)
-  return hnf(R.basis_matrix) == hnf(S.basis_matrix)
+  return ___hnf(R.basis_matrix) == ___hnf(S.basis_matrix)
 end
 
 function hash(R::AbsNumFieldOrder, h::UInt)
   h = hash(nf(R), h)
   h = hash(discriminant(R), h)
   assure_has_basis_matrix(R)
-  h = hash(hnf(R.basis_matrix), h)
+  h = hash(___hnf(R.basis_matrix), h)
   return h
 end
 

@@ -286,7 +286,7 @@ global __GLn_generators_quadratic = [(-4, 1, [[[ 1, 0 ],[ 0, 0 ],[ 0, -1 ],[ 1, 
 ################################################################################
 
 function _orbit_stabilizer(G, idity, a)
-  OT = Tuple{typeof(idity), FakeFmpqMat}[(idity, hnf(basis_matrix(FakeFmpqMat, a)))]
+  OT = Tuple{typeof(idity), FakeFmpqMat}[(idity, ___hnf(basis_matrix(FakeFmpqMat, a)))]
   Y = typeof(idity)[]
   m = 1
   while m <= length(OT)
@@ -311,6 +311,6 @@ end
 
 function _operate(g::AbstractAssociativeAlgebraElem, b)
   M = representation_matrix(g, :right)
-  c = hnf(b * FakeFmpqMat(M))
+  c = ___hnf(b * FakeFmpqMat(M))
   return c
 end

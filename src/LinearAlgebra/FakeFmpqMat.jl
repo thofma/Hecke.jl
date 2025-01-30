@@ -238,16 +238,20 @@ end
 #
 ################################################################################
 
-function hnf!(x::FakeFmpqMat, shape = :lowerleft)
+function ___hnf!(x::FakeFmpqMat, shape = :lowerleft)
   x.num = _hnf(x.num, shape)
   return x
 end
 
-function __hnf(x::FakeFmpqMat)
+function ____hnf(x::FakeFmpqMat)
   FakeFmpqMat(Nemo.__hnf(x.num), x.den)
 end
 
-function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+#function hnf_integral(x::QQMatrix, args...; kw...)
+#  return QQMatrix(hnf(FakeFmpqMat(x, args...; kw...)))
+#end
+
+function ___hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
   if triangular_top
     @assert ncols(x) <= nrows(x)
     z = one(ZZ)
@@ -269,7 +273,7 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, c
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function ___hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = _hnf_modular_eldiv(x.num, g, shape)
   if cutoff
     # Since we are modular, we are in the full rank situation
@@ -285,7 +289,7 @@ function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cu
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function ___hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = hnf_modular_eldiv!(x.num, g, shape)
   # Since we are modular, we are in the full rank situation
   if cutoff
@@ -300,10 +304,7 @@ function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, c
   return x
 end
 
-function _hnf_modular_iterative_eldiv(x::Vector{FakeFmpqMat}, g::ZZRingElem, shape = :lowerleft, cutoff::Bool = false)
-end
-
-function hnf!!(x::FakeFmpqMat, shape = :lowerleft)
+function ___hnf!!(x::FakeFmpqMat, shape = :lowerleft)
   _hnf!(x.num, shape)
 end
 

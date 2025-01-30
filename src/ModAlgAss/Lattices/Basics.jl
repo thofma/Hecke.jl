@@ -55,7 +55,7 @@ function lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::Vector{<:ModAlgAssEl
     end
   end
   M = matrix(coordinates.(BB))
-  MM = QQMatrix(hnf!(FakeFmpqMat(M), :upperright))
+  MM = QQMatrix(___hnf!(FakeFmpqMat(M), :upperright))
   r = nrows(MM)
   while is_zero_row(MM, r)
     r = r - 1
@@ -73,7 +73,7 @@ function _lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::QQMatrix; check::Bo
   @hassert :ModLattice _defines_lattice(V, O, B)
 
   if !is_hnf
-    BB = QQMatrix(hnf!(FakeFmpqMat(B), :upperright))
+    BB = QQMatrix(___hnf!(FakeFmpqMat(B), :upperright))
   else
     BB = B
   end
@@ -154,7 +154,7 @@ end
 ################################################################################
 
 function _hnf_nonzero(a::QQMatrix)
-  b = QQMatrix(hnf(FakeFmpqMat(a)))
+  b = QQMatrix(___hnf(FakeFmpqMat(a)))
   i = 1
   while is_zero_row(b, i)
     i += 1

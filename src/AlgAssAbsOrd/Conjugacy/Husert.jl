@@ -129,7 +129,7 @@ function _issimilar_husert_generic(A, B)
     M = hcat(M, _M)
   end
 
-  M = sub(hnf(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
+  M = sub(___hnf(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
   N = inv(M)
 
   SS = N
@@ -147,7 +147,7 @@ function _issimilar_husert_generic(A, B)
     end
     M = hcat(M, _M)
   end
-  M = sub(hnf(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
+  M = sub(___hnf(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
   N = inv(M)
 
   bcolonb = N

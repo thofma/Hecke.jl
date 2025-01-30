@@ -328,7 +328,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
     end
   end
   #@show z
-  h = transpose(hnf(transpose(FakeFmpqMat(z))))
+  h = transpose(___hnf(transpose(FakeFmpqMat(z))))
   #@show h
   @assert all(i -> is_zero_column(h, i), 1:(d^2 - d))
   T = sub(h, 1:d, (d^2 - d + 1:d^2))
