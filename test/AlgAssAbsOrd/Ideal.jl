@@ -189,8 +189,8 @@
   I = A(48) * O
   PD = primary_decomposition(I, O)
 
-  J = typeof(I)(A, identity_matrix(QQ, 4))
-  @test J * J == typeof(I)(A, 48 * identity_matrix(QQ, 4))
+  J = typeof(I)(A, ZZ, identity_matrix(QQ, 4))
+  @test J * J == typeof(I)(A, ZZ, 48 * identity_matrix(QQ, 4))
 
   # zero algebra
 

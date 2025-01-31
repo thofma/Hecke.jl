@@ -26,9 +26,9 @@ has_one(A::MatAlgebra) = true
 
 elem_type(::Type{MatAlgebra{T, S}}) where { T, S } = MatAlgebraElem{T, S}
 
-order_type(::Type{MatAlgebra{QQFieldElem, S}}) where { S } = AlgAssAbsOrd{MatAlgebra{QQFieldElem, S}, elem_type(MatAlgebra{QQFieldElem, S})}
-
-order_type(::Type{MatAlgebra{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), MatAlgebra{T, S}}
+#order_type(::Type{MatAlgebra{QQFieldElem, S}}) where { S } = AlgAssAbsOrd{MatAlgebra{QQFieldElem, S}, elem_type(MatAlgebra{QQFieldElem, S})}
+#
+#order_type(::Type{MatAlgebra{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), MatAlgebra{T, S}}
 
 matrix_algebra_type(K::Field) = matrix_algebra_type(typeof(K))
 

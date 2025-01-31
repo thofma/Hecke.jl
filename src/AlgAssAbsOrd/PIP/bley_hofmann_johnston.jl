@@ -92,7 +92,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right, local
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U::FinGenAbGroup, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem},AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}} = unit_group(OZ)
+  U::FinGenAbGroup, mU::MapUnitGrp{typeof(OZ)} = unit_group(OZ)
   @vprintln :PIP 1 "Solving principal ideal problem over maximal order..."
 
   #@show Q

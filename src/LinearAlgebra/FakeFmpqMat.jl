@@ -242,6 +242,7 @@ end
 
 for s in [:__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv,:_hnf!_integral!]
   @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+  @eval ($s)(x::QQMatrix, ::ZZRing, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
 end
 
 function _hnf!_integral(x::QQMatrix, shape = :lowerleft)
@@ -264,9 +265,25 @@ function _hnf!_integral(x::FakeFmpqMat, shape = :lowerleft)
   return x
 end
 
+function _hnf!_integral(x::MatElem, R::Ring, shape = :lowerleft)
+  y, d = integral_split(x, R)
+  x .= divexact(base_ring(x).(_hnf(y, :lowerleft)), d)
+end
+
 #function hnf_integral(x::QQMatrix, args...; kw...)
 #  return QQMatrix(hnf(FakeFmpqMat(x, args...; kw...)))
 #end
+
+function _hnf_integral(x::MatElem, R::Ring,  shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+  y, d = integral_split(x, R)
+  return divexact(base_ring(x).(_hnf(y, shape)), d)
+end
+
+# used in Oscar
+# remove this temporarily while changing FakeFmpqMat -> QQMatrix
+function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+  return _hnf_integral(x, shape; triangular_top, compute_det)
+end
 
 function _hnf_integral(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
   if triangular_top
