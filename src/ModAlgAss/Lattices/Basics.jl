@@ -154,7 +154,7 @@ end
 ################################################################################
 
 function _hnf_nonzero(a::QQMatrix)
-  b = QQMatrix(___hnf(FakeFmpqMat(a)))
+  b = QQMatrix(_hnf_integral(FakeFmpqMat(a)))
   i = 1
   while is_zero_row(b, i)
     i += 1

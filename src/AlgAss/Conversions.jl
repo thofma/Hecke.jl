@@ -159,7 +159,7 @@ function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdI
   Oalgebra = _algebra(O)
 
   n = degree(O)
-  BmatJinI = ___hnf(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
+  BmatJinI = _hnf_integral(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
   @assert isone(BmatJinI.den) "J is not a subset of I"
   BmatJinI = BmatJinI.num
   basis_elts = Vector{Int}()

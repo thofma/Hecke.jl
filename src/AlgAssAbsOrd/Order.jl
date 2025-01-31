@@ -915,7 +915,7 @@ function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructure
     append!(bas, Mibas)
   end
   M = Order(A, bas, isbasis = true)
-  N = Order(A, ___hnf(basis_matrix(FakeFmpqMat, M, copy = false)))
+  N = Order(A, _hnf_integral(basis_matrix(FakeFmpqMat, M, copy = false)))
   N.is_maximal = 1
   return N
 end

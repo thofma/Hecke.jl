@@ -52,7 +52,7 @@ function fractional_ideal(O::AbsNumFieldOrder, M::QQMatrix)
 end
 
 function fractional_ideal(O::AbsNumFieldOrder, M::FakeFmpqMat; M_in_hnf::Bool = false)
-  !M_in_hnf ? M = ___hnf(M) : nothing
+  !M_in_hnf ? M = _hnf_integral(M) : nothing
   z = AbsNumFieldOrderFractionalIdeal(O, M)
   return z
 end

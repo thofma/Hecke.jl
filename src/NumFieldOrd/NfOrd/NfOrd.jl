@@ -1132,14 +1132,14 @@ function ==(R::AbsNumFieldOrder, S::AbsNumFieldOrder)
   end
   assure_has_basis_matrix(R)
   assure_has_basis_matrix(S)
-  return ___hnf(R.basis_matrix) == ___hnf(S.basis_matrix)
+  return _hnf_integral(R.basis_matrix) == _hnf_integral(S.basis_matrix)
 end
 
 function hash(R::AbsNumFieldOrder, h::UInt)
   h = hash(nf(R), h)
   h = hash(discriminant(R), h)
   assure_has_basis_matrix(R)
-  h = hash(___hnf(R.basis_matrix), h)
+  h = hash(_hnf_integral(R.basis_matrix), h)
   return h
 end
 

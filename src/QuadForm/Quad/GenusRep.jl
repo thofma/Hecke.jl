@@ -1474,7 +1474,7 @@ function __colon_raw(K, a, b)
       end
     end
   end
-  M = sub(___hnf(FakeFmpqMat(M), :upperright), 1:d, 1:d)
+  M = sub(_hnf_integral(FakeFmpqMat(M), :upperright), 1:d, 1:d)
   N = inv(transpose(M))
   return N
 end

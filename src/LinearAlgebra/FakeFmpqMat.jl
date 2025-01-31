@@ -251,7 +251,7 @@ end
 #  return QQMatrix(hnf(FakeFmpqMat(x, args...; kw...)))
 #end
 
-function ___hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+function _hnf_integral(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
   if triangular_top
     @assert ncols(x) <= nrows(x)
     z = one(ZZ)
