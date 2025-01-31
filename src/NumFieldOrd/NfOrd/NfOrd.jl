@@ -1081,7 +1081,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
           # M.d divides B.den and we can choose (B.den/M.den)*det(M.num) as
           # modulus for the HNF of B.num.
           mm = ZZ(m*denominator(B, copy = false))
-          ___hnf_modular_eldiv!(B, mm, shape = :lowerleft)
+          _hnf_integral_modular_eldiv!(B, mm, shape = :lowerleft)
           B = sub(B, nrows(B) - n + 1:nrows(B), 1:n)
 
           # Check if we have a better modulus

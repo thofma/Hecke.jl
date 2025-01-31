@@ -273,7 +273,7 @@ function _hnf_integral(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool 
   return FakeFmpqMat(h, denominator(x))
 end
 
-function ___hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function _hnf_integral_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = _hnf_modular_eldiv(x.num, g, shape)
   if cutoff
     # Since we are modular, we are in the full rank situation
@@ -289,7 +289,7 @@ function ___hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft,
   return FakeFmpqMat(h, denominator(x))
 end
 
-function ___hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function _hnf_integral_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = hnf_modular_eldiv!(x.num, g, shape)
   # Since we are modular, we are in the full rank situation
   if cutoff

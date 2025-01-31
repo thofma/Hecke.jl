@@ -489,7 +489,7 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
     j += d
   end
   if !iszero(g)
-    M = sub(___hnf_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+    M = sub(_hnf_integral_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
   else
     M = sub(_hnf_integral(bigmat, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
   end
@@ -535,7 +535,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 
   if is_full_rank(a) && is_full_rank(b)
     el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_structure_constant_table(A) * oned
-    H = sub(___hnf_modular_eldiv!(FakeFmpqMat(M), el), (d2 - d + 1):d2, 1:d)
+    H = sub(_hnf_integral_modular_eldiv!(FakeFmpqMat(M), el), (d2 - d + 1):d2, 1:d)
     @hassert :AlgAssOrd 1 H == sub(_hnf_integral(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
   else
     H = sub(_hnf_integral(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
