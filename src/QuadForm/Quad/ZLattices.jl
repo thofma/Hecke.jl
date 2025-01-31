@@ -2097,7 +2097,6 @@ function _shortest_vectors_decomposition(L::ZZLat; closed::Bool=false, check::Bo
   @req !check || is_definite(L) "L must be definite"
   sv = ZZMatrix[]
   blocks = ZZLat[]
-  data = Tuple{QQFieldElem, Int64}[]
   _L = L
   while rank(_L) > 0
     M, svM = _shortest_vectors_sublattice(_L; check=false)
@@ -3030,12 +3029,12 @@ julia> vG = map_entries(x->Zmodh(ZZ(x)), inner_product(V, v, basis_matrix(N)));
 
 julia> LN = transpose(lift(Hecke.kernel(vG; side = :right)))*basis_matrix(N); # vectors whose inner product with `v` is divisible by `h`.
 
-julia> lattice(V, LN) == intersect(L, N)
+julia> M = lattice(V, LN) + h*N;
+
+julia> M == intersect(L, N)
 true
 
-julia> gensL = vcat(LN, 1//h * v);
-
-julia> lattice(V, gensL, isbasis=false) == L
+julia> M + lattice(V, 1//h * v) == L
 true
 
 ```
