@@ -12,7 +12,7 @@ end
 
 function defines_minimal_overorder(B::Vector, l::Vector)
   M = basis_matrix(B, FakeFmpqMat)
-  ___hnf!(M)
+  _hnf!_integral(M)
   x = M.den * l[1]^2
   if denominator(x) != 1
     return false, M
@@ -27,7 +27,7 @@ end
 
 function defines_minimal_overorder(B::Vector{AbsSimpleNumFieldElem}, l::Vector{AbsSimpleNumFieldElem})
   M = basis_matrix(B, FakeFmpqMat)
-  ___hnf!(M)
+  _hnf!_integral(M)
   x = M.den * l[1]^2
   if denominator(x) != 1
     return false, M
@@ -296,7 +296,7 @@ function _minimal_overorders_nonrecursive_meataxe(O, M)
     if !fl
       continue
     end
-    bL = ___hnf!(bL)
+    bL = _hnf!_integral(bL)
     #bL = basis_matrix(L, copy = false)
     if any(x -> basis_matrix(FakeFmpqMat, x, copy = false) == bL, orders)
       continue
@@ -393,7 +393,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
           excess[] = excess[] + 1
           continue
         end
-        L = Order(K, ___hnf!(bL, :lowerleft), check = false, cached = false)
+        L = Order(K, _hnf!_integral(bL, :lowerleft), check = false, cached = false)
         lQL = prime_ideals_over(L, P)
         if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
           push!(orders, L)
@@ -426,7 +426,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
       excess[] = excess[] + 1
       continue
     end
-    L = Order(K, ___hnf!(bL, :lowerleft), check = false, cached = false)
+    L = Order(K, _hnf!_integral(bL, :lowerleft), check = false, cached = false)
     push!(orders, L)
   end
 
@@ -521,7 +521,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
           excess[] = excess[] + 1
           continue
         end
-        ___hnf!(bL, :lowerleft)
+        _hnf!_integral(bL, :lowerleft)
         L = Order(K, bL, check = false, cached = false)
         lQL = prime_ideals_over(L, P)
         if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
@@ -550,7 +550,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
       end
     end
     @assert new_element != 0
-    bL = ___hnf!(basis_matrix(potential_basis, FakeFmpqMat))
+    bL = _hnf!_integral(basis_matrix(potential_basis, FakeFmpqMat))
     L = Order(K, bL, check = false, cached = false)
     push!(orders, L)
   end
@@ -791,7 +791,7 @@ function poverorders_one_step_generic(O, p::ZZRingElem)
       end
     end
     b, bmat = defines_order(K, deepcopy(potential_basis))
-    bmat = ___hnf!(bmat)
+    bmat = _hnf!_integral(bmat)
     if b
       push!(orders, Order(K, bmat))
     else
@@ -920,7 +920,7 @@ function poverorders_nonrecursive_meataxe(O, N, p::ZZRingElem)
       end
     end
     b, bmat = defines_order(K, deepcopy(potential_basis))
-    bmat = ___hnf!(bmat)
+    bmat = _hnf!_integral(bmat)
     if b
       push!(orders, Order(K, bmat))
     else
@@ -1354,7 +1354,7 @@ function _overorders_via_idempotent_splitting(M)
 
   I = Iterators.product(oorders...)
   @time for (j, i) in enumerate(I)
-    H = ___hnf!(basis_matrix(FakeFmpqMat, vcat(i...)))
+    H = _hnf!_integral(basis_matrix(FakeFmpqMat, vcat(i...)))
     res[j] = Order(A, H)
   end
   return res

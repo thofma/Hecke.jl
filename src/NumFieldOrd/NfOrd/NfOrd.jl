@@ -1090,7 +1090,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
             m = new_m
           end
         else
-          ___hnf!(B)
+          _hnf!_integral(B)
           k = findfirst(k -> !is_zero_row(B, k), nrows(B) - n + 1:nrows(B))
           B = sub(B, nrows(B) - n + k:nrows(B), 1:n)
           if nrows(B) == n

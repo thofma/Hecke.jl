@@ -238,7 +238,7 @@ end
 #
 ################################################################################
 
-function ___hnf!(x::FakeFmpqMat, shape = :lowerleft)
+function _hnf!_integral(x::FakeFmpqMat, shape = :lowerleft)
   x.num = _hnf(x.num, shape)
   return x
 end
@@ -304,7 +304,7 @@ function ___hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft
   return x
 end
 
-function ___hnf!!(x::FakeFmpqMat, shape = :lowerleft)
+function _hnf!_integral!(x::FakeFmpqMat, shape = :lowerleft)
   _hnf!(x.num, shape)
 end
 

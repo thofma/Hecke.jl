@@ -1648,7 +1648,7 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
     elem_to_mat_row!(M, i, basis_in_A[i])
   end
   M = FakeFmpqMat(M)
-  MM = sub(___hnf!(M, :lowerleft), (dim(B) - dim(A) + 1):dim(B), 1:dim(A))
+  MM = sub(_hnf!_integral(M, :lowerleft), (dim(B) - dim(A) + 1):dim(B), 1:dim(A))
   OO = Order(A, MM)
   return OO
 end

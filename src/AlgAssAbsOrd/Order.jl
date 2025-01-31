@@ -852,7 +852,7 @@ function any_order(A::AbstractAssociativeAlgebra{QQFieldElem})
       M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
     end
     M = FakeFmpqMat(M)
-    M = ___hnf!(M, :lowerleft)
+    M = _hnf!_integral(M, :lowerleft)
     O = Order(A, sub(M, 2:di + 1, 1:di))
     return O
   end::order_type(A)
@@ -892,7 +892,7 @@ function maximal_order_via_decomposition(A::AbstractAssociativeAlgebra{QQFieldEl
     end
   end
   FakeM = FakeFmpqMat(M)
-  FakeM = ___hnf!(FakeM, :lowerleft)
+  FakeM = _hnf!_integral(FakeM, :lowerleft)
   OO = Order(A, FakeM)
   OO.is_maximal = 1
   A.maximal_order = [OO]
@@ -946,7 +946,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = 
     end
   end
   M = FakeFmpqMat(M)
-  M = ___hnf!(M, :upperright)
+  M = _hnf!_integral(M, :upperright)
   M = QQMatrix(sub(M, 1:n, 1:n))
 
   # Compute M * O * M^-1
