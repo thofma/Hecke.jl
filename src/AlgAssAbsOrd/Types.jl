@@ -10,8 +10,8 @@
   dim::Int
   basis#::Vector{AlgAssAbsOrdElem{S, T}}
   basis_alg::Vector{T}             # Basis as array of elements of the algebra
-  basis_matrix::FakeFmpqMat           # Basis matrix of order wrt basis of the algebra
-  basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
+  basis_matrix::QQMatrix           # Basis matrix of order wrt basis of the algebra
+  basis_mat_inv::QQMatrix       # Inverse of basis matrix
   gen_index::QQFieldElem                  # The det of basis_mat_inv as QQFieldElem
   index::ZZRingElem                      # The det of basis_mat_inv
                                    # (this is the index of the equation order
@@ -28,7 +28,7 @@
 
   picard_group#::MapPicardGrp
 
-  tcontain::FakeFmpqMat
+  tcontain::QQMatrix
 
   isnice::Bool
   nice_order#Tuple{AlgAssAbsOrd, T}
@@ -39,11 +39,11 @@
     O = new{S, T}(A, dim(A))
     O.is_maximal = 0
     O.isnice = false
-    O.tcontain = FakeFmpqMat(zero_matrix(ZZ, 1, dim(A)))
+    O.tcontain = zero_matrix(QQ, 1, dim(A))
     return O
   end
 
-  function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, Minv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
+  function AlgAssAbsOrd{S, T}(A::S, M::QQMatrix, Minv::QQMatrix, B::Vector{T}, cached::Bool = false) where {S, T}
     return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
       O = AlgAssAbsOrd{S, T}(A)
       O.basis_alg = B
@@ -53,21 +53,21 @@
     end::AlgAssAbsOrd{S, T}
   end
 
-  function AlgAssAbsOrd{S, T}(A::S, M::FakeFmpqMat, cached::Bool = false) where {S, T}
+  function AlgAssAbsOrd{S, T}(A::S, M::QQMatrix, cached::Bool = false) where {S, T}
     return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
       O = AlgAssAbsOrd{S, T}(A)
       d = dim(A)
       O.basis_matrix = M
       O.basis_alg = Vector{T}(undef, d)
       for i in 1:d
-        O.basis_alg[i] = elem_from_mat_row(A, M.num, i, M.den)
+        O.basis_alg[i] = elem_from_mat_row(A, M, i)
       end
       return O
     end::AlgAssAbsOrd{S, T}
   end
 
   function AlgAssAbsOrd{S, T}(A::S, B::Vector{T}, cached::Bool = false) where {S, T}
-    M = basis_matrix(B, FakeFmpqMat)
+    M = basis_matrix(B)
     return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
       O = AlgAssAbsOrd{S, T}(A)
       O.basis_alg = B
@@ -77,7 +77,7 @@
   end
 end
 
-const AlgAssAbsOrdID = AbstractAlgebra.CacheDictType{Tuple{AbstractAssociativeAlgebra, FakeFmpqMat}, AlgAssAbsOrd}()
+const AlgAssAbsOrdID = AbstractAlgebra.CacheDictType{Tuple{AbstractAssociativeAlgebra, QQMatrix}, AlgAssAbsOrd}()
 
 @attributes mutable struct AlgAssAbsOrdElem{S, T} <: NCRingElem
   elem_in_algebra::T
@@ -133,8 +133,8 @@ end
 
   basis::Vector{T} # Basis of the ideal as array of elements of the algebra
   # The basis matrix is in the BASIS of the ALGEBRA!
-  basis_matrix::FakeFmpqMat
-  basis_mat_inv::FakeFmpqMat
+  basis_matrix::QQMatrix
+  basis_mat_inv::QQMatrix
   det_basis_matrix::QQFieldElem
 
   # Store whether the ideal has full rank
@@ -148,7 +148,7 @@ end
   eldiv_mul::ZZRingElem
 
   # Basis matrices with respect to orders
-  basis_matrix_wrt::Dict{AlgAssAbsOrd{S, T}, FakeFmpqMat}
+  basis_matrix_wrt::Dict{AlgAssAbsOrd{S, T}, QQMatrix}
 
   # Left and right order:
   # The largest orders of which the ideal is a left resp. right ideal.
@@ -178,7 +178,7 @@ end
     r.isleft = 0
     r.isright = 0
     r.iszero = 0
-    r.basis_matrix_wrt = Dict{AlgAssAbsOrd{S, T}, FakeFmpqMat}()
+    r.basis_matrix_wrt = Dict{AlgAssAbsOrd{S, T}, QQMatrix}()
     r.norm = Dict{AlgAssAbsOrd{S, T}, QQFieldElem}()
     r.normred = Dict{AlgAssAbsOrd{S, T}, QQFieldElem}()
     r.full_rank = 0
@@ -186,7 +186,7 @@ end
     return r
   end
 
-  function AlgAssAbsOrdIdl{S, T}(A::S, M::FakeFmpqMat) where { S <: AbstractAssociativeAlgebra, T <: AbstractAssociativeAlgebraElem }
+  function AlgAssAbsOrdIdl{S, T}(A::S, M::QQMatrix) where { S <: AbstractAssociativeAlgebra, T <: AbstractAssociativeAlgebraElem }
     r = AlgAssAbsOrdIdl{S, T}(A)
     r.basis_matrix = M
     n = nrows(M)
@@ -199,7 +199,7 @@ end
         r.full_rank = (i == 0) ? 1 : -1
         r.rank = n - i
         if r.full_rank == 1
-          r.eldiv_mul = reduce(*, diagonal(numerator(M, copy = false)), init = one(ZZ))
+          r.eldiv_mul = reduce(*, diagonal(numerator(M)), init = one(ZZ))
         else
           r.eldiv_mul = zero(ZZ)
         end
@@ -211,7 +211,7 @@ end
         r.rank = i - 1
         r.full_rank = (i == n + 1) ? 1 : -1
         if r.full_rank == 1
-          r.eldiv_mul = reduce(*, diagonal(numerator(M, copy = false)), init = one(ZZ))
+          r.eldiv_mul = reduce(*, diagonal(numerator(M)), init = one(ZZ))
         else
           r.eldiv_mul = zero(ZZ)
         end

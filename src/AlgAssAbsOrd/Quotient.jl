@@ -30,7 +30,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   quoAlg = StructureConstantAlgebra(QQ, mt; check = false)
   ord = Order(quoAlg, basis(quoAlg))
   #
-  bminvO = QQMatrix(basis_mat_inv(FakeFmpqMat, O))
+  bminvO = basis_matrix_inverse(O; copy = false)
   VQ = change_base_ring(QQ, V)
   A = algebra(O)
   img = matrix(QQ, [((coefficients(b) * bminvO * VQ)[k:end]) for b in basis(A)])

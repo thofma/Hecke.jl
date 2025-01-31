@@ -210,7 +210,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrd
       end
     end
     if typeof(R) <: AlgAssAbsOrd
-      M = basis_matrix(potential_basis, FakeFmpqMat)
+      M = basis_matrix(potential_basis)
       return ideal(algebra(R), R, M)
     else
       M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(FakeFmpqMat, R, copy = false)

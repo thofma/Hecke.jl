@@ -224,6 +224,8 @@ function _fmpq_mat_to_fmpz_mat_den(x::QQMatrix)
   return z, d
 end
 
+numerator(x::QQMatrix) = _fmpq_mat_to_fmpz_mat_den(x)[1]
+
 function _fmpq_mat_to_fmpz_mat_den!(z::ZZMatrix, d::ZZRingElem, x::QQMatrix)
   ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{QQMatrix}), z, d, x)
 end
@@ -238,8 +240,23 @@ end
 #
 ################################################################################
 
-for s in [:_hnf!_integral, :__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv, :_hnf_integral_modular_eldiv!, :_hnf!_integral!]
+for s in [:__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv,:_hnf!_integral!]
   @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+end
+
+function _hnf!_integral(x::QQMatrix, shape = :lowerleft)
+  x .= QQMatrix(_hnf!_integral(FakeFmpqMat(x), shape))
+  return x
+end
+
+function _hnf_integral_modular_eldiv!(x::QQMatrix, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+  y = _hnf_integral_modular_eldiv!(FakeFmpqMat(x), g; shape = shape, cutoff = cutoff)
+  yq = QQMatrix(y)
+  if cutoff
+    return yq
+  else
+    return x .= yq
+  end
 end
 
 function _hnf!_integral(x::FakeFmpqMat, shape = :lowerleft)

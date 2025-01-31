@@ -67,12 +67,12 @@ end
 ################################################################################
 
 @doc raw"""
-    ideal(A::AbstractAssociativeAlgebra, M::FakeFmpqMat; M_in_hnf::Bool = false) -> AlgAssAbsOrdIdl
+    ideal(A::AbstractAssociativeAlgebra, M::QQMatrix; M_in_hnf::Bool = false) -> AlgAssAbsOrdIdl
 
 Returns the ideal in $A$ with basis matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
-function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, M::FakeFmpqMat; M_in_hnf::Bool=false)
+function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, M::QQMatrix; M_in_hnf::Bool=false)
   if !M_in_hnf
     if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
       M = _hnf_integral(M, :lowerleft, compute_det = true)
@@ -85,7 +85,7 @@ function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, M::FakeFmpqMat; M_in_
 end
 
 @doc raw"""
-    ideal(A::AbstractAssociativeAlgebra, O::AlgAssAbsOrd, M::FakeFmpqMat; side::Symbol = :nothing,
+    ideal(A::AbstractAssociativeAlgebra, O::AlgAssAbsOrd, M::QQMatrix; side::Symbol = :nothing,
           M_in_hnf::Bool = false)
       -> AlgAssAbsOrdIdl
 
@@ -94,7 +94,7 @@ If the ideal is known to be a right/left/twosided ideal of $O$, `side` may be
 set to `:right`/`:left`/`:twosided` respectively.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
-function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, O::AlgAssAbsOrd, M::FakeFmpqMat; side::Symbol=:nothing, M_in_hnf::Bool=false)
+function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, O::AlgAssAbsOrd, M::QQMatrix; side::Symbol=:nothing, M_in_hnf::Bool=false)
   a = ideal(A, M; M_in_hnf)
   a.order = O
   _set_sidedness(a, side)
@@ -140,7 +140,7 @@ function ideal(O::AlgAssAbsOrd{S, T}, x::T) where {S, T}
       elem_to_mat_row!(M, ii + j, t2)
     end
   end
-  M = sub(_hnf_integral(FakeFmpqMat(M), :lowerleft), nrows(M) - degree(O) + 1:nrows(M), 1:ncols(M))
+  M = sub(_hnf_integral(M, :lowerleft), nrows(M) - degree(O) + 1:nrows(M), 1:ncols(M))
 
   return ideal(A, O, M; side=:twosided, M_in_hnf=true)
 end
@@ -165,9 +165,9 @@ function ideal(O::AlgAssAbsOrd{S, T}, x::T, side::Symbol) where { S, T }
   end
 
   if side == :left
-    M = basis_matrix(FakeFmpqMat, O)*FakeFmpqMat(representation_matrix(x, :right))
+    M = basis_matrix(O)*representation_matrix(x, :right)
   elseif side == :right
-    M = basis_matrix(FakeFmpqMat, O)*FakeFmpqMat(representation_matrix(x, :left))
+    M = basis_matrix(O)*representation_matrix(x, :left)
   else
     error("Option :$(side) for side not implemented")
   end
@@ -207,7 +207,7 @@ function ideal_from_lattice_gens(A::AbstractAssociativeAlgebra{QQFieldElem}, v::
   for i = 1:length(v)
     elem_to_mat_row!(M, i, v[i])
   end
-  M = _hnf_integral(FakeFmpqMat(M), :lowerleft)
+  M = _hnf_integral(M, :lowerleft)
   i = something(findfirst(k -> !is_zero_row(M, k), 1:nrows(M)), nrows(M) + 1)
   #if length(v) >= dim(A)
   #  M = sub(M, (nrows(M) - dim(A) + 1):nrows(M), 1:dim(A))
@@ -241,7 +241,7 @@ end
 ###############################################################################
 
 function _zero_ideal(A::AbstractAssociativeAlgebra{QQFieldElem})
-  a = ideal(A, FakeFmpqMat(zero_matrix(ZZ, dim(A), dim(A)), ZZRingElem(1)); M_in_hnf=true)
+  a = ideal(A, zero_matrix(QQ, dim(A), dim(A)); M_in_hnf=true)
   a.iszero = 1
   return a
 end
@@ -329,7 +329,7 @@ function assure_has_basis(a::AlgAssAbsOrdIdl)
   A = algebra(a)
   b = Vector{elem_type(A)}(undef, nrows(M))
   for i = 1:nrows(M)
-    b[i] = elem_from_mat_row(A, M.num, i, M.den)
+    b[i] = elem_from_mat_row(A, M, i)
   end
   a.basis = b
   return nothing
@@ -340,7 +340,7 @@ function assure_has_basis_matrix_wrt(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
     return nothing
   end
 
-  M = _hnf_integral(basis_matrix(a, copy = false)*basis_mat_inv(FakeFmpqMat, O, copy = false), :lowerleft)
+  M = _hnf_integral(basis_matrix(a, copy = false)*basis_matrix_inverse(O, copy = false), :lowerleft)
   a.basis_matrix_wrt[O] = M
   return nothing
 end
@@ -377,7 +377,7 @@ end
 absolute_basis(a::AlgAssAbsOrdIdl) = basis(a)
 
 @doc raw"""
-    basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true) -> FakeFmpqMat
+    basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true) -> QQMatrix
 
 Returns the basis matrix of $a$ with respect to the basis of the algebra.
 """
@@ -390,7 +390,7 @@ function basis_matrix(a::AlgAssAbsOrdIdl; copy::Bool = true)
 end
 
 @doc raw"""
-    basis_mat_inv(a::AlgAssAbsOrdIdl; copy::Bool = true) -> FakeFmpqMat
+    basis_mat_inv(a::AlgAssAbsOrdIdl; copy::Bool = true) -> QQMatrix
 
 Returns the inverse of the basis matrix of $a$.
 """
@@ -405,7 +405,7 @@ end
 
 @doc raw"""
     basis_matrix_wrt(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true)
-      -> FakeFmpqMat
+      -> QQMatrix
 
 Returns the basis matrix of $a$ with respect to the basis of $O$.
 """
@@ -428,8 +428,8 @@ matrix, assuming the ideal is contained in $O$.
 """
 function integral_basis_matrix_wrt(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true)
   M = basis_matrix_wrt(a, O, copy = copy)
-  @assert isone(denominator(M, copy = false)) "Ideal is not integral"
-  return numerator(M, copy = false)
+  @assert isone(denominator(M)) "Ideal is not integral"
+  return numerator(M)
 end
 
 ################################################################################
@@ -473,7 +473,7 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
     return a[1]
   end
 
-  mats = FakeFmpqMat[basis_matrix(I) for I in a]
+  mats = [basis_matrix(I) for I in a]
 
   bigmat = reduce(vcat, mats)
   k = length(a)
@@ -534,11 +534,11 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   _, oned = integral_split(coefficients(one(A)), ZZ)
 
   if is_full_rank(a) && is_full_rank(b)
-    el = b.basis_matrix.den * a.eldiv_mul * a.basis_matrix.den * b.eldiv_mul * denominator_of_structure_constant_table(A) * oned
-    H = sub(_hnf_integral_modular_eldiv!(FakeFmpqMat(M), el), (d2 - d + 1):d2, 1:d)
-    @hassert :AlgAssOrd 1 H == sub(_hnf_integral(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
+    el = denominator(b.basis_matrix) * a.eldiv_mul * denominator(a.basis_matrix) * b.eldiv_mul * denominator_of_structure_constant_table(A) * oned
+    H = sub(_hnf_integral_modular_eldiv!(M, el), (d2 - d + 1):d2, 1:d)
+    @hassert :AlgAssOrd 1 H == sub(_hnf_integral(M), (d2 - d + 1):d2, 1:d)
   else
-    H = sub(_hnf_integral(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
+    H = sub(_hnf_integral(M), (d2 - d + 1):d2, 1:d)
     #H = sub(__hnf_integral(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
   end
 
@@ -574,7 +574,7 @@ Returns $a \cap b$.
 function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = dim(algebra(a))
   M1 = hcat(basis_matrix(a, copy = false), basis_matrix(a, copy = false))
-  M2 = hcat(FakeFmpqMat(zero_matrix(ZZ, d, d), ZZRingElem(1)), basis_matrix(b, copy = false))
+  M2 = hcat(zero_matrix(QQ, d, d), basis_matrix(b, copy = false))
   M = vcat(M1, M2)
   H = sub(_hnf_integral(M, :lowerleft), 1:d, 1:d)
   c = ideal(algebra(a), H; M_in_hnf=true)
@@ -630,7 +630,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where { S, T <: Union{AssociativeAlge
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
-  M = basis_matrix(a, copy = false)*FakeFmpqMat(representation_matrix(x, :right))
+  M = basis_matrix(a, copy = false)* representation_matrix(x, :right)
   b = ideal(algebra(a), M)
   if isdefined(a, :left_order)
     b.left_order = left_order(a)
@@ -642,7 +642,7 @@ function *(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T <: Union{AssociativeAlge
   if iszero(x)
     return _zero_ideal(algebra(a))
   end
-  M = basis_matrix(a, copy = false)*FakeFmpqMat(representation_matrix(x, :left))
+  M = basis_matrix(a, copy = false)* representation_matrix(x, :left)
   b = ideal(algebra(a), M)
   if isdefined(a, :right_order)
     b.right_order = right_order(a)
@@ -685,9 +685,9 @@ Returns `true` if $x$ is in $a$ and `false` otherwise.
 function in(x::T, a::AlgAssAbsOrdIdl{S, T}) where { S, T }
   parent(x) !== algebra(a) && error("Algebra of element and ideal must be equal")
   A = algebra(a)
-  t = FakeFmpqMat(matrix(QQ, 1, dim(A), coefficients(x, copy = false)))
+  t = matrix(QQ, 1, dim(A), coefficients(x, copy = false))
   t = t*basis_mat_inv(a, copy = false)
-  return denominator(t, copy = false) == 1
+  return is_one(denominator(t))
 end
 
 in(x::AlgAssAbsOrdElem{S, T}, a::AlgAssAbsOrdIdl{S, T}) where { S, T } = in(elem_in_algebra(x, copy = false), a)
@@ -762,16 +762,15 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::ZZRingElem =
   end
   m = zero_matrix(ZZ, degree(O)*length(B), degree(O))
   for i = 1:length(B)
-    M = FakeFmpqMat(representation_matrix(B[i]))
-    M = mul!(M, basis_matrix(FakeFmpqMat, O, copy = false), M)
+    M = representation_matrix(B[i])
+    M = mul!(M, basis_matrix(O, copy = false), M)
     M = mul!(M, M, basis_mat_inv(I, copy = false))
     # M is now the representation matrix of B[i] as element of O multiplied
     # from the left by the inverse basis matrix of I in the basis of O.
-    @hassert :AlgAssOrd 1 denominator(M, copy = false) == 1
-    M = numerator(M, copy = false)
+    @hassert :AlgAssOrd 1 is_one(denominator(M))
     for s = 1:degree(O)
       for t = 1:degree(O)
-        m[t + (i - 1)*degree(O), s] = M[s, t]
+        m[t + (i - 1)*degree(O), s] = numerator(M[s, t])
       end
     end
   end
@@ -787,8 +786,8 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::ZZRingElem =
   end
   # n is upper right HNF
   n = transpose(view(m, 1:degree(O), 1:degree(O)))
-  b = FakeFmpqMat(pseudo_inv(n))
-  mul!(b, b, basis_matrix(FakeFmpqMat, O, copy = false))
+  b = inv(QQ.(n))
+  mul!(b, b, basis_matrix(O, copy = false))
   @hassert :AlgAssOrd 1 defines_order(algebra(O), b)[1]
   O1 = Order(algebra(O), b)
   O1.disc = divexact(discriminant(O), s^2)
@@ -814,7 +813,7 @@ function _colon_raw(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}, side::Sy
       end
     end
   end
-  M = sub(_hnf_integral(FakeFmpqMat(M), :upperright), 1:d, 1:d)
+  M = sub(_hnf_integral(M, :upperright), 1:d, 1:d)
   N = inv(transpose(M))
   return N
 end
@@ -894,7 +893,7 @@ function assure_has_norm(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}) where 
     return nothing
   end
 
-  a.norm[O] = abs(det(basis_matrix(a, copy = false))*det(basis_mat_inv(FakeFmpqMat, O, copy = false)))
+  a.norm[O] = abs(det(basis_matrix(a, copy = false))*det(basis_matrix_inverse(O, copy = false)))
   return nothing
 end
 
@@ -1173,7 +1172,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   end
   r = rref!(M1)
   if r == degree(O)
-    J = ideal(algebra(O), O, p*basis_matrix(FakeFmpqMat, O, copy = false); side=:twosided)
+    J = ideal(algebra(O), O, p*basis_matrix(O, copy = false); side=:twosided)
     J.gens = elem_type(algebra(O))[ p*one(algebra(O)) ]
     return J
   end
@@ -1188,7 +1187,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
     g[i] = elem_in_algebra(elem_from_mat_row(O, m, i), copy = false)
   end
   m = hnf_modular_eldiv!(m, ZZRingElem(p))
-  m = m*basis_matrix(FakeFmpqMat, O, copy = false)
+  m = m*basis_matrix(O, copy = false)
   g[nrows(dM) + 1] = p*one(algebra(O))
   J = ideal(algebra(O), O, m; side=:twosided)
   J.gens = g
@@ -1214,7 +1213,7 @@ function pradical(O::AlgAssAbsOrd, p::IntegerUnion)
   k = ncols(B)
   # The columns of B give the coordinates of the elements in the order.
   if k == 0
-    J = ideal(algebra(O), O, p*basis_matrix(FakeFmpqMat, O, copy = false); side=:twosided)
+    J = ideal(algebra(O), O, p*basis_matrix(O, copy = false); side=:twosided)
     J.gens = elem_type(algebra(O))[ p*one(algebra(O)) ]
     return J
   end
@@ -1227,7 +1226,7 @@ function pradical(O::AlgAssAbsOrd, p::IntegerUnion)
     end
   end
   M = hnf_modular_eldiv!(M, ZZRingElem(p)) # This puts p in the "missing" pivot entries
-  M = M*basis_matrix(FakeFmpqMat, O, copy = false)
+  M = M*basis_matrix(O, copy = false)
   res = ideal(algebra(O), O, M; side=:twosided)
   B1 = map_entries(x -> lift(ZZ, x), transpose(B))
   res.gens = Vector{elem_type(algebra(O))}(undef, k + 1)
@@ -1270,7 +1269,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
     end
     g[i] = elem_in_algebra(elem_from_mat_row(O, m, i), copy = false)
   end
-  m = m*basis_matrix(FakeFmpqMat, O, copy = false)
+  m = m*basis_matrix(O, copy = false)
   m = vcat(m, basis_matrix(I, copy = false))
   m = sub(_hnf_integral(m, :lowerleft), nrows(x) + 1:nrows(m), 1:degree(O))
   J = ideal(algebra(O), O, m; side=:twosided, M_in_hnf=true)
@@ -1442,8 +1441,8 @@ function denominator(a::AlgAssAbsOrdIdl{S, T}, O::AlgAssAbsOrd{S, T}; copy::Bool
     return ZZRingElem(1)
   end
 
-  M = basis_matrix(a, copy = false)*basis_mat_inv(FakeFmpqMat, O, copy = false)
-  return denominator(M, copy = false)
+  M = basis_matrix(a, copy = false)*basis_matrix_inverse(O, copy = false)
+  return denominator(M)
 end
 
 @doc raw"""
@@ -1545,8 +1544,7 @@ function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
   BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
-  N = FakeFmpqMat(BI)
-  return ideal(algebra(O), O, N; side = :nothing)
+  return ideal(algebra(O), O, BI; side = :nothing)
 end
 
 intersect(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = contract(A, O)
@@ -1585,7 +1583,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl)
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
   BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
-  N = FakeFmpqMat(BI)
+  N = BI
   #@show BI
 
   #OA = maximal_order(A)
@@ -1606,7 +1604,7 @@ function _as_ideal_of_smaller_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl)
   ## Map the basis to A
   basis_in_A = Vector{elem_type(A)}(undef, nrows(N))
   for i = 1:nrows(N)
-    t = elem_from_mat_row(B, N.num, i, N.den)
+    t = elem_from_mat_row(B, N, i)
     b, s = has_preimage_with_preimage(m, t)
     @assert b
     basis_in_A[i] = s
@@ -1630,9 +1628,9 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
     elem_to_mat_row!(M, i, t)
   end
   # Compute the intersection of M and O (in OB)
-  N = basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(FakeFmpqMat, OB, copy = false)
-  @assert N.den == 1
-  H = vcat(M, N.num)
+  N = basis_matrix(O, copy = false)*basis_matrix_inverse(OB, copy = false)
+  @assert denominator(N) == 1
+  H = vcat(M, numerator(N))
   K = kernel(H, side = :left)
   N = sub(K, 1:dim(B), 1:dim(B))*M
   # Map the basis to A
@@ -1647,7 +1645,6 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
   for i = 1:length(basis_in_A)
     elem_to_mat_row!(M, i, basis_in_A[i])
   end
-  M = FakeFmpqMat(M)
   MM = sub(_hnf!_integral(M, :lowerleft), (dim(B) - dim(A) + 1):dim(B), 1:dim(A))
   OO = Order(A, MM)
   return OO
@@ -1671,7 +1668,7 @@ function _as_ideal_of_larger_algebra(m::AbsAlgAssMor, I::AlgAssAbsOrdIdl, O::Alg
       elem_to_mat_row!(M, (i - 1)*dim(B) + j, t)
     end
   end
-  M = sub(_hnf_integral(FakeFmpqMat(M), :lowerleft), dim(B)*(dim(A) - 1) + 1:dim(A)*dim(B), 1:dim(B))
+  M = sub(_hnf_integral(M, :lowerleft), dim(B)*(dim(A) - 1) + 1:dim(A)*dim(B), 1:dim(B))
   return ideal(B, O, M; side=:nothing, M_in_hnf=true)
 end
 
@@ -1884,7 +1881,7 @@ is_normal(a::AlgAssAbsOrdIdl) = is_maximal(left_order(a))
 
 @attr ZZRingElem function minimum(P::AlgAssAbsOrdIdl)
   M = basis_mat_inv(P, copy = false)
-  v = FakeFmpqMat(matrix(QQ, 1, nrows(M), coefficients(one(algebra(P)))))
+  v = matrix(QQ, 1, nrows(M), coefficients(one(algebra(P))))
   m = denominator(v * M)
   return m
 end
@@ -2001,7 +1998,6 @@ function maximal_integral_ideal(O::AlgAssAbsOrd, p::Union{ ZZRingElem, Int }, si
       N = vcat(N, deepcopy(t))
     end
   end
-  N = FakeFmpqMat(N)
   N = sub(_hnf_integral(N, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
 
   M = ideal(algebra(O), O, N; side, M_in_hnf=true)
@@ -2082,7 +2078,7 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ ZZRingE
     b = toOP\(BtoOP(toC\(basis_c[i])))
     elem_to_mat_row!(t, i, elem_in_algebra(b, copy = false))
   end
-  m = _hnf_integral(vcat(basis_matrix(P), FakeFmpqMat(t)), :lowerleft)
+  m = _hnf_integral(vcat(basis_matrix(P; copy = false), t), :lowerleft)
   m = sub(m, length(basis_c) + 1:nrows(m), 1:ncols(m))
 
   M = ideal(algebra(O), O, m; side, M_in_hnf=true)
@@ -2117,7 +2113,7 @@ end
 ################################################################################
 
 function is_subset(R::AlgAssAbsOrdIdl, S::AlgAssAbsOrd)
-  B = basis_matrix(R, copy = false) * basis_mat_inv(FakeFmpqMat, S, copy = false)
+  B = basis_matrix(R, copy = false) * basis_matrix_inverse(S, copy = false)
   return is_one(denominator(B))
 end
 
@@ -2297,7 +2293,7 @@ function primary_decomposition(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd = left_order(
   @req is_etale(A) "Algebra must be etale"
   @req is_subset(I, O) && is_subset(O, left_order(I)) "Ideal not an ideal for this order"
 
-  M = numerator(basis_matrix(I) * basis_mat_inv(FakeFmpqMat, O))
+  M = numerator(basis_matrix(I) * basis_matrix_inverse(O; copy = false))
   ps = prime_divisors(det(M))
   eds = elementary_divisors(M)
   d = degree(O)

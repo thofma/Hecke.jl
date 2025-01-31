@@ -82,6 +82,17 @@ end
 #
 ################################################################################
 
+function defines_order(K::AbstractAssociativeAlgebra, A::Vector)
+  if length(A) != dim(K)
+    return false, QQMatrix(), QQMatrix(), A
+  else
+    B = basis_matrix(A)
+    b, Binv, _ = defines_order(K, B)
+    return b, B, Binv, A
+  end
+end
+
+
 @doc raw"""
     Order(A::AbstractAssociativeAlgebra{QQFieldElem}, B::Vector{<: AbstractAssociativeAlgebraElem{QQFieldElem}}; check::Bool = true,
           isbasis::Bool = false, cached::Bool = true)
@@ -108,15 +119,20 @@ function Order(A::S, B::Vector{T}; check::Bool = true, isbasis::Bool = false, ca
   end
 end
 
+# legacy
+function Order(A::S, M::FakeFmpqMat; kw...) where {S <: AbstractAssociativeAlgebra{QQFieldElem}}
+  return Order(A, QQMatrix(M); kw...)
+end
+
 @doc raw"""
-    Order(A::AbstractAssociativeAlgebra{QQFieldElem}, M::FakeFmpqMat; check::Bool = true,
+    Order(A::AbstractAssociativeAlgebra{QQFieldElem}, M::QQMatrix; check::Bool = true,
           cached::Bool = true)
       -> AlgAssAbsOrd
 
 Returns the order of $A$ with basis matrix $M$. If `check` is set, it is checked
 whether $M$ defines an order.
 """
-function Order(A::S, M::FakeFmpqMat; check::Bool = true, cached::Bool = true) where {S <: AbstractAssociativeAlgebra{QQFieldElem}}
+function Order(A::S, M::QQMatrix; check::Bool = true, cached::Bool = true) where {S <: AbstractAssociativeAlgebra{QQFieldElem}}
   if check
     b, Minv, v = defines_order(A, M)
     if !b
@@ -160,23 +176,23 @@ function _det_basis_matrix(O::AlgAssAbsOrd)
   if isdefined(O, :det_basis_matrix)
     return O.det_basis_matrix
   else
-    d = det(basis_matrix(FakeFmpqMat, O, copy = false))
+    d = det(basis_matrix(O, copy = false))
     O.det_basis_matrix = d
     return d
   end
 end
 
 function index(O::AlgAssAbsOrd)
-  B = basis_mat_inv(FakeFmpqMat, O, copy = false)
+  B = basis_matrix_inverse(O, copy = false)
   n = det(B)
   @assert isinteger(n)
   return ZZ(n)
 end
 
 function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
-  B = basis_mat_inv(FakeFmpqMat, O, copy = false)
+  B = basis_matrix_inverse(O, copy = false)
   n = det(B)
-  B = basis_mat_inv(FakeFmpqMat, R, copy = false)
+  B = basis_matrix_inverse(R, copy = false)
   m = det(B)
   @assert isinteger(m//n)
   return ZZ(m//n)
@@ -191,10 +207,10 @@ end
 function _assure_has_basis(O::AlgAssAbsOrd)
   if !isdefined(O, :basis)
     B = basis(algebra(O))
-    M = basis_matrix(FakeFmpqMat, O, copy = false)
+    M = basis_matrix(O, copy = false)
     v = Vector{elem_type(O)}(undef, degree(O))
     for i in 1:degree(O)
-      w = sum(M.num[i, j]//M.den * B[j] for j in 1:degree(O))
+      w = sum(M[i, j] * B[j] for j in 1:degree(O))
       v[i] = O(w)
     end
     O.basis = v
@@ -204,7 +220,7 @@ end
 
 function assure_basis_mat_inv(O::AlgAssAbsOrd)
   if !isdefined(O, :basis_mat_inv)
-    O.basis_mat_inv = inv(basis_matrix(FakeFmpqMat, O, copy = false))
+    O.basis_mat_inv = inv(basis_matrix(O, copy = false))
   end
   return nothing
 end
@@ -214,7 +230,7 @@ function assure_basis_alg(O::AlgAssAbsOrd)
     return nothing
   end
 
-  M = basis_matrix(FakeFmpqMat, O, copy = false)
+  M = basis_matrix(O, copy = false)
   A = algebra(O)
   O.basis_alg = Vector{elem_type(A)}(undef, dim(A))
   for i = 1:dim(A)
@@ -266,15 +282,11 @@ end
 ################################################################################
 
 @doc raw"""
-    basis_matrix(O::AlgAssAbsOrd; copy::Bool = true) -> FakeFmpqMat
+    basis_matrix(O::AlgAssAbsOrd; copy::Bool = true) -> QQMatrix
 
 Returns the basis matrix of $O$.
 """
 function basis_matrix(x::AlgAssAbsOrd; copy::Bool = true)
-  return QQMatrix(basis_matrix(FakeFmpqMat, x, copy = false))
-end
-
-function basis_matrix(::Type{FakeFmpqMat}, x::AlgAssAbsOrd; copy::Bool = true)
   if copy
     return deepcopy(x.basis_matrix)
   else
@@ -282,21 +294,21 @@ function basis_matrix(::Type{FakeFmpqMat}, x::AlgAssAbsOrd; copy::Bool = true)
   end
 end
 
+function basis_matrix(::Type{FakeFmpqMat}, x::AlgAssAbsOrd; copy::Bool = true)
+  return FakeFmpqMat(basis_matrix(x; copy))
+end
+
 @doc raw"""
-    basis_mat_inv(O::AlgAssAbsOrd; copy::Bool = true) -> FakeFmpqMat
+    basis_mat_inv(O::AlgAssAbsOrd; copy::Bool = true) -> QQMatrix
 
 Returns the inverse of the basis matrix of $O$.
 """
 function basis_matrix_inverse(O::AlgAssAbsOrd; copy::Bool = true)
-  return QQMatrix(basis_mat_inv(FakeFmpqMat, O, copy = false))
-end
-
-function basis_mat_inv(::Type{FakeFmpqMat}, O::AlgAssAbsOrd; copy::Bool = true)
   assure_basis_mat_inv(O)
   if copy
-    return deepcopy(O.basis_mat_inv)::FakeFmpqMat
+    return deepcopy(O.basis_mat_inv)::QQMatrix
   else
-    return O.basis_mat_inv::FakeFmpqMat
+    return O.basis_mat_inv::QQMatrix
   end
 end
 
@@ -324,17 +336,18 @@ end
 function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, ::Val{short} = Val(false)) where {S, T, short}
   t = zero_matrix(QQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
-  t = FakeFmpqMat(t)
-  t = t*basis_mat_inv(FakeFmpqMat, O, copy = false)
+  t = t*basis_matrix_inverse(O, copy = false)
+  d = denominator(t)
   if short
-    return isone(t.den)
+    return isone(d)
   else
-    if !isone(t.den)
+    if !isone(d)
       return false, Vector{ZZRingElem}()
     else
       v = Vector{ZZRingElem}(undef, degree(O))
       for i = 1:degree(O)
-        v[i] = deepcopy(t.num[1, i])
+        tn = numerator(t)
+        v[i] = deepcopy(tn[1, i])
       end
       return true, v
     end
@@ -364,9 +377,8 @@ Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
 function denominator(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd)
   t = zero_matrix(QQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
-  t = FakeFmpqMat(t)
-  t = mul!(t, t, basis_mat_inv(FakeFmpqMat, O, copy = false))
-  return t.den
+  t = mul!(t, t, basis_matrix_inverse(O, copy = false))
+  return denominator(t)
 end
 
 ################################################################################
@@ -503,11 +515,11 @@ end
 # Be careful!
 # To be used only in the case of the construction of a maximal order!
 function +(a::AlgAssAbsOrd, b::AlgAssAbsOrd)
-  aB = basis_matrix(FakeFmpqMat, a, copy = false)
-  bB = basis_matrix(FakeFmpqMat, b, copy = false)
+  aB = basis_matrix(a, copy = false)
+  bB = basis_matrix(b, copy = false)
   d = degree(a)
-  c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
-  return Order(algebra(a), FakeFmpqMat(c, aB.den*bB.den))
+  c = sub(_hnf(vcat(denominator(bB) * numerator(aB), denominator(aB)*numerator(bB)), :lowerleft), d + 1:2*d, 1:d)
+  return Order(algebra(a), divexact(QQMatrix(c), denominator(aB) * denominator(bB)))
 end
 
 ################################################################################
@@ -541,7 +553,7 @@ end
 Returns `true` if $S$ and $T$ are equal and `false` otherwise.
 """
 function ==(S::AlgAssAbsOrd, T::AlgAssAbsOrd)
-  return basis_matrix(FakeFmpqMat, S, copy = false) == basis_matrix(FakeFmpqMat, T, copy = false)
+  return basis_matrix(S, copy = false) == basis_matrix(T, copy = false)
 end
 
 ################################################################################
@@ -737,7 +749,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}; cached::Bool = true) where S where 
 
   if cached && isdefined(A, :maximal_order)
     for OO::order_type(A) in A.maximal_order
-      d = denominator(basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(FakeFmpqMat, OO, copy = false))
+      d = denominator(basis_matrix(O, copy = false)*basis_matrix_inverse(OO, copy = false))
       if isone(d)
         set_attribute!(O, :maximal_order, OO)
         return OO
@@ -785,7 +797,7 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: GroupAlgebra, T <: Gro
 
   if isdefined(A, :maximal_order)
     for OO::order_type(A) in A.maximal_order
-      d = denominator(basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(FakeFmpqMat, OO, copy = false))
+      d = denominator(basis_matrix(O, copy = false)*basis_matrix_inverse(OO, copy = false))
       if isone(d)
         return OO
       end
@@ -915,7 +927,7 @@ function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructure
     append!(bas, Mibas)
   end
   M = Order(A, bas, isbasis = true)
-  N = Order(A, _hnf_integral(basis_matrix(FakeFmpqMat, M, copy = false)))
+  N = Order(A, _hnf_integral(basis_matrix(M, copy = false)))
   N.is_maximal = 1
   return N
 end
@@ -945,9 +957,8 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = 
       M[i, j] = deepcopy(matrix(elem_in_algebra(basis(O, copy = false)[i], copy = false), copy = false)[1, j])
     end
   end
-  M = FakeFmpqMat(M)
   M = _hnf!_integral(M, :upperright)
-  M = QQMatrix(sub(M, 1:n, 1:n))
+  M = sub(M, 1:n, 1:n)
 
   # Compute M * O * M^-1
   iM = inv(M)
@@ -959,7 +970,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, S2}, ::Val{with_transform} = 
   simpleOrder = Order(A, bb)
   simpleOrder.isnice = true
 
-  @assert basis_matrix(FakeFmpqMat, simpleOrder) == FakeFmpqMat(identity_matrix(QQ, n^2))
+  @assert basis_matrix(simpleOrder) == identity_matrix(QQ, n^2)
 
   if with_transform
     return simpleOrder, A(M)
@@ -1003,9 +1014,9 @@ It is assumed that $R \subseteq S$.
 """
 function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   n = degree(R)
-  t = basis_matrix(FakeFmpqMat, R, copy = false)*basis_mat_inv(FakeFmpqMat, S, copy = false)
-  @assert isone(t.den)
-  basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
+  t = basis_matrix(R, copy = false)*basis_matrix_inverse(S, copy = false)
+  @assert isone(denominator(t))
+  basis_mat_R_in_S_inv_num, d = pseudo_inv(numerator(t))
   M = zero_matrix(ZZ, n^2, n)
   B = basis(S, copy = false)
 
@@ -1023,8 +1034,8 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol = :left)
   #end
   #HH = sub(hnf(M), 1:n, 1:n)
   #@assert H == HH
-  Hinv = inv(FakeFmpqMat(transpose(H)))
-  Hinv = Hinv*basis_mat_R_in_S_inv_num*basis_matrix(FakeFmpqMat, R, copy = false)
+  Hinv = inv(QQMatrix(transpose(H)))
+  Hinv = Hinv*basis_mat_R_in_S_inv_num*basis_matrix(R, copy = false)
   if action == :left
     return ideal(algebra(R), R, Hinv; side=:right)
   else
@@ -1050,8 +1061,8 @@ function enum_units(O::AlgAssAbsOrd{S, T}, g::ZZRingElem) where { S <: MatAlgebr
   n = degree(A)
 
   L = _simple_maximal_order(O)
-  a = basis_matrix(FakeFmpqMat, L, copy = false)[dim(A) - 1, dim(A) - 1]
-  ai = basis_matrix(FakeFmpqMat, L, copy = false)[n, n]
+  a = basis_matrix(L, copy = false)[dim(A) - 1, dim(A) - 1]
+  ai = basis_matrix(L, copy = false)[n, n]
 
   result = Vector{elem_type(L)}()
   n1 = n - 1
@@ -1094,7 +1105,7 @@ end
 ################################################################################
 
 function trace_dual(R::AlgAssAbsOrd)
-  t = inv(FakeFmpqMat(trred_matrix(R)))*basis_matrix(FakeFmpqMat, R, copy = false)
+  t = inv(QQ.(trred_matrix(R)))*basis_matrix(R, copy = false)
   return ideal(algebra(R), R, t)
 end
 
@@ -1124,6 +1135,6 @@ end
 ################################################################################
 
 function is_subset(R::AlgAssAbsOrd, S::AlgAssAbsOrd)
-  B = basis_matrix(FakeFmpqMat, R, copy = false) * basis_mat_inv(FakeFmpqMat, S, copy = false)
+  B = basis_matrix(R, copy = false) * basis_matrix_inverse(S, copy = false)
   return is_one(denominator(B))
 end

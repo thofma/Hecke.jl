@@ -116,7 +116,7 @@
     @test is_equal_locally(X, I, 2)
     @test is_equal_locally(X, J, 3)
     @test is_equal_locally(X, K, 13)
-    T = basis_matrix(X) * basis_mat_inv(Hecke.FakeFmpqMat, O)
+    T = basis_matrix(X) * basis_matrix_inverse(O)
     for a in QQMatrix(T)
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
@@ -189,8 +189,8 @@
   I = A(48) * O
   PD = primary_decomposition(I, O)
 
-  J = typeof(I)(A, Hecke.Hecke.FakeFmpqMat(identity_matrix(QQ, 4)))
-  @test J * J == typeof(I)(A, Hecke.Hecke.FakeFmpqMat(48 * identity_matrix(QQ, 4)))
+  J = typeof(I)(A, identity_matrix(QQ, 4))
+  @test J * J == typeof(I)(A, 48 * identity_matrix(QQ, 4))
 
   # zero algebra
 

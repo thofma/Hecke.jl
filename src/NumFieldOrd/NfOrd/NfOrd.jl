@@ -1282,6 +1282,15 @@ end
 # If false, then this returns (false, garbage, garbage).
 # If true, then this return (true, basis_matrix, basis_mat_inv).
 # This should also work if K is an algebra over QQ.
+function defines_order(K::S, x::QQMatrix) where {S}
+  fl, a, b = defines_order(K, FakeFmpqMat(x))
+  if !fl
+    return false, x, x
+  else
+    return true, QQMatrix(a), b
+  end
+end
+
 function defines_order(K::S, x::FakeFmpqMat) where {S}
   if nrows(x) != dim(K) || ncols(x) != dim(K)
     return false, x, Vector{elem_type(K)}()

@@ -134,6 +134,15 @@ end
 
 function preimage(f::GrpAbFinGenToNfOrdQuoNfOrd{S1, S2, T, U}, x) where {S1, S2, T, U}
   v = _elem_in_algebra(x)
+  t = FakeFmpqMat(f.codomain.tcontain)
+  elem_to_mat_row!(t.num, 1, t.den, v)
+  t = mul!(t, t, f.top_basis_mat_inv)
+  @assert isone(t.den)
+  return domain(f)(sub(t, 1:1, (1 + f.offset):ncols(t)).num)
+end
+
+function preimage(f::GrpAbFinGenToNfOrdQuoNfOrd{<: AbsSimpleNumFieldOrder, S2, T, U}, x) where {S2, T, U}
+  v = _elem_in_algebra(x)
   t = f.codomain.tcontain
   elem_to_mat_row!(t.num, 1, t.den, v)
   t = mul!(t, t, f.top_basis_mat_inv)
@@ -322,6 +331,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
   end
   if order(A) == p^f
     O1 = Order(_algebra(O), _hnf_integral(basis_matrix(FakeFmpqMat, M)), check = false, cached = false)
+    @hassert :AbsNumFieldOrder is_hnf(basis_matrix(FakeFmpqMat, O1).num, :lowerleft)
     push!(orders, O1)
     return orders
   end
@@ -394,6 +404,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
           continue
         end
         L = Order(K, _hnf!_integral(bL, :lowerleft), check = false, cached = false)
+        @hassert :AbsNumFieldOrder is_hnf(basis_matrix(FakeFmpqMat, L).num, :lowerleft)
         lQL = prime_ideals_over(L, P)
         if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
           push!(orders, L)
@@ -427,6 +438,7 @@ function _minimal_poverorders_in_ring_of_multipliers(O, P, excess = Int[0], use_
       continue
     end
     L = Order(K, _hnf!_integral(bL, :lowerleft), check = false, cached = false)
+    @hassert :AbsNumFieldOrder is_hnf(basis_matrix(FakeFmpqMat, L).num, :lowerleft)
     push!(orders, L)
   end
 
@@ -447,6 +459,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
   K = _algebra(O)
   if norm(P) == order(A)
     O1 = Order(K, _hnf_integral(basis_matrix(FakeFmpqMat, M, copy = false)), check = false, cached = false)
+    @hassert :AbsNumFieldOrder is_hnf(basis_matrix(FakeFmpqMat, O1).num, :lowerleft)
     push!(orders, O1)
     return orders
   end
@@ -522,7 +535,9 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
           continue
         end
         _hnf!_integral(bL, :lowerleft)
+        bL = 
         L = Order(K, bL, check = false, cached = false)
+        @hassert :AbsNumFieldOrder is_hnf(basis_matrix(FakeFmpqMat, L).num, :lowerleft)
         lQL = prime_ideals_over(L, P)
         if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
           push!(orders, L)
@@ -552,6 +567,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
     @assert new_element != 0
     bL = _hnf!_integral(basis_matrix(potential_basis, FakeFmpqMat))
     L = Order(K, bL, check = false, cached = false)
+    @hassert :AbsNumFieldOrder is_hnf(basis_matrix(FakeFmpqMat, L).num, :lowerleft)
     push!(orders, L)
   end
 

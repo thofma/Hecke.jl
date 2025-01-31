@@ -372,8 +372,8 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
 
   # Compute (p^u + q)/(p^v + q)
   N = basis_matrix(pvq, copy = false)*basis_mat_inv(puq, copy = false)
-  @assert denominator(N, copy = false) == 1
-  G = abelian_group(numerator(N, copy = false))
+  @assert is_one(denominator(N))
+  G = abelian_group(numerator(N))
   S, StoG = snf(G)
 
   gens = Vector{elem_type(O)}(undef, ngens(S))
@@ -393,11 +393,11 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   end
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
-  M = basis_matrix(FakeFmpqMat, O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
-  y_fakemat2 = FakeFmpqMat(zero_matrix(ZZ, 1, ncols(M)), ZZRingElem(1))
+  M = basis_matrix(O, copy = false)*basis_mat_inv(puq, copy = false)*StoG.imap
+  y_fakemat2 = zero_matrix(QQ, 1, ncols(M))
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
-    y_fakemat = FakeFmpqMat(matrix(ZZ, 1, degree(O), coordinates(y)), ZZRingElem(1))
+    y_fakemat = matrix(QQ, 1, degree(O), coordinates(y))
     mul!(y_fakemat2, y_fakemat, M)
     #@assert y_fakemat2 == y_fakemat * M
     denominator(y_fakemat2) != 1 && error("Element is in the ideal")
