@@ -238,13 +238,13 @@ end
 #
 ################################################################################
 
+for s in [:_hnf!_integral, :__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv, :_hnf_integral_modular_eldiv!, :_hnf!_integral!]
+  @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+end
+
 function _hnf!_integral(x::FakeFmpqMat, shape = :lowerleft)
   x.num = _hnf(x.num, shape)
   return x
-end
-
-function __hnf_integral(x::FakeFmpqMat)
-  FakeFmpqMat(Nemo.__hnf(x.num), x.den)
 end
 
 #function hnf_integral(x::QQMatrix, args...; kw...)
