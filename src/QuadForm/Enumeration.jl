@@ -774,7 +774,7 @@ function _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X
 
   # We pass the following function through to the iterator
   # They are applied to the vector found and the length of the vector
-  cleanvec = v -> __clean_and_assemble(v, transform, !isone(transform), S)
+  cleanvec = v -> __clean_and_assemble(v, transform, !isnothing(T) || !isone(transform), S)
   cleanscalar = l -> l//d
 
   if ub isa ZZRingElem && fits(Int, ub)
@@ -989,9 +989,9 @@ function _shortest_vectors_gram_integral(::Type{S}, _G) where {S}
   max = maximum([Glll[i, i] for i in 1:nrows(Glll)])
   @assert max > 0
   if isone(T)
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, nothing)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, nothing, one(ZZ), ZZRingElem)
   else
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, T)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, T, one(ZZ), ZZRingElem)
   end
   min = minimum(v[2] for v in V)
   return min, [ v for v in V if v[2] == min]
