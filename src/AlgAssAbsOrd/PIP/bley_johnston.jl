@@ -525,8 +525,11 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   res = Vector{Vector{QQFieldElem}}[]
   k = dim(A)
   kblock = k * block_size
-  nt = Threads.nthreads()
-  #nt = 1
+  if VERSION >= v"1.11"
+    nt = Threads.maxthreadid()
+  else
+    nt = Threads.nthreads()
+  end
 
   @assert size(M) == (k, k)
   #@assert all(x -> ncols(x) == k, tmps)
@@ -553,7 +556,6 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     tmps = [zero_matrix(QQ, kblock, k) for i in 1:nt]
     tmps2 = [zero_matrix(QQ, kblock, k) for i in 1:nt]
     tmp_elem = [A() for i in 1:nt]
-    @assert nt == Threads.nthreads()
     if length(par) >= nt
       GC.gc(true)
       Threads.@threads :static for i in 1:length(par)
