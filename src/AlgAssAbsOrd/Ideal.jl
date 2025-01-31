@@ -539,7 +539,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
     @hassert :AlgAssOrd 1 H == sub(___hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
   else
     H = sub(___hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
-    #H = sub(____hnf(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
+    #H = sub(__hnf_integral(FakeFmpqMat(M)), (d2 - d + 1):d2, 1:d)
   end
 
   c = ideal(A, H; M_in_hnf=true)

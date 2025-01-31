@@ -243,7 +243,7 @@ function _hnf!_integral(x::FakeFmpqMat, shape = :lowerleft)
   return x
 end
 
-function ____hnf(x::FakeFmpqMat)
+function __hnf_integral(x::FakeFmpqMat)
   FakeFmpqMat(Nemo.__hnf(x.num), x.den)
 end
 
