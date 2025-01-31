@@ -2109,7 +2109,7 @@ function _shortest_vectors_decomposition(L::ZZLat; closed::Bool=false, check::Bo
   if closed
     append!(sv, eltype(sv)[-v for v in sv])
   end
-  return atoms, sv
+  return blocks, sv
 end
 
 ################################################################################
