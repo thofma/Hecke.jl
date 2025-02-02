@@ -520,8 +520,8 @@
                      607//6 809//6 1//3 1//6 0 0 0 0 0 0 103//2 41//3 1//3 0 0 1//3 1//6 1//6 0 0;
                      520//3 895//6 1//6 1//3 0 0 0 0 0 0 359//6 47//6 1//3 0 0 1//6 1//2 0 1//6 0;
                      0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1//24 1//24 1//24 1//24 1//24])
-    Gamma = Order(A, Hecke.FakeFmpqMat(B))
-    I = ideal(A, Gamma, Hecke.FakeFmpqMat(BI))
+    Gamma = Order(A, B)
+    I = ideal(A, Gamma, BI)
     @test I * Gamma == I
     fl, beta = Hecke._is_principal_with_data_bj(I * Gamma, Gamma; side = :right)
     @test fl

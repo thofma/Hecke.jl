@@ -927,12 +927,12 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   return c, x*d
 end
 
-function _intersect_modules(BM::FakeFmpqMat, BN::FakeFmpqMat)
+function _intersect_modules(BM::QQMatrix, BN::QQMatrix)
   dM = denominator(BM)
   dN = denominator(BN)
   d = lcm(dM, dN)
-  BMint = change_base_ring(ZZ, numerator(d * BM))
-  BNint = change_base_ring(ZZ, numerator(d * BN))
+  BMint = numerator(d * BM)
+  BNint = numerator(d * BN)
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
   BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
@@ -948,7 +948,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
   A = algebra(O)
   K = base_ring(A)
   OK = base_ring(O)
-  BM = FakeFmpqMat(basis_matrix([A(one(K))]))
+  BM = basis_matrix([A(one(K))])
   BN = basis_matrix(b)
   BI = _intersect_modules(BM, BN)
   local c::ZZRingElem
@@ -959,7 +959,7 @@ function _coprime_integral_ideal_class_deterministic(a::AlgAssAbsOrdIdl, b::AlgA
     end
   end
   #@show (basis_matrix(c * O) * inv(basis_matrix(b)))
-  @assert c * BM == FakeFmpqMat(BI)
+  @assert c * BM == BI
   # The intersection b \cap Z is c*Z
   lp = prime_divisors(c)
   local_bases_inv = elem_type(A)[]

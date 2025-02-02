@@ -97,7 +97,7 @@ function one(A::AbstractAssociativeAlgebra)
   if _is_dense(A)
     return A(deepcopy(A.one)) # deepcopy needed by mul!
   else
-    return A(deepcopy(A.sparse_one))
+    return A(deepcopy(A.sparse_one)::sparse_row_type(base_ring(A)))
   end
 end
 

@@ -16,7 +16,9 @@ Generic.dim(A::GroupAlgebra) = order(Int, group(A))
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 
-order_type(::Type{GroupAlgebra{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{GroupAlgebra{QQFieldElem, S, R}, elem_type(GroupAlgebra{QQFieldElem, S, R})}
+#order_type(::Type{GroupAlgebra{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{ZZRing, GroupAlgebra{QQFieldElem, S, R}}
+
+# order_type(::Type{S}, ::Type{T}) where {S <: GroupAlgebra, T} = AlgAssAbsOrd{T, S}
 
 order_type(::Type{GroupAlgebra{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), GroupAlgebra{T, S, R}}
 
@@ -29,7 +31,7 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
-function (A::GroupAlgebra{T, S, R})(c::Union{Vector{T}, SRow{T}}; copy::Bool = false) where {T, S, R}
+function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
   c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end

@@ -55,7 +55,7 @@ function lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::Vector{<:ModAlgAssEl
     end
   end
   M = matrix(coordinates.(BB))
-  MM = QQMatrix(hnf!(FakeFmpqMat(M), :upperright))
+  MM = QQMatrix(_hnf!_integral(FakeFmpqMat(M), :upperright))
   r = nrows(MM)
   while is_zero_row(MM, r)
     r = r - 1
@@ -73,7 +73,7 @@ function _lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::QQMatrix; check::Bo
   @hassert :ModLattice _defines_lattice(V, O, B)
 
   if !is_hnf
-    BB = QQMatrix(hnf!(FakeFmpqMat(B), :upperright))
+    BB = QQMatrix(_hnf!_integral(FakeFmpqMat(B), :upperright))
   else
     BB = B
   end
@@ -91,7 +91,7 @@ end
 Given a $\mathbf{Z}$-order $O$ of a rational matrix algebra contained in
 $\mathrm{M}_n(\mathbf{Z})$, return $\mathbf{Z}^n$ as an $O$-lattice.
 """
-function natural_lattice(O::AlgAssAbsOrd{<:MatAlgebra{QQFieldElem, QQMatrix}})
+function natural_lattice(O::AlgAssAbsOrd{ZZRing, <: MatAlgebra{QQFieldElem}})
   A = algebra(O)
   if all(x -> isone(denominator(matrix(elem_in_algebra(x)))),
          basis(O, copy = false))
@@ -154,7 +154,7 @@ end
 ################################################################################
 
 function _hnf_nonzero(a::QQMatrix)
-  b = QQMatrix(hnf(FakeFmpqMat(a)))
+  b = QQMatrix(_hnf_integral(FakeFmpqMat(a)))
   i = 1
   while is_zero_row(b, i)
     i += 1
