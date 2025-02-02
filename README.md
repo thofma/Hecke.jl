@@ -86,8 +86,8 @@ julia> K, a = number_field(f, "a");
 julia> O = maximal_order(K);
 
 julia> O
-Maximal order of Number field of degree 3 over QQ
-with basis AbsSimpleNumFieldElem[1, a, a^2]
+Maximal order of number field of degree 3 over QQ
+with basis [1, a, a^2]
 ```
 
 ## Documentation

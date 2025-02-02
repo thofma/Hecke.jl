@@ -194,8 +194,9 @@ end
 ################################################################################
 
 function show(io::IO, S::AbsNumFieldOrderSet)
+  io = pretty(io)
   print(io, "Set of orders of the number field ")
-  print(io, S.nf)
+  print(io, Lowercase(), S.nf)
 end
 
 function extra_name(O::AbsNumFieldOrder)
@@ -217,14 +218,25 @@ function show(io::IO, O::AbsNumFieldOrder)
 end
 
 function show_gen(io::IO, O::AbsNumFieldOrder)
+  io = pretty(io)
   print(io, "Order of ")
-  println(io, nf(O))
+  println(io, Lowercase(), nf(O))
   print(io, "with Z-basis ")
-  print(io, basis(O, copy = false))
+  b = basis(O, copy = false)
+  # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
+  # to `[1, a, a^2]` when printing the base
+  print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
 end
 
 function show_maximal(io::IO, O::AbsNumFieldOrder)
-  print(io, "Maximal order of $(nf(O)) \nwith basis $(O.basis_nf)")
+  io = pretty(io)
+  print(io, "Maximal order of ")
+  println(io, Lowercase(), nf(O))
+  print(io, "with basis ")
+  b = O.basis_nf
+    # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
+    # to `[1, a, a^2]` when printing the base
+    print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
 end
 
 ################################################################################

@@ -77,7 +77,8 @@ Base.deepcopy_internal(x::AbsOrdQuoRingElem, dict::IdDict) =
 ################################################################################
 
 function show(io::IO, Q::AbsOrdQuoRing)
-  print(io, "Quotient of $(Q.base_ring)")
+  io = pretty(io)
+  print(io, "Quotient of ", Lowercase(), Q.base_ring)
 end
 
 function AbstractAlgebra.expressify(x::AbsOrdQuoRingElem; context = nothing)
