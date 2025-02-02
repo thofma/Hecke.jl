@@ -223,6 +223,8 @@ function show_gen(io::IO, O::AbsNumFieldOrder)
   println(io, Lowercase(), nf(O))
   print(io, "with Z-basis ")
   b = basis(O, copy = false)
+  # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
+  # to `[1, a, a^2]` when printing the base
   print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
 end
 
@@ -232,7 +234,9 @@ function show_maximal(io::IO, O::AbsNumFieldOrder)
   println(io, Lowercase(), nf(O))
   print(io, "with basis ")
   b = O.basis_nf
-  print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
+    # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
+    # to `[1, a, a^2]` when printing the base
+    print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
 end
 
 ################################################################################
