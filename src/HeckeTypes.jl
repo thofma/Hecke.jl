@@ -526,8 +526,6 @@ Used predominantly to represent bases of orders in absolute number fields.
 mutable struct FakeFmpqMat
   num::ZZMatrix
   den::ZZRingElem
-  rows::Int
-  cols::Int
 
   function FakeFmpqMat()
     z = new()
@@ -538,8 +536,6 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x
     z.den = y
-    z.rows = nrows(x)
-    z.cols = ncols(x)
     if !simplified
       simplify_content!(z)
     end
@@ -550,8 +546,6 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x[1]
     z.den = x[2]
-    z.rows = nrows(x[1])
-    z.cols = ncols(x[1])
     if !simplified
       simplify_content!(z)
     end
@@ -563,15 +557,11 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x
     z.den = one(ZZ)
-    z.rows = nrows(x)
-    z.cols = ncols(x)
     return z
   end
 
   function FakeFmpqMat(x::QQMatrix)
     z = new()
-    z.rows = nrows(x)
-    z.cols = ncols(x)
 
     n, d = _fmpq_mat_to_fmpz_mat_den(x)
 
