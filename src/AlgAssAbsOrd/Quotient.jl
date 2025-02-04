@@ -24,7 +24,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   for i in 1:l
     for j in 1:l
       bij = adjusted_basis[i] * adjusted_basis[j]
-      mt[i, j, :] = (coordinates(bij) * V)[k:end]
+      mt[i, j, :] = @view (coordinates(bij, copy = false) * V)[k:end]
     end
   end
   quoAlg = StructureConstantAlgebra(QQ, mt; check = false)

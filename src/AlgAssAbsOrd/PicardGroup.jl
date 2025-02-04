@@ -668,6 +668,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
     end
 
     function disc_log(x::AbsNumFieldOrderIdeal)
+      @req !is_zero(x) "Ideal must be non-zero"
       return StoR\(mR\x)
     end
   end
