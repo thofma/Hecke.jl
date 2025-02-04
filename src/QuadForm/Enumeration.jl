@@ -770,11 +770,11 @@ function _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X
   n = nrows(G)
   ub = floor(ZZRingElem, _ub)
   # G is integral, so q(x) <= ub is equivalent to q(x) <= floor(ub)
-  #                lb <= q(x) is equivalent to ceil(ub) <= q(x)
+  #                lb <= q(x) is equivalent to ceil(lb) <= q(x)
 
   # We pass the following function through to the iterator
   # They are applied to the vector found and the length of the vector
-  cleanvec = v -> __clean_and_assemble(v, transform, !isnothing(T) || !isone(transform), S)
+  cleanvec = v -> __clean_and_assemble(v, transform, !isnothing(transform) && !isone(transform), S)
   cleanscalar = l -> l//d
 
   if ub isa ZZRingElem && fits(Int, ub)
@@ -937,9 +937,9 @@ function _shortest_vectors_gram(::Type{S}, _G) where {S}
   ub = minimum([Glll[i, i] for i in 1:nrows(G)])
   @assert ub > 0
   if isone(T)
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, nothing, ZZRingElem)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, nothing, one(ZZ), ZZRingElem)
   else
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, T, ZZRingElem)
+    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, T, one(ZZ), ZZRingElem)
   end
   min = minimum(v[2] for v in V)
   return min//d, Vector{ZZRingElem}[ v[1] for v in V if v[2] == min]

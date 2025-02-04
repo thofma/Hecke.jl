@@ -1748,12 +1748,12 @@ function irreducible_components(L::ZZLat)
   if G[1, 1] < 0
     map_entries!(-, G, G)
   end
-  # We do a first LLL-reduction to a first orthogonal decomposition
+  # We do a first LLL-reduction to get a first orthogonal decomposition
   _, U = lll_gram_with_transform(G)
 
   irr = _irreducible_components(G, U)
   V = ambient_space(L)
-  return ZZLat[lattice(V, M*basis_matrix(L); check=false) for M in irr]
+  return ZZLat[lattice(V, M*basis_matrix(L); isbasis=false, check=false) for M in irr]
 end
 
 @doc raw"""
@@ -1806,32 +1806,32 @@ We proceed as follows:
   - we compute an LLL-reduction ``UB`` of ``B``, and we let ``_G``
     be the associated Gram matrix.
   - we determine the minimum norm ``m`` of a vector in ``B`` and we look
-    for the largest free primitive system of vectors ``_B`` in the span of
+    for the largest free system of vectors ``_B`` in the span of
     ``B`` made of vectors of shortest length.
-  - we complete ``_B`` into a basis of the span of ``B``, which we still
-    denote ``_B``.
-  - we look for trivial indecomposable vectors in ``_B``; i.e. vectors whose
-    norm is less than ``2*m``.
-      - if all such vectors are trivially indecomposable, then we split ``_B``
-      into its connected components.
-  - we keep the trivial indecomposable vectors in a partial basis ``triv``,
-    and we add the remaining vectors in another list ``rem``.
-  - for each such ``v`` in ``rem``, we test whether it is indecomposable.
-    - if it is indecomposable, not in the ZZ-span of ``triv``, and the span of
-    ``{triv, v}`` is saturated, we add ``w`` to ``B``.
+  - we iterate on the vectors ``v`` in ``B`` in the following way:
+    - if ``v`` is indecomposable, and not in the ZZ-span of ``_B``, we add
+      ``v`` to ``_B``. If the spans of ``_B`` and ``B`` coincide, then we
+      stop here.
     - if ``v = w1+w2`` is decomposable, then we add ``w1`` and ``w2`` to a
       temporary list ``tmp``.
-    - we iterate the procedure on each vector if ``tmp`` until it is empty.
-  - once we have finally obtain a basis ``_B`` of the span of ``B`` made of
-    indecomposable vectors, we return the connected components of ``_B``.
+    - we iterate the procedure on each vector if ``tmp`` until it is empty,
+      or if the span of ``_B`` and ``B`` coincide.
+  - eventually ``_B`` will consist of a generating system for the span of ``B``,
+    made of indecomposable vectors: we return the connected components of ``_B``.
 
-The algorithm eventually terminates by returning a basis for each of the
-irreducible components of ``L``.
+Note that mathematically, since we can decompose all vectors in a basis of ``L``
+into a sum of indecomposable vectors, and each such indecomposable vector lies
+in a unique irreducible component of ``L``, there exists a generating set made
+of indecomposable vectors, and the connected components of any such generating
+set spans the associated irreducible component of ``L``.
+
+Hence, the algorithm eventually terminates by returning a generating set made
+of indecomposable vectors, for each of the irreducible components of ``L``.
 
 !!!
 Warning: the approach is naive. It could be certainly improved, for instance
-in the decomposability check for vectors, or the search for a basis made of
-indecomposables.
+in the decomposability check for vectors, or for finding a generating set made
+of indecomposable vectors.
 !!!
 """
 function _irreducible_components(G::ZZMatrix, U::ZZMatrix)
@@ -1846,48 +1846,33 @@ function _irreducible_components(G::ZZMatrix, U::ZZMatrix)
       push!(components, _B*_UB)
     end
   end
-  @hassert :Lattice 0 sum(nrows(i) for i in components; init=0) == nrows(G)
   return components
 end
 
 @doc raw"""
-    _is_saturated(H::ZZMatrix, l::Int, w::ZZMatrix) -> Bool
+    _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
+                                           -> Bool, ZZRingElem, Vector{ZZMatrix}, ZZMatrix
 
-Return whether the span of ``{H, v}`` is saturated. We assume that
-``w`` is not in the span of ``H`` and ``H`` is in upperright HNF of
-rank ``l-1``.
+Given a Gram matrix ``G`` for a positive definite integral lattice ``L``, return
+the minimum ``m`` of a vector in ``L``, a system ``B`` of shortest vectors which
+span the shortest vectors sublattice of ``L``, and the Hermite normal form ``H``
+of such a system. The first output is a boolean which tells whether ``B`` generates
+the lattice ``L``.
+
+!!! Warning: the outputs are independent of a choice of a basis for ``L``, except for
+``B`` whose content depends on ``G``. So any other choice of a basis of ``L`` will
+change ``G``, and in turns will change ``B``.
 """
-function _is_saturated(H::ZZMatrix, l::Int, w::ZZMatrix)
-  # Very naive, there is possibly another way to do that... We add
-  # w to H, take an hnf, saturated it and take an hnf. We then compare
-  # both hnf's to see if they agree.
-  _H = deepcopy(H)
-  _H[l:l, :] = w
-  hnf!(_H)
-  __H = saturate(_H)
-  __H == view(_H, 1:l, :) && return true
-  hnf!(__H)
-  return __H == view(_H, 1:l, :)
-end
-
-@doc raw"""
-    _basis_shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
-                                           -> ZZRingElem, ZZMatrix
-
-Given a positive definite integral form with Gram matrix ``G``, return
-the minimum of a vector with respect to ``G``, and the largest free
-system of shortest vectors whose span is saturated.
-"""
-function _basis_shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
+function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   m = minimum(diagonal(G))
   # We create an iterator to avoid creating very large lists for
   # lattices with big kissing number
   V = _short_vectors_gram_nolll_integral(Hecke.LatEnumCtx, G, 0, m, nothing, one(ZZ), ZZRingElem)
-  B = zero(G)
+  B = ZZMatrix[]
   H = zero(G)
-  k = Int(0)
-  n = ZZ(0)
-  w = zero_matrix(ZZ, 1, ncols(B))
+  n = ncols(G)
+  w = zero_matrix(ZZ, 1, n)
+  flag = false
   for (_v, l) in V
     if l > m
       # m is our current minimum: if l is larger than that,
@@ -1895,8 +1880,8 @@ function _basis_shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
       continue
     elseif l < m
       # In that case, m was not the minimum so we have to start a new
-      # free system of vectors from scratch
-      zero!(B)
+      # system of vectors from scratch
+      empty!(B)
       zero!(H)
       k = Int(0)
       m = ZZ(l)
@@ -1905,15 +1890,21 @@ function _basis_shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
     # test whether _v is in the span of B
     reduce_mod_hnf_ur!(w, H)
     iszero(w) && continue
-
-    # check if the free system {B, _v} span a saturated submodule
-    !_is_saturated(H, k+1, w) && continue
-    B[(k+1):(k+1), :] = _v
-    k += 1
-    H[k:k, :] = _v
+    push!(B, matrix(ZZ, 1, n, _v))
+    # Now we reduce H since it may not be saturated, or not of full rank
+    reduce_mod_hnf_ur!(H, w)
+    # We add w wherever we have an empty entry: should always exist because
+    # w is nonzero.
+    k = findfirst(k -> iszero(view(H, k:k, 1:n)), 1:n)
+    @assert !isnothing(k)
+    H[k:k, :] = w
     hnf!(H)
+    if !iszero(view(H, n:n, 1:n)) && isone(det(H)) # We have a basis
+      flag = true
+      break
+    end
   end
-  return m, B[1:k, :]
+  return flag, m, B, H
 end
 
 # Subprocedure for _irreducible_components; see the documentation above
@@ -1921,39 +1912,19 @@ end
 function __irreducible_components(G)
   # A way to get indecomposable vectors for free, is to look for
   # vectors of minimal norm
-  m, _B = _basis_shortest_vectors_sublattice_gram_integral(G)
-  _B = _complete_to_basis(_B)
-  d = diagonal(_B*G*transpose(_B))
-
-  e = is_even(m) ? Int(2) : Int(1)
-
-  # Another kind of trivial indecomposable vectors, are the one
-  # whose norm is less (strictly) then 2*m
-  triv = filter(i -> d[i] < 2*m, 1:length(d))
-  rem = setdiff(1:length(d), triv)
-
-  # If our basis _B consists already of trivial indecomposable
-  # vectors, then we only need to return its connected components
-  # with respect to G
-  isempty(rem) && return _connected_components_graph(_B, G)
-
-  # We keep track of the vectors in _B which are trivially indecomposable
-  B = zero_matrix(ZZ, ncols(G), ncols(G))
-  for i in 1:length(triv)
-    B[i:i, :] = _B[triv[i]:triv[i], :]
+  flag, m, B, H = _shortest_vectors_sublattice_gram_integral(G)
+  if flag
+    return _connected_components_graph(B, G)
   end
-
-  # For book keeping, l is the rank of the free system B,
-  # and H is an upper-right hnf of B that we keep for testing
-  # whether certain vectors are in the ZZ-span of B
-  l = length(triv)
-  H = hnf(B)
-  v = zero_matrix(ZZ, 1, nrows(G))
+  e = is_even(m) ? Int(2) : Int(1)
+  n = nrows(G)
+  v = zero_matrix(ZZ, 1, n)
   _w = zero(v)
-  k = ZZ(0)
-  for j in rem
-    # We iterate over the remaining basis vectors
-    v[1:1, :] = _B[j:j, :]
+  for j in 1:n
+    # We iterate over the basis vectors: some of them could already
+    # be in the span of B
+    zero!(v)
+    v[1, j] = ZZ(1)
     ok, w = _is_decomposable(v, G, m, e)
     if !ok
       # v is indecomposable: we test now if it is in the
@@ -1962,23 +1933,21 @@ function __irreducible_components(G)
       add!(_w, _w, w)
       reduce_mod_hnf_ur!(_w, H)
       iszero(_w) && continue
-      # We now wants a primitive sublattice, so we check whether
-      # the free system {B, w} span a saturated submodule
-      !_is_saturated(H, l+1, _w) && continue
-
-      # if so, we have a new potential basis vector that we add
-      # to our free system B
-      B[(l+1):(l+1), :] = w
-      l += 1
-      l == nrows(G) && break # In that case, the free system B is a basis
-                             # consisting of indecomposable vectors, so we stop
-      H[l:l, :] = _w
+      # We add our vector in B, then we reduce H and add the vector where it can
+      # fit: it should always fit...
+      push!(B, deepcopy(w))
+      reduce_mod_hnf_ur!(H, _w)
+      k = findfirst(k -> iszero(view(H, k:k, 1:n)), 1:n)
+      @assert !isnothing(k)
+      H[n:n, :] = _w
       hnf!(H)
+      if !iszero(view(H, n:n, 1:n)) && isone(det(H)) # We have a basis
+        return _connected_components_graph(B, G)
+      end
       continue
     end
     # v is decomposable, as w+(v-w): we iteratively decompose them as a sum of
     # indecomposables
-    @info "Second reach"
     tmp = ZZMatrix[w, v-w]
     while !isempty(tmp)
       w = popfirst!(tmp)
@@ -1990,13 +1959,15 @@ function __irreducible_components(G)
 
       ok2, w2 = _is_decomposable(w, G, m, e)
       if !ok
-        !_is_saturated(H, l+1, _w) && continue
-
-        B[(l+1):(l+1), :] = w
-        l += 1
-        k == nrows(G) && break
-        H[l:l, :] = _w
+        push!(B, deepcopy(w))
+        reduce_mod_hnf_ur!(H, _w)
+        k = findfirst(k -> iszero(view(H, k:k, 1:n)), 1:n)
+        @assert !isnothing(k)
+        H[n:n, :] = _w
         hnf!(H)
+        if !iszero(view(H, n:n, 1:n)) && isone(det(H)) # We have a basis
+          return _connected_components_graph(B, G)
+        end
         continue
       end
       push!(tmp, w2)
@@ -2004,26 +1975,27 @@ function __irreducible_components(G)
     end
   end
 
-  # From here, B should be a basis made of indecomposable vectors
-  # We can just conclude by collecting the connected components
-  # of the associated graph, and thus obtain the wanted decomposition
-  __B = ZZMatrix[B[i:i, :] for i in 1:nrows(B)]
-  return _connected_components_graph(__B, G)
+  # From here, B should be a generating system made of indecomposable vectors
+  return _connected_components_graph(B, G)
 end
 
 @doc raw"""
     _connected_components_graph(B::Vector{T}, G::T) -> Vector{T}
 
 Return the connected components of system of vectors ``B`` wrt. to ``G``.
-``B`` is assumed to be free.
 
 We call connected components of ``B`` wrt. to ``G`` the matrices whose rows
 are vectors from ``B`` which belong to the same connected component of the
 graph obtained as follows:
 - each node is a vector in ``B``
 - two nodes are connected if their product wrt. to ``G`` is nonzero.
-This corresponds to decomposing the Gram matrix of ``B`` wrt. ``G`` into diagonal
-blocks. ``G`` is assumed to be bilinear.
+``G`` is assumed to be bilinear, and no assumption are made on ``B``.
+
+!!!
+Warning: the list ``B`` in input will be empty after calling this function.
+The content of ``B`` is still in the output list, but gathered as rows
+of matrices representing each connected component of the graph
+!!!
 """
 function _connected_components_graph(B::Vector{T}, G::T) where T <: MatElem
   components = T[]
@@ -2046,8 +2018,8 @@ function _connected_components_graph(B::Vector{T}, G::T) where T <: MatElem
     end
     push!(components, reduce(vcat, basis))
   end
-  @hassert :Lattice 0 sum(nrows(i) for i in components; init=0) == nrows(G)
-  sort!(components; by=nrows)
+  @hassert :Lattice 0 sum(rank(i) for i in components; init=0) == nrows(G)
+  sort!(components; by=rank)
   return components
 end
 
