@@ -357,8 +357,6 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
   z = FakeFmpqMat()
   z.num = Base.deepcopy_internal(x.num, dict)
   z.den = Base.deepcopy_internal(x.den, dict)
-  z.rows = nrows(x)
-  z.cols = ncols(x)
   return z
 end
 
