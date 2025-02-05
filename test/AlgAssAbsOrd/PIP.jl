@@ -527,4 +527,17 @@
     @test fl
     @test beta * Gamma == I
   end
+
+  let 
+    # Some random example
+    G = Hecke.small_group(36, 1; DB = Hecke.DefaultSmallGroupDB())
+    QG = QQ[G]
+    ZG = integral_group_ring(QG)
+    x = QG(G[34])
+    Lambda, maptoB = Hecke.quotient_order(ZG, (x^9 + 1) * ZG)
+    M = 1 * Lambda
+    fl, a = Hecke._isisomorphic_generic(M, 1*Lambda; side = :left)
+    @test fl
+    @test M * a == 1*Lambda
+  end
 end

@@ -97,10 +97,10 @@ function _isisomorphic_generic(X, Y; side::Symbol = :right, strategy = :default)
     Xop = op(X)
     Yop = op(Y)
     if isdefined(X, :order)
-      Xop.order = order(X)
+      Xop.order = op(order(X))
     end
     if isdefined(Y, :order)
-      Yop.order = order(Y)
+      Yop.order = op(order(Y))
     end
     fl, alpha = _isisomorphic_generic_right(Xop, Yop, strategy = strategy)
     return fl, preimage(op, alpha)

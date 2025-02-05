@@ -296,7 +296,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(a::AlgAssAbsOrdIdl, dict::IdDict)
-  b = typeof(a)(algebra(a))
+  b = typeof(a)(algebra(a), a.base_ring)
   for i in fieldnames(typeof(a))
     if isdefined(a, i)
       if i != :algebra && i != :order && i != :right_order && i != :left_order && i != :basis_matrix_wrt && i != :norm && i != normred

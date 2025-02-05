@@ -694,7 +694,7 @@ mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAss
     z.tempcodomain2 = zero_matrix(base_ring(Minv), 1, ncols(Minv))
     z.tempcodomain_threaded = [zero_matrix(base_ring(Minv), 1, nrows(Minv)) for i in 1:Threads.nthreads()]
     z.tempcodomain2_threaded = [zero_matrix(base_ring(Minv), 1, ncols(Minv)) for i in 1:Threads.nthreads()]
-
+    @assert nrows(Minv) == degree(base_ring(codomain)) * dim(codomain)
     z.Minv = Minv
     return z
   end
@@ -915,33 +915,21 @@ function _coefficients_of_restricted_scalars!(y, x)
 end
 
 function __set_row!(y::QQMatrix, k, c)
-  GC.@preserve y
-  begin
-    for i in 1:length(c)
-      t = mat_entry_ptr(y, k, i)
-      set!(t, c[i])
-    end
-  end
-  nothing
+  return y[k, :] = c
 end
 
 function __set_row!(c::Vector{QQFieldElem}, y::QQMatrix, k)
-  GC.@preserve y
-  begin
+  GC.@preserve y begin
     for i in 1:length(c)
       t = mat_entry_ptr(y, k, i)
       set!(c[i], t)
     end
   end
-  nothing
+  return c
 end
 
 function __set!(y, k, c)
-  GC.@preserve y begin
-    t = mat_entry_ptr(y, 1, k)
-    set!(t, c)
-  end
-  nothing
+  y[1, k] = c
 end
 
 function _coefficients_of_restricted_scalars!(y::Vector, x)
