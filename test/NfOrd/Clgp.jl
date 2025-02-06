@@ -273,8 +273,23 @@ end
   @testset "Class group proof" begin
     K, a = number_field(x^2 - 2)
     OK = maximal_order(K)
+    class_group(OK, GRH = true)
     c, mc = class_group(OK, GRH = false)
     @test isone(order(c))
+    unit_group(OK, GRH = false)
+    unit_group(OK, GRH = true)
+
+    # 
+    K, = quadratic_field(-100200000001; cached = false)
+    OK = maximal_order(K)
+    U, mU = unit_group_fac_elem(OK, GRH = false)
+    U, mU = unit_group_fac_elem(OK, GRH = false)
+
+    #
+    K,a = number_field(x^2 -5,"a")
+    O = maximal_order(K)
+    unit_group_fac_elem(O)
+    unit_group_fac_elem(lll(O); GRH = false)
   end
 
   @testset "Class group with small generating set" begin
