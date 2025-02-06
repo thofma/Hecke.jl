@@ -220,19 +220,19 @@ standard basis of the rational span of ``S``.
 
 The implementation is based on Algorithm 2.2 in [Shi15](@cite)
 """
-function short_vectors_affine(S::ZZLat, v::QQMatrix, _alpha::RationalUnion, _d::RationalUnion)
+function short_vectors_affine(S::ZZLat, v::QQMatrix, alpha::RationalUnion, d::RationalUnion)
   p, _, n = signature_tuple(S)
   @req p <= 1 || n <= 1 "Lattice must be definite or hyperbolic"
-  alpha = QQ(_alpha)
-  d = QQ(_d)
+  _alpha = QQ(alpha)
+  _d = QQ(d)
   gram = gram_matrix(S)
   tmp = v*gram_matrix(ambient_space(S))*transpose(basis_matrix(S))
   v_S = solve(gram_matrix(S), tmp; side=:left)
   if n > 1
-    sol = short_vectors_affine(gram, v_S, alpha, d)
+    sol = short_vectors_affine(gram, v_S, _alpha, _d)
   else
     map_entries!(-, gram, gram)
-    sol = short_vectors_affine(gram, v_S, -alpha, -d)
+    sol = short_vectors_affine(gram, v_S, -_alpha, -_d)
   end
   B = basis_matrix(S)
   return QQMatrix[s*B for s in sol]
