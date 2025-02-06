@@ -165,97 +165,118 @@ end
 #
 ###############################################################################
 
-function _vec(M::MatElem)
-  r = elem_type(base_ring(M))[]
-  sizehint!(r, nrows(M) * ncols(M))
-  for j=1:ncols(M)
-    for i=1:nrows(M)
-      push!(r, M[i, j])
-    end
-  end
-  return r
-end
-
 @doc raw"""
-    enumerate_quadratic_triple -> Vector{Tuple{Vector{Int}, QQFieldElem}}
+    enumerate_quadratic_triples(Q::MatrixElem{T}, b::MatrixElem{T}, c::T;
+                                                 algorithm::Symbol=:short_vectors,
+                                                 equal::Bool=false) where T <: Union{ZZRingElem, QQFieldElem}
+                                                     -> Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}
 
-Return $\{x \in \mathbb Z^n : x Q x^T + 2xb^T + c <=0\}$.
+Given the Gram matrix ``Q`` of a positive definite quadratic form, return
+the list of pairs ``(v, d)`` so that ``v`` satisfies $v*Q*v^T + 2*v*Q*b^T + c \leq 0$
+where ``b`` is seen as a row vector and ``c`` is a rational number.
+Moreover ``d`` is so that $(v-b)*Q*(v-b)^T = d$.
 
-#Input:
-- `Q`: positive definite matrix
-- `b`: row vector
-- `c`: rational number
+For the moment, only the algorithm `:short_vectors` is available. The function
+uses the data required for the closest vector problem for the quadratic triple
+`[Q, b, c]`; in particular, ``d`` is smaller than the associated upper-bound $M$
+(see [`close_vectors`](@ref)).
+
+If `equal` is set to `true`, the function returns only the pairs ``(v, d)`` such
+that $d=M$.
 """
-function enumerate_quadratic_triple(Q, b, c; algorithm=:short_vectors, equal=false)
+function enumerate_quadratic_triples(Q::MatrixElem{T}, b::MatrixElem{T}, c::T; algorithm=:short_vectors, equal::Bool=false) where T <: Union{ZZRingElem, QQFieldElem}
   if algorithm == :short_vectors
-    L, p, dist = Hecke._convert_type(Q, b, QQ(c))
-    #@vprint :K3Auto 1 ambient_space(L), basis_matrix(L), p, dist
+    L, p, dist = _convert_type(Q, b, c)
+    dist < 0 && return Tuple{Vector{ZZRingElem}, QQFieldElem}[]
     if equal
-      cv = Hecke.close_vectors(L, _vec(p), dist, dist, check=false)
+      cv = close_vectors(L, vec(collect(p)), dist, dist, ZZRingElem; check=false)
     else
-      cv = Hecke.close_vectors(L, _vec(p), dist, check=false)
+      cv = close_vectors(L, vec(collect(p)), dist, ZZRingElem; check=false)
     end
+  else
+    error("Algorithm ($(algorithm)) not (yet) implemented for this function")
   end
   return cv
 end
 
 @doc raw"""
-    short_vectors_affine(S::ZZLat, v::MatrixElem, alpha, d)
-    short_vectors_affine(gram::MatrixElem, v::MatrixElem, alpha, d)
+    short_vectors_affine(S::ZZLat, v::QQMatrix, alpha::RationalUnion, d::RationalUnion)
+    short_vectors_affine(gram::MatrixElem, v::MatrixElem, alpha::RationalUnion, d::RationalUnion)
+                                                                        -> Vector{MatrixElem}
 
-Return the vectors of squared length `d` in the given affine hyperplane.
+Given a hyperbolic or negative definite $\mathbb{Z}$-lattice ``S``, or its
+Gram matrix ``gram``, return the set of vectors
 
 ```math
 \{x \in S : x^2=d, x.v=\alpha \}.
 ```
-The matrix version takes `S` with standard basis and the given gram matrix.
+where ``v`` is a given vector in the ambient space of ``S`` with positive square,
+and ``\alpha`` and ``d`` are rational numbers.
 
-# Arguments
-- `v`: row vector with $v^2 > 0$
-- `S`: a hyperbolic `Z`-lattice
-
-The output is given in the ambient representation.
+The vectors in output are given in terms of their coordinates in the ambient
+space of ``S``. In case one only provides the Gram matrix ``gram`` of ``S``,
+the vectors are given in terms of their coordinates with respect to the
+standard basis of the rational span of ``S``.
 
 The implementation is based on Algorithm 2.2 in [Shi15](@cite)
 """
-function short_vectors_affine(S::ZZLat, v::MatrixElem, alpha, d)
-  alpha = QQ(alpha)
+function short_vectors_affine(S::ZZLat, v::QQMatrix, _alpha::RationalUnion, _d::RationalUnion)
+  p, _, n = signature_tuple(S)
+  @req p <= 1 || n <= 1 "Lattice must be definite or hyperbolic"
+  alpha = QQ(_alpha)
+  d = QQ(_d)
   gram = gram_matrix(S)
   tmp = v*gram_matrix(ambient_space(S))*transpose(basis_matrix(S))
-  v_S = solve(gram_matrix(S),tmp; side = :left)
-  sol = short_vectors_affine(gram, v_S, alpha, d)
+  v_S = solve(gram_matrix(S), tmp; side=:left)
+  if n > 1
+    sol = short_vectors_affine(gram, v_S, alpha, d)
+  else
+    map_entries!(-, gram, gram)
+    sol = short_vectors_affine(gram, v_S, -alpha, -d)
+  end
   B = basis_matrix(S)
-  return [s*B for s in sol]
+  return QQMatrix[s*B for s in sol]
 end
 
-function short_vectors_affine(gram::MatrixElem, v::MatrixElem, alpha, d)
+# In this function we assume that gram is the Gram matrix of a definite or
+# hyperbolic lattice. If not, then close_vectors will complain
+function short_vectors_affine(gram::MatrixElem{T}, v::MatrixElem{T}, alpha::T, d::T) where T <: Union{ZZRingElem, QQFieldElem}
   # find a solution <x,v> = alpha with x in L if it exists
+  res = MatrixElem{T}[]
   w = gram*transpose(v)
-  tmp = Hecke.FakeFmpqMat(w)
-  wn = numerator(tmp)
-  wd = denominator(tmp)
-  b, x = can_solve_with_solution(transpose(wn), matrix(ZZ, 1, 1, [alpha*wd]); side = :right)
-  if !b
-    return QQMatrix[]
+  if T == QQFieldElem
+    wd = denominator(w)
+    wn = map_entries(ZZ, wd*w)
+    beta = alpha*wd
+    !is_one(denominator(beta)) && return res
+  else
+    wd = ZZ(1)
+    wn = w
+    beta = alpha
   end
-  K = kernel(wn; side = :left)
+
+  ok, x = can_solve_with_solution(transpose(wn), matrix(ZZ, 1, 1, [beta]); side=:right)
+  if !ok
+    return res
+  end
+
+  K = kernel(wn; side=:left)
   # (x + y*K)*gram*(x + y*K) = x gram x + 2xGKy + y K G K y
 
-  # now I want to formulate this as a cvp
-  # (x +y K) gram (x+yK) ==d
-  # (x
+  # now we want to formulate this as a cvp
+  # (x +y K) gram (x+yK) == d
   GK = gram*transpose(K)
   Q = K * GK
   b = transpose(x) * GK
   c = (transpose(x)*gram*x)[1,1] - d
   # solve the quadratic triple
-  Q = change_base_ring(QQ, Q)
-  b = change_base_ring(QQ, transpose(b))
   if Q[1, 1] < 0
     map_entries!(-, Q, Q)
+    cv_vec = enumerate_quadratic_triples(Q, transpose(-b), -c; equal=true)
+  else
+    cv_vec = enumerate_quadratic_triples(Q, transpose(b), c; equal=true)
   end
-  cv = enumerate_quadratic_triple(Q, b, QQ(c), equal=true)
-  xt = transpose(x)
-  cv = [xt+matrix(ZZ,1,nrows(Q),u[1])*K for u in cv]
-  return cv #[u for u in cv if (u*gram*transpose(u))[1,1]==d]
+  xt = map_entries(parent(d), transpose(x))
+  cv = MatrixElem{T}[xt + matrix(parent(d), 1, nrows(Q), u[1])*K for u in cv_vec]
+  return cv
 end
