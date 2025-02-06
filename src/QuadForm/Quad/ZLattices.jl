@@ -1893,8 +1893,8 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   # lattices with big kissing number
   V = _short_vectors_gram_nolll_integral(Hecke.LatEnumCtx, G, 0, m, nothing, one(ZZ), ZZRingElem)
   B = ZZMatrix[]
-  H = zero(G)
   n = ncols(G)
+  H = zero_matrix(ZZ, n+1, n) # One row more for hnf
   w = zero_matrix(ZZ, 1, n)
   flag = false
   for (_v, l) in V
@@ -1915,13 +1915,9 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
     reduce_mod_hnf_ur!(w, H)
     iszero(w) && continue
     push!(B, matrix(ZZ, 1, n, _v))
-    # Now we reduce H since it may not be saturated, or not of full rank
-    reduce_mod_hnf_ur!(H, w)
-    # We add w wherever we have an empty entry: should always exist because
-    # w is nonzero.
-    k = findfirst(k -> iszero(view(H, k:k, 1:n)), 1:n)
-    @assert !isnothing(k)
-    H[k:k, :] = w
+    # We add w in the last row, and we do an hnf
+    # H will always have rank at most n
+    H[(n+1):(n+1), :] = w
     hnf!(H)
     if all(isone(H[i, i]) for i in 1:n) # We have a basis
       flag = true
@@ -1957,13 +1953,9 @@ function __irreducible_components(G)
       add!(_w, _w, w)
       reduce_mod_hnf_ur!(_w, H)
       iszero(_w) && continue
-      # We add our vector in B, then we reduce H and add the vector where it can
-      # fit: it should always fit...
+      # We add our vector in B
       push!(B, deepcopy(w))
-      reduce_mod_hnf_ur!(H, _w)
-      k = findfirst(k -> iszero(view(H, k:k, 1:n)), 1:n)
-      @assert !isnothing(k)
-      H[n:n, :] = _w
+      H[(n+1):(n+1), :] = _w
       hnf!(H)
       if all(isone(H[i, i]) for i in 1:n) # We have a basis
         return _connected_components_graph!(B, G)
@@ -1984,10 +1976,7 @@ function __irreducible_components(G)
       ok2, w2 = _is_decomposable(w, G, m, e)
       if !ok
         push!(B, deepcopy(w))
-        reduce_mod_hnf_ur!(H, _w)
-        k = findfirst(k -> iszero(view(H, k:k, 1:n)), 1:n)
-        @assert !isnothing(k)
-        H[n:n, :] = _w
+        H[(n+1):(n+1), :] = _w
         hnf!(H)
         if all(isone(H[i, i]) for i in 1:n) # We have a basis
           return _connected_components_graph!(B, G)
