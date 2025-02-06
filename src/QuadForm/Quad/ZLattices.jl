@@ -1965,7 +1965,7 @@ function __irreducible_components(G)
       @assert !isnothing(k)
       H[n:n, :] = _w
       hnf!(H)
-      if !iszero(view(H, n:n, 1:n)) && isone(det(H)) # We have a basis
+      if all(isone(H[i, i]) for i in 1:n) # We have a basis
         return _connected_components_graph!(B, G)
       end
       continue
@@ -1989,7 +1989,7 @@ function __irreducible_components(G)
         @assert !isnothing(k)
         H[n:n, :] = _w
         hnf!(H)
-        if !iszero(view(H, n:n, 1:n)) && isone(det(H)) # We have a basis
+        if all(isone(H[i, i]) for i in 1:n) # We have a basis
           return _connected_components_graph!(B, G)
         end
         continue
