@@ -1204,11 +1204,14 @@ mutable struct UnitGrpCtx{T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNum
   cache::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   relations_used::Vector{Int}
 
+  GRH::Bool
+
   function UnitGrpCtx{T}(O::AbsSimpleNumFieldOrder) where {T}
     z = new{T}()
     z.order = O
     z.rank = -1
     z.full_rank = false
+    z.GRH = true
     z.regulator_precision = -1
     z.torsion_units_order = -1
     z.units = Vector{T}()
