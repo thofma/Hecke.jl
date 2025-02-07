@@ -315,6 +315,7 @@ export embedded_number_field
 export embedding
 export embeddings
 export enumerate_definite_genus
+export enumerate_quadratic_triples
 export equation
 export equation_order
 export euclid
@@ -828,6 +829,7 @@ export set_vars!
 export set_verbosity_level
 export shift
 export short_vectors
+export short_vectors_affine
 export short_vectors_iterator
 export short_weierstrass_model
 export shortest_vectors
