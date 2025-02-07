@@ -240,7 +240,17 @@ end
 
 # In this function we assume that gram is the Gram matrix of a definite or
 # hyperbolic lattice. If not, then close_vectors will complain
+
+# remote the following method once it is removed from Oscar
+function short_vectors_affine(gram::QQMatrix, v::QQMatrix, alpha::QQFieldElem, d::QQFieldElem)
+  return _short_vectors_affine(gram, v, alpha, d)
+end
+
 function short_vectors_affine(gram::MatrixElem{T}, v::MatrixElem{T}, alpha::T, d::T) where T <: Union{ZZRingElem, QQFieldElem}
+  return _short_vectors_affine(gram, v, alpha, d)
+end
+
+function _short_vectors_affine(gram::MatrixElem{T}, v::MatrixElem{T}, alpha::T, d::T) where T <: Union{ZZRingElem, QQFieldElem}
   # find a solution <x,v> = alpha with x in L if it exists
   res = MatrixElem{T}[]
   w = gram*transpose(v)
