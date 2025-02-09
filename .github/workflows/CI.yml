@@ -73,7 +73,7 @@ jobs:
           git config user.name github-actions # mike needs a user name, but we do not push the commit, so all is fine
           git config user.email github-actions@github.com
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer
       - uses: julia-actions/setup-julia@v2
