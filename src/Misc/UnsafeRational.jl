@@ -28,11 +28,11 @@ function UnsafeRational{T}(x::Rational{<: Integer}) where {T}
   return UnsafeRational{T}(T(x.num), T(x.den))
 end
 
-function Int(x::UnsafeRational{T}) where {T}
+function Base.Int(x::UnsafeRational{T}) where {T}
   return Int(x.num)
 end
 
-Rational(x::UnsafeRational) = x.num//x.den
+Base.Rational(x::UnsafeRational) = x.num//x.den
 
 
 ################################################################################
