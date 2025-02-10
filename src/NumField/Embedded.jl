@@ -323,7 +323,7 @@ function (QQ::QQField)(x::EmbeddedNumFieldElem)
   return QQ(data(x))
 end
 
-function Float64(x::EmbeddedNumFieldElem)
+function Base.Float64(x::EmbeddedNumFieldElem)
   i = embedding(parent(x))
   return Float64(real(i(data(x))))
 end
