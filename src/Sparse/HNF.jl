@@ -532,6 +532,7 @@ function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} =
   @vprintln :HNF 1 "Starting Kannan Bachem HNF on:"
   @vprint :HNF 1 A
   @vprintln :HNF 1 " with density $(density(A)); truncating $truncate"
+  @v_do :HNF 1 trt = rt = time_ns()
 
   with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing
 
