@@ -323,6 +323,15 @@ function (QQ::QQField)(x::EmbeddedNumFieldElem)
   return QQ(data(x))
 end
 
+function Base.Float64(x::EmbeddedNumFieldElem)
+  i = embedding(parent(x))
+  return Float64(real(i(data(x))))
+end
+
+function Base.convert(::Type{Float64}, x::EmbeddedNumFieldElem)
+  return Float64(x)
+end
+
 function is_rational(x::EmbeddedNumFieldElem)
   return is_rational(data(x))
 end

@@ -99,6 +99,12 @@ test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
   @test !is_rational(a)
   @test (@inferred QQ(2*a^0)) == 2 * one(QQ)
 
+  @test isapprox(Float64(a), -1.41; rtol=0.1)
+  K, _a = number_field(x^2 - 2, "a")
+  i = Hecke.real_embedding(K, 1.41)
+  E, a = Hecke.embedded_field(K, i)
+  @test isapprox(Float64(a), 1.41; rtol=0.1)
+
   # roots and factor
   let
     Qx, x = QQ["x"]
