@@ -6,17 +6,17 @@
 
 algebra_type(x) = algebra_type(typeof(x))
 
-algebra_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = T
+algebra_type(::Type{AlgAssAbsOrd{T, S}}) where {S, T} = T
 
-order_type(::Type{T}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}} = AlgAssAbsOrd{ZZRing, T}
+order_type(::Type{T}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}} = AlgAssAbsOrd{T, ZZRing}
 
 order_type(::Type{T}) where {S <: NumFieldElem, T <: AbstractAssociativeAlgebra{S}} = AlgAssRelOrd{S, fractional_ideal_type(order_type(parent_type(S))), T}
 
-order_type(::Type{T}, ::Type{ZZRing}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}} = AlgAssAbsOrd{ZZRing, T}
+order_type(::Type{T}, ::Type{ZZRing}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}} = AlgAssAbsOrd{T, ZZRing}
 
-order_type(::Type{T}, ::Type{S}) where {T, U <: FieldElem, S <: PolyRing{U}} = AlgAssAbsOrd{S, T}
+order_type(::Type{T}, ::Type{S}) where {T, U <: FieldElem, S <: PolyRing{U}} = AlgAssAbsOrd{T, S}
 
-order_type(::Type{T}, ::Type{S}) where {T, U <: FieldElem, S <: KInftyRing{U}} = AlgAssAbsOrd{S, T}
+order_type(::Type{T}, ::Type{S}) where {T, U <: FieldElem, S <: KInftyRing{U}} = AlgAssAbsOrd{T, S}
 
 elem_type(::Type{T}) where {T <: AlgAssAbsOrd} = AlgAssAbsOrdElem{T, elem_type(algebra_type(T))}
 
@@ -36,7 +36,7 @@ _algebra(O::AlgAssAbsOrd) = algebra(O)
 
 base_ring(O::AlgAssAbsOrd) = O.base_ring
 
-base_ring_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = S
+base_ring_type(::Type{AlgAssAbsOrd{T, S}}) where {S, T} = S
 
 @doc raw"""
     is_commutative(O::AlgAssAbsOrd) -> Bool
@@ -204,10 +204,10 @@ function Order(A::AbstractAssociativeAlgebra, R::Ring, M::MatElem; check::Bool =
     if !b
       error("The basis matrix does not define an order")
     else
-      return AlgAssAbsOrd{typeof(R), typeof(A)}(A, R, deepcopy(M), Minv, v, cached)
+      return AlgAssAbsOrd{typeof(A), typeof(R)}(A, R, deepcopy(M), Minv, v, cached)
     end
   else
-    return AlgAssAbsOrd{typeof(R), typeof(A)}(A, R, deepcopy(M), cached)
+    return AlgAssAbsOrd{typeof(A), typeof(R)}(A, R, deepcopy(M), cached)
   end
 end
 
@@ -327,7 +327,7 @@ end
 
 absolute_basis(O::AlgAssAbsOrd) = basis(O)
 
-function basis_alg(O::AlgAssAbsOrd{S, T}; copy::Bool = true) where {S, T}
+function basis_alg(O::AlgAssAbsOrd{T, S}; copy::Bool = true) where {S, T}
   assure_basis_alg(O)
   if copy
     return deepcopy(O.basis_alg)::Vector{elem_type(T)}
@@ -336,7 +336,7 @@ function basis_alg(O::AlgAssAbsOrd{S, T}; copy::Bool = true) where {S, T}
   end
 end
 
-function basis(O::AlgAssAbsOrd{S, T}, A::T; copy::Bool = true) where {S, T}
+function basis(O::AlgAssAbsOrd{T, S}, A::T; copy::Bool = true) where {S, T}
   @req algebra(O) === A "Algebras do not match"
   return basis_alg(O, copy = copy)
 end
@@ -862,7 +862,7 @@ function new_maximal_order(O::AlgAssAbsOrd{S, T}, cache_in_substructures::Bool =
   return OO
 end
 
-function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: GroupAlgebra, T <: GroupAlgebraElem }
+function MaximalOrder(O::AlgAssAbsOrd{T, S}) where { S <: GroupAlgebra, T <: GroupAlgebraElem }
   A = algebra(O)
 
   if isdefined(A, :maximal_order)
@@ -1038,7 +1038,7 @@ end
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
-function _simple_maximal_order(O::AlgAssAbsOrd{ZZRing, S1}, ::Val{with_transform} = Val(false)) where { S1 <: MatAlgebra, with_transform }
+function _simple_maximal_order(O::AlgAssAbsOrd{S1, ZZRing}, ::Val{with_transform} = Val(false)) where { S1 <: MatAlgebra, with_transform }
   A = algebra(O)
 
   if !(A isa MatAlgebra)
