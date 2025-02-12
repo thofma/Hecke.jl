@@ -52,10 +52,12 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   ZA, ZAtoA = _as_algebra_over_center(A)
 
   if !isdefined(A, :isomorphic_full_matrix_algebra) && dim(ZA) == 1
+    @assert base_ring(ZA) isa NumField{QQFieldElem}
     B = matrix_algebra(base_ring(ZA), 1)
     img = [preimage(ZAtoA, x) for x in basis(A)]
     m = matrix(base_ring(B), dim(A), dim(B), [(x.coeffs[1])/(one(A).coeffs[1]) for x in img])
-    minv = matrix([ZAtoA(x[1, 1] * one(ZA)).coeffs for x in basis(B)])
+    B1 = basis(B)[1]
+    minv = matrix([ZAtoA(B1[1, 1] * (x * one(ZA))).coeffs for x in absolute_basis(base_ring(ZA))])
     AtoB = AbsAlgAssMorGen(A, B, m, minv)
     A.isomorphic_full_matrix_algebra = B, AtoB
   end
@@ -328,7 +330,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
     end
   end
   #@show z
-  h = transpose(hnf(transpose(FakeFmpqMat(z))))
+  h = transpose(_hnf_integral(transpose(FakeFmpqMat(z))))
   #@show h
   @assert all(i -> is_zero_column(h, i), 1:(d^2 - d))
   T = sub(h, 1:d, (d^2 - d + 1:d^2))

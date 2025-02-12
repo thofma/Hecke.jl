@@ -130,7 +130,7 @@ function _hom_space_as_ideal(L::ModAlgAssLat, M::ModAlgAssLat)
   end
   bas = [basis_matrix_inverse(L) * b * basis_matrix(M) for b in Bint]
   Ibas = [E(x, check = false) for x in bas] # this is Hom_Lambda(L, M) in E = End_A(V)
-  I = ideal(E, O, FakeFmpqMat(basis_matrix(Ibas)); side=:right)
+  I = ideal(E, O, QQMatrix(basis_matrix(Ibas)); side=:right)
 
   return E, f, O, I
 end

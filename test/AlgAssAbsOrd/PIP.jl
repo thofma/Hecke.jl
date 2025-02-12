@@ -520,11 +520,24 @@
                      607//6 809//6 1//3 1//6 0 0 0 0 0 0 103//2 41//3 1//3 0 0 1//3 1//6 1//6 0 0;
                      520//3 895//6 1//6 1//3 0 0 0 0 0 0 359//6 47//6 1//3 0 0 1//6 1//2 0 1//6 0;
                      0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1//24 1//24 1//24 1//24 1//24])
-    Gamma = Order(A, Hecke.FakeFmpqMat(B))
-    I = ideal(A, Gamma, Hecke.FakeFmpqMat(BI))
+    Gamma = Order(A, B)
+    I = ideal(A, Gamma, BI)
     @test I * Gamma == I
     fl, beta = Hecke._is_principal_with_data_bj(I * Gamma, Gamma; side = :right)
     @test fl
     @test beta * Gamma == I
+  end
+
+  let 
+    # Some random example
+    G = Hecke.small_group(36, 1; DB = Hecke.DefaultSmallGroupDB())
+    QG = QQ[G]
+    ZG = integral_group_ring(QG)
+    x = QG(G[34])
+    Lambda, maptoB = Hecke.quotient_order(ZG, (x^9 + 1) * ZG)
+    M = 1 * Lambda
+    fl, a = Hecke._isisomorphic_generic(M, 1*Lambda; side = :left)
+    @test fl
+    @test M * a == 1*Lambda
   end
 end

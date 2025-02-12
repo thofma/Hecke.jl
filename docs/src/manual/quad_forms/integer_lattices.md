@@ -190,6 +190,13 @@ minimum(L::ZZLat)
 kissing_number(L::ZZLat)
 ```
 
+### Short Vectors affine
+
+```@docs
+enumerate_quadratic_triples
+short_vectors_affine
+```
+
 ### Close Vectors
 ```@docs
 close_vectors(L::ZZLat, v::Vector, arg...; kw...)

@@ -46,6 +46,31 @@ function showprogress(io::IO, p::MiniProgressBar, info)
   print(io, "\r")
 end
 
+################################################################################
+#
+#  Class group verification
+#
+################################################################################
+
+function _class_group_proof(c, U, primes_checked = nothing)
+  if !c.GRH
+    return true
+  end
+  class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(order(c)))
+  for (p, _) in factor(c.h)
+    primes_checked isa Vector && p in primes_checked && continue
+
+    while saturate!(c, U, Int(p), 3.5)
+    end
+
+    if primes_checked isa Vector
+      push!(primes_checked, p)
+    end
+  end
+  c.GRH = false
+  return true
+end
+
 function _class_group_proof_one_primedeal(clg::ClassGrpCtx, clgFB, k, p, np, extra, prec = 100)
   E = class_group_small_real_elements_relation_start(clg, k, limit=10, prec=prec)
   while true
@@ -235,3 +260,94 @@ function class_group_proof_raw(clg::ClassGrpCtx, lb::ZZRingElem, ub::ZZRingElem;
   #gc_enable(true)
 end
 
+################################################################################
+#
+#  Unit group verification
+#
+################################################################################
+
+function _unit_group_proof(U::UnitGrpCtx, primes_checked)
+  if !U.GRH
+    return true
+  end
+  O = order(U)
+  tent_reg = tentative_regulator(U)
+  low_reg = lower_regulator_bound(Hecke.nf(O))
+  #low_reg = 14.3648167022986622831389045132
+  @vprintln :ClassGroupProof "Lower regulator bound: $(low_reg)"
+  fl, regindexbound = unique_integer(floor(tent_reg/low_reg))
+  @vprintln :ClassGroupProof "Making unit group p-maximal for up to $(regindexbound)"
+  PB = MiniProgressBar(header = "Unit group proof")
+  _no_of_primes = logarithmic_integral(Float64(regindexbound)) - logarithmic_integral(Float64(2))
+  #gc_enable(false)
+  rate = 0.0
+  length_eta = 0
+  if _no_of_primes < 1000
+    interval = 10
+  else
+    interval = 1000
+  end
+
+  no_primes = 0
+
+  for p in PrimesSet(1, Int(regindexbound))
+
+    @v_do :ClassGroupProof begin
+      no_primes += 1
+      last_time = PB.time_shown
+      cur_time = time()
+      prev = PB.prev
+      PB.current = min(no_primes/_no_of_primes, 1.0)
+      # from PB.current to prev it took cur_time - last_time seconds
+
+      if rate == 0.0
+        rate = ((PB.current - PB.prev)/(cur_time - last_time))
+      else
+        rate = (((PB.current - PB.prev)/(cur_time - last_time)) + rate)/2
+      end
+
+      duration = (1 - PB.current)/rate
+
+      duration = round(Int, duration)
+      ETA = " (ETA: $(Dates.Time(Dates.Nanosecond(duration * 10^9))))"
+      if length(ETA) < length_eta
+        ETA = ETA * " "^(length_eta - length(ETA))
+      else
+        length_eta = length(ETA)
+      end
+
+      showprogress(stdout, PB, ETA)
+      flush(stdout)
+    end
+
+    primes_checked isa Vector && p in primes_checked && continue
+    if _is_definitely_saturated(U, p)
+      continue
+    end
+    # not maximal, saturate
+    while saturate!(U, Int(p), 3.5)
+    end
+
+  end
+  U.GRH = false
+
+  @v_do :ClassGroupProof begin
+    PB.current = 1.0
+    showprogress(stdout, PB, " (ETA: 00:00:00)" * " "^(max(length_eta - 15, 0)))
+    println()
+  end
+
+  return true
+end
+
+function _is_definitely_saturated(U::UnitGrpCtx, p)
+  return __is_definitely_saturated(order(U), U.units, p)
+end
+
+function __is_definitely_saturated(O, units, p)
+  return __is_definitely_saturated_default(units, p)
+end
+
+function __is_definitely_saturated_default(units, p)
+  return 0 == nrows(RelSaturate.compute_candidates_for_saturate(units, Int(p), 3.5))
+end

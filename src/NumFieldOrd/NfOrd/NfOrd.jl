@@ -194,8 +194,9 @@ end
 ################################################################################
 
 function show(io::IO, S::AbsNumFieldOrderSet)
+  io = pretty(io)
   print(io, "Set of orders of the number field ")
-  print(io, S.nf)
+  print(io, Lowercase(), S.nf)
 end
 
 function extra_name(O::AbsNumFieldOrder)
@@ -217,14 +218,25 @@ function show(io::IO, O::AbsNumFieldOrder)
 end
 
 function show_gen(io::IO, O::AbsNumFieldOrder)
+  io = pretty(io)
   print(io, "Order of ")
-  println(io, nf(O))
+  println(io, Lowercase(), nf(O))
   print(io, "with Z-basis ")
-  print(io, basis(O, copy = false))
+  b = basis(O, copy = false)
+  # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
+  # to `[1, a, a^2]` when printing the base
+  print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
 end
 
 function show_maximal(io::IO, O::AbsNumFieldOrder)
-  print(io, "Maximal order of $(nf(O)) \nwith basis $(O.basis_nf)")
+  io = pretty(io)
+  print(io, "Maximal order of ")
+  println(io, Lowercase(), nf(O))
+  print(io, "with basis ")
+  b = O.basis_nf
+    # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
+    # to `[1, a, a^2]` when printing the base
+    print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
 end
 
 ################################################################################
@@ -1081,7 +1093,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
           # M.d divides B.den and we can choose (B.den/M.den)*det(M.num) as
           # modulus for the HNF of B.num.
           mm = ZZ(m*denominator(B, copy = false))
-          hnf_modular_eldiv!(B, mm, shape = :lowerleft)
+          _hnf_integral_modular_eldiv!(B, mm, shape = :lowerleft)
           B = sub(B, nrows(B) - n + 1:nrows(B), 1:n)
 
           # Check if we have a better modulus
@@ -1090,7 +1102,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
             m = new_m
           end
         else
-          hnf!(B)
+          _hnf!_integral(B)
           k = findfirst(k -> !is_zero_row(B, k), nrows(B) - n + 1:nrows(B))
           B = sub(B, nrows(B) - n + k:nrows(B), 1:n)
           if nrows(B) == n
@@ -1132,14 +1144,14 @@ function ==(R::AbsNumFieldOrder, S::AbsNumFieldOrder)
   end
   assure_has_basis_matrix(R)
   assure_has_basis_matrix(S)
-  return hnf(R.basis_matrix) == hnf(S.basis_matrix)
+  return _hnf_integral(R.basis_matrix) == _hnf_integral(S.basis_matrix)
 end
 
 function hash(R::AbsNumFieldOrder, h::UInt)
   h = hash(nf(R), h)
   h = hash(discriminant(R), h)
   assure_has_basis_matrix(R)
-  h = hash(hnf(R.basis_matrix), h)
+  h = hash(_hnf_integral(R.basis_matrix), h)
   return h
 end
 
@@ -1282,6 +1294,15 @@ end
 # If false, then this returns (false, garbage, garbage).
 # If true, then this return (true, basis_matrix, basis_mat_inv).
 # This should also work if K is an algebra over QQ.
+function defines_order(K::S, x::QQMatrix) where {S}
+  fl, a, b = defines_order(K, FakeFmpqMat(x))
+  if !fl
+    return false, x, x
+  else
+    return true, QQMatrix(a), b
+  end
+end
+
 function defines_order(K::S, x::FakeFmpqMat) where {S}
   if nrows(x) != dim(K) || ncols(x) != dim(K)
     return false, x, Vector{elem_type(K)}()

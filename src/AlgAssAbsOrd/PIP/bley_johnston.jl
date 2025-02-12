@@ -92,7 +92,7 @@ function __unit_reps_simple(M, F; GRH::Bool = true)
     #push!(_debug, cl)
     to_return = Vector{elem_type(B)}(undef, length(cl))
     @vprintln :PIP "Mapping back"
-    Threads.@threads for i in 1:length(cl)
+    Threads.@threads :static for i in 1:length(cl)
       to_return[i] = BtoC\(cl[i][1])
     end
     #@time to_return2 = elem_type(B)[ (BtoC\(c[1]))::elem_type(B) for c in cl ]
@@ -150,7 +150,7 @@ function __unit_reps(M, F; GRH::Bool = true)
     _unit_reps =  __unit_reps_simple(MinB, FinB; GRH = GRH)
     @vprintln :PIP "Mapping back once more"
     to_return = Vector{elem_type(A)}(undef, length(_unit_reps))
-    Threads.@threads for i in 1:length(_unit_reps)
+    Threads.@threads :static for i in 1:length(_unit_reps)
       to_return[i] = mB(_unit_reps[i])
     end
     push!(unit_reps, to_return)
@@ -525,8 +525,11 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   res = Vector{Vector{QQFieldElem}}[]
   k = dim(A)
   kblock = k * block_size
-  nt = Threads.nthreads()
-  #nt = 1
+  if VERSION >= v"1.11"
+    nt = Threads.maxthreadid()
+  else
+    nt = Threads.nthreads()
+  end
 
   @assert size(M) == (k, k)
   #@assert all(x -> ncols(x) == k, tmps)
@@ -555,7 +558,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     tmp_elem = [A() for i in 1:nt]
     if length(par) >= nt
       GC.gc(true)
-      Threads.@threads for i in 1:length(par)
+      Threads.@threads :static for i in 1:length(par)
         #thi = 1 #Threads.threadid()
         thi = Threads.threadid()
         p = par[i]

@@ -543,6 +543,7 @@ place_type(x) = place_type(typeof(x))
 place_type(T::DataType) = throw(MethodError(place_type, (T,)))
 
 order_type(x) = order_type(typeof(x))
+order_type(x, y) = order_type(typeof(x), typeof(y))
 order_type(T::DataType) = throw(MethodError(order_type, (T,)))
 
 embedding_type(x) = embedding_type(typeof(x))

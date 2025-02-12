@@ -224,6 +224,8 @@ function _fmpq_mat_to_fmpz_mat_den(x::QQMatrix)
   return z, d
 end
 
+numerator(x::QQMatrix) = _fmpq_mat_to_fmpz_mat_den(x)[1]
+
 function _fmpq_mat_to_fmpz_mat_den!(z::ZZMatrix, d::ZZRingElem, x::QQMatrix)
   ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{QQMatrix}), z, d, x)
 end
@@ -238,16 +240,52 @@ end
 #
 ################################################################################
 
-function hnf!(x::FakeFmpqMat, shape = :lowerleft)
+for s in [:__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv,:_hnf!_integral!]
+  @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+  @eval ($s)(x::QQMatrix, ::ZZRing, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+end
+
+function _hnf!_integral(x::QQMatrix, shape = :lowerleft)
+  x .= QQMatrix(_hnf!_integral(FakeFmpqMat(x), shape))
+  return x
+end
+
+function _hnf_integral_modular_eldiv!(x::QQMatrix, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+  y = _hnf_integral_modular_eldiv!(FakeFmpqMat(x), g; shape = shape, cutoff = cutoff)
+  yq = QQMatrix(y)
+  if cutoff
+    return yq
+  else
+    return x .= yq
+  end
+end
+
+function _hnf!_integral(x::FakeFmpqMat, shape = :lowerleft)
   x.num = _hnf(x.num, shape)
   return x
 end
 
-function __hnf(x::FakeFmpqMat)
-  FakeFmpqMat(Nemo.__hnf(x.num), x.den)
+function _hnf!_integral(x::MatElem, R::Ring, shape = :lowerleft)
+  y, d = integral_split(x, R)
+  x .= divexact(base_ring(x).(_hnf(y, :lowerleft)), d)
 end
 
+#function hnf_integral(x::QQMatrix, args...; kw...)
+#  return QQMatrix(hnf(FakeFmpqMat(x, args...; kw...)))
+#end
+
+function _hnf_integral(x::MatElem, R::Ring,  shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+  y, d = integral_split(x, R)
+  return divexact(base_ring(x).(_hnf(y, shape)), d)
+end
+
+# used in Oscar
+# remove this temporarily while changing FakeFmpqMat -> QQMatrix
 function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+  return _hnf_integral(x, shape; triangular_top, compute_det)
+end
+
+function _hnf_integral(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
   if triangular_top
     @assert ncols(x) <= nrows(x)
     z = one(ZZ)
@@ -269,7 +307,7 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, c
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function _hnf_integral_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = _hnf_modular_eldiv(x.num, g, shape)
   if cutoff
     # Since we are modular, we are in the full rank situation
@@ -285,7 +323,7 @@ function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cu
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function _hnf_integral_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = hnf_modular_eldiv!(x.num, g, shape)
   # Since we are modular, we are in the full rank situation
   if cutoff
@@ -300,10 +338,7 @@ function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, c
   return x
 end
 
-function _hnf_modular_iterative_eldiv(x::Vector{FakeFmpqMat}, g::ZZRingElem, shape = :lowerleft, cutoff::Bool = false)
-end
-
-function hnf!!(x::FakeFmpqMat, shape = :lowerleft)
+function _hnf!_integral!(x::FakeFmpqMat, shape = :lowerleft)
   _hnf!(x.num, shape)
 end
 
@@ -322,8 +357,6 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
   z = FakeFmpqMat()
   z.num = Base.deepcopy_internal(x.num, dict)
   z.den = Base.deepcopy_internal(x.den, dict)
-  z.rows = nrows(x)
-  z.cols = ncols(x)
   return z
 end
 

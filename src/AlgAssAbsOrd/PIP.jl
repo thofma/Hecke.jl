@@ -93,12 +93,17 @@ function _isisomorphic_generic(X, Y; side::Symbol = :right, strategy = :default)
   if side === :right
     return _isisomorphic_generic_right(X, Y, strategy = strategy)
   elseif side === :left
-    _, op = opposite_algebra(algebra(order(X)))
+    _, op = opposite_algebra(algebra(X))
     Xop = op(X)
     Yop = op(Y)
-    Xop.order = order(X)
-    Yop.order = order(X)
-    return _isisomorphic_generic_right(Xop, Yop, strategy = strategy)
+    if isdefined(X, :order)
+      Xop.order = op(order(X))
+    end
+    if isdefined(Y, :order)
+      Yop.order = op(order(Y))
+    end
+    fl, alpha = _isisomorphic_generic_right(Xop, Yop, strategy = strategy)
+    return fl, preimage(op, alpha)
   end
 end
 
@@ -120,7 +125,7 @@ function _isisomorphic_generic_right(X, Y; strategy = :default)
   CIint.order = Gamma
   @assert Hecke._test_ideal_sidedness(CIint, Gamma, :right)
   if strategy == :default
-    fl, alpha  = __isprincipal(Gamma, CIint, :right)
+    fl, alpha  = is_principal_with_data(CIint, Gamma; side = :right)
     if fl
       alpha = inv(QQ(d)) * alpha
       @assert alpha * X == Y

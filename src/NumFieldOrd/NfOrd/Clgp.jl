@@ -176,7 +176,7 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRHClassGroup::Bool = true, GRHUnitGroup::Bool = true)
 
   @vprintln :UnitGroup 1 "Computing tentative class and unit group ..."
 
@@ -185,18 +185,19 @@ function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
+    # Found tentative class and unit group, which are correct assuming GRH
     U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
     @assert U.finished
     @vprintln :UnitGroup 1 "... done (retrieved)."
-    if c.GRH && !GRH
-      if !GRH
-        class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
-        for (p, _) in factor(c.h)
-          while saturate!(c, U, Int(p), 3.5)
-          end
-        end
-      end
-      c.GRH = false
+    primes_checked = Int[]
+    if !GRHClassGroup
+      # an unconditional class group is requested
+      # (the unit group might need to be enlarged at the same time)
+      _class_group_proof(c, U, primes_checked)
+    end
+    if !GRHUnitGroup && unit_group_rank(O) > 0
+      # an unconditional unit group is requested
+      _unit_group_proof(U, primes_checked)
     end
     return c, U, ZZRingElem(1)
   end
@@ -309,30 +310,15 @@ function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true
 
   #@vprintln :ClassGroup 1 "hnftime $(c.time[:hnf_time])"
 
-  if !GRH
-    class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
-    sat = ZZRingElem[]
-    for (p, _) in factor(c.h)
-      push!(sat, p)
-      while saturate!(c, U, Int(p), 3.5)
-      end
-    end
-    c.GRH = false
+  primes_checked = Int[]
+  if !GRHClassGroup
+    # want unconditional class group
+    _class_group_proof(c, U, primes_checked)
+  end
 
-    if unit_group_rank(O) > 0
-      # need to make sure that the unit group is correct
-      tent_reg = tentative_regulator(U)
-      low_reg = lower_regulator_bound(Hecke.nf(O))
-      fl, regindexbound = unique_integer(floor(tent_reg/low_reg))
-      @vprintln :ClassGroupProof "Saturating unit group up to $(regindexbound))"
-      for p in PrimesSet(1, Int(regindexbound))
-        if p in sat
-          continue
-        end
-        while saturate!(c, U, Int(p), 3.5)
-        end
-      end
-    end
+  if !GRHUnitGroup && unit_group_rank(O) > 0
+    # want unconditional unit group
+    _unit_group_proof(U, primes_checked)
   end
 
   if degree(O) == 1
@@ -416,14 +402,14 @@ function class_group(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3
   else
     L = O
   end
-  c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH, saturate_at_2 = saturate_at_2)
+  c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRHClassGroup = GRH, saturate_at_2 = saturate_at_2)
 
   @assert b == 1
   return class_group(c, O)::Tuple{FinGenAbGroup, MapClassGrp}
 end
 
 function _unit_group_maximal(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRHUnitGroup = GRH)
   @assert b==1
   return unit_group(c, U)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
 end
@@ -463,13 +449,18 @@ function unit_group_fac_elem(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_me
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
+    if !GRH
+      # there was unit group context saved
+      # unconditional unit group requested
+      _unit_group_proof(U, nothing)
+    end
     return unit_group_fac_elem(U::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
     O = lll(maximal_order(nf(O)))
   end
-  _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
+  _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRHUnitGroup = GRH, redo = redo)
   @assert b==1
   return unit_group_fac_elem(UU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
 end
@@ -484,7 +475,7 @@ function regulator(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int 
   if c === nothing
     O = lll(maximal_order(nf(O)))
   end
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRHUnitGroup = GRH)
   @assert b == 1
   unit_group_fac_elem(U)
   return U.tentative_regulator

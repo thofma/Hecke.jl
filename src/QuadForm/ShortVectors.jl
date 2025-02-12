@@ -159,3 +159,134 @@ function kissing_number(L::ZZLat)
   return 2 * length(shortest_vectors(L))
 end
 
+###############################################################################
+#
+# Short vectors affine
+#
+###############################################################################
+
+@doc raw"""
+    enumerate_quadratic_triples(Q::MatrixElem{T}, b::MatrixElem{T}, c::T;
+                                                 algorithm::Symbol=:short_vectors,
+                                                 equal::Bool=false) where T <: Union{ZZRingElem, QQFieldElem}
+                                                     -> Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}
+
+Given the Gram matrix ``Q`` of a positive definite quadratic form, return
+the list of pairs ``(v, d)`` so that ``v`` satisfies $v*Q*v^T + 2*v*Q*b^T + c \leq 0$
+where ``b`` is seen as a row vector and ``c`` is a rational number.
+Moreover ``d`` is so that $(v-b)*Q*(v-b)^T = d$.
+
+For the moment, only the algorithm `:short_vectors` is available. The function
+uses the data required for the closest vector problem for the quadratic triple
+`[Q, b, c]`; in particular, ``d`` is smaller than the associated upper-bound $M$
+(see [`close_vectors`](@ref)).
+
+If `equal` is set to `true`, the function returns only the pairs ``(v, d)`` such
+that $d=M$.
+"""
+function enumerate_quadratic_triples(Q::MatrixElem{T}, b::MatrixElem{T}, c::T; algorithm=:short_vectors, equal::Bool=false) where T <: Union{ZZRingElem, QQFieldElem}
+  if algorithm == :short_vectors
+    L, p, dist = _convert_type(Q, b, c)
+    dist < 0 && return Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+    if equal
+      cv = close_vectors(L, vec(collect(p)), dist, dist, ZZRingElem; check=false)
+    else
+      cv = close_vectors(L, vec(collect(p)), dist, ZZRingElem; check=false)
+    end
+  else
+    error("Algorithm ($(algorithm)) not (yet) implemented for this function")
+  end
+  return cv
+end
+
+@doc raw"""
+    short_vectors_affine(S::ZZLat, v::QQMatrix, alpha::RationalUnion, d::RationalUnion)
+    short_vectors_affine(gram::MatrixElem, v::MatrixElem, alpha::RationalUnion, d::RationalUnion)
+                                                                        -> Vector{MatrixElem}
+
+Given a hyperbolic or negative definite $\mathbb{Z}$-lattice ``S``, or its
+Gram matrix ``gram``, return the set of vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector in the ambient space of ``S`` with positive square,
+and ``\alpha`` and ``d`` are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the ambient
+space of ``S``. In case one only provides the Gram matrix ``gram`` of ``S``,
+the vectors are given in terms of their coordinates with respect to the
+standard basis of the rational span of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine(S::ZZLat, v::QQMatrix, alpha::RationalUnion, d::RationalUnion)
+  p, _, n = signature_tuple(S)
+  @req p <= 1 || n <= 1 "Lattice must be definite or hyperbolic"
+  _alpha = QQ(alpha)
+  _d = QQ(d)
+  gram = gram_matrix(S)
+  tmp = v*gram_matrix(ambient_space(S))*transpose(basis_matrix(S))
+  v_S = solve(gram_matrix(S), tmp; side=:left)
+  if n > 1
+    sol = short_vectors_affine(gram, v_S, _alpha, _d)
+  else
+    map_entries!(-, gram, gram)
+    sol = short_vectors_affine(gram, v_S, -_alpha, -_d)
+  end
+  B = basis_matrix(S)
+  return QQMatrix[s*B for s in sol]
+end
+
+# In this function we assume that gram is the Gram matrix of a definite or
+# hyperbolic lattice. If not, then close_vectors will complain
+
+# remote the following method once it is removed from Oscar
+function short_vectors_affine(gram::QQMatrix, v::QQMatrix, alpha::QQFieldElem, d::QQFieldElem)
+  return _short_vectors_affine(gram, v, alpha, d)
+end
+
+function short_vectors_affine(gram::MatrixElem{T}, v::MatrixElem{T}, alpha::T, d::T) where T <: Union{ZZRingElem, QQFieldElem}
+  return _short_vectors_affine(gram, v, alpha, d)
+end
+
+function _short_vectors_affine(gram::MatrixElem{T}, v::MatrixElem{T}, alpha::T, d::T) where T <: Union{ZZRingElem, QQFieldElem}
+  # find a solution <x,v> = alpha with x in L if it exists
+  res = MatrixElem{T}[]
+  w = gram*transpose(v)
+  if T == QQFieldElem
+    wd = denominator(w)
+    wn = map_entries(ZZ, wd*w)
+    beta = alpha*wd
+    !is_one(denominator(beta)) && return res
+  else
+    wd = ZZ(1)
+    wn = w
+    beta = alpha
+  end
+
+  ok, x = can_solve_with_solution(transpose(wn), matrix(ZZ, 1, 1, [beta]); side=:right)
+  if !ok
+    return res
+  end
+
+  K = kernel(wn; side=:left)
+  # (x + y*K)*gram*(x + y*K) = x gram x + 2xGKy + y K G K y
+
+  # now we want to formulate this as a cvp
+  # (x +y K) gram (x+yK) == d
+  GK = gram*transpose(K)
+  Q = K * GK
+  b = transpose(x) * GK
+  c = (transpose(x)*gram*x)[1,1] - d
+  # solve the quadratic triple
+  if Q[1, 1] < 0
+    map_entries!(-, Q, Q)
+    cv_vec = enumerate_quadratic_triples(Q, transpose(-b), -c; equal=true)
+  else
+    cv_vec = enumerate_quadratic_triples(Q, transpose(b), c; equal=true)
+  end
+  xt = map_entries(parent(d), transpose(x))
+  cv = MatrixElem{T}[xt + matrix(parent(d), 1, nrows(Q), u[1])*K for u in cv_vec]
+  return cv
+end

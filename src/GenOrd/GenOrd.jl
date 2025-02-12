@@ -630,7 +630,7 @@ julia> k, a = quadratic_field(12);
 
 julia> integral_closure(ZZ, k)
 
-Maximal order of Real quadratic field defined by x^2 - 12
+Maximal order of real quadratic field defined by x^2 - 12
 with basis AbsSimpleNumFieldElem[1, 1//2*sqrt(12)]
 ```
 """
