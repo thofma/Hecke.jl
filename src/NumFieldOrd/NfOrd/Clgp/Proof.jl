@@ -273,8 +273,8 @@ function _unit_group_proof(U::UnitGrpCtx, primes_checked)
   O = order(U)
   tent_reg = tentative_regulator(U)
   low_reg = lower_regulator_bound(Hecke.nf(O))
-  @show low_reg
   #low_reg = 14.3648167022986622831389045132
+  @vprintln :ClassGroupProof "Lower regulator bound: $(low_reg)"
   fl, regindexbound = unique_integer(floor(tent_reg/low_reg))
   @vprintln :ClassGroupProof "Making unit group p-maximal for up to $(regindexbound)"
   PB = MiniProgressBar(header = "Unit group proof")
