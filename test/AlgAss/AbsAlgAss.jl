@@ -269,4 +269,25 @@
       @test isone(prod(v[i]^Int(w[i]) for i in 1:length(v)))
     end
   end
+
+  let
+    # separability, commutative algebras only for now
+    K, t = rational_function_field(GF(3), :t);
+    Kx, x = K["x"];
+    A = associative_algebra(x^3 - t)
+    @test !is_separable(A)
+    A = associative_algebra(x^2 - t)
+    @test is_separable(A)
+    A = associative_algebra(x^9 - t)
+    @test !is_separable(A)
+    A = associative_algebra((x^2 - t)^2)
+    @test !is_separable(A)
+    A = associative_algebra((x^2 - t)*(x^4 + t^2))
+    @test is_separable(A)
+
+    A = matrix_algebra(QQ, 2)
+    @test is_separable(A)
+    A = matrix_algebra(GF(9), 2)
+    @test is_separable(A)
+  end
 end
