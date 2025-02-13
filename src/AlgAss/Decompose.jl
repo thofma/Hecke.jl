@@ -126,7 +126,10 @@ function _dec_com(A::AbstractAssociativeAlgebra{T}) where {T}
     return _dec_com_given_idempotents(A, w)
   end
 
-  if characteristic(base_ring(A)) > 0
+  # There are two options
+  if is_finite(base_ring(A))
+    # the base ring is finite
+    # use a special implementation for this
     return _dec_com_finite(A)::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
   else
     return _dec_com_gen(A)::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
@@ -143,6 +146,7 @@ function _dec_com_given_idempotents(A::AbstractAssociativeAlgebra{T}, v::Vector)
 end
 
 function _dec_com_gen(A::AbstractAssociativeAlgebra{T}) where {T <: FieldElem}
+  @assert !is_finite(base_ring(A))
   if dim(A) == 0
     # The zero-dimensional algebra is the zero ring, which is semisimple, but not simple
     # It has *no* simple components.
@@ -156,13 +160,32 @@ function _dec_com_gen(A::AbstractAssociativeAlgebra{T}) where {T <: FieldElem}
     return Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[(B, mB)]
   end
 
+  if !is_separable(A)
+    # I am not sure we can/need to find *the* maximal separable subalgebra
+    # (it exists, see Roos, "Maximal Separable Subalgebras")
+    # B, mB = _separable_subalgebra(...)
+    throw(NotImplemented())
+  end
+
+  # we are separable and commutative, and the base field is not finite
+  # "Efficient decomposition of separable algebras", Eberly, Giesbrecht, 2004,
+  # Section 5 claims that we can then do the "normal" trick that always works
+  # for large base fields.
+
   F = base_ring(A)
 
   k = dim(A)
 
   V = elem_type(A)[A[i] for i in 1:k]
 
+  cnt = 0
+
   while true
+    cnt += 1
+    if cnt > 10000
+      error("something is wrong, please report this")
+      # either something is really wrong, or we need to adjust the randomization
+    end
     c = elem_type(F)[ rand(F, -10:10) for i = 1:k ]
     a = dot(c, V)
     f = minpoly(a)
