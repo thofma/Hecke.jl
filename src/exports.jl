@@ -549,6 +549,7 @@ export is_represented_by
 export is_right_ideal
 export is_semi_regular
 export is_semisimple
+export is_separable
 export is_short_weierstrass_model
 export is_simple
 export is_simplified_model
