@@ -1025,7 +1025,7 @@ end
 Return whether the algebra is separable, that is, semisimple under any base
 field extension.
 """
-@attr function is_separable(A::AbstractAssociativeAlgebra)
+@attr Bool function is_separable(A::AbstractAssociativeAlgebra)
   K = base_ring(A)
   # Would be great to have is_known(K, is_perfect) or something like that
   if characteristic(K) == 0  || is_finite(K)
