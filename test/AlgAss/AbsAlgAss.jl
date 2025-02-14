@@ -290,4 +290,16 @@
     A = matrix_algebra(GF(9), 2)
     @test is_separable(A)
   end
+
+  let
+    # decompose
+    K, t = rational_function_field(GF(3), :t);
+    Kx, x = K["x"];
+    # we don't have a radical yet, so take a group algebra, which will know
+    # that it is semisimple
+    A = group_algebra(K, abelian_group(5));
+    dec = decompose(A)
+    # A = F_3(t)[C_5] = F_3(t)[X]/(X^5 - 1) and this factors into deg 4 * deg 1
+    @test length(dec) == 2 && issetequal(dim.(first.(dec)), [1, 4])
+  end
 end
