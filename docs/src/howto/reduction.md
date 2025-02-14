@@ -6,7 +6,7 @@ is the residue field.
 Concretely, we want to reduce the polynomial
 ``f = x^3 + (1 + ζ_7 + ζ_7^2)x^2 + (23 + 55ζ_7^5)x + (ζ_7 + 77)/2``
 over ``\mathbf{Q}(\zeta_7)``.
-We begin by defining the cyclomotic field and the polynomial.
+We begin by defining the cyclotomic field and the polynomial.
 
 ```@repl 1
 using Hecke # hide

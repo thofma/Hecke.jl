@@ -10,7 +10,7 @@ This chapter deals with abelian extensions of number fields and the rational num
 
 Class Field Theory, here specifically, class field theory of global number fields, deals
 with abelian extension, ie. fields where the group of automorphisms is abelian.
-For extensions of $\mathbb Q$, the famous Kronnecker-Weber theorem classifies all such fields:
+For extensions of $\mathbb Q$, the famous Kronecker-Weber theorem classifies all such fields:
 a field is abelian if and only if it is contained in some cyclotomic field. For general
 number fields this is more involved and even for extensions of $\mathbb Q$ is is not practical.
 

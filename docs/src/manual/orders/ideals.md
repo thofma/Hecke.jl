@@ -63,7 +63,7 @@ isone(::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 
 ## Class Group
 
-The group of invertable ideals in any order forms a group and the principal
+The group of invertible ideals in any order forms a group and the principal
 ideals a subgroup.  The finite quotient is called class group for maximal orders
 and Picard group
 or ring class group in general.
@@ -142,7 +142,7 @@ norm(ans)
 factor(numerator(ans))
 ```
 
-## Miscaellenous
+## Miscellaneous
 
 ```@docs
 order(::AbsNumFieldOrderIdeal)
