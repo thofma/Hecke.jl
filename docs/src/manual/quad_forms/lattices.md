@@ -69,7 +69,7 @@ Hecke.to_hecke(Lherm)
 
 Finally, one can access some databases in which are stored several quadratic and
 hermitian lattices. Up to now, these are not automatically available while running
-Hecke. It can nonethelss be used in the following way:
+Hecke. It can nonetheless be used in the following way:
 
 ```@repl 2
 using Hecke # hide

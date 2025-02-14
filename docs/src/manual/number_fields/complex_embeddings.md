@@ -8,7 +8,7 @@ DocTestSetup = quote
 # Complex embedding
 
 We describe functionality for complex embeddings of arbitrary number fields.
-Note that a *complex embeddding* of a number field $L$ is a morphism $\iota \colon L \to \mathbf{C}$.
+Note that a *complex embedding* of a number field $L$ is a morphism $\iota \colon L \to \mathbf{C}$.
 Such an embedding is called *real* if $\operatorname{im}(\iota) \subseteq \mathbf{R}$ and *imaginary* otherwise.
 
 ## Construction of complex embeddings

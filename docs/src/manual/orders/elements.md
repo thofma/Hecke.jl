@@ -38,7 +38,7 @@ discriminant(::Vector{AbsSimpleNumFieldOrderElem})
 
 ## Arithmetic
 
-All the usual arithmetic operatinos are defined:
+All the usual arithmetic operations are defined:
 
 - `-(::NUmFieldOrdElem)`
 - `+(::NumFieldOrderElem, ::NumFieldOrderElem)`

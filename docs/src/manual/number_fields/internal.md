@@ -13,7 +13,7 @@ different types:
    We will refer to this as a non-simple field - even though mathematically
    we can find a primitive elements.
  - `RelSimpleNumField`: a finite simple extension of a number field. This is
-   actually parametried by the (element) type of the coefficient field.
+   actually parametrised by the (element) type of the coefficient field.
    The complete type of an extension of an absolute field (`AbsSimpleNumField`)
    is `RelSimpleNumField{AbsSimpleNumFieldElem}`. The next extension thus will be
    `RelSimpleNumField{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}`.
