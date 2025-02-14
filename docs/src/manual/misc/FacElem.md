@@ -19,8 +19,8 @@ $a_i$ are elements in $K$, typically _small_ and the $e_i\in \mathbb{Z}$ are fre
 large exponents. We refer to the $a_i$ as the *base* and the $e_i$ as the
 *exponents* of the factored element.
 
-Since $K$ is, in general, no PID, this presentation
-is non-unique, elements in this form can easily be multiplied, raised
+Presentations of elements of $K^*$ are
+non-unique; elements in this form can easily be multiplied, raised
 to large powers, but in general not compared and not added.
 
 In Hecke, this is captured more generally by the type `FacElem`,
