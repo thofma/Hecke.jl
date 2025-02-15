@@ -338,4 +338,16 @@
     @test is_unit(unit(fac))
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
   end
+
+  # minpoly and charpoly
+  let
+    Qx, x = QQ[:x]
+    K, a = quadratic_field(2)
+    OK = maximal_order(K)
+    ZZx, x = ZZ[:x]
+    @test minpoly(OK(a))(x) == x^2 - 2
+    @test parent(minpoly(ZZx, OK(a))) === ZZx
+    @test charpoly(OK(a))(x) == x^2 - 2
+    @test parent(charpoly(ZZx, OK(a))) === ZZx
+  end
 end
