@@ -7,22 +7,11 @@ const baseTemp = {
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
 }
 
-const navTemp = {
-  nav: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
-}
-
-const nav = [
-  ...navTemp.nav,
-  {
-    component: 'VersionPicker'
-  }
-]
-
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
   title: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
-  description: "A VitePress Site",
+  description: "Hecke - computational algebraic number theory",
   lastUpdated: true,
   cleanUrls: true,
   outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
@@ -32,7 +21,25 @@ export default defineConfig({
     ['script', {src: `${baseTemp.base}warner.js`}],
     ['script', {src: `${baseTemp.base}siteinfo.js`}]
   ],
-
+  vite: {
+    build: {
+      assetsInlineLimit: 0, // so we can tell whether we have created inlined images or not, we don't let vite inline them
+    },
+    optimizeDeps: {
+      exclude: [
+        '@nolebase/vitepress-plugin-enhanced-readabilities/client',
+        'vitepress',
+        '@nolebase/ui',
+      ],
+    },
+    ssr: {
+      noExternal: [
+        // If there are other packages that need to be processed by Vite, you can add them here.
+        '@nolebase/vitepress-plugin-enhanced-readabilities',
+        '@nolebase/ui',
+      ],
+    },
+  },
   ignoreDeadLinks: true,
   appearance: 'dark',
 
@@ -48,7 +55,6 @@ export default defineConfig({
       dark: "github-dark"}
   },
   themeConfig: {
-    outline: 'deep',
     logo: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
     search: {
       provider: 'local',
