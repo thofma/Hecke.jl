@@ -621,7 +621,15 @@ end
 Returns `true` if $S$ and $T$ are equal and `false` otherwise.
 """
 function ==(S::AlgAssAbsOrd, T::AlgAssAbsOrd)
+  if algebra(S) != algebra(T)
+    return false
+  end
   return basis_matrix(S, copy = false) == basis_matrix(T, copy = false)
+end
+
+function Base.hash(S::AlgAssAbsOrd, h::UInt)
+  h = hash(algebra(S), h)
+  return hash(basis_matrix(S, copy = false), h)
 end
 
 ################################################################################

@@ -21,6 +21,10 @@ function ==(a::FactoredIdeal, b::FactoredIdeal)
   return a.exp == b.exp
 end
 
+function Base.hash(a::FactoredIdeal, h::UInt)
+  return hash(a.exp, h)
+end
+
 function Base.copy(a::FactoredIdeal)
   b = FactoredIdeal(length(a.exp))
   b.exp = copy(a.exp)

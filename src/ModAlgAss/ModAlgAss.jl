@@ -121,6 +121,12 @@ function Base.:(==)(x::ModAlgAssElem{P, T}, y::ModAlgAssElem{P, T}) where {P, T}
   return parent(x) === parent(y) && coordinates(x) == coordinates(y)
 end
 
+function Base.hash(x::ModAlgAssElem, h::UInt)
+  h = hash(parent(x), h)
+  h = hash(coordinates(x), h)
+  return h
+end
+
 function Base.show(io::IO, ::MIME"text/plain", V::ModAlgAss)
   io = pretty(io)
   println(io, LowercaseOff(), "Amodule of dimension ", V.dim)
