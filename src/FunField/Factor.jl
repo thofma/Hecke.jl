@@ -1,5 +1,5 @@
 module FactorFF
-using Hecke
+using ..Hecke
 
 function Hecke.norm(f::PolyRingElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
@@ -33,16 +33,6 @@ function to_mpoly(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
     end
   end
   return finish(Fc)
-end
-
-function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
-  Pf = parent(f)
-  lf = factor(to_mpoly(f))
-  @assert is_constant(lf.unit)
-
-  fa = Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf))
-  @assert iszero(f) || sum(degree(x)*y for (x,y) = fa; init = 0) == degree(f)
-  return fa
 end
 
 function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
