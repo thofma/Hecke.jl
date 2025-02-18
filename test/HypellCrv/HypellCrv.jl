@@ -7,6 +7,8 @@
     f1 = x^6+3*x+5
     h1 = x+2
     C = @inferred HyperellipticCurve(f1, h1)
+    @test C == HyperellipticCurve(f1, h1)
+    @test hash(C) == hash(HyperellipticCurve(f1, h1))
     f2, h2 = @inferred hyperelliptic_polynomials(C)
     @test f1 == f2 && h1 == h2
     @test @inferred genus(C) == 2
@@ -59,5 +61,11 @@
   
     @test C([F(8), F(19), F(1)]) == C([F(8)*5, F(19)*5^3, F(1)*5])
 
+    P1 = C([F(8), F(19), F(1)])
+    P2 = C([F(8), F(19), F(1)])
+    P3 = C([F(8), F(18), F(1)])
+    @test P1 == P2
+    @test P1 != P3
+    @test hash(P1) == hash(P2)
   end
 end

@@ -286,7 +286,6 @@ end
 
 ################################################################################
 #
-#
 #  Equality
 #
 ################################################################################
@@ -294,6 +293,12 @@ end
 function ==(a::AbsAlgAssIdl, b::AbsAlgAssIdl)
   algebra(a) !== algebra(b) && return false
   return basis_matrix(a, copy = false) == basis_matrix(b, copy = false)
+end
+
+function Base.hash(a::AbsAlgAssIdl, h::UInt)
+  h = hash(algebra(a), h)
+  h = hash(basis_matrix(a, copy = false), h)
+  return h
 end
 
 ################################################################################

@@ -618,6 +618,12 @@ function ==(R::RelNumFieldOrder, S::RelNumFieldOrder)
   return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
 end
 
+function Base.hash(R::RelNumFieldOrder, h::UInt)
+  h = hash(nf(R), h)
+  h = hash(basis_matrix(R, copy = false), h)
+  return h
+end
+
 ################################################################################
 #
 #  Trace matrix

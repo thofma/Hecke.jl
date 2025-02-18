@@ -228,3 +228,17 @@ begin
   O = any_order(L)
   @test Hecke.nf(O) === L
 end
+
+# hash
+let
+  Qx, x = QQ["x"]
+  f = x^2 + 36*x + 16
+  K, a = number_field(f, "a", cached = false)
+  Ky, y = K["y"]
+  g = y^3 - 51*y^2 + 30*y - 28
+  L, b = number_field(g, "b", cached = false)
+  P = pseudo_matrix(identity_matrix(K, 3))
+  @test Order(L, P) == Order(L, P)
+  @test Order(L, P) !== Order(L, P)
+  @test hash(Order(L, P)) == hash(Order(L, P))
+end

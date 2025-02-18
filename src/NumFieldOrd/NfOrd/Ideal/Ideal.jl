@@ -68,6 +68,10 @@ parent_type(::Type{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEle
 
 ==(x::AbsNumFieldOrderIdealSet, y::AbsNumFieldOrderIdealSet) = x.order === y.order
 
+function Base.hash(x::AbsNumFieldOrderIdealSet, h::UInt)
+  return hash(objectid(x.order), h)
+end
+
 ################################################################################
 #
 #  Hashing
