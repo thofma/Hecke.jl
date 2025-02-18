@@ -283,5 +283,4 @@ end
 
 # Deprecated in 0.35.10
 @deprecate minpoly(a::Union{LocalFieldElem, QadicFieldElem, RelFinFieldElem, AbsNumFieldOrderElem}, R::PolyRing) minpoly(R, a)
-@deprecate minpoly(a::AbsNumFieldOrderElem, R::PolyRing) minpoly(R, a)
-@deprecate charpoly(a::RingElem, R::PolyRing) charpoly(R, a)
+@deprecate charpoly(a::AbsNumFieldOrderElem, R::PolyRing) charpoly(R, a)
