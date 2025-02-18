@@ -535,8 +535,12 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, Kx::PolyRing = polynomial_ring(parent(a), "t", cached = false)[1]) where T <: Union{LocalFieldElem, QadicFieldElem}
+function minpoly(Kx::PolyRing, a::T)  where T <: Union{LocalFieldElem, QadicFieldElem}
   return squarefree_part(norm(gen(Kx)-a))
+end
+
+function minpoly(a::Union{LocalFieldElem, QadicFieldElem})
+  return minpoly(polynomial_ring(parent(a), "t", cached = false)[1], a)
 end
 
 function absolute_minpoly(a::LocalFieldElem)
