@@ -57,6 +57,7 @@ sparse_row_type(::Type{T}) where {T <: NCRingElem} = SRow{T, sparse_inner_type(T
 
 
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
+ConformanceTests.equality(A::SRow, B::SRow) = A == B
 
 ################################################################################
 #
