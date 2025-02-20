@@ -9,7 +9,7 @@ end
   K, _ = number_field(x^3 - 18, "a")
   O = @inferred Order(ZZ, K)
   @test O isa Hecke.GenOrd
-  test_Ring_interface(O)
+  ConformanceTests.test_Ring_interface(O)
 
   k = GF(5)
   kx, x = rational_function_field(k, "x")

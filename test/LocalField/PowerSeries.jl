@@ -11,8 +11,8 @@ end
   R = @inferred valuation_ring(K)
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
-  test_Ring_interface(R)
-  #test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
+  ConformanceTests.test_Ring_interface(R)
+  #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
 end
 
 @testset "Ring to field" begin

@@ -57,7 +57,7 @@ end
     @test Hecke._exponent(R) == 3
     @test !is_domain_type(elem_type(R))
     @test is_exact_type(elem_type(R))
-    test_Ring_interface(R)
+    ConformanceTests.test_Ring_interface(R)
 
     p = uniformizer(R)
     @test p == R(pi)
@@ -69,7 +69,7 @@ end
 
     # the euclidean conformance test seems to assume that the ring is a domain
     R, _ = residue_ring(O, pi)
-    test_EuclideanRing_interface(R)
+    ConformanceTests.test_EuclideanRing_interface(R)
   end
 end
 

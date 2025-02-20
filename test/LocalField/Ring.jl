@@ -29,16 +29,16 @@ end
   R = valuation_ring(K)
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
-  test_Ring_interface(R)
-  #test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
+  ConformanceTests.test_Ring_interface(R)
+  #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
 
   # QadicField
   K, a = qadic_field(17, 2)
   R = valuation_ring(K)
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
-  test_Ring_interface(R)
-  #test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
+  ConformanceTests.test_Ring_interface(R)
+  #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
 
   # LocalField
   F, _ = cyclotomic_field(20)
@@ -48,6 +48,6 @@ end
   R = valuation_ring(K)
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
-  test_Ring_interface(R)
-  #test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
+  ConformanceTests.test_Ring_interface(R)
+  #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
 end
