@@ -393,6 +393,25 @@ function AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingResidueRingE
   AbstractAlgebra.promote_rule(T, U) == T ? LocalFieldValuationRingResidueRingElem{S, T} : Union{}
 end
 
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function ConformanceTests.generate_element(R::LocalFieldValuationRingResidueRing{<:LocalFieldValuationRing})
+  return R(ConformanceTests.generate_element(_valuation_ring(R)))
+end
+
+function ConformanceTests.generate_element(R::LocalFieldValuationRingResidueRing{<:LaurentSeriesFieldValuationRing})
+  O = _valuation_ring(R)
+  return R(ConformanceTests.generate_element(O; shift = _exponent(R)))
+end
+
+function ConformanceTests.equality(a::LocalFieldValuationRingElem{S, T}, b::LocalFieldValuationRingElem{S, T}) where {S, T}
+  return a == b
+end
+
 ################################################################################
 #
 #  Construction

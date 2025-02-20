@@ -1,8 +1,3 @@
-function test_elem(O::Hecke.GenOrd{<: Any, ZZRing})
-  B = basis(O)
-  return sum(rand(-10:10) * B[i] for i in 1:degree(O))
-end
-
 @testset "GenOrd" begin
   # Test first the ring interface
   Qx, x = QQ["x"]

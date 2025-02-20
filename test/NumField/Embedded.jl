@@ -1,5 +1,3 @@
-test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
-
 @testset "Embedded number field" begin
   Qx, x = QQ["x"]
   K, _a = number_field(x^2 - 2, "a")
