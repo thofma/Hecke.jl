@@ -194,7 +194,8 @@ kissing_number(L::ZZLat)
 
 ```@docs
 enumerate_quadratic_triples
-short_vectors_affine
+short_vectors_affine(::ZZLat, ::QQMatrix, ::RationalUnion, ::RationalUnion)
+short_vectors_affine(::QQMatrix, ::QQMatrix, ::RationalUnion, ::RationalUnion)
 ```
 
 ### Close Vectors
