@@ -1,15 +1,10 @@
-function test_elem(O::Hecke.GenOrd{<: Any, ZZRing})
-  B = basis(O)
-  return sum(rand(-10:10) * B[i] for i in 1:degree(O))
-end
-
 @testset "GenOrd" begin
   # Test first the ring interface
   Qx, x = QQ["x"]
   K, _ = number_field(x^3 - 18, "a")
   O = @inferred Order(ZZ, K)
   @test O isa Hecke.GenOrd
-  test_Ring_interface(O)
+  ConformanceTests.test_Ring_interface(O)
 
   k = GF(5)
   kx, x = rational_function_field(k, "x")
