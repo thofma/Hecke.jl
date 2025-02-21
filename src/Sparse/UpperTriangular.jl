@@ -41,9 +41,7 @@ end
 The Smith normal form (snf) of $A$.
 """
 function snf(A::SMat{ZZRingElem})
-  @show size(A)
   A = diagonal_form(A)
-  @show size(A)
   e = elementary_divisors(A)
   for i=1:length(e)
     if iszero(e[i])
