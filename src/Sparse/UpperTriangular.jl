@@ -5,25 +5,6 @@
 ################################################################################
 
 @doc raw"""
-    diagonal_form(A::SMat{ZZRingElem}) -> SMat{ZZRingElem}
-
-A matrix $D$ that is diagonal and obtained via unimodular row and column operations.
-Like a snf without the divisibility condition.
-"""
-function diagonal_form(A::SMat{ZZRingElem})
-  s = 0
-  while !is_diagonal(A)
-    s += 1
-    A = hnf(transpose(A))
-  end
-  if isodd(s)
-    return transpose(A)
-  else
-    return A
-  end
-end
-
-@doc raw"""
     diagonal(A::SMat) -> ZZRingElem[]
 
 The diagonal elements of $A$ in an array.
@@ -60,7 +41,9 @@ end
 The Smith normal form (snf) of $A$.
 """
 function snf(A::SMat{ZZRingElem})
+  @show size(A)
   A = diagonal_form(A)
+  @show size(A)
   e = elementary_divisors(A)
   for i=1:length(e)
     if iszero(e[i])

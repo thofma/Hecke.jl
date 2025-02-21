@@ -339,6 +339,14 @@ function Base.getindex(A::SRow{T}, i::Int) where {T <: NCRingElem}
   end
 end
 
+#the generic case is a julia array, so getindex does not do any allocations
+#set!(a, ...) will e.g. fail on FqDefault as push!() will not do a copy
+#consider push!(some_row.values, getindex!(t, some_otherow.values, i))
+#if set! is used that all values will be identical: t
+function Hecke.getindex!(a::T, A::Vector{T}, i::Int) where {T <: NCRingElem}
+  return A[i]
+end
+
 ################################################################################
 #
 #  Make sparse row iterable
@@ -944,12 +952,7 @@ function maximum(::typeof(abs), A::SRow{ZZRingElem})
   if iszero(A)
     return zero(ZZ)
   end
-  m = abs(A.values[1])
-  for j in 2:length(A)
-    if cmpabs(m, A.values[j]) < 0
-      m = A.values[j]
-    end
-  end
+  m = maximum(abs, A.values)
   return abs(m)
 end
 
