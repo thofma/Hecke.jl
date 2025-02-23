@@ -902,6 +902,23 @@ function trace_matrix(A::AbstractAssociativeAlgebra, tr = tr)
   return M
 end
 
+function _trace_matrix(A::Vector, tr = tr)
+  F = base_ring(parent(A[1]))
+  n = length(A)
+  M = zero_matrix(F, n, n)
+  for i = 1:n
+    M[i, i] = tr(A[i]^2)
+  end
+  for i = 1:n
+    for j = i + 1:n
+      x = tr(A[i]*A[j])
+      M[i, j] = x
+      M[j, i] = x
+    end
+  end
+  return M
+end
+
 ################################################################################
 #
 #  Change of ring
