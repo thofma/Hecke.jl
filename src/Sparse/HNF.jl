@@ -179,7 +179,7 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
     
     p_v = getindex!(p_v, g.values, 1)
     A_v = getindex!(A_v, A.rows[j].values, 1)
-    fl, g_v = divdes!(g_v, p_v, A_v)
+    fl, g_v = divides!(g_v, p_v, A_v)
 
     if fl
       A_v = neg!(A_v)
