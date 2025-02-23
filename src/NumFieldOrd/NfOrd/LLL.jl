@@ -125,7 +125,7 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 
     round_scale!(d, c, prec)
-    d = mul!(g, b.num, d)
+    g = mul!(g, b.num, d)
     den = b.den
 
     ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), d, g)
