@@ -93,7 +93,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
       end
       @v_do :ClassGroup_time 2 rt = time_ns()
 #      I.M = I.E.x * I.E.t
-      ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), I.M, I.E.x, I.E.t)
+      I.M = mul!(I.M, I.E.x, I.E.t)
       q = elem_from_mat_row(K, I.M, 1, I.E.t_den)
 #      println("found ", q, " norm ", norm(q)//norm(I.A))
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt
