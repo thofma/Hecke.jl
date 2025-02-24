@@ -428,9 +428,9 @@ end
 #
 ################################################################################
 
-stub_composition_factors(a) = error("Load Oscar (or GAP) and try again")
+stub_composition_factors(a) = error("Load Oscar (or GAP) and try again. This needs julia 1.9 or later.")
 
-stub_basis_hom_space(a, b) = error("Load Oscar (or GAP) and try again")
+stub_basis_hom_space(a, b) = error("Load Oscar (or GAP) and try again. This needs julia 1.9 or later.")
 
 ################################################################################
 #
