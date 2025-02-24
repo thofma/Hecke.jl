@@ -163,8 +163,7 @@ function _dec_com_gen(A::AbstractAssociativeAlgebra{T}) where {T <: FieldElem}
   if !is_separable(A)
     # I am not sure we can/need to find *the* maximal separable subalgebra
     # (it exists, see Roos, "Maximal Separable Subalgebras")
-    # B, mB = _separable_subalgebra(...)
-    throw(NotImplemented())
+    B, mB = _separable_subalgebra(A)
   end
 
   # we are separable and commutative, and the base field is not finite
@@ -477,4 +476,13 @@ function _as_number_fields(A::AbstractAssociativeAlgebra{T}; use_maximal_order::
   return result
 end
 
-
+function _separable_subalgebra(A::AbstractAssociativeAlgebra)
+  if is_separable(A)
+    return A, identity_map(A)
+  end
+  char = characteristic(base_ring(A))
+  n = char^ZZ(floor(log(char, ZZ(dim(A)))))
+  N = echelon_form(basis_matrix(map(x -> x^n, basis(A))); trim=true)
+  bb = [elem_from_mat_row(A, N, i) for i in 1:nrows(N)]
+  return _subalgebra(A, bb)
+end
