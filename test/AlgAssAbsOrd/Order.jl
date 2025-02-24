@@ -266,4 +266,15 @@
   O = Order(A, [zero(A)])
   @test is_maximal(O)
 
+  # equality and hashing
+  let
+    A = matrix_algebra(QQ, 2)
+    O = Order(A, identity_matrix(QQ, 4))
+    OO = Order(A, identity_matrix(QQ, 4))
+    @test O == OO
+    @test hash(O) == hash(OO)
+    A = group_algebra(QQ, abelian_group([4]))
+    OO = Order(A, identity_matrix(QQ, 4))
+    @test O != OO
+  end
 end

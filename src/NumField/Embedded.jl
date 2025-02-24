@@ -429,3 +429,13 @@ end
 # default
 round(a::EmbeddedNumFieldElem) = round(a, RoundNearestTiesAway)
 round(::Type{ZZRingElem}, a::EmbeddedNumFieldElem) = round(ZZRingElem, a, RoundNearestTiesAway)
+
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function ConformanceTests.generate_element(E::EmbeddedNumField)
+  E(rand(number_field(E), -10:10))
+end

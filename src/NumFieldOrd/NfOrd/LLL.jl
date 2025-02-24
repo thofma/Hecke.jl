@@ -96,8 +96,8 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), d, d, transpose(l))
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), d, l, d)
+    d = mul!(d, d, transpose(l))
+    d = mul!(d, l, d)
     g = zero_matrix(ZZ, n, n)
     den = ZZRingElem(1)
     sv = ZZRingElem(0)
@@ -125,7 +125,7 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 
     round_scale!(d, c, prec)
-    ccall((:fmpz_mat_mul, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix},  Ref{ZZMatrix}), g, (b.num), d)
+    g = mul!(g, b.num, d)
     den = b.den
 
     ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), d, g)
@@ -141,7 +141,7 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
   ctx = Nemo.LLLContext(0.99, 0.51, :gram)
 
-  ccall((:fmpz_mat_one, libflint), Nothing, (Ref{ZZMatrix}, ), g)
+  one!(g)
   ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
 
   l, t = d, g

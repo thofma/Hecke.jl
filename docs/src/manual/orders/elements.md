@@ -38,7 +38,7 @@ discriminant(::Vector{AbsSimpleNumFieldOrderElem})
 
 ## Arithmetic
 
-All the usual arithmetic operatinos are defined:
+All the usual arithmetic operations are defined:
 
 - `-(::NUmFieldOrdElem)`
 - `+(::NumFieldOrderElem, ::NumFieldOrderElem)`
@@ -63,8 +63,8 @@ minkowski_map(::AbsSimpleNumFieldOrderElem, ::Int)
 conjugates_arb(::AbsSimpleNumFieldOrderElem, ::Int)
 conjugates_arb_log(::AbsSimpleNumFieldOrderElem, ::Int)
 t2(::AbsSimpleNumFieldOrderElem, ::Int)
-minpoly(::AbsSimpleNumFieldOrderElem)
-charpoly(::AbsSimpleNumFieldOrderElem)
+minpoly(::ZZPolyRing, ::AbsSimpleNumFieldOrderElem)
+charpoly(::ZZPolyRing, ::AbsSimpleNumFieldOrderElem)
 factor(::AbsSimpleNumFieldOrderElem)
 denominator(a::NumFieldElem, O::RelNumFieldOrder)
 discriminant(::Vector{AbsNumFieldOrderElem})

@@ -7,7 +7,7 @@
 elem_type(::Type{StructureConstantAlgebra{T}}) where {T} = AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
 
 # Definitions for orders
-order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{ZZRing, StructureConstantAlgebra{QQFieldElem}}
+order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem}, ZZRing}
 
 #order_type(::Type{T}, ::Type{ZZRing}) where {T} = AlgAssAbsOrd{ZZRing, T}
 #

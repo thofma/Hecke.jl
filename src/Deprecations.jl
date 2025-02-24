@@ -280,3 +280,7 @@ end
 @deprecate prime_field(L::Union{QadicField, LocalField}) absolute_base_field(L)
 @deprecate coefficient_ring(k::LocalField) base_field(k)
 @deprecate coefficient_field(k::QadicField) base_field(k)
+
+# Deprecated in 0.35.10
+@deprecate minpoly(a::Union{LocalFieldElem, QadicFieldElem, RelFinFieldElem, AbsNumFieldOrderElem}, R::PolyRing) minpoly(R, a)
+@deprecate charpoly(a::AbsNumFieldOrderElem, R::PolyRing) charpoly(R, a)

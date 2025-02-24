@@ -6,7 +6,6 @@ using Hecke.Random
 using Hecke.RandomExtensions
 
 import Hecke.AbstractAlgebra
-include(joinpath(pathof(AbstractAlgebra), "..", "..", "test", "Rings-conformance-tests.jl"))
 
 import Hecke: mul!
 

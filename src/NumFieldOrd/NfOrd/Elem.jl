@@ -175,23 +175,28 @@ end
 ################################################################################
 
 @doc raw"""
-    charpoly(a::AbsNumFieldOrderElem) -> ZZPolyRingElem
-    charpoly(a::AbsNumFieldOrderElem, ZZ) -> ZZPolyRingElem
+    charpoly([ZZPolyRing], a::AbsNumFieldOrderElem) -> ZZPolyRingElem
 
-The characteristic polynomial of $a$.
+The characteristic polynomial of $a$. The parent of the polynomial can be
+supplied as a first argument.
 """
-function charpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(ZZ, :x, false))
-  return Zx(charpoly(elem_in_nf(a)))
+function charpoly(R::ZZPolyRing, a::AbsNumFieldOrderElem)
+  return R(charpoly(Globals.Qx, elem_in_nf(a)))
 end
+
+charpoly(a::AbsNumFieldOrderElem) = charpoly(Hecke.Globals.Zx, a)
 
 @doc raw"""
-    minpoly(a::AbsNumFieldOrderElem) -> ZZPolyRingElem
+    minpoly([ZZPolyRing], a::AbsNumFieldOrderElem) -> ZZPolyRingElem
 
-The minimal polynomial of $a$.
+The minimal polynomial of $a$. The parent of the polynomial can be supplied
+as a first argument.
 """
-function minpoly(a::AbsNumFieldOrderElem, Zx::ZZPolyRing = ZZPolyRing(ZZ, :x, false))
-  return Zx(minpoly(elem_in_nf(a)))
+function minpoly(R::ZZPolyRing, a::AbsNumFieldOrderElem)
+  return R(minpoly(Globals.Qx, elem_in_nf(a)))
 end
+
+minpoly(a::AbsNumFieldOrderElem) = minpoly(Hecke.Globals.Zx, a)
 
 ################################################################################
 #

@@ -91,7 +91,7 @@ end
 Given a $\mathbf{Z}$-order $O$ of a rational matrix algebra contained in
 $\mathrm{M}_n(\mathbf{Z})$, return $\mathbf{Z}^n$ as an $O$-lattice.
 """
-function natural_lattice(O::AlgAssAbsOrd{ZZRing, <: MatAlgebra{QQFieldElem}})
+function natural_lattice(O::AlgAssAbsOrd{<: MatAlgebra{QQFieldElem}, ZZRing})
   A = algebra(O)
   if all(x -> isone(denominator(matrix(elem_in_algebra(x)))),
          basis(O, copy = false))
@@ -191,6 +191,10 @@ end
 
 function Base.:(==)(L::T, M::T) where {T <: ModAlgAssLat}
   return L.V === M.V && basis_matrix(L) == basis_matrix(M)
+end
+
+function Base.hash(L::ModAlgAssLat, h::UInt)
+  return hash(basis_matrix(L), hash(L.V, h))
 end
 
 ################################################################################

@@ -499,15 +499,14 @@ end
 (p::QQPolyRingElem)(f::FinGenAbGroupHom) = evaluate(p, f)
 
 ###############################################################################
+
 struct MapParent
   dom
   codom
   typ::String
 end
 
-function Base.:(==)(a::MapParent, b::MapParent)
-  return a.dom == b.dom && a.codom == b.codom && a.typ == b.typ
-end
+# == and hash are doing the right thing, since this is immutable
 
 elem_type(::Type{MapParent}) = Map
 

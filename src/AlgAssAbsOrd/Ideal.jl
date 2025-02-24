@@ -81,7 +81,7 @@ function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, M::QQMatrix; M_in_hnf
     end
   end
   k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  return AlgAssAbsOrdIdl{ZZRing, typeof(A)}(A, ZZ, sub(M, k:nrows(M), 1:ncols(M)))
+  return AlgAssAbsOrdIdl{typeof(A), ZZRing}(A, ZZ, sub(M, k:nrows(M), 1:ncols(M)))
 end
 
 function ideal(A::AbstractAssociativeAlgebra, R::Ring, M::MatElem; M_in_hnf::Bool=false)
@@ -93,7 +93,7 @@ function ideal(A::AbstractAssociativeAlgebra, R::Ring, M::MatElem; M_in_hnf::Boo
     end
   end
   k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  return AlgAssAbsOrdIdl{typeof(R), typeof(A)}(A, R, sub(M, k:nrows(M), 1:ncols(M)))
+  return AlgAssAbsOrdIdl{typeof(A), typeof(R)}(A, R, sub(M, k:nrows(M), 1:ncols(M)))
 end
 
 @doc raw"""
@@ -1503,7 +1503,11 @@ function Base.one(S::AlgAssAbsOrdIdlSet)
   return ideal(order(S), one(order(S)))
 end
 
- ==(x::AlgAssAbsOrdIdlSet, y::AlgAssAbsOrdIdlSet) = x.order === y.order
+==(x::AlgAssAbsOrdIdlSet, y::AlgAssAbsOrdIdlSet) = x.order === y.order
+
+function Base.hash(x::AlgAssAbsOrdIdlSet, h::UInt)
+  return hash(objectid(x.order), h)
+end
 
 ################################################################################
 #
@@ -1694,7 +1698,7 @@ end
 ################################################################################
 
 function Base.hash(A::AlgAssAbsOrdIdl, h::UInt)
-  return Base.hash(basis_matrix(A, copy = false), h)
+  return Base.hash(basis_matrix(A, copy = false), hash(algebra(A), h))
 end
 
 ################################################################################
@@ -2113,7 +2117,7 @@ end
 #
 ################################################################################
 
-function swan_module(R::AlgAssAbsOrd{<: Any, <: GroupAlgebra}, r::IntegerUnion)
+function swan_module(R::AlgAssAbsOrd{<: GroupAlgebra, <: Any}, r::IntegerUnion)
   A = algebra(R)
   n = order(group(A))
   @req is_coprime(n, r) "Argument must be coprime to group order"

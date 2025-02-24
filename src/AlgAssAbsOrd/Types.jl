@@ -5,7 +5,7 @@
 ################################################################################
 
 # Orders in algebras over the rationals
-@attributes mutable struct AlgAssAbsOrd{BRingType, AlgType} <: NCRing
+@attributes mutable struct AlgAssAbsOrd{AlgType, BRingType} <: NCRing
   algebra::AlgType                       # Algebra containing the order
   dim::Int
   base_ring::BRingType #= parent_type(elem_type) =#
@@ -35,28 +35,28 @@
   nice_order#Tuple{AlgAssAbsOrd, T}
   nice_order_ideal#::ZZRingElem
 
-  function AlgAssAbsOrd{BRingType, AlgType}(A::AlgType, R::BRingType) where {BRingType, AlgType}
+  function AlgAssAbsOrd{AlgType, BRingType}(A::AlgType, R::BRingType) where {AlgType, BRingType}
     # "Default" constructor with default values.
-    O = new{BRingType, AlgType}(A, dim(A), R)
+    O = new{AlgType, BRingType}(A, dim(A), R)
     O.is_maximal = 0
     O.isnice = false
     O.tcontain = zero_matrix(base_ring(A), 1, dim(A))
     return O
   end
 
-  function AlgAssAbsOrd{BRingType, AlgType}(A::AlgType, R::BRingType, M::MatElem, Minv::MatElem, B::Vector, cached::Bool = false) where {BRingType, AlgType}
+  function AlgAssAbsOrd{AlgType, BRingType}(A::AlgType, R::BRingType, M::MatElem, Minv::MatElem, B::Vector, cached::Bool = false) where {AlgType, BRingType}
     return get_cached!(AlgAssAbsOrdID, (A, R, M), cached) do
-      O = AlgAssAbsOrd{BRingType, AlgType}(A, R)
+      O = AlgAssAbsOrd{AlgType, BRingType}(A, R)
       O.basis_alg = B
       O.basis_matrix = M
       O.basis_mat_inv = Minv
       return O
-    end::AlgAssAbsOrd{BRingType, AlgType}
+    end::AlgAssAbsOrd{AlgType, BRingType}
   end
 
-  function AlgAssAbsOrd{BRingType, AlgType}(A::AlgType, R::BRingType, M::MatElem, cached::Bool = false) where {BRingType, AlgType}
+  function AlgAssAbsOrd{AlgType, BRingType}(A::AlgType, R::BRingType, M::MatElem, cached::Bool = false) where {AlgType, BRingType}
     return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
-      O = AlgAssAbsOrd{BRingType, AlgType}(A, R)
+      O = AlgAssAbsOrd{AlgType, BRingType}(A, R)
       d = dim(A)
       O.basis_matrix = M
       O.basis_alg = Vector{elem_type(A)}(undef, d)
@@ -64,17 +64,17 @@
         O.basis_alg[i] = elem_from_mat_row(A, M, i)
       end
       return O
-    end::AlgAssAbsOrd{BRingType, AlgType}
+    end::AlgAssAbsOrd{AlgType, BRingType}
   end
 
-  function AlgAssAbsOrd{BRingType, AlgType}(A::AlgType, R::BRingType, B::Vector, cached::Bool = false) where {AlgType, BRingType}
+  function AlgAssAbsOrd{AlgType, BRingType}(A::AlgType, R::BRingType, B::Vector, cached::Bool = false) where {AlgType, BRingType}
     M = basis_matrix(B)
     return get_cached!(AlgAssAbsOrdID, (A, R, M), cached) do
-      O = AlgAssAbsOrd{BRingType, AlgType}(A, R)
+      O = AlgAssAbsOrd{AlgType, BRingType}(A, R)
       O.basis_alg = B
       O.basis_matrix = M
       return O
-    end::AlgAssAbsOrd{BRingType, AlgType}
+    end::AlgAssAbsOrd{AlgType, BRingType}
   end
 end
 
@@ -131,7 +131,7 @@ end
 #
 ################################################################################
 
-@attributes mutable struct AlgAssAbsOrdIdl{BRingType, AlgType}
+@attributes mutable struct AlgAssAbsOrdIdl{AlgType, BRingType}
   algebra::AlgType
   base_ring::BRingType
 
@@ -176,8 +176,8 @@ end
                                        # to different orders
   normred#::Dict{AlgAssAbsOrd{S, T}, QQFieldElem}
 
-  function AlgAssAbsOrdIdl{BRingType, AlgType}(A::AlgType, R::BRingType) where {BRingType, AlgType}
-    r = new{BRingType, AlgType}()
+  function AlgAssAbsOrdIdl{AlgType, BRingType}(A::AlgType, R::BRingType) where {AlgType, BRingType}
+    r = new{AlgType, BRingType}()
     r.algebra = A
     r.base_ring = R
     r.isleft = 0
@@ -191,8 +191,8 @@ end
     return r
   end
 
-  function AlgAssAbsOrdIdl{BRingType, AlgType}(A::AlgType, R::BRingType, M::MatElem) where {BRingType, AlgType}
-    r = AlgAssAbsOrdIdl{BRingType, AlgType}(A, R)
+  function AlgAssAbsOrdIdl{AlgType, BRingType}(A::AlgType, R::BRingType, M::MatElem) where {AlgType, BRingType}
+    r = AlgAssAbsOrdIdl{AlgType, BRingType}(A, R)
     r.basis_matrix = M
     n = nrows(M)
     if is_square(M)

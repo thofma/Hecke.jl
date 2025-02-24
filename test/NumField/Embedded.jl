@@ -1,5 +1,3 @@
-test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
-
 @testset "Embedded number field" begin
   Qx, x = QQ["x"]
   K, _a = number_field(x^2 - 2, "a")
@@ -23,7 +21,7 @@ test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
   @test sprint(show, a) isa String
   @test sprint(show, "text/plain", a) isa String
   @test E([1, 2]) == 1 + 2*a
-  test_Ring_interface(E)
+  ConformanceTests.test_Ring_interface(E)
   # trigger expressify
   Et, t = E["t"]
   @test sprint(show, a * t) isa String
@@ -47,7 +45,7 @@ test_elem(E::Hecke.EmbeddedNumField) = E(rand(number_field(E), -10:10))
   @test sprint(show, "text/plain", E) isa String
   @test sprint(show, a[1]) isa String
   @test sprint(show, "text/plain", a[1]) isa String
-  test_Ring_interface(E)
+  ConformanceTests.test_Ring_interface(E)
 
   # other constructors
   E, a = Hecke.embedded_number_field([x^2 - 2, x^2 - 3], [1.41, 1.6])

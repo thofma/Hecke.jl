@@ -734,6 +734,11 @@ function ==(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where { S,
          _spans_subset_of_pseudohnf(bpmat, apmat; shape = :lowerleft)
 end
 
+function Base.hash(a::AlgAssRelOrdIdl, h::UInt)
+  # apparently, basis matrices are not normalized
+  return hash(algebra(a), h)
+end
+
 ################################################################################
 #
 #  isleft/isright

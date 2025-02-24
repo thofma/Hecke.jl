@@ -1,6 +1,6 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.35.10"
+version = "0.35.11"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -28,7 +28,7 @@ GAPExt = "GAP"
 PolymakeExt = "Polymake"
 
 [compat]
-AbstractAlgebra = "^0.44.0"
+AbstractAlgebra = "^0.44.7"
 Dates = "1.6"
 Distributed = "1.6"
 GAP = "0.9.6, 0.10, 0.11, 0.12, 0.13"

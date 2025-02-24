@@ -12,15 +12,13 @@
 #  radical(A) -> _radical(A) which is supposed to return a basis of the radical
 #  _radical(A) --> _radical_zero(A) (characteristic zero)
 #              \-> _radical_finite(A) -> _radical_finite(A) (finite fields)
+#              \-> _radical_funfield(A) (F(t))
 #  (via runtime dispatch)
 #
 #  TODO:
 #  - make the finite field case fast for non-prime fields
 #    (by directly implementing it for matrix algebras as in the prime field
 #    case)
-#  - Implement for algebras over F_q(X_1,...X_m), following Ivanyos,
-#    Ronyai, Szanto, "Decomposition of Algebras over Fq(Xl,... , Xm)",
-#    (doi:10.1007/bf01438277).
 #  - Use Cohen-Ivanyos-Wales
 #    "Finding the radical of an algebra of linear transformations"
 #    for all finite fields
@@ -41,6 +39,8 @@ function _radical(A::AbstractAssociativeAlgebra)
     return _radical_zero(A)
   elseif is_finite(K)
     return _radical_finite(A)
+  elseif K isa Generic.RationalFunctionField # must have finit coefficients
+    return _radical_funfield(A)
   else
     throw(NotImplemented())
   end
@@ -373,4 +373,60 @@ function _lift!(A::zzModMatrix, B::FpMatrix, Mtemp::ZZMatrix)
   ccall((:fmpz_mod_mat_get_fmpz_mat, libflint), Cvoid, (Ref{ZZMatrix}, Ref{FpMatrix}, Ref{Nemo.fmpz_mod_ctx_struct}), Mtemp, B, base_ring(B).ninv)
   ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{zzModMatrix}, Ref{ZZMatrix}), A, Mtemp)
   return A
+end
+
+################################################################################
+#
+#  Rational function fields
+#
+################################################################################
+
+# Use Cohen-Ivanyos-Wales
+# "Finding the radical of an algebra of linear transformations"
+
+function _tr(i::Int, A::MatElem)
+  if i == 1
+    return trace(A)
+  else
+    n = nrows(A)
+    f = charpoly(A)
+    return isodd(i) ? -coeff(f, n - i) : coeff(f, n - i)
+  end
+end
+
+function _radical_funfield(A::AbstractAssociativeAlgebra)
+  B, BtoA = regular_matrix_algebra(A)
+  return BtoA.(_radical_funfield(B))
+end
+
+function _radical_funfield(A::MatAlgebra)
+  K = base_ring(A)
+  p = characteristic(K)
+  n = degree(A)
+  @assert p > 0
+  s = 1
+  B = basis(A)
+  if !any(isone, B)
+    B = push!(copy(B), one(A))
+  end
+
+  while s <= n
+    if !any(isone, B)
+      B = push!(copy(B), one(A))
+    end
+    d = length(B)
+    G = _trace_matrix(B, x -> _tr(Int(s), matrix(x, copy = false)))
+    K = kernel(G; side = :left)
+    # if 1 < s < |K| always satisfied
+    sp = 1
+    while sp < s
+      K = _intersect_with_pspan(K)
+      sp = sp * p
+    end
+    Bmat = echelon_form(K * basis_matrix(B); trim = true)
+    B = [elem_from_mat_row(A, Bmat, i) for i in 1:nrows(Bmat)]
+    # B is automatically a basis
+    s = s * p
+  end
+  return B
 end

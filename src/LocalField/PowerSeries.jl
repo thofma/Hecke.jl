@@ -317,6 +317,20 @@ function AbstractAlgebra.promote_rule(::Type{LaurentSeriesFieldValuationRingElem
   AbstractAlgebra.promote_rule(U, V) == U ? LaurentSeriesFieldValuationRingElem{S, T, U} : Union{}
 end
 
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function ConformanceTests.generate_element(R::LaurentSeriesFieldValuationRing; shift::Int = Int(characteristic(R)) - 1)
+  return R(rand(data(R), 0:shift))
+end
+
+function ConformanceTests.equality(a::T, b::T) where {T <: LaurentSeriesFieldValuationRingElem}
+  return a == b
+end
+
 ################################################################################
 #
 #  Construction

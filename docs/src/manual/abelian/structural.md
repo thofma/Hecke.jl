@@ -89,7 +89,7 @@ canonical_projection(G::FinGenAbGroup, i::Int)
 flat(G::FinGenAbGroup)
 ```
 
-## Tensor Producs
+## Tensor Products
 ```@docs
 tensor_product(G::FinGenAbGroup...)
 hom_tensor(G::FinGenAbGroup, H::FinGenAbGroup, A::Vector{ <: Map{FinGenAbGroup, FinGenAbGroup}})

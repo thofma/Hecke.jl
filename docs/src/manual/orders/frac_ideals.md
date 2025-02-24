@@ -36,7 +36,7 @@ numerator(::RelNumFieldOrderFractionalIdeal)
 denominator(::RelNumFieldOrderFractionalIdeal)
 ```
 
-## Miscaellenous
+## Miscellaneous
 
 ```@docs
 order(::AbsSimpleNumFieldOrderFractionalIdeal)

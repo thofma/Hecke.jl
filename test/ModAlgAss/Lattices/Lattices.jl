@@ -22,3 +22,15 @@ let
   M = f(OK)
   @test !is_free(M)
 end
+
+let
+  Qx, x = QQ["x"]
+  K, a = number_field(x^4 - x^3 + x^2 - x + 1, "a")
+  V, f = galois_module(K)
+  OK = ring_of_integers(K)
+  M = f(OK)
+  N = f(OK)
+  @test M == N
+  @test hash(M) == hash(N)
+end
+

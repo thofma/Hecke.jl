@@ -20,7 +20,7 @@ end
 
 function Base.getindex(a::ZZRingElem_Array, i::Integer)
   n = ZZRingElem()
-  set!(n, get_ptr(a, i))
+  return set!(n, get_ptr(a, i))
 end
 
 function Nemo.getindex!(n::ZZRingElem, a::ZZRingElem_Array, i::Integer)
