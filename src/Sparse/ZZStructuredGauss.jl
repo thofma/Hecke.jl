@@ -1,9 +1,12 @@
 #TODO: sizehints
 #TODO: pointer pointer pointer
 #TODO: sizehint for heavy stuff can be given later, so don't initialize immediately
-#TODO: new struct for second part
 #TODO: add sizehint for Y?
 #TODO: remove whitespaces at beginning of lines
+#TODO: eliminate some assertions/hassert
+#TODO: inplace instead of Y, dense part via pointer
+#TODO: use new set! for value array
+#TODO: rename single_col to pivot
 
 #=
 PROBLEMS:
@@ -170,7 +173,7 @@ mutable struct data_ZZStructGauss{T}
    j_light = find_light_entry(single_row.pos, SG.is_light_col)
    single_row_val = SG.A[i, j_light]
    @assert length(SG.col_list[j_light]) > 1
-   is_one = isone(single_row_val)||isone(-single_row_val)
+   is_one = isone(single_row_val)||isone(-single_row_val) #TODO: reduce isone queries
    if best_single_row < 0
     best_single_row = i
     best_col = j_light
@@ -279,7 +282,7 @@ mutable struct data_ZZStructGauss{T}
    @assert row_idx > 0
    @assert SG.col_list_perm[row_idx] in SG.col_list[best_col]
    L_row = SG.col_list_perm[row_idx]
-   add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG)
+   add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG) #TODO: isone query
    update_after_addition!(L_row, row_idx, best_col, SG)
    handle_new_light_weight!(row_idx, SG)
   end
@@ -477,7 +480,8 @@ function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
   if SG.is_light_col[i]
    if with_light
     @assert ilight <= SG.nlight
-    one!(K[i, _nullity+ilight])
+    #one!(K[i, _nullity+ilight]) doesn't work inplace
+    K[i, _nullity+ilight] = one(ZZ)
     ilight +=1
    end
   else
@@ -522,6 +526,11 @@ function compose_kernel(l, K, SG)
      zero!(r)
      zero!(g)
     end
+    #=test
+    for y = 1:size(K)[2]
+      !iszero(scalar_prod(SG.A[i], K[:,y])) && println(i)
+    end
+    =#
   end
   return l, K
  end
@@ -569,3 +578,12 @@ function Nemo.submul!(z::ZZRingElemOrPtr, x::ZZRingElemOrPtr, y::Ptr{Int})
   return z
 end
 =#
+
+function scalar_prod(A::SRow{T}, B::Array{T}) where T
+  z = zero(T)
+  for idx = 1:length(A.pos)
+   i = A.pos[idx]
+   z+=A.values[idx]*B[i]
+  end
+  return z
+end
