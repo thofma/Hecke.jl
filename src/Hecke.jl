@@ -37,6 +37,9 @@ using SparseArrays
 using Serialization
 using Random
 using Pkg
+if !isdefined(Base, :get_extension)
+  using Requires: @require
+end
 
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias
@@ -252,6 +255,13 @@ function __init__()
 
   add_verbosity_scope(:ZGenRep)
   add_assertion_scope(:ZGenRep)
+
+  # Remove once all supported julia versions support package extensions, i.e. 1.9 or later.
+  # Same for all other places that use `isdefined(Base, :get_extension)`.
+  @static if !isdefined(Base, :get_extension)
+    @require GAP = "c863536a-3901-11e9-33e7-d5cd0df7b904" include("../ext/GAPExt/GAPExt.jl")
+    @require Polymake = "d720cf60-89b5-51f5-aff5-213f193123e7" include("../ext/PolymakeExt.jl")
+  end
 end
 
 module Globals
