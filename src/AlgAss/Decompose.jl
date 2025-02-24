@@ -163,7 +163,13 @@ function _dec_com_gen(A::AbstractAssociativeAlgebra{T}) where {T <: FieldElem}
   if !is_separable(A)
     # I am not sure we can/need to find *the* maximal separable subalgebra
     # (it exists, see Roos, "Maximal Separable Subalgebras")
-    B, mB = _separable_subalgebra(A)
+    res = Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[]
+    B, BtoA = _separable_subalgebra(A)
+    decB = _dec_com_gen(B)::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
+    for (C, CtoB) in decB
+      push!(res, (C, compose_and_squash(BtoA, CtoB)))
+    end
+    return res
   end
 
   # we are separable and commutative, and the base field is not finite
@@ -481,7 +487,7 @@ function _separable_subalgebra(A::AbstractAssociativeAlgebra)
     return A, identity_map(A)
   end
   char = characteristic(base_ring(A))
-  n = char^ZZ(floor(log(char, ZZ(dim(A)))))
+  n = ZZ(char)^flog(ZZ(dim(A)), char)
   N = echelon_form(basis_matrix(map(x -> x^n, basis(A))); trim=true)
   bb = [elem_from_mat_row(A, N, i) for i in 1:nrows(N)]
   return _subalgebra(A, bb)
