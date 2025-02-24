@@ -479,7 +479,7 @@ function Hecke.fields(a::Int, b::Int, list::Vector{FieldsTower}, absolute_bound:
     first = false
     E1 = GAP.Globals.FactorGroup(L[1], L[i+1])
     H1 = GAP.Globals.FactorGroup(L[i], L[i+1])
-    l = GAP.gap_to_julia(Vector{Int64}, GAP.Globals.AbelianInvariants(H1))
+    l = Vector{Int}(GAP.Globals.AbelianInvariants(H1))
     @vprintln :Fields 1 "constructing abelian extensions with invariants $l"
     @vprintln :FieldsNonFancy 1 "constructing abelian extensions with invariants $l"
     o = divexact(GAP.Globals.Size(G), GAP.Globals.Size(E1))
@@ -550,7 +550,7 @@ function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_p
   end
   L = GAP.Globals.DerivedSeries(G)
   G1 = GAP.Globals.FactorGroup(L[1], L[end-1])
-  invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(L[end-1]))
+  invariants = Vector{Int}(GAP.Globals.AbelianInvariants(L[end-1]))
   lG = snf(abelian_group(invariants))[1]
   invariants = map(Int, lG.snf)
   if GAP.Globals.IsAbelian(G)
@@ -561,7 +561,7 @@ function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_p
   must_be_ram_surely, must_be_ram_maybe = must_be_ramified(L, length(L)-1)
   lvl = _real_level(L)
   IdGroupGAP = GAP.Globals.IdGroup(G1)
-  IdGroup = GAP.gap_to_julia(Vector{Int}, IdGroupGAP)
+  IdGroup = Tuple{Int, Int}(IdGroupGAP)
   pinvariants = prod(invariants)
   if must_be_ram_surely
     #The extension must be ramified. Find a constant...
