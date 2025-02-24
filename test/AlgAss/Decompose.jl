@@ -18,5 +18,11 @@
   B = first(Hecke._separable_subalgebra(A))
   @test dim(B) == 2
   @test is_separable(B)
+
+  (A1, i1), (A2, i2) = Hecke._dec_com_gen(A)
+  @test i1(one(A1)) * i2(one(A2)) == zero(A)
+  @test i1(one(A1)) + i2(one(A2)) == one(A)
+  @test dim(A1) + dim(A2) == dim(A)
+
 end
 

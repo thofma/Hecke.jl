@@ -167,7 +167,8 @@ function _dec_com_gen(A::AbstractAssociativeAlgebra{T}) where {T <: FieldElem}
     B, BtoA = _separable_subalgebra(A)
     decB = _dec_com_gen(B)::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
     for (C, CtoB) in decB
-      push!(res, (C, compose_and_squash(BtoA, CtoB)))
+      CtoA = compose_and_squash(BtoA, CtoB)
+      push!(res, _subalgebra(A, CtoA(one(C)), true))
     end
     return res
   end
