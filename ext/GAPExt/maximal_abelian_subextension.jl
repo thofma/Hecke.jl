@@ -13,7 +13,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   end
   #=
   E = GAP.Globals.SmallGroup(IdExtension)
-  oE = GAP.gap_to_julia(Int, GAP.Globals.Size(E))
+  oE = Int(GAP.Globals.Size(E))
   #I need to compute the degree of the maximal abelian subextension over this subfield.
   deg_mas = Set{Int}()
   if degree(domain(F.subfields[i])) == 1
@@ -21,7 +21,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
   else
     idH = IdGroup(automorphism_list(domain(F.subfields[i])))
   end
-  oH = GAP.gap_to_julia(Int, idH[1])
+  oH = Int(idH[1])
   order_sub = divexact(oE, oH)
   lN = GAP.Globals.NormalSubgroups(E)
   for s = 1:length(lN)
@@ -29,7 +29,7 @@ function check_abelian_extensions(class_fields::Vector{Tuple{ClassField{MapRayCl
       continue
     end
     if GAP.Globals.IdGroup(GAP.Globals.FactorGroup(E, lN[s])) == idH
-      dS = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(lN[s]))
+      dS = Vector{Int}(GAP.Globals.AbelianInvariants(lN[s]))
       push!(deg_mas, prod(dS)
     end
   end

@@ -507,13 +507,13 @@ function max_ab_norm_sub_containing(G::GAP.GapObj)
   #First, I check if the centralizer split directly as a direct product.
   sc = GAP.Globals.ComplementClassesRepresentatives(G1, H)
   if !GAP.Globals.IsEmpty(sc)
-    return G1, H, GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
+    return G1, H, Vector{Int}(GAP.Globals.AbelianInvariants(sc[1]))
   end
   lS = GAP.Globals.ConjugacyClassesSubgroups(G1)
   #TODO: Subgroups in the quotient by H and not in the full group
   candidate = H
   sizecandidate = GAP.Globals.Size(H)
-  ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(H))
+  ab_invariants = Vector{Int}(GAP.Globals.AbelianInvariants(H))
   for i = 1:length(lS)
     S = lS[i]
     s = GAP.Globals.Representative(S)
@@ -528,7 +528,7 @@ function max_ab_norm_sub_containing(G::GAP.GapObj)
     if sncandidate > sizecandidate
       candidate = s
       sizecandidate = sncandidate
-      ab_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(sc[1]))
+      ab_invariants = Vector{Int}(GAP.Globals.AbelianInvariants(sc[1]))
     end
   end
   return candidate, H, ab_invariants
