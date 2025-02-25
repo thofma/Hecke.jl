@@ -1,7 +1,12 @@
 module FactorFF
 using ..Hecke
 
+function _is_separable(F::Generic.FunctionField)
+  return is_separable(defining_polynomial(F))
+end
+
 function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem})
+  @assert !_is_separable(F)
   f = defining_polynomial(F)
   K = base_ring(f)
   # K = k(t)
@@ -21,7 +26,7 @@ function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem
     aden = denominator(a) # parent(aden) == R
     abiv = (map_coefficients(c -> c(y), anum)(x))
     abivswap = abiv(gen(base_ring(fint)), FFprim)/aden(FFprim)
-    return abivswap
+    return abivswap::typeof(a)
   end
 
   FFtoF = function(b)
@@ -29,7 +34,7 @@ function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem
     bden = denominator(b) # parent(aden) == R
     bbiv = (map_coefficients(c -> c(y), bnum)(x))
     bbivswap = bbiv(gen(base_ring(fint)), gen(F))/bden(gen(F))
-    return bbivswap
+    return bbivswap::typeof(b)
   end
 
   for i in 1:10
@@ -173,12 +178,20 @@ function Hecke.is_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
 end
 
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
+  if !_is_separable(base_ring(f))
+    FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
+    return Hecke.AbstractAlgebra.Generic._transport_factor(factor, f, FtoFF, FFtoF)
+  end
+  return _factor_assume_separable(f)
+end
+
+function _factor_assume_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
   lc = leading_coefficient(f)
   f = divexact(f, lc)
   fsqf = factor_squarefree(f)
   res = Fac(one(f), Dict{typeof(f), Int}())
   for (p, e) in fsqf
-    D = _factor_assume_squarefree(p)
+    D = _factor_assume_squarefree_and_separable(p)
     Hecke.AbstractAlgebra.mulpow!(res, D, e)
   end
   Hecke.AbstractAlgebra.mulpow!(res, parent(f)(lc), 1)
@@ -186,7 +199,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
 end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
-function _factor_assume_squarefree(f::Generic.Poly{<:Generic.FunctionFieldElem})
+function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
   i = 0
   local N
   g = f
