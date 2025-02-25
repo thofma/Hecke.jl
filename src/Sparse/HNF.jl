@@ -165,12 +165,12 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
       j += 1
     end
     if j > nrows(A) || A.rows[j].pos[1] > s
+      mod_sym!(g, m)
       g_v = getindex!(g_v, g.values, 1)
       if is_negative(g_v)
         scale_row!(g, -1)
         @hassert :HNF 3  mod_sym(g.values[1], m) > 0
       end
-      mod_sym!(g, m)
       release_tmp_scalar(A, tmp_scalar)
       release_tmp(A, tmpa)
       release_tmp(A, tmpb)
@@ -201,10 +201,10 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
     end
   end
   g_v = getindex!(g_v, g.values, 1)
+  Hecke.mod_sym!(g, m)
   if length(g.values) > 0 && is_negative(g_v)
     scale_row!(g, -1)
   end
-  Hecke.mod_sym!(g, m)
 #  @hassert :HNF 1  length(g.pos) == 0 || g.values[1] >= 0
   release_tmp_scalar(A, tmp_scalar)
   release_tmp(A, tmpa)
