@@ -924,8 +924,13 @@ function conjugate_quad(a::AbsSimpleNumFieldElem)
     p_ptr = reinterpret(Ptr{Int}, k.pol_coeffs)
     s = sizeof(Ptr{ZZRingElem})
 
-    # The C type `nf_elem_t` (corresponding to `AbsSimpleNumFieldElem`) starts with
-    # an `fmpq_poly_t` (our `QQPolyRingElem`).
+    # The C type `nf_elem_t` (corresponding to `AbsSimpleNumFieldElem`) is a C union;
+    # in our case (= quadratic number field) it is a `qnf_elem_t`, defined like this:
+    # typedef struct /* element of a quadratic number field */
+    # {
+    #    fmpz num[3]; /* extra coeff for delayed reduction */
+    #    fmpz_t den;
+    # } qnf_elem_struct;
 
     # compute r*y, where `r` is the second coefficient in k.pol_coeffs (hence `p_ptr+s`)
     # and `y` is the second coefficient in `a`
