@@ -931,6 +931,35 @@ function cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where 
 end
 
 @doc raw"""
+    is_cyclotomic_polynomial_with_data(p::PolyRingElem{T}) where T -> Bool, Int
+
+Return a tuple containing whether `p` is cyclotomic and which cyclotomic polynomial it is.
+
+# Examples
+
+```jldoctest
+julia> _, b = cyclotomic_field_as_cm_extension(12)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field of order 12, z_12)
+
+julia> is_cyclotomic_polynomial_with_data(minpoly(b))
+(false, -1)
+
+julia> is_cyclotomic_polynomial_with_data(absolute_minpoly(b))
+(true, 12)
+```
+"""
+function is_cyclotomic_polynomial_with_data(p::PolyRingElem{T}) where T
+  n = degree(p)
+  R = parent(p)::PolyRing{T}
+  for k in union(euler_phi_inv(n), [1])
+    if p == cyclotomic_polynomial(k, R)
+      return (true, k)
+    end
+  end
+  return (false, -1)
+end
+
+@doc raw"""
     is_cyclotomic_polynomial(p::PolyRingElem{T}) where T -> Bool
 
 Return whether `p` is cyclotomic.
@@ -948,12 +977,7 @@ julia> is_cyclotomic_polynomial(absolute_minpoly(b))
 true
 ```
 """
-function is_cyclotomic_polynomial(p::PolyRingElem{T}) where T
-  n = degree(p)
-  R = parent(p)::PolyRing{T}
-  list_cyc = union(Int[k for k in euler_phi_inv(n)], [1])::Vector{Int}
-  return any(k -> p == cyclotomic_polynomial(k, R), list_cyc)
-end
+is_cyclotomic_polynomial(p::PolyRingElem{T}) where T = is_cyclotomic_polynomial_with_data(p)[1]
 
 ################################################################################
 #

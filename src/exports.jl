@@ -466,6 +466,7 @@ export is_coprime
 export is_cyclic
 export is_cyclic_kernel_polynomial
 export is_cyclotomic_polynomial
+export is_cyclotomic_polynomial_with_data
 export is_defining_polynomial_nice
 export is_definite
 export is_degenerate
