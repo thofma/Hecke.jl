@@ -182,16 +182,16 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
     fl, g_v = divides!(g_v, p_v, A_v)
 
     if fl
-      A_v = neg!(A_v)
-      g = add_scaled_row(A[j], g, A_v, tmpa)
+      g_v = neg!(g_v)
+      add_scaled_row!(A[j], g, g_v, tmpa) #changes g
       mod_sym!(g, m)
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
-      x, a, b = gcdx!(x, a, b, A.rows[j].values[1], p)
+      x, a, b = gcdx!(x, a, b, A.rows[j].values[1], p_v)
       @hassert :HNF 2  x > 0
       c = div!(g_v, p_v, x)
       d = div!(A_v, A_v, x)
-      A[j], g = Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
+      Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
       new_g = true
 #      @hassert :HNF 2  A[j].values[1] == x
       mod_sym!(g, m)
