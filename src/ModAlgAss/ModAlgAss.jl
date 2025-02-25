@@ -417,7 +417,7 @@ end
 #  return [Amodule(c) for c in cf]
 #end
 
-function basis_of_hom(V, W)
+function basis_of_hom(V::T, W::T) where {T <: ModAlgAss}
   x, y = consistent_action(V, W)
   return stub_basis_hom_space(x, y)
 end
