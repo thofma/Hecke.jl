@@ -80,7 +80,7 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
       j += 1
     end
     if j > nrows(A) || A.rows[j].pos[1] > s
-      if getindex!(tmp, g.values, 1) < 0
+      if is_negative(getindex!(tmp, g.values, 1))
         if !new_g
           g = deepcopy(g)
           new_g = true
@@ -125,7 +125,7 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
     end
   end
  
-  if length(g.values) > 0 && getindex!(tmp, g.values, 1) < 0
+  if length(g.values) > 0 && is_negative(getindex!(tmp, g.values, 1))
     if !new_g
       g = deepcopy(g)
       new_g = false
@@ -148,9 +148,9 @@ modulo $m$ with respect to the symmetric residue system.
 function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
   @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
+  @assert m > 0 
   g = deepcopy(g)
   mod_sym!(g, m)
-  m2 = div(m, 2)
 
   tmpa = get_tmp(A)
   tmpb = get_tmp(A)
@@ -166,7 +166,7 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
     end
     if j > nrows(A) || A.rows[j].pos[1] > s
       g_v = getindex!(g_v, g.values, 1)
-      if g_v >= m2
+      if is_negative(g_v)
         scale_row!(g, -1)
         @hassert :HNF 3  mod_sym(g.values[1], m) > 0
       end
@@ -201,7 +201,7 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
     end
   end
   g_v = getindex!(g_v, g.values, 1)
-  if length(g.values) > 0 && g_v > m2
+  if length(g.values) > 0 && is_negative(g_v)
     scale_row!(g, -1)
   end
   Hecke.mod_sym!(g, m)
@@ -486,7 +486,7 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, ::Val{with_transfo
       b_v = getindex!(b_v, b.values, j)
       A_v = getindex!(A_v, A[p].values, 1)
       q, r = divrem!(q, r, b_v, A_v)
-      if T == ZZRingElem && r < 0
+      if T == ZZRingElem && is_negative(r)
         add!(q, q, -1)
         add!(r, r, A_v)
         @hassert :HNF 1  r >= 0

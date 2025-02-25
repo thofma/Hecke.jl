@@ -74,6 +74,7 @@ function check_index(M::ModuleCtx_fmpz)
     @assert M.basis_idx != 0
   else
     d = abs(det_mc(M.bas_gens))
+    @assert !iszero(d)
     C = M.max_indep
     C.c = M.bas_gens.c
     for ii = M.bas_gens
@@ -92,6 +93,7 @@ function check_index(M::ModuleCtx_fmpz)
     M.max_indep = copy(C)
     @assert is_upper_triangular(C)
     M.basis_idx = prod([C[i,i] for i=1:nrows(C)])
+    @assert M.basis_idx > 0
   end
 
   d = 2*M.basis_idx
