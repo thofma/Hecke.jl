@@ -11,4 +11,18 @@
   fac = factor(f)
   @test unit(fac) * prod(p^e for (p, e) in fac) == f
   @test all(isone(degree(p)) for (p, _) in fac)
+
+  # inseparable extension
+  let
+    k, o = finite_field(9)
+    kt, t = rational_function_field(k, "t")
+    ktx, x = kt[:x]
+    F, a = function_field(x^3 - t, "a")
+    Fy, y = polynomial_ring(F, :x)
+    f = o*(y^3 - t)
+    @test !is_squarefree(f)
+    fac = factor_squarefree(f)
+    @test unit(fac) * prod(p^e for (p, e) in fac) == f
+    @test all(isone(degree(p)) for (p, _) in fac)
+  end
 end

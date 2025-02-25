@@ -1,6 +1,46 @@
 module FactorFF
 using ..Hecke
 
+function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem})
+  f = defining_polynomial(F)
+  K = base_ring(f)
+  # K = k(t)
+  d = lcm(denominator.(coefficients(f)))
+  fint = map_coefficients(numerator, d * f; cached = false)
+  R = base_ring(fint)
+  Rxy, (x, y) = polynomial_ring(R, [:x, :y]; cached = false)
+  fintbiv = map_coefficients(c -> c(y), fint)(x)
+  # new do the switcheroo
+  # this is in R[y][x] = R[x, y]
+  gint = fintbiv(gen(base_ring(fint)), gen(parent(fint)))
+  g = map_coefficients(base_ring(F), gint)
+  FF, FFprim = function_field(g, :b; cached = false)
+  # now the maps ...
+  FtoFF = function(a)
+    anum = numerator(a)    
+    aden = denominator(a) # parent(aden) == R
+    abiv = (map_coefficients(c -> c(y), anum)(x))
+    abivswap = abiv(gen(base_ring(fint)), FFprim)/aden(FFprim)
+    return abivswap
+  end
+
+  FFtoF = function(b)
+    bnum = numerator(b)    
+    bden = denominator(b) # parent(aden) == R
+    bbiv = (map_coefficients(c -> c(y), bnum)(x))
+    bbivswap = bbiv(gen(base_ring(fint)), gen(F))/bden(gen(F))
+    return bbivswap
+  end
+
+  for i in 1:10
+    a = rand(F, 0:5)
+    b = rand(F, 0:5)
+    @assert FtoFF(a * b) == FtoFF(a) * FtoFF(b)
+    @assert FFtoF(FtoFF(a)) == a
+  end
+  return FF, FtoFF, FFtoF
+end
+
 function Hecke.norm(f::PolyRingElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
@@ -86,10 +126,21 @@ function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
   if characteristic(base_ring(f)) == 0
     return Hecke.Nemo._factor_squarefree_char_0(f)
   end
+  if is_separable(defining_polynomial(base_ring(f)))
+    return _factor_squarefree_sep_ext(f)
+  end
+  FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
+  ff = map_coefficients(FtoFF, f; cached = false)
+  fa = _factor_squarefree_sep_ext(ff)
+  D = Dict{typeof(f), Int}((map_coefficients(FFtoF, q; parent = parent(f)), e) for (q, e) in fa)
+  return Fac(map_coefficients(FFtoF, unit(fa); parent = parent(f)), D)
+end
+
+function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem})
   @req is_separable(defining_polynomial(base_ring(f))) "Defining polynomial must be separable"
   D = Dict{typeof(f), Int}() 
   un = leading_coefficient(f)
-  f = f/leading_coefficient(f)
+  f = divexact(f, leading_coefficient(f))
   p = characteristic(base_ring(f))
   C = gcd(f, derivative(f), _induced_derivation(f))
   B = divexact(f, C)
@@ -121,7 +172,6 @@ function Hecke.is_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
   return all(e == 1 for (_, e) in factor_squarefree(f)) 
 end
 
-#plain vanilla Trager, possibly doomed in pos. small char.
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   lc = leading_coefficient(f)
   f = divexact(f, lc)
@@ -135,6 +185,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   return res
 end
 
+#plain vanilla Trager, possibly doomed in pos. small char.
 function _factor_assume_squarefree(f::Generic.Poly{<:Generic.FunctionFieldElem})
   i = 0
   local N
