@@ -30,6 +30,7 @@ export CPS_non_archimedean
 export ClassField
 export ComplexOfMorphisms
 export CyclotomicExt
+export CyclotomicFac
 export Divisor
 export Divisors
 export EllipticCurve
@@ -330,6 +331,7 @@ export extension_field
 export factor
 export factor_absolute
 export factor_coprime
+export factor_cyclotomic
 export faltings_height
 export farey_lift
 export find_points
