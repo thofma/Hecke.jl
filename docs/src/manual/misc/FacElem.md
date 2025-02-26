@@ -32,7 +32,7 @@ Important special cases are
  * ```FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}```, factored algebraic numbers
  * ```FacElem{AbsNumFieldOrderIdeal, AbsNumFieldOrderIdealSet}```, factored ideals
 
-It should be noted that an object of type ```FacElem{ZZRingElem, ZZRing}``
+It should be noted that an object of type `FacElem{ZZRingElem, ZZRing}`
 will, in general, not represent an integer as the exponents can be
 negative.
 
