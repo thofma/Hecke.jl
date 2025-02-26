@@ -14,6 +14,12 @@ PROBLEMS:
 - maximum of PR.A greater as in SG.Y?
 =#
 
+AbstractAlgebra.add_verbosity_scope(:StructGauss)
+AbstractAlgebra.set_verbosity_level(:StructGauss, 0)
+
+AbstractAlgebra.add_assertion_scope(:StructGauss)
+AbstractAlgebra.set_assertion_level(:StructGauss, 0)
+
 mutable struct data_ZZStructGauss{T}
   A::SMat{T}
   Y::SMat{T}
@@ -506,8 +512,12 @@ function compose_kernel(l, K, SG)
   for i = n:-1:1
     c = SG.single_col[i]  # col idx of pivot or zero
     iszero(c) && continue
+    @hassert :StructGauss 2 SG.is_single_col[c]
+    @vprintln :StructGauss 1 "c = $c"
     a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
     for kern_i in 1:l
+     @vprintln :StructGauss 2 i, SG.A[i]
+     @vprintln :StructGauss 2 K[SG.A[i].pos, kern_i]
      for idx in 1:length(SG.A[i])
       cc = SG.A[i].pos[idx]
       cc == c && continue
@@ -521,19 +531,22 @@ function compose_kernel(l, K, SG)
      for j = 1:m
       Nemo.mul!(Nemo.mat_entry_ptr(K, j, kern_i), Nemo.mat_entry_ptr(K, j, kern_i), r)
      end
-     K[c, l] = x
+     Nemo.setindex!(K, x, c, kern_i) #TODO: remove Nemo. ?
+     @vprintln :StructGauss 2 "before zero: $(K[c,l])" 
+     @vprintln :StructGauss 1 "in loop before zero", K[c, :]
      zero!(x)
+     @vprintln :StructGauss 2 "after zero: $(K[c,l])"
      zero!(r)
      zero!(g)
+     @vprintln :StructGauss 1 "in loop after zero", K[c, :]
     end
-    #=test
+    @vprintln :StructGauss 1 K[c, :]
     for y = 1:size(K)[2]
-      !iszero(scalar_prod(SG.A[i], K[:,y])) && println(i)
+      !iszero(scalar_prod(SG.A[i], K[:,y])) && @vprintln :StructGauss 3 (i)
     end
-    =#
   end
   return l, K
- end
+end
 
 function compose_kernel2(l, K, SG)
  n, m = nrows(SG.A), ncols(SG.A)
@@ -557,7 +570,7 @@ function compose_kernel2(l, K, SG)
     for j = 1:m
      K[j, kern_i]=r*K[j, kern_i]
     end
-    K[c, l] = x
+    Nemo.setindex(K, x, c, l) #TODO: remove Nemo. ?
     zero!(x)
     zero!(r)
     zero!(g)
