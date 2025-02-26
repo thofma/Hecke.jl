@@ -279,7 +279,7 @@ in the standard basis of the rational span of ``S``, and ``\alpha`` and ``d``
 are rational numbers.
 
 The vectors in output are given in terms of their coordinates in the rational
-space of ``S``.
+span of ``S``.
 
 The implementation is based on Algorithm 2.2 in [Shi15](@cite)
 """
