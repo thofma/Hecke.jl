@@ -22,7 +22,10 @@
     f = o*(y^3 - t)
     @test !is_squarefree(f)
     fac = factor_squarefree(f)
-    @test unit(fac) * prod(p^e for (p, e) in fac) == f
+    @test evaluate(fac) == f
     @test all(isone(degree(p)) for (p, _) in fac)
+    fac = factor(f)
+    @test evaluate(fac) == f
+    @test length(fac) == 1
   end
 end
