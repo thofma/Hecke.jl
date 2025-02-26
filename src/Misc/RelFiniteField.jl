@@ -371,11 +371,16 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, Rx::PolyRing = polynomial_ring(base_field(parent(a)), "x", cached = false)[1]) where T <:RelFinFieldElem
+function minpoly(a::RelFinFieldElem)
+  Rx = polynomial_ring(base_field(parent(a)), "x", cached = false)[1]
+  return minpoly(Rx, a)
+end
+
+function minpoly(Rx::PolyRing, a::RelFinFieldElem)
   F = parent(a)
   d = degree(F)
   p = order(base_field(F))
-  conjs = T[a]
+  conjs = typeof(a)[a]
   el = a
   for i = 2:d
     el = el^p

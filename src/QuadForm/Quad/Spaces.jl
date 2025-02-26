@@ -2164,6 +2164,15 @@ function Base.:(==)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
   return is_local_square(G1.det*G2.det, prime(G1))
 end
 
+function Base.hash(G::LocalQuadSpaceCls, h::UInt)
+  h = hash(base_ring(G), h)
+  h = hash(prime(G), h)
+  h = hash(dim_radical(G), h)
+  h = hash(dim(G), h)
+  h = hash(hasse_invariant(G), h)
+  return h
+end
+
 @doc raw"""
     Base.:(+)(G1::LocalQuadSpaceCls, G2::LocalQuadSpaceCls)
     -> LocalQuadSpaceCls
@@ -2355,6 +2364,13 @@ function Base.:(==)(G1::QuadSpaceCls, G2::QuadSpaceCls)
   end
   P = union(Set(keys(G1.LGS)),Set(keys(G2.LGS)))
   return all(local_symbol(G1, p) == local_symbol(G2,p) for p in P)
+end
+
+function Base.hash(G::QuadSpaceCls, h::UInt)
+  h = hash(base_ring(G), h)
+  h = hash(dim(G), h)
+  h = hash(G.signature_tuples, h)
+  return h
 end
 
 @doc raw"""

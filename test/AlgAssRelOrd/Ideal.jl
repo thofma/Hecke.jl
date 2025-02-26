@@ -16,6 +16,8 @@
     @test I^ZZRingElem(2) == J
 
     @test norm(I) == 4*base_ring(O)
+
+    @test hash(I * J) == hash(8 * O)
   end
 
   @testset "Locally free basis" begin

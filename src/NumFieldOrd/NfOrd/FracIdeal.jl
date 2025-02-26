@@ -168,6 +168,8 @@ parent_type(::Type{AbsNumFieldOrderFractionalIdeal{S, T}}) where {S, T} = AbsNum
 
 ==(a::AbsNumFieldOrderFractionalIdealSet, b::AbsNumFieldOrderFractionalIdealSet) = order(a) === order(b)
 
+Base.hash(a::AbsNumFieldOrderFractionalIdealSet, h::UInt) = hash(order(a), h)
+
 ################################################################################
 #
 #  Order

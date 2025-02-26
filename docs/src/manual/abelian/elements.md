@@ -7,7 +7,7 @@ end
 # Elements
 Elements in a finitely generated abelian group are of type `FinGenAbGroupElem`
 and are always given as a linear combination of the generators.
-Internally this representation is normliased to have a unique
+Internally this representation is normalised to have a unique
 representative.
 
 ## Creation

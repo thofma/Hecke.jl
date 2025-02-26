@@ -121,6 +121,12 @@ function Base.:(==)(x::ModAlgAssElem{P, T}, y::ModAlgAssElem{P, T}) where {P, T}
   return parent(x) === parent(y) && coordinates(x) == coordinates(y)
 end
 
+function Base.hash(x::ModAlgAssElem, h::UInt)
+  h = hash(parent(x), h)
+  h = hash(coordinates(x), h)
+  return h
+end
+
 function Base.show(io::IO, ::MIME"text/plain", V::ModAlgAss)
   io = pretty(io)
   println(io, LowercaseOff(), "Amodule of dimension ", V.dim)
@@ -411,7 +417,7 @@ end
 #  return [Amodule(c) for c in cf]
 #end
 
-function basis_of_hom(V, W)
+function basis_of_hom(V::T, W::T) where {T <: ModAlgAss}
   x, y = consistent_action(V, W)
   return stub_basis_hom_space(x, y)
 end
@@ -422,9 +428,9 @@ end
 #
 ################################################################################
 
-stub_composition_factors(a) = error("Load Oscar (or GAP) and try again")
+stub_composition_factors(a) = error("Load Oscar (or GAP) and try again. This needs julia 1.9 or later.")
 
-stub_basis_hom_space(a, b) = error("Load Oscar (or GAP) and try again")
+stub_basis_hom_space(a, b) = error("Load Oscar (or GAP) and try again. This needs julia 1.9 or later.")
 
 ################################################################################
 #

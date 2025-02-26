@@ -466,6 +466,7 @@ export is_coprime
 export is_cyclic
 export is_cyclic_kernel_polynomial
 export is_cyclotomic_polynomial
+export is_cyclotomic_polynomial_with_data
 export is_defining_polynomial_nice
 export is_definite
 export is_degenerate
@@ -549,6 +550,7 @@ export is_represented_by
 export is_right_ideal
 export is_semi_regular
 export is_semisimple
+export is_separable
 export is_short_weierstrass_model
 export is_simple
 export is_simplified_model

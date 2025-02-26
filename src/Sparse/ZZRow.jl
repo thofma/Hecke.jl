@@ -1,7 +1,7 @@
 module ZZRingElem_Array_Mod
-using Nemo
 
-export ZZRingElem_Array, get_ptr
+using Nemo
+using Nemo: set!
 
 mutable struct ZZRingElem_Array <: AbstractVector{ZZRingElem}
   ar::Vector{Int}
@@ -15,18 +15,18 @@ mutable struct ZZRingElem_Array <: AbstractVector{ZZRingElem}
 end
 
 function get_ptr(a::ZZRingElem_Array, i::Int)
-  return pointer(a.ar, i)
+  return Ptr{ZZRingElem}(pointer(a.ar, i))
 end
 
 function Base.getindex(a::ZZRingElem_Array, i::Integer)
   n = ZZRingElem()
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ptr{Int}), n, get_ptr(a, i))
+  set!(n, get_ptr(a, i))
   return n
 end
 
 function Base.setindex!(a::ZZRingElem_Array, v::ZZRingElem, i::Integer)
   @assert i <= length(a)
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{Int}, Ref{ZZRingElem}), get_ptr(a, i), v)
+  set!(get_ptr(a, i), v)
   return v
 end
 
@@ -66,7 +66,7 @@ function empty!!(a::ZZRingElem_Array)
   p = get_ptr(a, 1)
   for i=1:length(a)
     if !Nemo.__fmpz_is_small(a.ar[i])
-      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{Int}, ), p)
+      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), p)
     end
     p += sizeof(Int)
   end
@@ -87,11 +87,11 @@ function Base.push!(a::ZZRingElem_Array, b::ZZRingElem)
 #    @assert length(a.ar) > a.l
     a.l += 1
   end
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{Int}, Ref{ZZRingElem}), get_ptr(a, length(a)), b)
+  set!(get_ptr(a, length(a)), b)
   return a
 end
 
-function Base.push!(a::ZZRingElem_Array, b::Ptr{Int})
+function Base.push!(a::ZZRingElem_Array, b::Ptr{ZZRingElem})
   if length(a.ar) > a.l
     a.l += 1
   else
@@ -99,7 +99,7 @@ function Base.push!(a::ZZRingElem_Array, b::Ptr{Int})
 #    @assert length(a.ar) > a.l
     a.l += 1
   end
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{Int}, Ptr{Int}), get_ptr(a, length(a)), b)
+  set!(get_ptr(a, length(a)), b)
   return a
 end
 
@@ -111,7 +111,7 @@ function Base.push!(a::ZZRingElem_Array, b::Ref{ZZRingElem})
 #    @assert length(a.ar) > a.l
     a.l += 1
   end
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{Int}, Ref{ZZRingElem}), get_ptr(a, length(a)), b)
+  set!(get_ptr(a, length(a)), b)
   return a
 end
 
@@ -127,7 +127,7 @@ function Base.push!(a::ZZRingElem_Array, b::Int)
   if Nemo.__fmpz_is_small(b) && Nemo.__fmpz_is_small(a.ar[a.l])
     a.ar[a.l] = b
   else
-    ccall((:fmpz_set_si, Nemo.libflint), Cvoid, (Ptr{Int}, Int), get_ptr(a, length(a)), b)
+    set!(get_ptr(a, length(a)), b)
   end
   return a
 end
@@ -152,7 +152,7 @@ function Base.resize!(a::ZZRingElem_Array, n::Int)
     end
   elseif n < la
     for i=n+1:la
-      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{Int}, ), get_ptr(a, i))
+      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, i))
     end
     resize!(a.ar, n)
     a.l = n
@@ -160,13 +160,13 @@ function Base.resize!(a::ZZRingElem_Array, n::Int)
   return a
 end
 
-function Base.deleteat!(a::ZZRingElem_Array_Mod.ZZRingElem_Array, b::Int64)
-  ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{Int}, ), get_ptr(a, b))
+function Base.deleteat!(a::ZZRingElem_Array, b::Int64)
+  ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, b))
   deleteat!(a.ar, b)
   a.l -= 1
 end
 
-function Base.insert!(a::ZZRingElem_Array_Mod.ZZRingElem_Array, b::Int64, c::ZZRingElem)
+function Base.insert!(a::ZZRingElem_Array, b::Int64, c::ZZRingElem)
   insert!(a.ar, b, 0)
   a.l += 1
   a[b] = c
@@ -187,7 +187,7 @@ end
 
 end # module
 
-using .ZZRingElem_Array_Mod
+using ..ZZRingElem_Array_Mod: ZZRingElem_Array, get_ptr
 
 sparse_inner_type(::Type{ZZRingElem}) = ZZRingElem_Array
 
@@ -210,7 +210,7 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
   pa = get_ptr(a.values, 1)
   pb = get_ptr(b.values, 1)
   for i=1:length(a)
-    if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{Int}, Ptr{Int}), pa, pb) != 0
+    if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
       return false
     end
     pa += sizeof(Int)

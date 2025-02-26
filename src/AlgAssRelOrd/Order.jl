@@ -375,6 +375,10 @@ function ==(R::AlgAssRelOrd, S::AlgAssRelOrd)
   return _spans_subset_of_pseudohnf(Rpmat, Spmat; shape = :lowerleft) && _spans_subset_of_pseudohnf(Spmat, Rpmat; shape = :lowerleft)
 end
 
+function Base.hash(R::AlgAssRelOrd, h::UInt)
+  return hash(algebra(R), h)
+end
+
 ################################################################################
 #
 #  Discriminant and Reduced Trace Matrix

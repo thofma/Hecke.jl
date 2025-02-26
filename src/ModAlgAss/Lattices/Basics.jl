@@ -193,6 +193,10 @@ function Base.:(==)(L::T, M::T) where {T <: ModAlgAssLat}
   return L.V === M.V && basis_matrix(L) == basis_matrix(M)
 end
 
+function Base.hash(L::ModAlgAssLat, h::UInt)
+  return hash(basis_matrix(L), hash(L.V, h))
+end
+
 ################################################################################
 #
 #  Local containment

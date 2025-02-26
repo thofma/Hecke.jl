@@ -199,4 +199,12 @@
   I = 1 * O
   @test Hecke.is_full_lattice(I)
 
+  # parent
+  let
+    A = zero_algebra(QQ)
+    O = Order(A, elem_type(A)[])
+    I = 1 * O
+    @test parent(I) == parent(I)
+    @test hash(parent(I)) == hash(parent(I))
+  end
 end

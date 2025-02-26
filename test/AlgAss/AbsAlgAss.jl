@@ -269,4 +269,37 @@
       @test isone(prod(v[i]^Int(w[i]) for i in 1:length(v)))
     end
   end
+
+  let
+    # separability, commutative algebras only for now
+    K, t = rational_function_field(GF(3), :t);
+    Kx, x = K["x"];
+    A = associative_algebra(x^3 - t)
+    @test !is_separable(A)
+    A = associative_algebra(x^2 - t)
+    @test is_separable(A)
+    A = associative_algebra(x^9 - t)
+    @test !is_separable(A)
+    A = associative_algebra((x^2 - t)^2)
+    @test !is_separable(A)
+    A = associative_algebra((x^2 - t)*(x^4 + t^2))
+    @test is_separable(A)
+
+    A = matrix_algebra(QQ, 2)
+    @test is_separable(A)
+    A = matrix_algebra(GF(9), 2)
+    @test is_separable(A)
+  end
+
+  let
+    # decompose
+    K, t = rational_function_field(GF(3), :t);
+    Kx, x = K["x"];
+    # we don't have a radical yet, so take a group algebra, which will know
+    # that it is semisimple
+    A = group_algebra(K, abelian_group(5));
+    dec = decompose(A)
+    # A = F_3(t)[C_5] = F_3(t)[X]/(X^5 - 1) and this factors into deg 4 * deg 1
+    @test length(dec) == 2 && issetequal(dim.(first.(dec)), [1, 4])
+  end
 end

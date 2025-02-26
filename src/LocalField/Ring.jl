@@ -349,6 +349,37 @@ function AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingElem{S, T}},
   AbstractAlgebra.promote_rule(T, U) == T ? LocalFieldValuationRingElem{S, T} : Union{}
 end
 
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function _integral_test_elem(R::PadicField)
+  p = prime(R)
+  prec = rand(1:R.prec_max)
+  r = ZZRingElem(0):p-1
+  return R(sum(rand(r)*p^i for i in 0:prec))
+end
+
+function _integral_test_elem(R::NonArchLocalField)
+  d = degree(R)
+  a = gen(R)
+  x = R()
+  for i in 0:d - 1
+    if rand() < 0.5
+      # Only fill every second coefficient
+      continue
+    end
+    x += _integral_test_elem(base_field(R))*a^i
+  end
+  return x
+end
+
+function ConformanceTests.generate_element(R::LocalFieldValuationRing)
+  return R(_integral_test_elem(_field(R)))
+end
+
 ################################################################################
 #
 #  Construction

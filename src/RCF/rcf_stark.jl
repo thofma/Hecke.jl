@@ -27,6 +27,8 @@ function ==(x::RCFCharacter, y::RCFCharacter)
   error("Not yet implemented!")
 end
 
+Base.hash(x::RCFCharacter, h::UInt) = hash(x.x, hash(x.C, h))
+
 function conductor(chi::RCFCharacter)
   if isdefined(chi, :conductor)
     return chi.conductor
