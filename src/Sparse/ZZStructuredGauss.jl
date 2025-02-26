@@ -6,7 +6,6 @@
 #TODO: eliminate some assertions/hassert
 #TODO: inplace instead of Y, dense part via pointer
 #TODO: use new set! for value array
-#TODO: rename single_col to pivot
 
 #=
 PROBLEMS:
@@ -26,14 +25,14 @@ mutable struct data_ZZStructGauss{T}
   single_row_limit::Int64
   base::Int64
   nlight::Int64
-  nsingle::Int64
+  npivots::Int64
   light_weight::Vector{Int64}
   col_list::Vector{Vector{Int64}} 
   col_list_perm::Vector{Int64} #perm gives new ordering of original A[i] via their indices
   col_list_permi::Vector{Int64} #A[permi[i]]=A[i] before permutation = list of sigma(i) (recent position of former A[i])
   is_light_col::Vector{Bool}
-  is_single_col::Vector{Bool}
-  single_col::Vector{Int64} #single_col[i] = c >= 0 if col c has its only entry in row i, i always recent position
+  is_pivot_col::Vector{Bool}
+  pivot_col::Vector{Int64} #pivot_col[i] = c >= 0 if col c has its only entry in row i, i always recent position
   heavy_ext::Int64
   heavy_col_idx::Vector{Int64}
   heavy_col_len::Vector{Int64}
@@ -153,10 +152,10 @@ mutable struct data_ZZStructGauss{T}
       end
      end
      SG.is_light_col[j] = false
-     SG.is_single_col[j] = true
-     SG.single_col[singleton_row_idx] = j
+     SG.is_pivot_col[j] = true
+     SG.pivot_col[singleton_row_idx] = j
      SG.nlight-=1
-     SG.nsingle+=1
+     SG.npivots+=1
      swap_i_into_base(singleton_row_idx, SG)
      SG.base+=1
     end
@@ -176,10 +175,11 @@ mutable struct data_ZZStructGauss{T}
    single_row_len = length(single_row)
    w = SG.light_weight[i]
    @assert w == 1
-   j_light = find_light_entry(single_row.pos, SG.is_light_col)
-   single_row_val = SG.A[i, j_light]
+   light_idx = find_light_entry(single_row.pos, SG.is_light_col)
+   j_light = single_row.pos[light_idx]
+   single_row_val = SG.A[i].values[light_idx]
    @assert length(SG.col_list[j_light]) > 1
-   is_one = isone(single_row_val)||isone(-single_row_val) #TODO: reduce isone queries
+   is_one = single_row_val.d == 1 || single_row_val.d == -1
    if best_single_row < 0
     best_single_row = i
     best_col = j_light
@@ -205,7 +205,7 @@ mutable struct data_ZZStructGauss{T}
  
  function find_dense_cols(SG::data_ZZStructGauss)
   m = ncols(SG.A)
-  nheavy = m - (SG.nlight + SG.nsingle)
+  nheavy = m - (SG.nlight + SG.npivots)
   nheavy == 0 ? SG.heavy_ext = max(div(SG.nlight,20),1) : SG.heavy_ext = max(div(SG.nlight,100),1)
   SG.heavy_col_idx = fill(-1, SG.heavy_ext) #indices (descending order for same length)
   SG.heavy_col_len = fill(-1, SG.heavy_ext)#length of cols in heavy_idcs (ascending)
@@ -261,7 +261,7 @@ mutable struct data_ZZStructGauss{T}
   w = SG.light_weight[i]
   if w == 0
    swap_i_into_base(i, SG)
-   SG.single_col[SG.base] = 0
+   SG.pivot_col[SG.base] = 0
    move_into_Y(SG.base, SG)
    SG.base+=1
   elseif w == 1
@@ -276,7 +276,8 @@ mutable struct data_ZZStructGauss{T}
  function eliminate_and_update!(best_single_row::Int64, SG::data_ZZStructGauss)::data_ZZStructGauss
   @assert best_single_row != 0
   best_row = deepcopy(SG.A[best_single_row])
-  best_col = find_light_entry(best_row.pos, SG.is_light_col)
+  light_idx = find_light_entry(best_row.pos, SG.is_light_col)
+  best_col = best_row.pos[light_idx]
   @assert length(SG.col_list[best_col]) > 1
   best_val = deepcopy(SG.A[best_single_row, best_col])
   @assert !iszero(best_val)
@@ -354,7 +355,7 @@ mutable struct data_ZZStructGauss{T}
  function swap_rows_perm(i::Int64, j, SG::data_ZZStructGauss)
   if i != j
    swap_rows!(SG.A, i, j)
-   swap_entries(SG.single_col, i, j)
+   swap_entries(SG.pivot_col, i, j)
    swap_entries(SG.col_list_perm, i, j)
    swap_entries(SG.col_list_permi, SG.col_list_perm[i], SG.col_list_perm[j])
    swap_entries(SG.light_weight, i, j)
@@ -374,10 +375,8 @@ mutable struct data_ZZStructGauss{T}
  end
  
  function find_light_entry(position_array::Vector{Int64}, is_light_col::Vector{Bool})::Int64
-  for j in position_array[end:-1:1]
-   if is_light_col[j]
-    return j
-   end
+  for idx in 1:length(position_array)
+    is_light_col[position_array[idx]] && return idx
   end
  end
  
@@ -445,11 +444,11 @@ end
 
 function collect_dense_cols!(SG)
  m = ncols(SG.A)
- nheavy = m - SG.nlight - SG.nsingle
+ nheavy = m - SG.nlight - SG.npivots
  KER = data_ZZKernel(SG, nheavy)
  j = 1
  for i = 1:m
-  if !SG.is_light_col[i] && !SG.is_single_col[i]
+  if !SG.is_light_col[i] && !SG.is_pivot_col[i]
    KER.heavy_map[i] = j
    push!(KER.heavy_mapi, i)
    j+=1
@@ -460,7 +459,7 @@ function collect_dense_cols!(SG)
 end
 
 function dense_matrix(SG, KER)
- D = ZZMatrix(nrows(SG.A) - SG.nsingle, length(KER.heavy_mapi))
+ D = ZZMatrix(nrows(SG.A) - SG.npivots, length(KER.heavy_mapi))
  GC.@preserve D SG KER begin
 	 for i in 1:length(SG.Y)
 	  for j in 1:length(KER.heavy_mapi)
@@ -510,18 +509,14 @@ function compose_kernel(l, K, SG)
   r = zero(ZZ)
   g = zero(ZZ)
   for i = n:-1:1
-    c = SG.single_col[i]  # col idx of pivot or zero
+    c = SG.pivot_col[i]  # col idx of pivot or zero
     iszero(c) && continue
-    @hassert :StructGauss 2 SG.is_single_col[c]
-    @vprintln :StructGauss 1 "c = $c"
     a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
     for kern_i in 1:l
-     @vprintln :StructGauss 2 i, SG.A[i]
-     @vprintln :StructGauss 2 K[SG.A[i].pos, kern_i]
      for idx in 1:length(SG.A[i])
       cc = SG.A[i].pos[idx]
       cc == c && continue
-      submul!(x, Nemo.mat_entry_ptr(K, cc, kern_i), reinterpret(Ptr{ZZRingElem}, Hecke.get_ptr(SG.A[i].values, idx))) #TODO
+      submul!(x, Nemo.mat_entry_ptr(K, cc, kern_i), Hecke.get_ptr(SG.A[i].values, idx))
       #submul!(x, K[cc, kern_i], SG.A[i].values[idx])
      end
      gcd!(g, a, x)
@@ -531,18 +526,10 @@ function compose_kernel(l, K, SG)
      for j = 1:m
       Nemo.mul!(Nemo.mat_entry_ptr(K, j, kern_i), Nemo.mat_entry_ptr(K, j, kern_i), r)
      end
-     Nemo.setindex!(K, x, c, kern_i) #TODO: remove Nemo. ?
-     @vprintln :StructGauss 2 "before zero: $(K[c,l])" 
-     @vprintln :StructGauss 1 "in loop before zero", K[c, :]
+     setindex!(K, x, c, kern_i)
      zero!(x)
-     @vprintln :StructGauss 2 "after zero: $(K[c,l])"
      zero!(r)
      zero!(g)
-     @vprintln :StructGauss 1 "in loop after zero", K[c, :]
-    end
-    @vprintln :StructGauss 1 K[c, :]
-    for y = 1:size(K)[2]
-      !iszero(scalar_prod(SG.A[i], K[:,y])) && @vprintln :StructGauss 3 (i)
     end
   end
   return l, K
@@ -555,7 +542,7 @@ function compose_kernel2(l, K, SG)
  r = zero(ZZ)
  g = zero(ZZ)
  for i = n:-1:1
-   c = SG.single_col[i]  # col idx of pivot or zero
+   c = SG.pivot_col[i]  # col idx of pivot or zero
    iszero(c) && continue
    a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
    for kern_i in 1:l
