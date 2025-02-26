@@ -29,7 +29,5 @@
 
     @test support(QQ(2)) == [2]
 
-
-
+    @test issetequal(euler_phi_inv(1), [1, 2])
 end
-
