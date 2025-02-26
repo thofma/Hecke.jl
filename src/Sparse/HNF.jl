@@ -200,9 +200,8 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
 #      @hassert :HNF 2  A[j].values[1] > 0
     end
   end
-  g_v = getindex!(g_v, g.values, 1)
   Hecke.mod_sym!(g, m)
-  if length(g.values) > 0 && is_negative(g_v)
+  if length(g.values) > 0 && is_negative(getindex!(g_v, g.values, 1))
     scale_row!(g, -1)
   end
 #  @hassert :HNF 1  length(g.pos) == 0 || g.values[1] >= 0

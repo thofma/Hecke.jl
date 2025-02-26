@@ -34,6 +34,17 @@ function Base.setindex!(a::ZZRingElem_Array, v::ZZRingElem, i::Integer)
   return v
 end
 
+function Base.setindex!(a::ZZRingElem_Array, v::Int, i::Integer)
+  @assert i <= length(a)
+  if Nemo.__fmpz_is_small(a.ar[i]) && Nemo.__fmpz_is_small(v)
+    a.ar[i] = v
+  else
+    set!(get_ptr(a, i), v)
+  end
+  return v
+end
+
+
 @inline function Base.setindex!(a::ZZRingElem_Array, v::Ptr{ZZRingElem}, i::Int)
 #  @assert i <= length(a)
   @inbounds if (unsigned(a.ar[i]) >> (Sys.WORD_SIZE - 2) != 1)
@@ -43,7 +54,7 @@ end
       return
     end
   end
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{Int}, Ptr{ZZRingElem}), get_ptr(a, i), v)
+  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), get_ptr(a, i), v)
   return v
 end
 
@@ -90,8 +101,8 @@ function empty!!(a::ZZRingElem_Array)
   for i=1:length(a)
     if !Nemo.__fmpz_is_small(a.ar[i])
       ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), p)
-      unsafe_store!(Ptr{Int}(p), 0)
     end
+    unsafe_store!(Ptr{Int}(p), 0)
     p += sizeof(Int)
   end
   a.l = 0
@@ -189,15 +200,17 @@ end
 
 function Base.deleteat!(a::ZZRingElem_Array, b::Int64)
   ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, b))
+  a[b] = 0
   deleteat!(a.ar, b)
   a.l -= 1
 end
 
 function Base.pop!(a::ZZRingElem_Array)
   length(a) < 1 && throw(ArgumentError("array must not be empty"))
+  l = length(a)
   r = ZZ()
-  r.d, a.ar[end] = a.ar[end], r.d
-  resize!(a, length(a)-1)
+  r.d, a.ar[l] = a.ar[l], r.d
+  resize!(a, l-1)
   return r
 end
 
@@ -210,10 +223,12 @@ end
 function Base.deepcopy_internal(a::ZZRingElem_Array, dict::IdDict)
   b = ZZRingElem_Array()
   sizehint!(b, length(a))
-  ap = get_ptr(a, 1)
-  for i=1:length(a)
-    push!(b, ap)
-    ap += sizeof(Int)
+  Base.GC.@preserve a begin
+    ap = get_ptr(a, 1)
+    for i=1:length(a)
+      push!(b, ap)
+      ap += sizeof(Int)
+    end
   end
   return b
 end
@@ -449,14 +464,16 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
   if a.values.ar == b.values.ar
     return true
   end
-  pa = get_ptr(a.values, 1)
-  pb = get_ptr(b.values, 1)
-  for i=1:length(a)
-    if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
-      return false
+  Base.GC.@preserve a b begin
+    pa = get_ptr(a.values, 1)
+    pb = get_ptr(b.values, 1)
+    for i=1:length(a)
+      if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
+        return false
+      end
+      pa += sizeof(Int)
+      pb += sizeof(Int)
     end
-    pa += sizeof(Int)
-    pb += sizeof(Int)
   end
   return true
 end
