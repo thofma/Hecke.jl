@@ -918,7 +918,7 @@ function conjugate_quad(a::AbsSimpleNumFieldElem)
   # so bar(a) = x + y (-bar(k) - r) = (x-ry) - y gen(k)
   b = k()
   q = ZZRingElem()
-  GC.@preserve b begin
+  GC.@preserve a b k begin
     a_ptr = reinterpret(Ptr{ZZRingElem}, pointer_from_objref(a))
     b_ptr = reinterpret(Ptr{ZZRingElem}, pointer_from_objref(b))
     p_ptr = reinterpret(Ptr{ZZRingElem}, k.pol_coeffs)
