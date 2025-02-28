@@ -918,15 +918,29 @@ function conjugate_quad(a::AbsSimpleNumFieldElem)
   # so bar(a) = x + y (-bar(k) - r) = (x-ry) - y gen(k)
   b = k()
   q = ZZRingElem()
-  GC.@preserve b begin
-    a_ptr = reinterpret(Ptr{Int}, pointer_from_objref(a))
-    p_ptr = reinterpret(Ptr{Int}, k.pol_coeffs)
+  GC.@preserve a b k begin
+    a_ptr = reinterpret(Ptr{ZZRingElem}, pointer_from_objref(a))
+    b_ptr = reinterpret(Ptr{ZZRingElem}, pointer_from_objref(b))
+    p_ptr = reinterpret(Ptr{ZZRingElem}, k.pol_coeffs)
     s = sizeof(Ptr{ZZRingElem})
 
-    ccall((:fmpz_mul, libflint), Cvoid, (Ref{ZZRingElem}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr +s)
-    ccall((:fmpz_sub, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b)), a_ptr, q)
-    ccall((:fmpz_neg, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
-    ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
+    # The C type `nf_elem_t` (corresponding to `AbsSimpleNumFieldElem`) is a C union;
+    # in our case (= quadratic number field) it is a `qnf_elem_t`, defined like this:
+    # typedef struct /* element of a quadratic number field */
+    # {
+    #    fmpz num[3]; /* extra coeff for delayed reduction */
+    #    fmpz_t den;
+    # } qnf_elem_struct;
+
+    # compute r*y, where `r` is the second coefficient in k.pol_coeffs (hence `p_ptr+s`)
+    # and `y` is the second coefficient in `a`
+    mul!(q, p_ptr+s, a_ptr+s)
+    # compute x - r*y, store it as first coefficient for `b`
+    sub!(b_ptr, a_ptr, q)
+    # compute -y, store it as second coefficient for `b`
+    neg!(b_ptr+s, a_ptr+s)
+    # copy the denominator from `a` to `b`
+    set!(b_ptr+3*s, a_ptr+3*s)
   end
   #TODO:
   # - write in c?
