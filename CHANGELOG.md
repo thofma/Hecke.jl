@@ -24,5 +24,5 @@ which we think might affect some users directly.
 
 #### Bugfix
 
-- [#1785](https://github.com/thofma/Hecke.jl/pull/1785) Euler_phi_inv(1)
+- [#1785](https://github.com/thofma/Hecke.jl/pull/1785) Fix `euler_phi_inv(1)`
 
