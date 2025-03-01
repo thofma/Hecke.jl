@@ -30,6 +30,12 @@ So far, Hecke provides the following features:
   - Locally free class groups of orders in semisimple algebras
   - Quadratic and Hermitian forms and lattices
 
+An overview of the functionality of Hecke (in connection with OSCAR) can be found in
+
+> "Number Theory", T. Hofmann & C. Fieker, in: The Computer Algebra System OSCAR. Springer Cham, 2025, 81-105.
+
+available [here](https://doi.org/10.1007/978-3-031-62127-7_3) or from the [arXiv](https://arxiv.org/abs/2404.06858).
+
 ## Installation
 
 To use Hecke, a julia version of 1.0 is necessary (the latest stable julia version will do).
