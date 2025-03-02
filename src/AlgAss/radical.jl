@@ -167,11 +167,11 @@ function _radical_finite_prime_field(A::MatAlgebra{<:Union{fpFieldElem, FpFieldE
   # Hard to believe, but this is linear!!!!
   pl = 1
   # if k > 0, then p < dim(A) <= typemax(Int)
-  Mtemp = zero_matrix(ZZ, degree(A), degree(A))
+  Mtemp = zero_matrix(ZZ, _matdeg(A), _matdeg(A))
   if k > 0
     _p = Int(p)
     R, mR = residue_ring(ZZ, _p^(k + 1))
-    MR = zero_matrix(R, degree(A), degree(A))
+    MR = zero_matrix(R, _matdeg(A), _matdeg(A))
     a = A()
     for l = 1:k
       pl = pl * _p
@@ -402,7 +402,7 @@ end
 function _radical_funfield(A::MatAlgebra)
   K = base_ring(A)
   p = characteristic(K)
-  n = degree(A)
+  n = _matdeg(A)
   @assert p > 0
   s = 1
   B = basis(A)
