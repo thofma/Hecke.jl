@@ -1147,7 +1147,7 @@ function is_locally_free(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ AbsNumFi
       end
     end
 
-    if length(basiseIJoverZ) != degree(C)
+    if length(basiseIJoverZ) != _matdeg(C)
       # I is not locally free
       return false, O()
     end
@@ -1283,7 +1283,7 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal
   C, CtoB = _as_algebra_over_center(B)
   D, CtoD = _as_matrix_algebra(C)
 
-  n = degree(D)
+  n = _matdeg(D)
   if isone(n)
     return P
   end
@@ -1361,7 +1361,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ AbsNumF
   y = left_principal_generator(JinC)
   m = matrix(y)
   r = rref!(m)
-  k = degree(C)
+  k = _matdeg(C)
   @assert r < k - 1 # Otherwise J would be maximal, which we have checked...
 
   # We need to "add" pivots to m to get rank k - 1

@@ -1053,7 +1053,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, ZZRing}, ::Val{with_transform
     throw(ArgumentError("Order must be an order in a matrix algebra"))
   end
 
-  n = degree(A)
+  n = _matdeg(A)
 
   # Build a matrix with the first rows of basis elements of O
   M = zero_matrix(QQ, dim(A), n)
@@ -1161,9 +1161,9 @@ end
 # group algebras", section 6.
 function enum_units(O::AlgAssAbsOrd{S, T}, g::ZZRingElem) where { S <: MatAlgebra, T }
   A = algebra(O)
-  @assert degree(A)^2 == dim(A)
+  @assert _matdeg(A)^2 == dim(A)
 
-  n = degree(A)
+  n = _matdeg(A)
 
   L = _simple_maximal_order(O)
   a = basis_matrix(L, copy = false)[dim(A) - 1, dim(A) - 1]
