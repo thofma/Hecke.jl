@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-degree(A::MatAlgebra) = A.degree
+_matdeg(A::MatAlgebra) = A.degree
 
 dim(A::MatAlgebra) = A.dim
 
@@ -34,7 +34,7 @@ matrix_algebra_type(K::Field) = matrix_algebra_type(typeof(K))
 
 matrix_algebra_type(::Type{T}) where {T <: Field} = MatAlgebra{elem_type(T), dense_matrix_type(elem_type(T))}
 
-# Returns the dimension d of the coefficient_ring of A, so that dim(A) is up to degree(A)^2 * d.
+# Returns the dimension d of the coefficient_ring of A, so that dim(A) is up to _matdeg(A)^2 * d.
 function dim_of_coefficient_ring(A::MatAlgebra)
   if base_ring(A) == coefficient_ring(A)
     return 1
@@ -61,7 +61,7 @@ function is_commutative(A::MatAlgebra)
     return A.is_commutative == 1
   end
   dcr = dim_of_coefficient_ring(A)
-  if degree(A) == 1
+  if _matdeg(A) == 1
     if base_ring(A) isa Field || is_commutative(base_ring(A))
       A.is_commutative = 1
       return true
@@ -69,7 +69,7 @@ function is_commutative(A::MatAlgebra)
     A.is_commutative = 2
     return false
   end
-  if dim(A) == degree(A)^2*dcr
+  if dim(A) == _matdeg(A)^2*dcr
     A.is_commutative = 2
     return false
   end
@@ -98,7 +98,7 @@ function assure_has_basis_matrix(A::MatAlgebra)
     return nothing
   end
 
-  d2 = degree(A)^2
+  d2 = _matdeg(A)^2
   if coefficient_ring(A) == base_ring(A)
     M = zero_matrix(base_ring(A), dim(A), d2)
     for i = 1:dim(A)
@@ -175,7 +175,7 @@ function assure_has_multiplication_table(A::MatAlgebra{T, S}) where { T, S }
   end
 
   d = dim(A)
-  de = degree(A)
+  de = _matdeg(A)
   mt = Array{T, 3}(undef, d, d, d)
   K = base_ring(A)
 
@@ -236,7 +236,7 @@ function denominator_of_multiplication_table(A::MatAlgebra)
   get_attribute!(A, :denominator_of_multiplication_table) do
     den = one(ZZ)
     mt = multiplication_table(A)
-    d = degree(A)
+    d = _matdeg(A)
     for i in 1:d
       for j in 1:d
         for k in 1:d
@@ -324,7 +324,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   @assert length(gens) > 0
   A = MatAlgebra{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   A.degree = nrows(gens[1])
-  A.one = identity_matrix(R, degree(A))
+  A.one = identity_matrix(R, _matdeg(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -336,8 +336,8 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   end
   A.gens = map(x -> A(x, check = false), gens)
 
-  d = degree(A)
-  d2 = degree(A)^2
+  d = _matdeg(A)
+  d2 = _matdeg(A)^2
   span = deepcopy(gens)
   push!(span, identity_matrix(R, d))
   M = zero_matrix(R, max(d2, length(span)), d2) # the maximal possible dimension is d^2
@@ -381,7 +381,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   A.basis_matrix = sub(M, 1:cur_rank, 1:d2)
   bas = Vector{elem_type(A)}(undef, dim(A))
   for i = 1:dim(A)
-    N = zero_matrix(R, degree(A), degree(A))
+    N = zero_matrix(R, _matdeg(A), _matdeg(A))
     for j = 1:d
       jd = (j - 1)*d
       for k = 1:d
@@ -411,7 +411,7 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bo
   @assert length(gens) > 0
   A = MatAlgebra{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])
-  A.one = identity_matrix(S, degree(A))
+  A.one = identity_matrix(S, _matdeg(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -423,8 +423,8 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bo
     return A
   end
 
-  d = degree(A)
-  d2 = degree(A)^2
+  d = _matdeg(A)
+  d2 = _matdeg(A)^2
   span = deepcopy(gens)
   push!(span, identity_matrix(S, d))
   dcr = dim(S)
@@ -485,7 +485,7 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bo
   A.basis_matrix = sub(M, 1:cur_rank, 1:max_dim)
   bas = Vector{elem_type(A)}(undef, dim(A))
   for i = 1:dim(A)
-    N = zero_matrix(S, degree(A), degree(A))
+    N = zero_matrix(S, _matdeg(A), _matdeg(A))
     for j = 1:d
       jd = (j - 1)*d
       for k = 1:d
@@ -539,7 +539,7 @@ end
 ################################################################################
 
 function _matrix_in_algebra(M::S, A::MatAlgebra{T, S}) where {T, S<:MatElem}
-  @assert size(M) == (degree(A), degree(A))
+  @assert size(M) == (_matdeg(A), _matdeg(A))
   _, U, pivots = basis_matrix_rref(A)
   # U * basis_matrix(A)[:, pivots] == R[:, pivots] == I, thus
   # U = inv(basis_matrix(A)[:, pivots]). So, for t = M[pivots],
@@ -557,14 +557,14 @@ function _matrix_in_algebra(M::S, A::MatAlgebra{T, S}) where {T, S<:MatElem}
 end
 
 function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, ::Val{short} = Val(false)) where {S, T, short}
-  if nrows(M) != degree(A) || ncols(M) != degree(A)
+  if nrows(M) != _matdeg(A) || ncols(M) != _matdeg(A)
     if short
       return false
     end
     return false, zeros(base_ring(A), dim(A))
   end
 
-  d2 = degree(A)^2
+  d2 = _matdeg(A)^2
   #B = basis_matrix(A, copy = false)
   if coefficient_ring(A) == base_ring(A)
     #tt = zero_matrix(base_ring(A), 1, d2)
@@ -675,7 +675,7 @@ function is_canonical(A::MatAlgebra)
     return false
   end
 
-  n = degree(A)
+  n = _matdeg(A)
   if dim(A) != n^2
     A.canonical_basis = 2
     return false

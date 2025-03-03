@@ -316,8 +316,8 @@ end
 # Generators for GL_n(K), taken from Taylor, Pairs of Generators for Matrix Groups. I
 function _unit_group_generators(A::MatAlgebra{<:FinFieldElem})
   K = base_ring(A)
-  @assert degree(A)^2 == dim(A)
-  d = degree(A)
+  @assert _matdeg(A)^2 == dim(A)
+  d = _matdeg(A)
   res = dense_matrix_type(K)[]
   if order(K) == 2
     # GL_n(K) = SL_n(K)
