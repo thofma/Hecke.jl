@@ -505,6 +505,18 @@ Return the torsion free rank of $A$, that is, the dimension of the
 $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 
 See also [`rank`](@ref).
+
+# Examples
+```jldoctest
+julia> G = abelian_group(5,0)
+Z/5 x Z
+
+julia> torsion_free_rank(G)
+1
+
+julia> rank(G)
+2
+```
 """
 function torsion_free_rank(A::FinGenAbGroup)
   if !is_snf(A)
@@ -537,9 +549,20 @@ end
 Return the rank of $A$, that is, the size of a minimal generating set for $A$.
 
 See also [`torsion_free_rank`](@ref).
+
+# Examples
+```jldoctest
+julia> G = abelian_group(5,0)
+Z/5 x Z
+
+julia> torsion_free_rank(G)
+1
+
+julia> rank(G)
+2
+```
 """
-rank(A::FinGenAbGroup) = error("rank(::FinGenAbGroup) has been renamed to torsion_free_rank")
-#rank(A::FinGenAbGroup) = is_snf(A) ? length(A.snf) : return rank(snf(A)[1])
+rank(A::FinGenAbGroup) = is_snf(A) ? length(A.snf) : return rank(snf(A)[1])
 
 
 ################################################################################
