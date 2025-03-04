@@ -46,7 +46,7 @@ end
 
 
 @inline function Base.setindex!(a::ZZRingElem_Array, v::Ptr{ZZRingElem}, i::Int)
-#  @assert i <= length(a)
+  @assert i <= length(a)
   @inbounds if (unsigned(a.ar[i]) >> (Sys.WORD_SIZE - 2) != 1)
     uu = unsafe_load(Ptr{Int}(v))
     if (unsigned(uu) >> (Sys.WORD_SIZE - 2) != 1)
@@ -86,11 +86,17 @@ function Base.iterate(a::ZZRingElem_Array, state::Int = 1)
 end
 
 function Base.sizehint!(a::ZZRingElem_Array, i::Int)
+  return sizehint!(a.ar, i)
+
   l = length(a.ar)
   if i > l
-    resize!(a.ar, 2*l)
-    for i=l+1:2*l
-      a.ar[i] = 0
+    resize!(a.ar, i)
+    for j=l+1:i
+      a.ar[j] = 0
+    end
+  else
+    for j=i+1:l
+      a.ar[j] = 0
     end
   end
   return a
@@ -99,7 +105,7 @@ end
 function empty!!(a::ZZRingElem_Array)
   p = get_ptr(a, 1)
   for i=1:length(a)
-    if !Nemo.__fmpz_is_small(a.ar[i])
+    @inbounds if !Nemo.__fmpz_is_small(a.ar[i])
       ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), p)
     end
     unsafe_store!(Ptr{Int}(p), 0)
@@ -183,7 +189,7 @@ function Base.resize!(a::ZZRingElem_Array, n::Int)
     resize!(a.ar, n)
     a.l = n
     for i=la+1:n
-      a.ar[i] = 0
+      @inbounds a.ar[i] = 0
     end
   elseif n < la
     ap = get_ptr(a, n+1)
@@ -407,9 +413,9 @@ function pop_first!(a::SRow{ZZRingElem, ZZRingElem_Array}, len::Int = length(a))
   return xi=>xv, len
 end
 
+#=
 function Base.sort!(a::SRow) end
 
-#=
 function Base.sort!(a::SRow{ZZRingElem, ZZRingElem_Array})
   length(a) == 0 && return
   i = 1
@@ -468,7 +474,8 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
     pa = get_ptr(a.values, 1)
     pb = get_ptr(b.values, 1)
     for i=1:length(a)
-      if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
+#      if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
+      if cmp(pa, pb) != 0
         return false
       end
       pa += sizeof(Int)
@@ -522,9 +529,9 @@ function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{T}; sort:
   sizehint!(a, length(val))
   l = Int[]
   for i=1:length(pos)
-    if !is_zero(val[i])
-      push!(a, val[i])
-      push!(l, pos[i])
+    @inbounds if !is_zero(val[i])
+      @inbounds push!(a, val[i])
+      @inbounds push!(l, pos[i])
     else
       error("zero passed in")
     end
@@ -550,7 +557,7 @@ end
 
 function _add_scaled_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingElem, sr::SRow{ZZRingElem} = sparse_row(ZZ))
   empty!(sr)
-  n = ZZRingElem(Val(:raw))
+  n = ZZRingElem()#Val(:raw))
   pi = 1
   pj = 1
   li = length(Ai)
@@ -593,7 +600,7 @@ function _add_scaled_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingEl
     push!(sr.values, get_ptr(Aj.values, pj))
     pj += 1
   end
-  Nemo._fmpz_clear_fn(n) 
+#  Nemo._fmpz_clear_fn(n) 
   return sr
 end
 

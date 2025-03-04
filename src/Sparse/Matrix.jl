@@ -107,6 +107,7 @@ function release_tmp(A::SMat{T}, s::SRow{T}) where T
 end
 
 function get_tmp_scalar(A::SMat, i::Int)
+#  return zeros(base_ring(A), i)
   if !isdefined(A, :tmp_scalar)
     A.tmp_scalar = zeros(base_ring(A), i)
   end
@@ -114,12 +115,13 @@ function get_tmp_scalar(A::SMat, i::Int)
   if length(s) < i
     append!(s, zeros(base_ring(A), i+1-length(s)))
   end
-  ret = s[length(s)-i+1:length(s)]
+  @inbounds ret = s[length(s)-i+1:length(s)]
   resize!(s, length(s)-i)
   return ret
 end
 
 function release_tmp_scalar(A::SMat{T}, s::Vector{T}) where T
+#  return
   if length(A.tmp_scalar) < 10
     append!(A.tmp_scalar, s)
   end
@@ -277,9 +279,9 @@ end
 
 Given a sparse matrix $A$ and an index $i$, return the $i$-th row of $A$.
 """
-function getindex(A::SMat{T}, i::Int) where T
-  (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
-  return A.rows[i]
+@inline function getindex(A::SMat{T}, i::Int) where T
+   @boundscheck (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
+  return @inbounds A.rows[i]
 end
 
 @doc raw"""

@@ -81,7 +81,7 @@ function reduce(A::SMat{T}, g::SRow{T}; new_g::Bool = false) where {T}
       j += 1
     end
     if j > nrows(A) || A.rows[j].pos[1] > s
-      if is_negative(getindex!(tmp, g.values, 1))
+      if length(g) > 0 && is_negative(getindex!(tmp, g.values, 1))
         if !new_g
           g = deepcopy(g)
           new_g = true
@@ -483,14 +483,15 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
  
   new_g || (b = deepcopy(b))
   with_transform ? trafos = [] : nothing
-  if length(b.pos) == 0
+  lb = length(b.pos)
+  if lb == 0
     with_transform ? (return b, trafos) : return b
   end
   j = 1
-  @inbounds while j <= length(b.pos) && b.pos[j] < start
+  @inbounds while j <= lb && b.pos[j] < start
     j += 1
   end
-  if j > length(b.pos)
+  if j > lb
     if is_negative(b.values[1])
       scale_row!(b, -1)
       if with_transform

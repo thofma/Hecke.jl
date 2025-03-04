@@ -157,9 +157,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(r::SRow, dict::IdDict)
-  s = sparse_row(base_ring(r))
-  s.pos = Base.deepcopy_internal(r.pos, dict)
-  s.values = Base.deepcopy_internal(r.values, dict)
+  s = sparse_row(base_ring(r), Base.deepcopy_internal(r.pos, dict), Base.deepcopy_internal(r.values, dict))
   return s
 end
 
