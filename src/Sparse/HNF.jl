@@ -9,21 +9,22 @@
 Given an upper triangular matrix $A$ over a field and a sparse row $g$, this
 function reduces $g$ modulo $A$.
 """
-function reduce(A::SMat{T}, g::SRow{T}) where {T <: FieldElement}
-  return _reduce_field(A, g)
+function reduce(A::SMat{T}, g::SRow{T}; new_g::Bool = false) where {T <: FieldElement}
+  return _reduce_field(A, g; new_g)
 end
 
-function reduce(A::SMat{zzModRingElem}, g::SRow{zzModRingElem})
-  return _reduce_field(A, g)
+function reduce(A::SMat{zzModRingElem}, g::SRow{zzModRingElem}; new_g::Bool = false)
+  return _reduce_field(A, g; new_g)
 end
 
-function _reduce_field(A::SMat{T}, g::SRow{T}) where {T}
+function _reduce_field(A::SMat{T}, g::SRow{T}; new_g::Bool = false) where {T}
   @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   # supposed to be a field...
   if A.r == A.c
     return sparse_row(base_ring(A))
   end
+  g = deepcopy(g)
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -61,11 +62,11 @@ end
 Given an upper triangular matrix $A$ over a field and a sparse row $g$, this
 function reduces $g$ modulo $A$.
 """
-function reduce(A::SMat{T}, g::SRow{T}) where {T}
+function reduce(A::SMat{T}, g::SRow{T}; new_g::Bool = false) where {T}
+
   @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   #until the 1st (pivot) change in A
-  new_g = false
 
   tmpa = get_tmp(A)
   tmpb = get_tmp(A)
@@ -73,7 +74,7 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
   R = base_ring(A)
   tmp, p_v, A_v, x, a, b = tmp_scalar = get_tmp_scalar(A, 6)
 
-  while length(g)>0
+  @inbounds while length(g)>0
     s = g.pos[1]
     j = 1
     while j<= nrows(A) && A.rows[j].pos[1] < s
@@ -87,9 +88,14 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
         end
         scale_row!(g, -1)
       end
+      if !new_g
+        g = deepcopy(g)
+        new_g = true
+      end
       release_tmp_scalar(A, tmp_scalar)
       release_tmp(A, tmpa)
       release_tmp(A, tmpb)
+      @assert new_g
       return g
     end
     p_v = getindex!(p_v, g.values, 1)
@@ -116,7 +122,7 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
       c = neg!(c)
       d = div!(A_v, A_v, x)
       if new_g
-        new_g = false
+        new_g = true
         g = deepcopy(g)
       end
       A[j], g = Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
@@ -128,13 +134,14 @@ function reduce(A::SMat{T}, g::SRow{T}) where {T}
   if length(g.values) > 0 && is_negative(getindex!(tmp, g.values, 1))
     if !new_g
       g = deepcopy(g)
-      new_g = false
+      new_g = true
     end
     scale_row!(g, -1)
   end
   release_tmp_scalar(A, tmp_scalar)
   release_tmp(A, tmpa)
   release_tmp(A, tmpb)
+  @assert new_g
   return g
 end
 
@@ -145,8 +152,8 @@ Given an upper triangular matrix $A$ over the integers, a sparse row $g$ and an
 integer $m$, this function reduces $g$ modulo $A$ and returns $g$
 modulo $m$ with respect to the symmetric residue system.
 """
-function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
-  @hassert :HNF 1  is_upper_triangular(A)
+function reduce(A::SMat{T}, g::SRow{T}, m::T; new_g::Bool = false) where {T}
+  @hassert :HNF 1 is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   @assert m > 0 
   g = deepcopy(g)
@@ -165,12 +172,13 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
       j += 1
     end
     if j > nrows(A) || A.rows[j].pos[1] > s
-      mod_sym!(g, m)
       g_v = getindex!(g_v, g.values, 1)
+      g_v = mod_sym!(g_v, m)
       if is_negative(g_v)
         scale_row!(g, -1)
         @hassert :HNF 3  mod_sym(g.values[1], m) > 0
       end
+      mod_sym!(g, m)
       release_tmp_scalar(A, tmp_scalar)
       release_tmp(A, tmpa)
       release_tmp(A, tmpb)
@@ -183,16 +191,16 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
 
     if fl
       g_v = neg!(g_v)
-      add_scaled_row!(A[j], g, g_v, tmpa) #changes g
+      add_scaled_row!(A[j], g, g_v)#, tmpa) #changes g
       mod_sym!(g, m)
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
-      x, a, b = gcdx!(x, a, b, A.rows[j].values[1], p_v)
+      x, a, b = gcdx!(x, a, b, A_v, p_v)
       @hassert :HNF 2  x > 0
       c = div!(g_v, p_v, x)
+      c = neg!(c)
       d = div!(A_v, A_v, x)
       Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
-      new_g = true
 #      @hassert :HNF 2  A[j].values[1] == x
       mod_sym!(g, m)
       mod_sym!(A[j], m)
@@ -200,10 +208,10 @@ function reduce(A::SMat{T}, g::SRow{T}, m::T) where {T}
 #      @hassert :HNF 2  A[j].values[1] > 0
     end
   end
-  Hecke.mod_sym!(g, m)
-  if length(g.values) > 0 && is_negative(getindex!(g_v, g.values, 1))
+  if length(g.values) > 0 && is_negative(mod_sym!(getindex!(g_v, g.values, 1), m))
     scale_row!(g, -1)
   end
+  Hecke.mod_sym!(g, m)
 #  @hassert :HNF 1  length(g.pos) == 0 || g.values[1] >= 0
   release_tmp_scalar(A, tmp_scalar)
   release_tmp(A, tmpa)
@@ -256,11 +264,12 @@ function find_row_starting_with(A::SMat, p::Int)
 #  @hassert :HNF 1  is_upper_triangular(A)
   start = 0
   stop = nrows(A)+1
-  while start < stop - 1
+  @inbounds while start < stop - 1
     mid = div((stop + start), 2)
-    if length(A[mid]) == 0 || A[mid].pos[1] == p
+    Am = A[mid]
+    if length(Am) == 0 || Am.pos[1] == p
       return mid
-    elseif A[mid].pos[1] < p
+    elseif Am.pos[1] < p
       start = mid
     else
       stop = mid
@@ -272,6 +281,7 @@ end
 # If with_transform is set to true, then additionally an Array of transformations
 # is returned.
 function reduce_up(A::SMat{T}, piv::Vector{Int}, with_transform_val::Val{with_transform} = Val(false); limit::Int = typemax(Int)) where {T, with_transform}
+
   if with_transform
     trafos = SparseTrafoElem{T, dense_matrix_type(T)}[]
   end
@@ -279,16 +289,16 @@ function reduce_up(A::SMat{T}, piv::Vector{Int}, with_transform_val::Val{with_tr
   sort!(piv)
   p = find_row_starting_with(A, piv[end])
 
-  for red=p-1:-1:1
+  @inbounds for red=p-1:-1:1
     # the last argument should be the smallest pivot larger then pos[1]
     if with_transform
-      A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), with_transform_val; limit)
+      A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), with_transform_val; limit, new_g = true)
       for t in new_trafos
         t.j = red
       end
       append!(trafos, new_trafos)
     else
-      A[red] = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]); limit)
+      A[red] = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]); limit, new_g = true)
     end
   end
   with_transform ? (return trafos) : nothing
@@ -307,34 +317,41 @@ The second return value is the array of pivot elements of $A$ that changed.
 If `with_transform` is set to `Val(true)`, then additionally an array of transformations
 is returned.
 """
-function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transform} = Val(false); full_hnf::Bool = true, limit::Int = typemax(Int)) where {T, with_transform}
+function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_transform} = Val(false); full_hnf::Bool = true, limit::Int = typemax(Int), new_g::Bool = false) where {T, S, with_transform}
 #  @hassert :HNF 1  is_upper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
 
+  g = deepcopy(g)
   if with_transform
     trafos = SparseTrafoElem{T, dense_matrix_type(T)}[]
   end
-
-  new_g = false
-
   piv = Int[]
+
+  if length(A.rows) == 0
+    return with_transform ? (g, piv, trafos) : (g, piv)
+  end
+
   tmpa = get_tmp(A)
   tmpb = get_tmp(A)
   p_v, A_v, sca, r, a, b, x = tmp_scalar = get_tmp_scalar(A, 7)
   is_Z = base_ring(A) == ZZ
 
-  while length(g)>0
+  nrA = nrows(A)
+  local Aj::SRow{T, S} = tmpa
+
+  @inbounds while length(g)>0
     s = g.pos[1]
     j = 1
-    while j<= nrows(A) && A.rows[j].pos[1] < s
+    while j<= nrA && A.rows[j].pos[1] < s
       j += 1
     end
-    if j > nrows(A) || A.rows[j].pos[1] > s || s > limit
+    j <= nrA && (Aj = A[j])
+    if j > nrA || Aj.pos[1] > s || s > limit
       A_v = getindex!(A_v, g.values, 1)
       if (is_Z && is_negative(A_v)) || (!is_Z && !isone(canonical_unit(A_v)))
         # Multiply row g by -1
         if with_transform
-          push!(trafos, sparse_trafo_scale(nrows(A) + 1, base_ring(A)(inv(canonical_unit(g.values[1])))))
+          push!(trafos, sparse_trafo_scale(nrA + 1, base_ring(A)(inv(canonical_unit(g.values[1])))))
         end
         if !new_g
           g = deepcopy(g)
@@ -350,13 +367,16 @@ function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transf
       _g = g
       if full_hnf
         if with_transform
-          g, new_trafos  = reduce_right(A, g, 1, with_transform_val; limit)
+          g, new_trafos  = reduce_right(A, g, 1, with_transform_val; limit, new_g)
           append!(trafos, new_trafos)
         else
-          g = reduce_right(A, g; limit)
+          g = reduce_right(A, g; limit, new_g)
         end
       end
       if _g !== g
+        new_g = true
+      else 
+        g = deepcopy(g)
         new_g = true
       end
 
@@ -367,20 +387,23 @@ function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transf
       release_tmp(A, tmpa)
       release_tmp(A, tmpb)
       release_tmp_scalar(A, tmp_scalar)
+      @assert new_g
       with_transform ? (return g, piv, trafos) : (return g, piv)
 
     end
     p_v = getindex!(p_v, g.values, 1)
-    A_v = getindex!(A_v, A.rows[j].values, 1)
+    A_v = getindex!(A_v, Aj.values, 1)
     if !new_g
       g = deepcopy(g)
       new_g = true
     end
     sca, r = divrem!(sca, r, p_v, A_v)
+#    sca, r = divrem(p_v, A_v)
     if iszero(r)
       sca = neg!(sca)
       @assert !iszero(sca)
-      Hecke.add_scaled_row!(A[j], g, sca, tmpa)
+      @assert new_g
+      Hecke.add_scaled_row!(Aj, g, sca, tmpa)
       with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
@@ -390,16 +413,17 @@ function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transf
       c = div(p_v, x)
       c = neg!(c)
       d = div(A_v, x)
-      Hecke.transform_row!(A[j], g, a, b, c, d, tmpa, tmpb)
+      @assert new_g
+      Hecke.transform_row!(Aj, g, a, b, c, d, tmpa, tmpb)
       if with_transform
-        push!(trafos, sparse_trafo_para_add_scaled(j, nrows(A) + 1, a, b, c, d))
+        push!(trafos, sparse_trafo_para_add_scaled(j, nrA + 1, a, b, c, d))
       end
       @hassert :HNF 1  A[j].values[1] == x
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
-      push!(piv, A[j].pos[1])
+      push!(piv, Aj.pos[1])
       if full_hnf
         if with_transform
-          A[j], new_trafos = reduce_right(A, A[j], A[j].pos[1]+1, with_transform_val; limit)
+          A[j], new_trafos = reduce_right(A, Aj, Aj.pos[1]+1, with_transform_val; limit, new_g = true)
           # We are updating the jth row
           # Have to adjust the transformations
           for t in new_trafos
@@ -408,7 +432,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transf
           # Now append
           append!(trafos, new_trafos)
         else
-          A[j] = reduce_right(A, A[j], A[j].pos[1]+1, with_transform_val; limit)
+          A[j] = reduce_right(A, Aj, Aj.pos[1]+1, with_transform_val; limit)
         end
       end
 
@@ -420,17 +444,17 @@ function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transf
   if length(g.values) > 0 && is_negative(getindex!(p_v, g.values, 1))
     if !new_g
       g = deepcopy(g)
-      new_g = false
+      new_g = true
     end
     scale_row!(g, -1)
     with_transform ? push!(trafos, sparse_trafo_scale!{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
   end
   if !new_g
     g = deepcopy(g)
-    new_g = false
+    new_g = true
   end
   if with_transform
-    g, new_trafos = reduce_right(A, g, 1, with_transform_val; limit)
+    g, new_trafos = reduce_right(A, g, 1, with_transform_val; limit, new_g)
     append!(trafos, new_trafos)
   else
     g = reduce_right(A, g; limit)
@@ -441,6 +465,7 @@ function reduce_full(A::SMat{T}, g::SRow{T}, with_transform_val::Val{with_transf
   release_tmp(A, tmpa)
   release_tmp(A, tmpb)
   release_tmp_scalar(A, tmp_scalar)
+  @assert new_g
   with_transform ? (return g, piv, trafos) : (return g, piv)
 end
 
@@ -451,15 +476,15 @@ function divrem!(q::ZZRingElem, r::ZZRingElem, a::ZZRingElem, b::ZZRingElem)
   return q, r
 end
 
-function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, ::Val{with_transform} = Val(false); limit::Int = typemax(Int)) where {T, with_transform}
-  
+function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val::Val{with_transform} = Val(false); limit::Int = typemax(Int), new_g::Bool = false) where {T, with_transform}
+ 
+  new_g || (b = deepcopy(b))
   with_transform ? trafos = [] : nothing
-  new = true
   if length(b.pos) == 0
     with_transform ? (return b, trafos) : return b
   end
   j = 1
-  while j <= length(b.pos) && b.pos[j] < start
+  @inbounds while j <= length(b.pos) && b.pos[j] < start
     j += 1
   end
   if j > length(b.pos)
@@ -473,11 +498,11 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, ::Val{with_transfo
   tmpa = get_tmp(A)
   R = base_ring(A)
   b_v, A_v, q, r = tmp_scalar = get_tmp_scalar(A, 4)
-  while j <= length(b.pos)
+  @inbounds while j <= length(b.pos)
     while p<nrows(A) && length(A[p])>0 && A[p].pos[1] < b.pos[j]
       p += 1
     end
-    if length(A[p]) == 0 || A[p].pos[1] > limit
+    if p > length(A.rows) || length(A[p]) == 0 || A[p].pos[1] > limit
       break
     end
 
@@ -492,10 +517,6 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, ::Val{with_transfo
 #        @assert q*A_v + r == b_v
       end
       if !iszero(q)
-        if new
-          b = deepcopy(b)
-          new = false
-        end
         q = neg!(q)
         Hecke.add_scaled_row!(A[p], b, q, tmpa)
 
@@ -602,12 +623,12 @@ end
 
 function upper_triag_to_hnf!(B::SMat{T}, with_transform_val::Val{with_transform} = Val(false); limit::Int = typemax(Int)) where {T, with_transform}
   with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing
-  for i = nrows(B)-1:-1:1
+  @inbounds for i = nrows(B)-1:-1:1
     if B[i].pos[1] > limit
       continue
     end
     if with_transform
-      B[i], new_trafos = reduce_right(B, B[i], B[i].pos[1]+1, with_transform_val; limit)
+      B[i], new_trafos = reduce_right(B, B[i], B[i].pos[1]+1, with_transform_val; limit, new_g = true)
       # We are updating the ith row
       # Have to adjust the transformations
       for t in new_trafos
@@ -616,7 +637,7 @@ function upper_triag_to_hnf!(B::SMat{T}, with_transform_val::Val{with_transform}
       # Now append
       append!(trafos, new_trafos)
     else
-      B[i] = reduce_right(B, B[i], B[i].pos[1]+1; limit)
+      B[i] = reduce_right(B, B[i], B[i].pos[1]+1; limit, new_g = true)
     end
   end
   with_transform ? (return B, trafos) : B
@@ -628,6 +649,7 @@ end
 Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 """
 function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} = Val(false); truncate::Bool = false, full_hnf::Bool = true, auto::Bool = false, limit::Int = typemax(Int)) where {T, with_transform}
+
   @vprintln :HNF 1 "Starting Kannan Bachem HNF on:"
   @vprint :HNF 1 A
   @vprintln :HNF 1 " with density $(density(A)); truncating $truncate"
@@ -637,6 +659,9 @@ function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} =
     full_hnf = false #we don't start with full reduction
   end
 
+  full_hnf = true
+  auto = false
+
   with_transform ? trafos = SparseTrafoElem{T, dense_matrix_type(T)}[] : nothing
 
   B = sparse_matrix(base_ring(A))
@@ -644,7 +669,7 @@ function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} =
   nc = 0
   stable_piv = 0
   local new_row::Bool
-  for i=A
+  @inbounds for i=A
     if with_transform
       q, w, new_trafos = reduce_full(B, i, with_transform_val; full_hnf, limit)
       append!(trafos, new_trafos)
@@ -749,6 +774,7 @@ function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} =
       push!(B, sparse_row(base_ring(A)))
     end
   end
+
   with_transform ? (return B, trafos) : (return B)
 end
 
@@ -759,7 +785,7 @@ Return the upper right Hermite normal form of $A$.
 
 $truncate$ indicates if zero rows should be returned or disgarded,
 when $full_hnf$ is set to $false$ only an upper triangular matrix is computed,
-ie. the upwards reduction s not performeded.
+ie. the upwards reduction is not performed.
 
 $auto$ if set to true selects a different elemination strategy - here the
 upwards reduction is temporarily switched off.
