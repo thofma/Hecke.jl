@@ -436,6 +436,7 @@ mutable struct SMat{T, S}
   nnz::Int
   base_ring::Union{Ring, Nothing}
   tmp::Vector{SRow{T, S}}
+  tmp_scalar::Vector{T}
 
   function SMat{T, S}() where {T, S}
     r = new{T, S}(0,0,Vector{SRow{T, S}}(), 0, nothing, Vector{SRow{T, S}}())
