@@ -328,6 +328,12 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
   piv = Int[]
 
   if length(A.rows) == 0
+    if length(g) > 0 && is_negative(g.values[1])
+      scale_row!(g, -1)
+      if with_transform
+        trafos = [sparse_trafo_scale(1, ZZ(-1))]
+      end
+    end
     return with_transform ? (g, piv, trafos) : (g, piv)
   end
 
@@ -441,14 +447,6 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
       end
     end
   end
-  if length(g.values) > 0 && is_negative(getindex!(p_v, g.values, 1))
-    if !new_g
-      g = deepcopy(g)
-      new_g = true
-    end
-    scale_row!(g, -1)
-    with_transform ? push!(trafos, sparse_trafo_scale!{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
-  end
   if !new_g
     g = deepcopy(g)
     new_g = true
@@ -459,6 +457,11 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
   else
     g = reduce_right(A, g; limit)
   end
+  if length(g.values) > 0 && is_negative(getindex!(p_v, g.values, 1))
+    scale_row!(g, -1)
+    with_transform ? push!(trafos, sparse_trafo_scale!{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
+  end
+
   if A.r == A.c
     @hassert :HNF 1  length(g) == 0 || minimum(g) >= 0
   end
@@ -488,10 +491,23 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
     j += 1
   end
   if j > length(b.pos)
+    if is_negative(b.values[1])
+      scale_row!(b, -1)
+      if with_transform
+        push!(trafos, sparse_trafo_scale(nrows(A) + 1), ZZ(-1))
+      end
+    end
     with_transform ? (return b, trafos) : return b
   end
   p = find_row_starting_with(A, b.pos[j])
   if p > nrows(A)
+    if is_negative(b.values[1])
+      scale_row!(b, -1)
+      if with_transform
+        push!(trafos, sparse_trafo_scale(nrows(A) + 1), ZZ(-1))
+      end
+    end
+
     with_transform ? (return b, trafos) : return b
   end
   @hassert :HNF 1  A[p] != b
@@ -509,6 +525,7 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
     if A[p].pos[1] == b.pos[j]
       b_v = getindex!(b_v, b.values, j)
       A_v = getindex!(A_v, A[p].values, 1)
+      @hassert :HNF 1 !is_negative(A_v)
       q, r = divrem!(q, r, b_v, A_v)
       if T == ZZRingElem && is_negative(r)
         add!(q, q, -1)
@@ -529,6 +546,13 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
       end
     end
     j += 1
+  end
+  if length(b) > 0 && is_negative(getindex!(A_v, b.values, 1)) 
+    @assert new_g
+    scale_row!(b, -1)
+    if with_transform
+      push!(trafos, sparse_trafo_scale(nrows(A) + 1), ZZ(-1))
+    end
   end
   release_tmp(A, tmpa)
   release_tmp_scalar(A, tmp_scalar)
