@@ -820,9 +820,9 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}; cached::Bool = true) where S where 
   A = algebra(O)
 
   # TODO: fix caching
-  #if cached && has_attribute(O, :maximal_order)
-  #  return get_attribute(O, :maximal_order)::typeof(O)
-  #end
+  if cached && has_attribute(O, :maximal_order)
+    return get_attribute(O, :maximal_order)::typeof(O)
+  end
 
   #if cached && isdefined(A, :maximal_order)
   #  for OO::order_type(A) in A.maximal_order
@@ -981,13 +981,15 @@ Returns a maximal order of $A$.
 """
 function MaximalOrder(A::AbstractAssociativeAlgebra{S}, R = _default_domain(base_ring(A))) where S
   # TODO: fix the caching
-  #if isdefined(A, :maximal_order)
-  #  return first(A.maximal_order)::order_type(A)
-  #end
+  if isdefined(A, :maximal_order) && R === _default_domain(base_ring(A))
+    return first(A.maximal_order)::order_type(A)
+  end
 
   O = any_order(A, R)
   OO = MaximalOrder(O)
-  #A.maximal_order = [OO]
+  if !isdefined(A, :maximal_order) && R === _default_domain(base_ring(A))
+    A.maximal_order = [OO]
+  end
   return OO
 end
 
