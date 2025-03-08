@@ -1,4 +1,5 @@
 function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
+  @req characteristic(K) != 2 "Characteristic must not be 2"
 
   M = zeros(K, 4, 4, 4)
 

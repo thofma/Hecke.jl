@@ -52,4 +52,10 @@
     fl, _ = Hecke._is_principal_maximal_quaternion_generic_proper(POp, GammaOp)
     @test !fl
   end
+
+  # make sure to forbid characteristic 2
+  let
+    K = GF(2)
+    @test_throws ArgumentError Hecke.QuaternionAlgebra(K, K(1), K(1))
+  end
 end
