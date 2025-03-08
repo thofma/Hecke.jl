@@ -173,7 +173,7 @@ function _solve_norm_equation_over_center_simple(M, x)
     ZA, ZAtoA = center(A)
     @assert ZAtoA(normred_over_center(elem_in_algebra(sol), ZAtoA)) == x
     return sol
-  elseif degree(A) == 4 && !is_split(A)
+  elseif _matdeg(A) == 4 && !is_split(A)
     return _solve_norm_equation_over_center_quaternion(M, x)
   else
     throw(NotImplemented())
@@ -214,7 +214,7 @@ end
 function _solve_norm_equation_over_center_full_matrix_algebra(M, x)
   A = algebra(M)
   ZA, ZAtoA = center(A)
-  if degree(A) == 1
+  if _matdeg(A) == 1
     @assert ZAtoA(normred_over_center(x, ZAtoA)) == x
     return M(x)
   elseif degree(base_ring(A)) == 1
@@ -306,7 +306,7 @@ function _lift_norm_one_unit_simple(x, F)
     FinB = ideal_from_lattice_gens(B, MinB, elem_type(B)[ AtoB(b) for b in basis(F) ], :twosided)
     y = _lift_norm_one_unit_full_matrix_algebra(MinB(AtoB(elem_in_algebra(x))::elem_type(B)), FinB)
     return (AtoB\y)::elem_type(A)
-  elseif degree(A) == 4 && !is_split(A)
+  elseif _matdeg(A) == 4 && !is_split(A)
     return _lift_norm_one_unit_quaternion(x, F)
   else
     error("Not implemented yet")
@@ -354,7 +354,7 @@ end
 function _lift_norm_one_unit_full_matrix_algebra(x, F)
   #@show F
   A = algebra(parent(x))
-  if degree(A) == 1
+  if _matdeg(A) == 1
     return elem_in_algebra(one(parent(x)))
   elseif degree(base_ring(A)) == 1
     M = parent(x)
@@ -393,7 +393,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   # zetainv * a == b
   @assert b + idnu == 1*order(b)
   zeta = inv(zetainv)
-  n = degree(A)
+  n = _matdeg(A)
   Phi1 = identity_matrix(base_ring(A), n)
   Phi1[n, n] = zetainv
   _belem, y = idempotents(b, idnu)

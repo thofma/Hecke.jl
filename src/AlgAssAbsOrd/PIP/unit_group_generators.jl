@@ -50,7 +50,7 @@ function _unit_group_generators_maximal_simple(M; GRH::Bool = true)
     OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     N, S = nice_order(OB)
     @assert basis_matrix(N) == identity_matrix(base_ring(B), dim(B))
-    gens = [ B(u) for u in _GLn_generators(base_ring(OB), degree(B))]
+    gens = [ B(u) for u in _GLn_generators(base_ring(OB), _matdeg(B))]
     @assert all(b in N for b in gens)
     gens_adjusted = [ inv(S) * u * S for u in gens]
     @assert all(b in OB for b in gens_adjusted)

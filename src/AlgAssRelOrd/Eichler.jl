@@ -72,8 +72,8 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
   Fq = base_ring(B)
   vv = mod(one(B), I)
   nonZeroCol = 0
-  for i = 1:degree(B)
-    for j = 1:degree(B)
+  for i = 1:_matdeg(B)
+    for j = 1:_matdeg(B)
       if !iszero(vv[i, j])
         nonZeroCol = j
         break
@@ -83,11 +83,11 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
       break
     end
   end
-  v = matrix(Fq, degree(B), 1, elem_type(Fq)[ vv[i, nonZeroCol] for i = 1:degree(B) ])
+  v = matrix(Fq, _matdeg(B), 1, elem_type(Fq)[ vv[i, nonZeroCol] for i = 1:_matdeg(B) ])
   ww = mod(one(B), J)
   nonZeroCol = 0
-  for i = 1:degree(B)
-    for j = 1:degree(B)
+  for i = 1:_matdeg(B)
+    for j = 1:_matdeg(B)
       if !iszero(ww[i, j])
         nonZeroCol = j
         break
@@ -97,7 +97,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
       break
     end
   end
-  w = matrix(Fq, degree(B), 1, elem_type(Fq)[ ww[i, nonZeroCol] for i = 1:degree(B) ])
+  w = matrix(Fq, _matdeg(B), 1, elem_type(Fq)[ ww[i, nonZeroCol] for i = 1:_matdeg(B) ])
 
   b = ceil(Int, degree(base_ring(B))*dim(B)*log2(BigInt(characteristic(base_ring(B)))))
   # A minimal set of generators of around b elements should generate B^\times

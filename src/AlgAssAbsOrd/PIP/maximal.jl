@@ -205,7 +205,7 @@ end
 
 function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
   A = algebra(M)
-  if degree(A) == 1
+  if _matdeg(A) == 1
     # I don't have _as_field_with_isomorphism for algebras over K
     AA, AAtoA = restrict_scalars(A, QQ)
     K, AAtoK = _as_field_with_isomorphism(AA)
@@ -252,7 +252,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   #@show basis(a)
   #@show a
   #@show norm(a, M)
-  d = degree(algebra(M))
+  d = _matdeg(algebra(M))
   e11 = zero(algebra(M))
   e11[1, 1] = 1
   O = base_ring(M)
@@ -318,7 +318,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   #@show basis(a)
   #@show a
   #@show norm(a, M)
-  d = degree(algebra(M))
+  d = _matdeg(algebra(M))
   e11 = zero(algebra(M))
   e11[1, 1] = 1
   z = zero_matrix(QQ, d, d^2)

@@ -748,7 +748,7 @@ end
 function _as_full_matrix_algebra_over_Q(A::MatAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
   @assert is_absolute(K) && degree(K) == 1
-  B = matrix_algebra(QQ, degree(A))
+  B = matrix_algebra(QQ, _matdeg(A))
 
   M = identity_matrix(K, dim(B))
   Minv = identity_matrix(QQ, dim(B))

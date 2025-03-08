@@ -96,10 +96,10 @@ function natural_lattice(O::AlgAssAbsOrd{<: MatAlgebra{QQFieldElem}, ZZRing})
   if all(x -> isone(denominator(matrix(elem_in_algebra(x)))),
          basis(O, copy = false))
     M = Amodule(A, matrix.(basis(A)))
-    if dim(A) == degree(A)^2 # this is a full matrix algebra
+    if dim(A) == _matdeg(A)^2 # this is a full matrix algebra
       M.is_abs_irreducible = 1
     end
-    return lattice(M, O, identity_matrix(QQ, degree(algebra(O))))
+    return lattice(M, O, identity_matrix(QQ, _matdeg(algebra(O))))
   else
     throw(ArgumentError("Order is not contained in M_n(Z)"))
   end
