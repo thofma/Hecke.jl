@@ -81,6 +81,14 @@ end
 # sr = get_tmp(A)
 # add_scaled_row(..., sr)
 # release_tmp(A, sr)
+#
+# get_tmp_scalar(A, n) similarly gets n temporary values - that should be
+# release_tmp_scalar(A, [a_1, ..., a_n]) for resuse
+# pattern
+# a, b, c = tmp_vals = get_tmp_scalar(A, 3)
+# ... using many "!" functions
+# release_tmp_scalar(A, tmp_vals)
+#
 function get_tmp(A::SMat)
   if isdefined(A, :tmp) && length(A.tmp) > 0
     return pop!(A.tmp)
@@ -89,7 +97,6 @@ function get_tmp(A::SMat)
 end
 
 function release_tmp(A::SMat{T}, s::SRow{T}) where T
-  return
   if isdefined(A, :tmp)
     if length(A.tmp) < 10
       push!(A.tmp, s)
@@ -98,6 +105,29 @@ function release_tmp(A::SMat{T}, s::SRow{T}) where T
     A.tmp = [s]
   end
 end
+
+function get_tmp_scalar(A::SMat, i::Int)
+#  return zeros(base_ring(A), i)
+  if !isdefined(A, :tmp_scalar)
+    A.tmp_scalar = zeros(base_ring(A), i)
+  end
+  s = A.tmp_scalar
+  if length(s) < i
+    append!(s, zeros(base_ring(A), i+1-length(s)))
+  end
+  @inbounds ret = s[length(s)-i+1:length(s)]
+  resize!(s, length(s)-i)
+  return ret
+end
+
+function release_tmp_scalar(A::SMat{T}, s::Vector{T}) where T
+#  return
+  if length(A.tmp_scalar) < 10
+    append!(A.tmp_scalar, s)
+  end
+  return nothing
+end
+
 
 @doc raw"""
     nnz(A::SMat) -> Int
@@ -236,8 +266,8 @@ Given a sparse matrix $A = (a_{ij})_{i, j}$, return the entry $a_{ij}$.
 function getindex(A::SMat{T}, i::Int, j::Int) where T
   if i in 1:A.r
     ra = A.rows[i]
-    p = findfirst(isequal(j), ra.pos)
-    if !(p === nothing)
+    p = searchsortedfirst(ra.pos, j)
+    if p <= length(ra.pos) && ra.pos[p] == j
       return ra.values[p]
     end
   end
@@ -249,9 +279,9 @@ end
 
 Given a sparse matrix $A$ and an index $i$, return the $i$-th row of $A$.
 """
-function getindex(A::SMat{T}, i::Int) where T
-  (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
-  return A.rows[i]
+@inline function getindex(A::SMat{T}, i::Int) where T
+   @boundscheck (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
+  return @inbounds A.rows[i]
 end
 
 @doc raw"""
@@ -483,6 +513,7 @@ function transpose(A::SMat{T}) where {T}
   n = nrows(A)
   m = ncols(A)
   B.rows = Vector{SRow{T}}(undef, m)
+  t = R()
   for i=1:m
     B.rows[i] = sparse_row(R)
   end
@@ -490,7 +521,8 @@ function transpose(A::SMat{T}) where {T}
     for j = 1:length(A.rows[i].pos)
       r = A.rows[i].pos[j]
       push!(B.rows[r].pos, i)
-      push!(B.rows[r].values, A.rows[i].values[j])
+      t = getindex!(t, A.rows[i].values, j) #this only works if push copies, kind of
+      push!(B.rows[r].values, t) #A.rows[i].values[j])
     end
   end
   B.c = n
@@ -850,12 +882,13 @@ function sub(A::SMat{T}, r::AbstractUnitRange, c::AbstractUnitRange) where T
   B = sparse_matrix(base_ring(A))
   B.nnz = 0
   B.c = length(c)
+  t = base_ring(A)()
   for i in r
     rw = sparse_row(base_ring(A))
     ra = A.rows[i]
     for j=1:length(ra.values)
       if ra.pos[j] in c
-        push!(rw.values, ra.values[j])
+        push!(rw.values, getindex!(t, ra.values, j))
         push!(rw.pos, ra.pos[j]-first(c)+1)
       end
     end
@@ -1202,12 +1235,14 @@ function maximum(::typeof(abs), A::SMat{ZZRingElem})
   if length(A.rows) == 0
     return zero(ZZ)
   end
-  m = abs(A.rows[1].values[1])
+  m = ZZ()
+  first = true
   for i in A.rows
-    for j in i.values
-      if cmpabs(m, j) < 0
-        m = j
-      end
+    if first
+      m = maximum(abs, i)
+      first = false
+    else
+      m = max(m, maximum(abs, i))
     end
   end
   return abs(m)
@@ -1219,12 +1254,14 @@ end
 Finds the largest entry of $A$.
 """
 function maximum(A::SMat)
-  m = zero(base_ring(A))
+  m = base_ring(A)()
+  first = true
   for i in A
-    for j in i.values
-      if cmp(m, j) < 0
-        m = j
-      end
+    if first
+      m = maximum(i)
+      first = false
+    else
+      m = max(m, maximum(i))
     end
   end
   return m
@@ -1236,12 +1273,14 @@ end
 Finds the smallest entry of $A$.
 """
 function minimum(A::SMat)
-  m = zero(base_ring(A))
+  m = base_ring(A)()
+  first = true
   for i in A.rows
-    for j in i.values
-      if cmp(m, j) > 0
-        m = j
-      end
+    if first
+      m = minimum(i)
+      first = false
+    else
+      m = min(m, minimum(i))
     end
   end
   return m
@@ -1253,11 +1292,7 @@ function maximum(::typeof(nbits), A::SMat{ZZRingElem})
   end
   m = nbits(A.rows[1].values[1])
   for i in A.rows
-    for j in i.values
-      if m < nbits(j)
-        m = nbits(j)
-      end
-    end
+    m = max(m, maximum(nbits, i))
   end
   return m
 end
