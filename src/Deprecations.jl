@@ -201,7 +201,6 @@ end
 @deprecate ispseudo_hnf is_pseudo_hnf
 @deprecate isquadratic is_quadratic
 @deprecate isquadratic_type is_quadratic_type
-@deprecate isquaternion_algebra is_quaternion_algebra
 @deprecate isradical_extension is_radical_extension
 @deprecate isramified is_ramified
 @deprecate isrationally_isometric is_rationally_isometric
