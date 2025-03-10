@@ -239,3 +239,16 @@ end
   @test mod(gg * hh, ZZ(4)) == mod(f, ZZ(4))
 end
 
+let
+  "divrem/gcd_right"
+  A = matrix_ring(QQ, 2)
+  Ax, x = A[:x]
+  f = A([1 1; 0 0]) * A([1 2; 3 4]) * x
+  g = A([1 2; 3 4]) * x
+  q, r = Hecke.divrem_right(f, g)
+  @test f == q * g + r
+  @test is_zero(r)
+  h = Hecke.gcd_right(f, g)
+  @test is_zero(Hecke.divrem_right(f, h)[2])
+  @test is_zero(Hecke.divrem_right(g, h)[2])
+end
