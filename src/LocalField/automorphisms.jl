@@ -269,3 +269,44 @@ function absolute_automorphism_group(L::LocalField)
   G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, L)
 end
+
+################################################################################
+#
+#  Isomorphism (partially)
+#
+################################################################################
+
+function is_isomorphic(K::PadicField, L::PadicField)
+  if prime(K) != prime(L)
+    return false, hom(K, L)
+  end
+  return true, hom(K, L)
+end
+
+function is_isomorphic(K::QadicField, L::QadicField)
+  fl, h = is_isomorphic(base_field(K), base_field(L))
+  if !fl
+    return false, hom(K, L, h, zero(L); check = false)
+  end
+  foverL = map_coefficients(h, defining_polynomial(K), parent = parent(defining_polynomial(L)))
+  r = roots(L, foverL)
+  if isempty(r)
+    return false, hom(K, L, zero(L); check = false)
+  else
+    return true, hom(K, L, r[1])
+  end
+end
+
+function is_isomorphic(K::LocalField, L::LocalField)
+  fl, h = is_isomorphic(base_field(K), base_field(L))
+  if !fl
+    return false, hom(K, L, h, zero(L); check = false)
+  end
+  foverL = map_coefficients(h, defining_polynomial(K), parent = parent(defining_polynomial(L)))
+  r = roots(L, foverL)
+  if isempty(r)
+    return false, hom(K, L, h, zero(L); check = false)
+  else
+    return true, hom(K, L, h, r[1])
+  end
+end

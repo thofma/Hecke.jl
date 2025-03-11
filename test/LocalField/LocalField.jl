@@ -308,4 +308,44 @@
     s = sprint(show, "text/plain", t//(1 + t))
     @test s isa String
   end
+
+  let
+    # some maps
+    Qx, x = QQ[:x]
+    K, a = number_field(x^3 - x^2 - 30*x + 64)
+    KK, aa = number_field(x^3 - x^2 - 30*x - 27)
+    # isomorphic over 13
+    P, = prime_ideals_over(maximal_order(K), 13)
+    Q, = prime_ideals_over(maximal_order(KK), 13)
+    CP, mCP = completion(K, P)
+    CQ, mCQ = completion(KK, Q)
+    fl, h = is_isomorphic(CP, CQ)
+    @test fl
+    @test is_one(h(one(CP)))
+    @test is_zero(h(zero(CP)))
+
+    # not isomorphic over 7
+    P, = prime_ideals_over(maximal_order(K), 7)
+    Q, = prime_ideals_over(maximal_order(KK), 7)
+    CP, mCP = completion(K, P)
+    CQ, mCQ = completion(KK, Q)
+    fl, h = is_isomorphic(CP, CQ)
+    @test !fl
+  end
+
+  let
+    # local isomormophism
+    Qx, x = QQ[:x]
+    K, a = number_field(x^3 - x^2 - 30*x + 64)
+    KK, aa = number_field(x^3 - x^2 - 30*x - 27)
+    @test Hecke._is_locally_isomorphic(K, KK, 13)
+    @test !Hecke._is_locally_isomorphic(K, KK, 7)
+
+    f = x^4 + 6*x^2 + 4
+    g = x^4 - 6*x^2 + 4
+    K, = number_field(f)
+    L, = number_field(g)
+    @test Hecke._is_locally_isomorphic(K, L, 5)
+    #@test !Hecke._is_locally_isomorphic(K, L, 2)
+  end
 end
