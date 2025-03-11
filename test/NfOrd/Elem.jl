@@ -321,14 +321,14 @@
   end
 
   @testset "Factorization" begin
-    K, a = number_field(x^2 + 1, "a")
+    K, a = number_field(x^2 + 1, "a"; cached = false)
     OK = maximal_order(K)
     b = OK(2 * 3 * a)
     fac = @inferred factor(b)
     @test is_unit(unit(fac)) == 1
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
 
-    K, a = number_field(x^3 - 2, "a")
+    K, a = number_field(x^3 - 2, "a"; cached = false)
     OK = maximal_order(K)
     b = rand(OK, -10:10)
 		while isone(abs(norm(b)))
@@ -342,7 +342,7 @@
   # minpoly and charpoly
   let
     Qx, x = QQ[:x]
-    K, a = quadratic_field(2)
+    K, a = quadratic_field(2; cached = false)
     OK = maximal_order(K)
     ZZx, x = ZZ[:x]
     @test minpoly(OK(a))(x) == x^2 - 2
