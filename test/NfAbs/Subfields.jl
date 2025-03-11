@@ -446,3 +446,10 @@ end
     @test length(Hecke.principal_subfields(K)) == 4
   end
 end
+
+let
+  Qx, x = QQ[:x]
+  L, a = number_field(x^4 + 6*x^2 + 4, :a)
+  LL, b = number_field(x^2 + 1, :b)
+  @test_throws ArgumentError Hecke.subfield(L, [b])
+end

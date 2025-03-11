@@ -870,6 +870,7 @@ export strong_echelon_form
 export structure_constant_algebra
 export structure_constant_table
 export sub
+export subfield
 export subfields
 export subgroups
 export submodules
