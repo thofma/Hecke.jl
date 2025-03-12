@@ -206,7 +206,7 @@ end
 
 function Base.deleteat!(a::ZZRingElem_Array, b::Int64)
   ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, b))
-  a[b] = 0
+  a.ar[b] = 0
   deleteat!(a.ar, b)
   a.l -= 1
 end
