@@ -129,6 +129,10 @@ function image(f::MapDataFromPadicField, L, y)
   return L(y)
 end
 
+function image(f::MapDataFromPadicField, L::PadicField, y)
+  return L(lift(ZZ, y))
+end
+
 function map_data(K::PadicField, L, ::Bool)
   return MapDataFromPadicField{typeof(L)}(L)
 end
