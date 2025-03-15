@@ -225,6 +225,7 @@ which we think might affect some users directly.
         # The remaining PRs have no "kind" or "topic" label from the priority list
         # (may have other "kind" or "topic" label outside the priority list).
         # Check their list in the release notes, and adjust labels if appropriate.
+        print(prs_with_use_title)
         if len(prs_with_use_title) > 0:
             relnotes_file.write("### Other changes\n\n")
             for typeobject in prtypes:
@@ -277,7 +278,7 @@ which we think might affect some users directly.
 
         # now read back the rest of changelog.md into newfile
         with open(finalfile, 'r') as oldchangelog:
-            oldchangelog.seek(262)
+            oldchangelog.seek(83)
             for line in oldchangelog.readlines():
                 relnotes_file.write(line)
         # finally copy over this new file to changelog.md
@@ -314,7 +315,7 @@ def main(new_version: str) -> None:
     # print(json.dumps(prs, sort_keys=True, indent=4))
 
     # reset changelog file to state tracked in git
-    
+
     subprocess.run('git checkout -- ../../CHANGELOG.md'.split(), check=True)
 
     changes_overview(prs, startdate, new_version)
