@@ -197,6 +197,20 @@ function schur_index(A::AbstractAssociativeAlgebra{<: NumFieldElem})
   return e
 end
 
+# Can the following be done without computing the center? Not clear, since the algebra
+# might have locally different Schur indicies over places lying over the same place 
+function schur_index_over_center(A::AbstractAssociativeAlgebra)
+  C, = StructureConstantAlgebra(A)
+  B, = _as_algebra_over_center(C) 
+  return schur_index(B)
+end
+
+function schur_index_over_center(A::AbstractAssociativeAlgebra, p)
+  C, = StructureConstantAlgebra(A)
+  B, = _as_algebra_over_center(C) 
+  return schur_index(B, p)
+end
+
 ################################################################################
 #
 #  Eichler condition

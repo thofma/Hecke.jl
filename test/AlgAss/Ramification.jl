@@ -168,4 +168,23 @@
     P = real_embeddings(K)[1]
     @test Hecke.n_positive_roots(f, P) == 21
   end
+
+  # Schur index over center
+  let
+    K, = quadratic_field(2)
+    A = Hecke.QuaternionAlgebra(K, K(-1), K(-1))
+    @test schur_index(A) == 2
+    AA, = restrict_scalars(A, QQ)
+    @test schur_index_over_center(AA) == 2
+    c = infinite_places(K)[1]
+    @test schur_index_over_center(AA, c) == 2
+
+    K, = quadratic_field(-1)
+    A = Hecke.QuaternionAlgebra(K, K(-1), K(-1))
+    @test schur_index(A) == 1
+    AA, = restrict_scalars(A, QQ)
+    @test schur_index_over_center(AA) == 1
+    c = infinite_places(K)[1]
+    @test schur_index_over_center(AA, c) == 1
+  end
 end
