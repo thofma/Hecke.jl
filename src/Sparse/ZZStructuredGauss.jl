@@ -6,6 +6,8 @@
 #TODO: eliminate some assertions/hassert
 #TODO: inplace instead of Y, dense part via pointer
 #TODO: use new set! for value array
+#TODO: alternatives for nullspace with treshhold or combination with rref mod p
+#TODO: write is_zero_entry for value arrays?
 
 #=
 PROBLEMS:
@@ -14,10 +16,10 @@ PROBLEMS:
 =#
 
 AbstractAlgebra.add_verbosity_scope(:StructGauss)
-AbstractAlgebra.set_verbosity_level(:StructGauss, 0)
+AbstractAlgebra.set_verbosity_level(:StructGauss, 1)
 
 AbstractAlgebra.add_assertion_scope(:StructGauss)
-AbstractAlgebra.set_assertion_level(:StructGauss, 0)
+AbstractAlgebra.set_assertion_level(:StructGauss, 1)
 
 mutable struct data_ZZStructGauss{T}
   A::SMat{T}
@@ -102,9 +104,11 @@ mutable struct data_ZZStructGauss{T}
  
   while SG.nlight > 0 && SG.base <= n
    build_part_ref!(SG)
+   #=
    for i = 1:m
     SG.is_light_col[i] && @assert length(SG.col_list[i]) != 1
    end
+   =# #testing
    (SG.nlight == 0 || SG.base > n) && break
    best_single_row = find_best_single_row(SG)
    best_single_row < 0 && @assert(SG.base == SG.single_row_limit)
@@ -145,8 +149,8 @@ mutable struct data_ZZStructGauss{T}
      singleton_row_idx = SG.col_list_permi[singleton_row_origin]
      for jj in SG.A[singleton_row_idx].pos
       if SG.is_light_col[jj]
-       @assert singleton_row_origin in SG.col_list[jj]
-       j_idx = findfirst(isequal(singleton_row_origin), SG.col_list[jj])
+       #@hassert :StructGauss singleton_row_origin in SG.col_list[jj]
+       j_idx = searchsortedfirst(SG.col_list[jj], singleton_row_origin)
        deleteat!(SG.col_list[jj],j_idx)
        length(SG.col_list[jj]) == 1 && push!(queue_new, jj)
       end
@@ -233,7 +237,7 @@ mutable struct data_ZZStructGauss{T}
     end
    end
   end
-  @assert light_cols == findall(x->SG.is_light_col[x], 1:m)
+  #@hassert :StructGauss light_cols == findall(x->SG.is_light_col[x], 1:m)
  end
  
  function turn_heavy(SG::data_ZZStructGauss)
@@ -285,9 +289,9 @@ mutable struct data_ZZStructGauss{T}
   row_idx = 0
   while length(best_col_idces) > 1
    row_idx = find_row_to_add_on(row_idx, best_row, best_col_idces, SG)
-   @assert best_col_idces == SG.col_list[best_col]
+   #@hassert :StructGauss 1 best_col_idces == SG.col_list[best_col]
    @assert row_idx > 0
-   @assert SG.col_list_perm[row_idx] in SG.col_list[best_col]
+   #@hassert :StructGauss SG.col_list_perm[row_idx] in SG.col_list[best_col]
    L_row = SG.col_list_perm[row_idx]
    add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG) #TODO: isone query
    update_after_addition!(L_row, row_idx, best_col, SG)
@@ -307,28 +311,28 @@ mutable struct data_ZZStructGauss{T}
  end
  
  function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val::ZZRingElem, SG::data_ZZStructGauss)::data_ZZStructGauss where T <: ZZRingElem
-  @assert L_row in SG.col_list[best_col]
-  @assert !(0 in SG.A[row_idx].values)
+  #@hassert :StructGauss L_row in SG.col_list[best_col]
+  #@hassert :StructGauss !(0 in SG.A[row_idx].values)
   val = SG.A[row_idx, best_col]
   @assert !iszero(val)
   g = gcd(val, best_val)
   val_red = divexact(val, g)
   best_val_red = divexact(best_val, g)
-  @assert L_row in SG.col_list[best_col]
+  #@hassert :StructGauss L_row in SG.col_list[best_col]
   for c in SG.A[row_idx].pos
    @assert !isempty(SG.col_list[c])
    if SG.is_light_col[c]
-    jj = findfirst(isequal(L_row), SG.col_list[c])
+    jj = searchsortedfirst(SG.col_list[c], L_row)
     deleteat!(SG.col_list[c], jj)
    end
   end
   scale_row!(SG.A, row_idx, best_val_red)
-  @assert !(0 in best_row.values)
+  #@hassert :StructGauss !(0 in best_row.values)
   SG.A.nnz -= length(SG.A[row_idx])
   Hecke.add_scaled_row!(best_row, SG.A[row_idx], -val_red)
   SG.A.nnz += length(SG.A[row_idx])
-  @assert iszero(SG.A[row_idx, best_col])
-  @assert !(0 in SG.A[row_idx].values)
+  #@hassert :StructGauss iszero(Hecke.get_ptr(SG.A[row_idx], searchsortedfirst(SG.A[row_idx].pos, best_col)))
+  #@hassert :StructGauss !(0 in SG.A[row_idx].values)
   return SG
  end
  
@@ -336,7 +340,7 @@ mutable struct data_ZZStructGauss{T}
   SG.light_weight[row_idx] = 0
   for c in SG.A[row_idx].pos
    @assert c != best_col
-   SG.is_light_col[c] && sort!(push!(SG.col_list[c], L_row))
+   SG.is_light_col[c] && insert!(SG.col_list[c], searchsortedfirst(SG.col_list[c], L_row), L_row)
    SG.is_light_col[c] && (SG.light_weight[row_idx]+=1)
   end
   return SG
@@ -460,13 +464,11 @@ end
 
 function dense_matrix(SG, KER)
  D = ZZMatrix(nrows(SG.A) - SG.npivots, length(KER.heavy_mapi))
- GC.@preserve D SG KER begin
 	 for i in 1:length(SG.Y)
 	  for j in 1:length(KER.heavy_mapi)
 	   setindex!(D, SG.Y[i], i, j, KER.heavy_mapi[j])
 	  end
 	 end
-	end 
  return D
 end
 
@@ -475,6 +477,7 @@ function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
  m = ncols(SG.A)
  if with_light
   l = _nullity+SG.nlight
+  #SG.nlight>0 && _one = one(ZZ)
  else
   l = _nullity
  end
@@ -486,15 +489,14 @@ function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
    if with_light
     @assert ilight <= SG.nlight
     #one!(K[i, _nullity+ilight]) doesn't work inplace
-    K[i, _nullity+ilight] = one(ZZ)
+    K[i, _nullity+ilight] = one(ZZ) #TODO
     ilight +=1
    end
   else
    j = KER.heavy_map[i]
    if j>0
     for c = 1:_nullity
-      #ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), Nemo.mat_entry_ptr(K, i, j), Nemo.mat_entry_ptr(_dense_kernel, j, c))
-      K[i,c] = _dense_kernel[j, c]
+      set!(mat_entry_ptr(K, i, c), mat_entry_ptr(_dense_kernel, j, c))
     end
    end
   end
@@ -511,17 +513,15 @@ function compose_kernel(l, K, SG)
   for i = n:-1:1
     c = SG.pivot_col[i]  # col idx of pivot or zero
     iszero(c) && continue
-    a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
+    a = Hecke.get_ptr(SG.A[i].values, searchsortedfirst(SG.A[i].pos, c))
     for kern_i in 1:l
      for idx in 1:length(SG.A[i])
       cc = SG.A[i].pos[idx]
       cc == c && continue
       submul!(x, Nemo.mat_entry_ptr(K, cc, kern_i), Hecke.get_ptr(SG.A[i].values, idx))
-      #submul!(x, K[cc, kern_i], SG.A[i].values[idx])
      end
      gcd!(g, a, x)
      divexact!(r, a, g)
-     #divexact!(r, reinterpret(Ptr{ZZRingElem}, Hecke.get_ptr(SG.A[i].values, findfirst(isequal(c), SG.A[i].pos))), g) #TODO
      divexact!(x, x, g)
      for j = 1:m
       Nemo.mul!(Nemo.mat_entry_ptr(K, j, kern_i), Nemo.mat_entry_ptr(K, j, kern_i), r)
@@ -535,55 +535,9 @@ function compose_kernel(l, K, SG)
   return l, K
 end
 
-function compose_kernel2(l, K, SG)
- n, m = nrows(SG.A), ncols(SG.A)
- x = zero(ZZ)
- a = zero(ZZ)
- r = zero(ZZ)
- g = zero(ZZ)
- for i = n:-1:1
-   c = SG.pivot_col[i]  # col idx of pivot or zero
-   iszero(c) && continue
-   a = SG.A[i].values[findfirst(isequal(c), SG.A[i].pos)]  # value of pivot  -->pointer?
-   for kern_i in 1:l
-    for idx in 1:length(SG.A[i])
-     cc = SG.A[i].pos[idx]
-     cc == c && continue
-     submul!(x, SG.A[i].values[idx], K[cc, kern_i])
-    end
-    gcd!(g, a, x)
-    divexact!(r, a, g)
-    divexact!(x, x, g)
-    for j = 1:m
-     K[j, kern_i]=r*K[j, kern_i]
-    end
-    Nemo.setindex(K, x, c, l) #TODO: remove Nemo. ?
-    zero!(x)
-    zero!(r)
-    zero!(g)
-   end
- end
- return l, K
-end
-
+#TODO: check if still necessary
 #Warning: skips zero entries in sparse matrix
-function Base.setindex!(A::ZZMatrix, B::SRow{ZZRingElem}, ar::Int64, ac::Int64, bj::Int64)
+function Base.setindex!(A::ZZMatrix, B::SRow{ZZRingElem}, ar::Int64, ac::Int64, bj::Int64) #TODO: why not working with searchsortedfirst?
  isnothing(findfirst(isequal(bj), B.pos)) && return
  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{Int}), Nemo.mat_entry_ptr(A, ar, ac), Hecke.get_ptr(B.values, findfirst(isequal(bj), B.pos)))
-end
-
-#=
-function Nemo.submul!(z::ZZRingElemOrPtr, x::ZZRingElemOrPtr, y::Ptr{Int})
-  @ccall libflint.fmpz_submul(z::Ref{ZZRingElem}, x::Ref{ZZRingElem}, y::Ref{Int})::Nothing
-  return z
-end
-=#
-
-function scalar_prod(A::SRow{T}, B::Array{T}) where T
-  z = zero(T)
-  for idx = 1:length(A.pos)
-   i = A.pos[idx]
-   z+=A.values[idx]*B[i]
-  end
-  return z
 end
