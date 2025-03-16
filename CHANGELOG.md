@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.35.15](https://github.com/thofma/Hecke/releases/tag/v0.35.15) - 2025-03-16
+
+The following gives an overview of the changes compared to the previous release. This list is not
+complete, many more internal or minor changes were made, but we tried to only list those changes
+which we think might affect some users directly.
+
+### Other changes
+
+#### Bugfix
+
+- [#1807](https://github.com/thofma/Hecke.jl/pull/1807) Fix interminated doctest
+
 ## [0.35.14](https://github.com/thofma/Hecke/releases/tag/v0.35.14) - 2025-03-15
 
 The following gives an overview of the changes compared to the previous release. This list is not
