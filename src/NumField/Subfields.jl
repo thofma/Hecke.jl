@@ -223,13 +223,14 @@ If `is_basis` is `true`, it is assumed that `elements` holds a $k$-basis of
 $K$.
 
 ```jldoctest
-julia> Qx, x = QQ[:x]; L, a = number_field(x^4 + 6*x^2 + 4, :a)
+julia> Qx, x = QQ[:x]; L, a = number_field(x^4 + 6*x^2 + 4, :a);
 
 julia> K, KtoL = subfield(L, [a^2]);
 
 julia> K
 Number field with defining polynomial x^2 + 6*x + 4
   over rational field
+```
 """
 function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = false, isbasis::Bool = false)
   @req all(x -> parent(x) === K, elt) "Elements must be contained in the field"
