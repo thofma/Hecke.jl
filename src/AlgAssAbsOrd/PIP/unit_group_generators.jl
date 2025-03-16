@@ -50,7 +50,7 @@ function _unit_group_generators_maximal_simple(M; GRH::Bool = true)
     OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     N, S = nice_order(OB)
     @assert basis_matrix(N) == identity_matrix(base_ring(B), dim(B))
-    gens = [ B(u) for u in _GLn_generators(base_ring(OB), degree(B))]
+    gens = [ B(u) for u in _GLn_generators(base_ring(OB), _matdeg(B))]
     @assert all(b in N for b in gens)
     gens_adjusted = [ inv(S) * u * S for u in gens]
     @assert all(b in OB for b in gens_adjusted)
@@ -58,7 +58,8 @@ function _unit_group_generators_maximal_simple(M; GRH::Bool = true)
     @assert all(b in M for b in gens_in_M)
     return gens_in_M
   elseif dim(ZA) == 4 && !is_split(ZA) && !isdefined(A, :isomorphic_full_matrix_algebra)
-    Q, QtoZA = is_quaternion_algebra(ZA)
+    QtoZA = isomorphism(QuaternionAlgebra, ZA)
+    Q = domain(QtoZA)
     MQ = _get_order_from_gens(Q, [QtoZA\(ZAtoA\(elem_in_algebra(b))) for b in absolute_basis(M)])
     _gens =  _unit_group_generators_quaternion(MQ; GRH = GRH)
     gens_in_M = [ ZAtoA(QtoZA(elem_in_algebra(u))) for u in _gens]

@@ -30,7 +30,7 @@ end
 function _maximal_torus(A::MatAlgebra)
   Abasis = matrix.(basis(A))
   K = base_ring(A)
-  n = degree(A)
+  n = _matdeg(A)
   p = characteristic(K)
   @assert 0 < p < n
   I = one(A)

@@ -557,3 +557,21 @@ function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::I
   f.precision = new_prec
   return nothing
 end
+
+#
+
+# at the moment only internal, since ideally we also return an appropriate map
+function _is_locally_isomorphic(K::AbsSimpleNumField, L::AbsSimpleNumField, p::IntegerUnion)
+  @req is_normal(K) && is_normal(L) "Not implemented for non-normal extensions (yet)"
+  OK = maximal_order(K)
+  OL = maximal_order(L)
+  if prime_decomposition_type(OK, p) != prime_decomposition_type(OL, p)
+    return false
+  end
+  P, = prime_ideals_over(OK, p)
+  Q, = prime_ideals_over(OL, p)
+  CP, mCP = completion(K, P)
+  CQ, mCQ = completion(L, Q)
+  fl, = is_isomorphic(CP, CQ)
+  return fl
+end

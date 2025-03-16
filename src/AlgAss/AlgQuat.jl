@@ -1,4 +1,5 @@
 function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
+  @req characteristic(K) != 2 "Characteristic must not be 2"
 
   M = zeros(K, 4, 4, 4)
 
@@ -31,18 +32,6 @@ function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
   return z
 end
 
-function show(io::IO, A::QuaternionAlgebra)
-  print(io, "Quaternion algebra over\n")
-  println(IOContext(io, :compact => true), base_ring(A))
-  a, b = standard_form(A)
-  print(io, "defined by i^2 = ", a, ", j^2 = ", b)
-end
-
-function show(io::IO, a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
-  v = a.coeffs
-  print(io, "(", v[1], ") + (", v[2], ") * i + (", v[3], ") * j + (", v[4], ") * k")
-end
-
 dim(A::QuaternionAlgebra) = 4
 
 base_ring(A::QuaternionAlgebra{T}) where {T} = A.base_ring::parent_type(T)
@@ -64,6 +53,55 @@ is_simple(A::QuaternionAlgebra) = true
 is_simple_known(A::QuaternionAlgebra) = true
 
 dimension_of_center(A::QuaternionAlgebra) = 1
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, mime::MIME"text/plain", A::QuaternionAlgebra)
+  @show_name(io, A)
+  @show_special(io, mime, A)
+  println(io, "Quaternion algebra")
+  io = pretty(io)
+  a, b = standard_form(A)
+  println(io, Indent(), "over ", Lowercase(), base_ring(A))
+  print(io, "defined by i^2 = ", a, ", j^2 = ", b)
+  print(io, Dedent())
+end
+
+function show(io::IO, A::QuaternionAlgebra)
+  if is_terse(io)
+    print(io, "Quaternion algebra")
+  else
+    a, b = standard_form(A)
+    io = pretty(io)
+    print(io, "Quaternion algebra over ")
+    print(terse(io), Lowercase(), base_ring(A))
+    print(io, " defined by i^2 = ", a, ", j^2 = ", b)
+  end
+end
+
+# now for elements
+
+@enable_all_show_via_expressify AssociativeAlgebraElem{T, QuaternionAlgebra{T}} where {T}
+
+function AbstractAlgebra.expressify(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}; context = nothing) where {T}
+  # Expr(:row, a, b) gives a b
+  v = a.coeffs
+  sum = Expr(:call, :+)
+  for (i, sym) in enumerate([1, :i, :j, :k])
+    push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(v[i]; context), AbstractAlgebra.expressify(sym; context)))
+  end
+  return sum
+end
+
+################################################################################
+#
+#  Parent call overloading
+#
+################################################################################
 
 (A::QuaternionAlgebra{T})(a::IntegerUnion) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
@@ -146,14 +184,22 @@ function __standard_involution(A)
   return hom(A, A, M, inv(M))
 end
 
+function isomorphism(::Type{QuaternionAlgebra}, A::StructureConstantAlgebra)
+  @req characteristic(base_ring(A)) != 2 "Characteristic must not be 2"
+  fl, iso = _is_quaternion_algebra(A)
+  !fl && error("Not an quaternion algebra")
+  return iso
+end
+
 # John Voight, "Quaternion algebra companion", Algorithm 4.6.1
 # https://math.dartmouth.edu/~jvoight/hints-solns.pdf
-function is_quaternion_algebra(A::StructureConstantAlgebra)
-  @assert dim(A) == 4
-  @assert dimension_of_center(A) == 1
+function _is_quaternion_algebra(A::StructureConstantAlgebra)
+  K = base_ring(A)
+  if dim(A) != 4 || dimension_of_center(A) != 1
+    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
+  end
 
   f = standard_involution(A)
-  K = base_ring(A)
   G = zero_matrix(K, 4, 4)
   B = copy(basis(A))
   # Make one(A) the first element of B
@@ -180,7 +226,7 @@ function is_quaternion_algebra(A::StructureConstantAlgebra)
   @assert stdbasis[1] == 1
 
   if iszero(det(F))
-    return false
+    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
   end
 
   a = stdbasis[2]^2
@@ -215,7 +261,7 @@ function is_quaternion_algebra(A::StructureConstantAlgebra)
 
   SBinv = inv(SB)
 
-  return QA, hom(QA, A, SB, SBinv)
+  return true, hom(QA, A, SB, SBinv)
 end
 
 ################################################################################

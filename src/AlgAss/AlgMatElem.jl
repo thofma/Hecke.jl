@@ -232,11 +232,11 @@ function one(A::MatAlgebra)
   if !has_one(A)
     error("Algebra does not have a one")
   end
-  return A(identity_matrix(coefficient_ring(A), degree(A)), check = false) # deepcopy needed by mul!
+  return A(identity_matrix(coefficient_ring(A), _matdeg(A)), check = false) # deepcopy needed by mul!
 end
 
 function (A::MatAlgebra)()
-  n = degree(A)
+  n = _matdeg(A)
   return A(zero_matrix(coefficient_ring(A), n, n), check = false)
 end
 
@@ -269,8 +269,8 @@ end
 function (A::MatAlgebra{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)
-  M = zero_matrix(R, degree(A), degree(A))
-  temp = zero_matrix(R, degree(A), degree(A))
+  M = zero_matrix(R, _matdeg(A), _matdeg(A))
+  temp = zero_matrix(R, _matdeg(A), _matdeg(A))
   B = basis(A)
   for i = 1:dim(A)
     temp = mul!(temp, matrix(B[i], copy = false), R(v[i]))

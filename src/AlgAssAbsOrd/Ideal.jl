@@ -1149,7 +1149,7 @@ function _islocally_free_left(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Union{Int,
       end
     end
 
-    if length(basiseIJoverZ) != degree(C)
+    if length(basiseIJoverZ) != _matdeg(C)
       # I is not locally free
       return false, O()
     end

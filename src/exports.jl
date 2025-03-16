@@ -824,6 +824,7 @@ export scale_row!
 export scale_row_right!
 export scales
 export schur_index
+export schur_index_over_center
 export semi_global_minimal_model
 export set_assertion_level
 export set_var!
@@ -870,6 +871,7 @@ export strong_echelon_form
 export structure_constant_algebra
 export structure_constant_table
 export sub
+export subfield
 export subfields
 export subgroups
 export submodules

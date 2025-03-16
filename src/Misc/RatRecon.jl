@@ -43,71 +43,25 @@ end
  Returns `true` and $x/y$ s.th. $ay = x mod b$ and $degree(x), degree(y) <= degree(b)/2$
    or `false` (and garbage) if this is not possible. Shortcut to the more general function.
 """
-function rational_reconstruction(a::PolyRingElem{T}, b::PolyRingElem{T}; ErrorTolerant::Bool = false) where T
-  return rational_reconstruction_subres(a, b, ErrorTolerant = ErrorTolerant)
-end
-function rational_reconstruction(a::QQPolyRingElem, b::QQPolyRingElem; ErrorTolerant::Bool = false)
-  return rational_reconstruction_mod(a, b, ErrorTolerant = ErrorTolerant)
+function rational_reconstruction(a::PolyRingElem{T}, b::PolyRingElem{T}; error_tolerant::Bool = false, ErrorTolerant::Bool = false) where T
+  return rational_reconstruction_subres(a, b, error_tolerant = error_tolerant || ErrorTolerant)
 end
 
-
-#Note: this is not the best (fastest) algorithm, not the most general
-#      signature, not the best (fastest) interface, ....
-#However: for now it works.
-
-@doc raw"""
-    rational_reconstruction(a::ZZRingElem, b::ZZRingElem)
-    rational_reconstruction(a::Integer, b::Integer)
-
-Tries to solve $ay=x mod b$ for $x,y < sqrt(b/2)$. If possible, returns
-  (`true`, $x$, $y$) or (`false`, garbage) if not possible.
-
-By default `y` and `b` have to be coprime for a valid solution. It is
-well known that then the solution is unique.
-
-If `ErrorTolerant` is set to `true`, then a solution is also accepted if
-`x`, `y` and `b` have a common divisor `g` and if
-  `a(y/g) = (x/g) mod (b/g)` is true and if the combined size is small enough,
-The typical application are modular algorithms where
- - there are finitely many bad primes (ie. the `mod p` datum does
-   not match the global solution modulo `p`)
- - that cannot be detected
-In this case `g` will be the product of the bad primes.
-"""
-function rational_reconstruction(a::ZZRingElem, b::ZZRingElem; ErrorTolerant::Bool = false)
-  if ErrorTolerant
-    m = matrix(ZZ, 2, 2, [a, ZZRingElem(1), b, ZZRingElem(0)])
-    lll!(m)
-    x = m[1,1]
-    y = m[1,2]
-    @assert (a*y-x) % b == 0
-    g = gcd(x, y)
-    divexact!(x, g)
-    divexact!(y, g)
-    return nbits(x)+nbits(y)+2*nbits(g) + 20 < nbits(b), x, y
-  else
-    res = QQFieldElem()
-    a = mod(a, b)
-    fl = ccall((:fmpq_reconstruct_fmpz, libflint), Int, (Ref{QQFieldElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), res, a, b)
-    return fl!=0, numerator(res), denominator(res)
-  end
+function rational_reconstruction(a::QQPolyRingElem, b::QQPolyRingElem; error_tolerant::Bool = false, ErrorTolerant::Bool = false)
+  return rational_reconstruction_mod(a, b, error_tolerant = error_tolerant || ErrorTolerant)
 end
 
-function rational_reconstruction(a::Integer, b::Integer; ErrorTolerant::Bool = false)
-  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b), ErrorTolerant = ErrorTolerant)
+
+function rational_reconstruction(a::ZZRingElem, b::ZZRingElem; error_tolerant::Bool = false, ErrorTolerant::Bool = false, kw...)
+  return Nemo._rational_reconstruction(a, b; error_tolerant = error_tolerant || ErrorTolerant , kw...)
 end
 
-@doc raw"""
-    rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D::ZZRingElem) -> Bool, ZZRingElem, ZZRingElem
+function rational_reconstruction(a::Integer, b::Integer; error_tolerant::Bool = false, kw...)
+  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b), error_tolerant, kw...)
+end
 
-Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
-satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
-"""
 function rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D::ZZRingElem)
-  res = QQFieldElem()
-  a = mod(a, b)
-  fl = ccall((:fmpq_reconstruct_fmpz_2, libflint), Int, (Ref{QQFieldElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), res, a, b, N, D)
-  return fl!=0, numerator(res), denominator(res)
+  return Nemo._rational_reconstruction(a, b, N, D)
 end
 
 #Note: the vector version might be useful - or the mult by previous den version
@@ -118,7 +72,7 @@ end
 
 Applies the `rational_reconstruction` function to each coefficient.
 """
-function rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem; ErrorTolerant::Bool = false)
+function rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem; error_tolerant::Bool = false)
   K= parent(a)
   Qx = parent(K.pol)
   res = Qx(0)
@@ -128,7 +82,7 @@ function rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem; ErrorT
       continue
     end
     @assert denominator(c) == 1
-    fl, x, y = rational_reconstruction(numerator(c), b, ErrorTolerant = ErrorTolerant)
+    fl, x, y = rational_reconstruction(numerator(c), b, error_tolerant = error_tolerant)
     if !fl
       return false, K(res)
     end
@@ -147,13 +101,13 @@ farey_lift = rational_reconstruction
 # Idea of using the same algorithm due to E. Thome
 #
 
-function berlekamp_massey_recon(a::Vector{T}; ErrorTolerant::Bool = false, parent = polynomial_ring(parent(a[1]), "x", cached = false)[1]) where T
+function berlekamp_massey_recon(a::Vector{T}; ErrorTolerant::Bool = false, error_tolerant::Bool = false, parent = polynomial_ring(parent(a[1]), "x", cached = false)[1]) where T
   Rx = parent
   f = Rx(a)
   x = gen(Rx)
   xn= x^length(a)
 
-  fl, n, d = rational_reconstruction(f, xn, ErrorTolerant = ErrorTolerant)
+  fl, n, d = rational_reconstruction(f, xn, error_tolerant = error_tolerant || ErrorTolerant)
   if fl
     d = reverse(d)
     return true, d*(inv(leading_coefficient(d)))
@@ -167,7 +121,7 @@ end
 # from Dereje
 ###############################################################################
 
-function rational_reconstruction_subres(g::PolyRingElem{T}, f::PolyRingElem{T}, bnd::Int = -1; ErrorTolerant::Bool = false) where T
+function rational_reconstruction_subres(g::PolyRingElem{T}, f::PolyRingElem{T}, bnd::Int = -1; error_tolerant::Bool = false) where T
     # the denominator is normalized
     R_2 = g.parent
     r_1 = R_2(1); t_1 = R_2(0)
@@ -212,7 +166,7 @@ function rational_reconstruction_subres(g::PolyRingElem{T}, f::PolyRingElem{T}, 
 
     if(degree(q_m)==1)
        g = gcd(l_rt[1], l_rt[2])
-       if ErrorTolerant
+       if error_tolerant
           if 2*degree(g) + degree(l_rt[1]) + degree(l_rt[2]) >= degree(f) -1
             return false, l_rt[1], l_rt[2]
           else
@@ -225,7 +179,7 @@ function rational_reconstruction_subres(g::PolyRingElem{T}, f::PolyRingElem{T}, 
        end
     else
         g = gcd(r_m, t_m)
-        if ErrorTolerant
+        if error_tolerant
            if 2*degree(g) + degree(r_m) + degree(t_m) >= degree(f) -1
               return false, r_m, t_m
            else
@@ -242,14 +196,14 @@ end
 #                 modular univariate farey lift                               #
 ###############################################################################
 
-function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::Int = -1; ErrorTolerant ::Bool = false)
+function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::Int = -1; error_tolerant ::Bool = false)
   p = next_prime(ZZRingElem(p_start))
   local n, p
   try
-    n, p = _inner_modp_results(g, f, p, bnd, ErrorTolerant)  # mainly used to find the correct
+    n, p = _inner_modp_results(g, f, p, bnd, error_tolerant)  # mainly used to find the correct
   catch e
     if e == ErrorException("Reconstruction probably not possible. illegal inputs")
-      if ErrorTolerant
+      if error_tolerant
         return false, g, f
       end
       rethrow(e)
@@ -263,7 +217,7 @@ function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::
   local N, D
   while true
     kp = 2*kp
-    L = _modp_results(g,f,p,kp, n, ErrorTolerant)
+    L = _modp_results(g,f,p,kp, n, error_tolerant)
     p = L[4]
     if j==0
        N = L[1]; D = L[2]; pp = L[3]
@@ -277,7 +231,7 @@ function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::
       fl, de_rat_f = induce_rational_reconstruction(D, ZZ(pp), parent = parent(g))
       if fl
         t = de_rat_f *g - nu_rat_f
-        if ErrorTolerant
+        if error_tolerant
            gc = divexact(f, gcd(t, f))
            if iszero((t*gc) % f)
               return true, nu_rat_f, de_rat_f
@@ -293,14 +247,14 @@ end
 
 ################################################################################
 
-function _modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, M::Int, n::Int, ErrorTolerant::Bool)
+function _modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, M::Int, n::Int, error_tolerant::Bool)
    l1 = fpPolyRingElem[]; l2 = fpPolyRingElem[];l3 = ZZRingElem[]
    L = listprimes([f,g], p, M)
    for j in 1:length(L)
      Rp, t = polynomial_ring(Native.GF(Int(L[j]), cached=false), cached=false)
      gp = Rp(g)
      fp = Rp(f)
-     fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, -1, ErrorTolerant = ErrorTolerant)
+     fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, -1, error_tolerant = error_tolerant)
      if fl
         ut = Rp(inv(leading_coefficient(de_p)))
         push!(l1, ut*nu_p)
@@ -314,7 +268,7 @@ function _modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, M::In
    return nu, du, c.pr[end], L[end]
 end
 
-function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, bnd::Int = -1, ErrorTolerant::Bool = false)
+function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, bnd::Int = -1, error_tolerant::Bool = false)
    np = 0
    while true
      np += 1
@@ -322,7 +276,7 @@ function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem,
          Rp, t = polynomial_ring(residue_ring(ZZ, p, cached=false)[1], cached=false)
          gp = Rp(g)
          fp = Rp(f)
-         fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, bnd, ErrorTolerant = ErrorTolerant)
+         fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, bnd, error_tolerant = error_tolerant)
          if fl
              return degree(nu_p), p
          end
@@ -339,9 +293,9 @@ end
 function berlekamp_massey(L::Vector{T}; parent = polynomial_ring(parent(L[1]), "x", cached = false)[1]) where T
   return berlekamp_massey_naive(L, parent = parent)
 end
-function berlekamp_massey(L::Vector{QQFieldElem}; ErrorTolerant::Bool = false, parent = Globals.Qx)
-  if ErrorTolerant
-    return berlekamp_massey_recon(L, ErrorTolerant = true, parent = parent)
+function berlekamp_massey(L::Vector{QQFieldElem}; error_tolerant::Bool = false, ErrorTolerant::Bool = false, parent = Globals.Qx)
+  if ErrorTolerant || error_tolerant
+    return berlekamp_massey_recon(L, error_tolerant = true, parent = parent)
   end
   return berlekamp_massey_mod(L, parent = parent)
 end

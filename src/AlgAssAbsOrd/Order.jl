@@ -820,9 +820,9 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}; cached::Bool = true) where S where 
   A = algebra(O)
 
   # TODO: fix caching
-  #if cached && has_attribute(O, :maximal_order)
-  #  return get_attribute(O, :maximal_order)::typeof(O)
-  #end
+  if cached && has_attribute(O, :maximal_order)
+    return get_attribute(O, :maximal_order)::typeof(O)
+  end
 
   #if cached && isdefined(A, :maximal_order)
   #  for OO::order_type(A) in A.maximal_order
@@ -981,13 +981,15 @@ Returns a maximal order of $A$.
 """
 function MaximalOrder(A::AbstractAssociativeAlgebra{S}, R = _default_domain(base_ring(A))) where S
   # TODO: fix the caching
-  #if isdefined(A, :maximal_order)
-  #  return first(A.maximal_order)::order_type(A)
-  #end
+  if isdefined(A, :maximal_order) && R === _default_domain(base_ring(A))
+    return first(A.maximal_order)::order_type(A)
+  end
 
   O = any_order(A, R)
   OO = MaximalOrder(O)
-  #A.maximal_order = [OO]
+  if !isdefined(A, :maximal_order) && R === _default_domain(base_ring(A))
+    A.maximal_order = [OO]
+  end
   return OO
 end
 
@@ -1053,7 +1055,7 @@ function _simple_maximal_order(O::AlgAssAbsOrd{S1, ZZRing}, ::Val{with_transform
     throw(ArgumentError("Order must be an order in a matrix algebra"))
   end
 
-  n = degree(A)
+  n = _matdeg(A)
 
   # Build a matrix with the first rows of basis elements of O
   M = zero_matrix(QQ, dim(A), n)
@@ -1161,9 +1163,9 @@ end
 # group algebras", section 6.
 function enum_units(O::AlgAssAbsOrd{S, T}, g::ZZRingElem) where { S <: MatAlgebra, T }
   A = algebra(O)
-  @assert degree(A)^2 == dim(A)
+  @assert _matdeg(A)^2 == dim(A)
 
-  n = degree(A)
+  n = _matdeg(A)
 
   L = _simple_maximal_order(O)
   a = basis_matrix(L, copy = false)[dim(A) - 1, dim(A) - 1]
