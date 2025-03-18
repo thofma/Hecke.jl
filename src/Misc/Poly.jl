@@ -1026,3 +1026,37 @@ end
 
 Base.IteratorSize(::Type{FactorsOfSquarefree{T}}) where T = Base.SizeUnknown()
 Base.eltype(::Type{FactorsOfSquarefree{T}}) where T = T
+
+################################################################################
+#
+#  Right division with remainder
+#
+################################################################################
+
+# Conventions follow Ore, "Theory of Non-Commutative Polynomials", 1933
+
+function divrem_right(f::NCPolyRingElem, g::NCPolyRingElem)
+  check_parent(f, g)
+  @req !is_zero(g) "Divisor must be non-zero"
+  # we are looing for q, r with f = q*g + r, so g is always a right divisors
+  b = leading_coefficient(g)
+  q = zero(f)
+  R = parent(f)
+  while degree(f) >= degree(g)
+    n = degree(f) - degree(g)
+    c = shift_left(R(divexact_right(leading_coefficient(f), b)), n)
+    q += c
+    @assert degree(f - c * g) < degree(f)
+    f = f - c * g
+  end
+  return q, f
+end
+
+function gcd_right(f::NCPolyRingElem, g::NCPolyRingElem)
+  check_parent(f, g)
+  while !iszero(g)
+    _, r = divrem_right(f, g)
+    f, g = g, r
+  end
+  return f
+end
