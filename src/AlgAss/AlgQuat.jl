@@ -1,3 +1,18 @@
+@doc raw"""
+    quaternion_algebra(K::Field, a, b) -> QuaternionAlgebra
+
+Return the quaternion algebra $(a, b | K)$ defined by $i^2 = -1$, $j^2 - 1$.
+
+At the moment, the field must have characteristic not equal to $2$.
+"""
+function quaternion_algebra(K::Field, a, b)
+  if parent(a) === K && parent(b) === K
+    return QuaternionAlgebra(K, a, b)
+  else
+    return QuaternionAlgebra(K, K(a)::elem_type(K), K(b)::elem_type(K))
+  end
+end
+
 function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
   @req characteristic(K) != 2 "Characteristic must not be 2"
 

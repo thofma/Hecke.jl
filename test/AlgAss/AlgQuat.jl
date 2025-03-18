@@ -1,4 +1,12 @@
 @testset "Quaternion algebras" begin
+
+  let
+    Q = quaternion_algebra(QQ, -1, -1)
+    @test Q isa Hecke.QuaternionAlgebra
+    Q = quaternion_algebra(QQ, QQ(-1), -1)
+    @test Q isa Hecke.QuaternionAlgebra
+  end
+
   M = Array{QQFieldElem, 3}(undef, 4, 4, 4)
   M[:, :, 1] = [-2 4 -2 0; 0 0 -1 -3; 1 1 0 3; -3 3 -3 0]
   M[:, :, 2] = [ -4 0 -1 -3; 2 0 2 0; -3 2 -5//2 -3//2; -3 0 -3//2 -9//2]
@@ -17,6 +25,14 @@
   let
     K, a = quadratic_field(5)
     A = Hecke.quaternion_algebra2(K, K(-1), K(-1))
+    O = maximal_order(A)
+    I = basis(A)[2] * O
+    fl, b = Hecke._is_principal_maximal_quaternion_generic_proper(I, O)
+    @assert fl
+    @test b * O == I
+
+    K, a = quadratic_field(5)
+    A = Hecke.quaternion_algebra(K, -1, -1)
     O = maximal_order(A)
     I = basis(A)[2] * O
     fl, b = Hecke._is_principal_maximal_quaternion_generic_proper(I, O)
