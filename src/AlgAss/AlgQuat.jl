@@ -1,7 +1,7 @@
 @doc raw"""
     quaternion_algebra(K::Field, a, b) -> QuaternionAlgebra
 
-Return the quaternion algebra $(a, b | K)$ defined by $i^2 = -1$, $j^2 - 1$.
+Return the quaternion algebra $(a, b | K)$ defined by $i^2 = a$, $j^2 = b$.
 
 At the moment, the field must have characteristic not equal to $2$.
 """
