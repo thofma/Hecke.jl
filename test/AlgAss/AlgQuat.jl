@@ -76,4 +76,56 @@
     K = GF(2)
     @test_throws ArgumentError Hecke.QuaternionAlgebra(K, K(1), K(1))
   end
+
+  # finding zero-divisors
+  let
+    Q = Hecke.QuaternionAlgebra(QQ, QQ(3), QQ(2))
+    fl, _ = Hecke.is_split_with_zero_divisor(Q)
+    @test !fl
+    for (a, b) in [(1, 1), (2, 1), (1, 2), (-2, 2), (-4, 4)]
+      Q = Hecke.QuaternionAlgebra(QQ, QQ(a), QQ(b))
+      fl, alpha = Hecke.is_split_with_zero_divisor(Q)
+      @test fl
+      @test !is_zero(alpha)
+      @test norm(alpha) == 0
+    end
+  end
+
+  let
+    K, = rationals_as_number_field()
+    Q = Hecke.QuaternionAlgebra(K, K(3), K(2))
+    fl, _ = Hecke.is_split_with_zero_divisor(Q)
+    @test !fl
+    for (a, b) in [(1, 1), (2, 1), (1, 2), (-2, 2), (-4, 4)]
+      Q = Hecke.QuaternionAlgebra(K, K(a), K(b))
+      fl, alpha = Hecke.is_split_with_zero_divisor(Q)
+      @test fl
+      @test !is_zero(alpha)
+      @test norm(alpha) == 0
+    end
+  end
+
+  let
+    K, ii = quadratic_field(-1)
+    Q = Hecke.QuaternionAlgebra(K, K(-1), K(-1))
+    for (a, b) in [(-1, -1), (2, 1), (1, 2), (2*ii, ii)]
+      Q = Hecke.QuaternionAlgebra(K, K(a), K(b))
+      fl, alpha = Hecke.is_split_with_zero_divisor(Q)
+      @test fl
+      @test !is_zero(alpha)
+      @test norm(alpha) == 0
+    end
+  end
+
+  let
+    K, x, (a, b) = rational_function_field(QQ, :x => 1:4, [:a, :b])
+    A = quaternion_algebra(K, a, b)
+    z = A(x)
+    _, i, j, k = basis(A)
+    @test normred(z) == x[1]^2 - x[2]^2*a - x[3]^2*b + x[4]^2*a*b
+    @test trred(z) == 2*x[1]
+    @test conjugate(z) == x[1] - x[2]*i - x[3]*j - x[4]*k
+    m = reduced_charpoly(z)
+    @test m(z) == 0 && degree(m) == 2
+  end
 end

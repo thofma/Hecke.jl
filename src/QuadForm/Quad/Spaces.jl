@@ -1231,6 +1231,12 @@ function is_isotropic_with_vector(q::QuadSpace{QQField, QQMatrix})
   return true, v
 end
 
+function is_isotropic_with_vector(q::QuadSpace)
+  # for number fields see below
+  G = gram_matrix(q)
+  return _isisotropic_with_vector(G)
+end
+
 @doc raw"""
     _isotropic_subspace(q::QuadSpace{QQField, QQMatrix}) -> Bool, QQMatrix
 

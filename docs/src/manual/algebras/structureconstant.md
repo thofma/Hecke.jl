@@ -2,6 +2,7 @@
 
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
 DocTestSetup = quote
   using Hecke
 end
