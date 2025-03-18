@@ -759,6 +759,7 @@ export quadratic_product
 export quadratic_space
 export quadratic_twist
 export quadratic_twists
+export quaternion_algebra
 export quo
 export quotient
 export radical
