@@ -686,7 +686,7 @@ function _create_element_from_vector(A::AbstractAssociativeAlgebra{T}, c::Vector
   end
 end
 
-function (A::QuaternionAlgebra{T})(c::Vector{T}; copy::Bool = true) where {T}
+function (A::QuaternionAlgebra{T})(c::Vector; copy::Bool = true) where {T}
   return _create_element_from_vector(A, c; copy)
 end
 

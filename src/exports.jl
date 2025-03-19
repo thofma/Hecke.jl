@@ -557,6 +557,7 @@ export is_simplified_model
 export is_smooth
 export is_snf
 export is_split
+export is_split_with_zero_divisor
 export is_squarefree
 export is_subfield
 export is_subfield_normal
