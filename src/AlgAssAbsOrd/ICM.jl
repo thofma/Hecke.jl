@@ -319,10 +319,10 @@ function _isconjugate(O::Union{ AbsNumFieldOrder, AlgAssAbsOrd }, M::ZZMatrix, N
   I, basisI = matrix_to_ideal(O, M)
   J, basisJ = matrix_to_ideal(O, N)
   t, a = is_isomorphic_with_map(J, I)
-  @assert J == a*I
   if !t
     return false, zero_matrix(ZZ, nrows(M), ncols(M))
   end
+  @assert J == a*I
 
   aBI = basis_matrix([ a*b for b in basisI ], FakeFmpqMat)
   BJ = basis_matrix(basisJ, FakeFmpqMat)

@@ -89,4 +89,8 @@ end
   b, V = is_conjugate(M, N)
   @test b == false
 
+  M = ZZ[-2 0; -3 -8]
+  N = ZZ[2 5; -8 -12]
+  b, V = is_conjugate(M, N)
+  @test b == false
 end
