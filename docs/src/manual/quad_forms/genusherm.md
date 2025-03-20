@@ -324,10 +324,10 @@ julia> p = prime_decomposition(OK, 2)[1][1];
 julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
 
 julia> det_representative(g1)
--8*a + 10
+-8*a - 6
 
 julia> det_representative(g1,2)
--8*a + 10
+-8*a - 6
 ```
 
 ---
@@ -363,12 +363,12 @@ julia> L = hermitian_lattice(E, gens, gram = D);
 julia> g2 = genus(L, p);
 
 julia> gram_matrix(g2)
-[5//2*a + 4   0          0]
-[         0   a          a]
-[         0   a   -4*a - 8]
+[-3//2*a   0     0]
+[      0   a     a]
+[      0   a   4*a]
 
 julia> gram_matrix(g2,1)
-[5//2*a + 4]
+[-3//2*a]
 ```
 
 ---
@@ -436,12 +436,16 @@ julia> infp = infinite_places(E)
 
 julia> SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
 ERROR: type InfPlc has no field base_field_place
+[...]
 
 julia> length(SEK)
-ERROR: UndefVarError: `SEK` not defined
+ERROR: UndefVarError: `SEK` not defined in `Main`
+[...]
+
 
 julia> G1 = genus([g1], [(SEK[1], 1)])
-ERROR: UndefVarError: `SEK` not defined
+ERROR: UndefVarError: `SEK` not defined in `Main`
+[...]
 
 julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
 
@@ -451,7 +455,7 @@ julia> L = hermitian_lattice(E, gens, gram = D);
 
 julia> G2 = genus(L)
 Genus symbol for hermitian lattices
-  over relative maximal order of Relative number field of degree 2 over number field
+  over relative maximal order of Relative number field of degree 2 over K
   with pseudo-basis
   (1, 1//1 * <1, 1>)
   (b, 1//1 * <1, 1>)
@@ -522,7 +526,7 @@ two normal wrt: 7
 
 julia> signatures(G2)
 Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64} with 1 entry:
-  Infinite place corresponding to (Complex embedding corresponding to -1.41 of K) => 2
+  Infinite place corresponding to (Complex embedding corresponding to -1.4… => 2
 
 julia> rank(G2)
 3

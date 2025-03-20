@@ -100,7 +100,7 @@ julia> [ mc \ I for I = lp]
  [2]
 
 julia> mc(c[1])
-<2, 1//2*_$^2 + 3//2>
+<2, 3//2*_$^2 + 2*_$ + 5//2>
 Norm: 2
 Minimum: 2
 two normal wrt: 2
@@ -109,7 +109,7 @@ julia> order(c[1])
 9
 
 julia> mc(c[1])^Int(order(c[1]))
-<512, 949353250304611//2*_$^2 - 471112258013202*_$ + 1027822857336369//2>
+<512, 43959719112139289493//2*_$^2 - 21814811847856022656*_$ + 47593247393471446019//2>
 Norm: 512
 Minimum: 512
 two normal wrt: 2
@@ -139,7 +139,7 @@ prime_ideals_up_to
 
 ```jldoctest 2
 julia> I = mc(c[1])
-<2, 1//2*_$^2 + 3//2>
+<2, 3//2*_$^2 + 2*_$ + 5//2>
 Norm: 2
 Minimum: 2
 two normal wrt: 2
@@ -148,7 +148,7 @@ julia> is_principal(I)
 false
 
 julia> I = I^Int(order(c[1]))
-<512, 949353250304611//2*_$^2 - 471112258013202*_$ + 1027822857336369//2>
+<512, 43959719112139289493//2*_$^2 - 21814811847856022656*_$ + 47593247393471446019//2>
 Norm: 512
 Minimum: 512
 two normal wrt: 2
@@ -157,7 +157,7 @@ julia> is_principal(I)
 true
 
 julia> is_principal_fac_elem(I)
-(true, 5^1*(_$^2 + _$ + 2)^-1*(_$ + 5)^4*11^1*(1//2*_$^2 + 3//2)^2*(_$ + 27)^-2*(_$ + 2)^-2*(_$ + 1)^-1*1^-1)
+(true, (_$ + 29)^2*5^-3*(1//2*_$^2 - 6*_$ + 5//2)^2*(1//2*_$^2 - 6*_$ + 7//2)^2*31^-2*(19//2*_$^2 - 117*_$ + 117//2)^2*(_$ - 4)^-2*(_$^2 + _$ + 2)^3*(_$ + 5)^-3*(_$^2 + 1)^-3*3^1*(10*_$^2 - 91*_$ - 156)^-2*(_$ + 1)^1*(3//2*_$^2 + 1//2)^2*(_$ + 6)^2*1^-1)
 ```
 
 The computation of $S$-units is also tied to the class group:
@@ -181,24 +181,24 @@ with basis [1, _$, 1//2*_$^2 + 1//2]
 )
 
 julia> mu(u[2])
--_$ + 12
+_$ - 12
 
 julia> u, mu = unit_group_fac_elem(zk)
 (Z/2 x Z, UnitGroup map of Factored elements over Number field of degree 3 over QQ
 )
 
 julia> mu(u[2])
-(_$^2 + 1)^-1*(12*_$^2 - 151*_$ + 117)^1*3^1*(7//2*_$^2 - 56*_$ - 39//2)^-1*2^1
+(19//2*_$^2 - 117*_$ + 117//2)^1*(_$^2 + 1)^-1*(1//2*_$^2 - 6*_$ + 5//2)^1*(1//2*_$^2 - 6*_$ + 7//2)^1*(10*_$^2 - 91*_$ - 156)^-1
 
 julia> evaluate(ans)
--_$ + 12
+_$ - 12
 
 julia> lp = factor(6*zk)
 Dict{AbsSimpleNumFieldOrderIdeal, Int64} with 4 entries:
   <3, _$ + 5>                  => 1
   <3, _$^2 + 1>                => 1
-  <2, 7//2*_$^2 + 2*_$ + 3//2> => 2
-  <2, 7//2*_$^2 + _$ + 7//2>   => 1
+  <2, 3//2*_$^2 + 7//2>        => 2
+  <2, 5//2*_$^2 + 3*_$ + 5//2> => 1
 
 julia> s, ms = Hecke.sunit_group(collect(keys(lp)))
 (Z/2 x Z^(5), SUnits  map of k for AbsSimpleNumFieldOrderIdeal[<3, _$ + 5>
@@ -211,12 +211,12 @@ Norm: 9
 Minimum: 3
 basis_matrix
 [3 0 0; 0 3 0; 0 0 1]
-two normal wrt: 3, <2, 7//2*_$^2 + 2*_$ + 3//2>
+two normal wrt: 3, <2, 3//2*_$^2 + 7//2>
 Norm: 2
 Minimum: 2
 basis_matrix
 [2 0 0; 1 1 0; 0 0 1]
-two normal wrt: 2, <2, 7//2*_$^2 + _$ + 7//2>
+two normal wrt: 2, <2, 5//2*_$^2 + 3*_$ + 5//2>
 Norm: 2
 Minimum: 2
 basis_matrix
