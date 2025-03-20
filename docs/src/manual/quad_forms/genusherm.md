@@ -428,24 +428,25 @@ julia> p = prime_decomposition(OK, 2)[1][1];
 
 julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
 
-julia> infp = infinite_places(E)
-3-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumFieldEmbedding{AbsSimpleNumFieldEmbedding, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
- Infinite place corresponding to (Complex embedding corresponding to root -1.19 of relative number field)
- Infinite place corresponding to (Complex embedding corresponding to root 1.19 of relative number field)
+julia> infp = infinite_places(E);
+
+julia> SEK = unique([r for r in infp if isreal(restrict(r, K)) && !isreal(r)])
+1-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumFieldEmbedding{AbsSimpleNumFieldEmbedding, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
  Infinite place corresponding to (Complex embedding corresponding to root 0.00 + 1.19 * i of relative number field)
 
-julia> SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
-ERROR: type InfPlc has no field base_field_place
-[...]
-
 julia> length(SEK)
-ERROR: UndefVarError: `SEK` not defined in `Main`
-[...]
-
+1
 
 julia> G1 = genus([g1], [(SEK[1], 1)])
-ERROR: UndefVarError: `SEK` not defined in `Main`
-[...]
+Genus symbol for hermitian lattices
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+Signature:
+  infinite place corresponding to (Complex embedding of relative number field) => 1
+Local symbol:
+  <2, a> => (0, 1, +, 0)(2, 2, -, 1)
 
 julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
 
@@ -724,23 +725,8 @@ julia> E, b = number_field(t^2 - a * t + 1);
 
 julia> p = prime_decomposition(maximal_order(K), 2)[1][1];
 
-julia> hermitian_local_genera(E, p, 4, 2, 0, 4)
-15-element Vector{HermLocalGenus{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderIdeal}}:
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
- Local genus symbol for hermitian lattices over the 2-adic integers
+julia> length(hermitian_local_genera(E, p, 4, 2, 0, 4))
+15
 
 julia> SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
 
