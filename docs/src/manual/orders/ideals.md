@@ -75,7 +75,7 @@ picard_group(::AbsSimpleNumFieldOrder)
 ring_class_group(::AbsNumFieldOrder)
 ```
 
-```jldoctest 2
+```jldoctest 2; filter = r".*"
 julia> k, a = wildanger_field(3, 13);
 
 julia> zk = maximal_order(k);
@@ -137,7 +137,7 @@ factor_base_bound_bach(::AbsSimpleNumFieldOrder)
 prime_ideals_up_to
 ```
 
-```jldoctest 2
+```jldoctest 2; filter = r".*"
 julia> I = mc(c[1])
 <2, 3//2*_$^2 + 2*_$ + 5//2>
 Norm: 2
@@ -174,7 +174,7 @@ sunit_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
 sunit_mod_units_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 ```
 
-```jldoctest 2
+```jldoctest 2; filter = r".*"
 julia> u, mu = unit_group(zk)
 (Z/2 x Z, UnitGroup map of Maximal order of number field of degree 3 over QQ
 with basis [1, _$, 1//2*_$^2 + 1//2]

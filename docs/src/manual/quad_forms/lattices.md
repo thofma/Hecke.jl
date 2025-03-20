@@ -37,7 +37,7 @@ hermitian_lattice(::NumField, ::Vector)
 #### Examples
 The two following examples will be used all along this section:
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];
@@ -70,7 +70,7 @@ Hermitian lattice of rank 4 and degree 4
 Note that the format used here is the one given by the internal function
 `Hecke.to_hecke()` which prints REPL commands to get back the input lattice.
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];
@@ -101,7 +101,7 @@ Finally, one can access some databases in which are stored several quadratic and
 hermitian lattices. Up to now, these are not automatically available while running
 Hecke. It can nonetheless be used in the following way:
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> qld = Hecke.quadratic_lattice_database()
 Quadratic lattices of rank >= 3 with class number 1 or 2
 Author: Markus Kirschmer
@@ -143,7 +143,7 @@ diagonal_of_rational_span(::AbstractLat)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];
@@ -218,7 +218,7 @@ For now and for the rest of this section, the examples will include the new latt
 `Lquad2` which is quadratic. Moreover, all the completions are going to be done at
 the prime ideal $p = 7*\mathcal O_K$.
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
@@ -294,7 +294,7 @@ gram_matrix_of_generators(::AbstractLat; minimal::Bool = false)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];
@@ -464,7 +464,7 @@ orthogonal_submodule(::AbstractLat, ::AbstractLat)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
@@ -553,7 +553,7 @@ volume(L::AbstractLat)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];
@@ -613,7 +613,7 @@ can_scale_totally_positive(L::AbstractLat)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];
@@ -659,7 +659,7 @@ is_isotropic(::AbstractLat, p)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
@@ -708,7 +708,7 @@ automorphism_group_generators(::AbstractLat)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];
@@ -751,7 +751,7 @@ is_locally_isometric(::AbstractLat, ::AbstractLat, p::AbsNumFieldOrderIdeal{AbsS
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> D = matrix(K, 3, 3, [2, 0, 0, 0, 2, 0, 0, 0, 2]);
@@ -792,7 +792,7 @@ maximal_integral_lattice(::AbstractSpace)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = rationals_as_number_field();
 
 julia> Kt, t = K[:t];

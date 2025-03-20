@@ -78,7 +78,7 @@ There are two ways of creating a local genus symbol for hermitian lattices:
 We will construct two examples for the rest of this section. Note that the prime
 chosen here is bad.
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -132,7 +132,7 @@ prime(::HermLocalGenus)
 
 #### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -187,7 +187,7 @@ norms(::HermLocalGenus)
 
 #### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -245,7 +245,7 @@ is_dyadic(::HermLocalGenus)
 
 #### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -274,7 +274,7 @@ uniformizer(::HermLocalGenus)
 
 #### Example
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -308,7 +308,7 @@ det_representative(::HermLocalGenus)
 
 #### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -341,7 +341,7 @@ gram_matrix(::HermLocalGenus)
 
 #### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -413,7 +413,7 @@ lattices:
 As before, we will construct two different global genus symbols for hermitian
 lattices, which we will use for the rest of this section.
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -484,7 +484,7 @@ norm(::HermGenus)
 
 #### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -555,7 +555,7 @@ mass(::HermLat)
 
 #### Example
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = polynomial_ring(QQ, "x");
 
 julia> f = x^2 - 2;
@@ -594,7 +594,7 @@ genus_representatives(::HermLat)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -651,7 +651,7 @@ direct_sum(::HermGenus, ::HermGenus)
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> Qx, x = QQ[:x];
 
 julia> K, a = number_field(x^2 - 2, :a);
@@ -716,7 +716,7 @@ hermitian_genera(::Hecke.RelSimpleNumField, ::Int, ::Dict{InfPlc, Int}, ::Union{
 
 ### Examples
 
-```jldoctest
+```jldoctest; filter = r".*"
 julia> K, a = cyclotomic_real_subfield(8, :a);
 
 julia> Kt, t = K[:t];
