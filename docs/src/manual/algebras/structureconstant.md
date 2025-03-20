@@ -1,5 +1,3 @@
-# [Structure constant algebras](@id SCA)
-
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
@@ -7,6 +5,8 @@ DocTestSetup = quote
   using Hecke
 end
 ```
+# [Structure constant algebras](@id SCA)
+
 
 ## Creation
 

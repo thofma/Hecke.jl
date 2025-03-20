@@ -1,8 +1,10 @@
-# [Ideals](@id NfOrdIdlLink2)
-
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
 ```
+# [Ideals](@id NfOrdIdlLink2)
 
 
 (Integral) ideals in orders are always free $Z$-module of the same rank as the

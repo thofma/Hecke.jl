@@ -1,7 +1,11 @@
-# Orders
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
 ```
+# Orders
+
 
 Orders, that is, unitary subrings that are free $\mathbf{Z}$-modules of rank
 equal to the degree of the number field, are at the core of the

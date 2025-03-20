@@ -1,9 +1,10 @@
-# [Pseudo-matrices](@id PMatLink)
-
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
 ```
-
+# [Pseudo-matrices](@id PMatLink)
 
 This chapter deals with pseudo-matrices.
 We follow the common terminology and conventions introduced in

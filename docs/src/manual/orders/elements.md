@@ -1,8 +1,10 @@
-# Elements
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
 ```
-
+# Elements
 
 Elements in orders have two representations: they can be viewed as
 elements in the $\mathbf Z^n$ giving the coefficients wrt to the order basis

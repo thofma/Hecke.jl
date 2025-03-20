@@ -1,8 +1,10 @@
-# Class Field Theory
-
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
 ```
+# Class Field Theory
 
 ## Introduction
 

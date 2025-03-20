@@ -1,3 +1,9 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
+```
 # Documentation
 
 The files for the documentation are located in the

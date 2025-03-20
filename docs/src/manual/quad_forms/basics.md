@@ -1,12 +1,10 @@
-# [Spaces](@id Spaces2)
-
-
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote
-  using Hecke
+    using Hecke
 end
 ```
+# [Spaces](@id Spaces2)
 
 ## Creation of spaces
 

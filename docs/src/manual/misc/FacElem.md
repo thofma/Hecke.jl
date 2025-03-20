@@ -1,8 +1,10 @@
-# Factored Elements
-
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
 ```
+# Factored Elements
 
 In many applications in number theory related to the multiplicative
 structure of number fields, interesting elements, e.g. units,

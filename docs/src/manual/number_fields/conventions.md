@@ -1,3 +1,9 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
+```
 # Conventions
 
 By an absolute number field we mean finite extensions of $\mathbf Q$, which is

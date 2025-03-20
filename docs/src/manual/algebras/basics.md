@@ -1,5 +1,3 @@
-# Basics
-
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
@@ -7,6 +5,8 @@ DocTestSetup = quote
   using Hecke
 end
 ```
+# Basics
+
 
 ## Creation of algebras
 

@@ -2,9 +2,8 @@
 CurrentModule = Hecke
 DocTestSetup = quote
     using Hecke
-  end
+end
 ```
-
 # Complex embedding
 
 We describe functionality for complex embeddings of arbitrary number fields.

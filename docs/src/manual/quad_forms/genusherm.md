@@ -1,10 +1,10 @@
-# Genera for hermitian lattices
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote
     using Hecke
-  end
+end
 ```
+# Genera for hermitian lattices
 
 ## Local genus symbols
 

@@ -2,9 +2,8 @@
 CurrentModule = Hecke
 DocTestSetup = quote
     using Hecke
-  end
+end
 ```
-
 # Element operations
 
 ## Creation

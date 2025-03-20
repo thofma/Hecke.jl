@@ -1,11 +1,10 @@
-# Number field operations
-
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote
-  using Hecke
+    using Hecke
 end
 ```
+# Number field operations
 
 ## Creation of number fields
 

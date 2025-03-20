@@ -1,3 +1,9 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
+```
 # Getting started
 
 To use Hecke, a julia version of 1.0 is necessary (the latest stable julia version will do).

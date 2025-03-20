@@ -1,7 +1,11 @@
-# Introduction
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = quote
+    using Hecke
+end
 ```
+# Introduction
+
 
 This chapter deals with number fields and orders there of.
 We follow the common terminology and conventions as e.g. used in

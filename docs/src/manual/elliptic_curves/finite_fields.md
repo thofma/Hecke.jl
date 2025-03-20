@@ -1,11 +1,11 @@
-# Elliptic curves over finite fields
-
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote
     using Hecke
 end
 ```
+# Elliptic curves over finite fields
+
 
 ## Random points
 

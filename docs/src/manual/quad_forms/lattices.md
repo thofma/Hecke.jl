@@ -1,10 +1,11 @@
-# Lattices
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = quote
     using Hecke
-  end
+end
 ```
+# Lattices
+
 
 ## Creation of lattices
 
