@@ -58,12 +58,17 @@ ring_class_field(::AbsNumFieldOrder)
 
 ### Example
 
-```@repl
-using Hecke # hide
-Qx, x = polynomial_ring(QQ, "x");
-K, a = number_field(x^2 - 10, "a");
-c, mc = class_group(K)
-A = ray_class_field(mc)
+```jldoctest
+julia> Qx, x = polynomial_ring(QQ, :x);
+
+julia> K, a = number_field(x^2 - 10, :a);
+
+julia> c, mc = class_group(K)
+(Z/2, ClassGroup map of
+Set of ideals of O_K)
+
+julia> A = ray_class_field(mc)
+Class field defined mod (<1, 1>, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]) of structure c
 ```
 
 ## Conversions
@@ -80,15 +85,29 @@ where $0\le n\le 3$
 number_field(C::ClassField)
 ```
 
-```@repl
-using Hecke; # hide
-Qx, x = polynomial_ring(QQ, "x");
-k, a = number_field(x^2 - 10, "a");
-c, mc = class_group(k);
-A = ray_class_field(mc)
-K = number_field(A)
-ZK = maximal_order(K)
-isone(discriminant(ZK))
+```jldoctest
+julia> Qx, x = polynomial_ring(QQ, :x);
+
+julia> k, a = number_field(x^2 - 10, :a);
+
+julia> c, mc = class_group(k);
+
+julia> A = ray_class_field(mc)
+Class field defined mod (<1, 1>, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]) of structure c
+
+julia> K = number_field(A)
+Non-simple number field with defining polynomials [x^2 - 2]
+  over number field with defining polynomial x^2 - 10
+    over rational field
+
+julia> ZK = maximal_order(K)
+Relative maximal order of Non-simple number field of degree 2 over k
+with pseudo-basis
+(1, 1//1 * <1, 1>)
+(_$1 + a, 1//4 * <2, a>)
+
+julia> isone(discriminant(ZK))
+true
 ```
 
 ```@docs

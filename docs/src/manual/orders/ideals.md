@@ -75,17 +75,47 @@ picard_group(::AbsSimpleNumFieldOrder)
 ring_class_group(::AbsNumFieldOrder)
 ```
 
-```@repl 2
-using Hecke # hide
-k, a = wildanger_field(3, 13);
-zk = maximal_order(k);
-c, mc = class_group(zk)
-lp = prime_ideals_up_to(zk, 20);
-[ mc \ I for I = lp]
-mc(c[1])
-order(c[1])
-mc(c[1])^Int(order(c[1]))
-mc \ ans
+```jldoctest 2
+julia> k, a = wildanger_field(3, 13);
+
+julia> zk = maximal_order(k);
+
+julia> c, mc = class_group(zk)
+(Z/9, ClassGroup map of
+Set of ideals of zk)
+
+julia> lp = prime_ideals_up_to(zk, 20);
+
+julia> [ mc \ I for I = lp]
+10-element Vector{FinGenAbGroupElem}:
+ [1]
+ [4]
+ [4]
+ [5]
+ [3]
+ [2]
+ [7]
+ [1]
+ [0]
+ [2]
+
+julia> mc(c[1])
+<2, 1//2*_$^2 + 3//2>
+Norm: 2
+Minimum: 2
+two normal wrt: 2
+
+julia> order(c[1])
+9
+
+julia> mc(c[1])^Int(order(c[1]))
+<512, 949353250304611//2*_$^2 - 471112258013202*_$ + 1027822857336369//2>
+Norm: 512
+Minimum: 512
+two normal wrt: 2
+
+julia> mc \ ans
+Abelian group element [0]
 ```
 
 
@@ -107,12 +137,27 @@ factor_base_bound_bach(::AbsSimpleNumFieldOrder)
 prime_ideals_up_to
 ```
 
-```@repl 2
-I = mc(c[1])
-is_principal(I)
-I = I^Int(order(c[1]))
-is_principal(I)
-is_principal_fac_elem(I)
+```jldoctest 2
+julia> I = mc(c[1])
+<2, 1//2*_$^2 + 3//2>
+Norm: 2
+Minimum: 2
+two normal wrt: 2
+
+julia> is_principal(I)
+false
+
+julia> I = I^Int(order(c[1]))
+<512, 949353250304611//2*_$^2 - 471112258013202*_$ + 1027822857336369//2>
+Norm: 512
+Minimum: 512
+two normal wrt: 2
+
+julia> is_principal(I)
+true
+
+julia> is_principal_fac_elem(I)
+(true, 5^1*(_$^2 + _$ + 2)^-1*(_$ + 5)^4*11^1*(1//2*_$^2 + 3//2)^2*(_$ + 27)^-2*(_$ + 2)^-2*(_$ + 1)^-1*1^-1)
 ```
 
 The computation of $S$-units is also tied to the class group:
@@ -129,17 +174,64 @@ sunit_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
 sunit_mod_units_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
 ```
 
-```@repl 2
-u, mu = unit_group(zk)
-mu(u[2])
-u, mu = unit_group_fac_elem(zk)
-mu(u[2])
-evaluate(ans)
-lp = factor(6*zk)
-s, ms = Hecke.sunit_group(collect(keys(lp)))
-ms(s[4])
-norm(ans)
-factor(numerator(ans))
+```jldoctest 2
+julia> u, mu = unit_group(zk)
+(Z/2 x Z, UnitGroup map of Maximal order of number field of degree 3 over QQ
+with basis [1, _$, 1//2*_$^2 + 1//2]
+)
+
+julia> mu(u[2])
+-_$ + 12
+
+julia> u, mu = unit_group_fac_elem(zk)
+(Z/2 x Z, UnitGroup map of Factored elements over Number field of degree 3 over QQ
+)
+
+julia> mu(u[2])
+(_$^2 + 1)^-1*(12*_$^2 - 151*_$ + 117)^1*3^1*(7//2*_$^2 - 56*_$ - 39//2)^-1*2^1
+
+julia> evaluate(ans)
+-_$ + 12
+
+julia> lp = factor(6*zk)
+Dict{AbsSimpleNumFieldOrderIdeal, Int64} with 4 entries:
+  <3, _$ + 5>                  => 1
+  <3, _$^2 + 1>                => 1
+  <2, 7//2*_$^2 + 2*_$ + 3//2> => 2
+  <2, 7//2*_$^2 + _$ + 7//2>   => 1
+
+julia> s, ms = Hecke.sunit_group(collect(keys(lp)))
+(Z/2 x Z^(5), SUnits  map of k for AbsSimpleNumFieldOrderIdeal[<3, _$ + 5>
+Norm: 3
+Minimum: 3
+basis_matrix
+[3 0 0; 2 1 0; 2 0 1]
+two normal wrt: 3, <3, _$^2 + 1>
+Norm: 9
+Minimum: 3
+basis_matrix
+[3 0 0; 0 3 0; 0 0 1]
+two normal wrt: 3, <2, 7//2*_$^2 + 2*_$ + 3//2>
+Norm: 2
+Minimum: 2
+basis_matrix
+[2 0 0; 1 1 0; 0 0 1]
+two normal wrt: 2, <2, 7//2*_$^2 + _$ + 7//2>
+Norm: 2
+Minimum: 2
+basis_matrix
+[2 0 0; 1 1 0; 1 0 1]
+two normal wrt: 2]
+)
+
+julia> ms(s[4])
+-1//2*_$^2 + 6*_$ + 5//2
+
+julia> norm(ans)
+144
+
+julia> factor(numerator(ans))
+1 * 2^4 * 3^2
 ```
 
 ## Miscellaneous
