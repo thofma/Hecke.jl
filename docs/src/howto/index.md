@@ -1,7 +1,5 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
 # How-to guides

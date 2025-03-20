@@ -1,7 +1,5 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Elliptic curves over rationals and number fields

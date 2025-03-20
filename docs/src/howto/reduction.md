@@ -1,8 +1,6 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Reduction of polynomials over number fields modulo a prime ideal
 

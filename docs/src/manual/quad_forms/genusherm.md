@@ -1,8 +1,6 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Genera for hermitian lattices
 

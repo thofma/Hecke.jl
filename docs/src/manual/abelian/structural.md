@@ -1,8 +1,6 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Structural Computations
 Abelian groups support a wide range of structural operations such as

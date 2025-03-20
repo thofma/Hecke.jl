@@ -1,8 +1,6 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Maps
 Maps between abelian groups are mainly of type `FinGenAbGroupHom`. They

@@ -1,9 +1,7 @@
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
-DocTestSetup = quote
-  using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
 # [Group algebras](@id group-alg)
 
