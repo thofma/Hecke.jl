@@ -63,8 +63,8 @@ julia> Qx, x = polynomial_ring(QQ, :x);
 julia> K, a = number_field(x^2 - 10, :a);
 
 julia> E = equation_order(K)
-Maximal order of number field of degree 2 over QQ
-with basis [1, a]
+Order of number field of degree 2 over QQ
+with Z-basis [1, a]
 
 julia> Z_K = maximal_order(K)
 Maximal order of number field of degree 2 over QQ
