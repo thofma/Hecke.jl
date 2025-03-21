@@ -1,10 +1,8 @@
-# Discriminant Groups
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-  end
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Discriminant Groups
 
 ## Torsion Quadratic Modules
 A torsion quadratic module is the quotient

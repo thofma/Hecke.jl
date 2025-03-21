@@ -11,12 +11,12 @@ julia> K, a = quadratic_field(-3);
 
 julia> complex_embeddings(K)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field
- Complex embedding corresponding to 0.00 - 1.73 * i of imaginary quadratic field
+ Complex embedding corresponding to 0.00 + 1.73 * i of K
+ Complex embedding corresponding to 0.00 - 1.73 * i of K
 
 julia> complex_embeddings(K, conjugates = false)
 1-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field
+ Complex embedding corresponding to 0.00 + 1.73 * i of K
 ```
 """
 complex_embeddings(K::NumField)
@@ -33,8 +33,8 @@ julia> K, a = quadratic_field(3);
 
 julia> real_embeddings(K)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to -1.73 of real quadratic field
- Complex embedding corresponding to 1.73 of real quadratic field
+ Complex embedding corresponding to -1.73 of K
+ Complex embedding corresponding to 1.73 of K
 ```
 """
 function real_embeddings(K::NumField)
@@ -180,8 +180,8 @@ julia> e = complex_embeddings(k)[1];
 
 julia> extend(e, ktoK)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to -0.81 + 0.59 * i of cyclotomic field of order 5
- Complex embedding corresponding to -0.81 - 0.59 * i of cyclotomic field of order 5
+ Complex embedding corresponding to -0.81 + 0.59 * i of K
+ Complex embedding corresponding to -0.81 - 0.59 * i of K
 ```
 """
 function extend(e::NumFieldEmb, f::NumFieldHom)

@@ -1,3 +1,34 @@
+@doc raw"""
+    quaternion_algebra(K::Field, a, b) -> QuaternionAlgebra
+
+Return the quaternion algebra $(a, b | K)$ defined by $i^2 = a$, $j^2 = b$.
+
+At the moment, the field must have characteristic not equal to $2$.
+
+# Examples
+
+```jldoctest
+julia> Q = quaternion_algebra(QQ, -1, -1)
+Quaternion algebra
+  over rational field
+  defined by i^2 = -1, j^2 = -1
+
+julia> K, sqrt2 = quadratic_field(2);
+
+julia> Q = quaternion_algebra(K, sqrt2, -1)
+Quaternion algebra
+  over real quadratic field defined by x^2 - 2
+  defined by i^2 = sqrt(2), j^2 = -1
+```
+"""
+function quaternion_algebra(K::Field, a, b)
+  if parent(a) === K && parent(b) === K
+    return QuaternionAlgebra(K, a, b)
+  else
+    return QuaternionAlgebra(K, K(a)::elem_type(K), K(b)::elem_type(K))
+  end
+end
+
 function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
   @req characteristic(K) != 2 "Characteristic must not be 2"
 
@@ -129,22 +160,39 @@ function standard_involution(A::QuaternionAlgebra{T}) where {T}
   end
 end
 
+@doc raw"""
+    conjugate(a::AssociativeAlgebraElem{_, QuaternionAlgebra})
+                                 -> AssociativeAlgebraElem{_, QuaternionAlgebra}
+
+Return the image of $a$ under the canonical involution of the quaternion
+algebra.
+
+# Examples
+
+```jldoctest
+julia> Q = quaternion_algebra(QQ, -1, -1); a = Q([1, 1, 1, 1])
+1 + i + j + k
+
+julia> conjugate(a)
+1 - i - j - k
+```
+"""
 function conjugate(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
   return standard_involution(parent(a))(a)
 end
 
 function trred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
-  return base_ring(parent(a))(a + conjugate(a))
+  return (a + conjugate(a)).coeffs[1]
 end
 
 function normred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
-  return base_ring(parent(a))(a * conjugate(a))
+  return (a * conjugate(a)).coeffs[1]
 end
 
 function reduced_charpoly(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
   A = parent(a)
   R = polynomial_ring(base_ring(A), "x", cached = false)[1]
-  return x^2 - trred(a) * x + normred(a)
+  return R([normred(a), -trred(a), one(base_ring(A))])
 end
 
 function standard_involution(A::StructureConstantAlgebra{T}) where {T}
@@ -570,4 +618,68 @@ function StructureConstantAlgebra(A::QuaternionAlgebra)
   K = base_ring(A)
   B = StructureConstantAlgebra(K, A.mult_table)
   return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
+end
+
+################################################################################
+#
+#  Zero-divisors for split algebras
+#
+################################################################################
+
+@doc raw"""
+    is_split_with_zero_divisor(A::QuaternionAlgebra) -> Bool, AssociativeAlgebraElem
+
+Given a quaternion algebra $A$, return whether $A$ is split together with an element,
+which is a zero-divisor in case $A$ is split.
+
+# Examples
+
+```jldoctest
+julia> A = quaternion_algebra(QQ, 1, 4);
+
+julia> is_split_with_zero_divisor(A)
+(true, 1 + i)
+
+julia> A = quaternion_algebra(QQ, -1, -1);
+
+julia> is_split_with_zero_divisor(A)
+(false, 0)
+```
+"""
+function is_split_with_zero_divisor(A::QuaternionAlgebra{<:Union{QQFieldElem, AbsSimpleNumFieldElem}})
+  if !is_split(A)
+    return false, zero(A)
+  end
+
+  _, i, j, k = basis(A)
+
+  # reduced norm is t^2 - a x^2 - b y^2 + ab z^2
+
+  # let's do it via norm norm equations
+
+  a, b = standard_form(A)
+
+  fl, asqrt = is_square_with_sqrt(a)
+  if fl
+    alpha = asqrt + i
+    @assert norm(alpha) == 0
+    return true, alpha
+  end
+
+  fl, bsqrt = is_square_with_sqrt(b)
+  if fl
+    alpha = bsqrt + j
+    @assert norm(alpha) == 0
+    return true, alpha
+  end
+
+  d = denominator(a)
+  aa = d^2 * a
+  K, = radical_extension(2, aa)
+  c = norm_equation(K, b)
+  # b = nr(c) = nr(x + y * sqrt(aa)) = x^2 - y^2 d^2 * a = x^2 - (y * d)^2 * a
+  alpha = coeff(c, 0) + coeff(c, 1)* d * i + j
+  @assert !is_zero(alpha)
+  @assert norm(alpha) == 0
+  return true, alpha
 end

@@ -1,7 +1,7 @@
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
 ```
-
 # [Introduction](@id Algebras)
 
 !!! note
@@ -10,7 +10,7 @@ CurrentModule = Hecke
     conventions for the return values might change in future versions.
 
 This section describes the functionality for finite-dimensional associative
-algebras (or just *algebras* for short). Since different applications have different requirements, 
+algebras (or just *algebras* for short). Since different applications have different requirements,
 the following types of algebras are implemented:
 - structure constant algebras,
 - matrix algebras,

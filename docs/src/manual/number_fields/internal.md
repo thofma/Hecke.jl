@@ -1,7 +1,7 @@
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
 ```
-
 # Internals
 
 ## Types of number fields

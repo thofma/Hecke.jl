@@ -266,7 +266,7 @@ else
   # Run the doctests
   if v"1.10-" <= VERSION < v"1.11-"
     @info "Running doctests (Julia version is 1.10)"
-    DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
+    DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive = true)
     doctest(Hecke)
   else
     @info "Not running doctests (Julia version must be 1.10)"

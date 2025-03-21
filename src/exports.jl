@@ -557,6 +557,7 @@ export is_simplified_model
 export is_smooth
 export is_snf
 export is_split
+export is_split_with_zero_divisor
 export is_squarefree
 export is_subfield
 export is_subfield_normal
@@ -759,6 +760,7 @@ export quadratic_product
 export quadratic_space
 export quadratic_twist
 export quadratic_twists
+export quaternion_algebra
 export quo
 export quotient
 export radical

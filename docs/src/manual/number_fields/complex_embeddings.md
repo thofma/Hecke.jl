@@ -1,10 +1,7 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-  end
+DocTestSetup = Hecke.doctestsetup()
 ```
-
 # Complex embedding
 
 We describe functionality for complex embeddings of arbitrary number fields.
@@ -113,12 +110,12 @@ julia> K, a = number_field([x^2 + 1, x^3 + 2], "a");
 
 julia> emb = complex_embeddings(K)
 6-element Vector{AbsNonSimpleNumFieldEmbedding}:
- Complex embedding corresponding to [1.00 * i, -1.26] of non-simple number field
- Complex embedding corresponding to [1.00 * i, 0.63 + 1.09 * i] of non-simple number field
- Complex embedding corresponding to [-1.00 * i, 0.63 + 1.09 * i] of non-simple number field
- Complex embedding corresponding to [-1.00 * i, -1.26] of non-simple number field
- Complex embedding corresponding to [-1.00 * i, 0.63 - 1.09 * i] of non-simple number field
- Complex embedding corresponding to [1.00 * i, 0.63 - 1.09 * i] of non-simple number field
+ Complex embedding corresponding to [1.00 * i, -1.26] of K
+ Complex embedding corresponding to [1.00 * i, 0.63 + 1.09 * i] of K
+ Complex embedding corresponding to [-1.00 * i, 0.63 + 1.09 * i] of K
+ Complex embedding corresponding to [-1.00 * i, -1.26] of K
+ Complex embedding corresponding to [-1.00 * i, 0.63 - 1.09 * i] of K
+ Complex embedding corresponding to [1.00 * i, 0.63 - 1.09 * i] of K
 
 julia> k, b = quadratic_field(-1);
 

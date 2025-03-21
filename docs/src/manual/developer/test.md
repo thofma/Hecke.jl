@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
+```
 # Testing
 
 ## Structure
