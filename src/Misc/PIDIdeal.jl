@@ -71,6 +71,11 @@ function ideal(R::Field, xs::AbstractVector{T}) where T<:RingElement
   return _ideal_pid(R, xs)
 end
 
+ideal_type(::Type{T}) where {T<:Field} = PIDIdeal{elem_type(T)}
+
+ideal_type(::Type{T}) where {T<:PolyRing{<:FieldElem}} = PIDIdeal{elem_type(T)}
+
+
 # Show
 
 function Base.show(io::IO, x::PIDIdeal)
@@ -111,6 +116,8 @@ lcm(x::PIDIdeal, y::PIDIdeal) = intersect(x, y)
 +(x::PIDIdeal, y::PIDIdeal) = gcd(x, y)
 
 *(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(x.gen * y.gen)
+
+^(x::PIDIdeal, n::IntegerUnion) = PIDIdeal(x.gen ^ n)
 
 intersect(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(lcm(x.gen, y.gen))
 
