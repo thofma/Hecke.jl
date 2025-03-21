@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
+```
 # Conventions
 
 By an absolute number field we mean finite extensions of $\mathbf Q$, which is

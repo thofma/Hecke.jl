@@ -50,7 +50,7 @@ function make(Hecke::Module; strict = false,
   @info "Using bibliography: $(bib)"
 
   cd(joinpath(Hecke.pkgdir, "docs")) do
-    DocMeta.setdocmeta!(Hecke, :DocTestSetup, :(using Hecke); recursive = true)
+    DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive = true)
     DocMeta.setdocmeta!(Hecke.Nemo, :DocTestSetup, :(using Hecke.Nemo); recursive = true)
 
     if format == :html

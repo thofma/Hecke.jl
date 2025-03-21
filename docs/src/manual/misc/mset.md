@@ -1,11 +1,9 @@
-# Multi-sets and sub-set iterators
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Multi-sets and sub-set iterators
+
 
 ## Multi-sets
 

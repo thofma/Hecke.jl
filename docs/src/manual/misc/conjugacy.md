@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
+```
 # Conjugacy of integral matrices
 
 ```@docs

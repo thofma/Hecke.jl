@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
+```
 # Documentation
 
 The files for the documentation are located in the

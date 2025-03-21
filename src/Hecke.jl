@@ -761,6 +761,12 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
   end
 end
 
+# Hecke needs some complicated setup to get the printing right. This provides a
+# helper function to set this up consistently.
+function doctestsetup()
+  return :(using Hecke; Hecke.AbstractAlgebra.set_current_module(@__MODULE__))
+end
+
 #html_build = Ref(false)
 #
 #function build_doc(html::Bool = false)

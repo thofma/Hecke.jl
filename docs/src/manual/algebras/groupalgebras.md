@@ -1,12 +1,10 @@
-# [Group algebras](@id group-alg)
-
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
-DocTestSetup = quote
-  using Hecke
-end
+DocTestSetup = Hecke.doctestsetup()
 ```
+# [Group algebras](@id group-alg)
+
 
 As is natural, the basis of a group algebra $K[G]$ correspond to the elements of $G$ with respect
 to some arbitrary ordering.

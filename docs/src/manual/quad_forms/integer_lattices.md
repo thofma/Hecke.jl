@@ -1,10 +1,9 @@
-# Integer Lattices
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-  end
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Integer Lattices
+
 An integer lattice $L$ is a finitely generated $\mathbb{Z}$-submodule of a quadratic
 vector space $V = \mathbb{Q}^n$ over the rational numbers.
 Integer lattices are also known as quadratic forms over the integers.

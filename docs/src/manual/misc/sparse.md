@@ -1,8 +1,8 @@
-# Sparse linear algebra
-
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Sparse linear algebra
 
 ## Introduction
 

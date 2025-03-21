@@ -1,7 +1,9 @@
-# Introduction
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Introduction
+
 
 This chapter deals with number fields and orders there of.
 We follow the common terminology and conventions as e.g. used in
@@ -55,29 +57,62 @@ generators not in the structure.
 
 Usually, to create an order, one starts with a field (or a polynomial):
 
-```@repl 1
-using Hecke; # hide
-Qx, x = polynomial_ring(QQ, "x");
-K, a = number_field(x^2 - 10, "a");
-E = equation_order(K)
-Z_K = maximal_order(K)
-conductor(E)
-E == Z_K
+```jldoctest 1
+julia> Qx, x = polynomial_ring(QQ, :x);
+
+julia> K, a = number_field(x^2 - 10, :a);
+
+julia> E = equation_order(K)
+Order of number field of degree 2 over QQ
+with Z-basis [1, a]
+
+julia> Z_K = maximal_order(K)
+Maximal order of number field of degree 2 over QQ
+with basis [1, a]
+
+julia> conductor(E)
+<no 2-elts present>
+basis_matrix
+[1 0; 0 1]
+
+julia> E == Z_K
+true
 ```
 
 Once orders are created, we can play with elements and ideals:
 
-```@repl 1
-lp = prime_decomposition(Z_K, 2)
-p = lp[1][1]
-is_principal(p)
-fl, alpha = is_principal_with_data(p^2)
-norm(alpha)
+```jldoctest 1
+julia> lp = prime_decomposition(Z_K, 2)
+1-element Vector{Tuple{AbsSimpleNumFieldOrderIdeal, Int64}}:
+ (<2, a>
+Norm: 2
+Minimum: 2
+two normal wrt: 2, 2)
+
+julia> p = lp[1][1]
+<2, a>
+Norm: 2
+Minimum: 2
+two normal wrt: 2
+
+julia> is_principal(p)
+false
+
+julia> fl, alpha = is_principal_with_data(p^2)
+(true, 2)
+
+julia> norm(alpha)
+4
 ```
 
 It is possible to work with residue fields as well:
 
-```@repl 1
-Fp, mFp = residue_field(Z_K, p)
-[ mFp(x) for x = basis(Z_K)]
+```jldoctest 1
+julia> Fp, mFp = residue_field(Z_K, p)
+(Prime field of characteristic 2, Map: E -> Fp)
+
+julia> [mFp(x) for x = basis(Z_K)]
+2-element Vector{FqFieldElem}:
+ 1
+ 0
 ```

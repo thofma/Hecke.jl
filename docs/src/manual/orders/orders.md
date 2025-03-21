@@ -1,7 +1,9 @@
-# Orders
 ```@meta
 CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Orders
+
 
 Orders, that is, unitary subrings that are free $\mathbf{Z}$-modules of rank
 equal to the degree of the number field, are at the core of the
@@ -36,11 +38,14 @@ any_order(K::AbsSimpleNumField)
 
 ### Example
 
-```@repl
-using Hecke; # hide
-Qx, x = polynomial_ring(QQ, "x");
-K, a = number_field(x^2 - 2, "a");
-O = EquationOrder(K)
+```jldoctest
+julia> Qx, x = polynomial_ring(QQ, :x);
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> O = EquationOrder(K)
+Maximal order of number field of degree 2 over QQ
+with basis [1, a]
 ```
 
 ```@docs

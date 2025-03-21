@@ -1,12 +1,8 @@
-# Basics
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
-
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Basics
 
 ## Creation
 
