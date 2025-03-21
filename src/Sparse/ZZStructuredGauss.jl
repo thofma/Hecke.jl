@@ -8,6 +8,8 @@
 #TODO: use new set! for value array
 #TODO: alternatives for nullspace with treshhold or combination with rref mod p
 #TODO: write is_zero_entry for value arrays?
+#TODO: single kernel elem for any rank (try wiedemann vs nullspace?)
+#TODO: adapt doc to optional argument
 
 #=
 PROBLEMS:
@@ -75,15 +77,15 @@ mutable struct data_ZZStructGauss{T}
  end
  
  @doc raw"""
-     structured_gauss(A::SMat{T}) where T <: ZZRingElem
+     structured_gauss(A::SMat{T}, kernel_basis::Bool=false) where T <: ZZRingElem
  
  Return a tuple (\nu, N) consisting of the nullity \nu of A and a basis N
  (consisting of column vectors) for the right nullspace of A, i.e. such that
  AN is the zero matrix.
  """
- function structured_gauss(A::SMat{T}) where T <: ZZRingElem
+ function structured_gauss(A::SMat{T}, kernel_basis::Bool=false) where T <: ZZRingElem
   SG = part_echolonize!(A)
-  return compute_kernel(SG)
+  return compute_kernel(SG, kernel_basis)
  end
  
  ################################################################################
@@ -356,7 +358,7 @@ mutable struct data_ZZStructGauss{T}
   v[i],v[j] = v[j],v[i]
  end
  
- function swap_rows_perm(i::Int64, j, SG::data_ZZStructGauss)
+ function swap_rows_perm(i::Int64, j::Int64, SG::data_ZZStructGauss)
   if i != j
    swap_rows!(SG.A, i, j)
    swap_entries(SG.pivot_col, i, j)
@@ -426,13 +428,17 @@ mutable struct data_ZZKernel
  end
 end
 
-function compute_kernel(SG, with_light = true)
+function compute_kernel(SG, kernel_basis::Bool)
   Hecke.update_light_cols!(SG)
   @assert SG.nlight >= 0
   KER = Hecke.collect_dense_cols!(SG)
   D = dense_matrix(SG, KER)
-  _nullity, _dense_kernel = nullspace(D)
-  l, K = Hecke.init_kernel(_nullity, _dense_kernel, SG, KER, with_light)
+  if kernel_basis
+    _nullity, _dense_kernel = nullspace(D)
+  else
+    _nullity, _dense_kernel = 1, kernel_elem(D)
+  end
+  l, K = Hecke.init_kernel(_nullity, _dense_kernel, SG, KER, kernel_basis)
   return compose_kernel(l, K, SG)
 end
 
@@ -472,21 +478,65 @@ function dense_matrix(SG, KER)
  return D
 end
 
-function init_kernel(_nullity, _dense_kernel, SG, KER, with_light=false)
+function kernel_elem(D)
+  #assume D has full rank-1
+  n, m = size(D)
+  @assert n >= m #TODO: allow m<n?
+  p = 0
+  crank = Int64(0) #TODO: type decl. relevant?
+  rrank = Int64(0)
+  lbound = Int64(0)
+  DT = transpose(D)
+  for i = 1:5
+    p = next_prime(2^20 + rand(2:2^10))
+    Dp = change_base_ring(Native.GF(p), D)
+    crank  = rref!(Dp)
+    crank == m && return ZZMatrix(m, 1)
+    lbound = crank
+    lbound < m-1 && continue
+    DTp = change_base_ring(Native.GF(p), DT)
+    rrank = rref!(DTp)
+    @assert rrank == crank
+    c, cpivots = _pivots(Dp, crank, true)
+    _, rpivots = _pivots(DTp, rrank)
+    @show(c)
+    @assert !iszero(c)
+    D_red = D[rpivots, cpivots]
+    d = D[rpivots, c:c]
+    sol = Nemo.dixon_solve(D_red, d)#TODO: use view or alternative
+    return vcat(sol[1], ZZMatrix(1,1,[-sol[2]]))#TODO: vcat at position c? why working like this?
+  end
+  p = next_prime(2^50 + rand(2:2^10))
+  Dp = change_base_ring(Native.GF(p), D)
+  crank  = rref!(Dp)
+  crank == m && return ZZMatrix(m, 1)
+  @error("case for rank smaller ncols-1 not yet implemented") 
+  #=TODO:
+    - dixon_solve with given rank
+    - if solution trivial, independent col d found
+    - try to find P+d with another p to get corresp. rows
+      a) look for indep. rows in submatrix D[:, P+d]    or
+      b) take union of new and old pivots if diff not empty and try again
+    - alternatively: ignore rank and use wiedemann
+  =#
+end
+
+#TODO: assume dixon for one-dim kernel, nullspace else
+function init_kernel(_nullity, _dense_kernel, SG, KER, kernel_basis)
  R = base_ring(SG.A)
  m = ncols(SG.A)
- if with_light
+ if kernel_basis
   l = _nullity+SG.nlight
   #SG.nlight>0 && _one = one(ZZ)
  else
-  l = _nullity
+  l = 1
  end
  K = ZZMatrix(m, l)
  #initialisation
  ilight = 1
  for i = 1:m
   if SG.is_light_col[i]
-   if with_light
+   if kernel_basis
     @assert ilight <= SG.nlight
     #one!(K[i, _nullity+ilight]) doesn't work inplace
     K[i, _nullity+ilight] = one(ZZ) #TODO
@@ -533,6 +583,34 @@ function compose_kernel(l, K, SG)
     end
   end
   return l, K
+end
+
+function _pivots(A, _rank, nonpivot = false)
+  n,m = size(A)
+  i = 1
+  j = 1
+  P = sizehint!(Int64[], _rank)
+  c = m
+  while i<= n && j<=m
+   while iszero(A[i,j])
+    j+=1
+    j>m && return c, P
+   end
+   if j<=m
+    if !isempty(P) && nonpivot && j > (P[end]+1)
+      c = P[end] +1
+      @show c
+    end
+    push!(P,j)
+   else
+    break
+   end
+   while !iszero(A[i,j])
+    i+=1
+    i>n && return c, P
+   end
+  end
+  return P
 end
 
 #TODO: check if still necessary
