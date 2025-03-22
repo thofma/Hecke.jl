@@ -1,6 +1,7 @@
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
+CollapsedDocStrings = true
 DocTestSetup = Hecke.doctestsetup()
 ```
 # Element operations
