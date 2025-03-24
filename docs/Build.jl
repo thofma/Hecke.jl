@@ -99,9 +99,9 @@ function edit_header(content)
   str = """
 # This file is also available as a jupyter notebook and a julia file:
 #
-# [![download](https://img.shields.io/badge/download-notebook-blue)](@__REPO_ROOT_URL__.ipynb)
-# [![nbviewer](https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg)](https://nbviewer.jupyter.org/@__REPO_ROOT_URL__.ipynb)
-# [![download](https://img.shields.io/badge/download-jl-blue)](@__REPO_ROOT_URL__.jl)
+# [![download](https://img.shields.io/badge/download-notebook-blue)](https://@__REPO_ROOT_URL__.ipynb)
+# [![nbviewer](https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg)](https://nbviewer.jupyter.org/url/@__REPO_ROOT_URL__.ipynb)
+# [![download](https://img.shields.io/badge/download-script-blue)](https://@__REPO_ROOT_URL__.jl)
 """
   content = replace(content, "__HEADER__" => str)
   return content
@@ -136,7 +136,7 @@ function build_all_tutorials(Hecke::Module, local_build::Bool = false)
   # get the base_str
   relpath = local_build ? "" : "/"
   res = []
-  repourl = "https://docs.hecke.thofma.com/"
+  repourl = "docs.hecke.thofma.com/"
   outdir = mkpath(joinpath(Hecke.pkgdir, "docs", "src", "public", "tutorials", "build"))
   cd(joinpath(Hecke.pkgdir, "docs", "src", "tutorials")) do
     for s in readdir(".")
