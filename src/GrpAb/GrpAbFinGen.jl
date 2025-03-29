@@ -637,6 +637,31 @@ function isomorphism(G::FinGenAbGroup, H::FinGenAbGroup)
   return inv(SGtoG) * h * SHtoH
 end
 
+function (::Type{T})(G::FinGenAbGroup) where T <: Group
+  return codomain(isomorphism(T, G))
+end
+
+function (::Type{FinGenAbGroup})(G::Group)
+  return codomain(isomorphism(FinGenAbGroup, G))
+end
+
+function isomorphism(::Type{FinGenAbGroup}, G::FinGenAbGroup; on_gens::Bool=false)
+  # Known isomorphisms are cached in the attribute `:isomorphisms`.
+  on_gens = true # we ignore the on_gens flag, the identity will *always* map gens onto gens
+  isos = get_attribute!(Dict{Tuple{Type, Bool}, Any}, G, :isomorphisms)::Dict{Tuple{Type, Bool}, Any}
+  return get!(isos, (FinGenAbGroup, on_gens)) do
+    return id_hom(G)
+  end::FinGenAbGroupHom
+end
+
+function isomorphism(::Type{T}, G::FinGenAbGroup; on_gens::Bool=false) where T <: Group
+  throw(NotImplementedError(:isomorphism, T, G))
+end
+
+function isomorphism(::Type{FinGenAbGroup}, G::Group; on_gens::Bool=false)
+  throw(NotImplementedError(:isomorphism, FinGenAbGroup, G))
+end
+
 ################################################################################
 #
 #  Direct products/direct sums/biproducts
