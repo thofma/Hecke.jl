@@ -19,4 +19,11 @@
   K, a = cyclotomic_field(13, cached = false)
   O = maximal_order(K)
   @test (@inferred length(Hecke._torsion_units_lattice_enum(O)[1])) == 26
+
+  let
+    p = 2^9
+    K, a = cyclotomic_field(p)
+    l = Hecke._torsion_group_order_divisor(K)
+    @test is_divisible_by(degree(K), euler_phi(l))
+  end
 end
