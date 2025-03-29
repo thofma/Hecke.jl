@@ -177,24 +177,46 @@ function schur_index(A::AbstractAssociativeAlgebra{<: NumFieldElem}, p::NumField
   return divexact(s, t)
 end
 
-function schur_index(A::AbstractAssociativeAlgebra{QQFieldElem})
+function local_schur_indices(A::AbstractAssociativeAlgebra{QQFieldElem})
+  lsd = []
   e = schur_index(A, inf)
-  for p in prime_divisors(discriminant(maximal_order(A)))
-    e = lcm(e, schur_index(A, p))
+  if e != 1
+    push!(lsd, 0=>e)
   end
-  return e
+  for p in prime_divisors(discriminant(maximal_order(A)))
+    e = schur_index(A, p)
+    if e != 1
+      push!(lsd, p=>e)
+    end
+  end
+  return lsd
 end
 
-function schur_index(A::AbstractAssociativeAlgebra{<: NumFieldElem})
+function schur_index(A::AbstractAssociativeAlgebra{<: Union{QQField, NumFieldElem}})
+  lsd = local_schur_indices(A)
+  return length(lsd) == 0 ? 1 : lcm([x[2] for x = lsd])
+end
+
+function local_schur_indices(A::AbstractAssociativeAlgebra{<: NumFieldElem})
   rlp = infinite_places(base_ring(A))
+  lsd = Any[]
   e = schur_index(A, rlp[1])
+  if e != 1
+    push!(lsd, rlp[1]=>e)
+  end
   for i in 2:length(rlp)
-    e = lcm(e, schur_index(A, rlp[i]))
+    e = schur_index(A, rlp[i])
+    if e != 1
+      push!(lsd, rlp[i]=>e)
+    end
   end
   for (p, _) in factor(discriminant(maximal_order(A)))
-    e = lcm(e, schur_index(A, p))
+    e = schur_index(A, p)
+    if e != 1
+      push!(lsd, p=>e)
+    end
   end
-  return e
+  return lsd
 end
 
 # Can the following be done without computing the center? Not clear, since the algebra

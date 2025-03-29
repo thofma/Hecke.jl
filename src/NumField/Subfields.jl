@@ -36,10 +36,12 @@ function _subfield_basis(K::S, as::Vector{T}) where {
   end
 
   kx = parent(K.pol)
-  return elem_type(K)[let Kv = phivs(v)
+  b = elem_type(K)[let Kv = phivs(v)
             K(kx([Kv[n] for n in d:-1:1]))
           end
           for v in gens(Fvs)]::Vector{elem_type(K)}
+          return b
+  return [x*denominator(x) for x= b]        
 end
 
 function _improve_subfield_basis(K, bas)
@@ -122,33 +124,42 @@ end
 
 #As above, but for AbsSimpleNumField type
 #In this case, we can use block system to find if an element is primitive.
+#does not need to be a basis, generators are sufficient
 function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector{AbsSimpleNumFieldElem})
   if isempty(as) || degree(K) == 1
     return gen(K)
   end
 
+  as = [x for x = as if !iszero(x)]
+
   dsubfield = length(as)
 
-  @vprintln :Subfields 1 "Sieving for primitive elements"
-  # First check basis elements
   @vprintln :Subfields 1 "Sieving for primitive elements"
   # First check basis elements
   Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
   p, d = _find_prime(ZZPolyRingElem[f])
+  #does not need to ne successful!!!
   #First, we search for elements that are primitive using block systems
+  #TODO: use p-adic roots ala Oscar/experimental/Galois.../src/Subfield.jl
+  # prob: get bounds without SLP and GaloisCtx
   F = Nemo.Native.finite_field(p, d, "w", cached = false)[1]
   Ft = polynomial_ring(F, "t", cached = false)[1]
   ap = zero(Ft)
   fit!(ap, degree(K)+1)
   rt = roots(F, f)
   indices = Int[]
+  b = [collect(1:degree(f))] #block system for QQ
+  all_b = []
   for i = 1:length(as)
-    b = _block(as[i], rt, ap)
-    if length(b) == dsubfield
-      push!(indices, i)
-    end
+    _b = _block(as[i], rt, ap)
+    push!(all_b, _b)
+    b = [intersect(x, y) for x = b for y = _b]
+    b = [x for x = b if length(x) > 0]
   end
+  @vprintln :Subfields 1 "Have block systems, degree of subfield is $(length(b))\n"
+
+  indices = findall(x->length(x) == length(b), all_b)
 
   @vprintln :Subfields 1 "Found $(length(indices)) primitive elements in the basis"
   #Now, we select the one of smallest T2 norm
@@ -166,42 +177,30 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     return a
   end
 
-  @vprintln :Subfields 1 "Trying combinations of elements in the basis"
-  # Notation: cs the coefficients in a linear combination of the as, ca the dot
-  # product of these vectors.
-  cs = ZZRingElem[rand(ZZ, -2:2) for n in 1:dsubfield]
-  k = 0
-  s = 1
-  first = true
-  a = one(K)
-  I = t2(a)
-  while true
-    s += 1
-    ca = sum(c*a for (c,a) in zip(cs,as))
-    b = _block(ca, rt, ap)
-    if length(b) == dsubfield
-      t2n = t2(ca)
-      if first
-        a = ca
-        I = t2n
-        first = false
-      elseif t2n < I
-        a = ca
-        I = t2n
-      end
-      k += 1
-      if k == 5
-      	@vprintln :Subfields 1 "Primitive element found"
-        return a
+  @vprintln :Subfields 1 "Finding combination of elements"
+
+  pe = as[1]
+  cur_b = all_b[1]
+  for i=2:length(as)
+    if issubset(all_b[i][1], cur_b[1])
+      continue
+    end
+    cur_b = [intersect(x, y) for x = cur_b for y = all_b[i]]
+    cur_b = [x for x = cur_b if length(x) > 0]
+    j = 1
+    while _block(pe + j*as[i], rt, ap) != c
+      j += 1
+      if j > 10
+        error("dnw")
       end
     end
-
-    # increment the components of cs
-    bb = div(s, 10)+1
-    for n = 1:dsubfield
-      cs[n] = rand(ZZ, -bb:bb)
+    pe += j*as[i]
+    if cur_b == b
+      @vprintln :Subfields 1 "Primitive element found"
+      return pe
     end
   end
+  error("should be hard...")
 end
 
 ################################################################################
@@ -239,14 +238,9 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
     return _subfield_from_primitive_element(K, elt[1])
   end
 
-  isbasis = is_basis || isbasis
-
-  if isbasis
-    s = _subfield_primitive_element_from_basis(K, elt)
-  else
-    bas = _subfield_basis(K, elt)
-    s = _subfield_primitive_element_from_basis(K, bas)
-  end
+  s = _subfield_primitive_element_from_basis(K, elt) #see comment: does not
+   #have to be a basis...
+  s *= denominator(s)
 
   return _subfield_from_primitive_element(K, s)
 end
