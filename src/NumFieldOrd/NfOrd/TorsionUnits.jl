@@ -413,6 +413,16 @@ end
 
 function _torsion_units_gen(K::AbsSimpleNumField)
  return get_attribute!(K, :torsion_units) do
+  if Nemo.is_cyclo_type(K)
+    f = get_attribute(K, :cyclo)::Int
+    a = Hecke.gen(K)
+    if is_even(f)
+      return f, a
+    else
+      return 2*f, -a
+    end
+  end
+
   r1, r2 = signature(K)
   if r1 > 0
     return 2, K(-1)
