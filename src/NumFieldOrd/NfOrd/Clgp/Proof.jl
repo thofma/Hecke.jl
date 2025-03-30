@@ -3,7 +3,7 @@ import Dates
 
 # This is a modified showprogress from Pkg.GitTools
 
-PROGRESS_BAR_PERCENTAGE_GRANULARITY = Ref(0.1)
+PROGRESS_BAR_PERCENTAGE_GRANULARITY = Ref(0.001)
 
 Base.@kwdef mutable struct MiniProgressBar
     max::Float64 = 1.0
@@ -17,7 +17,7 @@ Base.@kwdef mutable struct MiniProgressBar
 end
 
 function showprogress(io::IO, p::MiniProgressBar, info)
-  perc = p.current / p.max * 100
+  perc = max(p.current / p.max * 100, 0.0)
   prev_perc = p.prev / p.max * 100
   # Bail early if we are not updating the progress bar,
   # Saves printing to the terminal
@@ -41,7 +41,7 @@ function showprogress(io::IO, p::MiniProgressBar, info)
   print(io, " [")
   print(io, "="^n_filled, ">")
   print(io, " "^n_left, "]  ", )
-  @printf io "%2.1f %%" perc
+  @printf io "%2.3f %%" perc
   print(io, info)
   print(io, "\r")
 end
@@ -56,6 +56,7 @@ function _class_group_proof(c, U, primes_checked = nothing)
   if !c.GRH
     return true
   end
+  @vprintln :ClassGroupProof 1 "Testing all primes up to $(factor_base_bound_minkowski(order(c)))"
   class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(order(c)))
   for (p, _) in factor(c.h)
     primes_checked isa Vector && p in primes_checked && continue
