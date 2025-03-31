@@ -917,6 +917,7 @@ export trailing_coefficient
 export transform
 export transform_rstu
 export triangularize
+export trivial_divisor
 export trivial_morphism
 export trred
 export trred_matrix
