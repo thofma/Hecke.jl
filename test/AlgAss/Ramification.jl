@@ -54,6 +54,7 @@
   @test schur_index(A) == 2
   @test !is_split(A)
   @test is_eichler(A)
+  @test issetequal(Hecke.local_schur_indices(A), [ZZ(2) => 2, ZZ(0) => 2])
 
   K, = Hecke.rationals_as_number_field()
   OK = maximal_order(K)
@@ -71,6 +72,7 @@
   @test schur_index(Q) == 2
   @test !is_split(Q)
   @test !is_eichler(Q)
+  @test issetequal(Hecke.local_schur_indices(Q), [ p2 => 2, rlp => 2])
 
   Q, = StructureConstantAlgebra(Q)
   @test !is_split(Q, p2)
